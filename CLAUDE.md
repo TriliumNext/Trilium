@@ -128,8 +128,11 @@ Common UI components are available in `apps/client/src/widgets/react/` — **alw
 - `FormSelect` - Dropdown/combobox taking an object array as data
 - `Slider` - Range slider with label
 - `Checkbox`, `RadioButton` - Form controls
-- `CollapsibleSection` - Expandable content sections
+- `Collapsible` - Expandable content section (animated, theme-styled); `ExternallyControlledCollapsible` is the controlled variant (caller owns `expanded`/`setExpanded`) vs. `Collapsible`'s self-managed `initiallyExpanded`
+- `ColorPicker` - Color picker combining preset swatches with the browser's native `<input type="color">`; value is a CSS color string (`onChange("")` clears). Uses the theme `Dropdown` for its popover — don't hand-roll a color popover
 - `Badge` - Colored pill/label with optional icon, tooltip, and `onClick` (for counts, status flags). Set its color via the `--color` CSS variable on a wrapper class (not inline styles); pass `outline` for a colored-border/transparent-fill variant instead of a solid background. `BadgeWithDropdown` pairs a badge with a dropdown menu. Don't hand-roll pill/badge markup — reuse it
+- `Table` - Generic [Tabulator](https://tabulator.info/)-based data grid (`columns`, `data`, `events`, `modules`, `tabulatorRef`; props typed via `TableProps<T>`). Decoupled from the note/collection model — deals purely in columns/data/events, so use it for any grid (e.g. the SQL console results, the note collection table view). Prefer it over instantiating `tabulator-tables` directly
+- `Calendar` - Generic [FullCalendar](https://fullcalendar.io/) wrapper (accepts any `CalendarOptions` plus a `calendarRef`; props typed via `CalendarProps`). Decoupled from the note/collection model — deals purely in FullCalendar options, so use it for any calendar rather than instantiating `@fullcalendar/core` directly
 
 Fluent builder pattern: `.child()`, `.class()`, `.css()` chaining with position-based ordering.
 

@@ -4,8 +4,10 @@ import * as hooks from "preact/hooks";
 import ActionButton from "../widgets/react/ActionButton";
 import Admonition from "../widgets/react/Admonition";
 import Button from "../widgets/react/Button";
+import Calendar from "../widgets/collections/calendar/calendar";
 import CKEditor from "../widgets/react/CKEditor";
-import Collapsible from "../widgets/react/Collapsible";
+import Collapsible, { ExternallyControlledCollapsible } from "../widgets/react/Collapsible";
+import ColorPicker from "../widgets/react/ColorPicker";
 import Dropdown from "../widgets/react/Dropdown";
 import FormCheckbox from "../widgets/react/FormCheckbox";
 import FormDropdownList from "../widgets/react/FormDropdownList";
@@ -26,6 +28,7 @@ import NoteAutocomplete from "../widgets/react/NoteAutocomplete";
 import NoteLink from "../widgets/react/NoteLink";
 import RawHtml from "../widgets/react/RawHtml";
 import Slider from "../widgets/react/Slider";
+import Table from "../widgets/collections/table/tabulator";
 import RightPanelWidget from "../widgets/sidebar/RightPanelWidget";
 
 export interface WidgetDefinition {
@@ -72,8 +75,10 @@ export const preactAPI = Object.freeze({
     ActionButton,
     Admonition,
     Button,
+    Calendar,
     CKEditor,
-    Collapsible,
+    Collapsible, ExternallyControlledCollapsible,
+    ColorPicker,
     Dropdown,
     FormCheckbox,
     FormDropdownList,
@@ -93,6 +98,7 @@ export const preactAPI = Object.freeze({
     NoteLink,
     RawHtml,
     Slider,
+    Table,
 
     // Specialized widgets
     RightPanelWidget,
@@ -110,5 +116,4 @@ export const preactAPI = Object.freeze({
 // so they aren't part of the shared surface and aren't checked.)
 type _PublicPreactExports = keyof typeof import("@triliumnext/commons/src/lib/script_api_preact.js");
 type _MissingPreactMembers = Exclude<_PublicPreactExports, keyof typeof preactAPI>;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _preactDriftGuard: [_MissingPreactMembers] extends [never] ? true : _MissingPreactMembers = true;

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 import { CalendarOptions, Calendar as FullCalendar, PluginDef } from "@fullcalendar/core";
 import { RefObject } from "preact";
 
-interface CalendarProps extends CalendarOptions {
+export interface CalendarProps extends CalendarOptions {
     calendarRef?: RefObject<FullCalendar>;
 }
 
