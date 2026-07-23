@@ -25,7 +25,7 @@
     "eslint-config-ckeditor5": ">=9.1.0",
     "stylelint": "17.14.0",
     "stylelint-config-ckeditor5": ">=9.1.0",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "vite-plugin-svgo": "2.0.0",
     "vitest": "4.1.10",
     "webdriverio": "9.29.1"
