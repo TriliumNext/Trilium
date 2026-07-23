@@ -122,6 +122,8 @@ The examples below assume four notes: _Austria_ (`#capital=Vienna`), _Somewhere_
 | `#capital!=Vienna` | `Prague` | Yes | `!=` matches every value that is not `Vienna` |
 | `#capital!=Vienna` | `Vienna` | No | `!=` excludes the exact value |
 
+> **Quick search relaxes this.** The [Quick search](Quick%20search.md) bar and autocomplete apply relaxed attribute matching — an attribute `=` is treated as "contains" — so `#capital=Vienna` typed there also matches `Vienna Austria`; the strict full-value equality described here applies only in the full Search.
+
 ### Fuzzy operators (`~=` and `~*`)
 
 **Rule:** the fuzzy operators tolerate typos. `~=` (fuzzy-equals) matches a value that is a close whole-word variant of your term; `~*` (fuzzy-contains) matches when your term appears — as a fragment _or_ a near-miss — anywhere inside the value. Both work on note properties (`note.title`, `note.content`, …) and on labels (`#label`). Fuzzy operators require at least 3 characters.

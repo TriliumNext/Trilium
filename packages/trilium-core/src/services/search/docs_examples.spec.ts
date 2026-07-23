@@ -166,6 +166,22 @@ describe("Search documentation examples", () => {
             expect(findNoteByTitle(results, "Switzerland")).toBeTruthy();
             expect(results.length).toEqual(1);
         });
+
+        // Docs: Search.md § "Attribute and property equality" — quick-search caveat.
+        // Quick search / autocomplete run with fuzzyAttributeSearch, which rewrites attribute `=`
+        // to `*=*` (contains); the same `#capital=Vienna` that is strict in full search also
+        // matches the substring value `Vienna Austria` there.
+        it("quick search relaxes attribute `=` to a substring match (`#capital=Vienna` also matches `Vienna Austria`)", () => {
+            buildCapitals();
+
+            const results = searchService.findResultsWithQuery(
+                "#capital=Vienna",
+                new SearchContext({ fuzzyAttributeSearch: true })
+            );
+
+            expect(findNoteByTitle(results, "Austria")).toBeTruthy();
+            expect(findNoteByTitle(results, "Somewhere")).toBeTruthy();
+        });
     });
 
     describe('Fuzzy operators (~= fuzzy-equals, ~* fuzzy-contains)', () => {
