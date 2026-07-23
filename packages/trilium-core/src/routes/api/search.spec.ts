@@ -41,6 +41,19 @@ describe("Search API (core)", () => {
         expect(res.body.highlightedTokens).toContain(UNIQUE_TOKEN.toLowerCase());
     });
 
+    it("excludes regex (`%=`) tokens from quick-search highlightedTokens", async () => {
+        // The client seeds these into the find bar as literal jump-to-match terms; a raw regex
+        // pattern would match nothing there (silent no-op), so the server must drop regex tokens.
+        const pattern = "ZzRegexQwerty";
+        const res = await api.get<{ highlightedTokens: string[]; error: string | null }>(
+            `/api/quick-search/${encodeURIComponent(`note.content %= '${pattern}'`)}`
+        );
+
+        expect(res.status).toBe(200);
+        expect(res.body.error).toBeFalsy();
+        expect(res.body.highlightedTokens).not.toContain(pattern);
+    });
+
     it("lists template note ids including a freshly-labelled template", async () => {
         const { noteId } = await createTextNote(api, { title: "A template note" });
         await api.post(`/api/notes/${noteId}/attributes`, {

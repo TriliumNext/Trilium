@@ -119,7 +119,11 @@ function quickSearch(req: Request<{ searchString: string }>) {
     return {
         searchResultNoteIds: searchResults.map((result) => result.noteId),
         searchResults,
-        highlightedTokens: searchContext.highlightedTokens,
+        // Only plain tokens round-trip as literal jump-to-match search terms. Regex (`%=`) tokens
+        // are raw patterns the find bar would treat literally (a silent no-op), so drop them here.
+        // The client uses this field solely to seed jump-to-match; snippet highlighting already
+        // happened server-side on `searchResults`, so filtering the response is safe.
+        highlightedTokens: searchContext.highlightedTokens.filter((token) => !searchContext.regexTokens.has(token)),
         error: searchContext.getError()
     };
 }
