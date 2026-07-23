@@ -1,4 +1,4 @@
-import { installIosInterceptors } from "./ios-interceptors.js";
+import { installIosNativeBridge } from "./ios-native-bridge.js";
 import { attachServiceWorkerBridge, registerNativeHttpHandler, startLocalServerWorker } from "./local-bridge.js";
 
 async function waitForServiceWorkerControl(): Promise<void> {
@@ -56,11 +56,12 @@ async function bootstrap() {
         startLocalServerWorker();
 
         // iOS Capacitor loads on the capacitor:// scheme, where WebKit rejects
-        // service worker registration. Fall back to in-page request interceptors
-        // that route API calls straight to the local SQLite worker; everywhere
-        // else (Android https, web) the service worker handles this.
+        // service worker registration. The native WKURLSchemeHandler intercepts
+        // local API requests instead and forwards them back to this page, which
+        // routes them to the local SQLite worker; everywhere else (Android https,
+        // web) the service worker handles this.
         if (location.protocol === "capacitor:") {
-            installIosInterceptors();
+            installIosNativeBridge();
         } else {
             attachServiceWorkerBridge();
             await waitForServiceWorkerControl();
