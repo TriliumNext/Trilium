@@ -1,6 +1,7 @@
 import "./index.css";
 import "gridstack/dist/gridstack.min.css";
 
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { clsx } from "clsx";
 import { GridStack } from "gridstack";
 import { RefObject, TargetedMouseEvent } from "preact";
@@ -309,7 +310,7 @@ function useNoteTreeDropToDashboard(note: FNote, includeArchived: boolean, dropA
 interface DashboardWidgetProps {
     note: FNote;
     parentNote: FNote;
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchived: boolean;
     showTextRepresentation?: boolean;
 }

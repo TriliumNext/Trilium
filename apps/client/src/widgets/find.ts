@@ -10,6 +10,7 @@ import FindInText from "./find_in_text.js";
 import FindInCode from "./find_in_code.js";
 import { isIMEComposing } from "../services/shortcuts.js";
 import FindInHtml from "./find_in_html.js";
+import utils from "../services/utils.js";
 import type { EventData } from "../components/app_context.js";
 
 const findWidgetDelayMillis = 200;
@@ -53,6 +54,15 @@ const TPL = /*html*/`
 
         .find-widget-spacer {
             flex-grow: 1;
+        }
+
+        /* Muted highlight for the non-seed tokens of a multi-token jump-to-match (see
+           FindInHtml.highlightExtraTokens): a reduced-opacity variant of the primary
+           .ck-find-result highlight, so extra matches are visible without competing with the
+           seed match that Enter/F3 cycles. */
+        .find-result-secondary {
+            background-color: color-mix(in srgb, var(--ck-color-find-result-background, #66ff99) 40%, transparent);
+            border-radius: 2px;
         }
     </style>
 
@@ -191,8 +201,12 @@ export default class FindWidget extends NoteContextAwareWidget {
         return this.$widget;
     }
 
-    async findInTextEvent() {
-        if (!this.isActiveNoteContext()) {
+    async findInTextEvent(data: EventData<"findInText"> = {}) {
+        // Route by explicit ntxId when the command targets a specific context (the seeded
+        // jump-to-match flow fired on note open carries it); otherwise fall back to the active
+        // context, as manual Ctrl+F / toolbar invocations do.
+        const isTargeted = data.ntxId ? this.isNoteContext(data.ntxId) : this.isActiveNoteContext();
+        if (!isTargeted) {
             return;
         }
 
@@ -204,6 +218,11 @@ export default class FindWidget extends NoteContextAwareWidget {
         }
 
         this.handler = await this.getHandler();
+
+        if (data.searchTerms?.length) {
+            await this.seededFind(data.searchTerms);
+            return;
+        }
 
         const isReadOnly = await this.noteContext?.isReadOnly();
 
@@ -243,6 +262,41 @@ export default class FindWidget extends NoteContextAwareWidget {
                 this.$input.select();
                 await this.performFind();
             }
+        }
+    }
+
+    /**
+     * Opens the find bar pre-seeded from search terms carried in on note open (jump-to-match),
+     * scrolling to the first match so Enter/F3 immediately cycles the results.
+     *
+     * The bar is shown whenever there is at least one match — deliberately, even for non-Electron
+     * users who have no Ctrl+F to summon it: (a) Enter/F3 cycling is bound on the input, (b) leaving
+     * the bar open is the affordance that lets the user dismiss the highlights (closeSearch only
+     * unmarks while the bar is visible). With zero matches nothing is shown and performFind leaves
+     * no marks behind, so there is nothing to leak.
+     *
+     * Kept separate from the manual-open flow above, whose pre-existing show()/isAlreadyVisible
+     * ordering is intentionally left untouched.
+     */
+    private async seededFind(searchTerms: string[]) {
+        const { seed, extraTokens } = deriveSeededFind(searchTerms);
+        this.$input.val(seed);
+
+        const { totalFound } = await this.performFind();
+        if (totalFound < 1) {
+            return;
+        }
+
+        this.$widget.show();
+        if (!utils.isMobile()) {
+            this.$input.focus();
+            this.$input.select();
+        }
+
+        // Multi-token highlight-all is only supported by the read-only HTML handler; the editable
+        // CKEditor and CodeMirror find engines highlight the single seed term only.
+        if (extraTokens.length && this.handler instanceof FindInHtml) {
+            await this.handler.highlightExtraTokens(extraTokens);
         }
     }
 
@@ -329,14 +383,14 @@ export default class FindWidget extends NoteContextAwareWidget {
         }
     }
 
-    /** Perform the find and highlight the find results. */
-    async performFind() {
+    /** Perform the find and highlight the find results. Returns the resulting match counts. */
+    async performFind(): Promise<FindResult> {
         const searchTerm = String(this.$input.val());
         const matchCase = this.$caseSensitiveCheckbox.prop("checked");
         const wholeWord = this.$matchWordsCheckbox.prop("checked");
 
         if (!this.handler) {
-            return;
+            return { totalFound: 0, currentFound: 0 };
         }
         const { totalFound, currentFound } = await this.handler.performFind(searchTerm, matchCase, wholeWord);
 
@@ -344,6 +398,8 @@ export default class FindWidget extends NoteContextAwareWidget {
         this.$currentFound.text(currentFound);
 
         this.searchTerm = searchTerm;
+
+        return { totalFound, currentFound };
     }
 
     async closeSearch() {
@@ -391,4 +447,14 @@ export default class FindWidget extends NoteContextAwareWidget {
             this.closeSearch();
         }
     }
+}
+
+/**
+ * Splits the search terms carried in on note open into the seed (first token — a quoted phrase
+ * arrives as a single token) that drives the find counter and Enter/F3 cycling, and the remaining
+ * tokens that get a muted highlight-all pass (HTML handler only). Extracted and kept pure so the
+ * seed/extras split is unit-testable without instantiating the jQuery widget.
+ */
+export function deriveSeededFind(searchTerms: string[]): { seed: string; extraTokens: string[] } {
+    return { seed: searchTerms[0] ?? "", extraTokens: searchTerms.slice(1) };
 }

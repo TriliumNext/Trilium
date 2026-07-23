@@ -1,5 +1,5 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
-import { FilterLabelsByType, KeyboardActionNames, NoteType, OptionNames, RelationNames } from "@triliumnext/commons";
+import { FilterLabelsByType, HighlightedTokenInfo, KeyboardActionNames, NoteType, OptionNames, RelationNames } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import Mark from "mark.js";
 import { Ref, RefObject, VNode } from "preact";
@@ -19,6 +19,7 @@ import keyboard_actions from "../../services/keyboard_actions";
 import { parseNavigationStateFromUrl, ViewScope } from "../../services/link";
 import options, { type OptionValue } from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
+import { consumeSearchTerms } from "../../services/search_jump";
 import server from "../../services/server";
 import type { ShortcutHintDefinition, ShortcutHintProvider } from "../../services/shortcut_hints";
 import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
@@ -26,7 +27,7 @@ import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import { getEffectiveThemeStyle } from "../../services/theme";
 import toast, { ToastOptions } from "../../services/toast";
 import tree from "../../services/tree";
-import utils, { escapeRegExp, getErrorMessage, randomString, reloadFrontendApp } from "../../services/utils";
+import utils, { getErrorMessage, randomString, reloadFrontendApp } from "../../services/utils";
 import ws from "../../services/ws";
 import BasicWidget, { ReactWrappedWidget } from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
@@ -855,6 +856,28 @@ export function useNoteBlob(note: FNote | null | undefined, componentId?: string
     return blob;
 }
 
+/**
+ * Handles the same-note re-click half of jump-to-match consumption (see `search_jump.ts`), shared
+ * by the text and code type widgets. The other half — consuming when a note's content first loads
+ * — is done directly at each widget's content-ready point (`[blob]` effect / `onContentChange`),
+ * because that signal differs between the read-only and editable variants.
+ *
+ * Re-clicking the same search result re-runs `setNote` (it proceeds because the viewScope now
+ * carries new `searchTerms` and so differs from the current one) and fires `noteSwitched` without
+ * changing the blob — so the content-ready path doesn't re-run. We consume here instead, but only
+ * when the switch targets the note this widget already shows: a genuine switch to a *different*
+ * note is handled by the newly mounted widget's content-ready path, and consuming it here (against
+ * this widget's stale, about-to-unmount content) would clear the terms before the real content is
+ * ready, so we skip it.
+ */
+export function useSearchTermsConsumer(note: FNote | null | undefined, noteContext: NoteContext | undefined, ntxId: string | null | undefined) {
+    useTriliumEvent("noteSwitched", ({ noteContext: switchedContext }) => {
+        if (switchedContext.ntxId !== ntxId) return;
+        if (switchedContext.note?.noteId !== note?.noteId) return;
+        consumeSearchTerms(noteContext, ntxId);
+    });
+}
+
 export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, { noteContext, containerClassName, containerStyle }: {
     noteContext?: NoteContext;
     containerClassName?: string;
@@ -1242,31 +1265,68 @@ export function useSyncedRef<T>(externalRef?: Ref<T>, initialValue: T | null = n
     return ref;
 }
 
-export function useImperativeSearchHighlighlighting(highlightedTokens: string[] | null | undefined) {
+/** Longer regex tokens are rejected outright rather than compiled, to avoid pathological patterns. */
+const MAX_REGEX_TOKEN_LENGTH = 1000;
+/** Caps the number of matches a single regex token can wrap, mirroring the cap mark.js's own term API implicitly applies via node-at-a-time processing. */
+const MAX_REGEX_MATCHES = 500;
+
+export function useImperativeSearchHighlighlighting(
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
+) {
     const mark = useRef<Mark>();
-    const highlightRegex = useMemo(() => {
+    const tokenInfos = useMemo<HighlightedTokenInfo[] | null>(() => {
         if (!highlightedTokens?.length) return null;
-        const regex = highlightedTokens.map((token) => escapeRegExp(token)).join("|");
-        return new RegExp(regex, "gi");
+        return highlightedTokens.map((token) => (typeof token === "string" ? { token, type: "plain" as const } : token));
     }, [ highlightedTokens ]);
 
     return (el: HTMLElement | null | undefined) => {
-        if (!el || !highlightRegex) return;
+        if (!el || !tokenInfos) return;
 
         if (!mark.current) {
             mark.current = new Mark(el);
         }
 
         mark.current.unmark();
-        mark.current.markRegExp(highlightRegex, {
-            element: "span",
-            className: "ck-find-result",
-            // Reveal matches that landed inside collapsed <details> blocks — they
-            // are highlighted in the DOM but hidden until the block is expanded.
-            done: () => {
-                el.querySelectorAll<HTMLElement>(".ck-find-result").forEach(expandAncestorDetails);
+
+        const plainTokens = tokenInfos.filter((info) => info.type === "plain").map((info) => info.token);
+        if (plainTokens.length) {
+            // Term API (not markRegExp): its diacritics map lets an unaccented query like "ktory"
+            // (the server strips diacritics before indexing) still highlight "ktorý" (#10616).
+            // separateWordSearch: false keeps a multi-word token as one literal phrase; the default
+            // "partially" accuracy keeps plain substring matching, so CJK tokens without word
+            // boundaries (e.g. "笔记" inside "我的笔记本") keep working.
+            mark.current.mark(plainTokens, {
+                separateWordSearch: false,
+                diacritics: true,
+                caseSensitive: false,
+                element: "span",
+                className: "ck-find-result"
+            });
+        }
+
+        for (const info of tokenInfos) {
+            if (info.type !== "regex" || info.token.length > MAX_REGEX_TOKEN_LENGTH) continue;
+
+            let regex: RegExp;
+            try {
+                regex = new RegExp(info.token, "gi");
+            } catch {
+                // Invalid regex (e.g. from a malformed %= search) - skip rather than crash the render.
+                continue;
             }
-        });
+
+            mark.current.markRegExp(regex, {
+                element: "span",
+                className: "ck-find-result",
+                // markRegExp's filter is called as (node, match, totalCounter so far); returning
+                // false once the cap is hit stops further matches from being wrapped.
+                filter: (_node, _match, totalCounter) => totalCounter < MAX_REGEX_MATCHES
+            });
+        }
+
+        // Reveal matches that landed inside collapsed <details> blocks — they are highlighted
+        // in the DOM but hidden until the block is expanded.
+        el.querySelectorAll<HTMLElement>(".ck-find-result").forEach(expandAncestorDetails);
     };
 }
 

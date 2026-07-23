@@ -8,8 +8,9 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { CommandListenerData } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
+import { consumeSearchTerms } from "../../../services/search_jump";
 import utils from "../../../services/utils";
-import { useColorScheme, useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useColorScheme, useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useSearchTermsConsumer, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { refToJQuerySelector } from "../../react/react_utils";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
@@ -36,7 +37,7 @@ export interface EditableCodeProps extends TypeWidgetProps, Omit<CodeEditorProps
     editorRef?: Ref<VanillaCodeMirror>;
 }
 
-export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
+export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, parentComponent, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
     const [ content, setContent ] = useState("");
     const blob = useNoteBlob(note);
     // Read reactively so switching the language from the dropdown re-highlights live, rather than
@@ -55,7 +56,12 @@ export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent, editorRe
         }
 
         setContent(newContent);
+
+        // Jump to the first search match (and pre-fill the find bar) when navigated from search
+        // results; the same-note re-click case is covered by useSearchTermsConsumer below.
+        consumeSearchTerms(noteContext, ntxId);
     }, [ blob ]);
+    useSearchTermsConsumer(note, noteContext, ntxId);
 
     return (
         <CodeEditor
@@ -115,10 +121,17 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
             codeEditor.setText(content ?? "");
             codeEditor.setMimeType(note.mime);
             codeEditor.clearHistory();
+
+            // Jump to the first search match (and pre-fill the find bar) when navigated from search
+            // results. Runs once the content has loaded into the editor; the same-note re-click case
+            // is covered by useSearchTermsConsumer below.
+            consumeSearchTerms(noteContext, ntxId);
         },
         dataSaved,
         updateInterval
     });
+
+    useSearchTermsConsumer(note, noteContext, ntxId);
 
     // make sure that script is saved before running it #4028
     useLegacyImperativeHandlers({

@@ -3,7 +3,7 @@ import { Dropdown, Tooltip } from "bootstrap";
 import appContext from "../components/app_context.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
-import linkService from "../services/link.js";
+import linkService, { calculateHash, type ViewScope } from "../services/link.js";
 import server from "../services/server.js";
 import shortcutService, { isIMEComposing } from "../services/shortcuts.js";
 import utils, { handleRightToLeftPlacement } from "../services/utils.js";
@@ -99,11 +99,15 @@ const TPL = /*html*/`
         text-overflow: ellipsis;
     }
 
-    /* Search result highlighting */
+    /* Search result highlighting: point at the same highlight vars the snippet cards
+       (SearchResultsList.css / ListOrGridView.css) use, falling back to the pre-existing
+       colors if a theme hasn't defined them. */
     .quick-search .search-result-title b,
     .quick-search .search-result-content b,
     .quick-search .search-result-attributes b {
-        color: var(--admonition-warning-accent-color);
+        background: var(--note-list-view-search-result-highlight-background, transparent);
+        color: var(--note-list-view-search-result-highlight-color, var(--admonition-warning-accent-color));
+        font-weight: 600;
         text-decoration: underline;
     }
 
@@ -144,6 +148,8 @@ interface QuickSearchResponse {
         highlightedAttributeSnippet?: string;
         icon: string;
     }>;
+    /** Plain search tokens the server highlighted; consumed by jump-to-match producers. */
+    highlightedTokens?: string[];
     error: string;
 }
 
@@ -158,6 +164,10 @@ export default class QuickSearchWidget extends BasicWidget {
     private allSearchResultNoteIds: string[] = [];
     private currentDisplayedCount: number = 0;
     private isLoadingMore: boolean = false;
+
+    // Plain tokens the server highlighted for the last completed search. Consumed by
+    // jump-to-match producers to know what to highlight in the opened note.
+    private lastHighlightedTokens: string[] = [];
 
     doRender() {
         this.$widget = $(TPL);
@@ -243,7 +253,9 @@ export default class QuickSearchWidget extends BasicWidget {
                 ${t("quick-search.searching")}
             </span>`);
 
-        const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
+        const { searchResultNoteIds, searchResults, highlightedTokens, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
+
+        this.lastHighlightedTokens = highlightedTokens || [];
 
         if (error) {
             const tooltip = new Tooltip(this.$searchString[0], {
@@ -292,7 +304,12 @@ export default class QuickSearchWidget extends BasicWidget {
             for (const result of resultsToDisplay) {
                 if (!result.notePath) continue;
 
-                const $item = $(`<a class="dropdown-item" tabindex="0" href="#${result.notePath}">`);
+                // Carry the highlighted search tokens into the opened note (jump-to-match) via the
+                // view scope. Set the href with .attr() rather than interpolating it into the HTML
+                // string so query separators aren't parsed as HTML entities. calculateHash omits
+                // searchTerms when the token list is empty, so this degrades to a plain `#notePath`.
+                const $item = $(`<a class="dropdown-item" tabindex="0">`);
+                $item.attr("href", calculateHash({ notePath: result.notePath, viewScope: this.resultViewScope() }));
 
                 // Build the display HTML with content snippet below the title
                 let itemHtml = `<div class="quick-search-item">
@@ -337,7 +354,7 @@ export default class QuickSearchWidget extends BasicWidget {
             const noteIdsToDisplay = this.allSearchResultNoteIds.slice(startIndex, endIndex);
 
             for (const note of await froca.getNotes(noteIdsToDisplay)) {
-                const $link = await linkService.createLink(note.noteId, { showNotePath: true, showNoteIcon: true });
+                const $link = await linkService.createLink(note.noteId, { showNotePath: true, showNoteIcon: true, viewScope: this.resultViewScope() });
                 $link.addClass("dropdown-item");
                 $link.attr("tabIndex", "0");
                 $link.on("click auxclick", (e) => {
@@ -361,6 +378,15 @@ export default class QuickSearchWidget extends BasicWidget {
         }
 
         this.isLoadingMore = false;
+    }
+
+    /**
+     * View scope attached to each result link so the opened note jumps to the first match and
+     * pre-fills the find bar. Undefined when the last search highlighted no tokens, so links stay
+     * plain `#notePath`.
+     */
+    private resultViewScope(): ViewScope | undefined {
+        return this.lastHighlightedTokens.length ? { searchTerms: this.lastHighlightedTokens } : undefined;
     }
 
     private handleScroll() {

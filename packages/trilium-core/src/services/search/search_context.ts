@@ -1,7 +1,10 @@
 "use strict";
 
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
+
 import hoistedNoteService from "../hoisted_note.js";
 import optionService from "../options.js";
+import { betterQuality, type ContentMatchQuality } from "./match_quality.js";
 import type { SearchParams } from "./services/types.js";
 
 class SearchContext {
@@ -23,10 +26,21 @@ class SearchContext {
     /** When true, skip the two-phase fuzzy fallback and use the single-token fast path. */
     autocomplete: boolean;
     highlightedTokens: string[];
+    /**
+     * Subset of {@link highlightedTokens} that came from the `%=` (regex) operator
+     * and must be matched as regular expressions rather than literal text.
+     */
+    regexTokens: Set<string>;
     originalQuery: string;
     fulltextQuery: string;
     dbLoadNeeded: boolean;
     error: string | null;
+    /**
+     * Per-note content match quality recorded during expression evaluation and
+     * consumed by scoring. Bounded memory: one small record per matched note.
+     * Cleared at the start of each progressive search phase.
+     */
+    contentMatches: Map<string, ContentMatchQuality>;
 
     constructor(params: SearchParams = {}) {
         this.fastSearch = !!params.fastSearch;
@@ -56,12 +70,34 @@ class SearchContext {
             this.enableFuzzyMatching = true; // Default to true if option not yet initialized
         }
         this.highlightedTokens = [];
+        this.regexTokens = new Set();
         this.originalQuery = "";
         this.fulltextQuery = ""; // complete fulltext part
         // if true, becca does not have (up-to-date) information needed to process the query
         // and some extra data needs to be loaded before executing
         this.dbLoadNeeded = false;
         this.error = null;
+        this.contentMatches = new Map();
+    }
+
+    /**
+     * Records how well a note's content matched, merging with any existing record
+     * for that note so the best quality wins (higher tier, then more tokens).
+     */
+    recordContentMatch(noteId: string, quality: ContentMatchQuality) {
+        const existing = this.contentMatches.get(noteId);
+        this.contentMatches.set(noteId, existing ? betterQuality(existing, quality) : quality);
+    }
+
+    /**
+     * Maps {@link highlightedTokens} to structured token infos, tagging each token
+     * as `regex` when it was collected from a `%=` operator and `plain` otherwise.
+     */
+    getHighlightedTokenInfos(): HighlightedTokenInfo[] {
+        return this.highlightedTokens.map((token) => ({
+            token,
+            type: this.regexTokens.has(token) ? "regex" : "plain"
+        }));
     }
 
     addError(error: string) {

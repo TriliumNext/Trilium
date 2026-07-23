@@ -1,3 +1,4 @@
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { useRef } from "preact/hooks";
@@ -129,64 +130,92 @@ describe("useStaticTooltip", () => {
 
 describe("useImperativeSearchHighlighlighting", () => {
     let container: HTMLElement;
-    let highlight: ((el: HTMLElement | null | undefined) => void) | undefined;
-
-    function Probe({ tokens }: { tokens: string[] | null | undefined }) {
-        highlight = useImperativeSearchHighlighlighting(tokens);
-        return null;
-    }
+    let target: HTMLElement;
 
     beforeEach(() => {
         container = document.createElement("div");
         document.body.appendChild(container);
+        target = document.createElement("div");
+        document.body.appendChild(target);
     });
 
     afterEach(() => {
         render(null, container);
         container.remove();
-        highlight = undefined;
+        target.remove();
     });
 
-    async function mount(tokens: string[] | null | undefined) {
-        await act(async () => render(<Probe tokens={tokens} />, container));
+    function Probe({ tokens, onReady }: {
+        tokens: (string | HighlightedTokenInfo)[] | null | undefined;
+        onReady: (fn: (el: HTMLElement | null | undefined) => void) => void;
+    }) {
+        const highlight = useImperativeSearchHighlighlighting(tokens);
+        onReady(highlight);
+        return null;
     }
 
-    function content(html: string): HTMLElement {
-        const el = document.createElement("div");
-        el.innerHTML = html;
-        document.body.appendChild(el);
-        return el;
+    /** Mounts a fresh hook instance (so each call gets its own `Mark` instance) and applies it to `target`. */
+    function highlight(tokens: (string | HighlightedTokenInfo)[] | null | undefined, html: string) {
+        target.innerHTML = html;
+        render(null, container);
+        let highlightFn: ((el: HTMLElement | null | undefined) => void) | undefined;
+        act(() => {
+            render(<Probe tokens={tokens} onReady={(fn) => { highlightFn = fn; }} />, container);
+        });
+        highlightFn?.(target);
+        return target;
     }
 
-    it("highlights matches and opens the collapsed <details> that contains them", async () => {
-        await mount([ "needle" ]);
-        const target = content("<details><summary>t</summary><p>a needle here</p></details>");
+    function markedTexts(el: HTMLElement) {
+        return Array.from(el.querySelectorAll("span.ck-find-result")).map((mark) => mark.textContent);
+    }
 
-        highlight?.(target);
-
-        expect(target.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
-        expect(target.querySelector("details")?.open).toBe(true);
-        target.remove();
+    it("wraps a diacritic match when searching a plain, unaccented token (#10616)", () => {
+        const el = highlight(["ktory"], "<p>Aký ktorý</p>");
+        expect(markedTexts(el)).toEqual(["ktorý"]);
     });
 
-    it("leaves a collapsed block closed when it holds no match", async () => {
-        await mount([ "needle" ]);
-        const target = content("<details><summary>t</summary><p>nothing relevant</p></details>");
-
-        highlight?.(target);
-
-        expect(target.querySelector("details")?.open).toBe(false);
-        target.remove();
+    it("wraps a CJK substring match inside a larger word", () => {
+        const el = highlight(["笔记"], "<p>我的笔记本</p>");
+        expect(markedTexts(el)).toEqual(["笔记"]);
     });
 
-    it("does nothing without tokens", async () => {
-        await mount([]);
-        const target = content("<details><summary>t</summary><p>needle</p></details>");
+    it("wraps every match of a regex-typed token (#5332)", () => {
+        const el = highlight([{ token: "ba.", type: "regex" }], "<p>foo bar baz qux</p>");
+        expect(markedTexts(el)).toEqual(["bar", "baz"]);
+    });
 
-        highlight?.(target);
+    it("skips an invalid regex token without throwing", () => {
+        expect(() => highlight([{ token: "(unterminated", type: "regex" }], "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+    });
 
-        expect(target.querySelectorAll(".ck-find-result").length).toBe(0);
+    it("still highlights when given legacy string[] input", () => {
+        const el = highlight(["bar"], "<p>foo bar baz</p>");
+        expect(markedTexts(el)).toEqual(["bar"]);
+    });
+
+    it("is a no-op for null or undefined tokens", () => {
+        expect(() => highlight(null, "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+
+        expect(() => highlight(undefined, "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+
+        highlight([], "<details><summary>t</summary><p>needle</p></details>");
+        expect(markedTexts(target)).toEqual([]);
         expect(target.querySelector("details")?.open).toBe(false);
-        target.remove();
+    });
+
+    it("highlights matches and opens the collapsed <details> that contains them", () => {
+        const el = highlight(["needle"], "<details><summary>t</summary><p>a needle here</p></details>");
+        expect(markedTexts(el)).toEqual(["needle"]);
+        expect(el.querySelector("details")?.open).toBe(true);
+    });
+
+    it("leaves a collapsed block closed when it holds no match", () => {
+        const el = highlight(["needle"], "<details><summary>t</summary><p>nothing relevant</p></details>");
+        expect(markedTexts(el)).toEqual([]);
+        expect(el.querySelector("details")?.open).toBe(false);
     });
 });

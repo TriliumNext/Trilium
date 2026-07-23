@@ -1,4 +1,4 @@
-import { normalizeSearchText, fuzzyMatchWord, FUZZY_SEARCH_CONFIG } from "../utils/text_utils.js";
+import { FUZZY_SEARCH_CONFIG, fuzzyMatchWord, normalizeSearchText, stripWordPunctuation, tokenizeIntoWords } from "../utils/text_utils.js";
 
 const cachedRegexes: Record<string, RegExp> = {};
 
@@ -13,9 +13,15 @@ function getRegex(str: string) {
 type Comparator<T> = (comparedValue: T) => (val: string) => boolean;
 
 const stringComparators: Record<string, Comparator<string>> = {
-    "=": (comparedValue) => (val) => {
-        // For the = operator, check if the value contains the exact word or phrase
-        // This is case-insensitive
+    // Strict normalized full-value equality: the whole value must equal the whole
+    // compared value (case- and diacritic-insensitive). This is the documented
+    // label-equality semantics — e.g. #capital=Vienna matches "vienna" but NOT
+    // "Vienna Austria". Word/phrase matching lives in the internal "word=" operator.
+    "=": (comparedValue) => (val) => normalizeSearchText(val) === normalizeSearchText(comparedValue),
+    "!=": (comparedValue) => (val) => normalizeSearchText(val) !== normalizeSearchText(comparedValue),
+    // Internal operator (not user-typable): word/phrase match used by the leading-"="
+    // fulltext title comparison. Punctuation-aware via tokenizeIntoWords/stripWordPunctuation.
+    "word=": (comparedValue) => (val) => {
         if (!val) return false;
 
         const normalizedVal = normalizeSearchText(val);
@@ -27,26 +33,10 @@ const stringComparators: Record<string, Comparator<string>> = {
             return normalizedVal.includes(normalizedCompared);
         }
 
-        // For single word, split into words and check for exact word match
-        const words = normalizedVal.split(/\s+/);
-        return words.some(word => word === normalizedCompared);
-    },
-    "!=": (comparedValue) => (val) => {
-        // Negation of exact word/phrase match
-        if (!val) return true;
-
-        const normalizedVal = normalizeSearchText(val);
-        const normalizedCompared = normalizeSearchText(comparedValue);
-
-        // If comparedValue has spaces, it's a multi-word phrase
-        // Check for substring match (consecutive phrase) and negate
-        if (normalizedCompared.includes(" ")) {
-            return !normalizedVal.includes(normalizedCompared);
-        }
-
-        // For single word, split into words and check for exact word match, then negate
-        const words = normalizedVal.split(/\s+/);
-        return !words.some(word => word === normalizedCompared);
+        // For single word, tokenize into punctuation-stripped words and check for
+        // an exact word match, so a value like "(Books)" matches the token "books".
+        const words = tokenizeIntoWords(normalizedVal);
+        return words.some(word => word === stripWordPunctuation(normalizedCompared));
     },
     ">": (comparedValue) => (val) => val > comparedValue,
     ">=": (comparedValue) => (val) => val >= comparedValue,
@@ -72,8 +62,8 @@ const stringComparators: Record<string, Comparator<string>> = {
             return true;
         }
         
-        // Then try fuzzy word matching
-        const words = normalizedVal.split(/\s+/);
+        // Then try fuzzy word matching over the tokenized (punctuation-stripped) value
+        const words = tokenizeIntoWords(normalizedVal);
         return words.some(word => fuzzyMatchWord(normalizedCompared, word));
     },
     "~*": (comparedValue) => (val) => {
@@ -86,8 +76,14 @@ const stringComparators: Record<string, Comparator<string>> = {
         
         const normalizedVal = normalizeSearchText(val);
         const normalizedCompared = normalizeSearchText(comparedValue);
-        
-        // For ~* operator, use fuzzy matching across the entire content
+
+        // "~*" is fuzzy CONTAINS: first try a plain substring (fragment) match, so
+        // a fragment like "progr" matches "programming" (mirrors the ~= fallback).
+        // Then fall back to fuzzy matching for typos that are not substrings.
+        if (normalizedVal.includes(normalizedCompared)) {
+            return true;
+        }
+
         return fuzzyMatchWord(normalizedCompared, normalizedVal);
     }
 };

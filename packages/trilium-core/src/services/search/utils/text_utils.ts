@@ -280,6 +280,31 @@ function escapeRegExp(string: string): string {
 }
 
 /**
+ * Returns the maximum edit distance allowed for a fuzzy match of a token of the
+ * given length, scaled by length in the style of Elasticsearch's `fuzziness:
+ * AUTO`. A flat edit distance of 2 is too loose for short words (e.g. "sync"
+ * would match "send"), so short tokens get a tighter bound.
+ *
+ * - 0-2 chars: 0 (no fuzzy matching)
+ * - 3-5 chars: 1
+ * - 6+ chars: 2
+ *
+ * The result never exceeds {@link FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE}.
+ *
+ * @param tokenLength The length of the token being matched.
+ * @returns The maximum allowed edit distance for that token.
+ */
+export function getAutoMaxEditDistance(tokenLength: number): number {
+    if (tokenLength <= 2) {
+        return 0;
+    }
+    if (tokenLength <= 5) {
+        return 1;
+    }
+    return FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE;
+}
+
+/**
  * Checks if a word matches a token with fuzzy matching and returns the matched word.
  * Optimized for common case where distances are small.
  *
@@ -288,7 +313,7 @@ function escapeRegExp(string: string): string {
  * @param maxDistance Maximum allowed edit distance
  * @returns The matched word if found, null otherwise
  */
-export function fuzzyMatchWordWithResult(token: string, text: string, maxDistance: number = FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE): string | null {
+export function fuzzyMatchWordWithResult(token: string, text: string, maxDistance: number = getAutoMaxEditDistance(token.length)): string | null {
     // Input validation
     if (typeof token !== 'string' || typeof text !== 'string') {
         return null;
@@ -304,12 +329,11 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
         const normalizedToken = token.toLowerCase();
         const normalizedText = text.toLowerCase();
 
-        // Exact match check first (most common case)
-        if (normalizedText.includes(normalizedToken)) {
-            // Find the exact match position and return the original substring with case preserved
-            const matchIndex = normalizedText.indexOf(normalizedToken);
-            return text.substring(matchIndex, matchIndex + normalizedToken.length);
-        }
+        // NOTE: no whole-text substring shortcut here. Substring relationships are
+        // NOT fuzzy matches — callers that want substring semantics do their own
+        // .includes() check first (note_flat_text smartMatch, build_comparator ~=,
+        // note_content_fulltext tokenMatchesContent). Letting "async" count as a
+        // fuzzy match for "sync" was a false positive (#10616).
 
         // For fuzzy matching, split into words and check each against the token
         const words = normalizedText.split(/\s+/).filter(word => word.length > 0);
@@ -319,17 +343,20 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
             const word = words[i];
             const originalWord = originalWords[i];
 
+            // A word that literally contains the token is a substring relationship,
+            // not a fuzzy (typo) one — skip it so e.g. "sync" does not fuzzy-match
+            // "async". Callers handle substrings via their own .includes() checks.
+            if (word.length > normalizedToken.length && word.includes(normalizedToken)) {
+                continue;
+            }
+
             // Skip if word is too different in length for fuzzy matching
             if (Math.abs(word.length - normalizedToken.length) > maxDistance) {
                 continue;
             }
 
-            // For very short tokens or very different lengths, be more strict
-            if (normalizedToken.length < 4 || Math.abs(word.length - normalizedToken.length) > 2) {
-                continue;
-            }
-
-            // Use optimized edit distance calculation
+            // Use optimized edit distance calculation. maxDistance is length-scaled
+            // (Elasticsearch AUTO-style) via getAutoMaxEditDistance by default.
             const distance = calculateOptimizedEditDistance(normalizedToken, word, maxDistance);
             if (distance <= maxDistance) {
                 return originalWord; // Return the original word with case preserved
@@ -353,6 +380,86 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
  * @param maxDistance Maximum allowed edit distance
  * @returns True if the word matches the token within the distance threshold
  */
-export function fuzzyMatchWord(token: string, text: string, maxDistance: number = FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE): boolean {
+export function fuzzyMatchWord(token: string, text: string, maxDistance: number = getAutoMaxEditDistance(token.length)): boolean {
     return fuzzyMatchWordWithResult(token, text, maxDistance) !== null;
+}
+
+/**
+ * Unicode character class for punctuation that should be trimmed from word
+ * boundaries during tokenization: initial/final quotes (Pi/Pf), open/close
+ * brackets (Ps/Pe), other punctuation such as `,` `.` `!` `#` `"` `'` (Po) and
+ * dashes (Pd).
+ *
+ * Deliberately EXCLUDED so those characters survive tokenization:
+ * - Connector punctuation (Pc), e.g. `_` — keeps identifiers like `_private`.
+ * - Symbols (S*), e.g. `+`, `=`, `$` — keeps tokens like `c++`.
+ */
+const WORD_BOUNDARY_PUNCTUATION = "\\p{Pi}\\p{Pf}\\p{Ps}\\p{Pe}\\p{Po}\\p{Pd}";
+const LEADING_PUNCTUATION = new RegExp(`^[${WORD_BOUNDARY_PUNCTUATION}]+`, "u");
+const TRAILING_PUNCTUATION = new RegExp(`[${WORD_BOUNDARY_PUNCTUATION}]+$`, "u");
+
+/**
+ * Strips leading and trailing punctuation from a single word so that a search
+ * token and a content word compare equal even when the content word is wrapped
+ * in punctuation, e.g. `(sync)` -> `sync`, `sync,` -> `sync`, `"sync"` -> `sync`.
+ *
+ * Tradeoffs (documented deliberately):
+ * - KEEPS connector punctuation (`_`, class Pc) and symbols (`+`, `=`, `$`,
+ *   class S), so `c++` and `_private` survive intact.
+ * - Only leading/trailing punctuation is removed; INNER punctuation is untouched,
+ *   so `d'artagnan` keeps its apostrophe.
+ * - Trailing symbol-like punctuation that IS in the stripped classes is removed:
+ *   `f#` -> `f`. This is acceptable because stripping is applied symmetrically to
+ *   both the query token and the content word, so matching stays self-consistent.
+ *
+ * @param word A single word (no internal whitespace expected).
+ * @returns The word with boundary punctuation removed (may be empty).
+ */
+export function stripWordPunctuation(word: string): string {
+    if (!word) {
+        return "";
+    }
+
+    return word.replace(LEADING_PUNCTUATION, "").replace(TRAILING_PUNCTUATION, "");
+}
+
+/**
+ * Splits text into normalized, punctuation-stripped words. This is the
+ * tokenization used by exact word / phrase matching so that punctuation in
+ * content (parentheses, quotes, trailing commas, newlines) does not prevent a
+ * word from matching.
+ *
+ * Pipeline: {@link normalizeSearchText} (lowercase + strip diacritics) ->
+ * split on whitespace -> {@link stripWordPunctuation} each -> drop empties.
+ *
+ * @param text The text to tokenize.
+ * @returns An array of normalized words with empty entries removed.
+ */
+export function tokenizeIntoWords(text: string): string[] {
+    return normalizeSearchText(text)
+        .split(/\s+/)
+        .map(stripWordPunctuation)
+        .filter((word) => word.length > 0);
+}
+
+/**
+ * Returns true if `phrase` appears as a consecutive run of words inside `words`.
+ * Both arrays are expected to already be tokenized (e.g. via
+ * {@link tokenizeIntoWords}). An empty phrase never matches.
+ *
+ * @param words The haystack words, in order.
+ * @param phrase The needle words that must appear consecutively and in order.
+ */
+export function wordsContainPhrase(words: string[], phrase: string[]): boolean {
+    if (phrase.length === 0 || phrase.length > words.length) {
+        return false;
+    }
+
+    for (let i = 0; i <= words.length - phrase.length; i++) {
+        if (phrase.every((phraseWord, j) => words[i + j] === phraseWord)) {
+            return true;
+        }
+    }
+
+    return false;
 }

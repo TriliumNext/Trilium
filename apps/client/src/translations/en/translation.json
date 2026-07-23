@@ -2333,7 +2333,11 @@
   "search_result": {
     "no_notes_found": "No notes have been found for given search parameters.",
     "search_not_executed": "Search has not been executed yet.",
-    "search_now": "Search now"
+    "search_now": "Search now",
+    "result_count_one": "{{count}} result",
+    "result_count_other": "{{count}} results",
+    "page_size": "Per page",
+    "snippet_unavailable": "No preview available."
   },
   "sql_result": {
     "not_executed": "The query has not been executed yet.",

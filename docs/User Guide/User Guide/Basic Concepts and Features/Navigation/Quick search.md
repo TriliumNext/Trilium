@@ -60,54 +60,27 @@ Quick search uses progressive search:
 
 ## Quick Search - Exact Match Operator
 
-Quick Search now supports the exact match operator (`=`) at the beginning of your search query. This allows you to search for notes where the title or content exactly matches your search term, rather than just containing it.
+Quick Search shares the same search engine as the full <a class="reference-link" href="Search.md">Search</a>, so the exact match operator (`=`) behaves identically in both. Start your query with `=` (no space after it) to switch from the default "contains" behavior to exact whole-word or phrase matching.
 
-### Usage
+**What `=` actually does:** it finds notes where the title or content contains your term as a **whole word or phrase**, ignoring surrounding punctuation. It does **not** require the whole note to equal your term, and it does **not** do substring or fuzzy matching.
 
-To use exact match in Quick Search:
+| Query | Example note content | Matches? | Why |
+| --- | --- | --- | --- |
+| `sync` | `synchronize the database now` | Yes | default search matches the substring |
+| `=sync` | `see (sync) mode` | Yes | `=` matches the whole word `sync`, punctuation ignored |
+| `=sync` | `synchronize the database now` | No | `=` never matches substrings |
+| `="project plan"` | `the (project plan) is ready to share` | Yes | quote a multi-word phrase to match it exactly |
 
-1.  Start your search query with the `=` operator
-2.  Follow it immediately with your search term (no space after `=`)
-
-#### Examples
-
-*   `=example` - Finds notes with title exactly "example" or content exactly "example"
-*   `=Project Plan` - Finds notes with title exactly "Project Plan" or content exactly "Project Plan"
-*   `='hello world'` - Use quotes for multi-word exact matches
-
-#### Comparison with Regular Search
-
-| Query | Behavior |
-| --- | --- |
-| `example` | Finds all notes containing "example" anywhere in title or content |
-| `=example` | Finds only notes where the title equals "example" or content equals "example" exactly |
-
-### Technical Details
-
-When you use the `=` operator:
-
-*   The search performs an exact match on note titles
-*   For note content, it looks for exact matches of the entire content
-*   Partial word matches are excluded
-*   The search is case-insensitive
+The search is case- and diacritic-insensitive. For the complete explanation of the three matching modes, fuzzy operators and relevance ranking, see [How search matches your text](Search.md) in the full Search documentation.
 
 ### Limitations
 
-*   The `=` operator must be at the very beginning of the search query
-*   Spaces after `=` will treat it as a regular search
-*   Multiple `=` operators (like `==example`) are treated as regular text search
-
-### Use Cases
-
-This feature is particularly useful when:
-
-*   You know the exact title of a note
-*   You want to find notes with specific, complete content
-*   You need to distinguish between notes with similar but not identical titles
-*   You want to avoid false positives from partial matches
+*   The `=` operator must be at the very beginning of the search query.
+*   A space immediately after `=` is treated as a regular search.
+*   Multiple `=` operators (like `==example`) are treated as regular text search.
 
 ### Related Features
 
-*   For more complex exact matching queries, use the full [Search](Search.md) functionality
-*   For fuzzy matching (finding results despite typos), use the `~=` operator in the full search
-*   For partial matches with wildcards, use operators like `*=*`, `=*`, or `*=` in the full search
+*   For attribute, property, boolean and ordering queries, use the full [Search](Search.md) functionality.
+*   For fuzzy matching (finding results despite typos), use the `~=` or `~*` operators in the full search.
+*   For partial matches with wildcards, use operators like `*=*`, `=*`, or `*=` in the full search.

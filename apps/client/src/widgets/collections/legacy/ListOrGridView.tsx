@@ -1,6 +1,7 @@
 import "./ListOrGridView.css";
 import { Card, CardFrame, CardSection } from "../../react/Card";
 
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -98,7 +99,7 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
     parentNote: FNote,
     currentLevel: number,
     expandDepth: number,
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchived: boolean;
     showTextRepresentation?: boolean;
 }) {
@@ -159,7 +160,7 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
 interface GridNoteCardProps {
     note: FNote;
     parentNote: FNote;
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchived: boolean;
     showTextRepresentation?: boolean;
 }
@@ -211,7 +212,7 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
     note: FNote;
     trim?: boolean;
     noChildrenList?: boolean;
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchivedNotes: boolean;
     showTextRepresentation?: boolean;
     /** Render live interactive type widgets (e.g. web views) instead of static previews. */
@@ -295,7 +296,7 @@ function NoteChildren({ note, parentNote, highlightedTokens, currentLevel, expan
     parentNote: FNote,
     currentLevel: number,
     expandDepth: number,
-    highlightedTokens: string[] | null | undefined
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
     includeArchived: boolean;
 }) {
     const [ childNotes, setChildNotes ] = useState<FNote[]>();

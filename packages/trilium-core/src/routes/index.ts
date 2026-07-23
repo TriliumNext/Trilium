@@ -159,6 +159,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
 
     apiRoute(GET, "/api/quick-search/:searchString", searchRoute.quickSearch);
     apiRoute(GET, "/api/search-note/:noteId", searchRoute.searchFromNote);
+    apiRoute(PST, "/api/search-note/:noteId/result-details", searchRoute.getSearchResultDetails);
     apiRoute(PST, "/api/search-and-execute-note/:noteId", searchRoute.searchAndExecute);
     apiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
     apiRoute(GET, "/api/search/:searchString", searchRoute.search);

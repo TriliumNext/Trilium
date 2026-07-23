@@ -175,6 +175,53 @@ describe("calculateHash", () => {
     });
 });
 
+describe("searchTerms view scope round-trip", () => {
+    it("omits the searchTerms param when the array is empty or undefined", () => {
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: [] } } as any)).toBe("#root/aaaaaaaaaaaa");
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: {} } as any)).toBe("#root/aaaaaaaaaaaa");
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa" } as any)).toBe("#root/aaaaaaaaaaaa");
+    });
+
+    it("emits a searchTerms param when non-empty", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello"] } } as any);
+        expect(hash).toContain("searchTerms=");
+    });
+
+    it("round-trips a single search term", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello"] } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["hello"]);
+    });
+
+    it("round-trips multiple search terms, preserving order", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello", "world", "foo"] } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["hello", "world", "foo"]);
+    });
+
+    it("round-trips tokens containing commas, percent signs, quotes and unicode", () => {
+        const terms = ["a,b", "100% done", 'she said "hi"', "héllo wörld 日本語"];
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: terms } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(terms);
+    });
+
+    it("drops malformed encoded search-term entries instead of throwing", () => {
+        // Hand-craft a hash whose decoded searchTerms value is "good,%E0%A4%A" -- a well-formed
+        // token followed by a truncated (invalid) percent-encoding sequence.
+        const hash = `#root/aaaaaaaaaaaa?searchTerms=${encodeURIComponent("good,%E0%A4%A")}`;
+        expect(() => parseNavigationStateFromUrl(hash)).not.toThrow();
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["good"]);
+    });
+
+    it("does not touch the legacy #?searchString= branch", () => {
+        const output = parseNavigationStateFromUrl("#?searchString=hello&searchTerms=world");
+        // searchString short-circuits to its own dedicated return before viewScope is even considered
+        expect(output).toStrictEqual({ searchString: "hello" });
+    });
+});
+
 describe("getNotePathFromUrl", () => {
     it("extracts the note path from a hash url and returns null otherwise", () => {
         expect(linkService.getNotePathFromUrl("https://x.test/#root/abc_123")).toBe("root/abc_123");

@@ -6,14 +6,16 @@ import { deferred } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
+import { consumeBookmark } from "../../../services/bookmark_jump";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
+import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
 import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
@@ -60,14 +62,16 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             contentRef.current = newContent;
             watchdogRef.current?.editor?.setData(newContent);
 
+            // Jump to the first search match (and pre-fill the find bar) when navigated from search
+            // results. Runs once the content has loaded into the editor; the same-note re-click case
+            // is covered by useSearchTermsConsumer below.
+            consumeSearchTerms(noteContext, ntxId);
+
             // Scroll to bookmark anchor if navigated with ?bookmark=...
             const viewScope = noteContext?.viewScope;
             if (viewScope?.bookmark) {
                 requestAnimationFrame(() => {
-                    const el = watchdogRef.current?.editor?.editing.view.getDomRoot()
-                        ?.querySelector(`[id="${CSS.escape(viewScope.bookmark!)}"]`);
-                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    viewScope.bookmark = undefined;
+                    consumeBookmark(watchdogRef.current?.editor?.editing.view.getDomRoot(), viewScope);
                 });
             }
         },
@@ -77,6 +81,8 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         }
     });
     const templates = useTemplates();
+
+    useSearchTermsConsumer(note, noteContext, ntxId);
 
     useTriliumEvent("scrollToEnd", () => {
         const editor = watchdogRef.current?.editor;

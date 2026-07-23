@@ -994,6 +994,24 @@ table.promoted-attributes-in-tooltip th {
     word-wrap: break-word;
 }
 
+.aa-dropdown-menu .aa-suggestion .search-result-content {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.85em;
+    color: var(--muted-text-color);
+    line-height: 1.3;
+    word-wrap: break-word;
+}
+
+/* Highlight the server-injected <b> tags with the same vars the snippet cards
+   (SearchResultsList.css / ListOrGridView.css) and quick-search dropdown use. */
+.aa-dropdown-menu .aa-suggestion .search-result-content b {
+    background: var(--note-list-view-search-result-highlight-background);
+    color: var(--note-list-view-search-result-highlight-color);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
 .aa-dropdown-menu .aa-suggestion p {
     padding: 0;
     margin: 0;
