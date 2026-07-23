@@ -52,6 +52,7 @@ type Labels = {
     expanded: string;
     "calendar:hideWeekends": boolean;
     "calendar:weekNumbers": boolean;
+    "calendar:showHiddenEvents": boolean;
     "calendar:view": string;
     "calendar:initialDate": string;
     "calendar:slotDuration": string;
