@@ -31,14 +31,22 @@ interface SearchResultsListProps {
  * {@link SearchResultCard} per note on the current page plus a bottom pager. The per-note snippet
  * details are fetched lazily, one page at a time, via {@link useSearchResultDetails}.
  */
-export default function SearchResultsList({ note, ...rest }: SearchResultsListProps) {
+export default function SearchResultsList({ note, ntxId, highlightedTokens }: SearchResultsListProps) {
     // The results view only mounts for an executed search note; guard here so the inner component
     // (and the collection hooks it drives) can rely on a non-null note.
     if (!note) return null;
-    return <SearchResultsListInner note={note} {...rest} />;
+    return <SearchResultsListInner note={note} ntxId={ntxId} highlightedTokens={highlightedTokens} />;
 }
 
-function SearchResultsListInner({ note, ntxId, highlightedTokens }: SearchResultsListProps & { note: FNote }) {
+// Only the props the card view actually consumes; `media`/`notePath` from the shared collection-view
+// shape are unused here, so they are not threaded into the inner component.
+interface SearchResultsListInnerProps {
+    note: FNote;
+    ntxId: string | null | undefined;
+    highlightedTokens?: (string | HighlightedTokenInfo)[] | null;
+}
+
+function SearchResultsListInner({ note, ntxId, highlightedTokens }: SearchResultsListInnerProps) {
     const [ pageSize, setPageSize ] = useTriliumOptionInt("searchResultsPageSize");
     const noteIds = useNoteIds(note, "list", ntxId);
     const pagination = usePagination(note, noteIds, pageSize);
