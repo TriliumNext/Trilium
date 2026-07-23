@@ -91,6 +91,13 @@ export interface LlmProvider {
     getAvailableModels(): ModelInfo[];
 
     /**
+     * For providers with a dynamic model list (e.g. Ollama), fetch the models
+     * from the running instance. Call sites should `await provider.loadModels?.()`
+     * before reading the model list. No-op for providers with static model lists.
+     */
+    loadModels?(): Promise<ModelInfo[]>;
+
+    /**
      * Generate a short title summarizing a message.
      * Used for auto-renaming chat notes. Should use a fast, cheap model.
      */

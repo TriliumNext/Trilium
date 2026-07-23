@@ -13,7 +13,12 @@ import SelectableCard, { SelectableCardGrid } from "../../../react/SelectableCar
 import anthropicIcon from "./icons/anthropic.svg?url";
 import claudeAgentIcon from "./icons/claude-ai.svg?url";
 import geminiIcon from "./icons/gemini.svg?url";
+import ollamaIcon from "./icons/ollama.svg?url";
 import openaiIcon from "./icons/openai.svg?url";
+import searxngIcon from "./icons/searxng.svg?url";
+import tavilyIcon from "./icons/tavily.svg?url";
+
+export type ProviderKind = "llm" | "search";
 
 export interface LlmProviderConfig {
     id: string;
@@ -21,6 +26,13 @@ export interface LlmProviderConfig {
     provider: string;
     apiKey: string;
     baseURL?: string;
+    /** "llm" (default when missing, for backward compatibility) or "search". */
+    type?: ProviderKind;
+}
+
+/** Resolve the kind of a configured provider entry ("llm" when the type is missing). */
+export function getProviderKind(provider: LlmProviderConfig): ProviderKind {
+    return provider.type ?? "llm";
 }
 
 export interface ProviderType {
@@ -31,10 +43,14 @@ export interface ProviderType {
     iconUrl: string;
     /** Short blurb shown under the provider name on its selectable card. */
     description: string;
+    /** What kind of provider this is (defaults to "llm"). */
+    type?: ProviderKind;
     /** Marks the provider as beta, shown as a badge next to its name. */
     beta?: boolean;
     /** When false, the provider needs no API key or base URL (e.g. subscription-based auth). */
     usesApiKey?: boolean;
+    /** When true (with usesApiKey: false), the base URL is the primary connection detail (e.g. Ollama, SearXNG). */
+    usesBaseUrl?: boolean;
 }
 
 // The two Claude-powered providers lead the list so they sit together on the top row,
@@ -44,7 +60,13 @@ export const PROVIDER_TYPES: ProviderType[] = [
     // Uses the Claude Agent SDK on the server; auth belongs to Claude Code (`claude /login`).
     { id: "claude-agent", name: "Claude Code", defaultBaseUrl: "", iconUrl: claudeAgentIcon, description: t("llm.provider_desc_claude_agent"), beta: true, usesApiKey: false },
     { id: "openai", name: "OpenAI", defaultBaseUrl: "https://api.openai.com/v1", iconUrl: openaiIcon, description: t("llm.provider_desc_openai") },
-    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: geminiIcon, description: t("llm.provider_desc_google") }
+    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: geminiIcon, description: t("llm.provider_desc_google") },
+    // Local models via Ollama — no API key, only the instance URL.
+    { id: "ollama", name: "Ollama", defaultBaseUrl: "http://localhost:11434", iconUrl: ollamaIcon, description: t("llm.provider_desc_ollama"), usesApiKey: false, usesBaseUrl: true },
+    // Web search engines (type: "search") — configured alongside LLM providers
+    // in the same llmProviders option, offered by the modal's "search" kind.
+    { id: "tavily", name: "Tavily", defaultBaseUrl: "", iconUrl: tavilyIcon, description: t("llm.provider_desc_tavily"), type: "search" },
+    { id: "searxng", name: "SearXNG", defaultBaseUrl: "http://localhost:8888", iconUrl: searxngIcon, description: t("llm.provider_desc_searxng"), type: "search", usesApiKey: false, usesBaseUrl: true }
 ];
 
 function isValidBaseUrl(value: string): boolean {
@@ -63,22 +85,35 @@ interface AddProviderModalProps {
     show: boolean;
     onHidden: () => void;
     onSave: (provider: LlmProviderConfig) => void;
+    /** Which kind of providers to offer (defaults to "llm"). */
+    kind?: ProviderKind;
 }
 
-export default function AddProviderModal({ show, onHidden, onSave }: AddProviderModalProps) {
-    const [selectedProvider, setSelectedProvider] = useState(PROVIDER_TYPES[0].id);
+export default function AddProviderModal({ show, onHidden, onSave, kind = "llm" }: AddProviderModalProps) {
+    const providerTypes = useMemo(
+        () => PROVIDER_TYPES.filter(p => (p.type ?? "llm") === kind),
+        [kind]
+    );
+    const [selectedProvider, setSelectedProvider] = useState(providerTypes[0].id);
+    const [displayName, setDisplayName] = useState("");
     const [apiKey, setApiKey] = useState("");
     const [baseUrl, setBaseUrl] = useState("");
     const formRef = useRef<HTMLFormElement>(null);
 
     const providerType = useMemo(
-        () => PROVIDER_TYPES.find(p => p.id === selectedProvider),
-        [selectedProvider]
+        () => providerTypes.find(p => p.id === selectedProvider) ?? providerTypes[0],
+        [providerTypes, selectedProvider]
     );
-    const usesApiKey = providerType?.usesApiKey !== false;
+    const usesApiKey = providerType.usesApiKey !== false;
+    // Providers with an API key can override the base URL as an advanced option;
+    // key-less providers (Ollama, SearXNG) can declare it as their primary connection detail.
+    const usesBaseUrl = usesApiKey || providerType.usesBaseUrl === true;
+    // Search engines have no server-side fallback URL, so an explicit one is required —
+    // otherwise the entry would be saved unusable and silently fall back to native search.
+    const requiresBaseUrl = kind === "search" && providerType.usesBaseUrl === true;
     const trimmedBaseUrl = baseUrl.trim();
-    const baseUrlIsValid = isValidBaseUrl(trimmedBaseUrl);
-    const canSubmit = usesApiKey ? !!apiKey.trim() && baseUrlIsValid : true;
+    const baseUrlIsValid = isValidBaseUrl(trimmedBaseUrl) && (!requiresBaseUrl || !!trimmedBaseUrl);
+    const canSubmit = (usesApiKey ? !!apiKey.trim() : true) && (usesBaseUrl ? baseUrlIsValid : true);
 
     function handleSubmit() {
         if (!canSubmit) {
@@ -86,11 +121,14 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
         }
 
         const newProvider: LlmProviderConfig = {
-            id: `${selectedProvider}_${Date.now()}`,
-            name: providerType?.name || selectedProvider,
-            provider: selectedProvider,
+            id: `${providerType.id}_${Date.now()}`,
+            name: displayName.trim() || providerType.name,
+            provider: providerType.id,
             apiKey: usesApiKey ? apiKey.trim() : "",
-            ...(usesApiKey && trimmedBaseUrl && { baseURL: trimmedBaseUrl })
+            ...(usesBaseUrl && trimmedBaseUrl && { baseURL: trimmedBaseUrl }),
+            // Only search engines get an explicit type; LLM entries stay without
+            // one to remain compatible with configurations from older versions.
+            ...(kind === "search" ? { type: "search" as const } : {})
         };
 
         onSave(newProvider);
@@ -99,7 +137,8 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
     }
 
     function resetForm() {
-        setSelectedProvider(PROVIDER_TYPES[0].id);
+        setSelectedProvider(providerTypes[0].id);
+        setDisplayName("");
         setApiKey("");
         setBaseUrl("");
     }
@@ -115,7 +154,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
             onHidden={handleCancel}
             onSubmit={handleSubmit}
             formRef={formRef}
-            title={t("llm.add_provider_title")}
+            title={kind === "search" ? t("llm.add_search_engine_title") : t("llm.add_provider_title")}
             className="add-provider-modal"
             size="md"
             maxWidth={600}
@@ -126,15 +165,15 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
                         {t("llm.cancel")}
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
-                        {t("llm.add_provider")}
+                        {kind === "search" ? t("llm.add_search_engine") : t("llm.add_provider")}
                     </button>
                 </>
             }
         >
-            <Card heading={t("llm.provider_type")}>
+            <Card heading={kind === "search" ? t("llm.search_engine_type") : t("llm.provider_type")}>
                 <CardSection>
                     <SelectableCardGrid columns={2}>
-                        {PROVIDER_TYPES.map((provider) => (
+                        {providerTypes.map((provider) => (
                             <SelectableCard
                                 key={provider.id}
                                 iconUrl={provider.iconUrl}
@@ -152,6 +191,13 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
 
             <Card heading={t("llm.connection_details")}>
                 <CardSection>
+                    <FormGroup name="display-name" label={t("llm.display_name")} description={t("llm.display_name_description")}>
+                        <FormTextBox
+                            currentValue={displayName}
+                            onChange={setDisplayName}
+                            placeholder={providerType.name}
+                        />
+                    </FormGroup>
                     {usesApiKey ? (
                         <FormGroup name="api-key" label={t("llm.api_key")}>
                             <FormTextBox
@@ -162,13 +208,33 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
                                 autoFocus
                             />
                         </FormGroup>
+                    ) : usesBaseUrl ? (
+                        // Key-less self-hosted provider (Ollama): the base URL is
+                        // the primary connection detail.
+                        <FormGroup
+                            name="base-url"
+                            label={t("llm.base_url")}
+                            description={
+                                !baseUrlIsValid
+                                    ? <span className="text-danger">{t("llm.base_url_invalid")}</span>
+                                    : t("llm.base_url_description")
+                            }
+                        >
+                            <FormTextBox
+                                type="text"
+                                currentValue={baseUrl}
+                                onChange={setBaseUrl}
+                                placeholder={providerType?.defaultBaseUrl}
+                                autoFocus
+                            />
+                        </FormGroup>
                     ) : (
                         <p>{t("llm.claude_agent_description")}</p>
                     )}
                 </CardSection>
             </Card>
 
-            {usesApiKey && (
+            {usesApiKey && kind === "llm" && (
                 <Card heading={t("llm.advanced_options")}>
                     <CardSection>
                         <FormGroup

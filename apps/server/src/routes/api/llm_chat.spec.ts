@@ -80,14 +80,14 @@ describe("LLM chat API", () => {
     });
 
     describe("getModels", () => {
-        it("returns no models when no provider is configured", () => {
+        it("returns no models when no provider is configured", async () => {
             state.configured = false;
-            expect(llmChatRoute.getModels({} as Request, {} as Response)).toEqual({ models: [] });
+            await expect(llmChatRoute.getModels({} as Request, {} as Response)).resolves.toEqual({ models: [] });
         });
 
-        it("returns all models when configured", () => {
+        it("returns all models when configured", async () => {
             state.models = [{ id: "m1" }];
-            expect(llmChatRoute.getModels({} as Request, {} as Response)).toEqual({ models: [{ id: "m1" }] });
+            await expect(llmChatRoute.getModels({} as Request, {} as Response)).resolves.toEqual({ models: [{ id: "m1" }] });
         });
     });
 

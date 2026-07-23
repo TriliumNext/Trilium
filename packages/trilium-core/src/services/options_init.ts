@@ -282,6 +282,8 @@ const defaultOptions: DefaultOption[] = [
     { name: "aiEnabled", value: (optionsMap) => optionsMap.experimentalFeatures?.includes('"llm"') ? "true" : "false", isSynced: true },
     { name: "llmProviders", value: "[]", isSynced: true },
     { name: "mcpEnabled", value: "false", isSynced: false },
+    { name: "llmWebSearchEngine", value: "provider", isSynced: true },
+    { name: "llmSearchTimeout", value: "15", isSynced: true },
 
     // OCR options
     { name: "ocrAutoProcessImages", value: "false", isSynced: true },

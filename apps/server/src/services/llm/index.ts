@@ -1,23 +1,12 @@
-import { getLog, options as optionService } from "@triliumnext/core";
+import { getLog } from "@triliumnext/core";
 
 import { AnthropicProvider } from "./providers/anthropic.js";
 import { ClaudeAgentProvider } from "./providers/claude_agent.js";
 import { GoogleProvider } from "./providers/google.js";
+import { OllamaProvider } from "./providers/ollama.js";
+import { getLlmProviderSetups } from "./provider_config.js";
 import { OpenAiProvider } from "./providers/openai.js";
 import type { LlmProvider, ModelInfo } from "./types.js";
-
-/**
- * Configuration for a single LLM provider instance.
- * This matches the structure stored in the llmProviders option.
- */
-export interface LlmProviderSetup {
-    id: string;
-    name: string;
-    provider: string;
-    apiKey: string;
-    /** Optional override for the SDK's default API endpoint (e.g. for self-hosted Ollama, vLLM, or proxies). */
-    baseURL?: string;
-}
 
 /** Factory functions for creating provider instances */
 const providerFactories: Record<string, (apiKey: string, baseURL?: string) => LlmProvider> = {
@@ -26,34 +15,20 @@ const providerFactories: Record<string, (apiKey: string, baseURL?: string) => Ll
     google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL),
     // Claude Pro/Max subscription via the Claude Agent SDK — no API key;
     // authentication is handled by Claude Code itself (`claude /login`).
-    "claude-agent": () => new ClaudeAgentProvider()
+    "claude-agent": () => new ClaudeAgentProvider(),
+    // Local models via Ollama's OpenAI-compatible API — no API key needed.
+    ollama: (_apiKey, baseURL) => new OllamaProvider(baseURL)
 };
 
 /** Cache of instantiated providers by their config ID */
 let cachedProviders: Record<string, LlmProvider> = {};
 
 /**
- * Get configured providers from the options.
- */
-function getConfiguredProviders(): LlmProviderSetup[] {
-    try {
-        const providersJson = optionService.getOptionOrNull("llmProviders");
-        if (!providersJson) {
-            return [];
-        }
-        return JSON.parse(providersJson) as LlmProviderSetup[];
-    } catch (e) {
-        getLog().error(`Failed to parse llmProviders option: ${e}`);
-        return [];
-    }
-}
-
-/**
  * Get a provider instance by its configuration ID.
  * If no ID is provided, returns the first configured provider.
  */
 export function getProvider(providerId?: string): LlmProvider {
-    const configs = getConfiguredProviders();
+    const configs = getLlmProviderSetups();
 
     if (configs.length === 0) {
         throw new Error("No LLM providers configured. Please add a provider in Options → AI / LLM.");
@@ -88,7 +63,7 @@ export function getProvider(providerId?: string): LlmProvider {
  * Get the first configured provider of a specific type (e.g., "anthropic").
  */
 export function getProviderByType(providerType: string): LlmProvider {
-    const configs = getConfiguredProviders();
+    const configs = getLlmProviderSetups();
     const config = configs.find(c => c.provider === providerType);
 
     if (!config) {
@@ -102,14 +77,14 @@ export function getProviderByType(providerType: string): LlmProvider {
  * Check if any providers are configured.
  */
 export function hasConfiguredProviders(): boolean {
-    return getConfiguredProviders().length > 0;
+    return getLlmProviderSetups().length > 0;
 }
 
 /**
  * Get all models from all configured providers, tagged with their provider type.
  */
-export function getAllModels(): ModelInfo[] {
-    const configs = getConfiguredProviders();
+export async function getAllModels(): Promise<ModelInfo[]> {
+    const configs = getLlmProviderSetups();
     const seenProviderTypes = new Set<string>();
     const allModels: ModelInfo[] = [];
 
@@ -122,6 +97,8 @@ export function getAllModels(): ModelInfo[] {
 
         try {
             const provider = getProvider(config.id);
+            // Providers with a dynamic model list (Ollama) fetch it at runtime
+            await provider.loadModels?.();
             const models = provider.getAvailableModels();
             for (const model of models) {
                 allModels.push({ ...model, provider: config.provider });
@@ -141,4 +118,5 @@ export function clearProviderCache(): void {
     cachedProviders = {};
 }
 
+export type { LlmProviderSetup } from "./provider_config.js";
 export type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing } from "./types.js";

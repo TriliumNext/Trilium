@@ -131,6 +131,8 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "aiEnabled",
     "llmProviders",
     "mcpEnabled",
+    "llmWebSearchEngine",
+    "llmSearchTimeout",
     // OCR options
     "ocrAutoProcessImages",
     "ocrMinConfidence"

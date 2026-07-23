@@ -6,6 +6,7 @@
 import { type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
 import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
 
+import { addConfiguredSearchEngineTool } from "../search_engines.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
 import { resolveAttachmentPart } from "./attachment_content.js";
@@ -179,7 +180,10 @@ export abstract class BaseProvider implements LlmProvider {
         const tools: ToolSet = {};
 
         if (config.enableWebSearch) {
-            this.addWebSearchTool(tools);
+            // Use the configured search engine, falling back to the provider's native search
+            if (!addConfiguredSearchEngineTool(tools)) {
+                this.addWebSearchTool(tools);
+            }
         }
 
         if (config.enableNoteTools) {
