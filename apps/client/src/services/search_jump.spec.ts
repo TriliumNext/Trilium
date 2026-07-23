@@ -71,6 +71,19 @@ describe("consumeSearchTerms", () => {
         expect(triggerCommand).not.toHaveBeenCalled();
     });
 
+    it("aborts the deferred trigger when the context navigates before the frame fires", () => {
+        const ctx = makeContext([ "foo" ]);
+
+        consumeSearchTerms(ctx, "ntx1");
+        // Navigation replaces the context's viewScope object (note_context.setNote /
+        // resetViewScope) before the animation frame fires; the stale seeded find must not
+        // open the find bar on whatever note the tab shows now.
+        ctx.viewScope = {};
+        flushRaf();
+
+        expect(triggerCommand).not.toHaveBeenCalled();
+    });
+
     it("is idempotent: a second call after consumption does nothing", () => {
         const ctx = makeContext([ "foo" ]);
 

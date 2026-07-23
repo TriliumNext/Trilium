@@ -152,7 +152,23 @@ export function usePagination(note: FNote, noteIds: string[], defaultPageSize = 
     const pageNoteIds = noteIds.slice(startIdx, Math.min(endIdx, noteIds.length));
 
     useEffect(() => {
-        froca.getNotes(pageNoteIds).then(setPageNotes);
+        // While the clamp effect above is stepping an out-of-range page back onto the last valid
+        // one, the slice is empty; loading it would only flash the list blank for a frame.
+        if (pageCount > 0 && page > pageCount) {
+            return;
+        }
+
+        // Overlapping loads (rapid page flips, a shrinking result set) can resolve out of order;
+        // the cleanup flag makes sure a superseded load can no longer overwrite the current page.
+        let cancelled = false;
+        froca.getNotes(pageNoteIds).then((notes) => {
+            if (!cancelled) {
+                setPageNotes(notes);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
     }, [ note, noteIds, page, normalizedPageSize ]);
 
     return {

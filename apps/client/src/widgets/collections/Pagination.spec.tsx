@@ -5,22 +5,23 @@
  */
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
 import type FNote from "../../entities/fnote";
+import froca from "../../services/froca";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
 import { usePagination } from "./Pagination";
 
-let observed: { pageSize: number; pageCount: number; page: number } | undefined;
+let observed: { pageSize: number; pageCount: number; page: number; pageNotes?: FNote[]; setPage?: (page: number) => void } | undefined;
 
 // 25 real froca notes so usePagination's froca.getNotes() slice never round-trips to the server.
 const NOTE_IDS = buildNotes(Array.from({ length: 25 }, (_, i) => ({ id: `pag-${i}`, title: `N${i}` })));
 
-function Harness({ note, defaultPageSize }: { note: FNote; defaultPageSize?: number }) {
-    const { page, pageSize, pageCount } = usePagination(note, NOTE_IDS, defaultPageSize);
-    observed = { pageSize, pageCount, page };
+function Harness({ note, noteIds = NOTE_IDS, defaultPageSize }: { note: FNote; noteIds?: string[]; defaultPageSize?: number }) {
+    const { page, setPage, pageNotes, pageSize, pageCount } = usePagination(note, noteIds, defaultPageSize);
+    observed = { pageSize, pageCount, page, pageNotes, setPage };
     return null;
 }
 
@@ -73,5 +74,36 @@ describe("usePagination default page size", () => {
         const note = buildNote({ title: "Search", type: "search" });
         await mount(note, Number.NaN);
         expect(observed?.pageSize).toBe(20);
+    });
+
+    it("discards a stale note load that resolves after a newer page's load", async () => {
+        // Take over froca.getNotes with manually-resolved deferreds so resolution order can be
+        // inverted: rapid page flips issue overlapping loads, and the older one must not win.
+        const pending: Array<{ ids: string[]; resolve: (notes: FNote[]) => void }> = [];
+        const getNotesSpy = vi.spyOn(froca, "getNotes").mockImplementation((ids) =>
+            new Promise((resolve) => pending.push({ ids: ids as string[], resolve }))
+        );
+        try {
+            const note = buildNote({ title: "Search", type: "search" });
+            await mount(note, 10);
+
+            // Initial load for page 1, then flip to page 2 and quickly on to page 3.
+            expect(pending.length).toBe(1);
+            await act(async () => observed?.setPage?.(2));
+            await act(async () => observed?.setPage?.(3));
+            expect(pending.length).toBe(3);
+
+            const [ , page2Load, page3Load ] = pending;
+            const toNotes = (ids: string[]) => ids.map((id) => froca.notes[id]).filter((n): n is FNote => Boolean(n));
+
+            // Newest (page 3) resolves first, then the stale page-2 load arrives late.
+            await act(async () => page3Load.resolve(toNotes(page3Load.ids)));
+            await act(async () => page2Load.resolve(toNotes(page2Load.ids)));
+
+            expect(observed?.page).toBe(3);
+            expect(observed?.pageNotes?.map((n) => n.noteId)).toEqual(page3Load.ids);
+        } finally {
+            getNotesSpy.mockRestore();
+        }
     });
 });

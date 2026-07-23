@@ -24,5 +24,14 @@ export function consumeSearchTerms(noteContext: NoteContext | undefined | null, 
     }
 
     viewScope.searchTerms = undefined;
-    requestAnimationFrame(() => appContext.triggerCommand("findInText", { ntxId, searchTerms }));
+    requestAnimationFrame(() => {
+        // Navigation replaces the context's viewScope object (note_context.setNote /
+        // resetViewScope), so an identity change here means the tab moved on before the frame
+        // fired — the seeded find would target the wrong note. A fresh navigation from search
+        // results carries its own searchTerms and runs its own consumption, so aborting is safe.
+        if (noteContext.viewScope !== viewScope) {
+            return;
+        }
+        appContext.triggerCommand("findInText", { ntxId, searchTerms });
+    });
 }
