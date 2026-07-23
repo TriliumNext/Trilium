@@ -52,6 +52,10 @@ async function streamChat(req: Request, res: Response) {
 
         const provider = getProviderByType(config.provider || "anthropic");
 
+        // Providers with a dynamic model list (Ollama) need it loaded so
+        // defaultModel/titleModel are populated before chatting
+        await provider.loadModels?.();
+
         // Get pricing and display name for the model
         const modelId = config.model || provider.getAvailableModels().find(m => m.isDefault)?.id;
         if (!modelId) {
@@ -114,12 +118,12 @@ async function streamChat(req: Request, res: Response) {
 /**
  * Get available models from all configured providers.
  */
-function getModels(_req: Request, _res: Response) {
+async function getModels(_req: Request, _res: Response) {
     if (!hasConfiguredProviders()) {
         return { models: [] };
     }
 
-    return { models: getAllModels() };
+    return { models: await getAllModels() };
 }
 
 export default {

@@ -3,6 +3,7 @@ import { getLog, options as optionService } from "@triliumnext/core";
 import { AnthropicProvider } from "./providers/anthropic.js";
 import { ClaudeAgentProvider } from "./providers/claude_agent.js";
 import { GoogleProvider } from "./providers/google.js";
+import { OllamaProvider } from "./providers/ollama.js";
 import { OpenAiProvider } from "./providers/openai.js";
 import type { LlmProvider, ModelInfo } from "./types.js";
 
@@ -26,7 +27,9 @@ const providerFactories: Record<string, (apiKey: string, baseURL?: string) => Ll
     google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL),
     // Claude Pro/Max subscription via the Claude Agent SDK — no API key;
     // authentication is handled by Claude Code itself (`claude /login`).
-    "claude-agent": () => new ClaudeAgentProvider()
+    "claude-agent": () => new ClaudeAgentProvider(),
+    // Local models via Ollama's OpenAI-compatible API — no API key needed.
+    ollama: (_apiKey, baseURL) => new OllamaProvider(baseURL)
 };
 
 /** Cache of instantiated providers by their config ID */
@@ -108,7 +111,7 @@ export function hasConfiguredProviders(): boolean {
 /**
  * Get all models from all configured providers, tagged with their provider type.
  */
-export function getAllModels(): ModelInfo[] {
+export async function getAllModels(): Promise<ModelInfo[]> {
     const configs = getConfiguredProviders();
     const seenProviderTypes = new Set<string>();
     const allModels: ModelInfo[] = [];
@@ -122,6 +125,8 @@ export function getAllModels(): ModelInfo[] {
 
         try {
             const provider = getProvider(config.id);
+            // Providers with a dynamic model list (Ollama) fetch it at runtime
+            await provider.loadModels?.();
             const models = provider.getAvailableModels();
             for (const model of models) {
                 allModels.push({ ...model, provider: config.provider });

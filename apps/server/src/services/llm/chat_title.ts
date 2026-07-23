@@ -28,6 +28,8 @@ export async function generateChatTitle(chatNoteId: string, firstMessage: string
     }
 
     const provider = getProvider();
+    // Providers with a dynamic model list (Ollama) need it loaded for the title model
+    await provider.loadModels?.();
     const title = await provider.generateTitle(firstMessage);
     if (title) {
         note.title = title;

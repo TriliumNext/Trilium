@@ -13,6 +13,7 @@ import SelectableCard, { SelectableCardGrid } from "../../../react/SelectableCar
 import anthropicIcon from "./icons/anthropic.svg?url";
 import claudeAgentIcon from "./icons/claude-ai.svg?url";
 import geminiIcon from "./icons/gemini.svg?url";
+import ollamaIcon from "./icons/ollama.svg?url";
 import openaiIcon from "./icons/openai.svg?url";
 
 export interface LlmProviderConfig {
@@ -35,6 +36,8 @@ export interface ProviderType {
     beta?: boolean;
     /** When false, the provider needs no API key or base URL (e.g. subscription-based auth). */
     usesApiKey?: boolean;
+    /** When true (with usesApiKey: false), the base URL is the primary connection detail (e.g. Ollama). */
+    usesBaseUrl?: boolean;
 }
 
 // The two Claude-powered providers lead the list so they sit together on the top row,
@@ -44,7 +47,9 @@ export const PROVIDER_TYPES: ProviderType[] = [
     // Uses the Claude Agent SDK on the server; auth belongs to Claude Code (`claude /login`).
     { id: "claude-agent", name: "Claude Code", defaultBaseUrl: "", iconUrl: claudeAgentIcon, description: t("llm.provider_desc_claude_agent"), beta: true, usesApiKey: false },
     { id: "openai", name: "OpenAI", defaultBaseUrl: "https://api.openai.com/v1", iconUrl: openaiIcon, description: t("llm.provider_desc_openai") },
-    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: geminiIcon, description: t("llm.provider_desc_google") }
+    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: geminiIcon, description: t("llm.provider_desc_google") },
+    // Local models via Ollama — no API key, only the instance URL.
+    { id: "ollama", name: "Ollama", defaultBaseUrl: "http://localhost:11434", iconUrl: ollamaIcon, description: t("llm.provider_desc_ollama"), usesApiKey: false, usesBaseUrl: true }
 ];
 
 function isValidBaseUrl(value: string): boolean {
@@ -76,9 +81,12 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
         [selectedProvider]
     );
     const usesApiKey = providerType?.usesApiKey !== false;
+    // Providers with an API key can override the base URL as an advanced option;
+    // key-less providers (Ollama) can declare it as their primary connection detail.
+    const usesBaseUrl = usesApiKey || providerType?.usesBaseUrl === true;
     const trimmedBaseUrl = baseUrl.trim();
     const baseUrlIsValid = isValidBaseUrl(trimmedBaseUrl);
-    const canSubmit = usesApiKey ? !!apiKey.trim() && baseUrlIsValid : true;
+    const canSubmit = (usesApiKey ? !!apiKey.trim() : true) && (usesBaseUrl ? baseUrlIsValid : true);
 
     function handleSubmit() {
         if (!canSubmit) {
@@ -90,7 +98,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
             name: providerType?.name || selectedProvider,
             provider: selectedProvider,
             apiKey: usesApiKey ? apiKey.trim() : "",
-            ...(usesApiKey && trimmedBaseUrl && { baseURL: trimmedBaseUrl })
+            ...(usesBaseUrl && trimmedBaseUrl && { baseURL: trimmedBaseUrl })
         };
 
         onSave(newProvider);
@@ -159,6 +167,26 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
                                 currentValue={apiKey}
                                 onChange={setApiKey}
                                 placeholder={t("llm.api_key_placeholder")}
+                                autoFocus
+                            />
+                        </FormGroup>
+                    ) : usesBaseUrl ? (
+                        // Key-less self-hosted provider (Ollama): the base URL is
+                        // the primary connection detail.
+                        <FormGroup
+                            name="base-url"
+                            label={t("llm.base_url")}
+                            description={
+                                !baseUrlIsValid
+                                    ? <span className="text-danger">{t("llm.base_url_invalid")}</span>
+                                    : t("llm.base_url_description")
+                            }
+                        >
+                            <FormTextBox
+                                type="text"
+                                currentValue={baseUrl}
+                                onChange={setBaseUrl}
+                                placeholder={providerType?.defaultBaseUrl}
                                 autoFocus
                             />
                         </FormGroup>

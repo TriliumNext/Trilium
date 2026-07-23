@@ -49,6 +49,7 @@ export default function LlmSettings() {
             {aiEnabled ? (
                 <>
                     <ProviderSettings />
+                    <SemanticSearchSettings />
                     <McpSettings />
                 </>
             ) : (
@@ -106,6 +107,24 @@ function ProviderSettings() {
                 onHidden={() => setShowAddModal(false)}
                 onSave={handleAddProvider}
             />
+        </OptionsSection>
+    );
+}
+
+function SemanticSearchSettings() {
+    const [embeddingModel, setEmbeddingModel] = useTriliumOption("llmEmbeddingModel");
+
+    return (
+        <OptionsSection title={t("llm.semantic_search_title")}>
+            <p className="form-text">{t("llm.semantic_search_description")}</p>
+
+            <OptionsRow name="embedding-model" label={t("llm.embedding_model")} description={t("llm.embedding_model_description")}>
+                <FormTextBox
+                    currentValue={embeddingModel || ""}
+                    onChange={setEmbeddingModel}
+                    placeholder="nomic-embed-text"
+                />
+            </OptionsRow>
         </OptionsSection>
     );
 }
