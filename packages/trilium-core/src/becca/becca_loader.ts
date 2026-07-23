@@ -14,6 +14,7 @@ import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
 import { getContext } from "../services/context.js";
+import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
 export const beccaLoaded = new Promise<void>(async (res, rej) => {
     // We have to import async since options init requires keyboard actions which require translations.
@@ -64,6 +65,8 @@ function load() {
 
     });
 
+    injectVirtualSubtrees();
+
     for (const noteId in becca.notes) {
         becca.notes[noteId].sortParents();
     }
@@ -71,6 +74,156 @@ function load() {
     becca.loaded = true;
 
     getLog().info(`Becca (note cache) load took ${Date.now() - start}ms`);
+}
+
+/**
+ * Builds the becca entities of every registered virtual note provider (see
+ * `services/virtual_notes.ts`). Runs on every load, after the persisted entities: virtual
+ * entities live only in becca, so a full reload (e.g. `becca_loader.reload()`) both refreshes
+ * them and is the way to pick up provider-side changes.
+ */
+function injectVirtualSubtrees() {
+    const log = getLog();
+    let injectedAny = false;
+
+    for (const provider of getVirtualNoteProviders()) {
+        if (!(provider.parentNoteId in becca.notes)) {
+            // E.g. the first load during initial database creation, which happens before the
+            // hidden subtree exists; the post-dbReady load will inject.
+            log.info(`Virtual note provider '${provider.namespace}': anchor note '${provider.parentNoteId}' not present, skipping injection.`);
+            continue;
+        }
+
+        try {
+            const subtree = provider.getSubtree();
+            validateVirtualSubtree(provider, subtree);
+
+            // Sort the injected roots after the anchor's persisted children so their
+            // notePositions don't collide.
+            const basePosition = becca.notes[provider.parentNoteId]
+                .getChildBranches()
+                .reduce((max, childBranch) => Math.max(max, childBranch?.notePosition ?? 0), 0);
+
+            subtree.forEach((item, index) => injectVirtualItem(provider, provider.parentNoteId, item, basePosition + (index + 1) * 10));
+            injectedAny = true;
+        } catch (e) {
+            // A broken provider must never take down the becca load.
+            log.error(`Virtual note provider '${provider.namespace}' failed, skipping: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
+        }
+    }
+
+    if (injectedAny) {
+        backfillVirtualTargetRelations();
+    }
+}
+
+function validateVirtualSubtree(provider: VirtualNoteProvider, items: VirtualSubtreeItem[], seenIds = new Set<string>()) {
+    for (const item of items) {
+        if (!item.id.startsWith(provider.namespace)) {
+            throw new Error(`Item '${item.id}' is outside the provider's namespace '${provider.namespace}'.`);
+        }
+
+        if (seenIds.has(item.id)) {
+            throw new Error(`Duplicate item ID '${item.id}'.`);
+        }
+
+        seenIds.add(item.id);
+        validateVirtualSubtree(provider, item.children ?? [], seenIds);
+    }
+}
+
+function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, item: VirtualSubtreeItem, defaultPosition: number) {
+    let note = becca.notes[item.id];
+
+    if (note && !note.isVirtual && note.type !== undefined) {
+        // A persisted note still occupies this ID (e.g. rows predating the migration that
+        // removed the persisted variant of this subtree). Persisted data wins to avoid
+        // corrupting it; the conflict is surfaced instead of silently overridden.
+        getLog().error(`Virtual note provider '${provider.namespace}': a persisted note '${item.id}' already exists, skipping injection of this item and its children.`);
+        return;
+    }
+
+    const noteRow: Partial<NoteRow> = {
+        noteId: item.id,
+        title: item.title,
+        type: item.type,
+        mime: item.mime ?? "",
+        isProtected: false
+    };
+
+    if (note) {
+        // Skeleton created by a forward reference (e.g. a persisted branch or relation loaded
+        // before this virtual note existed) — fill it in place so those links survive.
+        note.updateFromRow(noteRow);
+    } else {
+        note = new BNote(noteRow);
+    }
+
+    note.isVirtual = true;
+
+    const branchId = `${parentNoteId}_${item.id}`;
+
+    if (!becca.branches[branchId]) {
+        const branch = new BBranch({
+            branchId,
+            noteId: item.id,
+            parentNoteId,
+            prefix: null,
+            notePosition: item.notePosition ?? defaultPosition,
+            isExpanded: !!item.isExpanded
+        });
+        branch.isVirtual = true;
+    }
+
+    const attributeDefs = [...(item.attributes ?? [])];
+
+    if (item.icon) {
+        attributeDefs.push({ type: "label", name: "iconClass", value: `bx ${item.icon}` });
+    }
+
+    attributeDefs.forEach((def, index) => {
+        // Deterministic ID, unique thanks to the note-ID prefix; the index suffix disambiguates
+        // multiple same-named attributes on one note.
+        let attributeId = `v_${item.id}_${def.type.charAt(0)}${def.name}`;
+        if (becca.attributes[attributeId]) {
+            attributeId = `${attributeId}_${index}`;
+        }
+
+        const attribute = new BAttribute({
+            attributeId,
+            noteId: item.id,
+            type: def.type,
+            name: def.name,
+            value: def.value ?? "",
+            isInheritable: !!def.isInheritable,
+            position: (index + 1) * 10
+        });
+        attribute.isVirtual = true;
+    });
+
+    (item.children ?? []).forEach((child, index) => injectVirtualItem(provider, item.id, child, (index + 1) * 10));
+}
+
+/**
+ * Relations pointing into a virtual namespace load before the virtual notes exist, so their
+ * target-relation backlinks could not be established in `BAttribute.init()` — including
+ * relations between virtual notes when the target comes later in the subtree. One pass after
+ * injection fixes both.
+ */
+function backfillVirtualTargetRelations() {
+    for (const attributeId in becca.attributes) {
+        const attribute = becca.attributes[attributeId];
+
+        if (attribute.type !== "relation" || !attribute.value) {
+            continue;
+        }
+
+        const targetNote = becca.notes[attribute.value];
+
+        if (targetNote?.isVirtual && !targetNote.targetRelations.includes(attribute)) {
+            targetNote.targetRelations.push(attribute);
+        }
+    }
 }
 
 function reload(reason: string) {

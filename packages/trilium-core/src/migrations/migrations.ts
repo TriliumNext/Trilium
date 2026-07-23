@@ -9,6 +9,35 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // The in-app help (`_help` subtree) became virtual — injected into becca from the bundled
+    // help meta on every load, never persisted or synced (see services/virtual_notes.ts).
+    // Remove the previously persisted rows, including their entity_changes so the deletions
+    // don't churn through sync: every instance in a cluster runs this same migration (the
+    // accompanying sync-version bump guarantees no un-migrated peers), so all copies converge.
+    // User clones of help notes and user attributes on them are dropped by design — the help
+    // structure is application-owned. Orphaned blobs are vacuumed by the regular erase job.
+    // The rows for indirectly-keyed entities must be removed from entity_changes before their
+    // base rows disappear from under the subselects.
+    {
+        version: 240,
+        sql: /*sql*/`
+            DELETE FROM entity_changes WHERE entityName = 'branches' AND entityId IN
+                (SELECT branchId FROM branches WHERE noteId LIKE '\\_help%' ESCAPE '\\' OR parentNoteId LIKE '\\_help%' ESCAPE '\\');
+            DELETE FROM entity_changes WHERE entityName = 'attributes' AND entityId IN
+                (SELECT attributeId FROM attributes WHERE noteId LIKE '\\_help%' ESCAPE '\\');
+            DELETE FROM entity_changes WHERE entityName = 'revisions' AND entityId IN
+                (SELECT revisionId FROM revisions WHERE noteId LIKE '\\_help%' ESCAPE '\\');
+            DELETE FROM entity_changes WHERE entityName = 'attachments' AND entityId IN
+                (SELECT attachmentId FROM attachments WHERE ownerId LIKE '\\_help%' ESCAPE '\\');
+            DELETE FROM entity_changes WHERE entityName = 'notes' AND entityId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM entity_changes WHERE entityName = 'note_reordering' AND entityId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM branches WHERE noteId LIKE '\\_help%' ESCAPE '\\' OR parentNoteId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM attributes WHERE noteId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM revisions WHERE noteId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM attachments WHERE ownerId LIKE '\\_help%' ESCAPE '\\';
+            DELETE FROM notes WHERE noteId LIKE '\\_help%' ESCAPE '\\';
+        `
+    },
     // Turn TOTP back off for installs that had disabled MFA before the enable flag was removed
     {
         version: 239,

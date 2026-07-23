@@ -20,6 +20,7 @@ import BRevision from "./brevision.js";
 import { getLog } from "../../services/log.js";
 import { getSql } from "../../services/sql/index.js";
 import { formatDownloadTitle, isStringNote, normalize, randomString, replaceAll } from "../../services/utils/index.js";
+import { getVirtualNoteContent } from "../../services/virtual_notes.js";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -206,6 +207,11 @@ class BNote extends AbstractBeccaEntity<BNote> {
      * - but to the user note content and title changes are one and the same - single dateModified (so all changes must go through Note and content is not a separate entity)
      */
     getContent() {
+        if (this.isVirtual) {
+            // Virtual notes have no blob row; content (if any) comes from their provider.
+            return getVirtualNoteContent(this.noteId);
+        }
+
         return this._getContent();
     }
 

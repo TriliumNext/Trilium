@@ -35,6 +35,11 @@ function getCurrentLanguage(): LOCALE_IDS {
 export async function changeLanguage(locale: string) {
     await i18next.changeLanguage(locale);
     hidden_subtree.checkHiddenSubtree(true, { restoreNames: true });
+
+    // Virtual subtrees (e.g. the in-app help) build their titles with t() at injection time,
+    // so a becca reload is needed to re-render them in the new language.
+    const { reload } = await import("../becca/becca_loader.js");
+    reload("locale changed");
 }
 
 /**
