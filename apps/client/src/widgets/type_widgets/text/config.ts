@@ -44,7 +44,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             enablePreview: true, // Enable preview view
             // Map MathLive-only commands (e.g. \differentialD) onto KaTeX equivalents so
             // formulas produced by the visual editor render instead of erroring out (#9523).
-            katexRenderOptions: { macros: KATEX_MACROS }
+            katexRenderOptions: { macros: KATEX_MACROS },
+            enableMathField: options.get("mathFieldEnabled") !== "false"
         },
         mermaid: {
             lazyLoad: async () => (await import("mermaid")).default, // FIXME

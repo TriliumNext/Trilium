@@ -126,6 +126,7 @@ function ToolbarIcon({ wide }: { wide?: boolean }) {
 }
 
 function EditorFeatures() {
+    const [mathFieldEnabled, setMathFieldEnabled] = useTriliumOptionBool("mathFieldEnabled");
     const [emojiCompletionEnabled, setEmojiCompletionEnabled] = useTriliumOptionBool("textNoteEmojiCompletionEnabled");
     const [noteCompletionEnabled, setNoteCompletionEnabled] = useTriliumOptionBool("textNoteCompletionEnabled");
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
@@ -134,6 +135,14 @@ function EditorFeatures() {
 
     return (
         <OptionsSection title={t("editorfeatures.title")}>
+            <OptionsRowWithToggle
+                name="mathlive-enabled"
+                label={t("editorfeatures.mathlive_enabled")}
+                description={t("editorfeatures.mathlive_description")}
+                currentValue={mathFieldEnabled}
+                onChange={setMathFieldEnabled}
+            />
+
             <OptionsRowWithToggle
                 name="emoji-completion-enabled"
                 label={t("editorfeatures.emoji_completion_enabled")}
