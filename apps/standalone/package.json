@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.1",
-    "@fullcalendar/core": "6.1.21",
+    "@fullcalendar/core": "7.0.1",
     "@fullcalendar/daygrid": "6.1.21",
     "@fullcalendar/interaction": "6.1.21",
     "@fullcalendar/list": "6.1.21",
