@@ -18,7 +18,7 @@
     "npm": ">=5.7.1"
   },
   "devDependencies": {
-    "ckeditor5": "48.2.0",
+    "ckeditor5": "48.3.1",
     "happy-dom": "20.11.0",
     "typescript": "6.0.3",
     "vite-plugin-svgo": "2.0.0",
@@ -30,7 +30,7 @@
   },
   "peerDependencies": {
     "bootstrap": "^5.3.0",
-    "ckeditor5": "48.2.0"
+    "ckeditor5": "48.3.1"
   },
   "author": "Trilium contributors",
   "license": "GPL-2.0-or-later",

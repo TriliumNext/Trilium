@@ -22,7 +22,7 @@
     "@triliumnext/ckeditor5-keyboard-marker": "workspace:*",
     "@triliumnext/ckeditor5-math": "workspace:*",
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
-    "ckeditor5": "48.2.0",
-    "ckeditor5-premium-features": "48.2.0"
+    "ckeditor5": "48.3.1",
+    "ckeditor5-premium-features": "48.3.1"
   }
 }
