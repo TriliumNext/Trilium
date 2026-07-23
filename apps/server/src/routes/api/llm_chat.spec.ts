@@ -10,7 +10,8 @@ const state = vi.hoisted(() => ({
     // When true, the fake provider is chunk-native (implements chatChunks) and
     // records the abort signal the route wires to the response lifecycle.
     chunkNative: false,
-    chunkSignal: undefined as AbortSignal | undefined
+    chunkSignal: undefined as AbortSignal | undefined,
+    executed: [] as unknown[]
 }));
 
 vi.mock("../../services/llm/index.js", () => ({
@@ -32,6 +33,30 @@ vi.mock("../../services/llm/index.js", () => ({
 vi.mock("../../services/llm/stream.js", () => ({
     async *streamToChunks () { for (const c of state.chunks) yield c; }
 }));
+
+vi.mock("../../services/llm/tools/index.js", async () => {
+    const { z } = await import("zod");
+    const writeDef = {
+        description: "write",
+        inputSchema: z.object({ id: z.string() }),
+        mutates: true as const,
+        execute: (args: { id: string }) => { state.executed.push(args); return { ok: true, id: args.id }; }
+    };
+    const readDef = {
+        description: "read",
+        inputSchema: z.object({ id: z.string() }),
+        execute: () => ({ read: true })
+    };
+    const registry = {
+        *[Symbol.iterator]() {
+            yield ["write_thing", writeDef] as const;
+            yield ["read_thing", readDef] as const;
+        },
+        getMutatingToolNames: () => ["write_thing"],
+        toToolSet: () => ({})
+    };
+    return { allToolRegistries: [registry] };
+});
 
 const generateChatTitle = vi.fn(async (..._args: unknown[]) => {});
 vi.mock("../../services/llm/chat_title.js", () => ({ generateChatTitle: (...args: unknown[]) => generateChatTitle(...args) }));
@@ -210,6 +235,39 @@ describe("LLM chat API", () => {
             await llmChatRoute.streamChat(req({ messages: [{ role: "user", content: "hello" }], config: { chatNoteId: "abc" } }), r.res);
             expect(r.writes.join("")).toContain('"type":"done"');
             expect(r.ended).toBe(true);
+        });
+    });
+
+    describe("executeTool", () => {
+        function req(body: unknown) { return { body } as unknown as Request; }
+
+        it("executes an approved mutating tool with schema-valid input", () => {
+            state.executed = [];
+            const result = llmChatRoute.executeTool(req({ toolName: "write_thing", toolInput: { id: "w1" } }), {} as Response);
+            expect(result).toEqual({ result: { ok: true, id: "w1" } });
+            expect(state.executed).toEqual([{ id: "w1" }]);
+        });
+
+        it("rejects input that fails the tool's schema without executing", () => {
+            state.executed = [];
+            const result = llmChatRoute.executeTool(req({ toolName: "write_thing", toolInput: { id: 42 } }), {} as Response) as { error?: string };
+            expect(result.error).toMatch(/Invalid tool input/);
+            expect(state.executed).toEqual([]);
+        });
+
+        it("refuses to run read-only tools through the approval endpoint", () => {
+            const result = llmChatRoute.executeTool(req({ toolName: "read_thing", toolInput: {} }), {} as Response) as { error?: string };
+            expect(result.error).toMatch(/Only mutating tools/);
+        });
+
+        it("errors on an unknown tool name", () => {
+            const result = llmChatRoute.executeTool(req({ toolName: "nope", toolInput: {} }), {} as Response) as { error?: string };
+            expect(result.error).toMatch(/not found/);
+        });
+
+        it("errors when toolName is missing", () => {
+            const result = llmChatRoute.executeTool(req({ toolInput: {} }), {} as Response) as { error?: string };
+            expect(result.error).toMatch(/toolName is required/);
         });
     });
 });

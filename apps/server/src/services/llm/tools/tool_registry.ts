@@ -56,23 +56,42 @@ export class ToolRegistry implements Iterable<[string, ToolDefinition]> {
 
     /**
      * Convert to an AI SDK ToolSet for use with the LLM chat providers.
-     * Mutating tools are wrapped in a transaction for consistency with MCP.
+     * Read-only tools are given an `execute` function so the AI SDK auto-runs them.
+     * Mutating tools are registered WITHOUT `execute` so the SDK emits a tool-call
+     * event but does NOT auto-execute — the client must approve first.
+     * With `autoExecuteMutating` (tool permission mode "auto"), mutating tools
+     * also get an `execute` function, wrapped in a transaction.
      * (CLS context is provided by the route handler.)
      */
-    toToolSet(): ToolSet {
+    toToolSet(options: { autoExecuteMutating?: boolean } = {}): ToolSet {
         const set: ToolSet = {};
         for (const [name, def] of this) {
-            const execute = def.mutates
-                ? (args: unknown) => sql.transactional(() => def.execute(args))
-                : def.execute;
-
-            set[name] = tool({
-                description: def.description,
-                inputSchema: def.inputSchema,
-                execute
-            });
+            if (def.mutates && !options.autoExecuteMutating) {
+                // No execute → AI SDK emits tool-call but doesn't auto-execute (human-in-the-loop)
+                set[name] = tool({
+                    description: def.description,
+                    inputSchema: def.inputSchema
+                });
+            } else if (def.mutates) {
+                set[name] = tool({
+                    description: def.description,
+                    inputSchema: def.inputSchema,
+                    execute: (args) => sql.transactional(() => def.execute(args))
+                });
+            } else {
+                set[name] = tool({
+                    description: def.description,
+                    inputSchema: def.inputSchema,
+                    execute: def.execute
+                });
+            }
         }
         return set;
+    }
+
+    /** Return the names of all mutating tools in this registry. */
+    getMutatingToolNames(): string[] {
+        return [...this].filter(([, def]) => def.mutates).map(([name]) => name);
     }
 }
 

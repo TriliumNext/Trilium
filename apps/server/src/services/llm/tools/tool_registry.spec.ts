@@ -54,7 +54,7 @@ describe("ToolRegistry", () => {
         expect(set.write_thing.inputSchema).toBeDefined();
     });
 
-    it("toToolSet runs read-only tools directly and wraps mutating tools in a transaction", async () => {
+    it("toToolSet runs read-only tools directly and leaves mutating tools without execute (human-in-the-loop)", async () => {
         transactionalMock.mockClear();
         const set = registry.toToolSet();
 
@@ -62,6 +62,15 @@ describe("ToolRegistry", () => {
         expect(readResult).toEqual({ id: "r1", read: true });
         // Read-only tools are not transaction-wrapped.
         expect(transactionalMock).not.toHaveBeenCalled();
+
+        // Mutating tools have no execute — the AI SDK emits a tool-call event
+        // and the client must approve before execution.
+        expect(set.write_thing.execute).toBeUndefined();
+    });
+
+    it("toToolSet with autoExecuteMutating wraps mutating tools in a transaction", async () => {
+        transactionalMock.mockClear();
+        const set = registry.toToolSet({ autoExecuteMutating: true });
 
         const writeResult = await set.write_thing.execute!({ id: "w1" }, {} as any);
         expect(writeResult).toEqual({ id: "w1", written: true });

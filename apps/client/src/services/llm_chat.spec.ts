@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LlmChatConfig, LlmMessage } from "@triliumnext/commons";
 
-import { getAvailableModels, streamChatCompletion, type StreamCallbacks } from "./llm_chat.js";
+import { executeToolCall, getAvailableModels, streamChatCompletion, type StreamCallbacks } from "./llm_chat.js";
 import server from "./server.js";
 
 /**
@@ -159,7 +159,7 @@ describe("streamChatCompletion", () => {
         expect(cb.onThinking).toHaveBeenCalledWith("TH");
         expect(cb.onToolInputStart).toHaveBeenCalledWith("c1", "search");
         expect(cb.onToolInputDelta).toHaveBeenCalledWith("c1", "{");
-        expect(cb.onToolUse).toHaveBeenCalledWith("c1", "search", { q: "x" });
+        expect(cb.onToolUse).toHaveBeenCalledWith("c1", "search", { q: "x" }, undefined);
         expect(cb.onToolResult).toHaveBeenCalledWith("c1", "search", "res", false);
         expect(cb.onCitation).toHaveBeenCalledWith({ id: "cit1" });
         expect(cb.onUsage).toHaveBeenCalledWith({ totalTokens: 10 });
@@ -287,5 +287,32 @@ describe("streamChatCompletion", () => {
         await streamChatCompletion(messages, config, cb, controller.signal);
         const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
         expect(init.signal).toBe(controller.signal);
+    });
+});
+
+describe("executeToolCall", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("posts the tool call and stringifies an object result", async () => {
+        server.post = vi.fn(async () => ({ result: { ok: true } })) as typeof server.post;
+        await expect(executeToolCall("create_note", { title: "T" })).resolves.toEqual({
+            result: '{"ok":true}'
+        });
+        expect(server.post).toHaveBeenCalledWith("llm-chat/execute-tool", { toolName: "create_note", toolInput: { title: "T" } });
+    });
+
+    it("passes string results through unchanged", async () => {
+        server.post = vi.fn(async () => ({ result: "plain" })) as typeof server.post;
+        await expect(executeToolCall("t", {})).resolves.toEqual({ result: "plain" });
+    });
+
+    it("maps a server-side error to an error result", async () => {
+        server.post = vi.fn(async () => ({ error: "Only mutating tools can be executed via this endpoint" })) as typeof server.post;
+        await expect(executeToolCall("t", {})).resolves.toEqual({
+            result: "Only mutating tools can be executed via this endpoint",
+            isError: true
+        });
     });
 });

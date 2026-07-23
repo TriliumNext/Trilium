@@ -1,9 +1,9 @@
-import type { LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmUsage } from "@triliumnext/commons";
+import type { LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmUsage, ToolPermissionMode } from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
-import { getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
+import { executeToolCall, getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
 import { randomString } from "../../../services/utils.js";
 import { useTriliumEvent } from "../../react/hooks.js";
 import { stripQuoteSources } from "./chat_quote.js";
@@ -108,6 +108,7 @@ export interface UseLlmChatReturn {
     enableWebSearch: boolean;
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
+    toolPermissionMode: ToolPermissionMode;
     contextNoteId: string | undefined;
     /** The chat note's ID — used as the upload target for attachments. */
     chatNoteId: string | undefined;
@@ -140,6 +141,7 @@ export interface UseLlmChatReturn {
     setEnableWebSearch: (value: boolean) => void;
     setEnableNoteTools: (value: boolean) => void;
     setEnableExtendedThinking: (value: boolean) => void;
+    setToolPermissionMode: (mode: ToolPermissionMode) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
     /** Append a freshly uploaded image or file to the pending-attachments list. */
@@ -161,6 +163,10 @@ export interface UseLlmChatReturn {
     retryLast: () => void;
     /** Regenerate the last reply: re-run from the last user message, dropping the reply that followed */
     regenerateLastReply: () => void;
+    /** Approve a pending mutating tool call */
+    approveToolCall: (toolCallId: string) => Promise<void>;
+    /** Reject a pending mutating tool call */
+    rejectToolCall: (toolCallId: string) => void;
 }
 
 export function useLlmChat(
@@ -195,6 +201,7 @@ export function useLlmChat(
     const [enableWebSearch, setEnableWebSearch] = useState(true);
     const [enableNoteTools, setEnableNoteTools] = useState(defaultEnableNoteTools);
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
+    const [toolPermissionMode, setToolPermissionMode] = useState<ToolPermissionMode>("ask");
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
@@ -229,6 +236,10 @@ export function useLlmChat(
     enableNoteToolsRef.current = enableNoteTools;
     const enableExtendedThinkingRef = useRef(enableExtendedThinking);
     enableExtendedThinkingRef.current = enableExtendedThinking;
+    const toolPermissionModeRef = useRef(toolPermissionMode);
+    toolPermissionModeRef.current = toolPermissionMode;
+    /** Tool calls whose approval request is currently in flight (double-click guard). */
+    const approvingToolCallsRef = useRef(new Set<string>());
     const chatNoteIdRef = useRef(chatNoteId);
     chatNoteIdRef.current = chatNoteId;
     const setChatNoteId = useCallback((noteId: string | undefined) => {
@@ -491,6 +502,7 @@ export function useLlmChat(
         if (supportsExtendedThinking && typeof content.enableExtendedThinking === "boolean") {
             setEnableExtendedThinking(content.enableExtendedThinking);
         }
+        setToolPermissionMode(content.toolPermissionMode ?? "ask");
         // Restore last prompt tokens from the most recent message with usage
         const lastUsage = [...(content.messages || [])].reverse().find(m => m.usage)?.usage;
         setLastPromptTokens(lastUsage?.promptTokens ?? 0);
@@ -508,6 +520,9 @@ export function useLlmChat(
         };
         if (supportsExtendedThinking) {
             content.enableExtendedThinking = enableExtendedThinkingRef.current;
+        }
+        if (toolPermissionModeRef.current !== "ask") {
+            content.toolPermissionMode = toolPermissionModeRef.current;
         }
         return content;
     }, [supportsExtendedThinking]);
@@ -568,6 +583,7 @@ export function useLlmChat(
         if (supportsExtendedThinking) {
             streamOptions.enableExtendedThinking = enableExtendedThinking;
         }
+        streamOptions.toolPermissionMode = toolPermissionMode;
 
         const abortController = new AbortController();
         abortControllerRef.current = abortController;
@@ -581,8 +597,10 @@ export function useLlmChat(
 
             // Mark any in-progress tool calls as stopped so they don't show infinite spinners.
             // Also clear `inputStreaming` so a half-streamed JSON arg list doesn't render.
+            // Tool calls awaiting user approval are left pending — the stream legitimately
+            // ends while they wait for the Approve/Reject decision.
             for (const [i, block] of contentBlocks.entries()) {
-                if (block.type === "tool_call" && !block.toolCall.result) {
+                if (block.type === "tool_call" && !block.toolCall.result && !block.toolCall.requiresApproval) {
                     contentBlocks[i] = {
                         type: "tool_call",
                         toolCall: {
@@ -683,7 +701,7 @@ export function useLlmChat(
                     }
                     setTargetBlocks([...contentBlocks]);
                 },
-                onToolUse: (toolCallId, toolName, toolInput) => {
+                onToolUse: (toolCallId, toolName, toolInput, requiresApproval) => {
                     // Some providers skip tool-input-start/delta entirely and only emit
                     // the final tool-call. In that case there's no pending block to update,
                     // so push a fresh one.
@@ -695,7 +713,8 @@ export function useLlmChat(
                                 toolCall: {
                                     ...block.toolCall,
                                     input: toolInput,
-                                    inputStreaming: undefined
+                                    inputStreaming: undefined,
+                                    requiresApproval
                                 }
                             };
                             setTargetBlocks([...contentBlocks]);
@@ -708,7 +727,7 @@ export function useLlmChat(
                     smoothDrain();
                     contentBlocks.push({
                         type: "tool_call",
-                        toolCall: { id: toolCallId, toolName, input: toolInput }
+                        toolCall: { id: toolCallId, toolName, input: toolInput, requiresApproval }
                     });
                     setTargetBlocks([...contentBlocks]);
                 },
@@ -782,7 +801,7 @@ export function useLlmChat(
             setIsStreaming(false);
             abortControllerRef.current = null;
         });
-    }, [selectedModel, selectedProvider, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
+    }, [selectedModel, selectedProvider, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, toolPermissionMode, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
 
     const handleSubmit = useCallback(async (e: Event) => {
         e.preventDefault();
@@ -839,6 +858,53 @@ export function useLlmChat(
         await runStream(conversation);
     }, [isStreaming, messages, runStream]);
 
+    /** Approve a pending mutating tool call — execute it server-side and update the message. */
+    const approveToolCall = useCallback(async (toolCallId: string) => {
+        // Guard against double-clicks: the result stays empty while the request
+        // is in flight, so a second click would dispatch a duplicate execution.
+        if (approvingToolCallsRef.current.has(toolCallId)) {
+            return;
+        }
+        approvingToolCallsRef.current.add(toolCallId);
+        try {
+            for (const msg of messages) {
+                if (!Array.isArray(msg.content)) continue;
+                for (const block of msg.content) {
+                    if (block.type === "tool_call" && block.toolCall.id === toolCallId && block.toolCall.requiresApproval && !block.toolCall.result) {
+                        const { result, isError } = await executeToolCall(block.toolCall.toolName, block.toolCall.input);
+                        // Update the tool call block immutably
+                        const updatedContent = msg.content.map(b =>
+                            b.type === "tool_call" && b.toolCall.id === toolCallId
+                                ? { ...b, toolCall: { ...b.toolCall, result, isError } }
+                                : b
+                        );
+                        const updatedMessages = messages.map(m =>
+                            m.id === msg.id ? { ...m, content: updatedContent } : m
+                        );
+                        setMessages(updatedMessages);
+                        return;
+                    }
+                }
+            }
+        } finally {
+            approvingToolCallsRef.current.delete(toolCallId);
+        }
+    }, [messages, setMessages]);
+
+    /** Reject a pending mutating tool call. */
+    const rejectToolCall = useCallback((toolCallId: string) => {
+        const updatedMessages = messages.map(msg => {
+            if (!Array.isArray(msg.content)) return msg;
+            const updatedContent = msg.content.map(b =>
+                b.type === "tool_call" && b.toolCall.id === toolCallId
+                    ? { ...b, toolCall: { ...b.toolCall, rejected: true } }
+                    : b
+            );
+            return { ...msg, content: updatedContent };
+        });
+        setMessages(updatedMessages);
+    }, [messages, setMessages]);
+
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -884,6 +950,7 @@ export function useLlmChat(
         enableWebSearch,
         enableNoteTools,
         enableExtendedThinking,
+        toolPermissionMode,
         contextNoteId,
         chatNoteId,
         lastPromptTokens,
@@ -906,6 +973,7 @@ export function useLlmChat(
         setEnableWebSearch,
         setEnableNoteTools,
         setEnableExtendedThinking,
+        setToolPermissionMode,
         setContextNoteId,
         setChatNoteId,
         addPendingAttachment,
@@ -920,6 +988,8 @@ export function useLlmChat(
         refreshModels,
         stopStreaming,
         retryLast,
-        regenerateLastReply
+        regenerateLastReply,
+        approveToolCall,
+        rejectToolCall
     };
 }

@@ -69,6 +69,8 @@ interface ChatInputBarProps {
     onNoteToolsChange?: () => void;
     /** Callback when extended thinking toggle changes */
     onExtendedThinkingChange?: () => void;
+    /** Callback when the tool permission mode changes */
+    onToolPermissionModeChange?: () => void;
     /** Callback when model changes */
     onModelChange?: (model: string) => void;
     /** Rendered inside the narrow right sidebar — opens the model submenu leftwards so it doesn't overflow. */
@@ -83,6 +85,7 @@ export default function ChatInputBar({
     onWebSearchChange,
     onNoteToolsChange,
     onExtendedThinkingChange,
+    onToolPermissionModeChange,
     onModelChange,
     inSidebar
 }: ChatInputBarProps) {
@@ -152,6 +155,11 @@ export default function ChatInputBar({
     const handleExtendedThinkingToggle = (newValue: boolean) => {
         chat.setEnableExtendedThinking(newValue);
         onExtendedThinkingChange?.();
+    };
+
+    const handleToolPermissionToggle = (askFirst: boolean) => {
+        chat.setToolPermissionMode(askFirst ? "ask" : "auto");
+        onToolPermissionModeChange?.();
     };
 
     const handleModelSelect = (model: string, provider?: string) => {
@@ -418,6 +426,15 @@ export default function ChatInputBar({
                             onChange={handleExtendedThinkingToggle}
                             disabled={chat.isStreaming}
                         />
+                        {chat.enableNoteTools && (
+                            <FormListToggleableItem
+                                icon="bx bx-shield-quarter"
+                                title={t("llm_chat.ask_before_changes")}
+                                currentValue={chat.toolPermissionMode === "ask"}
+                                onChange={handleToolPermissionToggle}
+                                disabled={chat.isStreaming}
+                            />
+                        )}
                     </Dropdown>
                     {activeNoteId && activeNoteTitle && (
                         <Button

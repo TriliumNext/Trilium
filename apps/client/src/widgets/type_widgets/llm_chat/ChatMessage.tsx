@@ -14,7 +14,7 @@ import { renderQuoteSourceLinks } from "./chat_quote.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
 import { type ContentBlock, type FileBlock, getMessageText, type ImageBlock, type StoredMessage, type TextBlock, type TextFileBlock, type ToolCallBlock } from "./llm_chat_types.js";
 import { SafeImage } from "./retry_image.js";
-import ToolCallCard from "./ToolCallCard.js";
+import ToolCallCard, { type ToolApprovalHandlers } from "./ToolCallCard.js";
 
 function shortenNumber(n: number): string {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -47,6 +47,10 @@ interface Props {
     isStreaming?: boolean;
     /** When set on an error message, renders a Retry button that re-runs the failed turn. */
     onRetry?: () => void;
+    /** Approve a pending mutating tool call. */
+    onApproveToolCall?: (toolCallId: string) => Promise<void>;
+    /** Reject a pending mutating tool call. */
+    onRejectToolCall?: (toolCallId: string) => void;
 }
 
 type ContentGroup =
@@ -115,7 +119,7 @@ function CitationsSection({ citations }: { citations: LlmCitation[] }) {
     );
 }
 
-function ChatMessage({ message, isStreaming, onRetry }: Props) {
+function ChatMessage({ message, isStreaming, onRetry, onApproveToolCall, onRejectToolCall }: Props) {
     const isError = message.type === "error";
     const isThinking = message.type === "thinking";
     const textContent = typeof message.content === "string" ? message.content : getMessageText(message.content);
@@ -186,7 +190,7 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
             <div className={messageClasses}>
                 <div className="llm-chat-message-content">
                     {hasBlockContent ? (
-                        renderContentBlocks(message.content as ContentBlock[], isStreaming)
+                        renderContentBlocks(message.content as ContentBlock[], isStreaming, { onApprove: onApproveToolCall, onReject: onRejectToolCall })
                     ) : (
                         <MarkdownContent html={renderedContent || ""} isStreaming={isStreaming && message.role === "assistant"} />
                     )}
@@ -268,7 +272,7 @@ function groupContentBlocks(blocks: ContentBlock[]): ContentGroup[] {
     return groups;
 }
 
-function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
+function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean, approvalHandlers?: ToolApprovalHandlers) {
     return groupContentBlocks(blocks).map((group) => {
         if (group.type === "text") {
             const isLastBlock = group.index === blocks.length - 1;
@@ -311,6 +315,6 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
             );
         }
 
-        return <ToolCallCard key={group.index} toolCalls={group.blocks.map((b) => b.toolCall)} />;
+        return <ToolCallCard key={group.index} toolCalls={group.blocks.map((b) => b.toolCall)} onApprove={approvalHandlers?.onApprove} onReject={approvalHandlers?.onReject} />;
     });
 }

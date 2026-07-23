@@ -174,6 +174,7 @@ function register(app: express.Application) {
     // LLM chat endpoints
     asyncRoute(PST, "/api/llm-chat/stream", [auth.checkApiAuthOrElectron, csrfMiddleware], llmChatRoute.streamChat, null);
     apiRoute(GET, "/api/llm-chat/models", llmChatRoute.getModels);
+    apiRoute(PST, "/api/llm-chat/execute-tool", llmChatRoute.executeTool);
 
     // no CSRF since this is called from android app
     asyncRoute(PST, "/api/sender/login", [loginRateLimiter], loginApiRoute.token, apiResultHandler);

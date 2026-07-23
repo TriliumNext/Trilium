@@ -183,8 +183,9 @@ export abstract class BaseProvider implements LlmProvider {
         }
 
         if (config.enableNoteTools) {
+            const autoExecuteMutating = config.toolPermissionMode === "auto";
             for (const registry of allToolRegistries) {
-                Object.assign(tools, registry.toToolSet());
+                Object.assign(tools, registry.toToolSet({ autoExecuteMutating }));
             }
         }
 

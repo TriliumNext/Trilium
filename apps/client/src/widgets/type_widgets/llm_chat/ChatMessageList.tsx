@@ -24,7 +24,7 @@ interface ChatMessageListProps {
  * scroll anchor. Shared by the chat note type widget and the sidebar chat.
  */
 export default function ChatMessageList({ chat, emptyStateText, className }: ChatMessageListProps) {
-    const { messages, isStreaming, retryLast } = chat;
+    const { messages, isStreaming, retryLast, approveToolCall, rejectToolCall } = chat;
 
     // Rebuilt only when the timeline itself changes: renders caused by anything else
     // (streaming commits, toggles) skip the O(messages) vnode allocation and the
@@ -38,8 +38,10 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
                     ? retryLast
                     : undefined
             }
+            onApproveToolCall={approveToolCall}
+            onRejectToolCall={rejectToolCall}
         />
-    )), [messages, isStreaming, retryLast]);
+    )), [messages, isStreaming, retryLast, approveToolCall, rejectToolCall]);
 
     // Stable placeholder objects: rebuilt only when their streamed content advances, so
     // renders caused by anything else let memo(ChatMessage) skip the placeholders too.

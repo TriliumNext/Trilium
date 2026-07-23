@@ -1,4 +1,4 @@
-import type { LlmCitation, LlmUsage } from "@triliumnext/commons";
+import type { LlmCitation, LlmUsage, ToolPermissionMode } from "@triliumnext/commons";
 
 export type MessageType = "message" | "error" | "thinking";
 
@@ -13,6 +13,8 @@ export interface ToolCall {
     inputStreaming?: string;
     result?: string;
     isError?: boolean;
+    requiresApproval?: boolean;
+    rejected?: boolean;
 }
 
 /** A block of text content (rendered as Markdown for assistant messages). */
@@ -161,4 +163,5 @@ export interface LlmChatContent {
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;
+    toolPermissionMode?: ToolPermissionMode;
 }

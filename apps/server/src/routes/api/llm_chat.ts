@@ -5,6 +5,7 @@ import type { Request, Response } from "express";
 import { generateChatTitle } from "../../services/llm/chat_title.js";
 import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
 import { streamToChunks } from "../../services/llm/stream.js";
+import { allToolRegistries } from "../../services/llm/tools/index.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 interface ChatRequest {
@@ -62,6 +63,17 @@ async function streamChat(req: Request, res: Response) {
         const pricing = provider.getModelPricing(modelId);
         const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
 
+        // Collect names of tools that require human approval.
+        // In "auto" permission mode nothing needs approval — tools execute directly.
+        const mutatingToolNames = new Set<string>();
+        if (config.toolPermissionMode !== "auto") {
+            for (const registry of allToolRegistries) {
+                for (const name of registry.getMutatingToolNames()) {
+                    mutatingToolNames.add(name);
+                }
+            }
+        }
+
         let chunks: AsyncIterable<LlmStreamChunk>;
         if (provider.chatChunks) {
             // Chunk-native provider (e.g. Claude Agent): it owns its own agentic
@@ -71,7 +83,7 @@ async function streamChat(req: Request, res: Response) {
             res.on("close", () => abortController.abort());
             chunks = provider.chatChunks(messages, config, abortController.signal);
         } else {
-            chunks = streamToChunks(provider.chat(messages, config), { model: modelDisplayName, pricing });
+            chunks = streamToChunks(provider.chat(messages, config), { model: modelDisplayName, pricing, mutatingToolNames });
         }
 
         for await (const chunk of chunks) {
@@ -122,7 +134,43 @@ function getModels(_req: Request, _res: Response) {
     return { models: getAllModels() };
 }
 
+/**
+ * Execute a single tool call after user approval.
+ * Used for mutating tools that require human-in-the-loop confirmation.
+ * (Runs inside a transaction — apiRoute registers handlers transactionally.)
+ */
+function executeTool(req: Request, _res: Response) {
+    const { toolName, toolInput } = req.body as { toolName: string; toolInput: Record<string, unknown> };
+
+    if (!toolName || typeof toolName !== "string") {
+        return { error: "toolName is required" };
+    }
+
+    // Find the tool definition across all registries
+    for (const registry of allToolRegistries) {
+        for (const [name, def] of registry) {
+            if (name === toolName) {
+                if (!def.mutates) {
+                    return { error: "Only mutating tools can be executed via this endpoint" };
+                }
+
+                // Validate the input against the tool's schema, the same way the
+                // AI SDK does before auto-executing a tool.
+                const parsed = def.inputSchema.safeParse(toolInput);
+                if (!parsed.success) {
+                    return { error: `Invalid tool input: ${parsed.error.message}` };
+                }
+
+                return { result: def.execute(parsed.data) };
+            }
+        }
+    }
+
+    return { error: `Tool '${toolName}' not found` };
+}
+
 export default {
     streamChat,
-    getModels
+    getModels,
+    executeTool
 };

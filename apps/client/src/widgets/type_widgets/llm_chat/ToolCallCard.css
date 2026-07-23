@@ -136,3 +136,44 @@
 @keyframes llm-chat-tool-call-caret {
     50% { opacity: 0; }
 }
+
+/* Tool call approval UI */
+
+/* Highlight the whole pending section with the theme accent so it stands out */
+.llm-chat-tool-call-pending {
+    border-left: 3px solid var(--main-selection-color, #007bff);
+}
+
+.llm-chat-tool-call-pending .expandable-section-summary {
+    font-weight: 600;
+}
+
+.llm-chat-tool-call-approval {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid var(--main-border-color);
+    background: var(--accented-background-color);
+}
+
+.llm-chat-tool-call-approval-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8rem;
+    color: var(--main-text-color);
+}
+
+.llm-chat-tool-call-approval-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.llm-chat-tool-call-approval-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
