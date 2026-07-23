@@ -158,6 +158,13 @@ export interface LlmChatContent {
      * provider by model ID in that case.
      */
     selectedProvider?: string;
+    /**
+     * ID of the provider configuration owning {@link selectedModel}. Stronger
+     * than {@link selectedProvider}: it also disambiguates multiple configs of
+     * the same type (e.g. OpenAI + a self-hosted Ollama endpoint). Absent in
+     * chats saved before this field existed.
+     */
+    selectedProviderId?: string;
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;

@@ -13,12 +13,6 @@ export interface BlockDragHandleOptions {
     refineTarget?: (model: any) => any;
     /** Invoked when the user clicks the handle without dragging past the threshold. */
     onClick?: (model: any) => void;
-    /**
-     * Invoked just before the move runs (inside the same model.change batch
-     * would be ideal, but the call happens immediately before — close enough
-     * for capturing pre-move DOM state of the dragged element).
-     */
-    beforeMove?: (model: any) => void;
 }
 
 interface DragState {
@@ -118,7 +112,6 @@ export default class BlockDragHandle {
         for (let node: any = target.model; node; node = node.parent) {
             if (node === state.model) return;
         }
-        this.opts.beforeMove?.(state.model);
         this.opts.editor.model.change(writer => {
             const pos = target.before
                 ? writer.createPositionBefore(target.model)

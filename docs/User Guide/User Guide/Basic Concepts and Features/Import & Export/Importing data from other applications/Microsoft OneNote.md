@@ -5,7 +5,9 @@ Trilium allows importing from OneNote. Currently the only mechanism supported is
 
 1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
 2.  In the _Import from_ section, select _OneNote_.
-3.  Press the _Connect_ button, you will be redirected to Microsoft's authentication screen where you can log into your account.
+3.  Press the _Connect_ button:
+    1.  On the desktop app, you will be redirected to Microsoft's authentication screen where you can log into your account.
+    2.  On the web app, the process is slightly more involved as it requires copying the code to clipboard, accessing the link, pasting the code and then signing in once more.
 4.  After the connection is successful, you should be able to see a list of sections that can be imported. Simply check the ones to import and press the _Import selected_ button.
 5.  Wait for the import to finish.
 
@@ -28,6 +30,31 @@ Regarding the note structure:
 *   The order of the pages within a section is maintained.
 *   Sub-pages and section groups are maintained by nesting notes in a hierarchical structure.
 *   Creation and modification of both notes and sections is preserved. The order of section or section groups is not preserved (see limitations).
+
+## Error management and reporting
+
+The OneNote importer uses Microsoft's Graph API which handles the HTML export (that we later post-process for Trilium use). The Graph API itself has to process the OneNote pages before sending them to us, and as such it's a time-consuming operation that is directly proportional to the number of notes and the complexity/size of the notes.
+
+The Graph API throttles access if it detects too many operations. The importer takes that into account, but sometimes this means that most of the time is spent waiting for the Graph API to unblock access rather than actually importing data.
+
+In addition, some pages may fail at the Graph API level due to an internal timeout on their side or other issues. Trilium will try to refetch pages in order to avoid that but sometimes pages cannot be retrieved even after multiple retries. In that case, the importer will still create a corresponding note in Trilium but with an error report instead of a content. This preserves <a class="reference-link" href="../../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> and makes it easy to identify and manually fix the pages that failed.
+
+At the end of the import, the top-level note called _OneNote_ _import_ will contain information about how the import went:
+
+*   The number of notes imported;
+*   The success rate;
+*   A list of notes that could not be imported, as well as the failure reason;
+*   Pages whose images/attachments failed to download
+*   How long the import spent waiting out throttling.
+
+To avoid cases in which the import is fundamentally broken (e.g. an expired sign-in), the import will error out if it fails to import 6 pages in a row.
+
+## Attributes
+
+Pages imported from OneNote have a few built-in [labels](../../../Advanced%20Usage/Attributes/Labels.md):
+
+*   `oneNotePageId`, with the corresponding page ID in OneNote. This can be used to identify the original OneNote page. Trilium doesn't use it in any way at this moment.
+*   `oneNoteImportFailed` attached to notes that couldn't be imported. This can be used to quickly <a class="reference-link" href="../../Navigation/Search.md">Search</a> for failed notes.
 
 ## Limitations
 

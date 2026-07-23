@@ -1,0 +1,50 @@
+.modal.wizard-modal {
+    /**
+     * The frame the wizard keeps across its steps: set `--wizard-body-height` on the
+     * dialog to fit its content — enough that the shortest step doesn't look hollow,
+     * and that the longest needs only a little scrolling.
+     *
+     * The default lives in the `var()` fallback rather than in a declaration here.
+     * A declaration would be `(0,2,0)`, the same as the `.modal.<dialog>` rule a
+     * consumer writes, so source order would decide — and this file is imported by
+     * the component, i.e. after the dialog's own stylesheet, which would leave the
+     * default quietly overriding every value anyone sets.
+     *
+     * A height rather than a min-height, so a step with a long list scrolls inside the
+     * frame instead of stretching it, and a step with one field leaves the footer
+     * exactly where the previous step had it. `.modal-body` still shrinks (it is a
+     * flex item that scrolls), so a short viewport caps this via Bootstrap's
+     * scrollable chain rather than pushing the footer off-screen.
+     */
+    .modal-body {
+        height: var(--wizard-body-height, 30rem);
+    }
+
+    /* How far along, next to the close button — the title already says what the step
+       is, so this only has to answer "how much is left". */
+    .wizard-progress {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-inline-start: auto;
+        margin-inline-end: 12px;
+    }
+
+    .wizard-progress-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background-color: var(--muted-text-color);
+        opacity: 0.35;
+    }
+
+    /* Steps already walked through stay legible but recede; the current one is solid. */
+    .wizard-progress-dot.visited {
+        opacity: 0.6;
+    }
+
+    .wizard-progress-dot.current {
+        background-color: var(--main-text-color);
+        opacity: 1;
+    }
+}

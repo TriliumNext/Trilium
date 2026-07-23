@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LlmChatConfig, LlmMessage } from "@triliumnext/commons";
 
-import { getAvailableModels, streamChatCompletion, type StreamCallbacks } from "./llm_chat.js";
+import { fetchProviderModels, streamChatCompletion, type StreamCallbacks } from "./llm_chat.js";
 import server from "./server.js";
 
 /**
@@ -48,17 +48,40 @@ function makeCallbacks(): Record<keyof StreamCallbacks, ReturnType<typeof vi.fn>
 const messages: LlmMessage[] = [{ role: "user", content: "hi" }];
 const config = {} as LlmChatConfig;
 
-describe("getAvailableModels", () => {
-    it("returns the models array from the server response", async () => {
-        const models = [{ name: "gpt", provider: "openai" }];
-        server.get = vi.fn(async () => ({ models })) as typeof server.get;
-        await expect(getAvailableModels()).resolves.toBe(models);
-        expect(server.get).toHaveBeenCalledWith("llm-chat/models");
+describe("fetchProviderModels", () => {
+    it("posts the provider credentials and returns the models array", async () => {
+        const models = [{ id: "gpt-4.1", name: "gpt", provider: "openai" }];
+        server.post = vi.fn(async () => ({ models })) as typeof server.post;
+        const query = { provider: "openai", apiKey: "sk-test", baseURL: "http://localhost:11434/v1" };
+        await expect(fetchProviderModels(query)).resolves.toBe(models);
+        expect(server.post).toHaveBeenCalledWith("llm-chat/provider-models", query);
     });
 
     it("defaults to an empty array when models is absent", async () => {
-        server.get = vi.fn(async () => ({})) as typeof server.get;
-        await expect(getAvailableModels()).resolves.toEqual([]);
+        server.post = vi.fn(async () => ({})) as typeof server.post;
+        await expect(fetchProviderModels({ provider: "openai" })).resolves.toEqual([]);
+    });
+
+    it("surfaces the server error message when the request fails", async () => {
+        // server.post rejects with the raw response body (a { message } JSON string).
+        server.post = vi.fn(async () => { throw '{"message":"Authentication failed (HTTP 401) — check the API key."}'; }) as typeof server.post;
+        await expect(fetchProviderModels({ provider: "openai", apiKey: "bad" }))
+            .rejects.toThrow("Authentication failed (HTTP 401) — check the API key.");
+    });
+
+    it("falls back to the raw rejection when it isn't a JSON error body", async () => {
+        server.post = vi.fn(async () => { throw "rejected by browser"; }) as typeof server.post;
+        await expect(fetchProviderModels({ provider: "openai" })).rejects.toThrow("rejected by browser");
+    });
+
+    it("uses an Error's message when the rejection is an Error object", async () => {
+        server.post = vi.fn(async () => { throw new Error("network down"); }) as typeof server.post;
+        await expect(fetchProviderModels({ provider: "openai" })).rejects.toThrow("network down");
+    });
+
+    it("stringifies a non-string, non-Error rejection", async () => {
+        server.post = vi.fn(async () => { throw { code: 500 }; }) as typeof server.post;
+        await expect(fetchProviderModels({ provider: "openai" })).rejects.toThrow("[object Object]");
     });
 });
 

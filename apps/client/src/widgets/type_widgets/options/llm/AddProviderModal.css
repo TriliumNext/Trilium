@@ -1,4 +1,12 @@
 .modal.add-provider-modal {
+    /* Sized against the three steps, which trade off one for one: every pixel of frame
+       is a pixel less scrolling in the provider list (far the tallest — four group
+       cards, seven rows) and a pixel more empty space under the connection step (the
+       shortest — a logo and one or two fields). This sits nearer the tall end because
+       the model list, whose length isn't known until it loads, is the step that most
+       wants the room. */
+    --wizard-body-height: 40rem;
+
     .tn-card {
         margin-bottom: 1rem;
     }
@@ -7,10 +15,27 @@
         margin-bottom: 0;
     }
 
-    /* The connection card holds the form fields directly, so drop the FormGroup's
-       trailing margin on the last field to keep the card padding even. */
-    .tn-card-section .form-group:last-child {
-        margin-bottom: 0;
+    /* The picked provider's logo introducing the connection step, following the
+       setup wizard's illustrations: one large centred mark, muted so it stays
+       decoration rather than competing with the fields below it. */
+    .add-provider-illustration {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.25rem;
+        color: var(--muted-text-color);
+        opacity: 0.6;
+
+        .masked-icon {
+            --masked-icon-size: 80px;
+        }
+    }
+
+    /* Where the notes end up — the distinction the groups exist to draw. Sits at
+       the top of its group's card, ahead of the providers it qualifies. */
+    .add-provider-group-description {
+        margin-bottom: 0.75em;
+        color: var(--muted-text-color);
+        font-size: 0.85em;
     }
 
     /* Provider name + its beta badge sitting inline on the card. */

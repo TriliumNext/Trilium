@@ -1,6 +1,8 @@
 import { useEffect } from "preact/hooks";
 import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 
+import { isAppShortcutChord } from "../../services/shortcuts";
+
 export type ImageViewerControl =
     | "zoomIn" | "zoomOut" | "reset"
     | "panUp" | "panDown" | "panLeft" | "panRight";
@@ -13,8 +15,25 @@ const PAN_SPEED = 1200;
 const PAN_FAST_FACTOR = 2.5;
 
 /**
- * Maps a physical key (`KeyboardEvent.code`) to a viewer control, independent of modifiers — so the
- * zoom/reset keys work with or without Ctrl/Cmd. Using `code` keeps it keyboard-layout independent.
+ * The keys the browser and the OS zoom with, which the viewer claims even with Ctrl/Cmd held: while an
+ * image is focused, Ctrl+= should zoom the image rather than the whole UI. Their letter aliases (E/Q) are
+ * deliberately absent — Ctrl+E and Ctrl+Q belong to the application (Ctrl+Q quits, on Linux).
+ */
+const ZOOM_GESTURE_CODES = new Set([ "Equal", "Minus", "NumpadAdd", "NumpadSubtract" ]);
+
+/**
+ * Whether the viewer acts on this keystroke, or leaves it to Trilium's own shortcuts. Bare keys (and
+ * Shift, which pans faster) are the viewer's; a chord is the application's — otherwise Ctrl+W would pan up
+ * instead of closing the tab, since the viewer stops the event from ever reaching the global handler.
+ */
+export function claimsKeystroke(e: { code: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): boolean {
+    return !isAppShortcutChord(e) || ZOOM_GESTURE_CODES.has(e.code);
+}
+
+/**
+ * Maps a physical key (`KeyboardEvent.code`) to a viewer control, independent of modifiers — whether the
+ * viewer may act on a modified one is {@link claimsKeystroke}'s call. Using `code` keeps it
+ * keyboard-layout independent.
  */
 export function codeToControl(code: string): ImageViewerControl | null {
     switch (code) {
@@ -141,7 +160,7 @@ export function useImageViewerKeyboard(
         const onKeyDown = (e: KeyboardEvent) => {
             shift = e.shiftKey;
             const control = codeToControl(e.code);
-            if (!control) return;
+            if (!control || !claimsKeystroke(e)) return;
             // Claim the key so the browser (Ctrl +/-) and Trilium's global shortcuts
             // (arrow tree navigation, app zoom, quick search) don't also act on it.
             e.preventDefault();

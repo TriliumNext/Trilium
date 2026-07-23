@@ -73,14 +73,7 @@ describe("createDatabaseForSync on a partially set-up database", () => {
     it("is a no-op wipe on a virgin database (no schema at all)", async () => {
         const sql = getSql();
 
-        // Reduce the DB to a truly empty file, as on a first-ever run.
-        sql.execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
-        const objects = sql.getRows<{ name: string; type: string }>(
-            /*sql*/`SELECT name, type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%'`
-        );
-        for (const { name, type } of objects) {
-            sql.execute(`DROP ${type === "view" ? "VIEW" : "TABLE"} IF EXISTS "${name}"`);
-        }
+        wipeToVirginDatabase();
         expect(sqlInit.schemaExists()).toBe(false);
 
         await cls.init(() => sqlInit.createDatabaseForSync(
@@ -92,3 +85,52 @@ describe("createDatabaseForSync on a partially set-up database", () => {
         expect(sql.getValue<string>("SELECT value FROM options WHERE name = 'documentSecret'")).toBe("virgin-secret");
     });
 });
+
+/**
+ * A database created to sync an existing document into is an empty shell: everything it ends up
+ * containing must come from the server. Anything created locally beforehand is stamped with the
+ * current time, so it beats the server's older row in the purely timestamp-based conflict
+ * resolution of `sync_update#updateNormalEntity`, and the first push then propagates it to the
+ * entire cluster — one freshly set-up client silently resetting a setting on every instance
+ * (#10626).
+ *
+ * Asserted over the staged entity changes rather than over one known option, so that anything
+ * created on this path, of any entity type, is caught.
+ */
+describe("createDatabaseForSync on a virgin database", () => {
+    it("stages no change for push to the sync server", async () => {
+        const sql = getSql();
+
+        wipeToVirginDatabase();
+
+        await cls.init(() => sqlInit.createDatabaseForSync(
+            // The real seed is the server's own documentId/documentSecret rows, which are local-only
+            // (`options_init#initDocumentOptions`) and so are not pushed back at it.
+            [
+                { name: "documentId", value: "seed-doc-id", isSynced: false, utcDateModified: "2026-07-18 00:00:00.000Z" },
+                { name: "documentSecret", value: "seed-doc-secret", isSynced: false, utcDateModified: "2026-07-18 00:00:00.000Z" }
+            ],
+            "http://sync-server:8080"
+        ));
+
+        // `sync#pushChanges` sends exactly these rows, starting from lastSyncedPush = 0.
+        const staged = sql.getRows<{ entityName: string; entityId: string }>(
+            /*sql*/`SELECT entityName, entityId FROM entity_changes WHERE isSynced = 1`
+        );
+        expect(staged).toEqual([]);
+    });
+});
+
+/** Reduces the database to a truly empty file, as on a first-ever run. */
+function wipeToVirginDatabase() {
+    const sql = getSql();
+
+    sql.execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
+
+    const objects = sql.getRows<{ name: string; type: string }>(
+        /*sql*/`SELECT name, type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%'`
+    );
+    for (const { name, type } of objects) {
+        sql.execute(`DROP ${type === "view" ? "VIEW" : "TABLE"} IF EXISTS "${name}"`);
+    }
+}

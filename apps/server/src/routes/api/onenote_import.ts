@@ -1,67 +1,117 @@
 /**
- * REST endpoints for the OneNote importer. Implements the OAuth authorization-code-with-PKCE flow
- * (delegated Microsoft Graph access) and the actual import. Tokens live in the user's session only —
- * they are never written to the synced options store.
+ * REST endpoints for the OneNote importer. Implements the OAuth device authorization grant (delegated
+ * Microsoft Graph access) and the actual import. Tokens live in the user's session only — they are
+ * never written to the synced options store.
+ *
+ * The device flow (RFC 8628) is used because a self-hosted server's domain cannot be pre-registered as
+ * a redirect URI on the shared app registration, so an authorization-code callback can never come back
+ * to it. With the device flow there is no redirect at all: the user enters a short code at Microsoft's
+ * sign-in page in any browser while the client polls until the tokens arrive. (The desktop build does
+ * not use these sign-in endpoints — it runs an authorization-code flow over a loopback redirect in the
+ * Electron main process, which Microsoft matches host-only, and only stores the result here.)
  *
  * Flow:
- *   1. GET  /api/onenote-import/auth-url  -> { authUrl }   (client opens it in a browser)
- *   2. GET  /api/onenote-import/callback  -> browser lands here after sign-in; tokens are stored
- *   3. GET  /api/onenote-import/status    -> { connected, account }   (client polls)
- *   4. GET  /api/onenote-import/notebooks -> { notebooks }
- *   5. POST /api/onenote-import/import    -> { noteId }
+ *   1. POST /api/onenote-import/device-login -> { userCode, verificationUri, ... }   (shown to the user)
+ *   2. POST /api/onenote-import/device-poll  -> { status: pending | connected | failed }   (client polls)
+ *   3. GET  /api/onenote-import/status       -> { connected, account }
+ *   4. GET  /api/onenote-import/notebooks    -> { notebooks }
+ *   5. POST /api/onenote-import/import       -> { noteId }
  */
 
-import type { OneNoteSectionSelection } from "@triliumnext/commons";
-import { becca, ValidationError } from "@triliumnext/core";
-import type { Request, Response } from "express";
+import type { OneNoteDeviceLogin, OneNoteDevicePollResult, OneNoteSectionSelection } from "@triliumnext/commons";
+import { becca, getLog, ValidationError } from "@triliumnext/core";
+import type { Request } from "express";
 
 import { isInternalElectronRequest } from "../../services/electron_request.js";
 import { getDesktopSession, type OneNoteTokenSession, setDesktopSession } from "../../services/import/onenote/desktop_session.js";
-import graph from "../../services/import/onenote/graph.js";
+import graph, { type AccessTokenProvider } from "../../services/import/onenote/graph.js";
 import importer from "../../services/import/onenote/importer.js";
 import { ONENOTE_OAUTH } from "../../services/import/onenote/oauth.js";
-import oauth from "../../services/oauth/oauth.js";
+import { createGraphTokenProvider } from "../../services/import/onenote/token_provider.js";
+import oauth, { type DevicePollResult } from "../../services/oauth/oauth.js";
 
-function getAuthUrl(req: Request) {
-    const { verifier, challenge } = oauth.generatePkce();
-    const state = oauth.generateState();
-    const redirectUri = getRedirectUri(req);
+async function deviceLogin(req: Request): Promise<OneNoteDeviceLogin> {
+    const device = await oauth.requestDeviceCode(ONENOTE_OAUTH);
 
-    req.session.oneNoteImport = { verifier, state, redirectUri };
+    // Starting a new sign-in discards any previous connection or half-finished attempt. Only the
+    // device code (the credential the tokens are polled out with) stays server-side; the browser gets
+    // exclusively the user-facing pieces.
+    req.session.oneNoteImport = {
+        deviceCode: device.device_code,
+        deviceCodeExpiresAt: Date.now() + device.expires_in * 1000
+    };
+    await saveSession(req);
 
-    return { authUrl: oauth.buildAuthorizationUrl(ONENOTE_OAUTH, { redirectUri, state, challenge }) };
+    return {
+        userCode: device.user_code,
+        verificationUri: device.verification_uri,
+        expiresInSeconds: device.expires_in,
+        intervalSeconds: device.interval
+    };
 }
 
-async function callback(req: Request, res: Response) {
-    res.triliumResponseHandled = true;
+async function devicePoll(req: Request): Promise<OneNoteDevicePollResult | [number, string]> {
+    const pending = req.session.oneNoteImport;
 
-    try {
-        const { code, state, error } = req.query as { code?: string; state?: string; error?: string };
-        const pending = req.session.oneNoteImport;
-
-        if (error) {
-            return sendHtml(res, `Sign-in failed: ${error}. You can close this window and try again.`);
-        }
-        if (!code || !pending?.verifier || !pending.state || !pending.redirectUri || pending.state !== state) {
-            return sendHtml(res, "Sign-in could not be completed (invalid or expired state). Please close this window and try again.");
-        }
-
-        const tokens = await oauth.exchangeCodeForToken(ONENOTE_OAUTH, { code, verifier: pending.verifier, redirectUri: pending.redirectUri });
-        const account = await graph.getAccount(tokens.access_token);
-
-        req.session.oneNoteImport = {
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token,
-            expiresAt: Date.now() + tokens.expires_in * 1000,
-            account
-        };
-        await saveSession(req);
-
-        return sendHtml(res, `Connected as ${account.name}. You can close this window and return to Trilium.`);
-    } catch (e) {
-        return sendHtml(res, `Sign-in failed: ${e instanceof Error ? e.message : String(e)}`);
+    // A concurrent/earlier poll may have already completed the sign-in. Report that instead of polling
+    // the now-consumed device code again (which would fail and could wipe the good tokens).
+    if (pending?.accessToken) {
+        return { status: "connected", account: pending.account ?? EMPTY_ACCOUNT };
     }
+    if (!pending?.deviceCode) {
+        return [400, "No sign-in is in progress."];
+    }
+
+    const clearPending = async () => {
+        delete req.session.oneNoteImport;
+        await saveSession(req);
+    };
+
+    if (pending.deviceCodeExpiresAt && Date.now() > pending.deviceCodeExpiresAt) {
+        await clearPending();
+        return { status: "failed", error: "The sign-in code expired before the sign-in was completed. Please try again." };
+    }
+
+    let result: DevicePollResult;
+    try {
+        result = await oauth.pollDeviceToken(ONENOTE_OAUTH, pending.deviceCode);
+    } catch (e) {
+        // pollDeviceToken throws only on a known terminal outcome (declined, code expired): the device
+        // code is dead, so the pending state is too and the client offers a fresh sign-in. Transient
+        // failures come back as `pending`, never here, so a network blip won't cancel a valid sign-in.
+        await clearPending();
+        return { status: "failed", error: e instanceof Error ? e.message : String(e) };
+    }
+
+    if (result.status === "pending") {
+        return { status: "pending", slowDown: result.slowDown };
+    }
+
+    // Success consumes the device code, so the tokens can't be re-fetched by polling again — persist
+    // them immediately, before the (fallible, non-essential) profile lookup, so a transient failure
+    // there can't discard a completed sign-in.
+    req.session.oneNoteImport = {
+        accessToken: result.tokens.access_token,
+        refreshToken: result.tokens.refresh_token,
+        expiresAt: Date.now() + result.tokens.expires_in * 1000
+    };
+    await saveSession(req);
+
+    let account = EMPTY_ACCOUNT;
+    try {
+        account = await graph.getAccount(() => Promise.resolve(result.tokens.access_token));
+        req.session.oneNoteImport = { ...req.session.oneNoteImport, account };
+        await saveSession(req);
+    } catch (e) {
+        // The connection stands (tokens are stored); only the display name is missing. Leave it blank
+        // rather than failing the whole sign-in over a cosmetic profile fetch.
+        getLog().info(`OneNote sign-in connected but the profile lookup failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    return { status: "connected", account };
 }
+
+const EMPTY_ACCOUNT = { name: "", email: "" };
 
 function getStatus(req: Request) {
     const session = tokenStore(req).read();
@@ -74,16 +124,16 @@ async function disconnect(req: Request) {
 }
 
 async function getNotebooks(req: Request) {
-    const accessToken = await getValidAccessToken(req);
-    if (!accessToken) {
+    const getAccessToken = buildTokenProvider(req);
+    if (!(await isConnected(getAccessToken))) {
         return [401, "Not connected to OneNote."];
     }
-    return { notebooks: await graph.listNotebooks(accessToken) };
+    return { notebooks: await graph.listNotebooks(getAccessToken) };
 }
 
 async function runImport(req: Request) {
-    const accessToken = await getValidAccessToken(req);
-    if (!accessToken) {
+    const getAccessToken = buildTokenProvider(req);
+    if (!(await isConnected(getAccessToken))) {
         return [401, "Not connected to OneNote."];
     }
 
@@ -99,41 +149,35 @@ async function runImport(req: Request) {
     // Fire-and-forget: a large notebook can take far longer than the client's HTTP request timeout, so
     // we return immediately and let the import report progress, completion and any error over the
     // WebSocket (taskType "importNotes"). importSelection catches and reports its own failures, so the
-    // detached promise never rejects.
-    void importer.importSelection({ accessToken, parentNoteId, sections, taskId, debug: !!debug, shrinkImages: !!shrinkImages });
+    // detached promise never rejects. The token provider (not a fixed token) is handed off so the
+    // import keeps refreshing across its whole run, which can outlast a single Graph token.
+    void importer.importSelection({ getAccessToken, parentNoteId, sections, taskId, debug: !!debug, shrinkImages: !!shrinkImages });
     return {};
 }
 
-function getRedirectUri(req: Request): string {
-    return `${req.protocol}://${req.get("host")}/api/onenote-import/callback`;
+/**
+ * Builds the token provider bound to this request's token store (session on web, the process-wide
+ * singleton on desktop). Returns a valid access token per call, refreshing and persisting as expiry
+ * nears; the importer re-reads it before every Graph request so a long import never runs on an expired
+ * token. See {@link createGraphTokenProvider}.
+ */
+function buildTokenProvider(req: Request): AccessTokenProvider {
+    const store = tokenStore(req);
+    return createGraphTokenProvider({
+        read: () => store.read(),
+        write: (tokens) => store.write(tokens),
+        refresh: (refreshToken) => oauth.refreshAccessToken(ONENOTE_OAUTH, { refreshToken })
+    });
 }
 
-/** Returns a usable access token, transparently refreshing it when expired, or null if disconnected. */
-async function getValidAccessToken(req: Request): Promise<string | null> {
-    const store = tokenStore(req);
-    const session = store.read();
-    if (!session?.accessToken) {
-        return null;
+/** True when the connection can currently produce an access token; false when disconnected/unrefreshable. */
+async function isConnected(getAccessToken: AccessTokenProvider): Promise<boolean> {
+    try {
+        await getAccessToken();
+        return true;
+    } catch {
+        return false;
     }
-
-    const stillValid = session.expiresAt && Date.now() < session.expiresAt - 60_000;
-    if (stillValid) {
-        return session.accessToken;
-    }
-
-    if (session.refreshToken) {
-        const tokens = await oauth.refreshAccessToken(ONENOTE_OAUTH, { refreshToken: session.refreshToken });
-        await store.write({
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token ?? session.refreshToken,
-            expiresAt: Date.now() + tokens.expires_in * 1000
-        });
-        return tokens.access_token;
-    }
-
-    // Expired with no refresh token: force a clean reconnect rather than handing back a stale token
-    // that would fail mid-import with a confusing Graph 401.
-    return null;
 }
 
 interface TokenStore {
@@ -175,21 +219,9 @@ function saveSession(req: Request): Promise<void> {
     return new Promise((resolve, reject) => req.session.save((err) => (err ? reject(err) : resolve())));
 }
 
-function sendHtml(res: Response, message: string) {
-    res.status(200).setHeader("Content-Type", "text/html").send(
-        `<!doctype html><html><head><meta charset="utf-8"><title>OneNote import</title></head>` +
-        `<body style="font-family: sans-serif; padding: 2rem; text-align: center;">` +
-        `<p>${escapeHtml(message)}</p><script>setTimeout(() => window.close(), 1500);</script></body></html>`
-    );
-}
-
-function escapeHtml(text: string): string {
-    return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
-}
-
 export default {
-    getAuthUrl,
-    callback,
+    deviceLogin,
+    devicePoll,
     getStatus,
     disconnect,
     getNotebooks,

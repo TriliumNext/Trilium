@@ -32,22 +32,29 @@ import path from "path";
 
 import dataDirs from "../../data_dir.js";
 import { createMcpServer } from "../../mcp/mcp_server.js";
+import { resolveAttachmentPart } from "../attachment_content.js";
+import { buildNoteHint } from "../note_hint.js";
+import { buildSystemPrompt } from "../system_prompt.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
-import { resolveAttachmentPart } from "./attachment_content.js";
-import { buildModelList } from "./base_provider.js";
+import { anthropicRecommendedIds } from "./anthropic.js";
+import { buildModelList, mergeModelLists, type RemoteModel } from "./base_provider.js";
 import { resolveClaudeBinaryPath } from "./claude_binary.js";
-import { buildNoteHint } from "./note_hint.js";
-import { buildSystemPrompt } from "./system_prompt.js";
 
 /** Image media types Anthropic accepts as a base64 image block. */
 type SupportedImageMime = "image/png" | "image/jpeg" | "image/gif" | "image/webp";
 const SUPPORTED_IMAGE_MIMES = new Set<string>(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 
 /**
- * Models offered under a Claude subscription, mirroring Claude Code's own `/model`
+ * Curated Claude subscription models, mirroring Claude Code's own `/model`
  * picker (the Agent SDK accepts any of these). Pricing is zero because usage is
  * covered by the subscription — the per-turn `usage` chunk still reports the
  * API-equivalent cost as informational metadata from the agent's result.
+ *
+ * This is now the *metadata + fallback* list: {@link ClaudeAgentProvider.listModels}
+ * discovers the actually-available models live from the CLI and enriches them
+ * against these entries (context windows, legacy flags), falling back to this
+ * list wholesale when the probe can't run (Claude Code not installed / not
+ * logged in).
  */
 const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
     // ===== Current Models =====
@@ -127,6 +134,21 @@ const TITLE_MODEL = "claude-haiku-4-5-20251001";
 /** Upper bound on assistant↔tool round-trips within one chat turn. */
 const MAX_TURNS = 25;
 
+/** How long a successfully probed subscription model list is served from cache. */
+const SUBSCRIPTION_MODEL_TTL_MS = 60 * 60 * 1000;
+/** Upper bound on how long the init handshake may take to surface the catalog. */
+const SUBSCRIPTION_MODEL_PROBE_TIMEOUT_MS = 15_000;
+
+/**
+ * Cached dynamic model list. Deliberately module-level rather than per-instance:
+ * the add/edit-provider flow ({@link listProviderModels}) builds a throwaway
+ * provider on every call, so an instance cache would never hit — and there is
+ * only ever one Claude Code install per host, so a single shared cache is both
+ * correct and avoids re-spawning the CLI subprocess on each dropdown open.
+ */
+let subscriptionModelCache: { models: ModelInfo[]; fetchedAt: number } | undefined;
+let subscriptionModelInFlight: Promise<ModelInfo[]> | undefined;
+
 /** Session mappings kept per chat note; bounded to avoid unbounded growth. */
 const MAX_TRACKED_SESSIONS = 200;
 
@@ -165,6 +187,111 @@ export class ClaudeAgentProvider implements LlmProvider {
 
     getAvailableModels(): ModelInfo[] {
         return AVAILABLE_MODELS;
+    }
+
+    /**
+     * The subscription catalog shares Anthropic's `claude-*` id shape, so it
+     * reuses the metered provider's per-family newest-version rule rather than
+     * the generic non-preview/non-legacy default.
+     */
+    recommendedModelIds(models: ModelInfo[]): Set<string> {
+        return anthropicRecommendedIds(models);
+    }
+
+    /**
+     * Dynamically list the models Claude Code actually offers on this host,
+     * enriched with curated metadata. Unlike the API providers there is no
+     * `/models` endpoint: the catalog is whatever the installed CLI reports for
+     * the logged-in account (tier, version, any managed `availableModels`
+     * allowlist), which the Agent SDK hands over via the `initialize` handshake.
+     *
+     * Cached for {@link SUBSCRIPTION_MODEL_TTL_MS}. A probe *failure* (Claude
+     * Code not installed, not logged in, or timed out) propagates so the
+     * add/edit-provider screen surfaces an actionable error rather than masking
+     * it as success with the curated defaults. The curated list stays available
+     * via {@link getAvailableModels} as the static catalog used elsewhere.
+     */
+    async listModels(): Promise<ModelInfo[]> {
+        const now = Date.now();
+        if (subscriptionModelCache && now - subscriptionModelCache.fetchedAt < SUBSCRIPTION_MODEL_TTL_MS) {
+            return subscriptionModelCache.models;
+        }
+        if (!subscriptionModelInFlight) {
+            subscriptionModelInFlight = this.fetchAndMergeModels().finally(() => {
+                subscriptionModelInFlight = undefined;
+            });
+        }
+        return subscriptionModelInFlight;
+    }
+
+    private async fetchAndMergeModels(): Promise<ModelInfo[]> {
+        let sdkModels: SubscriptionModelSource[];
+        try {
+            sdkModels = await this.probeSupportedModels();
+        } catch (error) {
+            // Report why the probe failed (missing binary, not logged in, timeout)
+            // so the caller can show an actionable message.
+            throw new Error(describeAgentError(error));
+        }
+        const merged = buildSubscriptionModelList(sdkModels, AVAILABLE_MODELS);
+        subscriptionModelCache = { models: merged, fetchedAt: Date.now() };
+        return merged;
+    }
+
+    /**
+     * Read Claude Code's model catalog without running a chat turn. A streaming
+     * prompt that never yields keeps stdin open so the session's `initialize`
+     * handshake completes — that handshake carries the catalog, so no user
+     * message is sent and no tokens are spent. The session is torn down as soon
+     * as the catalog is read (or the probe times out).
+     */
+    private async probeSupportedModels(): Promise<SubscriptionModelSource[]> {
+        const abortController = new AbortController();
+        // An input stream that yields no user message: `next()` stays pending —
+        // keeping the session's stdin open so the `initialize` handshake can
+        // complete — and only resolves `done` when the probe is torn down. No
+        // user turn is ever sent, so the probe spends no tokens.
+        const noInput: AsyncIterable<SDKUserMessage> = {
+            [Symbol.asyncIterator]: () => ({
+                next: () => new Promise<IteratorResult<SDKUserMessage>>(resolve => {
+                    const finish = () => resolve({ done: true, value: undefined });
+                    if (abortController.signal.aborted) {
+                        finish();
+                    } else {
+                        abortController.signal.addEventListener("abort", finish, { once: true });
+                    }
+                })
+            })
+        };
+
+        const response = query({
+            prompt: noInput,
+            options: {
+                ...await this.buildBaseOptions({ enableNoteTools: false }),
+                maxTurns: 1,
+                abortController
+            }
+        });
+
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+            return await Promise.race([
+                response.supportedModels(),
+                new Promise<never>((_, reject) => {
+                    timer = setTimeout(() => reject(new Error("Timed out reading the Claude Code model catalog")), SUBSCRIPTION_MODEL_PROBE_TIMEOUT_MS);
+                })
+            ]);
+        } finally {
+            // `timer` is always assigned by the time this runs: the Promise
+            // executor above is invoked synchronously by the constructor, so the
+            // race cannot settle before the assignment. The guard exists only to
+            // narrow the optional type, making its else path unreachable.
+            /* v8 ignore else */
+            if (timer) {
+                clearTimeout(timer);
+            }
+            abortController.abort();
+        }
     }
 
     /** Not used — the route prefers {@link chatChunks} when implemented. */
@@ -539,6 +666,53 @@ function getAgentCwd(): string {
 /** For tests: forget the initialized agent cwd so the next call re-runs setup. */
 export function resetAgentCwdForTests(): void {
     agentCwd = undefined;
+}
+
+/** For tests: forget the cached dynamic model list so the next call re-probes. */
+export function resetSubscriptionModelCacheForTests(): void {
+    subscriptionModelCache = undefined;
+    subscriptionModelInFlight = undefined;
+}
+
+/** The subset of the Agent SDK's model-catalog entries the merge consumes. */
+interface SubscriptionModelSource {
+    /** The picker value — a family alias (`sonnet`) or a full model id. */
+    value: string;
+    /** The canonical wire id an alias resolves to (`sonnet` → `claude-sonnet-5`). */
+    resolvedModel?: string;
+    /** Human-readable name Claude Code shows for the model. */
+    displayName?: string;
+}
+
+/**
+ * Merge Claude Code's live catalog with the curated subscription metadata.
+ *
+ * The canonical wire id (`resolvedModel`) is preferred over the picker alias
+ * (`value`) so a chat stores a stable, concrete model id that matches the
+ * metered Anthropic provider's ids; aliases resolving to the same model are
+ * deduped. The CLI's display name wins; curated entries supply the context
+ * window and legacy flag for models they know, and unknown models come through
+ * with whatever the CLI reported. Every row is a subscription model, so the
+ * plan-covered invariants (zero pricing, no metered cost) are re-asserted
+ * across the merged list.
+ */
+export function buildSubscriptionModelList(sdkModels: SubscriptionModelSource[], curated: ModelInfo[]): ModelInfo[] {
+    const remote: RemoteModel[] = [];
+    const seen = new Set<string>();
+    for (const model of sdkModels) {
+        const id = model.resolvedModel ?? model.value;
+        if (!id || seen.has(id)) {
+            continue;
+        }
+        seen.add(id);
+        remote.push({ id, name: model.displayName });
+    }
+
+    return mergeModelLists(curated, remote).map(model => ({
+        ...model,
+        isSubscription: true,
+        pricing: model.pricing ?? { input: 0, output: 0 }
+    }));
 }
 
 /**

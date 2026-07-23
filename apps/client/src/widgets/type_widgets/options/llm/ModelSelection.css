@@ -1,0 +1,54 @@
+.model-selection-status {
+    padding: 1em;
+    text-align: center;
+    color: var(--muted-text-color);
+}
+
+.model-selection-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.model-selection-count {
+    color: var(--muted-text-color);
+    font-size: 0.9em;
+}
+
+.model-selection-actions {
+    display: flex;
+    gap: 0.5em;
+}
+
+.model-selection-list {
+    max-height: 40vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+}
+
+.model-selection-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+.model-selection-cost {
+    color: var(--muted-text-color);
+}
+
+/* Setup checklist shown inside the "couldn't list models" placeholder. */
+.model-selection-troubleshooting {
+    margin: 0.75em 0 0;
+    padding-inline-start: 1.2em;
+    text-align: start;
+    font-size: 0.9em;
+    color: var(--muted-text-color);
+
+    & li {
+        margin-bottom: 0.25em;
+    }
+}

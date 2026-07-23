@@ -15,9 +15,10 @@
 </ol>
 <h3>Configuring the authentication provider</h3>
 <ol>
-  <li>First, make sure the authentication provider (e.g. Google, Authelia) is
-    configured properly. See&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/WOcw2SLH6tbX/x1lQNKQBqLcA/_help_IgkTHSaFfq6A">Setting up with various providers</a>&nbsp;for
-    concrete examples.
+  <li>
+    <p>First, make sure the authentication provider (e.g. Google, Authelia) is
+      configured properly. See&nbsp;<a class="reference-link" href="#root/_help_IgkTHSaFfq6A">Setting up with various providers</a>&nbsp;for
+      concrete examples.</p>
     <ol>
       <li>The redirect URL of Trilium is <code spellcheck="false">https://&lt;your-trilium-domain&gt;/callback</code>.</li>
       <li>You should obtain the base URL, client ID and client secret.</li>
@@ -26,14 +27,8 @@
   <li>
     <p>Set the following information using&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>:</p>
     <figure
-    class="table" style="width:101.29%;">
-      <table class="ck-table-resized">
-        <colgroup>
-          <col style="width:11.67%;">
-            <col style="width:23.7%;">
-              <col style="width:29.4%;">
-                <col style="width:35.23%;">
-        </colgroup>
+    class="table">
+      <table>
         <thead>
           <tr>
             <th>Configuration</th>
@@ -90,15 +85,8 @@
       spellcheck="false">oauthIssuerName</code>, and <code spellcheck="false">oauthIssuerIcon</code> in
         the <code spellcheck="false">config.ini</code> file. Alternatively, these
         values can be set using environment variables:</p>
-    <figure class="table"
-    style="width:106.63%;">
-      <table class="ck-table-resized">
-        <colgroup>
-          <col style="width:11.08%;">
-            <col style="width:22.5%;">
-              <col style="width:27.93%;">
-                <col style="width:38.49%;">
-        </colgroup>
+    <figure class="table">
+      <table>
         <thead>
           <tr>
             <th>Configuration</th>
@@ -139,7 +127,9 @@
     </figure>
     <p>All the fields here are optional, since the default OAuth issuer is Google.</p>
   </li>
-  <li>Restart the server so that the changes are applied.</li>
+  <li>
+    <p>Restart the server so that the changes are applied.</p>
+  </li>
 </ol>
 <aside class="admonition note">
   <p>Legacy environment variables are also supported: <code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code>,

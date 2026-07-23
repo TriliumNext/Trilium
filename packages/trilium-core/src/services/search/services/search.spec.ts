@@ -932,6 +932,25 @@ describe("Search", () => {
     });
 
 
+    it("breaks a collapsible summary onto its own line in the quick-search snippet", () => {
+        // striptags concatenates block text with no separator, which would merge a
+        // collapsible's summary straight into its body ("Summary TitleBody text").
+        const noteBuilder = note("Collapsible note");
+        noteBuilder.note.getContent = () => "<details class=\"trilium-collapsible\"><summary>Summary Title</summary><p>Body text here</p></details><p>After the block</p>";
+        rootNote.child(noteBuilder);
+
+        // The snippet gets a newline at the summary boundary and after the whole block, so
+        // neither the summary nor the body runs into the surrounding text.
+        const snippet = searchService.extractContentSnippet(noteBuilder.note.noteId, [ "body" ]);
+        expect(snippet.split("\n")).toEqual([ "Summary Title", "Body text here", "After the block" ]);
+
+        // ...which the quick-search route (extractContentSnippet -> highlightSearchResults)
+        // turns into <br> tags in the HTML the dropdown renders.
+        const result: any = { notePathTitle: "Collapsible note", contentSnippet: snippet, attributeSnippet: "" };
+        searchService.highlightSearchResults([ result ], [ "body" ]);
+        expect(result.highlightedContentSnippet).toBe("Summary Title<br><b>Body</b> text here<br>After the block");
+    });
+
     // FIXME: test what happens when we order without any filter criteria
 
     // it("comparison between labels", () => {

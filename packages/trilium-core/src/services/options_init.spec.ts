@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { getDefaultOptionSyncedFlag, migrateSyncTimeoutFromMilliseconds } from "./options_init.js";
+import type { OptionDefinitions, OptionNames } from "@triliumnext/commons";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import optionService from "./options.js";
+import { getDefaultOptionSyncedFlag, initNotSyncedOptions, migrateSyncTimeoutFromMilliseconds } from "./options_init.js";
 
 describe("migrateSyncTimeoutFromMilliseconds", () => {
     it("returns null when no migration is needed (values < 1000 are already in seconds)", () => {
@@ -26,6 +29,47 @@ describe("migrateSyncTimeoutFromMilliseconds", () => {
     });
 });
 
+describe("initNotSyncedOptions", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /**
+     * Setting up an instance against a sync server goes through `sql_init#createDatabaseForSync`,
+     * which calls this function on an empty database *before* the first pull. Every option created
+     * here is therefore stamped with the current time, so a synced one beats the server's older
+     * value in the purely timestamp-based conflict resolution of `sync_update#updateNormalEntity`
+     * and is then pushed to every instance in the cluster: setting up one fresh client silently
+     * resets a setting for all of them (#10626).
+     *
+     * Deliberately asserted over the whole set rather than for one known option, so that any future
+     * synced option added to the sync-setup path is caught here.
+     */
+    it("creates no synced option, since it also runs when the database is created for sync", async () => {
+        const created = captureCreatedOptions();
+
+        await initNotSyncedOptions(false, {});
+
+        expect(created.filter(({ isSynced }) => isSynced)).toEqual([]);
+    });
+
+    /**
+     * An option created here as local-only while {@link defaultOptions} declares it synced (or vice
+     * versa) produces a row whose sync flag depends on which code path created the database, which
+     * in turn makes the sync content hash unreconcilable across instances.
+     */
+    it("uses the same sync flag as the default options table for the options it shares with it", async () => {
+        const created = captureCreatedOptions();
+
+        await initNotSyncedOptions(true, {});
+
+        const mismatched = created
+            .map(({ name, isSynced }) => ({ name, isSynced, declared: getDefaultOptionSyncedFlag(name) }))
+            .filter(({ isSynced, declared }) => declared !== undefined && declared !== isSynced);
+        expect(mismatched).toEqual([]);
+    });
+});
+
 describe("getDefaultOptionSyncedFlag", () => {
     it("returns true for an option declared as synced", () => {
         expect(getDefaultOptionSyncedFlag("seenCallToActions")).toBe(true);
@@ -43,3 +87,26 @@ describe("getDefaultOptionSyncedFlag", () => {
         expect(getDefaultOptionSyncedFlag("doesNotExistOption" as never)).toBeUndefined();
     });
 });
+
+interface CreatedOption {
+    name: OptionNames;
+    value: string;
+    isSynced: boolean;
+}
+
+/**
+ * Replaces `optionService.createOption` with a recorder, so that the option initialization can be
+ * inspected without a database (and without the entity changes that creating one would produce).
+ * Restored by the `afterEach` of the calling suite.
+ */
+function captureCreatedOptions(): CreatedOption[] {
+    const created: CreatedOption[] = [];
+
+    vi.spyOn(optionService, "createOption").mockImplementation(
+        <T extends OptionNames>(name: T, value: string | OptionDefinitions[T], isSynced: boolean) => {
+            created.push({ name, value: String(value), isSynced });
+        }
+    );
+
+    return created;
+}

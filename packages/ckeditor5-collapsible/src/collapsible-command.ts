@@ -1,5 +1,7 @@
 import { Command } from "ckeditor5";
 
+import { OPEN_ATTRIBUTE } from "./constants.js";
+
 /**
  * Inserts a new collapsible block (<details><summary>…</summary>…</details>) at the
  * current selection. The summary becomes the editable title; the body holds whatever
@@ -29,7 +31,11 @@ export default class CollapsibleCommand extends Command {
             // Clone the selected content up front (does not modify the document).
             const fragment = !selection.isCollapsed ? model.getSelectedContent(selection) : null;
 
-            const details = writer.createElement("details");
+            // A collapsible the user just inserted starts expanded — they are about
+            // to type a title and then its content. The attribute is set at creation
+            // (rather than after insertion) so it belongs to this command's batch:
+            // undoing the insert removes it, and redoing replays it.
+            const details = writer.createElement("details", { [OPEN_ATTRIBUTE]: true });
             const summary = writer.createElement("summary");
             writer.append(summary, details);
 

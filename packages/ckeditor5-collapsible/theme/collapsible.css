@@ -137,12 +137,20 @@
 
     /* Body-paragraph placeholder ("Content") is registered on the first body
      * block. Hide it whenever the body has more than one block — the hint is
-     * only useful when the body is a single empty <p>. `:has(> :nth-child(3))`
-     * matches a <details> with summary + 2+ body children; `:not(:last-child)`
-     * would only hide the placeholder on non-last paragraphs, leaving the last
-     * one (e.g. the original empty body after Enter-in-summary) still visible. */
-    &:has(> :nth-child(3)) > p.ck-placeholder::before {
+     * only useful when the body is a single empty <p>. The body blocks live in
+     * the editing-only `.trilium-collapsible-content` wrapper, so `:has(> :nth-child(2))`
+     * matches a wrapper with 2+ body children; `:not(:last-child)` would only hide
+     * the placeholder on non-last paragraphs, leaving the last one (e.g. the
+     * original empty body after Enter-in-summary) still visible. */
+    .trilium-collapsible-content:has(> :nth-child(2)) > p.ck-placeholder::before {
         display: none;
+    }
+
+    /* The shared `> *:last-child:not(summary)` rule now lands on the content
+     * wrapper (which has no margin of its own); zero the wrapper's last body
+     * block instead so the collapsible keeps its tight bottom padding. */
+    .trilium-collapsible-content > *:last-child {
+        margin-bottom: 0;
     }
 
     > summary {

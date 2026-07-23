@@ -26,9 +26,11 @@ describe("CollapsibleCommand", () => {
         it("inserts an empty collapsible at a collapsed caret and parks the caret in the new summary", () => {
             setModelData(model, "<paragraph>[]</paragraph>");
             editor.execute("collapsible");
-            // Caret in the new summary; the empty body paragraph follows it.
+            // Caret in the new summary; the empty body paragraph follows it. The
+            // block is created expanded so the user can see the body they're about
+            // to fill in — `open` is part of the command's own batch.
             expect(getModelData(model)).toContain(
-                "<details><summary>[]</summary><paragraph></paragraph></details>"
+                "<details open=\"true\"><summary>[]</summary><paragraph></paragraph></details>"
             );
         });
 
@@ -36,7 +38,7 @@ describe("CollapsibleCommand", () => {
             setModelData(model, "<paragraph>Hello [selected] world</paragraph>");
             editor.execute("collapsible");
             expect(getModelData(model, { withoutSelection: true })).toContain(
-                "<details><summary></summary><paragraph>selected</paragraph></details>"
+                "<details open=\"true\"><summary></summary><paragraph>selected</paragraph></details>"
             );
         });
 
@@ -49,7 +51,7 @@ describe("CollapsibleCommand", () => {
             expect(data).toContain("<paragraph>Block one</paragraph>");
             expect(data).toContain("<paragraph>Block two</paragraph>");
             // Both selected paragraphs end up inside the new <details>.
-            expect(data).toMatch(/<details><summary><\/summary><paragraph>Block one<\/paragraph><paragraph>Block two<\/paragraph><\/details>/);
+            expect(data).toMatch(/<details open="true"><summary><\/summary><paragraph>Block one<\/paragraph><paragraph>Block two<\/paragraph><\/details>/);
         });
 
         it("unwraps a nested <details> in the selection so we don't gain an extra level of nesting", () => {
@@ -62,7 +64,7 @@ describe("CollapsibleCommand", () => {
             editor.execute("collapsible");
             const data = getModelData(model, { withoutSelection: true });
             // Exactly ONE <details> in the output — the inner one was unwrapped.
-            expect((data.match(/<details>/g) ?? []).length).toBe(1);
+            expect((data.match(/<details[ >]/g) ?? []).length).toBe(1);
             // The inner body is preserved as the new collapsible's body.
             expect(data).toContain("<paragraph>Inner body</paragraph>");
             // The inner summary's text isn't pulled into the new summary (the

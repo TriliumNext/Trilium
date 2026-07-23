@@ -3,13 +3,13 @@
 // without this side-effect import the progress/finished toasts would never appear.
 import "./import.js";
 
-import type { OneNoteFolderRef, OneNoteNotebook, OneNoteSection, OneNoteSectionGroup, OneNoteSectionSelection } from "@triliumnext/commons";
+import type { OneNoteDeviceLogin, OneNoteDevicePollResult, OneNoteFolderRef, OneNoteNotebook, OneNoteSection, OneNoteSectionGroup, OneNoteSectionSelection } from "@triliumnext/commons";
 
 import server from "./server.js";
 
 // The notebook/section/selection types are shared with the server; re-export them so existing callers
 // (the import dialog, tests) keep importing them from this service.
-export type { OneNoteFolderRef, OneNoteNotebook, OneNoteSection, OneNoteSectionGroup, OneNoteSectionSelection };
+export type { OneNoteDeviceLogin, OneNoteDevicePollResult, OneNoteFolderRef, OneNoteNotebook, OneNoteSection, OneNoteSectionGroup, OneNoteSectionSelection };
 
 export interface OneNoteAccount {
     name: string;
@@ -21,8 +21,17 @@ export interface OneNoteStatus {
     account: OneNoteAccount | null;
 }
 
-function getAuthUrl() {
-    return server.get<{ authUrl: string }>("onenote-import/auth-url");
+// Starts a device-flow sign-in (RFC 8628): the server obtains a short user code from Microsoft, the
+// dialog shows it, and the user enters it at the verification URI in any browser. There is no OAuth
+// redirect back to the server, so this works no matter what domain the server is reachable on.
+function deviceLogin() {
+    return server.post<OneNoteDeviceLogin>("onenote-import/device-login");
+}
+
+// One round of asking the server whether the pending device sign-in has completed; called on the
+// interval returned by deviceLogin until the result is `connected` or `failed`.
+function devicePoll() {
+    return server.post<OneNoteDevicePollResult>("onenote-import/device-poll");
 }
 
 function getStatus() {
@@ -45,7 +54,8 @@ function runImport(payload: { parentNoteId: string; sections: OneNoteSectionSele
 }
 
 export default {
-    getAuthUrl,
+    deviceLogin,
+    devicePoll,
     getStatus,
     disconnect,
     getNotebooks,

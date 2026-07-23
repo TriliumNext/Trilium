@@ -17,12 +17,18 @@ export interface MediaSource {
 export function getMediaSource(entity: FNote | FAttachment): MediaSource {
     const isNote = "noteId" in entity;
     const path = isNote ? `api/notes/${entity.noteId}` : `api/attachments/${entity.attachmentId}`;
+    // Replacing the media leaves its id — and so its endpoints — untouched, which would leave an open player
+    // streaming what it already had. Versioning the URLs gives the element (and the waveform fetch) one they
+    // haven't loaded, so the new content is picked up in place rather than by rebuilding the player around
+    // them. A note carries its content hash; an attachment only exposes a modification stamp, so that one also
+    // re-versions on a rename.
+    const version = encodeURIComponent(isNote ? entity.blobId : entity.utcDateModified);
 
     return {
         id: isNote ? entity.noteId : entity.attachmentId,
         title: entity.title,
         mime: entity.mime,
-        streamUrl: getUrlForDownload(`${path}/open-partial`),
-        fullUrl: getUrlForDownload(`${path}/open`)
+        streamUrl: getUrlForDownload(`${path}/open-partial?v=${version}`),
+        fullUrl: getUrlForDownload(`${path}/open?v=${version}`)
     };
 }

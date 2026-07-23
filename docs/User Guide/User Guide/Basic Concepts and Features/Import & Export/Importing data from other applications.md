@@ -22,7 +22,3 @@ A list of supported applications will appear at the top, each with their own con
 ## Acknowledgement
 
 *   Trilium's importer is inspired by Obsidian's [Importer plugin](https://github.com/obsidianmd/obsidian-importer) (licensed under the MIT license), for example regarding the OneNote connection process or the Notion ID management.
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.

@@ -329,7 +329,29 @@
     "note-cannot-be-displayed": "This note type cannot be displayed."
   },
   "onenote_import": {
-    "root-title": "OneNote import"
+    "root-title": "OneNote import",
+    "failed-page-placeholder": "This page could not be imported from OneNote. Error: {{error}}",
+    "report": {
+      "row-pages": "Pages imported successfully",
+      "row-notebooks": "Notebooks imported",
+      "row-sections": "Sections imported",
+      "row-duration": "Total import duration",
+      "row-images": "Images",
+      "row-attachments": "File attachments",
+      "row-ink": "Pages with handwriting or drawings",
+      "row-links": "Cross-page links",
+      "row-throttling": "Time throttled by Microsoft Graph",
+      "value-links": "{{resolved}} resolved, {{unresolved}} pointing outside the imported selection",
+      "value-throttling_one": "{{- wait}} ({{count}} throttled request)",
+      "value-throttling_other": "{{- wait}} ({{count}} throttled requests)",
+      "failed-pages-title": "Pages that could not be imported",
+      "failed-pages-page": "Page",
+      "failed-pages-section": "Section",
+      "failed-pages-error": "Error",
+      "failed-resources-title": "Missing images and attachments",
+      "failed-resources-item_one": "{{- pageLink}}: {{count}} resource could not be downloaded",
+      "failed-resources-item_other": "{{- pageLink}}: {{count}} resources could not be downloaded"
+    }
   },
   "notion_import": {
     "root-title": "Notion import",

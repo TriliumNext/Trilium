@@ -15,7 +15,10 @@ const SUPPORTED_MIME_TYPES = new Set([
     'application/vnd.oasis.opendocument.presentation',
     // Rich Text Format
     'application/rtf',
-    'text/rtf'
+    'text/rtf',
+    // E-book
+    'application/epub+zip',
+    'application/x-epub+zip'
 ]);
 
 const PARSER_CONFIG: OfficeParserConfig = {
@@ -24,18 +27,24 @@ const PARSER_CONFIG: OfficeParserConfig = {
     ignoreNotes: false
 };
 
-// officeparser auto-detects most formats from the buffer's magic bytes, but its
-// RTF detection (via file-type) is unreliable — some valid RTF documents are not
-// recognised and parsing then fails. For those MIME types we route to the correct
-// parser explicitly with a fileType hint instead of relying on auto-detection.
+// officeparser auto-detects most formats from the buffer's magic bytes, but for
+// some MIME types we route to the correct parser explicitly with a fileType hint
+// instead of relying on auto-detection:
+//  - RTF detection (via file-type) is unreliable — some valid RTF documents are
+//    not recognised and parsing then fails.
+//  - EPUB shares the ZIP container (PK magic bytes) with DOCX/ODT, so an explicit
+//    hint avoids any ambiguity in container-format detection.
 const MIME_TYPE_TO_FILE_TYPE: Record<string, SupportedFileType> = {
     'application/rtf': 'rtf',
-    'text/rtf': 'rtf'
+    'text/rtf': 'rtf',
+    'application/epub+zip': 'epub',
+    'application/x-epub+zip': 'epub'
 };
 
 /**
- * Office document processor for extracting text from DOCX/XLSX/PPTX and ODT/ODS/ODP files.
- * Uses officeparser's main API, which auto-detects the format from the buffer's magic bytes.
+ * Office document processor for extracting text from DOCX/XLSX/PPTX, ODT/ODS/ODP,
+ * RTF and EPUB files. Uses officeparser's main API, which auto-detects the format
+ * from the buffer's magic bytes (with an explicit fileType hint for RTF and EPUB).
  */
 export class OfficeProcessor extends FileProcessor {
 

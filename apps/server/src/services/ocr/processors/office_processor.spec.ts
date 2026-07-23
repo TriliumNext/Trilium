@@ -23,6 +23,7 @@ let OfficeProcessor: typeof import('./office_processor.js').OfficeProcessor;
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const ODT = 'application/vnd.oasis.opendocument.text';
 const RTF = 'application/rtf';
+const EPUB = 'application/epub+zip';
 
 beforeEach(async () => {
     vi.clearAllMocks();
@@ -43,6 +44,8 @@ describe('OfficeProcessor', () => {
         expect(processor.canProcess(ODT)).toBe(true);
         expect(processor.canProcess(RTF)).toBe(true);
         expect(processor.canProcess('text/rtf')).toBe(true);
+        expect(processor.canProcess(EPUB)).toBe(true);
+        expect(processor.canProcess('application/x-epub+zip')).toBe(true);
         expect(processor.canProcess('application/pdf')).toBe(false);
         expect(processor.getSupportedMimeTypes()).toContain(DOCX);
         expect(processor.getProcessingType()).toBe('office');
@@ -77,6 +80,21 @@ describe('OfficeProcessor', () => {
             newlineDelimiter: '\n',
             ignoreNotes: false,
             fileType: 'rtf'
+        });
+    });
+
+    it('passes an explicit fileType hint for EPUB, which shares the ZIP container with DOCX/ODT', async () => {
+        const processor = new OfficeProcessor();
+        mockParseOffice.mockResolvedValue({ toText: () => 'epub body' });
+
+        const result = await processor.extractText(buffer, { mimeType: EPUB });
+
+        expect(result.text).toBe('epub body');
+        expect(mockParseOffice).toHaveBeenCalledWith(buffer, {
+            outputErrorToConsole: false,
+            newlineDelimiter: '\n',
+            ignoreNotes: false,
+            fileType: 'epub'
         });
     });
 

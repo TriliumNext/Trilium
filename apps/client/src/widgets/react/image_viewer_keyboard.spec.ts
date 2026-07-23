@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { clampPan, codeToControl, getPanDelta, zoomToPointPosition } from "./image_viewer_keyboard";
+import { claimsKeystroke, clampPan, codeToControl, getPanDelta, zoomToPointPosition } from "./image_viewer_keyboard";
 
 describe("codeToControl", () => {
     it("maps zoom/reset keys (Equal/Minus/Slash, numpad, Q/E) regardless of modifiers", () => {
@@ -28,6 +28,34 @@ describe("codeToControl", () => {
     it("ignores unrelated keys", () => {
         expect(codeToControl("KeyZ")).toBeNull();
         expect(codeToControl("Space")).toBeNull();
+    });
+});
+
+describe("claimsKeystroke", () => {
+    const keystroke = (code: string, modifiers: Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean }> = {}) =>
+        ({ code, ctrlKey: false, metaKey: false, altKey: false, ...modifiers });
+
+    it("takes bare keys, which are the viewer's own", () => {
+        expect(claimsKeystroke(keystroke("KeyW"))).toBe(true);
+        expect(claimsKeystroke(keystroke("ArrowLeft"))).toBe(true);
+        expect(claimsKeystroke(keystroke("Equal"))).toBe(true);
+    });
+
+    it("leaves chords to the application, so Ctrl+W still closes the tab", () => {
+        expect(claimsKeystroke(keystroke("KeyW", { ctrlKey: true }))).toBe(false);
+        expect(claimsKeystroke(keystroke("ArrowUp", { ctrlKey: true }))).toBe(false);
+        expect(claimsKeystroke(keystroke("Slash", { altKey: true }))).toBe(false);
+        // The letter aliases for zoom are ordinary letters as far as the app is concerned (Ctrl+Q quits).
+        expect(claimsKeystroke(keystroke("KeyE", { ctrlKey: true }))).toBe(false);
+        expect(claimsKeystroke(keystroke("KeyQ", { ctrlKey: true }))).toBe(false);
+    });
+
+    it("keeps the zoom gesture, where the modifier is the point", () => {
+        // Looking at an image, Ctrl+= zooms the image rather than the whole UI.
+        expect(claimsKeystroke(keystroke("Equal", { ctrlKey: true }))).toBe(true);
+        expect(claimsKeystroke(keystroke("Minus", { metaKey: true }))).toBe(true);
+        expect(claimsKeystroke(keystroke("NumpadAdd", { ctrlKey: true }))).toBe(true);
+        expect(claimsKeystroke(keystroke("NumpadSubtract", { ctrlKey: true }))).toBe(true);
     });
 });
 

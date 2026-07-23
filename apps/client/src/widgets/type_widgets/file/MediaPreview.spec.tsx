@@ -9,13 +9,14 @@ const { audioVisualizer } = vi.hoisted(() => ({ audioVisualizer: vi.fn((_props: 
 vi.mock("./audio_waveform", () => ({ loadWaveform: vi.fn(async () => null) }));
 vi.mock("./AudioVisualizer", () => ({ AudioVisualizer: audioVisualizer }));
 
+import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import MediaPreview from "./MediaPreview";
 
-const videoNote = { noteId: "vid1", title: "Holiday", mime: "video/mp4" } as FNote;
-const audioNote = { noteId: "snd1", title: "Podcast", mime: "audio/mpeg" } as FNote;
-const audioAttachment = { attachmentId: "att1", title: "Recording", mime: "audio/mpeg" } as FAttachment;
+const videoNote = { noteId: "vid1", title: "Holiday", mime: "video/mp4", blobId: "blobV" } as FNote;
+const audioNote = { noteId: "snd1", title: "Podcast", mime: "audio/mpeg", blobId: "blobA" } as FNote;
+const audioAttachment = { attachmentId: "att1", title: "Recording", mime: "audio/mpeg", utcDateModified: "att1mod" } as FAttachment;
 
 describe("MediaPreview", () => {
     let container: HTMLElement;
@@ -55,7 +56,7 @@ describe("MediaPreview", () => {
             expect(container.querySelector(".media-proxy")).toBeNull();
             const media = mediaElement();
             expect(media?.tagName).toBe("VIDEO");
-            expect(media?.getAttribute("src")).toBe("api/notes/vid1/open-partial");
+            expect(media?.getAttribute("src")).toBe("api/notes/vid1/open-partial?v=blobV");
 
             // The media is only just being fetched, so playback waits for it to become playable.
             expect(play).not.toHaveBeenCalled();
@@ -71,7 +72,7 @@ describe("MediaPreview", () => {
 
             const media = mediaElement();
             expect(media?.tagName).toBe("AUDIO");
-            expect(media?.getAttribute("src")).toBe("api/attachments/att1/open-partial");
+            expect(media?.getAttribute("src")).toBe("api/attachments/att1/open-partial?v=att1mod");
         });
     });
 
@@ -81,7 +82,7 @@ describe("MediaPreview", () => {
 
             expect(container.querySelector(".media-proxy")).toBeNull();
             const media = mediaElement();
-            expect(media?.getAttribute("src")).toBe("api/notes/vid1/open-partial");
+            expect(media?.getAttribute("src")).toBe("api/notes/vid1/open-partial?v=blobV");
             // Embedded is "ready to play", not "playing".
             expect(media?.getAttribute("preload")).toBe("metadata");
             expect(play).not.toHaveBeenCalled();
@@ -110,8 +111,54 @@ describe("MediaPreview", () => {
         expect(container.querySelector(".play-mode-dropdown")).toBeNull();
     });
 
+    describe("attachment siblings", () => {
+        // Audio, video, PDFs and archives all carry the "file" role, so only the mime tells them apart.
+        const attachments = [
+            { attachmentId: "att1", role: "file", title: "Recording", mime: "audio/mpeg" },
+            { attachmentId: "att2", role: "file", title: "Manual", mime: "application/pdf" },
+            { attachmentId: "att3", role: "file", title: "Interview", mime: "audio/ogg" }
+        ];
+        const viewScope = { viewMode: "attachments" as const, attachmentId: "att1" };
+        const ownerNote = { noteId: "own1", attachments, getAttachments: async () => attachments } as unknown as FNote;
+
+        const renderAttachmentPlayer = async (setNote: ReturnType<typeof vi.fn>) => {
+            const noteContext = { noteId: "own1", notePath: "root/own1", viewScope, isActive: () => true, setNote } as unknown as NoteContext;
+            await act(async () => render(
+                <MediaPreview entity={audioAttachment} environment="standalone" noteContext={noteContext} ownerNote={ownerNote} viewScope={viewScope} />,
+                container));
+            // Siblings are loaded asynchronously, so the buttons only appear on the following render.
+            await act(async () => {});
+        };
+
+        it("moves to the owner note's other playable attachments, skipping what it can't play", async () => {
+            const setNote = vi.fn();
+            await renderAttachmentPlayer(setNote);
+
+            const next = container.querySelector(".bx-skip-next");
+            expect(next).not.toBeNull();
+            expect(container.querySelector(".bx-skip-previous")).not.toBeNull();
+
+            await act(async () => (next as HTMLElement).click());
+            // att2 is the PDF sitting between them, and is passed over.
+            expect(setNote).toHaveBeenCalledWith("root/own1", { viewScope: { ...viewScope, attachmentId: "att3" } });
+        });
+
+        it("has nothing to move between when the owner has a single playable attachment", async () => {
+            const setNote = vi.fn();
+            const lonelyOwner = { noteId: "own1", attachments: attachments.slice(0, 2), getAttachments: async () => attachments.slice(0, 2) } as unknown as FNote;
+            const noteContext = { noteId: "own1", notePath: "root/own1", viewScope, isActive: () => true, setNote } as unknown as NoteContext;
+            await act(async () => render(
+                <MediaPreview entity={audioAttachment} environment="standalone" noteContext={noteContext} ownerNote={lonelyOwner} viewScope={viewScope} />,
+                container));
+            await act(async () => {});
+
+            expect(container.querySelector(".bx-skip-next")).toBeNull();
+            expect(container.querySelector(".bx-skip-previous")).toBeNull();
+        });
+    });
+
     describe("compact audio chrome", () => {
-        /** The compact chrome is worn everywhere but the note detail — an activated preview and an embed alike. */
+        /** The compact chrome is worn everywhere but a standalone player — an activated preview and an embed alike. */
         const renderCompactAudio = async (environment: "preview" | "embedded") => {
             await act(async () => render(<MediaPreview entity={audioNote} environment={environment} />, container));
             if (environment === "preview") {
@@ -142,7 +189,7 @@ describe("MediaPreview", () => {
                 expect.objectContaining({ compact: true }), expect.anything());
         });
 
-        it("leaves the note detail with the full controls and the icon", async () => {
+        it("leaves a standalone player with the full controls and the icon", async () => {
             await act(async () => render(<MediaPreview entity={audioNote} environment="standalone" />, container));
 
             expect(container.querySelector(".media-compact")).toBeNull();
@@ -188,7 +235,7 @@ describe("MediaPreview", () => {
             expect(container.querySelector(".bx-fullscreen")).toBeNull();
         });
 
-        it("leaves the note detail with the full overlay", async () => {
+        it("leaves a standalone player with the full overlay", async () => {
             await act(async () => render(<MediaPreview entity={videoNote} environment="standalone" />, container));
 
             expect(container.querySelector(".media-compact-row")).toBeNull();

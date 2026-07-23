@@ -13,6 +13,14 @@ import { extractPageId } from "./links.js";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
+/**
+ * Supplies a currently-valid access token, refreshing it as needed. The importer passes one of these
+ * rather than a fixed string so a long or heavily-throttled import — which outlives a single Graph
+ * token — keeps authenticating instead of 401ing once the token captured up front expires. It is
+ * re-read before every request attempt (see {@link graphFetch}), including after a throttle wait.
+ */
+export type AccessTokenProvider = () => Promise<string>;
+
 // safeFetch's default 5s timeout is too tight for the importer: page content and binary resources can
 // be large and slow. Allow a generous per-request budget instead.
 const GRAPH_TIMEOUT_MS = 60_000;
@@ -29,11 +37,25 @@ const BASE_RETRY_DELAY_MS = 2000;
 const MAX_RETRY_DELAY_MS = 60_000;
 const MAX_THROTTLE_WAIT_MS = 60 * 60_000;
 
+// A 504 means the OneNote backend behind the Graph gateway timed out producing this one response.
+// Usually transient (Microsoft's own SDK retry handlers treat 504 like 429/503), but a permanent
+// per-resource variant is well documented — some pages/sections 504 on every fetch — so unlike
+// throttling these retries are bounded by a small attempt count, not the hour-long wait budget: a
+// poisoned page must fail within minutes instead of stalling the import for an hour.
+const MAX_GATEWAY_TIMEOUT_RETRIES = 5;
+
 // Shared throttle gate. Graph throttles per app/tenant, so a 429 on one request means every other
 // in-flight and subsequent request is being throttled too. Rather than each request independently
 // retrying — which just keeps hammering Graph and prolongs the throttle — a 429 pushes back a shared
 // "don't send until" timestamp that ALL requests wait on, so the whole pool backs off together.
 let throttledUntilMs = 0;
+
+// Aggregate throttle statistics for the current import, surfaced in the import report (they answer
+// "why did this take hours?"). `requestCount` counts throttled (429/503) responses; `waitMs`
+// accumulates net extensions of the shared gate — wall-clock time spent waiting out throttles —
+// rather than a per-request sum, since concurrent requests wait on the same gate window.
+let throttledRequestCount = 0;
+let throttleWaitMs = 0;
 
 /**
  * Fetches a Microsoft Graph URL through {@link safeFetch} so the request is hardened against SSRF —
@@ -44,19 +66,44 @@ let throttledUntilMs = 0;
  * requests pause together instead of dog-piling the throttle. Gives up only once this request has
  * spent {@link MAX_THROTTLE_WAIT_MS} waiting, returning the throttled response for the caller to
  * report as an error.
+ *
+ * Also retries gateway timeouts (504), but privately: the backoff is slept here rather than pushed
+ * onto the shared gate — a 504 is specific to the resource being fetched, not the app+user pool —
+ * and gives up after {@link MAX_GATEWAY_TIMEOUT_RETRIES} attempts rather than drawing on the
+ * hour-long throttle budget.
  */
-async function graphFetch(accessToken: string, url: string): Promise<Response> {
+async function graphFetch(getAccessToken: AccessTokenProvider, url: string): Promise<Response> {
     const giveUpAtMs = Date.now() + MAX_THROTTLE_WAIT_MS;
-    for (let attempt = 0; ; attempt++) {
+    let throttleAttempt = 0;
+    let gatewayTimeoutRetry = 0;
+    for (;;) {
         const gateWaitMs = throttledUntilMs - Date.now();
         if (gateWaitMs > 0) {
             await delay(gateWaitMs);
         }
 
+        // Resolved after the gate wait, per attempt: a token captured before an hour of throttling
+        // would already be expired by the time the request finally goes out. The provider hands back
+        // the cached token while it is valid and refreshes only as expiry nears.
+        const accessToken = await getAccessToken();
         const response = await safeFetch(url, {
             headers: { Authorization: `Bearer ${accessToken}` },
             signal: AbortSignal.timeout(GRAPH_TIMEOUT_MS)
         });
+
+        if (response.status === 504) {
+            if (gatewayTimeoutRetry >= MAX_GATEWAY_TIMEOUT_RETRIES) {
+                return response;
+            }
+            const waitMs = backoffDelayMs(gatewayTimeoutRetry);
+            gatewayTimeoutRetry++;
+
+            // Drain the failed response so its connection is released before we back off.
+            await response.body?.cancel();
+            getLog().info(`OneNote import: Graph gateway timeout (HTTP 504) on ${sanitizeGraphUrl(url)}; retry ${gatewayTimeoutRetry}/${MAX_GATEWAY_TIMEOUT_RETRIES} after ${waitMs}ms`);
+            await delay(waitMs);
+            continue;
+        }
 
         if (response.status !== 429 && response.status !== 503) {
             return response;
@@ -64,7 +111,7 @@ async function graphFetch(accessToken: string, url: string): Promise<Response> {
 
         // Graph's Retry-After, when present, states exactly how long the throttle lasts — trust it
         // over the computed backoff.
-        const waitMs = retryAfterMs(response.headers.get("retry-after")) ?? backoffDelayMs(attempt);
+        const waitMs = retryAfterMs(response.headers.get("retry-after")) ?? backoffDelayMs(throttleAttempt);
         if (Date.now() + waitMs > giveUpAtMs) {
             return response;
         }
@@ -74,8 +121,11 @@ async function graphFetch(accessToken: string, url: string): Promise<Response> {
 
         // Extend the shared gate (Math.max: simultaneous 429s converge on one window rather than
         // stacking). The wait itself happens at the top of the next iteration, shared across the pool.
+        throttledRequestCount++;
+        throttleWaitMs += Math.max(0, Date.now() + waitMs - Math.max(throttledUntilMs, Date.now()));
         throttledUntilMs = Math.max(throttledUntilMs, Date.now() + waitMs);
-        getLog().info(`OneNote import: Graph throttled (HTTP ${response.status}) on ${url}; retry ${attempt + 1} after ${waitMs}ms (${Math.round((giveUpAtMs - Date.now()) / 60_000)}min of wait budget left)`);
+        throttleAttempt++;
+        getLog().info(`OneNote import: Graph throttled (HTTP ${response.status}) on ${sanitizeGraphUrl(url)}; retry ${throttleAttempt} after ${waitMs}ms (${Math.round((giveUpAtMs - Date.now()) / 60_000)}min of wait budget left)`);
     }
 }
 
@@ -106,6 +156,17 @@ export function resetThrottleGate(): void {
     throttledUntilMs = 0;
 }
 
+/** Returns the throttle statistics accumulated since the last {@link resetThrottleStats}. */
+export function getThrottleStats(): { requestCount: number; waitMs: number } {
+    return { requestCount: throttledRequestCount, waitMs: throttleWaitMs };
+}
+
+/** Resets the throttle statistics; called at the start of an import so its report covers only itself. */
+export function resetThrottleStats(): void {
+    throttledRequestCount = 0;
+    throttleWaitMs = 0;
+}
+
 function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -126,8 +187,8 @@ export interface OneNotePage {
     pageId?: string;
 }
 
-export async function getAccount(accessToken: string): Promise<GraphAccount> {
-    const me = await graphGet<{ displayName?: string; mail?: string; userPrincipalName?: string }>(accessToken, "/me");
+export async function getAccount(getAccessToken: AccessTokenProvider): Promise<GraphAccount> {
+    const me = await graphGet<{ displayName?: string; mail?: string; userPrincipalName?: string }>(getAccessToken, "/me");
     return {
         name: me.displayName ?? me.userPrincipalName ?? "Unknown",
         email: me.mail ?? me.userPrincipalName ?? ""
@@ -144,9 +205,9 @@ export async function getAccount(accessToken: string): Promise<GraphAccount> {
  * section groups follow their `sectionGroupsUrl`, and those follow-up requests run in parallel —
  * section groups nest arbitrarily and the notebooks endpoint won't $expand them more than one level.
  */
-export async function listNotebooks(accessToken: string): Promise<OneNoteNotebook[]> {
+export async function listNotebooks(getAccessToken: AccessTokenProvider): Promise<OneNoteNotebook[]> {
     const url = "/me/onenote/notebooks?$select=id,displayName,createdDateTime,lastModifiedDateTime,sectionGroupsUrl&$expand=sections($select=id,displayName,createdDateTime,lastModifiedDateTime),sectionGroups($select=id)&$orderby=displayName";
-    const notebooks = await graphGetAll<RawNotebook>(accessToken, url);
+    const notebooks = await graphGetAll<RawNotebook>(getAccessToken, url);
 
     return Promise.all(
         notebooks.map(async (notebook) => ({
@@ -155,7 +216,7 @@ export async function listNotebooks(accessToken: string): Promise<OneNoteNoteboo
             createdDateTime: notebook.createdDateTime,
             lastModifiedDateTime: notebook.lastModifiedDateTime,
             sections: mapSections(notebook.sections),
-            sectionGroups: notebook.sectionGroups?.length && notebook.sectionGroupsUrl ? await fetchSectionGroups(accessToken, notebook.sectionGroupsUrl) : []
+            sectionGroups: notebook.sectionGroups?.length && notebook.sectionGroupsUrl ? await fetchSectionGroups(getAccessToken, notebook.sectionGroupsUrl) : []
         }))
     );
 }
@@ -165,9 +226,9 @@ export async function listNotebooks(accessToken: string): Promise<OneNoteNoteboo
  * each group carrying its own sections and nested groups. Sibling groups are fetched in parallel, and a
  * further round-trip happens only for groups that actually have nested groups.
  */
-async function fetchSectionGroups(accessToken: string, sectionGroupsUrl: string): Promise<OneNoteSectionGroup[]> {
+async function fetchSectionGroups(getAccessToken: AccessTokenProvider, sectionGroupsUrl: string): Promise<OneNoteSectionGroup[]> {
     const url = appendQuery(sectionGroupsUrl, "$select=id,displayName,createdDateTime,lastModifiedDateTime,sectionGroupsUrl&$expand=sections($select=id,displayName,createdDateTime,lastModifiedDateTime),sectionGroups($select=id)");
-    const groups = await graphGetAll<RawSectionGroup>(accessToken, url);
+    const groups = await graphGetAll<RawSectionGroup>(getAccessToken, url);
 
     return Promise.all(
         groups.map(async (group) => ({
@@ -176,7 +237,7 @@ async function fetchSectionGroups(accessToken: string, sectionGroupsUrl: string)
             createdDateTime: group.createdDateTime,
             lastModifiedDateTime: group.lastModifiedDateTime,
             sections: mapSections(group.sections),
-            sectionGroups: group.sectionGroups?.length && group.sectionGroupsUrl ? await fetchSectionGroups(accessToken, group.sectionGroupsUrl) : []
+            sectionGroups: group.sectionGroups?.length && group.sectionGroupsUrl ? await fetchSectionGroups(getAccessToken, group.sectionGroupsUrl) : []
         }))
     );
 }
@@ -189,11 +250,11 @@ function appendQuery(url: string, query: string): string {
     return url.includes("?") ? `${url}&${query}` : `${url}?${query}`;
 }
 
-export async function listPages(accessToken: string, sectionId: string): Promise<OneNotePage[]> {
+export async function listPages(getAccessToken: AccessTokenProvider, sectionId: string): Promise<OneNotePage[]> {
     // `links` carries the page's own `onenote:` client URL, from which we recover the page-id GUID that
     // cross-page links reference (see links.ts).
     const url = `/me/onenote/sections/${sectionId}/pages?$select=id,title,createdDateTime,lastModifiedDateTime,level,links&$orderby=order&pagelevel=true`;
-    const raw = await graphGetAll<RawPage>(accessToken, url);
+    const raw = await graphGetAll<RawPage>(getAccessToken, url);
     return raw.map((p) => ({
         id: p.id,
         title: p.title || "Untitled",
@@ -213,9 +274,9 @@ export async function listPages(accessToken: string, sectionId: string): Promise
  * `application/inkml+xml` part), which parsePageContent splits apart. Pages without ink may still come
  * back as plain HTML, which the parser handles by returning the whole body as `html`.
  */
-export async function getPageContent(accessToken: string, pageId: string): Promise<{ html: string; inkml: string }> {
+export async function getPageContent(getAccessToken: AccessTokenProvider, pageId: string): Promise<{ html: string; inkml: string }> {
     const url = `${GRAPH_BASE}/me/onenote/pages/${pageId}/content?includeInkML=true`;
-    const response = await graphFetch(accessToken, url);
+    const response = await graphFetch(getAccessToken, url);
     if (!response.ok) {
         throw await graphRequestError("Failed to fetch OneNote page content", url, response);
     }
@@ -258,14 +319,14 @@ export function parsePageContent(raw: string): { html: string; inkml: string } {
  * absolute Graph `…/resources/{id}/$value` link, so it is fetched directly rather than relative to the
  * API base. Returns the raw bytes plus the server-reported content type.
  */
-export async function getResource(accessToken: string, url: string): Promise<{ content: Uint8Array; contentType: string }> {
-    const response = await graphFetch(accessToken, url);
+export async function getResource(getAccessToken: AccessTokenProvider, url: string): Promise<{ content: Uint8Array; contentType: string }> {
+    const response = await graphFetch(getAccessToken, url);
     if (!response.ok) {
         throw await graphRequestError("Failed to fetch OneNote resource", url, response);
     }
     const buffer = new Uint8Array(await response.arrayBuffer());
     const contentType = response.headers.get("content-type") ?? "application/octet-stream";
-    getLog().info(`OneNote import: downloaded resource (${contentType}, ${buffer.length} bytes) from ${url}`);
+    getLog().info(`OneNote import: downloaded resource (${contentType}, ${buffer.length} bytes) from ${sanitizeGraphUrl(url)}`);
     return { content: buffer, contentType };
 }
 
@@ -307,9 +368,9 @@ interface RawPage {
     links?: { oneNoteClientUrl?: { href?: string } };
 }
 
-async function graphGet<T>(accessToken: string, path: string): Promise<T> {
+async function graphGet<T>(getAccessToken: AccessTokenProvider, path: string): Promise<T> {
     const url = `${GRAPH_BASE}${path}`;
-    const response = await graphFetch(accessToken, url);
+    const response = await graphFetch(getAccessToken, url);
     if (!response.ok) {
         throw await graphRequestError("Microsoft Graph request failed", url, response);
     }
@@ -317,12 +378,12 @@ async function graphGet<T>(accessToken: string, path: string): Promise<T> {
 }
 
 /** GETs a Graph collection endpoint, following @odata.nextLink pagination. */
-async function graphGetAll<T>(accessToken: string, pathOrUrl: string): Promise<T[]> {
+async function graphGetAll<T>(getAccessToken: AccessTokenProvider, pathOrUrl: string): Promise<T[]> {
     const results: T[] = [];
     let next: string | null = pathOrUrl.startsWith("http") ? pathOrUrl : `${GRAPH_BASE}${pathOrUrl}`;
 
     while (next) {
-        const response: Response = await graphFetch(accessToken, next);
+        const response: Response = await graphFetch(getAccessToken, next);
         if (!response.ok) {
             // `next` rather than `pathOrUrl`: on a paginated collection the failing request may be a
             // follow-up @odata.nextLink, not the original URL.
@@ -349,7 +410,21 @@ async function graphRequestError(summary: string, url: string, response: Respons
         // The status and URL are still worth reporting when the body cannot be read.
     }
     const detail = extractGraphErrorDetail(body);
-    return new Error(`${summary} (HTTP ${response.status}${detail ? `: ${detail}` : ""}) from ${url}`);
+    return new Error(`${summary} (HTTP ${response.status}${detail ? `: ${detail}` : ""}) from ${sanitizeGraphUrl(url)}`);
+}
+
+/**
+ * Redacts personal data from a Graph URL before it is logged or embedded in an error message. OneNote
+ * resource URLs (taken from page HTML) address the mailbox by the signed-in user's email — e.g.
+ * `…/users('jane@example.com')/onenote/resources/…` — so the raw URL is PII. The email (or user id) in
+ * the `users('…')` / `users/{id}` segment is replaced with a placeholder; the rest of the path, which
+ * is what makes the log line useful for debugging, is kept. The importer's own calls use the `/me`
+ * alias and pass through unchanged.
+ */
+export function sanitizeGraphUrl(url: string): string {
+    return url
+        .replace(/users\('[^']*'\)/gi, "users('<redacted>')")
+        .replace(/users\/[^/?#]+/gi, "users/<redacted>");
 }
 
 /**
@@ -370,5 +445,7 @@ export default {
     listNotebooks,
     listPages,
     getPageContent,
-    getResource
+    getResource,
+    getThrottleStats,
+    resetThrottleStats
 };

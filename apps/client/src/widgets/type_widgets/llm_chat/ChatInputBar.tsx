@@ -12,9 +12,9 @@ import ActionButton from "../../react/ActionButton.js";
 import Button from "../../react/Button.js";
 import CKEditor, { type CKEditorApi } from "../../react/CKEditor.js";
 import Dropdown from "../../react/Dropdown.js";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../../react/FormList.js";
+import { FormDropdownDivider, FormListHeader, FormListItem, FormListToggleableItem } from "../../react/FormList.js";
 import { useLegacyImperativeHandlers } from "../../react/hooks.js";
-import AddProviderModal, { type LlmProviderConfig, PROVIDER_TYPES } from "../options/llm/AddProviderModal.js";
+import AddProviderModal, { type LlmProviderConfig, type ProviderStep } from "../options/llm/AddProviderModal.js";
 import { insertNewBlock as insertNewBlockCommand, isSelectionInCodeBlock, outdentListItemAtStart } from "./chat_input_editing.js";
 import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { SafeImage } from "./retry_image.js";
@@ -86,7 +86,12 @@ export default function ChatInputBar({
     onModelChange,
     inSidebar
 }: ChatInputBarProps) {
-    const [showAddProviderModal, setShowAddProviderModal] = useState(false);
+    // Provider add/edit modal. `modalProvider` undefined = adding; a config = editing.
+    // The bumping token re-keys the modal so it re-initializes its wizard on each open.
+    const [modalProvider, setModalProvider] = useState<LlmProviderConfig | undefined>();
+    const [modalStep, setModalStep] = useState<ProviderStep | undefined>();
+    const [modalOpen, setModalOpen] = useState(false);
+    const [openToken, setOpenToken] = useState(0);
     const editorApiRef = useRef<CKEditorApi>();
     const editorInstanceRef = useRef<CKTextEditor>();
     // Always-fresh submit handler for the editor's enter listener.
@@ -154,9 +159,9 @@ export default function ChatInputBar({
         onExtendedThinkingChange?.();
     };
 
-    const handleModelSelect = (model: string, provider?: string) => {
-        chat.setSelectedModel(model, provider);
-        onModelChange?.(model);
+    const handleModelSelect = (model: ModelOption) => {
+        chat.setSelectedModel(model.id, model.provider, model.providerId);
+        onModelChange?.(model.id);
     };
 
     const handleNoteContextToggle = () => {
@@ -167,29 +172,44 @@ export default function ChatInputBar({
         }
     };
 
-    const handleAddProvider = useCallback(async (provider: LlmProviderConfig) => {
-        // Get current providers and add the new one
-        const currentProviders = options.getJson("llmProviders") || [];
-        const newProviders = [...currentProviders, provider];
-        await options.save("llmProviders", JSON.stringify(newProviders));
-        // Refresh models to pick up the new provider
+    const openModal = useCallback((provider?: LlmProviderConfig, step?: ProviderStep) => {
+        setModalProvider(provider);
+        setModalStep(step);
+        setOpenToken(token => token + 1);
+        setModalOpen(true);
+    }, []);
+
+    // Open the model-selection step for an existing provider (the dropdown pencil).
+    const openEditModels = useCallback((providerId: string) => {
+        const configs = (options.getJson("llmProviders") as LlmProviderConfig[] | null) ?? [];
+        const config = configs.find(c => c.id === providerId);
+        if (config) {
+            openModal(config, "models");
+        }
+    }, [openModal]);
+
+    // Upsert the saved provider (editing replaces by id, adding appends) and refresh the picker.
+    const handleSaveProvider = useCallback(async (provider: LlmProviderConfig) => {
+        const configs = (options.getJson("llmProviders") as LlmProviderConfig[] | null) ?? [];
+        const next = configs.some(c => c.id === provider.id)
+            ? configs.map(c => (c.id === provider.id ? provider : c))
+            : [...configs, provider];
+        await options.save("llmProviders", JSON.stringify(next));
         chat.refreshModels();
     }, [chat]);
 
     const isNoteContextEnabled = !!chat.contextNoteId && !!activeNoteId;
 
-    // Two providers can expose the same model ID (e.g. an Anthropic API key and
-    // a Claude subscription both offering "claude-sonnet-5"), so identify the
-    // active model by provider too. Mirror the sender's resolution: prefer the
-    // recorded provider, else fall back to the first ID match (pre-existing chats).
-    const effectiveProvider = chat.selectedProvider
-        ?? chat.availableModels.find(m => m.id === chat.selectedModel)?.provider;
-    const isSelectedModel = (m: ModelOption) => m.id === chat.selectedModel && m.provider === effectiveProvider;
-    const currentModel = chat.availableModels.find(isSelectedModel);
-    const currentModels = chat.availableModels.filter(m => !m.isLegacy);
-    const currentModelGroups = groupModelsByProvider(currentModels);
-    const legacyModels = chat.availableModels.filter(m => m.isLegacy);
-    const legacyModelGroups = groupModelsByProvider(legacyModels);
+    // Several providers can expose the same model ID (e.g. an Anthropic API key
+    // and a Claude subscription both offering "claude-sonnet-5", or two
+    // OpenAI-compatible endpoints), so identify the active model by its provider
+    // config too. Mirror the sender's resolution: prefer the recorded provider
+    // id/type, else fall back to the first ID match (pre-existing chats).
+    const currentModel = chat.availableModels.find(m =>
+        m.id === chat.selectedModel
+        && (!chat.selectedProvider || m.provider === chat.selectedProvider)
+        && (!chat.selectedProviderId || m.providerId === chat.selectedProviderId));
+    const isSelectedModel = (m: ModelOption) => m === currentModel;
     // Gemini 2.x cannot combine googleSearch with function tools in a single
     // request. When note tools are enabled on a Gemini model we silently drop
     // web search server-side; reflect that here by disabling the toggle so the
@@ -211,291 +231,262 @@ export default function ChatInputBar({
                     <Button
                         text={t("llm_chat.add_provider")}
                         icon="bx bx-plus"
-                        onClick={() => setShowAddProviderModal(true)}
+                        onClick={() => openModal()}
                     />
                 </div>
                 <AddProviderModal
-                    show={showAddProviderModal}
-                    onHidden={() => setShowAddProviderModal(false)}
-                    onSave={handleAddProvider}
+                    key={openToken}
+                    show={modalOpen}
+                    existingProvider={modalProvider}
+                    initialStep={modalStep}
+                    onHidden={() => setModalOpen(false)}
+                    onSave={handleSaveProvider}
                 />
             </div>
         );
     }
 
     return (
-        <form
-            className="llm-chat-input-form"
-            onSubmit={handleSubmit}
-            onDrop={attachments.handleDrop}
-            onDragOver={attachments.handleDragOver}
-        >
-            {chat.pendingAttachments.length > 0 && (
-                <div className="llm-chat-attachments">
-                    {chat.pendingAttachments.map((att) => (
-                        <div
-                            key={att.attachmentId}
-                            className={`llm-chat-attachment-chip llm-chat-attachment-chip-${att.type}`}
-                            title={att.title}
-                        >
-                            {att.type === "image" ? (
-                                <SafeImage src={att.url} alt={att.title} />
-                            ) : (
-                                <div className="llm-chat-attachment-file">
-                                    <span className={`bx ${att.type === "file" ? "bxs-file-pdf" : "bxs-file-blank"} llm-chat-attachment-file-icon`} />
-                                    <span className="llm-chat-attachment-file-name">{att.title}</span>
-                                </div>
-                            )}
-                            <button
-                                type="button"
-                                className="llm-chat-attachment-remove"
-                                title={t("llm_chat.remove_attachment")}
-                                onClick={() => chat.removePendingAttachment(att.attachmentId)}
-                                disabled={chat.isStreaming}
+        <>
+            <form
+                className="llm-chat-input-form"
+                onSubmit={handleSubmit}
+                onDrop={attachments.handleDrop}
+                onDragOver={attachments.handleDragOver}
+            >
+                {chat.pendingAttachments.length > 0 && (
+                    <div className="llm-chat-attachments">
+                        {chat.pendingAttachments.map((att) => (
+                            <div
+                                key={att.attachmentId}
+                                className={`llm-chat-attachment-chip llm-chat-attachment-chip-${att.type}`}
+                                title={att.title}
                             >
-                                <span className="bx bx-x" />
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            )}
-            <CKEditor
-                apiRef={editorApiRef}
-                className="llm-chat-input"
-                editor={CKEditorAttributeEditor}
-                config={{
+                                {att.type === "image" ? (
+                                    <SafeImage src={att.url} alt={att.title} />
+                                ) : (
+                                    <div className="llm-chat-attachment-file">
+                                        <span className={`bx ${att.type === "file" ? "bxs-file-pdf" : "bxs-file-blank"} llm-chat-attachment-file-icon`} />
+                                        <span className="llm-chat-attachment-file-name">{att.title}</span>
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    className="llm-chat-attachment-remove"
+                                    title={t("llm_chat.remove_attachment")}
+                                    onClick={() => chat.removePendingAttachment(att.attachmentId)}
+                                    disabled={chat.isStreaming}
+                                >
+                                    <span className="bx bx-x" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                <CKEditor
+                    apiRef={editorApiRef}
+                    className="llm-chat-input"
+                    editor={CKEditorAttributeEditor}
+                    config={{
                     // Markdown autoformatting (block quotes, code fences, lists, links) without a toolbar.
-                    extraPlugins: CHAT_INPUT_PLUGINS,
-                    toolbar: { items: [] },
-                    placeholder: t("llm_chat.placeholder"),
-                    mention: { feeds: mentionFeeds },
-                    licenseKey: "GPL",
-                    language: "en"
-                }}
-                onChange={(html) => {
-                    chat.setInput(editorHtmlToMarkdown(html ?? ""));
-                }}
-                onInitialized={(editor) => {
-                    editorInstanceRef.current = editor;
-                    const insertNewBlock = () => {
-                        insertNewBlockCommand(editor);
-                        editor.editing.view.scrollToTheSelection();
-                    };
-                    editor.editing.view.document.on(
-                        "enter",
-                        (event, data) => {
+                        extraPlugins: CHAT_INPUT_PLUGINS,
+                        toolbar: { items: [] },
+                        placeholder: t("llm_chat.placeholder"),
+                        mention: { feeds: mentionFeeds },
+                        licenseKey: "GPL",
+                        language: "en"
+                    }}
+                    onChange={(html) => {
+                        chat.setInput(editorHtmlToMarkdown(html ?? ""));
+                    }}
+                    onInitialized={(editor) => {
+                        editorInstanceRef.current = editor;
+                        const insertNewBlock = () => {
+                            insertNewBlockCommand(editor);
+                            editor.editing.view.scrollToTheSelection();
+                        };
+                        editor.editing.view.document.on(
+                            "enter",
+                            (event, data) => {
                             // Inside a code block, don't submit — let CodeBlock turn Enter/Shift+Enter
                             // into newlines, so multi-line snippets can be typed.
-                            if (isSelectionInCodeBlock(editor)) return;
-                            // Shift+Enter builds blocks — a new list item / paragraph, or exiting an empty
-                            // list item / code-block line — so lists and blocks can be built while plain
-                            // Enter submits. Normally handled by the keydown keystroke below; this is a
-                            // fallback for the rare case where the keystroke doesn't cancel the event.
-                            if (data.isSoft) {
+                                if (isSelectionInCodeBlock(editor)) return;
+                                // Shift+Enter builds blocks — a new list item / paragraph, or exiting an empty
+                                // list item / code-block line — so lists and blocks can be built while plain
+                                // Enter submits. Normally handled by the keydown keystroke below; this is a
+                                // fallback for the rare case where the keystroke doesn't cancel the event.
+                                if (data.isSoft) {
+                                    event.stop();
+                                    data.preventDefault();
+                                    insertNewBlock();
+                                    return;
+                                }
+                                // Plain Enter submits.
                                 event.stop();
                                 data.preventDefault();
-                                insertNewBlock();
-                                return;
-                            }
-                            // Plain Enter submits.
-                            event.stop();
-                            data.preventDefault();
-                            submitRef.current(new Event("submit"));
-                        },
-                        { priority: "high" }
-                    );
-                    // Shift/Ctrl/Alt+Enter all insert a new block. Bind them on keydown via keystrokes
-                    // rather than the `enter` view event: modified Enter combos don't fire that event, and
-                    // — crucially for Shift+Enter — CodeBlock consumes the `enter` event in its own context
-                    // (and stops it) before our handler runs, so intercepting on keydown is the only way to
-                    // let Shift+Enter leave a code block from its empty last line.
-                    editor.keystrokes.set("Shift+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
-                    editor.keystrokes.set("Ctrl+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
-                    editor.keystrokes.set("Alt+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
-                    // Backspace at the very start of a list item leaves the list (outdent → paragraph)
-                    // instead of CKEditor's default, which merges the item into the previous one as a
-                    // bullet-less continuation block — confusing in a simple chat input. The list handles
-                    // this on the `delete` view event (fired from `beforeinput`), so intercepting on the
-                    // earlier `keydown` and cancelling suppresses that event before the list can merge.
-                    editor.keystrokes.set("Backspace", (_keyEvtData, cancel) => {
-                        if (outdentListItemAtStart(editor)) cancel();
-                    });
-                    // Capture pasted images at the DOM layer so CKEditor doesn't
-                    // try to embed them as base64 data URLs inside the editor.
-                    // Go through `pasteHandlerRef` so this one-time registration
-                    // always sees the latest closure (chatNoteId arrives via a
-                    // useEffect in the parent, after first render).
-                    const editable = editor.editing.view.getDomRoot();
-                    editable?.addEventListener(
-                        "paste",
-                        (e) => attachments.pasteHandlerRef.current(e as ClipboardEvent),
-                        { capture: true }
-                    );
-                }}
-            />
-            <input
-                ref={attachments.fileInputRef}
-                type="file"
-                accept={attachments.acceptAttr}
-                multiple
-                onChange={attachments.handleFilePickerChange}
-                style={{ display: "none" }}
-            />
-            <div className="llm-chat-options">
-                <div className="llm-chat-model-selector">
-                    <span className="bx bx-chip" />
-                    <Dropdown
-                        text={<>{currentModel?.name}</>}
-                        disabled={chat.isStreaming}
-                        buttonClassName="llm-chat-model-select"
-                        className="llm-chat-model-dropdown"
-                        // In the sidebar the menu lives inside `.sidebar-chat-container`'s
-                        // `overflow: hidden`, which clips the leftward-opening legacy submenu.
-                        // Portal it to the body (with a fixed popper) so it can extend past the
-                        // sidebar edge, matching the sidebar's other dropdowns.
-                        portalToBody={inSidebar}
-                        dropdownOptions={inSidebar ? { popperConfig: { strategy: "fixed" } } : undefined}
-                    >
-                        {currentModelGroups.map(group => (
-                            <Fragment key={group.key}>
-                                {group.providerName && <FormListHeader text={group.providerName} />}
-                                {group.models.map(model => (
-                                    <FormListItem
-                                        key={`${model.provider}:${model.id}`}
-                                        onClick={() => handleModelSelect(model.id, model.provider)}
-                                        checked={isSelectedModel(model)}
-                                    >
-                                        {model.name}{model.costDescription && <> <small>({model.costDescription})</small></>}
-                                    </FormListItem>
-                                ))}
-                            </Fragment>
-                        ))}
-                        {legacyModels.length > 0 && (
-                            <>
-                                <FormDropdownDivider />
-                                <FormDropdownSubmenu
-                                    icon="bx bx-history"
-                                    title={t("llm_chat.legacy_models")}
-                                    dropStart={inSidebar}
-                                >
-                                    {legacyModelGroups.map(group => (
-                                        <Fragment key={group.key}>
-                                            {group.providerName && <FormListHeader text={group.providerName} />}
-                                            {group.models.map(model => (
-                                                <FormListItem
-                                                    key={`${model.provider}:${model.id}`}
-                                                    onClick={() => handleModelSelect(model.id, model.provider)}
-                                                    checked={isSelectedModel(model)}
-                                                >
-                                                    {model.name}{model.costDescription && <> <small>({model.costDescription})</small></>}
-                                                </FormListItem>
-                                            ))}
-                                        </Fragment>
-                                    ))}
-                                </FormDropdownSubmenu>
-                            </>
-                        )}
-                        <FormDropdownDivider />
-                        <FormListToggleableItem
-                            icon="bx bx-globe"
-                            title={t("llm_chat.web_search")}
-                            currentValue={chat.enableWebSearch && !webSearchUnavailable}
-                            onChange={handleWebSearchToggle}
-                            disabled={chat.isStreaming || webSearchUnavailable}
-                            disabledTooltip={webSearchUnavailable ? t("llm_chat.web_search_unavailable_gemini") : undefined}
-                        />
-                        <FormListToggleableItem
-                            icon="bx bx-note"
-                            title={t("llm_chat.note_tools")}
-                            currentValue={chat.enableNoteTools}
-                            onChange={handleNoteToolsToggle}
+                                submitRef.current(new Event("submit"));
+                            },
+                            { priority: "high" }
+                        );
+                        // Shift/Ctrl/Alt+Enter all insert a new block. Bind them on keydown via keystrokes
+                        // rather than the `enter` view event: modified Enter combos don't fire that event, and
+                        // — crucially for Shift+Enter — CodeBlock consumes the `enter` event in its own context
+                        // (and stops it) before our handler runs, so intercepting on keydown is the only way to
+                        // let Shift+Enter leave a code block from its empty last line.
+                        editor.keystrokes.set("Shift+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
+                        editor.keystrokes.set("Ctrl+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
+                        editor.keystrokes.set("Alt+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
+                        // Backspace at the very start of a list item leaves the list (outdent → paragraph)
+                        // instead of CKEditor's default, which merges the item into the previous one as a
+                        // bullet-less continuation block — confusing in a simple chat input. The list handles
+                        // this on the `delete` view event (fired from `beforeinput`), so intercepting on the
+                        // earlier `keydown` and cancelling suppresses that event before the list can merge.
+                        editor.keystrokes.set("Backspace", (_keyEvtData, cancel) => {
+                            if (outdentListItemAtStart(editor)) cancel();
+                        });
+                        // Capture pasted images at the DOM layer so CKEditor doesn't
+                        // try to embed them as base64 data URLs inside the editor.
+                        // Go through `pasteHandlerRef` so this one-time registration
+                        // always sees the latest closure (chatNoteId arrives via a
+                        // useEffect in the parent, after first render).
+                        const editable = editor.editing.view.getDomRoot();
+                        editable?.addEventListener(
+                            "paste",
+                            (e) => attachments.pasteHandlerRef.current(e as ClipboardEvent),
+                            { capture: true }
+                        );
+                    }}
+                />
+                <input
+                    ref={attachments.fileInputRef}
+                    type="file"
+                    accept={attachments.acceptAttr}
+                    multiple
+                    onChange={attachments.handleFilePickerChange}
+                    style={{ display: "none" }}
+                />
+                <div className="llm-chat-options">
+                    <div className="llm-chat-model-selector">
+                        <span className="bx bx-chip" />
+                        <Dropdown
+                            text={<>{currentModel?.name}</>}
                             disabled={chat.isStreaming}
-                        />
-                        <FormListToggleableItem
-                            icon="bx bx-brain"
-                            title={t("llm_chat.extended_thinking")}
-                            currentValue={chat.enableExtendedThinking}
-                            onChange={handleExtendedThinkingToggle}
-                            disabled={chat.isStreaming}
-                        />
-                    </Dropdown>
-                    {activeNoteId && activeNoteTitle && (
-                        <Button
-                            text={activeNoteTitle}
-                            icon={isNoteContextEnabled ? "bx-file" : "bx-hide"}
-                            kind="lowProfile"
-                            size="micro"
-                            className={`llm-chat-note-context ${isNoteContextEnabled ? "active" : ""}`}
-                            onClick={handleNoteContextToggle}
-                            disabled={chat.isStreaming}
-                            title={isNoteContextEnabled
-                                ? t("llm_chat.note_context_enabled", { title: activeNoteTitle })
-                                : t("llm_chat.note_context_disabled")}
-                        />
-                    )}
-                    {chat.lastPromptTokens > 0 && (
-                        <div
-                            className="llm-chat-context-indicator"
-                            title={`${formatTokenCount(chat.lastPromptTokens)} / ${formatTokenCount(contextWindow)} ${t("llm_chat.tokens")}`}
+                            buttonClassName="llm-chat-model-select"
+                            className="llm-chat-model-dropdown"
+                            // In the sidebar the menu lives inside `.sidebar-chat-container`'s
+                            // `overflow: hidden`, which clips the leftward-opening legacy submenu.
+                            // Portal it to the body (with a fixed popper) so it can extend past the
+                            // sidebar edge, matching the sidebar's other dropdowns.
+                            portalToBody={inSidebar}
+                            dropdownOptions={inSidebar ? { popperConfig: { strategy: "fixed" } } : undefined}
                         >
-                            <div
-                                className="llm-chat-context-pie"
-                                style={{
-                                    background: `conic-gradient(${pieColor} ${percentage}%, var(--accented-background-color) ${percentage}%)`
-                                }}
+                            {chat.modelGroups.map(group => (
+                                <Fragment key={group.id}>
+                                    <FormListHeader
+                                        text={group.name}
+                                        action={
+                                            <ActionButton
+                                                icon="bx bx-edit"
+                                                text={t("llm_chat.edit_models")}
+                                                onClick={() => openEditModels(group.id)}
+                                            />
+                                        }
+                                    />
+                                    {group.models.length > 0 ? group.models.map(model => (
+                                        <FormListItem
+                                            key={`${model.providerId ?? model.provider}:${model.id}`}
+                                            onClick={() => handleModelSelect(model)}
+                                            checked={isSelectedModel(model)}
+                                        >
+                                            {model.name}{model.costDescription && <> <small>({model.costDescription})</small></>}
+                                        </FormListItem>
+                                    )) : (
+                                    // Provider configured before model selection existed (or with
+                                    // everything deselected): keep the group visible with a hint.
+                                        <FormListItem disabled onClick={() => {}}>
+                                            <small>{t("llm_chat.no_models_selected")}</small>
+                                        </FormListItem>
+                                    )}
+                                </Fragment>
+                            ))}
+                            <FormDropdownDivider />
+                            <FormListToggleableItem
+                                icon="bx bx-globe"
+                                title={t("llm_chat.web_search")}
+                                currentValue={chat.enableWebSearch && !webSearchUnavailable}
+                                onChange={handleWebSearchToggle}
+                                disabled={chat.isStreaming || webSearchUnavailable}
+                                disabledTooltip={webSearchUnavailable ? t("llm_chat.web_search_unavailable_gemini") : undefined}
                             />
-                            <span className="llm-chat-context-text">{t("llm_chat.context_used", { percentage: percentage.toFixed(0) })}</span>
-                        </div>
-                    )}
+                            <FormListToggleableItem
+                                icon="bx bx-note"
+                                title={t("llm_chat.note_tools")}
+                                currentValue={chat.enableNoteTools}
+                                onChange={handleNoteToolsToggle}
+                                disabled={chat.isStreaming}
+                            />
+                            <FormListToggleableItem
+                                icon="bx bx-brain"
+                                title={t("llm_chat.extended_thinking")}
+                                currentValue={chat.enableExtendedThinking}
+                                onChange={handleExtendedThinkingToggle}
+                                disabled={chat.isStreaming}
+                            />
+                        </Dropdown>
+                        {activeNoteId && activeNoteTitle && (
+                            <Button
+                                text={activeNoteTitle}
+                                icon={isNoteContextEnabled ? "bx-file" : "bx-hide"}
+                                kind="lowProfile"
+                                size="micro"
+                                className={`llm-chat-note-context ${isNoteContextEnabled ? "active" : ""}`}
+                                onClick={handleNoteContextToggle}
+                                disabled={chat.isStreaming}
+                                title={isNoteContextEnabled
+                                    ? t("llm_chat.note_context_enabled", { title: activeNoteTitle })
+                                    : t("llm_chat.note_context_disabled")}
+                            />
+                        )}
+                        {chat.lastPromptTokens > 0 && (
+                            <div
+                                className="llm-chat-context-indicator"
+                                title={`${formatTokenCount(chat.lastPromptTokens)} / ${formatTokenCount(contextWindow)} ${t("llm_chat.tokens")}`}
+                            >
+                                <div
+                                    className="llm-chat-context-pie"
+                                    style={{
+                                        background: `conic-gradient(${pieColor} ${percentage}%, var(--accented-background-color) ${percentage}%)`
+                                    }}
+                                />
+                                <span className="llm-chat-context-text">{t("llm_chat.context_used", { percentage: percentage.toFixed(0) })}</span>
+                            </div>
+                        )}
+                    </div>
+                    <ActionButton
+                        icon="bx bx-paperclip"
+                        text={t("llm_chat.attach_file")}
+                        onClick={attachments.openFilePicker}
+                        disabled={chat.isStreaming || !chat.chatNoteId}
+                        className="llm-chat-attach-btn"
+                    />
+                    <ActionButton
+                        icon={chat.isStreaming ? "bx bx-stop" : "bx bx-send"}
+                        text={chat.isStreaming ? t("llm_chat.stop") : t("llm_chat.send")}
+                        onClick={chat.isStreaming ? chat.stopStreaming : handleSubmit}
+                        disabled={!chat.isStreaming && !chat.hasInputText && chat.pendingAttachments.length === 0}
+                        className={`llm-chat-send-btn ${chat.isStreaming ? "llm-chat-stop-btn" : ""}`}
+                    />
                 </div>
-                <ActionButton
-                    icon="bx bx-paperclip"
-                    text={t("llm_chat.attach_file")}
-                    onClick={attachments.openFilePicker}
-                    disabled={chat.isStreaming || !chat.chatNoteId}
-                    className="llm-chat-attach-btn"
-                />
-                <ActionButton
-                    icon={chat.isStreaming ? "bx bx-stop" : "bx bx-send"}
-                    text={chat.isStreaming ? t("llm_chat.stop") : t("llm_chat.send")}
-                    onClick={chat.isStreaming ? chat.stopStreaming : handleSubmit}
-                    disabled={!chat.isStreaming && !chat.hasInputText && chat.pendingAttachments.length === 0}
-                    className={`llm-chat-send-btn ${chat.isStreaming ? "llm-chat-stop-btn" : ""}`}
-                />
-            </div>
-        </form>
+            </form>
+            <AddProviderModal
+                key={openToken}
+                show={modalOpen}
+                existingProvider={modalProvider}
+                initialStep={modalStep}
+                onHidden={() => setModalOpen(false)}
+                onSave={handleSaveProvider}
+            />
+        </>
     );
 }
 
-interface ProviderModelGroup {
-    /** Stable key for the group (the provider id). */
-    key: string;
-    /** Friendly provider name shown in the group header. */
-    providerName: string;
-    models: ModelOption[];
-}
-
-/**
- * Groups models by their owning provider, preserving the order in which each provider first
- * appears. The provider's friendly name (from {@link PROVIDER_TYPES}) heads each group.
- */
-function groupModelsByProvider(models: ModelOption[]): ProviderModelGroup[] {
-    const groups: ProviderModelGroup[] = [];
-    const byProvider = new Map<string | undefined, ProviderModelGroup>();
-
-    for (const model of models) {
-        let group = byProvider.get(model.provider);
-        if (!group) {
-            group = {
-                key: model.provider ?? "",
-                providerName: PROVIDER_TYPES.find(p => p.id === model.provider)?.name ?? model.provider ?? "",
-                models: []
-            };
-            byProvider.set(model.provider, group);
-            groups.push(group);
-        }
-        group.models.push(model);
-    }
-
-    return groups;
-}

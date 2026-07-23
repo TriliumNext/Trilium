@@ -40,19 +40,14 @@ describe("gapPostFixer + onEnterInBody", () => {
         });
 
         it("dives into a nested <details>'s last block when the gap before the caret is a nested <details>", () => {
+            // Both details are open so hiddenBodyPostFixer doesn't rescue the caret
+            // away from the nested body — we're isolating gapPostFixer here.
             setModelData(model,
-                "<details>" +
+                "<details open=\"true\">" +
                     "<summary>Outer</summary>" +
-                    "<details><summary>Inner</summary><paragraph>nested</paragraph></details>" +
+                    "<details open=\"true\"><summary>Inner</summary><paragraph>nested</paragraph></details>" +
                 "</details>"
             );
-            // Open both details manually so hiddenBodyPostFixer doesn't rescue
-            // the caret away from the nested body — we're isolating gapPostFixer.
-            // (Auto-open only walks top-level siblings of the insert entry, so
-            // nested details from a single setModelData stay closed in tests.)
-            for (const d of editor.editing.view.getDomRoot()!.querySelectorAll("details")) {
-                (d as HTMLDetailsElement).open = true;
-            }
             model.change(writer => {
                 const outer = model.document.getRoot()!.getChild(0)!;
                 // Position at outer's end: between inner-details and end-of-outer.
@@ -60,8 +55,8 @@ describe("gapPostFixer + onEnterInBody", () => {
             });
             // Caret should land at the end of the nested details' last block.
             expect(getModelData(model)).toBe(
-                "<details><summary>Outer</summary>" +
-                    "<details><summary>Inner</summary><paragraph>nested[]</paragraph></details>" +
+                "<details open=\"true\"><summary>Outer</summary>" +
+                    "<details open=\"true\"><summary>Inner</summary><paragraph>nested[]</paragraph></details>" +
                 "</details>"
             );
         });
@@ -69,8 +64,11 @@ describe("gapPostFixer + onEnterInBody", () => {
 
     describe("onEnterInBody", () => {
         it("escapes the collapsible when Enter is pressed in an empty trailing body paragraph", () => {
+            // Open: a caret can only ever be in a body that is actually visible —
+            // hiddenBodyPostFixer bounces it to the summary otherwise, so a
+            // collapsed block could never reach onEnterInBody in the first place.
             setModelData(model,
-                "<details>" +
+                "<details open=\"true\">" +
                     "<summary>X</summary>" +
                     "<paragraph>existing</paragraph>" +
                     "<paragraph>[]</paragraph>" +
@@ -85,7 +83,7 @@ describe("gapPostFixer + onEnterInBody", () => {
             // The empty trailing paragraph is gone; the caret has moved to a new
             // paragraph outside the details.
             expect(getModelData(model)).toBe(
-                "<details><summary>X</summary><paragraph>existing</paragraph></details>" +
+                "<details open=\"true\"><summary>X</summary><paragraph>existing</paragraph></details>" +
                 "<paragraph>[]</paragraph>"
             );
         });

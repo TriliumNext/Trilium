@@ -57,9 +57,12 @@ export interface RenderOptions {
     /**
      * How audio/video renders. `preview` (the default) shows a click-to-load placeholder, so that a screen
      * full of media notes doesn't have every one of them streaming from the server at once; `embedded`
-     * mounts the full player straight away. `native` emits a plain `<audio>`/`<video>` element instead of
+     * mounts the compact player straight away. `native` emits a plain `<audio>`/`<video>` element instead of
      * the player, for the callers that serialize the rendered content into an HTML string or into a separate
      * document (presentation, printing) — a mounted player would be dead markup there.
+     *
+     * A full-size player has no entry here: it needs the tab it lives in (for sibling navigation and the OS
+     * media session), which the renderer has no access to, so its hosts mount {@link MediaPreview} themselves.
      */
     mediaEnvironment?: "preview" | "embedded" | "native";
     /**

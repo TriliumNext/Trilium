@@ -1,3 +1,5 @@
+import "./Modal.css";
+
 import { Modal as BootstrapModal } from "bootstrap";
 import clsx from "clsx";
 import { ComponentChildren, CSSProperties, RefObject } from "preact";

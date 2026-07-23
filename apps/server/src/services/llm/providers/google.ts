@@ -1,10 +1,12 @@
 import { createGoogleGenerativeAI, type GoogleGenerativeAIProvider } from "@ai-sdk/google";
-import { streamText, stepCountIs, type ToolSet } from "ai";
 import type { LlmMessage } from "@triliumnext/commons";
-
 import { getLog } from "@triliumnext/core";
+import { stepCountIs, streamText, type ToolSet } from "ai";
+
 import type { LlmProviderConfig, StreamResult } from "../types.js";
-import { BaseProvider, buildModelList } from "./base_provider.js";
+import { BaseProvider, type RemoteModel } from "./base_provider.js";
+
+const OFFICIAL_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
 /**
  * Gemini 2.x models (every model we currently expose) cannot combine
@@ -18,51 +20,15 @@ function geminiHasToolConflict(config: LlmProviderConfig): boolean {
     return !!(config.enableWebSearch && config.enableNoteTools);
 }
 
-/**
- * Available Google Gemini models with pricing (USD per million tokens).
- * Source: https://ai.google.dev/gemini-api/docs/pricing
- */
-const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
-    // ===== Current Models =====
-    {
-        id: "gemini-2.5-pro",
-        name: "Gemini 2.5 Pro",
-        pricing: { input: 1.25, output: 10 },
-        contextWindow: 1048576
-    },
-    {
-        id: "gemini-2.5-flash",
-        name: "Gemini 2.5 Flash",
-        pricing: { input: 0.3, output: 2.5 },
-        contextWindow: 1048576,
-        isDefault: true
-    },
-    {
-        id: "gemini-2.5-flash-lite",
-        name: "Gemini 2.5 Flash-Lite",
-        pricing: { input: 0.1, output: 0.4 },
-        contextWindow: 1048576
-    },
-    {
-        id: "gemini-2.0-flash",
-        name: "Gemini 2.0 Flash",
-        pricing: { input: 0.1, output: 0.4 },
-        contextWindow: 1048576,
-        isLegacy: true
-    }
-]);
-
 export class GoogleProvider extends BaseProvider {
     name = "google";
     protected defaultModel = "gemini-2.5-flash";
     protected titleModel = "gemini-2.5-flash-lite";
-    protected availableModels = AVAILABLE_MODELS;
-    protected modelPricing = MODEL_PRICING;
 
     private google: GoogleGenerativeAIProvider;
 
     constructor(apiKey: string, baseURL?: string) {
-        super();
+        super(apiKey, baseURL);
         if (!apiKey) {
             throw new Error("API key is required for Google provider");
         }
@@ -71,6 +37,31 @@ export class GoogleProvider extends BaseProvider {
 
     protected createModel(modelId: string) {
         return this.google(modelId);
+    }
+
+    /**
+     * List models from the Gemini API. Only `generateContent`-capable models
+     * are kept (the endpoint also lists embedding/imagen/veo models), and the
+     * `models/` id prefix is stripped to match what `createModel` expects.
+     */
+    protected override async fetchRemoteModels(): Promise<RemoteModel[] | null> {
+        const payload = await this.fetchJson(`${this.baseURL ?? OFFICIAL_BASE_URL}/models?pageSize=1000`, {
+            "x-goog-api-key": this.apiKey
+        });
+        const models = (payload as { models?: unknown }).models;
+        if (!Array.isArray(models)) {
+            throw new Error("Unexpected /models response shape");
+        }
+        return models
+            .filter((m): m is { name: string; displayName?: string; inputTokenLimit?: number; supportedGenerationMethods?: string[] } =>
+                typeof (m as { name?: unknown }).name === "string")
+            .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
+            .map(m => ({
+                id: m.name.replace(/^models\//, ""),
+                name: m.displayName,
+                contextWindow: m.inputTokenLimit
+            }))
+            .filter(m => isGoogleChatModel(m.id));
     }
 
     protected override addWebSearchTool(tools: ToolSet): void {
@@ -131,4 +122,27 @@ export class GoogleProvider extends BaseProvider {
 
         return streamText(streamOptions);
     }
+}
+
+/**
+ * Chat-model filter for the Gemini API. The endpoint's `supportedGenerationMethods`
+ * is not enough: image (Nano Banana), robotics, computer-use, and speech models
+ * all advertise `generateContent` too. Filter by id shape instead:
+ *
+ * - Only `gemini-*` ids are chat candidates — this drops the non-Gemini
+ *   families wholesale (`lyria-*` music, `veo-*` video, `imagen-*`, `gemma-*`
+ *   open models, `deep-research-*`, `antigravity-*` agents, embeddings, AQA).
+ * - Within `gemini-*`, drop non-conversational variants by token: image
+ *   generation, speech (tts/live/native-audio), video (omni), robotics,
+ *   computer use, embeddings, and tool-variant builds (custom-tools).
+ * - Drop `-latest` rolling aliases and `-NNN` pinned revisions — both are
+ *   duplicates of a stable id that is also in the list.
+ */
+const GOOGLE_NON_CHAT = /image|tts|live|audio|dialog|robotics|computer-use|embedding|omni|custom-?tools/i;
+
+export function isGoogleChatModel(id: string): boolean {
+    return /^gemini-/.test(id)
+        && !GOOGLE_NON_CHAT.test(id)
+        && !/-latest$/.test(id)
+        && !/-\d{3}$/.test(id);
 }

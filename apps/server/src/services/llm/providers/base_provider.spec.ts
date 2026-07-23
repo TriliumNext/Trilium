@@ -1,7 +1,7 @@
 import type { LlmMessage, LlmMessagePart } from "@triliumnext/commons";
 import { encodeUtf8 } from "@triliumnext/core/src/services/utils/binary.js";
 import type { LanguageModel } from "ai";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LlmProviderConfig, ModelInfo } from "../types.js";
 
@@ -28,7 +28,8 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
     return {
         ...actual,
         becca: { ...actual.becca, ...beccaStub },
-        getLog: () => ({ ...actual.getLog(), error: errorLogMock })
+        // Spreading the real logger loses prototype methods (e.g. info), so stub it too.
+        getLog: () => ({ ...actual.getLog(), error: errorLogMock, info: vi.fn() })
     };
 });
 
@@ -42,28 +43,48 @@ vi.mock("../tools/index.js", () => ({
     allToolRegistries: [{ toToolSet: () => ({ fake_tool: { description: "x" } }) }]
 }));
 
-import { BaseProvider, buildModelList, buildModelMessage } from "./base_provider.js";
+import {
+    BaseProvider,
+    buildModelList,
+    buildModelMessage,
+    mergeModelLists,
+    type ProviderPrices,
+    type RemoteModel
+} from "./base_provider.js";
 
-const TEST_MODELS: Omit<ModelInfo, "costMultiplier">[] = [
+const TEST_MODELS: Parameters<typeof buildModelList>[0] = [
     { id: "cheap", name: "Cheap", pricing: { input: 1, output: 2 } },
     { id: "mid", name: "Mid", pricing: { input: 2, output: 4 }, isDefault: true },
     { id: "spendy", name: "Spendy", pricing: { input: 10, output: 30 } }
 ];
 
-const { models: BUILT_MODELS, pricing: BUILT_PRICING } = buildModelList(TEST_MODELS);
+const { pricing: BUILT_PRICING } = buildModelList(TEST_MODELS);
+
+/** Injected price-table slice — the base class reads this instead of the JSON file. */
+const TEST_PRICES: ProviderPrices = {
+    cheap: { input: 1, output: 2 },
+    mid: { input: 2, output: 4, ctx: 1000 },
+    spendy: { input: 10, output: 30 }
+};
 
 class TestProvider extends BaseProvider {
     name = "test";
     protected defaultModel = "mid";
     protected titleModel = "cheap";
-    protected availableModels = BUILT_MODELS;
-    protected modelPricing = BUILT_PRICING;
+    protected override getProviderPrices(): ProviderPrices {
+        return TEST_PRICES;
+    }
 
     public createdModelIds: string[] = [];
+    public fetchRemoteModelsMock = vi.fn<() => Promise<RemoteModel[] | null>>(async () => null);
 
     protected createModel(modelId: string): LanguageModel {
         this.createdModelIds.push(modelId);
         return { modelId } as unknown as LanguageModel;
+    }
+
+    protected override fetchRemoteModels(): Promise<RemoteModel[] | null> {
+        return this.fetchRemoteModelsMock();
     }
 
     // Expose protected helpers for direct assertions.
@@ -72,6 +93,20 @@ class TestProvider extends BaseProvider {
     }
     public callBuildMessages(m: LlmMessage[]) {
         return this.buildMessages(m);
+    }
+    /** Reach the base implementation past this class's own override. */
+    public callBaseFetchRemoteModels() {
+        return super.fetchRemoteModels();
+    }
+    public callFetchJson(url: string, headers: Record<string, string>) {
+        return this.fetchJson(url, headers);
+    }
+    public callBaseGetProviderPrices() {
+        return super.getProviderPrices();
+    }
+    /** Expose the normalized endpoint override for assertions. */
+    public get normalizedBaseUrl() {
+        return this.baseURL;
     }
 }
 
@@ -87,31 +122,202 @@ function makeAttachment(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe("buildModelList", () => {
-    it("derives cost multipliers relative to the default (baseline) model", () => {
-        // Baseline = mid: effective = (2 + 3*4)/4 = 3.5
-        const byId = Object.fromEntries(BUILT_MODELS.map((m) => [m.id, m]));
-        expect(byId.mid.costMultiplier).toBe(1);
-        // cheap: (1 + 3*2)/4 = 1.75 → 1.75/3.5 = 0.5
-        expect(byId.cheap.costMultiplier).toBe(0.5);
-        // spendy: (10 + 3*30)/4 = 25 → 25/3.5 = 7.14 → rounded to 7.1
-        expect(byId.spendy.costMultiplier).toBe(7.1);
-    });
-
-    it("falls back to the first model as baseline when none is marked default", () => {
-        const { models } = buildModelList([
-            { id: "a", name: "A", pricing: { input: 2, output: 4 } },
-            { id: "b", name: "B", pricing: { input: 4, output: 8 } }
-        ]);
-        expect(models[0].costMultiplier).toBe(1);
-        expect(models[1].costMultiplier).toBe(2);
-    });
-
     it("maps each model id to its pricing", () => {
         expect(BUILT_PRICING).toMatchObject({
             cheap: { input: 1, output: 2 },
             mid: { input: 2, output: 4 },
             spendy: { input: 10, output: 30 }
         });
+    });
+});
+
+describe("getAvailableModels / getModelPricing (from the price table)", () => {
+    it("builds the model list from the price table, sorted, with the default flagged", () => {
+        const models = new TestProvider().getAvailableModels();
+        expect(models.map((m) => m.id)).toEqual(["cheap", "mid", "spendy"]);
+        expect(models[1]).toMatchObject({ id: "mid", pricing: { input: 2, output: 4 }, contextWindow: 1000, isDefault: true });
+        // Non-default models carry no isDefault flag.
+        expect(models[0].isDefault).toBeUndefined();
+    });
+
+    it("looks pricing up by model id, undefined for unknown", () => {
+        const provider = new TestProvider();
+        expect(provider.getModelPricing("spendy")).toEqual({ input: 10, output: 30 });
+        expect(provider.getModelPricing("nope")).toBeUndefined();
+    });
+});
+
+describe("base URL normalization", () => {
+    it("strips trailing slashes and treats a blank override as none", () => {
+        expect(new TestProvider("k", "http://localhost:11434/v1").normalizedBaseUrl).toBe("http://localhost:11434/v1");
+        expect(new TestProvider("k", "http://localhost:11434/v1/").normalizedBaseUrl).toBe("http://localhost:11434/v1");
+        expect(new TestProvider("k", "http://localhost:11434/v1///").normalizedBaseUrl).toBe("http://localhost:11434/v1");
+        expect(new TestProvider("k").normalizedBaseUrl).toBeUndefined();
+        expect(new TestProvider("k", "").normalizedBaseUrl).toBeUndefined();
+        expect(new TestProvider("k", "///").normalizedBaseUrl).toBeUndefined();
+    });
+
+    it("trims a pathological run of trailing slashes without backtracking", () => {
+        // The base URL comes straight from a request body, and the previous
+        // `/\/+$/` pattern backtracked polynomially on this input, hanging the
+        // server (CodeQL js/polynomial-redos).
+        const hostile = `http://x${"/".repeat(100_000)}`;
+        const startedAt = Date.now();
+        expect(new TestProvider("k", hostile).normalizedBaseUrl).toBe("http://x");
+        expect(Date.now() - startedAt).toBeLessThan(1000);
+    });
+});
+
+describe("mergeModelLists", () => {
+    const CURATED: ModelInfo[] = [
+        { id: "gpt-4.1", name: "GPT-4.1", pricing: { input: 2, output: 8 }, contextWindow: 1047576, isDefault: true },
+        { id: "gpt-4.1-mini", name: "GPT-4.1 Mini", pricing: { input: 0.4, output: 1.6 }, contextWindow: 1047576 },
+        { id: "gpt-4o", name: "GPT-4o", pricing: { input: 2.5, output: 10 }, contextWindow: 128000, isLegacy: true }
+    ];
+
+    it("keeps base metadata for known models and appends unknown ones alphabetically", () => {
+        const merged = mergeModelLists(CURATED, [
+            { id: "gpt-9" },
+            { id: "gpt-4.1-mini" },
+            { id: "gpt-5" },
+            { id: "gpt-4.1" }
+        ]);
+        expect(merged.map(m => m.id)).toEqual(["gpt-4.1", "gpt-4.1-mini", "gpt-5", "gpt-9"]);
+        // Base entries keep their pricing/default metadata...
+        expect(merged[0]).toMatchObject({ name: "GPT-4.1", pricing: { input: 2, output: 8 }, isDefault: true });
+        // ...unknown ones carry no pricing.
+        expect(merged[2]).toEqual({ id: "gpt-5", name: "gpt-5", contextWindow: undefined });
+    });
+
+    it("prefers the endpoint's display name over the base list's for known models", () => {
+        const merged = mergeModelLists(
+            [{ id: "gpt-4.1", name: "gpt-4.1", pricing: { input: 2, output: 8 } }],
+            [{ id: "gpt-4.1", name: "GPT-4.1 (from endpoint)" }]
+        );
+        expect(merged[0].name).toBe("GPT-4.1 (from endpoint)");
+    });
+
+    it("drops curated models absent from the remote list", () => {
+        expect(mergeModelLists(CURATED, [{ id: "gpt-4.1" }]).map(m => m.id)).toEqual(["gpt-4.1"]);
+    });
+
+    it("uses the remote display name and context window when provided", () => {
+        const merged = mergeModelLists([], [{ id: "llama3.2", name: "Llama 3.2", contextWindow: 131072 }]);
+        expect(merged[0]).toMatchObject({ id: "llama3.2", name: "Llama 3.2", contextWindow: 131072, isDefault: true });
+    });
+
+    it("fills a curated model's missing context window from the remote data", () => {
+        const curated: ModelInfo[] = [{ id: "m", name: "M", pricing: { input: 1, output: 1 } }];
+        expect(mergeModelLists(curated, [{ id: "m", contextWindow: 32000 }])[0].contextWindow).toBe(32000);
+    });
+
+    it("promotes the first model to default when the curated default is unavailable", () => {
+        const merged = mergeModelLists(CURATED, [{ id: "gpt-4o" }, { id: "custom-model" }]);
+        expect(merged.map(m => [m.id, m.isDefault ?? false])).toEqual([
+            ["gpt-4o", true],
+            ["custom-model", false]
+        ]);
+    });
+
+    it("returns an empty list when the remote list shares nothing and is empty", () => {
+        expect(mergeModelLists(CURATED, [])).toEqual([]);
+    });
+});
+
+describe("recommendedModelIds (generic rule)", () => {
+    it("recommends every model that is neither a preview nor legacy", () => {
+        // Providers whose id shape carries no recency signal (e.g. Google) keep
+        // this default; OpenAI/Anthropic override it in their own modules.
+        const ids = new TestProvider().recommendedModelIds([
+            { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+            { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" },
+            { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", isLegacy: true }
+        ]);
+        expect([...ids]).toEqual(["gemini-2.5-flash"]);
+    });
+});
+
+describe("listModels", () => {
+    it("returns the price-table list when the provider has no dynamic listing", async () => {
+        const models = await new TestProvider().listModels();
+        expect(models.map((m) => m.id)).toEqual(["cheap", "mid", "spendy"]);
+    });
+
+    it("merges the remote list with price-table metadata and caches the result", async () => {
+        const provider = new TestProvider();
+        provider.fetchRemoteModelsMock.mockResolvedValue([{ id: "mid" }, { id: "brand-new" }]);
+
+        const models = await provider.listModels();
+        expect(models.map((m) => m.id)).toEqual(["mid", "brand-new"]);
+        // Known model keeps its price-table pricing + default flag...
+        expect(models[0]).toMatchObject({ id: "mid", pricing: { input: 2, output: 4 }, isDefault: true });
+        // ...unknown one has no pricing.
+        expect(models[1].pricing).toBeUndefined();
+
+        // Second call is served from the cache — no second fetch.
+        await expect(provider.listModels()).resolves.toBe(models);
+        expect(provider.fetchRemoteModelsMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("deduplicates concurrent calls into a single fetch", async () => {
+        const provider = new TestProvider();
+        provider.fetchRemoteModelsMock.mockResolvedValue([{ id: "mid" }]);
+
+        const [a, b] = await Promise.all([provider.listModels(), provider.listModels()]);
+        expect(a).toBe(b);
+        expect(provider.fetchRemoteModelsMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("propagates a fetch failure (e.g. a bad API key) so the add/edit modal can surface it", async () => {
+        const provider = new TestProvider();
+        provider.fetchRemoteModelsMock.mockRejectedValue(new Error("HTTP 401"));
+        await expect(provider.listModels()).rejects.toThrow("HTTP 401");
+    });
+
+    it("falls back to the price-table list when the remote list is empty", async () => {
+        const provider = new TestProvider();
+        provider.fetchRemoteModelsMock.mockResolvedValue([]);
+        expect((await provider.listModels()).map((m) => m.id)).toEqual(["cheap", "mid", "spendy"]);
+    });
+});
+
+describe("fetchRemoteModels / fetchJson (base defaults and errors)", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("base fetchRemoteModels returns null — providers opt in to dynamic listing", async () => {
+        await expect(new TestProvider().callBaseFetchRemoteModels()).resolves.toBeNull();
+    });
+
+    it("fetchJson raises a plain HTTP error for a non-auth failure", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 500 })));
+        await expect(new TestProvider().callFetchJson("https://api.example/models", { "x-key": "v" }))
+            .rejects.toThrow("HTTP 500 from https://api.example/models");
+    });
+
+    it("fetchJson reports an auth failure so the add/edit screen can flag the credential", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 401 })));
+        await expect(new TestProvider().callFetchJson("https://api.example/models", { "x-key": "v" }))
+            .rejects.toThrow(/Authentication failed \(HTTP 401\) — check the API key\.$/);
+    });
+
+    it("fetchJson's auth error also blames the base URL when one is configured", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 403 })));
+        await expect(new TestProvider("key", "https://proxy.example").callFetchJson("https://proxy.example/models", {}))
+            .rejects.toThrow(/check the API key and base URL\./);
+    });
+
+    it("fetchJson returns the parsed JSON on success", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ data: [1, 2] }) })));
+        await expect(new TestProvider().callFetchJson("https://api.example/models", {}))
+            .resolves.toEqual({ data: [1, 2] });
+    });
+
+    it("getProviderPrices returns an empty table for a provider absent from the price file", () => {
+        // TestProvider.name ("test") has no entry in the committed price table,
+        // so the base lookup falls back to an empty map.
+        expect(new TestProvider().callBaseGetProviderPrices()).toEqual({});
     });
 });
 
@@ -372,17 +578,6 @@ describe("BaseProvider chat / pricing / models / title", () => {
         const provider2 = new TestProvider();
         provider2.chat([{ role: "user", content: "hi" }], { model: "spendy" });
         expect(provider2.createdModelIds).toContain("spendy");
-    });
-
-    it("getModelPricing returns known pricing and undefined for unknown models", () => {
-        const provider = new TestProvider();
-        expect(provider.getModelPricing("mid")).toEqual({ input: 2, output: 4 });
-        expect(provider.getModelPricing("nope")).toBeUndefined();
-    });
-
-    it("getAvailableModels returns the configured model list", () => {
-        const provider = new TestProvider();
-        expect(provider.getAvailableModels().map((m) => m.id)).toEqual(["cheap", "mid", "spendy"]);
     });
 
     it("generateTitle uses the title model and trims the result", async () => {

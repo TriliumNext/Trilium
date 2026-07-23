@@ -2,6 +2,7 @@ import { type ComponentChildren, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import { collectShortcutHints } from "../../services/shortcut_hints";
 import { ParentComponent } from "./react_utils";
@@ -85,6 +86,18 @@ describe("ImageViewer", () => {
             "image_viewer.hints.first_image",
             "image_viewer.hints.last_image"
         ]);
+    });
+
+    it("registers nothing on the app root, whose hints would be collected in every context", () => {
+        // A standalone Preact root mounted by the content renderer is hosted by appContext itself, and
+        // every chain the dispatcher walks ends there — so its hints would join every other widget's.
+        const container = document.createElement("div");
+        act(() => render(
+            <ParentComponent.Provider value={appContext}><ImageViewer src="x" /></ParentComponent.Provider>,
+            container
+        ));
+
+        expect(collectShortcutHints(appContext)).toEqual([]);
     });
 
     it("wires up the interactive zoom behavior", () => {

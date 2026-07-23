@@ -13,6 +13,7 @@ Setting up authentication with OpenID connect is a two-step process:
 ### Configuring the authentication provider
 
 1.  First, make sure the authentication provider (e.g. Google, Authelia) is configured properly. See <a class="reference-link" href="Signing%20in%20with%20OpenID%20Connect/Setting%20up%20with%20various%20providers.md">Setting up with various providers</a> for concrete examples.
+    
     1.  The redirect URL of Trilium is `https://<your-trilium-domain>/callback`.
     2.  You should obtain the base URL, client ID and client secret.
 2.  Set the following information using <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>:

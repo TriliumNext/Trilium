@@ -9,10 +9,10 @@ import { loadWaveform } from "./audio_waveform";
 import { AudioVisualizer } from "./AudioVisualizer";
 import MediaFileActions from "./MediaFileActions";
 import { playerRootClasses, preloadFor, showsFileActions, usesCompactControls } from "./media_environment";
-import { MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
+import { claimsKeystroke, MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 import { WaveformSeekBar } from "./WaveformSeekBar";
 
-export default function AudioPreview({ source, entity, environment, noteContext, isVisible = true, autoPlay }: MediaPlayerProps) {
+export default function AudioPreview({ source, entity, environment, noteContext, ownerNote, viewScope, isVisible = true, autoPlay }: MediaPlayerProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const [playing, setPlaying] = useState(false);
@@ -38,8 +38,8 @@ export default function AudioPreview({ source, entity, environment, noteContext,
     // Mirror the element's real play state on every transition: "pause" isn't fired reliably when a track
     // ends or its src is swapped, so derive from `paused` rather than assuming play→true / pause→false.
     const syncPlaying = useCallback(() => setPlaying(!!audioRef.current && !audioRef.current.paused), []);
-    const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, audioRef);
-    const siblingNavigation = useMediaSessionController({ source, entity, environment, noteContext, isVisible, autoPlay, mimePrefix: "audio/", mediaRef: audioRef, playMode });
+    const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, audioRef, ownerNote?.noteId);
+    const siblingNavigation = useMediaSessionController({ source, entity, environment, noteContext, ownerNote, viewScope, isVisible, autoPlay, mimePrefix: "audio/", mediaRef: audioRef, playMode });
     useMediaPlayerShortcutHints({ fullscreen: false });
     const waveformPeaks = useWaveformPeaks(source.fullUrl);
 
@@ -82,7 +82,7 @@ export default function AudioPreview({ source, entity, environment, noteContext,
                         <div class="media-buttons-row">
                             <div className="left">
                                 <PlaybackSpeed mediaRef={audioRef} />
-                                {/* The play mode lives on the parent folder, which only the note detail knows. */}
+                                {/* The play mode lives on the parent folder (or, for an attachment, its owner note), which only a detail view knows. */}
                                 {noteContext && <PlayModeButton mode={playMode} onSelectMode={setPlayMode} />}
                             </div>
 
@@ -131,7 +131,7 @@ function useWaveformPeaks(fullUrl: string): number[] | null {
 function useKeyboardShortcuts(audioRef: MutableRef<HTMLAudioElement | null>, togglePlayback: () => void) {
     return useCallback((e: KeyboardEvent) => {
         const audio = audioRef.current;
-        if (!audio) return;
+        if (!audio || !claimsKeystroke(e)) return;
 
         switch (e.key) {
             case " ":

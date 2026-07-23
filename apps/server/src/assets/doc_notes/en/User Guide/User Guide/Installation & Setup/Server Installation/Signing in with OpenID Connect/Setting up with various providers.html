@@ -1,6 +1,6 @@
 <aside class="admonition note">
   <p>This page contains instructions on how to set up&nbsp;<a class="reference-link"
-    href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/WOcw2SLH6tbX/_help_x1lQNKQBqLcA">Signing in with OpenID Connect</a>&nbsp;with
+    href="#root/_help_x1lQNKQBqLcA">Signing in with OpenID Connect</a>&nbsp;with
     various providers such as Authelia, GitLab,. Google. Note that while the
     configuration reference is correct and up to date, the steps to create
     the OAuth application might differ slightly as providers change their UI.</p>
@@ -19,48 +19,32 @@
       Authelia's <code spellcheck="false">configuration.yml</code>, replacing
       <code
       spellcheck="false">&lt;server&gt;</code>with the URL of your Trilium instance:</p><pre><code class="language-text-x-yaml">identity_providers:
-
   oidc:
-
     clients:
-
       - client_id: 'trilium'
-
         client_name: 'Trilium'
-
         client_secret: '&lt;Digest&gt;'
-
         public: false
-
         authorization_policy: 'two_factor'
-
         redirect_uris:
-
           - 'https://&lt;server&gt;/callback'
-
         scopes:
-
           - 'openid'
-
           - 'profile'
-
           - 'email'</code></pre>
     <p>Unlike GitLab, <code spellcheck="false">client_id</code> is a name you choose
       rather than one the provider generates.</p>
   </li>
-  <li>Restart Authelia.</li>
+  <li>
+    <p>Restart Authelia.</p>
+  </li>
 </ol>
 <p>Adjust <code spellcheck="false">config.ini</code>, using the <code spellcheck="false">Random Password</code> from
   step 1:</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
-
 oauthBaseUrl=https://&lt;server&gt;
-
 oauthClientId=&lt;ClientId&gt;
-
 oauthClientSecret=&lt;RandomPassword&gt;
-
 oauthIssuerBaseUrl=https://&lt;server&gt;
-
 oauthIssuerName=Authelia</code></pre>
 <aside class="admonition important">
   <p>Do <strong>not</strong> set <code spellcheck="false">oauthClientAuthMethod</code> for
@@ -111,28 +95,17 @@ oauthClientAuthMethod=client_secret_post
   2.0 and not OpenID Connect, so it will fail with <code spellcheck="false">OAUTH_RESPONSE_IS_NOT_CONFORM</code>.</p>
 <h2>Google</h2>
 <ol>
-  <li>
-    <p>Go to <a href="https://console.cloud.google.com/auth/clients">Google Cloud's Clients</a> dashboard
-      and select <em>Create client</em>.</p>
-  </li>
-  <li>
-    <p>For <em>Application type,</em> select <em>Web application</em>.</p>
-  </li>
-  <li>
-    <p>In <em>Authorized redirect URIs</em>, set &nbsp;<code spellcheck="false">https://&lt;server&gt;/callback</code>.</p>
-  </li>
-  <li>
-    <p>Press <em>Create</em> and copy <em>Client ID</em> and <em>Client secret</em>.</p>
-  </li>
+  <li>Go to <a href="https://console.cloud.google.com/auth/clients">Google Cloud's Clients</a> dashboard
+    and select <em>Create client</em>.</li>
+  <li>For <em>Application type,</em> select <em>Web application</em>.</li>
+  <li>In <em>Authorized redirect URIs</em>, set &nbsp;<code spellcheck="false">https://&lt;server&gt;/callback</code>.</li>
+  <li>Press <em>Create</em> and copy <em>Client ID</em> and <em>Client secret</em>.</li>
 </ol>
 <p>Adjust <code spellcheck="false">config.ini</code> as follows, replacing
   <code
   spellcheck="false">&lt;ClientID&gt;</code>and <code spellcheck="false">&lt;ClientSecret&gt;</code> with
     the values from the last step as well as the <code spellcheck="false">&lt;server&gt;</code> with
     a URL to your Trilium instance.</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
-
 oauthBaseUrl=https://&lt;server&gt;
-
 oauthClientId=&lt;ClientID&gt;
-
 oauthClientSecret=&lt;ClientSecret&gt;</code></pre>

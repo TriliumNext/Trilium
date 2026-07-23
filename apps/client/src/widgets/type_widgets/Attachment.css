@@ -124,6 +124,12 @@
     overflow: hidden;
 }
 
+/* Same flex-slot constraint for the media player, which is height:100% of whatever it is given: without
+   it the video (and the audio player's visualizer band) grows the layout instead of fitting the pane. */
+.attachment-content-wrapper.attachment-media-player {
+    overflow: hidden;
+}
+
 .attachment-detail-wrapper.scheduled-for-deletion .attachment-content-wrapper img {
     filter: contrast(10%);
 }

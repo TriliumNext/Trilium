@@ -1,0 +1,18 @@
+/**
+ * Bootstrap scrolls a modal by capping `.modal-content`'s height and letting the
+ * `.modal-body` flex item shrink inside it. A modal given `onSubmit` wraps the
+ * body and footer in a <form>, which lands between the two: a block-level form
+ * neither shrinks (its automatic minimum size is its content) nor passes the flex
+ * sizing on, so the body keeps its full height, `overflow-y: auto` finds nothing
+ * to scroll, and `.modal-content`'s own `overflow: hidden` simply clips the
+ * overflowing content — footer included.
+ *
+ * Making the form a flex column that may shrink puts it back in the chain.
+ * `overflow` is deliberately left visible so footer dropdowns still escape.
+ */
+.modal-dialog-scrollable > .modal-content > form,
+.modal-dialog-scrollable > .modal-content > .modal-main > form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}

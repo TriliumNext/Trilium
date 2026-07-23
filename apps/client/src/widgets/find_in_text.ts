@@ -1,8 +1,6 @@
-import type { CKTextEditor, FindAndReplaceState, FindCommandResult } from "@triliumnext/ckeditor5";
-
-import { expandCollapsedAncestors } from "../services/collapsibles.js";
-import type FindWidget from "./find.js";
+import type { FindAndReplaceState, FindCommandResult } from "@triliumnext/ckeditor5";
 import type { FindResult } from "./find.js";
+import type FindWidget from "./find.js";
 
 export default class FindInText {
 
@@ -46,7 +44,6 @@ export default class FindInText {
             // totalFound = m ? m.length : 0;
             const options = { matchCase: matchCase, wholeWords: wholeWord };
             findResult = textEditor.execute("find", searchTerm, options);
-            revealSelectedFindResult(textEditor);
             totalFound = findResult.results.length;
             const selection = model.document.selection;
             // If text is selected, highlight the corresponding result;
@@ -102,10 +99,6 @@ export default class FindInText {
         } else {
             textEditor?.execute("findPrevious");
         }
-
-        if (textEditor) {
-            revealSelectedFindResult(textEditor);
-        }
     }
 
     async findBoxClosed(totalFound: number, currentFound: number) {
@@ -152,27 +145,4 @@ export default class FindInText {
             textEditor?.execute("replaceAll", replaceText, this.editingState.results);
         }
     }
-}
-
-/**
- * Scrolls the currently-selected find match into view, expanding any closed `<details>`
- * ancestor (e.g. a collapsed CKEditor collapsible block) that hides it first.
- *
- * CKEditor's own debounced scroll (32ms, see `EditingView#scrollToTheSelection`) is a no-op for
- * a range that sits inside a closed `<details>`, since a collapsed subtree has no layout box to
- * scroll to. Deferred to the next animation frame so it runs after CKEditor has applied the
- * `.ck-find-result_selected` class and the DOM has settled; once we've expanded the ancestor
- * ourselves we re-scroll explicitly.
- *
- * Note: a later CKEditor reconversion (e.g. re-rendering the collapsible widget) may recreate
- * the `<details>` closed again. That's acceptable — it matches the collapsible plugin's
- * everything-loads-collapsed design; the user just has to find-next into it again.
- */
-function revealSelectedFindResult(textEditor: CKTextEditor) {
-    requestAnimationFrame(() => {
-        const el = textEditor.editing.view.getDomRoot()?.querySelector(".ck-find-result_selected");
-        if (el && expandCollapsedAncestors(el)) {
-            el.scrollIntoView({ block: "center" });
-        }
-    });
 }

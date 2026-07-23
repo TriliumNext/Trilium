@@ -1,4 +1,4 @@
-import { expandCollapsedAncestors } from "./collapsibles.js";
+import { expandAncestorDetails } from "./collapsible.js";
 import type { ViewScope } from "./link.js";
 
 /**
@@ -21,7 +21,7 @@ export function consumeBookmark(container: ParentNode | null | undefined, viewSc
     const bookmark = viewScope.bookmark;
     const el = [...container.querySelectorAll("[id]")].find((candidate) => candidate.id === bookmark);
     if (el) {
-        expandCollapsedAncestors(el);
+        expandAncestorDetails(el);
         el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     viewScope.bookmark = undefined;

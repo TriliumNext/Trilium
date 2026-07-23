@@ -1,5 +1,5 @@
 {
-    "packageManager": "pnpm@11.15.0",
+    "packageManager": "pnpm@11.15.1",
     "dependencies": {
         "better-sqlite3": "12.11.1"
     }

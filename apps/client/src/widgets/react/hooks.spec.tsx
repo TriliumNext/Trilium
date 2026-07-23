@@ -201,5 +201,21 @@ describe("useImperativeSearchHighlighlighting", () => {
 
         expect(() => highlight(undefined, "<p>foo bar</p>")).not.toThrow();
         expect(markedTexts(target)).toEqual([]);
+
+        highlight([], "<details><summary>t</summary><p>needle</p></details>");
+        expect(markedTexts(target)).toEqual([]);
+        expect(target.querySelector("details")?.open).toBe(false);
+    });
+
+    it("highlights matches and opens the collapsed <details> that contains them", () => {
+        const el = highlight(["needle"], "<details><summary>t</summary><p>a needle here</p></details>");
+        expect(markedTexts(el)).toEqual(["needle"]);
+        expect(el.querySelector("details")?.open).toBe(true);
+    });
+
+    it("leaves a collapsed block closed when it holds no match", () => {
+        const el = highlight(["needle"], "<details><summary>t</summary><p>nothing relevant</p></details>");
+        expect(markedTexts(el)).toEqual([]);
+        expect(el.querySelector("details")?.open).toBe(false);
     });
 });

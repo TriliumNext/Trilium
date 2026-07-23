@@ -24,8 +24,17 @@ import { TypeWidgetProps } from "../type_widget";
 import { applyReferenceLinks } from "./read_only_helper";
 import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
-export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetProps) {
-    const blob = useNoteBlob(note, undefined, { reportLoadStateTo: noteContext });
+export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent, isVisible }: TypeWidgetProps) {
+    // The componentId matters: the WS echo of a save made by the editable-text editor in the same
+    // split carries the shared parent component's id. Without it, this widget — kept mounted but
+    // hidden while the user temporarily edits an auto-read-only note — would refetch the whole blob
+    // after every save and flash the loading overlay over the editor (#10575). Skipped own-component
+    // changes are caught up on via refreshOnShow when this view is displayed again.
+    const blob = useNoteBlob(note, parentComponent?.componentId, {
+        reportLoadStateTo: noteContext,
+        isVisible,
+        refreshOnShow: true
+    });
     const { isRtl } = useNoteLanguage(note);
     const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
 

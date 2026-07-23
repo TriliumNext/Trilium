@@ -24,21 +24,37 @@ function makeProviderMock(tag: string) {
         getAvailableModels() {
             return [{ id: `${tag}-model`, name: `${tag} Model` }];
         }
+        listModels() {
+            return Promise.resolve([
+                { id: `${tag}-model`, name: `${tag} Model` },
+                { id: `${tag}-preview`, name: `${tag} Preview` }
+            ]);
+        }
+        /** Stands in for the provider's own rule — index only forwards to it. */
+        recommendedModelIds(models: { id: string }[]) {
+            return new Set(models.filter(m => !m.id.endsWith("-preview")).map(m => m.id));
+        }
     };
 }
 
 vi.mock("./providers/anthropic.js", () => ({ AnthropicProvider: makeProviderMock("anthropic") }));
 vi.mock("./providers/openai.js", () => ({ OpenAiProvider: makeProviderMock("openai") }));
 vi.mock("./providers/google.js", () => ({ GoogleProvider: makeProviderMock("google") }));
+vi.mock("./providers/deepseek.js", () => ({ DeepSeekProvider: makeProviderMock("deepseek") }));
 vi.mock("./providers/claude_agent.js", () => ({ ClaudeAgentProvider: makeProviderMock("claude-agent") }));
+vi.mock("./providers/local.js", () => ({ LocalProvider: makeProviderMock("local") }));
 
 import {
     clearProviderCache,
-    getAllModels,
     getProvider,
     getProviderByType,
-    hasConfiguredProviders
+    getSelectedModel,
+    hasConfiguredProviders,
+    listProviderModels
 } from "./index.js";
+// Mocked module → this is the makeProviderMock("google") stand-in class, whose
+// prototype we can strip listModels from to exercise the curated-list fallback.
+import { GoogleProvider } from "./providers/google.js";
 
 function setProviders(configs: unknown) {
     getOptionOrNullMock.mockReturnValue(typeof configs === "string" ? configs : JSON.stringify(configs));
@@ -78,13 +94,25 @@ describe("llm/index provider registry", () => {
                 { id: "a", name: "A", provider: "anthropic", apiKey: "ka" },
                 { id: "o", name: "O", provider: "openai", apiKey: "ko" },
                 { id: "g", name: "G", provider: "google", apiKey: "kg" },
-                { id: "c", name: "C", provider: "claude-agent", apiKey: "" }
+                { id: "d", name: "D", provider: "deepseek", apiKey: "kd" },
+                { id: "c", name: "C", provider: "claude-agent", apiKey: "" },
+                { id: "l", name: "L", provider: "ollama", apiKey: "", baseURL: "http://ollama.lan:11434" },
+                { id: "lm", name: "LM", provider: "lmstudio", apiKey: "", baseURL: "http://box:1234/v1" },
+                { id: "oc", name: "OC", provider: "openai-compatible", apiKey: "k", baseURL: "http://box:8080/v1" }
             ]);
             expect((getProvider("a").constructor as any).lastArgs).toEqual(["ka", undefined]);
             expect((getProvider("o").constructor as any).lastArgs).toEqual(["ko", undefined]);
             expect((getProvider("g").constructor as any).lastArgs).toEqual(["kg", undefined]);
+            // Its own class rather than the shared self-hosted one, despite speaking
+            // the same protocol — that is what gives its models a price.
+            expect((getProvider("d").constructor as any).lastArgs).toEqual(["kd", undefined]);
             // The subscription provider takes no constructor args — auth is Claude Code's.
             expect((getProvider("c").constructor as any).lastArgs).toEqual([]);
+            // The three self-hosted cards share one class, which receives the card
+            // id so it knows which endpoint to probe and prefill.
+            expect((getProvider("l").constructor as any).lastArgs).toEqual(["ollama", "", "http://ollama.lan:11434"]);
+            expect((getProvider("lm").constructor as any).lastArgs).toEqual(["lmstudio", "", "http://box:1234/v1"]);
+            expect((getProvider("oc").constructor as any).lastArgs).toEqual(["openai-compatible", "k", "http://box:8080/v1"]);
         });
 
         it("throws when no providers are configured (null and empty array)", () => {
@@ -102,6 +130,19 @@ describe("llm/index provider registry", () => {
         it("throws for an unknown provider type", () => {
             setProviders([{ id: "x", name: "X", provider: "mystery", apiKey: "k" }]);
             expect(() => getProvider("x")).toThrow(/Unknown LLM provider type: mystery/);
+        });
+
+        it("drops cached instances when the llmProviders option changes", () => {
+            setProviders(TWO);
+            const p1 = getProvider("a1");
+            // Same config → still cached.
+            setProviders(TWO);
+            expect(getProvider("a1")).toBe(p1);
+            // Edited config (e.g. new API key) → cache self-invalidates.
+            setProviders([{ ...TWO[0], apiKey: "new-key" }, TWO[1]]);
+            const p2 = getProvider("a1");
+            expect(p2).not.toBe(p1);
+            expect((p2.constructor as any).lastArgs).toEqual(["new-key", "https://proxy"]);
         });
     });
 
@@ -136,31 +177,52 @@ describe("llm/index provider registry", () => {
         });
     });
 
-    describe("getAllModels", () => {
-        it("aggregates models across provider types, tagged with the provider", () => {
-            setProviders(TWO);
-            const models = getAllModels();
+    describe("listProviderModels", () => {
+        it("lists models for ad-hoc credentials, tagged with the recommended flag", async () => {
+            // No saved config needed — the add/edit flow passes raw credentials.
+            // Only the delegation is asserted here; each provider's own rule is
+            // covered in its spec (openai/anthropic/google/claude_agent).
+            const models = await listProviderModels("google", "k");
             expect(models).toEqual([
-                { id: "anthropic-model", name: "anthropic Model", provider: "anthropic" },
-                { id: "openai-model", name: "openai Model", provider: "openai" }
+                { id: "google-model", name: "google Model", recommended: true },
+                { id: "google-preview", name: "google Preview", recommended: false }
             ]);
         });
 
-        it("includes each provider type only once even with duplicate configs", () => {
+        it("throws for an unknown provider type", async () => {
+            await expect(listProviderModels("mystery", "k")).rejects.toThrow(/Unknown LLM provider type: mystery/);
+        });
+
+        it("falls back to getAvailableModels for a provider without dynamic listing", async () => {
+            // Some providers offer no live /models endpoint, so listModels is
+            // absent and the `?.() ?? getAvailableModels()` fallback takes over.
+            const proto = GoogleProvider.prototype as { listModels?: unknown };
+            const original = proto.listModels;
+            delete proto.listModels;
+            try {
+                const models = await listProviderModels("google", "k");
+                expect(models).toEqual([{ id: "google-model", name: "google Model", recommended: true }]);
+            } finally {
+                proto.listModels = original;
+            }
+        });
+    });
+
+    describe("getSelectedModel", () => {
+        it("finds a stored selected model by config id and model id", () => {
             setProviders([
-                { id: "a1", name: "A1", provider: "anthropic", apiKey: "k1" },
-                { id: "a2", name: "A2", provider: "anthropic", apiKey: "k2" }
+                { id: "o1", name: "My GPT", provider: "openai", apiKey: "k", selectedModels: [
+                    { id: "gpt-9", name: "GPT-9", pricing: { input: 1, output: 2 } }
+                ] }
             ]);
-            const models = getAllModels();
-            expect(models).toHaveLength(1);
-            expect(models[0].provider).toBe("anthropic");
+            expect(getSelectedModel("o1", "gpt-9")).toMatchObject({ name: "GPT-9", pricing: { input: 1, output: 2 } });
         });
 
-        it("skips and logs a provider whose model lookup throws", () => {
-            setProviders([{ id: "x", name: "X", provider: "mystery", apiKey: "k" }]);
-            // Unknown type → getProvider throws inside getAllModels and is caught.
-            expect(getAllModels()).toEqual([]);
-            expect(errorMock).toHaveBeenCalled();
+        it("returns undefined for a missing provider, model, or providerId", () => {
+            setProviders([{ id: "o1", name: "My GPT", provider: "openai", apiKey: "k", selectedModels: [{ id: "gpt-9", name: "GPT-9" }] }]);
+            expect(getSelectedModel("o1", "absent")).toBeUndefined();
+            expect(getSelectedModel("nope", "gpt-9")).toBeUndefined();
+            expect(getSelectedModel(undefined, "gpt-9")).toBeUndefined();
         });
     });
 });

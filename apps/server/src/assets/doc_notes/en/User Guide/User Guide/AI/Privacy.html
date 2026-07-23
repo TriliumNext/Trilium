@@ -1,0 +1,107 @@
+<p>Trilium sends nothing to an AI provider until you send a message. Enabling
+  the integration, adding a provider or opening a chat transmits nothing
+  on its own, the one exception is that listing a provider's models sends
+  your API key to that provider, so the list can be fetched.</p>
+<p>Once you send a message, what leaves your machine depends on the provider
+  you chose and on which context options are enabled.</p>
+<h2>Where your notes go</h2>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Provider type</th>
+        <th scope="col">Destination</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cloud providers</td>
+        <td>The provider's servers (Anthropic, OpenAI, Google, DeepSeek)</td>
+      </tr>
+      <tr>
+        <td>Subscription-based</td>
+        <td>The provider's servers, via Claude Code running locally</td>
+      </tr>
+      <tr>
+        <td>Local / self-hosted</td>
+        <td>Nothing leaves the machine running the model</td>
+      </tr>
+      <tr>
+        <td>Custom endpoint</td>
+        <td>Wherever you pointed it — which may be your own hardware or a hosted service</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>This is the reason the provider list is grouped this way, and why Trilium
+  pre-selects nothing: the choice of where your notes travel is made explicitly,
+  by you, before anything is sent.</p>
+<h2>What is actually sent</h2>
+<ul>
+  <li class="ck-list-marker-bold"><strong>Always, with every message</strong>
+    <ul>
+      <li>The conversation itself: your messages and the assistant's replies, including
+        earlier turns</li>
+      <li>Trilium's system prompt describing how to format answers and use tools.</li>
+    </ul>
+  </li>
+  <li class="ck-list-marker-bold"><strong>The current note, only when note context is enabled.</strong>
+    <ul>
+      <li>In the sidebar chat this is the file icon at the bottom; the dedicated
+        chat note type never sends a current note.</li>
+      <li>What travels is a metadata block: the note's ID, title, type, creation
+        and modification dates, its parent IDs, the titles of up to 20 children,
+        up to 20 attributes, and a preview of the content.</li>
+      <li>Notes above a size threshold send a size hint instead of the text, and
+        the model must call a tool to read further.</li>
+    </ul>
+  </li>
+  <li class="ck-list-marker-bold"><strong>Any note the model asks for, when note access is enabled.</strong>
+    <ul>
+      <li>Tools let the model search your tree and read notes, attributes and attachments
+        beyond the current one.</li>
+      <li>It decides what to fetch; there is no per-note permission system, so the
+        reachable scope is your whole tree.</li>
+    </ul>
+  </li>
+  <li><strong>Attachments and mentions</strong>, when you add them: images,
+    PDFs and text files are sent to the provider, and an <code spellcheck="false">@</code> mention
+    makes that note fetchable.</li>
+  <li><strong>Your search query</strong>, when web search is enabled, the model's
+    search terms reach the provider's own search infrastructure.</li>
+</ul>
+<h2>Protected notes</h2>
+<p>While your <a href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_bwg0e8ewQMak">protected session</a> is
+  locked, protected notes send neither title nor content. <strong>While it is unlocked they are treated like any other note</strong> —
+  a note the model reads through a tool is sent to the provider in full.
+  If you keep sensitive material in protected notes, be aware that unlocking
+  them removes that boundary for the duration of the session.</p>
+<h2>What you control</h2>
+<ul>
+  <li><strong>Which provider</strong>: the single decision that determines whether
+    anything leaves your machine at all.</li>
+  <li><strong>Note access</strong>: turn tools off from the model selector at
+    the bottom of the chat, and the model can read nothing beyond what you
+    type.</li>
+  <li><strong>The current note:</strong> the file icon in the sidebar chat.</li>
+  <li><strong>Web search:</strong> also in the model selector.</li>
+</ul>
+<p>With note access and note context both off, the provider receives only
+  the words you typed.</p>
+<h2>Keeping everything local</h2>
+<p>Adding an Ollama or LM Studio provider keeps every message on the machine
+  running the model, and Trilium marks their models as free because no metered
+  API is involved. The trade-off is quality and hardware: a small local model
+  may fail at tool calls that a cloud model handles, so a local setup that
+  misbehaves is worth benchmarking against a cloud provider before reporting
+  it as a bug.</p>
+<h2>Telemetry &amp; security</h2>
+<p>Trilium itself collects no telemetry from the AI integration.</p>
+<p>Your API key is stored in your database, sent only to the provider it
+  belongs to, and is write-only through the options API so that a malevolent&nbsp;
+  <a
+  class="reference-link" href="#root/pOsGYCXsbNQG/_help_CdNpE2pqjmI6">Scripting</a>&nbsp;cannot access it. If you have backend or SQL console
+    access enabled, a malevolent script <strong>could potentially exfiltrate your API keys</strong>.</p>
+<p>The built-in MCP server has no authentication and exposes the same note
+  tools to any application on your machine that can reach it. It is off by
+  default and bound to <code spellcheck="false">localhost</code>.</p>

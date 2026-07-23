@@ -21,6 +21,7 @@ const AUTHORITY = "https://login.microsoftonline.com/common/oauth2/v2.0";
 export const ONENOTE_OAUTH: OAuthProviderConfig = {
     authorizeEndpoint: `${AUTHORITY}/authorize`,
     tokenEndpoint: `${AUTHORITY}/token`,
+    deviceCodeEndpoint: `${AUTHORITY}/devicecode`,
     clientId: "47e34695-b922-4c23-8519-303fa39284c8",
     // offline_access is requested so we receive a refresh token that survives long imports.
     scopes: "offline_access User.Read Notes.Read"

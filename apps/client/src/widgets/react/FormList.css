@@ -37,3 +37,15 @@
         flex-grow: 1;
     }
 }
+
+.dropdown-header.dropdown-header-with-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5em;
+
+    /* Shrink the whole icon-action box (not just the glyph) to the 26px used by
+       the right-panel card-header-buttons — .icon-action derives its width,
+       height and font-size from this variable. */
+    --icon-button-size: 26px;
+}

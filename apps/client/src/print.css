@@ -273,6 +273,18 @@ body[data-note-type="llmChat"] .llm-chat-footer {
 }
 /* #endregion */
 
+/* #region Collapsible blocks */
+/* A collapsed <details> hides its body in print too; overriding the UA's content-visibility on
+   ::details-content is the only CSS way to reveal it. The arrow is rotated to match. */
+details::details-content {
+    content-visibility: visible;
+}
+
+.ck-content details.trilium-collapsible > summary::before {
+    transform: scale(1.3) rotate(90deg) !important;
+}
+/* #endregion */
+
 /* #region Page breaks */
 .page-break {
     page-break-after: always;

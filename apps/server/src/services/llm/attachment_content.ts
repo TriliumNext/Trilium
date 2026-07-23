@@ -1,7 +1,7 @@
 /**
  * Provider-neutral resolution of multimodal message parts.
  *
- * Both the AI-SDK providers ({@link ../base_provider}) and the Claude Agent
+ * Both the AI-SDK providers ({@link ./providers/base_provider}) and the Claude Agent
  * provider need the same thing from an attachment part: load the bytes out of
  * Becca and apply the conventions that don't depend on the provider — an SVG is
  * rendered as its XML source (no vision model accepts SVG, but all can read the

@@ -44,7 +44,14 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         // TriliumNextTODO: look into potentially creating an getOptionBoolOrNull instead
         const hasRedirectBareDomain = options.getOptionOrNull("redirectBareDomain") === "true";
 
-        if (hasRedirectBareDomain) {
+        // The redirect targets only a bare document request for the root. The login
+        // screen is served by the SPA at the root too, so an explicit login navigation
+        // (GET /login redirects here with a `?login` marker) and SPA sub-requests such
+        // as /bootstrap must fall through to it — otherwise enabling the option locks
+        // the owner out of the instance entirely (#10552).
+        const isBareRootRequest = req.path === "/" && req.query.login === undefined;
+
+        if (hasRedirectBareDomain && isBareRootRequest) {
             // Only redirect to the share page when a share root is actually configured.
             // Otherwise (e.g. the owner's session expired before they set one up) fall back
             // to the login screen rather than stranding the user on a 404. See #7869.

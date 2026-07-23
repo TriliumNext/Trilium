@@ -1,4 +1,8 @@
-FROM node:24.18.0-alpine AS builder
+# Alpine is pinned to 3.23 deliberately: musl 1.2.6 (Alpine 3.24+) issues pwritev2, which hosts
+# with libseccomp < 2.3.3 deny with EPERM instead of ENOSYS. musl only falls back on ENOSYS, so
+# SQLite fails with "disk I/O error" there. Alpine 3.23 ships musl 1.2.5 and is supported until
+# 2027-11-01. See https://github.com/TriliumNext/Trilium/issues/10627
+FROM node:24.18.0-alpine3.23 AS builder
 RUN corepack enable
 
 # Install build tools required to compile native addons (e.g. better-sqlite3) on ARM
@@ -10,7 +14,7 @@ COPY ./docker/package.json ./docker/pnpm-workspace.yaml /usr/src/app/
 # We have to use --no-frozen-lockfile due to CKEditor patches
 RUN pnpm install --no-frozen-lockfile --prod && pnpm rebuild
 
-FROM node:24.18.0-alpine
+FROM node:24.18.0-alpine3.23
 # Install runtime dependencies
 RUN apk add --no-cache su-exec shadow
 

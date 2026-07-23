@@ -54,14 +54,15 @@ export declare module "express-session" {
          */
         ssoConnectionFailed?: string;
         /**
-         * Transient state for the OneNote importer's delegated-Graph OAuth flow. During sign-in it
-         * holds the PKCE verifier + state + redirect URI; after a successful callback it holds the
-         * access/refresh tokens and the connected account. Session-scoped only — never synced.
+         * Transient state for the OneNote importer's delegated-Graph OAuth device flow. During
+         * sign-in it holds the pending device code (the secret the tokens are polled out with — never
+         * sent to the browser); once the sign-in completes it holds the access/refresh tokens and the
+         * connected account. Session-scoped only — never synced.
          */
         oneNoteImport?: {
-            verifier?: string;
-            state?: string;
-            redirectUri?: string;
+            deviceCode?: string;
+            /** Epoch millis at which the pending device code expires. */
+            deviceCodeExpiresAt?: number;
             accessToken?: string;
             refreshToken?: string;
             expiresAt?: number;

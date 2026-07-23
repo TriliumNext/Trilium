@@ -1,0 +1,685 @@
+{
+  "anthropic": {
+    "claude-3-7-sonnet-20250219": {
+      "input": 3,
+      "output": 15,
+      "ctx": 200000
+    },
+    "claude-3-haiku-20240307": {
+      "input": 0.25,
+      "output": 1.25,
+      "ctx": 200000
+    },
+    "claude-3-opus-20240229": {
+      "input": 15,
+      "output": 75,
+      "ctx": 200000
+    },
+    "claude-4-opus-20250514": {
+      "input": 15,
+      "output": 75,
+      "ctx": 200000
+    },
+    "claude-4-sonnet-20250514": {
+      "input": 3,
+      "output": 15,
+      "ctx": 1000000
+    },
+    "claude-fable-5": {
+      "input": 10,
+      "output": 50,
+      "ctx": 1000000
+    },
+    "claude-haiku-4-5": {
+      "input": 1,
+      "output": 5,
+      "ctx": 200000
+    },
+    "claude-haiku-4-5-20251001": {
+      "input": 1,
+      "output": 5,
+      "ctx": 200000
+    },
+    "claude-opus-4-1": {
+      "input": 15,
+      "output": 75,
+      "ctx": 200000
+    },
+    "claude-opus-4-1-20250805": {
+      "input": 15,
+      "output": 75,
+      "ctx": 200000
+    },
+    "claude-opus-4-20250514": {
+      "input": 15,
+      "output": 75,
+      "ctx": 200000
+    },
+    "claude-opus-4-5": {
+      "input": 5,
+      "output": 25,
+      "ctx": 200000
+    },
+    "claude-opus-4-5-20251101": {
+      "input": 5,
+      "output": 25,
+      "ctx": 200000
+    },
+    "claude-opus-4-6": {
+      "input": 5,
+      "output": 25,
+      "ctx": 1000000
+    },
+    "claude-opus-4-6-20260205": {
+      "input": 5,
+      "output": 25,
+      "ctx": 1000000
+    },
+    "claude-opus-4-7": {
+      "input": 5,
+      "output": 25,
+      "ctx": 1000000
+    },
+    "claude-opus-4-7-20260416": {
+      "input": 5,
+      "output": 25,
+      "ctx": 1000000
+    },
+    "claude-opus-4-8": {
+      "input": 5,
+      "output": 25,
+      "ctx": 1000000
+    },
+    "claude-sonnet-4-20250514": {
+      "input": 3,
+      "output": 15,
+      "ctx": 1000000
+    },
+    "claude-sonnet-4-5": {
+      "input": 3,
+      "output": 15,
+      "ctx": 200000
+    },
+    "claude-sonnet-4-5-20250929": {
+      "input": 3,
+      "output": 15,
+      "ctx": 200000
+    },
+    "claude-sonnet-4-6": {
+      "input": 3,
+      "output": 15,
+      "ctx": 1000000
+    },
+    "claude-sonnet-5": {
+      "input": 2,
+      "output": 10,
+      "ctx": 1000000
+    }
+  },
+  "deepseek": {
+    "deepseek-chat": {
+      "input": 0.28,
+      "output": 0.42,
+      "ctx": 131072
+    },
+    "deepseek-reasoner": {
+      "input": 0.28,
+      "output": 0.42,
+      "ctx": 131072
+    },
+    "deepseek-v4-flash": {
+      "input": 0.14,
+      "output": 0.28,
+      "ctx": 1000000
+    },
+    "deepseek-v4-pro": {
+      "input": 0.435,
+      "output": 0.87,
+      "ctx": 1000000
+    }
+  },
+  "google": {
+    "gemini-2.0-flash": {
+      "input": 0.1,
+      "output": 0.4,
+      "ctx": 1048576
+    },
+    "gemini-2.0-flash-001": {
+      "input": 0.15,
+      "output": 0.6,
+      "ctx": 1048576
+    },
+    "gemini-2.0-flash-lite": {
+      "input": 0.075,
+      "output": 0.3,
+      "ctx": 1048576
+    },
+    "gemini-2.0-flash-lite-001": {
+      "input": 0.075,
+      "output": 0.3,
+      "ctx": 1048576
+    },
+    "gemini-2.5-computer-use-preview-10-2025": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gemini-2.5-flash": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    },
+    "gemini-2.5-flash-lite": {
+      "input": 0.1,
+      "output": 0.4,
+      "ctx": 1048576
+    },
+    "gemini-2.5-flash-lite-preview-06-17": {
+      "input": 0.1,
+      "output": 0.4,
+      "ctx": 1048576
+    },
+    "gemini-2.5-flash-lite-preview-09-2025": {
+      "input": 0.1,
+      "output": 0.4,
+      "ctx": 1048576
+    },
+    "gemini-2.5-flash-native-audio-latest": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    },
+    "gemini-2.5-flash-native-audio-preview-09-2025": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    },
+    "gemini-2.5-flash-native-audio-preview-12-2025": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    },
+    "gemini-2.5-flash-preview-09-2025": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    },
+    "gemini-2.5-pro": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 1048576
+    },
+    "gemini-2.5-pro-preview-tts": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 1048576
+    },
+    "gemini-3-flash-preview": {
+      "input": 0.5,
+      "output": 3,
+      "ctx": 1048576
+    },
+    "gemini-3-pro-preview": {
+      "input": 2,
+      "output": 12,
+      "ctx": 1048576
+    },
+    "gemini-3.1-flash-lite": {
+      "input": 0.25,
+      "output": 1.5,
+      "ctx": 1048576
+    },
+    "gemini-3.1-flash-lite-preview": {
+      "input": 0.25,
+      "output": 1.5,
+      "ctx": 1048576
+    },
+    "gemini-3.1-flash-live-preview": {
+      "input": 0.75,
+      "output": 4.5,
+      "ctx": 131072
+    },
+    "gemini-3.1-pro-preview": {
+      "input": 2,
+      "output": 12,
+      "ctx": 1048576
+    },
+    "gemini-3.1-pro-preview-customtools": {
+      "input": 2,
+      "output": 12,
+      "ctx": 1048576
+    },
+    "gemini-3.5-flash": {
+      "input": 1.5,
+      "output": 9,
+      "ctx": 1048576
+    },
+    "gemini-3.5-flash-lite": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    },
+    "gemini-3.6-flash": {
+      "input": 1.5,
+      "output": 7.5,
+      "ctx": 1048576
+    },
+    "gemini-exp-1206": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    },
+    "gemini-flash-latest": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    },
+    "gemini-flash-lite-latest": {
+      "input": 0.1,
+      "output": 0.4,
+      "ctx": 1048576
+    },
+    "gemini-omni-flash-preview": {
+      "input": 1.5,
+      "output": 9,
+      "ctx": 1048576
+    },
+    "gemini-pro-latest": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 1048576
+    },
+    "gemini-robotics-er-1.5-preview": {
+      "input": 0.3,
+      "output": 2.5,
+      "ctx": 1048576
+    }
+  },
+  "openai": {
+    "chatgpt-4o-latest": {
+      "input": 5,
+      "output": 15,
+      "ctx": 128000
+    },
+    "gpt-3.5-turbo": {
+      "input": 0.5,
+      "output": 1.5,
+      "ctx": 16385
+    },
+    "gpt-3.5-turbo-0125": {
+      "input": 0.5,
+      "output": 1.5,
+      "ctx": 16385
+    },
+    "gpt-3.5-turbo-1106": {
+      "input": 1,
+      "output": 2,
+      "ctx": 16385
+    },
+    "gpt-3.5-turbo-16k": {
+      "input": 3,
+      "output": 4,
+      "ctx": 16385
+    },
+    "gpt-4": {
+      "input": 30,
+      "output": 60,
+      "ctx": 8192
+    },
+    "gpt-4-0125-preview": {
+      "input": 10,
+      "output": 30,
+      "ctx": 128000
+    },
+    "gpt-4-0314": {
+      "input": 30,
+      "output": 60,
+      "ctx": 8192
+    },
+    "gpt-4-0613": {
+      "input": 30,
+      "output": 60,
+      "ctx": 8192
+    },
+    "gpt-4-1106-preview": {
+      "input": 10,
+      "output": 30,
+      "ctx": 128000
+    },
+    "gpt-4-turbo": {
+      "input": 10,
+      "output": 30,
+      "ctx": 128000
+    },
+    "gpt-4-turbo-2024-04-09": {
+      "input": 10,
+      "output": 30,
+      "ctx": 128000
+    },
+    "gpt-4-turbo-preview": {
+      "input": 10,
+      "output": 30,
+      "ctx": 128000
+    },
+    "gpt-4.1": {
+      "input": 2,
+      "output": 8,
+      "ctx": 1047576
+    },
+    "gpt-4.1-2025-04-14": {
+      "input": 2,
+      "output": 8,
+      "ctx": 1047576
+    },
+    "gpt-4.1-mini": {
+      "input": 0.4,
+      "output": 1.6,
+      "ctx": 1047576
+    },
+    "gpt-4.1-mini-2025-04-14": {
+      "input": 0.4,
+      "output": 1.6,
+      "ctx": 1047576
+    },
+    "gpt-4.1-nano": {
+      "input": 0.1,
+      "output": 0.4,
+      "ctx": 1047576
+    },
+    "gpt-4.1-nano-2025-04-14": {
+      "input": 0.1,
+      "output": 0.4,
+      "ctx": 1047576
+    },
+    "gpt-4o": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-4o-2024-05-13": {
+      "input": 5,
+      "output": 15,
+      "ctx": 128000
+    },
+    "gpt-4o-2024-08-06": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-4o-2024-11-20": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-4o-audio-preview": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-4o-audio-preview-2024-12-17": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-4o-audio-preview-2025-06-03": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-4o-mini": {
+      "input": 0.15,
+      "output": 0.6,
+      "ctx": 128000
+    },
+    "gpt-4o-mini-2024-07-18": {
+      "input": 0.15,
+      "output": 0.6,
+      "ctx": 128000
+    },
+    "gpt-4o-mini-audio-preview": {
+      "input": 0.15,
+      "output": 0.6,
+      "ctx": 128000
+    },
+    "gpt-4o-mini-audio-preview-2024-12-17": {
+      "input": 0.15,
+      "output": 0.6,
+      "ctx": 128000
+    },
+    "gpt-4o-mini-search-preview": {
+      "input": 0.15,
+      "output": 0.6,
+      "ctx": 128000
+    },
+    "gpt-4o-mini-search-preview-2025-03-11": {
+      "input": 0.15,
+      "output": 0.6,
+      "ctx": 128000
+    },
+    "gpt-4o-search-preview": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-4o-search-preview-2025-03-11": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-5": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 272000
+    },
+    "gpt-5-2025-08-07": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 272000
+    },
+    "gpt-5-chat": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-5-chat-latest": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-5-mini": {
+      "input": 0.25,
+      "output": 2,
+      "ctx": 272000
+    },
+    "gpt-5-mini-2025-08-07": {
+      "input": 0.25,
+      "output": 2,
+      "ctx": 272000
+    },
+    "gpt-5-nano": {
+      "input": 0.05,
+      "output": 0.4,
+      "ctx": 272000
+    },
+    "gpt-5-nano-2025-08-07": {
+      "input": 0.05,
+      "output": 0.4,
+      "ctx": 272000
+    },
+    "gpt-5-search-api": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 272000
+    },
+    "gpt-5-search-api-2025-10-14": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 272000
+    },
+    "gpt-5.1": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 272000
+    },
+    "gpt-5.1-2025-11-13": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 272000
+    },
+    "gpt-5.1-chat-latest": {
+      "input": 1.25,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-5.2": {
+      "input": 1.75,
+      "output": 14,
+      "ctx": 272000
+    },
+    "gpt-5.2-2025-12-11": {
+      "input": 1.75,
+      "output": 14,
+      "ctx": 272000
+    },
+    "gpt-5.2-chat-latest": {
+      "input": 1.75,
+      "output": 14,
+      "ctx": 128000
+    },
+    "gpt-5.3-chat-latest": {
+      "input": 1.75,
+      "output": 14,
+      "ctx": 128000
+    },
+    "gpt-5.4": {
+      "input": 2.5,
+      "output": 15,
+      "ctx": 1050000
+    },
+    "gpt-5.4-2026-03-05": {
+      "input": 2.5,
+      "output": 15,
+      "ctx": 1050000
+    },
+    "gpt-5.4-mini": {
+      "input": 0.75,
+      "output": 4.5,
+      "ctx": 1050000
+    },
+    "gpt-5.4-mini-2026-03-17": {
+      "input": 0.75,
+      "output": 4.5,
+      "ctx": 1050000
+    },
+    "gpt-5.4-nano": {
+      "input": 0.2,
+      "output": 1.25,
+      "ctx": 1050000
+    },
+    "gpt-5.4-nano-2026-03-17": {
+      "input": 0.2,
+      "output": 1.25,
+      "ctx": 1050000
+    },
+    "gpt-5.5": {
+      "input": 5,
+      "output": 30,
+      "ctx": 1050000
+    },
+    "gpt-5.5-2026-04-23": {
+      "input": 5,
+      "output": 30,
+      "ctx": 1050000
+    },
+    "gpt-5.6": {
+      "input": 5,
+      "output": 30,
+      "ctx": 1050000
+    },
+    "gpt-5.6-luna": {
+      "input": 1,
+      "output": 6,
+      "ctx": 1050000
+    },
+    "gpt-5.6-sol": {
+      "input": 5,
+      "output": 30,
+      "ctx": 1050000
+    },
+    "gpt-5.6-terra": {
+      "input": 2.5,
+      "output": 15,
+      "ctx": 1050000
+    },
+    "gpt-audio": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-audio-1.5": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-audio-2025-08-28": {
+      "input": 2.5,
+      "output": 10,
+      "ctx": 128000
+    },
+    "gpt-audio-mini": {
+      "input": 0.6,
+      "output": 2.4,
+      "ctx": 128000
+    },
+    "gpt-audio-mini-2025-10-06": {
+      "input": 0.6,
+      "output": 2.4,
+      "ctx": 128000
+    },
+    "gpt-audio-mini-2025-12-15": {
+      "input": 0.6,
+      "output": 2.4,
+      "ctx": 128000
+    },
+    "o1": {
+      "input": 15,
+      "output": 60,
+      "ctx": 200000
+    },
+    "o1-2024-12-17": {
+      "input": 15,
+      "output": 60,
+      "ctx": 200000
+    },
+    "o3": {
+      "input": 2,
+      "output": 8,
+      "ctx": 200000
+    },
+    "o3-2025-04-16": {
+      "input": 2,
+      "output": 8,
+      "ctx": 200000
+    },
+    "o3-mini": {
+      "input": 1.1,
+      "output": 4.4,
+      "ctx": 200000
+    },
+    "o3-mini-2025-01-31": {
+      "input": 1.1,
+      "output": 4.4,
+      "ctx": 200000
+    },
+    "o4-mini": {
+      "input": 1.1,
+      "output": 4.4,
+      "ctx": 200000
+    },
+    "o4-mini-2025-04-16": {
+      "input": 1.1,
+      "output": 4.4,
+      "ctx": 200000
+    }
+  }
+}

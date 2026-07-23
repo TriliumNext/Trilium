@@ -4,7 +4,9 @@ import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cls } from "@triliumnext/core";
+import { cls, options } from "@triliumnext/core";
+import { refreshAuth } from "../services/auth.js";
+import config from "../services/config.js";
 import { type SQLiteSessionStore } from "./session_parser.js";
 
 let app: Application;
@@ -24,12 +26,12 @@ describe("Login Route test", () => {
         vi.useRealTimers();
     });
 
-    it("redirects GET /login to the SPA root, since login is served client-side", async () => {
+    it("redirects GET /login to the SPA root with the login marker, since login is served client-side", async () => {
         const res = await supertest(app)
             .get("/login")
             .expect(302);
 
-        expect(res.headers.location).toBe(".");
+        expect(res.headers.location).toBe("./?login");
     });
 
     it("returns a 401 status, when login fails with wrong password", async () => {
@@ -39,6 +41,58 @@ describe("Login Route test", () => {
             .send({ password: "fakePassword" })
             .expect(401);
 
+    });
+
+    describe("login stays reachable with redirectBareDomain enabled (#10552)", () => {
+        // The fixture DB contains a #shareRoot note (y0AFOwgOgkWO), so enabling
+        // redirectBareDomain arms the bare-domain → share redirect in checkAuth.
+        // The login screen is served by the SPA at the root, so an explicit login
+        // request must still be able to reach it — otherwise the share redirect
+        // locks the owner out of their own instance.
+        let originalNoAuthentication: boolean;
+
+        beforeAll(() => {
+            // The spec data dir's config.ini enables noAuthentication, which makes
+            // checkAuth wave every request through and would mask the redirect
+            // behavior under test.
+            originalNoAuthentication = config.General.noAuthentication;
+            config.General.noAuthentication = false;
+            refreshAuth();
+            cls.init(() => options.setOption("redirectBareDomain", "true"));
+        });
+
+        afterAll(() => {
+            config.General.noAuthentication = originalNoAuthentication;
+            refreshAuth();
+            cls.init(() => options.setOption("redirectBareDomain", "false"));
+        });
+
+        it("still redirects the bare domain itself to the share page", async () => {
+            const res = await supertest(app).get("/").expect(302);
+            expect(res.headers.location).toBe("share");
+        });
+
+        it("GET /login ends on the login screen, not the share page", async () => {
+            const { res, path } = await followRedirects(app, "/login");
+
+            expect(path).not.toMatch(/^\/share/);
+            expect(res.status).toBe(200);
+        });
+
+        it("GET /login/ (trailing slash) ends on the login screen, not a redirect loop", async () => {
+            const { res, path } = await followRedirects(app, "/login/");
+
+            expect(path).not.toMatch(/^\/share/);
+            expect(res.status).toBe(200);
+        });
+
+        it("serves the bootstrap payload to a logged-out client instead of redirecting it to share", async () => {
+            // The SPA's login screen is driven by the bootstrap `loggedIn: false`
+            // payload; if /bootstrap gets bounced to the share page, the login
+            // screen can never render even when the SPA itself is served.
+            const res = await supertest(app).get("/bootstrap").expect(200);
+            expect(res.body.loggedIn).toBe(false);
+        });
     });
 
     describe("Login when 'Remember Me' is ticked", async () => {
@@ -184,6 +238,31 @@ describe("Login Route test", () => {
         });
     });
 }, 100_000);
+
+const MAX_REDIRECT_HOPS = 5;
+
+/**
+ * Follows 3xx redirects the way a browser would, resolving relative `Location`
+ * headers (".", "share", …) against the current URL. Stops after
+ * {@link MAX_REDIRECT_HOPS} hops so redirect loops surface as a final 3xx
+ * response instead of hanging the test.
+ */
+async function followRedirects(app: Application, startPath: string) {
+    let url = new URL(startPath, "http://localhost");
+    let res = await supertest(app).get(url.pathname + url.search);
+
+    for (let hop = 0; hop < MAX_REDIRECT_HOPS && res.status >= 300 && res.status < 400; hop++) {
+        const location = res.headers.location;
+        if (!location) {
+            break;
+        }
+
+        url = new URL(location, url);
+        res = await supertest(app).get(url.pathname + url.search);
+    }
+
+    return { res, path: url.pathname };
+}
 
 async function getSessionFromCookie(setCookieHeader: string) {
     // Extract the session ID from the cookie.

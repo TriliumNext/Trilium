@@ -108,6 +108,7 @@ describe("Auth", () => {
             return {
                 method: "GET",
                 path: "/test",
+                query: {},
                 ip: "127.0.0.1",
                 sessionID: "sid",
                 headers: {},
@@ -165,14 +166,39 @@ describe("Auth", () => {
             const labelSpy = vi.spyOn(attributes, "getNotesWithLabel").mockReturnValue([]);
             const resLogin = makeRes();
             const nextLogin = vi.fn();
-            auth.checkAuth(makeReq({ session: { loggedIn: false } }), resLogin as never, nextLogin);
+            auth.checkAuth(makeReq({ path: "/", session: { loggedIn: false } }), resLogin as never, nextLogin);
             expect(nextLogin).toHaveBeenCalled();
             expect(resLogin.statusCode).not.toBe(404);
 
             labelSpy.mockReturnValue([{ noteId: "x" } as never]);
             const resShare = makeRes();
-            auth.checkAuth(makeReq({ session: { loggedIn: false } }), resShare as never, vi.fn());
+            auth.checkAuth(makeReq({ path: "/", session: { loggedIn: false } }), resShare as never, vi.fn());
             expect(resShare.redirectedTo).toBe("share");
+
+            cls.init(() => options.setOption("redirectBareDomain", "false"));
+        });
+
+        it("checkAuth limits the bare-domain redirect to bare root requests (#10552)", () => {
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
+            vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
+            vi.spyOn(attributes, "getNotesWithLabel").mockReturnValue([{ noteId: "x" } as never]);
+            cls.init(() => options.setOption("redirectBareDomain", "true"));
+
+            // An explicit login navigation (GET /login redirects to the root with the
+            // `?login` marker) must reach the SPA login screen, not the share page.
+            const resLogin = makeRes();
+            const nextLogin = vi.fn();
+            auth.checkAuth(makeReq({ path: "/", query: { login: "" }, session: { loggedIn: false } }), resLogin as never, nextLogin);
+            expect(nextLogin).toHaveBeenCalled();
+            expect(resLogin.redirectedTo).toBeUndefined();
+
+            // SPA sub-requests such as /bootstrap must fall through too, or the login
+            // screen can never render its `loggedIn: false` payload.
+            const resBootstrap = makeRes();
+            const nextBootstrap = vi.fn();
+            auth.checkAuth(makeReq({ path: "/bootstrap", session: { loggedIn: false } }), resBootstrap as never, nextBootstrap);
+            expect(nextBootstrap).toHaveBeenCalled();
+            expect(resBootstrap.redirectedTo).toBeUndefined();
 
             cls.init(() => options.setOption("redirectBareDomain", "false"));
         });

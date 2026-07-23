@@ -10,13 +10,18 @@ const state = vi.hoisted(() => ({
     // When true, the fake provider is chunk-native (implements chatChunks) and
     // records the abort signal the route wires to the response lifecycle.
     chunkNative: false,
-    chunkSignal: undefined as AbortSignal | undefined
+    chunkSignal: undefined as AbortSignal | undefined,
+    // Records how streamChat resolved the provider.
+    providerIdRequested: undefined as string | undefined,
+    providerTypeRequested: undefined as string | undefined,
+    // Records the credentials passed to listProviderModels by the provider-models route.
+    providerModelsArgs: undefined as unknown[] | undefined,
+    // When set, listProviderModels rejects with this (simulates a bad key).
+    providerModelsThrows: undefined as unknown
 }));
 
-vi.mock("../../services/llm/index.js", () => ({
-    hasConfiguredProviders: () => state.configured,
-    getAllModels: () => state.models,
-    getProviderByType: () => ({
+vi.mock("../../services/llm/index.js", () => {
+    const makeProvider = () => ({
         chat: () => { if (state.chatThrows !== undefined) throw state.chatThrows; return {}; },
         chatChunks: state.chunkNative
             ? async function* (_messages: unknown, _config: unknown, signal?: AbortSignal) {
@@ -26,8 +31,19 @@ vi.mock("../../services/llm/index.js", () => ({
             : undefined,
         getAvailableModels: () => state.availableModels,
         getModelPricing: () => ({ input: 0, output: 0 })
-    })
-}));
+    });
+    return {
+        hasConfiguredProviders: () => state.configured,
+        listProviderModels: async (...args: unknown[]) => {
+            state.providerModelsArgs = args;
+            if (state.providerModelsThrows !== undefined) throw state.providerModelsThrows;
+            return state.models;
+        },
+        getSelectedModel: () => undefined,
+        getProvider: (id: string) => { state.providerIdRequested = id; return makeProvider(); },
+        getProviderByType: (type: string) => { state.providerTypeRequested = type; return makeProvider(); }
+    };
+});
 
 vi.mock("../../services/llm/stream.js", () => ({
     async *streamToChunks () { for (const c of state.chunks) yield c; }
@@ -74,20 +90,44 @@ describe("LLM chat API", () => {
             availableModels: [{ id: "m1", name: "Model One", isDefault: true }],
             chatThrows: undefined,
             chunkNative: false,
-            chunkSignal: undefined
+            chunkSignal: undefined,
+            providerIdRequested: undefined,
+            providerTypeRequested: undefined,
+            providerModelsArgs: undefined,
+            providerModelsThrows: undefined
         });
         generateChatTitle.mockClear();
     });
 
-    describe("getModels", () => {
-        it("returns no models when no provider is configured", () => {
-            state.configured = false;
-            expect(llmChatRoute.getModels({} as Request, {} as Response)).toEqual({ models: [] });
+    describe("getProviderModels", () => {
+        it("lists models for the credentials in the request body", async () => {
+            state.models = [{ id: "m1" }];
+            const req = { body: { provider: "openai", apiKey: "sk-test", baseURL: "http://localhost:11434/v1" } } as unknown as Request;
+            await expect(llmChatRoute.getProviderModels(req, {} as Response)).resolves.toEqual({ models: [{ id: "m1" }] });
+            expect(state.providerModelsArgs).toEqual(["openai", "sk-test", "http://localhost:11434/v1"]);
         });
 
-        it("returns all models when configured", () => {
-            state.models = [{ id: "m1" }];
-            expect(llmChatRoute.getModels({} as Request, {} as Response)).toEqual({ models: [{ id: "m1" }] });
+        it("throws when no provider is given", async () => {
+            const req = { body: {} } as unknown as Request;
+            await expect(llmChatRoute.getProviderModels(req, {} as Response)).rejects.toThrow(/provider is required/);
+        });
+
+        it("surfaces a listing failure (e.g. a bad API key) instead of masking it", async () => {
+            state.providerModelsThrows = new Error("Authentication failed (HTTP 401) — check the API key.");
+            const req = { body: { provider: "openai", apiKey: "bad-key" } } as unknown as Request;
+            await expect(llmChatRoute.getProviderModels(req, {} as Response)).rejects.toThrow(/Authentication failed \(HTTP 401\)/);
+        });
+
+        it("defaults a missing apiKey to an empty string", async () => {
+            const req = { body: { provider: "claude-agent" } } as unknown as Request;
+            await llmChatRoute.getProviderModels(req, {} as Response);
+            expect(state.providerModelsArgs).toEqual(["claude-agent", "", undefined]);
+        });
+
+        it("stringifies a non-Error listing failure into the validation error", async () => {
+            state.providerModelsThrows = "socket hang up";
+            const req = { body: { provider: "openai", apiKey: "k" } } as unknown as Request;
+            await expect(llmChatRoute.getProviderModels(req, {} as Response)).rejects.toThrow("socket hang up");
         });
     });
 
@@ -107,6 +147,27 @@ describe("LLM chat API", () => {
             await llmChatRoute.streamChat(req({ messages: [{ role: "user", content: "hi" }] }), r.res);
             expect(r.writes.join("")).toContain("No LLM providers configured");
             expect(r.ended).toBe(true);
+        });
+
+        it("routes by providerId when present, falling back to provider type", async () => {
+            state.chunks = [{ type: "done" }];
+            const r1 = fakeRes();
+            await llmChatRoute.streamChat(req({
+                messages: [{ role: "user", content: "hi" }],
+                config: { provider: "openai", providerId: "openai_123" }
+            }), r1.res);
+            expect(state.providerIdRequested).toBe("openai_123");
+            expect(state.providerTypeRequested).toBeUndefined();
+
+            // No providerId (chat saved before it existed) → type-based resolution.
+            state.providerIdRequested = undefined;
+            const r2 = fakeRes();
+            await llmChatRoute.streamChat(req({
+                messages: [{ role: "user", content: "hi" }],
+                config: { provider: "openai" }
+            }), r2.res);
+            expect(state.providerIdRequested).toBeUndefined();
+            expect(state.providerTypeRequested).toBe("openai");
         });
 
         it("emits an SSE error when no model can be resolved", async () => {

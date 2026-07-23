@@ -202,18 +202,23 @@ export function noteSiblingProvider(note: FNote | undefined, noteContext: NoteCo
     };
 }
 
-/** Iterator over the note's same-role attachments, with the role taken from the currently-shown attachment. */
-function attachmentSiblingProvider(note: FNote | undefined, noteContext: NoteContext | undefined, viewScope: ViewScope): SiblingNavigationProvider {
+/**
+ * Iterator over the note's same-role attachments, with the role taken from the currently-shown attachment.
+ * `mimePrefix` narrows it further, for a host that can only show one kind — a media player cycles the
+ * owner's `audio/` attachments rather than every `file`-role one.
+ */
+export function attachmentSiblingProvider(note: FNote | undefined, noteContext: NoteContext | undefined, viewScope: ViewScope, filter: { mimePrefix?: string } = {}): SiblingNavigationProvider {
     const notePath = noteContext?.notePath;
     const attachmentId = viewScope.attachmentId;
+    const { mimePrefix } = filter;
     // Key on the role rather than the id, so cycling same-role attachments doesn't re-fetch the list.
     const role = note?.attachments?.find((attachment) => attachment.attachmentId === attachmentId)?.role;
     return {
         currentId: attachmentId,
-        depsKey: `attachment:${note?.noteId ?? ""}:${role ?? attachmentId ?? ""}`,
+        depsKey: `attachment:${note?.noteId ?? ""}:${role ?? attachmentId ?? ""}:${mimePrefix ?? ""}`,
         loadSiblings: async () => {
             if (!note) return [];
-            return sameRoleAttachments(Array.from(await note.getAttachments()), attachmentId);
+            return sameRoleAttachments(Array.from(await note.getAttachments()), attachmentId, mimePrefix);
         },
         navigateTo: (id) => { if (notePath) void noteContext?.setNote(notePath, { viewScope: { ...viewScope, attachmentId: id } }); },
         shouldRefresh: (loadResults) => !!note && loadResults.getAttachmentRows().some((row) => row.ownerId === note.noteId)

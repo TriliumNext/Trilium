@@ -1,0 +1,48 @@
+name: Update model prices
+
+# Refreshes the committed LLM price table (apps/server/src/services/llm/providers/model_prices.json)
+# from LiteLLM's upstream data. Runs weekly and on demand; opens a PR only when the
+# pruned output actually changes, so a human reviews price movements before they ship.
+# The build never fetches this itself — it imports the committed JSON and stays hermetic.
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-model-prices:
+    name: Refresh model_prices.json
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Regenerate the price table
+        run: pnpm --filter server update-model-prices
+      - name: Open a PR if the table changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: apps/server/src/services/llm/providers/model_prices.json
+          branch: chore/update-model-prices
+          commit-message: "chore(llm): refresh model price table from LiteLLM"
+          title: "chore(llm): refresh model price table"
+          body: |
+            Automated refresh of the committed LLM price/context table
+            (`apps/server/src/services/llm/providers/model_prices.json`) from
+            [LiteLLM](https://github.com/BerriAI/litellm)'s upstream data, via
+            `pnpm --filter server update-model-prices`.
+
+            Review the diff for notable price movements before merging.
+          labels: dependencies

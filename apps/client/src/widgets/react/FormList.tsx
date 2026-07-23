@@ -223,12 +223,17 @@ function FormListContent({ children, badges, description, disabled, disabledTool
 
 interface FormListHeaderOpts {
     text: string;
+    /** Optional element rendered right-aligned in the header (e.g. an edit action). */
+    action?: ComponentChildren;
 }
 
-export function FormListHeader({ text }: FormListHeaderOpts) {
+export function FormListHeader({ text, action }: FormListHeaderOpts) {
     return (
         <li>
-            <h6 className="dropdown-header">{text}</h6>
+            <h6 className={`dropdown-header ${action ? "dropdown-header-with-action" : ""}`}>
+                <span>{text}</span>
+                {action}
+            </h6>
         </li>
     );
 }

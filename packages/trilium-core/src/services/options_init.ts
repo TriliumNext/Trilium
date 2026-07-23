@@ -1,4 +1,4 @@
-import { type KeyboardShortcutWithRequiredActionName, type OptionMap, type OptionNames, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import { type KeyboardShortcutWithRequiredActionName, type OptionDefinitions, type OptionMap, type OptionNames, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 
 import appInfo from "./app_info.js";
 import { getPlatform } from "./platform.js";
@@ -39,41 +39,71 @@ interface DefaultOption {
 /**
  * Initializes the default options for new databases only.
  *
+ * Every option registered here is local-only (hence the name), which is what makes it safe to run on
+ * both paths that create a database: a brand-new document, and the empty shell that
+ * `sql_init#createDatabaseForSync` fills by syncing an existing document into it. Defaults that must
+ * be synced belong in {@link initNewDocumentOptions} instead — see the warning there.
+ *
  * @param initialized `true` if the database has been fully initialized (i.e. a new database was created), or `false` if the database is created for sync.
  * @param opts additional options to be initialized, for example the sync configuration.
  */
 export async function initNotSyncedOptions(initialized: boolean, opts: NotSyncedOpts = {}) {
-    optionService.createOption(
+    createNotSyncedOption(
         "openNoteContexts",
         JSON.stringify([
             {
                 notePath: "root",
                 active: true
             }
-        ]),
-        false
+        ])
     );
 
-    optionService.createOption("lastDailyBackupDate", dateUtils.utcNowDateTime(), false);
-    optionService.createOption("lastWeeklyBackupDate", dateUtils.utcNowDateTime(), false);
-    optionService.createOption("lastMonthlyBackupDate", dateUtils.utcNowDateTime(), false);
-    optionService.createOption("dbVersion", appInfo.dbVersion.toString(), false);
+    createNotSyncedOption("lastDailyBackupDate", dateUtils.utcNowDateTime());
+    createNotSyncedOption("lastWeeklyBackupDate", dateUtils.utcNowDateTime());
+    createNotSyncedOption("lastMonthlyBackupDate", dateUtils.utcNowDateTime());
+    createNotSyncedOption("dbVersion", appInfo.dbVersion.toString());
 
-    optionService.createOption("initialized", initialized ? "true" : "false", false);
+    createNotSyncedOption("initialized", initialized ? "true" : "false");
 
-    optionService.createOption("lastSyncedPull", "0", false);
-    optionService.createOption("lastSyncedPush", "0", false);
+    createNotSyncedOption("lastSyncedPull", "0");
+    createNotSyncedOption("lastSyncedPush", "0");
 
-    optionService.createOption("theme", "next", false);
-    optionService.createOption("textNoteEditorType", "ckeditor-classic", true);
+    createNotSyncedOption("theme", "next");
 
-    optionService.createOption("syncServerHost", opts.syncServerHost || "", false);
-    optionService.createOption("syncServerTimeout", "120", false); // 120 seconds (2 minutes)
-    optionService.createOption("syncProxy", opts.syncProxy || "", false);
-    optionService.createOption("syncIncomplete", "false", false);
+    createNotSyncedOption("syncServerHost", opts.syncServerHost || "");
+    createNotSyncedOption("syncServerTimeout", "120"); // 120 seconds (2 minutes)
+    createNotSyncedOption("syncProxy", opts.syncProxy || "");
+    createNotSyncedOption("syncIncomplete", "false");
     // Per-device blob size limit (bytes) for sync pulls; 0 = disabled. Set to a non-zero value only
     // on memory-constrained clients (mobile), so this is not synced across the cluster.
-    optionService.createOption("syncMaxBlobContentSize", (opts.syncMaxBlobContentSize ?? 0).toString(), false);
+    createNotSyncedOption("syncMaxBlobContentSize", (opts.syncMaxBlobContentSize ?? 0).toString());
+}
+
+/**
+ * Initializes the defaults that apply to a brand-new document only and that, unlike
+ * {@link initNotSyncedOptions}, do participate in sync. Must therefore be called only when creating a
+ * genuinely new document, never when creating a database to sync an existing one into.
+ *
+ * These cannot live in {@link defaultOptions}, which is also applied to existing databases on every
+ * startup: a value there fills in for everyone who does not have the option yet, so it would change
+ * the behaviour of upgrading users as well. And they must not live in {@link initNotSyncedOptions},
+ * which also runs on the sync-setup path, on an empty database, before the first pull. An option
+ * created there carries the current timestamp, so it wins the purely timestamp-based conflict
+ * resolution in `sync_update#updateNormalEntity` against the server's older value and is then pushed
+ * to the whole cluster — setting up a single fresh client would silently reset the setting
+ * everywhere (#10626).
+ */
+export function initNewDocumentOptions() {
+    optionService.createOption("textNoteEditorType", "ckeditor-classic", true);
+}
+
+/**
+ * Creates a local-only option, i.e. one that is not propagated to the other instances of a sync
+ * cluster. Deliberately offers no way to create a synced option, so that the contract of
+ * {@link initNotSyncedOptions} cannot be broken by passing the wrong argument.
+ */
+function createNotSyncedOption<T extends OptionNames>(name: T, value: string | OptionDefinitions[T]) {
+    optionService.createOption(name, value, false);
 }
 
 /**

@@ -29,20 +29,41 @@ describe("onEnterInSummary", () => {
     });
 
     it("at the end of a title (expanded) parks the caret in the existing empty body paragraph instead of stacking a second one", () => {
+        // The expanded/collapsed branch is decided by the `open` model attribute,
+        // so the state is set up in the model rather than on the DOM element.
         setModelData(model,
-            "<details><summary>Title[]</summary><paragraph></paragraph></details>"
+            "<details open=\"true\"><summary>Title[]</summary><paragraph></paragraph></details>"
         );
-        // Auto-open won't have fired in this synchronous slice, so the details
-        // dom.open is still false. The expanded vs collapsed branch decision is
-        // made via dom.open — force it true to exercise the expanded branch.
-        const detailsDom = editor.editing.view.getDomRoot()!.querySelector("details") as HTMLDetailsElement;
-        detailsDom.open = true;
 
         fireEnter();
 
         // Caret moved into the existing empty paragraph; no second one was inserted.
         expect(getModelData(model)).toBe(
-            "<details><summary>Title</summary><paragraph>[]</paragraph></details>"
+            "<details open=\"true\"><summary>Title</summary><paragraph>[]</paragraph></details>"
+        );
+    });
+
+    it("expands a collapsed block when splitting its title, as part of the same undo step", () => {
+        setModelData(model,
+            "<details><summary>Ti[]tle</summary><paragraph>body</paragraph></details>"
+        );
+
+        fireEnter();
+
+        // The right half of the title became the first body block, and the block
+        // expanded so the caret lands somewhere the user can actually see.
+        expect(getModelData(model)).toBe(
+            "<details open=\"true\"><summary>Ti</summary>" +
+                "<paragraph>[]tle</paragraph><paragraph>body</paragraph>" +
+            "</details>"
+        );
+
+        editor.execute("undo");
+
+        // The expansion belongs to the user's edit — unlike a plain toggle — so
+        // undoing the split restores the collapsed state along with the title.
+        expect(getModelData(model, { withoutSelection: true })).toBe(
+            "<details><summary>Title</summary><paragraph>body</paragraph></details>"
         );
     });
 
@@ -51,7 +72,7 @@ describe("onEnterInSummary", () => {
             "<details><summary>Title[]</summary><paragraph>body</paragraph></details>" +
             "<paragraph></paragraph>"
         );
-        // dom.open stays false in happy-dom, exercising the collapsed branch.
+        // No `open` attribute — the collapsed branch.
 
         fireEnter();
 

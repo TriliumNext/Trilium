@@ -9,7 +9,7 @@
 import { becca } from "@triliumnext/core";
 import { dump } from "js-yaml";
 
-import { getNoteMeta, SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
+import { getNoteMeta, SYSTEM_PROMPT_LIMITS } from "./tools/helpers.js";
 
 /**
  * Build a context hint about the current note with full metadata (same shape as

@@ -1,7 +1,7 @@
 /**
- * Where a media player is being rendered. The note detail is `standalone`; a note included in a text note
- * or embedded in a canvas is `embedded`; a lightweight preview such as a collection tile or an attachment
- * list is `preview`.
+ * Where a media player is being rendered. A pane of its own — the note detail, or an attachment opened in
+ * full detail — is `standalone`; a note included in a text note or embedded in a canvas is `embedded`; a
+ * lightweight preview such as a collection tile or an attachment list is `preview`.
  */
 export type MediaEnvironment = "standalone" | "embedded" | "preview";
 
@@ -14,7 +14,7 @@ export function loadsEagerly(environment: MediaEnvironment): boolean {
     return environment !== "preview";
 }
 
-/** How much a mounted player may buffer ahead: only the note detail is worth pre-loading in full. */
+/** How much a mounted player may buffer ahead: only a player with a pane of its own is worth pre-loading in full. */
 export function preloadFor(environment: MediaEnvironment): "auto" | "metadata" {
     return environment === "standalone" ? "auto" : "metadata";
 }
@@ -34,8 +34,8 @@ export function playerRootClasses(environment: MediaEnvironment): string {
 }
 
 /**
- * Whether the player wears its compact chrome: only the note detail has room for the full control set, so
- * everywhere else keeps just what a small host needs — play, seek, volume — and drops the rest.
+ * Whether the player wears its compact chrome: only a player with a pane of its own has room for the full
+ * control set, so everywhere else keeps just what a small host needs — play, seek, volume — and drops the rest.
  */
 export function usesCompactControls(environment: MediaEnvironment): boolean {
     return environment !== "standalone";

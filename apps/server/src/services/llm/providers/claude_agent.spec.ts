@@ -1,5 +1,5 @@
 import type { LlmStreamChunk } from "@triliumnext/commons";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const queryMock = vi.hoisted(() => vi.fn());
 const errorLogMock = vi.hoisted(() => vi.fn());
@@ -29,7 +29,7 @@ vi.mock("../../data_dir.js", async () => {
 vi.mock("../../port.js", () => ({ default: 8080 }));
 
 const buildNoteHintMock = vi.hoisted(() => vi.fn((noteId: string): string | null => `NOTE_META(${noteId})`));
-vi.mock("./note_hint.js", () => ({ buildNoteHint: buildNoteHintMock }));
+vi.mock("../note_hint.js", () => ({ buildNoteHint: buildNoteHintMock }));
 
 // BYO binary resolution shells out to the user's `claude`; stub it so tests
 // don't depend on a real install. Resolves a path by default; can be made to
@@ -40,9 +40,14 @@ vi.mock("./claude_binary.js", () => ({ resolveClaudeBinaryPath: resolveClaudeBin
 // Attachment resolution reads bytes out of Becca, which the core mock above
 // omits — stub it so the multimodal tests drive block construction directly.
 const resolveAttachmentPartMock = vi.hoisted(() => vi.fn());
-vi.mock("./attachment_content.js", () => ({ resolveAttachmentPart: resolveAttachmentPartMock }));
+vi.mock("../attachment_content.js", () => ({ resolveAttachmentPart: resolveAttachmentPartMock }));
 
-const { buildSeededPrompt, ClaudeAgentProvider, hashTranscript, resetAgentCwdForTests } = await import("./claude_agent.js");
+// The Windows `.cmd` shim delegates to child_process.spawn; the provider never
+// spawns otherwise, so mocking the whole module is safe.
+const spawnMock = vi.hoisted(() => vi.fn());
+vi.mock("child_process", () => ({ spawn: spawnMock }));
+
+const { buildSeededPrompt, buildSubscriptionModelList, ClaudeAgentProvider, hashTranscript, resetAgentCwdForTests, resetSubscriptionModelCacheForTests } = await import("./claude_agent.js");
 
 /** Drain the query prompt into the single user message it streams (multimodal path). */
 async function drainPrompt(prompt: unknown): Promise<{ role: string; content: unknown[] }> {
@@ -870,5 +875,227 @@ describe("transcript helpers", () => {
         expect(prompt).toContain("User: q1");
         expect(prompt).toContain("Assistant: a1");
         expect(prompt.endsWith("q2")).toBe(true);
+    });
+});
+
+describe("buildSubscriptionModelList", () => {
+    const curated = [
+        { id: "claude-sonnet-5", name: "Claude Sonnet 5", pricing: { input: 0, output: 0 }, contextWindow: 1000000, isDefault: true, isSubscription: true },
+        { id: "claude-opus-4-6", name: "Claude Opus 4.6", pricing: { input: 0, output: 0 }, contextWindow: 1000000, isLegacy: true, isSubscription: true },
+        { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", pricing: { input: 0, output: 0 }, contextWindow: 200000, isSubscription: true }
+    ];
+
+    it("resolves aliases to canonical ids, dedupes, and keeps curated metadata", () => {
+        const merged = buildSubscriptionModelList([
+            { value: "sonnet", resolvedModel: "claude-sonnet-5", displayName: "Sonnet 5" },
+            { value: "claude-sonnet-5", displayName: "Sonnet 5 (again)" }, // dup of the resolved alias → dropped
+            { value: "claude-opus-4-6", displayName: "Opus 4.6" }
+        ], curated);
+
+        expect(merged.map(m => m.id)).toEqual(["claude-sonnet-5", "claude-opus-4-6"]);
+        // The CLI's display name wins; curated flags/context window survive.
+        expect(merged[0]).toMatchObject({ name: "Sonnet 5", isDefault: true, isSubscription: true, contextWindow: 1000000, pricing: { input: 0, output: 0 } });
+        expect(merged[1]).toMatchObject({ id: "claude-opus-4-6", isLegacy: true });
+        // Haiku is curated but absent from the live catalog → dropped.
+        expect(merged.some(m => m.id === "claude-haiku-4-5-20251001")).toBe(false);
+    });
+
+    it("passes through unknown models with subscription invariants and no pricing/context window", () => {
+        const merged = buildSubscriptionModelList([
+            { value: "sonnet", resolvedModel: "claude-sonnet-5", displayName: "Sonnet 5" },
+            { value: "claude-fable-9", displayName: "Claude Fable 9" }
+        ], curated);
+
+        const fable = merged.find(m => m.id === "claude-fable-9");
+        expect(fable).toEqual({ id: "claude-fable-9", name: "Claude Fable 9", contextWindow: undefined, isSubscription: true, pricing: { input: 0, output: 0 } });
+    });
+});
+
+describe("ClaudeAgentProvider.listModels", () => {
+    function scriptSupportedModels(models: unknown[] | (() => Promise<unknown[]>)) {
+        queryMock.mockReturnValue({
+            supportedModels: typeof models === "function" ? models : async () => models
+        });
+    }
+
+    beforeEach(() => {
+        queryMock.mockReset();
+        resetSubscriptionModelCacheForTests();
+        resolveClaudeBinaryMock.mockClear();
+    });
+
+    it("probes the live catalog without running a chat turn", async () => {
+        scriptSupportedModels([
+            { value: "sonnet", resolvedModel: "claude-sonnet-5", displayName: "Sonnet 5" },
+            { value: "claude-fable-9", displayName: "Claude Fable 9" }
+        ]);
+        const provider = new ClaudeAgentProvider();
+        const models = await provider.listModels();
+
+        expect(models.map(m => m.id)).toEqual(["claude-sonnet-5", "claude-fable-9"]);
+        expect(models.every(m => m.isSubscription)).toBe(true);
+        // Curated models the CLI didn't report are gone (unlike getAvailableModels).
+        expect(models.some(m => m.id === "claude-haiku-4-5-20251001")).toBe(false);
+
+        // The probe uses a streaming prompt that yields nothing — never a string,
+        // so no user turn (and no tokens) is sent — capped at a single turn.
+        const { prompt, options } = queryMock.mock.calls[0][0];
+        expect(typeof prompt).not.toBe("string");
+        expect(prompt[Symbol.asyncIterator]).toBeTypeOf("function");
+        expect(options.maxTurns).toBe(1);
+    });
+
+    it("serves the cached list on the next call without re-spawning", async () => {
+        scriptSupportedModels([{ value: "claude-sonnet-5", displayName: "Sonnet 5" }]);
+        const provider = new ClaudeAgentProvider();
+        const first = await provider.listModels();
+        // A fresh instance still hits the shared module-level cache.
+        const second = await new ClaudeAgentProvider().listModels();
+
+        expect(second).toBe(first);
+        expect(queryMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("deduplicates concurrent probes into a single spawn", async () => {
+        scriptSupportedModels([{ value: "claude-sonnet-5", displayName: "Sonnet 5" }]);
+        const provider = new ClaudeAgentProvider();
+        // The second call arrives while the first probe is still in flight and
+        // shares its promise instead of spawning a second CLI subprocess.
+        const [a, b] = await Promise.all([provider.listModels(), provider.listModels()]);
+
+        expect(a).toBe(b);
+        expect(queryMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("propagates the probe failure so the modal can surface it (e.g. not authenticated)", async () => {
+        scriptSupportedModels(async () => {
+            throw new Error("Claude Code is not authenticated");
+        });
+        const provider = new ClaudeAgentProvider();
+        await expect(provider.listModels()).rejects.toThrow("not authenticated");
+    });
+
+    it("times out when the init handshake never surfaces the catalog", async () => {
+        vi.useFakeTimers();
+        try {
+            // supportedModels() never resolves → the 15s timeout wins the race.
+            scriptSupportedModels(() => new Promise<never>(() => {}));
+            const provider = new ClaudeAgentProvider();
+            const promise = provider.listModels();
+            // Surface the rejection now so it isn't reported as unhandled while
+            // we advance the clock; assert on it after the timer fires.
+            const settled = promise.then(() => "resolved", (e: Error) => e.message);
+            await vi.advanceTimersByTimeAsync(15_000);
+            expect(await settled).toMatch(/Timed out reading the Claude Code model catalog/);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("propagates when Claude Code isn't installed, without spawning a probe", async () => {
+        resolveClaudeBinaryMock.mockRejectedValueOnce(new Error("Claude Code CLI not found"));
+        const provider = new ClaudeAgentProvider();
+
+        await expect(provider.listModels()).rejects.toThrow("not found");
+        expect(queryMock).not.toHaveBeenCalled();
+    });
+
+    it("feeds query() a no-input prompt that stays open until teardown, then finishes once aborted", async () => {
+        // The probe hands query() a prompt whose iterator never yields a user
+        // message — it registers a teardown listener and only resolves `done`
+        // once the probe aborts. Drive that iterator here (the mock never would).
+        let probeIterator: AsyncIterator<unknown> | undefined;
+        let firstPull: Promise<IteratorResult<unknown>> | undefined;
+        queryMock.mockImplementation((opts: { prompt: AsyncIterable<unknown> }) => {
+            probeIterator = opts.prompt[Symbol.asyncIterator]();
+            // Pull once while the probe's controller is still un-aborted: this
+            // runs the iterator body and registers the abort ("finish") listener.
+            firstPull = probeIterator.next();
+            return { supportedModels: async () => [{ value: "claude-sonnet-5", displayName: "Sonnet 5" }] };
+        });
+
+        await new ClaudeAgentProvider().listModels();
+
+        // The probe's teardown aborted the controller, resolving the pending pull.
+        expect(firstPull).toBeDefined();
+        await expect(firstPull).resolves.toEqual({ done: true, value: undefined });
+
+        // A later pull sees the already-aborted signal and finishes immediately.
+        expect(probeIterator).toBeDefined();
+        await expect(probeIterator?.next()).resolves.toEqual({ done: true, value: undefined });
+    });
+});
+
+describe("Windows .cmd spawn shim", () => {
+    const realPlatform = process.platform;
+
+    function setPlatform(value: string) {
+        Object.defineProperty(process, "platform", { value, configurable: true });
+    }
+
+    beforeEach(() => {
+        queryMock.mockReset();
+        spawnMock.mockReset();
+    });
+    afterEach(() => {
+        setPlatform(realPlatform);
+        // Restore the default binary path the other suites depend on.
+        resolveClaudeBinaryMock.mockReset();
+        resolveClaudeBinaryMock.mockImplementation(async () => "/usr/bin/claude");
+    });
+
+    it("wraps the CLI spawn in a shell for a .cmd shim on Windows", async () => {
+        // Node's spawn() can't execute a .cmd batch file (the npm shim) directly,
+        // so the provider installs a spawn override that delegates via a shell.
+        setPlatform("win32");
+        resolveClaudeBinaryMock.mockResolvedValue("C:\\Users\\me\\claude.cmd");
+        scriptAgent([successResult()]);
+        await collect(new ClaudeAgentProvider().chatChunks([{ role: "user", content: "hi" }], {}));
+
+        const spawnClaudeCodeProcess = queryMock.mock.calls[0][0].options.spawnClaudeCodeProcess;
+        expect(spawnClaudeCodeProcess).toBeTypeOf("function");
+
+        const fakeChild = { pid: 123 };
+        spawnMock.mockReturnValue(fakeChild);
+        const child = spawnClaudeCodeProcess({ command: "claude.cmd", args: ["--print"], cwd: "/tmp", env: { A: "1" }, signal: undefined });
+
+        expect(spawnMock).toHaveBeenCalledWith(
+            "claude.cmd",
+            ["--print"],
+            expect.objectContaining({ shell: true, stdio: "pipe", cwd: "/tmp", env: { A: "1" } })
+        );
+        expect(child).toBe(fakeChild);
+    });
+
+    it("installs no spawn override on non-Windows hosts", async () => {
+        setPlatform("linux");
+        resolveClaudeBinaryMock.mockResolvedValue("/usr/bin/claude");
+        scriptAgent([successResult()]);
+        await collect(new ClaudeAgentProvider().chatChunks([{ role: "user", content: "hi" }], {}));
+
+        expect(queryMock.mock.calls[0][0].options.spawnClaudeCodeProcess).toBeUndefined();
+    });
+
+    it("installs no spawn override for a non-.cmd binary on Windows", async () => {
+        setPlatform("win32");
+        resolveClaudeBinaryMock.mockResolvedValue("C:\\Users\\me\\claude.exe");
+        scriptAgent([successResult()]);
+        await collect(new ClaudeAgentProvider().chatChunks([{ role: "user", content: "hi" }], {}));
+
+        expect(queryMock.mock.calls[0][0].options.spawnClaudeCodeProcess).toBeUndefined();
+    });
+});
+
+describe("ClaudeAgentProvider.recommendedModelIds", () => {
+    it("applies Anthropic's per-family newest-version rule, not the generic default", () => {
+        // The subscription catalog shares Anthropic's id shape, so it recommends
+        // one model per family rather than every non-preview, non-legacy model.
+        const ids = new ClaudeAgentProvider().recommendedModelIds(
+            ["claude-fable-5", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-5", "claude-haiku-4-5-20251001"]
+                .map(id => ({ id, name: id }))
+        );
+        expect([...ids].sort()).toEqual([
+            "claude-fable-5", "claude-haiku-4-5-20251001", "claude-opus-4-8", "claude-sonnet-5"
+        ]);
     });
 });

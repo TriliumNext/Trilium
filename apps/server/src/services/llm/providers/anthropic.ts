@@ -2,8 +2,10 @@ import { type AnthropicProvider as AnthropicSDKProvider,createAnthropic } from "
 import type { LlmMessage } from "@triliumnext/commons";
 import { type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type ToolSet } from "ai";
 
-import type { LlmProviderConfig, StreamResult } from "../types.js";
-import { BaseProvider, buildModelList, buildModelMessage } from "./base_provider.js";
+import type { LlmProviderConfig, ModelInfo, StreamResult } from "../types.js";
+import { BaseProvider, buildModelMessage, type RemoteModel } from "./base_provider.js";
+
+const OFFICIAL_BASE_URL = "https://api.anthropic.com/v1";
 
 /** Anthropic ephemeral prompt-caching breakpoint. */
 const CACHE_CONTROL = { anthropic: { cacheControl: { type: "ephemeral" as const } } };
@@ -17,107 +19,15 @@ const CACHE_CONTROL = { anthropic: { cacheControl: { type: "ephemeral" as const 
  */
 const ADAPTIVE_THINKING_MODELS = /^claude-(?:opus-4-[678]|sonnet-(?:4-6|5))/;
 
-/**
- * Available Anthropic models with pricing (USD per million tokens).
- * Source: https://docs.anthropic.com/en/docs/about-claude/models
- */
-const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
-    // ===== Current Models =====
-    {
-        id: "claude-fable-5",
-        name: "Claude Fable 5",
-        pricing: { input: 10, output: 50 },
-        contextWindow: 1000000
-    },
-    {
-        id: "claude-opus-4-8",
-        name: "Claude Opus 4.8",
-        pricing: { input: 5, output: 25 },
-        contextWindow: 1000000
-    },
-    {
-        id: "claude-opus-4-7",
-        name: "Claude Opus 4.7",
-        pricing: { input: 5, output: 25 },
-        contextWindow: 1000000
-    },
-    {
-        id: "claude-sonnet-5",
-        name: "Claude Sonnet 5",
-        // Standard pricing. Introductory $2/$10 per MTok applies through 2026-08-31.
-        pricing: { input: 3, output: 15 },
-        contextWindow: 1000000,
-        isDefault: true
-    },
-    {
-        id: "claude-haiku-4-5-20251001",
-        name: "Claude Haiku 4.5",
-        pricing: { input: 1, output: 5 },
-        contextWindow: 200000
-    },
-    // ===== Legacy Models =====
-    {
-        id: "claude-sonnet-4-6",
-        name: "Claude Sonnet 4.6",
-        pricing: { input: 3, output: 15 },
-        contextWindow: 1000000,
-        isLegacy: true
-    },
-    {
-        id: "claude-opus-4-6",
-        name: "Claude Opus 4.6",
-        pricing: { input: 5, output: 25 },
-        contextWindow: 1000000,
-        isLegacy: true
-    },
-    {
-        id: "claude-sonnet-4-5-20250929",
-        name: "Claude Sonnet 4.5",
-        pricing: { input: 3, output: 15 },
-        contextWindow: 200000,
-        isLegacy: true
-    },
-    {
-        id: "claude-opus-4-5-20251101",
-        name: "Claude Opus 4.5",
-        pricing: { input: 5, output: 25 },
-        contextWindow: 200000,
-        isLegacy: true
-    },
-    {
-        id: "claude-opus-4-1-20250805",
-        name: "Claude Opus 4.1",
-        pricing: { input: 15, output: 75 },
-        contextWindow: 200000,
-        isLegacy: true
-    },
-    {
-        id: "claude-sonnet-4-20250514",
-        name: "Claude Sonnet 4.0",
-        pricing: { input: 3, output: 15 },
-        contextWindow: 200000,
-        isLegacy: true
-    },
-    {
-        id: "claude-opus-4-20250514",
-        name: "Claude Opus 4.0",
-        pricing: { input: 15, output: 75 },
-        contextWindow: 200000,
-        isLegacy: true
-    }
-]);
-
 export class AnthropicProvider extends BaseProvider {
     name = "anthropic";
     protected defaultModel = "claude-sonnet-5";
     protected titleModel = "claude-haiku-4-5-20251001";
-    protected availableModels = AVAILABLE_MODELS;
-    protected modelPricing = MODEL_PRICING;
 
     private anthropic: AnthropicSDKProvider;
 
     constructor(apiKey: string, baseURL?: string) {
-        super();
+        super(apiKey, baseURL);
         if (!apiKey) {
             throw new Error("API key is required for Anthropic provider");
         }
@@ -128,10 +38,29 @@ export class AnthropicProvider extends BaseProvider {
         return this.anthropic(modelId);
     }
 
+    /** List models from Anthropic's `/models` endpoint (all are chat models). */
+    protected override async fetchRemoteModels(): Promise<RemoteModel[] | null> {
+        const payload = await this.fetchJson(`${this.baseURL ?? OFFICIAL_BASE_URL}/models?limit=1000`, {
+            "x-api-key": this.apiKey,
+            "anthropic-version": "2023-06-01"
+        });
+        const data = (payload as { data?: unknown }).data;
+        if (!Array.isArray(data)) {
+            throw new Error("Unexpected /models response shape");
+        }
+        return data
+            .filter((m): m is { id: string; display_name?: string } => typeof (m as { id?: unknown }).id === "string")
+            .map(m => ({ id: m.id, name: m.display_name }));
+    }
+
     protected override addWebSearchTool(tools: ToolSet): void {
         tools.web_search = this.anthropic.tools.webSearch_20250305({
             maxUses: 5
         });
+    }
+
+    override recommendedModelIds(models: ModelInfo[]): Set<string> {
+        return anthropicRecommendedIds(models);
     }
 
     /**
@@ -219,4 +148,60 @@ export class AnthropicProvider extends BaseProvider {
 
         return streamText(streamOptions);
     }
+}
+
+/**
+ * Anthropic model id shape: `claude-<family>-<major>[-<minor>][-<YYYYMMDD>]`.
+ * The optional trailing 8-digit snapshot date is not part of the version —
+ * `claude-sonnet-4-20250514` is Sonnet 4.0, not 4.20250514 — so the minor
+ * group is capped at two digits to force the date into the snapshot group.
+ */
+const ANTHROPIC_MODEL = /^claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-\d{8})?$/;
+
+/**
+ * Recommend the newest version within each Claude family (Opus, Sonnet, Haiku,
+ * Fable, and any future one) — one model per family, so today's Opus 4.8,
+ * Sonnet 5, Haiku 4.5 and Fable 5. Older revisions and dated snapshots stay in
+ * the picker, unchecked.
+ *
+ * Exported because the Claude Code subscription provider serves the same
+ * `claude-*` catalog and must apply the same rule, without inheriting from
+ * {@link AnthropicProvider} (it runs the Agent SDK, not the AI SDK).
+ */
+export function anthropicRecommendedIds(models: ModelInfo[]): Set<string> {
+    const byFamily = new Map<string, { id: string; version: number }[]>();
+    for (const model of models) {
+        const parsed = parseAnthropicModel(model.id);
+        if (!parsed) {
+            continue;
+        }
+        const members = byFamily.get(parsed.family) ?? [];
+        members.push({ id: model.id, version: parsed.version });
+        byFamily.set(parsed.family, members);
+    }
+    const recommended = new Set<string>();
+    for (const members of byFamily.values()) {
+        // Strict `>` so the earliest listed model wins a version tie.
+        const newest = members.reduce((best, m) => (m.version > best.version ? m : best));
+        recommended.add(newest.id);
+    }
+    return recommended;
+}
+
+/**
+ * `claude-opus-4-8` → `{ family: "opus", version: 4.8 }`, `claude-sonnet-5` →
+ * version 5, `claude-sonnet-4-20250514` → version 4 (the trailing date is a
+ * snapshot, not a minor). Null for ids outside the `claude-<family>-<version>`
+ * shape, which the caller skips.
+ *
+ * Family and version are parsed together so the regex runs once per model
+ * rather than again on both sides of every version comparison.
+ */
+function parseAnthropicModel(id: string): { family: string; version: number } | null {
+    const match = ANTHROPIC_MODEL.exec(id);
+    if (!match) {
+        return null;
+    }
+    const [, family, major, minor] = match;
+    return { family, version: parseFloat(minor ? `${major}.${minor}` : major) };
 }

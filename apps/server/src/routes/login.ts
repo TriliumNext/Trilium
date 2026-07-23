@@ -10,8 +10,11 @@ import totp from '../services/totp.js';
 function loginPage(req: Request, res: Response) {
     // The login screen is served by the SPA at the root now (driven by the bootstrap
     // `loggedIn: false` payload, which also surfaces any one-shot SSO error left by a
-    // failed OIDC round-trip); redirect any direct hits there.
-    res.redirect(".");
+    // failed OIDC round-trip); redirect any direct hits there. The `?login` marker
+    // tells checkAuth this is an explicit login navigation, so it isn't mistaken for
+    // a bare-domain hit and bounced to the share page (#10552). A direct hit on
+    // "/login/" (trailing slash) needs ".." — "." would resolve onto itself and loop.
+    res.redirect(req.path.endsWith("/") ? "../?login" : "./?login");
 }
 
 function setPasswordPage(req: Request, res: Response) {

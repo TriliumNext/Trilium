@@ -77,7 +77,14 @@ export interface LlmCitation {
  * Configuration for LLM chat requests.
  */
 export interface LlmChatConfig {
+    /** Provider type (e.g. "anthropic"). Kept for chats saved before {@link providerId} existed. */
     provider?: string;
+    /**
+     * ID of the provider configuration to route through. Preferred over
+     * {@link provider} — it disambiguates multiple configs of the same type
+     * (e.g. a real OpenAI key plus a self-hosted Ollama endpoint).
+     */
+    providerId?: string;
     model?: string;
     systemPrompt?: string;
     /** Enable web search tool */
@@ -114,14 +121,18 @@ export interface LlmModelInfo {
     name: string;
     /** Provider type that owns this model (e.g., "anthropic", "openai") */
     provider?: string;
-    /** Pricing per million tokens */
-    pricing: LlmModelPricing;
+    /** ID of the provider configuration this model was listed from */
+    providerId?: string;
+    /** User-given name of the provider configuration (e.g. "My Ollama") */
+    providerName?: string;
+    /** Pricing per million tokens. Absent for dynamically discovered models with unknown pricing. */
+    pricing?: LlmModelPricing;
     /** Whether this is the default model */
     isDefault?: boolean;
     /** Whether this is a legacy/older model */
     isLegacy?: boolean;
-    /** Cost multiplier relative to the cheapest model (1x = cheapest) */
-    costMultiplier?: number;
+    /** Whether this model is pre-selected by default when adding a provider (e.g. excludes legacy and, for Gemini, preview models) */
+    recommended?: boolean;
     /** Maximum context window size in tokens */
     contextWindow?: number;
     /** Whether usage is covered by a subscription plan rather than metered per token */

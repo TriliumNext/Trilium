@@ -10,11 +10,11 @@ import NoItems from "../../react/NoItems";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import MediaFileActions from "./MediaFileActions";
 import { playerRootClasses, preloadFor, showsFileActions, showsViewportControls, usesCompactControls } from "./media_environment";
-import { MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
+import { claimsKeystroke, MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 
 const AUTO_HIDE_DELAY = 3000;
 
-export default function VideoPreview({ source, entity, environment, noteContext, isVisible = true, autoPlay }: MediaPlayerProps) {
+export default function VideoPreview({ source, entity, environment, noteContext, ownerNote, viewScope, isVisible = true, autoPlay }: MediaPlayerProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [playing, setPlaying] = useState(false);
@@ -65,8 +65,8 @@ export default function VideoPreview({ source, entity, environment, noteContext,
     }, [togglePlayback, toggleControls]);
 
     const onKeyDown = useKeyboardShortcuts(videoRef, wrapperRef, togglePlayback, flashControls);
-    const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, videoRef);
-    const siblingNavigation = useMediaSessionController({ source, entity, environment, noteContext, isVisible, autoPlay, mimePrefix: "video/", mediaRef: videoRef, playMode });
+    const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, videoRef, ownerNote?.noteId);
+    const siblingNavigation = useMediaSessionController({ source, entity, environment, noteContext, ownerNote, viewScope, isVisible, autoPlay, mimePrefix: "video/", mediaRef: videoRef, playMode });
     useMediaPlayerShortcutHints({ fullscreen: true });
     const compact = usesCompactControls(environment);
 
@@ -109,7 +109,7 @@ export default function VideoPreview({ source, entity, environment, noteContext,
                         <div class="media-buttons-row">
                             <div className="left">
                                 <PlaybackSpeed mediaRef={videoRef} />
-                                {/* The play mode lives on the parent folder, which only the note detail knows. */}
+                                {/* The play mode lives on the parent folder (or, for an attachment, its owner note), which only a detail view knows. */}
                                 {noteContext && <PlayModeButton mode={playMode} onSelectMode={setPlayMode} />}
                                 <RotateButton videoRef={videoRef} />
                             </div>
@@ -140,7 +140,7 @@ export default function VideoPreview({ source, entity, environment, noteContext,
 function useKeyboardShortcuts(videoRef: MutableRef<HTMLVideoElement | null>, wrapperRef: MutableRef<HTMLDivElement | null>, togglePlayback: () => void, flashControls: () => void) {
     return useCallback((e: KeyboardEvent) => {
         const video = videoRef.current;
-        if (!video) return;
+        if (!video || !claimsKeystroke(e)) return;
 
         switch (e.key) {
             case " ":

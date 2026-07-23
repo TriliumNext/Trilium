@@ -173,7 +173,7 @@ function register(app: express.Application) {
 
     // LLM chat endpoints
     asyncRoute(PST, "/api/llm-chat/stream", [auth.checkApiAuthOrElectron, csrfMiddleware], llmChatRoute.streamChat, null);
-    apiRoute(GET, "/api/llm-chat/models", llmChatRoute.getModels);
+    asyncApiRoute(PST, "/api/llm-chat/provider-models", llmChatRoute.getProviderModels);
 
     // no CSRF since this is called from android app
     asyncRoute(PST, "/api/sender/login", [loginRateLimiter], loginApiRoute.token, apiResultHandler);
@@ -186,10 +186,8 @@ function register(app: express.Application) {
     // one-time token or a signed signature. The body is not logged.
     asyncApiRoute(PST, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
 
-    apiRoute(GET, "/api/onenote-import/auth-url", onenoteImportRoute.getAuthUrl);
-    // Plain GET (no CSRF/auth headers): this is a top-level browser redirect back from Microsoft.
-    // The OAuth `state` validated against the session is what guards it.
-    asyncRoute(GET, "/api/onenote-import/callback", [], onenoteImportRoute.callback);
+    asyncApiRoute(PST, "/api/onenote-import/device-login", onenoteImportRoute.deviceLogin);
+    asyncApiRoute(PST, "/api/onenote-import/device-poll", onenoteImportRoute.devicePoll);
     apiRoute(GET, "/api/onenote-import/status", onenoteImportRoute.getStatus);
     asyncApiRoute(PST, "/api/onenote-import/disconnect", onenoteImportRoute.disconnect);
     asyncApiRoute(GET, "/api/onenote-import/notebooks", onenoteImportRoute.getNotebooks);

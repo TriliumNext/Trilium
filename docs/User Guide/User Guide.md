@@ -1,5 +1,5 @@
 # User Guide
-Trilium is an open-source solution for note-taking and organizing a personal knowledge base. Use it locally on your desktop, or sync it with your self-hosted server to keep your notes everywhere you go.
+Trilium is an open-source solution for note-takinong and organizing a personal knowledge base. Use it locally on your desktop, or sync it with your self-hosted server to keep your notes everywhere you go.
 
 > [!TIP]
 > The same documentation can be accessed locally from within the Trilium Notes application by pressing <kbd>F1</kbd>.

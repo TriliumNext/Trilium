@@ -26,6 +26,7 @@ const ODT = 'application/vnd.oasis.opendocument.text';
 const ODS = 'application/vnd.oasis.opendocument.spreadsheet';
 const ODP = 'application/vnd.oasis.opendocument.presentation';
 const RTF = 'application/rtf';
+const EPUB = 'application/epub+zip';
 
 const SAMPLES_DIR = join(__dirname, 'samples');
 
@@ -53,10 +54,23 @@ const SPREADSHEET_PHRASES = [
     'Plată'
 ];
 
+// The EPUB sample is a different document again: Charlotte Perkins Gilman's
+// public-domain short story "The Yellow Wallpaper" (Project Gutenberg #1952).
+// These phrases span the front matter and the story body, proving the parser
+// walked the spine's XHTML chapters, not just the cover page.
+const EPUB_PHRASES = [
+    'The Yellow Wallpaper',
+    'Charlotte Perkins Gilman',
+    'John is a physician',
+    'It is a big, airy room',
+    'creeping women'
+];
+
 // Each sample exercises a distinct officeparser code path: DOCX -> WordParser,
 // XLSX -> ExcelParser, PPTX -> PowerPointParser, ODT/ODS/ODP -> OpenOfficeParser
-// (text / spreadsheet / presentation element handling), RTF -> RtfParser (routed
-// via an explicit fileType hint), with OOXML vs. ODF magic-byte detection on top.
+// (text / spreadsheet / presentation element handling), RTF -> RtfParser and
+// EPUB -> EpubParser (both routed via an explicit fileType hint to bypass the
+// ambiguous ZIP/PK magic bytes shared with OOXML and ODF).
 const SAMPLES = [
     { label: 'DOCX', file: 'demo.docx', mimeType: DOCX, phrases: DOCUMENT_PHRASES },
     { label: 'XLSX', file: 'demo.xlsx', mimeType: XLSX, phrases: SPREADSHEET_PHRASES },
@@ -64,7 +78,8 @@ const SAMPLES = [
     { label: 'ODT', file: 'demo.odt', mimeType: ODT, phrases: DOCUMENT_PHRASES },
     { label: 'ODS', file: 'demo.ods', mimeType: ODS, phrases: SPREADSHEET_PHRASES },
     { label: 'ODP', file: 'demo.odp', mimeType: ODP, phrases: DOCUMENT_PHRASES },
-    { label: 'RTF', file: 'demo.rtf', mimeType: RTF, phrases: DOCUMENT_PHRASES }
+    { label: 'RTF', file: 'demo.rtf', mimeType: RTF, phrases: DOCUMENT_PHRASES },
+    { label: 'EPUB', file: 'demo.epub', mimeType: EPUB, phrases: EPUB_PHRASES }
 ];
 
 beforeEach(async () => {

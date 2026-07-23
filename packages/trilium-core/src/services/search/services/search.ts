@@ -530,6 +530,12 @@ function extractContentSnippet(noteId: string, searchTokens: HighlightedTokenInf
 
         // Strip HTML tags for text notes
         if (note.type === "text") {
+            // A collapsible's summary and body must not run into surrounding text: striptags
+            // drops tags with no separator, so break the line after the summary and after the
+            // whole block. The newlines become paragraph breaks in the snippet (rendered as <br>).
+            content = content
+                .replace(/<\/summary>/gi, "</summary>\n")
+                .replace(/<\/details>/gi, "</details>\n");
             content = striptags(content);
         } else if (note.type === "llmChat") {
             // The note stores the whole conversation as a JSON blob; show the readable prose only.

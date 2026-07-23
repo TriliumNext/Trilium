@@ -42,7 +42,8 @@ The text will be extracted from the following file formats:
     *   Values are extracted raw, so searching for dates will not work. The OpenDocument alternative will actually extract the properly formatted value.
 *   Microsoft PowerPoint documents
 *   The OpenDocument alternatives to the previous formats (Text, Spreadsheet, Presentation), created by editors such as LibreOffice and OpenOffice.
-*   Rich Text Format (RTF), since v0.104.0.
+*   [Rich Text Format (RTF)](https://en.wikipedia.org/wiki/Rich_Text_Format), since v0.104.0.
+*   [EPUB](https://en.wikipedia.org/wiki/EPUB), since v0.104.1.
 
 ## Configuring and triggering OCR
 

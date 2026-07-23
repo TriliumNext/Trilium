@@ -182,6 +182,11 @@
     color: var(--muted-text-color);
 }
 
+.llm-chat-model-dropdown .dropdown-menu {
+    max-height: 80vh;
+    overflow: auto;
+}
+
 /* Position legacy models submenu to open upward */
 .llm-chat-model-dropdown .dropdown-submenu .dropdown-menu {
     bottom: 0;

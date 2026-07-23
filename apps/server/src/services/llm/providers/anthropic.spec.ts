@@ -1,5 +1,5 @@
 import type { LlmMessage } from "@triliumnext/commons";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const createAnthropicMock = vi.fn();
 const webSearchMock = vi.fn(() => ({ kind: "anthropic_web_search" }));
@@ -286,5 +286,91 @@ describe("AnthropicProvider prompt cache stability", () => {
 
         // ...but never leaks into the cache-controlled system prompt.
         expect(opts.system.content).not.toContain("SCRIPT_BODY");
+    });
+});
+
+describe("AnthropicProvider model listing", () => {
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        vi.stubGlobal("fetch", fetchMock);
+    });
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    const okJson = (body: unknown) => ({ ok: true, json: async () => body });
+
+    it("fetches /models with the API key headers and merges display names", async () => {
+        fetchMock.mockResolvedValue(okJson({
+            data: [
+                { id: "claude-sonnet-5", display_name: "Claude Sonnet 5" },
+                { id: "claude-omega-6", display_name: "Claude Omega 6" }
+            ]
+        }));
+        const provider = new AnthropicProvider("sk-ant");
+
+        const models = await provider.listModels();
+        expect(fetchMock).toHaveBeenCalledWith(
+            "https://api.anthropic.com/v1/models?limit=1000",
+            expect.objectContaining({
+                headers: { "x-api-key": "sk-ant", "anthropic-version": "2023-06-01" }
+            })
+        );
+        expect(models.map((m) => m.id)).toEqual(["claude-sonnet-5", "claude-omega-6"]);
+        // Known model is flagged default and carries price-table pricing (exact
+        // values live in the committed model_prices.json, so only assert presence);
+        // the unknown one uses the API's display name and has no pricing.
+        expect(models[0]).toMatchObject({ isDefault: true });
+        expect(models[0].pricing).toBeDefined();
+        expect(models[1]).toMatchObject({ name: "Claude Omega 6" });
+        expect(models[1].pricing).toBeUndefined();
+    });
+
+    it("uses a custom baseURL when configured", async () => {
+        fetchMock.mockResolvedValue(okJson({ data: [{ id: "claude-sonnet-5" }] }));
+        const provider = new AnthropicProvider("sk-ant", "https://proxy.example/v1");
+        await provider.listModels();
+        expect(fetchMock).toHaveBeenCalledWith("https://proxy.example/v1/models?limit=1000", expect.anything());
+    });
+
+    it("propagates a failed fetch so the modal can surface it", async () => {
+        fetchMock.mockRejectedValue(new Error("offline"));
+        const provider = new AnthropicProvider("sk-ant");
+        await expect(provider.listModels()).rejects.toThrow("offline");
+    });
+
+    it("rejects a /models payload whose data field is not an array", async () => {
+        fetchMock.mockResolvedValue(okJson({ data: { unexpected: "shape" } }));
+        const provider = new AnthropicProvider("sk-ant");
+        await expect(provider.listModels()).rejects.toThrow(/Unexpected \/models response shape/);
+    });
+});
+
+describe("AnthropicProvider recommendedModelIds", () => {
+    const recommend = (ids: string[]) =>
+        new AnthropicProvider("sk-ant").recommendedModelIds(ids.map(id => ({ id, name: id })));
+
+    it("recommends the newest version of each Claude family", () => {
+        const ids = recommend([
+            "claude-fable-5",
+            "claude-opus-4-8", "claude-opus-4-7", "claude-opus-4-6", "claude-opus-4-20250514",
+            "claude-sonnet-5", "claude-sonnet-4-6", "claude-sonnet-4-20250514",
+            "claude-haiku-4-5-20251001"
+        ]);
+        // One per family, newest each — Fable 5, Opus 4.8, Sonnet 5, Haiku 4.5.
+        expect([...ids].sort()).toEqual([
+            "claude-fable-5", "claude-haiku-4-5-20251001", "claude-opus-4-8", "claude-sonnet-5"
+        ]);
+    });
+
+    it("treats a snapshot date as the version, not a minor bump", () => {
+        // sonnet-4-20250514 is 4.0, so sonnet-4-6 (4.6) must outrank it.
+        expect([...recommend(["claude-sonnet-4-20250514", "claude-sonnet-4-6"])]).toEqual(["claude-sonnet-4-6"]);
+    });
+
+    it("ignores ids that don't match the claude-<family>-<version> shape", () => {
+        expect(recommend(["some-proxy-model", "claude-instant"]).size).toBe(0);
     });
 });

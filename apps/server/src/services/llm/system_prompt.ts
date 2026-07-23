@@ -12,7 +12,7 @@
 import { isAnchorState, type LlmMessage } from "@triliumnext/commons";
 import { task_states } from "@triliumnext/core";
 
-import type { LlmProviderConfig } from "../types.js";
+import type { LlmProviderConfig } from "./types.js";
 
 /**
  * Build the system prompt from the conversation's system message / config plus

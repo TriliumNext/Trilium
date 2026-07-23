@@ -56,6 +56,21 @@ export const KEYCODES_WITH_NO_MODIFIER = new Set([
 ]);
 
 /**
+ * Whether a keystroke carries an application-level modifier, and so belongs to Trilium's own shortcuts
+ * rather than to whichever widget holds focus. A widget that binds bare keys has to stand aside for these:
+ * global shortcuts are bound on `document` in the bubble phase and don't check `defaultPrevented`, so a
+ * widget acting on a modified key either swallows the app shortcut (if it stops propagation) or fires
+ * alongside it. Shift is deliberately not one of them — it modifies a widget's own key (the image viewer
+ * pans faster with it held) and no shortcut is Shift-only.
+ *
+ * A widget may still claim a specific chord where the modifier *is* its gesture (Ctrl+= zooms the focused
+ * image rather than the whole UI); those are exceptions the widget states for itself.
+ */
+export function isAppShortcutChord(e: { ctrlKey: boolean; metaKey: boolean; altKey: boolean }): boolean {
+    return e.ctrlKey || e.metaKey || e.altKey;
+}
+
+/**
  * Check if IME (Input Method Editor) is composing
  * This is used to prevent keyboard shortcuts from firing during IME composition
  * @param e - The keyboard event to check
