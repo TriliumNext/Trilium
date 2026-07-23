@@ -26,7 +26,14 @@ export default function preprocessContent(rawContent: string | Uint8Array, type:
             content = stripTags(content);
 
             if (injectedText) {
-                content = `${content} ${injectedText}`;
+                // Normalize the appended text the same way the body was normalized above.
+                // Extraction ran against the case-preserved original so link-target noteIds
+                // still resolved, but the default single-token content match lowercases the
+                // query token and does a raw `content.includes()` (see note_content_fulltext
+                // matchesContent), so the injected titles/metadata must be lowercased and
+                // diacritic-stripped too — otherwise `special` misses a linked "Special Topic"
+                // and `zurich` misses a linked "Zürich" in phase 1.
+                content = `${content} ${normalize(injectedText)}`;
             }
         }
 

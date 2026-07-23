@@ -175,6 +175,8 @@ The last point is the least obvious: if a note's only content is a reference lin
 | Query | Setup | Matches? | Why |
 | --- | --- | --- | --- |
 | `special topic` | a note whose only content is a reference link to a note titled `Special Topic` | Yes — the linking note is found; the linked target ranks first | the target's title is indexed into the linking note's searchable text |
+| `special` | the same note (only a reference link to `Special Topic`) | Yes — a single word from the target's title is enough to find the linking note | the indexed title is normalized just like body text, so even one lowercased word matches |
+| `zurich` | a note whose only content is a reference link to a note titled `Zürich` | Yes — the linking note is found | the indexed title has its accents normalized, so the plain form matches the accented title |
 
 ### Diacritics
 

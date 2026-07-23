@@ -250,6 +250,33 @@ describe("Search documentation examples", () => {
             // the linked target (direct title match) ranks above the linking note (indirect match)
             expect(targetRank).toBeLessThan(linkerRank);
         });
+
+        // Docs: Search.md § "What is searchable" — example 9 (single word)
+        it("a single word `special` from the target's title still finds the reference-linking note", () => {
+            const target = contentNote("Special Topic", "");
+            const linker = contentNote(
+                "Linker",
+                `<p>see <a class="reference-link" href="#root/${target.noteId}"></a></p>`
+            );
+
+            const results = search("special");
+
+            expect(rank(results, target.noteId)).toBeGreaterThanOrEqual(0);
+            expect(rank(results, linker.noteId)).toBeGreaterThanOrEqual(0);
+        });
+
+        // Docs: Search.md § "What is searchable" — example 9 (diacritic-insensitive)
+        it("`zurich` finds a note reference-linking to a note titled `Zürich` (diacritics normalized)", () => {
+            const target = contentNote("Zürich", "");
+            const linker = contentNote(
+                "Linker",
+                `<p>see <a class="reference-link" href="#root/${target.noteId}"></a></p>`
+            );
+
+            const results = search("zurich");
+
+            expect(rank(results, linker.noteId)).toBeGreaterThanOrEqual(0);
+        });
     });
 
     describe('Diacritics — normalization strips accents on both sides', () => {

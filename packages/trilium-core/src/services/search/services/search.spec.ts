@@ -885,6 +885,34 @@ describe("Search", () => {
             expect(targetRank).toBeLessThan(linkerRank);
         });
 
+        it("finds a note by a SINGLE word from a reference-link's target title, as a phase-1 exact match", () => {
+            // The injected title is normalized like the body, so a single lowercased query token
+            // hits it via the default *=* content includes() in phase 1 — not only via phase-2
+            // fuzzy (where it would rank last, or be dropped entirely once phase 1 is sufficient).
+            const target = contentNote("Special Topic", "");
+            const linker = contentNote("Linker", `<p>see <a class="reference-link" href="#root/${target.noteId}"></a></p>`);
+
+            const context = new SearchContext();
+            const searchResults = searchService.findResultsWithQuery("special", context);
+
+            expect(rank(searchResults, linker.noteId)).toBeGreaterThanOrEqual(0);
+            // exact_word (not "fuzzy") proves the injected title matched in phase 1, not the fallback.
+            expect(context.contentMatches.get(linker.noteId)?.tier).toBe("exact_word");
+        });
+
+        it("finds a note via a reference-link target title with diacritics (zurich -> Zürich), as an exact match", () => {
+            // Normalization strips diacritics on the injected title too, so `zurich` matches a
+            // linked "Zürich"; without normalizing the injected text this only surfaced via fuzzy.
+            const target = contentNote("Zürich", "");
+            const linker = contentNote("Linker", `<p>see <a class="reference-link" href="#root/${target.noteId}"></a></p>`);
+
+            const context = new SearchContext();
+            const searchResults = searchService.findResultsWithQuery("zurich", context);
+
+            expect(rank(searchResults, linker.noteId)).toBeGreaterThanOrEqual(0);
+            expect(context.contentMatches.get(linker.noteId)?.tier).toBe("exact_word");
+        });
+
         it("skips content matching in fast search, so content scoring is a natural no-op", () => {
             const doc = contentNote("Doc", "please sync the database now");
 

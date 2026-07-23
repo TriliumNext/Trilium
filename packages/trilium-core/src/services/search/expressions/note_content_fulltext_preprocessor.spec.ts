@@ -46,34 +46,46 @@ describe("Reference-link & link-preview searchability", () => {
     it("appends the resolved title of an empty-text reference link", () => {
         // dataDowncast markup from referencelink.ts: <a href=... class="reference-link">title</a>.
         // The stored anchor text is stale/empty, so the real title must come from the resolver.
+        // The appended title is normalized (lowercased) to match the normalized body.
         const html = `<p>See <a href="#root/abc123DEF456" class="reference-link"></a> for details.</p>`;
         const result = preprocessContent(html, type, mime, false, (id) => (id === "abc123DEF456" ? "Special Topic" : null));
-        expect(result).toContain("Special Topic");
+        expect(result).toContain("special topic");
+    });
+
+    it("normalizes injected link text so a lowercased single-token query matches", () => {
+        // Extraction runs against the case-preserved original (so link-target noteIds resolve),
+        // but the APPENDED text must be lowercased and diacritic-stripped: the default single-token
+        // content match lowercases the query token and does a raw includes(), so `zurich` must hit
+        // a linked "Zürich" (and `special` a linked "Special Topic") in phase 1, not only via fuzzy.
+        const html = `<p><a href="#root/city1" class="reference-link"></a></p>`;
+        const result = preprocessContent(html, type, mime, false, (id) => (id === "city1" ? "Zürich" : null));
+        expect(result).toContain("zurich");
+        expect(result).not.toContain("Zürich");
     });
 
     it("also resolves plain internal links (not only reference links)", () => {
         const html = `<p>Jump to <a href="#root/parent1/target99">whatever</a>.</p>`;
         const result = preprocessContent(html, type, mime, false, (id) => (id === "target99" ? "Linked Note" : null));
-        expect(result).toContain("Linked Note");
+        expect(result).toContain("linked note");
     });
 
     it("extracts link-embed metadata and entity-decodes attribute values", () => {
         // dataDowncast markup from link_embed_editing.ts (metadataViewAttributes): class first,
-        // then META_KEYS-ordered data-* attributes.
+        // then META_KEYS-ordered data-* attributes. Injected metadata is normalized (lowercased).
         const html = `<section class="link-embed" data-url="https://example.com/a" data-embed-type="card" data-title="Great Article" data-description="Things &amp; stuff" data-site-name="Example Site"><div class="link-embed-preview-wrapper"></div></section>`;
         const result = preprocessContent(html, type, mime, false);
         expect(result).toContain("https://example.com/a");
-        expect(result).toContain("Great Article");
-        expect(result).toContain("Things & stuff");
-        expect(result).toContain("Example Site");
+        expect(result).toContain("great article");
+        expect(result).toContain("things & stuff");
+        expect(result).toContain("example site");
     });
 
     it("extracts link-mention metadata", () => {
         const html = `<p>a <span class="link-mention" data-url="https://example.com/x" data-title="Mentioned Thing" data-site-name="Mention Site">x</span> b</p>`;
         const result = preprocessContent(html, type, mime, false);
         expect(result).toContain("https://example.com/x");
-        expect(result).toContain("Mentioned Thing");
-        expect(result).toContain("Mention Site");
+        expect(result).toContain("mentioned thing");
+        expect(result).toContain("mention site");
     });
 
     it("appends a repeated link target's title only once", () => {
@@ -86,7 +98,7 @@ describe("Reference-link & link-preview searchability", () => {
             }
             return null;
         });
-        expect(result.match(/Repeated Target/g)?.length).toEqual(1);
+        expect(result.match(/repeated target/g)?.length).toEqual(1);
         expect(calls).toEqual(1);
     });
 
