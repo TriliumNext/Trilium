@@ -20,7 +20,7 @@ const stringComparators: Record<string, Comparator<string>> = {
     "=": (comparedValue) => (val) => normalizeSearchText(val) === normalizeSearchText(comparedValue),
     "!=": (comparedValue) => (val) => normalizeSearchText(val) !== normalizeSearchText(comparedValue),
     // Internal operator (not user-typable): word/phrase match used by the leading-"="
-    // fulltext title comparison. Punctuation-aware via Task 1's helpers.
+    // fulltext title comparison. Punctuation-aware via tokenizeIntoWords/stripWordPunctuation.
     "word=": (comparedValue) => (val) => {
         if (!val) return false;
 

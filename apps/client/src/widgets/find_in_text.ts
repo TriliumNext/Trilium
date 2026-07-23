@@ -1,7 +1,8 @@
 import type { CKTextEditor, FindAndReplaceState, FindCommandResult } from "@triliumnext/ckeditor5";
+
 import { expandCollapsedAncestors } from "../services/collapsibles.js";
-import type { FindResult } from "./find.js";
 import type FindWidget from "./find.js";
+import type { FindResult } from "./find.js";
 
 export default class FindInText {
 

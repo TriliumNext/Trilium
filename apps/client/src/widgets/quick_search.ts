@@ -166,7 +166,7 @@ export default class QuickSearchWidget extends BasicWidget {
     private isLoadingMore: boolean = false;
 
     // Plain tokens the server highlighted for the last completed search. Consumed by
-    // jump-to-match producers (Task 9) to know what to highlight in the opened note.
+    // jump-to-match producers to know what to highlight in the opened note.
     private lastHighlightedTokens: string[] = [];
 
     doRender() {

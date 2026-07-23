@@ -71,7 +71,7 @@ describe("SearchResultCard", () => {
 
         const link = container.querySelector("a.search-result-card");
         // The card's href carries the highlighted plain tokens as `searchTerms` so the destination
-        // type widget can highlight/jump to them once ViewScope.searchTerms is real (task 8).
+        // type widget can highlight/jump to them via ViewScope.searchTerms.
         expect(link?.getAttribute("href")).toBe(`#${note.noteId}?searchTerms=sync`);
         expect(container.querySelector(".search-result-card-title")?.textContent).toBe("Meeting notes");
         // Breadcrumb is the note-path title minus the note's own (last) segment.
