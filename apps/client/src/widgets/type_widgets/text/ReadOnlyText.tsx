@@ -10,7 +10,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "pre
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
-import { expandCollapsedAncestors } from "../../../services/collapsibles";
+import { consumeBookmark } from "../../../services/bookmark_jump";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
 import { getLocaleById } from "../../../services/i18n";
 import { applyLinkEmbeds } from "../../../services/link_embed";
@@ -29,17 +29,13 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
     const { isRtl } = useNoteLanguage(note);
     const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
 
-    // Scroll to bookmark anchor if navigated with ?bookmark=...
+    // Scroll to bookmark anchor if navigated with ?bookmark=... Gated on the blob: the mount
+    // run fires while the content is still loading (empty container), and consuming the
+    // bookmark there would leave nothing for the post-load run — this effect only re-fires
+    // on [blob].
     useEffect(() => {
-        const viewScope = noteContext?.viewScope;
-        if (!viewScope?.bookmark || !readOnlyContentRef.current) return;
-
-        const el = readOnlyContentRef.current.querySelector(`[id="${CSS.escape(viewScope.bookmark)}"]`);
-        if (el) {
-            expandCollapsedAncestors(el);
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-        viewScope.bookmark = undefined;
+        if (!blob) return;
+        consumeBookmark(readOnlyContentRef.current, noteContext?.viewScope);
     }, [blob]);
 
     // Jump to the first search match (and pre-fill the find bar) when navigated from search results.
