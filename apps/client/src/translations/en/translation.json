@@ -1151,7 +1151,9 @@
     "intro_not_placed": "This note is not yet placed into the note tree.",
     "outside_hoisted": "This path is outside of hoisted note and you would have to unhoist.",
     "archived": "Archived",
-    "search": "Search"
+    "search": "Search",
+    "show_flat_list": "Show Flat List",
+    "show_inverse_tree": "Show Inverse Tree"
   },
   "note_properties": {
     "this_note_was_originally_taken_from": "This note was originally taken from:",
