@@ -111,7 +111,6 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 /* Matches when the left pane is collapsed */
 #horizontal-main-container.left-pane-hidden {
     --note-split-top-border-radius: 0;
-    --tab-first-item-horiz-offset: 5px;
 }
 
 /* Matches when a status bar panel is open */
@@ -1180,10 +1179,6 @@ body.layout-horizontal div.tab-row-widget div.note-tab div.note-tab-wrapper {
     inset-inline-end: 0;
     height: 3px;
     background-color: var(--workspace-tab-background-color);
-}
-
-body:not([dir=rtl]) .tab-row-widget .note-tab:nth-child(1) {
-    transform: translate3d(var(--tab-first-item-horiz-offset), 0, 0);
 }
 
 :root .tab-row-widget .note-tab .note-tab-icon {
