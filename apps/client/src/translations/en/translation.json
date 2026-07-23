@@ -276,6 +276,13 @@
     "attach_source": "Attach original HTML (debug)",
     "attach_source_hint": "Saves each page's unmodified OneNote HTML as an attachment on the imported note, for comparing against the converted result."
   },
+  "onenote_file_import": {
+    "name": "OneNote file",
+    "description": "From a .one section file",
+    "description_long": "Choose a OneNote desktop section file (.one). It's parsed directly from its file — no Microsoft account needed. Extracts pages, text and embedded files (formatting and ink are not yet supported).",
+    "choose_file": "OneNote section file (.one)",
+    "import": "Import"
+  },
   "notion_import": {
     "name": "Notion",
     "description": "From an HTML export",
