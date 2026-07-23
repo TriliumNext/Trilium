@@ -304,8 +304,8 @@ importers:
         specifier: 1.51.4
         version: 1.51.4(preact-render-to-string@6.7.0)
       gridstack:
-        specifier: 12.6.0
-        version: 12.6.0
+        specifier: 13.0.0
+        version: 13.0.0
       htmldiff-js:
         specifier: 1.0.5
         version: 1.0.5
@@ -9267,8 +9267,8 @@ packages:
   grapheme-splitter@1.0.4:
     resolution: {integrity: sha512-bzh50DW9kTPM00T8y4o8vQg89Di9oLJVLW/KaOGIXJWP/iqCN6WKYkbNOF04vFLJhwcpYUh9ydh/+5vpOqV4YQ==}
 
-  gridstack@12.6.0:
-    resolution: {integrity: sha512-dUrqsormSybFn/2P4Dz8AgprftKD5e/IiV7UmC0XLQU+G+/WtkAeFiCSNLoAGhPDXoJ/O61Xtj3gljY/Ds83yQ==}
+  gridstack@13.0.0:
+    resolution: {integrity: sha512-40+5jod7Lp6T2Dq/9wIXRoQ7ebSuAyeKLpVHgDrq0F7W0d4D2+DRQxLFoB/VlEyMMZkWfnbbqYzaQx+XO4rY+w==}
 
   growly@1.3.0:
     resolution: {integrity: sha512-+xGQY0YyAWCnqy7Cd++hc2JqMYzlm0dG30Jd0beaA64sROr8C4nt8Yc9V5Ro3avlSUDTN0ulqP/VBKi1/lLygw==}
@@ -23942,7 +23942,7 @@ snapshots:
 
   grapheme-splitter@1.0.4: {}
 
-  gridstack@12.6.0: {}
+  gridstack@13.0.0: {}
 
   growly@1.3.0: {}
 
