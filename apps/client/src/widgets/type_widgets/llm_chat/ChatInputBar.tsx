@@ -15,6 +15,7 @@ import Dropdown from "../../react/Dropdown.js";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../../react/FormList.js";
 import { useLegacyImperativeHandlers } from "../../react/hooks.js";
 import AddProviderModal, { type LlmProviderConfig, PROVIDER_TYPES } from "../options/llm/AddProviderModal.js";
+import KnowledgeBasePanel from "./KnowledgeBasePanel.js";
 import { insertNewBlock as insertNewBlockCommand, isSelectionInCodeBlock, outdentListItemAtStart } from "./chat_input_editing.js";
 import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { SafeImage } from "./retry_image.js";
@@ -69,6 +70,8 @@ interface ChatInputBarProps {
     onNoteToolsChange?: () => void;
     /** Callback when extended thinking toggle changes */
     onExtendedThinkingChange?: () => void;
+    /** Callback when the knowledge base toggle or its sources change */
+    onKnowledgeBaseChange?: () => void;
     /** Callback when model changes */
     onModelChange?: (model: string) => void;
     /** Rendered inside the narrow right sidebar — opens the model submenu leftwards so it doesn't overflow. */
@@ -83,6 +86,7 @@ export default function ChatInputBar({
     onWebSearchChange,
     onNoteToolsChange,
     onExtendedThinkingChange,
+    onKnowledgeBaseChange,
     onModelChange,
     inSidebar
 }: ChatInputBarProps) {
@@ -152,6 +156,21 @@ export default function ChatInputBar({
     const handleExtendedThinkingToggle = (newValue: boolean) => {
         chat.setEnableExtendedThinking(newValue);
         onExtendedThinkingChange?.();
+    };
+
+    const handleKnowledgeBaseToggle = (newValue: boolean) => {
+        chat.setEnableKnowledgeBase(newValue);
+        onKnowledgeBaseChange?.();
+    };
+
+    const handleAddSourceNote = (noteId: string) => {
+        chat.addSourceNote(noteId);
+        onKnowledgeBaseChange?.();
+    };
+
+    const handleRemoveSourceNote = (noteId: string) => {
+        chat.removeSourceNote(noteId);
+        onKnowledgeBaseChange?.();
     };
 
     const handleModelSelect = (model: string, provider?: string) => {
@@ -341,6 +360,14 @@ export default function ChatInputBar({
                 onChange={attachments.handleFilePickerChange}
                 style={{ display: "none" }}
             />
+            {chat.enableKnowledgeBase && (
+                <KnowledgeBasePanel
+                    sourceNoteIds={chat.sourceNoteIds}
+                    onAddSource={handleAddSourceNote}
+                    onRemoveSource={handleRemoveSourceNote}
+                    disabled={chat.isStreaming}
+                />
+            )}
             <div className="llm-chat-options">
                 <div className="llm-chat-model-selector">
                     <span className="bx bx-chip" />
@@ -416,6 +443,14 @@ export default function ChatInputBar({
                             title={t("llm_chat.extended_thinking")}
                             currentValue={chat.enableExtendedThinking}
                             onChange={handleExtendedThinkingToggle}
+                            disabled={chat.isStreaming}
+                        />
+                        <FormDropdownDivider />
+                        <FormListToggleableItem
+                            icon="bx bx-book-open"
+                            title={t("llm_chat.knowledge_base")}
+                            currentValue={chat.enableKnowledgeBase}
+                            onChange={handleKnowledgeBaseToggle}
                             disabled={chat.isStreaming}
                         />
                     </Dropdown>

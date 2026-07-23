@@ -88,6 +88,7 @@ export default function LlmChat({ note, noteContext }: TypeWidgetProps) {
                     onWebSearchChange={triggerSave}
                     onNoteToolsChange={triggerSave}
                     onExtendedThinkingChange={triggerSave}
+                    onKnowledgeBaseChange={triggerSave}
                     onModelChange={triggerSave}
                 />
             )}

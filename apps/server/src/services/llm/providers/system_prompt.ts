@@ -12,6 +12,7 @@
 import { isAnchorState, type LlmMessage } from "@triliumnext/commons";
 import { task_states } from "@triliumnext/core";
 
+import { buildKnowledgeBaseSources } from "../knowledge_base.js";
 import type { LlmProviderConfig } from "../types.js";
 
 /**
@@ -33,8 +34,17 @@ export function buildSystemPrompt(messages: LlmMessage[], config: LlmProviderCon
         parts.push(basePrompt);
     }
 
-    // Note tools hint
-    if (config.enableNoteTools) {
+    // Knowledge base sources — selected notes the answers should be grounded in
+    const hasKnowledgeBase = !!config.sourceNoteIds?.length;
+    if (hasKnowledgeBase) {
+        const kbSection = buildKnowledgeBaseSources(config.sourceNoteIds!);
+        if (kbSection) {
+            parts.push(kbSection);
+        }
+    }
+
+    // Note tools hint (KB mode implies note access so sources can be read in full)
+    if (config.enableNoteTools || hasKnowledgeBase) {
         parts.push(
             [
                 `Before calling create_note (or any write tool) for Trilium-specific code or queries, you MUST call load_skill first — guessing the API produces broken code that doesn't run:`,

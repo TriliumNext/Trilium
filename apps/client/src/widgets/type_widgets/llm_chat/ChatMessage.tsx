@@ -75,7 +75,10 @@ function getUniqueSiteCount(citations: LlmCitation[]): number {
 
 function CitationsSection({ citations }: { citations: LlmCitation[] }) {
     const siteCount = getUniqueSiteCount(citations);
-    const summary = t("llm_chat.sources_summary", { count: citations.length, sites: siteCount });
+    // Knowledge base citations reference notes rather than web sites
+    const summary = siteCount > 0
+        ? t("llm_chat.sources_summary", { count: citations.length, sites: siteCount })
+        : t("llm_chat.sources_summary_notes", { count: citations.length });
 
     return (
         <ExpandableCard className="llm-chat-citations-card">
@@ -97,6 +100,10 @@ function CitationsSection({ citations }: { citations: LlmCitation[] }) {
                                         {citation.url ? (
                                             <a href={citation.url} target="_blank" rel="noopener noreferrer" title={title}>
                                                 {title}
+                                            </a>
+                                        ) : citation.noteId ? (
+                                            <a href={`#root/${citation.noteId}`} className="reference-link" title={title}>
+                                                <span className="bx bx-note" /> {title}
                                             </a>
                                         ) : (
                                             <span>{title}</span>

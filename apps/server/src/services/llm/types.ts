@@ -21,6 +21,15 @@ export interface LlmProviderConfig extends LlmChatConfig {
 export type StreamResult = ReturnType<typeof streamText>;
 
 /**
+ * A resolved knowledge base source note. Order matches the numbered
+ * reference list injected into the system prompt.
+ */
+export interface KnowledgeBaseSource {
+    noteId: string;
+    title: string;
+}
+
+/**
  * Pricing per million tokens for a model.
  */
 export interface ModelPricing {

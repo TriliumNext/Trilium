@@ -5,7 +5,7 @@
 import type { LlmStreamChunk } from "@triliumnext/commons";
 import { APICallError, type LanguageModelUsage } from "ai";
 
-import type { ModelPricing, StreamResult } from "./types.js";
+import type { KnowledgeBaseSource, ModelPricing, StreamResult } from "./types.js";
 
 // Cache pricing assumes Anthropic's 5-min ephemeral rates (writes 1.25× input, reads 0.1× input).
 // OpenAI/Gemini bill caches differently but the gap is small compared to the current behaviour
@@ -48,6 +48,38 @@ export interface StreamOptions {
     model?: string;
     /** Model pricing for cost calculation (from provider) */
     pricing?: ModelPricing;
+    /** Knowledge base sources, in the same order as numbered in the system prompt. */
+    knowledgeBaseSources?: KnowledgeBaseSource[];
+}
+
+/**
+ * Find which knowledge base sources were cited in the response text via
+ * inline Harvard-style markers ([1], [2], …) and return them as citations.
+ * Source numbering matches the reference list injected into the system prompt.
+ */
+function collectKbCitations(text: string, sources: KnowledgeBaseSource[]): LlmStreamChunk[] {
+    // Strip fenced code blocks and inline code first — bracketed numbers there
+    // are array subscripts or similar, not citations.
+    const prose = text
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/`[^`\n]*`/g, " ");
+
+    const citedNumbers = new Set<number>();
+    for (const match of prose.matchAll(/\[(\d{1,2})\]/g)) {
+        citedNumbers.add(Number(match[1]));
+    }
+
+    const chunks: LlmStreamChunk[] = [];
+    for (const num of [...citedNumbers].sort((a, b) => a - b)) {
+        const source = sources[num - 1];
+        if (source) {
+            chunks.push({
+                type: "citation",
+                citation: { noteId: source.noteId, title: source.title }
+            });
+        }
+    }
+    return chunks;
 }
 
 /**
@@ -88,11 +120,13 @@ export function describeStreamError(error: unknown): string {
  * This is provider-agnostic - works with any AI SDK provider.
  */
 export async function* streamToChunks(result: StreamResult, options: StreamOptions = {}): AsyncIterable<LlmStreamChunk> {
+    let fullText = "";
     let errorEmitted = false;
     try {
         for await (const part of result.fullStream) {
             switch (part.type) {
                 case "text-delta":
+                    fullText += part.text;
                     yield { type: "text", content: part.text };
                     break;
 
@@ -158,6 +192,11 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
                     yield { type: "error", error: describeStreamError(part.error) };
                     break;
             }
+        }
+
+        // Emit citations for knowledge base sources referenced in the response
+        if (options.knowledgeBaseSources?.length) {
+            yield* collectKbCitations(fullText, options.knowledgeBaseSources);
         }
 
         // Get usage information after the stream completes. Use `totalUsage`, which

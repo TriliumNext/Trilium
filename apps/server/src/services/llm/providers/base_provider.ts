@@ -182,7 +182,7 @@ export abstract class BaseProvider implements LlmProvider {
             this.addWebSearchTool(tools);
         }
 
-        if (config.enableNoteTools) {
+        if (config.enableNoteTools || config.sourceNoteIds?.length) {
             for (const registry of allToolRegistries) {
                 Object.assign(tools, registry.toToolSet());
             }

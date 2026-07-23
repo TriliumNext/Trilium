@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 
 import { generateChatTitle } from "../../services/llm/chat_title.js";
 import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
+import { resolveKnowledgeBaseSources } from "../../services/llm/knowledge_base.js";
 import { streamToChunks } from "../../services/llm/stream.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
@@ -71,7 +72,10 @@ async function streamChat(req: Request, res: Response) {
             res.on("close", () => abortController.abort());
             chunks = provider.chatChunks(messages, config, abortController.signal);
         } else {
-            chunks = streamToChunks(provider.chat(messages, config), { model: modelDisplayName, pricing });
+            const knowledgeBaseSources = config.sourceNoteIds?.length
+                ? resolveKnowledgeBaseSources(config.sourceNoteIds)
+                : undefined;
+            chunks = streamToChunks(provider.chat(messages, config), { model: modelDisplayName, pricing, knowledgeBaseSources });
         }
 
         for await (const chunk of chunks) {

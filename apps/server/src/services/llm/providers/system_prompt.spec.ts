@@ -4,10 +4,15 @@ import { describe, expect, it, vi } from "vitest";
 // to inject custom task states (the namespace re-export is frozen, so a plain
 // spy can't patch it).
 const getTaskStatesMock = vi.hoisted(() => vi.fn());
+const getNoteMock = vi.hoisted(() => vi.fn());
 vi.mock("@triliumnext/core", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@triliumnext/core")>();
     getTaskStatesMock.mockImplementation(actual.task_states.getTaskStates);
-    return { ...actual, task_states: { ...actual.task_states, getTaskStates: getTaskStatesMock } };
+    return {
+        ...actual,
+        task_states: { ...actual.task_states, getTaskStates: getTaskStatesMock },
+        becca: { ...actual.becca, getNote: getNoteMock }
+    };
 });
 
 import { buildSystemPrompt } from "./system_prompt.js";
@@ -76,5 +81,42 @@ describe("buildSystemPrompt", () => {
         ]);
         const prompt = buildSystemPrompt([], {}) ?? "";
         expect(prompt).toContain("`- [v]` — Verified (completed)");
+    });
+});
+
+describe("buildSystemPrompt knowledge base", () => {
+    function kbNote(noteId: string, title: string) {
+        return {
+            noteId,
+            type: "text",
+            getTitleOrProtected: () => title,
+            getChildNotes: () => [],
+            isContentAvailable: () => true,
+            getContent: () => `<p>content of ${title}</p>`
+        };
+    }
+
+    it("injects the KB section and enables the note-tools guidance for the sources", () => {
+        getNoteMock.mockImplementation((id: string) => kbNote(id, `Note ${id}`));
+
+        const prompt = buildSystemPrompt([], { sourceNoteIds: ["a", "b"] }) ?? "";
+
+        expect(prompt).toContain("## Knowledge Base Sources");
+        expect(prompt).toContain("[1] Note a [[a]]");
+        expect(prompt).toContain("[2] Note b [[b]]");
+        // KB mode implies note access even when enableNoteTools is off.
+        expect(prompt).toContain("wiki-link format [[noteId]]");
+        expect(prompt).not.toContain('"Note access" is disabled');
+    });
+
+    it("adds no KB section when the sources resolve to nothing", () => {
+        getNoteMock.mockReturnValue(null);
+        const prompt = buildSystemPrompt([], { sourceNoteIds: ["gone"] }) ?? "";
+        expect(prompt).not.toContain("## Knowledge Base Sources");
+    });
+
+    it("adds no KB section without sources", () => {
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        expect(prompt).not.toContain("## Knowledge Base Sources");
     });
 });
