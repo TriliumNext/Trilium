@@ -11,6 +11,7 @@ export default [
     { type: "label", name: "appThemeBase" },
     { type: "label", name: "hidePromotedAttributes" },
     { type: "label", name: "readOnly" },
+    { type: "label", name: "openAtBottom" },
     { type: "label", name: "autoReadOnlyDisabled" },
     { type: "label", name: "cssClass" },
     { type: "label", name: "iconClass" },
