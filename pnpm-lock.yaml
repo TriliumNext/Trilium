@@ -517,6 +517,18 @@ importers:
         specifier: 7.1.3
         version: 7.1.3
 
+  apps/desktop-deno:
+    dependencies:
+      '@triliumnext/commons':
+        specifier: workspace:*
+        version: link:../../packages/commons
+      '@triliumnext/core':
+        specifier: workspace:*
+        version: link:../../packages/trilium-core
+      i18next:
+        specifier: 26.3.4
+        version: 26.3.4(typescript@6.0.3)
+
   apps/dump-db:
     dependencies:
       better-sqlite3:

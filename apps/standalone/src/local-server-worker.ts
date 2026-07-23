@@ -204,7 +204,7 @@ async function initialize(): Promise<void> {
             // initialization steps are persisted to the OPFS log file.
             const logService = new StandaloneLogService();
             await logService.initialize();
-            logService.info("[Worker] Log service initialized with OPFS");
+            logService.info("[Worker] Log service initialized");
 
             logService.info("[Worker] Initializing SQLite WASM...");
             await sqlProvider!.initWasm();
@@ -224,6 +224,10 @@ async function initialize(): Promise<void> {
             const integrationTestMode = __TRILIUM_INTEGRATION_TEST__;
             const dbName = "/trilium.db";
 
+            // The provider handed to core; a desktop shell may substitute a
+            // native-SQLite bridge below when OPFS is unavailable.
+            let dbProvider: import("@triliumnext/core").DatabaseProvider = sqlProvider!;
+
             if (integrationTestMode === "memory") {
                 // Use OPFS for the DB in integration test mode so option changes
                 // (and any other writes) survive page reloads within a single test.
@@ -236,9 +240,38 @@ async function initialize(): Promise<void> {
                 sqlProvider!.loadFromSahPool(dbName);
             } else {
                 // SAHPool only needs a Worker + OPFS API, so reaching this
-                // branch means the environment lacks OPFS entirely.
-                logService.info("[Worker] OPFS not available, using in-memory database (data will not persist)");
-                sqlProvider!.loadFromMemory();
+                // branch means the environment lacks OPFS entirely. A native
+                // desktop shell (e.g. apps/desktop-deno) may still provide
+                // persistence: preferably by executing SQL against a native
+                // SQLite database on the host (SQL bridge), otherwise by
+                // storing periodic snapshots of the WASM database.
+                const bridgedSqlModule = await import("./lightweight/bridged_sql_provider.js");
+                const { fetchDesktopDatabase, startDesktopDatabaseSync } =
+                    await import("./lightweight/desktop_persistence.js");
+
+                const desktopDb = await bridgedSqlModule.probeDesktopSqlBridge()
+                    ? null
+                    : await fetchDesktopDatabase();
+
+                if (!desktopDb) {
+                    logService.info("[Worker] OPFS not available, using native SQLite through the desktop shell SQL bridge");
+                    dbProvider = new bridgedSqlModule.default();
+                } else if (desktopDb.available) {
+                    if (desktopDb.buffer) {
+                        logService.info("[Worker] OPFS not available, loading database from the desktop shell");
+                        sqlProvider!.loadFromBuffer(desktopDb.buffer);
+                    } else {
+                        logService.info("[Worker] OPFS not available, creating a new database backed by the desktop shell");
+                        sqlProvider!.loadFromMemory();
+                    }
+                    startDesktopDatabaseSync(
+                        () => sqlProvider!.serialize(),
+                        (message) => logService.info(message)
+                    );
+                } else {
+                    logService.info("[Worker] OPFS not available, using in-memory database (data will not persist)");
+                    sqlProvider!.loadFromMemory();
+                }
             }
 
             logService.info("[Worker] Database loaded");
@@ -267,7 +300,7 @@ async function initialize(): Promise<void> {
                 inAppHelp: new StandaloneInAppHelpProvider(),
                 image: (await import("./services/image_provider.js")).standaloneImageProvider,
                 dbConfig: {
-                    provider: sqlProvider!,
+                    provider: dbProvider,
                     isReadOnly: false,
                     onTransactionCommit: () => {
                         coreModule?.ws.sendTransactionEntityChangesToAllClients();

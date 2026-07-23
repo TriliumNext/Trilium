@@ -304,7 +304,9 @@ function bootstrapRoute(): BootstrapDefinition {
     const isDbInitialized = sql_init.isDbInitialized();
     const commonItems = {
         ...getSharedBootstrapItems(assetPath, isDbInitialized),
-        isDev: import.meta.env.DEV,
+        // import.meta.env is a Vite-ism; guard for non-Vite runtimes (the
+        // Deno desktop shell dispatches this route table natively).
+        isDev: typeof import.meta.env === "undefined" ? false : !!import.meta.env.DEV,
         isStandalone: true,
         isMainWindow: true,
         isElectron: false,

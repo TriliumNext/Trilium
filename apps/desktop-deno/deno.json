@@ -1,0 +1,22 @@
+{
+    "name": "@triliumnext/desktop-deno",
+    "version": "0.103.0",
+    "exports": "./main.ts",
+    "//": "Workspace member. The @triliumnext import map and sloppy-imports/nodeModulesDir settings live in the workspace-root deno.json (../../deno.json) because they must govern trilium-core's own cross-package imports under packages/, which a member config does not reach. The desktop build passes --node-modules-dir=none so the shell binary (jsr:@std + node: builtins only) embeds no node_modules.",
+    "tasks": {
+        "start": "deno desktop --no-check --node-modules-dir=none --allow-env --allow-read --allow-net --allow-write --allow-run main.ts",
+        "dev": "deno desktop --no-check --node-modules-dir=none --hmr --allow-env --allow-read --allow-net --allow-write --allow-run main.ts",
+        "dev-server": "deno run --no-check -A server/dev.ts",
+        "smoke": "TRILIUM_SMOKE=1 deno desktop --no-check --node-modules-dir=none --allow-env --allow-read --allow-net --allow-write --allow-run main.ts",
+        "start-wasm": "TRILIUM_WASM=1 deno desktop --no-check --node-modules-dir=none --allow-env --allow-read --allow-net --allow-write --allow-run main.ts",
+        "smoke-wasm": "TRILIUM_SMOKE=1 TRILIUM_WASM=1 deno desktop --no-check --node-modules-dir=none --allow-env --allow-read --allow-net --allow-write --allow-run main.ts",
+        "package": "deno desktop --no-check --node-modules-dir=none --output TriliumNotes.AppImage --include ../standalone/dist --allow-env --allow-read --allow-net --allow-write --allow-run main.ts"
+    },
+    "imports": {
+        "@std/encoding": "jsr:@std/encoding@^1.0.0",
+        "@std/http": "jsr:@std/http@^1.0.0"
+    },
+    "compilerOptions": {
+        "lib": ["deno.window", "deno.desktop"]
+    }
+}

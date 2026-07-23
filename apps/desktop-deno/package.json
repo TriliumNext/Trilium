@@ -1,0 +1,11 @@
+{
+    "name": "@triliumnext/desktop-deno",
+    "version": "0.103.0",
+    "private": true,
+    "description": "Experimental Deno Desktop shell for Trilium (no Node, no Electron)",
+    "dependencies": {
+        "@triliumnext/commons": "workspace:*",
+        "@triliumnext/core": "workspace:*",
+        "i18next": "26.3.4"
+    }
+}
