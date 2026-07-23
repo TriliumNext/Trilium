@@ -2,6 +2,7 @@ import { getLog, options as optionService } from "@triliumnext/core";
 
 import { AnthropicProvider } from "./providers/anthropic.js";
 import { ClaudeAgentProvider } from "./providers/claude_agent.js";
+import { CopilotAgentProvider } from "./providers/copilot_agent.js";
 import { GoogleProvider } from "./providers/google.js";
 import { OpenAiProvider } from "./providers/openai.js";
 import type { LlmProvider, ModelInfo } from "./types.js";
@@ -26,7 +27,10 @@ const providerFactories: Record<string, (apiKey: string, baseURL?: string) => Ll
     google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL),
     // Claude Pro/Max subscription via the Claude Agent SDK — no API key;
     // authentication is handled by Claude Code itself (`claude /login`).
-    "claude-agent": () => new ClaudeAgentProvider()
+    "claude-agent": () => new ClaudeAgentProvider(),
+    // GitHub Copilot subscription via the Copilot CLI's ACP mode — no API key;
+    // authentication is handled by the CLI itself (`copilot login`).
+    "copilot-agent": () => new CopilotAgentProvider()
 };
 
 /** Cache of instantiated providers by their config ID */
