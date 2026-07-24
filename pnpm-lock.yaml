@@ -413,8 +413,8 @@ importers:
         specifier: 1.32.0
         version: 1.32.0
       stylelint:
-        specifier: 17.14.0
-        version: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+        specifier: 17.14.1
+        version: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
       vite-plugin-static-copy:
         specifier: 4.1.1
         version: 4.1.1(vite@8.1.5(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.47.1)(tsx@4.23.1)(yaml@2.9.0))
@@ -1146,11 +1146,11 @@ importers:
         specifier: '>=9.1.0'
         version: 18.0.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       stylelint:
-        specifier: 17.14.0
-        version: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+        specifier: 17.14.1
+        version: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 15.1.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
+        version: 15.1.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1210,11 +1210,11 @@ importers:
         specifier: '>=9.1.0'
         version: 18.0.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       stylelint:
-        specifier: 17.14.0
-        version: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+        specifier: 17.14.1
+        version: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 15.1.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
+        version: 15.1.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1246,11 +1246,11 @@ importers:
         specifier: '>=9.1.0'
         version: 18.0.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       stylelint:
-        specifier: 17.14.0
-        version: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+        specifier: 17.14.1
+        version: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 15.1.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
+        version: 15.1.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1289,11 +1289,11 @@ importers:
         specifier: '>=9.1.0'
         version: 18.0.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       stylelint:
-        specifier: 17.14.0
-        version: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+        specifier: 17.14.1
+        version: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 15.1.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
+        version: 15.1.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1325,11 +1325,11 @@ importers:
         specifier: '>=9.1.0'
         version: 18.0.0(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       stylelint:
-        specifier: 17.14.0
-        version: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+        specifier: 17.14.1
+        version: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 15.1.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
+        version: 15.1.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1982,11 +1982,11 @@ packages:
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
 
-  '@cacheable/memory@2.0.9':
-    resolution: {integrity: sha512-HdMx6DoGywB30vacDbBsITbIX4pgFqj1zsrV58jZBUw3klzkNoXhj7qOqAgledhxG7YZI5rBSJg7Zp8/VG0DuA==}
+  '@cacheable/memory@2.2.0':
+    resolution: {integrity: sha512-CTLKqLItRCEixEAewD3/j9DB3/o96gpTPD4eJ1v+DGOlxZRZncRQkGYqqnAGCscYd6RNeXfGeiuCphsPtqyIfQ==}
 
-  '@cacheable/utils@2.4.1':
-    resolution: {integrity: sha512-eiFgzCbIneyMlLOmNG4g9xzF7Hv3Mga4LjxjcSC/ues6VYq2+gUbQI8JqNuw/ZM8tJIeIaBGpswAsqV2V7ApgA==}
+  '@cacheable/utils@2.5.0':
+    resolution: {integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==}
 
   '@capacitor/android@8.4.2':
     resolution: {integrity: sha512-bzf8XZ9C+ePgOQ+e+T0fnhHGH4aCNY494vvSQIF5w4AY07RwEmkFqZs1678DDSMH0hLSQpxEwXGFNUVcXO6bBA==}
@@ -2629,7 +2629,7 @@ packages:
     engines: {node: '>=22.12.0'}
 
   '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
+    resolution: {gitHosted: true, integrity: sha512-MXgzlTDEEndJB3TBbvd5uFQO/8gaINo1Hfen8vef5rq/VHVPeB63uuv/uO5+8GFsAJ/rauu6XB79S6K4+aXc+w==, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
     version: 10.2.0-electron.1
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -7341,8 +7341,8 @@ packages:
     resolution: {integrity: sha512-v+p6ongsrp0yTGbJXjgxPow2+DL93DASP4kXCDKb8/bwRtt9OEF3whggkkDkGNzgcWy2XaF4a8nZglC7uElscg==}
     engines: {node: '>=8'}
 
-  cacheable@2.3.5:
-    resolution: {integrity: sha512-EQfaKe09tl615iNvq/TBRWTFf1AKJNXYQSsMx0Z3EI0nA+pVsVPS8wJhnRlkbdacKPh1d0qVIhwTc2zsQNFEEg==}
+  cacheable@2.5.0:
+    resolution: {integrity: sha512-60cyAOytib/OzBw1JNSoSV/boK1AtHryDIjvVBk7XbN4ugfkM3+Sry7fEjNgPMGgOjuaZPAp8ruZ0Cxafwyq9g==}
 
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -8867,8 +8867,8 @@ packages:
   fflate@0.8.3:
     resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
-  file-entry-cache@11.1.3:
-    resolution: {integrity: sha512-oMbq0PD6VIiIwMF6LIa7MEwd/l9huKwmqRKXqmrkqIZv8CvRbfowL+L0ryAl8h//HfAS0zS+4SbYoRyAoA6BJA==}
+  file-entry-cache@11.1.5:
+    resolution: {integrity: sha512-+PFTHITI08JIGhnNpGNI8T8inUpgZfk3GNEqfT9R2zZV2iFXg3CvqzSl/uEhs7TSGujYRELEANyDvS8Fj7+S7Q==}
 
   file-entry-cache@8.0.0:
     resolution: {integrity: sha512-XXTUwCvisa5oacNGRP9SfNtYBNAMi+RPwBFmblZEF7N7swHYQS6/Zfk7SRwx4D5j3CH211YNRco1DEMNVfZCnQ==}
@@ -8926,8 +8926,8 @@ packages:
     resolution: {integrity: sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw==}
     engines: {node: '>=16'}
 
-  flat-cache@6.1.22:
-    resolution: {integrity: sha512-N2dnzVJIphnNsjHcrxGW7DePckJ6haPrSFqpsBUhHYgwtKGVq4JrBGielEGD2fCVnsGm1zlBVZ8wGhkyuetgug==}
+  flat-cache@6.1.23:
+    resolution: {integrity: sha512-f++BY9pTk+983xK1FLzlLpmM0i0z+jHmx3QESGkURMXujQZz1k5wzwX6hjnQ8goaD0B+sYnDK1yZ6MTyZfUaqA==}
 
   flatted@3.4.2:
     resolution: {integrity: sha512-PjDse7RzhcPkIJwy5t7KPWQSZ9cAbzQXcafsetQoD7sOJRQlGikNbx7yZp2OotDnJyrDcbyRq3Ttb18iYOqkxA==}
@@ -9237,8 +9237,8 @@ packages:
     resolution: {integrity: sha512-DpLKbNU4WylpxJykQujfCcwYWiV/Jhm50Goo0wrVILAv5jOr9d+H+UR3PhSCD2rCCEIg0uc+G+muBTwD54JhDQ==}
     engines: {node: '>= 0.4'}
 
-  globby@16.2.0:
-    resolution: {integrity: sha512-QrJia2qDf5BB/V6HYlDTs0I0lBahyjLzpGQg3KT7FnCdTonAyPy2RtY802m2k4ALx6Dp752f82WsOczEVr3l6Q==}
+  globby@16.2.2:
+    resolution: {integrity: sha512-NLvV9ubZ6NDsJaOpKPy3cQeJpKi9DcWiyCiFUpJPA0YihRqiE6RWaLUmgNNPr8MgPpLZjnBjSmou7uZBRJv9wA==}
     engines: {node: '>=20'}
 
   globjoin@0.1.4:
@@ -11562,10 +11562,6 @@ packages:
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
-  postcss@8.5.15:
-    resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
-    engines: {node: ^10 || ^12 || >=14}
-
   postcss@8.5.16:
     resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
     engines: {node: ^10 || ^12 || >=14}
@@ -12669,8 +12665,8 @@ packages:
     peerDependencies:
       stylelint: '>=16.0.0'
 
-  stylelint@17.14.0:
-    resolution: {integrity: sha512-8xkHPpdqYryeIsOgfsYTmr6cIeC4nLYWk5S8BPxpodq8mIuepggkMljsHewWfuAjj/+qpRKou2QerhjMH3iasg==}
+  stylelint@17.14.1:
+    resolution: {integrity: sha512-xVQwyiuxALUBNB2fBe0tmNemg9KqLtdj3T64mioFDar79B2cU8LIyz+3KL6LdiHs9NkeNfwxpKSaIVOY8f112g==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -12710,8 +12706,8 @@ packages:
     resolution: {integrity: sha512-MpUEN2OodtUzxvKQl72cUF7RQ5EiHsGvSsVG0ia9c5RbWGL2CI4C7EpPS8UTBIplnlzZiNuV56w+FuNxy3ty2Q==}
     engines: {node: '>=10'}
 
-  supports-hyperlinks@4.4.0:
-    resolution: {integrity: sha512-UKbpT93hN5Nr9go5UY7bopIB9YQlMz9nm/ct4IXt/irb5YRkn9WaqrOBJGZ5Pwvsd5FQzSVeYlGdXoCAPQZrPg==}
+  supports-hyperlinks@4.5.0:
+    resolution: {integrity: sha512-ZW2OvfeCXrNTbLakPUzjQG922EeGCOteFSVoek5DKStTh898wf7zgtuFlzQN8HfZCxC3Eh02yJVrRW51hADf+w==}
     engines: {node: '>=20'}
 
   supports-preserve-symlinks-flag@1.0.0:
@@ -14164,14 +14160,14 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@cacheable/memory@2.0.9':
+  '@cacheable/memory@2.2.0':
     dependencies:
-      '@cacheable/utils': 2.4.1
+      '@cacheable/utils': 2.5.0
       '@keyv/bigmap': 1.3.1(keyv@5.6.0)
       hookified: 1.15.1
       keyv: 5.6.0
 
-  '@cacheable/utils@2.4.1':
+  '@cacheable/utils@2.5.0':
     dependencies:
       hashery: 1.5.1
       keyv: 5.6.0
@@ -18475,17 +18471,17 @@ snapshots:
       - supports-color
       - typescript
 
-  '@stylistic/stylelint-plugin@3.1.3(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))':
+  '@stylistic/stylelint-plugin@3.1.3(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))':
     dependencies:
       '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
       '@csstools/css-tokenizer': 3.0.4
       '@csstools/media-query-list-parser': 3.0.1(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)
       is-plain-object: 5.0.0
-      postcss: 8.5.16
+      postcss: 8.5.20
       postcss-selector-parser: 6.1.2
       postcss-value-parser: 4.2.0
       style-search: 0.1.0
-      stylelint: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+      stylelint: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
 
   '@szmarczak/http-timer@4.0.6':
     dependencies:
@@ -21523,10 +21519,10 @@ snapshots:
       normalize-url: 6.1.0
       responselike: 2.0.1
 
-  cacheable@2.3.5:
+  cacheable@2.5.0:
     dependencies:
-      '@cacheable/memory': 2.0.9
-      '@cacheable/utils': 2.4.1
+      '@cacheable/memory': 2.2.0
+      '@cacheable/utils': 2.5.0
       hookified: 1.15.1
       keyv: 5.6.0
       qified: 0.10.1
@@ -23461,9 +23457,9 @@ snapshots:
 
   fflate@0.8.3: {}
 
-  file-entry-cache@11.1.3:
+  file-entry-cache@11.1.5:
     dependencies:
-      flat-cache: 6.1.22
+      flat-cache: 6.1.23
 
   file-entry-cache@8.0.0:
     dependencies:
@@ -23538,9 +23534,9 @@ snapshots:
       flatted: 3.4.2
       keyv: 4.5.4
 
-  flat-cache@6.1.22:
+  flat-cache@6.1.23:
     dependencies:
-      cacheable: 2.3.5
+      cacheable: 2.5.0
       flatted: 3.4.2
       hookified: 1.15.1
 
@@ -23905,7 +23901,7 @@ snapshots:
       define-properties: 1.2.1
       gopd: 1.2.0
 
-  globby@16.2.0:
+  globby@16.2.2:
     dependencies:
       '@sindresorhus/merge-streams': 4.0.0
       fast-glob: 3.3.3
@@ -25698,7 +25694,7 @@ snapshots:
   micromatch@4.0.8:
     dependencies:
       braces: 3.0.3
-      picomatch: 4.0.4
+      picomatch: 4.0.5
 
   mime-db@1.52.0: {}
 
@@ -26487,9 +26483,9 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  postcss-safe-parser@7.0.1(postcss@8.5.15):
+  postcss-safe-parser@7.0.1(postcss@8.5.20):
     dependencies:
-      postcss: 8.5.15
+      postcss: 8.5.20
 
   postcss-selector-parser@6.1.2:
     dependencies:
@@ -26502,12 +26498,6 @@ snapshots:
       util-deprecate: 1.0.2
 
   postcss-value-parser@4.2.0: {}
-
-  postcss@8.5.15:
-    dependencies:
-      nanoid: 3.3.12
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
 
   postcss@8.5.16:
     dependencies:
@@ -27824,22 +27814,22 @@ snapshots:
 
   style-search@0.1.0: {}
 
-  stylelint-config-ckeditor5@15.1.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3)):
+  stylelint-config-ckeditor5@15.1.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3)):
     dependencies:
-      '@stylistic/stylelint-plugin': 3.1.3(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
-      stylelint: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
-      stylelint-config-recommended: 16.0.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
-      stylelint-plugin-ckeditor5-rules: 15.1.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
+      '@stylistic/stylelint-plugin': 3.1.3(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))
+      stylelint: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
+      stylelint-config-recommended: 16.0.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))
+      stylelint-plugin-ckeditor5-rules: 15.1.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3))
 
-  stylelint-config-recommended@16.0.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3)):
+  stylelint-config-recommended@16.0.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3)):
     dependencies:
-      stylelint: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+      stylelint: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
 
-  stylelint-plugin-ckeditor5-rules@15.1.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3)):
+  stylelint-plugin-ckeditor5-rules@15.1.0(stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3)):
     dependencies:
-      stylelint: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+      stylelint: 17.14.1(supports-color@10.2.2)(typescript@6.0.3)
 
-  stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3):
+  stylelint@17.14.1(supports-color@10.2.2)(typescript@6.0.3):
     dependencies:
       '@csstools/css-calc': 3.2.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
@@ -27855,9 +27845,9 @@ snapshots:
       debug: 4.4.3(supports-color@10.2.2)
       fast-glob: 3.3.3
       fastest-levenshtein: 1.0.16
-      file-entry-cache: 11.1.3
+      file-entry-cache: 11.1.5
       global-modules: 2.0.0
-      globby: 16.2.0
+      globby: 16.2.2
       globjoin: 0.1.4
       html-tags: 5.1.0
       ignore: 7.0.5
@@ -27867,12 +27857,12 @@ snapshots:
       micromatch: 4.0.8
       normalize-path: 3.0.0
       picocolors: 1.1.1
-      postcss: 8.5.15
-      postcss-safe-parser: 7.0.1(postcss@8.5.15)
+      postcss: 8.5.20
+      postcss-safe-parser: 7.0.1(postcss@8.5.20)
       postcss-selector-parser: 7.1.4
       postcss-value-parser: 4.2.0
       string-width: 8.2.1
-      supports-hyperlinks: 4.4.0
+      supports-hyperlinks: 4.5.0
       svg-tags: 1.0.0
       table: 6.9.0
       write-file-atomic: 7.0.1
@@ -27934,7 +27924,7 @@ snapshots:
     dependencies:
       has-flag: 4.0.0
 
-  supports-hyperlinks@4.4.0:
+  supports-hyperlinks@4.5.0:
     dependencies:
       has-flag: 5.0.1
       supports-color: 10.2.2
