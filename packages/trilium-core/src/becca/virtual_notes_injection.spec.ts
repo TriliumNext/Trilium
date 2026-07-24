@@ -31,7 +31,14 @@ const SUBTREE: VirtualSubtreeItem[] = [
                 // backfill of forward references within a virtual subtree
                 attributes: [{ type: "relation", name: "seeAlso", value: "_vtestLast" }]
             },
-            { id: "_vtestLast", title: "Last page", type: "text" }
+            {
+                id: "_vtestLast",
+                title: "Last page",
+                type: "text",
+                // repeated placement of _vtestPage — a clone within the virtual subtree,
+                // as the real User Guide meta contains (same ID, several locations)
+                children: [{ id: "_vtestPage", title: "Clone placement", type: "text" }]
+            }
         ]
     }
 ];
@@ -86,6 +93,18 @@ describe("virtual note injection", () => {
         expect(page.getLabelValue("docName")).toBe("vtest_page");
         expect(becca.getNoteOrThrow("_vtest").getLabelValue("iconClass")).toBe("bx bx-cube");
         expect(page.getOwnedAttributes().every((attribute) => attribute.isVirtual)).toBe(true);
+    });
+
+    it("treats repeated item IDs as clones: one note, several branches, attributes once", () => {
+        const page = becca.getNoteOrThrow("_vtestPage");
+
+        // the first occurrence defines the note; the second only places it again
+        expect(page.title).toBe("Virtual page");
+        expect(page.getParentNotes().map((note) => note.noteId).sort()).toEqual(["_vtest", "_vtestLast"]);
+        expect(becca.getBranchFromChildAndParent("_vtestPage", "_vtestLast")?.isVirtual).toBe(true);
+
+        // attributes come from the first occurrence only, without duplication
+        expect(page.getOwnedAttributes().filter((attribute) => attribute.name === "docName")).toHaveLength(1);
     });
 
     it("persists nothing to the database", () => {

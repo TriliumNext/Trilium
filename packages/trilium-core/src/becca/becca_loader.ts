@@ -117,18 +117,15 @@ function injectVirtualSubtrees() {
     }
 }
 
-function validateVirtualSubtree(provider: VirtualNoteProvider, items: VirtualSubtreeItem[], seenIds = new Set<string>()) {
+function validateVirtualSubtree(provider: VirtualNoteProvider, items: VirtualSubtreeItem[]) {
+    // Repeated IDs are deliberately allowed: an ID appearing in several places is a clone
+    // (multiple placements of one note), which e.g. the User Guide meta makes use of.
     for (const item of items) {
         if (!item.id.startsWith(provider.namespace)) {
             throw new Error(`Item '${item.id}' is outside the provider's namespace '${provider.namespace}'.`);
         }
 
-        if (seenIds.has(item.id)) {
-            throw new Error(`Duplicate item ID '${item.id}'.`);
-        }
-
-        seenIds.add(item.id);
-        validateVirtualSubtree(provider, item.children ?? [], seenIds);
+        validateVirtualSubtree(provider, item.children ?? []);
     }
 }
 
@@ -143,23 +140,31 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
         return;
     }
 
-    const noteRow: Partial<NoteRow> = {
-        noteId: item.id,
-        title: item.title,
-        type: item.type,
-        mime: item.mime ?? "",
-        isProtected: false
-    };
+    // An already-virtual note means this is a repeated placement (a clone within the virtual
+    // subtree): the first occurrence defined the note and its attributes, this one only
+    // contributes an additional branch.
+    const isCloneOccurrence = !!note?.isVirtual;
 
-    if (note) {
-        // Skeleton created by a forward reference (e.g. a persisted branch or relation loaded
-        // before this virtual note existed) — fill it in place so those links survive.
-        note.updateFromRow(noteRow);
-    } else {
-        note = new BNote(noteRow);
+    if (!isCloneOccurrence) {
+        const noteRow: Partial<NoteRow> = {
+            noteId: item.id,
+            title: item.title,
+            type: item.type,
+            mime: item.mime ?? "",
+            isProtected: false
+        };
+
+        if (note) {
+            // Skeleton created by a forward reference (e.g. a persisted branch or relation
+            // loaded before this virtual note existed) — fill it in place so those links
+            // survive.
+            note.updateFromRow(noteRow);
+        } else {
+            note = new BNote(noteRow);
+        }
+
+        note.isVirtual = true;
     }
-
-    note.isVirtual = true;
 
     const branchId = `${parentNoteId}_${item.id}`;
 
@@ -175,9 +180,9 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
         branch.isVirtual = true;
     }
 
-    const attributeDefs = [...(item.attributes ?? [])];
+    const attributeDefs = isCloneOccurrence ? [] : [...(item.attributes ?? [])];
 
-    if (item.icon) {
+    if (!isCloneOccurrence && item.icon) {
         attributeDefs.push({ type: "label", name: "iconClass", value: `bx ${item.icon}` });
     }
 
