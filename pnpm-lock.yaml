@@ -926,8 +926,8 @@ importers:
         specifier: 2.38.5
         version: 2.38.5(jquery@4.0.0)
       js-md5:
-        specifier: 0.8.3
-        version: 0.8.3
+        specifier: 0.9.2
+        version: 0.9.2
       js-sha1:
         specifier: 0.7.0
         version: 0.7.0
@@ -9990,8 +9990,8 @@ packages:
   jquery@4.0.0:
     resolution: {integrity: sha512-TXCHVR3Lb6TZdtw1l3RTLf8RBWVGexdxL6AC8/e0xZKEpBflBsjh9/8LXw+dkNFuOyW9B7iB3O1sP7hS0Kiacg==}
 
-  js-md5@0.8.3:
-    resolution: {integrity: sha512-qR0HB5uP6wCuRMrWPTrkMaev7MJZwJuuw4fnwAzRgP4J4/F8RwtodOKpGp4XpqsLBFzzgqIO42efFAyz2Et6KQ==}
+  js-md5@0.9.2:
+    resolution: {integrity: sha512-QK62elp/ozZj7kzyCG5yaeK+uWeqxPlg3w3znYDBvwyqzJs7nh5bgTAAH9KltLni2LT7qx/E1EgSVwfiOSRe0Q==}
 
   js-sha1@0.7.0:
     resolution: {integrity: sha512-oQZ1Mo7440BfLSv9TX87VNEyU52pXPVG19F9PL3gTgNt0tVxlZ8F4O6yze3CLuLx28TxotxvlyepCNaaV0ZjMw==}
@@ -24720,7 +24720,7 @@ snapshots:
 
   jquery@4.0.0: {}
 
-  js-md5@0.8.3: {}
+  js-md5@0.9.2: {}
 
   js-sha1@0.7.0: {}
 
