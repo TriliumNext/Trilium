@@ -29,8 +29,11 @@ export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
                 (SELECT revisionId FROM revisions WHERE noteId LIKE '\\_help%' ESCAPE '\\');
             DELETE FROM entity_changes WHERE entityName = 'attachments' AND entityId IN
                 (SELECT attachmentId FROM attachments WHERE ownerId LIKE '\\_help%' ESCAPE '\\');
-            DELETE FROM entity_changes WHERE entityName = 'notes' AND entityId LIKE '\\_help%' ESCAPE '\\';
-            DELETE FROM entity_changes WHERE entityName = 'note_reordering' AND entityId LIKE '\\_help%' ESCAPE '\\';
+            -- Blanket sweep by ID prefix: catches notes and note_reordering rows directly, plus
+            -- tombstones of help branches/attributes deleted (and later erased) by past releases —
+            -- their base rows are gone, so the subselects above cannot find them, but branch IDs
+            -- ('parentNoteId_noteId') and attribute IDs ('noteId_...') carry the _help prefix.
+            DELETE FROM entity_changes WHERE entityId LIKE '\\_help%' ESCAPE '\\';
             DELETE FROM branches WHERE noteId LIKE '\\_help%' ESCAPE '\\' OR parentNoteId LIKE '\\_help%' ESCAPE '\\';
             DELETE FROM attributes WHERE noteId LIKE '\\_help%' ESCAPE '\\';
             DELETE FROM revisions WHERE noteId LIKE '\\_help%' ESCAPE '\\';
