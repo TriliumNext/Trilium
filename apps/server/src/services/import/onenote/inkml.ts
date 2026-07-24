@@ -39,12 +39,43 @@ interface Trace {
 const DEFAULT_BRUSH: Brush = { color: "#000000", width: 70, height: 70, transparency: 0 };
 
 /**
+ * OneNote's automatic ink colors. Like its automatic *text* color (see removeDefaultTextColor in
+ * converter.ts), the default pen isn't a chosen color: it's black on OneNote's light canvas but
+ * inverts to white in dark mode. These two are rendered theme-adaptively (see AUTO_INK_STYLE) rather
+ * than baked as a hard color that would be unreadable under the opposite theme; every deliberately
+ * picked color is left exactly as OneNote sent it.
+ */
+const AUTOMATIC_INK_COLORS = new Set(["#000000", "#000", "black", "#ffffff", "#fff", "white"]);
+
+/** The class carried by an automatic-colored shape; the color itself comes from {@link AUTO_INK_STYLE}. */
+const AUTO_INK_CLASS = "ink-auto";
+
+/**
+ * Theme-adaptive styling for automatic-colored strokes. `color-scheme: light dark` enables the
+ * `light-dark()` function; the used scheme is inherited from the embedding `<img>` — Trilium sets
+ * `color-scheme` from its active theme on `:root` (theme-next/base.css) and Chromium propagates it
+ * into the referenced SVG — so the ink follows Trilium's light/dark toggle instead of rendering as
+ * unreadable black-on-dark. Paths take the color on `stroke`, single-point dots on `fill`; qualifying
+ * each rule by element keeps the fill rule from overriding a path's `fill="none"` and flooding it solid.
+ * Emitted only when at least one automatic stroke is present.
+ */
+const AUTO_INK_STYLE =
+    `<style>svg{color-scheme:light dark}` +
+    `path.${AUTO_INK_CLASS}{stroke:light-dark(#000,#fff)}` +
+    `circle.${AUTO_INK_CLASS}{fill:light-dark(#000,#fff)}</style>`;
+
+/**
  * The on-screen stroke thickness. Pens carry equal width/height, but highlighters (rectangle tip)
  * carry a small width and a large height — so taking the larger dimension renders highlighters as the
  * wide swath they are rather than a thin pen line.
  */
 function strokeWidth(brush: Brush): number {
     return Math.max(brush.width, brush.height);
+}
+
+/** Whether a brush color is OneNote's mode-adaptive automatic ink (default black / its white inverse). */
+function isAutomaticColor(color: string): boolean {
+    return AUTOMATIC_INK_COLORS.has(color.trim().toLowerCase());
 }
 
 export function inkmlToSvg(inkml: string): string | null {
@@ -68,10 +99,11 @@ export function inkmlToSvg(inkml: string): string | null {
     const height = maxY - minY + PADDING * 2;
     const scale = Math.min(1, MAX_DISPLAY_SIZE / Math.max(width, height, 1));
 
+    const hasAutomaticInk = traces.some((trace) => isAutomaticColor(trace.brush.color));
     const shapes = traces.flatMap((trace) => traceToSvg(trace, minX, minY)).join("");
     return (
         `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(width * scale)}" height="${Math.round(height * scale)}" ` +
-        `viewBox="0 0 ${width} ${height}">${shapes}</svg>`
+        `viewBox="0 0 ${width} ${height}">${hasAutomaticInk ? AUTO_INK_STYLE : ""}${shapes}</svg>`
     );
 }
 
@@ -170,14 +202,17 @@ function traceToSvg(trace: Trace, minX: number, minY: number): string[] {
     const opacity = 1 - transparency;
     const opacityAttr = opacity < 1 ? ` opacity="${opacity.toFixed(2)}"` : "";
     const point = (coord: number[]) => [coord[0] - minX + PADDING, coord[1] - minY + PADDING];
+    const automatic = isAutomaticColor(color);
 
     if (trace.coords.length === 1) {
         const [x, y] = point(trace.coords[0]);
-        return [`<circle cx="${x}" cy="${y}" r="${width / 2}" fill="${color}"${opacityAttr}/>`];
+        const fillAttr = automatic ? ` class="${AUTO_INK_CLASS}"` : ` fill="${color}"`;
+        return [`<circle cx="${x}" cy="${y}" r="${width / 2}"${fillAttr}${opacityAttr}/>`];
     }
 
     const path = trace.coords.map((coord, index) => `${index === 0 ? "M" : "L"} ${point(coord).join(" ")}`).join(" ");
-    return [`<path d="${path}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round"${opacityAttr}/>`];
+    const strokeAttr = automatic ? ` class="${AUTO_INK_CLASS}"` : ` stroke="${color}"`;
+    return [`<path d="${path}"${strokeAttr} stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round"${opacityAttr}/>`];
 }
 
 export default { inkmlToSvg };

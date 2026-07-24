@@ -107,6 +107,7 @@ export function convertPageHtml(rawHtml: string): string {
 
     sortPositionedOutlines(scope);
     convertResourceReferences(scope);
+    wrapFloatingImages(scope);
     convertTags(scope);
     convertInlineFormatting(scope);
     normalizeNamedColors(scope);
@@ -114,8 +115,10 @@ export function convertPageHtml(rawHtml: string): string {
     unwrapListItemParagraphs(scope);
     normalizeListMarkers(scope);
     normalizeTableBorders(scope);
+    correctTableShadingColors(scope);
     removeEmptyListItems(scope);
     removeBlockLevelBreaks(scope);
+    resizeTables(scope);
 
     return sanitize.sanitizeHtml(scope.innerHTML);
 }
@@ -174,6 +177,70 @@ function convertResourceReferences(scope: HTMLElement) {
             }
         }
     }
+}
+
+/** Block contexts whose direct <img> children are standalone (block) images, not inline runs. */
+const FLOATING_IMAGE_PARENTS = new Set(["body", "div", "section", "article"]);
+
+/**
+ * OneNote lays a standalone image out as a bare <img> floating in the outline <div>, frequently
+ * trailed — across OneNote's block-level <br> spacing — by a <cite> caption (e.g. a screen clipping's
+ * "Screen clipping taken: …"). Left verbatim the caption renders as loose body text beside the image.
+ *
+ * CKEditor represents a block image as `<figure class="image">`, with any caption as its
+ * `<figcaption>`, so wrap each floating image in a figure, carry its width/height into an
+ * `aspect-ratio` (the form CKEditor stores so the image reserves space and resizes proportionally),
+ * and pull a trailing <cite> in as the caption. Inline images (inside a <p>/<a>/<span>) are left alone.
+ */
+function wrapFloatingImages(scope: HTMLElement) {
+    for (const img of scope.querySelectorAll("img")) {
+        const parent = img.parentNode;
+        if (!(parent instanceof HTMLElement) || !FLOATING_IMAGE_PARENTS.has(parent.tagName?.toLowerCase() ?? "")) {
+            continue;
+        }
+
+        const width = img.getAttribute("width");
+        const height = img.getAttribute("height");
+        const style = parseStyle(img.getAttribute("style") ?? "");
+        if (width && height && !style.has("aspect-ratio") && /^\d+(\.\d+)?$/.test(width) && /^\d+(\.\d+)?$/.test(height)) {
+            style.set("aspect-ratio", `${width}/${height}`);
+            img.setAttribute("style", serializeStyle(style));
+        }
+
+        const caption = takeTrailingCaption(img);
+        const figcaption = caption ? `<figcaption>${caption}</figcaption>` : "";
+        img.insertAdjacentHTML("beforebegin", `<figure class="image">${img.toString()}${figcaption}</figure>`);
+        img.remove();
+    }
+}
+
+/**
+ * Consumes the <cite> caption that trails a floating image (OneNote separates the two with block-level
+ * <br>s), returning the markup for the image's <figcaption> and removing the cite and the intervening
+ * breaks from the document. The caption's text is placed in a fresh <cite>, wrapped in its font-size
+ * class (e.g. text-small) — OneNote's inline caption styling (its grey chrome colour, point size and
+ * zero margins) is dropped so the caption inherits the theme foreground. Returns null when the image
+ * has no trailing cite. Runs before convertInlineFormatting so the fresh cite's content is still
+ * formatted (a caption's own bold/italic runs survive).
+ */
+function takeTrailingCaption(img: HTMLElement): string | null {
+    const breaks: HTMLElement[] = [];
+    let sibling = img.nextElementSibling;
+    while (sibling && sibling.tagName?.toLowerCase() === "br") {
+        breaks.push(sibling);
+        sibling = sibling.nextElementSibling;
+    }
+    if (!sibling || sibling.tagName?.toLowerCase() !== "cite") {
+        return null;
+    }
+
+    const sizeClass = fontSizeClass(parseStyle(sibling.getAttribute("style") ?? "").get("font-size"), sibling);
+    const cite = `<cite>${sibling.innerHTML}</cite>`;
+    const caption = sizeClass ? `<span class="${sizeClass}">${cite}</span>` : cite;
+
+    breaks.forEach((br) => br.remove());
+    sibling.remove();
+    return caption;
 }
 
 /**
@@ -454,6 +521,183 @@ function normalizeTableBorders(scope: HTMLElement) {
             el.setAttribute("style", serializeStyle(style));
         }
     }
+}
+
+/**
+ * OneNote carries a resized column's width as a bare pixel `width` on every cell of that column
+ * (e.g. `<td style="width:150;…">`), a per-cell form the sanitizer drops — so column widths are lost.
+ * CKEditor instead stores column widths as percentages in a <colgroup> on a `ck-table-resized` table
+ * wrapped in `<figure class="table" style="width:100%;">`. When every column carries an explicit width,
+ * translate OneNote's pixel widths into that representation: emit a <colgroup> of proportional
+ * percentages (summing to 100), strip the now-redundant per-cell widths, tag the table resized and wrap
+ * it in a table figure. Tables that don't width every column, or that merge cells (colspan/rowspan,
+ * which this flat column model can't represent), are left untouched.
+ */
+function resizeTables(scope: HTMLElement) {
+    for (const table of scope.querySelectorAll("table")) {
+        const cellRows = table.querySelectorAll("tr").map((row) => row.querySelectorAll("td, th"));
+        const columnCount = Math.max(0, ...cellRows.map((cells) => cells.length));
+        if (columnCount === 0 || cellRows.some((cells) => cells.some(hasCellSpan))) {
+            continue;
+        }
+
+        // A resized column repeats its width on every cell; take the first one seen per column. Bail
+        // unless every column has one — a partial set can't be faithfully turned into a full colgroup.
+        const widths: number[] = [];
+        for (let column = 0; column < columnCount; column++) {
+            const width = cellRows.map((cells) => columnWidth(cells[column])).find((value) => value !== undefined);
+            if (width === undefined) {
+                break;
+            }
+            widths.push(width);
+        }
+        if (widths.length !== columnCount) {
+            continue;
+        }
+
+        for (const cells of cellRows) {
+            for (const cell of cells) {
+                const style = parseStyle(cell.getAttribute("style") ?? "");
+                if (style.delete("width")) {
+                    if (style.size === 0) {
+                        cell.removeAttribute("style");
+                    } else {
+                        cell.setAttribute("style", serializeStyle(style));
+                    }
+                }
+            }
+        }
+
+        const colgroup = `<colgroup>${columnPercentages(widths).map((percent) => `<col style="width:${percent}%;">`).join("")}</colgroup>`;
+        const existingClass = table.getAttribute("class");
+        table.setAttribute("class", existingClass ? `${existingClass} ck-table-resized` : "ck-table-resized");
+        table.set_content(`${colgroup}<tbody>${table.innerHTML}</tbody>`);
+        table.insertAdjacentHTML("beforebegin", `<figure class="table" style="width:100%;">${table.toString()}</figure>`);
+        table.remove();
+    }
+}
+
+/** Whether a cell spans multiple rows/columns, which the flat column model in resizeTables can't map. */
+function hasCellSpan(cell: HTMLElement): boolean {
+    return cell.getAttribute("colspan") != null || cell.getAttribute("rowspan") != null;
+}
+
+/** A cell's positive pixel `width` (OneNote writes it unit-less, e.g. `width:150`), or undefined. */
+function columnWidth(cell: HTMLElement | undefined): number | undefined {
+    const value = cell && parseStyle(cell.getAttribute("style") ?? "").get("width");
+    const pixels = value ? parseFloat(value) : NaN;
+    return Number.isFinite(pixels) && pixels > 0 ? pixels : undefined;
+}
+
+/**
+ * Turns pixel column widths into percentages of their total, rounded to two decimals. The last column
+ * takes the remainder so the set sums to exactly 100% (matching CKEditor's normalized colgroup) rather
+ * than drifting a hundredth off through independent rounding.
+ */
+function columnPercentages(widths: number[]): number[] {
+    const total = widths.reduce((sum, width) => sum + width, 0);
+    let allocated = 0;
+    return widths.map((width, index) => {
+        if (index === widths.length - 1) {
+            return Math.round((100 - allocated) * 100) / 100;
+        }
+        const percent = Math.round((width / total) * 10000) / 100;
+        allocated += percent;
+        return percent;
+    });
+}
+
+/**
+ * OneNote's Graph API exports table cell shading as a dark *shade* of the colour OneNote actually
+ * displays: it keeps the hue and saturation but inverts the lightness (e.g. a cell shown as #b6d9a1
+ * comes back as #375623). Left as-is the cell imports far too dark — commonly dark-on-dark and
+ * unreadable. So for a cell whose background is dark, reflect its lightness (L → 1 − L, hue/saturation
+ * untouched) to recover the displayed light tint; light backgrounds (plausible shading as-is, and the
+ * form correctly-exported colours arrive in) are left alone. Runs after normalizeNamedColors, so a
+ * named background has already become the hex this keys on.
+ */
+function correctTableShadingColors(scope: HTMLElement) {
+    for (const cell of scope.querySelectorAll("td, th")) {
+        const style = parseStyle(cell.getAttribute("style") ?? "");
+        const rgb = parseHexColor(style.get("background-color") ?? "");
+        if (!rgb) {
+            continue;
+        }
+        const [hue, saturation, lightness] = rgbToHsl(rgb);
+        if (lightness >= 0.5) {
+            continue;
+        }
+        style.set("background-color", hslToHex(hue, saturation, 1 - lightness));
+        cell.setAttribute("style", serializeStyle(style));
+    }
+}
+
+/** Parses a `#rgb` or `#rrggbb` colour to [r, g, b] (0-255), or null if it isn't a hex colour. */
+function parseHexColor(value: string): [number, number, number] | null {
+    const match = value.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (!match) {
+        return null;
+    }
+    const hex = match[1].length === 3 ? match[1].replace(/(.)/g, "$1$1") : match[1];
+    return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+}
+
+/** Converts an [r, g, b] (0-255) colour to [h, s, l], each in [0, 1]. */
+function rgbToHsl([r, g, b]: [number, number, number]): [number, number, number] {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const lightness = (max + min) / 2;
+    const delta = max - min;
+    if (delta === 0) {
+        return [0, 0, lightness];
+    }
+    const saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+    let hue: number;
+    switch (max) {
+        case r:
+            hue = (g - b) / delta + (g < b ? 6 : 0);
+            break;
+        case g:
+            hue = (b - r) / delta + 2;
+            break;
+        default:
+            hue = (r - g) / delta + 4;
+            break;
+    }
+    return [hue / 6, saturation, lightness];
+}
+
+/** Converts [h, s, l] (each in [0, 1]) back to a `#rrggbb` hex colour. */
+function hslToHex(h: number, s: number, l: number): string {
+    const channel = (value: number) => Math.round(value * 255).toString(16).padStart(2, "0");
+    if (s === 0) {
+        return `#${channel(l).repeat(3)}`;
+    }
+    /* v8 ignore next -- only called from correctTableShadingColors with l strictly above 0.5 */
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const component = (t: number) => {
+        if (t < 0) {
+            t += 1;
+        }
+        if (t > 1) {
+            t -= 1;
+        }
+        if (t < 1 / 6) {
+            return p + (q - p) * 6 * t;
+        }
+        if (t < 1 / 2) {
+            return q;
+        }
+        if (t < 2 / 3) {
+            return p + (q - p) * (2 / 3 - t) * 6;
+        }
+        return p;
+    };
+    return `#${channel(component(h + 1 / 3))}${channel(component(h))}${channel(component(h - 1 / 3))}`;
 }
 
 /** Drops list items that hold nothing but whitespace/<br> (OneNote's "exited the list" remnant). */

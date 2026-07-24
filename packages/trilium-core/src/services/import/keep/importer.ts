@@ -16,6 +16,7 @@
 import { t } from "i18next";
 
 import type BNote from "../../../becca/entities/bnote.js";
+import * as cls from "../../context.js";
 import imageService from "../../image.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
@@ -217,6 +218,10 @@ function createNotes(importRootNote: BNote, notes: ParsedNote[], binaries: Map<s
 
     const rootNote = noteService.createNewNote({ parentNoteId: importRootNote.noteId, title: t("keep_import.root-title"), content: "", type: "text", mime: "text/html", isProtected }).note;
     rootNote.addLabel("iconClass", "bx bx-import");
+
+    // Root created; keep the imported notes in export order under an inherited #newNotesOnTop (the root above
+    // still floats to the top of the target). See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
 
     for (const parsed of notes) {
         const { note } = noteService.createNewNote({

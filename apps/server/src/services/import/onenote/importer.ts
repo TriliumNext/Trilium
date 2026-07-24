@@ -6,7 +6,7 @@
  */
 
 import type { OneNoteFolderRef, OneNoteSectionSelection } from "@triliumnext/commons";
-import { becca, binary_utils, type BNote, date_utils, getLog, imageService, note_service as noteService, protected_session as protectedSession, TaskContext } from "@triliumnext/core";
+import { becca, binary_utils, type BNote, cls, date_utils, getLog, imageService, note_service as noteService, protected_session as protectedSession, TaskContext } from "@triliumnext/core";
 import { t } from "i18next";
 import { parse } from "node-html-parser";
 
@@ -180,6 +180,10 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
 
     const rootNote = createFolder(parentNoteId, t("onenote_import.root-title"));
     rootNote.addLabel("iconClass", "bx bx-import");
+
+    // Root created; keep the OneNote notebooks/sections/pages in their display order under an inherited
+    // #newNotesOnTop (the root above still floats to the top of the target). See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
 
     // Created page notes with their content-so-far (resources/ink applied), plus a map from each
     // page's OneNote page-id GUID to its imported note (and title) — both feed the link-resolution pass.

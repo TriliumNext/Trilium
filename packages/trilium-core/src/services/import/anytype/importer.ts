@@ -31,6 +31,7 @@ import { parse } from "node-html-parser";
 
 import type BNote from "../../../becca/entities/bnote.js";
 import cloningService from "../../cloning.js";
+import * as cls from "../../context.js";
 import imageService from "../../image.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
@@ -328,6 +329,10 @@ function createNotes(importRootNote: BNote, pages: ParsedObject[], targets: Map<
         applyCollectionView(rootNote, "table", rootColumns);
     }
     rootNote.addLabel("iconClass", "bx bx-import");
+
+    // Root created; keep the imported pages/collections in order under an inherited #newNotesOnTop (the root
+    // above still floats to the top of the target). See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
 
     // Each member's primary parent is the first collection that lists it (a collection itself stays at the
     // root, so it's never reparented — it's cloned into an owning collection by the membership pass below).

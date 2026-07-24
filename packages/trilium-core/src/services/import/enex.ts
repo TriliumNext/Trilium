@@ -1,6 +1,7 @@
 import type { AttributeType } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
+import * as cls from "../context.js";
 import * as utils from "../utils/index.js";
 import imageService from "../image.js";
 import { getLog } from "../log.js";
@@ -73,6 +74,10 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
         mime: "text/html",
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     }).note;
+
+    // Root created; keep the imported notes in their ENEX order under an inherited #newNotesOnTop (the root
+    // above still floats to the top of the target). See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
 
     function extractContent(content: string, tasks: EnexTask[] = []) {
         const openingNoteIndex = content.indexOf("<en-note>");

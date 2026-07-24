@@ -7,6 +7,7 @@ import BAttachment from "../../becca/entities/battachment.js";
 import BAttribute from "../../becca/entities/battribute.js";
 import BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
+import * as cls from "../context.js";
 import attributeService from "../../services/attributes.js";
 import { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
@@ -74,6 +75,19 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
     let firstNote: BNote | null = null;
     let topLevelPath = "";
     const createdNoteIds = new Set<string>();
+
+    // Records the first created note as the de-facto import root (its position is deliberately left to float
+    // per any inherited #newNotesOnTop — see the notePosition logic below). Once it exists, order-preservation
+    // is turned on so the remaining entries keep their archive order: this only matters for a non-Trilium
+    // folder zip, which carries no position metadata, since a Trilium export restores explicit positions for
+    // every non-root note and so never consults getNewNotePosition. See cls.setImportOrderPreserved.
+    function trackFirstNote(note: BNote) {
+        if (firstNote) {
+            return;
+        }
+        firstNote = note;
+        cls.setImportOrderPreserved(true);
+    }
 
     function getNewNoteId(origNoteId: string) {
         if (!origNoteId.trim()) {
@@ -305,7 +319,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
         saveAttributes(note, noteMeta);
 
-        firstNote = firstNote || note;
+        trackFirstNote(note);
         return noteId;
     }
 
@@ -644,7 +658,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             }
 
             if (opts?.preserveIds || isImportRootNote) {
-                firstNote = firstNote || note;
+                trackFirstNote(note);
             }
         } else {
             if (detectedType as string === "geoMap") {
@@ -691,7 +705,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
                 note.addLabel(attribute.name, attribute.value);
             }
 
-            firstNote = firstNote || note;
+            trackFirstNote(note);
         }
 
         if (!noteMeta && (type === "file" || type === "image")) {

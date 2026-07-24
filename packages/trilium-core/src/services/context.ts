@@ -73,6 +73,24 @@ export function isMigrationRunning() {
     return !!getContext().get("migrationRunning");
 }
 
+/**
+ * While an import materializes its content tree, a `#newNotesOnTop` label inherited onto the import target
+ * would otherwise make {@link getNewNotePosition} insert each created note *above* the previous one, silently
+ * reversing the source order. Importers turn this on to keep imported content in its original order.
+ *
+ * It is turned on deliberately *after* an importer has created its own top-level root note, so that single
+ * root note still honours `newNotesOnTop` and floats to the top of the target (the reason users set the
+ * label) — only the content *underneath* it is order-preserved. The flag lives for the import's CLS context
+ * only, so it never needs clearing (each import runs in its own context, like `disableEntityEvents`).
+ */
+export function setImportOrderPreserved(preserved: boolean) {
+    getContext().set("importOrderPreserved", !!preserved);
+}
+
+export function isImportOrderPreserved() {
+    return !!getContext().get("importOrderPreserved");
+}
+
 export function putEntityChange(entityChange: EntityChange) {
     if (getContext().get("ignoreEntityChangeIds")) {
         return;

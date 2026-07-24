@@ -8,6 +8,7 @@ import { PassThrough } from "stream";
 import zip, { removeTriliumTags } from "./zip.js";
 import becca from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
+import noteService from "../notes.js";
 import TaskContext from "../task_context.js";
 import sql_init from "../sql_init.js";
 import { trimIndentation } from "@triliumnext/commons";
@@ -470,6 +471,37 @@ describe("processNoteContent", () => {
         expect(child?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
         expect(child?.getContent().toString()).toContain("child content");
         expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+    });
+
+    it("keeps a folder zip's entries in archive order under an inherited #newNotesOnTop (no position metadata)", async () => {
+        // A plain folder zip carries no !!!meta.json, so its notes have no stored positions and fall back to
+        // getNewNotePosition. With #newNotesOnTop inherited onto the target that default would reverse them
+        // (each note inserted above the last); the import must preserve the archive order instead.
+        const zipBuffer = await createZipBuffer({ "a.txt": "first", "b.txt": "second", "c.txt": "third" });
+
+        const orderedTitles = await new Promise<(string | undefined)[]>((resolve, reject) => {
+            void getContext().init(async () => {
+                try {
+                    const parent = noteService.createNewNote({ parentNoteId: "root", title: "zip-order target", content: "", type: "text", mime: "text/html" }).note;
+                    parent.addLabel("newNotesOnTop", "", true);
+
+                    const taskContext = TaskContext.getInstance("import-zip-order", "importNotes", { textImportedAsText: true });
+                    await zip.importZip(taskContext, zipBuffer, parent);
+
+                    // Sort by notePosition the way the tree renders it (becca's `children` is insertion order).
+                    const titles = parent
+                        .getChildBranches()
+                        .slice()
+                        .sort((a, b) => a.notePosition - b.notePosition)
+                        .map((branch) => branch.getNote().title);
+                    resolve(titles);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+
+        expect(orderedTitles).toEqual(["a.txt", "b.txt", "c.txt"]);
     });
 
     it("imports a CSV entry as a plain file note when the spreadsheet option is off", async () => {

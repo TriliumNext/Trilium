@@ -74,7 +74,10 @@ export interface NoteParams {
 }
 
 function getNewNotePosition(parentNote: BNote) {
-    if (parentNote.isLabelTruthy("newNotesOnTop")) {
+    // An import that preserves its source order suspends newNotesOnTop for the content it creates, so an
+    // inherited `#newNotesOnTop` on the import target doesn't reverse the imported tree (see
+    // {@link cls.setImportOrderPreserved}).
+    if (!cls.isImportOrderPreserved() && parentNote.isLabelTruthy("newNotesOnTop")) {
         const minNotePos = parentNote
             .getChildBranches()
             .filter((branch) => branch?.noteId !== "_hidden") // has "always last" note position

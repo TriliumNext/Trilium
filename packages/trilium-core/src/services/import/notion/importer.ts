@@ -18,6 +18,7 @@ import { t } from "i18next";
 import { type HTMLElement, parse } from "node-html-parser";
 
 import type BNote from "../../../becca/entities/bnote.js";
+import * as cls from "../../context.js";
 import imageService from "../../image.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
@@ -195,6 +196,10 @@ function createNotes(importRootNote: BNote, pages: ParsedPage[], resources: Map<
 
     const rootNote = noteService.createNewNote({ parentNoteId: importRootNote.noteId, title: t("notion_import.root-title"), content: "", type: "text", mime: "text/html", isProtected }).note;
     rootNote.addLabel("iconClass", "bx bx-import");
+
+    // Root created; keep the imported pages in export order under an inherited #newNotesOnTop (the root above
+    // still floats to the top of the target). See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
 
     const noteByFolder = new Map<string, BNote>();
     const targetByPageId = new Map<string, LinkTarget>();

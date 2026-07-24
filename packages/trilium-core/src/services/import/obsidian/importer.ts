@@ -35,6 +35,7 @@
 import { t } from "i18next";
 
 import type BNote from "../../../becca/entities/bnote.js";
+import * as cls from "../../context.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
 import type TaskContext from "../../task_context.js";
@@ -130,6 +131,10 @@ function createNotes(importRootNote: BNote, notes: VaultNote[], attachments: Map
 
     const rootNote = noteService.createNewNote({ parentNoteId: importRootNote.noteId, title: rootTitle, content: "", type: "text", mime: "text/html", isProtected }).note;
     rootNote.addLabel("iconClass", "bx bx-import");
+
+    // Root created; keep the vault's notes/folders in order under an inherited #newNotesOnTop (the root above
+    // still floats to the top of the target). See cls.setImportOrderPreserved.
+    cls.setImportOrderPreserved(true);
 
     const attachmentIndex = buildAttachmentIndex(attachments);
     const shrinkImages = !!taskContext.data?.shrinkImages;

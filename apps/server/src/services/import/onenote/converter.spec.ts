@@ -214,6 +214,26 @@ const RESOURCE_SAMPLE = `<html lang="en-US">
     </body>
 </html>`;
 
+// Real OneNote source (debug-captured): a "screen clipping" page — two standalone images, each
+// floating directly in the outline <div> and separated from its <cite> caption by OneNote's <br>
+// spacing. Left verbatim the caption renders as loose body text next to the image.
+const SCREEN_CLIPPING_SAMPLE = `<html lang="ro-RO">
+    <body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
+        <div style="position:absolute;left:48px;top:115px;width:720px">
+            <img width="577.5" height="277.5" src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-aaa!1-BBB!sccc/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-aaa!1-BBB!sccc/$value" data-fullres-src-type="image/png" />
+            <br />
+            <cite lang="en-US" style="font-size:9pt;color:#595959;margin-top:0pt;margin-bottom:0pt">Screen clipping taken: 23.07.2026 21:40</cite>
+            <br />
+            <br />
+            <img width="385" height="509" src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-ddd!1-BBB!sccc/$value" data-src-type="image/png" data-fullres-src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-ddd!1-BBB!sccc/$value" data-fullres-src-type="image/png" />
+            <br />
+            <cite lang="en-US" style="font-size:9pt;color:#595959;margin-top:0pt;margin-bottom:0pt">Screen clipping taken: 23.07.2026 21:40</cite>
+            <br />
+            <br />
+        </div>
+    </body>
+</html>`;
+
 // Real OneNote source (debug-captured): OneNote puts the list marker type on each <li> and wraps
 // item text in a margin-0 <p>. The marker type belongs on the <ul>/<ol> (CKEditor's representation),
 // and OneNote's lower-alpha/upper-alpha map to CKEditor's lower-latin/upper-latin.
@@ -267,6 +287,36 @@ const TABLE_SAMPLE = `<html lang="en-US">
     </body>
 </html>`;
 
+// Real OneNote source (debug-captured): a column-resized table. OneNote stamps the resized width as a
+// bare pixel `width` on every cell of the column (150/49/399/136 across the four columns), a form the
+// sanitizer drops — so the widths are lost unless translated to CKEditor's colgroup representation.
+const TABLE_RESIZE_SAMPLE = `<html lang="ro-RO">
+    <body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
+        <div style="position:absolute;left:48px;top:115px;width:689px">
+            <table style="border:1px solid;border-collapse:collapse">
+                <tr>
+                    <td style="width:150;border:1px solid"><span lang="en-US">Mid</span></td>
+                    <td style="width:49;border:1px solid"><span lang="en-US">SM</span></td>
+                    <td style="width:399;border:1px solid"><span lang="en-US">Large</span></td>
+                    <td style="width:136;border:1px solid"><br /></td>
+                </tr>
+                <tr>
+                    <td style="width:150;border:1px solid"><span lang="en-US">Mid</span></td>
+                    <td style="width:49;border:1px solid"><span lang="en-US">SM</span></td>
+                    <td style="width:399;border:1px solid"><span lang="en-US">Large</span></td>
+                    <td style="width:136;border:1px solid"><br /></td>
+                </tr>
+                <tr>
+                    <td style="width:150;border:1px solid"><br /></td>
+                    <td style="width:49;border:1px solid"><br /></td>
+                    <td style="width:399;border:1px solid"><br /></td>
+                    <td style="width:136;border:1px solid"><br /></td>
+                </tr>
+            </table>
+        </div>
+    </body>
+</html>`;
+
 // Tests assert the end result (the HTML actually stored on the note, i.e. after sanitization).
 describe("convertPageHtml", () => {
     it("strips OneNote's block-level <br> spacing and empty list items, keeping real content", () => {
@@ -307,6 +357,16 @@ describe("convertPageHtml", () => {
             "Brown fox",
             "Jumps over the lazy dog"
         ]);
+    });
+
+    it("sorts outlines missing position coordinates as 0 and breaks top ties by left", () => {
+        const sample = `<body>
+            <div style="position:absolute;left:200px;top:100px"><p>right</p></div>
+            <div style="position:absolute;left:50px;top:100px"><p>left</p></div>
+            <div style="position:absolute"><p>unplaced</p></div>
+        </body>`;
+        const paragraphs = parse(converter.convertPageHtml(sample)).querySelectorAll("p").map((p) => p.textContent.trim());
+        expect(paragraphs).toEqual(["unplaced", "left", "right"]);
     });
 
     it("moves OneNote list marker types from <li> onto the list, mapping alpha to latin", () => {
@@ -350,6 +410,96 @@ describe("convertPageHtml", () => {
 
         expect(out).not.toContain("border:0px");
         expect(out).not.toContain("border-collapse");
+    });
+
+    it("preserves OneNote per-column widths as a CKEditor resized-table colgroup", () => {
+        const out = converter.convertPageHtml(TABLE_RESIZE_SAMPLE);
+        const root = parse(out);
+
+        // The table becomes a full-width table figure, tagged as column-resized, with its rows in a
+        // <tbody> beneath the <colgroup> — CKEditor's resized-table shape.
+        const figure = root.querySelector("figure.table");
+        expect(figure?.getAttribute("style")).toContain("width:100%");
+        expect(figure?.querySelector("table")?.getAttribute("class")).toContain("ck-table-resized");
+        expect(root.querySelector("figure.table table colgroup")).toBeTruthy();
+        expect(root.querySelectorAll("figure.table table tbody tr")).toHaveLength(3);
+
+        // Each column's pixel width (150/49/399/136 of 734) becomes a proportional percentage in the
+        // colgroup, and the set sums to exactly 100 (the rounding remainder settles on the last column).
+        const cols = root.querySelectorAll("colgroup col").map((col) => col.getAttribute("style"));
+        expect(cols).toEqual(["width:20.44%", "width:6.68%", "width:54.36%", "width:18.52%"]);
+
+        // The now-redundant per-cell widths are gone, and the cell content survives.
+        expect(root.querySelectorAll("td").every((td) => !(td.getAttribute("style") ?? "").includes("width"))).toBe(true);
+        expect(out).toContain("Mid");
+        expect(out).toContain("Large");
+    });
+
+    it("leaves a table without a full set of column widths unresized", () => {
+        // Only the first column carries a width — the resize would be ambiguous, so the table is left as-is.
+        const sample = `<body><div><table style="border:1px solid;border-collapse:collapse"><tr><td style="width:220;border:1px solid">A</td><td style="border:1px solid">B</td></tr></table></div></body>`;
+        const root = parse(converter.convertPageHtml(sample));
+
+        expect(root.querySelector("figure.table")).toBeFalsy();
+        expect(root.querySelector("colgroup")).toBeFalsy();
+        expect(root.querySelector("table")?.getAttribute("class") ?? "").not.toContain("ck-table-resized");
+    });
+
+    it("does not resize a table that merges cells (colspan/rowspan)", () => {
+        const sample = `<body><div><table><tr><td colspan="2" style="width:100">A</td></tr><tr><td style="width:50">B</td><td style="width:50">C</td></tr></table></div></body>`;
+        expect(parse(converter.convertPageHtml(sample)).querySelector("colgroup")).toBeFalsy();
+    });
+
+    it("keeps a resized cell's other styles and appends to the table's existing class", () => {
+        // Both columns carry a width on the first row; the second row's cells have no style at all.
+        // Stripping the redundant widths must keep the shaded cell's background, leave the style-less
+        // cells alone, and append the resized marker to the table's pre-existing class.
+        const sample = `<body><div><table class="layout"><tr><td style="width:100;background-color:#b6d9a1">A</td><td style="width:300">B</td></tr><tr><td>C</td><td>D</td></tr></table></div></body>`;
+        const root = parse(converter.convertPageHtml(sample));
+
+        expect(root.querySelector("table")?.getAttribute("class")).toContain("ck-table-resized");
+        const cols = root.querySelectorAll("colgroup col").map((col) => col.getAttribute("style"));
+        expect(cols).toEqual(["width:25%", "width:75%"]);
+
+        const shaded = root.querySelectorAll("td").find((td) => td.textContent === "A");
+        expect(shaded?.getAttribute("style")).toContain("background-color:#b6d9a1");
+        expect(shaded?.getAttribute("style") ?? "").not.toContain("width");
+    });
+
+    it("recovers OneNote's over-darkened table cell shading by reflecting its lightness", () => {
+        // OneNote's Graph export returns cell shading as a dark shade of the colour it displays (same
+        // hue and saturation, inverted lightness): a cell shown as #b6d9a1 comes back as #375623.
+        // Reflecting the lightness recovers the light tint (#bddca9, a barely-perceptible delta off).
+        const sample = `<body><div><table><tr><td style="background-color:#375623"><span lang="en-US">A</span></td><td>B</td></tr></table></div></body>`;
+        const out = converter.convertPageHtml(sample);
+
+        expect(out).toContain("background-color:#bddca9");
+        expect(out).not.toContain("#375623");
+    });
+
+    it("leaves an already-light table cell shading untouched", () => {
+        // A light background is plausible shading as-is (and correctly-exported colours arrive light),
+        // so only dark cell backgrounds are reflected.
+        const sample = `<body><div><table><tr><td style="background-color:#b6d9a1">A</td><td>B</td></tr></table></div></body>`;
+        expect(converter.convertPageHtml(sample)).toContain("background-color:#b6d9a1");
+    });
+
+    it("reflects dark shading across the hue wheel, including grays and short hex", () => {
+        // One dark cell per rgbToHsl hue sector (the green-dominant sector is covered above): plain
+        // dark red, a magenta whose hue wraps past the top of the wheel, a blue-dominant navy, and an
+        // achromatic gray in the short #rgb form.
+        const sample = `<body><div><table><tr>
+            <td style="background-color:#8b0000">Dark red</td>
+            <td style="background-color:#400040">Dark magenta</td>
+            <td style="background-color:#000080">Navy</td>
+            <td style="background-color:#333">Dark gray</td>
+        </tr></table></div></body>`;
+        const out = converter.convertPageHtml(sample);
+
+        expect(out).toContain("background-color:#ff7474"); // dark red -> light red, hue preserved
+        expect(out).toContain("background-color:#ffbfff"); // dark magenta -> light magenta
+        expect(out).toContain("background-color:#7f7fff"); // navy -> light blue
+        expect(out).toContain("background-color:#cccccc"); // gray stays achromatic, just lightened
     });
 
     it("converts OneNote to-do tags into a Trilium task list", () => {
@@ -435,6 +585,82 @@ describe("convertPageHtml", () => {
         expect(out).not.toContain("data-fullres-src");
         expect(out).not.toContain("data-src-type");
         expect(out).not.toContain("0-eee"); // the full-resolution resource id is gone
+    });
+
+    it("fills in defaults for an attachment object with missing metadata", () => {
+        // An <object> tagged as an attachment but with an empty name and no type/data still becomes a
+        // marker anchor, with placeholder filename and mime.
+        const out = converter.convertPageHtml(`<body><div><object data-attachment="" /></div></body>`);
+        const anchor = parse(out).querySelector("a.onenote-attachment");
+
+        expect(anchor?.textContent).toBe("attachment");
+        expect(anchor?.getAttribute("data-mime")).toBe("application/octet-stream");
+    });
+
+    it("wraps a floating image and its trailing cite caption into a figure with a figcaption", () => {
+        const out = converter.convertPageHtml(SCREEN_CLIPPING_SAMPLE);
+        const root = parse(out);
+
+        // Each standalone image becomes a CKEditor block image (<figure class="image">).
+        const figures = root.querySelectorAll("figure.image");
+        expect(figures).toHaveLength(2);
+
+        const firstImg = figures[0].querySelector("img");
+        // The display dimensions are kept and carried into an aspect-ratio (CKEditor's stored form).
+        expect(firstImg?.getAttribute("width")).toBe("577.5");
+        expect(firstImg?.getAttribute("height")).toBe("277.5");
+        expect(firstImg?.getAttribute("style")).toContain("aspect-ratio:577.5/277.5");
+        // The Graph URL is left intact for the importer to swap for a local attachment reference.
+        expect(firstImg?.getAttribute("src")).toContain("/resources/0-aaa!1-BBB!sccc/$value");
+
+        // The caption is pulled in as the figure's <figcaption>, small and wrapped in a bare <cite>.
+        const figcaption = figures[0].querySelector("figcaption");
+        expect(figcaption?.querySelector("span.text-small cite")?.textContent).toContain("Screen clipping taken: 23.07.2026 21:40");
+        // OneNote's grey caption colour is dropped so the caption inherits the theme foreground.
+        expect(figcaption?.querySelector("cite")?.getAttribute("style") ?? "").not.toContain("color");
+
+        // Both captions are absorbed into a figcaption — none left floating as body text — and the
+        // <br> spacing between image and caption is gone.
+        expect(root.querySelectorAll("cite")).toHaveLength(2);
+        expect(root.querySelectorAll("figcaption cite")).toHaveLength(2);
+        expect(root.querySelectorAll("br")).toHaveLength(0);
+    });
+
+    it("wraps a caption-less floating image in a figure carrying its aspect ratio", () => {
+        const out = converter.convertPageHtml(`<body><div><img width="480" height="441" src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-x!1-y!sz/$value" /><br /></div></body>`);
+        const figure = parse(out).querySelector("figure.image");
+
+        expect(figure).toBeTruthy();
+        expect(figure?.querySelector("figcaption")).toBeFalsy();
+        expect(figure?.querySelector("img")?.getAttribute("style")).toContain("aspect-ratio:480/441");
+    });
+
+    it("leaves an inline image (inside a paragraph) unwrapped", () => {
+        const out = converter.convertPageHtml(`<body><div><p>before <img width="16" height="16" src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-x!1-y!sz/$value" /> after</p></div></body>`);
+        const root = parse(out);
+
+        expect(root.querySelectorAll("figure")).toHaveLength(0);
+        expect(root.querySelector("p img")).toBeTruthy();
+    });
+
+    it("keeps an unstyled trailing caption as a bare cite (no font-size wrapper)", () => {
+        // A cite with no style has no font-size class, so the figcaption holds the cite directly.
+        const out = converter.convertPageHtml(`<body><div><img width="10" height="10" src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-x!1-y!sz/$value" /><br /><cite>Plain caption</cite></div></body>`);
+        const figcaption = parse(out).querySelector("figure.image figcaption");
+
+        expect(figcaption?.querySelector("cite")?.textContent).toBe("Plain caption");
+        expect(figcaption?.querySelector("span")).toBeFalsy();
+    });
+
+    it("leaves an image and break with no block container (fragment root) untouched", () => {
+        // Content directly at the fragment root (no <body>, no outline <div>) has no recognized block
+        // parent: the image is not wrapped into a figure and the break is not treated as block spacing.
+        const out = converter.convertPageHtml(`<img src="https://graph.microsoft.com/v1.0/users('me')/onenote/resources/0-x!1-y!sz/$value" /><br />`);
+        const root = parse(out);
+
+        expect(root.querySelector("figure")).toBeFalsy();
+        expect(root.querySelector("img")).toBeTruthy();
+        expect(root.querySelectorAll("br")).toHaveLength(1);
     });
 
     it("converts inline-style formatting (bold/italic/underline) to semantic tags", () => {
@@ -529,6 +755,34 @@ describe("convertPageHtml", () => {
         expect(out).toContain(`<span class="text-big">Size 26</span>`);
         expect(out).toContain(`<span class="text-huge">Size 28</span>`);
         expect(out).toContain(`<span class="text-huge">Size 72</span>`);
+    });
+
+    it("converts px font sizes on the pt scale and ignores unparseable ones", () => {
+        const sample = `<body><div style="position:absolute;left:0px;top:0px">
+            <p style="margin-top:0pt;margin-bottom:0pt"><span style="font-size:24px">Pixel size</span></p>
+            <p style="margin-top:0pt;margin-bottom:0pt"><span style="font-size:medium">Named size</span></p>
+        </div></body>`;
+        const out = converter.convertPageHtml(sample);
+
+        // 24px = 18pt, the bottom of the big band; a named (unparseable) size gets no size class.
+        expect(out).toContain(`<span class="text-big">Pixel size</span>`);
+        expect(out).toContain("Named size");
+        expect(out).not.toMatch(/text-\w+">Named size</);
+    });
+
+    it("keeps a non-span element that loses its default black color, with its other styles", () => {
+        const sample = `<body><div style="position:absolute;left:0px;top:0px">
+            <p style="color:#000000">Black paragraph</p>
+            <ul><li style="list-style-type:circle;background-color:#ffff00">Styled item</li></ul>
+        </div></body>`;
+        const out = converter.convertPageHtml(sample);
+
+        // The default black is dropped but the <p> itself stays (only bare <span>s are unwrapped).
+        expect(out).toContain("Black paragraph");
+        expect(out).not.toContain("color:#000000");
+        // A list item keeps its remaining styles once its marker type moves onto the list.
+        expect(out).toContain("background-color:#ffff00");
+        expect(out).not.toMatch(/<li[^>]*list-style-type/);
     });
 
     it("maps the 20pt Title style to text-big and the Code style to <code>", () => {

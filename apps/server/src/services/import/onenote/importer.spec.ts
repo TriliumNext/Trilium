@@ -198,6 +198,47 @@ describe("importSelection (real DB)", () => {
         expect(content).toContain(`href="#root/${badNote?.noteId}"`);
     });
 
+    it("preserves the OneNote page order even when #newNotesOnTop is inherited onto the target", async () => {
+        graphMock.listPages.mockResolvedValue([
+            { id: "1-ord-a", title: "Order Page A", level: 0 },
+            { id: "1-ord-b", title: "Order Page B", level: 0 },
+            { id: "1-ord-c", title: "Order Page C", level: 0 }
+        ]);
+        graphMock.getPageContent.mockResolvedValue({ html: "<p>hi</p>", inkml: "" });
+
+        // The label the user reported: inheritable on the import target, so every note created during the
+        // import (root, section, pages) sees it. Without explicit positions it would invert the page order.
+        const parent = cls.init(() => {
+            const note = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "order parent",
+                content: "",
+                type: "text",
+                mime: "text/html"
+            }).note;
+            note.addLabel("newNotesOnTop", "", true);
+            return note;
+        });
+
+        await cls.init(() => importSelection({
+            getAccessToken: () => Promise.resolve("token"),
+            parentNoteId: parent.noteId,
+            sections: [{ id: "sec-order", title: "Order Section", groupPath: [], notebookId: "nb-order", notebookTitle: "Order Notebook" }],
+            taskId: "task-order"
+        }));
+
+        // Order lives in notePosition (becca's in-memory `children` is insertion order); the tree sorts
+        // by it the way the client does. With the newNotesOnTop default each page would land above the
+        // last (positions -10, -20, -30 → C, B, A); the fix's explicit ascending positions keep A, B, C.
+        const sectionNote = Object.values(becca.notes).find((note) => note.title === "Order Section");
+        const orderedTitles = sectionNote
+            ?.getChildBranches()
+            .slice()
+            .sort((a, b) => a.notePosition - b.notePosition)
+            .map((branch) => branch.getNote().title);
+        expect(orderedTitles).toEqual(["Order Page A", "Order Page B", "Order Page C"]);
+    });
+
     it("aborts the import when too many consecutive pages fail (systemic failure)", async () => {
         graphMock.listPages.mockResolvedValue(
             Array.from({ length: 8 }, (_, i) => ({ id: `1-cb${i}`, title: `CB Page ${i}`, level: 0 }))

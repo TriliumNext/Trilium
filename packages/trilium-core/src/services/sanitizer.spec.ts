@@ -68,6 +68,15 @@ describe("sanitize", () => {
         expect(sanitizeHtml(dirty)).toBe(dirty);
     });
 
+    it("keeps a fractional image aspect-ratio (OneNote reports fractional pixel dimensions)", () => {
+        // CKEditor's usual integer ratio still passes...
+        expect(sanitizeHtml(`<img style="aspect-ratio:991/403" src="x.png" />`)).toContain("aspect-ratio:991/403");
+        // ...and a fractional ratio (e.g. a 577.5×277.5 OneNote screen clipping) is no longer stripped.
+        expect(sanitizeHtml(`<img style="aspect-ratio:577.5/277.5" src="x.png" />`)).toContain("aspect-ratio:577.5/277.5");
+        // A non-ratio value is still rejected.
+        expect(sanitizeHtml(`<img style="aspect-ratio:auto" src="x.png" />`)).not.toContain("aspect-ratio");
+    });
+
     describe("bookmark anchors", () => {
         it("preserves id attribute on empty <a> tags (CKEditor bookmarks)", () => {
             const dirty = `<a id="my-bookmark"></a>`;
