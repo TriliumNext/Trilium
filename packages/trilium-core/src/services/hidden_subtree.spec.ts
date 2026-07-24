@@ -52,8 +52,10 @@ describe("hidden_subtree (real DB)", () => {
             expect(hidden.getParentBranches().some((b) => b.parentNoteId === "root")).toBe(true);
 
             // A representative set of the declared children must exist and sit
-            // directly under _hidden.
-            for (const childId of ["_search", "_options", "_help", "_taskStates", "_lbRoot"]) {
+            // directly under _hidden. (_help is deliberately absent: it is a virtual
+            // subtree owned by the in-app help provider, not by checkHiddenSubtree —
+            // see in_app_help.spec.ts.)
+            for (const childId of ["_search", "_options", "_taskStates", "_lbRoot"]) {
                 const child = becca.notes[childId];
                 expect(child, `${childId} should exist`).toBeDefined();
                 expect(

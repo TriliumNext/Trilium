@@ -10,6 +10,7 @@ import { beforeAll } from "vitest";
 import StandaloneBackupService from "./lightweight/backup_provider.js";
 import BrowserExecutionContext from "./lightweight/cls_provider.js";
 import BrowserCryptoProvider from "./lightweight/crypto_provider.js";
+import StandaloneInAppHelpProvider from "./lightweight/in_app_help_provider.js";
 import StandalonePlatformProvider from "./lightweight/platform_provider.js";
 import BrowserSqlProvider from "./lightweight/sql_provider.js";
 import BrowserZipProvider from "./lightweight/zip_provider.js";
@@ -124,6 +125,9 @@ beforeAll(async () => {
             });
         },
         platform: new StandalonePlatformProvider(""),
+        // Mirrors production (local-server-worker): registers the _help virtual note
+        // provider so the virtual help subtree exists in this environment's becca too.
+        inAppHelp: new StandaloneInAppHelpProvider(),
         backup: new StandaloneBackupService(options),
         image: standaloneImageProvider,
         schema: schemaSql,

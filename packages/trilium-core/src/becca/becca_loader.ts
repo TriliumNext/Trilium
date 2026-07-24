@@ -104,8 +104,11 @@ function injectVirtualSubtrees() {
                 .getChildBranches()
                 .reduce((max, childBranch) => Math.max(max, childBranch?.notePosition ?? 0), 0);
 
-            subtree.forEach((item, index) => injectVirtualItem(provider, provider.parentNoteId, item, basePosition + (index + 1) * 10));
+            // Set before injecting: should injection throw mid-subtree, the already-injected
+            // notes still need the target-relation backfill below.
             injectedAny = true;
+
+            subtree.forEach((item, index) => injectVirtualItem(provider, provider.parentNoteId, item, basePosition + (index + 1) * 10));
         } catch (e) {
             // A broken provider must never take down the becca load.
             log.error(`Virtual note provider '${provider.namespace}' failed, skipping: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
@@ -187,11 +190,13 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
     }
 
     attributeDefs.forEach((def, index) => {
-        // Deterministic ID, unique thanks to the note-ID prefix; the index suffix disambiguates
-        // multiple same-named attributes on one note.
-        let attributeId = `v_${item.id}_${def.type.charAt(0)}${def.name}`;
-        if (becca.attributes[attributeId]) {
-            attributeId = `${attributeId}_${index}`;
+        // Deterministic ID, unique thanks to the note-ID prefix; the counter suffix
+        // disambiguates multiple same-named attributes on one note, probing until free so
+        // pathological names (e.g. "x" colliding with an explicit "x_1") cannot overwrite.
+        const baseAttributeId = `v_${item.id}_${def.type.charAt(0)}${def.name}`;
+        let attributeId = baseAttributeId;
+        for (let suffix = 1; becca.attributes[attributeId]; suffix++) {
+            attributeId = `${baseAttributeId}_${suffix}`;
         }
 
         const attribute = new BAttribute({
