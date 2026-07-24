@@ -390,6 +390,13 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
 }
 
 function protectNoteRecursively(note: BNote, protect: boolean, includingSubTree: boolean, taskContext: TaskContext<"protectNotes">) {
+    if (note.isVirtual) {
+        // Virtual notes (e.g. the in-app help) are read-only, application-owned and never
+        // persisted — (un)protecting them is meaningless. Their children are virtual too,
+        // so the whole subtree is skipped.
+        return;
+    }
+
     protectNote(note, protect);
 
     taskContext.increaseProgressCount();
