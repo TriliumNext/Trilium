@@ -32,7 +32,7 @@ jobs:
       - name: Regenerate the price table
         run: pnpm --filter server update-model-prices
       - name: Open a PR if the table changed
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           add-paths: apps/server/src/services/llm/providers/model_prices.json
           branch: chore/update-model-prices
