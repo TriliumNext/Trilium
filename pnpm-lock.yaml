@@ -358,8 +358,8 @@ importers:
         specifier: 17.0.10
         version: 17.0.10(i18next@26.3.6(typescript@6.0.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@6.0.3)
       react-window:
-        specifier: 2.2.7
-        version: 2.2.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 2.3.0
+        version: 2.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-zoom-pan-pinch:
         specifier: 4.0.3
         version: 4.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -971,8 +971,8 @@ importers:
         specifier: 17.0.10
         version: 17.0.10(i18next@26.3.6(typescript@6.0.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@6.0.3)
       react-window:
-        specifier: 2.2.7
-        version: 2.2.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 2.3.0
+        version: 2.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-zoom-pan-pinch:
         specifier: 4.0.3
         version: 4.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11867,8 +11867,8 @@ packages:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
 
-  react-window@2.2.7:
-    resolution: {integrity: sha512-SH5nvfUQwGHYyriDUAOt7wfPsfG9Qxd6OdzQxl5oQ4dsSsUicqQvjV7dR+NqZ4coY0fUn3w1jnC5PwzIUWEg5w==}
+  react-window@2.3.0:
+    resolution: {integrity: sha512-FW6TIpaOH646k51X7yE+LSCWGkt5Pfsnc1fVyq/sCI9h0pTqmMiBXM04pzFKg3Bt7NGkeV6kqbU8d/QjmFS7Ug==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -26844,7 +26844,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-window@2.2.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-window@2.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
