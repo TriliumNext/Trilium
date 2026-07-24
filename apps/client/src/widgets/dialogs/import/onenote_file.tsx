@@ -18,10 +18,11 @@ import useProviderImport from "./useProviderImport.js";
 function OneNoteFilePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPanelProps) {
     const [compressImages] = useTriliumOptionBool("compressImages");
     const [shrinkImages, setShrinkImages] = useState(compressImages);
+    const [debug, setDebug] = useState(false);
     // No `format` tag: the importer is routed by the `.one` extension in the dispatcher, and an empty
     // format keeps the desktop native path reading the file into a buffer (a `.one` isn't streamed like a
     // zip) rather than handing over a path the offline parser can't open.
-    const { hasSelection, displayNames, onChange, onBrowse, onNativeDrop, onRemove, doImport } = useProviderImport({ format: "", parentNoteId, shrinkImages, closeDialog });
+    const { hasSelection, displayNames, onChange, onBrowse, onNativeDrop, onRemove, doImport } = useProviderImport({ format: "", parentNoteId, shrinkImages, debug, closeDialog });
 
     const doImportRef = useRef(doImport);
     doImportRef.current = doImport;
@@ -50,6 +51,13 @@ function OneNoteFilePanel({ parentNoteId, closeDialog, setFooter }: ImportProvid
                     currentValue={compressImages && shrinkImages}
                     onChange={setShrinkImages}
                     disabled={!compressImages}
+                />
+                <OptionsRowWithToggle
+                    name="onenote-file-debug"
+                    label={t("onenote_file_import.attach_source")}
+                    description={t("onenote_file_import.attach_source_hint")}
+                    currentValue={debug}
+                    onChange={setDebug}
                 />
             </CardSection>
         </Card>

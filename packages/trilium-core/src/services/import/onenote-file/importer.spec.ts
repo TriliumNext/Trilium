@@ -14,10 +14,11 @@ import oneFileImporter from "./importer.js";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 
-/** Runs the .one importer over the fixture and returns the created import-root note. */
-async function importFixture(name: string): Promise<BNote> {
+/** Runs the .one importer over the fixture and returns the created import-root note. `debug` gets its own
+ *  task id because TaskContext.getInstance caches by id and would otherwise reuse the first run's data. */
+async function importFixture(name: string, debug = false): Promise<BNote> {
     const bytes = new Uint8Array(fs.readFileSync(join(dir, "fixtures", name)));
-    const taskContext = TaskContext.getInstance("onefile-integration", "importNotes", {});
+    const taskContext = TaskContext.getInstance(`onefile-integration${debug ? "-debug" : ""}`, "importNotes", { debug });
 
     return new Promise<BNote>((resolve, reject) => {
         void getContext().init(() => {
@@ -57,5 +58,18 @@ describe("importOneFile (real DB)", () => {
 
         expect(pageWithImage).toBeTruthy();
         expect(pageWithImage?.getAttachmentsByRole("image").length).toBeGreaterThan(0);
+    });
+
+    it("attaches each page's parsed object graph only when importing in debug mode", async () => {
+        expect((await importFixture("onenote_desktop.one")).getChildNotes()[0].getAttachmentsByRole("importSource")).toHaveLength(0);
+
+        const page = (await importFixture("onenote_desktop.one", true)).getChildNotes()[0];
+        const [source] = page.getAttachmentsByRole("importSource");
+
+        expect(source).toMatchObject({ title: "OneNote source.json", mime: "application/json" });
+
+        const dump = JSON.parse(decodeUtf8(source.getContent() ?? ""));
+        expect(dump.objects.length).toBeGreaterThan(0);
+        expect(dump.spaceId).toBeTruthy();
     });
 });

@@ -41,6 +41,8 @@ type TaskDataDefinitions = {
         replaceUnderscoresWithSpaces?: boolean;
         shrinkImages?: boolean;
         safeImport?: boolean;
+        /** Attaches the importer's raw source alongside each imported note, for diagnosing conversions. */
+        debug?: boolean;
     } | null,
     importAttachments: null
 }

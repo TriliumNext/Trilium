@@ -45,4 +45,19 @@ describe("parseOneSection", () => {
         const fake = new Uint8Array(1024);
         expect(() => parseOneSection(fake)).toThrow();
     });
+
+    it("rejects an FSSHTTPB-packaged (OneDrive download) file with an actionable message", () => {
+        // Header layout: guidFileType, guidFile, guidLegacyFileVersion, then guidFileFormat —
+        // set the format GUID to the MS-ONESTORE §2.8 packaging GUID.
+        const fake = new Uint8Array(1024);
+        fake.set(encodeGuid("638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7"), 48);
+        expect(() => parseOneSection(fake)).toThrow(/OneDrive\/SharePoint/);
+    });
 });
+
+/** Encodes a GUID string in the Microsoft mixed-endian binary layout (Data1-3 LE, Data4 as-is). */
+function encodeGuid(guid: string): Uint8Array {
+    const [d1, d2, d3, d4a, d4b] = guid.split("-");
+    const hexBytes = (s: string) => s.match(/../g)?.map((b) => parseInt(b, 16)) ?? [];
+    return new Uint8Array([...hexBytes(d1).reverse(), ...hexBytes(d2).reverse(), ...hexBytes(d3).reverse(), ...hexBytes(d4a), ...hexBytes(d4b)]);
+}

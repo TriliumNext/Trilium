@@ -72,6 +72,8 @@ const NIL_GUID = "00000000-0000-0000-0000-000000000000";
 const GUID_FILE_TYPE_ONE = "7B5C52E4-D88C-4DA7-AEB1-5378D02996D3";
 const GUID_FILE_TYPE_ONETOC2 = "43FF2FA1-EFD9-4C76-9EE2-10EA5722765F";
 const GUID_FILE_FORMAT_REVISION_STORE = "109ADD3F-911B-49F5-A5D0-1791EDC8AED8";
+/** MS-ONESTORE §2.8 "packaging structure": FSSHTTPB data elements, as downloaded from OneDrive/SharePoint. */
+const GUID_FILE_FORMAT_PACKAGING = "638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7";
 const FILE_NODE_LIST_MAGIC_HI = 0xa4567ab1; // full magic 0xA4567AB1F5F7F4C4 (lo 0xF5F7F4C4)
 const FILE_NODE_LIST_MAGIC_LO = 0xf5f7f4c4;
 const FDO_HEADER_GUID = "BDE316E7-2665-4511-A4C4-8D4D0B7A9EAC";
@@ -115,7 +117,7 @@ const FN = {
 } as const;
 
 // JCIDs
-const JCID = {
+export const JCID = {
     SectionNode: 0x00060007,
     PageSeriesNode: 0x00060008,
     PageMetadata: 0x00020030,
@@ -135,7 +137,7 @@ const JCID = {
 } as const;
 
 // Property IDs (full 32-bit values, type encoded in high bits)
-const PROP = {
+export const PROP = {
     ElementChildNodes: 0x24001c20, // ArrayOfObjectIDs
     ChildGraphSpaceElementNodes: 0x2c001d63, // ArrayOfObjectSpaceIDs
     MetaDataObjectsAboveGraphSpace: 0x24003442, // ArrayOfObjectIDs (XOR seed)
@@ -154,7 +156,7 @@ const PROP = {
 } as const;
 
 // Property value type nibble (5 bits)
-const PT = {
+export const PT = {
     NoData: 0x1,
     Bool: 0x2,
     OneByte: 0x3,
@@ -358,11 +360,16 @@ function parseHeader(file: Reader): OneHeader {
     r.guid(); // guidFile
     const guidLegacyFileVersion = r.guid();
     const guidFileFormat = r.guid();
+    if (guidFileFormat === GUID_FILE_FORMAT_PACKAGING) {
+        throw new Error(
+            "This OneNote section was downloaded from OneDrive/SharePoint (FSSHTTPB packaging), which is not supported yet — use the OneNote cloud importer, or open the notebook in OneNote desktop and import its local .one file"
+        );
+    }
     if (guidFileFormat !== GUID_FILE_FORMAT_REVISION_STORE) {
         throw new Error(`Not a revision-store OneNote file (guidFileFormat=${guidFileFormat})`);
     }
     if (guidLegacyFileVersion !== NIL_GUID) {
-        throw new Error("FSSHTTPB/legacy OneNote files are not supported by this parser");
+        throw new Error("Legacy OneNote 2003/2007 files are not supported by this parser");
     }
     const isOne = guidFileType === GUID_FILE_TYPE_ONE;
     const isTocorSection = isOne || guidFileType === GUID_FILE_TYPE_ONETOC2;
@@ -400,7 +407,10 @@ function parseTransactionLog(file: Reader, fcr: Fcr): Map<number, number> {
 // Property sets
 // ---------------------------------------------------------------------------------------------------
 
-interface PropertyValue {
+// The parsed property-set shapes are exported for ./one_debug.js, which serializes them verbatim — every
+// property of every object is parsed and kept here regardless of whether an accessor below reads it, so the
+// dump can surface data (formatting, tables, note tags) this importer doesn't understand yet.
+export interface PropertyValue {
     type: number;
     // primitives
     num?: number;
@@ -412,18 +422,18 @@ interface PropertyValue {
     refCount?: number;
 }
 
-interface Property {
+export interface Property {
     id: number;
     type: number;
     bool: boolean;
     value: PropertyValue;
 }
 
-interface PropertySet {
+export interface PropertySet {
     props: Property[];
 }
 
-interface ObjectPropSet {
+export interface ObjectPropSet {
     objectIds: string[]; // resolved ExGuid keys (guid:n)
     objectSpaceIds: string[];
     set: PropertySet;
@@ -564,14 +574,14 @@ function resolveCompact(cid: CompactId, idTable: Map<number, string>): string {
 // Object graph
 // ---------------------------------------------------------------------------------------------------
 
-interface OneObject {
+export interface OneObject {
     jcid: number;
     propSet: ObjectPropSet;
     fileData?: Uint8Array;
     fileExt?: string;
 }
 
-interface ObjectSpace {
+export interface ObjectSpace {
     id: string; // gsoid guid:n
     objects: Map<string, OneObject>;
     roots: Map<number, string>; // rootRole -> object ExGuid key
@@ -593,7 +603,7 @@ function readStringInStorageBuffer(r: Reader): string {
     return decodeUtf16(bytes);
 }
 
-function decodeUtf16(bytes: Uint8Array): string {
+export function decodeUtf16(bytes: Uint8Array): string {
     let s = "";
     for (let i = 0; i + 1 < bytes.length; i += 2) {
         const code = bytes[i] | (bytes[i + 1] << 8);
@@ -810,7 +820,12 @@ function findProp(obj: OneObject, propId: number): Property | undefined {
     return obj.propSet.set.props.find((p) => p.id === wantId);
 }
 
-function refCounts(value: PropertyValue): { oid: number; osid: number } {
+/**
+ * How many object / object-space references a property value consumes from its object's flat id arrays.
+ * Exported so ./one_debug.js can resolve references with the exact same accounting the accessors use —
+ * a dump that walked the arrays differently would silently mis-attribute every reference after the first.
+ */
+export function refCounts(value: PropertyValue): { oid: number; osid: number } {
     let oid = 0;
     let osid = 0;
     if (value.type === PT.ObjectID || value.type === PT.ArrayOfObjectIDs) {
@@ -871,7 +886,7 @@ function stringProp(obj: OneObject, propId: number, ascii = false): string | und
     return ascii ? decodeLatin1(p.value.data) : decodeUtf16(p.value.data);
 }
 
-function decodeLatin1(bytes: Uint8Array): string {
+export function decodeLatin1(bytes: Uint8Array): string {
     let s = "";
     for (const b of bytes) {
         if (b === 0) {
@@ -911,6 +926,21 @@ export interface OnePage {
     level: number;
     /** Text + media blocks in reading order. */
     content: OneContent[];
+    /**
+     * The page's whole parsed object space — everything {@link OnePage.content} was distilled from, plus
+     * everything this importer doesn't understand yet. Retained only when
+     * {@link ParseOptions.retainObjectSpaces} is set; serialize it with `dumpObjectSpace` from
+     * ./one_debug.js (which lives there, not here, so the parser stays free of the debug format).
+     */
+    space?: ObjectSpace;
+}
+
+export interface ParseOptions {
+    /**
+     * Keeps each page's object space on {@link OnePage.space} instead of discarding it once the content is
+     * extracted. Costs memory proportional to the section, so it's off unless the debug import asked for it.
+     */
+    retainObjectSpaces?: boolean;
 }
 
 export interface OneSection {
@@ -1058,7 +1088,7 @@ function extractPage(pageSpace: ObjectSpace, level: number): OnePage | null {
     return { title: title || "Untitled", level, content };
 }
 
-export function parseOneSection(bytes: Uint8Array): OneSection {
+export function parseOneSection(bytes: Uint8Array, options: ParseOptions = {}): OneSection {
     const diagnostics: string[] = [];
     const file = new Reader(bytes);
     const header = parseHeader(file);
@@ -1114,6 +1144,9 @@ export function parseOneSection(bytes: Uint8Array): OneSection {
             }
             const page = extractPage(pageSpace, level);
             if (page) {
+                if (options.retainObjectSpaces) {
+                    page.space = pageSpace;
+                }
                 pages.push(page);
             }
         });

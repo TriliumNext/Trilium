@@ -21,6 +21,12 @@ export interface ImportOptions {
     spreadsheetImportedAsSpreadsheet: boolean;
     explodeArchives: boolean;
     replaceUnderscoresWithSpaces: boolean;
+    /**
+     * Attaches the importer's raw source alongside each imported note, for diagnosing conversions. Only the
+     * OneNote importers honour it (the `.one` importer attaches its parsed object graph); off by default,
+     * unlike the flags above, since it's a developer aid rather than an import preference.
+     */
+    debug?: boolean;
 }
 
 /**

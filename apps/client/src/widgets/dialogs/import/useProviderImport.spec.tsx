@@ -193,8 +193,28 @@ describe("useProviderImport", () => {
             expect(uploadFiles).toHaveBeenCalledWith("notes", "p1", [file], {
                 format: "obsidian",
                 safeImport: "true",
-                shrinkImages: "true"
+                shrinkImages: "true",
+                debug: "false"
             });
+        });
+
+        it("forwards the debug flag on both routes, so the raw source is attached either way", async () => {
+            await mount({ shrinkImages: false, debug: true });
+            const file = new File(["x"], "section.one");
+            await act(async () => current().onChange([file]));
+            await act(async () => current().doImport());
+
+            expect(uploadFiles).toHaveBeenCalledWith("notes", "p1", [file], expect.objectContaining({ debug: "true" }));
+
+            isElectron.mockReturnValue(true);
+            await mount({ shrinkImages: false, debug: true });
+            pickFiles.mockResolvedValueOnce({ status: "selected", files: [{ token: "tok-1", fileName: "section.one" }] });
+            await act(async () => {
+                current().onBrowse?.();
+            });
+            await act(async () => current().doImport());
+
+            expect(importFromToken).toHaveBeenCalledWith(expect.objectContaining({ options: expect.objectContaining({ debug: true }) }));
         });
 
         it("imports a native pick in place via the capability token instead of uploading", async () => {

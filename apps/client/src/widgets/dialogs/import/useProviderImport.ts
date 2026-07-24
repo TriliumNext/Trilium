@@ -9,6 +9,8 @@ interface ProviderImportArgs {
     format: string;
     parentNoteId: string;
     shrinkImages: boolean;
+    /** Attaches the importer's raw source to each imported note (OneNote importers only). */
+    debug?: boolean;
     closeDialog: () => void;
 }
 
@@ -33,7 +35,7 @@ interface ProviderImport {
  * (streamed, memory-bounded), while drag-and-drop keeps the upload route. The two selections are mutually
  * exclusive — choosing one clears the other.
  */
-export default function useProviderImport({ format, parentNoteId, shrinkImages, closeDialog }: ProviderImportArgs): ProviderImport {
+export default function useProviderImport({ format, parentNoteId, shrinkImages, debug, closeDialog }: ProviderImportArgs): ProviderImport {
     const [file, setFile] = useState<File | null>(null);
     const [nativeFile, setNativeFile] = useState<NativeImportPickedFile | null>(null);
 
@@ -76,7 +78,7 @@ export default function useProviderImport({ format, parentNoteId, shrinkImages, 
         if (nativeFile) {
             const options: NativeImportOptions = {
                 safeImport: true, shrinkImages, textImportedAsText: true, codeImportedAsCode: true,
-                spreadsheetImportedAsSpreadsheet: true, explodeArchives: true, replaceUnderscoresWithSpaces: true
+                spreadsheetImportedAsSpreadsheet: true, explodeArchives: true, replaceUnderscoresWithSpaces: true, debug
             };
             closeDialog();
             await window.electronApi?.nativeImport.importFromToken({
@@ -88,8 +90,10 @@ export default function useProviderImport({ format, parentNoteId, shrinkImages, 
             return;
         }
         closeDialog();
-        await importService.uploadFiles("notes", parentNoteId, [file], { format, safeImport: "true", shrinkImages: shrinkImages ? "true" : "false" }).catch(() => {});
-    }, [file, nativeFile, shrinkImages, format, parentNoteId, closeDialog]);
+        await importService.uploadFiles("notes", parentNoteId, [file], {
+            format, safeImport: "true", shrinkImages: shrinkImages ? "true" : "false", debug: debug ? "true" : "false"
+        }).catch(() => {});
+    }, [file, nativeFile, shrinkImages, debug, format, parentNoteId, closeDialog]);
 
     return {
         hasSelection: !!file || !!nativeFile,

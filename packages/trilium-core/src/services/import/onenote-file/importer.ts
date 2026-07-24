@@ -20,10 +20,14 @@ import protectedSessionService from "../../protected_session.js";
 import { sanitizeHtml } from "../../sanitizer.js";
 import type TaskContext from "../../task_context.js";
 import { escapeHtml } from "../../utils/index.js";
+import { dumpObjectSpace } from "./one_debug.js";
 import { type OnePage, parseOneSection } from "./one_parser.js";
 
 function importOneFile(taskContext: TaskContext<"importNotes">, fileBuffer: Uint8Array, importRootNote: BNote, fileName?: string): BNote {
-    const section = parseOneSection(fileBuffer);
+    // Debug mode keeps each page's parsed object space so it can be attached to the imported note — the
+    // offline counterpart of the Graph importer attaching its original HTML. See ./one_debug.js.
+    const debug = !!taskContext.data?.debug;
+    const section = parseOneSection(fileBuffer, { retainObjectSpaces: debug });
 
     const isProtected = importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
     const shrinkImages = !!taskContext.data?.shrinkImages;
@@ -55,6 +59,17 @@ function importOneFile(taskContext: TaskContext<"importNotes">, fileBuffer: Uint
             isProtected
         });
         note.setContent(sanitizeHtml(buildPageHtml(note, page, shrinkImages)));
+
+        // Attached after the content, so the page's embedded files already have their attachments and the
+        // dump can refer to them by size rather than re-encoding their bytes.
+        if (page.space) {
+            note.saveAttachment({
+                role: "importSource",
+                mime: "application/json",
+                title: "OneNote source.json",
+                content: JSON.stringify(dumpObjectSpace(page.space), null, 2)
+            });
+        }
 
         lastNoteAtLevel[page.level] = note;
         lastNoteAtLevel.length = page.level + 1; // a shallower page ends any deeper nesting
