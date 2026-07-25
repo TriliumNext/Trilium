@@ -43,7 +43,7 @@
     "html-to-text": "10.0.0",
     "i18next": "26.3.6",
     "ipaddr.js": "^2.4.0",
-    "js-yaml": "5.2.1",
+    "js-yaml": "5.2.2",
     "unpdf": "1.6.2"
   },
   "devDependencies": {
