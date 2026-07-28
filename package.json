@@ -54,7 +54,7 @@
   "private": true,
   "devDependencies": {
     "@fast-csv/parse": "5.0.7",
-    "@playwright/test": "1.61.1",
+    "@playwright/test": "1.62.0",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "24.13.3",
