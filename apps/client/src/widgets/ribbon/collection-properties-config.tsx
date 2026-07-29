@@ -61,6 +61,12 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                 bindToLabel: "calendar:weekNumbers"
             },
             {
+                label: t("book_properties_config.show-hidden-events"),
+                icon: "bx bx-show",
+                type: "checkbox",
+                bindToLabel: "calendar:showHiddenEvents"
+            },
+            {
                 label: t("calendar_view.time_slots"),
                 icon: "bx bx-time",
                 type: "submenu",

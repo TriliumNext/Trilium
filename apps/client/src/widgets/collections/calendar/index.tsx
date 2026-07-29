@@ -39,7 +39,7 @@ interface CalendarViewData {
     nextText: string;
 }
 
-const CALENDAR_VIEWS = [
+export const CALENDAR_VIEWS = [
     {
         type: "timeGridDay",
         name: t("calendar.day"),
@@ -117,6 +117,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const [ firstDayOfWeek ] = useTriliumOptionInt("firstDayOfWeek");
     const [ hideWeekends ] = useNoteLabelBoolean(note, "calendar:hideWeekends");
     const [ weekNumbers ] = useNoteLabelBoolean(note, "calendar:weekNumbers");
+    const [ showHiddenEvents ] = useNoteLabelBoolean(note, "calendar:showHiddenEvents");
     const [ calendarView, setCalendarView ] = useNoteLabel(note, "calendar:view");
     const [ initialDate ] = useNoteLabel(note, "calendar:initialDate");
     const [ slotDuration ] = useNoteLabel(note, "calendar:slotDuration");
@@ -165,6 +166,12 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
         }
     });
 
+    // Refetch on showHiddenEvents change
+    useEffect(() => {
+        // called on first render but fullcalendar doesn't do an extra fetch since we haven't fetched yet
+        calendarRef.current?.refetchEvents();
+    }, [showHiddenEvents]);
+
     return (plugins &&
         <div className="calendar-view" ref={containerRef} tabIndex={100}>
             <CalendarCollectionProperties note={note} calendarRef={calendarRef} />
@@ -184,6 +191,15 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 handleWindowResize={false}
                 initialDate={initialDate || undefined}
                 locale={locale}
+                lazyFetching={false}
+                eventDataTransform={(e) => {
+                    if (showHiddenEvents) return e;
+                    // Hide events that shouldn't be shown in this view. We use the view from the calendar ref since viewDidMount runs after this is called.
+                    if (e.hideInViews && e.hideInViews.split(",").includes(calendarRef.current?.view.type)) {
+                        e.display = "none";
+                    }
+                    return e;
+                }}
                 {...editingProps}
                 eventDidMount={eventDidMount}
                 viewDidMount={({ view }) => {
@@ -434,7 +450,7 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
             const note = await froca.getNote(e.event.extendedProps.noteId);
             if (!note) return;
 
-            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId);
+            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId, e.view.type);
         }
 
         if (isMobile()) {

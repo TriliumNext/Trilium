@@ -111,6 +111,7 @@ For each note of the calendar, the following attributes can be used:
 | `#endDate` | Similar to `startDate`, mentions the end date if the event spans across multiple days. The date is inclusive, so the end day is also considered. The attribute can be missing for single-day events. |
 | `#startTime` | The time the event starts at. If this value is missing, then the event is considered a full-day event. The format is `HH:MM` (hours in 24-hour format and minutes). |
 | `#endTime` | Similar to `startTime`, it mentions the time at which the event ends (in relation with `endDate` if present, or `startDate`). |
+| `#hideInViews` | A comma-separated value of view names to not show this event in. Any valid values of `#calendar:view` may be used. |
 | `#recurrence` | This is an optional CalDAV `RRULE` string that if present, determines whether a task should repeat or not. Note that it does not include the `DTSTART` attribute, which is derived from the `#startDate` and `#startTime` directly. For examples of valid `RRULE` strings see [https://icalendar.org/rrule-tool.html](https://icalendar.org/rrule-tool.html) |
 | `#color` | Displays the event with a specified color (named such as `red`, `gray` or hex such as `#FF0000`). This will also change the color of the note in other places such as the note tree. |
 | `#calendar:color` | **❌️ Removed since v0.100.0. Use** `**#color**` **instead.**     <br>  <br>Similar to `#color`, but applies the color only for the event in the calendar and not for other places such as the note tree. |
@@ -121,6 +122,7 @@ For each note of the calendar, the following attributes can be used:
 | `#calendar:endDate` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the end date. |
 | `#calendar:startTime` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the start time. |
 | `#calendar:endTime` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the end time. |
+| `#calendar:hideInViews` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the views to hide this event in. |
 
 ## How the calendar works
 

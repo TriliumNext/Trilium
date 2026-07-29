@@ -16,7 +16,8 @@ interface Event {
     startTime?: string | null,
     endTime?: string | null,
     isArchived?: boolean,
-    recurrence?: string | null;
+    recurrence?: string | null,
+    hideInViews?: string | null;
 }
 
 export async function buildEvents(noteIds: string[]) {
@@ -34,9 +35,10 @@ export async function buildEvents(noteIds: string[]) {
         const startTime = getCustomisableLabel(note, "startTime", "calendar:startTime");
         const endTime = getCustomisableLabel(note, "endTime", "calendar:endTime");
         const recurrence = getCustomisableLabel(note, "recurrence", "calendar:recurrence");
+        const hideInViews = getCustomisableLabel(note, "hideInViews", "calendar:hideInViews");
         const isArchived = note.hasLabel("archived");
         try {
-            events.push(await buildEvent(note, { startDate, endDate, startTime, endTime, recurrence, isArchived }));
+            events.push(await buildEvent(note, { startDate, endDate, startTime, endTime, recurrence, isArchived, hideInViews }));
         } catch (error) {
             if (error instanceof Error) {
                 const errorMessage = error.message;
@@ -94,7 +96,7 @@ export async function buildEventsForCalendar(note: FNote, e: EventSourceFuncArg)
     return events.flat();
 }
 
-export async function buildEvent(note: FNote, { startDate, endDate, startTime, endTime, recurrence, isArchived }: Event) {
+export async function buildEvent(note: FNote, { startDate, endDate, startTime, endTime, recurrence, isArchived, hideInViews }: Event) {
     const customTitleAttributeName = note.getLabelValue("calendar:title");
     const titles = await parseCustomTitle(customTitleAttributeName, note);
     const colorClass = note.getColorClass();
@@ -129,6 +131,7 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
         const eventData: EventInput = {
             id: note.noteId,
             title,
+            hideInViews,
             start: startDate,
             url: `#${note.noteId}?popup`,
             noteId: note.noteId,

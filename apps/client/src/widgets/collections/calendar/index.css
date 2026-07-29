@@ -194,3 +194,10 @@
 }
 
 /* #endregion */
+
+/* context menu */
+.calendar-context-menu-hidden {
+    font-size: 0.8em;
+    color: var(--main-text-color);
+    margin-inline: 8px;
+}
