@@ -19,7 +19,7 @@ describe("app_info", () => {
     it("exposes the fixed sync and clipper protocol versions", () => {
         // These are protocol constants; bumping them is a deliberate,
         // breaking change, so they are locked here as a regression guard.
-        expect(appInfo.syncVersion).toBe(39);
+        expect(appInfo.syncVersion).toBe(40); // 40: in-app help notes became virtual (v240 migration)
         expect(appInfo.clipperProtocolVersion).toBe("1.0");
     });
 

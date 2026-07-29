@@ -107,6 +107,16 @@ export { default as sync_mutex } from "./services/sync_mutex";
 export { default as setup } from "./services/setup";
 export { getPlatform, type PlatformProvider } from "./services/platform";
 export { InAppHelpProvider } from "./services/in_app_help";
+export {
+    getVirtualNoteContent,
+    getVirtualNoteProvider,
+    getVirtualNoteProviders,
+    registerVirtualNoteProvider,
+    unregisterVirtualNoteProvider,
+    type VirtualNoteProvider,
+    type VirtualSubtreeAttribute,
+    type VirtualSubtreeItem
+} from "./services/virtual_notes";
 export { type ImageProvider, type ImageFormat, type ProcessedImage, getImageProvider } from "./services/image_provider";
 export { type CoreConfig, initConfig, getConfig } from "./services/config";
 export { default as imageService } from "./services/image";
@@ -168,6 +178,11 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     initZipProvider(zip);
     initZipExportProviderFactory(zipExportProviderFactory);
     initContext(executionContext);
+    if (inAppHelp) {
+        // Must precede initSql: it registers the _help virtual note provider, and initSql can
+        // resolve dbReady, which triggers the becca load that injects virtual subtrees.
+        initInAppHelp(inAppHelp);
+    }
     await initSql(new SqlService(dbConfig, getLog()));
     initSchema(schema);
     initImageProvider(image);
@@ -180,8 +195,5 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     }
     if (request) {
         initRequest(request);
-    }
-    if (inAppHelp) {
-        initInAppHelp(inAppHelp);
     }
 };

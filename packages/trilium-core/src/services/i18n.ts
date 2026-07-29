@@ -3,6 +3,7 @@ import sql_init from "./sql_init";
 import options from "./options";
 import i18next from "i18next";
 import hidden_subtree from "./hidden_subtree";
+import { getContext } from "./context";
 
 export type TranslationProvider = (i18nextInstance: typeof i18next, locale: LOCALE_IDS) => Promise<void>;
 
@@ -35,6 +36,14 @@ function getCurrentLanguage(): LOCALE_IDS {
 export async function changeLanguage(locale: string) {
     await i18next.changeLanguage(locale);
     hidden_subtree.checkHiddenSubtree(true, { restoreNames: true });
+
+    // Virtual subtrees (e.g. the in-app help) build their titles with t() at injection time,
+    // so a becca reload is needed to re-render them in the new language. Deliberately load()
+    // and not reload(): the latter would push a reload-frontend message mid-request, aborting
+    // the very options call that triggered the language change — and the client performs its
+    // own frontend reload after a locale switch anyway.
+    const { load } = await import("../becca/becca_loader.js");
+    getContext().init(() => load());
 }
 
 /**

@@ -7,7 +7,6 @@ import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
 import buildLaunchBarConfig from "./hidden_subtree_launcherbar.js";
 import buildHiddenSubtreeTemplates from "./hidden_subtree_templates.js";
-import { cleanUpHelp, getHelpHiddenSubtreeData } from "./in_app_help.js";
 import migrationService from "./migration.js";
 import noteService from "./notes.js";
 import { getLog } from "./log.js";
@@ -32,7 +31,7 @@ export const LBTPL_CUSTOM_WIDGET = "_lbTplCustomWidget";
 
 let hiddenSubtreeDefinition: HiddenSubtreeItem;
 
-function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenSubtreeItem {
+function buildHiddenSubtreeDefinition(): HiddenSubtreeItem {
     const launchbarConfig = buildLaunchBarConfig();
 
     return {
@@ -317,14 +316,9 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                     { id: "_optionsAdvanced", title: t("hidden-subtree.advanced-title"), type: "contentWidget" }
                 ]
             },
-            {
-                id: "_help",
-                title: t("hidden-subtree.user-guide"),
-                type: "book",
-                icon: "bx-help-circle",
-                children: helpSubtree,
-                isExpanded: true
-            },
+            // The in-app help (`_help`) is deliberately absent here: it is a virtual subtree
+            // injected into becca by the provider registered in `services/in_app_help.ts`,
+            // never persisted or synced.
             buildHiddenSubtreeTemplates()
         ]
     };
@@ -341,9 +335,8 @@ function checkHiddenSubtree(force = false, extraOpts: CheckHiddenExtraOpts = {})
         return;
     }
 
-    const helpSubtree = getHelpHiddenSubtreeData();
     if (!hiddenSubtreeDefinition || force) {
-        hiddenSubtreeDefinition = buildHiddenSubtreeDefinition(helpSubtree);
+        hiddenSubtreeDefinition = buildHiddenSubtreeDefinition();
     }
 
     getSql().transactional(() => {
@@ -355,13 +348,6 @@ function checkHiddenSubtree(force = false, extraOpts: CheckHiddenExtraOpts = {})
         // so that later user deletions stick instead of being recreated on startup.
         if (!taskStatesExisted) {
             seedDefaultTaskStates();
-        }
-
-        try {
-            cleanUpHelp(helpSubtree);
-        } catch (e) {
-            // Non-critical operation should something go wrong.
-            console.error(e);
         }
     });
 }
@@ -458,7 +444,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
             }
         }
 
-        if (item.enforceBranches || item.id.startsWith("_help")) {
+        if (item.enforceBranches) {
             // Clean up any branches that shouldn't exist according to the meta definition
             // For hidden subtree notes, we want to ensure they only exist in their designated locations
 
@@ -518,7 +504,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         }
     }
 
-    const shouldRestoreNames = extraOpts.restoreNames || note.noteId.startsWith("_help") || item.id.startsWith("_lb") || item.id.startsWith("_template");
+    const shouldRestoreNames = extraOpts.restoreNames || item.id.startsWith("_lb") || item.id.startsWith("_template");
     if (shouldRestoreNames && note.title !== item.title) {
         note.title = item.title;
         note.save();
@@ -588,7 +574,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
                 value: attr.value,
                 isInheritable: attr.isInheritable
             }).save();
-        } else if (attr.name === "docName" || (existingAttribute.noteId.startsWith("_help") && attr.name === "iconClass")) {
+        } else if (attr.name === "docName") {
             if (existingAttribute.value !== attr.value) {
                 log.info(`Updating attribute ${attrId} from "${existingAttribute.value}" to "${attr.value}"`);
                 existingAttribute.value = attr.value ?? "";
