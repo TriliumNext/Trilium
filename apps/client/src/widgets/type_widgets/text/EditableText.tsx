@@ -70,6 +70,10 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     viewScope.bookmark = undefined;
                 });
             }
+
+            if (note?.hasLabel("openAtBottom")) {
+                scrollEditorToBottom(watchdogRef.current?.editor as CKTextEditor | undefined, containerRef.current);
+            }
         },
         dataSaved(savedData) {
             // Store back the saved data in order to retrieve it in case the CKEditor crashes.
@@ -450,10 +454,30 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     editor.setData(contentRef.current);
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
 
+                    if (note?.hasLabel("openAtBottom")) {
+                        scrollEditorToBottom(editor, containerRef.current);
+                    }
                 }}
             />}
         </>
     );
+}
+
+function scrollEditorToBottom(editor: CKTextEditor | null | undefined, container: HTMLElement | null) {
+    requestAnimationFrame(() => {
+        if (editor) {
+            editor.model.change((writer) => {
+                const rootItem = editor.model.document.getRoot();
+                if (rootItem) {
+                    writer.setSelection(writer.createPositionAt(rootItem, "end"));
+                }
+            });
+        }
+        const scrollContainer = container?.closest(".scrolling-container");
+        if (scrollContainer instanceof HTMLElement) {
+            scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: "instant" });
+        }
+    });
 }
 
 /**

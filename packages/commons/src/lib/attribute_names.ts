@@ -75,6 +75,7 @@ type Labels = {
     webViewSrc: string;
     "disabled:webViewSrc": string;
     readOnly: boolean;
+    openAtBottom: boolean;
     fullContentWidth: boolean;
     displayMode: string;
     tabWidth: number;
