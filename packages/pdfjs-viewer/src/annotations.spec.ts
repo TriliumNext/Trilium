@@ -306,12 +306,14 @@ describe("scrolling to an annotation", () => {
 
         viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "14R", pageNumber: 2 });
 
-        // Nothing to scroll to yet, so the viewer is asked to page there first.
-        await vi.waitFor(() => expect(window.PDFViewerApplication?.pdfViewer.currentPageNumber).toBe(2));
-        expect(viewer.scrollRequests).not.toHaveBeenCalled();
+        // The annotation is not in the DOM, so scrollToAnnotation estimates the page
+        // position and scrolls the container there (bypassing currentPageNumber setter
+        // because PDF.js's virtual scroller may have removed off-screen page divs).
+        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalled());
+        expect(viewer.scrollRequests).toHaveBeenCalledWith(expect.objectContaining({ behavior: "smooth" }));
 
         // Once pdf.js renders the annotation, the observer picks it up.
         renderAnnotation("14R");
-        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalled());
+        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalledTimes(2));
     });
 });

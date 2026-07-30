@@ -57,3 +57,29 @@
     color: #555;
     margin-top: 2px;
 }
+
+.pdf-annotation-copy-link {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #555;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.pdf-annotation-item:hover .pdf-annotation-copy-link {
+    opacity: 1;
+}
+
+.pdf-annotation-copy-link:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: #222;
+}

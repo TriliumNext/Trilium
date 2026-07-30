@@ -11,7 +11,13 @@
         /** Number of pdfjs-viewer-document-modified messages received. */
         modifiedCount: 0,
         /** Byte arrays received via pdfjs-viewer-blob, in order. */
-        blobs: []
+        blobs: [],
+        /** Area capture messages received, in order. */
+        areaCaptures: [],
+        /** Whether the viewer signalled it is ready for overlays. */
+        viewerReadyForOverlays: false,
+        /** Areas currently set via trilium-set-area-overlays. */
+        currentAreas: []
     };
 
     const iframe = document.getElementById("viewer");
@@ -30,11 +36,64 @@
         if (data.type === "pdfjs-viewer-blob") {
             window.harness.blobs.push(Array.from(new Uint8Array(data.data)));
         }
+        if (data.type === "pdfjs-viewer-area-capture") {
+            window.harness.areaCaptures.push({
+                imageData: data.imageData,
+                pageNumber: data.pageNumber,
+                rect: data.rect,
+                ntxId: data.ntxId,
+                noteId: data.noteId
+            });
+        }
+        if (data.type === "pdfjs-viewer-ready-for-overlays") {
+            window.harness.viewerReadyForOverlays = true;
+            // Re-send any areas that were set before the viewer was ready
+            if (window.harness.currentAreas.length > 0) {
+                iframe.contentWindow.postMessage({
+                    type: "trilium-set-area-overlays",
+                    areas: window.harness.currentAreas
+                }, window.location.origin);
+            }
+        }
     });
 
     /** Asks the viewer for the current document bytes, like the spaced-update save does. */
     window.requestBlob = () => {
         iframe.contentWindow.postMessage({ type: "trilium-request-blob" }, window.location.origin);
+    };
+
+    /** Sets area overlays in the viewer, simulating the Trilium client. */
+    window.setAreaOverlays = (areas) => {
+        window.harness.currentAreas = areas;
+        iframe.contentWindow.postMessage({
+            type: "trilium-set-area-overlays",
+            areas
+        }, window.location.origin);
+    };
+
+    /** Scrolls to an area annotation in the viewer. */
+    window.scrollToArea = (pageNumber, rect) => {
+        iframe.contentWindow.postMessage({
+            type: "trilium-scroll-to-area",
+            pageNumber,
+            rect
+        }, window.location.origin);
+    };
+
+    /** Scrolls to a regular annotation in the viewer. */
+    window.scrollToAnnotation = (annotationId, pageNumber) => {
+        iframe.contentWindow.postMessage({
+            type: "trilium-scroll-to-annotation",
+            annotationId,
+            pageNumber
+        }, window.location.origin);
+    };
+
+    /** Requests annotations from the viewer. */
+    window.requestAnnotations = () => {
+        iframe.contentWindow.postMessage({
+            type: "trilium-request-annotations"
+        }, window.location.origin);
     };
 </script>
 </body>

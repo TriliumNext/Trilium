@@ -7,6 +7,10 @@ const baseURL = `http://127.0.0.1:${port}`;
  * E2E tests for the viewer itself, run against the built bundle served statically
  * together with a stub of the Trilium client (see e2e/harness). No Trilium server
  * is involved; the tests speak the same postMessage protocol as the client.
+ *
+ * Cross-browser projects:
+ * - chromium: Primary project, runs by default.
+ * - firefox: Secondary project, run via `pnpm test:firefox` or `pnpm test:all`.
  */
 export default defineConfig({
     testDir: "./e2e",
@@ -15,14 +19,27 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     timeout: 60_000,
     use: {
-        ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 900 },
         baseURL,
         trace: "on-first-retry",
-        // Set PLAYWRIGHT_CHROME_CHANNEL=chrome to run against a system Chrome
-        // instead of the Playwright-managed Chromium.
-        channel: process.env.PLAYWRIGHT_CHROME_CHANNEL
     },
+    projects: [
+        {
+            name: "chromium",
+            use: {
+                ...devices["Desktop Chrome"],
+                // Set PLAYWRIGHT_CHROME_CHANNEL=chrome to run against a system Chrome
+                // instead of the Playwright-managed Chromium.
+                channel: process.env.PLAYWRIGHT_CHROME_CHANNEL
+            }
+        },
+        {
+            name: "firefox",
+            use: {
+                ...devices["Desktop Firefox"],
+            }
+        }
+    ],
     webServer: {
         command: "pnpm build && node e2e/harness/serve.mjs",
         url: `${baseURL}/parent.html`,

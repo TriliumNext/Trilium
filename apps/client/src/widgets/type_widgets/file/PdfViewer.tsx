@@ -17,7 +17,14 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
     iframeRef?: RefObject<HTMLIFrameElement>;
     /** Note: URLs are relative to /pdfjs/web, ideally use absolute paths (but without domain name) to avoid issues with some proxies. */
     pdfUrl: string;
-    onLoad?(): void;
+    /**
+     * Called when the iframe finishes loading, with the window belonging to that exact load
+     * event. Deriving the window from `event.currentTarget` rather than an external ref avoids
+     * a real race: if the iframe is torn down and remounted in quick succession (e.g. closing
+     * and reopening the same PDF note), a ref can still be null or point at a different iframe
+     * by the time this fires.
+     */
+    onLoad?(win: Window): void;
     /**
      * If set, enables editable mode which includes persistence of user settings, annotations as well as specific features such as sending table of contents data for the sidebar.
      */
@@ -50,9 +57,10 @@ export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad
             class="pdf-preview"
             style={{width: "100%", height: "100%"}}
             src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}${minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : ""}`}
-            onLoad={() => {
+            onLoad={(e) => {
                 injectStyles();
-                onLoad?.();
+                const win = (e.currentTarget as HTMLIFrameElement).contentWindow;
+                if (win) onLoad?.(win);
             }}
         />
     );
