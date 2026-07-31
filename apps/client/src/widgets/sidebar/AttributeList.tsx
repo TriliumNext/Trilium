@@ -26,7 +26,6 @@ import HelpButton from "../react/HelpButton";
 import { useActiveNoteContext, useTriliumEvent, useTriliumOptionJson } from "../react/hooks";
 import Icon from "../react/Icon";
 import { DetailPane, MasterPane, useMasterDetail, useMasterDetailPage } from "../react/master_detail";
-import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
 import { ParentComponent } from "../react/react_utils";
 import { ATTRIBUTE_HELP_PAGE } from "../ribbon/components/AttributeHelp";
@@ -707,16 +706,18 @@ export default function AttributeList() {
                         title={t("attribute_list_panel.section_owned")}
                         count={sections.owned.length}
                     >
-                        {sections.owned.length > 0 ? (
-                            <AttributeRowList rows={sections.owned} alignValuesEnd {...rowProps} />
-                        ) : (
-                            <NoItems icon="bx bx-hash" text={t("attribute_list_panel.no_attributes")} />
-                        )}
+                        {/* Nothing stands in for a run holding nothing: the heading's count says it
+                            is empty and the add row below says what there is to do about it, so a
+                            "no attributes" of any size would be the third telling of one fact. */}
+                        <AttributeRowList rows={sections.owned} alignValuesEnd {...rowProps} />
 
                         {/* Inside the run it adds to rather than at the foot of everything, and put
                             away with it. A phone adds from the header, page flow and all. */}
                         {!IS_MOBILE && note && (
-                            <AddAttributeRow onAdd={(e) => addAttribute("label", e)} />
+                            <AddAttributeRow
+                                text={t("attribute_list_panel.add_attribute")}
+                                onAdd={(e) => addAttribute("label", e)}
+                            />
                         )}
                     </AttributeGroup>
 
@@ -739,6 +740,13 @@ export default function AttributeList() {
                             count={sections.definitions.length}
                         >
                             <AttributeRowList rows={sections.definitions} {...rowProps} />
+
+                            {!IS_MOBILE && note && (
+                                <AddAttributeRow
+                                    text={t("attribute_list_panel.add_definition")}
+                                    onAdd={(e) => addAttribute("label-definition", e)}
+                                />
+                            )}
                         </AttributeGroup>
                     )}
 
@@ -1590,12 +1598,14 @@ function AttributeSelectionBar({ count, canDelete, canPaste, onCopy, onPaste, on
 }
 
 /**
- * The way in at the foot of the list: a ghost of a row that creates a label in place when pressed —
- * a label because that is nearly always the kind being added, and the creation editor it opens can
- * be switched to a relation from its own name box or kind icon (see AttributeCreationEditor). The
- * card header's menu stays the way to every kind, definitions included.
+ * The way in at the foot of a run: a ghost of a row that adds to the run it sits in, one kind and no
+ * menu — the kind that run is nearly always given, with the editor it opens being where the other is
+ * reached. A label for the note's own attributes, switched to a relation from the creation editor's
+ * own name box or kind icon (see AttributeCreationEditor); a label definition for the definitions,
+ * switched to a relation definition from the form's own list of field types, which offers "relation"
+ * among them. The panel header's menu stays the way to any kind from anywhere.
  */
-function AddAttributeRow({ onAdd }: { onAdd: (e: MouseEvent) => void }) {
+function AddAttributeRow({ text, onAdd }: { text: string; onAdd: (e: MouseEvent) => void }) {
     return (
         <div
             class="attribute-add-row"
@@ -1606,7 +1616,7 @@ function AddAttributeRow({ onAdd }: { onAdd: (e: MouseEvent) => void }) {
             }}
         >
             <Icon icon="bx bx-plus" />
-            {t("attribute_list_panel.add_attribute")}
+            {text}
         </div>
     );
 }

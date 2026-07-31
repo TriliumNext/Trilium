@@ -247,11 +247,17 @@ describe("AttributeList", () => {
         expect(JSON.parse(options.get("rightPaneCollapsedItems") ?? "[]")).toContain("attributes-definitions");
     });
 
-    it("says so, rather than showing an empty list, for a note carrying no attributes at all", () => {
+    it("leaves a note carrying no attributes its heading and the way in, and says nothing besides", () => {
         renderPanel(buildNote({ id: "empty", title: "Empty" }));
 
+        // The run stands, empty. Nothing stands in for its rows: the heading counts them — at zero —
+        // and the add row says what there is to do about it, so any "no attributes" beside those two
+        // would be a third telling of the one fact, and the loudest of the three at that.
         expect(container.querySelectorAll(".attribute-row")).toHaveLength(0);
-        expect(container.querySelector(".no-items")).not.toBeNull();
+        expect(container.querySelector(".no-items")).toBeNull();
+        expect(groupIds()).toEqual([ "attributes-owned" ]);
+        expect(group("attributes-owned").querySelector(".attribute-group-count")?.textContent).toBe("0");
+        expect(group("attributes-owned").querySelector(".attribute-add-row")).not.toBeNull();
     });
 
     it("leaves what Trilium wrote for itself out of a release build, and gives it its own run in a development one", () => {
@@ -342,7 +348,7 @@ describe("AttributeList", () => {
         expect(namesIn(container)).not.toContain("author");
     });
 
-    it("adds a definition through the popup, saving it once the popup is closed", async () => {
+    it("adds a definition from the panel's menu or the run's own way in, saving it once the popup is closed", async () => {
         renderPanel(noteWithAttributes());
 
         // One list, so one button, and it offers every kind: the definitions had a button of their
@@ -368,6 +374,24 @@ describe("AttributeList", () => {
         expect(document.querySelector(".attr-detail")).toBeNull();
         const [ , saved ] = put.mock.calls[0] as [ string, { name: string; value: string }[] ];
         expect(saved.at(-1)).toEqual(
+            { type: "label", name: "label:myLabel", value: "promoted,single,text", isInheritable: false });
+
+        // The run has a way in of its own too, as the note's own attributes do: the panel's button is
+        // a long way from the definitions once a template has filled the pane. It adds the one kind —
+        // the form's own list of field types is where a relation definition is reached — so it opens
+        // the same popup on the same thing the menu's third entry did, with no menu in between.
+        const definitionAddRow = group("attributes-definitions").querySelector<HTMLElement>(".attribute-add-row");
+        expect(definitionAddRow).not.toBeNull();
+        act(() => definitionAddRow?.click());
+        expect(document.querySelector(".attr-detail")).not.toBeNull();
+        expect(put).toHaveBeenCalledOnce();
+
+        await act(async () => {
+            document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        });
+
+        const [ , savedAgain ] = put.mock.calls[1] as [ string, { name: string; value: string }[] ];
+        expect(savedAgain.at(-1)).toEqual(
             { type: "label", name: "label:myLabel", value: "promoted,single,text", isInheritable: false });
     });
 

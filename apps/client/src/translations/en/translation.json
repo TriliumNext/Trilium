@@ -802,7 +802,6 @@
     "placeholder": "Type the labels and relations here"
   },
   "attribute_list_panel": {
-    "no_attributes": "No attributes",
     "section_owned": "Owned",
     "section_inherited": "Inherited",
     "section_definitions": "Definitions",
@@ -821,6 +820,7 @@
     "type_relation_definition": "Relation definition",
     "system_hint": "System: this name has a built-in meaning",
     "add_attribute": "Add attribute",
+    "add_definition": "Add definition",
     "creation_kind_label": "Label: press here, or type ~, to make it a relation",
     "creation_kind_relation": "Relation: press here, or type #, to make it a label",
     "copy_one": "Copy attribute",
