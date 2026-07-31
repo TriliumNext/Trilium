@@ -662,12 +662,138 @@ export default function AttributeList() {
         onSaveAndClose: detail?.isOwned ? commit : undefined,
         onDelete: detail?.isOwned ? () => void deleteAttribute(detail.attribute) : undefined
     };
-    const sectionList = (
-        // One card holding the lot, the sections being headings within it rather than cards of their
-        // own: they are one list to the eye and one list to a selection — a range runs from any row to
-        // any other — and four headers is a great deal of a hand-wide pane to spend on saying which
-        // run is which. It also leaves the selection's own bar somewhere to belong: a bar at the foot
-        // of one card among several belonged to a card the picked rows need not have been in at all.
+    // The runs the panel is made of, in the order it draws them — the same runs either way it is
+    // drawn (see below), so what a run is and what it holds is settled in one place.
+    const runs: AttributeRun[] = [ {
+        id: "attributes-owned",
+        title: t("attribute_list_panel.section_owned"),
+        count: sections.owned.length,
+        // The note's own values read from the trailing edge, as the inherited ones' do — the two
+        // runs of plain attributes reading as one ledger. Nothing stands in for the run holding
+        // nothing: its count says it is empty and its way in says what there is to do about it.
+        rows: <AttributeRowList rows={sections.owned} alignValuesEnd {...rowProps} />,
+        add: { kind: "label", text: t("attribute_list_panel.add_attribute") }
+    } ];
+
+    if (sections.inherited.length > 0) {
+        runs.push({
+            id: "attributes-inherited",
+            title: t("attribute_list_panel.section_inherited"),
+            count: sections.inherited.length,
+            rows: <AttributeRowList rows={sections.inherited} alignValuesEnd {...rowProps} />
+        });
+    }
+
+    if (sections.definitions.length > 0) {
+        runs.push({
+            id: "attributes-definitions",
+            title: t("attribute_list_panel.section_definitions"),
+            count: sections.definitions.length,
+            // The definitions keep prose order: their "value" is a summary of settings rather than a
+            // value, so there is no column of values for it to line up in.
+            rows: <AttributeRowList rows={sections.definitions} {...rowProps} />,
+            add: { kind: "label-definition", text: t("attribute_list_panel.add_definition") }
+        });
+    }
+
+    if (internalRows.length > 0) {
+        runs.push({
+            id: "attributes-internal",
+            title: t("attribute_list_panel.section_internal"),
+            count: internalRows.length,
+            rows: <AttributeRowList rows={internalRows} readOnly {...rowProps} />
+        });
+    }
+
+    // At the foot of the runs, the rows it acts on being picked out anywhere among them. It holds
+    // there while they are scrolled (see the stylesheet), so it is the one thing both ways of
+    // drawing them share: a phone picks rows out by holding one down, a pointer by the checkbox or
+    // a modifier, and either way what can be done about it is said in the one place.
+    const selectionBar = note && isSelecting && (
+        <AttributeSelectionBar
+            count={selection.size}
+            canDelete={selectedAttributes().every((candidate) => owned.current.includes(candidate))}
+            canPaste={getHeldAttributes().length > 0}
+            onCopy={() => void copyPickedAttributes(selectedAttributes())}
+            onPaste={() => void applyPaste(getHeldAttributes())}
+            onDelete={() => void deleteSelection(selectedAttributes())}
+            onClear={clearSelection}
+        />
+    );
+
+    // Presses inside a run do not dismiss the popup (see `parent` above), which leaves closing on a
+    // press next to a row up to this handler. A run is also what the note's own attributes are pasted
+    // onto, so it offers pasting beside its rows as well as on them.
+    const panelProps = {
+        onClick: commit,
+        onContextMenu: showPanelMenu,
+        ...clipboardProps
+    };
+
+    const sectionList = IS_MOBILE ? (
+        // A card each, as the panel had before its runs became headings of one card. What made them
+        // headings was a pane a hand wide, where four card headers were a great deal of it to spend
+        // on saying which run is which — and the tree that gathered them was drawn for a pointer, in
+        // hairlines and hover. A phone has neither: the panel is a sheet the width of the screen,
+        // which has the room, and the card is already how everything else on it says that things
+        // belong together (see the settings pages). So the runs are cards again here, and the tree
+        // is left to the pane that needed it.
+        <>
+            {runs.map((run, index) => (
+                <AttributeSection
+                    key={run.id}
+                    id={run.id}
+                    title={run.title}
+                    count={run.count}
+                    buttons={note && (index === 0 ? (
+                        // The panel's own two ride on the first card: there is no header above the
+                        // cards to put them in, and the note's own attributes are what the panel is
+                        // opened for. The menu is also the only way to a relation on a phone, whose
+                        // rows are pressed rather than typed into — hence every kind, not just this
+                        // run's.
+                        <>
+                            <HelpButton helpPage={ATTRIBUTE_HELP_PAGE} />
+                            <AddAttributeButton
+                                text={t("attribute_editor.add_a_new_attribute")}
+                                attrTypes={ALL_ATTRIBUTE_KINDS}
+                                onSelect={addAttribute}
+                            />
+                        </>
+                    ) : run.add && (
+                        // A run that can be added to says so in its own header, which is where a
+                        // card keeps what is done to it. The ghost row a pointer gets is a hover
+                        // affordance, so it stays on the desktop.
+                        <ActionButton
+                            icon="bx bx-plus"
+                            text={run.add.text}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                addAttribute(run.add?.kind ?? "label", e);
+                            }}
+                        />
+                    ))}
+                >
+                    <div
+                        class={clsx("attribute-list-panel", isSelecting && "selecting")}
+                        // The popup anchors to the panel, and the first card is the one it is
+                        // opened over: the note's own attributes are what it edits.
+                        ref={index === 0 ? containerRef : undefined}
+                        {...panelProps}
+                    >
+                        {run.rows}
+                    </div>
+                </AttributeSection>
+            ))}
+
+            {selectionBar}
+        </>
+    ) : (
+        // One card holding the lot, the runs being headings within it rather than cards of their
+        // own: they are one list to the eye and one list to a selection — a range runs from any row
+        // to any other — and four headers is a great deal of a hand-wide pane to spend on saying
+        // which run is which. It also leaves the selection's own bar somewhere to belong: a bar at
+        // the foot of one card among several belonged to a card the picked rows need not have been
+        // in at all.
         //
         // Collapsing moves to the headings with it. The card cannot be collapsed away, being all its
         // tab has (see RightPanelWidget), which is what the context below says.
@@ -687,92 +813,27 @@ export default function AttributeList() {
                     </>
                 )}
             >
-                {/* Presses inside the list do not dismiss the popup (see `parent` above), which leaves
-                    closing on a press next to a row up to this handler. The whole list is what the
-                    note's own attributes are pasted onto, so it offers pasting beside its rows too. */}
                 <div
                     class={clsx("attribute-list-panel", isSelecting && "selecting")}
                     ref={containerRef}
-                    onClick={commit}
-                    onContextMenu={showPanelMenu}
-                    {...clipboardProps}
+                    {...panelProps}
                 >
-                    {/* A heading of their own, as every other run has: the card names the panel
-                        rather than this run, so without one the note's own attributes read as
-                        belonging to no run at all. Their values read from the trailing edge, as the
-                        inherited ones' do — the two runs of plain attributes reading as one ledger. */}
-                    <AttributeGroup
-                        id="attributes-owned"
-                        title={t("attribute_list_panel.section_owned")}
-                        count={sections.owned.length}
-                    >
-                        {/* Nothing stands in for a run holding nothing: the heading's count says it
-                            is empty and the add row below says what there is to do about it, so a
-                            "no attributes" of any size would be the third telling of one fact. */}
-                        <AttributeRowList rows={sections.owned} alignValuesEnd {...rowProps} />
+                    {runs.map((run) => (
+                        <AttributeGroup key={run.id} id={run.id} title={run.title} count={run.count}>
+                            {run.rows}
 
-                        {/* Inside the run it adds to rather than at the foot of everything, and put
-                            away with it. A phone adds from the header, page flow and all. */}
-                        {!IS_MOBILE && note && (
-                            <AddAttributeRow
-                                text={t("attribute_list_panel.add_attribute")}
-                                onAdd={(e) => addAttribute("label", e)}
-                            />
-                        )}
-                    </AttributeGroup>
-
-                    {sections.inherited.length > 0 && (
-                        <AttributeGroup
-                            id="attributes-inherited"
-                            title={t("attribute_list_panel.section_inherited")}
-                            count={sections.inherited.length}
-                        >
-                            <AttributeRowList rows={sections.inherited} alignValuesEnd {...rowProps} />
-                        </AttributeGroup>
-                    )}
-
-                    {sections.definitions.length > 0 && (
-                        // The definitions keep prose order: their "value" is a summary of settings
-                        // rather than a value, so there is no column of values for it to line up in.
-                        <AttributeGroup
-                            id="attributes-definitions"
-                            title={t("attribute_list_panel.section_definitions")}
-                            count={sections.definitions.length}
-                        >
-                            <AttributeRowList rows={sections.definitions} {...rowProps} />
-
-                            {!IS_MOBILE && note && (
+                            {/* Inside the run it adds to rather than at the foot of everything, and
+                                put away with it. */}
+                            {run.add && note && (
                                 <AddAttributeRow
-                                    text={t("attribute_list_panel.add_definition")}
-                                    onAdd={(e) => addAttribute("label-definition", e)}
+                                    text={run.add.text}
+                                    onAdd={(e) => addAttribute(run.add?.kind ?? "label", e)}
                                 />
                             )}
                         </AttributeGroup>
-                    )}
+                    ))}
 
-                    {internalRows.length > 0 && (
-                        <AttributeGroup
-                            id="attributes-internal"
-                            title={t("attribute_list_panel.section_internal")}
-                            count={internalRows.length}
-                        >
-                            <AttributeRowList rows={internalRows} readOnly {...rowProps} />
-                        </AttributeGroup>
-                    )}
-
-                    {/* At the foot of the whole list, the rows it acts on being picked out anywhere
-                        in it. It holds there while the list is scrolled (see the stylesheet). */}
-                    {note && isSelecting && (
-                        <AttributeSelectionBar
-                            count={selection.size}
-                            canDelete={selectedAttributes().every((candidate) => owned.current.includes(candidate))}
-                            canPaste={getHeldAttributes().length > 0}
-                            onCopy={() => void copyPickedAttributes(selectedAttributes())}
-                            onPaste={() => void applyPaste(getHeldAttributes())}
-                            onDelete={() => void deleteSelection(selectedAttributes())}
-                            onClear={clearSelection}
-                        />
-                    )}
+                    {selectionBar}
                 </div>
             </AttributeSection>
         </CollapsibleWidgets.Provider>
@@ -817,10 +878,31 @@ export default function AttributeList() {
     );
 }
 
+/**
+ * One run of the panel — a heading with its rows on a desktop, a card of its own on a phone. Held
+ * apart from either so that what the runs are, and which of them the note has at all, is settled
+ * once rather than twice over.
+ */
+interface AttributeRun {
+    /** What the run is known by: a class on it, and what a collapsed run is remembered under. */
+    id: string;
+    title: string;
+    count: number;
+    rows: ComponentChildren;
+    /** How the run is added to, for the runs that can be — the kind, and what to call adding it. */
+    add?: { kind: AttributeKind; text: string };
+}
+
 interface AttributeSectionProps {
     /** What the right pane remembers the section by, collapsed state and all. */
     id: string;
     title: string;
+    /**
+     * How many rows the section holds, where it stands for one run. A phone puts it beside the name
+     * in the card's own heading, the runs being cards there; the right pane's card names the whole
+     * panel and leaves counting to the headings within it.
+     */
+    count?: number;
     children: ComponentChildren;
     buttons?: ComponentChildren;
     /** Passed on to {@link RightPanelWidget}, which is the only host that has room to give. */
@@ -832,11 +914,26 @@ interface AttributeSectionProps {
  * a desktop, foldable and remembered as folded; the same card the settings pages are built from on a
  * phone, where the panel is a page of its own and a title is read rather than pressed.
  */
-function AttributeSection({ id, title, children, buttons, grow }: AttributeSectionProps) {
+function AttributeSection({ id, title, count, children, buttons, grow }: AttributeSectionProps) {
     if (IS_MOBILE) {
         // The id names the section here too, as a class: it is what the right pane knows the section by,
         // and there is no reason for a stylesheet (or a test) to know it by anything else.
-        return <OptionsSection className={id} title={title} actions={buttons}>{children}</OptionsSection>;
+        return (
+            <OptionsSection
+                className={id}
+                title={
+                    <>
+                        {title}
+                        {/* The figure the desktop headings wear, in a heading that is uppercase and
+                            letter-spaced — which a number takes no part in (see the stylesheet). */}
+                        {count !== undefined && <SimpleBadge className="attribute-run-count" title={count} />}
+                    </>
+                }
+                actions={buttons}
+            >
+                {children}
+            </OptionsSection>
+        );
     }
 
     return (

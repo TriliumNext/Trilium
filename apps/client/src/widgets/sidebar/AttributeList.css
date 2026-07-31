@@ -142,14 +142,21 @@
 
 /* The glyph the checkbox stands in for — badge and all, which would otherwise hang off its corner
    saying something about an attribute that is not what the checkbox is asking. Hidden rather than
-   left out, so the slot keeps the width the icon gave it. */
-.attribute-list-panel .attribute-row:hover .attribute-kind > .tn-icon,
-.attribute-list-panel.selecting .attribute-kind > .tn-icon {
+   left out, so the slot keeps the width the icon gave it.
+
+   Only where there is a checkbox to stand in for it, which is a pointer's rows: a phone marks a
+   picked row by turning its icon into a check (see AttributeRow), so its unpicked rows keep theirs
+   — and would otherwise be stripped of a badge that says the attribute is Trilium's own or its
+   field promoted, neither of which the picking is about. The wrapper holding the icon is what
+   these are about; on a phone the icon is itself `.attribute-kind`, hence the `.tn-icon` it always
+   carries telling the two apart. */
+.attribute-list-panel .attribute-row:hover .attribute-kind:not(.tn-icon) > .tn-icon,
+.attribute-list-panel.selecting .attribute-kind:not(.tn-icon) > .tn-icon {
     visibility: hidden;
 }
 
-.attribute-list-panel .attribute-row:hover .attribute-kind::after,
-.attribute-list-panel.selecting .attribute-kind::after {
+.attribute-list-panel .attribute-row:hover .attribute-kind:not(.tn-icon)::after,
+.attribute-list-panel.selecting .attribute-kind:not(.tn-icon)::after {
     display: none;
 }
 
@@ -195,6 +202,15 @@
     background-image: linear-gradient(
         var(--card-background-color, var(--accented-background-color)),
         var(--card-background-color, var(--accented-background-color)));
+}
+
+/* The same island over a ground that is already carrying that wash. Where a run is a card of its own
+   — a phone (see AttributeSection) — the card paints exactly the fill composited above, so the bar
+   mixed to the card's own colour and disappeared into it, leaving its border to do all the work. The
+   plain surface instead, which is what those cards are washed over: the island reads as lifted off
+   them rather than as one more of them. */
+body.mobile .attribute-selection-bar {
+    background-image: none;
 }
 
 .attribute-selection-bar .attribute-selection-count {
@@ -288,6 +304,22 @@
    of what the run is called, not as a column of its own. Sized and worn as the note tree wears the
    count of a node's hidden children (see note_tree.css) — the same wash, a shade of the ink over the
    page rather than a colour, and small enough to be answered rather than announced. */
+/* The same figure where a run is a card of its own rather than a heading of one — a phone (see
+   AttributeSection). Scoped by its own class rather than by the panel: the heading it sits in is the
+   card's, which stands outside the list. The card's name is set uppercase and letter-spaced, neither
+   of which a number takes any part in. */
+.attribute-run-count {
+    margin-inline-start: 6px;
+    padding: 0.1em 0.5em;
+    border-radius: 0.5em;
+    color: var(--muted-text-color);
+    font-size: 0.7rem;
+    font-weight: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
+}
+
 .attribute-list-panel .attribute-group-count {
     flex-shrink: 0;
     /* The heading's own gap sets it off; the base badge's margin would set it adrift of the name. */
