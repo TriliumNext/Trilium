@@ -156,14 +156,45 @@
 /*
  * What can be done to the rows picked out, at the foot of the card. It stands where the add row
  * stands and takes its turn, so that picking rows out costs the list no room of its own.
+ *
+ * Held at the foot of what can be seen of the card rather than left at the end of the rows: a note
+ * carrying more attributes than the card can show at once would otherwise have the bar scrolled off
+ * below them, and rows are picked out to be acted on. It sticks against the card's body, which is
+ * what scrolls (see RightPanelContainer.css); where the rows all fit, there is nothing to stick to
+ * and it sits at their end as before. It is lifted just clear of the rows — but left under the row
+ * an editor stands over (which reaches 10), that editor being the taller thing to read.
+ *
+ * Drawn as a surface of its own standing over the list rather than as a strip ruled off from it:
+ * held off the card's edges so that it reads as a thing laid on the card and not as furniture the
+ * card was built with. A rule across the card would have said instead that the list ends there,
+ * which it does not.
+ *
+ * The theme's card recipe, as the chat's composer island wears it (see ChatInputBar.css): the 10px
+ * radius shared by the centre pane, the dropdown menus and the tool dialogs, the card's own border
+ * and fill, and no shadow of its own — a Trilium surface is told by its fill, not by being lifted
+ * off what it sits on.
+ *
+ * Its fill is the one thing held apart from that recipe. A card's fill is a film over the pane
+ * rather than a colour, which the rows sliding under this one would be read straight through; so
+ * the film is laid over the app's surface here instead of straight onto the card, which comes out
+ * the shade the recipe asks for and hides what passes beneath it besides.
  */
 .attribute-selection-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 2px;
-    padding: 2px 2px 2px 6px;
-    margin-top: 2px;
-    border-top: 1px solid var(--main-border-color);
+    padding: 2px 3px 2px 10px;
+    margin: 6px 4px 4px;
+    border: 1px solid var(--card-border-color, var(--main-border-color));
+    border-radius: 10px;
+    box-shadow: var(--card-box-shadow, none);
+    background-color: var(--main-background-color);
+    background-image: linear-gradient(
+        var(--card-background-color, var(--accented-background-color)),
+        var(--card-background-color, var(--accented-background-color)));
 }
 
 .attribute-selection-bar .attribute-selection-count {
