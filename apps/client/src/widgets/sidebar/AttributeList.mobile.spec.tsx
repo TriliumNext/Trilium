@@ -24,6 +24,7 @@ vi.mock("../../services/dialog", () => ({ default: { confirm: vi.fn(async () => 
 vi.mock("../../services/toast", () => ({ default: { showMessage: vi.fn(), showError: vi.fn() } }));
 
 import FAttribute, { FAttributeRow } from "../../entities/fattribute";
+import { holdAttributes } from "../../services/attribute_clipboard";
 import froca from "../../services/froca";
 import noteAttributeCache from "../../services/note_attribute_cache";
 import options from "../../services/options";
@@ -33,11 +34,16 @@ import AttributeList from "./AttributeList";
 
 describe("AttributeList on a phone", () => {
     let container: HTMLElement;
+    let put: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         options.set("rightPaneCollapsedItems", "[]");
-        server.put = (async () => ({})) as unknown as typeof server.put;
+        // What Trilium last copied outlives a render, so each test says for itself whether there is
+        // anything to paste.
+        holdAttributes([]);
+        put = vi.fn(async () => ({}));
+        server.put = put as unknown as typeof server.put;
         server.post = (async () => ({ results: [], count: 0 })) as unknown as typeof server.post;
         container = document.createElement("div");
         document.body.appendChild(container);
@@ -81,6 +87,31 @@ describe("AttributeList on a phone", () => {
 
         // The ghost row at the foot of a run is a hover affordance, so it stays on the desktop.
         expect(container.querySelector(".attribute-add-row")).toBeNull();
+    });
+
+    it("offers pasting from the first card's header, which is a phone's only way to it", async () => {
+        // Nothing copied, nothing offered — as the row menu and the selection's bar do.
+        renderPanel(noteWithRuns());
+        expect(iconsIn(header("attributes-owned"))).not.toContain("bx bx-paste");
+
+        // The note that most wants pasting into is the one carrying nothing, and it is exactly the
+        // note where every other way in is gone: no row to hold down, so no selection and no bar,
+        // and the list a press beside the rows would land on has no rows to give it a height. The
+        // header stands whatever the run holds, which is why the way in belongs there.
+        render(null, container);
+        holdAttributes([ { type: "label", name: "author", value: "Elian", isInheritable: false } ]);
+        renderPanel(buildNote({ id: "phone-bare", title: "Bare" }));
+
+        expect(container.querySelectorAll(".attribute-row")).toHaveLength(0);
+        expect(container.querySelector(".attribute-selection-bar")).toBeNull();
+        expect(iconsIn(header("attributes-owned"))).toEqual([ "bx bx-help-circle", "bx bx-paste", "bx bx-plus" ]);
+
+        const paste = header("attributes-owned")?.querySelector<HTMLElement>(".bx-paste");
+        await act(async () => paste?.click());
+
+        const [ url, saved ] = put.mock.calls[0] as [ string, { name: string; value: string }[] ];
+        expect(url).toBe("notes/phone-bare/attributes");
+        expect(saved).toEqual([ { type: "label", name: "author", value: "Elian", isInheritable: false } ]);
     });
 
     it("still picks rows out, by the press held down, and says what can be done with them", () => {

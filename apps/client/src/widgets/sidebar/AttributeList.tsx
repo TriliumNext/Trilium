@@ -705,6 +705,10 @@ export default function AttributeList() {
         });
     }
 
+    // What Trilium last copied, which is what there is to paste (see the clipboard service). Read
+    // here rather than at each use so that one render offers the same thing everywhere in itself.
+    const heldAttributes = getHeldAttributes();
+
     // At the foot of the runs, the rows it acts on being picked out anywhere among them. It holds
     // there while they are scrolled (see the stylesheet), so it is the one thing both ways of
     // drawing them share: a phone picks rows out by holding one down, a pointer by the checkbox or
@@ -713,9 +717,9 @@ export default function AttributeList() {
         <AttributeSelectionBar
             count={selection.size}
             canDelete={selectedAttributes().every((candidate) => owned.current.includes(candidate))}
-            canPaste={getHeldAttributes().length > 0}
+            canPaste={heldAttributes.length > 0}
             onCopy={() => void copyPickedAttributes(selectedAttributes())}
-            onPaste={() => void applyPaste(getHeldAttributes())}
+            onPaste={() => void applyPaste(heldAttributes)}
             onDelete={() => void deleteSelection(selectedAttributes())}
             onClear={clearSelection}
         />
@@ -753,6 +757,25 @@ export default function AttributeList() {
                         // run's.
                         <>
                             <HelpButton helpPage={ATTRIBUTE_HELP_PAGE} />
+
+                            {/* The only way to paste a phone has. A pointer has three — the key,
+                                a right press on a row, a right press beside them — and all three
+                                are a pointer's: there is no paste key to press, a row that is held
+                                down is being picked out instead, and the list a press beside the
+                                rows would land on is nothing at all on the note that most wants
+                                pasting into, having no rows to give it a height. The header is the
+                                one part of a run that stands whatever the run holds. */}
+                            {heldAttributes.length > 0 && (
+                                <ActionButton
+                                    icon="bx bx-paste"
+                                    text={t("attribute_list_panel.paste", { count: heldAttributes.length })}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        void applyPaste(heldAttributes);
+                                    }}
+                                />
+                            )}
+
                             <AddAttributeButton
                                 text={t("attribute_editor.add_a_new_attribute")}
                                 attrTypes={ALL_ATTRIBUTE_KINDS}
