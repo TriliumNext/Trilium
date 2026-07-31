@@ -234,21 +234,37 @@
     z-index: 1;
     display: flex;
     align-items: center;
-    gap: 3px;
-    padding: 14px 4px 6px;
+    /* The row's own gap, so that a heading's words start where a row's name does. */
+    gap: 6px;
+    padding: 7px 4px 3px;
     cursor: pointer;
     color: var(--right-pane-heading-color, var(--muted-text-color));
     font-weight: 600;
     font-size: 0.85em;
-    letter-spacing: 0.3pt;
-    text-transform: uppercase;
     background-color: var(--main-background-color);
 }
 
 /* The room above a heading sets its run apart from the one before it. The first has none before it,
    only the card's own header, which has set it apart already. */
 .attribute-list-panel .attribute-group:first-child .attribute-group-header {
-    padding-top: 4px;
+    padding-top: 2px;
+}
+
+.attribute-list-panel .attribute-group-header:hover {
+    color: var(--main-text-color);
+}
+
+/*
+ * What makes the runs read as one thing branching rather than as three things stacked: the rows of a
+ * run hang under its heading, set in from it and gathered by a line drawn down the heading's own
+ * chevron — the branch the rows are on. The chevron folds the branch as a tree's does, and the line
+ * ends where the branch does, so the eye is told where a run stops without a rule across the card.
+ */
+.attribute-list-panel .attribute-group-body {
+    /* Set so the line lands under the middle of the chevron above it. */
+    margin-inline-start: 11px;
+    padding-inline-start: 6px;
+    border-inline-start: 1px solid var(--main-border-color);
 }
 
 /* Turned as the cards turned theirs (see RightPanelContainer.css), so that folding a run away reads
@@ -268,13 +284,15 @@
     white-space: nowrap;
 }
 
-/* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort is
-   what carries the split, the rule only marks where it falls. */
+/* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort
+   is what carries the split, the rule only marks where it falls — and quieter still than the line
+   the run hangs from, which it crosses: a split within a branch, not a cut through it. Held off the
+   leading edge for the same reason, so the branch reads as running past it unbroken. */
 .attribute-list-panel .attribute-rows-divider {
-    margin: 4px 4px 5px;
+    margin: 5px 4px 6px 8px;
     border: none;
     border-top: 1px solid var(--main-border-color);
-    opacity: 0.6;
+    opacity: 0.45;
 }
 
 .attribute-list-panel .attribute-name {

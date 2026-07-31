@@ -875,7 +875,9 @@ function AttributeGroup({ id, title, children }: { id: string; title: string; ch
                 <span class="attribute-group-title">{title}</span>
             </div>
 
-            {!collapsed && children}
+            {/* The rows hang together under the heading rather than each standing on its own, so that
+                the line drawn down from it (see the stylesheet) is one line and not one per row. */}
+            {!collapsed && <div class="attribute-group-body">{children}</div>}
         </div>
     );
 }
