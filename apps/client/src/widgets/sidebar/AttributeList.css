@@ -212,6 +212,62 @@
     border-radius: 50%;
 }
 
+/*
+ * The heading a run of rows folds away under, where a card and its own header stood before. Dressed
+ * as those headers were — the pane's heading colour at its weight, its size and its letter spacing
+ * (see shell.css) — so that the runs still read as the sections they were, one notch quieter for
+ * standing inside a card rather than being one.
+ *
+ * Held at the top of what can be seen while its rows are scrolled past, so that a row is never read
+ * without the heading that says what it is; the heading of the run below pushes it out of the way in
+ * its turn. Opaque for the same reason the selection's island is, the rows passing under it — but
+ * the app's surface plainly, not the card's fill over it: a right-pane card paints no ground of its
+ * own, so its rows lie on that same surface, and a heading carrying the fill besides would read as
+ * a band laid across them rather than as words above them.
+ *
+ * The room above it is padding rather than margin, which a sticky box is held off its edge by: the
+ * rows would then be read through the gap that opened above the heading as they passed under it.
+ */
+.attribute-list-panel .attribute-group-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 14px 4px 6px;
+    cursor: pointer;
+    color: var(--right-pane-heading-color, var(--muted-text-color));
+    font-weight: 600;
+    font-size: 0.85em;
+    letter-spacing: 0.3pt;
+    text-transform: uppercase;
+    background-color: var(--main-background-color);
+}
+
+/* The room above a heading sets its run apart from the one before it. The first has none before it,
+   only the card's own header, which has set it apart already. */
+.attribute-list-panel .attribute-group:first-child .attribute-group-header {
+    padding-top: 4px;
+}
+
+/* Turned as the cards turned theirs (see RightPanelContainer.css), so that folding a run away reads
+   as folding a card away did. */
+.attribute-list-panel .attribute-group-chevron {
+    flex-shrink: 0;
+    transition: transform 100ms ease;
+}
+
+.attribute-list-panel .attribute-group.collapsed .attribute-group-chevron {
+    transform: rotate(-90deg);
+}
+
+.attribute-list-panel .attribute-group-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort is
    what carries the split, the rule only marks where it falls. */
 .attribute-list-panel .attribute-rows-divider {
@@ -242,10 +298,10 @@
 
 /* Set against the row's trailing edge rather than trailing the name, so the values line up in a
    column of their own: name reads from the one edge, value from the other, and the gap between them
-   says how much room is left rather than being dead space after every short value. Where the card
-   asks for it — the two lists of plain attributes, owned and inherited (see AttributeList.tsx);
-   the definitions' summaries keep prose order. */
-.attribute-list-panel.align-values-end .attribute-value {
+   says how much room is left rather than being dead space after every short value. Where the run of
+   rows asks for it — the two runs of plain attributes, the note's own and the inherited ones (see
+   AttributeList.tsx); the definitions' summaries keep prose order. */
+.attribute-list-panel .attribute-rows.align-values-end .attribute-value {
     text-align: end;
 }
 
@@ -307,8 +363,8 @@
     width: fit-content;
 }
 
-/* Being a box rather than text, the chip follows the card's alignment by margin instead. */
-.attribute-list-panel.align-values-end .attribute-value > .label-color-chip {
+/* Being a box rather than text, the chip follows the run's alignment by margin instead. */
+.attribute-list-panel .attribute-rows.align-values-end .attribute-value > .label-color-chip {
     margin-inline-start: auto;
 }
 

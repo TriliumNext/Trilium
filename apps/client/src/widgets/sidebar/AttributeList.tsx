@@ -22,7 +22,7 @@ import { ColorChip, renderLabelValue } from "../attribute_widgets/label_value_di
 import ActionButton from "../react/ActionButton";
 import { FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
-import { useActiveNoteContext, useTriliumEvent } from "../react/hooks";
+import { useActiveNoteContext, useTriliumEvent, useTriliumOptionJson } from "../react/hooks";
 import Icon from "../react/Icon";
 import { DetailPane, MasterPane, useMasterDetail, useMasterDetailPage } from "../react/master_detail";
 import NoItems from "../react/NoItems";
@@ -643,11 +643,6 @@ export default function AttributeList() {
         onEditValue: startValueEdit,
         onDelete: (attribute: Attribute) => void deleteAttribute(attribute)
     };
-    // The cards a section has nothing for are left out, so an ordinary note sees one or two of the four.
-    const shownCards = 1
-        + (sections.inherited.length ? 1 : 0)
-        + (sections.definitions.length ? 1 : 0)
-        + (internalRows.length ? 1 : 0);
 
     // The same callbacks whichever of the two the form is shown in.
     const formCallbacks = {
@@ -668,116 +663,106 @@ export default function AttributeList() {
         onDelete: detail?.isOwned ? () => void deleteAttribute(detail.attribute) : undefined
     };
     const sectionList = (
-        <>
-            {/* A card each, so a section is collapsed on its own and the inherited attributes — which a
-                template can run to dozens of — can be put away without taking the note's own with them.
-                Which is also why the collapsing is offered here rather than left to the tab: the tab
-                counts this whole panel as one widget (see RightPanelContainer), being one entry in its
-                list. Down to a single card, collapsing it away is not on offer. */}
-            <CollapsibleWidgets.Provider value={shownCards > 1}>
-                <AttributeSection
-                    id="attributes"
-                    title={t("attribute_list_panel.owned", { count: sections.owned.length })}
-                    grow
-                    buttons={note && (
-                        <>
-                            <HelpButton helpPage={ATTRIBUTE_HELP_PAGE} />
-                            <AddAttributeButton
-                                text={t("attribute_editor.add_a_new_attribute")}
-                                attrTypes={ALL_ATTRIBUTE_KINDS}
-                                onSelect={addAttribute}
-                            />
-                        </>
-                    )}
+        // One card holding the lot, the sections being headings within it rather than cards of their
+        // own: they are one list to the eye and one list to a selection — a range runs from any row to
+        // any other — and four headers is a great deal of a hand-wide pane to spend on saying which
+        // run is which. It also leaves the selection's own bar somewhere to belong: a bar at the foot
+        // of one card among several belonged to a card the picked rows need not have been in at all.
+        //
+        // Collapsing moves to the headings with it. The card cannot be collapsed away, being all its
+        // tab has (see RightPanelWidget), which is what the context below says.
+        <CollapsibleWidgets.Provider value={false}>
+            <AttributeSection
+                id="attributes"
+                title={t("attributes_panel.title")}
+                grow
+                buttons={note && (
+                    <>
+                        <HelpButton helpPage={ATTRIBUTE_HELP_PAGE} />
+                        <AddAttributeButton
+                            text={t("attribute_editor.add_a_new_attribute")}
+                            attrTypes={ALL_ATTRIBUTE_KINDS}
+                            onSelect={addAttribute}
+                        />
+                    </>
+                )}
+            >
+                {/* Presses inside the list do not dismiss the popup (see `parent` above), which leaves
+                    closing on a press next to a row up to this handler. The whole list is what the
+                    note's own attributes are pasted onto, so it offers pasting beside its rows too. */}
+                <div
+                    class={clsx("attribute-list-panel", isSelecting && "selecting")}
+                    ref={containerRef}
+                    onClick={commit}
+                    onContextMenu={showPanelMenu}
+                    {...clipboardProps}
                 >
-                    {/* Presses inside the sections do not dismiss the popup (see `parent` above), which
-                        leaves closing on a press next to a row up to this handler. */}
-                    {/* The values read from the trailing edge here and in the inherited card below,
-                        the two lists of plain attributes reading as one ledger. The definitions keep
-                        prose order: their "value" is a summary of settings, not a value. */}
-                    {/* The card the note's own attributes are pasted onto, so it is the one that
-                        offers pasting beside its rows as well as on them. */}
-                    <div
-                        class={clsx("attribute-list-panel align-values-end", isSelecting && "selecting")}
-                        ref={containerRef}
-                        onClick={commit}
-                        onContextMenu={showPanelMenu}
-                        {...clipboardProps}
+                    {/* A heading of their own, as every other run has: the card names the panel
+                        rather than this run, so without one the note's own attributes read as
+                        belonging to no run at all. Their values read from the trailing edge, as the
+                        inherited ones' do — the two runs of plain attributes reading as one ledger. */}
+                    <AttributeGroup
+                        id="attributes-owned"
+                        title={t("attribute_list_panel.owned", { count: sections.owned.length })}
                     >
                         {sections.owned.length > 0 ? (
-                            <AttributeRowList rows={sections.owned} {...rowProps} />
+                            <AttributeRowList rows={sections.owned} alignValuesEnd {...rowProps} />
                         ) : (
                             <NoItems icon="bx bx-hash" text={t("attribute_list_panel.no_attributes")} />
                         )}
 
-                        {/* What the foot of the card offers follows from what is being done at it:
-                            while rows are picked out, what can be done to them, and otherwise the way
-                            into adding one — which a phone reaches from the header, page flow and all. */}
-                        {note && (isSelecting ? (
-                            <AttributeSelectionBar
-                                count={selection.size}
-                                canDelete={selectedAttributes().every((candidate) => owned.current.includes(candidate))}
-                                canPaste={getHeldAttributes().length > 0}
-                                onCopy={() => void copyPickedAttributes(selectedAttributes())}
-                                onPaste={() => void applyPaste(getHeldAttributes())}
-                                onDelete={() => void deleteSelection(selectedAttributes())}
-                                onClear={clearSelection}
-                            />
-                        ) : !IS_MOBILE && (
+                        {/* Inside the run it adds to rather than at the foot of everything, and put
+                            away with it. A phone adds from the header, page flow and all. */}
+                        {!IS_MOBILE && note && (
                             <AddAttributeRow onAdd={(e) => addAttribute("label", e)} />
-                        ))}
-                    </div>
-                </AttributeSection>
-
-                {sections.inherited.length > 0 && (
-                    <AttributeSection
-                        id="attributes-inherited"
-                        title={t("attribute_list_panel.inherited", { count: sections.inherited.length })}
-                    >
-                        <div
-                            class={clsx("attribute-list-panel align-values-end", isSelecting && "selecting")}
-                            onClick={commit}
-                            {...clipboardProps}
-                        >
-                            <AttributeRowList rows={sections.inherited} {...rowProps} />
-                        </div>
-                    </AttributeSection>
-                )}
-
-                {sections.definitions.length > 0 && (
-                    <AttributeSection
-                        id="attributes-definitions"
-                        title={t("attribute_list_panel.definitions", { count: sections.definitions.length })}
-                        buttons={note && (
-                            <AddAttributeButton
-                                text={t("attribute_list_panel.add_definition")}
-                                attrTypes={DEFINITION_KINDS}
-                                onSelect={addAttribute}
-                            />
                         )}
-                    >
-                        <div
-                            class={clsx("attribute-list-panel", isSelecting && "selecting")}
-                            onClick={commit}
-                            {...clipboardProps}
+                    </AttributeGroup>
+
+                    {sections.inherited.length > 0 && (
+                        <AttributeGroup
+                            id="attributes-inherited"
+                            title={t("attribute_list_panel.inherited", { count: sections.inherited.length })}
+                        >
+                            <AttributeRowList rows={sections.inherited} alignValuesEnd {...rowProps} />
+                        </AttributeGroup>
+                    )}
+
+                    {sections.definitions.length > 0 && (
+                        // The definitions keep prose order: their "value" is a summary of settings
+                        // rather than a value, so there is no column of values for it to line up in.
+                        <AttributeGroup
+                            id="attributes-definitions"
+                            title={t("attribute_list_panel.definitions", { count: sections.definitions.length })}
                         >
                             <AttributeRowList rows={sections.definitions} {...rowProps} />
-                        </div>
-                    </AttributeSection>
-                )}
+                        </AttributeGroup>
+                    )}
 
-                {internalRows.length > 0 && (
-                    <AttributeSection
-                        id="attributes-internal"
-                        title={t("attribute_list_panel.internal", { count: internalRows.length })}
-                    >
-                        <div class="attribute-list-panel" onClick={commit}>
+                    {internalRows.length > 0 && (
+                        <AttributeGroup
+                            id="attributes-internal"
+                            title={t("attribute_list_panel.internal", { count: internalRows.length })}
+                        >
                             <AttributeRowList rows={internalRows} readOnly {...rowProps} />
-                        </div>
-                    </AttributeSection>
-                )}
-            </CollapsibleWidgets.Provider>
-        </>
+                        </AttributeGroup>
+                    )}
+
+                    {/* At the foot of the whole list, the rows it acts on being picked out anywhere
+                        in it. It holds there while the list is scrolled (see the stylesheet). */}
+                    {note && isSelecting && (
+                        <AttributeSelectionBar
+                            count={selection.size}
+                            canDelete={selectedAttributes().every((candidate) => owned.current.includes(candidate))}
+                            canPaste={getHeldAttributes().length > 0}
+                            onCopy={() => void copyPickedAttributes(selectedAttributes())}
+                            onPaste={() => void applyPaste(getHeldAttributes())}
+                            onDelete={() => void deleteSelection(selectedAttributes())}
+                            onClear={clearSelection}
+                        />
+                    )}
+                </div>
+            </AttributeSection>
+        </CollapsibleWidgets.Provider>
     );
 
     // Inside a master-detail host the list and the form are its two panes, which it slides over each
@@ -848,6 +833,53 @@ function AttributeSection({ id, title, children, buttons, grow }: AttributeSecti
     );
 }
 
+/**
+ * One run of rows under a heading that folds it away: the note's own attributes, what reaches it
+ * from elsewhere, the definitions behind either, and — in a development build — what Trilium wrote
+ * for itself. The card names the panel rather than any one of them, so each says what it is itself.
+ *
+ * A card each is what they were before, which spent four headers' worth of a hand-wide pane on
+ * saying which run was which. What is kept from those cards is the folding — a template's dozens of
+ * inherited attributes can still be put away — and what it is remembered under, so a pane that had
+ * them put away has them put away still.
+ */
+function AttributeGroup({ id, title, children }: { id: string; title: string; children: ComponentChildren }) {
+    const [ collapsedItems, setCollapsedItems ] = useTriliumOptionJson<string[]>("rightPaneCollapsedItems");
+    const [ collapsed, setCollapsed ] = useState(collapsedItems.includes(id));
+
+    function toggle() {
+        const remembered = new Set(collapsedItems);
+        if (collapsed) {
+            remembered.delete(id);
+        } else {
+            remembered.add(id);
+        }
+
+        setCollapsed(!collapsed);
+        void setCollapsedItems([ ...remembered ]);
+    }
+
+    return (
+        // Named by its id as the card it stands in for was, which is what a stylesheet — or a test —
+        // knows the run by.
+        <div class={clsx("attribute-group", id, collapsed && "collapsed")}>
+            <div
+                class="attribute-group-header"
+                onClick={(e) => {
+                    // Kept from the list, whose handler would close a form this press is not about.
+                    e.stopPropagation();
+                    toggle();
+                }}
+            >
+                <Icon className="attribute-group-chevron" icon="bx bx-chevron-down" />
+                <span class="attribute-group-title">{title}</span>
+            </div>
+
+            {!collapsed && children}
+        </div>
+    );
+}
+
 interface AttributeRowListProps {
     rows: AttributeEntry[];
     /** The note the rows belong to, read for the definitions that type their values. */
@@ -860,6 +892,13 @@ interface AttributeRowListProps {
     selection: ReadonlySet<string>;
     /** Whether rows are being picked out, which every row is drawn for rather than only the picked. */
     selecting: boolean;
+    /**
+     * Set the values against the rows' trailing edge, so that they line up in a column of their own:
+     * the name reads from the one edge and the value from the other, and the gap between them says
+     * how much room is left rather than being dead space after every short value. For the runs of
+     * plain attributes; a definition's summary keeps prose order, having no value to line up.
+     */
+    alignValuesEnd?: boolean;
     /**
      * The rows stand for attributes Trilium writes and keeps up to date itself, which leaves them
      * nothing to offer: nothing to edit, nothing to delete, no note to name as their source (they are
@@ -882,14 +921,18 @@ interface AttributeRowListProps {
  * Trilium reads for itself. What a row offers follows from whether the note owns its attribute rather
  * than from the card it is in: the definitions card holds the note's own alongside a template's.
  */
-function AttributeRowList({ rows, note, activeAttribute, valueEditor, selection, selecting, readOnly, onOpen, onSelect, onShowMenu, onEditValue, onDelete }: AttributeRowListProps) {
+function AttributeRowList({ rows, note, activeAttribute, valueEditor, selection, selecting, readOnly, alignValuesEnd, onOpen, onSelect, onShowMenu, onEditValue, onDelete }: AttributeRowListProps) {
     function renderRows(group: AttributeEntry[]) {
         return (
             // The rows are menu items on a phone (see AttributeRow), and the theme dresses a menu item
             // through the menu around it — so the list stands in as that menu, the way the other lists
             // of menu items outside a dropdown do (`dropdown-menu static show`, as in the code-note
             // switcher). Static: it opens nowhere and is positioned by nothing.
-            <ul class={clsx("attribute-rows", IS_MOBILE && "dropdown-menu tn-dropdown-menu static show")}>
+            <ul class={clsx(
+                "attribute-rows",
+                alignValuesEnd && "align-values-end",
+                IS_MOBILE && "dropdown-menu tn-dropdown-menu static show"
+            )}>
                 {group.map(({ attribute, isOwned, isSystem }, index) => (
                     <AttributeRow
                         key={attribute.attributeId ?? `new-${index}`}
@@ -1558,9 +1601,6 @@ const ADD_MENU_ENTRIES: { attrType: AttributeKind; title: string; icon: string }
 ];
 
 const ALL_ATTRIBUTE_KINDS = ADD_MENU_ENTRIES.map((entry) => entry.attrType);
-
-/** The kinds the definitions card can add: the last two of the menu above, on their own. */
-const DEFINITION_KINDS: AttributeKind[] = [ "label-definition", "relation-definition" ];
 
 function showAddMenu(e: MouseEvent, attrTypes: AttributeKind[], onSelect: (attrType: AttributeKind) => void) {
     const offered = ADD_MENU_ENTRIES.filter((entry) => attrTypes.includes(entry.attrType));
