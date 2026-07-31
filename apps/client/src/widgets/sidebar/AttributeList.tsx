@@ -9,12 +9,14 @@ import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import FAttribute from "../../entities/fattribute";
 import FNote from "../../entities/fnote";
 import contextMenu, { MenuItem } from "../../menus/context_menu";
+import { copyAttributesToClipboard, getHeldAttributes, mergePastedAttributes, readAttributes, writeAttributes } from "../../services/attribute_clipboard";
 import type { Attribute } from "../../services/attribute_parser";
 import attributes, { isBuiltinAttribute } from "../../services/attributes";
 import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
-import { isMobile } from "../../services/utils";
+import toast from "../../services/toast";
+import { getErrorMessage, isMobile } from "../../services/utils";
 import { AttributeDetail, AttributeDetailOpts, AttributeForm, AttrType, DEFINITION_TYPES, getAttrType, RELATION_DEFINITION_TYPE } from "../attribute_widgets/attribute_detail";
 import { ColorChip, renderLabelValue } from "../attribute_widgets/label_value_display";
 import ActionButton from "../react/ActionButton";
@@ -57,6 +59,11 @@ export default function AttributeList() {
     // The draft a label or relation is created through in a row of its own, already among the owned
     // rows; un-creating it is taking it back out of them.
     const [ creating, setCreating ] = useState<Attribute | null>(null);
+    // The rows picked out to be copied, by attributeId: a selection outlives the row objects, which a
+    // reload rebuilds, and an attribute not yet saved has nothing to be copied by anyway.
+    const [ selection, setSelection ] = useState<ReadonlySet<string>>(EMPTY_SELECTION);
+    // Where a range drawn with shift is measured from: the row last picked out on its own.
+    const selectionAnchor = useRef<string | null>(null);
     const componentId = parentComponent?.componentId;
 
     // The owned rows double as the detail popup's working copy: it edits the very objects it is handed,
@@ -94,10 +101,13 @@ export default function AttributeList() {
     }
 
     // Every editor works on one attribute of the note being left, so all of them close with the note.
+    // The selection goes with them: it picks out rows of the note being left, and the clipboard holds
+    // whatever was copied out of it already.
     useEffect(() => {
         setDetail(null);
         setValueEdit(null);
         setCreating(null);
+        clearSelection();
 
         const draft = draftToFlush.current;
         draftToFlush.current = null;
@@ -126,6 +136,10 @@ export default function AttributeList() {
                 setCreating(null);
             }
 
+            // A row deleted elsewhere takes its place in the selection with it, so what is copied is
+            // always what is still shown.
+            pruneSelection();
+
             rerender();
         }
     });
@@ -144,6 +158,10 @@ export default function AttributeList() {
     }
 
     function openDetail(attribute: Attribute, isOwned: boolean, anchor: HTMLElement | null, e: MouseEvent) {
+        // A press with no modifier on it is about the one attribute it landed on, so it takes the
+        // selection over rather than leaving it standing behind the form to be copied by surprise.
+        clearSelection();
+
         setDetail({
             allAttributes: isOwned ? owned.current : undefined,
             attribute,
@@ -297,6 +315,266 @@ export default function AttributeList() {
 
     const sections = splitIntoSections(owned.current, inherited.current);
     const internalRows = internal.current.map((attribute) => toEntry(attribute, true));
+
+    //#region Selection and the clipboard
+    /**
+     * Every row that can be picked out, in the order the panel draws them — the three cards read as
+     * one list, so a range drawn with shift runs from any row to any other. The internal card is left
+     * out: its rows are Trilium's own bookkeeping, rewritten whenever the note's content is saved,
+     * which there is nothing to be gained by carrying elsewhere. A row is picked out by its
+     * attributeId, so a draft still being created is not among them — it is not an attribute yet.
+     */
+    const selectableRows = [ ...sections.owned, ...sections.inherited, ...sections.definitions ]
+        .filter((entry) => entry.attribute.attributeId);
+    const selectableIds = selectableRows.flatMap((entry) => entry.attribute.attributeId ?? []);
+
+    /** The picked-out rows in the order they are drawn, whichever cards they were picked out from. */
+    function selectedAttributes() {
+        return selectableRows
+            .filter((entry) => entry.attribute.attributeId && selection.has(entry.attribute.attributeId))
+            .map((entry) => entry.attribute);
+    }
+
+    function clearSelection() {
+        selectionAnchor.current = null;
+        setSelection(EMPTY_SELECTION);
+    }
+
+    /** Drops from the selection whatever the note no longer holds, so what is copied is what is shown. */
+    function pruneSelection() {
+        setSelection((current) => {
+            if (current.size === 0) {
+                return current;
+            }
+
+            const shown = new Set([ ...owned.current, ...inherited.current ].flatMap((attribute) => attribute.attributeId ?? []));
+            const next = new Set([ ...current ].filter((attributeId) => shown.has(attributeId)));
+
+            return next.size === current.size ? current : next;
+        });
+    }
+
+    /**
+     * Picks a row out or takes it back out: control adds and removes the one row, as a list of files
+     * is picked through, and shift draws a range from the row last picked out on its own, replacing
+     * whatever was picked out before it.
+     */
+    function selectRow(attributeId: string, e: MouseEvent) {
+        // Whatever is being edited is wrapped up: picking rows out is about the rows, not the value.
+        commit();
+        commitValueEdit();
+        commitCreation();
+
+        if (e.shiftKey && selectionAnchor.current) {
+            const from = selectableIds.indexOf(selectionAnchor.current);
+            const to = selectableIds.indexOf(attributeId);
+
+            if (from >= 0 && to >= 0) {
+                setSelection(new Set(selectableIds.slice(Math.min(from, to), Math.max(from, to) + 1)));
+                return;
+            }
+        }
+
+        const next = new Set(selection);
+        if (next.has(attributeId)) {
+            next.delete(attributeId);
+        } else {
+            next.add(attributeId);
+        }
+
+        selectionAnchor.current = attributeId;
+        setSelection(next);
+    }
+
+    /**
+     * The copy key, which the panel receives by holding the focus (see {@link clipboardProps}). With
+     * no rows picked out it is left alone: the press is then about whatever text is selected in the
+     * panel, which is the browser's to copy.
+     */
+    function copySelection(e: ClipboardEvent) {
+        const picked = selectedAttributes();
+        if (picked.length === 0) {
+            return;
+        }
+
+        e.preventDefault();
+        writeAttributes(e.clipboardData, picked);
+        toast.showMessage(t("attribute_list_panel.copied", { count: picked.length }));
+    }
+
+    /**
+     * The paste key. What the clipboard holds is read as the text the attributes editor spells
+     * attributes out in — which is what this panel copies, and what that editor holds — so a paste
+     * from either lands here whole, as does one written out by hand.
+     */
+    async function pasteAttributes(e: ClipboardEvent) {
+        if (!note) {
+            return;
+        }
+        e.preventDefault();
+
+        let pasted: Attribute[];
+        try {
+            pasted = readAttributes(e.clipboardData);
+        } catch (error: unknown) {
+            // What was on the clipboard was not attributes; the parser says what it made of it.
+            toast.showError(t("attribute_list_panel.paste_failed", { message: getErrorMessage(error) }));
+            return;
+        }
+
+        if (pasted.length === 0) {
+            toast.showMessage(t("attribute_list_panel.nothing_to_paste"));
+            return;
+        }
+
+        await applyPaste(pasted);
+    }
+
+    /** The attributes folded into the note's own and saved, wherever the paste came from. */
+    async function applyPaste(pasted: Attribute[]) {
+        if (!note) {
+            return;
+        }
+
+        // The edit in flight is wrapped up first, so the paste folds into a settled list.
+        commit();
+        commitValueEdit();
+        commitCreation();
+
+        const { attributes, added, replaced } = mergePastedAttributes(
+            owned.current,
+            pasted,
+            (attribute) => isMultiValued(note, attribute)
+        );
+
+        owned.current = attributes;
+        rerender();
+        await save();
+
+        toast.showMessage(t("attribute_list_panel.pasted", { count: added + replaced }));
+    }
+
+    /**
+     * The menu a row is right-pressed for, over the rows picked out — which a press on a row that is
+     * not among them narrows down to that row alone, as a file manager does. Copying is offered for
+     * any row and deleting only where every picked row is the note's own: an inherited attribute is
+     * the source note's to delete.
+     */
+    function showRowMenu(attribute: Attribute, e: MouseEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const attributeId = attribute.attributeId;
+        let picked = selectedAttributes();
+
+        if (!attributeId || !selection.has(attributeId)) {
+            picked = [ attribute ];
+            selectionAnchor.current = attributeId ?? null;
+            setSelection(attributeId ? new Set([ attributeId ]) : EMPTY_SELECTION);
+        }
+
+        const items: MenuItem<never>[] = [
+            {
+                title: t("attribute_list_panel.copy", { count: picked.length }),
+                uiIcon: "bx bx-copy",
+                handler: () => void copyAttributesToClipboard(picked)
+            },
+            ...pasteMenuItems()
+        ];
+
+        if (picked.every((candidate) => owned.current.includes(candidate))) {
+            items.push({ kind: "separator" });
+            items.push({
+                title: t("attribute_list_panel.delete_selection", { count: picked.length }),
+                uiIcon: "bx bx-trash",
+                handler: () => void deleteSelection(picked)
+            });
+        }
+
+        void contextMenu.show({ x: e.pageX, y: e.pageY, items, selectMenuItemHandler: () => {} });
+    }
+
+    /**
+     * The menu the card itself is right-pressed for, beside the rows — which is where a note with no
+     * attributes at all is pasted onto, there being no row to press. Nothing is shown where there is
+     * nothing to paste: the browser's own menu is the better answer then.
+     */
+    function showPanelMenu(e: MouseEvent) {
+        const items = pasteMenuItems();
+        if (items.length === 0) {
+            return;
+        }
+
+        e.preventDefault();
+        void contextMenu.show({ x: e.pageX, y: e.pageY, items, selectMenuItemHandler: () => {} });
+    }
+
+    /**
+     * Pasting as a menu offers it, which is what Trilium last copied rather than what the system
+     * clipboard holds — a menu cannot read that one (see the clipboard service), and the note tree's
+     * own paste works from the same kind of store. The paste key is the way in to everything else,
+     * the attributes editor's text included.
+     */
+    function pasteMenuItems(): MenuItem<never>[] {
+        const heldAttributes = getHeldAttributes();
+        if (heldAttributes.length === 0 || !note) {
+            return [];
+        }
+
+        return [ {
+            title: t("attribute_list_panel.paste", { count: heldAttributes.length }),
+            uiIcon: "bx bx-paste",
+            handler: () => void applyPaste(heldAttributes)
+        } ];
+    }
+
+    /** Deletes the rows picked out, confirmed once for the lot as a single row's press is for the one. */
+    async function deleteSelection(picked: Attribute[]) {
+        if (picked.length === 1) {
+            await deleteAttribute(picked[0]);
+            return;
+        }
+
+        if (!await dialog.confirm(t("attribute_list_panel.delete_selection_confirm", { count: picked.length }))) {
+            return;
+        }
+
+        owned.current = owned.current.filter((candidate) => !picked.includes(candidate));
+        clearSelection();
+        setDetail(null);
+        rerender();
+
+        await save();
+    }
+
+    /**
+     * What every card carries so that the copy and paste keys reach the panel rather than the note
+     * behind it: a clipboard event goes to whatever holds the focus, so a press anywhere in a card
+     * takes it. Presses inside an open editor are left alone — taking the focus off a field would
+     * commit the very edit the press is part of.
+     */
+    const clipboardProps = {
+        tabIndex: -1,
+        onCopy: copySelection,
+        onPaste: (e: ClipboardEvent) => void pasteAttributes(e),
+        onKeyDown: (e: KeyboardEvent) => {
+            if (e.key === "Escape" && selection.size > 0) {
+                e.stopPropagation();
+                clearSelection();
+            }
+        },
+        onMouseDownCapture: (e: MouseEvent) => {
+            if (e.target instanceof Element && e.target.closest(".attribute-editor-overlay")) {
+                return;
+            }
+
+            if (e.currentTarget instanceof HTMLElement) {
+                e.currentTarget.focus({ preventScroll: true });
+            }
+        }
+    };
+    //#endregion
+
     // Not built for an attribute the list no longer holds: a reload can rebuild the rows out from
     // under the editor within this very render, before the state has caught up (see above).
     const activeValueEdit = valueEdit && owned.current.includes(valueEdit.attribute) ? valueEdit : null;
@@ -333,7 +611,10 @@ export default function AttributeList() {
         note,
         activeAttribute: detail?.attribute,
         valueEditor,
+        selection,
         onOpen: openDetail,
+        onSelect: selectRow,
+        onShowMenu: showRowMenu,
         onEditValue: startValueEdit,
         onDelete: (attribute: Attribute) => void deleteAttribute(attribute)
     };
@@ -389,7 +670,15 @@ export default function AttributeList() {
                     {/* The values read from the trailing edge here and in the inherited card below,
                         the two lists of plain attributes reading as one ledger. The definitions keep
                         prose order: their "value" is a summary of settings, not a value. */}
-                    <div class="attribute-list-panel align-values-end" ref={containerRef} onClick={commit}>
+                    {/* The card the note's own attributes are pasted onto, so it is the one that
+                        offers pasting beside its rows as well as on them. */}
+                    <div
+                        class="attribute-list-panel align-values-end"
+                        ref={containerRef}
+                        onClick={commit}
+                        onContextMenu={showPanelMenu}
+                        {...clipboardProps}
+                    >
                         {sections.owned.length > 0 ? (
                             <AttributeRowList rows={sections.owned} {...rowProps} />
                         ) : (
@@ -408,7 +697,7 @@ export default function AttributeList() {
                         id="attributes-inherited"
                         title={t("attribute_list_panel.inherited", { count: sections.inherited.length })}
                     >
-                        <div class="attribute-list-panel align-values-end" onClick={commit}>
+                        <div class="attribute-list-panel align-values-end" onClick={commit} {...clipboardProps}>
                             <AttributeRowList rows={sections.inherited} {...rowProps} />
                         </div>
                     </AttributeSection>
@@ -426,7 +715,7 @@ export default function AttributeList() {
                             />
                         )}
                     >
-                        <div class="attribute-list-panel" onClick={commit}>
+                        <div class="attribute-list-panel" onClick={commit} {...clipboardProps}>
                             <AttributeRowList rows={sections.definitions} {...rowProps} />
                         </div>
                     </AttributeSection>
@@ -522,14 +811,20 @@ interface AttributeRowListProps {
     activeAttribute?: Attribute;
     /** The in-place editor over one row's value, shown by that row in the value's place. */
     valueEditor?: { attribute: Attribute; element: ComponentChildren };
+    /** The attributeIds of the rows picked out to be copied. */
+    selection: ReadonlySet<string>;
     /**
      * The rows stand for attributes Trilium writes and keeps up to date itself, which leaves them
      * nothing to offer: nothing to edit, nothing to delete, no note to name as their source (they are
-     * always the current one's), and no split to draw between the note's own names and Trilium's —
-     * every one of them is Trilium's, which is what the card they are in says.
+     * always the current one's), no split to draw between the note's own names and Trilium's — every
+     * one of them is Trilium's, which is what the card they are in says — and nothing to be picked
+     * out for, being rewritten from the note's content rather than carried anywhere.
      */
     readOnly?: boolean;
     onOpen: (attribute: Attribute, isOwned: boolean, anchor: HTMLElement | null, e: MouseEvent) => void;
+    /** Picks the row out, or takes it back out of the selection. */
+    onSelect: (attributeId: string, e: MouseEvent) => void;
+    onShowMenu: (attribute: Attribute, e: MouseEvent) => void;
     /** Asks for the in-place editor over the attribute's value; wired to editable labels alone. */
     onEditValue: (attribute: Attribute) => void;
     onDelete: (attribute: Attribute) => void;
@@ -540,7 +835,7 @@ interface AttributeRowListProps {
  * Trilium reads for itself. What a row offers follows from whether the note owns its attribute rather
  * than from the card it is in: the definitions card holds the note's own alongside a template's.
  */
-function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, onOpen, onEditValue, onDelete }: AttributeRowListProps) {
+function AttributeRowList({ rows, note, activeAttribute, valueEditor, selection, readOnly, onOpen, onSelect, onShowMenu, onEditValue, onDelete }: AttributeRowListProps) {
     function renderRows(group: AttributeEntry[]) {
         return (
             // The rows are menu items on a phone (see AttributeRow), and the theme dresses a menu item
@@ -556,6 +851,13 @@ function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, 
                         active={activeAttribute === attribute}
                         valueEditor={valueEditor?.attribute === attribute ? valueEditor.element : undefined}
                         isSystem={isSystem && !readOnly}
+                        // A row is picked out by the attribute behind it, which a draft has yet to
+                        // become; the internal card's rows are not picked out at all (see above).
+                        selected={!readOnly && !!attribute.attributeId && selection.has(attribute.attributeId)}
+                        onSelect={!readOnly && attribute.attributeId
+                            ? (e) => onSelect(attribute.attributeId ?? "", e)
+                            : undefined}
+                        onShowMenu={!readOnly ? (e) => onShowMenu(attribute, e) : undefined}
                         // An attribute of another note names it; the current note's own would name itself.
                         showOwner={!isOwned && !readOnly}
                         // A read-only row opens the popup as an inherited one does: to be read, not edited.
@@ -598,25 +900,41 @@ interface AttributeRowProps {
     valueEditor?: ComponentChildren;
     /** Whether the name is one Trilium reads for itself rather than one the note was given. */
     isSystem?: boolean;
+    /** Whether the row is picked out to be copied. */
+    selected?: boolean;
     /** Names the note the attribute is inherited from, for attributes not owned by the current note. */
     showOwner?: boolean;
     onOpen: (anchor: HTMLElement | null, e: MouseEvent) => void;
+    /** Picks the row out; absent for the rows that are not picked out at all (see the list above). */
+    onSelect?: (e: MouseEvent) => void;
+    onShowMenu?: (e: MouseEvent) => void;
     /** Starts the in-place edit of the value; absent for rows whose value is not edited in place. */
     onEditValue?: () => void;
     onDelete?: () => void;
 }
 
-function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwner, onOpen, onEditValue, onDelete }: AttributeRowProps) {
+function AttributeRow({ attribute, note, active, valueEditor, isSystem, selected, showOwner, onOpen, onSelect, onShowMenu, onEditValue, onDelete }: AttributeRowProps) {
     const rowRef = useRef<HTMLLIElement>(null);
     const attrType = getAttributeKind(attribute);
     const markerClass = getKindMarkerClass(attribute, attrType, isSystem);
     const kindIcon = getKindIcon(attribute, attrType);
     const kindTooltip = getKindTooltip(attribute, attrType, isSystem);
-    const rowClass = clsx("attribute-row", active && "active", valueEditor && "editing");
+    const rowClass = clsx("attribute-row", active && "active", valueEditor && "editing", selected && "selected");
 
     function open(e: MouseEvent) {
         // Keep the container's closing handler from undoing this.
         e.stopPropagation();
+
+        // Held down, the modifiers that pick rows out mean the press is about the selection rather
+        // than about the one attribute the popup would show.
+        if (onSelect && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+            // Nothing of the press is the browser's here: a shift-press would otherwise take the text
+            // between the two rows as a selection, over the rows being picked out.
+            e.preventDefault();
+            onSelect(e);
+            return;
+        }
+
         onOpen(rowRef.current, e);
     }
 
@@ -698,7 +1016,7 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwne
     }
 
     return (
-        <li ref={rowRef} class={rowClass} onClick={open}>
+        <li ref={rowRef} class={rowClass} onClick={open} onContextMenu={onShowMenu}>
             {/* The icon is what carries the row's one tooltip: everything else about a row is already
                 written on it, and what the icon (badge and all) stands for is exactly what is not. */}
             <span class={clsx("attribute-kind", markerClass)} title={kindTooltip}>
@@ -715,6 +1033,22 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwne
  * the rows are redrawn on every keystroke the popup takes.
  */
 const IS_MOBILE = isMobile();
+
+/** Shared so that clearing a selection that is already empty is not a change to be redrawn for. */
+const EMPTY_SELECTION: ReadonlySet<string> = new Set();
+
+/**
+ * Whether the note's definitions say the attribute's field holds a set rather than a single value,
+ * which is what a paste over a name the note already carries turns on: a set takes the pasted value
+ * alongside what it holds, where a single value is replaced by it.
+ */
+export function isMultiValued(note: FNote | null | undefined, attribute: Attribute) {
+    const definition = note?.getAttributeDefinitions()
+        .find((candidate) => candidate.name === `${attribute.type}:${attribute.name}`)
+        ?.getDefinition();
+
+    return definition?.multiplicity === "multi";
+}
 
 /**
  * What the attribute is, as an icon. A definition takes the icon of the field it sets up, the same one

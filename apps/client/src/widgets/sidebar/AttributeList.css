@@ -3,6 +3,14 @@
     flex-direction: column;
 }
 
+/* The card takes the focus when it is pressed, which is how the copy and paste keys reach the panel
+   (see AttributeList.tsx) — a way in rather than a place to arrive at, so it is not drawn as focused:
+   the rows picked out are what says where those keys will land. */
+.attribute-list-panel:focus,
+.attribute-list-panel:focus-visible {
+    outline: none;
+}
+
 .attribute-list-panel ul.attribute-rows {
     margin: 0;
     padding-inline-start: 0;
@@ -28,6 +36,25 @@
 .attribute-list-panel .attribute-row.active,
 .attribute-list-panel .attribute-row.editing {
     background-color: var(--hover-item-background-color);
+}
+
+/* Picked out to be copied. Held apart from the row merely being pointed at or shown in the popup —
+   which come and go with the pointer — by the standing mark of a filled leading edge, and by a
+   ground that outweighs the hover film so a picked row pointed at still reads as picked. */
+.attribute-list-panel .attribute-row.selected,
+.attribute-list-panel .attribute-row.selected:hover {
+    background-color: var(--active-item-background-color);
+}
+
+.attribute-list-panel .attribute-row.selected::before {
+    content: "";
+    position: absolute;
+    inset-block: 2px;
+    inset-inline-start: 0;
+    width: 2px;
+    border-radius: 1px;
+    background-color: var(--main-text-color);
+    opacity: 0.5;
 }
 
 /* While its value is edited (or the attribute created), the row lets the editor standing over it

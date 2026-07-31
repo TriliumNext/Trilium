@@ -34,8 +34,12 @@ vi.mock("../../menus/context_menu", () => ({ default: { show: showContextMenu } 
 
 /** What the add button asks the context menu to show: a kind per entry, and a rule between groups. */
 interface AddMenuCall {
-    items: { kind?: string; handler?: () => void }[];
+    items: { kind?: string; uiIcon?: string; handler?: () => void }[];
 }
+
+// Copying and pasting report what they did; the toasts themselves belong to no widget.
+const toast = vi.hoisted(() => ({ showMessage: vi.fn(), showError: vi.fn() }));
+vi.mock("../../services/toast", () => ({ default: toast }));
 
 // A relation's target is picked in an Algolia autocomplete bound to jQuery, which is not loaded here:
 // a bare box stands in, reporting whatever is typed into it as the noteId picked.
@@ -55,6 +59,7 @@ vi.mock("../react/NoteAutocomplete", async () => {
 import appContext from "../../components/app_context";
 import type Component from "../../components/component";
 import FAttribute, { FAttributeRow } from "../../entities/fattribute";
+import { writeAttributes } from "../../services/attribute_clipboard";
 import type { Attribute } from "../../services/attribute_parser";
 import froca from "../../services/froca";
 import type LoadResults from "../../services/load_results";
@@ -823,6 +828,211 @@ describe("AttributeList", () => {
 
     /** What the panel subscribed to, when rendered under a parent component that can tell it. */
     let eventHandlers: Map<string, (data: unknown) => void>;
+
+    it("picks rows out with the modifiers, across the cards, and lets a plain press take over again", () => {
+        renderPanel(noteWithAttributes());
+
+        // Control adds and removes the one row, as a list of files is picked through.
+        pick(0, { ctrlKey: true });
+        expect(selectedNames()).toEqual([ "author" ]);
+        pick(0, { ctrlKey: true });
+        expect(selectedNames()).toEqual([]);
+        // The rows are not what the press was about, so no form is opened over them.
+        expect(document.querySelector(".attr-detail")).toBeNull();
+
+        // Shift draws a range from the row last picked out, over the cards' boundaries: the owned
+        // card's three rows and the first of the inherited card's.
+        pick(0, { ctrlKey: true });
+        pick(3, { shiftKey: true });
+        expect(selectedNames()).toEqual([ "author", "cssClass", "template", "inheritedLabel" ]);
+
+        // A press with nothing held down is about the one attribute it landed on, and takes over.
+        act(() => rows()[1].click());
+        expect(selectedNames()).toEqual([]);
+        expect(document.querySelector(".attr-detail")).not.toBeNull();
+    });
+
+    it("copies the picked rows as the text the attributes editor spells them out in", () => {
+        renderPanel(noteWithAttributes());
+
+        // Nothing picked out: the press is about whatever text is selected, and is left alone.
+        const untouched = copyFrom(firstPanel());
+        expect(untouched.defaultPrevented).toBe(false);
+        expect(untouched.written).toEqual({});
+
+        pick(0, { ctrlKey: true });
+        pick(2, { ctrlKey: true });
+
+        const copied = copyFrom(firstPanel());
+        expect(copied.defaultPrevented).toBe(true);
+        // Both flavours, the relation as the path in the one and as a reference link in the other.
+        expect(copied.written["text/plain"]).toBe("#author=Elian ~template=#root/tpl");
+        expect(copied.written["text/html"]).toContain('href="#root/tpl"');
+        expect(toast.showMessage).toHaveBeenCalledOnce();
+    });
+
+    it("pastes attributes onto the note, replacing a name it already carries and adding the rest", async () => {
+        // A note of its own: the effective-attribute cache is shared between the tests, so a note
+        // named as another test's would arrive carrying that one's inherited attributes.
+        const note = buildNote({ id: "pastee", title: "Pastee", "#author": "Someone" });
+        const existingId = note.getOwnedAttributes()[0].attributeId;
+        renderPanel(note);
+
+        await act(async () => pasteInto(firstPanel(), { "text/plain": "#author=Elian #tag=new ~parent=#root/tpl" }));
+
+        expect(put).toHaveBeenCalledOnce();
+        const [ url, saved ] = put.mock.calls[0] as [ string, Attribute[] ];
+        expect(url).toBe("notes/pastee/attributes");
+        expect(saved).toMatchObject([
+            // Replaced in place, the attribute staying the one it was rather than a second `author`.
+            { type: "label", name: "author", value: "Elian", attributeId: existingId },
+            { type: "label", name: "tag", value: "new" },
+            { type: "relation", name: "parent", value: "tpl" }
+        ]);
+        // Nothing of the note the attributes were copied from comes across with them.
+        expect(saved[1].attributeId).toBeUndefined();
+        expect(namesIn(container)).toEqual([ "author", "tag", "parent" ]);
+    });
+
+    it("says what it made of a clipboard that is not attributes, and saves nothing over it", async () => {
+        renderPanel(buildNote({ id: "subject", title: "Subject", "#author": "Someone" }));
+
+        await act(async () => pasteInto(firstPanel(), { "text/plain": "just some prose" }));
+        expect(toast.showError).toHaveBeenCalledOnce();
+        expect(put).not.toHaveBeenCalled();
+
+        // An empty clipboard is not an error, only nothing to do.
+        await act(async () => pasteInto(firstPanel(), { "text/plain": "" }));
+        expect(toast.showError).toHaveBeenCalledOnce();
+        expect(put).not.toHaveBeenCalled();
+    });
+
+    it("offers the picked rows to a right press, narrowing down to the one row pressed outside them", async () => {
+        renderPanel(noteWithAttributes());
+        pick(0, { ctrlKey: true });
+        pick(1, { ctrlKey: true });
+
+        // A right press on a row among those picked out is about all of them.
+        rightPress(1);
+        expect(selectedNames()).toEqual([ "author", "cssClass" ]);
+
+        // Deleting the lot is confirmed once, as a single row's deletion is.
+        confirm.mockResolvedValueOnce(true);
+        await act(async () => menuItem("bx bx-trash")?.handler?.());
+        expect(confirm).toHaveBeenCalledOnce();
+        const [ , saved ] = put.mock.calls[0] as [ string, Attribute[] ];
+        expect(saved.map((attribute) => attribute.name)).toEqual([ "template", "label:priority" ]);
+
+        // A right press on a row outside them narrows down to that row alone.
+        rightPress(0);
+        expect(selectedNames()).toEqual([ "template" ]);
+        // An inherited row is the source note's to delete, so only copying is offered over it.
+        rightPress(1);
+        expect(menuItem("bx bx-trash")).toBeUndefined();
+        expect(menuItem("bx bx-copy")).toBeDefined();
+    });
+
+    it("pastes from a menu what Trilium last copied, beside the rows as well as on them", async () => {
+        renderPanel(buildNote({ id: "source", title: "Source", "#author": "Elian", "#tag": "book" }));
+        pick(0, { ctrlKey: true });
+        pick(1, { ctrlKey: true });
+        // Copied from the menu, which is the way in that holds on to them for a menu to paste.
+        rightPress(0);
+        expect(menuItem("bx bx-copy")).toBeDefined();
+        await act(async () => menuItem("bx bx-copy")?.handler?.());
+
+        // A note with no attributes at all has no row to press: the card itself offers the paste.
+        renderPanel(buildNote({ id: "blank", title: "Blank" }));
+        expect(container.querySelectorAll(".attribute-row")).toHaveLength(0);
+        act(() => {
+            firstPanel().dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        });
+
+        await act(async () => menuItem("bx bx-paste")?.handler?.());
+        const [ url, saved ] = put.mock.calls[0] as [ string, Attribute[] ];
+        expect(url).toBe("notes/blank/attributes");
+        expect(saved).toMatchObject([
+            { type: "label", name: "author", value: "Elian" },
+            { type: "label", name: "tag", value: "book" }
+        ]);
+        expect(namesIn(container)).toEqual([ "author", "tag" ]);
+    });
+
+    it("offers no menu of its own beside the rows while there is nothing to paste", () => {
+        // Whatever an earlier test copied is still held, the store being the module's own — as the
+        // note tree's clipboard is. Copying nothing is how a session that has copied nothing looks.
+        writeAttributes(null, []);
+        renderPanel(buildNote({ id: "blank", title: "Blank" }));
+
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        act(() => {
+            firstPanel().dispatchEvent(event);
+        });
+
+        // Left to the browser's own menu, rather than shown an empty one of ours.
+        expect(showContextMenu).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    function rows() {
+        return [ ...container.querySelectorAll<HTMLElement>(".attribute-row") ];
+    }
+
+    function selectedNames() {
+        return [ ...container.querySelectorAll(".attribute-row.selected .attribute-name") ]
+            .map((name) => name.textContent);
+    }
+
+    function firstPanel() {
+        const panel = container.querySelector<HTMLElement>(".attribute-list-panel");
+        expect(panel).not.toBeNull();
+        return panel as HTMLElement;
+    }
+
+    /** A press on a row with the modifiers held down that pick it out rather than open it. */
+    function pick(index: number, modifiers: { ctrlKey?: boolean; shiftKey?: boolean }) {
+        act(() => {
+            rows()[index].dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ...modifiers }));
+        });
+    }
+
+    function rightPress(index: number) {
+        act(() => {
+            rows()[index].dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        });
+    }
+
+    /** The copy key over the panel, reporting what it wrote onto the clipboard it was handed. */
+    function copyFrom(panel: HTMLElement) {
+        const written: Record<string, string> = {};
+        const event = clipboardEvent("copy", { setData: (type: string, data: string) => { written[type] = data; } });
+        panel.dispatchEvent(event);
+
+        return { written, defaultPrevented: event.defaultPrevented };
+    }
+
+    /** The paste key over the panel, the clipboard holding the given flavours. */
+    function pasteInto(panel: HTMLElement, flavours: Record<string, string>) {
+        panel.dispatchEvent(clipboardEvent("paste", { getData: (type: string) => flavours[type] ?? "" }));
+    }
+
+    /**
+     * A clipboard event carrying the given stand-in for the system clipboard: the constructor takes
+     * no data of its own, so it is hung on the event as the browser hangs the real one.
+     */
+    function clipboardEvent(type: string, clipboardData: Partial<DataTransfer>) {
+        const event = new Event(type, { bubbles: true, cancelable: true });
+        Object.assign(event, { clipboardData });
+
+        return event;
+    }
+
+    /** The entry of the menu last shown carrying the given icon, which is what names it here: the
+     *  titles are translated, and translations stay unloaded in these tests. */
+    function menuItem(icon: string) {
+        const call = showContextMenu.mock.lastCall?.[0];
+        return call?.items.find((item) => item.uiIcon === icon);
+    }
 
     function renderPanel(note: FNote, withEvents = false) {
         shownNote.current = note;

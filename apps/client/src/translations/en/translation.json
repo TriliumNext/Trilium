@@ -827,7 +827,20 @@
     "system_hint": "System: this name has a built-in meaning",
     "add_attribute": "Add attribute",
     "creation_kind_label": "Label: press here, or type ~, to make it a relation",
-    "creation_kind_relation": "Relation: press here, or type #, to make it a label"
+    "creation_kind_relation": "Relation: press here, or type #, to make it a label",
+    "copy_one": "Copy attribute",
+    "copy_other": "Copy {{count}} attributes",
+    "paste_one": "Paste attribute",
+    "paste_other": "Paste {{count}} attributes",
+    "copied_one": "{{count}} attribute copied",
+    "copied_other": "{{count}} attributes copied",
+    "pasted_one": "{{count}} attribute pasted",
+    "pasted_other": "{{count}} attributes pasted",
+    "nothing_to_paste": "The clipboard holds no attributes.",
+    "paste_failed": "The clipboard could not be read as attributes: {{- message}}",
+    "delete_selection_one": "Delete attribute",
+    "delete_selection_other": "Delete {{count}} attributes",
+    "delete_selection_confirm": "Delete the {{count}} selected attributes?"
   },
   "attribute_names": {
     "system": "System",

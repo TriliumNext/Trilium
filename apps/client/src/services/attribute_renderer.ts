@@ -36,7 +36,8 @@ async function renderAttribute(attribute: FAttribute, renderIsInheritable: boole
     return $attr;
 }
 
-function formatValue(val: string) {
+/** A value as the lexer reads it back: bare where it can be, quoted with whichever quote it spares. */
+export function formatValue(val: string) {
     if (/^[\p{L}\p{N}\-_,.]+$/u.test(val)) {
         return val;
     } else if (!val.includes('"')) {
