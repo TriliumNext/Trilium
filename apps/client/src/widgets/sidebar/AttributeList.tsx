@@ -973,6 +973,8 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, selected
     const kindIcon = getKindIcon(attribute, attrType);
     const kindTooltip = getKindTooltip(attribute, attrType, isSystem);
     const rowClass = clsx("attribute-row", active && "active", valueEditor && "editing", selected && "selected");
+    /** Whether the whole row picks, which is what it does once rows are being picked out. */
+    const selectsWholeRow = !!selecting && !!onSelect;
 
     /**
      * A phone has no modifier to hold down, so it has the press itself held instead: held long enough,
@@ -1009,20 +1011,62 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, selected
         };
     }, [ onSelect ]);
 
+    /**
+     * Once rows are being picked out, the whole row is what picks: a checkbox is a small thing to
+     * aim at, and the press that missed it would otherwise open the form and let the selection go.
+     * Taken in the capture phase and kept there, so that nothing the row holds acts on the press
+     * instead — a value that would open its editor, a relation's target that would be navigated to.
+     */
+    function selectFromRow(e: MouseEvent) {
+        // The release of the press that picked the row out, which has had its say already.
+        if (heldDown.current) {
+            heldDown.current = false;
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+
+        // The checkbox is left its own press: refused, its tick is put back after this has run,
+        // which would leave the box a press behind the selection it is drawn from.
+        if (e.target instanceof Element && e.target.closest(".attribute-kind-check")) {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect?.(e.shiftKey);
+    }
+
+    // A menu item takes no capture handler of its own, so a phone's rows are bound theirs by hand.
+    useEffect(() => {
+        const row = rowRef.current;
+        if (!IS_MOBILE || !row || !selectsWholeRow) return;
+
+        row.addEventListener("click", selectFromRow, true);
+        return () => row.removeEventListener("click", selectFromRow, true);
+        // The handler itself is left out: it is written anew on every render, where what it does
+        // turns only on the two below.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ selectsWholeRow, onSelect ]);
+
     function open(e: MouseEvent) {
         // Keep the container's closing handler from undoing this.
         e.stopPropagation();
 
-        // The release of the press that picked the row out, which has had its say already.
+        // Already answered above, by the press that picked the row out or the one that let it go.
+        if (selecting && onSelect) {
+            return;
+        }
+
         if (heldDown.current) {
             heldDown.current = false;
             return;
         }
 
         // Held down, the modifiers that pick rows out mean the press is about the selection rather
-        // than about the one attribute the popup would show. On a phone, where there are none to
-        // hold, a tap means that too once rows are being picked out.
-        if (onSelect && (e.ctrlKey || e.metaKey || e.shiftKey || (IS_MOBILE && selecting))) {
+        // than about the one attribute the popup would show — which is how the first row is picked
+        // out, there being no row yet whose whole face picks.
+        if (onSelect && (e.ctrlKey || e.metaKey || e.shiftKey)) {
             // Nothing of the press is the browser's here: a shift-press would otherwise take the text
             // between the two rows as a selection, over the rows being picked out.
             e.preventDefault();
@@ -1114,7 +1158,13 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, selected
     }
 
     return (
-        <li ref={rowRef} class={rowClass} onClick={open} onContextMenu={onShowMenu}>
+        <li
+            ref={rowRef}
+            class={rowClass}
+            onClickCapture={selectsWholeRow ? selectFromRow : undefined}
+            onClick={open}
+            onContextMenu={onShowMenu}
+        >
             {/* The icon is what carries the row's one tooltip: everything else about a row is already
                 written on it, and what the icon (badge and all) stands for is exactly what is not. */}
             <span class={clsx("attribute-kind", markerClass)} title={kindTooltip}>

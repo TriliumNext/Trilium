@@ -846,10 +846,38 @@ describe("AttributeList", () => {
         pick(3, { shiftKey: true });
         expect(selectedNames()).toEqual([ "author", "cssClass", "template", "inheritedLabel" ]);
 
-        // A press with nothing held down is about the one attribute it landed on, and takes over.
+        // While rows are being picked out the whole row picks, so a press with nothing held down
+        // picks too rather than opening the form and letting the selection go.
+        act(() => rows()[1].click());
+        expect(selectedNames()).toEqual([ "author", "template", "inheritedLabel" ]);
+        expect(document.querySelector(".attr-detail")).toBeNull();
+
+        // With none picked out it is the one attribute it landed on again.
+        act(() => barButton("bx bx-x")?.click());
         act(() => rows()[1].click());
         expect(selectedNames()).toEqual([]);
         expect(document.querySelector(".attr-detail")).not.toBeNull();
+    });
+
+    it("keeps a press on a picked row from whatever it lands on within it", () => {
+        renderPanel(noteWithAttributes());
+
+        // Nothing picked out: the value is its own way in, which opens the field over it.
+        act(() => rows()[0].querySelector<HTMLElement>(".attribute-value")?.click());
+        expect(container.querySelector(".attribute-value-editor")).not.toBeNull();
+
+        pick(2, { ctrlKey: true });
+        expect(selectedNames()).toEqual([ "template" ]);
+
+        // Picked out, the same press picks the row instead — and is refused besides, so that a
+        // relation's value, which is a link to the note it points at, is not navigated to either.
+        const press = new MouseEvent("click", { bubbles: true, cancelable: true });
+        act(() => void rows()[0].querySelector(".attribute-value")?.dispatchEvent(press));
+
+        expect(press.defaultPrevented).toBe(true);
+        // Read in the order the rows are drawn, whichever order they were picked out in.
+        expect(selectedNames()).toEqual([ "author", "template" ]);
+        expect(container.querySelectorAll(".attribute-value-editor")).toHaveLength(0);
     });
 
     it("copies the picked rows as the text the attributes editor spells them out in", () => {

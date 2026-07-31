@@ -224,9 +224,15 @@
 }
 
 /* A label's value is edited in place, so the preview itself is a click target of its own: a text
-   cursor over it says as much, where the row around it — which opens the popup — points. */
-.attribute-list-panel .attribute-value.editable {
+   cursor over it says as much, where the row around it — which opens the popup — points. Not while
+   rows are being picked out: the whole row picks then, its value and its links along with it, so
+   nothing on it should offer what it will not do. */
+.attribute-list-panel:not(.selecting) .attribute-value.editable {
     cursor: text;
+}
+
+.attribute-list-panel.selecting .attribute-row :is(a, .attribute-value) {
+    cursor: pointer;
 }
 
 /* A flag's press toggles rather than types (see startValueEdit), and the pointer says so. */
