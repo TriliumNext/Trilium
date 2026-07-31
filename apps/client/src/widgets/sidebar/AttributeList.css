@@ -284,6 +284,22 @@
     white-space: nowrap;
 }
 
+/* How many the run holds, beside its name rather than away at the trailing edge: it is read as part
+   of what the run is called, not as a column of its own. Sized and worn as the note tree wears the
+   count of a node's hidden children (see note_tree.css) — the same wash, a shade of the ink over the
+   page rather than a colour, and small enough to be answered rather than announced. */
+.attribute-list-panel .attribute-group-count {
+    flex-shrink: 0;
+    /* The heading's own gap sets it off; the base badge's margin would set it adrift of the name. */
+    margin-inline-start: 0;
+    padding: 0.1em 0.5em;
+    border-radius: 0.5em;
+    color: var(--muted-text-color);
+    font-size: 0.7rem;
+    font-weight: normal;
+    letter-spacing: 0;
+}
+
 /* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort
    is what carries the split, the rule only marks where it falls — and quieter still than the line
    the run hangs from, which it crosses: a split within a branch, not a cut through it. Held off the

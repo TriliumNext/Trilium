@@ -20,6 +20,7 @@ import { getErrorMessage, isMobile } from "../../services/utils";
 import { AttributeDetail, AttributeDetailOpts, AttributeForm, AttrType, DEFINITION_TYPES, getAttrType, RELATION_DEFINITION_TYPE } from "../attribute_widgets/attribute_detail";
 import { ColorChip, renderLabelValue } from "../attribute_widgets/label_value_display";
 import ActionButton from "../react/ActionButton";
+import SimpleBadge from "../react/Badge";
 import { FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
 import { useActiveNoteContext, useTriliumEvent, useTriliumOptionJson } from "../react/hooks";
@@ -703,7 +704,8 @@ export default function AttributeList() {
                         inherited ones' do — the two runs of plain attributes reading as one ledger. */}
                     <AttributeGroup
                         id="attributes-owned"
-                        title={t("attribute_list_panel.owned", { count: sections.owned.length })}
+                        title={t("attribute_list_panel.section_owned")}
+                        count={sections.owned.length}
                     >
                         {sections.owned.length > 0 ? (
                             <AttributeRowList rows={sections.owned} alignValuesEnd {...rowProps} />
@@ -721,7 +723,8 @@ export default function AttributeList() {
                     {sections.inherited.length > 0 && (
                         <AttributeGroup
                             id="attributes-inherited"
-                            title={t("attribute_list_panel.inherited", { count: sections.inherited.length })}
+                            title={t("attribute_list_panel.section_inherited")}
+                            count={sections.inherited.length}
                         >
                             <AttributeRowList rows={sections.inherited} alignValuesEnd {...rowProps} />
                         </AttributeGroup>
@@ -732,7 +735,8 @@ export default function AttributeList() {
                         // rather than a value, so there is no column of values for it to line up in.
                         <AttributeGroup
                             id="attributes-definitions"
-                            title={t("attribute_list_panel.definitions", { count: sections.definitions.length })}
+                            title={t("attribute_list_panel.section_definitions")}
+                            count={sections.definitions.length}
                         >
                             <AttributeRowList rows={sections.definitions} {...rowProps} />
                         </AttributeGroup>
@@ -741,7 +745,8 @@ export default function AttributeList() {
                     {internalRows.length > 0 && (
                         <AttributeGroup
                             id="attributes-internal"
-                            title={t("attribute_list_panel.internal", { count: internalRows.length })}
+                            title={t("attribute_list_panel.section_internal")}
+                            count={internalRows.length}
                         >
                             <AttributeRowList rows={internalRows} readOnly {...rowProps} />
                         </AttributeGroup>
@@ -843,7 +848,13 @@ function AttributeSection({ id, title, children, buttons, grow }: AttributeSecti
  * inherited attributes can still be put away — and what it is remembered under, so a pane that had
  * them put away has them put away still.
  */
-function AttributeGroup({ id, title, children }: { id: string; title: string; children: ComponentChildren }) {
+function AttributeGroup({ id, title, count, children }: {
+    id: string;
+    title: string;
+    /** How many rows the run holds, shown beside its name rather than read ahead of it. */
+    count: number;
+    children: ComponentChildren;
+}) {
     const [ collapsedItems, setCollapsedItems ] = useTriliumOptionJson<string[]>("rightPaneCollapsedItems");
     const [ collapsed, setCollapsed ] = useState(collapsedItems.includes(id));
 
@@ -873,6 +884,12 @@ function AttributeGroup({ id, title, children }: { id: string; title: string; ch
             >
                 <Icon className="attribute-group-chevron" icon="bx bx-chevron-down" />
                 <span class="attribute-group-title">{title}</span>
+
+                {/* Beside the name rather than away at the trailing edge: it is read as part of what
+                    the run is called. The plain badge, as the note tree counts a node's hidden
+                    children with and as the checkbox tree counts its leaves — a bare figure, the
+                    heading beside it saying what is being counted. */}
+                <SimpleBadge className="attribute-group-count" title={count} />
             </div>
 
             {/* The rows hang together under the heading rather than each standing on its own, so that
