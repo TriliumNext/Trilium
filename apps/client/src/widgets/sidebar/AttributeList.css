@@ -30,6 +30,10 @@
        value are cut off instead, and the popup the row opens has them in full. */
     white-space: nowrap;
     overflow: hidden;
+    /* A row is pressed rather than read from, and a press that draws a range would otherwise take
+       the text between the two rows along with them. The popup has the attribute in full to copy
+       from, and the attributes editor is the surface its text is read off. */
+    user-select: none;
 }
 
 .attribute-list-panel .attribute-row:hover,
@@ -107,6 +111,74 @@
     font-size: 0.8em;
     inset-inline-end: -4px;
     bottom: -4px;
+}
+
+/*
+ * The checkbox a row is picked out by, standing in the slot the kind icon holds rather than in a
+ * column of its own: the pane is narrow, and a column would take from the names what it took for
+ * itself. Only the row being pointed at shows one — until rows are being picked out, when every row
+ * shows its own, the way a list of mail turns over once one of it is picked.
+ */
+.attribute-list-panel .attribute-kind-check {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.attribute-list-panel .attribute-row:hover .attribute-kind-check,
+.attribute-list-panel.selecting .attribute-kind-check {
+    display: flex;
+}
+
+.attribute-list-panel .attribute-kind-check .form-check-input {
+    /* The icon's own size, so that the row is laid out the same whichever of the two is showing. */
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* The glyph the checkbox stands in for — badge and all, which would otherwise hang off its corner
+   saying something about an attribute that is not what the checkbox is asking. Hidden rather than
+   left out, so the slot keeps the width the icon gave it. */
+.attribute-list-panel .attribute-row:hover .attribute-kind > .tn-icon,
+.attribute-list-panel.selecting .attribute-kind > .tn-icon {
+    visibility: hidden;
+}
+
+.attribute-list-panel .attribute-row:hover .attribute-kind::after,
+.attribute-list-panel.selecting .attribute-kind::after {
+    display: none;
+}
+
+/*
+ * What can be done to the rows picked out, at the foot of the card. It stands where the add row
+ * stands and takes its turn, so that picking rows out costs the list no room of its own.
+ */
+.attribute-selection-bar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 2px 2px 6px;
+    margin-top: 2px;
+    border-top: 1px solid var(--main-border-color);
+}
+
+.attribute-selection-bar .attribute-selection-count {
+    /* Pushes the buttons to the trailing edge, where the values read from. */
+    margin-inline-end: auto;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+}
+
+/* At the compact size the row's own actions keep, the two rows of buttons reading as one kind. */
+.attribute-selection-bar .icon-action {
+    --icon-button-size: 24px;
+    --icon-button-icon-ratio: 0.8;
+
+    border-radius: 50%;
 }
 
 /* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort is
@@ -254,8 +326,9 @@
 }
 
 /* Not while editing: the actions — later in the DOM — would paint over the very overlay that
-   replaces them. */
-.attribute-list-panel .attribute-row:not(.editing):is(:hover, .active) .attribute-row-actions {
+   replaces them. Nor while rows are being picked out: a row's own actions are about the one row,
+   which is not what is being done then, and the foot of the card carries what is. */
+.attribute-list-panel:not(.selecting) .attribute-row:not(.editing):is(:hover, .active) .attribute-row-actions {
     display: flex;
 }
 

@@ -34,6 +34,15 @@ export function getHeldAttributes(): Attribute[] {
     return held;
 }
 
+/**
+ * Holds the attributes for a menu or a button to paste, without touching the system clipboard.
+ * Apart from the copying so that what is held — which is what says whether pasting is on offer at
+ * all — is settled at once, rather than after a round trip to the system clipboard.
+ */
+export function holdAttributes(attributes: Attribute[]) {
+    held = [ ...attributes ];
+}
+
 /** Reads whichever flavour the clipboard offers. Throws what the parser throws over text that is not
  *  attributes, which the caller is the one to put to the user. */
 export function readAttributes(data: DataTransfer | null): Attribute[] {
@@ -51,7 +60,7 @@ export function readAttributes(data: DataTransfer | null): Attribute[] {
 
 /** Writes both flavours of the attributes onto a clipboard event's data, and holds on to them. */
 export function writeAttributes(data: DataTransfer | null, attributes: Attribute[]) {
-    held = [ ...attributes ];
+    holdAttributes(attributes);
 
     if (!data) {
         return;
@@ -71,7 +80,7 @@ export function writeAttributes(data: DataTransfer | null, attributes: Attribute
  * command needs something selected to copy, hence the field held off-screen for the moment it takes.
  */
 export async function copyAttributesToClipboard(attributes: Attribute[]) {
-    held = [ ...attributes ];
+    holdAttributes(attributes);
     const text = serializeAttributes(attributes);
 
     try {
@@ -91,13 +100,19 @@ export async function copyAttributesToClipboard(attributes: Attribute[]) {
     document.body.append(field);
 
     const previouslyFocused = document.activeElement;
-    field.select();
-    document.execCommand("copy");
-    field.remove();
+    try {
+        field.select();
+        document.execCommand("copy");
+    } catch {
+        // Neither way in was to be had. The attributes are held all the same, so pasting them back
+        // into Trilium still works; what is lost is carrying them out of it.
+    } finally {
+        field.remove();
 
-    // The panel had the focus and needs it back: it is what the paste key reaches the panel through.
-    if (previouslyFocused instanceof HTMLElement) {
-        previouslyFocused.focus({ preventScroll: true });
+        // The panel had the focus and needs it back: it is what the paste key reaches it through.
+        if (previouslyFocused instanceof HTMLElement) {
+            previouslyFocused.focus({ preventScroll: true });
+        }
     }
 }
 

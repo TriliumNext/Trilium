@@ -9,7 +9,7 @@ import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import FAttribute from "../../entities/fattribute";
 import FNote from "../../entities/fnote";
 import contextMenu, { MenuItem } from "../../menus/context_menu";
-import { copyAttributesToClipboard, getHeldAttributes, mergePastedAttributes, readAttributes, writeAttributes } from "../../services/attribute_clipboard";
+import { copyAttributesToClipboard, getHeldAttributes, holdAttributes, mergePastedAttributes, readAttributes, writeAttributes } from "../../services/attribute_clipboard";
 import type { Attribute } from "../../services/attribute_parser";
 import attributes, { isBuiltinAttribute } from "../../services/attributes";
 import dialog from "../../services/dialog";
@@ -328,6 +328,15 @@ export default function AttributeList() {
         .filter((entry) => entry.attribute.attributeId);
     const selectableIds = selectableRows.flatMap((entry) => entry.attribute.attributeId ?? []);
 
+    /**
+     * Whether rows are being picked out, which is the panel's second standing: every row shows the
+     * checkbox only the pointed-at one shows otherwise, the actions over the rows picked out are at
+     * the foot of the card, and a row's own — its pencil, its trash — are put away, being about the
+     * one row. There is no mode to turn on and off beside the selection itself: picking the first
+     * row out is what starts it, and letting the last one go is what ends it.
+     */
+    const isSelecting = selection.size > 0;
+
     /** The picked-out rows in the order they are drawn, whichever cards they were picked out from. */
     function selectedAttributes() {
         return selectableRows
@@ -355,17 +364,17 @@ export default function AttributeList() {
     }
 
     /**
-     * Picks a row out or takes it back out: control adds and removes the one row, as a list of files
-     * is picked through, and shift draws a range from the row last picked out on its own, replacing
-     * whatever was picked out before it.
+     * Picks a row out or takes it back out. A range is drawn from the row last picked out on its own,
+     * replacing whatever was picked out before it — what shift asks for; otherwise the one row is
+     * added or removed, as a list of files is picked through and as a checkbox means.
      */
-    function selectRow(attributeId: string, e: MouseEvent) {
+    function selectRow(attributeId: string, range = false) {
         // Whatever is being edited is wrapped up: picking rows out is about the rows, not the value.
         commit();
         commitValueEdit();
         commitCreation();
 
-        if (e.shiftKey && selectionAnchor.current) {
+        if (range && selectionAnchor.current) {
             const from = selectableIds.indexOf(selectionAnchor.current);
             const to = selectableIds.indexOf(attributeId);
 
@@ -399,7 +408,22 @@ export default function AttributeList() {
 
         e.preventDefault();
         writeAttributes(e.clipboardData, picked);
+        // What is held is what says whether pasting is on offer at all, so the offer is redrawn.
+        rerender();
         toast.showMessage(t("attribute_list_panel.copied", { count: picked.length }));
+    }
+
+    /**
+     * The same from a button or a menu, where there is no event to write onto. What is held is set
+     * before the system clipboard is written to: it is what says whether pasting is on offer, and
+     * the offer has no reason to wait on a round trip the panel does not read back.
+     */
+    function copyPickedAttributes(picked: Attribute[]) {
+        holdAttributes(picked);
+        rerender();
+        toast.showMessage(t("attribute_list_panel.copied", { count: picked.length }));
+
+        void copyAttributesToClipboard(picked);
     }
 
     /**
@@ -477,7 +501,7 @@ export default function AttributeList() {
             {
                 title: t("attribute_list_panel.copy", { count: picked.length }),
                 uiIcon: "bx bx-copy",
-                handler: () => void copyAttributesToClipboard(picked)
+                handler: () => void copyPickedAttributes(picked)
             },
             ...pasteMenuItems()
         ];
@@ -612,6 +636,7 @@ export default function AttributeList() {
         activeAttribute: detail?.attribute,
         valueEditor,
         selection,
+        selecting: isSelecting,
         onOpen: openDetail,
         onSelect: selectRow,
         onShowMenu: showRowMenu,
@@ -673,7 +698,7 @@ export default function AttributeList() {
                     {/* The card the note's own attributes are pasted onto, so it is the one that
                         offers pasting beside its rows as well as on them. */}
                     <div
-                        class="attribute-list-panel align-values-end"
+                        class={clsx("attribute-list-panel align-values-end", isSelecting && "selecting")}
                         ref={containerRef}
                         onClick={commit}
                         onContextMenu={showPanelMenu}
@@ -685,10 +710,22 @@ export default function AttributeList() {
                             <NoItems icon="bx bx-hash" text={t("attribute_list_panel.no_attributes")} />
                         )}
 
-                        {/* Only on a desktop: a phone adds from the header, page flow and all. */}
-                        {!IS_MOBILE && note && (
+                        {/* What the foot of the card offers follows from what is being done at it:
+                            while rows are picked out, what can be done to them, and otherwise the way
+                            into adding one — which a phone reaches from the header, page flow and all. */}
+                        {note && (isSelecting ? (
+                            <AttributeSelectionBar
+                                count={selection.size}
+                                canDelete={selectedAttributes().every((candidate) => owned.current.includes(candidate))}
+                                canPaste={getHeldAttributes().length > 0}
+                                onCopy={() => void copyPickedAttributes(selectedAttributes())}
+                                onPaste={() => void applyPaste(getHeldAttributes())}
+                                onDelete={() => void deleteSelection(selectedAttributes())}
+                                onClear={clearSelection}
+                            />
+                        ) : !IS_MOBILE && (
                             <AddAttributeRow onAdd={(e) => addAttribute("label", e)} />
-                        )}
+                        ))}
                     </div>
                 </AttributeSection>
 
@@ -697,7 +734,11 @@ export default function AttributeList() {
                         id="attributes-inherited"
                         title={t("attribute_list_panel.inherited", { count: sections.inherited.length })}
                     >
-                        <div class="attribute-list-panel align-values-end" onClick={commit} {...clipboardProps}>
+                        <div
+                            class={clsx("attribute-list-panel align-values-end", isSelecting && "selecting")}
+                            onClick={commit}
+                            {...clipboardProps}
+                        >
                             <AttributeRowList rows={sections.inherited} {...rowProps} />
                         </div>
                     </AttributeSection>
@@ -715,7 +756,11 @@ export default function AttributeList() {
                             />
                         )}
                     >
-                        <div class="attribute-list-panel" onClick={commit} {...clipboardProps}>
+                        <div
+                            class={clsx("attribute-list-panel", isSelecting && "selecting")}
+                            onClick={commit}
+                            {...clipboardProps}
+                        >
                             <AttributeRowList rows={sections.definitions} {...rowProps} />
                         </div>
                     </AttributeSection>
@@ -813,6 +858,8 @@ interface AttributeRowListProps {
     valueEditor?: { attribute: Attribute; element: ComponentChildren };
     /** The attributeIds of the rows picked out to be copied. */
     selection: ReadonlySet<string>;
+    /** Whether rows are being picked out, which every row is drawn for rather than only the picked. */
+    selecting: boolean;
     /**
      * The rows stand for attributes Trilium writes and keeps up to date itself, which leaves them
      * nothing to offer: nothing to edit, nothing to delete, no note to name as their source (they are
@@ -822,8 +869,8 @@ interface AttributeRowListProps {
      */
     readOnly?: boolean;
     onOpen: (attribute: Attribute, isOwned: boolean, anchor: HTMLElement | null, e: MouseEvent) => void;
-    /** Picks the row out, or takes it back out of the selection. */
-    onSelect: (attributeId: string, e: MouseEvent) => void;
+    /** Picks the row out, or takes it back out of the selection; `range` is what shift asks for. */
+    onSelect: (attributeId: string, range?: boolean) => void;
     onShowMenu: (attribute: Attribute, e: MouseEvent) => void;
     /** Asks for the in-place editor over the attribute's value; wired to editable labels alone. */
     onEditValue: (attribute: Attribute) => void;
@@ -835,7 +882,7 @@ interface AttributeRowListProps {
  * Trilium reads for itself. What a row offers follows from whether the note owns its attribute rather
  * than from the card it is in: the definitions card holds the note's own alongside a template's.
  */
-function AttributeRowList({ rows, note, activeAttribute, valueEditor, selection, readOnly, onOpen, onSelect, onShowMenu, onEditValue, onDelete }: AttributeRowListProps) {
+function AttributeRowList({ rows, note, activeAttribute, valueEditor, selection, selecting, readOnly, onOpen, onSelect, onShowMenu, onEditValue, onDelete }: AttributeRowListProps) {
     function renderRows(group: AttributeEntry[]) {
         return (
             // The rows are menu items on a phone (see AttributeRow), and the theme dresses a menu item
@@ -854,8 +901,9 @@ function AttributeRowList({ rows, note, activeAttribute, valueEditor, selection,
                         // A row is picked out by the attribute behind it, which a draft has yet to
                         // become; the internal card's rows are not picked out at all (see above).
                         selected={!readOnly && !!attribute.attributeId && selection.has(attribute.attributeId)}
+                        selecting={!readOnly && selecting}
                         onSelect={!readOnly && attribute.attributeId
-                            ? (e) => onSelect(attribute.attributeId ?? "", e)
+                            ? (range) => onSelect(attribute.attributeId ?? "", range)
                             : undefined}
                         onShowMenu={!readOnly ? (e) => onShowMenu(attribute, e) : undefined}
                         // An attribute of another note names it; the current note's own would name itself.
@@ -902,36 +950,83 @@ interface AttributeRowProps {
     isSystem?: boolean;
     /** Whether the row is picked out to be copied. */
     selected?: boolean;
+    /** Whether rows are being picked out, which every row shows its checkbox for. */
+    selecting?: boolean;
     /** Names the note the attribute is inherited from, for attributes not owned by the current note. */
     showOwner?: boolean;
     onOpen: (anchor: HTMLElement | null, e: MouseEvent) => void;
     /** Picks the row out; absent for the rows that are not picked out at all (see the list above). */
-    onSelect?: (e: MouseEvent) => void;
+    onSelect?: (range?: boolean) => void;
     onShowMenu?: (e: MouseEvent) => void;
     /** Starts the in-place edit of the value; absent for rows whose value is not edited in place. */
     onEditValue?: () => void;
     onDelete?: () => void;
 }
 
-function AttributeRow({ attribute, note, active, valueEditor, isSystem, selected, showOwner, onOpen, onSelect, onShowMenu, onEditValue, onDelete }: AttributeRowProps) {
+function AttributeRow({ attribute, note, active, valueEditor, isSystem, selected, selecting, showOwner, onOpen, onSelect, onShowMenu, onEditValue, onDelete }: AttributeRowProps) {
     const rowRef = useRef<HTMLLIElement>(null);
+    // Set by a press held long enough to pick the row out, and read by the press's own release, which
+    // would otherwise open the form behind the selection it just made.
+    const heldDown = useRef(false);
     const attrType = getAttributeKind(attribute);
     const markerClass = getKindMarkerClass(attribute, attrType, isSystem);
     const kindIcon = getKindIcon(attribute, attrType);
     const kindTooltip = getKindTooltip(attribute, attrType, isSystem);
     const rowClass = clsx("attribute-row", active && "active", valueEditor && "editing", selected && "selected");
 
+    /**
+     * A phone has no modifier to hold down, so it has the press itself held instead: held long enough,
+     * it picks the row out rather than opening it, which is how a phone's lists are picked through.
+     * Once rows are being picked out a plain tap picks too — there being no checkbox to aim a thumb at
+     * on a row that is a menu item — which is the turn those lists take as well.
+     */
+    useEffect(() => {
+        const row = rowRef.current;
+        if (!IS_MOBILE || !row || !onSelect) return;
+
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const start = () => {
+            heldDown.current = false;
+            timer = setTimeout(() => {
+                heldDown.current = true;
+                onSelect();
+            }, LONG_PRESS_DURATION);
+        };
+        // A press that travels is the list being scrolled, and is no longer a press on the row.
+        const cancel = () => clearTimeout(timer);
+
+        row.addEventListener("touchstart", start, { passive: true });
+        row.addEventListener("touchmove", cancel, { passive: true });
+        row.addEventListener("touchend", cancel);
+        row.addEventListener("touchcancel", cancel);
+
+        return () => {
+            clearTimeout(timer);
+            row.removeEventListener("touchstart", start);
+            row.removeEventListener("touchmove", cancel);
+            row.removeEventListener("touchend", cancel);
+            row.removeEventListener("touchcancel", cancel);
+        };
+    }, [ onSelect ]);
+
     function open(e: MouseEvent) {
         // Keep the container's closing handler from undoing this.
         e.stopPropagation();
 
+        // The release of the press that picked the row out, which has had its say already.
+        if (heldDown.current) {
+            heldDown.current = false;
+            return;
+        }
+
         // Held down, the modifiers that pick rows out mean the press is about the selection rather
-        // than about the one attribute the popup would show.
-        if (onSelect && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+        // than about the one attribute the popup would show. On a phone, where there are none to
+        // hold, a tap means that too once rows are being picked out.
+        if (onSelect && (e.ctrlKey || e.metaKey || e.shiftKey || (IS_MOBILE && selecting))) {
             // Nothing of the press is the browser's here: a shift-press would otherwise take the text
             // between the two rows as a selection, over the rows being picked out.
             e.preventDefault();
-            onSelect(e);
+            onSelect(e.shiftKey);
             return;
         }
 
@@ -1008,6 +1103,9 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, selected
                 // The badge hangs off the icon's own corner here, there being no wrapper to hang it on.
                 iconClassName={clsx("attribute-kind", markerClass)}
                 title={kindTooltip}
+                // A picked-out row takes the mark a menu item is checked with, in the slot its kind
+                // icon holds — the same trade the checkbox makes for itself on a desktop below.
+                checked={selected}
                 onClick={open}
             >
                 {contents}
@@ -1021,12 +1119,38 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, selected
                 written on it, and what the icon (badge and all) stands for is exactly what is not. */}
             <span class={clsx("attribute-kind", markerClass)} title={kindTooltip}>
                 <Icon icon={kindIcon} />
+
+                {/* The way rows are picked out, standing in the kind icon's slot rather than taking a
+                    column of its own: the pane is narrow, and a column would take from the names what
+                    it took for itself. Only the row being pointed at offers one — until rows are being
+                    picked out, when every row shows its own, as a list of mail does. */}
+                {onSelect && (
+                    <span
+                        class="attribute-kind-check"
+                        onClick={(e) => {
+                            // Kept from the row, whose press would open the form over the selection.
+                            // The tick itself is left to the browser: refusing it puts the box back
+                            // after this handler has run, leaving it a press behind the selection it
+                            // is drawn from. What the press means either way is the same, so the two
+                            // agree — and the box is drawn from the selection on every render after.
+                            e.stopPropagation();
+                            onSelect(e.shiftKey);
+                        }}
+                    >
+                        {/* Not the form's checkbox component: that one is a labelled row of a settings
+                            page, where this is the glyph of an icon's slot. */}
+                        <input type="checkbox" class="form-check-input" checked={selected} tabIndex={-1} />
+                    </span>
+                )}
             </span>
 
             {contents}
         </li>
     );
 }
+
+/** How long a press is held before it picks a row out rather than opening it. */
+const LONG_PRESS_DURATION = 500;
 
 /**
  * Whether a row is a menu item, read once: what the app is running on does not change under it, and
@@ -1288,6 +1412,68 @@ function AddAttributeButton({ text, attrTypes, onSelect }: {
                 showAddMenu(e, attrTypes, (attrType) => onSelect(attrType, e));
             }}
         />
+    );
+}
+
+/**
+ * What can be done to the rows picked out, at the foot of the card holding them: how many they are,
+ * and the three things there are to do with them. It stands where the add row stands and takes its
+ * turn (see the card above), so that picking rows out costs the list no room of its own — and it
+ * says in words what the keys and the row menu offer without saying anything.
+ *
+ * Deleting is offered only where every picked row is the note's own, an inherited attribute being the
+ * source note's to delete; pasting only where something has been copied to paste.
+ */
+function AttributeSelectionBar({ count, canDelete, canPaste, onCopy, onPaste, onDelete, onClear }: {
+    count: number;
+    canDelete: boolean;
+    canPaste: boolean;
+    onCopy: () => void;
+    onPaste: () => void;
+    onDelete: () => void;
+    onClear: () => void;
+}) {
+    /** Kept from the card, whose own handler would close the form the button is not about. */
+    const act = (action: () => void) => (e: MouseEvent) => {
+        e.stopPropagation();
+        action();
+    };
+
+    return (
+        <div class="attribute-selection-bar">
+            <span class="attribute-selection-count">{t("attribute_list_panel.selected", { count })}</span>
+
+            <ActionButton
+                icon="bx bx-copy"
+                text={t("attribute_list_panel.copy", { count })}
+                onClick={act(onCopy)}
+            />
+
+            {canPaste && (
+                <ActionButton
+                    icon="bx bx-paste"
+                    text={t("attribute_list_panel.paste", { count: getHeldAttributes().length })}
+                    onClick={act(onPaste)}
+                />
+            )}
+
+            {canDelete && (
+                <ActionButton
+                    className="attribute-delete-button"
+                    icon="bx bx-trash"
+                    text={t("attribute_list_panel.delete_selection", { count })}
+                    onClick={act(onDelete)}
+                />
+            )}
+
+            {/* The way out, which is letting every row go: there is no mode standing apart from the
+                selection to be turned off (see `isSelecting`). */}
+            <ActionButton
+                icon="bx bx-x"
+                text={t("attribute_list_panel.clear_selection")}
+                onClick={act(onClear)}
+            />
+        </div>
     );
 }
 

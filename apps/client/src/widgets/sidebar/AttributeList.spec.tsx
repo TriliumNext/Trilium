@@ -974,8 +974,81 @@ describe("AttributeList", () => {
         expect(event.defaultPrevented).toBe(false);
     });
 
+    it("picks rows out by the checkbox standing in the kind icon's slot, no modifier held", () => {
+        renderPanel(noteWithAttributes());
+
+        // Every row offers one — the stylesheet is what shows it only over the row being pointed at
+        // — but the rows Trilium keeps for itself offer none, being carried nowhere.
+        expect(container.querySelectorAll(".attribute-kind-check")).toHaveLength(7);
+
+        checkbox(0).click();
+        expect(selectedNames()).toEqual([ "author" ]);
+        // A checkbox adds rather than takes over, which is what a checkbox means.
+        checkbox(2).click();
+        expect(selectedNames()).toEqual([ "author", "template" ]);
+        // And is not the row's press: no form opens behind the selection.
+        expect(document.querySelector(".attr-detail")).toBeNull();
+
+        checkbox(0).click();
+        expect(selectedNames()).toEqual([ "template" ]);
+    });
+
+    it("turns the card's foot over to what can be done to the rows picked out", async () => {
+        renderPanel(noteWithAttributes());
+
+        // Nothing picked out: the foot is the way into adding an attribute, as it always was.
+        expect(container.querySelector(".attribute-add-row")).not.toBeNull();
+        expect(container.querySelector(".attribute-selection-bar")).toBeNull();
+        // The cards say they are not picking rows out, which is what draws the checkboxes.
+        expect(firstPanel().className).not.toContain("selecting");
+
+        checkbox(0).click();
+        const bar = container.querySelector(".attribute-selection-bar");
+        expect(bar).not.toBeNull();
+        expect(container.querySelector(".attribute-add-row")).toBeNull();
+        expect(firstPanel().className).toContain("selecting");
+        // Only that the count has a slot: the wording is translated, and translations stay unloaded.
+        expect(bar?.querySelector(".attribute-selection-count")).not.toBeNull();
+
+        // Copy, delete and the way out, the note owning the one row picked out; nothing to paste yet.
+        writeAttributes(null, []);
+        checkbox(1).click();
+        expect(barIcons()).toEqual([ "bx bx-copy", "bx bx-trash", "bx bx-x" ]);
+
+        // Copying from the bar holds the attributes, which is what puts pasting on offer.
+        await act(async () => barButton("bx bx-copy")?.click());
+        expect(barIcons()).toEqual([ "bx bx-copy", "bx bx-paste", "bx bx-trash", "bx bx-x" ]);
+
+        // An inherited row is the source note's to delete, so the lot cannot be.
+        checkbox(3).click();
+        expect(barIcons()).not.toContain("bx bx-trash");
+
+        // The way out is letting every row go, which puts the add row back.
+        act(() => barButton("bx bx-x")?.click());
+        expect(selectedNames()).toEqual([]);
+        expect(container.querySelector(".attribute-selection-bar")).toBeNull();
+        expect(container.querySelector(".attribute-add-row")).not.toBeNull();
+    });
+
     function rows() {
         return [ ...container.querySelectorAll<HTMLElement>(".attribute-row") ];
+    }
+
+    function checkbox(index: number) {
+        const box = container.querySelectorAll<HTMLElement>(".attribute-kind-check")[index];
+        expect(box).toBeDefined();
+        return { click: () => act(() => box.click()) };
+    }
+
+    /** An action button wears its icon as classes of its own, rather than around a glyph of one. */
+    function barIcons() {
+        return [ ...container.querySelectorAll(".attribute-selection-bar .icon-action") ]
+            .map((button) => [ ...button.classList ].filter((name) => name.startsWith("bx")).join(" "));
+    }
+
+    function barButton(icon: string) {
+        return container.querySelector<HTMLElement>(
+            `.attribute-selection-bar .icon-action.${icon.split(" ").join(".")}`);
     }
 
     function selectedNames() {
@@ -1107,7 +1180,8 @@ function namesIn(root: Element) {
 }
 
 function iconsIn(root: Element) {
-    return [ ...root.querySelectorAll(".attribute-kind > span") ].map(
+    // The icon alone: the slot also holds the checkbox that stands in for it while rows are picked out.
+    return [ ...root.querySelectorAll(".attribute-kind > .tn-icon") ].map(
         (icon) => icon.className.replace(" tn-icon", ""));
 }
 
