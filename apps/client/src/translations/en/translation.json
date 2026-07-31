@@ -802,6 +802,7 @@
     "placeholder": "Type the labels and relations here"
   },
   "attribute_list_panel": {
+    "no_attributes": "No attributes",
     "section_owned": "Owned",
     "section_inherited": "Inherited",
     "section_definitions": "Definitions",

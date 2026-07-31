@@ -26,6 +26,7 @@ import HelpButton from "../react/HelpButton";
 import { useActiveNoteContext, useTriliumEvent, useTriliumOptionJson } from "../react/hooks";
 import Icon from "../react/Icon";
 import { DetailPane, MasterPane, useMasterDetail, useMasterDetailPage } from "../react/master_detail";
+import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
 import { ParentComponent } from "../react/react_utils";
 import { ATTRIBUTE_HELP_PAGE } from "../ribbon/components/AttributeHelp";
@@ -804,6 +805,17 @@ export default function AttributeList() {
                         {...panelProps}
                     >
                         {run.rows}
+
+                        {/* A run holding nothing says so here, where a pointer's does not: there,
+                            the count says the run is empty and the add row beneath it says what
+                            there is to do about it, so a third telling would be one too many. A
+                            phone has no add row — a card keeps what is done to it in its header —
+                            which leaves an empty run as an empty card, saying nothing at all. Only
+                            the note's own attributes can be shown empty; every other run is left
+                            out entirely when it holds nothing. */}
+                        {run.count === 0 && (
+                            <NoItems icon="bx bx-hash" text={t("attribute_list_panel.no_attributes")} />
+                        )}
                     </div>
                 </AttributeSection>
             ))}

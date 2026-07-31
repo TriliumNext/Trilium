@@ -89,6 +89,18 @@ describe("AttributeList on a phone", () => {
         expect(container.querySelector(".attribute-add-row")).toBeNull();
     });
 
+    it("says a run holds nothing, which a pointer's runs leave to the add row beneath them", () => {
+        renderPanel(buildNote({ id: "phone-bare-run", title: "Bare" }));
+
+        // The card would otherwise stand empty and say nothing: a phone keeps what is done to a run
+        // in the card's header, so there is no add row inside it to imply the run is waiting to be
+        // filled. AttributeList.spec asserts the other half — that a pointer gets no such notice.
+        expect(container.querySelectorAll(".attribute-row")).toHaveLength(0);
+        expect(section("attributes-owned").querySelector(".no-items")).not.toBeNull();
+        // Only the note's own run is ever shown empty; the rest are left out when they hold nothing.
+        expect(sectionIds()).toEqual([ "attributes-owned" ]);
+    });
+
     it("offers pasting from the first card's header, which is a phone's only way to it", async () => {
         // Nothing copied, nothing offered — as the row menu and the selection's bar do.
         renderPanel(noteWithRuns());
