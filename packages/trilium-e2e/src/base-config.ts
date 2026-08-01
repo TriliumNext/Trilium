@@ -43,7 +43,12 @@ export function createBaseConfig({ appDir, localTestDir, projectName, webServer,
             name: `${projectName}-shared`,
             testDir: sharedTestDir,
             use: { ...devices["Desktop Chrome"] },
-        }
+        },
+        {
+            name: `${projectName}-shared-firefox`,
+            testDir: sharedTestDir,
+            use: { ...devices["Desktop Firefox"] },
+        },
     ];
 
     if (localTestDir) {
@@ -55,8 +60,13 @@ export function createBaseConfig({ appDir, localTestDir, projectName, webServer,
     }
 
     return defineConfig({
+        // outputDir (raw per-test artifacts written during the run: videos, traces, screenshots)
+        // must NOT be the same path as the html reporter's outputFolder below. The html reporter
+        // clears its output folder before copying attachments into it, so pointing both at the
+        // same directory wiped the video/trace files out from under it before they could be
+        // embedded — every report ended up with zero playable video/trace data, silently.
         reporter: [["list"], ["html", { outputFolder: join(appDir, "test-output") }]],
-        outputDir: join(appDir, "test-output"),
+        outputDir: join(appDir, "test-results"),
         retries: 3,
         use: {
             baseURL,

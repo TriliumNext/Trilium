@@ -35,3 +35,41 @@ export function copyTextWithToast(text: string) {
         toast.showError(t("clipboard.copy_failed"));
     }
 }
+
+/**
+ * Copies both an HTML and a plain-text representation to the clipboard, so pasting into
+ * a rich-text editor (e.g. CKEditor) preserves formatting (links, images) while pasting
+ * into a plain-text field falls back to readable text.
+ *
+ * Uses the `copy` event's `clipboardData.setData()` instead of the classic "select a hidden
+ * DOM node, then execCommand('copy')" trick. The latter relies on each browser's own
+ * selection-to-clipboard HTML serialization, which is inconsistent — in particular Firefox
+ * does not reliably populate the `text/html` clipboard flavor that way, so pasted content
+ * silently degrades to plain text. Writing the flavors directly during the `copy` event is
+ * the documented cross-browser-reliable approach and does not require any selection at all.
+ */
+export function copyRichText(html: string, plainText: string): boolean {
+    function listener(e: ClipboardEvent) {
+        e.clipboardData?.setData("text/plain", plainText);
+        e.clipboardData?.setData("text/html", html);
+        e.preventDefault();
+    }
+
+    try {
+        document.addEventListener("copy", listener);
+        return document.execCommand("copy");
+    } catch (e) {
+        console.warn(e);
+        return false;
+    } finally {
+        document.removeEventListener("copy", listener);
+    }
+}
+
+export function copyRichTextWithToast(html: string, plainText: string) {
+    if (copyRichText(html, plainText)) {
+        toast.showMessage(t("clipboard.copy_success"));
+    } else {
+        toast.showError(t("clipboard.copy_failed"));
+    }
+}

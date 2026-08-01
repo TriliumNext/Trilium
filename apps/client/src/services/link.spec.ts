@@ -173,6 +173,74 @@ describe("calculateHash", () => {
     it("produces only the param string when note path is empty", () => {
         expect(calculateHash({ ntxId: "n1" } as any)).toBe("#?ntxId=n1");
     });
+
+    it("includes annotationId and annotationPage when set", () => {
+        const hash = calculateHash({
+            notePath: "root/abc",
+            viewScope: { annotationId: "12R", annotationPage: 5 }
+        } as any);
+        expect(hash).toBe("#root/abc?annotationId=12R&annotationPage=5");
+    });
+
+    it("includes annotationPreview when set", () => {
+        const hash = calculateHash({
+            notePath: "root/abc",
+            viewScope: { annotationId: "12R", annotationPage: 3, annotationPreview: "hello world" }
+        } as any);
+        expect(hash).toContain("annotationId=12R");
+        expect(hash).toContain("annotationPage=3");
+        expect(hash).toContain("annotationPreview=hello%20world");
+    });
+
+    it("omits annotationPage when falsy", () => {
+        const hash = calculateHash({
+            notePath: "root/abc",
+            viewScope: { annotationId: "12R" }
+        } as any);
+        expect(hash).not.toContain("annotationPage");
+        expect(hash).not.toContain("annotationPreview");
+    });
+});
+
+describe("parseNavigationStateFromUrl — annotation params", () => {
+    it("round-trips annotationId, annotationPage and annotationPreview", () => {
+        const hash = calculateHash({
+            notePath: "root/aaaaaaaaaaaa",
+            viewScope: { annotationId: "12R", annotationPage: 5, annotationPreview: "fox jumps" }
+        } as any);
+
+        const parsed = parseNavigationStateFromUrl(hash);
+        expect((parsed as any).viewScope).toMatchObject({
+            annotationId: "12R",
+            annotationPage: 5,
+            annotationPreview: "fox jumps"
+        });
+    });
+
+    it("parses annotationId without a preview", () => {
+        const parsed = parseNavigationStateFromUrl("#root/aaaaaaaaaaaa?annotationId=15R&annotationPage=2");
+        expect((parsed as any).viewScope).toMatchObject({
+            annotationId: "15R",
+            annotationPage: 2
+        });
+        expect((parsed as any).viewScope.annotationPreview).toBeUndefined();
+    });
+
+    it("parses area: prefixed annotationId used for image annotations", () => {
+        const parsed = parseNavigationStateFromUrl(
+            "#root/aaaaaaaaaaaa?annotationId=area%3AattachmentXyz&annotationPage=7"
+        );
+        expect((parsed as any).viewScope.annotationId).toBe("area:attachmentXyz");
+        expect((parsed as any).viewScope.annotationPage).toBe(7);
+    });
+
+    it("ignores an invalid annotationPage value", () => {
+        const parsed = parseNavigationStateFromUrl(
+            "#root/aaaaaaaaaaaa?annotationId=12R&annotationPage=notanumber"
+        );
+        // parseInt("notanumber") || undefined → undefined
+        expect((parsed as any).viewScope.annotationPage).toBeUndefined();
+    });
 });
 
 describe("getNotePathFromUrl", () => {

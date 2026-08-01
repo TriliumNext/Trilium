@@ -58,6 +58,14 @@ export interface NoteContextDataMap {
     pdfAnnotations: {
         annotations: PdfAnnotationInfo[];
         scrollToAnnotation(annotationId: string, pageNumber: number): void;
+        setAnnotationColor(annotationId: string, color: string): void;
+        deleteAnnotation(annotationId: string, pageNumber: number): void;
+    };
+    pdfAreaAnnotations: {
+        annotations: PdfAreaAnnotationInfo[];
+        scrollToArea(pageNumber: number, rect: { x: number; y: number; width: number; height: number }): void;
+        deleteArea(attachmentId: string, attributeId: string): void;
+        updateArea(attributeId: string, patch: { comment?: string; color?: string }): void;
     };
     saveState: {
         state: SaveState;

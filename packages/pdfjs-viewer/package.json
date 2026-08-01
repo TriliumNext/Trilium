@@ -6,7 +6,10 @@
     "build": "tsx scripts/build.ts",
     "watch": "tsx scripts/build.ts --watch",
     "test": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:chrome": "playwright test --project=chromium",
+    "e2e:firefox": "playwright test --project=firefox",
+    "e2e:all": "playwright test --project=chromium --project=firefox"
   },
   "dependencies": {
     "@triliumnext/commons": "workspace:*"
