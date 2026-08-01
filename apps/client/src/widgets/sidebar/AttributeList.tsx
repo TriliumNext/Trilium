@@ -494,8 +494,19 @@ export default function AttributeList() {
 
         if (!attributeId || !selection.has(attributeId)) {
             picked = [ attribute ];
-            selectionAnchor.current = attributeId ?? null;
-            setSelection(attributeId ? new Set([ attributeId ]) : EMPTY_SELECTION);
+
+            // The narrowing is only a correction, so it is only made where there is something to
+            // correct: with rows already picked out, a menu about a row outside them would leave
+            // the panel offering to copy three rows while the menu deleted a fourth. With none
+            // picked out there is no such contradiction — and picking this one out to make the
+            // point would turn the whole panel over to a standing it was never asked for, every row
+            // grown a checkbox and stripped of its own buttons, the bar up at the foot, all for a
+            // menu about the one row under the pointer. A press asking what can be done to a row is
+            // not a press picking it out.
+            if (isSelecting) {
+                selectionAnchor.current = attributeId ?? null;
+                setSelection(attributeId ? new Set([ attributeId ]) : EMPTY_SELECTION);
+            }
         }
 
         const items: MenuItem<never>[] = [

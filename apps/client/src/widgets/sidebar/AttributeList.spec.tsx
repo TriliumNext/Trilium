@@ -989,7 +989,22 @@ describe("AttributeList", () => {
         const [ , saved ] = put.mock.calls[0] as [ string, Attribute[] ];
         expect(saved.map((attribute) => attribute.name)).toEqual([ "template", "label:priority" ]);
 
-        // A right press on a row outside them narrows down to that row alone.
+        // Deleting the lot let them all go, so nothing is picked out now — and a right press then
+        // picks nothing out for itself: it is a press asking what can be done to the row under it,
+        // not one picking that row out, and picking it would turn the whole panel over to the
+        // standing rows are picked out in, bar and checkboxes and all, for a menu about one row.
+        expect(selectedNames()).toEqual([]);
+        rightPress(0);
+        expect(selectedNames()).toEqual([]);
+        expect(container.querySelector(".attribute-selection-bar")).toBeNull();
+        expect(container.querySelector(".attribute-list-panel")?.className).not.toContain("selecting");
+        // The menu is about the row pressed all the same, which is the point of the press.
+        expect(menuItem("bx bx-copy")).toBeDefined();
+        expect(menuItem("bx bx-trash")).toBeDefined();
+
+        // With rows picked out, though, a right press outside them narrows down to that row alone:
+        // what the menu acts on has to be what the panel shows as picked.
+        pick(1, { ctrlKey: true });
         rightPress(0);
         expect(selectedNames()).toEqual([ "template" ]);
         // An inherited row is the source note's to delete, so only copying is offered over it.
