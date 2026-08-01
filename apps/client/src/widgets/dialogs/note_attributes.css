@@ -111,6 +111,15 @@ body.mobile .modal.note-attributes-modal {
         min-width: 0;
         padding: 0;
 
+        /* Nor a menu's standing above the app. `body.mobile .dropdown-menu` lifts every menu to 3000
+           so that one opening floats over everything; this list opens over nothing, it sits in a
+           card. The rule that un-fixes its position (`body.mobile .modal-dialog .dropdown-menu`)
+           leaves that 3000 behind, and it does not lie idle as it would on any ordinary static box:
+           the list is a flex item of the panel, and a flex item takes its z-index whether it is
+           positioned or not. So the rows stood at 3000 and the selection's bar — a sticky 1 — was
+           drawn underneath them, which is what a row scrolling past it looked like it was doing. */
+        z-index: auto !important;
+
         /* The card is the surface now, so the rows keep only what tells them apart from one another: the
            dividers between them, and whatever a row is being pressed or read in. */
         .attribute-row {

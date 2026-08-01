@@ -3,6 +3,14 @@
     flex-direction: column;
 }
 
+/* The card takes the focus when it is pressed, which is how the copy and paste keys reach the panel
+   (see AttributeList.tsx) — a way in rather than a place to arrive at, so it is not drawn as focused:
+   the rows picked out are what says where those keys will land. */
+.attribute-list-panel:focus,
+.attribute-list-panel:focus-visible {
+    outline: none;
+}
+
 .attribute-list-panel ul.attribute-rows {
     margin: 0;
     padding-inline-start: 0;
@@ -22,12 +30,35 @@
        value are cut off instead, and the popup the row opens has them in full. */
     white-space: nowrap;
     overflow: hidden;
+    /* A row is pressed rather than read from, and a press that draws a range would otherwise take
+       the text between the two rows along with them. The popup has the attribute in full to copy
+       from, and the attributes editor is the surface its text is read off. */
+    user-select: none;
 }
 
 .attribute-list-panel .attribute-row:hover,
 .attribute-list-panel .attribute-row.active,
 .attribute-list-panel .attribute-row.editing {
     background-color: var(--hover-item-background-color);
+}
+
+/* Picked out to be copied. Held apart from the row merely being pointed at or shown in the popup —
+   which come and go with the pointer — by the standing mark of a filled leading edge, and by a
+   ground that outweighs the hover film so a picked row pointed at still reads as picked. */
+.attribute-list-panel .attribute-row.selected,
+.attribute-list-panel .attribute-row.selected:hover {
+    background-color: var(--active-item-background-color);
+}
+
+.attribute-list-panel .attribute-row.selected::before {
+    content: "";
+    position: absolute;
+    inset-block: 2px;
+    inset-inline-start: 0;
+    width: 2px;
+    border-radius: 1px;
+    background-color: var(--main-text-color);
+    opacity: 0.5;
 }
 
 /* While its value is edited (or the attribute created), the row lets the editor standing over it
@@ -82,13 +113,234 @@
     bottom: -4px;
 }
 
-/* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort is
-   what carries the split, the rule only marks where it falls. */
+/*
+ * The checkbox a row is picked out by, standing in the slot the kind icon holds rather than in a
+ * column of its own: the pane is narrow, and a column would take from the names what it took for
+ * itself. Only the row being pointed at shows one — until rows are being picked out, when every row
+ * shows its own, the way a list of mail turns over once one of it is picked.
+ */
+.attribute-list-panel .attribute-kind-check {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.attribute-list-panel .attribute-row:hover .attribute-kind-check,
+.attribute-list-panel.selecting .attribute-kind-check {
+    display: flex;
+}
+
+.attribute-list-panel .attribute-kind-check .form-check-input {
+    /* The icon's own size, so that the row is laid out the same whichever of the two is showing. */
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* The glyph the checkbox stands in for — badge and all, which would otherwise hang off its corner
+   saying something about an attribute that is not what the checkbox is asking. Hidden rather than
+   left out, so the slot keeps the width the icon gave it.
+
+   Only where there is a checkbox to stand in for it, which is a pointer's rows: a phone marks a
+   picked row by turning its icon into a check (see AttributeRow), so its unpicked rows keep theirs
+   — and would otherwise be stripped of a badge that says the attribute is Trilium's own or its
+   field promoted, neither of which the picking is about. The wrapper holding the icon is what
+   these are about; on a phone the icon is itself `.attribute-kind`, hence the `.tn-icon` it always
+   carries telling the two apart. */
+.attribute-list-panel .attribute-row:hover .attribute-kind:not(.tn-icon) > .tn-icon,
+.attribute-list-panel.selecting .attribute-kind:not(.tn-icon) > .tn-icon {
+    visibility: hidden;
+}
+
+.attribute-list-panel .attribute-row:hover .attribute-kind:not(.tn-icon)::after,
+.attribute-list-panel.selecting .attribute-kind:not(.tn-icon)::after {
+    display: none;
+}
+
+/*
+ * What can be done to the rows picked out, at the foot of the card. It stands where the add row
+ * stands and takes its turn, so that picking rows out costs the list no room of its own.
+ *
+ * Held at the foot of what can be seen of the card rather than left at the end of the rows: a note
+ * carrying more attributes than the card can show at once would otherwise have the bar scrolled off
+ * below them, and rows are picked out to be acted on. It sticks against the card's body, which is
+ * what scrolls (see RightPanelContainer.css); where the rows all fit, there is nothing to stick to
+ * and it sits at their end as before. It is lifted just clear of the rows — but left under the row
+ * an editor stands over (which reaches 10), that editor being the taller thing to read.
+ *
+ * Drawn as a surface of its own standing over the list rather than as a strip ruled off from it:
+ * held off the card's edges so that it reads as a thing laid on the card and not as furniture the
+ * card was built with. A rule across the card would have said instead that the list ends there,
+ * which it does not.
+ *
+ * The theme's card recipe, as the chat's composer island wears it (see ChatInputBar.css): the 10px
+ * radius shared by the centre pane, the dropdown menus and the tool dialogs, the card's own border
+ * and fill, and no shadow of its own — a Trilium surface is told by its fill, not by being lifted
+ * off what it sits on.
+ *
+ * Its fill is the one thing held apart from that recipe. A card's fill is a film over the pane
+ * rather than a colour, which the rows sliding under this one would be read straight through; so
+ * the film is laid over the app's surface here instead of straight onto the card, which comes out
+ * the shade the recipe asks for and hides what passes beneath it besides.
+ */
+.attribute-selection-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 3px 2px 10px;
+    margin: 6px 4px 4px;
+    border: 1px solid var(--card-border-color, var(--main-border-color));
+    border-radius: 10px;
+    box-shadow: var(--card-box-shadow, none);
+    background-color: var(--main-background-color);
+    background-image: linear-gradient(
+        var(--card-background-color, var(--accented-background-color)),
+        var(--card-background-color, var(--accented-background-color)));
+}
+
+/* The same island over a ground that is already carrying that wash. Where a run is a card of its own
+   — a phone (see AttributeSection) — the card paints exactly the fill composited above, so the bar
+   mixed to the card's own colour and disappeared into it, leaving its border to do all the work. The
+   plain surface instead, which is what those cards are washed over: the island reads as lifted off
+   them rather than as one more of them. */
+body.mobile .attribute-selection-bar {
+    background-image: none;
+}
+
+.attribute-selection-bar .attribute-selection-count {
+    /* Pushes the buttons to the trailing edge, where the values read from. */
+    margin-inline-end: auto;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+}
+
+/* At the compact size the row's own actions keep, the two rows of buttons reading as one kind. */
+.attribute-selection-bar .icon-action {
+    --icon-button-size: 24px;
+    --icon-button-icon-ratio: 0.8;
+
+    border-radius: 50%;
+}
+
+/*
+ * The heading a run of rows folds away under, where a card and its own header stood before. Dressed
+ * as those headers were — the pane's heading colour at its weight, its size and its letter spacing
+ * (see shell.css) — so that the runs still read as the sections they were, one notch quieter for
+ * standing inside a card rather than being one.
+ *
+ * Held at the top of what can be seen while its rows are scrolled past, so that a row is never read
+ * without the heading that says what it is; the heading of the run below pushes it out of the way in
+ * its turn. Opaque for the same reason the selection's island is, the rows passing under it — but
+ * the app's surface plainly, not the card's fill over it: a right-pane card paints no ground of its
+ * own, so its rows lie on that same surface, and a heading carrying the fill besides would read as
+ * a band laid across them rather than as words above them.
+ *
+ * The room above it is padding rather than margin, which a sticky box is held off its edge by: the
+ * rows would then be read through the gap that opened above the heading as they passed under it.
+ */
+.attribute-list-panel .attribute-group-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    /* The row's own gap, so that a heading's words start where a row's name does. */
+    gap: 6px;
+    padding: 7px 4px 3px;
+    cursor: pointer;
+    color: var(--right-pane-heading-color, var(--muted-text-color));
+    font-weight: 600;
+    font-size: 0.85em;
+    background-color: var(--main-background-color);
+}
+
+/* The room above a heading sets its run apart from the one before it. The first has none before it,
+   only the card's own header, which has set it apart already. */
+.attribute-list-panel .attribute-group:first-child .attribute-group-header {
+    padding-top: 2px;
+}
+
+.attribute-list-panel .attribute-group-header:hover {
+    color: var(--main-text-color);
+}
+
+/*
+ * What makes the runs read as one thing branching rather than as three things stacked: the rows of a
+ * run hang under its heading, set in from it and gathered by a line drawn down the heading's own
+ * chevron — the branch the rows are on. The chevron folds the branch as a tree's does, and the line
+ * ends where the branch does, so the eye is told where a run stops without a rule across the card.
+ */
+.attribute-list-panel .attribute-group-body {
+    /* Set so the line lands under the middle of the chevron above it. */
+    margin-inline-start: 11px;
+    padding-inline-start: 6px;
+    border-inline-start: 1px solid var(--main-border-color);
+}
+
+/* Turned as the cards turned theirs (see RightPanelContainer.css), so that folding a run away reads
+   as folding a card away did. */
+.attribute-list-panel .attribute-group-chevron {
+    flex-shrink: 0;
+    transition: transform 100ms ease;
+}
+
+.attribute-list-panel .attribute-group.collapsed .attribute-group-chevron {
+    transform: rotate(-90deg);
+}
+
+.attribute-list-panel .attribute-group-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* How many the run holds, beside its name rather than away at the trailing edge: it is read as part
+   of what the run is called, not as a column of its own. Sized and worn as the note tree wears the
+   count of a node's hidden children (see note_tree.css) — the same wash, a shade of the ink over the
+   page rather than a colour, and small enough to be answered rather than announced. */
+/* The same figure where a run is a card of its own rather than a heading of one — a phone (see
+   AttributeSection). Scoped by its own class rather than by the panel: the heading it sits in is the
+   card's, which stands outside the list. The card's name is set uppercase and letter-spaced, neither
+   of which a number takes any part in. */
+.attribute-run-count {
+    margin-inline-start: 6px;
+    padding: 0.1em 0.5em;
+    border-radius: 0.5em;
+    color: var(--muted-text-color);
+    font-size: 0.7rem;
+    font-weight: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
+}
+
+.attribute-list-panel .attribute-group-count {
+    flex-shrink: 0;
+    /* The heading's own gap sets it off; the base badge's margin would set it adrift of the name. */
+    margin-inline-start: 0;
+    padding: 0.1em 0.5em;
+    border-radius: 0.5em;
+    color: var(--muted-text-color);
+    font-size: 0.7rem;
+    font-weight: normal;
+    letter-spacing: 0;
+}
+
+/* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort
+   is what carries the split, the rule only marks where it falls — and quieter still than the line
+   the run hangs from, which it crosses: a split within a branch, not a cut through it. Held off the
+   leading edge for the same reason, so the branch reads as running past it unbroken. */
 .attribute-list-panel .attribute-rows-divider {
-    margin: 4px 4px 5px;
+    margin: 5px 4px 6px 8px;
     border: none;
     border-top: 1px solid var(--main-border-color);
-    opacity: 0.6;
+    opacity: 0.45;
 }
 
 .attribute-list-panel .attribute-name {
@@ -112,10 +364,10 @@
 
 /* Set against the row's trailing edge rather than trailing the name, so the values line up in a
    column of their own: name reads from the one edge, value from the other, and the gap between them
-   says how much room is left rather than being dead space after every short value. Where the card
-   asks for it — the two lists of plain attributes, owned and inherited (see AttributeList.tsx);
-   the definitions' summaries keep prose order. */
-.attribute-list-panel.align-values-end .attribute-value {
+   says how much room is left rather than being dead space after every short value. Where the run of
+   rows asks for it — the two runs of plain attributes, the note's own and the inherited ones (see
+   AttributeList.tsx); the definitions' summaries keep prose order. */
+.attribute-list-panel .attribute-rows.align-values-end .attribute-value {
     text-align: end;
 }
 
@@ -125,9 +377,15 @@
 }
 
 /* A label's value is edited in place, so the preview itself is a click target of its own: a text
-   cursor over it says as much, where the row around it — which opens the popup — points. */
-.attribute-list-panel .attribute-value.editable {
+   cursor over it says as much, where the row around it — which opens the popup — points. Not while
+   rows are being picked out: the whole row picks then, its value and its links along with it, so
+   nothing on it should offer what it will not do. */
+.attribute-list-panel:not(.selecting) .attribute-value.editable {
     cursor: text;
+}
+
+.attribute-list-panel.selecting .attribute-row :is(a, .attribute-value) {
+    cursor: pointer;
 }
 
 /* A flag's press toggles rather than types (see startValueEdit), and the pointer says so. */
@@ -171,8 +429,8 @@
     width: fit-content;
 }
 
-/* Being a box rather than text, the chip follows the card's alignment by margin instead. */
-.attribute-list-panel.align-values-end .attribute-value > .label-color-chip {
+/* Being a box rather than text, the chip follows the run's alignment by margin instead. */
+.attribute-list-panel .attribute-rows.align-values-end .attribute-value > .label-color-chip {
     margin-inline-start: auto;
 }
 
@@ -227,8 +485,9 @@
 }
 
 /* Not while editing: the actions — later in the DOM — would paint over the very overlay that
-   replaces them. */
-.attribute-list-panel .attribute-row:not(.editing):is(:hover, .active) .attribute-row-actions {
+   replaces them. Nor while rows are being picked out: a row's own actions are about the one row,
+   which is not what is being done then, and the foot of the card carries what is. */
+.attribute-list-panel:not(.selecting) .attribute-row:not(.editing):is(:hover, .active) .attribute-row-actions {
     display: flex;
 }
 

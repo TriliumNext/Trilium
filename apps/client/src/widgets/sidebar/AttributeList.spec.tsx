@@ -34,8 +34,12 @@ vi.mock("../../menus/context_menu", () => ({ default: { show: showContextMenu } 
 
 /** What the add button asks the context menu to show: a kind per entry, and a rule between groups. */
 interface AddMenuCall {
-    items: { kind?: string; handler?: () => void }[];
+    items: { kind?: string; uiIcon?: string; handler?: () => void }[];
 }
+
+// Copying and pasting report what they did; the toasts themselves belong to no widget.
+const toast = vi.hoisted(() => ({ showMessage: vi.fn(), showError: vi.fn() }));
+vi.mock("../../services/toast", () => ({ default: toast }));
 
 // A relation's target is picked in an Algolia autocomplete bound to jQuery, which is not loaded here:
 // a bare box stands in, reporting whatever is typed into it as the noteId picked.
@@ -55,6 +59,7 @@ vi.mock("../react/NoteAutocomplete", async () => {
 import appContext from "../../components/app_context";
 import type Component from "../../components/component";
 import FAttribute, { FAttributeRow } from "../../entities/fattribute";
+import { writeAttributes } from "../../services/attribute_clipboard";
 import type { Attribute } from "../../services/attribute_parser";
 import froca from "../../services/froca";
 import type LoadResults from "../../services/load_results";
@@ -179,83 +184,103 @@ describe("AttributeList", () => {
         }
     });
 
-    it("gives the note's own attributes, the inherited ones and the definitions of either a card each", () => {
+    it("holds the note's own attributes, the inherited ones and the definitions of either in one list", () => {
         renderPanel(noteWithAttributes());
 
-        // Three cards, each listing what its section holds.
-        const cards = [ ...container.querySelectorAll(".card") ];
-        expect(cards.map((card) => card.id)).toEqual([ "attributes", "attributes-inherited", "attributes-definitions" ]);
-        expect(namesIn(cards[0])).toEqual([ "author", "cssClass", "template" ]);
-        expect(namesIn(cards[1])).toEqual([ "inheritedLabel", "archived" ]);
-        // The definitions of both notes share a card, the note's own first, and lose their prefix.
-        expect(namesIn(cards[2])).toEqual([ "priority", "status" ]);
+        // One card for the lot, every run of it under a heading of its own — the card names the
+        // panel, so the note's own attributes need one as much as the rest do.
+        expect(container.querySelectorAll(".card")).toHaveLength(1);
+        expect(groupIds()).toEqual([ "attributes-owned", "attributes-inherited", "attributes-definitions" ]);
+        expect(namesIn(group("attributes-owned"))).toEqual([ "author", "cssClass", "template" ]);
+        expect(namesIn(group("attributes-inherited"))).toEqual([ "inheritedLabel", "archived" ]);
+        // The definitions of both notes share a group, the note's own first, and lose their prefix.
+        expect(namesIn(group("attributes-definitions"))).toEqual([ "priority", "status" ]);
 
         // The kind is carried by the icon; a definition takes the icon of the field it sets up.
-        expect(iconsIn(cards[0])).toEqual([ "bx bx-hash", "bx bx-hash", "bx bx-transfer" ]);
+        expect(iconsIn(group("attributes-owned"))).toEqual([ "bx bx-hash", "bx bx-hash", "bx bx-transfer" ]);
 
         // The icon also carries the row's one tooltip — the row itself has none to compete with it.
         // Only its presence: the wording is translated, and translations stay unloaded here.
-        expect(cards[0].querySelector(".attribute-row")?.hasAttribute("title")).toBe(false);
-        expect(cards[0].querySelector(".attribute-kind")?.hasAttribute("title")).toBe(true);
+        expect(container.querySelector(".attribute-row")?.hasAttribute("title")).toBe(false);
+        expect(container.querySelector(".attribute-kind")?.hasAttribute("title")).toBe(true);
         // A definition that names no type sets up a text field, and takes that field's icon.
-        expect(iconsIn(cards[2])).toEqual([ "bx bx-calendar", "bx bx-text" ]);
+        expect(iconsIn(group("attributes-definitions"))).toEqual([ "bx bx-calendar", "bx bx-text" ]);
 
         // The names Trilium reads for itself come last, below a rule, and are marked as such.
-        expect(cards[0].querySelectorAll("hr.attribute-rows-divider")).toHaveLength(1);
-        expect([ ...cards[0].querySelectorAll(".attribute-kind") ].map((kind) => kind.className.includes("marker-system")))
+        expect(group("attributes-owned").querySelectorAll("hr.attribute-rows-divider")).toHaveLength(1);
+        expect([ ...group("attributes-owned").querySelectorAll(".attribute-kind") ]
+            .map((kind) => kind.className.includes("marker-system")))
             .toEqual([ false, true, true ]);
 
         // A row of the note's own is deletable and unattributed; an inherited one names its note instead.
-        expect(cards[0].querySelectorAll(".attribute-delete-button")).toHaveLength(3);
-        expect(cards[0].querySelectorAll(".attribute-owner")).toHaveLength(0);
-        expect(cards[1].querySelectorAll(".attribute-delete-button")).toHaveLength(0);
-        expect(cards[1].querySelectorAll(".attribute-owner")).toHaveLength(2);
-        // Only what the note may edit is deletable, whichever card it is in.
-        expect(cards[2].querySelectorAll(".attribute-delete-button")).toHaveLength(1);
+        expect(group("attributes-owned").querySelectorAll(".attribute-delete-button")).toHaveLength(3);
+        expect(group("attributes-owned").querySelectorAll(".attribute-owner")).toHaveLength(0);
+        expect(group("attributes-inherited").querySelectorAll(".attribute-delete-button")).toHaveLength(0);
+        expect(group("attributes-inherited").querySelectorAll(".attribute-owner")).toHaveLength(2);
+        // Only what the note may edit is deletable, whichever run it is in.
+        expect(group("attributes-definitions").querySelectorAll(".attribute-delete-button")).toHaveLength(1);
 
         // An inheritable attribute is marked, and every definition previews what it sets up — a
         // set-holding one (label:status, "multi") by a mark of its own rather than by words.
-        expect(cards[1].querySelectorAll(".attribute-marker")).toHaveLength(2);
-        expect(cards[2].querySelectorAll(".attribute-value.definition")).toHaveLength(2);
-        expect(cards[2].querySelectorAll(".definition-marker")).toHaveLength(1);
+        expect(group("attributes-inherited").querySelectorAll(".attribute-marker")).toHaveLength(2);
+        expect(group("attributes-definitions").querySelectorAll(".attribute-value.definition")).toHaveLength(2);
+        expect(group("attributes-definitions").querySelectorAll(".definition-marker")).toHaveLength(1);
     });
 
-    it("keeps to one card, collapsing and all, for a note with nothing but its own attributes", () => {
-        renderPanel(buildNote({ id: "bare", title: "Bare", "#author": "Elian" }));
+    it("folds a run of rows away by its heading, and remembers it folded", async () => {
+        options.set("rightPaneCollapsedItems", JSON.stringify([ "attributes-inherited" ]));
+        renderPanel(noteWithAttributes());
 
-        expect(container.querySelectorAll(".card")).toHaveLength(1);
-        // Down to a single card there is nothing to put away, so no chevron is offered.
+        // Remembered from before, so the run arrives folded and its rows are not drawn at all.
+        expect(group("attributes-inherited").className).toContain("collapsed");
+        expect(namesIn(group("attributes-inherited"))).toEqual([]);
+        // The card is the only one its tab has, so it is not itself something to fold away.
         expect(container.querySelector(".card")?.className).toContain("not-collapsible");
+
+        await act(async () => groupHeader("attributes-inherited").click());
+        expect(group("attributes-inherited").className).not.toContain("collapsed");
+        expect(namesIn(group("attributes-inherited"))).toEqual([ "inheritedLabel", "archived" ]);
+        expect(JSON.parse(options.get("rightPaneCollapsedItems") ?? "[]")).not.toContain("attributes-inherited");
+
+        // And folding one back up is remembered the same way.
+        await act(async () => groupHeader("attributes-definitions").click());
+        expect(JSON.parse(options.get("rightPaneCollapsedItems") ?? "[]")).toContain("attributes-definitions");
     });
 
-    it("says so, rather than showing an empty list, for a note carrying no attributes at all", () => {
+    it("leaves a note carrying no attributes its heading and the way in, and says nothing besides", () => {
         renderPanel(buildNote({ id: "empty", title: "Empty" }));
 
+        // The run stands, empty. Nothing stands in for its rows: the heading counts them — at zero —
+        // and the add row says what there is to do about it, so any "no attributes" beside those two
+        // would be a third telling of the one fact, and the loudest of the three at that.
         expect(container.querySelectorAll(".attribute-row")).toHaveLength(0);
-        expect(container.querySelector(".no-items")).not.toBeNull();
+        expect(container.querySelector(".no-items")).toBeNull();
+        expect(groupIds()).toEqual([ "attributes-owned" ]);
+        expect(group("attributes-owned").querySelector(".attribute-group-count")?.textContent).toBe("0");
+        expect(group("attributes-owned").querySelector(".attribute-add-row")).not.toBeNull();
     });
 
-    it("leaves what Trilium wrote for itself out of a release build, and gives it its own card in a development one", () => {
+    it("leaves what Trilium wrote for itself out of a release build, and gives it its own run in a development one", () => {
         buildNote({ id: "target", title: "Target" });
         const note = buildNote({ id: "linking", title: "Linking", "#author": "Elian", "~internalLink": "target" });
 
         renderPanel(note);
-        expect(cardIds()).toEqual([ "attributes" ]);
+        expect(groupIds()).toEqual([ "attributes-owned" ]);
 
         // Unmounted first, the panel collecting the attributes of the note it is handed as it mounts.
         setDevBuild(true);
         render(null, container);
         renderPanel(note);
 
-        const cards = [ ...container.querySelectorAll(".card") ];
-        expect(cardIds()).toEqual([ "attributes", "attributes-internal" ]);
-        expect(namesIn(cards[1])).toEqual([ "internalLink" ]);
+        expect(groupIds()).toEqual([ "attributes-owned", "attributes-internal" ]);
+        const internal = group("attributes-internal");
+        expect(namesIn(internal)).toEqual([ "internalLink" ]);
         // Nothing on such a row is the note's to change, and nothing marks it as Trilium's own: the
-        // card it is in says as much of every row it holds.
-        expect(cards[1].querySelectorAll(".attribute-delete-button")).toHaveLength(0);
-        expect(cards[1].querySelectorAll(".attribute-owner")).toHaveLength(0);
-        expect(cards[1].querySelector(".attribute-kind")?.className).not.toContain("marker-system");
-        expect(cards[1].querySelectorAll("hr.attribute-rows-divider")).toHaveLength(0);
+        // heading it is under says as much of every row it holds.
+        expect(internal.querySelectorAll(".attribute-delete-button")).toHaveLength(0);
+        expect(internal.querySelectorAll(".attribute-owner")).toHaveLength(0);
+        expect(internal.querySelector(".attribute-kind")?.className).not.toContain("marker-system");
+        expect(internal.querySelectorAll("hr.attribute-rows-divider")).toHaveLength(0);
     });
 
     it("opens the detail popup on a row and closes it again on a press beside the rows", () => {
@@ -323,21 +348,22 @@ describe("AttributeList", () => {
         expect(namesIn(container)).not.toContain("author");
     });
 
-    it("adds a definition through the popup, saving it once the popup is closed", async () => {
+    it("adds a definition from the panel's menu or the run's own way in, saving it once the popup is closed", async () => {
         renderPanel(noteWithAttributes());
 
-        // The panel's own button offers every kind; the definitions card offers the two definitions.
-        const [ ownedMenu, definitionsMenu ] = [ ...container.querySelectorAll<HTMLElement>(".card-header-buttons .bx-plus") ];
-        act(() => ownedMenu.click());
-        act(() => definitionsMenu.click());
+        // One list, so one button, and it offers every kind: the definitions had a button of their
+        // own while they had a card of their own, which offered nothing this one does not.
+        const addButton = container.querySelector<HTMLElement>(".card-header-buttons .bx-plus");
+        act(() => addButton?.click());
 
-        const offered = showContextMenu.mock.calls.map(([ { items } ]) => items.length);
-        // Four kinds and the rule setting the definitions apart, against the two definitions on their own.
-        expect(offered).toEqual([ 5, 2 ]);
+        // Four kinds and the rule setting the definitions apart from what they define.
+        const { items } = showContextMenu.mock.calls[0][0];
+        expect(items).toHaveLength(5);
+        expect(items[2].kind).toBe("separator");
 
         // A definition still goes through the form, its settings needing one; nothing is saved until
         // it is closed, and a press beside it keeps the edits — which for a list of rows means saving.
-        act(() => showContextMenu.mock.calls[1][0].items[0].handler?.());
+        act(() => items[3].handler?.());
         expect(document.querySelector(".attr-detail")).not.toBeNull();
         expect(put).not.toHaveBeenCalled();
 
@@ -348,6 +374,24 @@ describe("AttributeList", () => {
         expect(document.querySelector(".attr-detail")).toBeNull();
         const [ , saved ] = put.mock.calls[0] as [ string, { name: string; value: string }[] ];
         expect(saved.at(-1)).toEqual(
+            { type: "label", name: "label:myLabel", value: "promoted,single,text", isInheritable: false });
+
+        // The run has a way in of its own too, as the note's own attributes do: the panel's button is
+        // a long way from the definitions once a template has filled the pane. It adds the one kind —
+        // the form's own list of field types is where a relation definition is reached — so it opens
+        // the same popup on the same thing the menu's third entry did, with no menu in between.
+        const definitionAddRow = group("attributes-definitions").querySelector<HTMLElement>(".attribute-add-row");
+        expect(definitionAddRow).not.toBeNull();
+        act(() => definitionAddRow?.click());
+        expect(document.querySelector(".attr-detail")).not.toBeNull();
+        expect(put).toHaveBeenCalledOnce();
+
+        await act(async () => {
+            document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        });
+
+        const [ , savedAgain ] = put.mock.calls[1] as [ string, { name: string; value: string }[] ];
+        expect(savedAgain.at(-1)).toEqual(
             { type: "label", name: "label:myLabel", value: "promoted,single,text", isInheritable: false });
     });
 
@@ -612,8 +656,7 @@ describe("AttributeList", () => {
         // hold open — and an inherited flag with no value is not something the note lacks.
         render(null, container);
         renderPanel(noteWithAttributes());
-        const inherited = container.querySelector("#attributes-inherited");
-        const archived = [ ...(inherited?.querySelectorAll(".attribute-row") ?? []) ]
+        const archived = [ ...group("attributes-inherited").querySelectorAll(".attribute-row") ]
             .find((row) => row.querySelector(".attribute-name")?.textContent === "archived");
         expect(archived?.querySelector(".attribute-value")?.className).not.toContain("value-placeholder");
         expect(archived?.querySelector(".attribute-value")?.textContent).toBe("");
@@ -824,6 +867,331 @@ describe("AttributeList", () => {
     /** What the panel subscribed to, when rendered under a parent component that can tell it. */
     let eventHandlers: Map<string, (data: unknown) => void>;
 
+    it("picks rows out with the modifiers, across the cards, and lets a plain press take over again", () => {
+        renderPanel(noteWithAttributes());
+
+        // Control adds and removes the one row, as a list of files is picked through.
+        pick(0, { ctrlKey: true });
+        expect(selectedNames()).toEqual([ "author" ]);
+        pick(0, { ctrlKey: true });
+        expect(selectedNames()).toEqual([]);
+        // The rows are not what the press was about, so no form is opened over them.
+        expect(document.querySelector(".attr-detail")).toBeNull();
+
+        // Shift draws a range from the row last picked out, over the cards' boundaries: the owned
+        // card's three rows and the first of the inherited card's.
+        pick(0, { ctrlKey: true });
+        pick(3, { shiftKey: true });
+        expect(selectedNames()).toEqual([ "author", "cssClass", "template", "inheritedLabel" ]);
+
+        // While rows are being picked out the whole row picks, so a press with nothing held down
+        // picks too rather than opening the form and letting the selection go.
+        act(() => rows()[1].click());
+        expect(selectedNames()).toEqual([ "author", "template", "inheritedLabel" ]);
+        expect(document.querySelector(".attr-detail")).toBeNull();
+
+        // With none picked out it is the one attribute it landed on again.
+        act(() => barButton("bx bx-x")?.click());
+        act(() => rows()[1].click());
+        expect(selectedNames()).toEqual([]);
+        expect(document.querySelector(".attr-detail")).not.toBeNull();
+    });
+
+    it("keeps a press on a picked row from whatever it lands on within it", () => {
+        renderPanel(noteWithAttributes());
+
+        // Nothing picked out: the value is its own way in, which opens the field over it.
+        act(() => rows()[0].querySelector<HTMLElement>(".attribute-value")?.click());
+        expect(container.querySelector(".attribute-value-editor")).not.toBeNull();
+
+        pick(2, { ctrlKey: true });
+        expect(selectedNames()).toEqual([ "template" ]);
+
+        // Picked out, the same press picks the row instead — and is refused besides, so that a
+        // relation's value, which is a link to the note it points at, is not navigated to either.
+        const press = new MouseEvent("click", { bubbles: true, cancelable: true });
+        act(() => void rows()[0].querySelector(".attribute-value")?.dispatchEvent(press));
+
+        expect(press.defaultPrevented).toBe(true);
+        // Read in the order the rows are drawn, whichever order they were picked out in.
+        expect(selectedNames()).toEqual([ "author", "template" ]);
+        expect(container.querySelectorAll(".attribute-value-editor")).toHaveLength(0);
+    });
+
+    it("copies the picked rows as the text the attributes editor spells them out in", () => {
+        renderPanel(noteWithAttributes());
+
+        // Nothing picked out: the press is about whatever text is selected, and is left alone.
+        const untouched = copyFrom(firstPanel());
+        expect(untouched.defaultPrevented).toBe(false);
+        expect(untouched.written).toEqual({});
+
+        pick(0, { ctrlKey: true });
+        pick(2, { ctrlKey: true });
+
+        const copied = copyFrom(firstPanel());
+        expect(copied.defaultPrevented).toBe(true);
+        // Both flavours, the relation as the path in the one and as a reference link in the other.
+        expect(copied.written["text/plain"]).toBe("#author=Elian ~template=#root/tpl");
+        expect(copied.written["text/html"]).toContain('href="#root/tpl"');
+        expect(toast.showMessage).toHaveBeenCalledOnce();
+    });
+
+    it("pastes attributes onto the note, replacing a name it already carries and adding the rest", async () => {
+        // A note of its own: the effective-attribute cache is shared between the tests, so a note
+        // named as another test's would arrive carrying that one's inherited attributes.
+        const note = buildNote({ id: "pastee", title: "Pastee", "#author": "Someone" });
+        const existingId = note.getOwnedAttributes()[0].attributeId;
+        renderPanel(note);
+
+        await act(async () => pasteInto(firstPanel(), { "text/plain": "#author=Elian #tag=new ~parent=#root/tpl" }));
+
+        expect(put).toHaveBeenCalledOnce();
+        const [ url, saved ] = put.mock.calls[0] as [ string, Attribute[] ];
+        expect(url).toBe("notes/pastee/attributes");
+        expect(saved).toMatchObject([
+            // Replaced in place, the attribute staying the one it was rather than a second `author`.
+            { type: "label", name: "author", value: "Elian", attributeId: existingId },
+            { type: "label", name: "tag", value: "new" },
+            { type: "relation", name: "parent", value: "tpl" }
+        ]);
+        // Nothing of the note the attributes were copied from comes across with them.
+        expect(saved[1].attributeId).toBeUndefined();
+        expect(namesIn(container)).toEqual([ "author", "tag", "parent" ]);
+    });
+
+    it("says what it made of a clipboard that is not attributes, and saves nothing over it", async () => {
+        renderPanel(buildNote({ id: "subject", title: "Subject", "#author": "Someone" }));
+
+        await act(async () => pasteInto(firstPanel(), { "text/plain": "just some prose" }));
+        expect(toast.showError).toHaveBeenCalledOnce();
+        expect(put).not.toHaveBeenCalled();
+
+        // An empty clipboard is not an error, only nothing to do.
+        await act(async () => pasteInto(firstPanel(), { "text/plain": "" }));
+        expect(toast.showError).toHaveBeenCalledOnce();
+        expect(put).not.toHaveBeenCalled();
+    });
+
+    it("offers the picked rows to a right press, narrowing down to the one row pressed outside them", async () => {
+        renderPanel(noteWithAttributes());
+        pick(0, { ctrlKey: true });
+        pick(1, { ctrlKey: true });
+
+        // A right press on a row among those picked out is about all of them.
+        rightPress(1);
+        expect(selectedNames()).toEqual([ "author", "cssClass" ]);
+
+        // Deleting the lot is confirmed once, as a single row's deletion is.
+        confirm.mockResolvedValueOnce(true);
+        await act(async () => menuItem("bx bx-trash")?.handler?.());
+        expect(confirm).toHaveBeenCalledOnce();
+        const [ , saved ] = put.mock.calls[0] as [ string, Attribute[] ];
+        expect(saved.map((attribute) => attribute.name)).toEqual([ "template", "label:priority" ]);
+
+        // Deleting the lot let them all go, so nothing is picked out now — and a right press then
+        // picks nothing out for itself: it is a press asking what can be done to the row under it,
+        // not one picking that row out, and picking it would turn the whole panel over to the
+        // standing rows are picked out in, bar and checkboxes and all, for a menu about one row.
+        expect(selectedNames()).toEqual([]);
+        rightPress(0);
+        expect(selectedNames()).toEqual([]);
+        expect(container.querySelector(".attribute-selection-bar")).toBeNull();
+        expect(container.querySelector(".attribute-list-panel")?.className).not.toContain("selecting");
+        // The menu is about the row pressed all the same, which is the point of the press.
+        expect(menuItem("bx bx-copy")).toBeDefined();
+        expect(menuItem("bx bx-trash")).toBeDefined();
+
+        // With rows picked out, though, a right press outside them narrows down to that row alone:
+        // what the menu acts on has to be what the panel shows as picked.
+        pick(1, { ctrlKey: true });
+        rightPress(0);
+        expect(selectedNames()).toEqual([ "template" ]);
+        // An inherited row is the source note's to delete, so only copying is offered over it.
+        rightPress(1);
+        expect(menuItem("bx bx-trash")).toBeUndefined();
+        expect(menuItem("bx bx-copy")).toBeDefined();
+    });
+
+    it("pastes from a menu what Trilium last copied, beside the rows as well as on them", async () => {
+        renderPanel(buildNote({ id: "source", title: "Source", "#author": "Elian", "#tag": "book" }));
+        pick(0, { ctrlKey: true });
+        pick(1, { ctrlKey: true });
+        // Copied from the menu, which is the way in that holds on to them for a menu to paste.
+        rightPress(0);
+        expect(menuItem("bx bx-copy")).toBeDefined();
+        await act(async () => menuItem("bx bx-copy")?.handler?.());
+
+        // A note with no attributes at all has no row to press: the card itself offers the paste.
+        renderPanel(buildNote({ id: "blank", title: "Blank" }));
+        expect(container.querySelectorAll(".attribute-row")).toHaveLength(0);
+        act(() => {
+            firstPanel().dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        });
+
+        await act(async () => menuItem("bx bx-paste")?.handler?.());
+        const [ url, saved ] = put.mock.calls[0] as [ string, Attribute[] ];
+        expect(url).toBe("notes/blank/attributes");
+        expect(saved).toMatchObject([
+            { type: "label", name: "author", value: "Elian" },
+            { type: "label", name: "tag", value: "book" }
+        ]);
+        expect(namesIn(container)).toEqual([ "author", "tag" ]);
+    });
+
+    it("offers no menu of its own beside the rows while there is nothing to paste", () => {
+        // Whatever an earlier test copied is still held, the store being the module's own — as the
+        // note tree's clipboard is. Copying nothing is how a session that has copied nothing looks.
+        writeAttributes(null, []);
+        renderPanel(buildNote({ id: "blank", title: "Blank" }));
+
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        act(() => {
+            firstPanel().dispatchEvent(event);
+        });
+
+        // Left to the browser's own menu, rather than shown an empty one of ours.
+        expect(showContextMenu).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("picks rows out by the checkbox standing in the kind icon's slot, no modifier held", () => {
+        renderPanel(noteWithAttributes());
+
+        // Every row offers one — the stylesheet is what shows it only over the row being pointed at
+        // — but the rows Trilium keeps for itself offer none, being carried nowhere.
+        expect(container.querySelectorAll(".attribute-kind-check")).toHaveLength(7);
+
+        checkbox(0).click();
+        expect(selectedNames()).toEqual([ "author" ]);
+        // A checkbox adds rather than takes over, which is what a checkbox means.
+        checkbox(2).click();
+        expect(selectedNames()).toEqual([ "author", "template" ]);
+        // And is not the row's press: no form opens behind the selection.
+        expect(document.querySelector(".attr-detail")).toBeNull();
+
+        checkbox(0).click();
+        expect(selectedNames()).toEqual([ "template" ]);
+    });
+
+    it("stands a bar at the foot of the list saying what can be done to the rows picked out", async () => {
+        renderPanel(noteWithAttributes());
+
+        // Nothing picked out: no bar, and the list says it is not picking rows out — which is what
+        // draws the checkboxes.
+        expect(container.querySelector(".attribute-selection-bar")).toBeNull();
+        expect(firstPanel().className).not.toContain("selecting");
+
+        checkbox(0).click();
+        const bar = container.querySelector(".attribute-selection-bar");
+        expect(bar).not.toBeNull();
+        expect(firstPanel().className).toContain("selecting");
+        // The bar belongs to the whole list rather than to a run of it, the rows it acts on being
+        // picked out anywhere: it stands at the list's own foot, outside every folding run.
+        expect(bar?.closest(".attribute-group")).toBeNull();
+        expect(bar?.closest(".attribute-list-panel")).not.toBeNull();
+        // Adding an attribute stays on offer beside the note's own rows; the bar took nothing over.
+        expect(container.querySelector(".attribute-add-row")).not.toBeNull();
+        // Only that the count has a slot: the wording is translated, and translations stay unloaded.
+        expect(bar?.querySelector(".attribute-selection-count")).not.toBeNull();
+
+        // Copy, delete and the way out, the note owning the one row picked out; nothing to paste yet.
+        writeAttributes(null, []);
+        checkbox(1).click();
+        expect(barIcons()).toEqual([ "bx bx-copy", "bx bx-trash", "bx bx-x" ]);
+
+        // Copying from the bar holds the attributes, which is what puts pasting on offer.
+        await act(async () => barButton("bx bx-copy")?.click());
+        expect(barIcons()).toEqual([ "bx bx-copy", "bx bx-paste", "bx bx-trash", "bx bx-x" ]);
+
+        // An inherited row is the source note's to delete, so the lot cannot be.
+        checkbox(3).click();
+        expect(barIcons()).not.toContain("bx bx-trash");
+
+        // The way out is letting every row go, which takes the bar with it.
+        act(() => barButton("bx bx-x")?.click());
+        expect(selectedNames()).toEqual([]);
+        expect(container.querySelector(".attribute-selection-bar")).toBeNull();
+        expect(firstPanel().className).not.toContain("selecting");
+    });
+
+    function rows() {
+        return [ ...container.querySelectorAll<HTMLElement>(".attribute-row") ];
+    }
+
+    function checkbox(index: number) {
+        const box = container.querySelectorAll<HTMLElement>(".attribute-kind-check")[index];
+        expect(box).toBeDefined();
+        return { click: () => act(() => box.click()) };
+    }
+
+    /** An action button wears its icon as classes of its own, rather than around a glyph of one. */
+    function barIcons() {
+        return [ ...container.querySelectorAll(".attribute-selection-bar .icon-action") ]
+            .map((button) => [ ...button.classList ].filter((name) => name.startsWith("bx")).join(" "));
+    }
+
+    function barButton(icon: string) {
+        return container.querySelector<HTMLElement>(
+            `.attribute-selection-bar .icon-action.${icon.split(" ").join(".")}`);
+    }
+
+    function selectedNames() {
+        return [ ...container.querySelectorAll(".attribute-row.selected .attribute-name") ]
+            .map((name) => name.textContent);
+    }
+
+    function firstPanel() {
+        const panel = container.querySelector<HTMLElement>(".attribute-list-panel");
+        expect(panel).not.toBeNull();
+        return panel as HTMLElement;
+    }
+
+    /** A press on a row with the modifiers held down that pick it out rather than open it. */
+    function pick(index: number, modifiers: { ctrlKey?: boolean; shiftKey?: boolean }) {
+        act(() => {
+            rows()[index].dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ...modifiers }));
+        });
+    }
+
+    function rightPress(index: number) {
+        act(() => {
+            rows()[index].dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        });
+    }
+
+    /** The copy key over the panel, reporting what it wrote onto the clipboard it was handed. */
+    function copyFrom(panel: HTMLElement) {
+        const written: Record<string, string> = {};
+        const event = clipboardEvent("copy", { setData: (type: string, data: string) => { written[type] = data; } });
+        panel.dispatchEvent(event);
+
+        return { written, defaultPrevented: event.defaultPrevented };
+    }
+
+    /** The paste key over the panel, the clipboard holding the given flavours. */
+    function pasteInto(panel: HTMLElement, flavours: Record<string, string>) {
+        panel.dispatchEvent(clipboardEvent("paste", { getData: (type: string) => flavours[type] ?? "" }));
+    }
+
+    /**
+     * A clipboard event carrying the given stand-in for the system clipboard: the constructor takes
+     * no data of its own, so it is hung on the event as the browser hangs the real one.
+     */
+    function clipboardEvent(type: string, clipboardData: Partial<DataTransfer>) {
+        const event = new Event(type, { bubbles: true, cancelable: true });
+        Object.assign(event, { clipboardData });
+
+        return event;
+    }
+
+    /** The entry of the menu last shown carrying the given icon, which is what names it here: the
+     *  titles are translated, and translations stay unloaded in these tests. */
+    function menuItem(icon: string) {
+        const call = showContextMenu.mock.lastCall?.[0];
+        return call?.items.find((item) => item.uiIcon === icon);
+    }
+
     function renderPanel(note: FNote, withEvents = false) {
         shownNote.current = note;
         if (!withEvents) {
@@ -876,9 +1244,23 @@ describe("AttributeList", () => {
         });
     }
 
-    function cardIds() {
-        return [ ...container.querySelectorAll(".card") ].map((card) => card.id);
+    function groupIds() {
+        return [ ...container.querySelectorAll(".attribute-group") ]
+            .map((el) => [ ...el.classList ].find((name) => name.startsWith("attributes-")));
     }
+
+    function group(id: string) {
+        const el = container.querySelector<HTMLElement>(`.attribute-group.${id}`);
+        expect(el, id).not.toBeNull();
+        return el as HTMLElement;
+    }
+
+    function groupHeader(id: string) {
+        const header = group(id).querySelector<HTMLElement>(".attribute-group-header");
+        expect(header, id).not.toBeNull();
+        return header as HTMLElement;
+    }
+
 
     function firstRow() {
         const row = container.querySelector<HTMLElement>(".attribute-row");
@@ -897,7 +1279,8 @@ function namesIn(root: Element) {
 }
 
 function iconsIn(root: Element) {
-    return [ ...root.querySelectorAll(".attribute-kind > span") ].map(
+    // The icon alone: the slot also holds the checkbox that stands in for it while rows are picked out.
+    return [ ...root.querySelectorAll(".attribute-kind > .tn-icon") ].map(
         (icon) => icon.className.replace(" tn-icon", ""));
 }
 

@@ -4,7 +4,7 @@ import "./RightPanelContainer.css";
 import Split from "@triliumnext/split.js";
 import clsx from "clsx";
 import { VNode } from "preact";
-import { useLayoutEffect, useRef } from "preact/hooks";
+import { useCallback, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { WidgetsByParent } from "../../services/bundle";
@@ -14,7 +14,7 @@ import { DEFAULT_GUTTER_SIZE } from "../../services/resizer";
 import { isStandalone } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
-import { useActiveNoteContext, useGetContextData, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks";
+import { useActiveNoteContext, useGetContextData, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks";
 import LazyComponent from "../react/LazyComponent";
 import NoItems from "../react/NoItems";
 import { PaneMode, usePaneMode, usePeekDismiss } from "../react/peek_pane";
@@ -50,7 +50,14 @@ export interface RightPaneTabContents extends RightPaneTabDefinition {
 export default function RightPanelContainer({ widgetsByParent }: { widgetsByParent: WidgetsByParent }) {
     const { mode, visible, mounted, togglePeek, toggleDocked, dock, close, dismiss } = usePaneMode("rightPaneVisible");
     const tabs = useItems(mounted, widgetsByParent);
-    const [ selectedTabId, setSelectedTabId ] = useTriliumOption("rightPaneSelectedTab");
+    // This window's own choice, seeded from the option and written back for the next window to start
+    // from — the same treatment usePaneMode gives the pane's visibility. Subscribing to the option
+    // (useTriliumOption) would let a click in one window flip the strip in every other.
+    const [ selectedTabId, setSelectedTabIdState ] = useState(() => options.get("rightPaneSelectedTab"));
+    const setSelectedTabId = useCallback((tabId: RightPaneTabId) => {
+        setSelectedTabIdState(tabId);
+        void options.save("rightPaneSelectedTab", tabId);
+    }, []);
     useSplit(mode);
 
     // The chosen tab may have nothing to show for this note (or may have gone away entirely, e.g. the
@@ -80,7 +87,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
             return;
         }
 
-        void setSelectedTabId(tabId);
+        setSelectedTabId(tabId);
         if (!visible) {
             toggleDocked();
         }
@@ -123,7 +130,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
                                 <RightPaneTabs
                                     tabs={tabs}
                                     activeTabId={activeTab?.id}
-                                    onSelect={(tabId) => void setSelectedTabId(tabId)}
+                                    onSelect={setSelectedTabId}
                                 />
 
                                 {tabs.filter((tab) => openedTabs.current.has(tab.id)).map((tab) => (

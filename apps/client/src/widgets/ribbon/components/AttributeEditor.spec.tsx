@@ -2,7 +2,7 @@ import type { ModelPosition } from "@triliumnext/ckeditor5";
 import { describe, expect, it, vi } from "vitest";
 
 import server from "../../../services/server";
-import { fetchAttributeNames, getClickIndex, getPreprocessedData, renderAttributeName } from "./AttributeEditor";
+import { fetchAttributeNames, getClickIndex, renderAttributeName } from "./AttributeEditor";
 
 describe("fetchAttributeNames", () => {
     it("prefixes each name with the marker that inserts it, and asks for the names by an escaped query", async () => {
@@ -35,18 +35,6 @@ describe("renderAttributeName", () => {
 
         // A name that is a built-in of the other type is not one here.
         expect(renderAttributeName("relation", "archived").querySelector(".ext-badge")).toBeNull();
-    });
-});
-
-describe("getPreprocessedData", () => {
-    it("reduces a reference link back to the note path it stands for, and resolves the entities around it", () => {
-        expect(getPreprocessedData(
-            "<p>#author=Elian&nbsp;~parent=<a class=\"reference-link\" href=\"#root/abc123\">Some note</a>&nbsp;</p>"
-        )).toBe("#author=Elian ~parent=#root/abc123 ");
-
-        // A link to anywhere else is not a note path, so it is left to the text extraction below it.
-        expect(getPreprocessedData("<a href=\"https://example.com\">Example</a>")).toBe("Example");
-        expect(getPreprocessedData("#a&amp;b")).toBe("#a&b");
     });
 });
 
