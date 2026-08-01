@@ -13,6 +13,14 @@
         max-width: 100%;
         height: auto;
     }
+
+    .mermaid-diagram {
+        background: var(--mermaid-preview-bg, #fff);
+        resize: both;
+        overflow: auto;
+        min-height: 60px;
+        min-width: 150px;
+    }
 }
 
 /* Top-level (not scoped to the note view) so a swallowed mermaid failure is
