@@ -118,6 +118,13 @@ describe("plugin manager state helpers", () => {
         expect(parseCachedPackageManifest("not json")).toBeUndefined();
     });
 
+    it("accepts cached manifests written before repository metadata was retained", () => {
+        const { repository: _repository, ...legacyCachedManifest } = manifest;
+        const cached = parseCachedPackageManifest(JSON.stringify(legacyCachedManifest));
+        expect(cached?.id).toBe("example/plugin");
+        expect(cached?.repository).toBeUndefined();
+    });
+
     it("uses saved package metadata when every configured source is unavailable", async () => {
         const cachedManifest = parseCachedPackageManifest(JSON.stringify(manifest));
         vi.stubGlobal("fetch", vi.fn(async () => {

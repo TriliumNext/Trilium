@@ -90,6 +90,7 @@ export interface CatalogPackage {
     name: string;
     description: string;
     version: string;
+    repository?: string;
     permissions: string[];
     settings: PackageSettingDefinition[];
     artifacts: PackageArtifact[];
@@ -638,7 +639,7 @@ export function parseCachedPackageManifest(value: string | null | undefined): Ca
     if (!value || value.length > MAX_CACHED_MANIFEST_LENGTH) return undefined;
     try {
         const manifest = JSON.parse(value) as RawCatalogPackage;
-        return isCatalogPackageEntry(manifest) ? normalizeCatalogPackage(manifest) : undefined;
+        return isCachedCatalogPackageEntry(manifest) ? normalizeCatalogPackage(manifest) : undefined;
     } catch {
         return undefined;
     }
@@ -668,6 +669,7 @@ function normalizeCatalogPackage(entry: RawCatalogPackage): CatalogPackage {
         name: entry.name!,
         description: entry.description || "",
         version: entry.version!,
+        repository: entry.repository,
         permissions: Array.isArray(entry.permissions) ? entry.permissions.filter((permission): permission is string => typeof permission === "string") : [],
         settings: Array.isArray(entry.settings) ? entry.settings.filter(isPackageSettingDefinition) : [],
         artifacts: Array.isArray(entry.artifacts) ? entry.artifacts.filter(isPackageArtifact) : [],
@@ -856,6 +858,14 @@ export function isPackageArtifactSource(value: string) {
 }
 
 export function isCatalogPackageEntry(value: RawCatalogPackage): value is RawCatalogPackage & Required<Pick<RawCatalogPackage, "id" | "name" | "version" | "description" | "repository" | "artifacts">> {
+    return isCatalogPackageEntryWithRepository(value, true);
+}
+
+function isCachedCatalogPackageEntry(value: RawCatalogPackage) {
+    return isCatalogPackageEntryWithRepository(value, false);
+}
+
+function isCatalogPackageEntryWithRepository(value: RawCatalogPackage, requireRepository: boolean) {
     return Boolean(
         value
         && typeof value.id === "string"
@@ -864,8 +874,7 @@ export function isCatalogPackageEntry(value: RawCatalogPackage): value is RawCat
         && typeof value.version === "string"
         && PACKAGE_VERSION_PATTERN.test(value.version)
         && typeof value.description === "string"
-        && typeof value.repository === "string"
-        && isSecurePackageUrl(value.repository)
+        && (!requireRepository || (typeof value.repository === "string" && isSecurePackageUrl(value.repository)))
         && isPackageCompatibility(value.compatibility)
         && Array.isArray(value.artifacts)
         && value.artifacts.length > 0
