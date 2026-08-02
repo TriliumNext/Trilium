@@ -230,7 +230,7 @@ export default function PluginsSettings() {
     }, [refresh]));
 
     useEffect(() => {
-        if (state.loading || !state.checkForUpdates || (!state.registryUrls.length && !state.directManifestUrls.length)) return;
+        if (!shouldScheduleUpdateChecks(state.loading, state.checkForUpdates, state.registryUrls, state.directManifestUrls)) return;
         const intervalHours = Math.max(1, state.updateCheckIntervalHours || 24);
         const timer = window.setInterval(() => void refresh(), intervalHours * 60 * 60 * 1000);
         return () => window.clearInterval(timer);
@@ -610,6 +610,10 @@ export function parseRegistryUrls(value: string | null | undefined) {
 
 export function normalizeSourceHosts(value: string) {
     return value.split(/[\s,]+/).map((host) => host.trim()).filter(Boolean).join("\n");
+}
+
+export function shouldScheduleUpdateChecks(loading: boolean, checkForUpdates: boolean, registryUrls: string[], directManifestUrls: string[]) {
+    return !loading && checkForUpdates && Boolean(registryUrls.length || directManifestUrls.length);
 }
 
 function formatInstalledPackageDescription(pkg: PackageSummary) {
