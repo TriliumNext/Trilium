@@ -41,9 +41,17 @@ export interface PackageSummary {
     pinned: boolean;
     noteId: string;
     artifactIds: string[];
+    artifactNotes: PackageArtifactNote[];
     health: "healthy" | "broken" | "unknown";
     healthMessage: string;
     settings: Record<string, unknown>;
+}
+
+export interface PackageArtifactNote {
+    artifactId: string;
+    noteId: string;
+    title: string;
+    type: string;
 }
 
 type PackageSettingType = "boolean" | "number" | "string" | "secret" | "select";
@@ -178,6 +186,7 @@ export default function PluginsSettings() {
             const updateCheckIntervalHours = Math.max(1, Number(settings?.getOwnedLabelValue(PACKAGE_UPDATE_INTERVAL_LABEL)) || 24);
             const includeDeprecatedPackages = settings?.getOwnedLabelValue(PACKAGE_INCLUDE_DEPRECATED_LABEL) === "true";
             const artifactIdsByPackage = new Map<string, string[]>();
+            const artifactNotesByPackage = new Map<string, PackageArtifactNote[]>();
             packageNotes
                 .filter((note) => !note.isArchived && !note.getOwnedLabelValue(PACKAGE_TRANSACTION_LABEL))
                 .forEach((note) => {
@@ -187,6 +196,11 @@ export default function PluginsSettings() {
                     const artifactIds = artifactIdsByPackage.get(packageId) || [];
                     if (!artifactIds.includes(artifactId)) artifactIds.push(artifactId);
                     artifactIdsByPackage.set(packageId, artifactIds);
+                    if (note.type === "render") {
+                        const artifactNotes = artifactNotesByPackage.get(packageId) || [];
+                        artifactNotes.push({ artifactId, noteId: note.noteId, title: note.title, type: note.type });
+                        artifactNotesByPackage.set(packageId, artifactNotes);
+                    }
                 });
 
             const packages = packageNotes
@@ -199,6 +213,7 @@ export default function PluginsSettings() {
                     pinned: note.getOwnedLabelValue(PACKAGE_PINNED_LABEL) === "true",
                     noteId: note.noteId,
                     artifactIds: artifactIdsByPackage.get(note.getOwnedLabelValue("packageOwner") || note.noteId) || [],
+                    artifactNotes: artifactNotesByPackage.get(note.getOwnedLabelValue("packageOwner") || note.noteId) || [],
                     health: "unknown" as const,
                     healthMessage: "not checked",
                     settings: {}
@@ -241,6 +256,11 @@ export default function PluginsSettings() {
             await appContext.tabManager.openContextWithNote(state.manager.noteId, { activate: true, hoistedNoteId: "root" });
             closeActiveDialog();
         }
+    }
+
+    async function openPackageArtifact(noteId: string) {
+        await appContext.tabManager.openContextWithNote(noteId, { activate: true, hoistedNoteId: "root" });
+        closeActiveDialog();
     }
 
     async function saveSettings() {
@@ -405,6 +425,7 @@ export default function PluginsSettings() {
                             onSave={() => void savePackageSettings(pkg)}
                             onPinChange={(pinned) => void savePackagePin(pkg, pinned)}
                             onRepair={() => void openCatalog()}
+                            onOpenArtifact={(noteId) => void openPackageArtifact(noteId)}
                             disabled={savingPackage === pkg.id}
                         />}
                     </div>
@@ -635,7 +656,8 @@ function formatHealthMessage(message: string) {
     return message;
 }
 
-function InstalledPackageDetails({ pkg, manifest, onChange, onSave, onPinChange, onRepair, disabled }: { pkg: PackageSummary; manifest?: CatalogPackage; onChange: (key: string, value: unknown) => void; onSave: () => void; onPinChange: (pinned: boolean) => void; onRepair: () => void; disabled: boolean }) {
+function InstalledPackageDetails({ pkg, manifest, onChange, onSave, onPinChange, onRepair, onOpenArtifact, disabled }: { pkg: PackageSummary; manifest?: CatalogPackage; onChange: (key: string, value: unknown) => void; onSave: () => void; onPinChange: (pinned: boolean) => void; onRepair: () => void; onOpenArtifact: (noteId: string) => void; disabled: boolean }) {
+    const renderArtifacts = pkg.artifactNotes.filter((artifact) => artifact.type === "render");
     return (
         <div className="community-package-details options-section-card">
             <h5>{t("plugins.settings_panel_heading")}</h5>
@@ -643,6 +665,14 @@ function InstalledPackageDetails({ pkg, manifest, onChange, onSave, onPinChange,
             <OptionsRow name={`community-package-health-${pkg.noteId}`} label={t("plugins.health_label")} description={t("plugins.health_description")}>
                 <span>{t(`plugins.health_${pkg.health}`)}{pkg.healthMessage ? ` (${formatHealthMessage(pkg.healthMessage)})` : ""}</span>
             </OptionsRow>
+            {renderArtifacts.map((artifact) => <OptionsRowWithButton
+                key={artifact.noteId}
+                label={t("plugins.plugin_page_label")}
+                description={pkg.enabled ? artifact.title : `${artifact.title} · ${t("plugins.enable_to_open")}`}
+                buttonText={t("plugins.open_plugin_page")}
+                disabled={disabled || !pkg.enabled}
+                onClick={() => onOpenArtifact(artifact.noteId)}
+            />)}
             {pkg.health === "broken" && <OptionsRowWithButton
                 label={t("plugins.repair_label")}
                 description={t("plugins.repair_description")}
