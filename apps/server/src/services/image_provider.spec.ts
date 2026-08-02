@@ -5,6 +5,10 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { serverImageProvider } from './image_provider.js';
 import { compressionConcurrency } from './image_worker_pool.js';
 
+// Four Jimp re-encodes intentionally exercise the JPEG quality clamp. Under the
+// full server coverage suite, worker contention can exceed Vitest's 40-second default.
+const JPEG_QUALITY_TEST_TIMEOUT = 120_000;
+
 // is-svg / image-type / is-animated / jimp are all loaded by spec/setup.ts (which
 // imports serverImageProvider to initialise core), so they cannot be re-mocked
 // reliably. Instead we exercise the real implementations end-to-end with real
@@ -294,7 +298,7 @@ describe('serverImageProvider.processImage', () => {
         expect(tooLow).toBe(at75);
         expect(tooHigh).toBe(at75);
         expect(valid).not.toBe(at75);
-    });
+    }, JPEG_QUALITY_TEST_TIMEOUT);
 
     it('writes a PNG it converts at the conversion quality, not the recompression one', async () => {
         // The two were one setting: automatic shrinking wrote every image it touched, whatever it
