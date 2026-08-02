@@ -11,6 +11,7 @@
     "profile": "cross-env NODE_ENV=development TRILIUM_ENV=dev TRILIUM_DATA_DIR=data TRILIUM_RESOURCE_DIR=src TRILIUM_PROFILE=1 node --import tsx ./src/main.ts",
     "edit-integration-db": "cross-env NODE_ENV=development TRILIUM_PORT=8086 TRILIUM_ENV=dev TRILIUM_DATA_DIR=spec/db TRILIUM_DOCUMENT_PATH=../../packages/trilium-core/src/test/fixtures/document.db TRILIUM_INTEGRATION_TEST=edit TRILIUM_RESOURCE_DIR=src tsx watch --ignore '../client/node_modules/.vite-temp' ./src/main.ts",
     "build": "tsx scripts/build.ts",
+    "verify-build-artifacts": "node scripts/verify-build-artifacts.mjs",
     "package": "pnpm build && bash scripts/build-server.sh",
     "test": "vitest",
     "coverage": "vitest --coverage",

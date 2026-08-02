@@ -156,9 +156,12 @@ export default class BuildHelper {
      *   as the macOS runners are arm64 and also package darwin-x64.
      * @param opts.includeMusl whether to keep the musl build alongside the glibc one
      *   on Linux (defaults to `true`). Only the server needs it; see below.
+     * @param opts.includeAllLinuxArchitectures whether to retain Linux x64 and arm64
+     *   binaries in addition to the host target. This is used by the server artifact,
+     *   which is built on developer machines but consumed by multi-architecture Docker.
      */
-    trimBetterSqlite3(opts: { platform?: string; arch?: string; includeMusl?: boolean } = {}) {
-        const { platform = process.platform, arch = targetArch(), includeMusl = true } = opts;
+    trimBetterSqlite3(opts: { platform?: string; arch?: string; includeMusl?: boolean; includeAllLinuxArchitectures?: boolean } = {}) {
+        const { platform = process.platform, arch = targetArch(), includeMusl = true, includeAllLinuxArchitectures = false } = opts;
         const moduleDir = join(this.outDir, "node_modules", "better-sqlite3");
         const prebuildDir = join(moduleDir, "prebuilds");
 
@@ -184,7 +187,12 @@ export default class BuildHelper {
         // artifacts have no such consumer (Electron ships no musl builds), so they
         // opt out and save the extra ~2.3 MB.
         const keep = new Set([ `${platform}-${arch}.node` ]);
-        if (platform === "linux" && includeMusl) {
+        if (includeAllLinuxArchitectures) {
+            for (const linuxArch of ["x64", "arm64"]) {
+                keep.add(`linux-${linuxArch}.node`);
+                if (includeMusl) keep.add(`linuxmusl-${linuxArch}.node`);
+            }
+        } else if (platform === "linux" && includeMusl) {
             keep.add(`linuxmusl-${arch}.node`);
         }
 
