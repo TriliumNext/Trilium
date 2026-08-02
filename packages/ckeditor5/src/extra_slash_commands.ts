@@ -25,6 +25,7 @@ import { BookmarkUI } from "ckeditor5";
 import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
 import type { SlashCommandDefinition } from './plugins/mention/slash_commands.js';
+import aiIcon from './plugins/ai_assistant/theme/icons/ai.svg?raw';
 
 /**
  * Translation function supplied by the client (which owns i18n). Resolves the
@@ -42,6 +43,14 @@ export default function buildExtraCommands(
         ...buildAlignmentExtraCommands(t),
         ...buildAdmonitionExtraCommands(t),
         ...buildMermaidCommands(t, mermaidSamples),
+        {
+            id: "ai-assistant",
+            title: "AI assistant",
+            description: t("slash_commands.ai_assistant_description"),
+            aliases: [ "ask ai", "assistant" ],
+            icon: aiIcon,
+            commandName: "aiAssistant"
+        },
         {
             id: "collapsible",
             title: "Collapsible block",

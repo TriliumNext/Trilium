@@ -1,0 +1,120 @@
+.ck.ck-ai-assistant-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ck-spacing-medium);
+    padding: var(--ck-spacing-large);
+    width: min(560px, 90vw);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__heading {
+    display: flex;
+    align-items: center;
+    gap: var(--ck-spacing-small);
+    font-weight: bold;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__title {
+    flex-grow: 1;
+}
+
+.ck.ck-ai-assistant-form .ck-button.ck-ai-assistant-form__viewmode {
+    font-weight: normal;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__prompt-row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--ck-spacing-small);
+}
+
+/* The quick-actions list is long (four groups); scroll it rather than overflow the screen. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__prompt-row .ck-dropdown__panel {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__prompt-row .ck-labeled-field-view {
+    flex-grow: 1;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--ck-color-base-border);
+    border-radius: var(--ck-border-radius);
+    padding: var(--ck-spacing-medium);
+    background: var(--ck-color-base-background);
+    white-space: pre-wrap;
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* An empty preview is just a hollow frame — collapse it until the first chunk arrives. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview:empty {
+    display: none;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__error {
+    color: var(--ck-color-base-error);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__actions {
+    display: flex;
+    gap: var(--ck-spacing-small);
+}
+
+/* The run's model/token/cost line, tucked to the right of the review actions. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__usage {
+    margin-left: auto;
+    align-self: center;
+    font-size: var(--ck-font-size-small);
+    opacity: 0.7;
+}
+
+/* An actions row with every button hidden should not reserve a gap's worth of height. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__actions:not(:has(.ck-button:not(.ck-hidden))) {
+    display: none;
+}
+
+/* The inline diff shown by the "Changes" view (htmldiff-js `ins`/`del` markup, the same
+   convention the revisions dialog styles). Colors are self-contained rather than borrowing the
+   client's Bootstrap variables, so the plugin package stays host-agnostic. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins {
+    text-decoration: none;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins.diffins,
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins.diffmod {
+    background-color: rgba(63, 185, 80, 0.25);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del {
+    text-decoration: line-through;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del.diffdel,
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del.diffmod {
+    background-color: rgba(248, 81, 73, 0.25);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins img,
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del img {
+    border: 3px solid;
+    border-radius: 4px;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins img {
+    border-color: rgba(63, 185, 80, 0.7);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del img {
+    border-color: rgba(248, 81, 73, 0.7);
+    opacity: 0.6;
+}
+
+/* The tint on the note text the assistant was opened on — what "Replace" will hit. */
+.ck-content .ck-ai-assistant-target {
+    background: rgba(148, 112, 219, 0.22);
+}
