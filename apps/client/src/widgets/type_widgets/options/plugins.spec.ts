@@ -18,7 +18,8 @@ import {
     parseRegistryUrls,
     parseSettingValue,
     serializeSetting,
-    settingLabelName
+    settingLabelName,
+    shouldScheduleUpdateChecks
 } from "./plugins";
 
 const integrity = `sha256-${"A".repeat(43)}=`;
@@ -89,6 +90,14 @@ describe("plugin manager validation helpers", () => {
 });
 
 describe("plugin manager state helpers", () => {
+    it("schedules update checks for registry or direct-manifest sources only when enabled", () => {
+        expect(shouldScheduleUpdateChecks(true, true, ["https://example.com/registry.json"], [])).toBe(false);
+        expect(shouldScheduleUpdateChecks(false, false, ["https://example.com/registry.json"], [])).toBe(false);
+        expect(shouldScheduleUpdateChecks(false, true, [], [])).toBe(false);
+        expect(shouldScheduleUpdateChecks(false, true, ["https://example.com/registry.json"], [])).toBe(true);
+        expect(shouldScheduleUpdateChecks(false, true, [], ["https://example.com/plugin.json"])).toBe(true);
+    });
+
     it("reports healthy, broken, and unknown package states", () => {
         expect(packageHealth(["manifest"], manifest)).toEqual({ health: "healthy", healthMessage: "all artifacts present" });
         expect(packageHealth([], manifest)).toEqual({ health: "broken", healthMessage: "missing manifest" });
