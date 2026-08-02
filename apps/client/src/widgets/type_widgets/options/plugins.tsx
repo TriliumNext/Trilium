@@ -165,10 +165,10 @@ export default function PluginsSettings() {
         try {
             const [manager, packageNotes, transactionNotes] = await Promise.all([
                 findPackageManager(),
-                search.searchForNotes("#packageManaged"),
-                search.searchForNotes(`#${PACKAGE_TRANSACTION_LABEL}`)
+                search.searchForNotesIncludingHidden("#packageManaged"),
+                search.searchForNotesIncludingHidden(`#${PACKAGE_TRANSACTION_LABEL}`)
             ]);
-            const settings = (await search.searchForNotes("#packageManagerSettings"))[0] || null;
+            const settings = (await search.searchForNotesIncludingHidden("#packageManagerSettings"))[0] || null;
             const legacyRegistryUrl = settings?.getOwnedLabelValue(PACKAGE_REGISTRY_URL_LABEL) || "";
             const registryUrls = parseRegistryUrls(settings?.getOwnedLabelValue(PACKAGE_REGISTRY_URLS_LABEL) || legacyRegistryUrl);
             const directManifestUrls = parseRegistryUrls(settings?.getOwnedLabelValue(PACKAGE_DIRECT_MANIFEST_URLS_LABEL) || "");
@@ -507,7 +507,7 @@ async function findPackageManager() {
         return deployedManager;
     }
 
-    const candidates = await search.searchForNotes("Community Packages");
+    const candidates = await search.searchForNotesIncludingHidden("Community Packages");
     return candidates.find((note) => note.type === "render" && note.title === "Community Packages") || null;
 }
 

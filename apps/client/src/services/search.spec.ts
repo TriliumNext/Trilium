@@ -39,4 +39,15 @@ describe("search service", () => {
 
         expect(notes).toEqual([]);
     });
+
+    it("searchForNotesIncludingHidden resolves IDs from quick search", async () => {
+        const note = buildNote({ title: "Hidden package" });
+        const get = vi.fn(async () => ({ searchResultNoteIds: [note.noteId] }));
+        server.get = get as typeof server.get;
+
+        const notes = await searchService.searchForNotesIncludingHidden("#packageManaged");
+
+        expect(get).toHaveBeenCalledWith(`quick-search/${encodeURIComponent("#packageManaged")}`);
+        expect(notes.map((n) => n.noteId)).toEqual([note.noteId]);
+    });
 });
