@@ -706,14 +706,18 @@ export function shouldScheduleUpdateChecks(loading: boolean, checkForUpdates: bo
     return !loading && checkForUpdates && Boolean(registryUrls.length || directManifestUrls.length);
 }
 
-function formatInstalledPackageDescription(pkg: PackageSummary) {
+export function formatInstalledPackageDescription(pkg: PackageSummary) {
     return t("plugins.installed_summary", {
         id: pkg.id,
         version: pkg.version,
         state: t(pkg.enabled ? "plugins.enabled" : "plugins.disabled"),
         pinned: pkg.pinned ? ` · ${t("plugins.pinned")}` : "",
         health: t(`plugins.health_${pkg.health}`),
-        healthMessage: pkg.healthMessage ? ` (${formatHealthMessage(pkg.healthMessage)})` : ""
+        healthMessage: pkg.healthMessage ? ` (${formatHealthMessage(pkg.healthMessage)})` : "",
+        // These values are rendered as React text, not inserted into HTML. Leaving i18next's
+        // HTML escaping enabled turns package IDs such as "author/name" into visible entities
+        // like "author&#x2F;name" in the installed-plugin cards.
+        interpolation: { escapeValue: false }
     });
 }
 

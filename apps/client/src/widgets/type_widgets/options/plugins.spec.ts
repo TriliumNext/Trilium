@@ -1,10 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../../../services/i18n", () => ({
+    t: (key: string, options?: { id?: unknown; interpolation?: { escapeValue?: boolean } }) => {
+        if (!options) return key;
+        const id = String(options.id ?? "");
+        return options.interpolation?.escapeValue === false ? id : id.replaceAll("/", "&#x2F;");
+    }
+}));
+
 import {
     compareVersions,
     compatibilityStatus,
     formatCompatibility,
     formatDependency,
+    formatInstalledPackageDescription,
     isCatalogPackageEntry,
     isNewerVersion,
     isPackageArtifact,
@@ -178,6 +187,25 @@ describe("plugin manager state helpers", () => {
         expect(formatCompatibility(manifest.compatibility)).toBe("0.100.0 – 0.110.0");
         expect(manifestStatus({ ...manifest, securityStatus: "warning", maintenance: "slow", deprecated: true, deprecationMessage: "Use the replacement." })).toContain("Deprecated: Use the replacement.");
         expect(manifestStatus({ ...manifest, securityStatus: "warning", maintenance: "slow" })).toContain("Security review warning");
+    });
+
+    it("keeps package IDs readable in installed-package descriptions", () => {
+        const description = formatInstalledPackageDescription({
+            id: "iansher/languagetool",
+            title: "LanguageTool",
+            version: "0.1.0",
+            enabled: false,
+            pinned: false,
+            noteId: "package-note",
+            artifactIds: ["manifest"],
+            artifactNotes: [],
+            health: "unknown",
+            healthMessage: "not in registry",
+            settings: {}
+        });
+
+        expect(description).toContain("iansher/languagetool");
+        expect(description).not.toContain("&#x2F;");
     });
 
     it("round-trips package settings using stable labels", () => {
