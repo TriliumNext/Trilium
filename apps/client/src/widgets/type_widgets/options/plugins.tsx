@@ -389,7 +389,7 @@ export default function PluginsSettings() {
                                     onClick={() => void setPackageEnabled(pkg, !pkg.enabled)}
                                 />
                                 <Button
-                                    text={configuredPackage === pkg.id ? t("plugins.hide_details") : t("plugins.details")}
+                                    text={configuredPackage === pkg.id ? t("plugins.hide_settings") : t("plugins.settings_button")}
                                     icon="bx-cog"
                                     size="micro"
                                     disabled={savingPackage === pkg.id}
@@ -637,7 +637,9 @@ function formatHealthMessage(message: string) {
 
 function InstalledPackageDetails({ pkg, manifest, onChange, onSave, onPinChange, onRepair, disabled }: { pkg: PackageSummary; manifest?: CatalogPackage; onChange: (key: string, value: unknown) => void; onSave: () => void; onPinChange: (pinned: boolean) => void; onRepair: () => void; disabled: boolean }) {
     return (
-        <div className="community-package-details">
+        <div className="community-package-details options-section-card">
+            <h5>{t("plugins.settings_panel_heading")}</h5>
+            <p className="options-section-description">{t("plugins.settings_panel_description")}</p>
             <OptionsRow name={`community-package-health-${pkg.noteId}`} label={t("plugins.health_label")} description={t("plugins.health_description")}>
                 <span>{t(`plugins.health_${pkg.health}`)}{pkg.healthMessage ? ` (${formatHealthMessage(pkg.healthMessage)})` : ""}</span>
             </OptionsRow>
