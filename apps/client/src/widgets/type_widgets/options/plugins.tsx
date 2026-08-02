@@ -33,6 +33,7 @@ const PACKAGE_ARTIFACT_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
 const PACKAGE_SETTING_KEY_PATTERN = /^[a-zA-Z][a-zA-Z0-9._-]{0,63}$/;
 const PACKAGE_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const PACKAGE_VERSION_RANGE_PATTERN = /^(?:[<>=~^]*\s*)?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const cachedManifestWrites = new Map<string, string>();
 
 export interface PackageSummary {
     id: string;
@@ -649,11 +650,14 @@ async function cacheInstalledManifests(packages: PackageSummary[], catalog: Cata
         if (!manifest) return;
         const serialized = JSON.stringify(manifest);
         if (pkg.cachedManifest && JSON.stringify(pkg.cachedManifest) === serialized) return;
+        if (cachedManifestWrites.get(pkg.noteId) === serialized) return;
+        cachedManifestWrites.set(pkg.noteId, serialized);
         try {
             await setLabel(pkg.noteId, PACKAGE_MANIFEST_LABEL, serialized);
         } catch {
             // Caching is best-effort. A package should remain usable if the note
             // changes between the catalog read and this background write.
+            if (cachedManifestWrites.get(pkg.noteId) === serialized) cachedManifestWrites.delete(pkg.noteId);
         }
     }));
 }
