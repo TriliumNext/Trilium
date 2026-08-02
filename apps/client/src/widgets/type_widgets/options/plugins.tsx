@@ -5,6 +5,7 @@ import type FNote from "../../../entities/fnote";
 import { setLabel } from "../../../services/attributes";
 import { closeActiveDialog } from "../../../services/dialog";
 import froca from "../../../services/froca";
+import { t } from "../../../services/i18n";
 import search from "../../../services/search";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
@@ -229,11 +230,11 @@ export default function PluginsSettings() {
     }, [refresh]));
 
     useEffect(() => {
-        if (state.loading || !state.checkForUpdates || !state.registryUrls.length) return;
+        if (state.loading || !state.checkForUpdates || (!state.registryUrls.length && !state.directManifestUrls.length)) return;
         const intervalHours = Math.max(1, state.updateCheckIntervalHours || 24);
         const timer = window.setInterval(() => void refresh(), intervalHours * 60 * 60 * 1000);
         return () => window.clearInterval(timer);
-    }, [refresh, state.checkForUpdates, state.loading, state.registryUrls, state.updateCheckIntervalHours]);
+    }, [refresh, state.checkForUpdates, state.directManifestUrls, state.loading, state.registryUrls, state.updateCheckIntervalHours]);
 
     async function openCatalog() {
         if (state.manager) {
@@ -259,7 +260,7 @@ export default function PluginsSettings() {
             await setLabel(state.settings.noteId, PACKAGE_UPDATE_INTERVAL_LABEL, String(Math.max(1, state.updateCheckIntervalHours || 24)));
             await setLabel(state.settings.noteId, PACKAGE_INCLUDE_DEPRECATED_LABEL, state.includeDeprecatedPackages ? "true" : "false");
             await froca.reloadNotes([state.settings.noteId]);
-            toast.showMessage("Package settings saved.");
+            toast.showMessage(t("plugins.package_settings_saved"));
             await refresh();
         } catch (error) {
             toast.showError(error instanceof Error ? error.message : String(error));
@@ -278,7 +279,7 @@ export default function PluginsSettings() {
                 await setLabel(pkg.noteId, settingLabelName(setting.key), serializeSetting(pkg.settings[setting.key]));
             }
             await froca.reloadNotes([pkg.noteId]);
-            toast.showMessage(`${pkg.title} settings saved.`);
+            toast.showMessage(t("plugins.plugin_settings_saved", { title: pkg.title }));
             await refresh();
         } catch (error) {
             toast.showError(error instanceof Error ? error.message : String(error));
@@ -292,7 +293,7 @@ export default function PluginsSettings() {
         try {
             await setLabel(pkg.noteId, PACKAGE_PINNED_LABEL, pinned ? "true" : "false");
             await froca.reloadNotes([pkg.noteId]);
-            toast.showMessage(`${pkg.title} updates ${pinned ? "pinned" : "unpinned"}.`);
+            toast.showMessage(t(pinned ? "plugins.updates_pinned" : "plugins.updates_unpinned", { title: pkg.title }));
             await refresh();
         } catch (error) {
             toast.showError(error instanceof Error ? error.message : String(error));
@@ -306,7 +307,7 @@ export default function PluginsSettings() {
         try {
             await setLabel(pkg.noteId, PACKAGE_ENABLED_LABEL, enabled ? "true" : "false");
             await froca.reloadNotes([pkg.noteId]);
-            toast.showMessage(`${pkg.title} ${enabled ? "enabled" : "disabled"}.`);
+            toast.showMessage(t(enabled ? "plugins.plugin_enabled" : "plugins.plugin_disabled", { title: pkg.title }));
             await refresh();
         } catch (error) {
             toast.showError(error instanceof Error ? error.message : String(error));
@@ -332,68 +333,68 @@ export default function PluginsSettings() {
             <OptionsPageHeader />
 
             <OptionsSection
-                title="Available plugins"
-                description="Find and install extensions from your configured plugin sources."
+                title={t("plugins.available_title")}
+                description={t("plugins.available_description")}
             >
                 {!state.loading && state.interruptedTransactionCount > 0 && (
                     <OptionsRowWithButton
-                        label="Incomplete package operation"
-                        description={`${state.interruptedTransactionCount} interrupted install or update operation${state.interruptedTransactionCount === 1 ? " remains" : "s remain"}. Open the catalog to recover staged packages safely.`}
+                        label={t("plugins.incomplete_operation_label")}
+                        description={t("plugins.incomplete_operation_description", { count: state.interruptedTransactionCount })}
                         icon="bx-error"
-                        buttonText="Open recovery"
+                        buttonText={t("plugins.open_recovery")}
                         buttonClassName="btn-warning"
                         onClick={() => void openCatalog()}
                     />
                 )}
                 {!state.loading && state.manager && availablePackages.length > 0 && (
                     <OptionsRowWithButton
-                        label={`${availablePackages.length} plugin${availablePackages.length === 1 ? "" : "s"} available`}
+                        label={t("plugins.available_count", { count: availablePackages.length })}
                         description={availablePackages.map((pkg) => pkg.name).join(", ")}
                         icon="bx-package"
-                        buttonText="Browse available plugins"
+                        buttonText={t("plugins.browse_available")}
                         buttonClassName="btn-primary"
                         onClick={() => void openCatalog()}
                     />
                 )}
                 {!state.loading && state.manager && availablePackages.length === 0 && (
                     <OptionsRowWithButton
-                        label="Plugin catalog"
-                        description="Browse, install, update, and archive plugins."
+                        label={t("plugins.catalog")}
+                        description={t("plugins.catalog_description")}
                         icon="bx-package"
-                        buttonText="Browse plugin catalog"
+                        buttonText={t("plugins.browse_catalog")}
                         onClick={() => void openCatalog()}
                     />
                 )}
                 {!state.loading && !state.manager && !state.error && (
-                    <p>The plugin catalog is not available yet.</p>
+                    <p>{t("plugins.catalog_not_available")}</p>
                 )}
             </OptionsSection>
 
             <OptionsSection
-                title="Installed plugins"
-                description="Turn plugins on or off, and open Details to configure one."
+                title={t("plugins.installed_title")}
+                description={t("plugins.installed_description")}
             >
-                {state.error && <p role="alert">Could not load plugins: {state.error}</p>}
-                {state.loading && <p>Loading installed plugins…</p>}
-                {!state.loading && !state.packages.length && <NoItems icon="bx bx-package" text="No plugins installed." />}
+                {state.error && <p role="alert">{t("plugins.load_error", { error: state.error })}</p>}
+                {state.loading && <p>{t("plugins.loading")}</p>}
+                {!state.loading && !state.packages.length && <NoItems icon="bx bx-package" text={t("plugins.no_installed")} />}
                 {state.packages.map((pkg) => (
                     <div key={pkg.noteId}>
-                        <OptionsRow name={`community-package-${pkg.noteId}`} label={pkg.title} description={`${pkg.id} · v${pkg.version} · ${pkg.enabled ? "enabled" : "disabled"}${pkg.pinned ? " · pinned" : ""} · ${pkg.health}${pkg.healthMessage ? ` (${pkg.healthMessage})` : ""}`}>
+                        <OptionsRow name={`community-package-${pkg.noteId}`} label={pkg.title} description={formatInstalledPackageDescription(pkg)}>
                             <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.4em" }}>
                                 <Button
-                                    text={pkg.enabled ? "Disable" : "Enable"}
+                                    text={pkg.enabled ? t("plugins.disable") : t("plugins.enable")}
                                     kind={pkg.enabled ? undefined : "primary"}
                                     size="micro"
                                     disabled={savingPackage === pkg.id}
                                     onClick={() => void setPackageEnabled(pkg, !pkg.enabled)}
                                 />
                                 <Button
-                                    text={configuredPackage === pkg.id ? "Hide details" : "Details"}
+                                    text={configuredPackage === pkg.id ? t("plugins.hide_details") : t("plugins.details")}
                                     icon="bx-cog"
                                     size="micro"
                                     disabled={savingPackage === pkg.id}
                                     onClick={() => setConfiguredPackage((current) => current === pkg.id ? "" : pkg.id)}
-                                    title="Show plugin settings and permissions"
+                                    title={t("plugins.details_title")}
                                 />
                             </span>
                         </OptionsRow>
@@ -411,76 +412,76 @@ export default function PluginsSettings() {
             </OptionsSection>
 
             <OptionsSection
-                title="Updates"
-                description="Updates will appear here when they are available."
+                title={t("plugins.updates_title")}
+                description={t("plugins.updates_description")}
             >
-                {state.registryError && <p role="alert">Could not check for updates: {state.registryError}</p>}
-                {!state.loading && state.updateCount === null && !state.registryError && <p>Configure a plugin source in Advanced settings to check for updates.</p>}
-                {!state.loading && state.updateCount === 0 && !state.registryError && <NoItems icon="bx bx-check" text="All installed plugins are up to date." />}
+                {state.registryError && <p role="alert">{t("plugins.update_error", { error: state.registryError })}</p>}
+                {!state.loading && state.updateCount === null && !state.registryError && <p>{t("plugins.configure_source")}</p>}
+                {!state.loading && state.updateCount === 0 && !state.registryError && <NoItems icon="bx bx-check" text={t("plugins.up_to_date")} />}
                 {!state.loading && state.updateCount !== null && state.updateCount > 0 && (
                     <OptionsRowWithButton
-                        label={`${state.updateCount} update${state.updateCount === 1 ? "" : "s"} available`}
-                        description="Review versions and update safely in the plugin catalog."
-                        buttonText="Review updates"
+                        label={t("plugins.updates_available", { count: state.updateCount })}
+                        description={t("plugins.review_updates_description")}
+                        buttonText={t("plugins.review_updates")}
                         onClick={() => void openCatalog()}
                     />
                 )}
             </OptionsSection>
 
             <OptionsSection
-                title="Advanced"
-                description="Trusted plugin sources, permissions, and update behavior. Most people can leave these unchanged."
+                title={t("plugins.advanced_title")}
+                description={t("plugins.advanced_description")}
             >
                 {!state.loading && state.settings ? <>
-                    <OptionsRow name="community-package-registries" label="Plugin sources" description="One registry URL per line. Leave this unchanged unless you want to add another trusted source." stacked>
+                    <OptionsRow name="community-package-registries" label={t("plugins.registry_label")} description={t("plugins.registry_description")} stacked>
                         <textarea
                             rows={3}
                             value={state.registryUrls.join("\n")}
-                            placeholder="One registry URL per line"
+                            placeholder={t("plugins.registry_placeholder")}
                             style={{ width: "100%", boxSizing: "border-box" }}
                             onInput={(event) => setState((current) => ({ ...current, registryUrls: parseRegistryUrls(event.currentTarget.value) }))}
                         />
                     </OptionsRow>
-                    <OptionsRow name="community-package-direct-manifests" label="Direct plugin manifests (optional)" description="One manifest URL per line for a trusted plugin that is not listed in a registry catalog. The manifest and its artifacts still go through compatibility, permission, source-host, and integrity checks." stacked>
+                    <OptionsRow name="community-package-direct-manifests" label={t("plugins.direct_manifest_label")} description={t("plugins.direct_manifest_description")} stacked>
                         <textarea
                             rows={3}
                             value={state.directManifestUrls.join("\n")}
-                            placeholder="https://example.com/my-plugin/trilium-package.json"
+                            placeholder={t("plugins.direct_manifest_placeholder")}
                             style={{ width: "100%", boxSizing: "border-box" }}
                             onInput={(event) => setState((current) => ({ ...current, directManifestUrls: parseRegistryUrls(event.currentTarget.value) }))}
                         />
                     </OptionsRow>
-                    <OptionsRow name="community-package-source-hosts" label="Plugin download hosts (optional)" description="Restricts where plugin files may be downloaded from during install or update. This is separate from runtime network access." stacked>
+                    <OptionsRow name="community-package-source-hosts" label={t("plugins.download_hosts_label")} description={t("plugins.download_hosts_description")} stacked>
                         <textarea
                             rows={3}
                             value={state.allowedSourceHosts}
-                            placeholder="One host per line, for example:\ngithub.com\nraw.githubusercontent.com"
+                            placeholder={t("plugins.download_hosts_placeholder")}
                             style={{ width: "100%", boxSizing: "border-box" }}
                             onInput={(event) => setState((current) => ({ ...current, allowedSourceHosts: event.currentTarget.value }))}
                         />
                     </OptionsRow>
                     <OptionsRowWithToggle
                         name="community-package-network"
-                        label="Allow plugin network requests"
-                        description="Controls whether installed plugins may make network requests while running. This does not control plugin downloads."
+                        label={t("plugins.network_label")}
+                        description={t("plugins.network_description")}
                         currentValue={state.allowNetworkPackages}
                         onChange={(value) => setState((current) => ({ ...current, allowNetworkPackages: value }))}
                     />
                     <OptionsRowWithToggle
                         name="community-package-check-updates"
-                        label="Check for plugin updates automatically"
-                        description="Performs a low-frequency registry check while this page is open."
+                        label={t("plugins.check_updates_label")}
+                        description={t("plugins.check_updates_description")}
                         currentValue={state.checkForUpdates}
                         onChange={(value) => setState((current) => ({ ...current, checkForUpdates: value }))}
                     />
                     <OptionsRowWithToggle
                         name="community-package-include-deprecated"
-                        label="Show deprecated plugins"
-                        description="Deprecated plugins stay hidden unless you explicitly choose to show them."
+                        label={t("plugins.include_deprecated_label")}
+                        description={t("plugins.include_deprecated_description")}
                         currentValue={state.includeDeprecatedPackages}
                         onChange={(value) => setState((current) => ({ ...current, includeDeprecatedPackages: value }))}
                     />
-                    <OptionsRow name="community-package-update-interval" label="Update check interval (hours)" description="The minimum interval between automatic registry checks.">
+                    <OptionsRow name="community-package-update-interval" label={t("plugins.interval_label")} description={t("plugins.interval_description")}>
                         <FormTextBox
                             type="number"
                             currentValue={String(state.updateCheckIntervalHours)}
@@ -488,13 +489,13 @@ export default function PluginsSettings() {
                         />
                     </OptionsRow>
                     <OptionsRowWithButton
-                        label="Save advanced settings"
-                        description="Apply source, permission, and update changes."
-                        buttonText="Save settings"
+                        label={t("plugins.save_advanced_label")}
+                        description={t("plugins.save_advanced_description")}
+                        buttonText={t("plugins.save_settings")}
                         disabled={savingSettings}
                         onClick={() => void saveSettings()}
                     />
-                </> : !state.loading && <p>Open the plugin catalog once to initialize advanced settings.</p>}
+                </> : !state.loading && <p>{t("plugins.initialize_advanced")}</p>}
             </OptionsSection>
         </>
     );
@@ -611,31 +612,50 @@ export function normalizeSourceHosts(value: string) {
     return value.split(/[\s,]+/).map((host) => host.trim()).filter(Boolean).join("\n");
 }
 
+function formatInstalledPackageDescription(pkg: PackageSummary) {
+    return t("plugins.installed_summary", {
+        id: pkg.id,
+        version: pkg.version,
+        state: t(pkg.enabled ? "plugins.enabled" : "plugins.disabled"),
+        pinned: pkg.pinned ? ` · ${t("plugins.pinned")}` : "",
+        health: t(`plugins.health_${pkg.health}`),
+        healthMessage: pkg.healthMessage ? ` (${formatHealthMessage(pkg.healthMessage)})` : ""
+    });
+}
+
+function formatHealthMessage(message: string) {
+    if (message === "all artifacts present") return t("plugins.health_all_artifacts");
+    if (message === "not checked") return t("plugins.health_not_checked");
+    if (message === "not in registry") return t("plugins.health_not_in_registry");
+    if (message.startsWith("missing ")) return t("plugins.health_missing", { artifacts: message.slice("missing ".length) });
+    return message;
+}
+
 function InstalledPackageDetails({ pkg, manifest, onChange, onSave, onPinChange, onRepair, disabled }: { pkg: PackageSummary; manifest?: CatalogPackage; onChange: (key: string, value: unknown) => void; onSave: () => void; onPinChange: (pinned: boolean) => void; onRepair: () => void; disabled: boolean }) {
     return (
         <div className="community-package-details">
-            <OptionsRow name={`community-package-health-${pkg.noteId}`} label="Health" description="Checks that the installed package still contains its declared artifacts.">
-                <span>{pkg.health}{pkg.healthMessage ? ` (${pkg.healthMessage})` : ""}</span>
+            <OptionsRow name={`community-package-health-${pkg.noteId}`} label={t("plugins.health_label")} description={t("plugins.health_description")}>
+                <span>{t(`plugins.health_${pkg.health}`)}{pkg.healthMessage ? ` (${formatHealthMessage(pkg.healthMessage)})` : ""}</span>
             </OptionsRow>
             {pkg.health === "broken" && <OptionsRowWithButton
-                label="Repair package"
-                description="Downloads the declared artifacts again and replaces the broken installation. The repaired package stays disabled until you enable it."
-                buttonText="Open repair"
+                label={t("plugins.repair_label")}
+                description={t("plugins.repair_description")}
+                buttonText={t("plugins.open_repair")}
                 buttonClassName="btn-primary"
                 disabled={disabled}
                 onClick={onRepair}
             />}
             {manifest ? <>
-                <OptionsRow name={`community-package-maintenance-${pkg.noteId}`} label="Registry status" description="Maintenance and security metadata published by the registry.">
-                    <span>{[manifestStatus(manifest), manifest.maintainer && `Maintainer: ${manifest.maintainer}`, manifest.license && `License: ${manifest.license}`].filter(Boolean).join(" · ") || "No additional registry metadata"}</span>
+                <OptionsRow name={`community-package-maintenance-${pkg.noteId}`} label={t("plugins.registry_status_label")} description={t("plugins.registry_status_description")}>
+                    <span>{[manifestStatus(manifest), manifest.maintainer && t("plugins.maintainer", { maintainer: manifest.maintainer }), manifest.license && t("plugins.license", { license: manifest.license })].filter(Boolean).join(" · ") || t("plugins.no_registry_metadata")}</span>
                 </OptionsRow>
-                <OptionsRow name={`community-package-permissions-${pkg.noteId}`} label="Permissions" description="Permissions declared by the package manifest.">
-                    <span>{manifest.permissions.length ? manifest.permissions.join(", ") : "None declared"}</span>
+                <OptionsRow name={`community-package-permissions-${pkg.noteId}`} label={t("plugins.permissions_label")} description={t("plugins.permissions_description")}>
+                    <span>{manifest.permissions.length ? manifest.permissions.join(", ") : t("plugins.none_declared")}</span>
                 </OptionsRow>
-                <OptionsRow name={`community-package-dependencies-${pkg.noteId}`} label="Dependencies" description="Required packages must be installed first.">
-                    <span>{manifest.dependencies.length ? manifest.dependencies.map(formatDependency).join(", ") : "None declared"}</span>
+                <OptionsRow name={`community-package-dependencies-${pkg.noteId}`} label={t("plugins.dependencies_label")} description={t("plugins.dependencies_description")}>
+                    <span>{manifest.dependencies.length ? manifest.dependencies.map(formatDependency).join(", ") : t("plugins.none_declared")}</span>
                 </OptionsRow>
-                {manifest.compatibility && <OptionsRow name={`community-package-compatibility-${pkg.noteId}`} label="Compatibility" description="Trilium versions declared by the package manifest.">
+                {manifest.compatibility && <OptionsRow name={`community-package-compatibility-${pkg.noteId}`} label={t("plugins.compatibility_label")} description={t("plugins.compatibility_description")}>
                     <span>{formatCompatibility(manifest.compatibility)} · {compatibilityStatus(manifest.compatibility)}</span>
                 </OptionsRow>}
                 {manifest.settings.map((setting) => <PackageSettingEditor
@@ -647,17 +667,17 @@ function InstalledPackageDetails({ pkg, manifest, onChange, onSave, onPinChange,
                     disabled={disabled}
                 />)}
                 {manifest.settings.length > 0 && <OptionsRowWithButton
-                    label="Package settings"
-                    description="Settings remain stored while the package is disabled."
-                    buttonText="Save package settings"
+                    label={t("plugins.package_settings_label")}
+                    description={t("plugins.package_settings_description")}
+                    buttonText={t("plugins.save_package_settings")}
                     disabled={disabled}
                     onClick={onSave}
                 />}
-            </> : <p className="text-muted">This package is not present in the configured registry, so its manifest details are unavailable.</p>}
+            </> : <p className="text-muted">{t("plugins.manifest_unavailable")}</p>}
             <OptionsRowWithToggle
                 name={`community-package-pinned-${pkg.noteId}`}
-                label="Pin updates"
-                description="Pinned packages stay at this version until you unpin them."
+                label={t("plugins.pin_label")}
+                description={t("plugins.pin_description")}
                 currentValue={pkg.pinned}
                 onChange={onPinChange}
                 disabled={disabled}
@@ -818,26 +838,50 @@ export function settingLabelName(key: string) {
 }
 
 export function isNewerVersion(candidate: string, installed: string) {
-    const candidateParts = candidate.split(/[.-]/).slice(0, 3).map(Number);
-    const installedParts = installed.split(/[.-]/).slice(0, 3).map(Number);
-    if (candidateParts.length !== 3 || installedParts.length !== 3 || [...candidateParts, ...installedParts].some(Number.isNaN)) return false;
-    for (let index = 0; index < 3; index++) {
-        if (candidateParts[index] !== installedParts[index]) return candidateParts[index] > installedParts[index];
-    }
-    return false;
+    return compareVersions(candidate, installed) === 1;
 }
 
 export function compareVersions(left: string, right: string) {
-    const leftParts = parseVersionParts(left);
-    const rightParts = parseVersionParts(right);
+    const leftParts = parseVersion(left);
+    const rightParts = parseVersion(right);
     if (!leftParts || !rightParts) return null;
     for (let index = 0; index < 3; index++) {
         if (leftParts[index] !== rightParts[index]) return leftParts[index] > rightParts[index] ? 1 : -1;
     }
-    return 0;
+    return comparePrerelease(leftParts[3], rightParts[3]);
 }
 
-function parseVersionParts(version: string) {
-    const parts = version.split(/[.-]/).slice(0, 3).map(Number);
-    return parts.length === 3 && parts.every((part) => Number.isInteger(part) && part >= 0) ? parts : null;
+type ParsedVersion = [number, number, number, string[]];
+
+function parseVersion(version: string): ParsedVersion | null {
+    const match = version.match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/);
+    if (!match) return null;
+    const core = match.slice(1, 4).map(Number);
+    if (core.some((part) => !Number.isInteger(part) || part < 0)) return null;
+    const prerelease = match[4] ? match[4].split(".") : [];
+    if (prerelease.some((identifier) => !identifier || !/^[0-9A-Za-z-]+$/.test(identifier))) return null;
+    return [core[0], core[1], core[2], prerelease];
+}
+
+function comparePrerelease(left: string[], right: string[]) {
+    if (!left.length && !right.length) return 0;
+    if (!left.length) return 1;
+    if (!right.length) return -1;
+    for (let index = 0; index < Math.max(left.length, right.length); index++) {
+        if (left[index] === undefined) return -1;
+        if (right[index] === undefined) return 1;
+        const leftNumeric = /^\d+$/.test(left[index]);
+        const rightNumeric = /^\d+$/.test(right[index]);
+        if (leftNumeric && rightNumeric) {
+            const leftNumber = left[index].replace(/^0+/, "") || "0";
+            const rightNumber = right[index].replace(/^0+/, "") || "0";
+            if (leftNumber.length !== rightNumber.length) return leftNumber.length > rightNumber.length ? 1 : -1;
+            if (leftNumber !== rightNumber) return leftNumber > rightNumber ? 1 : -1;
+        } else if (leftNumeric !== rightNumeric) {
+            return leftNumeric ? -1 : 1;
+        } else if (left[index] !== right[index]) {
+            return left[index] > right[index] ? 1 : -1;
+        }
+    }
+    return 0;
 }
