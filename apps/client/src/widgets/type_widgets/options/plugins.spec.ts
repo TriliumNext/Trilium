@@ -139,6 +139,7 @@ describe("plugin manager state helpers", () => {
             pinned: false,
             noteId: "package-note",
             artifactIds: ["manifest"],
+            artifactNotes: [],
             health: "unknown",
             healthMessage: "not checked",
             settings: {},
