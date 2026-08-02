@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
     compareVersions,
@@ -8,13 +8,16 @@ import {
     isCatalogPackageEntry,
     isNewerVersion,
     isPackageArtifact,
+    isPackageArtifactSource,
     isPackageCompatibility,
     isPackageDependency,
     isPackageSettingDefinition,
     isSecurePackageUrl,
+    loadCatalog,
     manifestStatus,
     normalizeSourceHosts,
     packageHealth,
+    parseCachedPackageManifest,
     parseRegistryUrls,
     parseSettingValue,
     serializeSetting,
@@ -72,8 +75,11 @@ describe("plugin manager validation helpers", () => {
         expect(isPackageDependency({ id: "example/dependency" })).toBe(false);
         expect(isPackageDependency({ id: "example/dependency", version: "not-semver" })).toBe(false);
         expect(isPackageArtifact(manifest.artifacts[0])).toBe(true);
+        expect(isPackageArtifact({ ...manifest.artifacts[0], source: "src/plugin.js" })).toBe(true);
         expect(isPackageArtifact({ ...manifest.artifacts[0], id: "unsafe/id" })).toBe(false);
         expect(isPackageArtifact({ ...manifest.artifacts[0], source: "http://example.com/plugin.js" })).toBe(false);
+        expect(isPackageArtifactSource("../plugin.js")).toBe(false);
+        expect(isPackageArtifactSource("/absolute/plugin.js")).toBe(false);
         expect(isPackageArtifact({ ...manifest.artifacts[0], integrity: "sha256-invalid" })).toBe(false);
         expect(isPackageCompatibility(manifest.compatibility)).toBe(true);
         expect(isPackageCompatibility({ minTriliumVersion: 1 })).toBe(false);
@@ -90,6 +96,8 @@ describe("plugin manager validation helpers", () => {
 });
 
 describe("plugin manager state helpers", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
     it("schedules update checks for registry or direct-manifest sources only when enabled", () => {
         expect(shouldScheduleUpdateChecks(true, true, ["https://example.com/registry.json"], [])).toBe(false);
         expect(shouldScheduleUpdateChecks(false, false, ["https://example.com/registry.json"], [])).toBe(false);
@@ -102,6 +110,38 @@ describe("plugin manager state helpers", () => {
         expect(packageHealth(["manifest"], manifest)).toEqual({ health: "healthy", healthMessage: "all artifacts present" });
         expect(packageHealth([], manifest)).toEqual({ health: "broken", healthMessage: "missing manifest" });
         expect(packageHealth(["manifest"], undefined)).toEqual({ health: "unknown", healthMessage: "not in registry" });
+    });
+
+    it("accepts a valid cached manifest for offline package details", () => {
+        const cached = parseCachedPackageManifest(JSON.stringify(manifest));
+        expect(cached?.id).toBe("example/plugin");
+        expect(parseCachedPackageManifest("not json")).toBeUndefined();
+    });
+
+    it("uses saved package metadata when every configured source is unavailable", async () => {
+        const cachedManifest = parseCachedPackageManifest(JSON.stringify(manifest));
+        vi.stubGlobal("fetch", vi.fn(async () => {
+            throw new Error("network unavailable");
+        }));
+
+        const result = await loadCatalog(["https://example.com/registry.json"], [], [{
+            id: manifest.id,
+            title: manifest.name,
+            version: manifest.version,
+            enabled: false,
+            pinned: false,
+            noteId: "package-note",
+            artifactIds: ["manifest"],
+            health: "unknown",
+            healthMessage: "not checked",
+            settings: {},
+            cachedManifest
+        }], false);
+
+        expect(result.catalog).toEqual([cachedManifest]);
+        expect(result.usingSavedData).toBe(true);
+        expect(result.updateCount).toBeNull();
+        expect(result.registryError).toContain("network unavailable");
     });
 
     it("compares compatible versions and detects updates", () => {

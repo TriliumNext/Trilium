@@ -1028,6 +1028,8 @@
     "available_count_one": "{{count}} plugin available",
     "available_count_other": "{{count}} plugins available",
     "browse_available": "Browse available plugins",
+    "catalog_offline_title": "Plugin catalog unavailable — using saved plugin information.",
+    "catalog_offline_description": "Installed plugins can still be enabled and configured. New installations and updates are paused until the catalog is available again. The plugin manager is not downloading packages.",
     "catalog": "Plugin catalog",
     "catalog_description": "Browse, install, update, and archive plugins.",
     "browse_catalog": "Browse plugin catalog",

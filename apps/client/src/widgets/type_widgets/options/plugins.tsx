@@ -20,6 +20,7 @@ const COMMUNITY_PACKAGES_MANAGER_NOTE_ID = "_sd_community-packages-manager_rende
 const PACKAGE_PINNED_LABEL = "packagePinned";
 const PACKAGE_ENABLED_LABEL = "packageEnabled";
 const PACKAGE_TRANSACTION_LABEL = "packageTransaction";
+const PACKAGE_MANIFEST_LABEL = "packageManifest";
 const PACKAGE_REGISTRY_URL_LABEL = "packageRegistryUrl";
 const PACKAGE_REGISTRY_URLS_LABEL = "packageRegistryUrls";
 const PACKAGE_DIRECT_MANIFEST_URLS_LABEL = "packageDirectManifestUrls";
@@ -45,6 +46,7 @@ export interface PackageSummary {
     health: "healthy" | "broken" | "unknown";
     healthMessage: string;
     settings: Record<string, unknown>;
+    cachedManifest?: CatalogPackage;
 }
 
 export interface PackageArtifactNote {
@@ -140,6 +142,7 @@ interface PluginsState {
     interruptedTransactionCount: number;
     updateCount: number | null;
     registryError: string | null;
+    usingSavedData: boolean;
     loading: boolean;
     error: string | null;
 }
@@ -159,6 +162,7 @@ const EMPTY_STATE: PluginsState = {
     interruptedTransactionCount: 0,
     updateCount: null,
     registryError: null,
+    usingSavedData: false,
     loading: true,
     error: null
 };
@@ -173,10 +177,10 @@ export default function PluginsSettings() {
         try {
             const [manager, packageNotes, transactionNotes] = await Promise.all([
                 findPackageManager(),
-                search.searchForNotesIncludingHidden("#packageManaged"),
-                search.searchForNotesIncludingHidden(`#${PACKAGE_TRANSACTION_LABEL}`)
+                search.searchForNotes("#packageManaged"),
+                search.searchForNotes(`#${PACKAGE_TRANSACTION_LABEL}`)
             ]);
-            const settings = (await search.searchForNotesIncludingHidden("#packageManagerSettings"))[0] || null;
+            const settings = (await search.searchForNotes("#packageManagerSettings"))[0] || null;
             const legacyRegistryUrl = settings?.getOwnedLabelValue(PACKAGE_REGISTRY_URL_LABEL) || "";
             const registryUrls = parseRegistryUrls(settings?.getOwnedLabelValue(PACKAGE_REGISTRY_URLS_LABEL) || legacyRegistryUrl);
             const directManifestUrls = parseRegistryUrls(settings?.getOwnedLabelValue(PACKAGE_DIRECT_MANIFEST_URLS_LABEL) || "");
@@ -205,22 +209,27 @@ export default function PluginsSettings() {
 
             const packages = packageNotes
                 .filter((note) => note.getOwnedLabelValue("packageArtifact") === "manifest" && !note.isArchived && !note.getOwnedLabelValue(PACKAGE_TRANSACTION_LABEL))
-                .map((note) => ({
-                    id: note.getOwnedLabelValue("packageOwner") || note.noteId,
-                    title: note.title,
-                    version: note.getOwnedLabelValue("packageVersion") || "unknown",
-                    enabled: note.getOwnedLabelValue("packageEnabled") === "true",
-                    pinned: note.getOwnedLabelValue(PACKAGE_PINNED_LABEL) === "true",
-                    noteId: note.noteId,
-                    artifactIds: artifactIdsByPackage.get(note.getOwnedLabelValue("packageOwner") || note.noteId) || [],
-                    artifactNotes: artifactNotesByPackage.get(note.getOwnedLabelValue("packageOwner") || note.noteId) || [],
-                    health: "unknown" as const,
-                    healthMessage: "not checked",
-                    settings: {}
-                }))
+                .map((note) => {
+                    const packageId = note.getOwnedLabelValue("packageOwner") || note.noteId;
+                    return {
+                        id: packageId,
+                        title: note.title,
+                        version: note.getOwnedLabelValue("packageVersion") || "unknown",
+                        enabled: note.getOwnedLabelValue("packageEnabled") === "true",
+                        pinned: note.getOwnedLabelValue(PACKAGE_PINNED_LABEL) === "true",
+                        noteId: note.noteId,
+                        artifactIds: artifactIdsByPackage.get(packageId) || [],
+                        artifactNotes: artifactNotesByPackage.get(packageId) || [],
+                        health: "unknown" as const,
+                        healthMessage: "not checked",
+                        settings: {},
+                        cachedManifest: parseCachedPackageManifest(note.getOwnedLabelValue(PACKAGE_MANIFEST_LABEL))
+                    };
+                })
                 .sort((left, right) => left.title.localeCompare(right.title));
 
-            const { catalog, updateCount, registryError } = await loadCatalog(registryUrls, directManifestUrls, packages, includeDeprecatedPackages);
+            const { catalog, updateCount, registryError, usingSavedData } = await loadCatalog(registryUrls, directManifestUrls, packages, includeDeprecatedPackages);
+            await cacheInstalledManifests(packages, catalog);
             const packagesWithSettings = packages.map((pkg) => {
                 const note = packageNotes.find((candidate) => candidate.noteId === pkg.noteId);
                 const manifest = catalog.find((candidate) => candidate.id === pkg.id);
@@ -230,7 +239,7 @@ export default function PluginsSettings() {
                 .filter((note) => !note.isArchived)
                 .map((note) => note.getOwnedLabelValue(PACKAGE_TRANSACTION_LABEL))
                 .filter(Boolean)).size;
-            setState({ manager, settings, packages: packagesWithSettings, catalog, registryUrls, directManifestUrls, allowNetworkPackages, allowedSourceHosts, checkForUpdates, updateCheckIntervalHours, includeDeprecatedPackages, interruptedTransactionCount, updateCount, registryError, loading: false, error: null });
+            setState({ manager, settings, packages: packagesWithSettings, catalog, registryUrls, directManifestUrls, allowNetworkPackages, allowedSourceHosts, checkForUpdates, updateCheckIntervalHours, includeDeprecatedPackages, interruptedTransactionCount, updateCount, registryError, usingSavedData, loading: false, error: null });
         } catch (error) {
             setState({ ...EMPTY_STATE, loading: false, error: error instanceof Error ? error.message : String(error) });
         }
@@ -356,6 +365,10 @@ export default function PluginsSettings() {
                 title={t("plugins.available_title")}
                 description={t("plugins.available_description")}
             >
+                {!state.loading && state.usingSavedData && <p role="status">
+                    <strong>{t("plugins.catalog_offline_title")}</strong><br />
+                    {t("plugins.catalog_offline_description")}
+                </p>}
                 {!state.loading && state.interruptedTransactionCount > 0 && (
                     <OptionsRowWithButton
                         label={t("plugins.incomplete_operation_label")}
@@ -409,7 +422,7 @@ export default function PluginsSettings() {
                                     onClick={() => void setPackageEnabled(pkg, !pkg.enabled)}
                                 />
                                 <Button
-                                    text={configuredPackage === pkg.id ? t("plugins.hide_settings") : t("plugins.settings_button")}
+                                    text={configuredPackage === pkg.id ? t("plugins.hide_details") : t("plugins.details")}
                                     icon="bx-cog"
                                     size="micro"
                                     disabled={savingPackage === pkg.id}
@@ -528,7 +541,7 @@ async function findPackageManager() {
         return deployedManager;
     }
 
-    const candidates = await search.searchForNotesIncludingHidden("Community Packages");
+    const candidates = await search.searchForNotes("Community Packages");
     return candidates.find((note) => note.type === "render" && note.title === "Community Packages") || null;
 }
 
@@ -541,11 +554,14 @@ export function packageHealth(artifactIds: string[], manifest?: CatalogPackage) 
         : { health: "healthy" as const, healthMessage: "all artifacts present" };
 }
 
-async function loadCatalog(registryUrls: string[], directManifestUrls: string[], packages: PackageSummary[], includeDeprecatedPackages: boolean) {
+export async function loadCatalog(registryUrls: string[], directManifestUrls: string[], packages: PackageSummary[], includeDeprecatedPackages: boolean) {
     const registrySources = registryUrls.filter(Boolean);
     const directSources = directManifestUrls.filter(Boolean);
+    const cachedCatalog = packages
+        .map((pkg) => pkg.cachedManifest)
+        .filter((manifest): manifest is CatalogPackage => Boolean(manifest));
     if (!registrySources.length && !directSources.length) {
-        return { catalog: [], updateCount: null, registryError: null };
+        return { catalog: cachedCatalog, updateCount: null, registryError: null, usingSavedData: cachedCatalog.length > 0 };
     }
 
     const registryResults = registrySources.map(async (source): Promise<RawCatalogPackage[]> => {
@@ -574,37 +590,29 @@ async function loadCatalog(registryUrls: string[], directManifestUrls: string[],
         .filter((result): result is PromiseRejectedResult => result.status === "rejected")
         .map((result) => result.reason instanceof Error ? result.reason.message : String(result.reason));
     if (!indexes.length) {
-        return { catalog: [], updateCount: null, registryError: failures.join("; ") || "No plugin sources could be loaded." };
+        return {
+            catalog: cachedCatalog,
+            updateCount: null,
+            registryError: failures.join("; ") || "No plugin sources could be loaded.",
+            usingSavedData: cachedCatalog.length > 0
+        };
     }
 
     const seen = new Set<string>();
-    const catalog = indexes.flat()
+    const catalogFromSources = indexes.flat()
         .filter(isCatalogPackageEntry)
         .filter((entry) => {
             if (seen.has(entry.id!)) return false;
             seen.add(entry.id!);
             return true;
         })
-        .map((entry) => ({
-            id: entry.id!,
-            name: entry.name!,
-            description: entry.description || "",
-            version: entry.version!,
-            permissions: Array.isArray(entry.permissions) ? entry.permissions.filter((permission): permission is string => typeof permission === "string") : [],
-            settings: Array.isArray(entry.settings) ? entry.settings.filter(isPackageSettingDefinition) : [],
-            artifacts: Array.isArray(entry.artifacts) ? entry.artifacts.filter(isPackageArtifact) : [],
-            dependencies: Array.isArray(entry.dependencies) ? entry.dependencies.filter(isPackageDependency) : [],
-            compatibility: isPackageCompatibility(entry.compatibility) ? entry.compatibility : null,
-            author: entry.author,
-            maintainer: entry.maintainer,
-            homepage: entry.homepage,
-            license: entry.license,
-            deprecated: entry.deprecated,
-            deprecationMessage: entry.deprecationMessage,
-            maintenance: entry.maintenance,
-            securityStatus: entry.securityStatus,
-            lastValidatedAt: entry.lastValidatedAt
-        }));
+        .map(normalizeCatalogPackage);
+    const catalogIds = new Set(catalogFromSources.map((entry) => entry.id));
+    const catalog = [
+        ...catalogFromSources,
+        ...cachedCatalog.filter((entry) => !catalogIds.has(entry.id))
+    ];
+    const usingSavedData = cachedCatalog.some((entry) => !catalogIds.has(entry.id));
     const versions = new Map(catalog.map((entry) => [entry.id, entry.version]));
     const updateCount = packages.filter((pkg) => {
         if (pkg.pinned) return false;
@@ -615,7 +623,62 @@ async function loadCatalog(registryUrls: string[], directManifestUrls: string[],
             ? isNewerVersion(candidate, pkg.version)
             : false;
     }).length;
-    return { catalog, updateCount, registryError: failures.length ? `Some plugin sources could not be loaded: ${failures.join("; ")}` : null };
+    return {
+        catalog,
+        updateCount: failures.length || usingSavedData ? null : updateCount,
+        registryError: failures.length ? `Some plugin sources could not be loaded: ${failures.join("; ")}` : null,
+        usingSavedData
+    };
+}
+
+const MAX_CACHED_MANIFEST_LENGTH = 256 * 1024;
+
+export function parseCachedPackageManifest(value: string | null | undefined): CatalogPackage | undefined {
+    if (!value || value.length > MAX_CACHED_MANIFEST_LENGTH) return undefined;
+    try {
+        const manifest = JSON.parse(value) as RawCatalogPackage;
+        return isCatalogPackageEntry(manifest) ? normalizeCatalogPackage(manifest) : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+async function cacheInstalledManifests(packages: PackageSummary[], catalog: CatalogPackage[]) {
+    await Promise.all(packages.map(async (pkg) => {
+        const manifest = catalog.find((entry) => entry.id === pkg.id);
+        if (!manifest) return;
+        const serialized = JSON.stringify(manifest);
+        if (pkg.cachedManifest && JSON.stringify(pkg.cachedManifest) === serialized) return;
+        try {
+            await setLabel(pkg.noteId, PACKAGE_MANIFEST_LABEL, serialized);
+        } catch {
+            // Caching is best-effort. A package should remain usable if the note
+            // changes between the catalog read and this background write.
+        }
+    }));
+}
+
+function normalizeCatalogPackage(entry: RawCatalogPackage): CatalogPackage {
+    return {
+        id: entry.id!,
+        name: entry.name!,
+        description: entry.description || "",
+        version: entry.version!,
+        permissions: Array.isArray(entry.permissions) ? entry.permissions.filter((permission): permission is string => typeof permission === "string") : [],
+        settings: Array.isArray(entry.settings) ? entry.settings.filter(isPackageSettingDefinition) : [],
+        artifacts: Array.isArray(entry.artifacts) ? entry.artifacts.filter(isPackageArtifact) : [],
+        dependencies: Array.isArray(entry.dependencies) ? entry.dependencies.filter(isPackageDependency) : [],
+        compatibility: isPackageCompatibility(entry.compatibility) ? entry.compatibility : null,
+        author: entry.author,
+        maintainer: entry.maintainer,
+        homepage: entry.homepage,
+        license: entry.license,
+        deprecated: entry.deprecated,
+        deprecationMessage: entry.deprecationMessage,
+        maintenance: entry.maintenance,
+        securityStatus: entry.securityStatus,
+        lastValidatedAt: entry.lastValidatedAt
+    };
 }
 
 export function parseRegistryUrls(value: string | null | undefined) {
@@ -659,9 +722,7 @@ function formatHealthMessage(message: string) {
 function InstalledPackageDetails({ pkg, manifest, onChange, onSave, onPinChange, onRepair, onOpenArtifact, disabled }: { pkg: PackageSummary; manifest?: CatalogPackage; onChange: (key: string, value: unknown) => void; onSave: () => void; onPinChange: (pinned: boolean) => void; onRepair: () => void; onOpenArtifact: (noteId: string) => void; disabled: boolean }) {
     const renderArtifacts = pkg.artifactNotes.filter((artifact) => artifact.type === "render");
     return (
-        <div className="community-package-details options-section-card">
-            <h5>{t("plugins.settings_panel_heading")}</h5>
-            <p className="options-section-description">{t("plugins.settings_panel_description")}</p>
+        <div className="community-package-details">
             <OptionsRow name={`community-package-health-${pkg.noteId}`} label={t("plugins.health_label")} description={t("plugins.health_description")}>
                 <span>{t(`plugins.health_${pkg.health}`)}{pkg.healthMessage ? ` (${formatHealthMessage(pkg.healthMessage)})` : ""}</span>
             </OptionsRow>
@@ -773,9 +834,21 @@ export function isPackageArtifact(value: unknown): value is PackageArtifact {
     return typeof artifact.id === "string"
         && PACKAGE_ARTIFACT_ID_PATTERN.test(artifact.id)
         && typeof artifact.source === "string"
-        && isSecurePackageUrl(artifact.source)
+        && isPackageArtifactSource(artifact.source)
         && typeof artifact.integrity === "string"
         && /^sha256-[A-Za-z0-9+/]{43}=$/.test(artifact.integrity);
+}
+
+export function isPackageArtifactSource(value: string) {
+    if (/^[a-z][a-z\d+.-]*:/i.test(value) || value.startsWith("//")) {
+        return isSecurePackageUrl(value);
+    }
+
+    return Boolean(value.trim())
+        && !value.startsWith("/")
+        && !value.startsWith("\\")
+        && !value.includes("\\")
+        && !value.split("/").includes("..");
 }
 
 export function isCatalogPackageEntry(value: RawCatalogPackage): value is RawCatalogPackage & Required<Pick<RawCatalogPackage, "id" | "name" | "version" | "description" | "repository" | "artifacts">> {
