@@ -8,6 +8,16 @@ As an alternative to [hosting your own Trilium instance](1.%20Installing%20the%2
 
 ## Cloud instance providers
 
+### Zenith Hosting
+
+[![Deploy with Zenith](https://cdn.zenith.hosting/buttons/deploy-with-zenith.svg)](https://zenith.hosting/host/trilium-notes)
+
+1.  Go to [zenith.hosting/host/trilium-notes](https://zenith.hosting/host/trilium-notes) and sign up.
+2.  Click deploy and pick a name for your instance.
+3.  Trilium comes up at your own subdomain, ready to sync with the desktop and mobile clients.
+
+One-click managed Trilium: storage, backups, email and a free subdomain included. A share of every subscription goes back to Trilium.
+
 ### PikaPods
 
 1.  Go to [pikapods.com](https://www.pikapods.com)  and sign up.
