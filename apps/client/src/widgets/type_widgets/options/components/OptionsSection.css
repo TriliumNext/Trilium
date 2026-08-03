@@ -16,3 +16,13 @@
         margin-top: 0.5em;
     }
 }
+
+/* Installed plugin details are an expandable child card inside the installed-packages card. */
+.community-package-details {
+    margin: 0.35em 0 0.75em;
+    padding: 0 var(--options-card-padding);
+    border: 1px solid var(--card-border-color);
+    border-radius: 8px;
+    background: var(--main-background-color);
+    box-shadow: var(--card-box-shadow);
+}
