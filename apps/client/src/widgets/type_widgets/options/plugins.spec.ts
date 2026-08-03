@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type FNote from "../../../entities/fnote";
+
+const setLabelMock = vi.hoisted(() => vi.fn(async () => {}));
+const removeOwnedAttributesMock = vi.hoisted(() => vi.fn(async () => {}));
+
+vi.mock("../../../services/attributes", () => ({
+    removeOwnedAttributesByNameOrType: removeOwnedAttributesMock,
+    setLabel: setLabelMock
+}));
+
 vi.mock("../../../services/i18n", () => ({
     t: (key: string, options?: { id?: unknown; interpolation?: { escapeValue?: boolean } }) => {
         if (!options) return key;
@@ -30,6 +40,7 @@ import {
     parseRegistryUrls,
     parseSettingValue,
     serializeSetting,
+    setPackageNoteEnabled,
     settingLabelName,
     shouldScheduleUpdateChecks
 } from "./plugins";
@@ -119,6 +130,34 @@ describe("plugin manager state helpers", () => {
         expect(packageHealth(["manifest"], manifest)).toEqual({ health: "healthy", healthMessage: "all artifacts present" });
         expect(packageHealth([], manifest)).toEqual({ health: "broken", healthMessage: "missing manifest" });
         expect(packageHealth(["manifest"], undefined)).toEqual({ health: "unknown", healthMessage: "not in registry" });
+    });
+
+    it("activates package artifact labels when enabling an installed package", async () => {
+        const note = {
+            noteId: "css-note",
+            getOwnedLabels: (name: string) => name === "disabled:appCss" ? [{ value: "" }] : [],
+            getOwnedLabelValue: (name: string) => name === "packageArtifact" ? "notes-system-css" : undefined
+        } as unknown as FNote;
+
+        await setPackageNoteEnabled(note, true);
+
+        expect(removeOwnedAttributesMock).toHaveBeenCalledWith(note, expect.anything(), "disabled:appCss");
+        expect(setLabelMock).toHaveBeenCalledWith("css-note", "appCss", "");
+        expect(setLabelMock).not.toHaveBeenCalledWith("css-note", "packageEnabled", "true");
+    });
+
+    it("updates the package manifest state while disabling its artifacts", async () => {
+        const note = {
+            noteId: "manifest-note",
+            getOwnedLabels: (name: string) => name === "appCss" ? [{ value: "" }] : [],
+            getOwnedLabelValue: (name: string) => name === "packageArtifact" ? "manifest" : undefined
+        } as unknown as FNote;
+
+        await setPackageNoteEnabled(note, false);
+
+        expect(removeOwnedAttributesMock).toHaveBeenCalledWith(note, expect.anything(), "appCss");
+        expect(setLabelMock).toHaveBeenCalledWith("manifest-note", "disabled:appCss", "");
+        expect(setLabelMock).toHaveBeenCalledWith("manifest-note", "packageEnabled", "false");
     });
 
     it("accepts a valid cached manifest for offline package details", () => {

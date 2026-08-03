@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import type FNote from "../../../entities/fnote";
-import { setLabel } from "../../../services/attributes";
+import { removeOwnedAttributesByNameOrType, setLabel } from "../../../services/attributes";
+import branches from "../../../services/branches";
 import { closeActiveDialog } from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
@@ -20,6 +21,7 @@ const COMMUNITY_PACKAGES_MANAGER_NOTE_ID = "_sd_community-packages-manager_rende
 const PACKAGE_PINNED_LABEL = "packagePinned";
 const PACKAGE_ENABLED_LABEL = "packageEnabled";
 const PACKAGE_TRANSACTION_LABEL = "packageTransaction";
+const PACKAGE_ARTIFACT_LABEL = "packageArtifact";
 const PACKAGE_MANIFEST_LABEL = "packageManifest";
 const PACKAGE_REGISTRY_URL_LABEL = "packageRegistryUrl";
 const PACKAGE_REGISTRY_URLS_LABEL = "packageRegistryUrls";
@@ -33,6 +35,7 @@ const PACKAGE_ARTIFACT_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
 const PACKAGE_SETTING_KEY_PATTERN = /^[a-zA-Z][a-zA-Z0-9._-]{0,63}$/;
 const PACKAGE_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const PACKAGE_VERSION_RANGE_PATTERN = /^(?:[<>=~^]*\s*)?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const PACKAGE_ACTIVATION_LABELS = ["widget", "appCss", "appTheme", "run", "customRequestHandler", "launcherType"];
 const cachedManifestWrites = new Map<string, string>();
 
 export interface PackageSummary {
@@ -336,10 +339,18 @@ export default function PluginsSettings() {
     async function setPackageEnabled(pkg: PackageSummary, enabled: boolean) {
         setSavingPackage(pkg.id);
         try {
-            await setLabel(pkg.noteId, PACKAGE_ENABLED_LABEL, enabled ? "true" : "false");
-            await froca.reloadNotes([pkg.noteId]);
+            const packageNotes = (await search.searchForNotesIncludingHidden("#packageManaged"))
+                .filter((note) => note.getOwnedLabelValue("packageOwner") === pkg.id && !note.isArchived);
+            for (const note of packageNotes) {
+                await setPackageNoteEnabled(note, enabled);
+            }
+            await froca.reloadNotes(packageNotes.map((note) => note.noteId));
             toast.showMessage(t(enabled ? "plugins.plugin_enabled" : "plugins.plugin_disabled", { title: pkg.title }));
             await refresh();
+            // Startup scripts and stylesheets are discovered during bootstrap. Reloading here makes
+            // the settings toggle take effect immediately instead of leaving the package half-active
+            // until the next application restart.
+            window.location.reload();
         } catch (error) {
             toast.showError(error instanceof Error ? error.message : String(error));
         } finally {
@@ -535,6 +546,35 @@ export default function PluginsSettings() {
             </OptionsSection>
         </>
     );
+}
+
+export async function setPackageNoteEnabled(note: FNote, enabled: boolean) {
+    for (const labelName of PACKAGE_ACTIVATION_LABELS) {
+        const sourceName = enabled ? `disabled:${labelName}` : labelName;
+        const targetName = enabled ? labelName : `disabled:${labelName}`;
+        const sourceLabels = note.getOwnedLabels(sourceName);
+        if (!sourceLabels.length) continue;
+
+        await removeOwnedAttributesByNameOrType(note, "label", sourceName);
+        for (const label of sourceLabels) {
+            await setLabel(note.noteId, targetName, label.value);
+        }
+    }
+
+    if (note.getOwnedLabelValue(PACKAGE_ARTIFACT_LABEL) === "manifest") {
+        await setLabel(note.noteId, PACKAGE_ENABLED_LABEL, enabled ? "true" : "false");
+    }
+
+    if (note.type === "launcher") {
+        const targetParent = await froca.getNote(enabled ? "_lbVisibleLaunchers" : "_lbAvailableLaunchers", true);
+        const targetBranch = targetParent?.getParentBranches()[0];
+        const sourceBranchIds = note.getParentBranches()
+            .filter((branch) => ["_lbVisibleLaunchers", "_lbAvailableLaunchers"].includes(branch.parentNoteId))
+            .map((branch) => branch.branchId);
+        if (targetBranch && sourceBranchIds.length) {
+            await branches.moveToParentNote(sourceBranchIds, targetBranch.branchId);
+        }
+    }
 }
 
 async function findPackageManager() {
