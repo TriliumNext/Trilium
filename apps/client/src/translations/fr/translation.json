@@ -1405,7 +1405,6 @@
     "title": "Sauvegarde",
     "download": "Télécharger",
     "automatic_backups_description": "Trilium peut sauvegarder la base de données automatiquement. Il est recommandé de maintenir cette fonction activée, mais cela peut ralentir le démarrage de l'application si la base de données est volumineuse et/ou si le support de stockage est lent.",
-    "backup_location_description": "Les sauvegardes sont stockées dans {{- backupFolder}}.",
     "automatic_backups_title": "Sauvegardes automatiques"
   },
   "etapi": {
@@ -1899,7 +1898,6 @@
     "create-child-note-title": "Créer une nouvelle note enfant et l'ajouter à la carte",
     "create-child-note-instruction": "Cliquez sur la carte pour créer une nouvelle note à cet endroit ou appuyez sur Échap pour la supprimer.",
     "unable-to-load-map": "Impossible de charger la carte.",
-    "create-child-note-text": "Ajouter le marqueur",
     "create-child-note-toast-title": "Nouvelle note"
   },
   "geo-map-context": {
@@ -2488,8 +2486,6 @@
     "cancelFocus": "Annuler le mode Focus",
     "moveUp": "Monter",
     "moveDown": "Descendre",
-    "link": "Lien",
-    "linkBidirectional": "Lien bidirectionnel",
     "clickTips": "Cliquer sur le nœud cible",
     "summary": "Résumé"
   },

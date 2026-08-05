@@ -280,7 +280,7 @@ describe("PromotedAttributes", () => {
         container.remove();
     });
 
-    function mount(note: FNote) {
+    function mount(note: FNote, omit?: readonly string[]) {
         shownNote.current = note;
         const parent = {
             componentId: "cid",
@@ -289,7 +289,7 @@ describe("PromotedAttributes", () => {
         } as unknown as Component;
         act(() => render(
             <ParentComponent.Provider value={parent}>
-                <PromotedAttributes />
+                <PromotedAttributes omit={omit} />
             </ParentComponent.Provider>,
             container
         ));
@@ -312,6 +312,22 @@ describe("PromotedAttributes", () => {
         act(() => handlers.get("entitiesReloaded")?.({ loadResults }));
 
         expect(multiInput.current?.values).toEqual([ "alpha", "beta" ]);
+    });
+
+    /** A host showing a value better than a field would says so by name — see the geo map's pane. */
+    it("leaves out the definitions the host names, and keeps the rest", () => {
+        const note = buildNote({
+            title: "Place",
+            "#label:geolocation": "promoted,single,text",
+            "#geolocation": "1,2",
+            "#label:visited": "promoted,single,text",
+            "#visited": "yes"
+        });
+        mount(note, [ "geolocation" ]);
+
+        const names = [ ...container.querySelectorAll(".promoted-attribute-cell > label") ]
+            .map((label) => label.textContent);
+        expect(names).toEqual([ "visited" ]);
     });
 
     it("keeps the grid empty for a table view, whose cells already edit the same fields", () => {
@@ -438,7 +454,7 @@ describe("PromotedAttributesContent rendering", () => {
             buildCell(note, { definition: { labelType: "color" }, value: "#123456" })
         ]);
 
-        expect(container.querySelector(".note-color-picker")).not.toBeNull();
+        expect(container.querySelector(".color-picker")).not.toBeNull();
         // The raw input is kept but hidden, the picker drives the value.
         expect(container.querySelector("input.promoted-attribute-input")?.getAttribute("type")).toBe("hidden");
     });

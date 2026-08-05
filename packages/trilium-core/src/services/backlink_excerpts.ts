@@ -6,8 +6,11 @@
  * anchors — a text note's content directly. {@link findLlmChatExcerpts} brings `llmChat` notes
  * to that same shape first: their assistant prose is markdown, rendered to HTML through the
  * shared pipeline the chat UI uses, with wiki-link anchors retitled from note ID to note title.
+ * {@link findMindMapExcerpts} has no prose to quote at all, a map's links belonging to its nodes,
+ * and writes its own fragments instead.
  */
 
+import { parseMindMapNoteLink } from "@triliumnext/commons";
 import { renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HTMLElement, parse, TextNode } from "node-html-parser";
 
@@ -168,6 +171,83 @@ function collectAssistantProse(jsonContent: string): string {
     // A blank line between blocks keeps them separate markdown paragraphs.
     return blocks.join("\n\n");
 }
+
+/**
+ * The `mindMap` entry point. A map has no prose to quote: the link belongs to a node, so what is
+ * quoted is the node itself — its own text as the link, led by the nodes it hangs from, which is
+ * what says where in the map the link was made.
+ *
+ * @param jsonContent the map, as it is stored.
+ * @param referencedNoteId the note the backlinks are being gathered for.
+ * @returns one excerpt per node linking to that note.
+ */
+export function findMindMapExcerpts(jsonContent: string, referencedNoteId: string): string[] {
+    let rootNode: unknown;
+    try {
+        rootNode = (JSON.parse(jsonContent) as { nodeData?: unknown }).nodeData;
+    } catch {
+        return [];
+    }
+
+    const excerpts: string[] = [];
+    collectNodeExcerpts(rootNode, [], referencedNoteId, excerpts);
+    return excerpts;
+}
+
+function collectNodeExcerpts(node: unknown, ancestors: string[], referencedNoteId: string, excerpts: string[]) {
+    if (!node || typeof node !== "object") {
+        return;
+    }
+
+    const { topic, hyperLink, children } = node as Record<string, unknown>;
+    const nodeText = (typeof topic === "string" ? topic : "");
+
+    if (parseMindMapNoteLink(hyperLink)?.noteId === referencedNoteId) {
+        excerpts.push(buildNodeExcerpt(ancestors, nodeText, referencedNoteId));
+    }
+
+    if (Array.isArray(children)) {
+        const trail = [ ...ancestors, nodeText ];
+        for (const child of children) {
+            collectNodeExcerpts(child, trail, referencedNoteId, excerpts);
+        }
+    }
+}
+
+/**
+ * Quotes one node: the nodes it hangs from, then the node itself as the link.
+ *
+ * The trail is taken from the node upwards for as long as there is room, so what is dropped is the
+ * root end — the part every node in the map shares, and so the part that says the least about where
+ * this one sits.
+ */
+function buildNodeExcerpt(ancestors: string[], nodeText: string, referencedNoteId: string): string {
+    // A node left unnamed has nothing of its own to read; the note it points at names it instead,
+    // rather than leaving a link with no text to click.
+    const linkText = nodeText || becca.notes[referencedNoteId]?.getTitleOrProtected() || referencedNoteId;
+
+    const trail: string[] = [];
+    let length = linkText.length;
+    for (const ancestor of [ ...ancestors ].reverse()) {
+        if (!ancestor) continue;
+        if (length + ancestor.length + MIND_MAP_TRAIL_SEPARATOR.length > EXCERPT_CHAR_LIMIT) {
+            trail.unshift("…");
+            break;
+        }
+        trail.unshift(ancestor);
+        length += ancestor.length + MIND_MAP_TRAIL_SEPARATOR.length;
+    }
+
+    const crumbs = trail
+        .map((ancestor) => `${escapeHtml(ancestor)}${MIND_MAP_TRAIL_SEPARATOR}`)
+        .join("");
+
+    return `<div class="ck-content backlink-excerpt">${crumbs}` +
+        `<a class="backlink-link" href="#root/${referencedNoteId}">${escapeHtml(linkText)}</a></div>`;
+}
+
+/** What stands between a node and the one it hangs from. */
+const MIND_MAP_TRAIL_SEPARATOR = " › ";
 
 /**
  * Renames the wiki-link anchors from the note ID (all the markdown source carries) to the

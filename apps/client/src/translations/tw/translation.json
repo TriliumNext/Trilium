@@ -45,7 +45,11 @@
     },
     "widget-missing-parent": "自訂元件未定義強制性的 \"{{property}}\" 屬性。\n\n若此腳本需在無 UI 的情況下執行，請改用 \"#run=frontendStartup\"。",
     "open-script-note": "打開腳本筆記",
-    "scripting-error": "自訂腳本錯誤：{{title}}"
+    "scripting-error": "腳本筆記執行失敗",
+    "unhandled-error": {
+      "title": "背景任務執行失敗",
+      "details-button": "查看詳情…"
+    }
   },
   "add_link": {
     "add_link": "新增連結",
@@ -1969,8 +1973,7 @@
   "geo-map": {
     "create-child-note-title": "建立一個新的子筆記並將其加至地圖中",
     "create-child-note-instruction": "點擊地圖以在該位置建立新筆記，或按 Escape 以取消。",
-    "unable-to-load-map": "無法載入地圖。",
-    "create-child-note-text": "新增地圖標記"
+    "unable-to-load-map": "無法載入地圖。"
   },
   "geo-map-context": {
     "open-location": "打開位置",
@@ -2470,8 +2473,6 @@
     "cancelFocus": "退出專注模式",
     "moveUp": "上移",
     "moveDown": "下移",
-    "link": "連結",
-    "linkBidirectional": "雙向連結",
     "clickTips": "請點擊目標節點",
     "summary": "摘要"
   },

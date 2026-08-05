@@ -1,0 +1,140 @@
+.note-detail-mind-map {
+    height: 100%;
+    overflow: hidden !important;
+}
+
+.note-detail-mind-map .mind-map-container {
+    height: 100%;
+}
+
+/*
+ * How far everything standing over a map is held off its edges: the two bars (see MapToolbar.css)
+ * and the node panel between them (see NodePanel.css). All three are placed from here, so that they
+ * agree on where the one ends and the next may begin — including in fullscreen, where the edges of
+ * the map are the edges of the screen and part of them may not be the screen's to draw on.
+ */
+.mind-map-container {
+    /* The very room the image viewer keeps its controls at, taken from the shared name rather than
+       restated (see the overlay buttons in theme-next/base.css), as the geo map takes it too. */
+    --mind-map-inset: var(--overlay-button-inset, 10px);
+    --mind-map-inset-top: var(--mind-map-inset);
+    --mind-map-inset-bottom: var(--mind-map-inset);
+    /* What the control group at the foot comes out at — the room the panel above it has to leave
+       for it. The image viewer's controls are the same height, being the same group. */
+    --mind-map-toolbar-height: var(--overlay-button-height, 28px);
+}
+
+/* Hosts our own floating UI on top of the map, without interfering with the DOM managed by Mind Elixir. */
+.mind-map-container .mind-map-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.mind-map-container .mind-map-overlay > * {
+    pointer-events: auto;
+}
+
+/*
+ * The node backgrounds the panel offers are tints (see NodePanel), which take on whatever
+ * the canvas is. The branch lines are drawn underneath the nodes, so a tint on its own composites
+ * against them and lets them show through the node — give a tinted node an opaque copy of the
+ * canvas to sit on instead. Only nodes carrying a background of their own get one, so that the
+ * lines keep running under plain nodes as they did.
+ */
+.mind-map-container me-tpc[style*="background"] {
+    position: relative;
+}
+
+.mind-map-container me-tpc[style*="background"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /* Below the node's own background, but still above the lines, which are outside the stacking
+       context that the node's `me-parent` / `me-root` establishes. */
+    z-index: -1;
+    border-radius: inherit;
+    background-color: var(--bgcolor);
+}
+
+/*
+ * A node the map holds writing about wears a dot in its corner (see memos.ts): a memo is the one
+ * thing a node carries that the map draws nothing of, so without it there is nothing to tell a node
+ * written about from a node not.
+ *
+ * Drawn in the node's own color at a fraction of it rather than in a color of its own, so that it
+ * sits well on a node of any color and on either map theme, and quietly enough that a map full of
+ * memos still reads as a map.
+ *
+ * It follows the text on the line the text is written on, rather than sitting in a corner of the
+ * node: a node has no corner to speak of. The map draws a pill at the top — where the corner of the
+ * box is empty space beside the curve, and a dot left there hangs off the node — and further down
+ * draws no box at all, where a corner is nowhere and a dot in one is adrift in the canvas. What
+ * every node does have is a line of text and an end to it, so the dot follows the text as a mark
+ * upon it.
+ */
+.mind-map-container me-tpc[data-has-memo] {
+    position: relative;
+}
+
+.mind-map-container me-tpc[data-has-memo]::after {
+    content: "";
+    position: absolute;
+    top: calc(50% - 2.5px);
+    inset-inline-end: var(--memo-dot-end);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: currentColor;
+    opacity: .45;
+
+    /*
+     * Where the line ends, which is a matter of what the node is drawn as: a pill keeps a cap the
+     * width of its own curve beyond the text, and the dot sits in the middle of that cap — a share
+     * of the curve rather than a set number of pixels, so that it holds wherever a theme puts the
+     * corner. A branch is what most of a map is made of, so its share is the one kept here.
+     */
+    --memo-dot-end: calc(var(--main-radius, 20px) * .5);
+}
+
+.mind-map-container me-root > me-tpc[data-has-memo]::after {
+    --memo-dot-end: calc(var(--root-radius, 30px) * .5);
+}
+
+/*
+ * A child keeps three pixels between its text and its edge and is drawn with no box at all, so it
+ * has no cap for the dot to sit in: there the dot follows the text just past where the node ends.
+ * No further than that — the expander of a node that has children begins seven pixels out.
+ *
+ * Everything below a branch is a child — `me-children` nests within itself all the way down — and
+ * it is nested within `me-main` as well, so this has to be said after the branch's own share above
+ * rather than left to a selector to tell them apart.
+ */
+.mind-map-container me-children me-tpc[data-has-memo]::after {
+    --memo-dot-end: -5px;
+}
+
+/*
+ * The first icon of a node leads its text, as a note's icon leads its title (see icons.ts).
+ * The ones after it follow the text a little smaller: the first says what the node is, the rest are
+ * marks upon it.
+ */
+.mind-map-container .mind-map-lead-icon {
+    margin-inline-end: .3em;
+    vertical-align: middle;
+}
+
+.mind-map-container .icons {
+    font-size: .8em;
+}
+
+/* Emptied by the move, the wrapper would otherwise hold on to the gap it keeps before itself. */
+.mind-map-container .icons:empty {
+    display: none;
+}
+
+/* On a screen of its own, the map keeps clear of whatever the screen keeps for itself. */
+.mind-map-container:fullscreen {
+    --mind-map-inset-top: calc(var(--mind-map-inset) + env(safe-area-inset-top));
+    --mind-map-inset-bottom: calc(var(--mind-map-inset) + env(safe-area-inset-bottom));
+}

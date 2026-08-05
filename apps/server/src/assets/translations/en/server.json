@@ -400,6 +400,12 @@
     "show-windows": "Show windows",
     "open_new_window": "Open new window"
   },
+  "backup": {
+    "custom_directory_unwritable": "Database backup failed: unable to write to {{- location}}. Backing up to the default location instead."
+  },
+  "dialog": {
+    "select_directory": "Select folder"
+  },
   "migration": {
     "old_version": "Direct migration from your current version is not supported. Please upgrade to the latest v0.60.4 first and only then to this version.",
     "error_message": "Error during migration to version {{version}}: {{stack}}",

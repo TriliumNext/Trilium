@@ -94,7 +94,7 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         isFullHeight: true
     },
     mindMap: {
-        view: () => import("./type_widgets/MindMap"),
+        view: () => import("./type_widgets/mind_map/MindMap"),
         className: "note-detail-mind-map",
         printable: true,
         isFullHeight: true

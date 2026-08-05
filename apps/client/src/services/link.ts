@@ -49,6 +49,14 @@ export interface ViewScope {
      * to immediately enter read-only mode.
      */
     isReadOnly?: boolean;
+    /**
+     * If true, a text note is edited with the floating toolbar whatever the user's editor-type
+     * option says — the toolbar following the selection rather than standing in a bar of its own.
+     *
+     * For views too narrow to carry a full toolbar, such as the geo map's marker pane: a classic bar
+     * built for the width of a note either spills out of them or eats the room the note is left.
+     */
+    floatingToolbar?: boolean;
     highlightsListPreviousVisible?: boolean;
     highlightsListTemporarilyHidden?: boolean;
     tocTemporarilyHidden?: boolean;

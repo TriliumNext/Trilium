@@ -1,0 +1,169 @@
+.mind-map-node-panel {
+    /* Below the floating buttons of the note, which stand in this corner. */
+    --node-panel-top: 60px;
+    /*
+     * And above the map's toolbar, which stands in the corner under it, inset as far from the edge
+     * as the panel is (see MapToolbar.css). The panel is drawn over it, so a panel that reached the
+     * foot of the map would take the top half of every one of those buttons with it — the clicks
+     * along with the sight of them. What is kept is the bar's own room and as much again over it.
+     */
+    --node-panel-foot: calc(var(--mind-map-inset-bottom) + var(--mind-map-toolbar-height) + var(--mind-map-inset));
+
+    /* Everything the panel is made of — the sheet, the header row, the tabs under it — is the shared
+       panel's (see OverlayPanel.css). What is left here is where this one stands over the map. */
+    position: absolute;
+    top: var(--node-panel-top);
+    inset-inline-end: var(--mind-map-inset);
+    width: 240px;
+    max-height: calc(100% - var(--node-panel-top) - var(--node-panel-foot));
+}
+
+/* On a screen of its own the panel starts where the map does, there being no note buttons over it
+   there. The room it leaves for the toolbar follows the foot of the map on its own, both being
+   reckoned from the same insets (see MindMap.css). */
+.mind-map-container:fullscreen .mind-map-node-panel {
+    --node-panel-top: var(--mind-map-inset-top);
+}
+
+/* The new layout keeps no floating buttons over that corner — what they did is done from the title
+   row above the note instead — so there is nothing there for the panel to start under. */
+body.experimental-feature-new-layout .mind-map-node-panel {
+    --node-panel-top: var(--mind-map-inset-top);
+}
+
+/*
+ * The memo is the whole of its tab, so it fills the height the panel took from the fields — and the
+ * width edge to edge, the tab keeping none of the padding for itself. What insets the writing is
+ * the memo's own padding (see NodeMemo.css), so that the two read as one surface rather than as a
+ * sheet laid on a tab.
+ *
+ * The padding is given up through the variable the shared body reads it from rather than by setting
+ * `padding` over it: the two rules carry the same weight, and which of the two stylesheets is loaded
+ * last is not this file's to say.
+ */
+.mind-map-node-panel .mind-map-node-panel-memo-body {
+    --overlay-panel-body-padding: 0;
+
+    display: flex;
+
+    .mind-map-node-memo {
+        flex: 1;
+    }
+}
+
+/* The icons of a node stand side by side, the button adding one more after them. */
+.mind-map-node-panel .mind-map-node-icons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+}
+
+/* Each stands at the size it will read at on a node, rather than the size a note wears. */
+.mind-map-node-panel .mind-map-node-icon {
+    --note-icon-size: 20px;
+    --note-icon-container-padding-size: 4px;
+
+    &:last-child {
+        --note-icon-background-color: transparent;
+    }
+}
+
+/* What is done with the picture stands on one line, the shapes it is cut to on the next. */
+.mind-map-node-panel .mind-map-node-image {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mind-map-node-panel .mind-map-node-image-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    /* The sizes take what the buttons beside them leave, rather than the whole row (see below). */
+    .btn-group {
+        flex: 1;
+        width: auto;
+    }
+}
+
+/*
+ * A shape is drawn rather than named, and a drawing asks for no more room than itself: the row is
+ * as wide as the three of them, instead of each taking a third of the panel (see below).
+ *
+ * Written onto the group itself rather than as a descendant of the panel, so that it outweighs the
+ * rule below rather than merely disagreeing with it — that one is written last and would win.
+ */
+.mind-map-node-panel .mind-map-node-image-shapes.btn-group {
+    align-self: start;
+    width: auto;
+
+    .btn {
+        flex: 0 0 auto;
+    }
+}
+
+/* The field takes what the unlinking button beside it leaves, as the picture's sizes do above. */
+.mind-map-node-panel .mind-map-node-link-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .mind-map-node-link {
+        flex: 1;
+        /* Without it a flex item refuses to shrink past its content, and there is nothing to cut. */
+        min-width: 0;
+    }
+}
+
+/*
+ * The link takes the width of the panel and says what it points at, however long that runs: a title
+ * or an address is as long as it is, and cutting it short is kinder than letting it push the panel
+ * wider than the map can spare.
+ */
+.mind-map-node-panel button.mind-map-node-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-align: start;
+
+    .mind-map-node-link-label {
+        flex: 1;
+        /* Without it a flex item refuses to shrink past its content, and there is nothing to cut. */
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* A link there is not yet is an invitation rather than a value. */
+    .mind-map-node-link-empty {
+        opacity: .7;
+    }
+}
+
+/* The sizes share the width of the panel evenly, rather than each taking its label's width. */
+.mind-map-node-panel .btn-group {
+    width: 100%;
+
+    .btn {
+        flex: 1;
+    }
+}
+
+/*
+ * The hint on the tag field is written for the fields this one is borrowed from, which have a note's
+ * full width to sit in; here it runs a letter past the panel and is cut off. Set on the hint alone,
+ * so that what is typed keeps the size of the panel's own text — and the field the height it had,
+ * a placeholder having no say in that.
+ */
+.mind-map-node-panel .tn-field input::placeholder {
+    font-size: 0.9em;
+}
+
+/* Each palette is meant to fit on one line; wrapping is only a safety net for larger cells. */
+.mind-map-node-panel .color-picker {
+    flex-wrap: wrap;
+    row-gap: 8px;
+}

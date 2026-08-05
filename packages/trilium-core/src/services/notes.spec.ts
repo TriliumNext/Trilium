@@ -391,6 +391,27 @@ describe("notes service (real DB)", () => {
             expect(newContent).toContain(`attachmentId=${attachments[0].attachmentId}`);
             expect(newContent).not.toContain("data:image/png;base64");
         });
+
+        it("relates a mind map to the notes its nodes link to, and lets go of the ones dropped", () => {
+            const target = createNote("root", { title: "spec-map-target" });
+            const map = createNote("root", {
+                title: "spec-map",
+                type: "mindMap",
+                mime: "application/json",
+                content: `{"nodeData":{"id":"root","topic":"Root"}}`
+            });
+            const buildMap = (hyperLink: string) =>
+                JSON.stringify({ nodeData: { id: "root", topic: "Root", children: [{ id: "a", topic: "A", hyperLink }] } });
+
+            getContext().init(() => saveLinks(map.note, buildMap(`#root/${target.note.noteId}`)));
+
+            const relation = map.note.getRelations().find((r) => r.name === "internalLink");
+            expect(relation?.value).toBe(target.note.noteId);
+
+            // Pointed elsewhere, the node no longer relates the two notes.
+            getContext().init(() => saveLinks(map.note, buildMap("https://example.com")));
+            expect(map.note.getRelations().some((r) => r.name === "internalLink" && !r.isDeleted)).toBe(false);
+        });
     });
 
     describe("asyncPostProcessContent", () => {

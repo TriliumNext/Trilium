@@ -1,4 +1,4 @@
-import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, dayjs, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType } from "@triliumnext/commons";
+import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, dayjs, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
 import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 
@@ -456,9 +456,10 @@ export function checkImageAttachments(note: BNote, content: string) {
     if (!isCanvas) {
         let match;
 
-        // Spreadsheet content is JSON storing inline images as bare `api/attachments/{id}/image/...`
-        // URLs (no `src="..."` wrapper), so it scans with the same loose pattern as Markdown.
-        const patterns: { pattern: RegExp, previewPicture?: boolean }[] = (note.isMarkdown() || note.type === "spreadsheet")
+        // Spreadsheet and mind map content is JSON storing images as bare
+        // `api/attachments/{id}/image/...` URLs (no `src="..."` wrapper), so they scan with the same
+        // loose pattern as Markdown.
+        const patterns: { pattern: RegExp, previewPicture?: boolean }[] = (note.isMarkdown() || note.type === "spreadsheet" || note.type === "mindMap")
             ? [
                 // ![...](api/attachments/{id}/image/...) or similar markdown image syntax
                 { pattern: /api\/attachments\/([a-zA-Z0-9_]+)\/image/g },
@@ -502,6 +503,11 @@ export function checkImageAttachments(note: BNote, content: string) {
         // rendered image, looked up by title by the image endpoint — so leave it alone (otherwise it
         // would be scheduled for erasure on every save).
         if (note.type === "spreadsheet" && attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.spreadsheet) {
+            continue;
+        }
+
+        // Likewise for the mind map SVG export preview, which the map JSON never references.
+        if (note.type === "mindMap" && attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap) {
             continue;
         }
 
@@ -811,6 +817,47 @@ function findRelationMapLinks(content: string, foundLinks: FoundLink[]) {
     }
 }
 
+/**
+ * Collects the notes a mind map's nodes link to.
+ *
+ * A node carries one link of its own, and what makes it a link to a note is
+ * {@link parseMindMapNoteLink}'s to say; anything else is an address outside Trilium. The whole map
+ * is walked rather than only its nodes, so that a link stays found wherever Mind Elixir comes to
+ * keep one.
+ */
+export function findMindMapLinks(content: string, foundLinks: FoundLink[]) {
+    try {
+        collectMindMapLinks(JSON.parse(content), foundLinks);
+    } catch (e: any) {
+        getLog().error(`Could not scan for mind map links: ${e.message}`);
+    }
+}
+
+function collectMindMapLinks(value: unknown, foundLinks: FoundLink[]) {
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            collectMindMapLinks(item, foundLinks);
+        }
+        return;
+    }
+
+    if (!value || typeof value !== "object") {
+        return;
+    }
+
+    const record = value as Record<string, unknown>;
+    const noteId = parseMindMapNoteLink(record.hyperLink)?.noteId;
+    if (noteId) {
+        foundLinks.push({
+            name: "internalLink",
+            value: noteId
+        });
+    }
+
+    for (const key of Object.keys(record)) {
+        collectMindMapLinks(record[key], foundLinks);
+    }
+}
 
 /**
  * Derives a plain-text attachment title from the inner HTML of an inline
@@ -878,7 +925,7 @@ function stripStaleSrcset(content: string): string {
 
 
 export function saveLinks(note: BNote, content: string | Uint8Array) {
-    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && note.type !== "spreadsheet" && note.type !== "canvas" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
+    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && note.type !== "spreadsheet" && note.type !== "canvas" && note.type !== "mindMap" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
         return {
             forceFrontendReload: false,
             content
@@ -911,6 +958,11 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
         // Canvas images are stored as attachments titled with the Excalidraw fileId referenced from
         // the scene JSON; scan for orphans (inserted-then-removed images) so they get scheduled for
         // erasure. There are no Trilium internal links to extract from canvas content.
+        ({ forceFrontendReload, content } = checkImageAttachments(note, content));
+    } else if (note.type === "mindMap" && typeof content === "string") {
+        findMindMapLinks(content, foundLinks);
+        // Mind map node images are stored as attachments referenced by URL from the map JSON; scan
+        // for orphans (inserted-then-removed images) so they get scheduled for erasure.
         ({ forceFrontendReload, content } = checkImageAttachments(note, content));
     } else if (note.type === "relationMap" && typeof content === "string") {
         findRelationMapLinks(content, foundLinks);
@@ -1190,7 +1242,9 @@ function getUndeletedParentBranchIds(noteId: string, deleteId: string) {
 }
 
 function scanForLinks(note: BNote, content: string | Uint8Array) {
-    if (!note || !["text", "relationMap"].includes(note.type)) {
+    // A mind map is scanned here as well as on save, so that one arriving by import carries its
+    // links to the notes it points at without having to be opened and edited first.
+    if (!note || !["text", "relationMap", "mindMap"].includes(note.type)) {
         return;
     }
 

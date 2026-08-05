@@ -74,6 +74,13 @@ button.btn.btn-success span.tn-icon {
     font-size: 1.2em;
 }
 
+/* An icon with no label beside it is the whole of the button, and the spacing above would only push
+   it off centre. A label is a text node, which no selector reaches, so the button says so itself
+   (see `tn-icon-only` in Button.tsx). Written after the rule it undoes, the two weighing the same. */
+button.btn.tn-icon-only span.tn-icon {
+    margin-inline-end: 0;
+}
+
 /* Button's keyboard shortcut */
 button.btn.btn-primary kbd,
 button.btn.btn-secondary kbd,
@@ -254,6 +261,15 @@ button.tn-low-profile:hover {
             color: var(--opaque-icon-button-hover-color);
         }
 
+        /* A button standing for a choice in force is shown held down — the geo map's + while the
+           map is armed for a placement. Held through a hover as well, so that pointing at the one
+           already chosen does not lower it. */
+        &.active,
+        &.active:not(:disabled):hover {
+            background-color: var(--active-item-background-color);
+            color: var(--active-item-text-color);
+        }
+
         &.tn-overlay-icon-button {
             height: var(--overlay-button-height);
             width: 32px;
@@ -283,6 +299,12 @@ button.tn-low-profile:hover {
         &:first-child,
         &:last-child {
             border-radius: var(--_start-border-radius, 0) var(--_end-border-radius, 0) var(--_end-border-radius, 0) var(--_start-border-radius, 0);
+        }
+
+        /* A button that would do nothing says as much rather than merely failing to answer. */
+        &:disabled {
+            opacity: .4;
+            pointer-events: none;
         }
 
     }

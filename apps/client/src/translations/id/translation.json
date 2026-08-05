@@ -1787,8 +1787,7 @@
     "no_backup_yet": "belum ada cadangan",
     "download": "Unduh",
     "automatic_backups_title": "Pencadangan otomatis",
-    "automatic_backups_description": "Trilium dapat mencadangkan database secara otomatis. Disarankan untuk tetap mengaktifkan pencadangan, tetapi ini dapat memperlambat startup aplikasi pada database besar dan/atau perangkat penyimpanan yang lambat.",
-    "backup_location_description": "Cadangan disimpan di {{- backupFolder}}."
+    "automatic_backups_description": "Trilium dapat mencadangkan database secara otomatis. Disarankan untuk tetap mengaktifkan pencadangan, tetapi ini dapat memperlambat startup aplikasi pada database besar dan/atau perangkat penyimpanan yang lambat."
   },
   "etapi": {
     "description": "ETAPI adalah REST API yang digunakan untuk mengakses instance Trilium secara terprogram, tanpa UI.",
@@ -2480,7 +2479,6 @@
   },
   "geo-map": {
     "create-child-note-title": "Buat catatan anak baru dan tambahkan ke peta",
-    "create-child-note-text": "Tambahkan marker",
     "create-child-note-instruction": "Klik pada peta untuk membuat catatan baru di lokasi tersebut atau tekan Escape untuk menutup.",
     "unable-to-load-map": "Tidak dapat memuat peta.",
     "create-child-note-toast-title": "Catatan baru"
@@ -3023,8 +3021,6 @@
     "cancelFocus": "Batalkan Mode Fokus",
     "moveUp": "Pindah ke atas",
     "moveDown": "Pindah ke bawah",
-    "link": "Tautan",
-    "linkBidirectional": "Tautan Dua Arah",
     "clickTips": "Silakan klik node tujuan",
     "summary": "Ringkasan"
   },

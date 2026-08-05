@@ -17,6 +17,7 @@ class StubBackupService extends BackupService {
     constructor() {
         super({
             getOption: () => "",
+            getOptionOrNull: () => null,
             getOptionBool: () => false,
             setOption: () => {}
         });

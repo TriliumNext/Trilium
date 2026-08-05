@@ -47,7 +47,14 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
                     uiIcon: "bx bx-trash",
                     handler: async () => {
                         if (!note) return;
-                        const result = await dialog.confirmDeleteNoteBoxWithNote(note.title);
+
+                        // The branch is all the dialog is told: from it, it works out for itself
+                        // whether ticking the box would delete the note or merely unfile it here,
+                        // and says so (see confirmDeleteNoteBoxWithNote).
+                        const result = await dialog.confirmDeleteNoteBoxWithNote(note.title, {
+                            noteId: note.noteId,
+                            branchId: mapApiRef.current?.branchIdFor(note.noteId)
+                        });
                         if (typeof result !== "object" || !result.confirmed) return;
 
                         mapApiRef.current?.removeItem(note.noteId, result.isDeleteNoteChecked);

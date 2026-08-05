@@ -1208,8 +1208,7 @@
     "path": "Шлях",
     "database_backed_up_to": "Резервну копію бази даних створено у {{backupFilePath}}",
     "no_backup_yet": "резервної копії поки що немає",
-    "title": "Резервна копія",
-    "backup_location_description": "Резервні копії зберігаються в {{- backupFolder}}."
+    "title": "Резервна копія"
   },
   "etapi": {
     "description": "ETAPI — це REST API, який використовується для програмного доступу до екземпляра Trilium без інтерфейсу користувача.",
@@ -1267,11 +1266,15 @@
     "unit": "символи"
   },
   "code-editor-options": {
-    "title": "Редактор"
+    "title": "Редактор",
+    "tab_width": "Ширина табуляції",
+    "tab_width_unit": "пробіли"
   },
   "code_mime_types": {
     "title": "Доступні типи MIME у спадаючому списку",
-    "tooltip_syntax_highlighting": "Підсвічування синтаксису"
+    "tooltip_syntax_highlighting": "Підсвічування синтаксису",
+    "tooltip_code_note_syntax": "Нотатки з кодом",
+    "tooltip_code_block_syntax": "Блоки коду в Текстових нотатках"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Комбінації клавіш Vim",
@@ -1283,7 +1286,7 @@
   },
   "images": {
     "images_section_title": "Зображення",
-    "download_images_automatically": "Автоматично завантажувати зображення для використання офлайн.",
+    "download_images_automatically": "Завантажувати зображення автоматично",
     "download_images_description": "Вставлений HTML-код може містити посилання на онлайн-зображення, Trilium знайде ці посилання та завантажить зображення, щоб вони були доступні офлайн.",
     "enable_image_compression": "Увімкнути стиснення зображень",
     "max_image_dimensions": "Максимальна ширина / висота зображення (розмір зображення буде змінено, якщо воно перевищить це значення).",

@@ -55,6 +55,12 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     lastDailyBackupDate: string;
     lastWeeklyBackupDate: string;
     lastMonthlyBackupDate: string;
+    /**
+     * Directory the database backups are written to, replacing the default one inside the data
+     * directory. Empty means "use the default". Honoured on the desktop application only; the server
+     * is configured through the `TRILIUM_BACKUP_DIR` environment variable instead.
+     */
+    customDbBackupDir: string;
     dbVersion: string;
     theme: string;
     syncServerHost: string;

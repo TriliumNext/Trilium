@@ -1,0 +1,190 @@
+/*
+ * An island in the trailing corner rather than a wall against the edge: everything else over this
+ * map is one, and the map is a widget inside a note rather than a screen of its own, so a pane flush
+ * to its edge reads as cropping it.
+ *
+ * The width must agree with `PANE_WIDTH` in DetailPane.tsx.
+ */
+.geo-map-container {
+    --geo-detail-pane-width: 380px;
+}
+
+.geo-map-container .geo-detail-pane {
+    /* Room at the foot for the bar of buttons, which stands in this same corner: its own height and
+       as much air again. Standing clear of it rather than moving it aside — the mind map's panel
+       reckons its foot the same way. */
+    --detail-pane-foot: calc(var(--geo-map-inset) + var(--geo-map-toolbar-height) + var(--geo-map-inset));
+
+    position: absolute;
+    /* A fixed height rather than one sized to its contents, which would be a different pane for
+       every marker. What it holds scrolls within it (see OverlayPanel.css). */
+    top: var(--geo-map-inset);
+    bottom: var(--detail-pane-foot);
+    inset-inline-end: var(--geo-map-inset);
+    width: var(--geo-detail-pane-width);
+    /* An embedded map may be narrower than the pane would like to be. */
+    max-width: calc(100% - 2 * var(--geo-map-inset));
+    /* Clear of MapLibre's own control corners, which sit at 2 (see MapToolbar.css). */
+    z-index: 3;
+}
+
+/*
+ * A marker of no colour of its own wears none.
+ *
+ * The pane stands inside the map's note split, which carries the map note's colour, so the icon
+ * would otherwise be dressed in a hue belonging to another note entirely — the very thing the
+ * marker's own class overrides where it has one (see the `.geo-detail-pane.with-hue` rules in
+ * theme-next-{light,dark}.css). `initial` rather than `unset`: these are inherited properties, so
+ * unsetting them would let the split's values through again; made invalid, each `var()` falls back
+ * to the plain icon colour it names.
+ */
+.geo-map-container .geo-detail-pane:not(.with-hue) {
+    --note-icon-custom-color: initial;
+    --note-icon-custom-background-color: initial;
+    --note-icon-hover-custom-background-color: initial;
+}
+
+/*
+ * The app's own title row heads the pane (see TitleRow), so a note is renamed from a marker the way
+ * it is renamed anywhere else. It brings no placing of its own, the shared panel giving that only to
+ * its own heading, so the padding and the rule under it are handed over here.
+ */
+.geo-map-container .geo-detail-pane .tn-overlay-panel-header > .title-row {
+    box-sizing: content-box;
+    padding-block: 9px;
+    padding-inline-start: 9px;
+    /* Clear of the close button laid over the end of the row (see OverlayPanel.css). */
+    padding-inline-end: 36px;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+/*
+ * The pane's one body: the row of actions, then the note itself. A column so that the note takes
+ * whatever the row above leaves, however tall the pane happens to be.
+ */
+.geo-map-container .geo-detail-pane .geo-detail-pane-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 0;
+}
+
+/*
+ * The note fills the rest of the pane rather than ending where its content does, so that clicking
+ * below a short note still puts the caret in it — as it does in a note of its own.
+ */
+.geo-map-container .geo-detail-pane .note-detail {
+    flex: 1;
+    /* Written for a note split, where the split hands it one; there is no split here, and an unset
+       `--max-content-width` would leave `max-width` invalid rather than absent. */
+    max-width: none;
+    /* A floor rather than the 0 a flex item needs to scroll its own content: the fields above it are
+       as many as the note asks for, and without one they would squeeze the note out of the pane
+       instead of the body scrolling. Above the floor a long note still scrolls within itself. */
+    min-height: 120px;
+}
+
+/*
+ * Where the marker stands, reading as a subtitle to the name above it rather than as one more thing
+ * to press: it is a line of text that happens to answer to a click, so it stands on no plate of its
+ * own until it is aimed at.
+ */
+.geo-map-container .geo-detail-pane .geo-detail-pane-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    /* Room to be pressed, taken back at the leading edge so the text still lines up with the button
+       row under it. */
+    margin-inline-start: -6px;
+    padding: 2px 6px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+
+    &:hover {
+        background: var(--hover-item-background-color);
+        color: var(--main-text-color);
+    }
+}
+
+/*
+ * The note's promoted fields, laid out for a third of the width they are written for.
+ *
+ * A field reads across one line — its name, then what it holds — and stays that way here; what
+ * changes is the row they stand in. Across a note they stand side by side, each as wide as what it
+ * holds; in the pane there is room for one, so they come down the column instead, each taking the
+ * whole width.
+ */
+.geo-map-container .geo-detail-pane .promoted-attributes-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin: 0;
+    /* The body of the pane is the one thing that scrolls; a scroller inside it would take the wheel
+       off whichever of the two the pointer happened to be over. */
+    max-height: none;
+    overflow: visible;
+}
+
+.geo-map-container .geo-detail-pane .promoted-attribute-cell {
+    margin: 0;
+
+    /* The field takes whatever its name leaves, rather than the width of what it holds: a card
+       standing alone on its line has that room whether it needs it or not. */
+    > .input-group,
+    > .promoted-attribute-values {
+        flex: 1;
+        min-width: 0;
+        margin-inline-start: 8px;
+    }
+
+    /* Both are given a width in ems, which is a card's own width where cards stand side by side.
+       Marked as the theme marks them, there being no other way past it. */
+    input[type="text"],
+    input[type="number"] {
+        width: auto !important;
+    }
+
+    /* A name longer than the pane is cut short rather than pushing the field it names off the end. */
+    > label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tn-field {
+        min-width: 0;
+        padding: 0;
+    }
+}
+
+/* The widget stands whether the note promotes anything or not, and an empty one would still take
+   its share of the gap between the actions above it and the note below. */
+.geo-map-container .geo-detail-pane .promoted-attributes-widget:not(:has(.promoted-attribute-cell)) {
+    display: none;
+}
+
+/*
+ * The ways of opening the note, at the head of the pane. Named by tooltips rather than labels, as
+ * every other row of actions in a panel is: labels would wrap four buttons onto two lines here.
+ */
+.geo-map-container .geo-detail-pane .geo-detail-pane-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    /* Those that write rather than read stand apart from the ones being reached for repeatedly, so
+       the pointer cannot land on one of them by being a moment early. The gap falls before the first
+       of them, which is the colour: they are drawn together or not at all, a read-only map having
+       none of them. */
+    .geo-detail-pane-color {
+        margin-inline-start: auto;
+    }
+}
+
+:root .geo-map-container .geo-detail-pane .geo-detail-pane-remove.icon-action {
+    color: var(--dropdown-item-icon-destructive-color);
+}

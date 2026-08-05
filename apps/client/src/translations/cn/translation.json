@@ -63,7 +63,9 @@
     "link_title": "链接标题",
     "button_add_link": "添加链接",
     "anchor": "锚点（可选）",
-    "anchor_none": "无（笔记链接）"
+    "anchor_none": "无（笔记链接）",
+    "edit_link": "编辑链接",
+    "button_edit_link": "保存链接"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
@@ -618,7 +620,9 @@
     "share_logo": "用作共享页面 Logo 的图片笔记。必须位于共享子树内。",
     "share_open_graph_image_relation": "作为共享页面 <code>og:image</code> 的图片笔记。改为设置同名标签指向一个地址。",
     "share_html": "注入到共享页面的 HTML 笔记，位置由该笔记上的 <code>#shareHtmlLocation</code> 指定。该笔记必须位于共享子树内。",
-    "select_options_placeholder": "输入一个选项并按 Enter"
+    "select_options_placeholder": "输入一个选项并按 Enter",
+    "map_dark_style": "告知地理地图：<code>map:style</code> 中给定的自定义样式为深色样式，因此标记标题将以浅色绘制。集合属性中提供的样式本身即表明这一点，无需此类标注。",
+    "map_cluster": "将彼此靠近的标记聚合成单个带编号的气泡，点击即可展开。"
   },
   "attribute_editor": {
     "help_text_body1": "要添加标签，只需输入例如 <code>#rock</code> ；或者如果你还想同时添加数值，则可输入例如 <code>#year = 2020</code>",
@@ -1214,7 +1218,9 @@
     "open_help_page": "打开附件帮助页面",
     "owning_note": "所属笔记： ",
     "upload_attachments": "上传附件",
-    "no_attachments": "此笔记没有附件。"
+    "no_attachments": "此笔记没有附件。",
+    "no_user_attachments": "这篇笔记本身没有任何附件。\n下面列出的是 Trilium 为它生成的附件。",
+    "system_group": "由 Trilium 生成（{{amount}}）"
   },
   "book": {
     "no_children_help": "此集合没有任何子笔记，因此没有内容显示。",
@@ -1592,8 +1598,7 @@
     "download": "下载",
     "title": "备份",
     "automatic_backups_title": "自动备份",
-    "automatic_backups_description": "Trilium 可以自动备份数据库。建议保持备份功能开启，但如果数据库较大或存储设备较慢，可能会拖慢应用启动。",
-    "backup_location_description": "备份文件保存在 {{- backupFolder}}。"
+    "automatic_backups_description": "Trilium 可以自动备份数据库。建议保持备份功能开启，但如果数据库较大或存储设备较慢，可能会拖慢应用启动。"
   },
   "etapi": {
     "description": "ETAPI 是一个 REST API，用于以编程方式访问 Trilium 实例，而无需 UI。",
@@ -1792,7 +1797,11 @@
   },
   "attachment_detail_2": {
     "link_copied": "附件引用已复制到剪贴板。",
-    "unrecognized_role": "无法识别的附件角色 '{{role}}'。"
+    "unrecognized_role": "无法识别的附件角色 '{{role}}'。",
+    "deletion_badge": "将在 {{time}} 后删除",
+    "deletion_badge_soon": "即将删除",
+    "deletion_badge_tooltip": "此附件将被自动删除，因为它没有链接到笔记内容中。若要保留它，请将附件链接重新添加到内容中，或将附件转换为笔记。",
+    "kind_and_size": "{{role}} · {{size}}"
   },
   "bookmark_switch": {
     "bookmark": "书签",
@@ -2165,13 +2174,20 @@
     "create-child-note-title": "创建一个新的子笔记并将其添加到地图中",
     "create-child-note-instruction": "单击地图以在该位置创建新笔记，或按 Escape 以取消。",
     "unable-to-load-map": "无法加载地图。",
-    "create-child-note-text": "添加标记",
-    "create-child-note-toast-title": "新笔记"
+    "create-child-note-toast-title": "新笔记",
+    "move-marker-instruction": "点击地图即可将标记移动到该位置，或按 Escape 取消。",
+    "move-marker-toast-title": "移动标记",
+    "webgl-unavailable": "由于 WebGL 不可用，无法绘制此地图。请检查是否已启用硬件加速，并确保显卡驱动程序为最新版本。",
+    "zoom-in": "放大",
+    "zoom-out": "缩小",
+    "fullscreen": "全屏",
+    "exit-fullscreen": "退出全屏"
   },
   "geo-map-context": {
     "open-location": "打开位置",
     "remove-from-map": "从地图中移除",
-    "add-note": "在这个位置添加一个标记"
+    "add-note": "在这个位置添加一个标记",
+    "move-marker": "移动到其他位置"
   },
   "help-button": {
     "title": "打开相关帮助页面"
@@ -2305,7 +2321,8 @@
     "vector_light": "矢量（浅色）",
     "vector_dark": "矢量（深色）",
     "show-scale": "显示比例尺",
-    "show-labels": "显示标记名称"
+    "show-labels": "显示标记名称",
+    "cluster-markers": "聚合附近的标记"
   },
   "table_context_menu": {
     "delete_row": "删除行"
@@ -2530,7 +2547,7 @@
     "tab_chat": "AI 对话",
     "tab_widgets": "组件",
     "backlinks": "反向链接",
-    "tab_connections": "连接"
+    "tab_connections": "链接"
   },
   "attributes_panel": {
     "title": "笔记属性"
@@ -2786,10 +2803,60 @@
     "cancelFocus": "退出专注模式",
     "moveUp": "上移",
     "moveDown": "下移",
-    "link": "链接",
-    "linkBidirectional": "双向链接",
     "clickTips": "请点击目标节点",
-    "summary": "总结"
+    "summary": "总结",
+    "draw-arrow": "绘制箭头到…",
+    "draw-arrow-bidirectional": "绘制双向箭头到…",
+    "new-topic": "新建主题",
+    "new-node": "新建节点",
+    "new-summary": "概要",
+    "custom-link": "自定义链接",
+    "text-color": "文字",
+    "background-color": "背景",
+    "branch-color": "分支",
+    "font-size": "大小",
+    "font-size-small": "小",
+    "font-size-medium": "中",
+    "font-size-large": "大",
+    "font-size-extra-large": "特大",
+    "icons": "图标",
+    "add-icon": "添加图标",
+    "change-icon": "更改此图标",
+    "clear-icon": "移除图标",
+    "icons-differ": "选中的节点图标各不相同，因此这些图标只能查看。",
+    "image": "图片",
+    "add-image": "添加图片",
+    "change-image": "替换图片",
+    "remove-image": "移除图片",
+    "image-shape-original": "原始",
+    "image-shape-square": "方形",
+    "image-shape-wide": "宽幅",
+    "images-differ": "选中的节点图片各不相同。若仍需替换图片，请先将其移除。",
+    "image-upload-failed": "无法上传图片「{{name}}」。",
+    "node-link": "链接",
+    "add-link": "添加链接",
+    "choose-link": "将此节点链接到笔记或页面",
+    "clear-link": "移除链接",
+    "link-mixed": "不同的链接",
+    "links-differ": "选中的节点链接各不相同。",
+    "tab-format": "格式",
+    "hide-panel": "隐藏此面板",
+    "memo": "备忘录",
+    "memo-placeholder": "写下备忘录...",
+    "memos-differ": "选中的节点备忘录各不相同，因此此备忘录只能查看。",
+    "tags": "标签",
+    "tags-placeholder": "输入标签并按回车",
+    "tags-differ": "选中的节点标签各不相同，因此这些标签只能查看。",
+    "add-tag": "添加此标签",
+    "remove-tag": "移除此标签",
+    "zoom-in": "放大",
+    "zoom-out": "缩小",
+    "center-map": "将地图居中",
+    "fullscreen": "全屏",
+    "exit-fullscreen": "退出全屏",
+    "direction-left": "分支向左",
+    "direction-right": "分支向右",
+    "direction-side": "分支向两侧"
   },
   "llm": {
     "add_provider": "添加提供商",
@@ -2876,7 +2943,7 @@
     "troubleshoot_port": "URL 中的端口是否与服务器报告的端口一致？",
     "troubleshoot_remote": "如果服务器在另一台机器上，是否已配置为接受来自网络的连接，而不仅仅是本地连接？",
     "mcp_endpoint_this_device": "本设备",
-    "mcp_endpoint_network": "对外",
+    "mcp_endpoint_network": "来自同一网络下的其他设备",
     "mcp_endpoint_loopback_only": "Trilium 仅在本地监听，因此其他设备无法访问此端点。",
     "mcp_config_title": "如何连接助手",
     "mcp_config_description": "在「选项 → ETAPI」下创建一个令牌，然后将以下内容添加到助手的 MCP 配置中，将占位符替换为你的令牌：",
@@ -3705,5 +3772,17 @@
     "sheet_label": "帮助"
   },
   "compress-images": "压缩图片",
-  "compress-image": "压缩图片"
+  "compress-image": "压缩图片",
+  "attachment_roles": {
+    "favicon": "站点图标",
+    "coverImage": "封面图片",
+    "viewConfig": "视图设置",
+    "canvasLibraryItem": "画布库",
+    "importSource": "导入来源"
+  },
+  "color-picker": {
+    "clear-color": "清除颜色",
+    "set-color": "设置颜色",
+    "set-custom-color": "设置自定义颜色"
+  }
 }

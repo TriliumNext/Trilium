@@ -596,6 +596,23 @@ export interface ElectronNativeImportApi {
     importFromToken(opts: { token: string; parentNoteId: string; taskId: string; options: NativeImportOptions; last: boolean; format?: string }): Promise<NativeImportResult>;
 }
 
+/** Outcome of {@link ElectronDialogApi.pickDirectory}. */
+export interface NativeDirectoryPickResult {
+    status: "selected" | "cancelled";
+    /** Absolute path of the chosen directory (when `status === "selected"`). */
+    path?: string;
+}
+
+/** Native OS pickers that hand the renderer a location the user chose themselves. */
+export interface ElectronDialogApi {
+    /**
+     * Prompts a native "select folder" dialog, starting at `defaultPath` when it is given. The renderer
+     * cannot supply the answer: a script can at most pop the dialog, which the user still has to accept
+     * before any path comes back.
+     */
+    pickDirectory(opts?: { defaultPath?: string }): Promise<NativeDirectoryPickResult>;
+}
+
 /**
  * The complete surface exposed to the renderer as `window.electronApi` via
  * `contextBridge`. The renderer must access Electron-only functionality through
@@ -634,4 +651,6 @@ export interface ElectronApi {
     nativeExport: ElectronNativeExportApi;
     /** Desktop-native large-`.zip` import that reads the user's file in place via a capability token. */
     nativeImport: ElectronNativeImportApi;
+    /** Native OS pickers that hand the renderer a location the user chose themselves. */
+    dialog: ElectronDialogApi;
 }

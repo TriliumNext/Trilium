@@ -1,4 +1,4 @@
-import { BAttribute, becca, becca_easy_mocking, checkImageAttachments, collectCanvasImageFileIds, findBookmarks, findLlmChatLinks, saveLinks } from "@triliumnext/core";
+import { BAttribute, becca, becca_easy_mocking, checkImageAttachments, collectCanvasImageFileIds, findBookmarks, findLlmChatLinks, findMindMapLinks, saveLinks } from "@triliumnext/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { randomString } from "./utils.js";
@@ -443,6 +443,52 @@ describe("checkImageAttachments", () => {
         });
     });
 
+    describe("Mind map content", () => {
+        /** Wraps picture URLs into the JSON shape a mind map persists (one node per URL). */
+        function mindMapContent(...urls: string[]) {
+            return JSON.stringify({
+                nodeData: {
+                    id: "root",
+                    topic: "Root",
+                    children: urls.map((url, index) => ({
+                        id: `node-${index}`,
+                        topic: `Node ${index}`,
+                        image: { url, width: 240, height: 180 }
+                    }))
+                }
+            });
+        }
+
+        it("keeps a picture referenced by a node alive, and schedules one taken off a node for erasure", () => {
+            const note = buildNote({ title: "Map", type: "mindMap", mime: "application/json", attachments: [{ title: "photo.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, mindMapContent(`api/attachments/${att.attachmentId}/image/photo.png`));
+            expect(att.save).not.toHaveBeenCalled();
+
+            checkImageAttachments(note, mindMapContent("api/attachments/someOtherId/image/photo.png"));
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeTruthy();
+
+            // Put back on a node (e.g. undo), it is kept again.
+            checkImageAttachments(note, mindMapContent(`api/attachments/${att.attachmentId}/image/photo.png`));
+            expect(att.utcDateScheduledForErasureSince).toBeNull();
+        });
+
+        it("never schedules the SVG export preview for erasure even though it is unreferenced", () => {
+            const note = buildNote({ title: "Map", type: "mindMap", mime: "application/json", attachments: [{ title: "mindmap-export.svg", role: "image", mime: "image/svg+xml" }] });
+            mockAttachmentSaves(note);
+            const [preview] = note.getAttachments();
+
+            // A map with no pictures at all — the preview is the only "image" attachment.
+            checkImageAttachments(note, mindMapContent());
+
+            expect(preview.save).not.toHaveBeenCalled();
+            expect(preview.utcDateScheduledForErasureSince).toBeFalsy();
+        });
+    });
+
     describe("foreign attachment copying", () => {
         it("replaces foreign attachment IDs in HTML content", () => {
             const note = buildNote({ title: "Test" });
@@ -620,11 +666,11 @@ describe("saveLinks", () => {
         return attr;
     }
 
-    // `checkImageAttachments` exempts the canvas and spreadsheet rendered images by title, but not
-    // the mermaid and mindMap ones. That looks like an oversight until you notice `saveLinks` bails
-    // out before it for those two types, so their SVGs are never reachable by orphan erasure at all.
-    // Pinned here: if either type ever gains a `saveLinks` branch, it needs an exemption first, and
-    // this test is what will say so.
+    // `checkImageAttachments` exempts the canvas, spreadsheet and mind map rendered images by title,
+    // but not the mermaid one. That looks like an oversight until you notice `saveLinks` bails out
+    // before it for mermaid, so its SVG is never reachable by orphan erasure at all. Pinned here: if
+    // mermaid ever gains a `saveLinks` branch, it needs an exemption first, and this test is what
+    // will say so — as it did for mind maps, which now carry pictures and so have both.
     it.each([
         [ "mermaid", "text/mermaid", "mermaid-export.svg", "flowchart TD\n A --> B" ],
         [ "mindMap", "application/json", "mindmap-export.svg", `{"nodeData":{}}` ]
@@ -638,6 +684,16 @@ describe("saveLinks", () => {
 
         expect(rendered.save).not.toHaveBeenCalled();
         expect(rendered.utcDateScheduledForErasureSince).toBeFalsy();
+    });
+
+    it("schedules a picture taken off a mind map's nodes for erasure", () => {
+        const note = buildNote({ title: "Map", type: "mindMap", mime: "application/json", attachments: [{ title: "photo.png", role: "image", mime: "image/png" }] });
+        mockAttachmentSaves(note);
+        const [picture] = note.getAttachments();
+
+        saveLinks(note, JSON.stringify({ nodeData: { id: "root", topic: "Root" } }));
+
+        expect(picture.utcDateScheduledForErasureSince).toBeTruthy();
     });
 
     it("does not delete existing imageLink relations on markdown notes that reference images", () => {
@@ -863,6 +919,63 @@ describe("saveLinks", () => {
 
             expect(() => saveLinks(note, JSON.stringify({ version: 1, messages: [] }))).not.toThrow();
         });
+    });
+});
+
+describe("findMindMapLinks", () => {
+    type FoundLink = { name: "internalLink" | "imageLink" | "includeNoteLink" | "relationMapLink"; value: string };
+
+    /** A map whose nodes carry the given links, one per node, nested a level deep. */
+    function buildMap(...links: (string | undefined)[]) {
+        const [ rootLink, ...childLinks ] = links;
+        return JSON.stringify({
+            nodeData: {
+                id: "root",
+                topic: "Root",
+                hyperLink: rootLink,
+                children: childLinks.map((hyperLink, index) => ({
+                    id: `n${index}`,
+                    topic: `Node ${index}`,
+                    hyperLink,
+                    children: []
+                }))
+            }
+        });
+    }
+
+    it("collects the notes the nodes link to, wherever in the map they sit", () => {
+        const links: FoundLink[] = [];
+
+        findMindMapLinks(buildMap("#root/abc123", "#root/parent/def456", undefined, "#root"), links);
+
+        expect(links).toEqual([
+            { name: "internalLink", value: "abc123" },
+            // The whole path is stored, but it is the note at the end of it that is linked.
+            { name: "internalLink", value: "def456" },
+            { name: "internalLink", value: "root" }
+        ]);
+    });
+
+    it("takes nothing from a node pointing outside Trilium", () => {
+        const links: FoundLink[] = [];
+
+        findMindMapLinks(buildMap(
+            "https://example.com",
+            "mailto:someone@example.com",
+            // An address of its own that happens to carry a note path is still a page elsewhere.
+            "https://example.com/#root/abc123"
+        ), links);
+
+        expect(links).toEqual([]);
+    });
+
+    it("survives content it cannot read", () => {
+        const links: FoundLink[] = [];
+
+        findMindMapLinks("not valid json", links);
+        findMindMapLinks(JSON.stringify({ nodeData: { id: "root", hyperLink: 42 } }), links);
+
+        expect(links).toEqual([]);
     });
 });
 

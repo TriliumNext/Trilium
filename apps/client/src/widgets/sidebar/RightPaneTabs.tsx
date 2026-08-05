@@ -1,17 +1,11 @@
 import "./RightPaneTabs.css";
 
-import clsx from "clsx";
-import { useRef } from "preact/hooks";
-
 import { t } from "../../services/i18n";
-import { useStaticTooltip } from "../react/hooks";
+import TabStrip, { type TabStripTabDefinition } from "../react/TabStrip";
 
 export type RightPaneTabId = "outline" | "attributes" | "connections" | "chat" | "widgets";
 
-export interface RightPaneTabDefinition {
-    id: RightPaneTabId;
-    title: string;
-    icon: string;
+export interface RightPaneTabDefinition extends TabStripTabDefinition<RightPaneTabId> {
     /**
      * Keep the tab in the strip for a note it has nothing to show, saying so in its body instead of
      * going away. For a tab whose widgets come and go with the type of the note being read: leaving
@@ -47,54 +41,16 @@ interface RightPaneTabsProps {
 
 /**
  * The right pane's header: which group of widgets is on show. It doubles as the row the pane's own
- * pin/close actions sit in, so it is rendered whenever the pane is open.
+ * pin/close actions sit in, so it is rendered whenever the pane is open — which is what the row it
+ * hands the shared strip is for (see RightPaneTabs.css).
  */
 export default function RightPaneTabs({ tabs, activeTabId, onSelect }: RightPaneTabsProps) {
     return (
-        // Centred in the row rather than run up against its start (see RightPaneTabs.css).
-        <div class="right-pane-tabs">
-            {/* A button group, which is how Trilium draws a choice between several things: a recessed
-                track with the one on show raised out of it. The theme dresses the class; all this pane
-                does is size it to a header row (see RightPaneTabs.css). */}
-            <div class="btn-group right-pane-tab-group" role="tablist">
-                {tabs.map((tab) => (
-                    <RightPaneTab
-                        key={tab.id}
-                        tab={tab}
-                        active={tab.id === activeTabId}
-                        onSelect={() => onSelect(tab.id)}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function RightPaneTab({ tab, active, onSelect }: { tab: RightPaneTabDefinition; active: boolean; onSelect: () => void }) {
-    const buttonRef = useRef<HTMLButtonElement>(null);
-    // No tab is named in the strip, the selected one included: every tab is the same icon-sized segment,
-    // which is what keeps the whole group inside a pane narrow enough to only fit the icons. The name is
-    // the tooltip, and it is the only place it appears.
-    useStaticTooltip(buttonRef, {
-        title: tab.title,
-        placement: "bottom",
-        fallbackPlacements: [ "bottom" ],
-        animation: false
-    });
-
-    return (
-        <button
-            ref={buttonRef}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            aria-label={tab.title}
-            // `icon-action` is what the button group sizes and fills its segments by; `active` is what
-            // it raises the one on show with.
-            class={clsx("right-pane-tab icon-action", active && "active")}
-            onClick={onSelect}
-        >
-            <span class={clsx("right-pane-tab-icon tn-icon", tab.icon)} />
-        </button>
+        <TabStrip
+            className="right-pane-tabs"
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSelect={onSelect}
+        />
     );
 }

@@ -1,25 +1,58 @@
 {
   "add_link": {
-    "note": "Nota"
+    "note": "Nota",
+    "add_link": "Afegeix un enllaç",
+    "edit_link": "Edita l'enllaç",
+    "help_on_links": "Ajuda sobre els links",
+    "search_note": "Cerca una nota pel seu nom",
+    "link_title_arbitrary": "El títol de l'enllaç es pot canviar arbitràriament",
+    "link_title": "Títol de l'enllaç",
+    "anchor": "Àncora (opcional)",
+    "anchor_none": "Cap (enllaç a la nota)",
+    "button_add_link": "Afegeix un enllaç",
+    "button_edit_link": "Guarda l'enllaç"
   },
   "branch_prefix": {
     "prefix": "Prefix: ",
-    "save": "Desa"
+    "save": "Desa",
+    "edit_branch_prefix": "Editar el prefix de branca",
+    "help_on_tree_prefix": "Ajuda sobre el prefix de l'Arbre",
+    "branch_prefix_saved": "S'ha guardat el prefix de branca.",
+    "branch_prefix_saved_multiple": "S'ha guardat el prefix de branca per {{count}} branques.",
+    "affected_branches": "Branques afectades ({{count}}):",
+    "preview_in_tree": "Visualització prèvia a l'arbre",
+    "cancel": "Cancel·lar"
   },
   "bulk_actions": {
     "labels": "Etiquetes",
     "relations": "Relacions",
     "notes": "Notes",
-    "other": "Altres"
+    "other": "Altres",
+    "bulk_actions": "Accions en bloc",
+    "affected_notes": "Notes afectades",
+    "include_descendants": "Inclou els descendents de les notes seleccionades",
+    "available_actions": "Accions disponibles",
+    "chosen_actions": "Accions escollides",
+    "execute_bulk_actions": "Executa accions en bloc",
+    "bulk_actions_executed": "Les accions en bloc s'han executat amb èxit.",
+    "none_yet": "Cap encara.... afegeix una acció clicant una de les disponibles a dalt."
   },
   "confirm": {
     "confirmation": "Confirmació",
     "cancel": "Cancel·la",
-    "ok": "OK"
+    "ok": "OK",
+    "also_delete_note": "Eliminar també la nota"
   },
   "delete_notes": {
     "close": "Tanca",
-    "cancel": "Cancel·la"
+    "cancel": "Cancel·la",
+    "title": "Suprimeix les notes",
+    "clones_label": "Clons",
+    "delete_all_clones_description": "Suprimeix també tots els clons (es pot desfer a canvis recents)",
+    "erase_notes_label": "Suprimeix permanentment",
+    "notes_to_be_deleted": "Notes a eliminar ({{notesCount}})",
+    "no_note_to_delete": "No s'eliminarà cap nota (només els clons).",
+    "table_relation": "Relació"
   },
   "export": {
     "close": "Tanca",
@@ -171,5 +204,68 @@
   },
   "note_paths": {
     "archived": "Arxivat"
+  },
+  "about": {
+    "contributor_roles": {
+      "lead-dev": "desenvolupador principal",
+      "original-dev": "desenvolupador original"
+    },
+    "contributor_full_list": "Mira la comunitat sencera",
+    "channel": {
+      "nightly": "nocturn",
+      "standalone": "autònom"
+    },
+    "data_directory": "Directori de dades:",
+    "github_tooltip": "Informa d'errors, suggereix característiques, o contribueix a GitHub",
+    "license_tooltip": "Veure llicència",
+    "donate": "Donar",
+    "donate_tooltip": "Fes una donació per suportar el projecte",
+    "version_label": "Versió:",
+    "version": "{{appVersion}} (base de dades: {{dbVersion}}, protocol de sincronització: {{syncVersion}})",
+    "build_info": "Compilació: {{buildDate}}, revisió: <buildRevision />",
+    "contributors_label": "Col·laboradors:"
+  },
+  "toast": {
+    "critical-error": {
+      "title": "Error crític"
+    },
+    "widget-error": {
+      "title": "Error al inicialitzar un widget",
+      "message-unknown": "Un widget desconegut no s'ha pogut inicialitzar a causa de:\n\n{{message}}"
+    },
+    "bundle-error": {
+      "title": "Hi ha hagut un error al inicialitzar un script personalitzat",
+      "message": "L'Script no s'ha pogut executar a causa de:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Hi ha hagut un error al obtenir la llista de widgets del servidor"
+    },
+    "open-script-note": "Obre una nota d'script",
+    "scripting-error": "La nota d'script no s'ha pogut executar",
+    "unhandled-error": {
+      "title": "Una tasca en segon pla ha fallat",
+      "details-button": "Veure més detalls...",
+      "details-intro": "L'aplicació encara s'està executant i les teves notes no es veuen afectades. Si això continua, considera informar-ne a  Github copiant la informació que es mostra a continuació.",
+      "details-title": "Informació tècnica"
+    }
+  },
+  "clone_to": {
+    "clone_notes_to": "Clona les notes a....",
+    "help_on_links": "Ajuda sobre els enllaços",
+    "notes_to_clone": "Notes a clonar",
+    "search_for_note_by_its_name": "Cerca una nota pel seu nom",
+    "cloned_note_prefix_title": "La nota clonada apareixerà a l'arbre de notes amb el prefix donat",
+    "prefix_optional": "Prefix (opcional)",
+    "clone_to_selected_note": "Clonar a la nota seleccionada",
+    "no_path_to_clone_to": "No hi ha cap ruta per clonar.",
+    "note_cloned": "La nota \"{{clonedTitle}}\" s'ha clonat a \"{{targetTitle}}\""
+  },
+  "text-editor": {
+    "validation-errors": {
+      "missing-title": "Falta el títol",
+      "missing-icon": "Falta la icona",
+      "invalid-symbol": "el símbol de markdown hauria de ser un sol caràcter, exceptuant \"[\", \" \", \"X\", i \"]\"",
+      "duplicate-symbol": "Simbol de markdown duplicat"
+    }
   }
 }

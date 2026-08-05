@@ -171,3 +171,39 @@ export function normalizeLocale(locale: string) {
         default: return locale;
     }
 }
+
+/**
+ * Whether distances should be shown in miles or in kilometres, for consumers such as the geo map's
+ * scale bar.
+ *
+ * `Intl` exposes no measurement system (the locale-info proposal dropped it), so the locale's region
+ * is matched against the short list of countries that still state road distances in miles. A locale
+ * carrying no region is maximized first, which is what makes Trilium's plain `en` -- listed as
+ * "English (United States)" -- resolve to `US`; `en-GB` is a separate entry and resolves to `GB`.
+ */
+export function getMeasurementSystem(): "metric" | "imperial" {
+    // An explicitly chosen formatting locale wins. Failing that the browser's locale is preferred
+    // over what getFormattingLocale() would settle on (the UI language), because the UI language
+    // says nothing about where the user is -- an English UI is common well outside the US.
+    for (const candidate of [ options.get("formattingLocale"), navigator.language, getFormattingLocale() ]) {
+        const region = candidate && getRegion(candidate);
+        if (region) {
+            return IMPERIAL_REGIONS.has(region) ? "imperial" : "metric";
+        }
+    }
+
+    return "metric";
+}
+
+/** Regions that state road distances in miles rather than kilometres. */
+const IMPERIAL_REGIONS = new Set([ "US", "GB", "LR", "MM" ]);
+
+function getRegion(locale: string) {
+    try {
+        return new Intl.Locale(normalizeLocale(locale)).maximize().region;
+    } catch (e) {
+        // An unusable locale (e.g. the dev-only "en_rtl") makes the constructor throw; the caller
+        // then falls through to the browser's own locale.
+        return undefined;
+    }
+}

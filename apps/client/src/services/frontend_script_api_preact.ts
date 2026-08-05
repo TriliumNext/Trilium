@@ -1,7 +1,7 @@
 import { createContext, Fragment, h, VNode } from "preact";
 import * as hooks from "preact/hooks";
 
-import NoteColorPicker, { ColorPicker } from "../menus/custom-items/NoteColorPicker";
+import NoteColorPicker from "../menus/custom-items/NoteColorPicker";
 import Calendar from "../widgets/collections/calendar/calendar";
 import Table from "../widgets/collections/table/tabulator";
 import ActionButton from "../widgets/react/ActionButton";
@@ -9,6 +9,7 @@ import Admonition from "../widgets/react/Admonition";
 import Button from "../widgets/react/Button";
 import CKEditor from "../widgets/react/CKEditor";
 import Collapsible, { ExternallyControlledCollapsible } from "../widgets/react/Collapsible";
+import ColorPicker from "../widgets/react/ColorPicker";
 import Dropdown from "../widgets/react/Dropdown";
 import FormCheckbox from "../widgets/react/FormCheckbox";
 import FormDropdownList from "../widgets/react/FormDropdownList";

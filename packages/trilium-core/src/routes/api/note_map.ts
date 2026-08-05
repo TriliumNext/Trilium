@@ -4,7 +4,7 @@ import becca from "../../becca/becca";
 import type { BacklinkCountResponse, BacklinksResponse, NoteMapNote } from "@triliumnext/commons";
 import type { Request } from "express";
 
-import { findExcerpts, findLlmChatExcerpts } from "../../services/backlink_excerpts";
+import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
 
 interface TreeLink {
     sourceNoteId: string;
@@ -266,7 +266,7 @@ function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
 
     return getFilteredBacklinks(note).map((backlink) => {
         const sourceNote = backlink.note;
-        const supportsExcerpts = sourceNote.type === "text" || sourceNote.type === "llmChat";
+        const supportsExcerpts = sourceNote.type === "text" || sourceNote.type === "llmChat" || sourceNote.type === "mindMap";
 
         if (!supportsExcerpts || backlinksWithExcerptCount > 50) {
             return {
@@ -277,13 +277,12 @@ function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
 
         backlinksWithExcerptCount++;
 
-        const excerpts = sourceNote.type === "llmChat"
-            ? findLlmChatExcerpts(sourceNote.getContent().toString(), noteId)
-            : findExcerpts(sourceNote.getContent().toString(), noteId);
+        const excerpts = findSourceExcerpts(sourceNote, noteId);
 
-        // A chat that references the note only through tool calls has no quotable prose;
-        // name the relation instead, as for other excerpt-less sources.
-        if (sourceNote.type === "llmChat" && excerpts.length === 0) {
+        // A chat that references the note only through tool calls has no quotable prose, and a map
+        // whose link sits somewhere its nodes are not has no node to quote; name the relation
+        // instead, as for other excerpt-less sources.
+        if (sourceNote.type !== "text" && excerpts.length === 0) {
             return {
                 noteId: sourceNote.noteId,
                 relationName: backlink.name
@@ -295,6 +294,20 @@ function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
             excerpts
         } satisfies BacklinksResponse[number];
     });
+}
+
+/** Quotes what surrounds a link, in the terms the note holding it is written in. */
+function findSourceExcerpts(sourceNote: BNote, referencedNoteId: string): string[] {
+    const content = sourceNote.getContent().toString();
+
+    switch (sourceNote.type) {
+        case "llmChat":
+            return findLlmChatExcerpts(content, referencedNoteId);
+        case "mindMap":
+            return findMindMapExcerpts(content, referencedNoteId);
+        default:
+            return findExcerpts(content, referencedNoteId);
+    }
 }
 
 function getBacklinkCount(req: Request<{ noteId: string }>): BacklinkCountResponse {

@@ -10,7 +10,7 @@ vi.mock("../services/i18n", () => ({
 import { LOCALES } from "@triliumnext/commons";
 
 import options from "../services/options";
-import { formatDateNumeric, formatDateTime, formatDuration, normalizeLocale } from "./formatters";
+import { formatDateNumeric, formatDateTime, formatDuration, getMeasurementSystem, normalizeLocale } from "./formatters";
 
 describe("formatters", () => {
     it("tolerates incorrect locale", () => {
@@ -151,6 +151,65 @@ describe("formatters", () => {
             expect(formatDateNumeric(undefined)).toBe("");
             expect(formatDateNumeric("")).toBe("");
         });
+    });
+
+    describe("getMeasurementSystem", () => {
+        it("picks miles only for the regions that state road distances in them", () => {
+            // Trilium lists plain "en" as "English (United States)", so maximizing it yields US;
+            // "en-GB" is a separate, equally imperial entry.
+            for (const locale of [ "en", "en-GB", "en_US" ]) {
+                options.set("formattingLocale", locale);
+                expect(getMeasurementSystem(), locale).toBe("imperial");
+            }
+
+            // Including the region-less and the underscore/alias forms the options page offers.
+            for (const locale of [ "de", "fr", "ro", "es", "cn", "tw", "pt_br", "ja" ]) {
+                options.set("formattingLocale", locale);
+                expect(getMeasurementSystem(), locale).toBe("metric");
+            }
+        });
+
+        it("prefers the browser locale over the UI language when set to auto-detect", () => {
+            // "Auto" formatting locale plus an English UI: an Australian reads kilometres, so the
+            // UI language must not be what decides it.
+            options.set("formattingLocale", "");
+            options.set("locale", "en");
+
+            withBrowserLocale("en-AU", () => expect(getMeasurementSystem()).toBe("metric"));
+            withBrowserLocale("en-US", () => expect(getMeasurementSystem()).toBe("imperial"));
+
+            // An explicitly chosen formatting locale still wins over the browser.
+            options.set("formattingLocale", "de");
+            withBrowserLocale("en-US", () => expect(getMeasurementSystem()).toBe("metric"));
+        });
+
+        it("falls back to the browser locale when the configured one is unusable", () => {
+            // The dev-only "en_rtl" normalizes to "en-rtl", which Intl rejects outright.
+            options.set("formattingLocale", "en_rtl");
+
+            withBrowserLocale("en-US", () => expect(getMeasurementSystem()).toBe("imperial"));
+            withBrowserLocale("fr-FR", () => expect(getMeasurementSystem()).toBe("metric"));
+            // No usable locale anywhere, so nothing suggests miles.
+            options.set("locale", "!!!invalid!!!");
+            withBrowserLocale("!!!invalid!!!", () => expect(getMeasurementSystem()).toBe("metric"));
+            options.set("locale", "en");
+        });
+
+        function withBrowserLocale(language: string, assert: () => void) {
+            const original = Object.getOwnPropertyDescriptor(navigator, "language");
+            try {
+                Object.defineProperty(navigator, "language", { value: language, configurable: true });
+                assert();
+            } finally {
+                // Absent descriptor means the getter lives on the prototype, so drop the own
+                // property added above and let it shine through again.
+                if (original) {
+                    Object.defineProperty(navigator, "language", original);
+                } else {
+                    Reflect.deleteProperty(navigator, "language");
+                }
+            }
+        }
     });
 
     describe("formatDuration", () => {

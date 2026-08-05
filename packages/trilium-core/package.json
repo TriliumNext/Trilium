@@ -15,7 +15,7 @@
     "color": "5.0.3",
     "escape-html": "1.0.3",
     "i18next": "26.3.6",
-    "js-yaml": "5.2.2",
+    "js-yaml": "5.2.3",
     "lz-string": "1.5.0",
     "mime-types": "3.0.2",
     "node-html-parser": "9.0.1",

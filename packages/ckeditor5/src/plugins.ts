@@ -139,6 +139,34 @@ export const CHAT_INPUT_PLUGINS: typeof Plugin[] = [
 ];
 
 /**
+ * {@link CHAT_INPUT_PLUGINS} and the marks a sentence is written with, for an input whose text is
+ * kept rather than sent on — the memo of a mind map node. Added to an {@link AttributeEditor} the
+ * same way, and worth a toolbar there: a {@link BalloonEditor} raises one over the selection out of
+ * whatever `toolbar` it is configured with.
+ *
+ * Kept apart from {@link CHAT_INPUT_PLUGINS} rather than added to it, though the chat box would
+ * take these as readily: what is typed there is turned into markdown before it is sent, and that
+ * pass keeps the text of an inline wrapper and drops the wrapper. Bold offered there would be bold
+ * lost on its way to the model.
+ *
+ * `Autoformat` is what carries most of this: it registers `**bold**`, `_italic_`, `` `code` `` and
+ * `~~struck~~` only where the matching command exists, so the marks below are what make those
+ * spellings work at all — and the plainer way in, for anyone who would rather type than reach.
+ *
+ * The two Trilium converters ride along with them: they are what write italics as `<em>` and a
+ * strikethrough as `<del>`, which is how the rest of Trilium stores both.
+ */
+export const MEMO_PLUGINS: typeof Plugin[] = [
+    ...CHAT_INPUT_PLUGINS,
+    Bold,
+    Italic,
+    ItalicAsEmPlugin,
+    Strikethrough,
+    StrikethroughAsDel,
+    Code
+];
+
+/**
  * The set of plugins that are required for the editor to work. This is used in normal text editors (floating or fixed toolbar) but not in the attribute editor.
  */
 export const COMMON_PLUGINS: typeof Plugin[] = [

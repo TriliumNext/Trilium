@@ -2107,8 +2107,6 @@
   },
   "mind-map": {
     "summary": "Sumário",
-    "linkBidirectional": "Link Bidirecional",
-    "link": "Link",
     "cancelFocus": "Cancelar Modo Foco",
     "focus": "Modo Foco",
     "removeNode": "Remover nó",

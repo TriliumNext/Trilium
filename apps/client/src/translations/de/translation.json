@@ -1431,8 +1431,7 @@
     "title": "Sicherung",
     "download": "Herunterladen",
     "automatic_backups_title": "Automatische Sicherungen",
-    "automatic_backups_description": "Trilium kann die Datenbank automatisch sichern. Es wird empfohlen, die Sicherung aktiviert zu lassen, dies kann jedoch den Programmstart bei großen Datenbanken und/oder langsamen Speichermedien verlangsamen.",
-    "backup_location_description": "Sicherungen werden in {{- backupFolder}} gespeichert."
+    "automatic_backups_description": "Trilium kann die Datenbank automatisch sichern. Es wird empfohlen, die Sicherung aktiviert zu lassen, dies kann jedoch den Programmstart bei großen Datenbanken und/oder langsamen Speichermedien verlangsamen."
   },
   "etapi": {
     "description": "ETAPI ist eine REST-API, die für den programmgesteuerten Zugriff auf die Trilium-Instanz ohne Benutzeroberfläche verwendet wird.",
@@ -1925,7 +1924,6 @@
     "create-child-note-title": "Neue untergeordnete Notiz anlegen und zur Karte hinzufügen",
     "create-child-note-instruction": "Auf die Karte klicken, um eine neue Notiz an der Stelle zu erstellen oder Escape drücken um abzubrechen.",
     "unable-to-load-map": "Karte konnte nicht geladen werden.",
-    "create-child-note-text": "Marker hinzufügen",
     "create-child-note-toast-title": "Neue Notiz"
   },
   "geo-map-context": {
@@ -2713,9 +2711,7 @@
   },
   "mind-map": {
     "summary": "Zusammenfassung",
-    "link": "Link",
     "moveDown": "Nach unten",
-    "linkBidirectional": "Bidirektionaler Link",
     "moveUp": "Nach oben",
     "cancelFocus": "Fokusmodus beenden",
     "focus": "Fokusmodus",

@@ -32,7 +32,7 @@
     "dialogs": "대화 상자",
     "show-note-source": "\"노트 소스\" 대화 상자 표시",
     "show-options": "\"옵션\" 페이지 열기",
-    "show-revisions": "\"노트 리비전\" 대화 상자 표시",
+    "show-revisions": "\"노트 수정본\" 대화 상자 표시",
     "show-recent-changes": "\"최근 변경 사항\" 대화 상자 표시",
     "show-sql-console": "\"SQL 콘솔\" 페이지 열기",
     "show-backend-log": "\"백엔드 로그\" 페이지 열기",
@@ -61,7 +61,7 @@
     "open-note-externally": "기본 애플리케이션에서 노트를 파일로 열기",
     "note-navigation": "노트 탐색",
     "copy-without-formatting": "선택한 텍스트를 서식 없이 복사",
-    "force-save-revision": "활성 노트의 새 리비전 강제 생성/저장",
+    "force-save-revision": "활성 노트의 새 수정본 강제 생성/저장",
     "toggle-book-properties": "컬렉션 속성 전환",
     "toggle-classic-editor-toolbar": "고정 도구 모음 편집기의 서식 탭 전환",
     "toggle-zen-mode": "젠 모드 전환(집중 편집을 위한 최소 UI)",
@@ -69,7 +69,7 @@
     "peek-right-pane": "오른쪽 창을 콘텐츠 위의 임시 패널로 표시하고 포커스를 잃으면 닫기",
     "show-deleted-notes": "\"삭제된 노트\" 대화 상자 표시",
     "show-shortcut-hints": "포커스된 위젯의 키보드 단축키 표시",
-    "save-named-revision": "활성 노트의 이름 있는 리비전 저장"
+    "save-named-revision": "활성 노트의 이름 있는 수정본 저장"
   },
   "hidden-subtree": {
     "zen-mode": "젠 모드",
@@ -180,7 +180,7 @@
     "toggle-zen-mode": "젠 모드 전환",
     "show-note-source": "노트 소스 보기",
     "show-options": "옵션 보기",
-    "show-revisions": "리비전 보기",
+    "show-revisions": "수정본 보기",
     "show-recent-changes": "최근 변경 사항 보기",
     "show-sql-console": "SQL 콘솔 보기",
     "show-backend-log": "백엔드 로그 보기",
@@ -203,7 +203,7 @@
     "zoom-in": "확대",
     "reset-zoom-level": "확대/축소 수준 초기화",
     "copy-without-formatting": "일반 텍스트로 복사",
-    "force-save-revision": "리비전 강제 저장",
+    "force-save-revision": "수정본 강제 저장",
     "toggle-archived-notes": "보관된 노트 표시 전환",
     "create-note-after": "현재 노트 다음에 노트 만들기",
     "create-note-into": "하위 노트 만들기",
@@ -245,7 +245,7 @@
     "toggle-note-hoisting": "노트 루트 보기 전환",
     "unhoist-note": "노트 루트 보기 해제",
     "toggle-left-pane": "왼쪽 창 전환",
-    "save-named-revision": "이름 있는 리비전 저장"
+    "save-named-revision": "이름 있는 수정본 저장"
   },
   "login": {
     "title": "로그인",
@@ -253,7 +253,7 @@
     "incorrect-password": "비밀번호가 올바르지 않습니다. 다시 시도해 주세요.",
     "password": "비밀번호",
     "button": "로그인",
-    "sign_in_with_sso": "{{ssoIssuerName}}로 로그인",
+    "sign_in_with_sso": "{{ ssoIssuerName }} 로 로그인",
     "incorrect-totp": "TOTP가 올바르지 않습니다. 다시 시도해 주세요.",
     "remember-me": "로그인 상태 유지",
     "sso-wrong-account": "이 Trilium 인스턴스에 연결된 계정이 아닙니다. 연결된 계정으로 로그인하세요.",

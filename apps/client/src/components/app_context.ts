@@ -392,9 +392,6 @@ export type CommandMappings = {
     zoomReset: CommandData;
     copyWithoutFormatting: CommandData;
 
-    // Geomap
-    deleteFromMap: { noteId: string };
-
     toggleZenMode: CommandData;
 
     updateAttributeList: CommandData & { attributes: Attribute[] };

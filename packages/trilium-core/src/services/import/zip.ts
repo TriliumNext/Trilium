@@ -492,6 +492,10 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             content = processMarkdownCodeNoteContent(content, filePath);
         }
 
+        if (type === "mindMap" && typeof content === "string") {
+            content = processMindMapContent(content);
+        }
+
         if (type === "relationMap" && noteMeta && typeof content === "string") {
             const relationMapLinks = (noteMeta.attributes || []).filter((attr) => attr.type === "relation" && attr.name === "relationMapLink");
 
@@ -503,6 +507,18 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         }
 
         return content;
+    }
+
+    /**
+     * Points the pictures of a mind map's nodes at the attachments as they were recreated here.
+     *
+     * The map JSON carries each picture as the `api/attachments/...` URL it was served from in the
+     * instance the map came from, and every attachment is given a new id on the way in — so without
+     * this the pictures of an imported map point at attachments of the instance it left.
+     */
+    function processMindMapContent(content: string) {
+        return content.replace(/api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
+            (_match, attachmentId: string) => `api/attachments/${getNewAttachmentId(attachmentId)}/image`);
     }
 
     /**

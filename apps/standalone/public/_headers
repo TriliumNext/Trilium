@@ -1,2 +1,13 @@
 /*
   Cross-Origin-Opener-Policy: same-origin
+
+# Everything under src/ is content-hashed by the build (see vite.config.mts), so a given
+# URL never changes meaning and may be cached indefinitely. index.html is left on the
+# host's default (revalidate-always) so a deployment is picked up immediately.
+/src/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker keeps a stable URL, so it must never be served stale: a cached copy
+# would keep an outdated worker in control of the page after a deployment.
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate

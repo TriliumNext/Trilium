@@ -1426,7 +1426,6 @@
     "title": "बैकअप",
     "automatic_backups_title": "ऑटोमैटिक बैकअप",
     "automatic_backups_description": "ट्रिलियम डेटाबेस का बैकअप स्वचालित रूप से ले सकता है। बैकअप को चालू रखने की अनुशंसा की जाती है, लेकिन बड़े डेटाबेस और/या धीमी स्टोरेज डिवाइसेज के साथ यह एप्लिकेशन स्टार्टअप को धीमा कर सकता है।",
-    "backup_location_description": "बैकअप {{- backupFolder}} में स्टोर किए जाते हैं।",
     "download": "डाउनलोड करें"
   },
   "etapi": {
@@ -1999,7 +1998,6 @@
   },
   "geo-map": {
     "create-child-note-title": "नया चाइल्ड नोट बनाकर मैप पर जोड़ें",
-    "create-child-note-text": "मार्कर जोड़ें",
     "create-child-note-instruction": "नई जगह पर नोट बनाने के लिए मैप पर क्लिक करें, या बंद करने के लिए Escape दबाएं।",
     "unable-to-load-map": "मैप लोड नहीं हो सका।"
   },
@@ -2781,8 +2779,6 @@
     "cancelFocus": "फोकस मोड रद्द करें",
     "moveUp": "ऊपर ले जाएं",
     "moveDown": "नीचे ले जाएं",
-    "link": "लिंक (Link)",
-    "linkBidirectional": "द्विदिश लिंक (Bidirectional Link)",
     "clickTips": "कृपया लक्षित (target) नोड पर क्लिक करें",
     "summary": "सारांश (Summary)"
   },

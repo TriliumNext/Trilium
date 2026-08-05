@@ -1831,8 +1831,7 @@
   "geo-map": {
     "create-child-note-title": "Crează o notiță nouă și adaug-o pe hartă",
     "unable-to-load-map": "Nu s-a putut încărca harta.",
-    "create-child-note-instruction": "Click pe hartă pentru a crea o nouă notiță la acea poziție sau apăsați Escape pentru a anula.",
-    "create-child-note-text": "Adaugă marcaj"
+    "create-child-note-instruction": "Click pe hartă pentru a crea o nouă notiță la acea poziție sau apăsați Escape pentru a anula."
   },
   "duration": {
     "days": "zile",
@@ -2601,10 +2600,12 @@
     "cancelFocus": "Anulează modul focalizare",
     "moveUp": "Mută în sus",
     "moveDown": "Mută în jos",
-    "link": "Legătură",
-    "linkBidirectional": "Legătură bidirecțională",
     "clickTips": "Vă rugăm să faceți clic pe nodul țintă",
-    "summary": "Rezumat"
+    "summary": "Rezumat",
+    "new-topic": "Subiect nou",
+    "new-node": "Nod nou",
+    "new-summary": "Rezumat",
+    "custom-link": "Legătură personalizată"
   },
   "llm": {
     "feature_not_enabled": "Activați funcția experimentală LLM din Setări → Avansat → Funcții experimentale pentru a folosi integrările AI.",

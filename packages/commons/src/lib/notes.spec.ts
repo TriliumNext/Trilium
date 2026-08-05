@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getImageAttachmentTitle, getMimeIcon, getNoteIcon, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS } from "./notes.js";
+import { getImageAttachmentTitle, getMimeIcon, getNoteIcon, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink } from "./notes.js";
 import { NoteType } from "./rows.js";
 
 function buildArgs(overrides: {
@@ -137,6 +137,28 @@ describe("getNoteIcon", () => {
     it("returns the note-type icon for any other type", () => {
         const icon = getNoteIcon(buildArgs({ type: "book" }));
         expect(icon).toBe("bx bx-book");
+    });
+});
+
+describe("parseMindMapNoteLink", () => {
+    it("tells a link to a note from one pointing outside Trilium", () => {
+        expect(parseMindMapNoteLink("#root/abc123")).toEqual({ notePath: "root/abc123", noteId: "abc123" });
+        // The whole path is kept — it is what places the note — and the note is the end of it.
+        expect(parseMindMapNoteLink("#root/parent/abc123")).toEqual({ notePath: "root/parent/abc123", noteId: "abc123" });
+        expect(parseMindMapNoteLink("#root")).toEqual({ notePath: "root", noteId: "root" });
+
+        for (const link of [
+            null, undefined, "", 42,
+            "https://example.com",
+            // An address of its own that happens to carry a note path is still a page elsewhere.
+            "https://example.com/#root/abc123",
+            "#rootless/abc",
+            // The address as Mind Elixir would hold it, or not at all.
+            "root/abc123",
+            "#root/abc123?bookmark=x"
+        ]) {
+            expect(parseMindMapNoteLink(link)).toBeNull();
+        }
     });
 });
 

@@ -6,6 +6,11 @@ type BackupType = "daily" | "weekly" | "monthly";
 
 export interface BackupOptionsService {
     getOption(name: OptionNames): string;
+    /**
+     * Reads an option without throwing when it does not exist yet — the pre-migration backup runs
+     * before {@link options_init.initStartupOptions} has filled in the options added by newer versions.
+     */
+    getOptionOrNull(name: OptionNames): string | null;
     getOptionBool(name: FilterOptionsByType<boolean>): boolean;
     setOption(name: OptionNames, value: string): void;
 }

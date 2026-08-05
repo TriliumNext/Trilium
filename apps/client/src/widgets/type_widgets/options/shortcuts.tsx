@@ -129,7 +129,10 @@ export default function ShortcutSettings() {
                         />}
                         <Button
                             text={t("shortcuts.reload_app")}
-                            onClick={reloadFrontendApp}
+                            // Called rather than handed over: its one argument is the reason to be
+                            // logged for the reload, and passed straight to the button that would
+                            // have been the click event.
+                            onClick={() => reloadFrontendApp()}
                             size="micro"
                         />
                         <Button

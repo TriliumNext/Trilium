@@ -145,7 +145,28 @@ export default function Modal({ children, className, size, title, customTitleBar
                 modalInstanceRef.current = BootstrapModal.getOrCreateInstance($widget[0]);
             });
         } else {
-            modalInstanceRef.current?.hide();
+            const instance = modalInstanceRef.current;
+            instance?.hide();
+
+            /*
+             * Bootstrap drops a `hide()` made while the dialog is still opening — it is guarded on
+             * an internal `_isTransitioning`, which stands for the ~300ms the opening takes — and
+             * says nothing about having dropped it. A dialog told to close within that window (a
+             * picker closing itself on the first thing tapped, say) would be left open for good,
+             * and since our own tree has already emptied it, what stays on the screen is an empty
+             * sheet and its backdrop over a page that can no longer be pressed.
+             *
+             * A `hide()` that was carried out takes the class off at once, so a dialog still
+             * wearing it is one whose closing was dropped. Say it again the moment the opening
+             * lands, which is what `shown.bs.modal` reports.
+             */
+            const modalElement = modalRef.current;
+            if (instance && modalElement?.classList.contains("show")) {
+                const hideOnceShown = () => instance.hide();
+                modalElement.addEventListener("shown.bs.modal", hideOnceShown, { once: true });
+                // Dropped in turn if the dialog is asked to open again before the first one lands.
+                return () => modalElement.removeEventListener("shown.bs.modal", hideOnceShown);
+            }
         }
     }, [ show, modalRef.current, noFocus, zIndex ]);
 

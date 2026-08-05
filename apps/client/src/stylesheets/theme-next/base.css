@@ -72,6 +72,8 @@
     --overlay-button-color: var(--opaque-icon-button-color);
     --overlay-button-icon-size: 16px;
     --overlay-button-text-size: 14px;
+    /* How far a group of overlay buttons stands off the corner of the content it floats over. */
+    --overlay-button-inset: 10px;
 
     --menu-padding-size: 8px;
     --menu-item-icon-vert-offset: -2px;

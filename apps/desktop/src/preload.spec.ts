@@ -651,4 +651,18 @@ describe("preload script", () => {
             expect(ipcRendererInvoked).toContainEqual({ channel: "import-grant-dropped", args: [["/data/a.zip"]] });
         });
     });
+
+    describe("dialog", () => {
+        const dialog = () => getGroup("dialog");
+
+        it("pickDirectory forwards the starting location to its IPC channel", async () => {
+            await dialog().pickDirectory({ defaultPath: "/data/backup" });
+            expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-pick-directory", args: [{ defaultPath: "/data/backup" }] });
+        });
+
+        it("pickDirectory may be called without a starting location", async () => {
+            await dialog().pickDirectory();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-pick-directory", args: [undefined] });
+        });
+    });
 });

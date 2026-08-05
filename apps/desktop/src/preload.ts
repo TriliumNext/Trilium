@@ -227,6 +227,12 @@ contextBridge.exposeInMainWorld("electronApi", {
         }
     },
 
+    dialog: {
+        pickDirectory(opts?: { defaultPath?: string }) {
+            return ipcRenderer.invoke("dialog-pick-directory", opts);
+        }
+    },
+
     ws: {
         // Renderer → main process. Mirror channel name with the server-side
         // IpcMessagingProvider constants.

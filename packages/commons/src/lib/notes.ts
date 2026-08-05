@@ -54,6 +54,30 @@ export function getImageAttachmentTitle(type: NoteType | null | undefined): stri
     return (NOTE_TYPE_IMAGE_ATTACHMENTS as Partial<Record<NoteType, string>>)[type];
 }
 
+/**
+ * The note a mind map node's link points at, or `null` where it points somewhere else entirely.
+ *
+ * A node carries one link of its own — Mind Elixir's `hyperLink` — which the editor writes as the
+ * in-app address a note link wears everywhere else in Trilium, so that following it is answered by
+ * the delegated link handler with nothing else to wire up. The whole value has to be that address:
+ * a page whose own address happens to carry `#root/…` is a page, not a link between notes.
+ *
+ * Shared, so that what writes a link, what follows one, and what relates the two notes to each
+ * other all agree on what a link is.
+ */
+export function parseMindMapNoteLink(link: unknown): { notePath: string; noteId: string } | null {
+    if (typeof link !== "string" || !/^#root(\/[a-zA-Z0-9_]+)*$/.test(link)) {
+        return null;
+    }
+
+    const notePath = link.slice(1);
+    const segments = notePath.split("/");
+    return {
+        notePath,
+        noteId: segments[segments.length - 1]
+    };
+}
+
 const FILE_MIME_MAPPINGS: Record<string, string> = {
     "application/pdf": "bx bxs-file-pdf",
     "application/vnd.oasis.opendocument.text": "bx bxs-file-doc",

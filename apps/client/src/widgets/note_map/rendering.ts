@@ -1,9 +1,9 @@
 import type ForceGraph from "force-graph";
 
 import type FNote from "../../entities/fnote";
+import type { IconGlyph } from "../../services/icon_glyphs";
 import { escapeHtml } from "../../services/utils";
 import { NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
-import { ICON_FONT_FAMILY } from "./icons";
 import { getFitPadding, getHopDistances, isRootedAtCurrentNote, mixColors, NoteMapWidgetMode, withAlpha } from "./utils";
 
 /** Roughly a second of simulation at 60 fps — see {@link setupFraming}. */
@@ -113,8 +113,8 @@ interface RenderData {
     notesAndRelations: NotesAndRelationsData;
     /** The element the graph's canvas lives in, watched for the user taking the view over. */
     container: HTMLElement;
-    /** What each note's icon classes resolve to as a character of the icon font — see icons.ts. */
-    iconGlyphs: Map<string, string>;
+    /** What each note's icon class resolves to, as the icon pack draws it — see icon_glyphs.ts. */
+    iconGlyphs: Map<string, IconGlyph>;
 }
 
 /** @returns a teardown function to call when the graph is discarded. */
@@ -339,10 +339,12 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
         }
 
         ctx.fillStyle = getNodeColors(node, cssData).icon;
-        ctx.font = `${size}px ${ICON_FONT_FAMILY}`;
+        // The pack's own font rather than one font for the map: a note may wear an icon from a pack
+        // the user brought along, whose characters are numbered as the built-in one's are.
+        ctx.font = `${size}px ${glyph.fontFamily}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(glyph, x, y);
+        ctx.fillText(glyph.content, x, y);
     }
 
     /**

@@ -18,7 +18,7 @@
         "tagline_cross_platform": "Funciona sin conexión a internet"
     },
     "organization_benefits": {
-        "title": "Organización",
+        "title": "Organiza tus notas, a tu manera",
         "note_structure_title": "Estructura de notas",
         "note_structure_description": "Las notas se pueden organizar de forma jerárquica. No necesitas carpetas, ya que cada nota puede contener subnotas. Una misma nota puede añadirse en varios lugares de la jerarquía.",
         "attributes_title": "Etiquetas de notas y relaciones",
@@ -84,7 +84,8 @@
         "geomap_description": "Planifica vacaciones o marca puntos de interés en un mapa geográfico con marcadores personalizables. Visualiza rutas GPX registradas para seguir itinerarios.",
         "title": "Colecciones",
         "presentation_title": "Presentación",
-        "presentation_description": "Organiza la información en diapositivas y preséntalas en pantalla completa con transiciones fluidas. Las diapositivas también se pueden exportar a PDF para compartirlas fácilmente."
+        "presentation_description": "Organiza la información en diapositivas y preséntalas en pantalla completa con transiciones fluidas. Las diapositivas también se pueden exportar a PDF para compartirlas fácilmente.",
+        "dashboard_title": "Panel de control"
     },
     "faq": {
         "title": "Preguntas frecuentes",
@@ -216,7 +217,7 @@
     "section_nav": {
         "aria_label": "Ir a la sección",
         "organization": "Organiza",
-        "productivity": "🎁 Características",
+        "productivity": "Características",
         "note_types": "Tipos de nota",
         "import": "Importar y exportar",
         "collections": "Colecciones",

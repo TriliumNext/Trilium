@@ -3,7 +3,7 @@
     "data_directory": "데이터 경로:",
     "version_label": "버전:",
     "version": "{{appVersion}} (데이터베이스: {{dbVersion}}, 동기화 프로토콜: {{syncVersion}})",
-    "build_info": "빌드: {{buildDate}}, 리비전: <buildRevision />",
+    "build_info": "빌드: {{buildDate}}, 수정본: <buildRevision />",
     "contributors_label": "기여자:",
     "contributor_roles": {
       "lead-dev": "수석 개발자",
@@ -63,7 +63,9 @@
     "link_title": "링크 제목",
     "button_add_link": "링크 추가",
     "anchor": "앵커(선택)",
-    "anchor_none": "없음(노트 전체 링크)"
+    "anchor_none": "없음(노트 전체 링크)",
+    "edit_link": "링크 편집",
+    "button_edit_link": "링크 저장"
   },
   "branch_prefix": {
     "save": "저장",
@@ -447,13 +449,13 @@
     "undelete_failed": "그 노트는 복원할 수 없었고, 영구적으로 지워졌을 수도 있습니다."
   },
   "revisions": {
-    "note_revisions": "노트 리비전",
+    "note_revisions": "노트 수정본",
     "back": "뒤로",
-    "delete_all_revisions": "이 노트의 모든 리비전 삭제",
-    "delete_all_button": "모든 리비전 삭제",
-    "help_title": "노트 리비전 도움말",
+    "delete_all_revisions": "이 노트의 모든 수정본 삭제",
+    "delete_all_button": "모든 수정본 삭제",
+    "help_title": "노트 수정본 도움말",
     "confirm_delete_all": "이 노트의 모든 수정본을 삭제하시겠습니까?",
-    "no_revisions": "이 노트는 아직 수정하지 않았다...",
+    "no_revisions": "이 노트는 아직 수정본이 없습니다...",
     "restore_button": "복원",
     "highlight_changes": "하이라이트 변경 사항",
     "diff_on": "변경 내용 보기",
@@ -468,22 +470,22 @@
     "revisions_deleted": "노트 수정본이 삭제되었습니다.",
     "revision_restored": "노트 수정본이 복원되었습니다.",
     "revision_deleted": "노트 수정본이 삭제되었습니다.",
-    "snapshot_interval": "노트: 개정 스냅샷 간격: {{seconds}}s.",
-    "maximum_revisions": "노트: 수정 스냅샷 한도: {{number}}.",
-    "save_revision_now": "지금 리비전 저장",
-    "save_named_revision": "이름을 지정해 리비전 저장...",
-    "snapshot_header": "노트 리비전 스냅샷",
+    "snapshot_interval": "노트: 수정본 스냅샷 간격: {{seconds}}s.",
+    "maximum_revisions": "노트: 수정본 스냅샷 한도: {{number}}.",
+    "save_revision_now": "지금 수정본 저장",
+    "save_named_revision": "이름을 지정해 수정본 저장...",
+    "snapshot_header": "노트 수정본 스냅샷",
     "snapshot_interval_value": "간격: {{seconds}}s",
     "snapshot_limit_value": "제한: {{number}}",
-    "settings": "노트 리비전 설정",
-    "menu_tooltip": "리비전 옵션",
+    "settings": "노트 수정본 설정",
+    "menu_tooltip": "수정본 옵션",
     "download_button": "다운로드",
     "mime": "MIME: ",
     "file_size": "파일 크기:",
     "preview_not_available": "이 노트 유형에는 미리보기가 제공되지 않습니다.",
-    "save_revision": "리비전 저장",
+    "save_revision": "수정본 저장",
     "save_revision_tooltip": "현재 노트의 스냅샷을 수동으로 저장",
-    "description_placeholder": "이 리비전의 이름",
+    "description_placeholder": "이 수정본의 이름",
     "revision_saved": "노트 수정본이 저장되었습니다.",
     "edit_description": "이름 편집",
     "description_updated": "수정본명이 업데이트되었습니다.",
@@ -514,11 +516,11 @@
     "ascending": "오름차순",
     "descending": "내림차순",
     "folders": "폴더",
-    "sort_folders_at_top": "폴더 정렬 상단",
+    "sort_folders_at_top": "폴더를 맨 위로 정렬",
     "natural_sort": "자연 정렬",
     "sort_with_respect_to_different_character_sorting": "서로 다른 언어나 지역에서 서로 다른 문자 정렬 및 정렬 규칙에 따라 정렬합니다.",
     "natural_sort_language": "자연 정렬 언어",
-    "the_language_code_for_natural_sort": "자연 분류의 언어 코드, 예를 들어 중국어의 \"zh-CN\".",
+    "the_language_code_for_natural_sort": "자연 정렬의 언어 코드, 예: 중국어의 \"zh-CN\".",
     "sort": "정렬"
   },
   "upload_attachments": {
@@ -663,7 +665,7 @@
     "print_margins": "PDF로 내보낼 때 페이지 여백을 설정합니다. <code>default</code>, <code>none</code>, <code>minimum</code> 중 하나를 사용하거나, 밀리미터 단위의 사용자 지정 값을 <code>top,right,bottom,left</code> 형식으로 입력합니다.",
     "color_type": "색상",
     "relation_type": "관계",
-    "versioning_limit": "이 노트가 유지할 수 있는 수정 횟수를 제한하여 전역 설정을 덮어줍니다.",
+    "versioning_limit": "이 노트가 유지할 수 있는 수정본 횟수를 제한하여 전역 설정을 덮어줍니다.",
     "similar_notes_widget_disabled": "이 노트의 유사 노트 리본 탭을 비활성화합니다. 이전 레이아웃에서만 적용됩니다.",
     "llm_chat_home": "새 AI 채팅을 이 노트의 하위 노트로 만듭니다.",
     "workspace_llm_chat_home": "이 작업 공간의 상위 노트를 루트로 볼 때 새 AI 채팅을 이 노트의 하위 노트로 만듭니다.",
@@ -791,7 +793,9 @@
     "hoisted_note": "실행 메뉴가 대상을 열 때 루트로 볼 노트입니다.",
     "share_logo": "공유 페이지의 로고로 사용되는 이미지 노트입니다. 이 노트는 공유 하위 트리 안에 있어야 합니다.",
     "share_open_graph_image_relation": "공유 페이지의 <code>og:image</code> 로 사용할 이미지 노트입니다. 이미지 주소를 지정하려면 같은 이름의 레이블을 대신 설정합니다.",
-    "share_html": "해당 노트의 <code>#shareHtmlLocation</code> 설정에 따라 공유 페이지에 삽입할 HTML 노트입니다. 이 노트는 공유된 하위 트리 안에 있어야 합니다."
+    "share_html": "해당 노트의 <code>#shareHtmlLocation</code> 설정에 따라 공유 페이지에 삽입할 HTML 노트입니다. 이 노트는 공유된 하위 트리 안에 있어야 합니다.",
+    "map_dark_style": "<code>map:style</code> 에 지정된 사용자 지정 스타일이 어두운 스타일임을 지리 지도에 알려, 그 위에 표시되는 마커 제목을 밝게 그리도록 합니다. 컬렉션 속성에서 제공하는 스타일은 자체적으로 이를 나타내므로 이러한 레이블이 필요하지 않습니다.",
+    "map_cluster": "서로 가까이 표시되는 마커를 하나의 숫자 원으로 묶으며, 클릭하면 펼쳐집니다."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
@@ -814,7 +818,7 @@
     "back": "속성으로 돌아가기",
     "inheritable": "상속: 이 노트와 그 전체 하위 트리에 적용됩니다",
     "delete": "이 속성 삭제",
-    "delete_confirm": "\"{{name}}\" 속성을 삭제해야 하나요?",
+    "delete_confirm": "\"{{name}}\" 속성을 삭제하시겠습니까?",
     "add_definition": "새 정의 추가",
     "no_target": "대상 노트 없음",
     "no_value": "값 없음",
@@ -883,12 +887,12 @@
     "erase_notes_instruction": "노트를 영구적으로 지우려면, 삭제 후 옵션 -> 기타 항목에서 \"삭제된 노트 지우기\" 버튼을 클릭하세요."
   },
   "save_revision": {
-    "save_revision": "리비전 저장",
-    "revision_name_placeholder": "수정 이름 (선택 사항)",
-    "help": "각 매칭된 노트마다 현재 내용과 제목을 담은 명명된 리비전이 저장됩니다."
+    "save_revision": "수정본 저장",
+    "revision_name_placeholder": "수정본 이름 (선택 사항)",
+    "help": "각 매칭된 노트마다 현재 내용과 제목을 담은 명명된 수정본이 저장됩니다."
   },
   "delete_revisions": {
-    "delete_note_revisions": "노트 리비전 삭제",
+    "delete_note_revisions": "노트 수정본 삭제",
     "all_past_note_revisions": "일치하는 노트의 모든 이전 수정본을 삭제합니다. 노트 자체는 그대로 보존되고 노트 기록만 제거됩니다."
   },
   "move_note": {
@@ -959,7 +963,7 @@
     "open_custom_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
     "download": "다운로드",
     "rename_attachment": "첨부 파일 이름 변경",
-    "upload_new_revision": "새 리비전 업로드",
+    "upload_new_revision": "새 수정본 업로드",
     "copy_link_to_clipboard": "참조를 클립보드에 복사",
     "convert_attachment_into_note": "첨부 파일을 노트로 변환하기",
     "delete_attachment": "첨부 파일 삭제",
@@ -967,7 +971,7 @@
     "upload_failed": "새 첨부 파일 수정본을 업로드하지 못했습니다.",
     "open_externally_detail_page": "첨부 파일을 외부에서 열려면 먼저 첨부 파일 상세 페이지를 연 다음 작업을 다시 실행하세요.",
     "open_custom_client_only": "첨부 파일 맞춤 열기는 데스크톱 클라이언트에서만 가능합니다.",
-    "delete_confirm": "첨부 파일 '{{title}}'을 삭제하고 싶은 게 확실한가요?",
+    "delete_confirm": "첨부 파일 '{{title}}'을(를) 삭제하시겠습니까?",
     "delete_success": "첨부 파일 '{{title}}'이 삭제되었습니다.",
     "convert_confirm": "\"{{title}}\" 첨부 파일을 별도 노트로 변환하시겠습니까?",
     "convert_success": "\"{{title}}\" 첨부 파일을 노트로 변환했습니다.",
@@ -1104,9 +1108,9 @@
     "delete_note": "노트 삭제",
     "print_note": "노트 인쇄...",
     "print_or_export_to_pdf": "PDF로 출력/내보내기...",
-    "view_revisions": "노트 리비전...",
-    "save_revision": "리비전 저장",
-    "save_named_revision": "이름을 지정해 리비전 저장...",
+    "view_revisions": "노트 수정본...",
+    "save_revision": "수정본 저장",
+    "save_named_revision": "이름을 지정해 수정본 저장...",
     "advanced": "고급",
     "convert_into_attachment_failed": "'{{title}}' 노트 변환은 실패했습니다.",
     "convert_into_attachment_successful": "\"{{title}}\" 노트를 첨부 파일로 변환했습니다.",
@@ -1131,7 +1135,7 @@
     "inactive": "보호된 세션을 시작하려면 클릭"
   },
   "revisions_button": {
-    "note_revisions": "노트 리비전"
+    "note_revisions": "노트 수정본"
   },
   "update_available": {
     "update_available": "업데이트 가능"
@@ -1206,7 +1210,7 @@
   "mobile_detail_menu": {
     "insert_child_note": "하위 노트 삽입",
     "delete_this_note": "이 노트 삭제",
-    "note_revisions": "노트 리비전",
+    "note_revisions": "노트 수정본",
     "error_cannot_get_branch_id": "노트 경로 '{{notePath}}'의 branchId를 가져올 수 없습니다",
     "error_unrecognized_command": "인식되지 않은 명령 {{command}}",
     "backlinks": "백링크",
@@ -1268,9 +1272,9 @@
     "file_size": "파일 크기",
     "download": "다운로드",
     "open": "외부에서 열기",
-    "upload_new_revision": "새 리비전 업로드",
+    "upload_new_revision": "새 수정본 업로드",
     "upload_success": "새 파일 수정본이 업로드되었습니다.",
-    "upload_failed": "새 파일 수정 업로드에 실패했습니다.",
+    "upload_failed": "새 파일 수정본 업로드에 실패했습니다.",
     "title": "파일"
   },
   "image_properties": {
@@ -1280,9 +1284,9 @@
     "download": "다운로드",
     "open": "열기",
     "copy_reference_to_clipboard": "참조를 클립보드에 복사",
-    "upload_new_revision": "새 리비전 업로드",
+    "upload_new_revision": "새 수정본 업로드",
     "upload_success": "새 이미지 수정본이 업로드되었습니다.",
-    "upload_failed": "새 이미지 수정 업로드 실패: {{message}}",
+    "upload_failed": "새 이미지 수정본업로드 실패: {{message}}",
     "title": "이미지"
   },
   "inherited_attribute_list": {
@@ -1315,7 +1319,7 @@
   },
   "note_paths": {
     "title": "노트 경로",
-    "clone_button": "복제 노트를 새 위치로 보내...",
+    "clone_button": "노트를 새 위치로 복제...",
     "intro_placed": "이 노트는 다음 경로에 배치되어 있습니다:",
     "intro_not_placed": "이 노트는 아직 노트 트리에 배치되지 않았습니다.",
     "outside_hoisted": "이 경로는 현재 루트로 보는 노트 밖에 있으므로 루트 보기를 해제해야 합니다.",
@@ -1421,7 +1425,7 @@
     "content_size": "노트 내용 크기",
     "content_and_attachments_size": "첨부 파일을 포함한 콘텐츠 크기 노트",
     "content_and_attachments_and_revisions_size": "첨부 파일 및 수정본 포함 콘텐츠 크기 노트",
-    "revision_count": "리비전 수",
+    "revision_count": "수정본 수",
     "children_count": "하위 노트 수",
     "parent_count": "복제 개체 수",
     "owned_label_count": "라벨 수",
@@ -1467,7 +1471,9 @@
     "open_help_page": "첨부 파일 도움말 페이지 열기",
     "owning_note": "소유 노트: ",
     "upload_attachments": "첨부 파일 업로드",
-    "no_attachments": "이 노트에는 첨부 파일이 없습니다."
+    "no_attachments": "이 노트에는 첨부 파일이 없습니다.",
+    "no_user_attachments": "이 노트에는 자체 첨부 파일이 없습니다.\nTrilium에서 이 노트를 위해 생성한 항목은 아래에 표시됩니다.",
+    "system_group": "Trilium에서 생성됨 ({{amount}})"
   },
   "book": {
     "no_children_help": "이 컬렉션에는 하위 노트가 없어 표시할 내용이 없습니다.",
@@ -1564,7 +1570,7 @@
     "unprotecting-in-progress-count": "보호 무방화 진행 중: {{count}}"
   },
   "relation_map": {
-    "remove_note": "노트 삭제",
+    "remove_note": "노트 제거",
     "edit_title": "제목 수정",
     "rename_note": "노트 이름 변경",
     "enter_new_title": "새 노트 제목 입력:",
@@ -1838,26 +1844,26 @@
     "deleted_notes_erased": "삭제된 노트는 삭제되었습니다."
   },
   "revisions_snapshot": {
-    "title": "노트 리비전"
+    "title": "노트 수정본"
   },
   "revisions_snapshot_interval": {
-    "note_revisions_snapshot_interval_title": "노트 개정 스냅샷 간격",
-    "note_revisions_snapshot_description": "노트 개정 스냅샷 간격은 해당 노트의 새 개정판이 생성되기까지의 시간입니다. 자세한 내용은 <doc>위키</doc> 문서를 참조하세요.",
+    "note_revisions_snapshot_interval_title": "노트 수정본 스냅샷 간격",
+    "note_revisions_snapshot_description": "노트 개정 스냅샷 간격은 해당 노트의 새 수정본이 생성되기까지의 시간입니다. 자세한 내용은 <doc>위키</doc> 문서를 참조하세요.",
     "note_revisions_snapshot_description_short": "새 노트 수정본을 만들기까지의 시간입니다.",
     "snapshot_time_interval_label": "스냅샷 간격"
   },
   "revisions_snapshot_limit": {
-    "note_revisions_snapshot_limit_title": "노트 리비전 스냅샷 제한",
-    "note_revisions_snapshot_limit_description": "노트 리비전 스냅샷 수 제한은 각 노트에 대해 저장할 수 있는 최대 수정 횟수를 의미합니다. 여기서 -1은 제한 없음, 0은 모든 수정본을 삭제하는 것을 의미합니다. #versioningLimit 라벨을 통해 단일 노트의 최대 수정 횟수를 설정할 수 있습니다.",
+    "note_revisions_snapshot_limit_title": "노트 수정본 스냅샷 제한",
+    "note_revisions_snapshot_limit_description": "노트 수정본 스냅샷 수 제한은 각 노트에 대해 저장할 수 있는 최대 수정 횟수를 의미합니다. 여기서 -1은 제한 없음, 0은 모든 수정본을 삭제하는 것을 의미합니다. #versioningLimit 라벨을 통해 단일 노트의 최대 수정 횟수를 설정할 수 있습니다.",
     "note_revisions_snapshot_limit_description_short": "노트당 최대 수정 횟수. -1은 무제한, 0은 비활성화 시 사용하세요.",
-    "snapshot_number_limit_label": "최대 리비전 수",
+    "snapshot_number_limit_label": "최대 수정본 수",
     "snapshot_number_limit_unit": "스냅샷",
-    "erase_excess_revision_snapshots": "초과 리비전 스냅샷 삭제",
-    "erase_excess_revision_snapshots_description": "모든 노트에서 제한을 초과한 리비전을 삭제합니다.",
+    "erase_excess_revision_snapshots": "초과 수정본 스냅샷 삭제",
+    "erase_excess_revision_snapshots_description": "모든 노트에서 제한을 초과한 수정본을 삭제합니다.",
     "erase_now_button": "지금 삭제",
-    "erase_excess_revision_snapshots_prompt": "초과 리비전 스냅샷을 삭제했습니다.",
-    "keep_named_revisions_label": "이름이 지정된 리비전 유지",
-    "keep_named_revisions_description": "이름을 지정한 리비전은 삭제되지 않으며 최대 개수에도 포함되지 않습니다."
+    "erase_excess_revision_snapshots_prompt": "초과 수정본 스냅샷을 삭제했습니다.",
+    "keep_named_revisions_label": "이름이 지정된 수정본 유지",
+    "keep_named_revisions_description": "이름을 지정한 수정본은 삭제되지 않으며 최대 개수에도 포함되지 않습니다."
   },
   "search": {
     "title": "검색",
@@ -1955,7 +1961,6 @@
     "backup_now": "지금 백업",
     "backup_database_now": "지금 데이터베이스 백업",
     "existing_backups": "기존 백업",
-    "backup_location_description": "백업은 {{- backupFolder}}에 저장됩니다.",
     "date-and-time": "날짜 및 시간",
     "path": "경로",
     "database_backed_up_to": "데이터베이스는 {{- backupFilePath}}로 백업되었습니다",
@@ -2195,11 +2200,15 @@
   },
   "attachment_detail_2": {
     "link_copied": "첨부 파일 참조를 클립보드에 복사했습니다.",
-    "unrecognized_role": "인식되지 않은 첨부 파일 역할 '{{role}}'."
+    "unrecognized_role": "인식되지 않은 첨부 파일 역할 '{{role}}'.",
+    "deletion_badge": "{{time}} 후 삭제됨",
+    "deletion_badge_soon": "곧 삭제됨",
+    "deletion_badge_tooltip": "이 첨부 파일은 노트 내용에 연결되어 있지 않으므로 자동으로 삭제됩니다. 유지하려면 첨부 파일 링크를 내용에 다시 추가하거나 첨부 파일을 노트로 변환하세요.",
+    "kind_and_size": "{{role}} · {{size}}"
   },
   "bookmark_switch": {
     "bookmark": "북마크",
-    "bookmark_this_note": "이 노트를 왼쪽 패널에 즐겨찾기로 추가",
+    "bookmark_this_note": "이 노트를 왼쪽 패널에 북마크로 추가",
     "remove_bookmark": "북마크 제거"
   },
   "editability_select": {
@@ -2426,7 +2435,7 @@
     "scroll-active-title": "활성 노트로 스크롤",
     "tree-settings-title": "트리 설정",
     "hide-archived-notes": "보관된 노트 숨기기",
-    "automatically-collapse-notes": "자동 접기 노트",
+    "automatically-collapse-notes": "노트 자동 접기",
     "automatically-collapse-notes-title": "노트는 일정 기간 비활성 후 정리하기 위해 접어둡니다.",
     "follow-active-note": "활성 노트 따라가기",
     "follow-active-note-title": "트리를 스크롤하고 부모 노드를 확장하여 활성 노트를 보여줍니다. 비활성화하면 트리는 그대로 유지되고 배경 하이라이트만 업데이트됩니다.",
@@ -2545,7 +2554,7 @@
   },
   "entrypoints": {
     "note-revision-created": "노트 수정이 생성되었습니다.",
-    "save-named-revision-title": "이름을 지정해 리비전 저장",
+    "save-named-revision-title": "이름을 지정해 수정본 저장",
     "save-named-revision-message": "이 수정본에 이름을 입력하세요(이름이 없으면 비워두세요):",
     "note-executed": "노트를 실행했습니다.",
     "sql-error": "SQL 쿼리 실행 중 오류가 발생했습니다: {{message}}"
@@ -2681,15 +2690,22 @@
   },
   "geo-map": {
     "create-child-note-title": "새 하위 노트를 만들어 맵에 추가",
-    "create-child-note-text": "마커 추가",
     "create-child-note-instruction": "지도에서 위치를 클릭하여 새 노트를 만들거나 Escape 키를 눌러 취소하세요.",
     "create-child-note-toast-title": "새 노트",
-    "unable-to-load-map": "맵을 로드할 수 없습니다."
+    "unable-to-load-map": "맵을 로드할 수 없습니다.",
+    "move-marker-instruction": "지도를 클릭하여 마커를 해당 위치로 이동하거나 Esc 키를 눌러 취소합니다.",
+    "move-marker-toast-title": "마커 이동",
+    "webgl-unavailable": "WebGL을 사용할 수 없어 이 지도를 표시할 수 없습니다. 하드웨어 가속이 활성화되어 있고 그래픽 드라이버가 최신 상태인지 확인하세요.",
+    "zoom-in": "확대",
+    "zoom-out": "축소",
+    "fullscreen": "전체 화면",
+    "exit-fullscreen": "전체 화면 종료"
   },
   "geo-map-context": {
     "open-location": "위치 열기",
     "remove-from-map": "맵에서 제거",
-    "add-note": "이 위치에 마커 추가"
+    "add-note": "이 위치에 마커 추가",
+    "move-marker": "다른 위치로 이동"
   },
   "help-button": {
     "title": "관련 도움말 페이지 열기"
@@ -2806,7 +2822,7 @@
     "deleted_attachments_other": "삭제된 첨부 파일 {{count}}개",
     "deleted_entities": "{{notes}}, {{attachments}}",
     "note_body": "노트 내용",
-    "revisions": "리비전",
+    "revisions": "수정본",
     "others_notes_other": "노트 {{count}}개 더 ({{size}})",
     "others_attachments_other": "첨부 파일 {{count}}개 더 ({{size}})",
     "cell_size": "크기: {{size}}",
@@ -2818,14 +2834,14 @@
     "child_tooltip": "하위 노트: {{- title}} ({{size}})",
     "center_note_size": "노트: <Size/>",
     "center_note_size_help": "음 크기는 자신의 몸체와 첨부 파일만 커버합니다(디스크 {{size}})",
-    "center_revisions_size": "리비전: <Size/>",
-    "center_revisions_help": "이 노트의 개정 크기에는 후손 노트도 포함되어 있습니다",
+    "center_revisions_size": "수정본: <Size/>",
+    "center_revisions_help": "이 노트의 수정본 크기에는 후손 노트도 포함되어 있습니다",
     "center_subtree_size": "하위 트리: <Size/>",
-    "center_subtree_size_help": "하위 트리 크기에는 하위 노트가 포함되지만 해당 노트의 개정판은 포함되지 않습니다(디스크 사용량: {{size}})",
+    "center_subtree_size_help": "하위 트리 크기에는 하위 노트가 포함되지만 해당 노트의 수정본은 포함되지 않습니다(디스크 사용량: {{size}})",
     "back": "뒤로",
     "current_note": "현재 노트:",
     "status_content_other": "노트 {{count}}개가 {{size}} 사용 중(이 중 노트 첨부 파일 {{attachmentsSize}})",
-    "status_content_hint": "모든 노트(숨겨진 노트 포함), 첨부 파일 및 개정판이 차지하는 공간이며, 중복된 콘텐츠는 한 번만 계산됩니다",
+    "status_content_hint": "모든 노트(숨겨진 노트 포함), 첨부 파일 및 수정본이 차지하는 공간이며, 중복된 콘텐츠는 한 번만 계산됩니다",
     "status_deleted": "삭제된 노트 및 첨부 파일이 차지하는 공간: {{size}}",
     "status_deleted_hint": "삭제된 노트와 삭제된 첨부 파일이 여전히 차지하고 있는 공간입니다. 첨부 파일이 속한 노트는 남아 있을 수 있으며, 이를 완전히 삭제하면 공간을 회수할 수 있습니다",
     "menu_show_details": "세부 정보 보기",
@@ -2837,9 +2853,9 @@
     "cleanup_amount_of": "{{total}}개 중",
     "cleanup_deleted_entities": "삭제된 노트와 첨부 파일을 지우기",
     "cleanup_unused_attachments": "사용하지 않는 첨부 파일 삭제",
-    "cleanup_revision_snapshots": "리비전 스냅샷 삭제",
-    "cleanup_snapshots_to_keep": "유지할 리비전 스냅샷 수",
-    "cleanup_keep_named": "이름이 지정된 리비전 유지",
+    "cleanup_revision_snapshots": "수정본 스냅샷 삭제",
+    "cleanup_snapshots_to_keep": "유지할 수정본 스냅샷 수",
+    "cleanup_keep_named": "이름이 지정된 수정본 유지",
     "cleanup_cancel": "취소",
     "cleanup_clean": "정리",
     "cleanup_confirm": "이로 인해 선택된 데이터가 영구적으로 삭제됩니다. 되돌릴 수 없습니다.",
@@ -2851,8 +2867,8 @@
     "cleanup_confirm_compacting_title": "데이터베이스 압축은 느린 작업입니다",
     "cleanup_confirm_compacting": "데이터베이스 압축에는 데이터베이스 크기와 Trilium을 실행하는 컴퓨터의 성능에 따라 몇 분이 걸릴 수 있습니다. 또한 컴퓨터에 최대 {{space}}의 여유 디스크 공간이 일시적으로 필요합니다(데이터 디렉터리와 시스템 임시 디렉터리).",
     "cleanup_compact_notice": "이 작업은 몇 분이 걸릴 수 있으며, Trilium은 완료될 때까지 응답하지 않습니다.",
-    "cleanup_snapshots_to_keep_help": "각 노트마다 최신 항목부터 거꾸로 세어 몇 개의 리비전 스냅샷을 남길지 정합니다. 0으로 지정하면 리비전 기록 전체를 삭제합니다.",
-    "cleanup_keep_named_help": "이름을 지정한 리비전은 개수와 관계없이 항상 유지되며, 각 노트마다 남기는 스냅샷 개수와는 별개입니다.",
+    "cleanup_snapshots_to_keep_help": "각 노트마다 최신 항목부터 거꾸로 세어 몇 개의 수정본 스냅샷을 남길지 정합니다. 0으로 지정하면 수정본 기록 전체를 삭제합니다.",
+    "cleanup_keep_named_help": "이름을 지정한 수정본은 개수와 관계없이 항상 유지되며, 각 노트마다 남기는 스냅샷 개수와는 별개입니다.",
     "compress_summary_reading": "읽는 중…",
     "compress_summary_failed": "여기에 있는 내용을 읽을 수 없습니다.",
     "compress_summary_scope_other": "{{title}}, 하위 노트 {{count}}개",
@@ -2986,7 +3002,8 @@
     "vector_light": "벡터(밝게)",
     "vector_dark": "벡터(어둡게)",
     "show-scale": "축척 표시",
-    "show-labels": "마커 이름 표시"
+    "show-labels": "마커 이름 표시",
+    "cluster-markers": "가까운 마커 그룹화"
   },
   "table_context_menu": {
     "delete_row": "행 삭제"
@@ -3100,7 +3117,7 @@
     "related_settings": "관련 설정",
     "related_actions": "관련 작업",
     "related_space_usage": "데이터베이스의 공간 사용량 분석",
-    "related_space_usage_description": "어떤 노트, 리비전, 첨부 파일이 공간을 가장 많이 차지하는지 확인하고 정리하세요."
+    "related_space_usage_description": "어떤 노트, 수정본, 첨부 파일이 공간을 가장 많이 차지하는지 확인하고 정리하세요."
   },
   "settings_appearance": {
     "related_code_blocks": "텍스트 노트 내 코드 블록의 색상 체계",
@@ -3343,11 +3360,11 @@
     "button": "로그인",
     "remember-me": "로그인 상태 유지",
     "incorrect-password": "비밀번호가 올바르지 않습니다. 다시 시도해 주세요.",
-    "incorrect-totp": "일회성 비밀번호가 올바르지 않습니다. 다시 시도해 주세요.",
+    "incorrect-totp": "일회용 비밀번호가 올바르지 않습니다. 다시 시도해 주세요.",
     "incorrect-recovery-code": "복구 코드가 잘못되었거나 이미 사용된 경우입니다.",
     "too-many-attempts": "로그인 시도가 너무 많습니다. 몇 분 후 다시 시도하세요.",
     "connection-error": "서버에 연결하지 못했습니다. 연결 상태를 확인하고 다시 시도하세요.",
-    "sign_in_with_sso": "{{ ssoIssuerName }}로 로그인",
+    "sign_in_with_sso": "{{ssoIssuerName}} 로 로그인",
     "sso-wrong-account": "이 Trilium 인스턴스에 연결된 계정이 아닙니다. 연결된 계정으로 로그인하세요.",
     "sso-not-enrolled": "통합 로그인이 아직 설정되지 않았습니다. 먼저 비밀번호로 로그인한 다음 설정에서 계정을 연결하세요.",
     "sso-connection-failed": "인증 제공자와 연결할 수 없었습니다. 다시 시도하거나 서버 로그를 확인해 보세요."
@@ -3430,10 +3447,60 @@
     "cancelFocus": "포커스 모드 취소",
     "moveUp": "위로 이동",
     "moveDown": "아래로 이동",
-    "link": "링크",
-    "linkBidirectional": "양방향 링크",
     "clickTips": "대상 노드를 클릭하세요",
-    "summary": "요약"
+    "summary": "요약",
+    "draw-arrow": "화살표를 그릴 대상…",
+    "draw-arrow-bidirectional": "양방향 화살표를 그릴 대상…",
+    "new-topic": "새 주제",
+    "new-node": "새 노드",
+    "new-summary": "요약",
+    "custom-link": "사용자 지정 링크",
+    "text-color": "텍스트",
+    "background-color": "배경",
+    "branch-color": "가지",
+    "font-size": "크기",
+    "font-size-small": "S",
+    "font-size-medium": "M",
+    "font-size-large": "L",
+    "font-size-extra-large": "XL",
+    "icons": "아이콘",
+    "add-icon": "아이콘 추가",
+    "change-icon": "이 아이콘 변경",
+    "clear-icon": "아이콘 제거",
+    "icons-differ": "선택한 노드의 아이콘이 서로 다르므로 읽기만 할 수 있습니다.",
+    "image": "이미지",
+    "add-image": "이미지 추가",
+    "change-image": "이미지 교체",
+    "remove-image": "이미지 제거",
+    "image-shape-original": "원본",
+    "image-shape-square": "정사각형",
+    "image-shape-wide": "와이드",
+    "images-differ": "선택한 노드의 이미지가 서로 다릅니다. 그래도 이미지를 교체하려면 먼저 이미지를 제거하세요.",
+    "image-upload-failed": "\"{{name}}\" 이미지를 업로드할 수 없습니다.",
+    "node-link": "링크",
+    "add-link": "링크 추가",
+    "choose-link": "이 노드를 노트 또는 페이지에 연결",
+    "clear-link": "링크 제거",
+    "link-mixed": "서로 다른 링크",
+    "links-differ": "선택한 노드의 링크가 서로 다릅니다.",
+    "tab-format": "서식",
+    "hide-panel": "이 패널 숨기기",
+    "memo": "메모",
+    "memo-placeholder": "메모 작성...",
+    "memos-differ": "선택한 노드의 메모가 서로 다르므로 이 메모는 읽기만 할 수 있습니다.",
+    "tags": "태그",
+    "tags-placeholder": "태그를 입력하고 Enter 키를 누르세요",
+    "tags-differ": "선택한 노드의 태그가 서로 다르므로 읽기만 할 수 있습니다.",
+    "add-tag": "이 태그 추가",
+    "remove-tag": "이 태그 제거",
+    "zoom-in": "확대",
+    "zoom-out": "축소",
+    "center-map": "지도를 중앙에 맞추기",
+    "fullscreen": "전체 화면",
+    "exit-fullscreen": "전체 화면 종료",
+    "direction-left": "왼쪽으로 가지 펼치기",
+    "direction-right": "오른쪽으로 가지 펼치기",
+    "direction-side": "양쪽으로 가지 펼치기"
   },
   "llm": {
     "disabled_placeholder": "AI 기능이 꺼져 있습니다. 제공업체와 MCP를 설정하려면 AI 기능을 활성화하세요.",
@@ -3705,5 +3772,17 @@
     "similar_notes_how": "노트의 내용과 속성·관계, 그리고 생성된 시점의 근접성을 바탕으로 유사도를 판단합니다."
   },
   "compress-images": "이미지 압축",
-  "compress-image": "이미지 압축"
+  "compress-image": "이미지 압축",
+  "attachment_roles": {
+    "favicon": "사이트 아이콘",
+    "coverImage": "표지 이미지",
+    "viewConfig": "보기 설정",
+    "canvasLibraryItem": "캔버스 라이브러리",
+    "importSource": "가져오기 원본"
+  },
+  "color-picker": {
+    "clear-color": "색상 지우기",
+    "set-color": "색상 설정",
+    "set-custom-color": "사용자 지정 색상 설정"
+  }
 }

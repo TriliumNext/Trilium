@@ -179,6 +179,52 @@ describe("processNoteContent", () => {
         expect(content).not.toContain("Markdown Note_image.jpg");
     });
 
+    it("points the pictures of an imported mind map at the attachments as they were recreated", async () => {
+        // The map carries the address each picture was served from where it was exported, and every
+        // attachment is given a new id on the way in — so without rewriting, the pictures of an
+        // imported map would point at attachments of the instance it left.
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "mindMapNote1",
+                title: "Mind Map",
+                type: "mindMap",
+                mime: "application/json",
+                dataFileName: "Mind Map.json",
+                attachments: [{
+                    attachmentId: "mapPicture1",
+                    title: "photo.png",
+                    role: "image",
+                    mime: "image/png",
+                    position: 10,
+                    dataFileName: "Mind Map_photo.png"
+                }]
+            }]
+        };
+        const mapData = {
+            nodeData: {
+                id: "root",
+                topic: "Root",
+                image: { url: "api/attachments/mapPicture1/image/photo.png", width: 240, height: 180 }
+            }
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Mind Map.json": JSON.stringify(mapData),
+            "Mind Map_photo.png": Buffer.from("fake image data")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer);
+        const [ picture ] = importedNote.getAttachmentsByRole("image");
+        const content = importedNote.getContent() as string;
+
+        expect(picture.attachmentId).not.toBe("mapPicture1");
+        expect(content).toContain(`api/attachments/${picture.attachmentId}/image/photo.png`);
+        expect(content).not.toContain("mapPicture1");
+    });
+
     it("restores an embedded mermaid diagram as a note reference, not as a raw attachment", async () => {
         // The export points the <img> at the mermaid note's generated `mermaid-export.svg`.
         // On the way back in that has to resolve to `api/images/<noteId>` — which re-renders the

@@ -158,6 +158,7 @@ function ViewOptions({ note, viewType }: { note: FNote, viewType: ViewTypeOption
             buttonClassName="bx bx-cog icon-action"
             hideToggleArrow
             dropdownContainerClassName="mobile-bottom-menu"
+            noDropdownListStyle
             mobileBackdrop
         >
             {properties.map((property, index) => (

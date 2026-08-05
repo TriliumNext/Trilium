@@ -1995,7 +1995,6 @@
   },
   "geo-map": {
     "unable-to-load-map": "تعذر تحميل الخريطة.",
-    "create-child-note-text": "إضافة علامة",
     "create-child-note-instruction": "انقر على الخريطة لإنشاء ملاحظة جديدة في ذلك الموقع أو اضغط مفتاح Escape للإغلاق.",
     "create-child-note-title": "إنشاء ملاحظة فرعية جديدة وإضافتها إلى الخريطة"
   },
@@ -2310,7 +2309,6 @@
   },
   "mind-map": {
     "summary": "الملخص",
-    "link": "رابط",
     "addChild": "إضافة عنصر فرعي",
     "addParent": "إضافة عنصر رئيسي",
     "addSibling": "إضافة عنصر شقيق",
@@ -2318,7 +2316,6 @@
     "focus": "وضع التركيز",
     "moveUp": "تحريك للأعلى",
     "moveDown": "تحريك للاسفل",
-    "linkBidirectional": "رابط ثنائي الاتجاه",
     "cancelFocus": "إلغاء وضع التركيز",
     "clickTips": "يرجى النقر على العقدة المستهدفة"
   },

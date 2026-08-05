@@ -63,7 +63,9 @@
     "link_title_mirrors": "リンクタイトルはノートタイトルの変更を反映します",
     "link_title_arbitrary": "リンクタイトルは自由に変更可能",
     "anchor": "アンカー（任意）",
-    "anchor_none": "なし（ノートへのリンク）"
+    "anchor_none": "なし（ノートへのリンク）",
+    "edit_link": "リンクを編集",
+    "button_edit_link": "リンクを保存"
   },
   "branch_prefix": {
     "save": "保存",
@@ -83,7 +85,7 @@
     "options": "設定",
     "open_new_window": "新しいウィンドウを開く",
     "zoom": "ズーム",
-    "toggle_fullscreen": "フルスクリーンの切り替え",
+    "toggle_fullscreen": "全画面表示の切り替え",
     "reset_zoom_level": "ズームレベルのリセット",
     "open_dev_tools": "開発者ツールを開く",
     "open_sql_console": "SQLコンソールを開く",
@@ -1116,8 +1118,7 @@
     "download": "ダウンロード",
     "title": "バックアップ",
     "automatic_backups_title": "自動バックアップ",
-    "automatic_backups_description": "Trilium はデータベースを自動的にバックアップできます。バックアップを有効にしておくことをお勧めしますが、データベースが大きい場合やストレージデバイスの速度が遅い場合は、アプリケーションの起動が遅くなる可能性があります。",
-    "backup_location_description": "バックアップは {{- backupFolder}} に保存されます。"
+    "automatic_backups_description": "Trilium はデータベースを自動的にバックアップできます。バックアップを有効にしておくことをお勧めしますが、データベースが大きい場合やストレージデバイスの速度が遅い場合は、アプリケーションの起動が遅くなる可能性があります。"
   },
   "password": {
     "wiki": "wiki",
@@ -1461,7 +1462,9 @@
     "hoisted_note": "ランチャーがターゲットを開く際にホイストの対象となるノート。",
     "share_logo": "共有ページのロゴとして使用される画像ノート。共有対象のサブツリー内に配置されている必要があります。",
     "share_open_graph_image_relation": "<code>og:image</code> として使用される画像ノート。アドレスを指定する場合は、代わりに同名のラベルを設定してください。",
-    "share_html": "共有ページに挿入される HTML ノート。挿入位置は、そのノート上の <code>#shareHtmlLocation</code> で指定します。共有対象のサブツリー内に配置されている必要があります。"
+    "share_html": "共有ページに挿入される HTML ノート。挿入位置は、そのノート上の <code>#shareHtmlLocation</code> で指定します。共有対象のサブツリー内に配置されている必要があります。",
+    "map_dark_style": "<code>map:style</code> で指定されたカスタムスタイルがダーク系であることを地図に伝えます。これにより、その上に表示されるマーカーのタイトルが明るい色で描画されるようになります。コレクションのプロパティで提供されるスタイルには、その情報が既に含まれているため、このような指定は不要です。",
+    "map_cluster": "近接して描画されるマーカーをまとめ、番号付きの吹き出しとして表示します。この吹き出しはクリックすると開きます。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",
@@ -2208,13 +2211,20 @@
     "create-child-note-title": "新しい子ノートを作成し、マップに追加する",
     "create-child-note-instruction": "地図をクリックしてその場所に新しいノートを作成するか、Esc キーを押して閉じます。",
     "unable-to-load-map": "マップを読み込めません。",
-    "create-child-note-text": "マーカーを追加",
-    "create-child-note-toast-title": "新しいノート"
+    "create-child-note-toast-title": "新しいノート",
+    "move-marker-instruction": "地図をクリックしてマーカーをその位置に移動するか、Esc キーを押して閉じてください。",
+    "move-marker-toast-title": "マーカーを移動",
+    "webgl-unavailable": "WebGL が利用できないため、この地図を表示できません。ハードウェアアクセラレーションが有効になっていること、およびグラフィックスドライバーが最新であることを確認してください。",
+    "zoom-in": "拡大",
+    "zoom-out": "縮小",
+    "fullscreen": "全画面表示",
+    "exit-fullscreen": "全画面表示を終了"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
     "remove-from-map": "マップから削除",
-    "add-note": "この場所にマーカーを追加"
+    "add-note": "この場所にマーカーを追加",
+    "move-marker": "別の場所に移動"
   },
   "help-button": {
     "title": "関連するヘルプページを開く"
@@ -2239,7 +2249,8 @@
     "raster": "Raster",
     "vector_light": "Vector（ライト）",
     "vector_dark": "Vector （ダーク）",
-    "show-labels": "マーカー名を表示"
+    "show-labels": "マーカー名を表示",
+    "cluster-markers": "近くのマーカーをグループ化"
   },
   "call_to_action": {
     "next_theme_title": "新しいTriliumテーマをお試しください",
@@ -2302,7 +2313,9 @@
     "open_help_page": "添付ファイルのヘルプページを開く",
     "owning_note": "所有ノート: ",
     "upload_attachments": "添付ファイルをアップロード",
-    "no_attachments": "このノートには添付ファイルはありません。"
+    "no_attachments": "このノートには添付ファイルはありません。",
+    "no_user_attachments": "このノートには添付ファイルはありません。\nTrilium によって生成された添付ファイルは以下の通りです。",
+    "system_group": "Trilium により生成 ({{amount}})"
   },
   "book": {
     "no_children_help": "このコレクションには子ノートがないため、表示するものがありません。",
@@ -2409,7 +2422,11 @@
   },
   "attachment_detail_2": {
     "link_copied": "添付ファイルの参照先をクリップボードにコピーしました。",
-    "unrecognized_role": "添付ファイルのロール「{{role}}」は認識されません。"
+    "unrecognized_role": "添付ファイルのロール「{{role}}」は認識されません。",
+    "deletion_badge": "{{time}} 後に削除",
+    "deletion_badge_soon": "まもなく削除されます",
+    "deletion_badge_tooltip": "この添付ファイルはノートの本文内でリンクされていないため、自動的に削除されます。保持したい場合は、本文に添付ファイルのリンクを再度追加するか、添付ファイルをノートに変換してください。",
+    "kind_and_size": "{{role}} · {{size}}"
   },
   "presentation_view": {
     "edit-slide": "このスライドを編集",
@@ -2769,10 +2786,60 @@
     "cancelFocus": "フォーカスモードを解除",
     "moveUp": "上に移動",
     "moveDown": "下に移動",
-    "link": "リンク",
-    "linkBidirectional": "双方向リンク",
     "clickTips": "対象ノードをクリックしてください",
-    "summary": "概要"
+    "summary": "概要",
+    "draw-arrow": "矢印を描画…",
+    "draw-arrow-bidirectional": "双方向の矢印を描画…",
+    "new-topic": "新しいトピック",
+    "new-node": "新しいノード",
+    "new-summary": "概要",
+    "custom-link": "カスタムリンク",
+    "text-color": "テキスト",
+    "background-color": "背景",
+    "branch-color": "ブランチ",
+    "font-size": "サイズ",
+    "font-size-small": "S",
+    "font-size-medium": "M",
+    "font-size-large": "L",
+    "font-size-extra-large": "XL",
+    "icons": "アイコン",
+    "add-icon": "アイコンを追加",
+    "change-icon": "このアイコンを変更",
+    "clear-icon": "アイコンを削除",
+    "icons-differ": "選択されたノードは同じアイコンを持たないため、これらは読み取り専用です。",
+    "image": "画像",
+    "add-image": "画像を追加",
+    "change-image": "画像を置き換え",
+    "remove-image": "画像を削除",
+    "image-shape-original": "オリジナル",
+    "image-shape-square": "正方形",
+    "image-shape-wide": "ワイド",
+    "images-differ": "選択されたノードは同じ画像を保持していません。画像を置き換える場合は、まずそれらを削除してください。",
+    "image-upload-failed": "画像 \"{{name}}\" をアップロードできません。",
+    "node-link": "リンク",
+    "add-link": "リンクを追加",
+    "choose-link": "このノードをノートまたはページにリンク",
+    "clear-link": "リンクを削除",
+    "link-mixed": "異なるリンク",
+    "links-differ": "選択されたノードには同じリンクが設定されていません。",
+    "tab-format": "書式",
+    "hide-panel": "このパネルを非表示",
+    "memo": "メモ",
+    "memo-placeholder": "メモを入力...",
+    "memos-differ": "選択されたノードにはそれぞれ異なるメモが含まれているため、これらは閲覧のみ可能です。",
+    "tags": "タグ",
+    "tags-placeholder": "タグを入力して Enter キーを押してください",
+    "tags-differ": "選択されたノードには共通のタグが含まれていないため、これらは閲覧のみ可能です。",
+    "add-tag": "このタグを追加",
+    "remove-tag": "このタグを削除",
+    "zoom-in": "拡大",
+    "zoom-out": "縮小",
+    "center-map": "マップを中央に配置",
+    "fullscreen": "全画面表示",
+    "exit-fullscreen": "全画面表示を終了",
+    "direction-left": "左にブランチを配置",
+    "direction-right": "右にブランチを配置",
+    "direction-side": "両側にブランチを配置"
   },
   "llm": {
     "add_provider": "プロバイダーを追加",
@@ -3705,5 +3772,17 @@
     "similar_notes_how": "この類似性は、ノートの内容、属性、設定されているリレーション、および作成時期の近さなどに基づいて算出されます。"
   },
   "compress-images": "画像を圧縮",
-  "compress-image": "画像を圧縮"
+  "compress-image": "画像を圧縮",
+  "attachment_roles": {
+    "favicon": "サイトアイコン",
+    "coverImage": "カバー画像",
+    "viewConfig": "表示設定",
+    "canvasLibraryItem": "キャンバスライブラリ",
+    "importSource": "インポート元"
+  },
+  "color-picker": {
+    "clear-color": "色を消去",
+    "set-color": "色を設定",
+    "set-custom-color": "カスタム色を設定"
+  }
 }

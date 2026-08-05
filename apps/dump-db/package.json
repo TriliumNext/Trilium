@@ -11,7 +11,7 @@
     "yargs": "18.1.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "7.6.13",
+    "@types/better-sqlite3": "9.6.0",
     "@types/mime-types": "3.0.1",
     "@types/yargs": "17.0.35"
   },
