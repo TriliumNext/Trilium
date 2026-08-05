@@ -108,7 +108,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 "imageResize:50",
                 "imageResize:original",
                 "|",
-                "toggleImageCaption"
+                "toggleImageCaption",
+                "|",
+                "annotateImage"
             ],
             upload: {
                 // Derived rather than listed, so what the editor inserts as a picture and what the

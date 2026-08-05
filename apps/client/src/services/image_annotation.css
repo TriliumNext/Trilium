@@ -1,0 +1,139 @@
+
+
+.embedded-ann-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    background: var(--main-background-color, #fff);
+}
+
+
+
+.embedded-ann-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    background: var(--main-background-color, #fff);
+    border-bottom: 1px solid var(--main-border-color, #ddd);
+    flex-shrink: 0;
+}
+
+.embedded-ann-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--main-text-color, #333);
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.embedded-ann-back:hover {
+    background: var(--accented-background-color, #f0f0f0);
+    border-color: var(--main-border-color, #ccc);
+}
+
+.embedded-ann-back:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.embedded-ann-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--main-text-color, #333);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.embedded-ann-save-status {
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+
+.embedded-ann-save-status--saved {
+    color: var(--muted-text-color, #888);
+}
+
+.embedded-ann-save-status--saving {
+    color: var(--main-text-color, #555);
+}
+
+.embedded-ann-save-status--unsaved {
+    color: var(--muted-text-color, #aaa);
+}
+
+
+.embedded-ann-body {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+
+
+.embedded-ann-body .excalidraw.excalidraw {
+    --island-bg-color: var(--accented-background-color);
+    --overlay-bg-color: var(--accented-background-color);
+    --popup-bg-color: var(--accented-background-color);
+    --popup-secondary-bg-color: var(--more-accented-background-color);
+    --sidebar-bg-color: var(--accented-background-color);
+    --button-selected-bg: var(--more-accented-background-color);
+    --button-selected-border: var(--more-accented-background-color);
+    --button-selected-hover-bg: var(--more-accented-background-color);
+    --color-surface-primary-container: var(--more-accented-background-color);
+    --color-selection: var(--main-highlight-color, #4a90d9);
+    --color-slider-track: var(--more-accented-background-color);
+    --color-slider-thumb: var(--main-text-color);
+    --icon-fill-color: var(--main-text-color);
+    --button-color: var(--main-text-color);
+    --text-primary-color: var(--main-text-color);
+}
+
+
+
+.embedded-ann-body .excalidraw .Island,
+.embedded-ann-body .excalidraw .dropdown-menu,
+.embedded-ann-body .excalidraw .context-menu,
+.embedded-ann-body .excalidraw .popover-content,
+.embedded-ann-body .excalidraw .Sidebar {
+    background-color: var(--accented-background-color) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+
+
+.embedded-ann-body .excalidraw .ToolIcon .ToolIcon_type_radio:checked + .ToolIcon__icon,
+.embedded-ann-body .excalidraw .ToolIcon .ToolIcon_type_checkbox:checked + .ToolIcon__icon {
+    background: var(--more-accented-background-color) !important;
+}
+
+
+.embedded-ann-body .excalidraw .main-menu-trigger,
+.embedded-ann-body .excalidraw .default-sidebar-trigger {
+    display: none !important;
+}
+
+.embedded-ann-status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-text-color, #888);
+    font-size: 15px;
+}
+

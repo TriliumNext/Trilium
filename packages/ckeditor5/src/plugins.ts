@@ -31,6 +31,7 @@ import Footnotes from "./plugins/footnotes/footnotes.js";
 import Math from "./plugins/math/math.js";
 import AutoformatMath from "./plugins/math/autoformat_math.js";
 import CopyAnchorLinkButton from "./plugins/copy_anchor_link.js";
+import AnnotateImagePlugin from "./plugins/annotate_image.js";
 import CopyLinkUrlButton from "./plugins/copy_link_url.js";
 import ImageActions from "./plugins/image_actions.js";
 import TriliumSnippets from "./plugins/snippets/snippets.js";
@@ -87,6 +88,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     CollapsibleListItems,
     TableIndent,
     CopyAnchorLinkButton,
+    AnnotateImagePlugin,
     CopyLinkUrlButton,
     ImageActions,
     TriliumSnippets,
