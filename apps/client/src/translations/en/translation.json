@@ -18,6 +18,7 @@
       "standalone": "Standalone"
     },
     "data_directory": "Data directory:",
+    "sync_server_host": "Sync server:",
     "github_tooltip": "Report bugs, suggest features, or contribute on GitHub",
     "license_tooltip": "View license",
     "donate": "Donate",
