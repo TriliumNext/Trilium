@@ -82,12 +82,8 @@
     "you_can_also_open": ", se poate deschide și "
   },
   "attachment_detail_2": {
-    "deletion_reason": ", deoarece nu există o legătură către atașament în conținutul notiței. Pentru a preveni ștergerea, trebuie adăugată înapoi o legătură către atașament în conținut sau atașamentul trebuie convertit în notiță.",
     "link_copied": "O legătură către atașament a fost copiată în clipboard.",
-    "role_and_size": "Rol: {{role}}, dimensiune: {{size}}, MIME: {{- mimeType}}",
-    "unrecognized_role": "Rol atașament necunoscut: „{{role}}”.",
-    "will_be_deleted_in": "Acest atașament va fi șters automat în {{time}}",
-    "will_be_deleted_soon": "Acest atașament va fi șters automat în curând"
+    "unrecognized_role": "Rol atașament necunoscut: „{{role}}”."
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Perioadă de ștergere a atașamentelor",
@@ -1835,8 +1831,7 @@
   "geo-map": {
     "create-child-note-title": "Crează o notiță nouă și adaug-o pe hartă",
     "unable-to-load-map": "Nu s-a putut încărca harta.",
-    "create-child-note-instruction": "Click pe hartă pentru a crea o nouă notiță la acea poziție sau apăsați Escape pentru a anula.",
-    "create-child-note-text": "Adaugă marcaj"
+    "create-child-note-instruction": "Click pe hartă pentru a crea o nouă notiță la acea poziție sau apăsați Escape pentru a anula."
   },
   "duration": {
     "days": "zile",
@@ -2605,10 +2600,12 @@
     "cancelFocus": "Anulează modul focalizare",
     "moveUp": "Mută în sus",
     "moveDown": "Mută în jos",
-    "link": "Legătură",
-    "linkBidirectional": "Legătură bidirecțională",
     "clickTips": "Vă rugăm să faceți clic pe nodul țintă",
-    "summary": "Rezumat"
+    "summary": "Rezumat",
+    "new-topic": "Subiect nou",
+    "new-node": "Nod nou",
+    "new-summary": "Rezumat",
+    "custom-link": "Legătură personalizată"
   },
   "llm": {
     "feature_not_enabled": "Activați funcția experimentală LLM din Setări → Avansat → Funcții experimentale pentru a folosi integrările AI.",

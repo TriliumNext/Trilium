@@ -1,0 +1,24 @@
+/* Sits above the cards as a reading rather than a control, so it carries no card frame of its own —
+   only the spacing that keeps it from reading as part of the first one. */
+.image-compression-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    /* A fit-content dialog takes its width from the longest unbroken line in it, and the breakdown
+       sentence would otherwise be that line. Containment says the part that is true — this block's
+       width does not depend on what is written in it — so the dialog is sized by the rows that
+       should size it, and the sentence wraps to whatever width that leaves. */
+    contain: inline-size;
+}
+
+/* The name of what is about to be acted on: the one line that has to be read before the rest. */
+.image-compression-summary-title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.image-compression-summary-detail {
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+}

@@ -1,6 +1,7 @@
 import "./ChatInputBar.css";
 
 import { AttributeEditor as CKEditorAttributeEditor, CHAT_INPUT_PLUGINS, type CKTextEditor, type MentionFeed } from "@triliumnext/ckeditor5";
+import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -13,7 +14,7 @@ import Button from "../../react/Button.js";
 import CKEditor, { type CKEditorApi } from "../../react/CKEditor.js";
 import Dropdown from "../../react/Dropdown.js";
 import { FormListHeader, FormListItem } from "../../react/FormList.js";
-import { useLegacyImperativeHandlers } from "../../react/hooks.js";
+import { useLegacyImperativeHandlers, useTriliumOption } from "../../react/hooks.js";
 import MaskedIcon from "../../react/MaskedIcon.js";
 import AddProviderModal, { type LlmProviderConfig, type ProviderStep } from "../options/llm/AddProviderModal.js";
 import { providerIconUrl } from "../options/llm/provider_icons.js";
@@ -98,6 +99,7 @@ export default function ChatInputBar({
     const [openToken, setOpenToken] = useState(0);
     const editorApiRef = useRef<CKEditorApi>();
     const editorInstanceRef = useRef<CKTextEditor>();
+    const [ uiLanguage ] = useTriliumOption("locale");
     // Always-fresh submit handler for the editor's enter listener.
     const submitRef = useRef<(e: Event) => void>(() => {});
 
@@ -304,9 +306,12 @@ export default function ChatInputBar({
                         toolbar: { items: [] },
                         placeholder: t("llm_chat.placeholder"),
                         mention: { feeds: mentionFeeds },
-                        licenseKey: "GPL",
-                        language: "en"
+                        licenseKey: "GPL"
                     }}
+                    // The strings the box shows of its own — the link balloon it raises on Ctrl+K —
+                    // in the language the rest of Trilium is read in; the dictionary is fetched for
+                    // it before the editor is raised.
+                    uiLanguage={uiLanguage as DISPLAYABLE_LOCALE_IDS}
                     onChange={(html) => {
                         chat.setInput(editorHtmlToMarkdown(html ?? ""));
                     }}

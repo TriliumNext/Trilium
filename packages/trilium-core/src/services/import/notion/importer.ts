@@ -20,6 +20,7 @@ import { type HTMLElement, parse } from "node-html-parser";
 import type BNote from "../../../becca/entities/bnote.js";
 import * as cls from "../../context.js";
 import imageService from "../../image.js";
+import { storeLinkPreviewPictures } from "../../image_download.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
 import { sanitizeHtml } from "../../sanitizer.js";
@@ -63,7 +64,25 @@ async function importNotion(taskContext: TaskContext<"importNotes">, source: Zip
     reconcileDateColumns(pages);
     taskContext.setTotalCount(pages.length);
 
-    return createNotes(importRootNote, pages, resources, taskContext, csvColumnsByFolder);
+    const rootNote = createNotes(importRootNote, pages, resources, taskContext, csvColumnsByFolder);
+
+    // A Notion export ships no bytes for a bookmark card's icon or cover — only the origin's
+    // address — so those have to be fetched if the cards are to show anything. Done here rather
+    // than inside createNotes, which is synchronous, and only once every page's content is final.
+    for (const { note } of createdNotes(rootNote)) {
+        await storeLinkPreviewPictures(note);
+    }
+
+    return rootNote;
+}
+
+/** Every note the import produced, the root included. */
+function* createdNotes(rootNote: BNote): Generator<{ note: BNote }> {
+    yield { note: rootNote };
+
+    for (const child of rootNote.getChildNotes()) {
+        yield* createdNotes(child);
+    }
 }
 
 /**

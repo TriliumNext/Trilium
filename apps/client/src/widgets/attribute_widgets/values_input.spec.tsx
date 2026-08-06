@@ -37,6 +37,21 @@ describe("ValuesInput", () => {
         });
     }
 
+    it("commits nothing while disabled, whatever reaches it", async () => {
+        // The box and the buttons are out of reach on the page, but a host may disable the field
+        // while something is typed into it, and leaving the box hands over what it holds.
+        const onCommit = vi.fn();
+        const input = await mount({ labelType: "text", values: [ "one" ], onCommit, disabled: true });
+
+        await typeInto(input, "two");
+        await press(input, "Enter");
+        await act(async () => { input?.dispatchEvent(new FocusEvent("blur", { bubbles: true })); });
+        await act(async () => container.querySelector<HTMLElement>(".tn-chip-remove")?.click());
+        await press(input, "Backspace");
+
+        expect(onCommit).not.toHaveBeenCalled();
+    });
+
     it("shows the values held as chips, and drops the one pressed", async () => {
         const onCommit = vi.fn();
         await mount({ labelType: "text", values: [ "one", "two" ], onCommit });

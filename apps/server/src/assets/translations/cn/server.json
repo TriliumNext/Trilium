@@ -486,5 +486,23 @@
   },
   "import": {
     "invalid_file_grant": "文件选择已过期或无效。请重新选择文件。"
+  },
+  "backup": {
+    "custom_directory_unwritable": "数据库备份失败：无法写入{{- location}}。将改为备份到默认位置。",
+    "passphrase_unavailable": "无法读取备份密码，因此此备份未加密。它已保存到默认位置，而非所选位置。"
+  },
+  "dialog": {
+    "select_directory": "选择文件夹"
+  },
+  "backup-password-dialog": {
+    "cancel": "取消",
+    "set-title": "设置备份密码？",
+    "set-message": "以后的备份将使用此密码加密。",
+    "set-detail": "Trilium 无法再次显示此密码，请将副本保存在安全的地方：没有它，备份将无法恢复。\n\n如果你并未预期看到此提示，请取消——可能是某个笔记或脚本发起了请求。",
+    "set-confirm": "设置密码",
+    "clear-title": "忘记备份密码？",
+    "clear-message": "备份将不再加密。",
+    "clear-detail": "已写入的备份保留其创建时所用的密码，仍可用该密码恢复。\n\n如果你并未预期看到此提示，请取消——可能是某个笔记或脚本发起了请求。",
+    "clear-confirm": "忘记密码"
   }
 }

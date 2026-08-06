@@ -8,12 +8,14 @@ body.mobile .promoted-attributes-widget {
     contain: none;
 }
 
+/* The cells lay out as a row here rather than in whichever theme happens to be loaded: as a table with
+   flex cells, each one took an anonymous row of its own and the attributes stacked one per line. */
 .promoted-attributes-container {
     margin: 0 1.5em;
     overflow: auto;
     max-height: 400px;
+    display: flex;
     flex-wrap: wrap;
-    display: table;
 }
 
 body.experimental-feature-new-layout .promoted-attributes-container {

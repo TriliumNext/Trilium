@@ -5,7 +5,7 @@
 # >= 2.38 (arm64), so the base image is trixie rather than bullseye (glibc 2.31).
 # Platforms without a prebuild (32-bit ARM) are served by Dockerfile.legacy,
 # which still compiles from source.
-FROM node:24.18.0-trixie-slim
+FROM node:24.18.1-trixie-slim
 
 # Install only runtime dependencies
 RUN apt-get update && \

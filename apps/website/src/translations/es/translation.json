@@ -12,16 +12,20 @@
         "get_started": "Comenzar",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Captura de pantalla de la aplicación de escritorio Trilium Notes"
+        "screenshot_alt": "Captura de pantalla de la aplicación de escritorio Trilium Notes",
+        "tagline_license": "Con licencia AGPL-3.0",
+        "tagline_no_account": "No necesitas una cuenta",
+        "tagline_cross_platform": "Funciona sin conexión a internet"
     },
     "organization_benefits": {
-        "title": "Organización",
+        "title": "Organiza tus notas, a tu manera",
         "note_structure_title": "Estructura de notas",
         "note_structure_description": "Las notas se pueden organizar de forma jerárquica. No necesitas carpetas, ya que cada nota puede contener subnotas. Una misma nota puede añadirse en varios lugares de la jerarquía.",
         "attributes_title": "Etiquetas de notas y relaciones",
         "attributes_description": "Puedes establecer relaciones entre notas o añadir etiquetas para categorizarlas más fácilmente. Los atributos promovidos te permiten ingresar información estructurada, que luego puedes usar en tablas o tableros.",
         "hoisting_title": "Espacios de trabajo y organización jerárquica",
-        "hoisting_description": "Se pueden separar fácilmente tus notas personales y de trabajo agrupándolas en un espacio de trabajo, lo que centra el árbol de notas en mostrar únicamente un conjunto específico de ellas."
+        "hoisting_description": "Se pueden separar fácilmente tus notas personales y de trabajo agrupándolas en un espacio de trabajo, lo que centra el árbol de notas en mostrar únicamente un conjunto específico de ellas.",
+        "screenshot_alt": "Árbol jerárquico de notas en Trilium"
     },
     "productivity_benefits": {
         "title": "Productividad y seguridad",
@@ -34,7 +38,15 @@
         "search_title": "Búsqueda potente",
         "search_content": "O busca texto dentro de las notas y acota la búsqueda filtrando por la nota principal o por nivel de profundidad.",
         "web_clipper_title": "Clipper web",
-        "web_clipper_content": "Captura páginas web (o capturas de pantalla) y agrégalas directamente a Trilium usando la extensión del \"Clipper web\" para el navegador."
+        "web_clipper_content": "Captura páginas web (o capturas de pantalla) y agrégalas directamente a Trilium usando la extensión del \"Clipper web\" para el navegador.",
+        "auth_title": "Inicio de sesión seguro",
+        "auth_content": "Protege el inicio de sesión de tu servidor con autenticación multifactor (TOTP) o inicia sesión mediante tu proveedor de identidad con OpenID Connect.",
+        "templates_title": "Plantillas",
+        "templates_content": "Define plantillas de notas reutilizables con una estructura, atributos y contenido predefinidos, y crea nuevas notas a partir de ellas con un solo clic.",
+        "share_title": "Comparte notas en la red",
+        "share_content": "Si tienes un servidor, publica cualquier subárbol de tus notas como un sitio web público de solo lectura que cualquiera puede explorar sin necesidad de una cuenta.",
+        "api_title": "REST API",
+        "api_content": "Lee, crea y actualiza tus notas mediante programación a través de HTTP con la API REST integrada de Trilium, ideal para automatizaciones e integraciones de terceros."
     },
     "note_types": {
         "text_title": "Notas tipo texto",
@@ -49,7 +61,17 @@
         "mermaid_description": "Crea diagramas de flujo, de clases, de secuencia, de Gantt y muchos más con la sintaxis de Mermaid.",
         "mindmap_title": "Mapa mental",
         "mindmap_description": "Organiza ideas visualmente o haz una sesión de lluvia de ideas.",
-        "title": "Múltiples formas de representar su información"
+        "title": "Múltiples formas de representar su información",
+        "subtitle": "No todo encaja perfectamente en un párrafo. Trilium ofrece una amplia variedad de tipos de notas, desde texto enriquecido y código hasta hojas de cálculo, diagramas y mapas mentales, para que puedas capturar cada idea en el formato que mejor se adapte a ella y combinarlos libremente en tu árbol de notas.",
+        "others_label": "Y más",
+        "notemap_title": "Mapa de notas",
+        "relationmap_title": "Mapa de relaciones",
+        "savedsearch_title": "Búsquedas guardadas",
+        "rendernote_title": "Nota de renderización",
+        "webview_title": "Vistas web",
+        "markdown_title": "Markdown",
+        "markdown_description": "¿Prefieres texto plano? Escribe tus notas directamente en Markdown, manteniéndolas portables y fáciles de versionar, mientras sigues viendo tablas, bloques de código y formato enriquecido en una vista previa en paralelo.",
+        "spreadsheet_title": "Hojas de cálculo"
     },
     "collections": {
         "calendar_title": "Calendario",
@@ -62,7 +84,8 @@
         "geomap_description": "Planifica vacaciones o marca puntos de interés en un mapa geográfico con marcadores personalizables. Visualiza rutas GPX registradas para seguir itinerarios.",
         "title": "Colecciones",
         "presentation_title": "Presentación",
-        "presentation_description": "Organiza la información en diapositivas y preséntalas en pantalla completa con transiciones fluidas. Las diapositivas también se pueden exportar a PDF para compartirlas fácilmente."
+        "presentation_description": "Organiza la información en diapositivas y preséntalas en pantalla completa con transiciones fluidas. Las diapositivas también se pueden exportar a PDF para compartirlas fácilmente.",
+        "dashboard_title": "Panel de control"
     },
     "faq": {
         "title": "Preguntas frecuentes",
@@ -147,7 +170,8 @@
         "download_flatpak": ".flatpak",
         "download_zip": "Versión portátil (.zip)",
         "download_nixpkgs": "nixpkgs",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ".AppImage"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS para Intel",
@@ -189,5 +213,16 @@
         "icon_packs_intro": "Ampliar la selección de iconos disponibles para sus notas utilizando un paquete de iconos. Para más información acerca de paquetes de icono, vea la <DocumentationLink>documentación oficial</DocumentationLink>.",
         "download": "Descargar",
         "website": "Sitio web"
+    },
+    "section_nav": {
+        "aria_label": "Ir a la sección",
+        "organization": "Organiza",
+        "productivity": "Características",
+        "note_types": "Tipos de nota",
+        "import": "Importar y exportar",
+        "collections": "Colecciones",
+        "scripting": "Scripting",
+        "ai_integration": "IA",
+        "faq": "FAQ"
     }
 }

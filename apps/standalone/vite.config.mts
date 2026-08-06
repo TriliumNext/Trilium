@@ -337,15 +337,22 @@ export default defineConfig(() => ({
                 'local-bridge': join(__dirname, 'src', 'local-bridge.ts'),
             },
             output: {
+                // Everything below `src/` carries a content hash so a deployment switches over
+                // atomically: `index.html` is served uncached and can only ever reference chunks
+                // from its own build. Without the hash, a browser holding a still-fresh copy of
+                // one chunk mixes it with newly fetched ones — and since the minifier reassigns
+                // single-letter export names every build, a cross-build import silently binds to
+                // the wrong value ("X is not a function") until the cache expires.
                 entryFileNames: (chunkInfo) => {
-                    // Service worker and other workers should be at root level
-                    if (chunkInfo.name === 'sw') {
-                        return '[name].js';
+                    // The service worker must keep a stable URL: `main.ts` registers it as
+                    // `./sw.js`, and a hash would orphan the previously registered worker.
+                    if (chunkInfo.name === "sw") {
+                        return "[name].js";
                     }
-                    return 'src/[name].js';
+                    return "src/[name]-[hash].js";
                 },
-                chunkFileNames: "src/[name].js",
-                assetFileNames: "src/[name].[ext]"
+                chunkFileNames: "src/[name]-[hash].js",
+                assetFileNames: "src/[name]-[hash].[ext]"
             }
         }
     },

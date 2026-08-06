@@ -1484,8 +1484,7 @@
     "download": "Íoslódáil",
     "title": "Cúltaca",
     "automatic_backups_title": "Cúltacaí uathoibríocha",
-    "automatic_backups_description": "Is féidir le Trilium cúltaca den bhunachar sonraí a dhéanamh go huathoibríoch. Moltar an cúltaca a choinneáil casta air, ach is féidir leis seo moill a chur ar thosú feidhmchlár le bunachair shonraí móra agus/nó gléasanna stórála mall.",
-    "backup_location_description": "Stóráiltear cúltacaí i {{- backupFolder}}."
+    "automatic_backups_description": "Is féidir le Trilium cúltaca den bhunachar sonraí a dhéanamh go huathoibríoch. Moltar an cúltaca a choinneáil casta air, ach is féidir leis seo moill a chur ar thosú feidhmchlár le bunachair shonraí móra agus/nó gléasanna stórála mall."
   },
   "etapi": {
     "description": "Is API REST é ETAPI a úsáidtear chun rochtain a fháil ar shampla Trilium go ríomhchláraitheach, gan chomhéadan úsáideora.",
@@ -1686,10 +1685,6 @@
     "close": "Dún"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Scriosfar an ceangaltán seo go huathoibríoch i gceann {{time}}",
-    "will_be_deleted_soon": "Scriosfar an ceangaltán seo go huathoibríoch go luath",
-    "deletion_reason": ", mar nach bhfuil an ceangaltán nasctha in ábhar an nóta. Chun scriosadh a chosc, cuir an nasc ceangaltáin ar ais san ábhar nó tiontaigh an ceangaltán ina nóta.",
-    "role_and_size": "Ról: {{role}}, méid: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Tagairt an cheangaltáin cóipeáilte chuig an ghearrthaisce.",
     "unrecognized_role": "Ról ceangail neamhaitheanta '{{role}}'."
   },
@@ -2078,7 +2073,6 @@
   },
   "geo-map": {
     "create-child-note-title": "Cruthaigh nóta nua do pháistí agus cuir leis an léarscáil é",
-    "create-child-note-text": "Cuir marcóir leis",
     "create-child-note-instruction": "Cliceáil ar an léarscáil chun nóta nua a chruthú ag an suíomh sin nó brúigh Escape chun é a dhíbhe.",
     "unable-to-load-map": "Ní féidir an léarscáil a luchtú.",
     "create-child-note-toast-title": "Nóta nua"
@@ -2666,8 +2660,6 @@
     "cancelFocus": "Cealaigh Mód Fócais",
     "moveUp": "Bog suas",
     "moveDown": "Bog síos",
-    "link": "Nasc",
-    "linkBidirectional": "Nasc Déthreoch",
     "clickTips": "Cliceáil ar an nód sprice le do thoil",
     "summary": "Achoimre"
   },

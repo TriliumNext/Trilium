@@ -389,7 +389,13 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         content = content.replace(/<html.*<body[^>]*>/gis, "");
         content = content.replace(/<\/body>.*<\/html>/gis, "");
 
-        content = content.replace(/src="([^"]*)"/g, (match, url) => {
+        // `data-image` and `data-favicon` are where a link preview (section.link-embed /
+        // span.link-mention) keeps its two pictures, which the export rewrites to attachment files
+        // alongside any <img src> — so they have to come back the same way. They are only ever an
+        // attachment of the note, and the render sinks accept nothing else (see
+        // `isLocalPreviewImageSrc`), so the note-image fallback below is deliberately not offered to
+        // them: an unresolvable reference stays as it is and the preview falls back to its placeholder.
+        content = content.replace(/(src|data-image|data-favicon)="([^"]*)"/g, (match, attrName, url) => {
             if (url.startsWith("data:image")) {
                 // inline images are parsed and saved into attachments in the note service
                 return match;
@@ -399,7 +405,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
                 url = decodeURIComponent(url).trim();
             } catch (e: any) {
                 getLog().error(`Cannot parse image URL '${url}', keeping original. Error: ${e.message}.`);
-                return `src="${url}"`;
+                return `${attrName}="${url}"`;
             }
 
             if (isUrlAbsolute(url)) {
@@ -409,11 +415,20 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             const target = getEntityIdFromRelativeUrl(url, filePath);
 
             if (target.attachmentId && !target.isRenderedNoteImage) {
-                return `src="api/attachments/${target.attachmentId}/image/${basename(url)}"`;
-            } else if (target.noteId) {
+                // The attachment's own title, encoded — not the archive's file name, which is prefixed
+                // with the owner note's title and so carries whatever spaces and punctuation that had.
+                // A space there is fatal rather than untidy: `isLocalPreviewImageSrc` guards the render
+                // sinks with an anchored pattern that admits no whitespace, so a preview whose owner
+                // was called "New note" imports with correct references that draw nothing. Every other
+                // producer of one of these URLs already encodes the title, the Markdown branch below
+                // included.
+                const title = encodeURIComponent(target.attachmentTitle || basename(url));
+
+                return `${attrName}="api/attachments/${target.attachmentId}/image/${title}"`;
+            } else if (target.noteId && attrName === "src") {
                 return `src="api/images/${target.noteId}/${basename(url)}"`;
             }
-            /* v8 ignore next -- unreachable: getEntityIdFromRelativeUrl always yields a noteId; kept so the callback returns a string on every path */
+
             return match;
 
         });
@@ -477,6 +492,10 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             content = processMarkdownCodeNoteContent(content, filePath);
         }
 
+        if (type === "mindMap" && typeof content === "string") {
+            content = processMindMapContent(content);
+        }
+
         if (type === "relationMap" && noteMeta && typeof content === "string") {
             const relationMapLinks = (noteMeta.attributes || []).filter((attr) => attr.type === "relation" && attr.name === "relationMapLink");
 
@@ -488,6 +507,18 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         }
 
         return content;
+    }
+
+    /**
+     * Points the pictures of a mind map's nodes at the attachments as they were recreated here.
+     *
+     * The map JSON carries each picture as the `api/attachments/...` URL it was served from in the
+     * instance the map came from, and every attachment is given a new id on the way in — so without
+     * this the pictures of an imported map point at attachments of the instance it left.
+     */
+    function processMindMapContent(content: string) {
+        return content.replace(/api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
+            (_match, attachmentId: string) => `api/attachments/${getNewAttachmentId(attachmentId)}/image`);
     }
 
     /**

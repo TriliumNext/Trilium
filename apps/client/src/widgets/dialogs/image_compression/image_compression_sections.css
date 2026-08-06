@@ -1,0 +1,91 @@
+/* One row per setting: title on the leading edge, its control on the trailing one, so a stack of
+   them reads as a column of labels and a column of controls whichever card they were dropped into. */
+.image-compression-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    /* Takes the slack, so every control sits at the trailing edge whatever the title — and never
+       gives any back: an unwrapped title is what widens the dialog holding it. */
+    .image-compression-section-title {
+        flex: 1 0 auto;
+        white-space: nowrap;
+    }
+
+    /* A described row: the title and its sentence stack, and the pair takes the slack the title
+       alone would have taken. Unlike the title it may shrink, since a sentence wraps where a label
+       does not — and it needs to, or a long description would push the control off the row. */
+    .image-compression-section-label {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+
+        .image-compression-section-title {
+            white-space: normal;
+        }
+    }
+
+    .image-compression-section-description {
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+    }
+
+    /* Where the slider currently is, which the slider itself cannot say. Fixed-width digits so the
+       row holds still as the value is dragged through. */
+    .image-compression-section-value {
+        flex: 0 0 auto;
+        color: var(--muted-text-color);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    /* Wide enough for a four-digit bound and its unit, and no wider: the pair sizes itself to its
+       content otherwise, which would let the unit's translation move the field. */
+    .tn-number-unit-pair {
+        flex: 0 0 auto;
+        width: 11em;
+    }
+
+    /* Right-aligned so the digits end where the toggles below them do. */
+    .image-compression-section-number {
+        text-align: right;
+    }
+
+    .slider {
+        flex: 0 0 auto;
+        width: 140px;
+    }
+
+    /* The switch brings its own label slot, unused here — the row's own title names the setting. */
+    .switch-widget {
+        flex: 0 0 auto;
+    }
+
+    /* Never wraps: the choices are read across, and a button folding onto a second line would
+       break the row into two heights. A long translation widens the dialog instead. */
+    .image-compression-section-choice {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        /* Smaller than the label it answers: three of these across a row read as a control, where at
+           full size they compete with the title for it. */
+        font-size: 0.85em;
+    }
+}
+
+/* Indented by the card itself; quieting the title is what marks it as qualifying the row above
+   rather than standing beside it. */
+.image-compression-section-nested .image-compression-section-title {
+    color: var(--muted-text-color);
+}
+
+/* Prose rather than a row of controls, so none of the row layout applies to it. A fit-content
+   dialog takes its width from the longest unbroken line in it, and this sentence would otherwise
+   be that line; containment says the part that is true — this row's width does not depend on what
+   is written in it — so the dialog is sized by the rows that should size it. */
+.image-compression-notice {
+    contain: inline-size;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+}

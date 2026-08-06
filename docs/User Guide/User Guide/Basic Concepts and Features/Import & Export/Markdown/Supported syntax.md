@@ -55,3 +55,20 @@ This feature is import-only, which means that it will turn wikilinks into Triliu
 > 
 > *   If there is a single directory within the archive at root level, then that directory is considered the root.
 > *   If there are multiple files & directories at root level, then the archive root (containing all of these items) is considered the root.
+
+## Highlights
+
+Background highlights are supported in two ways:
+
+*   The Markdown `==` extension which is supported by other Markdown-based applications such as Obsidian:
+    
+    ```
+    ==highlighted==
+    ```
+*   The canonical HTML representation of highlights, as supported by Trilium:
+    
+    ```html
+    <span style="background-color:hsl(0,0%,100%);">Highlighted</span>
+    ```
+
+When the yellow highlight is used, import/export prefers the `==` syntax whereas the canonical HTML reprepresentation is used otherwise.

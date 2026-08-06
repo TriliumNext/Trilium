@@ -34,19 +34,21 @@
     flex-shrink: 0;
 }
 
-.link-embed-mention-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-menu);
-    flex-shrink: 0;
+/* A site draws its icon for one background, usually its own, and ours is not always that one:
+   GitHub's octocat is black on nothing and vanishes on the dark theme, while a mark drawn white for
+   a dark header vanishes on the light one. The classes are put on by the favicon_contrast script,
+   which measures each icon's own pixels; the theme decides when to act on them.
+   Rotating the hue a half turn before inverting is what keeps this from being vandalism: invert(1)
+   alone also sends every hue to its opposite, so a navy mark would come back pale yellow. Mirrors
+   the app-side rule in LinkEmbed.css, where the same markup faces the same problem. */
+html.theme-dark .link-embed-favicon-dark,
+html.theme-light .link-embed-favicon-light {
+    filter: hue-rotate(180deg) invert(1);
 }
 
 /* Sits the favicon before the link text and spaces it off the title. Scoped to the mention so
    it doesn't disturb the same favicon reused in the card's flex URL row. */
-.link-embed-mention > .link-embed-mention-favicon,
-.link-embed-mention > .link-embed-mention-dot {
+.link-embed-mention > .link-embed-mention-favicon {
     vertical-align: -0.2em;
     margin-right: 4px;
 }
@@ -228,10 +230,5 @@
     & .link-embed-mention-favicon {
         width: 14px;
         height: 14px;
-    }
-
-    & .link-embed-mention-dot {
-        width: 6px;
-        height: 6px;
     }
 }

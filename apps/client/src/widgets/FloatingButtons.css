@@ -88,12 +88,6 @@
 }
 /* #endregion */
 
-/* #region Geo map buttons */
-.leaflet-pane {
-    z-index: 50;
-}
-/* #endregion */
-
 /* #region Close floating buttons */
 .close-floating-buttons {
     margin-inline-start: 5px !important;

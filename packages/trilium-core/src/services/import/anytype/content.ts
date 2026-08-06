@@ -441,10 +441,10 @@ function paletteValue(covering: AppliedMark[], type: string, palette: Record<str
  * open-graph-preview markup the Notion importer produces and CKEditor's LinkEmbed plugin round-trips. The
  * card's `url`, `title` and `description` map to `data-url` / `data-title` / `data-description`. The
  * favicon/preview are content-addressed file CIDs (`faviconHash`/`imageHash`), emitted as-is in
- * `data-favicon` / `data-image` as placeholders — the importer resolves each to an inline base64 `data:` URI
- * (the form Trilium natively stores a link-embed favicon/image in), or drops the attribute when the export
- * has no bytes for it. Optional fields are only written when present. A card with no url (still fetching, or
- * a broken export) is dropped.
+ * `data-favicon` / `data-image` as placeholders — the importer saves each as an attachment of the note and
+ * rewrites the attribute to point at it (the form Trilium stores a link-embed's pictures in), or drops the
+ * attribute when the export has no usable bytes for it. Optional fields are only written when present. A
+ * card with no url (still fetching, or a broken export) is dropped.
  */
 export function renderBookmark(bookmark: NonNullable<AnytypeBlock["bookmark"]>): string {
     const url = (bookmark.url ?? "").trim();

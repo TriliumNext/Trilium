@@ -6,7 +6,7 @@
 # See the comment in Dockerfile: better-sqlite3 v13 ships N-API prebuilds — the
 # linuxmusl-* ones here — so there is no native compile step and no builder
 # stage. They link libstdc++, which node:*-alpine already provides at runtime.
-FROM node:24.18.0-alpine3.23
+FROM node:24.18.1-alpine3.23
 # Install runtime dependencies
 RUN apk add --no-cache su-exec shadow
 

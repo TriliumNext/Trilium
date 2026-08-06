@@ -329,8 +329,6 @@ function bootstrapRoute(): BootstrapDefinition {
         ...commonItems,
         csrfToken: "dummy-csrf-token",
         baseApiUrl: "../api/",
-        headingStyle: "plain",
-        layoutOrientation: "vertical",
         platform: "web",
     };
 }

@@ -1,0 +1,54 @@
+/*
+ * The form itself, which both shells hold (see GhostPopover.tsx): the name, what the drag decided,
+ * and the way to make the event of it. Named for each shell rather than nested under the popover
+ * alone — the sheet is a dialog of the app's, not a card of the calendar's, so a rule written for
+ * the one reaches the other only by saying so.
+ */
+.calendar-ghost-popover,
+.calendar-ghost-sheet {
+    .calendar-ghost-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .calendar-ghost-when {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+    }
+
+    .calendar-ghost-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
+/*
+ * The card standing beside the dragged range, which brings its own heading, its own way out and the
+ * room around what it holds — all of which a dialog brings for the sheet.
+ */
+.calendar-ghost-popover {
+    width: 300px;
+
+    .calendar-ghost-header {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 9px;
+        border-bottom: 1px solid var(--main-border-color);
+    }
+
+    .calendar-ghost-heading {
+        flex: 1;
+        min-width: 0;
+        padding: 6px 0;
+        font-weight: 600;
+    }
+
+    .calendar-ghost-body {
+        padding: 10px;
+    }
+}

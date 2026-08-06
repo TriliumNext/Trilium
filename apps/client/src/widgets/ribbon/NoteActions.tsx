@@ -21,6 +21,7 @@ import ws from "../../services/ws";
 import ClosePaneButton from "../buttons/close_pane_button";
 import CreatePaneButton from "../buttons/create_pane_button";
 import MovePaneButton from "../buttons/move_pane_button";
+import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
@@ -193,6 +194,11 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                     <CommandItem command="showNoteSource" icon="bx bx-code" disabled={!hasSource} text={t("note_actions.note_source")} />
                     {(note.type === "text" || note.isMarkdown()) && isContentAvailable && !isInOptionsOrHelp &&
                         <ConvertNoteFormat note={note} />}
+                    {/* Always the note-level dialog, an image note included: it has children of its
+                        own, and reaching them is what makes this "images" and not "image". */}
+                    <CommandItem icon="bx bx-collapse-alt" text={t("compress-images")}
+                        disabled={isInOptionsOrHelp}
+                        command={() => void showImageCompressionDialog({ type: "note", noteId: note.noteId })} />
                     <CommandItem command="showNoteOCRText" icon="bx bx-text" disabled={!["image", "file"].includes(noteType)} text={t("note_actions.view_ocr_text")} />
                     {(syncServerHost && isElectron) &&
                         <CommandItem command="openNoteOnServer" icon="bx bx-world" disabled={!syncServerHost} text={t("note_actions.open_note_on_server")} />

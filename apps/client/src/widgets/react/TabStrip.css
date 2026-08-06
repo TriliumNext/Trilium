@@ -1,0 +1,58 @@
+/*
+ * The strip centres its group on the row rather than running it up against the start. `safe`
+ * centring gives way to the start of the row rather than pushing the first tab out of reach, for a
+ * host too narrow to hold the whole group.
+ */
+.tab-strip {
+    display: flex;
+    align-items: center;
+    justify-content: safe center;
+    flex-shrink: 0;
+    /* More tabs than the host is wide for is possible at the smallest widths; they scroll rather
+       than wrap, which would break the fixed height of the header row they sit in. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    /*
+     * The group is the theme's (recessed track, raised active segment); only its size is the strip's
+     * own business, the theme building it for a toolbar, where it stands taller than a header row.
+     * The button selector out-specifies the theme's own sizing of the segments, which is a tie
+     * without it.
+     */
+    div.btn-group {
+        flex-shrink: 0;
+        /* As wide as its tabs, whatever a host makes of the button groups among its own fields:
+           the strip is centred on the row, which a group stretched across it cannot be. */
+        width: auto;
+        gap: 2px;
+        padding: 2px;
+
+        button.tab-strip-tab {
+            --icon-button-size: 26px;
+            /* Kept well inside the segment: the theme's own ratio is meant for a segment half again
+               as tall, where the same glyph has room to breathe. */
+            --icon-button-icon-ratio: 0.62;
+
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+    }
+
+    .tab-strip-tab-icon {
+        /* Sized by the same formula the theme sizes an icon button's glyph by. It is spelled out
+           here because that rule reaches the glyph through `::before`, and this one is a span of its
+           own — which is what the strip needs to keep the segment and its icon separately sized. */
+        font-size: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+        /* The glyph is what is being centred: themes centre icons with `text-align`, which leaves it
+           on the text baseline of its span rather than in the middle of the segment. */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+}

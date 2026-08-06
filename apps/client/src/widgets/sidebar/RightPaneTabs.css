@@ -1,55 +1,13 @@
 /*
  * The tab strip is also the pane's header row: the pin/close actions are absolutely positioned over its
  * end (see RightPanelContainer.css), and as much room again is kept free at the start, so the group is
- * centred in the pane rather than in what is left of the row. `safe` centring gives way to the start of
- * the row rather than pushing the first tab out of reach, for a pane too narrow to hold the group.
+ * centred in the pane rather than in what is left of the row.
+ *
+ * Everything the strip itself is — the centring, the group, the size of a tab — is shared with the other
+ * strips (see TabStrip.css); what is left here is the row it is given to head.
  */
 .right-pane-tabs {
-    display: flex;
-    align-items: center;
-    justify-content: safe center;
-    flex-shrink: 0;
     height: var(--right-pane-header-height);
     padding-inline: 50px;
     border-bottom: 1px solid var(--main-border-color);
-    /* More tabs than the pane is wide for is possible at the smallest widths; they scroll rather than
-       wrap, which would break the fixed header height. */
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-        display: none;
-    }
-
-    /*
-     * The group is the theme's (recessed track, raised active segment); only its size is this pane's own
-     * business, the theme building it for a toolbar, where it stands taller than a header row. The
-     * button selector out-specifies the theme's own sizing of the segments, which is a tie without it.
-     */
-    div.btn-group {
-        flex-shrink: 0;
-        gap: 2px;
-        padding: 2px;
-
-        button.right-pane-tab {
-            --icon-button-size: 26px;
-            /* Kept well inside the segment: the theme's own ratio is meant for a segment half again as
-               tall, where the same glyph has room to breathe. */
-            --icon-button-icon-ratio: 0.62;
-        }
-    }
-
-    .right-pane-tab-icon {
-        /* Sized by the same formula the theme sizes an icon button's glyph by. It is spelled out here
-           because that rule reaches the glyph through `::before`, and this one is a span of its own —
-           which is what the strip needs to keep the segment and its icon separately sized. */
-        font-size: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
-        /* The glyph is what is being centred: themes centre icons with `text-align`, which leaves it on
-           the text baseline of its span rather than in the middle of the segment. */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-    }
 }

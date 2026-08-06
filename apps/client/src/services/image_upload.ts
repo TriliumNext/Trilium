@@ -1,3 +1,5 @@
+import { imageExtensionForMime } from "@triliumnext/commons";
+
 import server from "./server.js";
 
 /**
@@ -8,6 +10,9 @@ import server from "./server.js";
  *
  * Format-agnostic: used by any rich note type that needs to offload inline base64 images to
  * attachments (e.g. the spreadsheet drawing layer).
+ *
+ * Always the user's own image. The pictures the app fetches on their behalf — a link preview's
+ * favicon and cover — are downloaded and stored server-side, and never travel through here.
  */
 export async function uploadImageAttachment(noteId: string, dataUrl: string): Promise<string | null> {
     const file = dataUrlToImageFile(dataUrl);
@@ -22,7 +27,10 @@ export async function uploadImageAttachment(noteId: string, dataUrl: string): Pr
     }
 }
 
-/** Decodes a `data:<mime>;base64,<data>` URL into a {@link File} suitable for upload. */
+/**
+ * Decodes a `data:<mime>;base64,<data>` URL into a {@link File} suitable for upload, named
+ * `image.<ext>` — the extension coming from the data URL's own media type.
+ */
 export function dataUrlToImageFile(dataUrl: string): File | null {
     const parsed = parseImageDataUrl(dataUrl);
     if (!parsed) return null;
@@ -53,7 +61,6 @@ export function parseImageDataUrl(dataUrl: string): ParsedImageDataUrl | null {
 
     const mime = match[1];
     const base64 = match[2];
-    const subtype = mime.split("/")[1] ?? "png";
-    const ext = subtype === "svg+xml" ? "svg" : (subtype.replace(/[^a-z0-9]/gi, "") || "png");
-    return { mime, base64, ext };
+
+    return { mime, base64, ext: imageExtensionForMime(mime) };
 }

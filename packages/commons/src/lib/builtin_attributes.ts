@@ -292,8 +292,12 @@ const BUILTIN_ATTRIBUTES = [
         "link", "tree"
     ] },
     { type: "label", name: "map:style", valueType: "text", hasUserValue: true },
+    // Says of a style Trilium knows nothing about that it is a dark one, which only the style itself
+    // can tell. The styles offered in the collection properties declare it for themselves.
+    { type: "label", name: "map:darkStyle", valueType: "boolean", hasUserValue: true },
     { type: "label", name: "map:scale", valueType: "boolean", hasUserValue: true },
     { type: "label", name: "map:hideLabels", valueType: "boolean", hasUserValue: true },
+    { type: "label", name: "map:cluster", valueType: "boolean", hasUserValue: true },
     // Reveal.js' own stock themes, which is what the presentation bundles; anything else falls back
     // to `white`.
     { type: "label", name: "presentation:theme", valueType: "select", hasUserValue: true, selectOptions: [

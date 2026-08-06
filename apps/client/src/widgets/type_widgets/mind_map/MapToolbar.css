@@ -1,0 +1,62 @@
+/*
+ * The direction bar is dressed as every bar standing over a canvas is (see OverlayToolbar.css),
+ * which is the dress the node panel wears too (see NodePanel.css). The view controls at the foot
+ * are the image viewer's control group instead (see the overlay buttons in theme-next/forms.css),
+ * as the geo map's are. Left here is only what is the mind map's own — where each stands, and the
+ * marks a direction is chosen by. How much room they leave the panel is settled between them in
+ * MindMap.css.
+ */
+
+/* What is done with the view stands at the foot of the map, out of the way of its root. The control
+   group brings no place of its own the way the shared bar does, so it is pinned here. */
+.mind-map-container .mind-map-view-toolbar {
+    position: absolute;
+    bottom: var(--mind-map-inset-bottom);
+    inset-inline-end: var(--mind-map-inset);
+}
+
+/* The way the map is laid out stands in the corner opposite, where Mind Elixir kept it. */
+.mind-map-container .mind-map-direction-toolbar {
+    top: var(--mind-map-inset-top);
+    inset-inline-start: var(--mind-map-inset);
+}
+
+/*
+ * The three marks a direction is chosen by, which are Mind Elixir's own (MIT, © 2019 DjZhou): each
+ * draws the very layout it sets, and Trilium's icon set has nothing that says it. They are drawn as
+ * a mask filled with the button's own color rather than as pictures, so that they take the color a
+ * boxicon would — including the one a pressed or hovered button lends its icon.
+ *
+ * Sized in `em` against the font size the theme gives an icon button's mark, so that the three sit
+ * at the size the four beside them do and follow that setting wherever it is changed.
+ */
+.mind-map-container .mind-map-direction-icon::before {
+    content: "";
+    width: 1em;
+    height: 1em;
+    background-color: currentColor;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+/* Each mark names its own file rather than handing one to a shared rule through a custom property:
+   a relative `url()` in a variable is resolved from wherever the variable is *used*, which the CSS
+   compiler refuses to guess at. */
+.mind-map-container .mind-map-direction-left::before {
+    -webkit-mask-image: url("./direction-left.svg");
+    mask-image: url("./direction-left.svg");
+}
+
+.mind-map-container .mind-map-direction-right::before {
+    -webkit-mask-image: url("./direction-right.svg");
+    mask-image: url("./direction-right.svg");
+}
+
+.mind-map-container .mind-map-direction-side::before {
+    -webkit-mask-image: url("./direction-side.svg");
+    mask-image: url("./direction-side.svg");
+}

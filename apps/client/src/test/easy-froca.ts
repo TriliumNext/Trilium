@@ -15,6 +15,7 @@ interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
     id?: string | undefined;
     title: string;
     type?: NoteType;
+    mime?: string;
     children?: NoteDefinition[];
     content?: string;
 }
@@ -49,7 +50,7 @@ export function buildNote(noteDef: NoteDefinition) {
         noteId: noteDef.id ?? utils.randomString(12),
         title: noteDef.title,
         type: noteDef.type ?? "text",
-        mime: "text/html",
+        mime: noteDef.mime ?? "text/html",
         isProtected: false,
         blobId: ""
     });

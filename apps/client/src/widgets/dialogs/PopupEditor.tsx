@@ -13,13 +13,10 @@ import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
 import FloatingButtons from "../FloatingButtons";
 import { DESKTOP_FLOATING_BUTTONS, POPUP_HIDDEN_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
-import NoteBadges from "../layout/NoteBadges";
-import NoteIcon from "../note_icon";
-import NoteTitleWidget from "../note_title";
+import TitleRow from "../layout/TitleRow";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
 import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
-import Icon from "../react/Icon";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import ReadOnlyNoteInfoBar from "../ReadOnlyNoteInfoBar";
@@ -163,49 +160,6 @@ export function DialogWrapper({ children }: { children: ComponentChildren }) {
     return (
         <div ref={wrapperRef} class={`quick-edit-dialog-wrapper ${note?.getColorClass() ?? ""}`}>
             {children}
-        </div>
-    );
-}
-
-export function TitleRow() {
-    const { viewScope } = useNoteContext();
-
-    if (viewScope?.attachmentId) {
-        return <AttachmentTitleRow attachmentId={viewScope.attachmentId} />;
-    }
-
-    return (
-        <div className="title-row">
-            <NoteIcon />
-            <NoteTitleWidget />
-            {isNewLayout && <NoteBadges />}
-        </div>
-    );
-}
-
-/**
- * The header shown when the popup displays an attachment instead of a note. Attachments are not
- * editable in place, so the title is plain read-only text, prefixed to make clear that what is
- * displayed is an attachment of the note and not the note itself.
- */
-function AttachmentTitleRow({ attachmentId }: { attachmentId: string }) {
-    const [ title, setTitle ] = useState<string>();
-
-    function refresh() {
-        froca.getAttachment(attachmentId).then(attachment => setTitle(attachment?.title));
-    }
-
-    useEffect(refresh, [ attachmentId ]);
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (loadResults.getAttachmentRows().some(row => row.attachmentId === attachmentId)) {
-            refresh();
-        }
-    });
-
-    return (
-        <div className="title-row attachment-title-row">
-            <Icon icon="bx bx-paperclip" />
-            <span className="attachment-title">{t("popup-editor.attachment_title", { title })}</span>
         </div>
     );
 }

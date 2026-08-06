@@ -42,7 +42,8 @@ type TaskDataDefinitions = {
         shrinkImages?: boolean;
         safeImport?: boolean;
     } | null,
-    importAttachments: null
+    importAttachments: null,
+    compressImages: null
 }
 
 type TaskResultDefinitions = {
@@ -59,6 +60,7 @@ type TaskResultDefinitions = {
         parentNoteId?: string;
         importedNoteId?: string
     };
+    compressImages: null;
 }
 
 export type TaskType = keyof TaskDataDefinitions | keyof TaskResultDefinitions;
@@ -163,4 +165,20 @@ export type WebSocketMessage = AllTaskDefinitions | {
     lastSyncedPush: number;
 } | {
     type: "consistency-checks-failed"
+} | {
+    /**
+     * An error that escaped every other handler and reached the process-level safety net — typically a
+     * throw from deferred background work (a timer, a floating promise), which has no request to fail.
+     * The backend keeps running; this only tells the user that something went wrong, since the failure
+     * would otherwise be invisible outside the log.
+     */
+    type: "unhandled-error";
+    /** The error message, shown directly in the notification. */
+    message: string;
+    /**
+     * The stack trace, kept behind a "view more details" step rather than shown up front: it is what
+     * makes a bug report actionable, and nothing the user is expected to read. Absent when the thrown
+     * value carried no stack.
+     */
+    stack?: string;
 }

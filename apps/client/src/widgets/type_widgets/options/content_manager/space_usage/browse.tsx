@@ -9,12 +9,12 @@ import { t } from "../../../../../services/i18n";
 import { formatSize } from "../../../../../services/utils";
 import ActionButton from "../../../../react/ActionButton";
 import type { DonutRing } from "../../../../react/charts/DonutChart";
+import { useFetch } from "../../../../react/use_fetch";
 import { type ContentChangedHandler, openSpaceUsageContextMenu } from "./context_menu";
 import { buildChildrenSegments, type UsageSegmentData } from "./donut_segments";
 import { deletedEntitiesLabel } from "./labels";
 import NoteUsageDonut, { segmentTooltip } from "./note_usage_donut";
 import SpaceUsagePlaceholder from "./placeholder";
-import { useSpaceUsageFetch } from "./use_space_usage_fetch";
 
 const CHILDREN_RING_RADIUS = 180;
 const CHILDREN_RING_THICKNESS = 46;
@@ -46,7 +46,7 @@ export default function Browse({
     path, onPathChange, refreshToken, onContentChanged, onLoadingChange
 }: BrowseProps) {
     const noteId = path[path.length - 1];
-    const { data: usage, failed, loading } = useSpaceUsageFetch<SpaceUsageNoteResponse>(
+    const { data: usage, failed, loading } = useFetch<SpaceUsageNoteResponse>(
         `space-usage/note/${noteId}`, refreshToken);
 
     useEffect(() => onLoadingChange(loading), [ loading, onLoadingChange ]);

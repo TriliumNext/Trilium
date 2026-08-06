@@ -178,6 +178,33 @@ describe("validateOpenPath", () => {
         expect(validateOpenPath(dataDir, dataDir, tmpDir)).toBe(path.resolve(dataDir));
     });
 
+    describe("backup directory root", () => {
+        let backupDir: string;
+
+        beforeAll(() => {
+            backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-open-path-backup-"));
+            fs.writeFileSync(path.join(backupDir, "backup-daily.db"), "");
+        });
+
+        afterAll(() => fs.rmSync(backupDir, { recursive: true, force: true }));
+
+        it("accepts a backup directory outside the data directory, and what it holds", () => {
+            expect(validateOpenPath(backupDir, dataDir, tmpDir, backupDir)).toBe(path.resolve(backupDir));
+            expect(validateOpenPath(path.join(backupDir, "backup-daily.db"), dataDir, tmpDir, backupDir))
+                .toBe(path.resolve(backupDir, "backup-daily.db"));
+        });
+
+        it("rejects that same directory when it is not the configured one", () => {
+            expect(() => validateOpenPath(backupDir, dataDir, tmpDir)).toThrow(/outside data dir/);
+            expect(() => validateOpenPath(backupDir, dataDir, tmpDir, null)).toThrow(/outside data dir/);
+        });
+
+        it("does not widen the sandbox beyond the backup directory", () => {
+            const outside = path.join(backupDir, "..", "elsewhere.txt");
+            expect(() => validateOpenPath(outside, dataDir, tmpDir, backupDir)).toThrow(/outside data dir/);
+        });
+    });
+
     it("accepts files under the data directory", () => {
         expect(validateOpenPath(dataFile, dataDir, tmpDir)).toBe(path.resolve(dataFile));
     });

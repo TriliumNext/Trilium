@@ -15,8 +15,8 @@ const mocks = vi.hoisted(() => ({
     reportBrowseLoading: undefined as ((loading: boolean) => void) | undefined
 }));
 
-vi.mock("./use_space_usage_fetch", () => ({
-    useSpaceUsageFetch: (_url: string, refreshToken: number) => {
+vi.mock("../../../../react/use_fetch", () => ({
+    useFetch: (_url: string, refreshToken: number) => {
         mocks.overviewToken = refreshToken;
         return { data: mocks.overview, failed: mocks.failed, loading: mocks.loading };
     }

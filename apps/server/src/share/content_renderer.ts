@@ -1,4 +1,4 @@
-import { extractYouTubeVideoId, safeLinkPreviewHref } from "@triliumnext/commons";
+import { extractYouTubeVideoId, isHttpUrl, safeLinkPreviewHref, safeLinkPreviewImageSrc } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { type BAttachment, type BBranch, becca, BNote, getLog, icon_packs as iconPackService, options, sanitize, task_states, utils } from "@triliumnext/core";
@@ -355,11 +355,35 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     };
     const document = parse(result.content || "", parseOpts);
 
-    // The site's favicon, or a neutral dot when it has none — shown by both the inline mention and
-    // the card's URL line, from the one `data-favicon` the element already carries.
-    const renderFavicon = (favicon: string | undefined) => (favicon
-        ? `<img class="link-embed-mention-favicon" src="${escapeHtml(favicon)}" width="16" height="16">`
-        : `<span class="link-embed-mention-dot"></span>`);
+    // One of a preview's pictures, or what stands in for it. Every picture on a shared page makes
+    // the same decision, so it is made once: safeLinkPreviewImageSrc() keeps the placeholder for
+    // anything but an inline image or an attachment of this instance, because an <img> fires on
+    // load — a remote URL here would have every visitor to the shared page announce itself to a
+    // third party without so much as a click.
+    const renderPicture = (
+        src: string | undefined | null,
+        { className, placeholder, size }: { className: string; placeholder: string; size?: number }
+    ) => {
+        const safeSrc = safeLinkPreviewImageSrc(src);
+
+        if (!safeSrc) {
+            return placeholder;
+        }
+
+        const sizeAttrs = size ? ` width="${size}" height="${size}"` : "";
+
+        return `<img class="${className}" src="${escapeHtml(safeSrc)}" alt="" loading="lazy"${sizeAttrs}>`;
+    };
+
+    // The site's favicon — shown by both the inline mention and the card's URL line, from the one
+    // `data-favicon` the element already carries. A site whose icon could not be had shows nothing
+    // in its place: unlike a card's missing cover there is no hole to fill, and anything stood there
+    // instead was read as a mark of its own rather than as an absent icon.
+    const renderFavicon = (favicon: string | undefined | null) => renderPicture(favicon, {
+        className: "link-embed-mention-favicon",
+        size: 16,
+        placeholder: ""
+    });
 
     // Process link mentions (inline) — metadata is stored in data attributes.
     for (const mentionEl of document.querySelectorAll("span.link-mention")) {
@@ -387,10 +411,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
                 // loads YouTube's player once a visitor asks for it, so simply reading the page does
                 // not hand every visitor's IP to Google. The swap is done by the share theme's
                 // video_facade script, which reads data-video-id.
-                const image = embedEl.getAttribute("data-image");
-                const thumbnailHtml = image
-                    ? `<img class="link-embed-video-thumbnail" src="${escapeHtml(image)}" alt="" loading="lazy">`
-                    : "";
+                // No placeholder: the play button carries the facade on its own.
+                const thumbnailHtml = renderPicture(embedEl.getAttribute("data-image"), {
+                    className: "link-embed-video-thumbnail",
+                    placeholder: ""
+                });
                 embedEl.innerHTML = `<div class="link-embed-video">`
                     + `<button type="button" class="link-embed-video-facade" data-video-id="${escapeHtml(videoId)}" aria-label="Play video" title="Play video">`
                     + thumbnailHtml
@@ -400,12 +425,16 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         } else {
             const title = embedEl.getAttribute("data-title") || safeHostnameForShare(url);
             const description = embedEl.getAttribute("data-description");
-            const image = embedEl.getAttribute("data-image");
             const siteName = embedEl.getAttribute("data-site-name") || safeHostnameForShare(url);
 
-            const imageHtml = image
-                ? `<div class="link-embed-card-image-wrapper"><img class="link-embed-card-image" src="${escapeHtml(image)}" alt="" loading="lazy"></div>`
-                : `<div class="link-embed-card-image-wrapper"><div class="link-embed-card-image-placeholder">&#128279;</div></div>`;
+            // The wrapper is there either way: it is what gives the card's left column its size, so
+            // a card without a picture keeps the same shape as one with it.
+            const imageHtml = `<div class="link-embed-card-image-wrapper">`
+                + renderPicture(embedEl.getAttribute("data-image"), {
+                    className: "link-embed-card-image",
+                    placeholder: `<div class="link-embed-card-image-placeholder">&#128279;</div>`
+                })
+                + `</div>`;
             const descHtml = description ? `<div class="link-embed-card-description">${escapeHtml(description)}</div>` : "";
             const urlHtml = `<div class="link-embed-card-url">`
                 + renderFavicon(embedEl.getAttribute("data-favicon"))
@@ -681,13 +710,35 @@ function renderSpreadsheet(result: Result) {
     }
 }
 
+/**
+ * Renders a web view note as the frame that embeds its source.
+ *
+ * Only an absolute http(s) URL is framed, which is the source a web view is documented to take and
+ * the only one its setup form will write. Any other value reaches the label by another route — a
+ * hand-edited attribute, an import, ETAPI, a sync — and is either not framable at all or points at
+ * this very server, which `allow-same-origin` would then not isolate from the page framing it.
+ *
+ * The frame is built as an element rather than assembled as a string: `setAttribute()` escapes the
+ * value it is handed, so the source is placed as a value and can only ever be read back as one.
+ */
 function renderWebView(note: SNote | BNote, result: Result) {
     const url = note.getLabelValue("webViewSrc");
     if (!url) return;
 
-    result.content = `<iframe class="webview" src="${sanitize.sanitizeUrl(url)}" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>`;
-}
+    if (!isHttpUrl(url)) {
+        getLog().error(`Web view of shared note '${note.noteId}' not rendered: '${url}' is not an absolute http(s) URL.`);
+        return;
+    }
 
+    const frame = new HTMLElement("iframe", { class: "webview" });
+    frame.setAttribute("src", sanitize.sanitizeUrl(url));
+    // The embedded page keeps its own origin, may run scripts and may open windows. Keeping the
+    // origin is what lets the pages a web view is normally pointed at use their cookies and
+    // storage, but it also means a page served from this very origin is not isolated from the page
+    // embedding it; only dropping allow-same-origin would isolate it.
+    frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups");
+    result.content = frame.toString();
+}
 
 
 function safeHostnameForShare(url: string): string {

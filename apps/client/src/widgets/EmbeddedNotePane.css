@@ -1,0 +1,117 @@
+/*
+ * The body of a pane holding an embedded note (see EmbeddedNotePane.tsx): the note's own widgets,
+ * laid out for a third of the width they are written for. The class goes on the element that holds
+ * them — the geo pane's body, the calendar dock's body — which brings the column they stand in;
+ * whatever else that element is (its padding, whether it scrolls) stays with its own class.
+ */
+.tn-embedded-note-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    /*
+     * The note fills the rest of the pane rather than ending where its content does, so that
+     * clicking below a short note still puts the caret in it — as it does in a note of its own.
+     */
+    .note-detail {
+        flex: 1;
+        /* Written for a note split, where the split hands it one; there is no split here, and an
+           unset `--max-content-width` would leave `max-width` invalid rather than absent. */
+        max-width: none;
+        /* A floor rather than the 0 a flex item needs to scroll its own content: the fields above
+           it are as many as the note asks for, and without one they would squeeze the note out of
+           the pane instead of the body scrolling. Above the floor a long note still scrolls within
+           itself. */
+        min-height: 120px;
+    }
+
+    /*
+     * The note's promoted fields. A field reads across one line — its name, then what it holds —
+     * and stays that way here; what changes is the row they stand in. Across a note they stand side
+     * by side, each as wide as what it holds; in the pane there is room for one, so they come down
+     * the column instead, each taking the whole width.
+     */
+    .promoted-attributes-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin: 0;
+        /* The body of the pane is the one thing that scrolls; a scroller inside it would take the
+           wheel off whichever of the two the pointer happened to be over. */
+        max-height: none;
+        overflow: visible;
+    }
+
+    .promoted-attribute-cell {
+        margin: 0;
+
+        /* The field takes whatever its name leaves, rather than the width of what it holds: a card
+           standing alone on its line has that room whether it needs it or not. */
+        > .input-group,
+        > .promoted-attribute-values {
+            flex: 1;
+            min-width: 0;
+            margin-inline-start: 8px;
+        }
+
+        /* Both are given a width in ems, which is a card's own width where cards stand side by
+           side. Marked as the theme marks them, there being no other way past it. */
+        input[type="text"],
+        input[type="number"] {
+            width: auto !important;
+        }
+
+        /* A name longer than the pane is cut short rather than pushing the field it names off the
+           end. */
+        > label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tn-field {
+            min-width: 0;
+            padding: 0;
+        }
+    }
+
+    /* The widget stands whether the note promotes anything or not, and an empty one would still
+       take its share of the gap between what stands above and below it. */
+    .promoted-attributes-widget:not(:has(.promoted-attribute-cell)) {
+        display: none;
+    }
+
+    /* The row of actions at the head of the pane (see EmbeddedNoteActions). */
+    .tn-embedded-note-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        /* Those that write rather than read stand apart from the ones being reached for repeatedly,
+           so the pointer cannot land on one of them by being a moment early. The gap falls before
+           the first of them, which is the colour: they are drawn together or not at all, a
+           read-only host having none of them. */
+        .tn-embedded-note-color {
+            margin-inline-start: auto;
+        }
+    }
+}
+
+:root .tn-embedded-note-pane .tn-embedded-note-remove.icon-action {
+    color: var(--dropdown-item-icon-destructive-color);
+}
+
+/*
+ * The maximize button (see MaximizeToQuickEditAction), dressed as the X it stands beside: the
+ * compact round surface the theme reserves for close crosses (`.icon-action.bx-x` in
+ * theme-next/forms.css), minus the red close hover. The icon keeps the stock ratio rather than the
+ * X's 0.8 — the expand glyph fills its em box where the X's does not, so the stock size is what
+ * stands at the X's visual weight. Stated from `:root` and with the icon's own class doubled on,
+ * so as to outweigh the theme's blanket `border-radius` whichever way the stylesheets are ordered
+ * (the bargain the attribute list's delete button strikes; see AttributeList.css).
+ */
+:root .icon-action.bx-expand-alt.tn-embedded-note-maximize {
+    --icon-button-size: 24px;
+
+    border-radius: 50%;
+}

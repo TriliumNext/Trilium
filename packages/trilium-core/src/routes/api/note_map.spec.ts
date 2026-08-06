@@ -455,6 +455,40 @@ describe("Note map service (branch coverage)", () => {
         ]);
         expect(toolCallOnly).toEqual({ noteId: "chatTool", relationName: "internalLink" });
     });
+
+    function mapBacklink(sourceId: string, nodeData: unknown) {
+        const target = buildNote({ id: `${sourceId}_t`, title: "Map target" });
+        buildNote({
+            id: sourceId,
+            title: "Map",
+            type: "mindMap",
+            "~internalLink": target.noteId,
+            content: JSON.stringify({ nodeData })
+        });
+        const res = note_map.getBacklinks(req(target.noteId));
+        return res.find((b) => b.noteId === sourceId) as any;
+    }
+
+    // As for chats, the excerpt HTML is covered by services/backlink_excerpts.spec.ts; these pin
+    // how getBacklinks routes a map.
+    it("mindMap backlinks: the node the link sits on is quoted instead of the relation name", () => {
+        const backlink = mapBacklink("mapNode", {
+            topic: "Root",
+            children: [ { topic: "The node", hyperLink: "#root/mapNode_t" } ]
+        });
+
+        expect(backlink.relationName).toBeUndefined();
+        expect(backlink.excerpts).toEqual([
+            `<div class="ck-content backlink-excerpt">Root › <a class="backlink-link" href="#root/mapNode_t">The node</a></div>`
+        ]);
+    });
+
+    it("mindMap backlinks: a map with no node to quote falls back to the relation name", () => {
+        // The relation says the two are linked, but nothing in the map does — a map whose link was
+        // taken off a node between the scan and the asking.
+        const noNode = mapBacklink("mapGone", { topic: "Root", children: [] });
+        expect(noNode).toEqual({ noteId: "mapGone", relationName: "internalLink" });
+    });
 });
 
 let api: CoreApiTester;

@@ -404,6 +404,7 @@ function OrientationIllustration({ orientation }: { orientation: "vertical" | "h
 
 function Fonts() {
     const [ overrideThemeFonts, setOverrideThemeFonts ] = useTriliumOptionBool("overrideThemeFonts");
+    const [ ligaturesEnabled, setLigaturesEnabled ] = useTriliumOptionBool("monospaceLigaturesEnabled");
     const isEnabled = overrideThemeFonts === true;
 
     return (
@@ -420,6 +421,19 @@ function Fonts() {
             <Font label={t("fonts.note_tree_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="treeFontFamily" fontSizeOption="treeFontSize" disabled={!isEnabled} />
             <Font label={t("fonts.note_detail_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="detailFontFamily" fontSizeOption="detailFontSize" disabled={!isEnabled} />
             <Font label={t("fonts.monospace_font")} description={t("fonts.monospace_font_description")} fontFamilyOption="monospaceFontFamily" fontSizeOption="monospaceFontSize" disabled={!isEnabled} isMonospace />
+
+            {/*
+              * Deliberately not gated behind `overrideThemeFonts` like the rows above: the ligatures
+              * come from the *theme's* monospace font, so the setting is needed exactly when custom
+              * fonts are off. Gating it would put it out of reach of everyone affected.
+              */}
+            <OptionsRowWithToggle
+                name="monospace-ligatures-enabled"
+                label={t("fonts.monospace_ligatures")}
+                description={t("fonts.monospace_ligatures_description")}
+                currentValue={ligaturesEnabled}
+                onChange={setLigaturesEnabled}
+            />
         </OptionsSection>
     );
 }

@@ -139,6 +139,11 @@ export interface TriliumConfig {
          * 'client_secret_post'. Leave empty to auto-detect from the issuer.
          */
         oauthClientAuthMethod: string;
+        /**
+         * The JWS algorithm the provider signs ID tokens with (e.g. 'RS256', 'EdDSA', 'ES256').
+         * Leave empty to auto-detect from the issuer's discovery document.
+         */
+        oauthIdTokenSigningAlg: string;
     };
     /** Logging configuration */
     Logging: {
@@ -495,6 +500,13 @@ const configMapping = {
             aliasEnvVars: ['TRILIUM_OAUTH_CLIENT_AUTH_METHOD'],
             iniGetter: () => getIniSection("MultiFactorAuthentication")?.oauthClientAuthMethod,
             defaultValue: ''
+        },
+        oauthIdTokenSigningAlg: {
+            standardEnvVar: 'TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG',
+            // alternative format
+            aliasEnvVars: ['TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG'],
+            iniGetter: () => getIniSection("MultiFactorAuthentication")?.oauthIdTokenSigningAlg,
+            defaultValue: ''
         }
     },
     Logging: {
@@ -579,7 +591,8 @@ const config: TriliumConfig = {
         oauthIssuerBaseUrl: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerBaseUrl),
         oauthIssuerName: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerName),
         oauthIssuerIcon: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerIcon),
-        oauthClientAuthMethod: getConfigValue(configMapping.MultiFactorAuthentication.oauthClientAuthMethod)
+        oauthClientAuthMethod: getConfigValue(configMapping.MultiFactorAuthentication.oauthClientAuthMethod),
+        oauthIdTokenSigningAlg: getConfigValue(configMapping.MultiFactorAuthentication.oauthIdTokenSigningAlg)
     },
     Logging: {
         retentionDays: getConfigValue(configMapping.Logging.retentionDays)

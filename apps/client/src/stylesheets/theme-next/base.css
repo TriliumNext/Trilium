@@ -72,6 +72,8 @@
     --overlay-button-color: var(--opaque-icon-button-color);
     --overlay-button-icon-size: 16px;
     --overlay-button-text-size: 14px;
+    /* How far a group of overlay buttons stands off the corner of the content it floats over. */
+    --overlay-button-inset: 10px;
 
     --menu-padding-size: 8px;
     --menu-item-icon-vert-offset: -2px;
@@ -557,11 +559,6 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
  * TOASTS
  */
 
- #toast-container {
-    /* The vertical gap between toasts */
-    gap: 10px;
-}
-
 #toast-container .toast {
     --bs-toast-padding-x: 12px;
     --bs-border-radius: 8px;
@@ -570,8 +567,6 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     --modal-control-button-background: var(--toast-close-button-background);
     --modal-control-button-color: var(--bs-toast-color);
 
-    display: flex;
-    flex-direction: column;
     backdrop-filter: blur(6px);
 }
 

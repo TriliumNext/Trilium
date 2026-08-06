@@ -1,0 +1,41 @@
+/*
+ * The memo is the whole of its tab rather than a field within one, so it wears none of a field's
+ * chrome: no frame, no fill and no focus ring of its own. The panel is the surface and the memo is
+ * simply what is written on it — a frame here would only draw a box inside a box.
+ *
+ * The `!important`s override CKEditor's own styling of an inline editable, which lands at the same
+ * specificity as this rule from a stylesheet whose load order against this one is not settled.
+ */
+.mind-map-node-panel .mind-map-node-memo {
+    overflow: auto;
+    /* The room the fields of the other tab are given (see NodePanel.css), so that what is read in
+       either tab stands the same distance from the edge of the panel. It is the memo's own padding
+       rather than the tab's, so that the memo fills the tab edge to edge and what is written scrolls
+       within it — a scrollbar riding the panel's edge rather than an inset frame's. */
+    padding: 15px !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent;
+    color: inherit;
+
+    /* CKEditor adds `.ck-content` to the very element it took over, which is this one. */
+    &.ck-content {
+        outline: none;
+
+        /* What is written begins and ends at the padding rather than a blank line inside it: the
+           memo is the pane, and a pane does not indent itself from its own edge. */
+        > :first-child {
+            margin-top: 0;
+        }
+
+        > :last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    /* Dimmed as every other hint CKEditor writes into an empty editor is (see style.css). */
+    .ck-placeholder::before {
+        opacity: .5;
+    }
+}

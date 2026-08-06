@@ -1,11 +1,26 @@
+import "./media.css";
+
+import type { ImageJpegHandling, ImagePngHandling } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { isElectron } from "../../../services/utils";
-import { FormTextBoxWithUnit } from "../../react/FormTextBox";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import {
+    AUTOMATIC_IMAGE_COMPRESSION_DEFAULTS,
+    type ImageCompressionToolOptions,
+    readImageCompressionOptions
+} from "../../dialogs/image_compression/image_compression_options";
+import {
+    type ImageCompressionSectionProps,
+    JpegHandlingSection,
+    PngHandlingSection,
+    ResizeImageSection
+} from "../../dialogs/image_compression/image_compression_sections";
+import { Card, CardSection } from "../../react/Card";
+import FormToggle from "../../react/FormToggle";
+import { useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../../react/hooks";
 import Slider from "../../react/Slider";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
@@ -17,6 +32,7 @@ export default function MediaSettings() {
         <>
             <OptionsPageHeader />
             <ImageSettings />
+            <ImageCompressionSettings />
             <OcrSettings />
         </>
     );
@@ -24,9 +40,6 @@ export default function MediaSettings() {
 
 function ImageSettings() {
     const [ downloadImagesAutomatically, setDownloadImagesAutomatically ] = useTriliumOptionBool("downloadImagesAutomatically");
-    const [ compressImages, setCompressImages ] = useTriliumOptionBool("compressImages");
-    const [ imageMaxWidthHeight, setImageMaxWidthHeight ] = useTriliumOption("imageMaxWidthHeight");
-    const [ imageJpegQuality, setImageJpegQuality ] = useTriliumOption("imageJpegQuality");
 
     return (
         <OptionsSection title={t("images.images_section_title")}>
@@ -37,33 +50,103 @@ function ImageSettings() {
                 currentValue={downloadImagesAutomatically}
                 onChange={setDownloadImagesAutomatically}
             />
-
-            <OptionsRowWithToggle
-                name="image-compression-enabled"
-                label={t("images.enable_image_compression")}
-                description={t("images.enable_image_compression_description")}
-                currentValue={compressImages}
-                onChange={setCompressImages}
-            />
-
-            <OptionsRow name="image-max-width-height" label={t("images.max_image_dimensions")} description={t("images.max_image_dimensions_description")}>
-                <FormTextBoxWithUnit
-                    type="number" min="1"
-                    disabled={!compressImages}
-                    unit={t("images.max_image_dimensions_unit")}
-                    currentValue={imageMaxWidthHeight} onChange={setImageMaxWidthHeight}
-                />
-            </OptionsRow>
-
-            <OptionsRow name="image-jpeg-quality" label={`${t("images.jpeg_quality")} (${imageJpegQuality ?? 75}%)`} description={t("images.jpeg_quality_description")}>
-                <Slider
-                    min={10} max={100} step={5}
-                    value={parseInt(imageJpegQuality ?? "75", 10)}
-                    onChange={(v) => setImageJpegQuality(String(v))}
-                />
-            </OptionsRow>
         </OptionsSection>
     );
+}
+
+/**
+ * What happens to an image on its way in, configured with the same rows the compression tool is
+ * built from — because behind them it is now the same compression. The one thing said here that the
+ * tool never has to say is *when* any of it happens: on upload, on paste, on import.
+ *
+ * A real card rather than the options page's own section: these rows nest, a choice bringing its
+ * quality out from under it, and nesting is what a card section does. The descriptions are the ones
+ * the settings carried before they were rows — a settings page is read by someone deciding, where a
+ * dialog is read by someone who has already decided, so here the prose is on the page rather than
+ * behind the help marks the dialogs use.
+ */
+function ImageCompressionSettings() {
+    const [ compressImages, setCompressImages ] = useTriliumOptionBool("compressImages");
+    const [ options, update ] = useAutomaticCompressionOptions();
+    const sectionProps: ImageCompressionSectionProps = {
+        options,
+        onChange: update,
+        disabled: !compressImages,
+        descriptions: {
+            resize: t("images.max_image_dimensions_description"),
+            quality: t("images.jpeg_quality_description"),
+            conversionQuality: t("images.jpeg_quality_description")
+        }
+    };
+
+    return (
+        <div className="options-section media-image-compression">
+            <Card heading={t("images.enable_image_compression")}>
+                <CardSection
+                    className="image-compression-section"
+                    subSectionsVisible={compressImages}
+                    subSections={[
+                        <ResizeImageSection key="resize" {...sectionProps} />,
+                        <JpegHandlingSection key="jpeg" {...sectionProps} />,
+                        <PngHandlingSection key="png" {...sectionProps} />
+                    ]}
+                >
+                    <span className="image-compression-section-label">
+                        {/* Not the tool's own "Compress images": that is something the user does to
+                            images already stored, where this is a standing instruction about every
+                            image still to arrive. Saying which is which is the whole of the label. */}
+                        <span className="image-compression-section-title">
+                            {t("images.automatic_image_compression")}
+                        </span>
+                        <small className="image-compression-section-description">
+                            {t("images.enable_image_compression_description")}
+                        </small>
+                    </span>
+                    <FormToggle currentValue={compressImages} onChange={setCompressImages} />
+                </CardSection>
+            </Card>
+        </div>
+    );
+}
+
+/**
+ * The image options, read and written as one set of compression settings.
+ *
+ * Each is its own synced option rather than a blob, as they always were — an install that has only
+ * ever had a bound and a quality keeps them, and a client too old to know the rest still reads the
+ * two it does. The adapter is what lets the tool's rows drive them: those rows speak in whole
+ * settings objects, and this turns a patch of one back into the writes it stands for.
+ */
+function useAutomaticCompressionOptions(): [ ImageCompressionToolOptions, (patch: Partial<ImageCompressionToolOptions>) => void ] {
+    const [ maxWidthHeight, setMaxWidthHeight ] = useTriliumOptionInt("imageMaxWidthHeight");
+    const [ quality, setQuality ] = useTriliumOptionInt("imageJpegQuality");
+    const [ conversionQuality, setConversionQuality ] = useTriliumOptionInt("imageConversionQuality");
+    const [ resize, setResize ] = useTriliumOptionBool("imageResize");
+    const [ jpegHandling, setJpegHandling ] = useTriliumOption("imageJpegHandling");
+    const [ pngHandling, setPngHandling ] = useTriliumOption("imagePngHandling");
+
+    const options = readImageCompressionOptions({
+        resize,
+        maxWidthHeight,
+        quality,
+        conversionQuality,
+        jpegHandling: jpegHandling as ImageJpegHandling,
+        pngHandling: pngHandling as ImagePngHandling,
+        // Automatic compression reaches every image that arrives; there is no subtree to choose,
+        // and no row here offers one. Held only because the rows share one settings type.
+        processChildNotes: false
+    }, AUTOMATIC_IMAGE_COMPRESSION_DEFAULTS);
+
+    // Each write is left to settle on its own: a row changes one setting, the option is saved, and
+    // nothing here waits on the round trip — the control already shows the new value.
+    return [ options, (patch) => {
+        if (patch.resize !== undefined) void setResize(patch.resize);
+        if (patch.maxWidthHeight !== undefined) void setMaxWidthHeight(patch.maxWidthHeight);
+        if (patch.quality !== undefined) void setQuality(patch.quality);
+        if (patch.conversionQuality !== undefined) void setConversionQuality(patch.conversionQuality);
+        if (patch.jpegHandling !== undefined) void setJpegHandling(patch.jpegHandling);
+        if (patch.pngHandling !== undefined) void setPngHandling(patch.pngHandling);
+    } ];
 }
 
 function OcrSettings() {

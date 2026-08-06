@@ -1,4 +1,4 @@
-import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { isImageAttachmentRole, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { search as searchService, SearchContext, utils } from "@triliumnext/core";
 import type { NextFunction, Request, Response, Router } from "express";
 import safeCompare from "safe-compare";
@@ -350,7 +350,7 @@ function register(router: Router) {
             return;
         }
 
-        if (attachment.role === "image") {
+        if (isImageAttachmentRole(attachment.role)) {
             addNoIndexHeader(attachment.note, res);
             if (attachment.mime === "image/svg+xml") {
                 // SVG attachments require sanitization to prevent stored XSS

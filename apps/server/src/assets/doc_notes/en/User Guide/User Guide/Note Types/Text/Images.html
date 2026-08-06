@@ -1,25 +1,48 @@
 <p>Trilium supports storing and displaying images. Supported formats are
-  JPEG, PNG and GIF.</p>
+  PNG, JPEG, GIF, BMP, WebP, AVIF and SVG.</p>
 <p>An image can be uploaded in the form of note's <a href="#root/_help_0vhv7lsOLy82">attachment</a> or
   as a standalone <a href="#root/_help_kBrnXNG3Hplm">note</a> placed into the <a href="#root/_help_kBrnXNG3Hplm">note tree</a>.
   Its reference can be copied into a text note, in order to display it in
   the text itself.</p>
 <h2>Uploading images</h2>
-<p>To add an image to the note, simply drag it from file explorer onto the
-  note editor inside Trilium and the image will be uploaded.</p>
-<p>
-  <img src="8_Images_image.png">
+<p>To add an image to the note:</p>
+<ul>
+  <li>Simply drag it from file explorer onto the note editor inside Trilium
+    and the image will be uploaded.</li>
+  <li>Alternatively, from the&nbsp;<a class="reference-link" href="#root/_help_nRhnJkTT8cPs">Formatting toolbar</a>&nbsp;look
+    for the <em>Insert image</em> icon.</li>
+  <li>You can also copy and paste an image from web (see section below).</li>
+</ul>
+<h2>Clipboard &amp; automatic download of images</h2>
+<p>Trilium has a special handling for images copied to and pasted from the
+  clipboard.</p>
+<ul>
+  <li>
+    <p>For a mix of text and images, the images are downloaded automatically
+      by the server (or desktop app, depending on what is being used).</p>
+    <ul>
+      <li>This means that the image must be publicly accessible and reachable from
+        wherever Trilium is running. Inaccessible images will end up as broken
+        images.</li>
+    </ul>
+  </li>
+  <li>
+    <p>If a single image is pasted into Trilium, it will prefer the image that
+      comes in the clipboard. This makes it possible to copy images that Trilium
+      would not otherwise be able to reach, such as Google Chat, Slack, etc.</p>
+  </li>
+  <li>
+    <p>When a text with images is copied from Trilium and pasted in another app
+      (such as Microsoft Word or LibreOffice Writer), the images will be preserved.</p>
+  </li>
+</ul>
+<p>The automatic download of images is enabled by default and can be toggled
+  from&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Media</em> → <em>Download images automatically.</em>
 </p>
-<p>Alternatively you can click on block toolbar and then on "Insert image":</p>
-<p>
-  <img src="6_Images_image.png">
-</p>
-<p>You can also copy and paste an image from web - the image will be (asynchronously)
-  downloaded and embedded.</p>
 <h2>Configuring the images</h2>
 <p>Clicking on an image will reveal a popup with multiple options:
   <br>
-  <img src="9_Images_image.png">
+  <img src="7_Images_image.png">
 </p>
 <h3>Alignment</h3>
 <p>The first set of options configure the alignment are, in order:</p>
@@ -49,7 +72,7 @@ class="table">
       </tr>
       <tr>
         <td>
-          <img src="10_Images_image.png">
+          <img src="8_Images_image.png">
         </td>
         <td>Centered image</td>
         <td>
@@ -64,7 +87,7 @@ class="table">
         </td>
         <td>Wrap text</td>
         <td>
-          <img src="7_Images_image.png">
+          <img src="6_Images_image.png">
         </td>
         <td>The image will be displayed to the left or the right of the text.</td>
       </tr>
@@ -88,7 +111,7 @@ class="table">
     it attempts to compress and resize (with pretty aggressive settings) uploaded
     images before storing them to the database. You may then notice some quality
     degradation. Basic quality settings is available in&nbsp;<a class="reference-link"
-    href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ Other.</p>
+    href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Media</em>.</p>
   <p>If you want to save images in their original resolution, it is recommended
     to save them as attachment to note (look for the contextual menu in&nbsp;
     <a

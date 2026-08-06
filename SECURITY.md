@@ -54,6 +54,13 @@ Trilium is a personal knowledge base where users have full control over their ow
 
 Vulnerabilities that require a user to inject malicious content into their own notes and then view it themselves are not considered security issues.
 
+#### Published (Shared) Note Content
+A shared note is published by its owner, and the share view renders it as it was authored, raw HTML included. Script running on a page you publish is not an escalation of anything: Trilium supports it deliberately, through the `~shareJs` relation, which loads a JavaScript note of your choosing into the share page, and through `~shareTemplate` for the page around it.
+
+Reports that reduce to "a note's own HTML or JavaScript executes for visitors to the page publishing it" are therefore out of scope, however the content was written (editor, ETAPI, sync). Content arriving through the importers and the web clipper is sanitized on write, independently of this.
+
+What crosses out of the published page remains **in scope**: disclosing notes that were never shared, bypassing `#shareCredentials` or `#shareHiddenFromTree`, or reaching the authenticated session of someone who merely visited. So does a defect in how the share renderer itself builds markup, such as a value escaping the attribute it was placed in; we fix those as correctness bugs even where the value was the publisher's own.
+
 #### Electron Architecture
 The desktop application follows the Electron security checklist: `nodeIntegration` is disabled, `contextIsolation` is enabled, and the renderer can only reach the main process through a whitelisted `contextBridge` API (`window.electronApi`). Embedded web content (Web View notes) is isolated in a dedicated session partition with deny-by-default permission handlers, `<webview>` attach requests are vetted in the main process, and window-open/navigation requests are checked against a scheme allowlist. Electron fuses additionally prevent external abuse.
 

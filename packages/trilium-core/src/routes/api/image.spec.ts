@@ -215,11 +215,23 @@ describe("Image API (core)", () => {
             expect(res.status).toBe(404);
         });
 
-        it("400s when the attachment role is not image", async () => {
+        it("400s when the attachment role is not a picture", async () => {
             const attachmentId = await createAttachment({ role: "file", mime: "text/plain", content: "hi" });
             const res = await api.get<string>(`/api/attachments/${attachmentId}/image/file.png`);
             expect(res.status).toBe(400);
             expect(res.headers["Content-Type"]).toBe("text/plain");
+        });
+
+        it("serves every picture role, not just the user's own images", async () => {
+            // A link preview's favicon and cover are pictures under their own roles; a route that
+            // knew only "image" would answer 400 and leave every preview showing a placeholder.
+            for (const role of [ "favicon", "coverImage" ]) {
+                const attachmentId = await createAttachment({ role, mime: "image/png", content: PNG_BYTES });
+                const res = await api.get(`/api/attachments/${attachmentId}/image/file.png`);
+
+                expect(res.status, role).toBe(200);
+                expect(Buffer.from(res.body as Buffer), role).toEqual(PNG_BYTES);
+            }
         });
 
         it("serves a real raster attachment image", async () => {

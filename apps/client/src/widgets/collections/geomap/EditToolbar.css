@@ -1,0 +1,30 @@
+/*
+ * The editing group stands in the middle of the map's foot — the one stretch of edge left free,
+ * the corners being spoken for (see EditToolbar.tsx). Centered by stretching across the foot and
+ * letting the margins share what the group does not take, which holds in either script direction.
+ *
+ * Held off the edge by the shared inset, and dressed with the rest of the map's furniture: the
+ * palette handoff every group over this map wears is settled once in index.css.
+ *
+ * Above the canvas whatever order the two end up in, clearing MapLibre's own control corners at 2
+ * (see MapToolbar.css).
+ */
+.geo-map-container .geo-edit-toolbar {
+    position: absolute;
+    bottom: var(--geo-map-inset);
+    inset-inline: 0;
+    margin-inline: auto;
+    width: fit-content;
+    z-index: 3;
+}
+
+/* The + speaks in words as well as the glyph, so it is given the room a sentence needs and a seam
+   between the two — the glyph at the size its icon-button neighbours are drawn at. */
+.geo-map-container .geo-edit-toolbar .geo-add-marker-button {
+    gap: 6px;
+    padding-inline: 12px;
+}
+
+.geo-map-container .geo-edit-toolbar .geo-add-marker-button .bx {
+    font-size: var(--overlay-button-icon-size);
+}

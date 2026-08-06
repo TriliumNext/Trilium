@@ -36,6 +36,24 @@ function findAnchorIds(content: string): string[] {
 export interface AddLinkOpts {
     text: string;
     hasSelection: boolean;
+    /**
+     * Pick what the link points at and nothing else.
+     *
+     * For a caller that carries no text of its own to dress — a mind map node reads as its own
+     * topic — there is no title to write and no reference-or-hyperlink to choose between, and the
+     * anchor within a note is left out too: what it appends is a link only a rich text can follow.
+     * `linkTitle` is handed over all the same, so a caller minding it need not be told twice.
+     */
+    targetOnly?: boolean;
+    /**
+     * The link the dialog opens on, in the shape a pick comes back in.
+     *
+     * A caller changing a link that is already there says what it points at, and the field opens
+     * filled with it: changing a link is then the same gesture as making one, and a dialog left as
+     * it was applies what was already pointed at rather than refusing for want of a pick. The
+     * dialog says it is editing rather than adding, too.
+     */
+    currentLink?: Suggestion;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
 }
 
@@ -61,6 +79,11 @@ export default function AddLinkDialog() {
         } else {
             setLinkType("reference-link");
         }
+
+        // Taken as though it had just been picked, so that a dialog opened on a link and left alone
+        // has one to apply — and so that everything a pick settles (the title, the anchors a note
+        // offers, whether it is a link outside Trilium at all) is settled for it as well.
+        setSuggestion(opts?.currentLink ?? null);
     }, [ opts ]);
 
     async function setDefaultLinkTitle(noteId: string) {
@@ -125,12 +148,28 @@ export default function AddLinkDialog() {
         }
     }, [selectedBookmark, noteTitle]);
 
-    function onShown() {
+    async function onShown() {
         const $autocompleteEl = refToJQuerySelector(autocompleteRef);
-        if (!opts?.text) {
+        const currentNotePath = opts?.currentLink?.notePath;
+        const currentNoteId = currentNotePath && tree.getNoteIdFromUrl(currentNotePath);
+
+        // A link already there fills the field the way text handed to the dialog does: a note by the
+        // name it goes by, an address as it stands. Through the autocomplete rather than around it —
+        // a value the field is given behind its back is one it does not know it holds, so nothing is
+        // searched for it and it is wiped the moment the field is left.
+        const text = (currentNoteId ? await tree.getNoteTitle(currentNoteId) : opts?.currentLink?.externalLink)
+            || opts?.text;
+
+        if (!text) {
             note_autocomplete.showRecentNotes($autocompleteEl);
         } else {
-            note_autocomplete.setText($autocompleteEl, opts.text);
+            note_autocomplete.setText($autocompleteEl, text);
+
+            // What `setText` fills the field with is something being typed, which has nothing picked
+            // behind it; the note the dialog opens on is picked already.
+            if (currentNotePath) {
+                $autocompleteEl.setSelectedNotePath(currentNotePath);
+            }
         }
 
         // to be able to quickly remove entered text
@@ -157,9 +196,9 @@ export default function AddLinkDialog() {
             className="add-link-dialog"
             size="lg"
             maxWidth={1000}
-            title={t("add_link.add_link")}
+            title={opts?.currentLink ? t("add_link.edit_link") : t("add_link.add_link")}
             helpPageId="QEAPj01N5f7w"
-            footer={<Button text={t("add_link.button_add_link")} keyboardShortcut="Enter" />}
+            footer={<Button text={opts?.currentLink ? t("add_link.button_edit_link") : t("add_link.button_add_link")} keyboardShortcut="Enter" />}
             onSubmit={onSubmit}
             onShown={onShown}
             onHidden={() => {
@@ -198,7 +237,7 @@ export default function AddLinkDialog() {
                 />
             </FormGroup>
 
-            {bookmarks.length > 0 && (
+            {bookmarks.length > 0 && !opts?.targetOnly && (
                 <FormGroup label={t("add_link.anchor")} name="anchor">
                     <select
                         className="form-select"
@@ -213,7 +252,7 @@ export default function AddLinkDialog() {
                 </FormGroup>
             )}
 
-            {!opts?.hasSelection && (
+            {!opts?.hasSelection && !opts?.targetOnly && (
                 <div className="add-link-title-settings">
                     {(linkType !== "external-link") && (
                         <>

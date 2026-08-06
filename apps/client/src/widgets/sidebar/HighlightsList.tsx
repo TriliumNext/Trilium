@@ -5,22 +5,20 @@ import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
 import { FormListToggleableItem } from "../react/FormList";
-import { useActiveNoteContext, useContentElement, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor, useTriliumOptionJson } from "../react/hooks";
+import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor, useTriliumOptionJson } from "../react/hooks";
 import RawHtml from "../react/RawHtml";
 import { HIGHLIGHT_FORMATS, HighlightFormat } from "../type_widgets/options/highlights_list_options";
+import { extractHighlightsFromStaticHtml, htmlForRun, type DomHighlight, type RawHighlight } from "./highlights_extract";
 import RightPanelWidget from "./RightPanelWidget";
 import SidebarHelp from "./SidebarHelp";
 
-interface RawHighlight {
-    id: string;
-    text: string;
-    attrs: {
-        bold: boolean;
-        italic: boolean;
-        underline: boolean;
-        color: string | undefined;
-        background: string | undefined;
-    }
+/**
+ * Highlights published by a type widget that renders its own content, rather than one the
+ * sidebar can read out of the editor or the DOM itself (see the Markdown note type).
+ */
+export interface HighlightContext {
+    highlights: RawHighlight[];
+    scrollToHighlight(highlight: RawHighlight): void;
 }
 
 export default function HighlightsList() {
@@ -32,8 +30,19 @@ export default function HighlightsList() {
         <>
             {noteType === "text" && isReadOnly && <ReadOnlyTextHighlightsList />}
             {noteType === "text" && !isReadOnly && <EditableTextHighlightsList />}
+            {note?.isMarkdown() && <ContextDataHighlightsList />}
         </>
     );
+}
+
+/** Reads what the note's own widget published, so the source stays the widget's business. */
+function ContextDataHighlightsList() {
+    const data = useGetContextData("highlights");
+
+    return <AbstractHighlightsList
+        highlights={data?.highlights ?? []}
+        scrollToHighlight={data?.scrollToHighlight ?? (() => {})}
+    />;
 }
 
 function AbstractHighlightsList<T extends RawHighlight>({ highlights, scrollToHighlight }: {
@@ -240,15 +249,14 @@ function extractHighlightsFromTextEditor(editor: CKTextEditor) {
         };
 
         if (Object.values(attrs).some(Boolean)) {
-            // Get HTML content from DOM (includes nested elements like math)
+            // Take the run's markup from the DOM, so nested content survives into the list.
             let html = item.data;
             try {
                 const modelPos = editor.model.createPositionAt(item.textNode, "before");
                 const viewPos = editor.editing.mapper.toViewPosition(modelPos);
                 const domPos = editor.editing.view.domConverter.viewPositionToDom(viewPos);
                 if (domPos?.parent instanceof HTMLElement) {
-                    // Get the formatting span's innerHTML (includes math elements)
-                    html = domPos.parent.innerHTML;
+                    html = htmlForRun(domPos.parent, item.data);
                 }
             } catch {
                 // During change:data events, the view may not be fully synchronized with the model.
@@ -270,10 +278,6 @@ function extractHighlightsFromTextEditor(editor: CKTextEditor) {
 //#endregion
 
 //#region Read-only text
-interface DomHighlight extends RawHighlight {
-    element: HTMLElement;
-}
-
 function ReadOnlyTextHighlightsList() {
     const { noteContext } = useActiveNoteContext();
     const contentEl = useContentElement(noteContext);
@@ -289,68 +293,4 @@ function ReadOnlyTextHighlightsList() {
     />;
 }
 
-export function extractHighlightsFromStaticHtml(el: HTMLElement | null) {
-    if (!el) return [];
-
-    const highlights: DomHighlight[] = [];
-    const processedElements = new Set<Element>();
-
-    // Find all elements with inline background-color or color styles
-    const styledElements = el.querySelectorAll<HTMLElement>('[style*="background-color"], [style*="color"]');
-
-    for (const styledEl of styledElements) {
-        if (processedElements.has(styledEl)) continue;
-        if (!styledEl.textContent?.trim()) continue;
-
-        const attrs: RawHighlight["attrs"] = {
-            bold: !!styledEl.closest("strong"),
-            italic: !!styledEl.closest("em"),
-            underline: !!styledEl.closest("u"),
-            background: styledEl.style.backgroundColor,
-            color: styledEl.style.color
-        };
-
-        if (Object.values(attrs).some(Boolean)) {
-            processedElements.add(styledEl);
-
-            highlights.push({
-                id: randomString(),
-                text: styledEl.innerHTML,
-                element: styledEl,
-                attrs
-            });
-        }
-    }
-
-    // Also find bold, italic, underline elements
-    const formattingElements = el.querySelectorAll<HTMLElement>("strong, em, u, b, i");
-
-    for (const formattedEl of formattingElements) {
-        // Skip if already processed or inside a processed element
-        if (processedElements.has(formattedEl)) continue;
-        if (Array.from(processedElements).some(processed => processed.contains(formattedEl))) continue;
-        if (!formattedEl.textContent?.trim()) continue;
-
-        const attrs: RawHighlight["attrs"] = {
-            bold: formattedEl.matches("strong, b"),
-            italic: formattedEl.matches("em, i"),
-            underline: formattedEl.matches("u"),
-            background: formattedEl.style.backgroundColor,
-            color: formattedEl.style.color
-        };
-
-        if (Object.values(attrs).some(Boolean)) {
-            processedElements.add(formattedEl);
-
-            highlights.push({
-                id: randomString(),
-                text: formattedEl.innerHTML,
-                element: formattedEl,
-                attrs
-            });
-        }
-    }
-
-    return highlights;
-}
 //#endregion

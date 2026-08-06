@@ -1,12 +1,14 @@
 import "../widgets/type_widgets/text/LinkEmbed.css";
 
-import { extractYouTubeVideoId, type LinkEmbedMetadata, safeLinkPreviewHref, YOUTUBE_REGEX } from "@triliumnext/commons";
-import { render } from "preact";
+import { extractYouTubeVideoId, type LinkEmbedMetadata, safeHostname, safeLinkPreviewHref, safeLinkPreviewImageSrc, YOUTUBE_REGEX } from "@triliumnext/commons";
+import { render, type VNode } from "preact";
 import { useState } from "preact/hooks";
 
+import { useFaviconContrastClass } from "./favicon_contrast.js";
 import { t } from "./i18n.js";
-import { uploadImageAttachment } from "./image_upload.js";
 import server from "./server.js";
+
+export { safeHostname };
 
 export interface EmbedMetadata {
     url: string;
@@ -25,24 +27,24 @@ export function detectEmbedType(url: string): "youtube" | "opengraph" {
     return YOUTUBE_REGEX.test(url) ? "youtube" : "opengraph";
 }
 
-export function safeHostname(url: string): string {
-    try { return new URL(url).hostname; } catch { return url; }
-}
-
 /**
  * Fetches link metadata from the server. Called once at link creation time.
  * The returned metadata is then stored in the note's HTML as data attributes.
  *
- * When `ownerNoteId` is given, the preview image is stored as an attachment of that note and only
- * its `api/attachments/...` URL ends up in the metadata. Inlined as a base64 data URI it would be
- * 10–140KB of note content per preview — enough for a single card to push the note past the
- * `autoReadonlySizeText` threshold (32KB by default) and flip it read-only.
+ * Both pictures a preview carries — the cover image and the favicon — are stored by the server as
+ * attachments of `ownerNoteId`, and only their `api/attachments/...` URLs come back. That is why
+ * the note id is required rather than optional: the pictures have nowhere else to live, and
+ * carrying them in the note's HTML instead would be 10–140KB of content for a cover and 1–10KB for
+ * a favicon, synced and revisioned like anything else the note holds. A single card is enough to
+ * push a note past the `autoReadonlySizeText` threshold (32KB by default) and flip it read-only;
+ * favicons get there by repetition, a note that links a site once usually linking it many times.
  */
-export async function fetchMetadata(url: string, ownerNoteId?: string): Promise<EmbedMetadata> {
+export async function fetchMetadata(url: string, ownerNoteId: string): Promise<EmbedMetadata> {
     try {
         // POSTed rather than passed in the query string: a URL can carry a one-time token or a
         // signed signature, and a query string ends up in every access log along the way.
-        const metadata = await server.post<LinkEmbedMetadata>("link-embed/metadata", { url });
+        const metadata = await server.post<LinkEmbedMetadata>("link-embed/metadata", { url, noteId: ownerNoteId });
+
         return {
             url: metadata.url,
             embedType: metadata.embedType,
@@ -50,33 +52,28 @@ export async function fetchMetadata(url: string, ownerNoteId?: string): Promise<
             description: metadata.description,
             favicon: metadata.favicon,
             siteName: metadata.siteName,
-            image: await offloadImageToAttachment(metadata.image, ownerNoteId),
+            image: metadata.image,
             unresolved: metadata.unresolved
         };
     } catch {
-        return {
-            url,
-            embedType: detectEmbedType(url),
-            title: safeHostname(url),
-            unresolved: true
-        };
+        return unresolvedMetadata(url);
     }
 }
 
 /**
- * Converts a base64 preview image into an attachment of the owning note, returning its
- * `api/attachments/...` URL — or the data URI unchanged when the upload fails, so the preview
- * still persists and renders, just at the old inline cost.
+ * What a URL is worth when nothing could be learned about it: the hostname, and a flag saying so.
  *
- * Only the card image is offloaded. The favicon stays inline on purpose: it is a few KB, and it is
- * carried by inline mentions too, where an attachment per mention would flood the attachment list.
+ * The caller keeps it as a plain link rather than rendering a preview that shows less than the URL
+ * did. Reached when the metadata request fails, and when there is no note yet to store the
+ * preview's pictures on.
  */
-async function offloadImageToAttachment(image: string | undefined, ownerNoteId: string | undefined): Promise<string | undefined> {
-    if (!image || !ownerNoteId || !image.startsWith("data:")) {
-        return image;
-    }
-
-    return await uploadImageAttachment(ownerNoteId, image) ?? image;
+export function unresolvedMetadata(url: string): EmbedMetadata {
+    return {
+        url,
+        embedType: detectEmbedType(url),
+        title: safeHostname(url),
+        unresolved: true
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -86,19 +83,42 @@ async function offloadImageToAttachment(image: string | undefined, ownerNoteId: 
 // notes, markdown preview).
 // ---------------------------------------------------------------------------
 
-function Favicon({ src }: { src?: string }) {
-    const [failed, setFailed] = useState(false);
+/**
+ * One of a preview's pictures, or what stands in for it.
+ *
+ * Both pictures make the same two decisions, so they make them in one place: load only what
+ * {@link safeLinkPreviewImageSrc} allows — an inline image or an attachment of this instance, so
+ * that opening a note never announces the reader to a third party — and fall back both when there
+ * is nothing to load and when loading fails. The failure half matters as much as the check: an
+ * attachment can be erased out from under a preview that still references it, and a broken-image
+ * glyph reads as a bug where an absence reads as an absence.
+ *
+ * `placeholder` is what a card's missing cover image gets, having a hole to fill; a missing favicon
+ * omits it, since nothing drawn in its place says as much as the title already does.
+ */
+function PreviewPicture({ src, className, placeholder, size }: {
+    src?: string | null;
+    className: string;
+    placeholder?: VNode;
+    /** For a picture drawn at a fixed size; the card image is sized by CSS instead. */
+    size?: number;
+}) {
+    const [ failed, setFailed ] = useState(false);
+    const safeSrc = safeLinkPreviewImageSrc(src);
 
-    if (!src || failed) {
-        return <span className="link-embed-mention-dot" />;
+    if (!safeSrc || failed) {
+        return placeholder ?? null;
     }
 
     return (
         <img
-            className="link-embed-mention-favicon"
-            src={src}
-            width={16}
-            height={16}
+            className={className}
+            src={safeSrc}
+            alt=""
+            width={size}
+            height={size}
+            loading="lazy"
+            draggable={false}
             onError={() => setFailed(true)}
         />
     );
@@ -108,23 +128,23 @@ function ImagePlaceholder() {
     return <div className="link-embed-card-image-placeholder">&#128279;</div>;
 }
 
-function CardImage({ src }: { src?: string }) {
-    const [failed, setFailed] = useState(false);
-
-    if (!src || failed) {
-        return <ImagePlaceholder />;
-    }
+function Favicon({ src }: { src?: string }) {
+    // A site draws its icon for one background, and ours is not always that one — see
+    // favicon_contrast.ts. The verdict travels as a class so that switching theme corrects the icon
+    // without anything being measured again.
+    const contrastClass = useFaviconContrastClass(src);
 
     return (
-        <img
-            className="link-embed-card-image"
+        <PreviewPicture
             src={src}
-            alt=""
-            loading="lazy"
-            draggable={false}
-            onError={() => setFailed(true)}
+            className={contrastClass ? `link-embed-mention-favicon ${contrastClass}` : "link-embed-mention-favicon"}
+            size={16}
         />
     );
+}
+
+function CardImage({ src }: { src?: string }) {
+    return <PreviewPicture src={src} className="link-embed-card-image" placeholder={<ImagePlaceholder />} />;
 }
 
 /**
@@ -136,6 +156,7 @@ function CardImage({ src }: { src?: string }) {
  */
 function VideoEmbed({ meta, videoId }: { meta: EmbedMetadata; videoId: string }) {
     const [playing, setPlaying] = useState(false);
+    const thumbnail = safeLinkPreviewImageSrc(meta.image);
 
     if (!playing) {
         return (
@@ -147,7 +168,7 @@ function VideoEmbed({ meta, videoId }: { meta: EmbedMetadata; videoId: string })
                     title={t("link_embed.play_video")}
                     onClick={() => setPlaying(true)}
                 >
-                    {meta.image && <img className="link-embed-video-thumbnail" src={meta.image} alt="" draggable={false} />}
+                    {thumbnail && <img className="link-embed-video-thumbnail" src={thumbnail} alt="" draggable={false} />}
                     <span className="link-embed-video-play" aria-hidden="true" />
                 </button>
             </div>
@@ -201,8 +222,8 @@ function EmbedPreview({ meta, editable }: { meta: EmbedMetadata; editable?: bool
                 {meta.title && <div className="link-embed-card-title">{meta.title}</div>}
                 {meta.description && <div className="link-embed-card-description">{meta.description}</div>}
                 <div className="link-embed-card-url">
-                    {/* The same favicon the inline mention shows, read from the metadata already stored
-                        on the element — the data URI is not duplicated. */}
+                    {/* The same favicon the inline mention shows, read from the metadata already
+                        stored on the element. */}
                     <Favicon src={meta.favicon} />
                     <span>{meta.siteName || safeHostname(meta.url)}</span>
                 </div>
@@ -269,6 +290,7 @@ export function applyLinkEmbeds(container: HTMLElement) {
 
 export default {
     fetchMetadata,
+    unresolvedMetadata,
     detectEmbedType,
     safeHostname,
     renderEmbedPreview,

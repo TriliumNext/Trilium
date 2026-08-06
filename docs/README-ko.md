@@ -1,12 +1,12 @@
 # Trilium Notes
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub 스폰서](https://img.shields.io/github/sponsors/eliandoran) ![LiberaPay
+후원자](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker 풀 횟수](https://img.shields.io/docker/pulls/triliumnext/trilium) ![GitHub
+다운로드(모든 파일, 모든
+릴리스)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![번역
+상태](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -37,9 +37,9 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
 
 문서는 다양한 형식으로 제공됩니다:
 - **온라인 문서**: [docs.triliumnotes.org](https://docs.triliumnotes.org/)에서 전체 문서를
-  확인하세요.
-- **앱 내 도움말**: Trilium에서 `F1`을 눌러 같은 문서를 애플리케이션 안에서 바로 확인하세요.
-- **GitHub**: 이 저장소의 [사용자 안내서](./User%20Guide/User%20Guide/)를 살펴보세요.
+  확인할 수 있습니다
+- **앱 내 도움말**: Trilium에서 `F1` 키를 누르면 애플리케이션 내에서 동일한 문서에 바로 접근할 수 있습니다
+- **GitHub**: 이 저장소의 [사용자 가이드](./User%20Guide/User%20Guide/)를 살펴보세요
 
 ### 바로가기
 - [시작하기 가이드](https://docs.triliumnotes.org/)
@@ -104,16 +104,16 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
 * 웹 콘텐츠를 간편하게 저장하는 [웹
   클리퍼](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
 * 사용자 지정 가능한 UI(사이드바 버튼, 사용자 지정 위젯 등)
-* Grafana 대시보드와 함께 제공되는
-  [메트릭](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)
+* [메트릭](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)과
+  Grafana 대시보드를 함께 제공합니다.
 
 ✨ TriliumNext와 관련된 더 많은 자료는 다음 서드 파티 리소스와 커뮤니티에서 확인하세요:
 
-- 서드 파티 테마, 스크립트, 플러그인 등을 모은
-  [awesome-trilium](https://github.com/Nriver/awesome-trilium)
-- 튜토리얼, 가이드 등을 제공하는 [TriliumRocks!](https://trilium.rocks/)
+- 서드파티 테마, 스크립트, 플러그인 등은
+  [awesome-trilium](https://github.com/Nriver/awesome-trilium)에서 확인할 수 있습니다.
+- 튜토리얼, 가이드 등은 [TriliumRocks!](https://trilium.rocks/)에서 확인할 수 있습니다.
 
-## ❓ TriliumNext를 사용하는 이유
+## ❓왜 TriliumNext인가요?
 
 Trilium의 최초 개발자([Zadam](https://github.com/zadam))가 Trilium 저장소를 커뮤니티 프로젝트에 기꺼이
 이전했습니다. 현재 저장소: https://github.com/TriliumNext
@@ -133,8 +133,8 @@ TriliumNext/Trilium 버전에서는 동기화 버전이 올라가므로 직접 �
 공식 커뮤니티 대화에 자유롭게 참여해 주세요. 원하는 기능, 제안 또는 문제에 관한 의견을 기다립니다!
 
 - [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (동기식 토론용)
-  - `General` Matrix 대화방은 [XMPP](xmpp:discuss@trilium.thisgreat.party?join)와도
-    연결되어 있습니다.
+  - `General` Matrix 방은 [XMPP](xmpp:discuss@trilium.thisgreat.party?join)와도 연동되어
+    있습니다
 - [GitHub Discussions](https://github.com/TriliumNext/Trilium/discussions)(비동기
   토론)
 - [GitHub Issues](https://github.com/TriliumNext/Trilium/issues)(버그 신고 및 기능 요청)
@@ -216,7 +216,7 @@ TriliumNext를 설치하려면 [서버 설치
 
 ### 코드
 
-저장소를 다운로드하고 `pnpm`으로 종속성을 설치한 다음 서버를 실행하세요. 서버 주소: http://localhost:8080
+저장소를 다운로드하고 `pnpm`으로 종속성을 설치한 다음 서버를 실행합니다(http://localhost:8080 에서 이용 가능):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -313,9 +313,9 @@ Trilium은 다음 기반 기술이 있었기에 만들어질 수 있었습니다
 * [Tabulator](https://github.com/olifolkerd/tabulator) - 컬렉션에서 사용하는 대화형 표입니다.
 * [FancyTree](https://github.com/mar10/fancytree) - 독보적으로 기능이 풍부한 트리 라이브러리입니다.
 * [jsPlumb](https://github.com/jsplumb/jsplumb) - 시각적 연결 라이브러리입니다. [관계
-  지도](https://docs.triliumnotes.org/user-guide/note-types/relation-map)와 [링크
-  지도](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)에
-  사용됩니다.
+  맵](https://docs.triliumnotes.org/user-guide/note-types/relation-map)과 [링크
+  맵](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)에
+  사용됩니다
 
 ## 🤝 후원
 
@@ -325,7 +325,7 @@ Trilium은 [수백 시간에 걸친
 
 애플리케이션의 주 개발자([eliandoran](https://github.com/eliandoran))를 다음 방법으로 후원해 주세요:
 
-- [GitHub Sponsors](https://github.com/sponsors/eliandoran)
+- [GitHub 스폰서](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
