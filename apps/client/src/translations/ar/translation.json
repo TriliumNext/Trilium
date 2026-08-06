@@ -1972,12 +1972,8 @@
     "print_report_collection_content_other": "تعذّر طباعة {{count}} ملاحظة في المجموعة لأنها غير مدعومة أو محمية."
   },
   "attachment_detail_2": {
-    "role_and_size": "الدور: {{role}}، الحجم: {{size}}",
     "unrecognized_role": "دور المرفق '{{role}}'الغير معروف.",
-    "link_copied": "تم نسخ رابط المرفق إلى الحافظة.",
-    "deletion_reason": "لأن المرفق غير مرتبط بمحتوى الملاحظة. ولمنع حذفه، أضف رابط المرفق مرة أخرى داخل المحتوى أو قم بتحويل المرفق إلى ملاحظة.",
-    "will_be_deleted_in": "سيتم حذف هذا المرفق تلقائيًا خلال {{time}}",
-    "will_be_deleted_soon": "سيتم حذف هذا المرفق تلقائيًا قريبًا"
+    "link_copied": "تم نسخ رابط المرفق إلى الحافظة."
   },
   "title_bar_buttons": {
     "window-on-top": "ابقاء النافذة في الاعلى"
@@ -1999,7 +1995,6 @@
   },
   "geo-map": {
     "unable-to-load-map": "تعذر تحميل الخريطة.",
-    "create-child-note-text": "إضافة علامة",
     "create-child-note-instruction": "انقر على الخريطة لإنشاء ملاحظة جديدة في ذلك الموقع أو اضغط مفتاح Escape للإغلاق.",
     "create-child-note-title": "إنشاء ملاحظة فرعية جديدة وإضافتها إلى الخريطة"
   },
@@ -2314,7 +2309,6 @@
   },
   "mind-map": {
     "summary": "الملخص",
-    "link": "رابط",
     "addChild": "إضافة عنصر فرعي",
     "addParent": "إضافة عنصر رئيسي",
     "addSibling": "إضافة عنصر شقيق",
@@ -2322,7 +2316,6 @@
     "focus": "وضع التركيز",
     "moveUp": "تحريك للأعلى",
     "moveDown": "تحريك للاسفل",
-    "linkBidirectional": "رابط ثنائي الاتجاه",
     "cancelFocus": "إلغاء وضع التركيز",
     "clickTips": "يرجى النقر على العقدة المستهدفة"
   },

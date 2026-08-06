@@ -63,8 +63,9 @@ export function buildShareNote(noteDef: NoteDefinition) {
     ]);
     shaca.notes[note.noteId] = note;
 
-    // Handle content
-    if (noteDef.content) {
+    // Handle content: an explicitly empty content is still a content, as note types that keep
+    // everything in their attributes (web view) have nothing else to return.
+    if (noteDef.content !== undefined) {
         note.getContent = () => {
             if (noteDef.isProtected) return undefined;
             return noteDef.content;

@@ -1,0 +1,63 @@
+/* Carried by the in-place wrapper and by the portaled one alike (see portalToBody in Dropdown.tsx),
+   so the button is styled here and the menu there under the one class. */
+.calendar-recurrence-dropdown {
+    flex: 1;
+    min-width: 0;
+
+    /* The button stands where a select would, so it takes the row as a select does, and says its
+       value from the leading edge with the arrow at the other end. */
+    > .select-button {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-align: start;
+    }
+
+    .dropdown-menu {
+        padding: 10px;
+        /* Room for the widest of its rows — the seven weekday pills — to breathe. */
+        min-width: 300px;
+    }
+
+    /* A locale that writes the frequencies long breaks the segments onto a second line rather
+       than stretching the menu across the calendar. */
+    .tn-segmented-choice {
+        flex-wrap: wrap;
+    }
+}
+
+.calendar-recurrence-weekdays {
+    display: flex;
+    gap: 4px;
+
+    .calendar-recurrence-weekday {
+        /* Seven of a kind sharing the row evenly, whatever their labels measure in a locale. */
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 3px 0;
+        border: 1px solid var(--main-border-color);
+        border-radius: 6px;
+        background: transparent;
+        color: var(--main-text-color);
+        font-size: 0.85em;
+        cursor: pointer;
+
+        &:hover {
+            background: var(--hover-item-background-color);
+        }
+
+        &.active {
+            background: var(--active-item-background-color);
+            border-color: var(--active-item-background-color);
+            color: var(--active-item-text-color);
+        }
+    }
+}
+
+.calendar-recurrence-hint {
+    font-size: 0.85em;
+    opacity: 0.75;
+    margin: 0;
+}

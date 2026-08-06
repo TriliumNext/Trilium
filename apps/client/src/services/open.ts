@@ -1,7 +1,9 @@
 import Component from "../components/component.js";
 import FNote from "../entities/fnote.js";
+import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
+import toast from "./toast.js";
 import utils from "./utils.js";
 
 
@@ -137,19 +139,27 @@ async function openNoteOnServer(noteId: string) {
 }
 
 async function openDirectory(directory: string) {
-    try {
-        if (utils.isElectron()) {
-            const res = await window.electronApi?.shell.openPath(directory);
-            if (res) {
-                console.error("Failed to open directory:", res);
-            }
-        } else {
-            console.error("Not running in an Electron environment.");
-        }
-    } catch (err: any) {
-        // Handle file system errors (e.g. path does not exist or is inaccessible)
-        console.error("Error:", err.message);
+    if (!utils.isElectron()) {
+        console.error("Not running in an Electron environment.");
+        return;
     }
+
+    try {
+        // Resolves to an empty string once the file manager is up, or to the reason it is not.
+        const failure = await window.electronApi?.shell.openPath(directory);
+        if (failure) {
+            reportDirectoryFailure(directory, failure);
+        }
+    } catch (e) {
+        // File system errors, e.g. the path no longer exists or is inaccessible.
+        reportDirectoryFailure(directory, e instanceof Error ? e.message : String(e));
+    }
+}
+
+/** Reported to the user, not only the console: a silent failure reads as the link doing nothing at all. */
+function reportDirectoryFailure(directory: string, reason: string) {
+    console.error("Failed to open directory:", directory, reason);
+    toast.showError(t("open.directory_failed", { directory, reason }));
 }
 
 export default {

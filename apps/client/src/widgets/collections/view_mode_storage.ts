@@ -18,8 +18,22 @@ export default class ViewModeStorage<T extends object> {
         this.attachmentName = `${viewType}.json`;
     }
 
+    /**
+     * Writes the config, unless it is already what is stored.
+     *
+     * A view reports its state on changes it makes itself as readily as on the user's — a map, for
+     * one, is told to move to its saved position as it opens, and hears that move back as though it
+     * had been dragged there. Writing anyway is not free and not private: the attachment is saved
+     * with `forceSave`, so identical content still stamps a new date, records an entity change and
+     * announces it to every client, each of which then fetches the attachment back to see what
+     * changed. Nothing did. Opened in a dozen tabs, a view could raise a dozen such writes and a
+     * fetch of each of them per tab, all for a config nobody touched.
+     */
     async store(data: T) {
         const content = JSON.stringify(data);
+        if (content === this.lastKnownContent) {
+            return;
+        }
         this.lastKnownContent = content;
         const payload = {
             role: ATTACHMENT_ROLE,

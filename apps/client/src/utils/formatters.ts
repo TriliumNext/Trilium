@@ -1,4 +1,4 @@
-import { t } from "../services/i18n";
+import { getLocaleById, t } from "../services/i18n";
 import options from "../services/options";
 
 type DateTimeStyle = "full" | "long" | "medium" | "short" | "none" | undefined;
@@ -169,5 +169,61 @@ export function normalizeLocale(locale: string) {
         case "cn": return "zh-CN";
         case "tw": return "zh-TW";
         default: return locale;
+    }
+}
+
+/**
+ * The language a note is written in.
+ *
+ * A note carries its own language as a `#language` label, set from the Basic Properties ribbon, but
+ * the label is opt-in and the picker that sets it stays empty until content languages are enabled —
+ * so in practice almost no note has one. The `defaultContentLanguage` option answers for all of
+ * them, and an empty value there means "follow the application's language" rather than "none".
+ *
+ * Callers should route the raw label through this rather than reading it directly, so that what the
+ * setting promises to affect — text direction, typographic quotes — actually follows it everywhere.
+ */
+export function resolveContentLanguage(noteLanguage: string | null | undefined): string | null {
+    return noteLanguage || options.get("defaultContentLanguage") || options.get("locale") || null;
+}
+
+/** Whether a note's resolved language is written right-to-left. */
+export function isContentRightToLeft(noteLanguage: string | null | undefined): boolean {
+    return getLocaleById(resolveContentLanguage(noteLanguage))?.rtl ?? false;
+}
+
+/**
+ * Whether distances should be shown in miles or in kilometres, for consumers such as the geo map's
+ * scale bar.
+ *
+ * `Intl` exposes no measurement system (the locale-info proposal dropped it), so the locale's region
+ * is matched against the short list of countries that still state road distances in miles. A locale
+ * carrying no region is maximized first, which is what makes Trilium's plain `en` -- listed as
+ * "English (United States)" -- resolve to `US`; `en-GB` is a separate entry and resolves to `GB`.
+ */
+export function getMeasurementSystem(): "metric" | "imperial" {
+    // An explicitly chosen formatting locale wins. Failing that the browser's locale is preferred
+    // over what getFormattingLocale() would settle on (the UI language), because the UI language
+    // says nothing about where the user is -- an English UI is common well outside the US.
+    for (const candidate of [ options.get("formattingLocale"), navigator.language, getFormattingLocale() ]) {
+        const region = candidate && getRegion(candidate);
+        if (region) {
+            return IMPERIAL_REGIONS.has(region) ? "imperial" : "metric";
+        }
+    }
+
+    return "metric";
+}
+
+/** Regions that state road distances in miles rather than kilometres. */
+const IMPERIAL_REGIONS = new Set([ "US", "GB", "LR", "MM" ]);
+
+function getRegion(locale: string) {
+    try {
+        return new Intl.Locale(normalizeLocale(locale)).maximize().region;
+    } catch (e) {
+        // An unusable locale (e.g. the dev-only "en_rtl") makes the constructor throw; the caller
+        // then falls through to the browser's own locale.
+        return undefined;
     }
 }

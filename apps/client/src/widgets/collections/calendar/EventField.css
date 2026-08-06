@@ -1,0 +1,50 @@
+.calendar-event-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .calendar-event-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    /* Fields sharing one line, splitting what is left of it evenly. Parted by more than the
+       controls within a field are, so the line reads as two fields rather than as one field's
+       worth of controls. */
+    .calendar-event-field-row {
+        display: flex;
+        gap: 16px;
+
+        > * {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        /* Except those that asked for no more room than they need (see EventField's `compact`). */
+        > .calendar-event-field-compact {
+            flex: 0 0 auto;
+        }
+    }
+
+    /* Faded as the promoted grid fades its labels (see theme-next/shell.css), so the event's own
+       fields and the note's promoted ones read as one form when they stand in the same dock. */
+    .calendar-event-field-name {
+        font-weight: normal;
+        font-size: 0.85em;
+        opacity: 0.75;
+        margin: 0;
+    }
+
+    .calendar-event-field-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        /* A number in a sentence is a small thing; the box beside it should be too, leaving the
+           line to the words around it. */
+        > .tn-number-unit-pair {
+            flex: 0 1 auto;
+        }
+    }
+}

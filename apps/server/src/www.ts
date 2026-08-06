@@ -11,6 +11,7 @@ import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
 import { registerOcrHandlers } from "./services/handlers.js";
 import host from "./services/host.js";
 import port from "./services/port.js";
+import { installProcessErrorHandlers, markAppReady } from "./services/process_errors.js";
 import { isScriptingEnabled } from "./services/scripting_guard.js";
 import { getDbSize } from "./services/sql_init.js";
 import { isHttpAttachableMessagingProvider } from "./services/ws_messaging_provider.js";
@@ -29,13 +30,7 @@ export default async function startTriliumServer(): Promise<Express> {
     await displayStartupMessage();
 
     // setup basic error handling even before requiring dependencies, since those can produce errors as well
-    process.on("unhandledRejection", (error: Error) => {
-        // this makes sure that stacktrace of failed promise is printed out
-        console.log(error);
-
-        // but also try to log it into file
-        getLog().info(error);
-    });
+    installProcessErrorHandlers();
 
     // When TRILIUM_PROFILE is set we drive the V8 CPU profiler ourselves rather than relying on Node's
     // --cpu-prof flag: that flag flushes its file during the normal shutdown path, which the exit() handler
@@ -94,6 +89,10 @@ export default async function startTriliumServer(): Promise<Express> {
     ws.init();
 
     registerOcrHandlers();
+
+    // Everything the application needs in order to be usable is now up, so from here on an escaped error
+    // is a contained failure rather than a broken startup, and stops being fatal.
+    markAppReady();
 
     return app;
 }

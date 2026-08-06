@@ -98,11 +98,3 @@
         color: var(--note-icon-color, var(--main-background-color));
     }
 }
-
-/* What an icon class is asked to resolve to before the map is drawn (see icons.ts). Out of sight and
-   out of the way, but laid out: a pseudo-element of a `display: none` element has no content to read. */
-.icon-glyph-probe {
-    position: absolute;
-    visibility: hidden;
-    pointer-events: none;
-}

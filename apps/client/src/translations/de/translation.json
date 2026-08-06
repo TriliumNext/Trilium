@@ -1431,8 +1431,7 @@
     "title": "Sicherung",
     "download": "Herunterladen",
     "automatic_backups_title": "Automatische Sicherungen",
-    "automatic_backups_description": "Trilium kann die Datenbank automatisch sichern. Es wird empfohlen, die Sicherung aktiviert zu lassen, dies kann jedoch den Programmstart bei großen Datenbanken und/oder langsamen Speichermedien verlangsamen.",
-    "backup_location_description": "Sicherungen werden in {{- backupFolder}} gespeichert."
+    "automatic_backups_description": "Trilium kann die Datenbank automatisch sichern. Es wird empfohlen, die Sicherung aktiviert zu lassen, dies kann jedoch den Programmstart bei großen Datenbanken und/oder langsamen Speichermedien verlangsamen."
   },
   "etapi": {
     "description": "ETAPI ist eine REST-API, die für den programmgesteuerten Zugriff auf die Trilium-Instanz ohne Benutzeroberfläche verwendet wird.",
@@ -1547,10 +1546,6 @@
     "close": "Schließen"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Dieser Anhang wird in {{time}} automatisch gelöscht",
-    "will_be_deleted_soon": "Dieser Anhang wird bald automatisch gelöscht",
-    "deletion_reason": ", da der Anhang nicht im Inhalt der Notiz verlinkt ist. Um das Löschen zu verhindern, füge den Anhangslink wieder in den Inhalt ein oder wandel den Anhang in eine Notiz um.",
-    "role_and_size": "Rolle: {{role}}, Größe: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Anhangsverweis in die Zwischenablage kopiert.",
     "unrecognized_role": "Unbekannte Anhangsrolle „{{role}}“."
   },
@@ -1929,7 +1924,6 @@
     "create-child-note-title": "Neue untergeordnete Notiz anlegen und zur Karte hinzufügen",
     "create-child-note-instruction": "Auf die Karte klicken, um eine neue Notiz an der Stelle zu erstellen oder Escape drücken um abzubrechen.",
     "unable-to-load-map": "Karte konnte nicht geladen werden.",
-    "create-child-note-text": "Marker hinzufügen",
     "create-child-note-toast-title": "Neue Notiz"
   },
   "geo-map-context": {
@@ -2717,9 +2711,7 @@
   },
   "mind-map": {
     "summary": "Zusammenfassung",
-    "link": "Link",
     "moveDown": "Nach unten",
-    "linkBidirectional": "Bidirektionaler Link",
     "moveUp": "Nach oben",
     "cancelFocus": "Fokusmodus beenden",
     "focus": "Fokusmodus",

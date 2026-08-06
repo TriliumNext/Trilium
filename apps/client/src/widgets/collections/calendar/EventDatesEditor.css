@@ -1,0 +1,21 @@
+/* The toggle stood at the height of the control beside it, so the row's two fields meet on one
+   line; the toggle itself is the app's own (see FormToggle). */
+.calendar-all-day-switch {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-height: 2em;
+}
+
+/* A range said in one line — the days an event spans, or the hours within its day: the two ends
+   share the row evenly, the dash between them taking only its own width. */
+.calendar-event-range {
+    > input {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .calendar-event-range-separator {
+        opacity: 0.75;
+    }
+}

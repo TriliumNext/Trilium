@@ -111,7 +111,7 @@ vi.mock("electron", () => {
         handle: (channel: string, fn: Handler) => h.ipcHandle.set(channel, fn)
     };
     // onReady() installs the embed-Referer hook, whose default argument reads
-    // `electron.session.defaultSession` (see services/embed_referer.ts).
+    // `electron.session.defaultSession` (see services/referer.ts).
     const session = {
         defaultSession: {
             webRequest: {

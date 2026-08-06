@@ -37,9 +37,24 @@ const mocks = vi.hoisted(() => ({
     weighed: [] as number[],
     save: vi.fn(async () => {}),
     get: vi.fn(),
-    post: vi.fn(async (url: string, _body?: object) => (
-        url === "database/vacuum-database" ? { sizeBefore: VACUUM_BEFORE, sizeAfter: VACUUM_AFTER } : undefined
-    )),
+    /** Whoever is listening to the websocket, which for the length of a run is the run itself. */
+    listeners: [] as ((message: unknown) => void)[],
+    /** What the server reports over that socket while a compression request is still open. */
+    progress: [] as { progressCount: number; totalCount?: number }[],
+    post: vi.fn(async (url: string, body?: object) => {
+        if (url === "database/vacuum-database") {
+            return { sizeBefore: VACUUM_BEFORE, sizeAfter: VACUUM_AFTER };
+        }
+
+        if (url === "notes/root/compress-images") {
+            const { taskId } = (body ?? {}) as { taskId?: string };
+
+            mocks.progress.forEach((report) => mocks.listeners.forEach(
+                (listener) => listener({ type: "taskProgressCount", taskId, ...report })));
+        }
+
+        return undefined;
+    }),
     /** Takes the confirmation element, which one test renders to read what it says. */
     confirm: vi.fn(async (_message?: unknown) => true),
     showMessage: vi.fn<(message: string, timeout?: number) => void>(),
@@ -96,6 +111,30 @@ vi.mock("../../../../../services/server", () => {
             postWithTimeout: (url: string, _timeoutMs: number, data?: object) => mocks.post(url, data)
         }
     };
+});
+
+// i18next is never initialised for these tests, and answers `undefined` to everything until it is —
+// which would make every comparison against a t() call below true of any two messages at all. Keys
+// and their interpolations stand in for the sentences, so that a wrong one reads as wrong.
+vi.mock("../../../../../services/i18n", () => ({
+    t: (key: string, params?: Record<string, unknown>) => (params ? `${key} ${JSON.stringify(params)}` : key),
+    translationsInitializedPromise: Promise.resolve(),
+    initLocale: async () => {},
+    getAvailableLocales: () => [],
+    getLocaleById: () => null,
+    getCurrentLanguage: () => "en"
+}));
+
+// The compression step is followed over the websocket rather than answered by the request, so the
+// socket is where its counting has to be driven from.
+vi.mock("../../../../../services/ws", () => {
+    const subscribeToMessages = (listener: (message: unknown) => void) => void mocks.listeners.push(listener);
+    const unsubscribeToMessage = (listener: (message: unknown) => void) =>
+        void mocks.listeners.splice(mocks.listeners.indexOf(listener), 1);
+
+    // Named and default both: the run reaches for the named exports, while modules the dialog pulls
+    // in on the way past subscribe through the default object.
+    return { subscribeToMessages, unsubscribeToMessage, default: { subscribeToMessages, unsubscribeToMessage } };
 });
 
 vi.mock("../../../../../services/dialog", () => ({ default: { confirm: mocks.confirm } }));
@@ -189,6 +228,8 @@ async function click(button: HTMLButtonElement | undefined) {
 beforeEach(() => {
     mocks.storedOption = "{}";
     mocks.weighed = [ MEASURED_BEFORE, MEASURED_AFTER ];
+    mocks.listeners.length = 0;
+    mocks.progress.length = 0;
     mocks.getInt.mockReturnValue(-1);
     mocks.confirm.mockResolvedValue(true);
     vi.clearAllMocks();
@@ -230,9 +271,12 @@ describe("showCleanupDialog", () => {
         mocks.storedOption = JSON.stringify({ revisionSnapshots: true, snapshotsToKeep: 2 });
         await openDialog();
 
-        // The whole is the history erased outright plus the rest; the offer, only what is picked.
+        // The whole is the history erased outright plus the rest, and the pages already free inside
+        // the file along with them — everything a run could hand back. The offer is only what is
+        // picked, which here is none of it.
         expect(textOf(".cleanup-chart-total")).toBe(
-            t("space_usage.cleanup_amount_of", { total: formatSize(REVISIONS_ALL + DELETED + UNUSED) }) ?? "");
+            t("space_usage.cleanup_amount_of",
+                { total: formatSize(REVISIONS_ALL + DELETED + UNUSED + FREE_PAGES) }) ?? "");
         expect(textOf(".cleanup-chart-amount")).toBe(formatSize(REVISIONS_TRIMMED));
 
         await toggle(rows()[0]);
@@ -287,6 +331,34 @@ describe("showCleanupDialog", () => {
             .toBe(t("space_usage.cleanup_compact_notice") ?? "");
     });
 
+    it("hangs the compression settings off its switch, and offers a run that only compresses", async () => {
+        await openDialog();
+
+        // No arc and no figure of its own: what recompressing will save is not knowable without
+        // doing it, so it stays out of both the chart and the estimate.
+        const compressRow = document.body.querySelector<HTMLElement>(".cleanup-item-compress");
+        expect(compressRow?.querySelector(".cleanup-item-size")).toBeNull();
+        // The swatch is still there, transparent, so the title lines up with every row above it.
+        expect(compressRow?.querySelector(".cleanup-item-swatch")).not.toBeNull();
+        expect(document.body.querySelector(".image-compression-section")).toBeNull();
+        // Nothing picked weighs anything, so the button rests on compressing alone being asked for.
+        expect(cleanButton()?.disabled).toBe(true);
+
+        await toggle(compressRow ?? undefined);
+
+        // The image dialog's own rows, dropped in beneath the switch: scaling with its bound, then
+        // one exclusive choice per format. Both formats open on "keep", so neither brings a quality
+        // row with it — the single nested row is the bound belonging to scaling.
+        const sections = document.body.querySelectorAll(".image-compression-section");
+        expect(sections).toHaveLength(4);
+        expect(document.body.querySelectorAll(".image-compression-section-nested")).toHaveLength(1);
+        expect(document.body.querySelectorAll(".image-compression-section-choice")).toHaveLength(2);
+        // The subtree switch is the one row that never comes: a cleanup has no scope to choose.
+        expect(document.body.querySelector(".image-compression-scope")).toBeNull();
+
+        expect(cleanButton()?.disabled).toBe(false);
+    });
+
     it("counts a rebuild into the whole, and into the offer once it is picked", async () => {
         await openDialog();
 
@@ -327,6 +399,23 @@ describe("showCleanupDialog", () => {
         expect(raised[0].dismissible).toBe(false);
 
         expect(mocks.closePersistent).toHaveBeenCalledWith(CLEANUP_TOAST_ID);
+    });
+
+    it("counts the images off in the toast, once the compression run says how many there are", async () => {
+        mocks.progress = [ { progressCount: 1 }, { progressCount: 197, totalCount: 867 } ];
+        const { closed } = await openDialog();
+
+        await toggle(document.body.querySelector<HTMLElement>(".cleanup-item-compress") ?? undefined);
+        await click(cleanButton());
+        await closed;
+
+        expect(mocks.showPersistent.mock.calls.map(([ options ]) => options.message)).toEqual([
+            // Named while the request is being made, there being nothing to count yet — and again
+            // for a first report that carried no total, which is the same nothing to count against.
+            t("space_usage.compress_running"),
+            t("space_usage.compress_running"),
+            t("space_usage.compress_running_progress", { done: 197, total: 867 })
+        ]);
     });
 
     it("reports the file's own reduction as the whole of what a compacting run reclaimed", async () => {

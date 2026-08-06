@@ -2,6 +2,8 @@ import {
     Clipboard,
     Essentials,
     FileRepository,
+    Image,
+    ImageUpload,
     Notification,
     Paragraph,
     Plugin,
@@ -128,6 +130,51 @@ describe("FileUploadEditing", () => {
         });
 
         expect(getModelData(editor.model)).toBe(before);
+    });
+
+    // -----------------------------------------------------------------
+    // Which plugin claims a dropped file
+    // -----------------------------------------------------------------
+
+    describe("against ImageUpload", () => {
+        /**
+         * Both plugins listen for `clipboardInput` at the same priority, and this one takes any
+         * file it is handed with no regard for what kind it is. So whether a picture is inserted as
+         * a picture comes down entirely to whether ImageUpload recognised the media type first and
+         * stopped the event — which is what `image.upload.types` decides.
+         */
+        async function editorClaiming(types: string[]) {
+            const withImages = await createTestEditor(
+                [Essentials, Paragraph, FileRepository, Notification, Clipboard, ReferenceSchema, Image, ImageUpload, FileUploadEditing],
+                { image: { upload: { types } } }
+            );
+            installUploadAdapter(withImages);
+            setModelData(withImages.model, "<paragraph>[]</paragraph>");
+
+            return withImages;
+        }
+
+        function dropIcon(target: ClassicEditor) {
+            target.editing.view.document.fire("clipboardInput", {
+                dataTransfer: makeDataTransfer({ files: [ new File([ "\x00\x00\x01\x00" ], "favicon.ico", { type: "image/x-icon" }) ] }),
+                targetRanges: null
+            });
+
+            return getModelData(target.model);
+        }
+
+        it("leaves a claimed media type to ImageUpload, so it becomes a picture", async () => {
+            const model = dropIcon(await editorClaiming([ "png", "x-icon" ]));
+
+            expect(model).toContain("image");
+            expect(model).not.toContain("reference");
+        });
+
+        it("takes an unclaimed one itself, which is what made a dropped icon a reference link", async () => {
+            const model = dropIcon(await editorClaiming([ "png" ]));
+
+            expect(model).toContain("reference");
+        });
     });
 
     // -----------------------------------------------------------------

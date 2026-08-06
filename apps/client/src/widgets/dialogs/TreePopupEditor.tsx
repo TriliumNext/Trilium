@@ -4,13 +4,13 @@ import { useCallback, useContext, useEffect, useRef, useState } from "preact/hoo
 
 import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
+import TitleRow from "../layout/TitleRow";
 import NoteTreeWidget from "../note_tree";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
 import { useContainedLinkNavigation, useLegacyWidget, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
-import { TitleRow } from "./PopupEditor";
 
 /**
  * A quick-edit-style popup whose sidebar is a hoisted note tree.

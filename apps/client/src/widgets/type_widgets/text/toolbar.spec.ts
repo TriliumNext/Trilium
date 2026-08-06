@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buildClassicToolbar, buildFloatingToolbar, buildMobileToolbar, buildToolbarConfig } from "./toolbar.js";
+import { buildClassicToolbar, buildFloatingToolbar, buildMobileToolbar, buildToolbarConfig, usesClassicToolbar } from "./toolbar.js";
 
 type ToolbarConfig = string | "|" | { items: ToolbarConfig[] };
 
@@ -128,5 +128,36 @@ describe("buildToolbarConfig dispatch", () => {
     it("returns the floating toolbar (with a block toolbar) when not in classic mode", () => {
         const config = buildToolbarConfig(false);
         expect("blockToolbar" in config).toBe(true);
+    });
+});
+
+/**
+ * Which of the two toolbars a text note is edited with. Three things have a say and they do not
+ * carry equal weight, which is the whole of what this settles.
+ */
+describe("usesClassicToolbar", () => {
+    it("follows the reader's option on a desktop that has asked for nothing else", () => {
+        expect(usesClassicToolbar({ isMobile: false, textNoteEditorType: "ckeditor-classic" })).toBe(true);
+        expect(usesClassicToolbar({ isMobile: false, textNoteEditorType: "ckeditor-balloon" })).toBe(false);
+    });
+
+    // A balloon is hard to reach around a virtual keyboard, so the option does not apply there.
+    it("keeps the classic bar on a phone whatever the option says", () => {
+        expect(usesClassicToolbar({ isMobile: true, textNoteEditorType: "ckeditor-balloon" })).toBe(true);
+    });
+
+    // A bar built for the width of a note fits no narrow view, on any device.
+    it("gives way to a view that has asked for the floating toolbar, option and device alike", () => {
+        expect(usesClassicToolbar({
+            floatingToolbarRequested: true,
+            isMobile: false,
+            textNoteEditorType: "ckeditor-classic"
+        })).toBe(false);
+
+        expect(usesClassicToolbar({
+            floatingToolbarRequested: true,
+            isMobile: true,
+            textNoteEditorType: "ckeditor-classic"
+        })).toBe(false);
     });
 });

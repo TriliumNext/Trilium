@@ -31,9 +31,9 @@ overrides:
   "@lezer/highlight": "1.2.3"
   "@lezer/lr": "1.4.10"
   "mermaid": "11.16.0"
-  "preact": "10.29.7"
+  "preact": "10.29.8"
   "roughjs": "4.6.6"
-  "@types/express-serve-static-core": "5.1.2"
+  "@types/express-serve-static-core": "5.1.3"
   "node-abi": "4.33.0"
   "flat@<5.0.1": ">=5.0.1"
   "debug@>=3.2.0 <3.2.7": ">=3.2.7"
@@ -110,8 +110,6 @@ ignoredOptionalDependencies:
   - "@anthropic-ai/claude-agent-sdk-*"
 
 patchedDependencies:
-  '@maplibre/maplibre-gl-leaflet@0.1.3': patches/@maplibre__maplibre-gl-leaflet@0.1.3.patch
-  leaflet@1.9.4: patches/leaflet@1.9.4.patch
   '@excalidraw/excalidraw@0.18.1': patches/@excalidraw__excalidraw@0.18.1.patch
 
 allowBuilds:

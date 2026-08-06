@@ -7,6 +7,7 @@ import setupMermaid from "./modules/mermaid.js";
 import setupMath from "./modules/math.js";
 import setupSidebars from "./modules/sidebar.js";
 import setupVideoFacades from "./modules/video_facade.js";
+import setupFaviconContrast from "./modules/favicon_contrast.js";
 import api from "./modules/api.js";
 import "highlight.js/styles/default.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
@@ -32,6 +33,7 @@ function setupTextNote() {
     $try(setupMermaid);
     $try(setupMath);
     $try(setupVideoFacades);
+    $try(setupFaviconContrast);
 }
 
 document.addEventListener(

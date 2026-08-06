@@ -17,6 +17,7 @@ import server from "../services/server.js";
 import toastService from "../services/toast.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
+import { showImageCompressionDialog } from "../widgets/dialogs/image_compression/image_compression_dialog.jsx";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import NoteColorPicker from "./custom-items/NoteColorPicker.jsx";
@@ -181,6 +182,14 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
             enabled: true,
             items: [
                 { title: t("tree-context-menu.apply-bulk-actions"), command: "openBulkActionsDialog", uiIcon: "bx bx-list-plus", enabled: true },
+                {
+                    // One note at a time: the dialog is configured against what that note holds and
+                    // reports on what it changed there, neither of which a multi-selection has.
+                    title: t("compress-images"),
+                    uiIcon: "bx bx-collapse-alt",
+                    enabled: noSelectedNotes && notOptionsOrHelp,
+                    handler: () => void showImageCompressionDialog({ type: "note", noteId: note.noteId })
+                },
 
                 { kind: "separator" },
 

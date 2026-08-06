@@ -5,8 +5,15 @@ import { describe, expect, it } from "vitest";
 import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
+import { initRequest } from "../../request.js";
 import TaskContext from "../../task_context.js";
 import notionImporter from "./importer.js";
+
+/** A 1x1 PNG. The bytes are asked what they are, so a placeholder buffer would rightly be refused. */
+const PIXEL_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+    "base64"
+);
 
 /** Builds an in-memory zip from a map of entry name -> contents. */
 async function createZipBuffer(files: Record<string, string | Buffer>): Promise<Buffer> {
@@ -1065,6 +1072,52 @@ describe("Notion importer — integration", () => {
         const container = importRoot.getChildNotes().find((note) => note.title === "Database");
         expect(container).toBeDefined();
         expect(container?.getChildNotes().map((note) => note.title)).toEqual(["Row"]);
+    });
+
+    it("fetches a bookmark card's icon and cover, which the export names but does not carry", async () => {
+        // The whole of a Notion bookmark: an <a class="bookmark source"> whose pictures are the
+        // origin's own addresses. The export ships no bytes for them, so unless they are fetched
+        // the card renders with placeholders — the render sinks refuse a remote address outright.
+        const bookmark = `<figure id="3b1c5eca-1b8b-8099-be42-da0f9203f06f">`
+            + `<a href="https://example.com/page" class="bookmark source"><div class="bookmark-info">`
+            + `<div class="bookmark-text"><div class="bookmark-title">A page</div>`
+            + `<div class="bookmark-description">About the page.</div></div>`
+            + `<div class="bookmark-href"><img src="https://example.com/favicon.png" class="icon bookmark-icon"/>`
+            + `https://example.com/page</div></div>`
+            + `<img src="https://cdn.example.com/cover.png" class="bookmark-image"/></a></figure>`;
+
+        const asked: string[] = [];
+        initRequest({
+            exec: async () => { throw new Error("Not used by this test."); },
+            getImage: async (address: string) => {
+                asked.push(address);
+                return PIXEL_PNG.buffer.slice(PIXEL_PNG.byteOffset, PIXEL_PNG.byteOffset + PIXEL_PNG.byteLength) as ArrayBuffer;
+            }
+        });
+
+        try {
+            const importRoot = await importNotion({
+                "Links 386c5eca1b8b80439520cad27a0d2749.html":
+                    `<html><head><title>Links</title></head><body>`
+                    + `<div id="386c5eca1b8b80439520cad27a0d2749" class="page"><div class="page-body">${bookmark}</div></div>`
+                    + `</body></html>`
+            });
+
+            const note = importRoot.getChildNotes().find((child) => child.title === "Links") ?? importRoot;
+            expect(asked).toEqual([ "https://example.com/favicon.png", "https://cdn.example.com/cover.png" ]);
+
+            expect(note.getAttachments().map((a) => a.role).sort()).toStrictEqual([ "coverImage", "favicon" ]);
+
+            const content = String(note.getContent());
+            expect(content).not.toContain("https://example.com/favicon.png");
+            expect(content).not.toContain("https://cdn.example.com/cover.png");
+            expect(content).toContain("api/attachments/");
+        } finally {
+            initRequest({
+                exec: async () => { throw new Error("Request provider not initialized. Call initRequest() first."); },
+                getImage: async () => { throw new Error("Request provider not initialized. Call initRequest() first."); }
+            });
+        }
     });
 
     it("synthesizes a container named after a CSV that carries no Notion id", async () => {

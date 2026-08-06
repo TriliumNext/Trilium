@@ -284,6 +284,20 @@ samp {
     font-family: var(--monospace-font-family) !important;
 }
 
+/*
+ * Programming ligatures: the bundled JetBrains Mono renders `!=` as `≠`, `->` as `→` and so on,
+ * which reads as the characters having been silently replaced (see #2851). The `monospaceLigatures-
+ * Enabled` option gates this; the class is applied by RootContainer.
+ *
+ * Scoped to the monospace surfaces rather than set on `body`: `font-variant-ligatures` is inherited,
+ * so a blanket rule would also disable `fi`/`fl` in prose, which is a typographic regression in note
+ * content and not what anyone is asking for. Inheritance is what makes `.cm-editor` enough to cover
+ * CodeMirror's internals.
+ */
+body.monospace-ligatures-disabled :is(code, kbd, pre, samp, .cm-editor, .ck-mermaid__editing-view) {
+    font-variant-ligatures: none;
+}
+
 .badge {
     --bs-badge-color: var(--muted-text-color);
 

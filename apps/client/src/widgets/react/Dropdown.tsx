@@ -24,6 +24,18 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
     /** If set to true, then the dropdown button will be considered an icon action (without normal border and sized for icons only). */
     iconAction?: boolean;
     noSelectButtonStyle?: boolean;
+    /**
+     * Drop the `tn-dropdown-list` class the menu otherwise carries by default.
+     *
+     * That class exists for **scrollable** menus: it moves the theme's backdrop blur off the menu's
+     * `::before` layer — which a scrollable menu would scroll away with its content — and onto the
+     * menu element itself. The element-level filter is the fragile one, though: opened over note
+     * content it blurs nothing at all, leaving the menu merely translucent and reading as
+     * see-through over anything dark.
+     *
+     * So set this on any menu that doesn't scroll (i.e. nearly every action menu) to keep it on the
+     * working pseudo-element layer.
+     */
     noDropdownListStyle?: boolean;
     disabled?: boolean;
     text?: ComponentChildren;

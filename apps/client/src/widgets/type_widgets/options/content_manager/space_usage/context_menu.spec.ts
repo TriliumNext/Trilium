@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
     deleteNotes: vi.fn(async (..._args: unknown[]) => true),
     downloadFileNote: vi.fn(),
     showDetails: vi.fn(),
+    // Answers like the real one: the run's report, or null when the user backed out or it failed.
+    showCompressionDialog: vi.fn<(...args: unknown[]) => Promise<{ compressedCount: number } | null>>(async () => null),
     contentChanged: vi.fn(),
     post: vi.fn(async (..._args: unknown[]) => undefined),
     showMessage: vi.fn(),
@@ -54,6 +56,12 @@ vi.mock("../../../../../services/server", () => ({
     default: { post: (...args: unknown[]) => mocks.post(...args) }
 }));
 
+// Stubbed rather than rendered: what belongs here is that the menu opens it, and the dialog's own
+// spec covers what it then does.
+vi.mock("../../../../dialogs/image_compression/image_compression_dialog", () => ({
+    showImageCompressionDialog: (...args: unknown[]) => mocks.showCompressionDialog(...args)
+}));
+
 vi.mock("../../../../../services/toast", () => ({
     default: { showMessage: (...args: unknown[]) => mocks.showMessage(...args) }
 }));
@@ -87,6 +95,7 @@ import {
 const QUICK_EDIT = "bx bx-edit";
 const NEW_TAB = "bx bx-link-external";
 const SHOW_DETAILS = "bx bx-detail";
+const COMPRESS_IMAGES = "bx bx-image";
 const DOWNLOAD = "bx bx-download";
 const EXPORT = "bx bx-export";
 const DELETE = "bx bx-trash destructive-action-icon";
@@ -147,7 +156,7 @@ describe("openSpaceUsageContextMenu", () => {
         expect(event.preventDefault).toHaveBeenCalled();
         expect(event.stopPropagation).toHaveBeenCalled();
         // No Download: a text note has no file to save.
-        expect(icons()).toEqual([ QUICK_EDIT, NEW_TAB, SHOW_DETAILS, EXPORT, DELETE ]);
+        expect(icons()).toEqual([ QUICK_EDIT, NEW_TAB, SHOW_DETAILS, COMPRESS_IMAGES, EXPORT, DELETE ]);
 
         invoke(QUICK_EDIT);
         expect(mocks.triggerCommand)
@@ -159,6 +168,9 @@ describe("openSpaceUsageContextMenu", () => {
 
         invoke(SHOW_DETAILS);
         expect(mocks.showDetails).toHaveBeenCalledWith([ "root", "p", "n1" ]);
+
+        invoke(COMPRESS_IMAGES);
+        expect(mocks.showCompressionDialog).toHaveBeenCalledWith({ type: "note", noteId: "n1" });
 
         invoke(EXPORT);
         expect(mocks.triggerCommand).toHaveBeenLastCalledWith("showExportDialog", {
@@ -189,6 +201,26 @@ describe("openSpaceUsageContextMenu", () => {
         expect(mocks.contentChanged).toHaveBeenCalledTimes(1);
     });
 
+    it("asks for a fresh reading once images were actually replaced, and not otherwise", async () => {
+        givenNote("n1");
+        await openFor([ "root", "p", "n1" ]);
+
+        // Compressing changes the size of the notes holding the images, which is what the views are
+        // drawn from — so a run that replaced any of them has to say so.
+        mocks.showCompressionDialog.mockResolvedValueOnce({ compressedCount: 2 });
+        invoke(COMPRESS_IMAGES);
+        await vi.waitFor(() => expect(mocks.contentChanged).toHaveBeenCalledTimes(1));
+
+        // A run that compressed nothing, and a dialog backed out of or failed, all leave the
+        // figures exactly as they were — so none of them is worth re-measuring the database for.
+        mocks.showCompressionDialog.mockResolvedValueOnce({ compressedCount: 0 });
+        invoke(COMPRESS_IMAGES);
+        mocks.showCompressionDialog.mockResolvedValueOnce(null);
+        invoke(COMPRESS_IMAGES);
+        await vi.waitFor(() => expect(mocks.showCompressionDialog).toHaveBeenCalledTimes(3));
+        expect(mocks.contentChanged).toHaveBeenCalledTimes(1);
+    });
+
     it("adds Download for file-bearing types, disabled when the content is away", async () => {
         givenNote("f1", "file");
         mocks.branchIds.set("p/f1", "b1");
@@ -210,7 +242,7 @@ describe("openSpaceUsageContextMenu", () => {
         await openFor([ "root" ]);
 
         // Not merely struck through: the root can never be deleted, so it is not offered.
-        expect(icons()).toEqual([ QUICK_EDIT, NEW_TAB, SHOW_DETAILS, EXPORT ]);
+        expect(icons()).toEqual([ QUICK_EDIT, NEW_TAB, SHOW_DETAILS, COMPRESS_IMAGES, EXPORT ]);
         expect(itemByIcon(EXPORT)?.enabled).toBe(false);
         // Opening it is still fine.
         expect(itemByIcon(QUICK_EDIT)?.enabled).toBeUndefined();

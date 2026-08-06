@@ -1422,10 +1422,6 @@
     "close": "Zavřít"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Tato příloha bude automaticky smazána za {{time}}",
-    "will_be_deleted_soon": "Tato příloha bude brzy automaticky smazána",
-    "deletion_reason": ", protože příloha není propojena s obsahem poznámky. Aby se smazání zabránilo, vložte odkaz na přílohu zpět do obsahu nebo převeďte přílohu na poznámku.",
-    "role_and_size": "Role: {{role}}, velikost: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Odkaz na přílohu byl zkopírován do schránky.",
     "unrecognized_role": "Nerozpoznaná role přílohy '{{role}}'."
   },
@@ -1828,7 +1824,6 @@
   },
   "geo-map": {
     "create-child-note-title": "Vytvořit novou dceřinou poznámku a přidat ji do mapy",
-    "create-child-note-text": "Přidat značku",
     "create-child-note-instruction": "Kliknutím na mapu vytvoříte novou poznámku na daném místě nebo stisknutím klávesy Escape jej zavřete.",
     "unable-to-load-map": "Nelze načíst mapu."
   },
@@ -2227,8 +2222,6 @@
     "cancelFocus": "Ukončit režim soustředění",
     "moveUp": "Posunout nahoru",
     "moveDown": "Posunout dolů",
-    "link": "Odkaz",
-    "linkBidirectional": "Obousměrný odkaz",
     "clickTips": "Klikněte prosím na cílový uzel",
     "summary": "Shrnutí"
   },

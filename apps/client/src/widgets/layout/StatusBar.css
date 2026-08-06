@@ -30,10 +30,6 @@
                 align-items: center;
                 border: 0;
 
-                span:first-of-type {
-                    font-size: 1rem;
-                }
-
                 &.active,
                 &.dropdown-toggle.show,
                 &:focus,

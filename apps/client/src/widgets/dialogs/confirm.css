@@ -1,0 +1,11 @@
+.modal.confirm-dialog {
+    .confirm-delete-note-outcome {
+        color: var(--muted-text-color);
+        margin-block: 4px 0;
+        font-size: 0.9em;
+
+        /* Held at the height of a line so that ticking the box swaps the wording rather than
+           resizing the dialog under the pointer that ticked it. */
+        min-height: 1.35em;
+    }
+}

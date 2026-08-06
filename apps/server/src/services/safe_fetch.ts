@@ -32,17 +32,22 @@ function isBlockedIP(ip: string): boolean {
  * Returns the validated addresses so they can be pinned for the actual connection.
  */
 async function validateHostResolution(hostname: string): Promise<dns.LookupAddress[]> {
+    // `URL.hostname` hands back an IPv6 literal still wrapped in its brackets ("[::1]"), which is
+    // not a form either net.isIP or ipaddr.js recognises. Left as-is, such an address would be
+    // taken for a name and looked up as one instead of being checked as the address it is.
+    const host = hostname.replace(/^\[|\]$/g, "");
+
     // If the hostname is already an IP literal, check it directly
-    if (net.isIP(hostname)) {
-        if (isBlockedIP(hostname)) {
+    if (net.isIP(host)) {
+        if (isBlockedIP(host)) {
             throw new ValidationError("URLs pointing to private/internal networks are not allowed");
         }
-        return [{ address: hostname, family: net.isIP(hostname) as 4 | 6 }];
+        return [{ address: host, family: net.isIP(host) as 4 | 6 }];
     }
 
     let addresses: dns.LookupAddress[];
     try {
-        addresses = await dns.promises.lookup(hostname, { all: true });
+        addresses = await dns.promises.lookup(host, { all: true });
     } catch {
         throw new ValidationError("Could not resolve hostname");
     }
@@ -210,4 +215,4 @@ async function safeFetch(url: string, options: RequestInit = {}): Promise<Respon
     throw new Error("Too many redirects");
 }
 
-export { safeFetch, validateHostResolution, validateUrl };
+export { createPinnedLookup, safeFetch, validateHostResolution, validateUrl };

@@ -99,6 +99,22 @@ function fileObjectJson(cid: string, name: string, fileExt: string, fileMimeType
     return JSON.stringify({ sbType: "FileObject", snapshot: { data: { details: { id: cid, name, fileExt, fileMimeType, source } } } });
 }
 
+/**
+ * A real icon directory of one entry. The importer asks the bytes what they are rather than taking
+ * the export's word for it, so a placeholder needs bytes that genuinely are a picture.
+ */
+function icoBytes(): Buffer {
+    const directory = Buffer.alloc(22);
+    directory.writeUInt16LE(1, 2); // type: icon
+    directory.writeUInt16LE(1, 4); // one entry
+    directory.writeUInt8(16, 6); // width
+    directory.writeUInt8(16, 7); // height
+    directory.writeUInt32LE(4, 14); // payload length
+    directory.writeUInt32LE(directory.length, 18); // where the payload starts
+
+    return Buffer.concat([ directory, Buffer.from([ 0, 0, 0, 0 ]) ]);
+}
+
 /** A title-less "row" object whose content is its custom property values (keyed by relation key). */
 function memberObject(id: string, props: Record<string, unknown>): string {
     return JSON.stringify({
@@ -137,10 +153,11 @@ describe("Anytype importer — integration", () => {
         expect(decodeUtf8(first?.getContent() ?? "")).toBe("<p>Hello world</p><p>Second paragraph</p>");
     });
 
-    it("keeps a bookmark block as a link-embed, inlining its favicon as a base64 data URI", async () => {
+    it("keeps a bookmark block as a link-embed, storing its favicon as an attachment", async () => {
         // A page holding a bookmark card. The card's target is a separate `ot-bookmark` object (a non-page
-        // layout, so not imported); the card carries the url/title/description and a favicon file id (resolved
-        // from the export's filesObjects/files to an inline data URI, how Trilium natively stores a favicon).
+        // layout, so not imported); the card carries the url/title/description and a favicon file id, which
+        // is saved as an attachment of the note and referenced from the card — the shape a preview fetched
+        // live is stored in, rather than base64 inside the note's HTML.
         const page = JSON.stringify({
             sbType: "Page",
             snapshot: {
@@ -161,24 +178,65 @@ describe("Anytype importer — integration", () => {
             sbType: "Page",
             snapshot: { data: { blocks: [{ id: "bookmark-obj", childrenIds: [] }], details: { id: "bookmark-obj", name: "Trilium Notes", resolvedLayout: 11, source: "https://triliumnotes.org/" }, objectTypes: ["ot-bookmark"] } }
         });
-        const faviconBytes = Buffer.from([0x00, 0x01, 0x02, 0x03]);
-
         const importRoot = await importAnytype({
             "objects/page1.pb.json": page,
             "objects/bookmark.pb.json": bookmarkObject,
             "filesObjects/fav.pb.json": fileObjectJson("fav-cid", "triliumnotes_org_icon", "ico", "image/x-icon", "files\\triliumnotes_org_icon.ico"),
-            "files/triliumnotes_org_icon.ico": faviconBytes
+            "files/triliumnotes_org_icon.ico": icoBytes()
         });
 
         const children = importRoot.getChildNotes();
         expect(children.map((note) => note.title)).toEqual(["Links"]);
-        // The favicon file id has been resolved to an inline data URI (mime derived from the .ico name).
+
+        // Under the role that says which of a card's two pictures it is, and titled after the site —
+        // which is the key a second card for the same site reuses it by.
+        const [ favicon ] = children[0]?.getAttachments() ?? [];
+        expect(favicon).toMatchObject({ role: "favicon", title: "triliumnotes.org.ico" });
+
         expect(decodeUtf8(children[0]?.getContent() ?? "")).toBe(
-            `<section class="link-embed" data-url="https://triliumnotes.org/" data-embed-type="opengraph" data-title="Trilium Notes" data-description="An open-source note-taking app." data-favicon="data:image/vnd.microsoft.icon;base64,${faviconBytes.toString("base64")}"></section>`
+            `<section class="link-embed" data-url="https://triliumnotes.org/" data-embed-type="opengraph" data-title="Trilium Notes"`
+            + ` data-description="An open-source note-taking app."`
+            + ` data-favicon="api/attachments/${favicon?.attachmentId}/image/triliumnotes.org.ico"></section>`
         );
     });
 
-    it("leaves a card with no favicon/preview untouched, and falls back to a generic MIME for an unrecognized one", async () => {
+    it("keeps one picture for a site linked by more than one card", async () => {
+        // Two cards for the same site, each carrying its own copy of the icon — as an export does,
+        // the files being content-addressed per object rather than shared.
+        const page = JSON.stringify({
+            sbType: "Page",
+            snapshot: {
+                data: {
+                    blocks: [
+                        { id: "page1", childrenIds: ["header", "one", "two"] },
+                        { id: "header", childrenIds: ["title"] },
+                        { id: "title", text: { text: "", style: "Title" } },
+                        { id: "one", bookmark: { url: "https://example.com/a", title: "A", faviconHash: "fav-a" } },
+                        { id: "two", bookmark: { url: "https://example.com/b", title: "B", faviconHash: "fav-b" } }
+                    ],
+                    details: { id: "page1", name: "Links", resolvedLayout: 0 }
+                }
+            }
+        });
+
+        const importRoot = await importAnytype({
+            "objects/page1.pb.json": page,
+            "filesObjects/a.pb.json": fileObjectJson("fav-a", "icon_a", "ico", "image/x-icon", "files\\icon_a.ico"),
+            "filesObjects/b.pb.json": fileObjectJson("fav-b", "icon_b", "ico", "image/x-icon", "files\\icon_b.ico"),
+            "files/icon_a.ico": icoBytes(),
+            "files/icon_b.ico": icoBytes()
+        });
+
+        // One attachment, titled by the site rather than by either file, and both cards point at it.
+        const attachments = importRoot.getChildNotes()[0]?.getAttachments() ?? [];
+        expect(attachments.map((a) => a.title)).toEqual([ "example.com.ico" ]);
+
+        const referenced = decodeUtf8(importRoot.getChildNotes()[0]?.getContent() ?? "").match(/data-favicon="[^"]+"/g) ?? [];
+        expect(referenced).toHaveLength(2);
+        expect(new Set(referenced).size).toBe(1);
+    });
+
+    it("leaves a card with no favicon/preview untouched, and drops one whose bytes are not a picture", async () => {
         const bookmarkPage = (bookmark: Record<string, unknown>) => JSON.stringify({
             sbType: "Page",
             snapshot: {
@@ -200,15 +258,18 @@ describe("Anytype importer — integration", () => {
             '<section class="link-embed" data-url="https://example.com/" data-embed-type="opengraph" data-title="Example"></section>'
         );
 
-        // A favicon whose file carries neither a known extension nor an exported MIME falls back to octet-stream.
-        const bytes = Buffer.from([0x09]);
+        // Bytes that are not a picture: the attribute goes, rather than a card being given something
+        // it cannot draw. The export's own metadata is not taken for it — the bytes are asked.
         const odd = await importAnytype({
             "objects/page1.pb.json": bookmarkPage({ url: "https://example.com/", faviconHash: "fav-cid" }),
-            "filesObjects/fav.pb.json": fileObjectJson("fav-cid", "icon", "", "", "files\\icon.weirdext"),
-            "files/icon.weirdext": bytes
+            "filesObjects/fav.pb.json": fileObjectJson("fav-cid", "icon", "ico", "image/x-icon", "files\\icon.ico"),
+            "files/icon.ico": Buffer.from([ 0x09 ])
         });
-        expect(decodeUtf8(odd.getChildNotes()[0]?.getContent() ?? ""))
-            .toContain(`data-favicon="data:application/octet-stream;base64,${bytes.toString("base64")}"`);
+
+        expect(decodeUtf8(odd.getChildNotes()[0]?.getContent() ?? "")).toBe(
+            '<section class="link-embed" data-url="https://example.com/" data-embed-type="opengraph"></section>'
+        );
+        expect(odd.getChildNotes()[0]?.getAttachments()).toHaveLength(0);
     });
 
     it("drops a bookmark's favicon placeholder when the export has no bytes for it", async () => {

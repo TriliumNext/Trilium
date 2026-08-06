@@ -133,8 +133,12 @@ Common UI components are available in `apps/client/src/widgets/react/` — **alw
 - `FormSelect` - Dropdown/combobox taking an object array as data
 - `Slider` - Range slider with label
 - `Checkbox`, `RadioButton` - Form controls
-- `CollapsibleSection` - Expandable content sections
+- `Collapsible` - Expandable content section (animated, theme-styled); `ExternallyControlledCollapsible` is the controlled variant (caller owns `expanded`/`setExpanded`) vs. `Collapsible`'s self-managed `initiallyExpanded`
+- `ColorPicker` - Color picker combining preset swatches with the browser's native `<input type="color">`; value is a CSS color string (`onChange(null)` clears). A controlled, flat swatch row — wrap it in a `Dropdown` to get a popover, or use it inline; don't hand-roll a color palette from scratch. `NoteColorPicker` is the note-bound variant that reads/writes the note's `color` label
 - `Badge` - Colored pill/label with optional icon, tooltip, and `onClick` (for counts, status flags). Set its color via the `--color` CSS variable on a wrapper class (not inline styles); pass `outline` for a colored-border/transparent-fill variant instead of a solid background. `BadgeWithDropdown` pairs a badge with a dropdown menu. Don't hand-roll pill/badge markup — reuse it
+- `Table` - Generic [Tabulator](https://tabulator.info/)-based data grid (`columns`, `data`, `events`, `modules`, `tabulatorRef`; props typed via `TableProps<T>`). Decoupled from the note/collection model — deals purely in columns/data/events, so use it for any grid (e.g. the SQL console results, the note collection table view). Prefer it over instantiating `tabulator-tables` directly
+- `Calendar` - Generic [FullCalendar](https://fullcalendar.io/) wrapper (accepts any `CalendarOptions` plus a `calendarRef`; props typed via `CalendarProps`). Decoupled from the note/collection model — deals purely in FullCalendar options, so use it for any calendar rather than instantiating `@fullcalendar/core` directly
+- `Dropdown` - Bootstrap dropdown wrapper (toggle button + menu, with `FormListItem`/`FormDropdownDivider` as the items). **Pass `noDropdownListStyle` unless the menu actually scrolls** — see "Dropdown menus and the backdrop blur" below
 
 Fluent builder pattern: `.child()`, `.class()`, `.css()` chaining with position-based ordering.
 
@@ -145,6 +149,18 @@ Fluent builder pattern: `.child()`, `.class()`, `.css()` chaining with position-
 - **Per-component CSS files**: each component should have a matching `.css` file (e.g. `my_dialog.tsx` → `my_dialog.css`), imported at the top of the component file.
 - **CSS nesting for scoping**: since CSS modules are not available, scope styles using a root class and native CSS nesting. For example, a dialog with `className="my-dialog"` should have its styles nested under `.modal.my-dialog { … }`.
 - **Reuse existing components** instead of building custom markup — prefer `FormTextBox`, `FormTextBoxWithUnit`, `FormSelect`, `Slider`, `Button`, etc. over hand-rolled `<input>`, `<select>`, or `<button>` elements.
+
+#### Dropdown menus and the backdrop blur
+The Next theme frosts every `.dropdown-menu` with `backdrop-filter`, but it does so along **two different paths**, and only one of them is reliable:
+
+- **`::before` layer** (default for a menu *without* `tn-dropdown-list`) — the blur lives on a background-less pseudo-element at `z-index: -1`. This one works everywhere.
+- **Element-level filter** (what the `tn-dropdown-list` class switches to) — the blur is put on the menu element itself, which also paints a translucent background. This exists only because a **scrollable** menu can't use the pseudo: it would scroll away with the content. Opened inside the note's scrolling content area, this filter silently does nothing, and the menu degrades to its bare ~85 %-alpha background — i.e. it reads as see-through over anything dark. `body.background-effects` already forces such menus to an opaque fallback for the same underlying reason (see the comment in `theme-next/base.css`).
+
+`Dropdown` adds `tn-dropdown-list` **by default**, so a new menu opts into the fragile path unless you say otherwise:
+
+- Pass **`noDropdownListStyle`** on any menu that doesn't scroll — that is nearly every action/`[…]` menu. `NoteActions`, the global menu, the note-icon picker and `HelpDropdown` all do.
+- Pass **`portalToBody`** instead when the menu is fine but an *ancestor* establishes a containment/backdrop root (`container-type`, `transform`, `filter` — e.g. the peeked right pane), which flattens the blur into a flat tint.
+- If a menu looks transparent rather than frosted, check these two before reaching for CSS overrides.
 
 #### API Architecture
 - **Internal API**: REST endpoints in `apps/server/src/routes/api/`

@@ -207,6 +207,10 @@ export default class SpacedUpdate<T = void> {
         const restoreOnError = (e: unknown): never => {
             this.changed = true;
             this.onStateChanged("error");
+            // Said out loud, as a failed commit is. Every caller of this path swallows what is
+            // rethrown, so a snapshot that cannot be taken would otherwise show as a failing save
+            // indicator and nothing else — anywhere.
+            logError(getErrorMessage(e));
             // The debounce timer may have already fired and gone idle while the snapshot was
             // being captured; schedule a retry so the restored change is not stranded until
             // the next scheduleUpdate() call. Going through the retry timer (rather than the

@@ -8,13 +8,13 @@ import { formatSize } from "../../../../../services/utils";
 import ActionButton from "../../../../react/ActionButton";
 import { useStaticTooltip } from "../../../../react/hooks";
 import SegmentedChoice from "../../../../react/SegmentedChoice";
+import { useFetch } from "../../../../react/use_fetch";
 import OptionsPageHeader from "../../components/OptionsPageHeader";
 import type { ContentManagerSectionProps } from "../index";
 import Browse from "./browse";
 import { showCleanupDialog } from "./cleanup_dialog";
 import Overview from "./overview";
 import SpaceUsagePlaceholder from "./placeholder";
-import { useSpaceUsageFetch } from "./use_space_usage_fetch";
 
 /** Matches the server default; the treemap could not label more cells anyway. */
 const OVERVIEW_LIMIT = 500;
@@ -42,7 +42,7 @@ export default function SpaceUsage({ sectionSwitcher }: ContentManagerSectionPro
     // Kept fetched across both views so returning to the treemap draws immediately rather than
     // blanking. Revisions stay out of the ranking so it shares the basis of the areas the treemap
     // draws — asking for one basis and drawing the other would rank in notes the cells then shrink.
-    const { data: overview, failed, loading } = useSpaceUsageFetch<SpaceUsageOverviewResponse>(
+    const { data: overview, failed, loading } = useFetch<SpaceUsageOverviewResponse>(
         `space-usage/overview?limit=${OVERVIEW_LIMIT}`, refreshToken);
 
     return (

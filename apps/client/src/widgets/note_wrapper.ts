@@ -2,8 +2,8 @@ import type { EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
 import type FNote from "../entities/fnote.js";
 import attributeService from "../services/attributes.js";
-import { getLocaleById } from "../services/i18n.js";
 import utils from "../services/utils.js";
+import { isContentRightToLeft } from "../utils/formatters.js";
 import type BasicWidget from "./basic_widget.js";
 import FlexContainer from "./containers/flex_container.js";
 
@@ -67,9 +67,9 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         this.$widget.toggleClass("bgfx", hasBackgroundEffects(note));
         this.$widget.toggleClass("protected", note.isProtected);
 
-        const noteLanguage = note?.getLabelValue("language");
-        const locale = getLocaleById(noteLanguage);
-        this.$widget.toggleClass("rtl", !!locale?.rtl);
+        // Resolved rather than read straight off the label: a note with no language of its own
+        // still follows the default content language.
+        this.$widget.toggleClass("rtl", isContentRightToLeft(note?.getLabelValue("language")));
     }
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
@@ -78,6 +78,9 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         const noteId = this.noteContext?.noteId;
         if (
             loadResults.isNoteReloaded(noteId) ||
+            // The direction of a note carrying no `#language` comes from this option, so a change to it
+            // has to repaint the `rtl` class the same way a change to the label would.
+            loadResults.isOptionReloaded("defaultContentLanguage") ||
             loadResults.getAttributeRows().find((attr) => attr.type === "label" && LABELS_CAUSING_REFRESH.includes(attr.name ?? "") && attributeService.isAffecting(attr, this.noteContext?.note))
         ) {
             this.refresh();

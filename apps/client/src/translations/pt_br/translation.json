@@ -561,10 +561,6 @@
     "close": "Fechar"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Este anexo será excluído automaticamente em {{time}}",
-    "will_be_deleted_soon": "Este anexo será excluído automaticamente em breve",
-    "deletion_reason": ", porque o anexo não está associado ao conteúdo da nota. Para evitar a exclusão, adicione o anexo novamente ao conteúdo ou converta o anexo em uma nota.",
-    "role_and_size": "Regra: {{role}}, tamanho: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Link do anexo copiado para a área de transferência.",
     "unrecognized_role": "Regra desconhecida de anexo '{{role}}'."
   },
@@ -2111,8 +2107,6 @@
   },
   "mind-map": {
     "summary": "Sumário",
-    "linkBidirectional": "Link Bidirecional",
-    "link": "Link",
     "cancelFocus": "Cancelar Modo Foco",
     "focus": "Modo Foco",
     "removeNode": "Remover nó",

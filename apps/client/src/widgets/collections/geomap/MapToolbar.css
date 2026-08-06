@@ -1,0 +1,31 @@
+/*
+ * The controls stand in the bottom corner, where every other set of zoom controls floating over
+ * content in the app stands — the image viewer's, whose control group this is — rather than in the
+ * top corner MapLibre keeps its zoom buttons in. The corner is the map's to give: its attribution
+ * has been moved to the foot of the other side, beside the scale (see map.tsx).
+ *
+ * Held off the edges by as much as everything else standing over the map is, which is settled for
+ * both in index.css, so the group and the scale opposite it stand on the same line.
+ *
+ * Above the canvas whatever order the two end up in: MapLibre builds its part of the container
+ * itself, so what Preact renders alongside is not reliably the later sibling. The number clears
+ * MapLibre's own control corners, which sit at 2.
+ */
+.geo-map-container .geo-map-toolbar {
+    position: absolute;
+    bottom: var(--geo-map-inset);
+    inset-inline-end: var(--geo-map-inset);
+    z-index: 3;
+}
+
+/* The group is dressed in the set the map's furniture shares, handed over once for every control
+   group standing over this map — see the palette handoff in index.css, which is also where a dark
+   map darkens it. */
+
+/* The tilt wears text — 3D or 2D, a word the icon set has no glyph for — but it is one action, so
+   it keeps an icon button's width rather than the readout's roomier chip. */
+.geo-map-container .geo-map-toolbar .geo-map-tilt-button {
+    min-width: 0;
+    width: 32px;
+}
+

@@ -16,7 +16,7 @@ Any r<a class="reference-link" href="Internal%20(reference)%20links.md">Interna
 Relations coming from a <a class="reference-link" href="../../Saved%20Search.md">Saved Search</a> are excluded, since a search stores an `ancestor` relation that would otherwise list every one of its results as a backlink.
 
 > [!NOTE]
-> Only some note types have their content scanned for links: text, Markdown, relation maps and AI chats. A link written inside a <a class="reference-link" href="../../Code.md">Code</a> note is not registered and will not appear as a backlink on the target note. A relation set manually on a code note does still count.
+> Only some note types have their content scanned for links: <a class="reference-link" href="../../Text.md">Text</a>, <a class="reference-link" href="../../Markdown.md">Markdown</a>, <a class="reference-link" href="../../Relation%20Map.md">Relation Map</a> and <a class="reference-link" href="../../../AI.md">AI</a> chats. A link written inside a <a class="reference-link" href="../../Code.md">Code</a> note is not registered and will not appear as a backlink on the target note. A relation set manually on a code note does still count.
 
 ## How entries are displayed
 

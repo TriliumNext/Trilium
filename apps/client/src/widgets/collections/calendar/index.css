@@ -162,6 +162,12 @@
     --border-color: var(--custom-color, var(--input-focus-outline-color));
 }
 
+/* The event the popover stands for, marked the way a focused event is. */
+.calendar-view a.fc-timegrid-event.calendar-event-selected,
+.calendar-view a.fc-daygrid-event.calendar-event-selected {
+    --border-color: var(--custom-color, var(--input-focus-outline-color));
+}
+
 .calendar-view a.fc-timegrid-event:hover,
 .calendar-view a.fc-daygrid-event:hover {
     filter: var(--calendar-coll-event-hover-filter, none);

@@ -45,6 +45,7 @@ The following features are preserved by Trilium during the import process:
     *   Toggle headings are stripped of their toggle button and become normal headings instead.
 *   <a class="reference-link" href="../../../Note%20Types/Text/Math%20Equations.md">Math Equations</a> (inline or block)
 *   <a class="reference-link" href="../../../Note%20Types/Text/Link%20Previews.md">Link Previews</a>
+    *   The icon and image of the links need to be retrieved online since the exports don't carry the images. This operation is done only if _Download images automatically_ is enabled in <a class="reference-link" href="../../UI%20Elements/Options.md">Options</a> → _Media_.
 *   <a class="reference-link" href="../../../Note%20Types/Text/Developer-specific%20formatting/Code%20blocks.md">Code blocks</a>, with a best-effort attempt to restore the language.
 *   <a class="reference-link" href="../../../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a>
 *   Links between other imported pages are converted to <a class="reference-link" href="../../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> if they are part of the same import.

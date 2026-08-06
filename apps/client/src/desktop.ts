@@ -5,6 +5,7 @@ import type { ElectronWindowApi } from "@triliumnext/commons";
 import appContext, { type CommandNames } from "./components/app_context.js";
 import electronContextMenu from "./menus/electron_context_menu.js";
 import bundleService from "./services/bundle.js";
+import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
 import glob from "./services/glob.js";
 import { t } from "./services/i18n.js";
 import { syncNativeWindowWithTheme } from "./services/native_window.js";
@@ -41,6 +42,8 @@ if (utils.isElectron()) {
 noteTooltipService.setupGlobalTooltip();
 
 noteAutocompleteService.init();
+
+setupClipboardImageEmbed();
 
 if (utils.isElectron()) {
     electronContextMenu.setupContextMenu();

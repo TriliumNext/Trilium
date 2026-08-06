@@ -43,6 +43,31 @@ async function saveAttachment(
     return attachment as AttachmentPojo;
 }
 
+/** A 1x1 transparent PNG, small enough to be written out in full. */
+const PIXEL_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+    "base64"
+);
+
+/**
+ * Wraps a picture in an icon directory of one entry, which is what an `.ico` is: a container of
+ * several sizes rather than an image format of its own. Built here rather than fixtured so the
+ * bytes that make it an icon — the type, and the offset the picture starts at — stay readable.
+ */
+function icoWrapping(image: Buffer): Buffer {
+    const directory = Buffer.alloc(22);
+    directory.writeUInt16LE(1, 2); // type: icon, as opposed to a cursor
+    directory.writeUInt16LE(1, 4); // one entry
+    directory.writeUInt8(1, 6); // width
+    directory.writeUInt8(1, 7); // height
+    directory.writeUInt16LE(1, 10); // colour planes
+    directory.writeUInt16LE(32, 12); // bits per pixel
+    directory.writeUInt32LE(image.length, 14);
+    directory.writeUInt32LE(directory.length, 18); // the picture starts where the directory ends
+
+    return Buffer.concat([ directory, image ]);
+}
+
 function attachmentIsDeleted(attachmentId: string): number | null {
     const row = getSql().getRowOrNull<{ isDeleted: number }>(
         "SELECT isDeleted FROM attachments WHERE attachmentId = ?",
@@ -171,6 +196,44 @@ describe("Attachments API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.uploaded).toBe(true);
             expect(res.body.url).toContain("/image/");
+
+            // The URL it just handed back has to be fetchable *now*. The editor puts it straight
+            // into the document as an image source and the browser asks for it immediately, so an
+            // upload that answers before the bytes are stored draws a broken image — the picture
+            // shows for a moment from the local copy and is then replaced by nothing.
+            const fetched = await api.get(`/${res.body.url}`);
+
+            expect(fetched.status).toBe(200);
+            expect((fetched.body as Uint8Array).length).toBeGreaterThan(0);
+        });
+
+        it("uploads an ICO as an image rather than as a file", async () => {
+            const { noteId } = await createTextNote(api, { title: "Icon upload target" });
+
+            const res = await api.post<{ uploaded: boolean; url: string }>(
+                `/api/notes/${noteId}/attachments/upload`,
+                {
+                    file: {
+                        originalname: "site.ico",
+                        mimetype: "image/x-icon",
+                        buffer: icoWrapping(PIXEL_PNG)
+                    }
+                }
+            );
+            expect(res.status).toBe(200);
+            expect(res.body.uploaded).toBe(true);
+            // A file attachment would answer with a `#root/...?viewMode=attachments` link instead,
+            // which is not something an <img> can be pointed at — the whole reason a favicon has to
+            // arrive here as an image.
+            expect(res.body.url).toContain("/image/");
+
+            const fetched = await api.get(`/${res.body.url}`);
+            expect(fetched.status).toBe(200);
+
+            // Stored under the registered type, not the `image/ico` that `image/<ext>` would give,
+            // since that is what the image route serves it as.
+            const [ attachment ] = (await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`)).body;
+            expect(attachment).toMatchObject({ role: "image", mime: "image/x-icon" });
         });
 
         it("reports a missing upload when no file is present", async () => {

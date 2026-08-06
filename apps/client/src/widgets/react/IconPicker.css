@@ -1,0 +1,51 @@
+/*
+ * The picker's own dressing. Written under the class the picker brings rather than the note icon
+ * widget's, which it used to live inside; the themes still reach the grid through the legacy class
+ * the picker also carries.
+ */
+.icon-picker .filter-row {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.icon-picker .filter-row span {
+    display: block;
+    font-weight: bold;
+}
+
+.icon-picker .icon-list {
+    height: 500px;
+    overflow: auto;
+}
+
+.icon-picker .icon-list span {
+    display: inline-block;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-size: 180%;
+}
+
+.icon-picker .icon-list span:hover {
+    border: 1px solid var(--main-border-color);
+}
+
+.icon-picker .icon-list span.bx-empty {
+    width: unset;
+}
+
+.icon-picker .icon-list span.bx-empty::before {
+    display: inline-block;
+    content: "";
+    border: 1px dashed var(--muted-text-color);
+    width: 1em;
+    height: 1em;
+}
+
+.icon-picker .no-results {
+    padding: 20px;
+    text-align: center;
+    color: var(--muted-text-color);
+}

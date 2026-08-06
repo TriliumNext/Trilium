@@ -1426,7 +1426,6 @@
     "title": "बैकअप",
     "automatic_backups_title": "ऑटोमैटिक बैकअप",
     "automatic_backups_description": "ट्रिलियम डेटाबेस का बैकअप स्वचालित रूप से ले सकता है। बैकअप को चालू रखने की अनुशंसा की जाती है, लेकिन बड़े डेटाबेस और/या धीमी स्टोरेज डिवाइसेज के साथ यह एप्लिकेशन स्टार्टअप को धीमा कर सकता है।",
-    "backup_location_description": "बैकअप {{- backupFolder}} में स्टोर किए जाते हैं।",
     "download": "डाउनलोड करें"
   },
   "etapi": {
@@ -1625,10 +1624,6 @@
     "close": "बंद करें"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "यह अटैचमेंट {{time}} में अपने-आप डिलीट हो जाएगा",
-    "will_be_deleted_soon": "यह अटैचमेंट जल्द ही अपने-आप डिलीट हो जाएगा",
-    "deletion_reason": ", क्योंकि इस अटैचमेंट का नोट में कोई लिंक नहीं है। इसे बचाने के लिए लिंक वापस जोड़ें या इसे नोट में बदल दें।",
-    "role_and_size": "रोल: {{role}}, साइज़: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "अटैचमेंट लिंक कॉपी कर लिया गया है।",
     "unrecognized_role": "अटैचमेंट रोल '{{role}}' की पहचान नहीं हुई।"
   },
@@ -2003,7 +1998,6 @@
   },
   "geo-map": {
     "create-child-note-title": "नया चाइल्ड नोट बनाकर मैप पर जोड़ें",
-    "create-child-note-text": "मार्कर जोड़ें",
     "create-child-note-instruction": "नई जगह पर नोट बनाने के लिए मैप पर क्लिक करें, या बंद करने के लिए Escape दबाएं।",
     "unable-to-load-map": "मैप लोड नहीं हो सका।"
   },
@@ -2785,8 +2779,6 @@
     "cancelFocus": "फोकस मोड रद्द करें",
     "moveUp": "ऊपर ले जाएं",
     "moveDown": "नीचे ले जाएं",
-    "link": "लिंक (Link)",
-    "linkBidirectional": "द्विदिश लिंक (Bidirectional Link)",
     "clickTips": "कृपया लक्षित (target) नोड पर क्लिक करें",
     "summary": "सारांश (Summary)"
   },

@@ -1,0 +1,134 @@
+/*
+ * The surface a panel standing over a canvas is drawn on, and the geometry of what heads it.
+ *
+ * Where the panel stands, how wide it is and how tall it may grow are the caller's — those are what
+ * differ between one canvas and the next (see NodePanel.css, DetailPane.css). What is settled here
+ * is everything the two share: the sheet itself, the header row, and the bodies under it.
+ */
+.tn-overlay-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+    background: var(--menu-background-color);
+    color: var(--menu-text-color);
+    border: 1px solid var(--dropdown-border-color);
+    /* A panel that stands away from the edges is a card; one flush against them is not, and squares
+       its corners off (see DetailPane.css). */
+    border-radius: var(--overlay-panel-radius, 8px);
+    box-shadow: 0 2px 8px #0003;
+    /* The frosting the bars beside it wear, which is a menu's (see OverlayToolbar.css). */
+    backdrop-filter: var(--dropdown-backdrop-filter, blur(10px));
+}
+
+/*
+ * The head of the panel: a strip of tabs or a heading of one line, and beside either of them the
+ * button that sends the panel away. Only the placing of that button is this row's business — what
+ * heads the panel keeps its own padding and the line under it (see below), the two headers standing
+ * at different heights.
+ */
+.tn-overlay-panel .tn-overlay-panel-header {
+    position: relative;
+    /* The head of a full panel keeps its height; what gives way is the body under it, which scrolls. */
+    flex-shrink: 0;
+}
+
+/*
+ * At the end of the row and centred on it, whichever header it is standing at: whatever the header
+ * offers, and last of all the way out. What they look like is the theme's — an "x" icon button is
+ * dressed as the one closing a tab is, here as everywhere.
+ *
+ * Laid over the row rather than standing in it: a strip of tabs is centred on the panel, and
+ * buttons taking their own place beside it would push it off centre. There is room to spare next
+ * to two tabs and next to one word, so the two never meet.
+ */
+.tn-overlay-panel .tn-overlay-panel-header-actions {
+    position: absolute;
+    inset-inline-end: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/*
+ * The strip is the right pane's, at the size it stands there (see TabStrip.css); what is left here
+ * is the row it heads. It parts from the body under it by a line the width of the panel, so that it
+ * reads as the panel's header rather than as one more choice among the fields — which is what a
+ * button group means everywhere else inside a panel.
+ */
+.tn-overlay-panel .tn-overlay-panel-header > .tab-strip {
+    padding: 8px;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+/*
+ * A heading of one line, dressed as the strip is: the same line under it, and the same room —
+ * reckoned from a body's own padding, so that the heading stands over what is under it rather than
+ * beside it.
+ */
+.tn-overlay-panel .tn-overlay-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 15px;
+    /* Clear of the button laid over the end of the row, for a heading longer than English gives it. */
+    padding-inline-end: 36px;
+    border-bottom: 1px solid var(--main-border-color);
+    font-weight: 550;
+}
+
+/* A heading is as long as whatever it names, and cutting it short is kinder than letting it push
+   the panel wider than the canvas can spare. */
+.tn-overlay-panel .tn-overlay-panel-title-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+ * Every body is laid into the same cell, so the panel stands as tall as the tallest of them and
+ * keeps that height whichever is on show. Were each to size the panel in turn, switching tabs would
+ * collapse the panel to the height of one field — pulling the strip up the screen, out from under
+ * the pointer that had just pressed a tab.
+ */
+.tn-overlay-panel .tn-overlay-panel-bodies {
+    display: grid;
+    /* Without it a grid refuses to shrink past its content, and the panel scrolls as a whole. */
+    min-height: 0;
+}
+
+/*
+ * Each body holds the padding rather than the panel, so that one filled edge to edge by what it
+ * holds can give that padding up on its own (see the memo in NodePanel.css).
+ */
+.tn-overlay-panel .tn-overlay-panel-body {
+    grid-area: 1 / 1;
+    padding: var(--overlay-panel-body-padding, 15px);
+    overflow: auto;
+    /* As above, for the body within the cell. */
+    min-height: 0;
+}
+
+/*
+ * The tab not on show keeps its place in the cell rather than leaving it, which is what holds the
+ * height of the panel still. `visibility` and not `display`, whose `none` would give the place up —
+ * it takes the tab out of reach of the pointer, the keyboard and a screen reader all the same.
+ */
+.tn-overlay-panel .tn-overlay-panel-body[aria-hidden="true"] {
+    visibility: hidden;
+}
+
+.tn-overlay-panel .tn-overlay-panel-section + .tn-overlay-panel-section {
+    margin-top: 16px;
+}
+
+.tn-overlay-panel .tn-overlay-panel-section-label {
+    margin-bottom: 8px;
+    font-size: .85em;
+    font-weight: 550;
+    text-transform: uppercase;
+    letter-spacing: .75pt;
+    opacity: .75;
+}

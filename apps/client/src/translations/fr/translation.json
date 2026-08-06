@@ -1405,7 +1405,6 @@
     "title": "Sauvegarde",
     "download": "Télécharger",
     "automatic_backups_description": "Trilium peut sauvegarder la base de données automatiquement. Il est recommandé de maintenir cette fonction activée, mais cela peut ralentir le démarrage de l'application si la base de données est volumineuse et/ou si le support de stockage est lent.",
-    "backup_location_description": "Les sauvegardes sont stockées dans {{- backupFolder}}.",
     "automatic_backups_title": "Sauvegardes automatiques"
   },
   "etapi": {
@@ -1522,10 +1521,6 @@
     "close": "Fermer"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Cette pièce jointe sera automatiquement supprimée dans {{time}}",
-    "will_be_deleted_soon": "Cette pièce jointe sera bientôt supprimée automatiquement",
-    "deletion_reason": ", car la pièce jointe n'est pas liée dans le contenu de la note. Pour empêcher la suppression, ajoutez à nouveau le lien de la pièce jointe dans le contenu d'une note ou convertissez la pièce jointe en note.",
-    "role_and_size": "Rôle : {{role}}, Taille : {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Référence de la pièce jointe copiée dans le presse-papiers.",
     "unrecognized_role": "Rôle de pièce jointe « {{role}} » non reconnu."
   },
@@ -1903,7 +1898,6 @@
     "create-child-note-title": "Créer une nouvelle note enfant et l'ajouter à la carte",
     "create-child-note-instruction": "Cliquez sur la carte pour créer une nouvelle note à cet endroit ou appuyez sur Échap pour la supprimer.",
     "unable-to-load-map": "Impossible de charger la carte.",
-    "create-child-note-text": "Ajouter le marqueur",
     "create-child-note-toast-title": "Nouvelle note"
   },
   "geo-map-context": {
@@ -2492,8 +2486,6 @@
     "cancelFocus": "Annuler le mode Focus",
     "moveUp": "Monter",
     "moveDown": "Descendre",
-    "link": "Lien",
-    "linkBidirectional": "Lien bidirectionnel",
     "clickTips": "Cliquer sur le nœud cible",
     "summary": "Résumé"
   },

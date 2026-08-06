@@ -1,7 +1,6 @@
 import { EventInput, EventSourceFuncArg, EventSourceInput } from "@fullcalendar/core/index.js";
 import { dayjs } from "@triliumnext/commons";
 import clsx from "clsx";
-import { start } from "repl";
 import * as rruleLib from 'rrule';
 
 import FNote from "../../../entities/fnote";

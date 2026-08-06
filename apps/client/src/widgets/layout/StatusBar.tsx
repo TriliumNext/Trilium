@@ -174,15 +174,15 @@ function useConnectionsToggle(expandWidgetId: string) {
 function LanguageSwitcher({ note }: StatusBarContext) {
     const [ modalShown, setModalShown ] = useState(false);
     const noteType = useNoteProperty(note, "type");
-    const { locales, DEFAULT_LOCALE, currentNoteLanguage, setCurrentNoteLanguage } = useLanguageSwitcher(note);
-    const { activeLocale, processedLocales } = useProcessedLocales(locales, DEFAULT_LOCALE, currentNoteLanguage ?? DEFAULT_LOCALE.id);
+    const { locales, DEFAULT_LOCALE, effectiveLocale, currentNoteLanguage, setCurrentNoteLanguage } = useLanguageSwitcher(note);
+    const { processedLocales } = useProcessedLocales(locales, DEFAULT_LOCALE, currentNoteLanguage ?? DEFAULT_LOCALE.id);
 
     return (
         <>
             {noteType === "text" && <StatusBarDropdown
                 icon="bx bx-globe"
                 title={t("status_bar.language_title")}
-                text={<span dir={activeLocale?.rtl ? "rtl" : "ltr"}>{getLocaleName(activeLocale)}</span>}
+                text={<span dir={effectiveLocale?.rtl ? "rtl" : "ltr"}>{getLocaleName(effectiveLocale)}</span>}
             >
                 {processedLocales.map((locale, index) =>
                     (typeof locale === "object") ? (

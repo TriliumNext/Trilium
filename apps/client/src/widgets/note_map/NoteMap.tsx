@@ -8,6 +8,7 @@ import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import link_context_menu from "../../menus/link_context_menu";
 import hoisted_note from "../../services/hoisted_note";
+import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
@@ -15,7 +16,6 @@ import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "
 import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
 import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
-import { loadIconFont, resolveIconGlyphs } from "./icons";
 import MapTypeSwitcher from "./MapTypeSwitcher";
 import { CssData, setupRendering } from "./rendering";
 import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
@@ -87,8 +87,9 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             loadNotesAndRelations(mapRootId, excludeRelations, includeRelations, mapType, widgetMode === "sidebar"),
             // Awaited alongside the notes rather than after them: a canvas asked to draw from a font
             // it does not have yet says nothing and draws tofu, and the map is painted the moment its
-            // data lands.
-            loadIconFont()
+            // data lands. Every pack's font, since which of them the map wears is not known until the
+            // notes are in hand — and by then there is no waiting left to do.
+            warmIconFonts()
         ]).then(([ notesAndRelations ]) => {
             if (disposed || !containerRef.current || !styleResolverRef.current) return;
 

@@ -57,6 +57,9 @@ function updateImage(noteId: string, uploadBuffer: Uint8Array, originalName: str
 }
 
 export default {
+    // Passed straight through: waiting for an image to be stored is the same act whether or not
+    // this layer had OCR to schedule for it.
+    awaitImageWrite: imageService.awaitImageWrite,
     saveImage,
     saveImageToAttachment,
     updateImage

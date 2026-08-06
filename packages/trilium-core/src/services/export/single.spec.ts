@@ -38,9 +38,10 @@ describe("Note type mappings", () => {
         }
     });
 
-    it("inlines a link preview's data-image attachment as base64 in single-note HTML export", () => {
-        // A link preview references its card image attachment from `data-image`, not an <img src>;
-        // the single-file export must inline it the same way to stay self-contained.
+    it("inlines both of a link preview's picture attachments as base64 in single-note HTML export", () => {
+        // A link preview references its card image and its favicon from `data-image` and
+        // `data-favicon`, not from an <img src>; the single-file export must inline both the same
+        // way to stay self-contained.
         const note = buildNote({ type: "text", title: "Preview" });
         const fakeAttachment = {
             mime: "image/jpeg",
@@ -50,11 +51,14 @@ describe("Note type mappings", () => {
 
         try {
             const content = `<section class="link-embed" data-url="https://example.com"`
-                + ` data-image="api/attachments/att1/image/preview.jpg"></section>`;
+                + ` data-image="api/attachments/att1/image/preview.jpg"`
+                + ` data-favicon="api/attachments/att2/image/favicon.ico"></section>`;
             const { payload } = mapByNoteType(note, content, "html");
 
             expect(getAttachment).toHaveBeenCalledWith("att1");
+            expect(getAttachment).toHaveBeenCalledWith("att2");
             expect(payload).toContain(`data-image="data:image/jpeg;base64,AQID"`);
+            expect(payload).toContain(`data-favicon="data:image/jpeg;base64,AQID"`);
             expect(payload).not.toContain("api/attachments");
         } finally {
             getAttachment.mockRestore();
@@ -146,14 +150,30 @@ describe("inlineAttachments", () => {
         }
     });
 
-    it("leaves an embedded image alone when the note is missing, not an image, or holds text", () => {
+    it("inlines an image note whose content is text, an SVG being the case in point", () => {
+        // An SVG is markup, so its content comes back as a string rather than as bytes. Skipping it on
+        // that basis left the exported file naming `api/images/<id>` — an address that resolves only
+        // in the instance it came from, and there to whatever note holds that id now.
+        const svgNote = buildNote({ type: "image", mime: "image/svg+xml", title: "icon.svg" });
+        vi.spyOn(svgNote, "getContent").mockReturnValue("<svg/>");
+        const getNote = vi.spyOn(becca, "getNote").mockReturnValue(svgNote);
+
+        try {
+            const payload = exportHtml(`<p><img src="api/images/img1/icon.svg"></p>`);
+
+            expect(payload).toContain(`src="data:image/svg+xml;base64,${btoa("<svg/>")}"`);
+            expect(payload).not.toContain("api/images");
+        } finally {
+            getNote.mockRestore();
+        }
+    });
+
+    it("leaves an embedded image alone when the note is missing or is not an image", () => {
         const textNote = buildNote({ type: "text", mime: "text/html", title: "Not an image" });
-        const stringImage = buildNote({ type: "image", mime: "image/png", title: "odd.png" });
-        vi.spyOn(stringImage, "getContent").mockReturnValue("not binary");
         const getNote = vi.spyOn(becca, "getNote");
 
         try {
-            for (const stub of [null, textNote, stringImage]) {
+            for (const stub of [null, textNote]) {
                 getNote.mockReturnValue(stub as never);
                 expect(exportHtml(`<p><img src="api/images/img1/pic.png"></p>`)).toContain(`src="api/images/img1/pic.png"`);
             }
@@ -181,7 +201,23 @@ describe("inlineAttachments", () => {
         }
     });
 
-    it("leaves an attachment reference alone when it is missing, not an image, or holds text", () => {
+    it("inlines an SVG favicon, whose content is markup rather than bytes", () => {
+        // What a link preview of a site serving an SVG icon holds — GitHub, for one. Left behind, the
+        // favicon was the one picture of the exported card that pointed back at the source instance.
+        const svg = { mime: "image/svg+xml", title: "github.com.svg", getContent: () => "<svg/>" } as unknown as BAttachment;
+        const getAttachment = vi.spyOn(becca, "getAttachment").mockReturnValue(svg);
+
+        try {
+            const payload = exportHtml(`<section data-favicon="api/attachments/att1/image/github.com.svg"></section>`);
+
+            expect(payload).toContain(`data-favicon="data:image/svg+xml;base64,${btoa("<svg/>")}"`);
+            expect(payload).not.toContain("api/attachments");
+        } finally {
+            getAttachment.mockRestore();
+        }
+    });
+
+    it("leaves an attachment reference alone when it is missing or is not an image", () => {
         const getAttachment = vi.spyOn(becca, "getAttachment");
         const textAttachment = { mime: "text/plain", title: "notes.txt", getContent: () => "plain text" } as unknown as BAttachment;
 
@@ -191,19 +227,14 @@ describe("inlineAttachments", () => {
             expect(exportHtml(`<section data-image="api/attachments/att1/image/x.png"></section>`))
                 .toContain(`data-image="api/attachments/att1/image/x.png"`);
 
-            // ... as is an image attachment whose content came back as text ...
-            getAttachment.mockReturnValue({ mime: "image/png", title: "x.png", getContent: () => "text" } as unknown as BAttachment);
-            expect(exportHtml(`<section data-image="api/attachments/att1/image/x.png"></section>`))
-                .toContain(`data-image="api/attachments/att1/image/x.png"`);
-
-            // ... and an href to an attachment that no longer exists, or whose content is text.
+            // ... whereas an href inlines an attachment of any type, so only a missing one survives.
             getAttachment.mockReturnValue(null as never);
             expect(exportHtml(`<p><a href="#root/abc?viewMode=attachments&attachmentId=att1">x</a></p>`))
                 .toContain("attachmentId=att1");
 
             getAttachment.mockReturnValue(textAttachment);
             expect(exportHtml(`<p><a href="#root/abc?viewMode=attachments&attachmentId=att1">x</a></p>`))
-                .toContain("attachmentId=att1");
+                .toContain(`href="data:text/plain;base64,${btoa("plain text")}" download="notes.txt"`);
         } finally {
             getAttachment.mockRestore();
         }

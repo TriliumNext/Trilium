@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { uploadImageAttachment } from "./image_upload.js";
 import {
     applyLinkEmbeds,
     detectEmbedType,
@@ -10,12 +9,6 @@ import {
     safeHostname
 } from "./link_embed.js";
 import server from "./server.js";
-
-vi.mock("./image_upload.js", () => ({
-    uploadImageAttachment: vi.fn()
-}));
-
-const uploadImageAttachmentMock = vi.mocked(uploadImageAttachment);
 
 let container: HTMLDivElement | undefined;
 
@@ -80,11 +73,12 @@ describe("fetchMetadata", () => {
         };
         server.post = vi.fn(async () => fromServer) as typeof server.post;
 
-        const result = await fetchMetadata(url);
+        const result = await fetchMetadata(url, "note1");
 
         // The URL travels in the body, so it never reaches an access log — a pasted URL can carry a
-        // one-time token or a signature in its query string.
-        expect(server.post).toHaveBeenCalledWith("link-embed/metadata", { url });
+        // one-time token or a signature in its query string. The note id goes with it: the server
+        // stores the preview's pictures as that note's attachments and answers with their URLs.
+        expect(server.post).toHaveBeenCalledWith("link-embed/metadata", { url, noteId: "note1" });
         expect(result).toEqual(fromServer);
     });
 
@@ -93,7 +87,7 @@ describe("fetchMetadata", () => {
             throw new Error("network down");
         }) as typeof server.post;
 
-        const result = await fetchMetadata("https://youtu.be/abcdefghijk");
+        const result = await fetchMetadata("https://youtu.be/abcdefghijk", "note1");
         expect(result).toEqual({
             url: "https://youtu.be/abcdefghijk",
             embedType: "youtube",
@@ -111,59 +105,26 @@ describe("fetchMetadata", () => {
             unresolved: true
         })) as typeof server.post;
 
-        const result = await fetchMetadata("https://blocked.example.com/x");
+        const result = await fetchMetadata("https://blocked.example.com/x", "note1");
         expect(result.unresolved).toBe(true);
     });
 
-    describe("image offload to attachment", () => {
-        const metaWithDataUriImage = {
+    it("takes the server's attachment URLs as they come, having nothing left to upload", async () => {
+        // The pictures are stored server-side now: the metadata answers with
+        // `api/attachments/...` URLs and the client's only job is to put them in the note.
+        const fromServer = {
             url: "https://example.com",
             embedType: "opengraph",
             title: "Title",
-            favicon: "data:image/png;base64,FAV",
-            image: "data:image/jpeg;base64,IMG"
+            favicon: "api/attachments/att1/image/example.com.ico",
+            image: "api/attachments/att2/image/example.com-1a2b3c4d.jpeg"
         };
+        server.post = vi.fn(async () => fromServer) as typeof server.post;
 
-        it("stores the image as an attachment of the owning note, keeping the favicon inline", async () => {
-            server.post = vi.fn(async () => metaWithDataUriImage) as typeof server.post;
-            uploadImageAttachmentMock.mockResolvedValueOnce("api/attachments/att1/image/image.jpg");
+        const result = await fetchMetadata("https://example.com", "note1");
 
-            const result = await fetchMetadata("https://example.com", "note1");
-
-            expect(uploadImageAttachmentMock).toHaveBeenCalledExactlyOnceWith("note1", "data:image/jpeg;base64,IMG");
-            // Only the attachment URL lands in the note content — inlined base64 would count against
-            // the auto-read-only size threshold. The favicon stays inline: it is small and shared
-            // with inline mentions.
-            expect(result.image).toBe("api/attachments/att1/image/image.jpg");
-            expect(result.favicon).toBe("data:image/png;base64,FAV");
-        });
-
-        it("keeps the data URI when the upload fails, so the preview still persists", async () => {
-            server.post = vi.fn(async () => metaWithDataUriImage) as typeof server.post;
-            uploadImageAttachmentMock.mockResolvedValueOnce(null);
-
-            const result = await fetchMetadata("https://example.com", "note1");
-
-            expect(result.image).toBe("data:image/jpeg;base64,IMG");
-        });
-
-        it("does not upload without an owning note, a non-data-URI image, or a missing image", async () => {
-            uploadImageAttachmentMock.mockClear();
-
-            server.post = vi.fn(async () => metaWithDataUriImage) as typeof server.post;
-            const withoutNote = await fetchMetadata("https://example.com");
-            expect(withoutNote.image).toBe("data:image/jpeg;base64,IMG");
-
-            server.post = vi.fn(async () => ({ ...metaWithDataUriImage, image: "https://img.example/x.png" })) as typeof server.post;
-            const remoteImage = await fetchMetadata("https://example.com", "note1");
-            expect(remoteImage.image).toBe("https://img.example/x.png");
-
-            server.post = vi.fn(async () => ({ ...metaWithDataUriImage, image: undefined })) as typeof server.post;
-            const noImage = await fetchMetadata("https://example.com", "note1");
-            expect(noImage.image).toBeUndefined();
-
-            expect(uploadImageAttachmentMock).not.toHaveBeenCalled();
-        });
+        expect(result.favicon).toBe("api/attachments/att1/image/example.com.ico");
+        expect(result.image).toBe("api/attachments/att2/image/example.com-1a2b3c4d.jpeg");
     });
 });
 
@@ -238,7 +199,7 @@ describe("renderEmbedPreview", () => {
             title: "A title",
             description: "A description",
             siteName: "YouTube",
-            image: "https://img.example/x.png"
+            image: "api/attachments/abc123/image/x.png"
         });
 
         expect(root.querySelector("iframe")).toBeNull();
@@ -264,7 +225,35 @@ describe("renderEmbedPreview", () => {
         expect(mention.querySelector("a.link-embed-mention")?.getAttribute("href")).toBe("about:blank");
     });
 
-    it("shows the stored favicon beside the site name, falling back to a dot without one", () => {
+    it("never loads a remote favicon or image, whatever the note stores", () => {
+        // Reaches here straight from the stored note HTML, exactly like the hostile `data-url` above.
+        // An <img> needs no click, so a remote value would tell a third party that the reader opened
+        // the note — the very thing embedding the metadata server-side exists to prevent.
+        const card = makeContainer();
+        renderEmbedPreview(card, {
+            url: "https://example.com",
+            embedType: "opengraph",
+            favicon: "https://tracker.test/favicon.ico",
+            image: "https://tracker.test/pixel.gif"
+        });
+        expect(card.querySelector("img.link-embed-card-image")).toBeNull();
+        expect(card.querySelector(".link-embed-card-image-placeholder")).not.toBeNull();
+        expect(card.querySelector("img.link-embed-mention-favicon")).toBeNull();
+
+        const video = makeContainer();
+        renderEmbedPreview(video, {
+            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            embedType: "youtube",
+            image: "https://tracker.test/thumb.jpg"
+        });
+        expect(video.querySelector("img.link-embed-video-thumbnail")).toBeNull();
+
+        const mention = makeContainer();
+        renderMentionPreview(mention, { url: "https://example.com", favicon: "http://169.254.169.254/latest/meta-data/" });
+        expect(mention.querySelector("img")).toBeNull();
+    });
+
+    it("shows the stored favicon beside the site name, and nothing at all without one", () => {
         const root = makeContainer();
         const meta = {
             url: "https://example.com/page",
@@ -283,10 +272,12 @@ describe("renderEmbedPreview", () => {
         // The favicon leads the line, so it renders to the left of the site name.
         expect(urlLine.firstElementChild).toBe(favicon);
 
+        // Nothing stands in for an icon that could not be had: the URL line is the site name alone.
         const withoutFavicon = document.createElement("div");
         renderEmbedPreview(withoutFavicon, { ...meta, favicon: undefined });
-        expect(withoutFavicon.querySelector(".link-embed-card-url .link-embed-mention-dot")).not.toBeNull();
-        expect(withoutFavicon.querySelector(".link-embed-card-url img")).toBeNull();
+        const urlLineWithout = withoutFavicon.querySelector(".link-embed-card-url");
+        expect(urlLineWithout?.querySelector("img")).toBeNull();
+        expect(urlLineWithout?.children.length).toBe(1);
     });
 
     it("omits optional fields and falls back to hostname, and drops target when editable", () => {
@@ -312,11 +303,12 @@ describe("renderEmbedPreview", () => {
     });
 
     it("replaces a broken card image with the placeholder on error", async () => {
+        // How a stored image actually breaks: its attachment was deleted, so the reference 404s.
         const root = makeContainer();
         renderEmbedPreview(root, {
             url: "https://example.com",
             embedType: "opengraph",
-            image: "https://img.example/broken.png"
+            image: "api/attachments/deleted1/image/broken.png"
         });
 
         const img = root.querySelector("img.link-embed-card-image")!;
@@ -334,17 +326,16 @@ describe("renderMentionPreview", () => {
         renderMentionPreview(root, {
             url: "https://example.com",
             title: "Example site",
-            favicon: "https://example.com/favicon.ico"
+            favicon: "data:image/png;base64,AAA"
         });
 
         const anchor = root.querySelector("a.link-embed-mention")!;
         expect(anchor.getAttribute("target")).toBe("_blank");
         expect(anchor.querySelector("img.link-embed-mention-favicon")).not.toBeNull();
-        expect(root.querySelector(".link-embed-mention-dot")).toBeNull();
         expect(anchor.querySelector(".link-embed-mention-title")!.textContent).toBe("Example site");
     });
 
-    it("falls back to a dot favicon and hostname title; drops target when editable", () => {
+    it("shows the title alone without a favicon, and drops target when editable", () => {
         const root = makeContainer();
         renderMentionPreview(
             root,
@@ -354,16 +345,17 @@ describe("renderMentionPreview", () => {
 
         const anchor = root.querySelector("a.link-embed-mention")!;
         expect(anchor.getAttribute("target")).toBeNull();
-        expect(root.querySelector("img.link-embed-mention-favicon")).toBeNull();
-        expect(root.querySelector(".link-embed-mention-dot")).not.toBeNull();
+        expect(root.querySelector("img")).toBeNull();
+        // The title is the whole mention: nothing is drawn where the icon would have been.
+        expect(anchor.children.length).toBe(1);
         expect(anchor.querySelector(".link-embed-mention-title")!.textContent).toBe("fallback.example.com");
     });
 
-    it("replaces a broken favicon with the dot on error", async () => {
+    it("drops a broken favicon on error, leaving the title alone", async () => {
         const root = makeContainer();
         renderMentionPreview(root, {
             url: "https://example.com",
-            favicon: "https://example.com/broken.ico"
+            favicon: "api/attachments/deleted1/image/broken.ico"
         });
 
         const img = root.querySelector("img.link-embed-mention-favicon")!;
@@ -371,7 +363,7 @@ describe("renderMentionPreview", () => {
         await fireError(img);
 
         expect(root.querySelector("img.link-embed-mention-favicon")).toBeNull();
-        expect(root.querySelector(".link-embed-mention-dot")).not.toBeNull();
+        expect(root.querySelector("a.link-embed-mention")?.children.length).toBe(1);
     });
 });
 
@@ -381,10 +373,10 @@ describe("applyLinkEmbeds", () => {
         root.innerHTML = `
             <section class="link-embed" data-url="https://full.example.com"
                 data-embed-type="opengraph" data-title="T" data-description="D"
-                data-site-name="Site" data-image="https://img.example/x.png"></section>
+                data-site-name="Site" data-image="api/attachments/abc123/image/x.png"></section>
             <section class="link-embed"></section>
             <span class="link-mention" data-url="https://m.example.com"
-                data-title="MT" data-favicon="https://m.example.com/fav.ico"></span>
+                data-title="MT" data-favicon="data:image/png;base64,AAA"></span>
             <span class="link-mention"></span>
         `;
 

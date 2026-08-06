@@ -1,6 +1,6 @@
 import "./content_renderer.css";
 
-import { isOfficeMimeType, normalizeMimeTypeForCKEditor, type TextRepresentationResponse } from "@triliumnext/commons";
+import { isImageAttachmentRole, isOfficeMimeType, normalizeMimeTypeForCKEditor, type TextRepresentationResponse } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
 
@@ -656,6 +656,11 @@ function getRenderingType(entity: FNote | FAttachment) {
         // for reference; render them exactly like a "file" role.
         if (type === "importSource") {
             type = "file";
+        } else if (isImageAttachmentRole(type)) {
+            // A link preview's "favicon" is a picture like any other as far as showing it goes; the
+            // role only says where it came from. Without this it would fall through to the unknown
+            // type and list as a file with no preview.
+            type = "image";
         }
     }
 

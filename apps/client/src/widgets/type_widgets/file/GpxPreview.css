@@ -1,0 +1,187 @@
+.gpx-preview {
+    max-width: 1000px;
+    /* Its own padding rather than the wrapper's: the wrapper is the unpadded scroll host (see
+       File.css), so the scrollbar hugs the split edge and this padding scrolls with the content. */
+    padding: 10px;
+
+    .gpx-preview-byline {
+        margin-bottom: 12px;
+    }
+
+    .gpx-preview-name {
+        font-weight: 600;
+    }
+
+    .gpx-preview-description {
+        color: var(--muted-text-color);
+    }
+
+    /* Only between the two — a lone name or a lone description stands unpunctuated. */
+    .gpx-preview-name + .gpx-preview-description::before {
+        content: " · ";
+    }
+
+    /* Boxless, but still a grid: the card backgrounds were furniture — nothing in them is
+       clickable — yet content-sized columns wrapped ragged in a narrow pane, so the stats keep
+       the grid's aligned columns and shed only the chrome. */
+    .gpx-preview-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 14px 16px;
+        margin-bottom: 20px;
+    }
+
+    .gpx-stat-value {
+        font-size: 1.3em;
+        font-weight: 600;
+        /* The digits of neighbouring tiles line up instead of jittering by glyph width. */
+        font-variant-numeric: tabular-nums;
+    }
+
+    .gpx-stat-label {
+        margin-top: 2px;
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+    }
+
+    .gpx-profile-heading {
+        margin-bottom: 6px;
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+    }
+
+    .gpx-profile-plot {
+        position: relative;
+        height: 160px;
+        /* What the line and its fill are drawn in when the note carries no colour of its own —
+           the note's own colour, set inline, wins over this. */
+        color: var(--link-color);
+        border-bottom: 1px solid var(--main-border-color);
+    }
+
+    .gpx-profile-plot svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .gpx-profile-area {
+        fill: currentColor;
+        fill-opacity: 0.15;
+        stroke: none;
+    }
+
+    .gpx-profile-line {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2px;
+    }
+
+    .gpx-profile-gridline {
+        stroke: var(--main-border-color);
+        stroke-width: 1px;
+        stroke-dasharray: 4 4;
+        opacity: 0.6;
+    }
+
+    .gpx-profile-crosshair {
+        stroke: var(--muted-text-color);
+        stroke-width: 1px;
+    }
+
+    .gpx-profile-max,
+    .gpx-profile-min {
+        position: absolute;
+        left: 6px;
+        font-size: 0.8em;
+        color: var(--muted-text-color);
+        pointer-events: none;
+    }
+
+    .gpx-profile-max {
+        top: 2px;
+    }
+
+    .gpx-profile-min {
+        bottom: 2px;
+    }
+
+    .gpx-profile-tooltip {
+        position: absolute;
+        top: 6px;
+        transform: translateX(-50%);
+        padding: 2px 8px;
+        border-radius: 4px;
+        /* The plain surface pair rather than the tooltip variables: the legacy themes carry no
+           tooltip foreground, and a dark tooltip background with inherited dark text is unreadable. */
+        background: var(--main-background-color);
+        color: var(--main-text-color);
+        border: 1px solid var(--main-border-color);
+        font-size: 0.85em;
+        white-space: nowrap;
+        pointer-events: none;
+    }
+
+    .gpx-profile-axis {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2px;
+        font-size: 0.8em;
+        color: var(--muted-text-color);
+    }
+
+    .gpx-journeys,
+    .gpx-waypoints {
+        margin-top: 12px;
+    }
+
+    .gpx-journey-list,
+    .gpx-waypoint-list {
+        list-style: none;
+        margin: 0;
+        padding: 2px 0 0;
+
+        > li {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            padding: 2px 0;
+
+            > .bx {
+                color: var(--muted-text-color);
+                /* An icon has no baseline worth aligning to; centred it sits on the text's height. */
+                align-self: center;
+            }
+        }
+    }
+
+    .gpx-waypoint-description {
+        color: var(--muted-text-color);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .gpx-waypoint-elevation,
+    .gpx-journey-distance {
+        margin-left: auto;
+        color: var(--muted-text-color);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .gpx-preview-map-hint {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 16px;
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+    }
+}
+
+/* The hint says where a map is; shown inside a geo map's own detail pane, it would point the
+   reader at the very map the pane stands on. */
+.geo-detail-pane .gpx-preview .gpx-preview-map-hint {
+    display: none;
+}

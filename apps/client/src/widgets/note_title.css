@@ -70,7 +70,7 @@ body.experimental-feature-new-layout {
         @container (max-width: 600px) {
             .note-title-widget {
                 --note-title-size: 1.25rem;
-                --note-title-padding-inline: 4px;
+                --note-title-padding-inline: 6px;
             }
 
             .note-title-widget {

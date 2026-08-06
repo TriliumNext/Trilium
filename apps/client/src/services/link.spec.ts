@@ -619,6 +619,20 @@ describe("loadReferenceLinkTitle", () => {
         warn.mockRestore();
     });
 
+    it("gives an href with no note id the same [missing note] the title resolvers do", async () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        // Exactly what the editing downcast hands over: an empty <span> that this call is the only
+        // thing ever to fill. An href that is not a hash note URL — an attachment image URL like
+        // this one, an external link, imported HTML — must still leave something in it, or the
+        // reference link renders as a blank widget while the stored HTML says "[missing note]".
+        const $el = $("<span>");
+
+        await linkService.loadReferenceLinkTitle($el, "api/attachments/bc1EIIdlPLKV/image/favicon.ico");
+
+        expect($el.text()).toBe("[missing note]");
+        warn.mockRestore();
+    });
+
     it("sets text, color class, bookmark and icon for a resolved note", async () => {
         const note = buildNote({ title: "Loaded", "#color": "red", "#iconClass": "bx bx-star" });
         const $a = $("<a>").attr("href", `#root/${note.noteId}?bookmark=Sec`);

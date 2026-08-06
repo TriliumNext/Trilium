@@ -49,6 +49,14 @@ export interface ViewScope {
      * to immediately enter read-only mode.
      */
     isReadOnly?: boolean;
+    /**
+     * If true, a text note is edited with the floating toolbar whatever the user's editor-type
+     * option says — the toolbar following the selection rather than standing in a bar of its own.
+     *
+     * For views too narrow to carry a full toolbar, such as the geo map's marker pane: a classic bar
+     * built for the width of a note either spills out of them or eats the room the note is left.
+     */
+    floatingToolbar?: boolean;
     highlightsListPreviousVisible?: boolean;
     highlightsListTemporarilyHidden?: boolean;
     tocTemporarilyHidden?: boolean;
@@ -447,11 +455,16 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
 
     const { noteId, viewScope } = parseNavigationStateFromUrl(href);
     if (!noteId) {
+        // Warned about but not returned on. The editing downcast creates an empty <span> and this
+        // call is the only thing that ever fills it, so bailing here left the widget rendering as
+        // nothing at all while the stored HTML — which resolves its title through
+        // getReferenceLinkTitleSync instead — said "[missing note]". An href that is not a hash
+        // note URL is ordinary enough to reach: an attachment image URL, an external link, or
+        // imported HTML carrying an <a class="reference-link">.
         console.warn("Missing note ID.");
-        return;
     }
 
-    const note = await froca.getNote(noteId, true);
+    const note = noteId ? await froca.getNote(noteId, true) : null;
 
     if (note) {
         $el.addClass(note.getColorClass());
@@ -467,8 +480,8 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
         ));
     }
 
-    if (note) {
-        const icon = await getLinkIcon(noteId, viewScope.viewMode);
+    if (noteId && note) {
+        const icon = await getLinkIcon(noteId, viewScope?.viewMode);
 
         if (icon) {
             $el.prepend($("<span>").addClass(icon));
