@@ -15,7 +15,8 @@ import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { useLegacyImperativeHandlers, useNoteContext, useTriliumEvent } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
-import DetailPane, { OTHER_WAYS_TO_OPEN, PaneSelection } from "./DetailPane";
+import { OTHER_WAYS_TO_OPEN } from "../../EmbeddedNotePane";
+import DetailPane, { PaneSelection } from "./DetailPane";
 import { GPX_MIME, trackSourceId } from "./GpxTrack";
 import { ParentMap } from "./map";
 import { MARKER_LAYER } from "./Markers";
@@ -628,7 +629,7 @@ describe("DetailPane", () => {
         }
 
         function press(icon: string) {
-            container?.querySelector<HTMLButtonElement>(`.geo-detail-pane-actions button.${icon}`)?.click();
+            container?.querySelector<HTMLButtonElement>(`.tn-embedded-note-actions button.${icon}`)?.click();
         }
 
         it("opens the note where every note in Trilium is opened", async () => {
@@ -661,6 +662,36 @@ describe("DetailPane", () => {
         });
 
         /**
+         * The maximize in the header: the pane grown into the quick editor, which takes the pane's
+         * place rather than standing over it — the quick editor opened on the path the menu's own
+         * entry would open, and the pane standing down having told its editors to save (see
+         * MaximizeToQuickEditAction).
+         */
+        it("maximizes into the quick editor, the pane standing down behind it", async () => {
+            const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
+            const map = fakeMap();
+
+            const notePath = "root/places/somewhere";
+            const bestNotePath = vi.spyOn(note, "getBestNotePathString").mockReturnValue(notePath);
+            const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined as never);
+
+            try {
+                await openPaneFor(note, map);
+
+                await act(async () => {
+                    pane()?.querySelector<HTMLButtonElement>(".tn-overlay-panel-header-actions button.tn-embedded-note-maximize")?.click();
+                });
+
+                expect(triggerCommand).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: notePath });
+                expect(editorAskedToSave).toHaveBeenCalled();
+                expect(pane()).toBeNull();
+            } finally {
+                bestNotePath.mockRestore();
+                triggerCommand.mockRestore();
+            }
+        });
+
+        /**
          * The rest are gathered behind one button, and are the same ways a link offers anywhere in
          * the app — which is how a split view, the one worth having beside a map, comes to be
          * offered at all: the three buttons this replaced never had one.
@@ -674,7 +705,7 @@ describe("DetailPane", () => {
             const map = fakeMap();
             await openPaneFor(note, map);
 
-            expect(container?.querySelector(".geo-detail-pane-more")).toBeTruthy();
+            expect(container?.querySelector(".tn-embedded-note-more")).toBeTruthy();
             expect(OTHER_WAYS_TO_OPEN.map((way) => way.command)).toEqual(
                 linkContextMenu.getItems(new MouseEvent("click"))
                     .map((item) => ("command" in item ? item.command : undefined)));
@@ -904,7 +935,7 @@ describe("DetailPane", () => {
 
     describe("moving the marker", () => {
         function moveButton() {
-            return container?.querySelector<HTMLButtonElement>(".geo-detail-pane-actions button.bx-move") ?? null;
+            return container?.querySelector<HTMLButtonElement>(".tn-embedded-note-actions button.bx-move") ?? null;
         }
 
         /**
@@ -959,14 +990,14 @@ describe("DetailPane", () => {
 
             // The rest of the row stands: only the one offer that cannot mean anything is gone.
             expect(pane()).toBeTruthy();
-            expect(container?.querySelector(".geo-detail-pane-actions button.bx-log-in")).toBeTruthy();
+            expect(container?.querySelector(".tn-embedded-note-actions button.bx-log-in")).toBeTruthy();
             expect(moveButton()).toBeNull();
         });
     });
 
     describe("taking the marker off the map", () => {
         function removeButton() {
-            return container?.querySelector<HTMLButtonElement>(".geo-detail-pane-actions button.bx-trash") ?? null;
+            return container?.querySelector<HTMLButtonElement>(".tn-embedded-note-actions button.bx-trash") ?? null;
         }
 
         /**
@@ -1027,7 +1058,7 @@ describe("DetailPane", () => {
 
             // The ways of reading the note stay; the one that writes it does not.
             expect(pane()).toBeTruthy();
-            expect(container?.querySelector(".geo-detail-pane-actions button.bx-log-in")).toBeTruthy();
+            expect(container?.querySelector(".tn-embedded-note-actions button.bx-log-in")).toBeTruthy();
             expect(removeButton()).toBeNull();
         });
 

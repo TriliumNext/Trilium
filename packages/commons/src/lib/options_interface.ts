@@ -191,6 +191,17 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     dailyBackupEnabled: boolean;
     weeklyBackupEnabled: boolean;
     monthlyBackupEnabled: boolean;
+    /**
+     * Whether backups are gzip-compressed. Compression or encryption switches the backup from a
+     * plain database file to a backup container; with both off, backups stay plain `.db` copies.
+     */
+    backupEnableCompression: boolean;
+    /**
+     * Whether backups are encrypted with the stored backup passphrase. Desktop only, and only where
+     * the OS offers a keyring to keep that passphrase in, since unattended backups cannot ask for
+     * it.
+     */
+    backupEnableEncryption: boolean;
     compressImages: boolean;
     /**
      * Whether an image above {@link imageMaxWidthHeight} is scaled down on its way in. Off, the
@@ -226,6 +237,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteContentHintsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
+    /** Whether copying note content embeds internal images as data: URIs so they paste into external apps (internal paste stays reference-based). Hidden kill-switch. */
+    clipboardImageEmbedEnabled: boolean;
     backgroundEffects: boolean;
     newLayout: boolean;
 

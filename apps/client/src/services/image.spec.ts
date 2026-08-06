@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import imageService, { copyImageReferenceToClipboard, copyImageToClipboard, downloadImage, getFileNameFromSrc, getImageDownloadUrl, isImageCopySupported } from "./image.js";
+import imageService, { copyImageReferenceToClipboard, copyImageToClipboard, downloadImage, embedReferenceImageAsDataUrl, getFileNameFromSrc, getImageDownloadUrl, isImageCopySupported, resetImageEmbedBudget } from "./image.js";
 import open from "./open.js";
 import * as toastModule from "./toast.js";
 import toastService from "./toast.js";
@@ -320,6 +320,124 @@ describe("copyImageToClipboard", () => {
     });
 });
 
+describe("embedReferenceImageAsDataUrl", () => {
+    const REFERENCE = "api/images/noteId123/photo.png";
+
+    beforeEach(() => {
+        document.body.innerHTML = "";
+        resetImageEmbedBudget();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("re-encodes a loaded internal image through a canvas sized to the image", () => {
+        appendLoadedImage(REFERENCE, 640, 480);
+        const drawImage = vi.fn();
+        const toDataURL = vi.fn(() => "data:image/png;base64,AAAA");
+        stubCanvasFactory({ getContext: () => ({ drawImage }), toDataURL });
+
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBe("data:image/png;base64,AAAA");
+        expect(drawImage).toHaveBeenCalledTimes(1);
+        // PNG is encoded losslessly, so no quality argument is passed for it.
+        expect(toDataURL).toHaveBeenCalledWith("image/png", undefined);
+    });
+
+    it("infers the output encoding from the source extension so photos do not bloat to PNG", () => {
+        const toDataURL = vi.fn(() => "data:x");
+        stubCanvasFactory({ toDataURL });
+
+        for (const [src, expected] of [["a/b/p.jpg", "image/jpeg"], ["a/b/p.JPEG", "image/jpeg"], ["a/b/p.webp", "image/webp"], ["a/b/p.gif", "image/png"]] as const) {
+            const reference = `api/images/noteId/${src}`;
+            appendLoadedImage(reference, 10, 10);
+
+            embedReferenceImageAsDataUrl(reference);
+
+            expect(toDataURL).toHaveBeenLastCalledWith(expected, expected === "image/png" ? undefined : 0.92);
+        }
+    });
+
+    it("ignores a query string when inferring the encoding, since image URLs carry cache-busters", () => {
+        const reference = "api/images/noteId/photo.jpg?timestamp=123";
+        appendLoadedImage(reference, 10, 10);
+        const toDataURL = vi.fn(() => "data:x");
+        stubCanvasFactory({ toDataURL });
+
+        embedReferenceImageAsDataUrl(reference);
+
+        expect(toDataURL).toHaveBeenLastCalledWith("image/jpeg", 0.92);
+    });
+
+    it("declines anything that is not an internal note or attachment image", () => {
+        const toDataURL = vi.fn(() => "data:x");
+        stubCanvasFactory({ toDataURL });
+
+        expect(embedReferenceImageAsDataUrl("https://example.com/cat.png")).toBeNull();
+        expect(embedReferenceImageAsDataUrl("data:image/png;base64,AAAA")).toBeNull();
+        // No canvas work is attempted for an image that was never a candidate.
+        expect(toDataURL).not.toHaveBeenCalled();
+    });
+
+    it("declines an image that is absent from the document or has not finished loading", () => {
+        stubCanvasFactory({});
+
+        // Nothing rendered at all.
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBeNull();
+
+        // Present, but still loading — encoding it now would yield a blank canvas.
+        appendLoadedImage(REFERENCE, 0, 0);
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBeNull();
+    });
+
+    it("declines when the canvas cannot be drawn to or the encoder throws on a tainted canvas", () => {
+        appendLoadedImage(REFERENCE, 10, 10);
+
+        stubCanvasFactory({ getContext: () => null });
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBeNull();
+
+        vi.restoreAllMocks();
+        stubCanvasFactory({ toDataURL: () => { throw new Error("tainted canvas"); } });
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBeNull();
+    });
+
+    it("declines a single image larger than the per-image cap, falling back to the reference", () => {
+        appendLoadedImage(REFERENCE, 10, 10);
+        const oversized = "d".repeat(12_000_001);
+        stubCanvasFactory({ toDataURL: () => oversized });
+
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBeNull();
+    });
+
+    it("spends a budget shared across one copy, and starts fresh once it is reset", () => {
+        appendLoadedImage(REFERENCE, 10, 10);
+        // Under the 12M per-image cap, so each call is individually acceptable; the 32M total is
+        // what stops the third. One string instance is reused, so this stays cheap.
+        const large = "d".repeat(11_000_000);
+        stubCanvasFactory({ toDataURL: () => large });
+
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBe(large);
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBe(large);
+        // 22M spent, 10M left — this one would overrun, so it stays a reference instead.
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBeNull();
+
+        resetImageEmbedBudget();
+        expect(embedReferenceImageAsDataUrl(REFERENCE)).toBe(large);
+    });
+});
+
+/** A rendered, fully-decoded `<img>`, which is what the synchronous canvas re-encode requires. */
+function appendLoadedImage(src: string, naturalWidth: number, naturalHeight: number) {
+    const image = document.createElement("img");
+    image.setAttribute("src", src);
+    Object.defineProperty(image, "complete", { value: naturalWidth > 0 });
+    Object.defineProperty(image, "naturalWidth", { value: naturalWidth });
+    Object.defineProperty(image, "naturalHeight", { value: naturalHeight });
+    document.body.appendChild(image);
+
+    return image;
+}
+
 /** happy-dom's `Image` reports `naturalWidth` 0 and can't decode, so stub a drawable one. */
 function stubDrawableImage() {
     vi.stubGlobal("Image", class {
@@ -336,13 +454,18 @@ function stubDrawableImage() {
  * Spies on `document.createElement` so that a "canvas" tag returns a fake canvas with controllable
  * `getContext`/`toBlob`; every other tag delegates to the real factory.
  */
-function stubCanvasFactory(overrides: { getContext?: () => unknown; toBlob?: (cb: (b: Blob | null) => void) => void }) {
+function stubCanvasFactory(overrides: {
+    getContext?: () => unknown;
+    toBlob?: (cb: (b: Blob | null) => void) => void;
+    toDataURL?: (type?: string, quality?: number) => string;
+}) {
     const realCreateElement = document.createElement.bind(document);
     const fakeCanvas = {
         width: 0,
         height: 0,
         getContext: overrides.getContext ?? (() => ({ drawImage: vi.fn() })),
-        toBlob: overrides.toBlob ?? ((cb: (b: Blob | null) => void) => cb(new Blob(["x"], { type: "image/png" })))
+        toBlob: overrides.toBlob ?? ((cb: (b: Blob | null) => void) => cb(new Blob(["x"], { type: "image/png" }))),
+        toDataURL: overrides.toDataURL ?? (() => "data:image/png;base64,AAAA")
     };
     vi.spyOn(document, "createElement").mockImplementation((tagName: string, options?: ElementCreationOptions) =>
         tagName === "canvas" ? (fakeCanvas as unknown as HTMLElement) : realCreateElement(tagName, options)

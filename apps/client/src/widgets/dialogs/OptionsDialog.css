@@ -1,22 +1,33 @@
-body.desktop .modal.options-dialog .modal-dialog {
+/*
+ * A dialog opened from within the settings (a password prompt, say) is nested in this dialog's own
+ * markup, so a descendant selector here would lay it out like the settings themselves: full height,
+ * no padding, its header floated away. Every rule that shapes the dialog frame is therefore written
+ * against this dialog's own parts, down the child chain.
+ *
+ * The chain forks once: with a sidebar the body sits inside `.modal-main`, without one it is a direct
+ * child of `.modal-content`. Both forms are listed where it matters.
+ */
+
+body.desktop .modal.options-dialog > .modal-dialog {
     max-width: min(1300px, 75vw);
 }
 
 /* Keep the sidebar background within the rounded corners. */
-.modal.options-dialog .modal-content {
+.modal.options-dialog > .modal-dialog > .modal-content {
     overflow: hidden;
 }
 
-.modal.options-dialog .modal-body {
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-body,
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-body {
     padding: 0;
     height: 75vh;
 }
 
-.modal.options-dialog .modal-sidebar {
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-sidebar {
     background-color: var(--card-background-color);
 }
 
-.modal.options-dialog .modal-sidebar .settings-navigation {
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-sidebar .settings-navigation {
     flex: 1 1 0;
     min-height: 0;
     overflow: auto;
@@ -26,7 +37,7 @@ body.desktop .modal.options-dialog .modal-dialog {
 
 /* The main header only carries the window (maximize/close) buttons, with the title moved into the
    sidebar. Float it over the content so it doesn't leave a tall empty band at the top. */
-body.desktop .modal.options-dialog .modal-main > .modal-header {
+body.desktop .modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-header {
     position: absolute;
     top: 0;
     right: 4px;
@@ -39,7 +50,8 @@ body.desktop .modal.options-dialog .modal-main > .modal-header {
 
 /* The dialog fills the full mobile page (isFullPageOnMobile), so the body stretches instead of
    using the fixed desktop height. Applies to both the master-detail and the tablet layout. */
-body.mobile .modal.options-dialog .modal-body {
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-body,
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-body {
     height: auto;
     flex: 1 1 auto;
 }
@@ -47,11 +59,11 @@ body.mobile .modal.options-dialog .modal-body {
 /* On wider mobile viewports (tablets) the dialog keeps the desktop-style sidebar layout; undo the
    generic bottom-strip arrangement that style.css applies to sidebar modals on mobile. The sidebar
    only exists outside the master-detail flow, so no extra scoping is needed. */
-body.mobile .modal.options-dialog .modal-content-with-sidebar {
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content-with-sidebar {
     flex-direction: row !important;
 }
 
-body.mobile .modal.options-dialog .modal-content-with-sidebar > .modal-sidebar {
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content-with-sidebar > .modal-sidebar {
     order: 0;
     height: auto;
     border-right: 1px solid var(--main-border-color);
@@ -59,7 +71,7 @@ body.mobile .modal.options-dialog .modal-content-with-sidebar > .modal-sidebar {
 }
 
 /* On tablets, don't take up the full page height like the master-detail flow does. */
-body.mobile .modal.options-dialog:not(.mobile-master-detail) .modal-dialog {
+body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog {
     height: 90vh;
 }
 
@@ -76,7 +88,8 @@ body.mobile .modal.options-dialog.mobile-master-detail {
     }
 }
 
-body.mobile .modal.options-dialog .modal-header {
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-main > .modal-header,
+body.mobile .modal.options-dialog > .modal-dialog > .modal-content > .modal-header {
     border-bottom: 1px solid var(--main-border-color);
 }
 

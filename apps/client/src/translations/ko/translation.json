@@ -97,7 +97,7 @@
   "i18n": {
     "saturday": "토요일",
     "sunday": "일요일",
-    "first-week-of-the-year": "일년의 첫째 주",
+    "first-week-of-the-year": "한 해의 첫째 주",
     "first-week-contains-first-day": "첫 번째 주에는 올해의 첫날이 포함됩니다",
     "title": "현지화",
     "language": "언어",
@@ -131,8 +131,11 @@
     "cancel": "취소",
     "ok": "OK",
     "are_you_sure_remove_note": "관계 맵에서 \"{{title}}\" 노트를 정말로 제거하시겠습니까? ",
-    "if_you_dont_check": "이 항목을 선택하지 않으면 해당 노트는 관계 맵에서만 제거됩니다.",
-    "also_delete_note": "노트를 함께 삭제"
+    "if_you_dont_check": "노트 자체는 유지되며, 여기에서의 위치만 제거됩니다.",
+    "also_delete_note": "노트를 함께 삭제",
+    "delete_note_deletes_note": "트리에서 이 노트가 있는 유일한 위치이므로 노트 자체가 삭제됩니다. 최근 변경 사항에서 되돌릴 수 있습니다.",
+    "delete_note_deletes_clones": "이 노트가 표시되는 {{places}}곳 모두에서 노트가 삭제됩니다. 최근 변경 사항에서 되돌릴 수 있습니다.",
+    "delete_note_keeps_note_other": "노트에 다른 복제본이 {{count}}개 있으므로 노트 자체는 유지됩니다."
   },
   "delete_notes": {
     "erase_notes_description": "노트를 일반 삭제하지 않고 즉시 완전히 삭제합니다. 이 작업은 되돌릴 수 없으며 애플리케이션을 다시 불러옵니다.",
@@ -363,7 +366,7 @@
   },
   "jump_to_note": {
     "search_placeholder": "이름이나 유형으로 노트를 검색하세요. > 명령으로...",
-    "search_button": "전문 검색"
+    "search_button": "전체 텍스트 검색"
   },
   "markdown_editor": {
     "image_upload_failed": "\"{{name}}\" 이미지를 업로드할 수 없습니다."
@@ -438,9 +441,9 @@
     "erase_notes_button": "지금 삭제된 노트를 지우세요",
     "more_actions": "추가 작업",
     "deleted_notes_settings": "삭제된 노트 설정",
-    "deleted_notes_message": "삭제된 노트는 삭제되었습니다.",
+    "deleted_notes_message": "삭제된 노트가 영구적으로 지워졌습니다.",
     "no_changes_message": "아직 변경 사항이 없습니다...",
-    "no_deleted_notes_message": "삭제된 노트를 보여줄 수 없습니다.",
+    "no_deleted_notes_message": "표시할 삭제된 노트가 없습니다.",
     "no_deleted_notes_erasure_hint": "삭제된 노트는 영구적으로 삭제되기 전에 {{- duration}} 동안 보관됩니다.",
     "undelete_link": "삭제 되돌리기",
     "confirm_undelete": "이 노트와 그 하위 노트를 삭제 취소하고 싶으신가요?",
@@ -457,7 +460,7 @@
     "confirm_delete_all": "이 노트의 모든 수정본을 삭제하시겠습니까?",
     "no_revisions": "이 노트는 아직 수정본이 없습니다...",
     "restore_button": "복원",
-    "highlight_changes": "하이라이트 변경 사항",
+    "highlight_changes": "변경 사항 강조",
     "diff_on": "변경 내용 보기",
     "diff_off": "내용 보기",
     "diff_on_hint": "노트 소스 변경 내용을 보려면 클릭",
@@ -672,7 +675,7 @@
     "date_pattern": "이 달력 루트 아래에서 생성되는 일별 노트의 제목 패턴입니다. 예: <code>{dateNumberPadded} - {weekDay}</code>.",
     "week_pattern": "이 캘린더 루트 아래에 생성되는 주간 노트의 제목 패턴입니다. <code>#enableWeekNote</code> 설정이 필요합니다.",
     "month_pattern": "이 달력 루트 아래에서 생성되는 월별 노트의 제목 패턴입니다. 예: <code>{monthNumberPadded} - {month}</code>.",
-    "quarter_pattern": "이 캘린더 루트 아래에 생성되는 주간 노트의 제목 패턴입니다. <code>#enableWeekNote</code> 설정이 필요합니다.",
+    "quarter_pattern": "이 캘린더 루트 아래에 생성되는 분기별 노트의 제목 패턴입니다. <code>#enableQuarterNote</code> 설정이 필요합니다.",
     "year_pattern": "이 달력 루트 아래에서 생성되는 연도별 노트의 제목 패턴입니다. 예: <code>{year}</code>.",
     "enable_week_note": "월별 노트와 일별 노트 사이에 주별 노트를 생성합니다. 달력 루트에 설정하며 기본값은 꺼짐입니다.",
     "enable_quarter_note": "연도별 노트와 월별 노트 사이에 분기별 노트를 생성합니다. 달력 루트에 설정하며 기본값은 꺼짐입니다.",
@@ -854,7 +857,7 @@
     "new_value_placeholder": "새 값",
     "help_text": "일치하는 모든 노트에 대해:",
     "help_text_item1": "노트에 아직 해당 라벨이 없으면 새로 생성",
-    "help_text_item2": "또는 기존 라벨의 값을 변경하는 방법",
+    "help_text_item2": "또는 기존 라벨이 있으면 값 변경",
     "help_text_note": "이 메서드는 값 없이 호출할 수도 있습니다. 이 경우 값이 없는 라벨을 노트에 지정합니다."
   },
   "delete_label": {
@@ -931,7 +934,7 @@
     "allowed_characters": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
     "to": "로",
     "target_note": "대상 노트",
-    "create_relation_on_all_matched_notes": "모든 매칭된 음에서 주어진 관계를 만드세요."
+    "create_relation_on_all_matched_notes": "일치하는 모든 노트에 지정된 관계를 생성합니다."
   },
   "delete_relation": {
     "delete_relation": "관계 삭제",
@@ -1014,7 +1017,41 @@
     "list": "목록",
     "today": "오늘",
     "pin_date": "현재 날짜를 고정하여 캘린더가 오늘 대신 항상 이 기간으로 열리도록 합니다",
-    "unpin_date": "날짜 고정을 해제해 달력이 다시 오늘 날짜로 열리도록 합니다"
+    "unpin_date": "날짜 고정을 해제해 달력이 다시 오늘 날짜로 열리도록 합니다",
+    "close_details": "일정 세부 정보 닫기",
+    "dates": {
+      "all_day": "종일",
+      "date": "날짜",
+      "start_date": "시작일",
+      "end_date": "종료일",
+      "time": "시간",
+      "start_time": "시작 시간",
+      "end_time": "종료 시간"
+    },
+    "recurrence": {
+      "repeats": "반복",
+      "frequency": "빈도",
+      "none": "없음",
+      "does_not_repeat": "반복하지 않음",
+      "daily": "매일",
+      "weekly": "매주",
+      "monthly": "매월",
+      "yearly": "매년",
+      "custom": "사용자 지정",
+      "repeat_every": "반복 간격",
+      "unit_days": "일",
+      "unit_weeks": "주",
+      "unit_months": "개월",
+      "unit_years": "년",
+      "on_days": "반복 요일",
+      "ends": "종료",
+      "never": "종료 안 함",
+      "until": "날짜 지정",
+      "count": "반복 횟수",
+      "times": "회",
+      "custom_rule": "규칙",
+      "custom_hint": "위 필드보다 더 세부적으로 설정할 수 있는 iCalendar 반복 규칙(RRULE)입니다. 비우면 반복이 중지됩니다."
+    }
   },
   "close_pane_button": {
     "close_this_pane": "이 창 닫기"
@@ -1579,7 +1616,7 @@
     "confirm_remove_relation": "관계를 제거하시겠습니까?",
     "specify_new_relation_name": "새로운 관계 이름을 지정하세요 (허용되는 문자: 영숫자, 콜론, 밑줄):",
     "connection_exists": "이 노트들 사이의 '{{name}}' 연결고리는 이미 존재합니다.",
-    "start_dragging_relations": "여기서부터 관계를 끌고 나가서 다른 조로 내려놓으세요.",
+    "start_dragging_relations": "여기에서 관계를 끌어 다른 노트에 놓으세요.",
     "note_not_found": "노트 {{noteId}}을(를) 찾을 수 없습니다!",
     "cannot_match_transform": "변환 매칭 불가: {{transform}}",
     "note_already_in_diagram": "\"{{title}}\"은 이미 도표에 표시되어 있습니다.",
@@ -1965,7 +2002,31 @@
     "path": "경로",
     "database_backed_up_to": "데이터베이스는 {{- backupFilePath}}로 백업되었습니다",
     "no_backup_yet": "아직 백업이 없습니다",
-    "download": "다운로드"
+    "download": "다운로드",
+    "location_title": "백업 위치",
+    "saved_in": "백업 저장 위치",
+    "select_location": "위치 선택",
+    "select_location_desktop_only": "백업 위치 선택은 데스크톱 애플리케이션에서만 사용할 수 있습니다.",
+    "reset_location": "기본값으로 재설정",
+    "reset_location_confirmation": "데이터베이스 백업 위치를 기본값으로 재설정하시겠습니까?",
+    "default_location": "기본 위치",
+    "options_title": "백업 옵션",
+    "enable_compression": "압축 사용",
+    "enable_compression_description": "각 백업 파일의 크기를 크게 줄이지만, 저장하는 데 시간이 조금 더 걸립니다.",
+    "enable_encryption": "암호화 사용",
+    "enable_encryption_description": "각 백업을 개인 비밀번호로 잠가 다른 사람이 읽지 못하게 합니다. 백업을 동기화 폴더에 저장할 때 사용하면 좋습니다.",
+    "no_keyring": "시스템에서 키링을 사용할 수 없습니다. 따라서 비밀번호를 안전하게 저장할 수 없어 백업 암호화를 사용할 수 없습니다.",
+    "turn_on_encryption": "암호화 사용",
+    "change_password": "비밀번호 변경",
+    "password_modal_title": "백업 비밀번호",
+    "password_modal_description": "이 비밀번호의 사본을 안전한 곳에 보관하세요. Trilium에서는 이 비밀번호를 다시 표시할 수 없으며, 비밀번호가 없으면 백업을 복원할 수 없습니다.",
+    "save_password": "비밀번호 저장",
+    "password_stored": "백업 비밀번호가 저장되었습니다.",
+    "password_not_stored": "백업 비밀번호를 저장할 수 없습니다.",
+    "encryption_not_disabled": "백업 비밀번호는 삭제되었지만 암호화를 끌 수 없습니다. 암호화를 다시 켜기 전까지 백업은 암호화되지 않습니다.",
+    "encryption_not_enabled": "백업 비밀번호는 저장되었지만 암호화를 켤 수 없습니다. 암호화를 켜기 전까지 백업은 암호화되지 않습니다.",
+    "compressed": "압축됨",
+    "encrypted": "암호화됨"
   },
   "etapi": {
     "description": "ETAPI는 UI 없이 Trilium 인스턴스에 프로그래밍적으로 접근할 수 있는 REST API입니다.",
@@ -2029,7 +2090,7 @@
     "protected_session_timeout_description": "설정한 시간 동안 활동이 없으면 세션 정보가 브라우저 메모리에서 삭제됩니다. 자세한 내용은",
     "wiki": "위키",
     "for_more_info": "자세한 내용은 다음을 참조하세요.",
-    "protected_session_timeout_label": "자동 종료 세션 후",
+    "protected_session_timeout_label": "다음 시간 후 세션 자동 종료",
     "reset_confirmation": "비밀번호를 재설정하면 기존의 모든 보호 노트에 대한 접근 권한을 영원히 잃게 됩니다. 정말 비밀번호를 재설정하고 싶으신가요?",
     "reset_success_message": "비밀번호가 초기화되었습니다. 새 비밀번호를 설정해 주세요",
     "change_password_heading": "비밀번호 변경",
@@ -2095,7 +2156,7 @@
     "oauth_description": "OpenID Connect를 사용하면 Google과 같은 다른 서비스의 계정으로 로그인하여 본인임을 확인할 수 있습니다. 기본 발급자는 Google이지만 다른 OpenID Connect 제공자로 변경할 수 있습니다. 자세한 내용은 <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">여기</a> 문서를 참조하세요. Google을 통해 OpenID Connect 서비스를 설정하려면 <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">이 안내</a> 내용을 따르세요.",
     "oauth_not_configured_title": "OpenID Connect 설정",
     "oauth_not_configured_hint": "OpenID Connect는 먼저 config.ini이나 환경 변수를 통해 설정해야 합니다.",
-    "oauth_missing_vars": "설정 남겨짐: {{-variables}}",
+    "oauth_missing_vars": "설정이 필요한 항목: {{-variables}}",
     "oauth_how_to_enable": "활성화 방법",
     "oauth_server_config_hint": "config.ini 파일에 다음 항목을 추가하고 애플리케이션을 재시작하세요:",
     "oauth_server_env_hint": "또는 다음 환경 변수를 설정할 수도 있습니다:",
@@ -2263,7 +2324,7 @@
   },
   "shared_info": {
     "shared_publicly": "이 노트는 {{- link}}에서 공개적으로 공유됩니다.",
-    "shared_locally": "이 노트는 {{- link}}에서 지역 공유됩니다.",
+    "shared_locally": "이 노트는 {{- link}}에서 로컬로 공유되고 있습니다.",
     "help_link": "도움이 필요하시면 방문하세요 <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">위키</a>."
   },
   "read-only-info": {
@@ -2547,7 +2608,7 @@
     "cannot-download": "이미지를 다운로드할 수 없었어요."
   },
   "clipboard": {
-    "cut": "노트는 클립보드에 잘라냈습니다.",
+    "cut": "노트를 클립보드로 잘라냈습니다.",
     "copied": "노트는 클립보드에 복사되었습니다.",
     "copy_failed": "허가 문제로 인해 클립보드에 복사할 수 없습니다.",
     "copy_success": "클립보드에 복사했습니다."
@@ -2699,13 +2760,25 @@
     "zoom-in": "확대",
     "zoom-out": "축소",
     "fullscreen": "전체 화면",
-    "exit-fullscreen": "전체 화면 종료"
+    "exit-fullscreen": "전체 화면 종료",
+    "create-child-note-cancel": "노트 추가 취소",
+    "add-marker": "마커 추가",
+    "add-marker-cancel": "취소",
+    "add-gpx-track": "GPX 파일에서 GPS 트랙 추가",
+    "enter-3d": "3D 보기로 기울이기\nCtrl 키를 누른 채 드래그하여 지도를 자유롭게 기울이세요",
+    "exit-3d": "지도를 다시 평면으로 보기",
+    "close-details": "닫기",
+    "marker-color": "마커 색상",
+    "copy-coordinates": "좌표 복사"
   },
   "geo-map-context": {
     "open-location": "위치 열기",
     "remove-from-map": "맵에서 제거",
     "add-note": "이 위치에 마커 추가",
-    "move-marker": "다른 위치로 이동"
+    "move-marker": "다른 위치로 이동",
+    "remove-from-map-confirmation": "지도에서 \"{{title}}\" 노트를 제거하시겠습니까?",
+    "delete-note": "노트 삭제",
+    "delete-note-confirmation": "\"{{title}}\" 노트를 삭제하시겠습니까? 트랙은 자체 노트에서 그려지므로 지도에서 트랙만 제거할 수 없습니다."
   },
   "help-button": {
     "title": "관련 도움말 페이지 열기"
@@ -2833,9 +2906,9 @@
     "attachment_tooltip": "첨부 파일: {{- title}} ({{size}})",
     "child_tooltip": "하위 노트: {{- title}} ({{size}})",
     "center_note_size": "노트: <Size/>",
-    "center_note_size_help": "음 크기는 자신의 몸체와 첨부 파일만 커버합니다(디스크 {{size}})",
+    "center_note_size_help": "노트 크기에는 해당 노트의 본문과 첨부 파일만 포함됩니다(디스크 사용량: {{size}})",
     "center_revisions_size": "수정본: <Size/>",
-    "center_revisions_help": "이 노트의 수정본 크기에는 후손 노트도 포함되어 있습니다",
+    "center_revisions_help": "하위 노트도 포함됩니다",
     "center_subtree_size": "하위 트리: <Size/>",
     "center_subtree_size_help": "하위 트리 크기에는 하위 노트가 포함되지만 해당 노트의 수정본은 포함되지 않습니다(디스크 사용량: {{size}})",
     "back": "뒤로",
@@ -3044,7 +3117,13 @@
     "slot_duration": "지속 기간",
     "slot_label_interval": "라벨 간격",
     "minutes_other": "{{count}}분",
-    "hours_other": "{{count}}시간"
+    "hours_other": "{{count}}시간",
+    "event_color": "일정 색상",
+    "remove_from_calendar": "캘린더에서 제거",
+    "remove_from_calendar_confirmation": "\"{{title}}\" 일정을 캘린더에서 제거하시겠습니까?",
+    "new_event": "새 일정",
+    "draft_title_placeholder": "제목 추가",
+    "create_event": "만들기"
   },
   "ocr": {
     "extracted_text": "추출된 텍스트 (OCR)",
@@ -3154,7 +3233,7 @@
     "traefik_blocks_requests": "Traefik 리버스 프록시를 사용 중이라면, 서버와의 통신에 영향을 주는 결정적인 변경이 발생했습니다."
   },
   "tab_history_navigation_buttons": {
-    "go-back": "이전 주도로 돌아가기",
+    "go-back": "이전 노트로 돌아가기",
     "go-forward": "다음 노트로 넘어가세요"
   },
   "breadcrumb": {
@@ -3500,7 +3579,8 @@
     "exit-fullscreen": "전체 화면 종료",
     "direction-left": "왼쪽으로 가지 펼치기",
     "direction-right": "오른쪽으로 가지 펼치기",
-    "direction-side": "양쪽으로 가지 펼치기"
+    "direction-side": "양쪽으로 가지 펼치기",
+    "reset-zoom": "확대/축소 초기화"
   },
   "llm": {
     "disabled_placeholder": "AI 기능이 꺼져 있습니다. 제공업체와 MCP를 설정하려면 AI 기능을 활성화하세요.",
@@ -3784,5 +3864,50 @@
     "clear-color": "색상 지우기",
     "set-color": "색상 설정",
     "set-custom-color": "사용자 지정 색상 설정"
+  },
+  "gpx_preview": {
+    "distance": "거리",
+    "duration": "소요 시간",
+    "avg_speed": "평균 속도",
+    "elevation_gain": "누적 상승 고도",
+    "elevation_loss": "누적 하강 고도",
+    "max_elevation": "최고 고도",
+    "points": "포인트",
+    "segments": "구간",
+    "tracks": "트랙",
+    "routes": "경로",
+    "waypoints": "웨이포인트",
+    "waypoints_with_count": "웨이포인트({{count}}개)",
+    "tracks_with_count": "트랙({{count}}개)",
+    "routes_with_count": "경로({{count}}개)",
+    "journeys_with_count": "트랙 및 경로({{count}}개)",
+    "unnamed": "(이름 없음)",
+    "recorded_on": "기록일",
+    "map_hint": "트랙을 지도에 표시하려면 이 노트를 지리 지도 컬렉션에 넣으세요.",
+    "elevation_profile": "고도 프로필",
+    "duration_minutes": "{{minutes}} min",
+    "duration_hours_minutes": "{{hours}} h {{minutes}} min",
+    "unit_m": "{{value}} m",
+    "unit_km": "{{value}} km",
+    "unit_mi": "{{value}} mi",
+    "unit_ft": "{{value}} ft",
+    "unit_kmh": "{{value}} km/h",
+    "unit_mph": "{{value}} mph"
+  },
+  "open": {
+    "directory_failed": "{{- directory}} 열기 실패: {{- reason}}"
+  },
+  "embedded_note": {
+    "open-note": "노트 열기",
+    "more-ways-to-open": "다른 방법으로 열기",
+    "maximize": "빠른 편집으로 열기"
+  },
+  "database_file_list": {
+    "size_on_disk": "디스크에서 {{size}}"
+  },
+  "password_with_confirmation": {
+    "password": "비밀번호",
+    "repeat_password": "비밀번호 다시 입력",
+    "mismatch": "비밀번호가 일치하지 않습니다."
   }
 }

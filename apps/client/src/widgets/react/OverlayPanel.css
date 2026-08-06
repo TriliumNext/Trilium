@@ -34,18 +34,22 @@
 }
 
 /*
- * At the end of the row and centred on it, whichever header it is standing at. What it looks like
- * is the theme's — an "x" icon button is dressed as the one closing a tab is, here as everywhere.
+ * At the end of the row and centred on it, whichever header it is standing at: whatever the header
+ * offers, and last of all the way out. What they look like is the theme's — an "x" icon button is
+ * dressed as the one closing a tab is, here as everywhere.
  *
- * Laid over the row rather than standing in it: a strip of tabs is centred on the panel, and a
- * button taking its own place beside it would push it off centre. There is room to spare next to
- * two tabs and next to one word, so the two never meet.
+ * Laid over the row rather than standing in it: a strip of tabs is centred on the panel, and
+ * buttons taking their own place beside it would push it off centre. There is room to spare next
+ * to two tabs and next to one word, so the two never meet.
  */
-.tn-overlay-panel .tn-overlay-panel-close {
+.tn-overlay-panel .tn-overlay-panel-header-actions {
     position: absolute;
     inset-inline-end: 6px;
     top: 50%;
     transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /*

@@ -86,7 +86,7 @@ The following features are supported by Trilium's Markdown format and will show 
     ```
 *   Highlights (background color) are supported both via the `==` Markdown syntax, as well as the canonical HTML representation in Trilium:
     
-    ```gfm
+    ```
     ==highlighted==
     <span style="background-color:hsl(0,0%,100%);">Highlighted</span>
     ```

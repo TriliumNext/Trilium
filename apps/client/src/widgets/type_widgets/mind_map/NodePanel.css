@@ -64,8 +64,9 @@ body.experimental-feature-new-layout .mind-map-node-panel {
     --note-icon-size: 20px;
     --note-icon-container-padding-size: 4px;
 
-    &:last-child {
+    &:last-child:not(:hover) {
         --note-icon-background-color: transparent;
+        --note-icon-custom-color: var(--main-text-color);
     }
 }
 

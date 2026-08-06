@@ -5,11 +5,13 @@ import "ckeditor5/ckeditor5.css";
 import "./theme/blockquote.css";
 import "./theme/code_block_toolbar.css";
 import "./theme/link_embed_form.css";
+import type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 import { COMMON_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
 export { default as EditorWatchdog } from "./custom_watchdog";
 export { CHAT_INPUT_PLUGINS, MEMO_PLUGINS } from "./plugins.js";
 export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, WatchdogConfig, WatchdogState } from "ckeditor5";
+export type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 export type { SlashCommandConfig, SlashCommandDefinition } from "./plugins/mention/slash_commands.js";
 export type { TriliumMentionFeed } from "./plugins/mention/types.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
@@ -85,6 +87,7 @@ declare module "ckeditor5" {
         },
         clipboard?: {
             copy(text: string): void;
-        }
+        },
+        clipboardImageEmbed?: ClipboardImageEmbedConfig
     }
 }

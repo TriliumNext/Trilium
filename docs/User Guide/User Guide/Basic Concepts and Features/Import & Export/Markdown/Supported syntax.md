@@ -62,7 +62,7 @@ Background highlights are supported in two ways:
 
 *   The Markdown `==` extension which is supported by other Markdown-based applications such as Obsidian:
     
-    ```gfm
+    ```
     ==highlighted==
     ```
 *   The canonical HTML representation of highlights, as supported by Trilium:

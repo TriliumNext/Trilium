@@ -59,4 +59,19 @@ describe("contextMenu", () => {
 
         expect(menu?.parentElement).toBe(document.body);
     });
+
+    it("says whether it is up, for a host whose own press would otherwise not know", async () => {
+        buildPage();
+        const contextMenu = await buildContextMenu();
+
+        // A host that answers a press itself keeps it from the document, whose click is what puts
+        // the menu away — so it has to ask, rather than let a standing menu outlive the press.
+        expect(contextMenu.isShown()).toBe(false);
+
+        await contextMenu.show({ x: 10, y: 10, items, selectMenuItemHandler: () => {} });
+        expect(contextMenu.isShown()).toBe(true);
+
+        await contextMenu.hide();
+        expect(contextMenu.isShown()).toBe(false);
+    });
 });

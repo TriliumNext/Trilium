@@ -1,4 +1,12 @@
-import type { ElectronApi, ElectronContextMenuParams, NativeImportOptions, OneNoteLoginResult, RendererStartupMetric } from "@triliumnext/commons";
+import type {
+    BackupPassphraseChange,
+    BackupPassphraseStatus,
+    ElectronApi,
+    ElectronContextMenuParams,
+    NativeImportOptions,
+    OneNoteLoginResult,
+    RendererStartupMetric
+} from "@triliumnext/commons";
 import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 
 contextBridge.exposeInMainWorld("electronApi", {
@@ -289,6 +297,19 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         setLanAccessEnabled(enabled: boolean): Promise<boolean> {
             return ipcRenderer.invoke("security-set-lan-access", enabled);
+        }
+    },
+
+    backupPassphrase: {
+        getStatus(): Promise<BackupPassphraseStatus> {
+            return ipcRenderer.invoke("backup-passphrase-status");
+        },
+        // No getter by design: the plaintext passphrase never comes back to the renderer.
+        set(passphrase: string): Promise<BackupPassphraseChange> {
+            return ipcRenderer.invoke("backup-passphrase-set", passphrase);
+        },
+        clear(): Promise<BackupPassphraseChange> {
+            return ipcRenderer.invoke("backup-passphrase-clear");
         }
     },
 

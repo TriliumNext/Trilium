@@ -26,6 +26,7 @@
     "@fullcalendar/rrule": "6.1.21",
     "@fullcalendar/timegrid": "6.1.21",
     "@mermaid-js/layout-elk": "0.2.2",
+    "@popperjs/core": "2.11.8",
     "@preact/signals": "2.10.1",
     "@triliumnext/ckeditor5": "workspace:*",
     "@triliumnext/codemirror": "workspace:*",

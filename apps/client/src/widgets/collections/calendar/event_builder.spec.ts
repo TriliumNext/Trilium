@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { buildNote, buildNotes } from "../../../test/easy-froca.js";
 import { buildEvent, buildEvents } from "./event_builder.js";
 import { LOCALE_MAPPINGS } from "./index.js";
-import { isValidDuration } from "./utils.js";
+import { isValidDuration, parseDurationSeconds } from "./utils.js";
 import { LOCALES } from "@triliumnext/commons";
 
 describe("Building events", () => {
@@ -325,6 +325,29 @@ describe("isValidDuration", () => {
     it("rejects out-of-range minute/second values", () => {
         expect(isValidDuration("00:60:00")).toBe(false);
         expect(isValidDuration("00:00:60")).toBe(false);
+    });
+});
+
+/**
+ * What the length of a slot is read by, a tap on the grid making an event of exactly one (see
+ * draftFromDateClick in index.tsx). Bounded lengths are {@link isValidDuration}'s business; this
+ * only says how long one lasts.
+ */
+describe("parseDurationSeconds", () => {
+    it("reads a duration written as hours, minutes and seconds", () => {
+        expect(parseDurationSeconds("00:15:00")).toBe(15 * 60);
+        expect(parseDurationSeconds("01:00:00")).toBe(60 * 60);
+        expect(parseDurationSeconds("00:00:30")).toBe(30);
+        expect(parseDurationSeconds("24:00:00")).toBe(24 * 60 * 60);
+    });
+
+    it("answers nothing for what is not written that way", () => {
+        expect(parseDurationSeconds("1:0:0")).toBe(null);
+        expect(parseDurationSeconds("00:60:00")).toBe(null);
+        expect(parseDurationSeconds("abc")).toBe(null);
+        expect(parseDurationSeconds("")).toBe(null);
+        expect(parseDurationSeconds(null)).toBe(null);
+        expect(parseDurationSeconds(undefined)).toBe(null);
     });
 });
 

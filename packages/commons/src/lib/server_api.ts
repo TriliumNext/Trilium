@@ -173,6 +173,18 @@ export interface DatabaseBackup {
     mtime: Date;
     /** Size of the backup file, in bytes. */
     fileSize: number;
+    /**
+     * Whether the backup is gzip-compressed. Absent for a plain database copy, and for a container
+     * whose header could not be read.
+     */
+    compressed?: boolean;
+    /** Whether the backup is encrypted. Absent under the same conditions as {@link compressed}. */
+    encrypted?: boolean;
+    /**
+     * Size of the wrapped database before compression, in bytes, as recorded by the writer. Absent
+     * for a plain copy, where the file size already says it.
+     */
+    plaintextSize?: number;
 }
 
 export interface ExistingBackupsResponse {

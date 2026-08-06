@@ -1006,7 +1006,40 @@
     "today": "Today",
     "pin_date": "Pin the current date so the calendar always opens on this interval instead of today",
     "unpin_date": "Unpin the date so the calendar opens on today's date again",
-    "close_details": "Close event details"
+    "close_details": "Close event details",
+    "dates": {
+      "all_day": "All day",
+      "date": "Date",
+      "start_date": "Start date",
+      "end_date": "End date",
+      "time": "Time",
+      "start_time": "Start time",
+      "end_time": "End time"
+    },
+    "recurrence": {
+      "repeats": "Repeats",
+      "frequency": "Frequency",
+      "none": "None",
+      "does_not_repeat": "Does not repeat",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "custom": "Custom",
+      "repeat_every": "Repeat every",
+      "unit_days": "days",
+      "unit_weeks": "weeks",
+      "unit_months": "months",
+      "unit_years": "years",
+      "on_days": "On days",
+      "ends": "Ends",
+      "never": "Never",
+      "until": "On date",
+      "count": "After",
+      "times": "times",
+      "custom_rule": "Rule",
+      "custom_hint": "An iCalendar recurrence rule (RRULE) that says more than the fields above can. Clearing it stops the repetition."
+    }
   },
   "close_pane_button": {
     "close_this_pane": "Close this pane"
@@ -2039,7 +2072,32 @@
     "path": "Path",
     "database_backed_up_to": "Database has been backed up to {{- backupFilePath}}",
     "no_backup_yet": "no backup yet",
-    "download": "Download"
+    "download": "Download",
+    "options_title": "Backup options",
+    "enable_compression": "Enable compression",
+    "enable_compression_description": "Makes each backup considerably smaller, at the cost of some time while it is written.",
+    "enable_encryption": "Enable encryption",
+    "enable_encryption_description": "Locks each backup with a password of your own, so that nobody else can read it. Worth turning on when backups are written to a synced folder.",
+    "no_keyring": "A keyring is not available in your system. That means the password cannot be securely stored, so encrypting backups is not available.",
+    "turn_on_encryption": "Turn on encryption",
+    "change_password": "Change password",
+    "password_modal_title": "Backup password",
+    "password_modal_description": "Keep a copy of this password somewhere safe. Trilium cannot show it again, and without it a backup cannot be restored.",
+    "save_password": "Save password",
+    "password_stored": "The backup password has been saved.",
+    "password_not_stored": "The backup password could not be saved.",
+    "encryption_not_disabled": "The backup password was removed, but encryption could not be switched off. Backups will not be encrypted until you turn encryption on again.",
+    "encryption_not_enabled": "The backup password was saved, but encryption could not be switched on. Backups will not be encrypted until you switch it on.",
+    "compressed": "Compressed",
+    "encrypted": "Encrypted"
+  },
+  "database_file_list": {
+    "size_on_disk": "{{size}} on disk"
+  },
+  "password_with_confirmation": {
+    "password": "Password",
+    "repeat_password": "Repeat password",
+    "mismatch": "The passwords do not match."
   },
   "open": {
     "directory_failed": "Could not open {{- directory}}: {{- reason}}"
@@ -2799,10 +2857,13 @@
     "fullscreen": "Fullscreen",
     "exit-fullscreen": "Exit fullscreen",
     "close-details": "Close",
-    "open-note": "Open note",
-    "more-ways-to-open": "More ways to open",
     "marker-color": "Marker color",
     "copy-coordinates": "Copy coordinates"
+  },
+  "embedded_note": {
+    "open-note": "Open note",
+    "more-ways-to-open": "More ways to open",
+    "maximize": "Open in quick edit"
   },
   "geo-map-context": {
     "open-location": "Open location",
@@ -3166,6 +3227,12 @@
   },
   "calendar_view": {
     "delete_note": "Delete note...",
+    "event_color": "Event color",
+    "remove_from_calendar": "Remove from calendar",
+    "remove_from_calendar_confirmation": "Are you sure you want to remove the event \"{{title}}\" from the calendar?",
+    "new_event": "New event",
+    "draft_title_placeholder": "Add a title",
+    "create_event": "Create",
     "time_slots": "Time slots",
     "slot_duration": "Duration",
     "slot_label_interval": "Label interval",

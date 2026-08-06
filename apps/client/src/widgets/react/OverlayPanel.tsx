@@ -18,6 +18,9 @@ interface OverlayPanelProps {
      * {@link OverlayPanelTitle} where there is only the one thing to show.
      */
     header: ComponentChildren;
+    /** Whatever else the header row offers, standing between the header and the close button —
+     *  the geo pane's maximize, say (see MaximizeToQuickEditAction). */
+    headerActions?: ComponentChildren;
     /** The way to send the panel away, offered at the end of the header row. Left out, the panel
      *  has no way of dismissing itself. */
     close?: {
@@ -38,7 +41,7 @@ interface OverlayPanelProps {
  * left to the caller, which is what differs between two of them. The same division
  * {@link OverlayToolbar} makes for the bars those canvases carry.
  */
-export default function OverlayPanel({ className, containerRef, header, close, children }: OverlayPanelProps) {
+export default function OverlayPanel({ className, containerRef, header, headerActions, close, children }: OverlayPanelProps) {
     return (
         <div
             ref={containerRef}
@@ -53,13 +56,19 @@ export default function OverlayPanel({ className, containerRef, header, close, c
             <div className="tn-overlay-panel-header">
                 {header}
 
-                {close && (
-                    <ActionButton
-                        className="tn-overlay-panel-close"
-                        icon="bx bx-x"
-                        text={close.text}
-                        onClick={close.onClick}
-                    />
+                {(headerActions || close) && (
+                    <div className="tn-overlay-panel-header-actions">
+                        {headerActions}
+
+                        {close && (
+                            <ActionButton
+                                className="tn-overlay-panel-close"
+                                icon="bx bx-x"
+                                text={close.text}
+                                onClick={close.onClick}
+                            />
+                        )}
+                    </div>
                 )}
             </div>
 

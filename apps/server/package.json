@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@braintree/sanitize-url": "7.1.2",
+    "@triliumnext/backup-container": "workspace:*",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/core": "workspace:*",
     "@triliumnext/express-partial-content": "workspace:*",

@@ -1,11 +1,13 @@
+import { readBackupContainer } from "@triliumnext/backup-container";
 import type { OptionNames } from "@triliumnext/commons";
 import { getLog, getSql, ws } from "@triliumnext/core";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { Readable, Writable } from "stream";
 import { afterAll, afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
-import ServerBackupService from "./backup_provider.js";
+import ServerBackupService, { type ServerBackupConfig } from "./backup_provider.js";
 import dataDir from "./services/data_dir.js";
 
 const DEFAULT_DIR = path.resolve(dataDir.BACKUP_DIR);
@@ -20,8 +22,15 @@ async function writeStubDatabase(target: string) {
 }
 
 /** A desktop service (custom directory honoured) reading the given option value. */
-function desktopService(customDbBackupDir: string | null) {
-    return new ServerBackupService(optionsWith(customDbBackupDir), { allowCustomDirectory: true });
+function desktopService(
+    customDbBackupDir: string | null,
+    extraOptions: OptionOverrides = {},
+    config: Partial<ServerBackupConfig> = {}
+) {
+    return new ServerBackupService(
+        optionsWith(customDbBackupDir, extraOptions),
+        { allowCustomDirectory: true, ...config }
+    );
 }
 
 /** A server service, which ignores the option entirely. */
@@ -29,10 +38,17 @@ function serverService(customDbBackupDir: string | null) {
     return new ServerBackupService(optionsWith(customDbBackupDir));
 }
 
-function optionsWith(customDbBackupDir: string | null) {
+type OptionOverrides = Partial<Record<OptionNames, string>>;
+
+function optionsWith(customDbBackupDir: string | null, extraOptions: OptionOverrides = {}) {
+    const values: Partial<Record<OptionNames, string | null>> = {
+        customDbBackupDir,
+        ...extraOptions
+    };
+
     return {
-        getOption: (name: OptionNames) => (name === "customDbBackupDir" ? customDbBackupDir ?? "" : ""),
-        getOptionOrNull: (name: OptionNames) => (name === "customDbBackupDir" ? customDbBackupDir : null),
+        getOption: (name: OptionNames) => values[name] ?? "",
+        getOptionOrNull: (name: OptionNames) => values[name] ?? null,
         getOptionBool: () => false,
         setOption: () => {}
     };
@@ -71,7 +87,7 @@ describe("ServerBackupService: backup location", () => {
 
         expect(service.getBackupFolderPath()).toBe(CUSTOM_DIR);
         expect(await service.backupNow("daily")).toBe(path.join(CUSTOM_DIR, "backup-daily.db"));
-        expect(backupNamesIn(CUSTOM_DIR)).toEqual(["backup-daily.db"]);
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([ "backup-daily.db" ]);
         expect(backupNamesIn(DEFAULT_DIR)).toEqual([]);
     });
 
@@ -100,7 +116,210 @@ describe("ServerBackupService: backup location", () => {
         expect(service.getBackupFolderPath()).toBe(DEFAULT_DIR);
         await service.backupNow("now");
         // Listed once, not once per configured directory.
-        expect((await service.getExistingBackups()).map((b) => b.fileName)).toEqual(["backup-now.db"]);
+        const listed = await service.getExistingBackups();
+        expect(listed.map((b) => b.fileName)).toEqual([ "backup-now.db" ]);
+    });
+});
+
+describe("ServerBackupService: backup format", () => {
+    const PASSPHRASE = "correct horse battery staple";
+    const withPassphrase: Partial<ServerBackupConfig> = { getPassphrase: async () => PASSPHRASE };
+
+    /** Unwraps a container back to the bytes the stub database was made of. */
+    async function unwrap(filePath: string, passphrase?: string) {
+        const chunks: Buffer[] = [];
+        const sink = new Writable({
+            write(chunk: Buffer, _encoding, callback) {
+                chunks.push(Buffer.from(chunk));
+                callback();
+            }
+        });
+
+        await readBackupContainer(Readable.from([ fs.readFileSync(filePath) ]), sink, {
+            passphrase,
+            // The stub standing in for the online backup is not a real database.
+            requireSqliteHeader: false
+        });
+
+        return Buffer.concat(chunks).toString();
+    }
+
+    it("writes a plain database when neither compression nor encryption is on", async () => {
+        const backupFile = await desktopService(CUSTOM_DIR).backupNow("now");
+
+        expect(backupFile).toBe(path.join(CUSTOM_DIR, "backup-now.db"));
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([ "backup-now.db" ]);
+    });
+
+    it("writes a compressed container, which unwraps to the database again", async () => {
+        const service = desktopService(CUSTOM_DIR, { backupEnableCompression: "true" });
+
+        const backupFile = await service.backupNow("now");
+
+        expect(backupFile).toBe(path.join(CUSTOM_DIR, "backup-now.tnbackup"));
+        expect(await unwrap(backupFile)).toBe("db-bytes");
+    });
+
+    it("writes an encrypted container, which only the passphrase opens", async () => {
+        const service = desktopService(
+            CUSTOM_DIR,
+            { backupEnableEncryption: "true" },
+            withPassphrase
+        );
+
+        const backupFile = await service.backupNow("now");
+
+        expect(backupFile).toBe(path.join(CUSTOM_DIR, "backup-now.tnbackup"));
+        expect(await unwrap(backupFile, PASSPHRASE)).toBe("db-bytes");
+        await expect(unwrap(backupFile, "wrong"))
+            .rejects.toMatchObject({ reason: "wrong-passphrase-or-damaged-header" });
+    });
+
+    it("compresses and encrypts together when both are on", async () => {
+        const service = desktopService(
+            CUSTOM_DIR,
+            { backupEnableCompression: "true", backupEnableEncryption: "true" },
+            withPassphrase
+        );
+
+        const backupFile = await service.backupNow("now");
+
+        expect(await unwrap(backupFile, PASSPHRASE)).toBe("db-bytes");
+    });
+
+    it("keeps one file per backup name, whichever format it was last written in", async () => {
+        await desktopService(CUSTOM_DIR).backupNow("daily");
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([ "backup-daily.db" ]);
+
+        await desktopService(CUSTOM_DIR, { backupEnableCompression: "true" }).backupNow("daily");
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([ "backup-daily.tnbackup" ]);
+
+        await desktopService(CUSTOM_DIR).backupNow("daily");
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([ "backup-daily.db" ]);
+    });
+
+    it("leaves no snapshot behind in the data directory", async () => {
+        await desktopService(CUSTOM_DIR, { backupEnableCompression: "true" }).backupNow("now");
+
+        const left = fs.readdirSync(dataDir.TMP_DIR);
+        const snapshots = left.filter((name) => name.includes("snapshot"));
+
+        expect(snapshots).toEqual([]);
+    });
+
+    it("cleans up after a failure, leaving no snapshot and no partial container", async () => {
+        copyDatabase.mockRejectedValue(new Error("EIO: i/o error"));
+
+        const backup = desktopService("", { backupEnableCompression: "true" }).backupNow("now");
+
+        await expect(backup).rejects.toThrow("EIO");
+
+        const left = fs.readdirSync(dataDir.TMP_DIR);
+        const snapshots = left.filter((name) => name.includes("snapshot"));
+
+        expect(snapshots).toEqual([]);
+        expect(backupNamesIn(DEFAULT_DIR)).toEqual([]);
+    });
+
+    it("lists containers alongside plain backups", async () => {
+        await desktopService("", { backupEnableCompression: "true" }).backupNow("daily");
+        await desktopService("").backupNow("weekly");
+
+        const backups = await desktopService("").getExistingBackups();
+
+        expect(backups.map((b) => b.fileName).sort()).toEqual(
+            [ "backup-daily.tnbackup",
+                "backup-weekly.db" ]
+        );
+    });
+
+    it("reads what each container is from its own header, not from today's options", async () => {
+        await desktopService("", { backupEnableCompression: "true" }).backupNow("compressed");
+        const encrypting = desktopService("", { backupEnableEncryption: "true" }, withPassphrase);
+        await encrypting.backupNow("encrypted");
+        await desktopService("").backupNow("plain");
+
+        // Listed by a service with both switched off: a backup keeps the shape it was written in.
+        const listed = await desktopService("").getExistingBackups();
+        const byName = new Map(listed.map((b) => [ b.fileName, b ]));
+
+        expect(byName.get("backup-compressed.tnbackup")).toMatchObject(
+            { compressed: true,
+                encrypted: false,
+                plaintextSize: "db-bytes".length }
+        );
+        expect(byName.get("backup-encrypted.tnbackup")).toMatchObject(
+            { compressed: false,
+                encrypted: true }
+        );
+        // A plain copy states nothing of the sort: its own size is the whole story.
+        expect(byName.get("backup-plain.db")).not.toHaveProperty("compressed");
+        expect(byName.get("backup-plain.db")).not.toHaveProperty("plaintextSize");
+    });
+
+    it("lists a container it cannot make sense of, rather than dropping it", async () => {
+        fs.mkdirSync(DEFAULT_DIR, { recursive: true });
+        fs.writeFileSync(
+            path.join(DEFAULT_DIR, "backup-damaged.tnbackup"),
+            "not a container at all"
+        );
+
+        const backups = await desktopService("").getExistingBackups();
+
+        expect(backups.map((b) => b.fileName)).toEqual([ "backup-damaged.tnbackup" ]);
+        expect(backups[0]).not.toHaveProperty("compressed");
+        expect(backups[0]).not.toHaveProperty("encrypted");
+    });
+});
+
+describe("ServerBackupService: when the backup passphrase cannot be read", () => {
+    const noPassphrase: Partial<ServerBackupConfig> = { getPassphrase: async () => null };
+
+    it("keeps the unencrypted backup out of the chosen directory and says so", async () => {
+        const service = desktopService(
+            CUSTOM_DIR,
+            { backupEnableEncryption: "true" },
+            noPassphrase
+        );
+
+        const backupFile = await service.backupNow("daily");
+
+        // The chosen directory is typically a synced folder, which is what encryption was avoiding.
+        // With nothing left to wrap, the backup is a plain database again rather than an empty
+        // container.
+        expect(backupFile).toBe(path.join(DEFAULT_DIR, "backup-daily.db"));
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([]);
+        expect(ws.sendMessageToAllClients).toHaveBeenCalledWith(
+            expect.objectContaining(
+                { type: "toast",
+                    message: expect.stringContaining("not encrypted") }
+            )
+        );
+    });
+
+    it("still honours compression, so only what could not be done is missing", async () => {
+        const service = desktopService(
+            CUSTOM_DIR,
+            { backupEnableCompression: "true", backupEnableEncryption: "true" },
+            noPassphrase
+        );
+
+        const backupFile = await service.backupNow("daily");
+
+        expect(backupFile).toBe(path.join(DEFAULT_DIR, "backup-daily.tnbackup"));
+    });
+
+    it("says nothing and encrypts nothing when encryption was never asked for", async () => {
+        await desktopService(CUSTOM_DIR, {}, noPassphrase).backupNow("daily");
+
+        expect(backupNamesIn(CUSTOM_DIR)).toEqual([ "backup-daily.db" ]);
+        expect(ws.sendMessageToAllClients).not.toHaveBeenCalled();
+    });
+
+    it("treats a service with no passphrase provider at all the same way", async () => {
+        const service = desktopService(CUSTOM_DIR, { backupEnableEncryption: "true" });
+
+        expect(await service.backupNow("daily")).toBe(path.join(DEFAULT_DIR, "backup-daily.db"));
     });
 });
 
@@ -109,7 +328,7 @@ describe("ServerBackupService: fallback when the custom directory cannot be writ
         copyDatabase.mockRejectedValueOnce(new Error("ENOSPC: no space left on device"));
 
         expect(await desktopService(CUSTOM_DIR).backupNow("daily")).toBe(path.join(DEFAULT_DIR, "backup-daily.db"));
-        expect(backupNamesIn(DEFAULT_DIR)).toEqual(["backup-daily.db"]);
+        expect(backupNamesIn(DEFAULT_DIR)).toEqual([ "backup-daily.db" ]);
 
         expect(ws.sendMessageToAllClients).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -139,7 +358,7 @@ describe("ServerBackupService: fallback when the custom directory cannot be writ
         await desktopService(CUSTOM_DIR).backupNow("daily");
 
         expect(backupNamesIn(CUSTOM_DIR)).toEqual([]);
-        expect(backupNamesIn(DEFAULT_DIR)).toEqual(["backup-daily.db"]);
+        expect(backupNamesIn(DEFAULT_DIR)).toEqual([ "backup-daily.db" ]);
     });
 
     it("propagates the failure when the default directory fails too", async () => {
@@ -222,7 +441,7 @@ describe("ServerBackupService.getExistingBackups", () => {
 
         const backups = await desktopService("").getExistingBackups();
 
-        expect(backups.map((b) => b.fileName)).toEqual(["backup-spec-list.db"]);
+        expect(backups.map((b) => b.fileName)).toEqual([ "backup-spec-list.db" ]);
         expect(backups[0].fileSize).toBe("backup-bytes".length);
         expect(backups[0].filePath).toBe(path.join(DEFAULT_DIR, "backup-spec-list.db"));
         expect(backups[0].mtime).toBeInstanceOf(Date);
@@ -237,7 +456,10 @@ describe("ServerBackupService.getExistingBackups", () => {
         const backups = await desktopService(CUSTOM_DIR).getExistingBackups();
 
         expect(backups.map((b) => b.filePath).sort()).toEqual(
-            [path.join(CUSTOM_DIR, "backup-daily.db"), path.join(DEFAULT_DIR, "backup-weekly.db")].sort()
+            [
+                path.join(CUSTOM_DIR, "backup-daily.db"),
+                path.join(DEFAULT_DIR, "backup-weekly.db")
+            ].sort()
         );
     });
 

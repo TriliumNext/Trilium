@@ -1,7 +1,7 @@
 <aside class="admonition note">
   <p>This page contains instructions on how to set up&nbsp;<a class="reference-link"
     href="#root/_help_x1lQNKQBqLcA">Signing in with OpenID Connect</a>&nbsp;with
-    various providers such as Authelia, GitLab,. Google. Note that while the
+    various providers such as Authelia, GitLab, Google. Note that while the
     configuration reference is correct and up to date, the steps to create
     the OAuth application might differ slightly as providers change their UI.</p>
 </aside>
@@ -35,9 +35,7 @@
     <p>Unlike GitLab, <code spellcheck="false">client_id</code> is a name you choose
       rather than one the provider generates.</p>
   </li>
-  <li>
-    <p>Restart Authelia.</p>
-  </li>
+  <li>Restart Authelia.</li>
 </ol>
 <p>Adjust <code spellcheck="false">config.ini</code>, using the <code spellcheck="false">Random Password</code> from
   step 1:</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
@@ -89,6 +87,83 @@ oauthClientAuthMethod=client_secret_post
     fails with a <code spellcheck="false">server responded with a challenge in the WWW-Authenticate HTTP Header</code> error.
     Trilium applies this automatically for <code spellcheck="false">gitlab.com</code>,
     but a self-hosted issuer URL cannot be detected.</p>
+</aside>
+<h2>Kanidm</h2>
+<ol>
+  <li>
+    <p>Create the client, add the redirect URL and grant the scopes, replacing
+      <code
+      spellcheck="false">&lt;server&gt;</code>with the URL of your Trilium instance and <code spellcheck="false">&lt;group&gt;</code> with
+        an existing Kanidm group whose members may sign in:</p><pre><code class="language-text-x-trilium-auto">kanidm system oauth2 create trilium "Trilium" "https://&lt;server&gt;"
+kanidm system oauth2 add-redirect-url trilium "https://&lt;server&gt;/callback"
+kanidm system oauth2 update-scope-map trilium &lt;group&gt; openid profile email</code></pre>
+    <p>The <code spellcheck="false">openid</code> scope is mandatory; without it
+      Kanidm treats the client as plain OAuth 2.0.</p>
+  </li>
+  <li>
+    <p>Read the client secret:</p><pre><code class="language-text-x-trilium-auto">kanidm system oauth2 show-basic-secret trilium</code></pre>
+  </li>
+</ol>
+<p>Adjust <code spellcheck="false">config.ini</code> as follows, replacing
+  <code
+  spellcheck="false">&lt;idm&gt;</code>with the URL of your Kanidm instance and <code spellcheck="false">&lt;BasicSecret&gt;</code> with
+    the value from step 2:</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
+
+oauthBaseUrl=https://&lt;server&gt;
+
+oauthClientId=trilium
+
+oauthClientSecret=&lt;BasicSecret&gt;
+
+oauthIssuerBaseUrl=https://&lt;idm&gt;/oauth2/openid/trilium
+
+oauthIssuerName=Kanidm</code></pre>
+<p>The client name you chose in step 1 is both the client ID and the last
+  path segment of the issuer URL, so the two must match.</p>
+<aside class="admonition important">
+  <p>Kanidm signs ID tokens with ES256, not RS256. Trilium detects this from
+    the provider on v0.105.0 and later, so no extra configuration is needed.
+    Do <strong>not</strong> run <code spellcheck="false">kanidm system oauth2 warning-enable-legacy-crypto</code>,
+    it downgrades the client to RS256 and disables ES256 entirely. On older
+    Trilium versions sign-in fails with an <code spellcheck="false">unexpected JWT alg</code> error.</p>
+</aside>
+<h2>Pocket ID</h2>
+<aside class="admonition important">
+  <p>Pocket ID is passwordless, signing in requires a passkey. Register one
+    and confirm you can sign in to Pocket ID itself <em>before</em> switching
+    Trilium over to OpenID Connect, otherwise you may find yourself unable
+    to authenticate at either end.</p>
+</aside>
+<ol>
+  <li>Sign in to Pocket ID as an administrator and go to <em>OIDC Clients</em> → <em>Add OIDC Client</em>.</li>
+  <li>Give it a name (e.g. Trilium).</li>
+  <li>Set <em>Callback URLs</em> to <code spellcheck="false">https://&lt;server&gt;/callback</code>,
+    replacing <code spellcheck="false">&lt;server&gt;</code> with the URL of
+    your Trilium instance.</li>
+  <li>Save, then copy the <em>Client ID</em>, <em>Client Secret</em> and <em>OIDC Discovery URL</em>.</li>
+</ol>
+<p>Adjust <code spellcheck="false">config.ini</code> as follows, using the
+  values from step 4:</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
+
+oauthBaseUrl=https://&lt;server&gt;
+
+oauthClientId=&lt;ClientID&gt;
+
+oauthClientSecret=&lt;ClientSecret&gt;
+
+oauthIssuerBaseUrl=&lt;OIDCDiscoveryURL&gt;
+
+oauthIssuerName=Pocket ID</code></pre>
+<aside class="admonition note">
+  <p>Pocket ID gives you an <em>OIDC Discovery URL</em> ending in <code spellcheck="false">/.well-known/openid-configuration</code>.
+    On v0.105.0 and later you can paste it as-is. On earlier versions, remove
+    that suffix and use only the part before it.</p>
+</aside>
+<aside class="admonition important">
+  <p>Pocket ID generates an RS256 signing key on first start, which works without
+    further configuration. If you rotate it to Ed25519 (<code spellcheck="false">pocket-id key-rotate --alg EdDSA --crv Ed25519</code>),
+    ID tokens are signed with EdDSA instead. Trilium detects this automatically
+    on v0.105.0 and later; older versions fail with <code spellcheck="false">unexpected JWT alg received, expected RS256, got: EdDSA</code>.</p>
 </aside>
 <h2>GitHub</h2>
 <p>GitHub cannot be used as an identity provider because it is plain OAuth

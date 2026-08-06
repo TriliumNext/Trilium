@@ -13,7 +13,6 @@ Setting up authentication with OpenID connect is a two-step process:
 ### Configuring the authentication provider
 
 1.  First, make sure the authentication provider (e.g. Google, Authelia) is configured properly. See <a class="reference-link" href="Signing%20in%20with%20OpenID%20Connect/Setting%20up%20with%20various%20providers.md">Setting up with various providers</a> for concrete examples.
-    
     1.  The redirect URL of Trilium is `https://<your-trilium-domain>/callback`.
     2.  You should obtain the base URL, client ID and client secret.
 2.  Set the following information using <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>:
@@ -24,13 +23,14 @@ Setting up authentication with OpenID connect is a two-step process:
     | Client ID\* | `oauthClientId` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID` | The client ID from your provider configuration. |
     | Client Secret\* | `oauthClientSecret` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET` | The client secret from your provider configuration. |
     | Client auth method | `oauthClientAuthMethod` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD` | Token-endpoint auth method: `client_secret_basic` or `client_secret_post`. Empty auto-detects.  Only needed if sign-in fails with a `WWW-Authenticate` or `invalid_client` error. |
+    | ID token algorithm | `oauthIdTokenSigningAlg` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG` | <span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span> `RS256`<span style="color:rgb(32,32,32);">,</span> `EdDSA`<span style="color:rgb(32,32,32);">,</span> `ES256`<span style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span> `unexpected JWT alg` <span style="color:rgb(32,32,32);">error.</span> |
     
     Asterisk (\*) marks a required field
 3.  The default OAuth issuer is Google. To use other services such as Authentik or Auth0, you can configure the settings via `oauthIssuerBaseUrl`, `oauthIssuerName`, and `oauthIssuerIcon` in the `config.ini` file. Alternatively, these values can be set using environment variables:
     
     | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
     | --- | --- | --- | --- |
-    | Issuer base URL | `oauthIssuerBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | The URL of your provider (e.g. `https://auth.example.com:9091`) |
+    | Issuer base URL | `oauthIssuerBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | Either the issuer itself (`https://auth.example.com`) or a full discovery URL (`https://auth.example.com/.well-known/openid-configuration`).<br><br>A URL containing `/.well-known/` is used as-is<span style="color:rgb(32,32,32);">, which is convenient when your provider hands you a discovery URL to copy. A trailing slash may be included or omitted; Trilium matches whichever spelling the provider advertises.</span><br><br>Use the full form when your provider advertises an issuer that differs from the path serving its discovery document, such as Authentik in "global" issuer mode. |
     | Issuer name | `oauthIssuerName` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME` | The name of your authentication provider, used for reference on the login screen and in settings. Default is “Google”. |
     | Issuer icon | `oauthIssuerIcon` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | Optionally, the URL to a logo of the provider. By default it will try to obtain the favicon from the website, so it's optional. |
     
@@ -38,7 +38,7 @@ Setting up authentication with OpenID connect is a two-step process:
 4.  Restart the server so that the changes are applied.
 
 > [!NOTE]
-> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`, `TRILIUM_OAUTH_CLIENT_AUTH_METHOD`.
+> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`, `TRILIUM_OAUTH_CLIENT_AUTH_METHOD`, `TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG` .
 
 ## Connecting to the authentication provider
 
@@ -96,6 +96,12 @@ proxy_buffer_size 128k;
 proxy_buffers 4 256k;
 proxy_busy_buffers_size 256k;
 ```
+
+### Setup fails with an `unexpected JWT alg` error
+
+Depending on your version the message reads `unexpected JWT "alg" header parameter` or `unexpected JWT alg received, expected RS256, got: EdDSA`. Both mean the same thing: your provider signs ID tokens with an algorithm other than RS256. Pocket ID (Ed25519) and Kanidm (ES256) do this.
+
+From v0.104.2 Trilium detects the algorithm from your provider automatically, and the log records the outcome (`OAuth: the issuer does not sign ID tokens with RS256; expecting ES256`). If detection can't reach the provider it falls back to RS256, so check that the issuer URL is correct and reachable first. Should it still fail, set `oauthIdTokenSigningAlg` explicitly to the algorithm your provider uses.
 
 ### Setup fails with `OAUTH_RESPONSE_IS_NOT_CONFORM`
 

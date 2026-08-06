@@ -399,6 +399,15 @@ class ContextMenu {
         return $item;
     }
 
+    /**
+     * Whether a menu is up. For a host that answers a press itself and so keeps it from the
+     * document, whose click is what would otherwise put the menu away (see the listener bound in
+     * the constructor): such a host has to know a standing menu is what its press is really for.
+     */
+    isShown() {
+        return this.$widget.hasClass("show");
+    }
+
     async hide() {
         this.options?.onHide?.();
         this.$widget.removeClass("show");

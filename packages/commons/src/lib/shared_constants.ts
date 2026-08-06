@@ -57,6 +57,17 @@ export const WEBVIEW_SESSION_PARTITION = "persist:webview";
 // sync. Other platforms default to 0 (no limit). See `syncMaxBlobContentSize`.
 export const MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE = 20 * 1024 * 1024;
 
+// Attribute carrying the original internal image reference (`api/images/<noteId>/…`) alongside the
+// embedded `data:` URI Trilium writes to the clipboard when note content is copied out. External
+// applications read `src` — the self-contained data URI — and ignore this; Trilium's own paste
+// handler reads it to restore the reference, so an internal copy/paste keeps pointing at the
+// original image instead of uploading a duplicate.
+//
+// Shared because the two halves live in different packages: the client writes it when copying
+// rendered note content (read-only notes, revisions, previews), and the CKEditor plugin both writes
+// it when copying from the editor and restores it on paste.
+export const TRILIUM_SRC_ATTRIBUTE = "data-trilium-src";
+
 // blobId of genuinely empty content, i.e. hashedBlobId(""). A blob row that carries empty content
 // but a *different* blobId is a sync stub: its real content was withheld by the sync server because
 // it exceeded the client's `syncMaxBlobContentSize`. Because `blobId` is content-derived, this

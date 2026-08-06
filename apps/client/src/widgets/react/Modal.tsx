@@ -116,21 +116,33 @@ export default function Modal({ children, className, size, title, customTitleBar
         const modalElement = modalRef.current;
         if (!modalElement) return;
 
-        if (onShown) {
-            modalElement.addEventListener("shown.bs.modal", onShown);
-        }
+        /*
+         * Bootstrap's modal events are native events, and native events bubble. A stacked modal is a
+         * DOM descendant of the one it opened over, so without this its opening and closing would be
+         * reported to every modal underneath as their own — closing the Options dialog the moment a
+         * dialog opened from inside it is dismissed.
+         */
+        const ownEvent = (handler: () => void) => (event: Event) => {
+            if (event.target === modalElement) {
+                handler();
+            }
+        };
 
-        function onModalHidden() {
+        const onModalShown = onShown && ownEvent(onShown);
+        const onModalHidden = ownEvent(() => {
             onHidden();
             if (elementToFocus.current && "focus" in elementToFocus.current) {
                 (elementToFocus.current as HTMLElement).focus();
             }
-        }
+        });
 
+        if (onModalShown) {
+            modalElement.addEventListener("shown.bs.modal", onModalShown);
+        }
         modalElement.addEventListener("hidden.bs.modal", onModalHidden);
         return () => {
-            if (onShown) {
-                modalElement.removeEventListener("shown.bs.modal", onShown);
+            if (onModalShown) {
+                modalElement.removeEventListener("shown.bs.modal", onModalShown);
             }
             modalElement.removeEventListener("hidden.bs.modal", onModalHidden);
         };
@@ -168,7 +180,38 @@ export default function Modal({ children, className, size, title, customTitleBar
                 return () => modalElement.removeEventListener("shown.bs.modal", hideOnceShown);
             }
         }
-    }, [ show, modalRef.current, noFocus, zIndex ]);
+        /*
+         * Not on `modalRef.current`, though the effect reads it. A ref holds nothing while the
+         * render that names the dependencies is running and the element by the time the effect
+         * runs, so listing it makes the first re-render after mounting look like a change and open
+         * the dialog a second time — and opening closes whatever dialog is active, which by then is
+         * this one (see openDialog). The dialog would put itself away on the first keystroke typed
+         * into it, telling its host it had been dismissed.
+         *
+         * A dialog that starts closed never showed it: `show` was false for those first renders, so
+         * the spurious run took the closing arm and did nothing, and by the time it opened the ref
+         * had long settled. Only one raised already open — the calendar's ghost — met it.
+         *
+         * Nothing is lost by leaving it out: the element the ref names is rendered unconditionally
+         * (see below), so it is always there by the time an effect could read it.
+         */
+    }, [ show, noFocus, zIndex ]);
+
+    /*
+     * A dialog may be taken out of the tree while it is still up — a host that closes it by ceasing
+     * to draw it rather than by turning `show` off, which is what a dialog raised for something
+     * that then goes does (the calendar's ghost, once its event is made). Bootstrap keeps the
+     * backdrop on the body rather than within the dialog, and the class that stills the page behind
+     * it likewise, so nothing would take either away: what is left is a dimmed page that cannot be
+     * pressed or scrolled, with no dialog on it to explain itself.
+     *
+     * Told to hide as it goes, Bootstrap sees its own teardown through even with the element
+     * detached — the transition it waits on has a timer behind it — and a dialog that was already
+     * hidden is told nothing, `hide()` being a no-op once it is down.
+     */
+    useEffect(() => () => {
+        modalInstanceRef.current?.hide();
+    }, []);
 
     // While this modal is shown, ensure it is the only modal trapping focus. Bootstrap has no stacked
     // modal support: every underlying modal keeps its own focus-trap active and steals focus from inputs

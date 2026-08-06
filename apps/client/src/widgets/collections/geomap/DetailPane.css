@@ -53,35 +53,17 @@
     box-sizing: content-box;
     padding-block: 9px;
     padding-inline-start: 9px;
-    /* Clear of the close button laid over the end of the row (see OverlayPanel.css). */
-    padding-inline-end: 36px;
+    /* Clear of the maximize and close buttons laid over the end of the row (see OverlayPanel.css). */
+    padding-inline-end: 64px;
     border-bottom: 1px solid var(--main-border-color);
 }
 
 /*
- * The pane's one body: the row of actions, then the note itself. A column so that the note takes
- * whatever the row above leaves, however tall the pane happens to be.
+ * The pane's one body: the row of actions, then the note itself — the note's own widgets laid out
+ * by the shared class (see EmbeddedNotePane.css), which also brings the column they stand in.
  */
 .geo-map-container .geo-detail-pane .geo-detail-pane-body {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
     padding-top: 0;
-}
-
-/*
- * The note fills the rest of the pane rather than ending where its content does, so that clicking
- * below a short note still puts the caret in it — as it does in a note of its own.
- */
-.geo-map-container .geo-detail-pane .note-detail {
-    flex: 1;
-    /* Written for a note split, where the split hands it one; there is no split here, and an unset
-       `--max-content-width` would leave `max-width` invalid rather than absent. */
-    max-width: none;
-    /* A floor rather than the 0 a flex item needs to scroll its own content: the fields above it are
-       as many as the note asks for, and without one they would squeeze the note out of the pane
-       instead of the body scrolling. Above the floor a long note still scrolls within itself. */
-    min-height: 120px;
 }
 
 /*
@@ -110,81 +92,3 @@
     }
 }
 
-/*
- * The note's promoted fields, laid out for a third of the width they are written for.
- *
- * A field reads across one line — its name, then what it holds — and stays that way here; what
- * changes is the row they stand in. Across a note they stand side by side, each as wide as what it
- * holds; in the pane there is room for one, so they come down the column instead, each taking the
- * whole width.
- */
-.geo-map-container .geo-detail-pane .promoted-attributes-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    margin: 0;
-    /* The body of the pane is the one thing that scrolls; a scroller inside it would take the wheel
-       off whichever of the two the pointer happened to be over. */
-    max-height: none;
-    overflow: visible;
-}
-
-.geo-map-container .geo-detail-pane .promoted-attribute-cell {
-    margin: 0;
-
-    /* The field takes whatever its name leaves, rather than the width of what it holds: a card
-       standing alone on its line has that room whether it needs it or not. */
-    > .input-group,
-    > .promoted-attribute-values {
-        flex: 1;
-        min-width: 0;
-        margin-inline-start: 8px;
-    }
-
-    /* Both are given a width in ems, which is a card's own width where cards stand side by side.
-       Marked as the theme marks them, there being no other way past it. */
-    input[type="text"],
-    input[type="number"] {
-        width: auto !important;
-    }
-
-    /* A name longer than the pane is cut short rather than pushing the field it names off the end. */
-    > label {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .tn-field {
-        min-width: 0;
-        padding: 0;
-    }
-}
-
-/* The widget stands whether the note promotes anything or not, and an empty one would still take
-   its share of the gap between the actions above it and the note below. */
-.geo-map-container .geo-detail-pane .promoted-attributes-widget:not(:has(.promoted-attribute-cell)) {
-    display: none;
-}
-
-/*
- * The ways of opening the note, at the head of the pane. Named by tooltips rather than labels, as
- * every other row of actions in a panel is: labels would wrap four buttons onto two lines here.
- */
-.geo-map-container .geo-detail-pane .geo-detail-pane-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-
-    /* Those that write rather than read stand apart from the ones being reached for repeatedly, so
-       the pointer cannot land on one of them by being a moment early. The gap falls before the first
-       of them, which is the colour: they are drawn together or not at all, a read-only map having
-       none of them. */
-    .geo-detail-pane-color {
-        margin-inline-start: auto;
-    }
-}
-
-:root .geo-map-container .geo-detail-pane .geo-detail-pane-remove.icon-action {
-    color: var(--dropdown-item-icon-destructive-color);
-}

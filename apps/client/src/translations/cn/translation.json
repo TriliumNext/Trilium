@@ -111,8 +111,11 @@
     "cancel": "取消",
     "ok": "确定",
     "are_you_sure_remove_note": "确定要从关系图中移除笔记 \"{{title}}\" ？ ",
-    "if_you_dont_check": "如果不选中此项，笔记将仅从关系图中移除。",
-    "also_delete_note": "同时删除笔记"
+    "if_you_dont_check": "笔记本身会被保留；仅将其从当前位置移除。",
+    "also_delete_note": "同时删除笔记",
+    "delete_note_keeps_note_other": "该笔记还有 {{count}} 个其他克隆位置，因此笔记本身会被保留。",
+    "delete_note_deletes_note": "这是该笔记在树中的唯一位置，因此笔记本身将被删除。可以在「最近更改」中撤销。",
+    "delete_note_deletes_clones": "该笔记将从其出现的全部 {{places}} 个位置被删除。可以在「最近更改」中撤销。"
   },
   "delete_notes": {
     "close": "关闭",
@@ -798,7 +801,41 @@
     "unpin_date": "取消日期固定，日历将恢复默认打开当日日期",
     "day": "天",
     "day_previous": "前天",
-    "day_next": "后天"
+    "day_next": "后天",
+    "close_details": "关闭事件详情",
+    "dates": {
+      "all_day": "全天",
+      "date": "日期",
+      "start_date": "开始日期",
+      "end_date": "结束日期",
+      "time": "时间",
+      "start_time": "开始日期",
+      "end_time": "结束日期"
+    },
+    "recurrence": {
+      "repeats": "重复",
+      "frequency": "频率",
+      "none": "无",
+      "does_not_repeat": "不重复",
+      "daily": "每天",
+      "weekly": "每周",
+      "monthly": "每月",
+      "yearly": "每年",
+      "custom": "自定义",
+      "repeat_every": "每",
+      "unit_days": "天",
+      "unit_weeks": "周",
+      "unit_months": "个月",
+      "unit_years": "年",
+      "on_days": "在以下日期",
+      "ends": "结束",
+      "never": "永不",
+      "until": "于日期",
+      "count": "在",
+      "times": "次后",
+      "custom_rule": "规则",
+      "custom_hint": "一条 iCalendar 重复规则（RRULE），可表达比上述字段更复杂的规则。清除它将停止重复。"
+    }
   },
   "close_pane_button": {
     "close_this_pane": "关闭此面板"
@@ -1598,7 +1635,31 @@
     "download": "下载",
     "title": "备份",
     "automatic_backups_title": "自动备份",
-    "automatic_backups_description": "Trilium 可以自动备份数据库。建议保持备份功能开启，但如果数据库较大或存储设备较慢，可能会拖慢应用启动。"
+    "automatic_backups_description": "Trilium 可以自动备份数据库。建议保持备份功能开启，但如果数据库较大或存储设备较慢，可能会拖慢应用启动。",
+    "location_title": "备份位置",
+    "saved_in": "备份保存在",
+    "select_location": "选择位置",
+    "select_location_desktop_only": "选择备份位置仅适用于桌面应用。",
+    "reset_location": "重置为默认",
+    "reset_location_confirmation": "是否要将数据库备份位置重置为默认？",
+    "default_location": "默认位置",
+    "options_title": "备份选项",
+    "enable_compression": "启用压缩",
+    "enable_compression_description": "使每个备份体积明显变小，代价是写入时多花一些时间。",
+    "enable_encryption": "启用加密",
+    "enable_encryption_description": "用你自己的密码锁定每个备份，防止他人读取。当备份写入同步文件夹时，建议开启此选项。",
+    "no_keyring": "你的系统中没有可用的密钥环，密码无法安全存储，因此无法加密备份。",
+    "turn_on_encryption": "开启加密",
+    "change_password": "修改密码",
+    "password_modal_title": "备份密码",
+    "password_modal_description": "请将密码副本保存在安全的地方。Trilium 无法再次显示该密码，没有它就无法恢复备份。",
+    "save_password": "保存密码",
+    "password_stored": "备份密码已保存。",
+    "password_not_stored": "备份密码保存失败。",
+    "encryption_not_disabled": "备份密码已移除，但加密无法关闭。在你重新开启加密之前，备份将不会被加密。",
+    "encryption_not_enabled": "备份密码已保存，但无法开启加密。在你开启加密之前，备份将不会被加密。",
+    "compressed": "已压缩",
+    "encrypted": "已加密"
   },
   "etapi": {
     "description": "ETAPI 是一个 REST API，用于以编程方式访问 Trilium 实例，而无需 UI。",
@@ -2181,13 +2242,25 @@
     "zoom-in": "放大",
     "zoom-out": "缩小",
     "fullscreen": "全屏",
-    "exit-fullscreen": "退出全屏"
+    "exit-fullscreen": "退出全屏",
+    "create-child-note-cancel": "取消添加笔记",
+    "add-marker": "添加标记",
+    "add-marker-cancel": "取消",
+    "add-gpx-track": "从 GPX 文件添加 GPS 轨迹",
+    "enter-3d": "倾斜进入 3D 视图\n按住 Ctrl 并拖动可自由倾斜地图",
+    "exit-3d": "将地图恢复平视",
+    "close-details": "关闭",
+    "marker-color": "标记颜色",
+    "copy-coordinates": "复制坐标"
   },
   "geo-map-context": {
     "open-location": "打开位置",
     "remove-from-map": "从地图中移除",
     "add-note": "在这个位置添加一个标记",
-    "move-marker": "移动到其他位置"
+    "move-marker": "移动到其他位置",
+    "remove-from-map-confirmation": "确定要将笔记「{{title}}」从地图上移除吗？",
+    "delete-note": "删除笔记",
+    "delete-note-confirmation": "确定要删除笔记「{{title}}」吗？轨迹由它自身的笔记绘制，因此无法单独将其从地图上移除。"
   },
   "help-button": {
     "title": "打开相关帮助页面"
@@ -2439,7 +2512,13 @@
     "slot_duration": "时长",
     "slot_label_interval": "标签间隔",
     "minutes_other": "{{count}} 分钟",
-    "hours_other": "{{count}} 小时"
+    "hours_other": "{{count}} 小时",
+    "event_color": "事件颜色",
+    "remove_from_calendar": "从日历中移除",
+    "remove_from_calendar_confirmation": "确定要将事件「{{title}}」从日历中移除吗？",
+    "new_event": "新建事件",
+    "draft_title_placeholder": "添加标题",
+    "create_event": "创建"
   },
   "read-only-info": {
     "read-only-note": "当前正在查看一个只读笔记。",
@@ -2815,10 +2894,10 @@
     "background-color": "背景",
     "branch-color": "分支",
     "font-size": "大小",
-    "font-size-small": "小",
-    "font-size-medium": "中",
-    "font-size-large": "大",
-    "font-size-extra-large": "特大",
+    "font-size-small": "S",
+    "font-size-medium": "M",
+    "font-size-large": "L",
+    "font-size-extra-large": "XL",
     "icons": "图标",
     "add-icon": "添加图标",
     "change-icon": "更改此图标",
@@ -2856,7 +2935,8 @@
     "exit-fullscreen": "退出全屏",
     "direction-left": "分支向左",
     "direction-right": "分支向右",
-    "direction-side": "分支向两侧"
+    "direction-side": "分支向两侧",
+    "reset-zoom": "重置缩放"
   },
   "llm": {
     "add_provider": "添加提供商",
@@ -3784,5 +3864,50 @@
     "clear-color": "清除颜色",
     "set-color": "设置颜色",
     "set-custom-color": "设置自定义颜色"
+  },
+  "gpx_preview": {
+    "distance": "距离",
+    "duration": "时长",
+    "avg_speed": "平均速度",
+    "elevation_gain": "累计爬升",
+    "elevation_loss": "累计下降",
+    "max_elevation": "最高海拔",
+    "points": "点数",
+    "segments": "分段",
+    "tracks": "轨迹",
+    "routes": "路线",
+    "waypoints": "航点",
+    "waypoints_with_count": "航点（{{count}}）",
+    "tracks_with_count": "轨迹（{{count}}）",
+    "routes_with_count": "路线（{{count}}）",
+    "journeys_with_count": "轨迹与路线（{{count}}）",
+    "unnamed": "（未命名）",
+    "recorded_on": "记录于",
+    "map_hint": "将此笔记放入地理地图集合中，即可在地图上查看轨迹。",
+    "elevation_profile": "海拔剖面图",
+    "duration_minutes": "{{minutes}} 分钟",
+    "duration_hours_minutes": "{{hours}} 小时 {{minutes}} 分钟",
+    "unit_m": "{{value}} 米",
+    "unit_km": "{{value}} 公里",
+    "unit_mi": "{{value}} 英里",
+    "unit_ft": "{{value}} 英尺",
+    "unit_kmh": "{{value}} 公里/小时",
+    "unit_mph": "{{value}} 英里/小时"
+  },
+  "database_file_list": {
+    "size_on_disk": "磁盘占用 {{size}}"
+  },
+  "password_with_confirmation": {
+    "password": "密码",
+    "repeat_password": "重复密码",
+    "mismatch": "两次输入的密码不一致。"
+  },
+  "open": {
+    "directory_failed": "无法打开 {{- directory}}: {{- reason}}"
+  },
+  "embedded_note": {
+    "open-note": "打开笔记",
+    "more-ways-to-open": "更多打开方式",
+    "maximize": "在快速编辑中打开"
   }
 }

@@ -686,9 +686,18 @@ export function useNoteRelationTarget(note: FNote, relationName: RelationNames) 
  * - if the value is null then the label is removed.
  */
 export function useNoteLabel(note: FNote | undefined | null, labelName: FilterLabelsByType<string>): [string | null | undefined, (newValue: string | null | undefined) => void] {
+    return useNoteLabelByName(note, labelName);
+}
+
+/**
+ * The same as {@link useNoteLabel} for a label the app does not know by name — one the user named
+ * themselves, e.g. a label a `#calendar:startDate` renaming points at. Prefer {@link useNoteLabel}
+ * wherever the name is a builtin one, as it holds the name to the declared vocabulary.
+ */
+export function useNoteLabelByName(note: FNote | undefined | null, labelName: string): [string | null | undefined, (newValue: string | null | undefined) => void] {
     const [ , setLabelValue ] = useState<string | null | undefined>();
 
-    useEffect(() => setLabelValue(note?.getLabelValue(labelName) ?? null), [ note ]);
+    useEffect(() => setLabelValue(note?.getLabelValue(labelName) ?? null), [ note, labelName ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         for (const attr of loadResults.getAttributeRows()) {
             if (attr.type === "label" && attr.name === labelName && attributes.isAffecting(attr, note)) {
@@ -710,7 +719,7 @@ export function useNoteLabel(note: FNote | undefined | null, labelName: FilterLa
                 attributes.removeOwnedLabelByName(note, labelName);
             }
         }
-    }, [note]);
+    }, [note, labelName]);
 
     useDebugValue(labelName);
 
@@ -1731,10 +1740,17 @@ export function useNote(noteId: string | null | undefined, silentNotFoundError =
         });
     }, [ note, noteId, silentNotFoundError ]);
 
+    if (!noteId) {
+        return undefined;
+    }
     if (note?.noteId === noteId) {
         return note;
     }
-    return undefined;
+    // The state only catches up in the effect above — after the mismatched render is already
+    // painted. A note the cache holds is answered in the same render instead: an id change must
+    // not paint a note-less frame in between, which read as a width wobble everywhere the host
+    // keeps something open for exactly as long as there is a note (the calendar's detail dock).
+    return froca.getNoteFromCache(noteId) ?? undefined;
 }
 
 export function useNoteTitle(noteId: string | undefined, parentNoteId: string | undefined) {
