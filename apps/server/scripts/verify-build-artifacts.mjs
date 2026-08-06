@@ -1,7 +1,8 @@
 import { access } from "node:fs/promises";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const distDir = new URL("../dist/", import.meta.url).pathname;
+const distDir = fileURLToPath(new URL("../dist/", import.meta.url));
 const requiredPaths = [
     "node_modules/better-sqlite3/prebuilds/linux-x64.node",
     "node_modules/better-sqlite3/prebuilds/linux-arm64.node",
