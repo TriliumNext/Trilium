@@ -1,0 +1,11 @@
+/* A real card where the rest of the page is options sections. It keeps the card styling the theme
+   already gives every other one — the wrapper is here for the page's own spacing, so the card sits
+   where a section would rather than flush against the one above it. */
+.media-image-compression {
+    /* The choice buttons and their labels sit on one line in a dialog sized to its content; a
+       settings page is only as wide as its pane, and a narrow one has to be allowed to stack them
+       rather than push the card wider than the page. */
+    .image-compression-section {
+        flex-wrap: wrap;
+    }
+}

@@ -82,14 +82,18 @@ export default function ValuesInput({ labelType, values, onCommit, removeButtonT
         return () => picker.removeEventListener("change", onPicked);
     });
 
+    // A field that cannot be edited commits nothing, whatever reaches its handlers. The box and the
+    // buttons are already out of reach, but the box also hands over what it holds on being left —
+    // and a field can be disabled by its host while something is still typed into it.
     function take(value: string) {
         const trimmed = value.trim();
         setDraft("");
-        if (!trimmed || values.includes(trimmed)) return;
+        if (disabled || !trimmed || values.includes(trimmed)) return;
         onCommit([ ...values, trimmed ]);
     }
 
     function drop(value: string) {
+        if (disabled) return;
         onCommit(values.filter((held) => held !== value));
     }
 

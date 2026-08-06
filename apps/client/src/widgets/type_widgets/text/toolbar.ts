@@ -3,6 +3,28 @@ import options from "../../../services/options.js";
 import { t } from "../../../services/i18n.js";
 import { IconAlignCenter } from "@ckeditor/ckeditor5-icons";
 
+/**
+ * Whether a text note is edited with the classic toolbar — a bar standing above the note — rather
+ * than the floating one, which follows the selection.
+ *
+ * Three things have a say, in this order. A view narrow enough to have asked for the floating
+ * toolbar gets it whatever else is true (the geo map's marker pane; see `floatingToolbar` in
+ * link.ts): a bar built for the width of a note fits none of them, on any device. Failing that a
+ * phone always gets the classic bar, a balloon being hard to reach around a virtual keyboard. And
+ * failing that it is the reader's own option.
+ */
+export function usesClassicToolbar({ floatingToolbarRequested, isMobile, textNoteEditorType }: {
+    floatingToolbarRequested?: boolean;
+    isMobile: boolean;
+    textNoteEditorType: string;
+}) {
+    if (floatingToolbarRequested) {
+        return false;
+    }
+
+    return isMobile || textNoteEditorType === "ckeditor-classic";
+}
+
 export function buildToolbarConfig(isClassicToolbar: boolean) {
     if (utils.isMobile()) {
         return buildMobileToolbar();

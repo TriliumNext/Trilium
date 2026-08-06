@@ -3,6 +3,8 @@
 import { type CookieJar, type ExecOpts, getLog, type RequestProvider, sync_options as syncOptions } from "@triliumnext/core";
 import url from "url";
 
+import { createPinnedLookup, validateHostResolution, validateUrl } from "./safe_fetch.js";
+
 // this service provides abstraction over node's HTTP/HTTPS modules.
 // Subclasses (e.g. apps/desktop's ElectronRequestProvider) can override
 // `getClient` to plug in alternative transports such as `electron.net`
@@ -19,6 +21,11 @@ export interface ClientOpts {
     headers?: Record<string, string | number>;
     agent?: any;
     proxy?: string | null;
+    /**
+     * Resolves the host for the node http/https clients. Supplying one keeps a connection on an
+     * address that has already been vetted, rather than on whatever DNS answers at connect time.
+     */
+    lookup?: unknown;
 }
 
 type RequestEvent = "error" | "response" | "abort";
@@ -186,7 +193,23 @@ export default class NodeRequestProvider implements RequestProvider {
         });
     }
 
+    /**
+     * Fetches an image named by note content.
+     *
+     * The URL comes from whoever wrote the note, and a note is not always written by the person
+     * whose server fetches it — a clipped page and an imported file both name their own images. So
+     * the address is vetted before anything is sent: the server's own network is not somewhere note
+     * content gets to reach, and what comes back is stored as an attachment the author can read.
+     *
+     * Vetting an address and then connecting to a name would leave the two free to disagree, so the
+     * connection is pinned to the addresses that were actually checked. The pin is honoured by the
+     * node clients; `electron.net` and a proxy each resolve the host themselves, and there it is
+     * the check above that stands alone.
+     */
     async getImage(imageUrl: string): Promise<ArrayBuffer> {
+        const parsedTargetUrl = validateUrl(imageUrl);
+        const validatedAddresses = await validateHostResolution(parsedTargetUrl.hostname);
+
         const proxyConf = syncOptions.getSyncProxy();
         const opts: ClientOpts = {
             method: "GET",
@@ -196,7 +219,6 @@ export default class NodeRequestProvider implements RequestProvider {
 
         const client = await this.getClient(opts);
         const proxyAgent = await getProxyAgent(opts);
-        const parsedTargetUrl = url.parse(opts.url);
 
         return new Promise<ArrayBuffer>((resolve, reject) => {
             try {
@@ -208,10 +230,11 @@ export default class NodeRequestProvider implements RequestProvider {
                     protocol: parsedTargetUrl.protocol,
                     host: parsedTargetUrl.hostname,
                     port: parsedTargetUrl.port,
-                    path: parsedTargetUrl.path,
+                    path: `${parsedTargetUrl.pathname}${parsedTargetUrl.search}`,
                     timeout: opts.timeout, // works only for the node client
                     headers: {},
-                    agent: proxyAgent
+                    agent: proxyAgent,
+                    lookup: createPinnedLookup(validatedAddresses)
                 });
 
                 request.on("error", (err) => reject(generateError(opts, err)));

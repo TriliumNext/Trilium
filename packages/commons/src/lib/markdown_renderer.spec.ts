@@ -215,6 +215,18 @@ describe("renderToHtml", () => {
         });
     });
 
+    describe("strikethrough (literal tilde)", () => {
+        it("strikes through only doubled tildes, leaving lone ones literal", () => {
+            expect(render("this is ~~gone~~ now")).toBe("<p>this is <del>gone</del> now</p>");
+            // Two approximations in one paragraph must not pair up into a strikethrough.
+            expect(render("a ~07:50 departure, supplement (~€11)"))
+                .toBe("<p>a ~07:50 departure, supplement (~€11)</p>");
+            // A lone tilde inside a real strikethrough stays part of the struck text.
+            expect(render("~~strike with ~5 min inside~~"))
+                .toBe("<p><del>strike with ~5 min inside</del></p>");
+        });
+    });
+
     describe("lists", () => {
         it("renders a task list with checkbox inputs and labels", () => {
             const html = render("- [ ] a\n- [x] b");
@@ -563,29 +575,34 @@ describe("renderToHtml", () => {
         });
     });
 
-    describe("Obsidian syntax (obsidian option)", () => {
-        it("renders ==text== as a background-coloured span only when the obsidian flag is set", () => {
-            expect(render("==hi==", "", { obsidian: true }))
-                .toBe('<p><span style="background-color:hsl(60, 75%, 60%);">hi</span></p>');
-            // Off by default so generic Markdown is untouched.
-            expect(render("==hi==")).toBe("<p>==hi==</p>");
+    describe("highlights (==text==)", () => {
+        const HL = '<span style="background-color:hsl(60, 75%, 60%);">';
+
+        it("renders ==text== as a background-coloured span without any flag", () => {
+            expect(render("==hi==")).toBe(`<p>${HL}hi</span></p>`);
+            expect(render("==hi==", "", { obsidian: true })).toBe(`<p>${HL}hi</span></p>`);
         });
 
         it("parses inner markdown inside a highlight", () => {
-            expect(render("==**bold**==", "", { obsidian: true }))
-                .toBe('<p><span style="background-color:hsl(60, 75%, 60%);"><strong>bold</strong></span></p>');
+            expect(render("==**bold**==")).toBe(`<p>${HL}<strong>bold</strong></span></p>`);
         });
 
         it("leaves ==== and spaced == as literal text", () => {
-            expect(render("====", "", { obsidian: true })).toBe("<p>====</p>");
-            expect(render("a == b", "", { obsidian: true })).toBe("<p>a == b</p>");
+            expect(render("====")).toBe("<p>====</p>");
+            expect(render("a == b")).toBe("<p>a == b</p>");
         });
 
-        it("does not highlight == inside inline code", () => {
-            expect(render("`==x==`", "", { obsidian: true }))
-                .toBe('<p><code spellcheck="false">==x==</code></p>');
+        it("does not highlight == inside code", () => {
+            expect(render("`==x==`")).toBe('<p><code spellcheck="false">==x==</code></p>');
+            expect(render("```\na ==x== b\n```")).toContain("a ==x== b");
         });
 
+        it("leaves a setext heading underline alone", () => {
+            expect(render("Title\n===", "", { demoteH1: false })).toBe("<h1>Title</h1>");
+        });
+    });
+
+    describe("Obsidian syntax (obsidian option)", () => {
         it("turns %% comment %% into an HTML comment only when the obsidian flag is set", () => {
             expect(render("a %%secret%% b", "", { obsidian: true })).toBe("<p>a <!-- secret --> b</p>");
             // Off by default so generic Markdown is untouched.

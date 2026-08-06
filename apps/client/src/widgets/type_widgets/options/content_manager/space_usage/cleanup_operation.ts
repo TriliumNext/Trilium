@@ -7,6 +7,12 @@ import type {
 
 import optionService from "../../../../../services/options";
 import server from "../../../../../services/server";
+import { newCompressionTaskId, runImageCompression } from "../../../../dialogs/image_compression/image_compression_operation";
+import {
+    CONSERVATIVE_IMAGE_COMPRESSION_DEFAULTS,
+    type ImageCompressionToolOptions,
+    readImageCompressionOptions
+} from "../../../../dialogs/image_compression/image_compression_options";
 
 /** The cleanup's items, in the order they are both listed and drawn. */
 export const CLEANUP_ITEMS = [
@@ -18,11 +24,23 @@ export const CLEANUP_ITEMS = [
 export type CleanupItemId = (typeof CLEANUP_ITEMS)[number]["id"];
 
 /**
- * What a run is doing, reported as it moves between the two. Erasing is over in seconds on an
- * ordinary database; compacting is the one that can hold the server for minutes, so it says so
- * rather than leaving the same message up throughout.
+ * What a run is doing, reported as it moves between them. Erasing is over in seconds on an ordinary
+ * database, where recompressing every image and rebuilding the file are both measured in minutes —
+ * so each says so rather than leaving the same message up throughout.
  */
-export type CleanupPhase = "erasing" | "compacting";
+export type CleanupPhase = "erasing" | "compressing" | "compacting";
+
+/**
+ * How far a phase has got, for the one phase that can say.
+ *
+ * Erasing and rebuilding are each a single request the server answers when it is finished; only
+ * recompressing works through a list it knows the length of, and reports itself against it.
+ */
+export interface CleanupProgress {
+    done: number;
+    /** Absent until the run has said how many there are, which its first report does. */
+    total?: number;
+}
 
 
 /**
@@ -37,6 +55,18 @@ export interface CleanupToolOptions {
     /** Revision snapshots kept per note; 0 erases the history outright. */
     snapshotsToKeep: number;
     keepNamedSnapshots: boolean;
+    /**
+     * Recompress every image in the database, under {@link imageCompression}. Unlike the erasures,
+     * this reclaims space from content that is being *kept* — so it frees bytes without anything
+     * leaving the tree.
+     */
+    compressImages: boolean;
+    /**
+     * How images are recompressed when {@link compressImages} is on. The same settings the image
+     * compression dialog works with, minus the subtree switch: a cleanup always runs over the whole
+     * database, so there is no scope left to choose.
+     */
+    imageCompression: ImageCompressionToolOptions;
     /**
      * Rebuild the database file afterwards. Erasing hands pages back to the database, which reuses
      * them but never shrinks the file; only this returns the space to the disk.
@@ -73,6 +103,10 @@ export function readCleanupOptions(stored: Partial<CleanupToolOptions> | null | 
         // Never answered here, the tool follows what the note revision settings say about named
         // revisions, rather than proposing a harsher trim than the one already configured.
         keepNamedSnapshots: stored?.keepNamedSnapshots ?? optionService.is("revisionIgnoreNamedSnapshots"),
+        compressImages: stored?.compressImages === true,
+        // Conservative where the dialog's own defaults are not: this runs over every image there is.
+        imageCompression: readImageCompressionOptions(
+            stored?.imageCompression, CONSERVATIVE_IMAGE_COMPRESSION_DEFAULTS),
         // Always starts unpicked, whatever the last run asked for: it is by far the most expensive
         // step, and one nobody should find themselves running because they forgot it was ticked.
         compactDatabase: false
@@ -93,9 +127,13 @@ export function storedCleanupOptions(options: CleanupToolOptions): Partial<Clean
  * Whether the settings amount to anything worth running. Compacting counts on its own: it frees no
  * *accounted* bytes — the figures are about content, and it moves none — but it is the only step
  * that hands space back to the disk, so a run asking for nothing else is still a run.
+ *
+ * Compressing counts on its own for the opposite reason: it frees bytes the figures very much are
+ * about, but no reading here says how many, since what an encoder will manage on an image is not
+ * knowable without doing it. Its absence from the estimate is not evidence of nothing to do.
  */
 export function hasWorkToDo(options: CleanupToolOptions, selectedBytes: number): boolean {
-    return selectedBytes > 0 || options.compactDatabase;
+    return selectedBytes > 0 || options.compactDatabase || options.compressImages;
 }
 
 /**
@@ -170,12 +208,17 @@ export function computeCleanupSizes(
  * orphaned, and there is nothing to be gained by having two of those scan the blobs at the same
  * time. Their order carries no weight beyond that — every one of them hands its own space back.
  *
+ * Recompressing comes after all of them and before any rebuild. After, because an original a
+ * revision still points at survives being replaced, so erasing the snapshots first is what lets the
+ * originals go with them; before, because a rebuild has to close around the final state to return
+ * the pages this frees.
+ *
  * @returns what the run reclaimed, never negative: a note saved by another client mid-run must not
  *          read as the cleanup having given space back.
  */
 export async function runCleanup(
     options: CleanupToolOptions,
-    onPhase: (phase: CleanupPhase) => void = () => {}
+    onPhase: (phase: CleanupPhase, progress?: CleanupProgress) => void = () => {}
 ): Promise<number> {
     const erasing = options.revisionSnapshots || options.unusedAttachments || options.deletedEntities;
 
@@ -202,6 +245,12 @@ export async function runCleanup(
         await server.postWithTimeout("notes/erase-deleted-notes-now", CLEANUP_TIMEOUT_MS);
     }
 
+    if (options.compressImages) {
+        onPhase("compressing");
+        await compressAllImages(options.imageCompression,
+            (done, total) => onPhase("compressing", { done, total }));
+    }
+
     let compaction: VacuumDatabaseResponse | undefined;
 
     if (options.compactDatabase) {
@@ -223,6 +272,37 @@ export async function runCleanup(
     await server.post("space-usage/cleanup-completed", { reclaimedBytes });
 
     return reclaimedBytes;
+}
+
+/**
+ * Recompresses every image in the tree, as one request against the root note.
+ *
+ * The endpoint answers with what it saved, and that figure is deliberately *not* added to the run's
+ * total. This step happens between the two readings the total is measured from, so those bytes are
+ * already counted in it — adding them would report every one of them twice.
+ *
+ * The measured figure is the truer of the two anyway. What the endpoint reports is the difference
+ * between the images it read and the ones it wrote, which is what compression achieved; what the
+ * readings show is what the database actually handed back, which is smaller whenever a revision
+ * still points at an original. Only the second is a claim about space, and space is what this tool
+ * is answering for.
+ *
+ * Run through the image tool's own runner rather than posted from here, which is what names the run
+ * and so what lets it be counted: the server reports each image against a task, and a task exists
+ * only because the request quoted one. The count itself costs nothing to obtain — the run knows how
+ * many images it collected before it touches the first, and says so with its first report.
+ */
+async function compressAllImages(
+    options: ImageCompressionToolOptions,
+    onProgress: (done: number, total: number | undefined) => void
+): Promise<void> {
+    await runImageCompression(
+        { type: "note", noteId: "root" },
+        // Always the whole tree: a cleanup is a database-wide operation, and the root note on its
+        // own holds no images at all.
+        { ...options, processChildNotes: true },
+        newCompressionTaskId(),
+        onProgress);
 }
 
 /**

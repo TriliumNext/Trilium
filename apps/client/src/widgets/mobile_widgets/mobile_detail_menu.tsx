@@ -121,13 +121,13 @@ export default function MobileDetailMenu() {
 }
 
 function ContentLanguageSelector({ note }: { note: FNote | null | undefined }) {
-    const { locales, DEFAULT_LOCALE, currentNoteLanguage, setCurrentNoteLanguage } = useLanguageSwitcher(note);
-    const { activeLocale, processedLocales } = useProcessedLocales(locales, DEFAULT_LOCALE, currentNoteLanguage ?? DEFAULT_LOCALE.id);
+    const { locales, DEFAULT_LOCALE, effectiveLocale, currentNoteLanguage, setCurrentNoteLanguage } = useLanguageSwitcher(note);
+    const { processedLocales } = useProcessedLocales(locales, DEFAULT_LOCALE, currentNoteLanguage ?? DEFAULT_LOCALE.id);
 
     return (
         <FormDropdownSubmenu
             icon="bx bx-globe"
-            title={t("mobile_detail_menu.content_language_switcher", { language: getLocaleName(activeLocale ?? DEFAULT_LOCALE) })}
+            title={t("mobile_detail_menu.content_language_switcher", { language: getLocaleName(effectiveLocale ?? DEFAULT_LOCALE) })}
         >
             {processedLocales.map((locale, index) =>
                 (typeof locale === "object") ? (

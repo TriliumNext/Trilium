@@ -1,5 +1,5 @@
 import { SHELL_OPEN_EXTERNAL_PROTOCOLS } from "@triliumnext/commons";
-import { getLog, utils as coreUtils } from "@triliumnext/core";
+import { getBackup, getLog, utils as coreUtils } from "@triliumnext/core";
 import dataDirs from "@triliumnext/server/src/services/data_dir.js";
 import { execFile } from "child_process";
 import electron from "electron";
@@ -63,25 +63,31 @@ export function validateOpenCustomPath(filePath: unknown, tmpDir: string): strin
 
 //#endregion
 
-//#region open-path — sandbox to Trilium's data dir ∪ tmp dir + existence check
+//#region open-path — sandbox to Trilium's data dir ∪ tmp dir ∪ backup dir + existence check
 
 /**
  * Validates a path for the "open-path" IPC channel (Open Note Externally,
- * Open Attachment Externally, and the "open data directory" link in the
- * About dialog). The legit callers only ever pass server-generated paths
- * either inside the tmp dir or equal to the data dir itself.
+ * Open Attachment Externally, and the "open data directory" / "open backup
+ * directory" links in the About dialog and the backup settings). The legit
+ * callers only ever pass server-generated paths either inside the tmp dir or
+ * equal to one of the directories themselves.
+ *
+ * `backupDir` is a root of its own because the user may have moved backups
+ * outside the data directory. It is resolved from the app's own configuration
+ * rather than taken from the renderer, so the sandbox still bounds the caller.
  *
  * UNC paths are blocked implicitly — they cannot normalise to a descendant
- * of the data/tmp dirs, so the sandbox check rejects them. This closes the
+ * of those roots, so the sandbox check rejects them. This closes the
  * NTLM-hash-leak vector that affects file:// and smb:// URLs.
  */
-export function validateOpenPath(input: unknown, dataDir: string, tmpDir: string): string {
+export function validateOpenPath(input: unknown, dataDir: string, tmpDir: string, backupDir?: string | null): string {
     if (typeof input !== "string" || input.length === 0 || input.includes("\0")) {
         throw new Error("open-path: invalid filePath");
     }
 
+    const roots = backupDir ? [dataDir, tmpDir, backupDir] : [dataDir, tmpDir];
     const resolved = path.resolve(input);
-    if (!isUnderOrEquals(resolved, dataDir) && !isUnderOrEquals(resolved, tmpDir)) {
+    if (!roots.some((root) => isUnderOrEquals(resolved, root))) {
         throw new Error(`open-path: refusing path outside data dir: ${resolved}`);
     }
 
@@ -242,7 +248,7 @@ export function setupShellHandlers() {
 
     electron.ipcMain.handle("open-path", (_event, filePath: string) => {
         try {
-            const resolved = validateOpenPath(filePath, dataDirs.TRILIUM_DATA_DIR, dataDirs.TMP_DIR);
+            const resolved = validateOpenPath(filePath, dataDirs.TRILIUM_DATA_DIR, dataDirs.TMP_DIR, getConfiguredBackupDir());
             return electron.shell.openPath(resolved);
         } catch (e) {
             getLog().error(`open-path failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
@@ -325,6 +331,19 @@ export function setupShellHandlers() {
             getLog().error(`open-custom failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
         }
     });
+}
+
+/**
+ * The directory backups currently go to, which the user may have moved outside the data directory.
+ * Read from the backup service rather than accepted from the renderer, so it stays the app's own
+ * notion of where backups live. Null before core is initialized, leaving the other roots to apply.
+ */
+function getConfiguredBackupDir(): string | null {
+    try {
+        return getBackup().getBackupFolderPath();
+    } catch {
+        return null;
+    }
 }
 
 //#endregion

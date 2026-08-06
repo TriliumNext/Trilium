@@ -117,6 +117,12 @@
         --cleanup-item-color: var(--cleanup-revisions-color);
     }
 
+    /* Named like the rows above it, but transparent: recompressing takes no arc in the chart, since
+       what it will save is not knowable until it has run. The swatch keeps the row's alignment. */
+    .cleanup-item-compress {
+        --cleanup-item-color: transparent;
+    }
+
     .cleanup-item-compact {
         --cleanup-item-color: var(--cleanup-compact-color);
     }

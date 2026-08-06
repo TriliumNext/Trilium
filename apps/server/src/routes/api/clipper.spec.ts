@@ -21,32 +21,35 @@ describe("processContent", () => {
                         attachmentId: "foo",
                         title: "encodedTitle",
                     };
-                }
+                },
+                // The clipping is read as soon as this answers, so the picture has to be stored by
+                // then; nothing here defers, so there is nothing for the wait to do.
+                awaitImageWrite: async () => {}
             }
         }));
     });
 
-    it("processes basic note", () => {
-        const processed = cls.init(() => processContent([], note, "<p>Hello world.</p>"));
+    it("processes basic note", async () => {
+        const processed = await cls.init(() => processContent([], note, "<p>Hello world.</p>"));
         expect(processed).toStrictEqual("<p>Hello world.</p>");
     });
 
-    it("processes plain text", () => {
-        const processed = cls.init(() => processContent([], note, "Hello world."));
+    it("processes plain text", async () => {
+        const processed = await cls.init(() => processContent([], note, "Hello world."));
         expect(processed).toStrictEqual("<p>Hello world.</p>");
     });
 
-    it("replaces images", () => {
-        const processed = cls.init(() => processContent(
+    it("replaces images", async () => {
+        const processed = await cls.init(() => processContent(
             [{"imageId":"OKZxZA3MonZJkwFcEhId","src":"inline.png","dataUrl":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAQCAYAAADESFVDAAAAF0lEQVQoU2P8DwQMBADjqKLRIGAgKggAzHs/0SoYCGwAAAAASUVORK5CYII="}],
             note, `<img src="OKZxZA3MonZJkwFcEhId">`
         ));
         expect(processed).toStrictEqual(`<img src="api/attachments/foo/image/encodedTitle" >`);
     });
 
-    it("skips over non-data images", () => {
+    it("skips over non-data images", async () => {
         for (const url of [ "foo", "" ]) {
-            const processed = cls.init(() => processContent(
+            const processed = await cls.init(() => processContent(
                 [{"imageId":"OKZxZA3MonZJkwFcEhId","src":"inline.png","dataUrl": url}],
                 note, `<img src="OKZxZA3MonZJkwFcEhId">`
             ));

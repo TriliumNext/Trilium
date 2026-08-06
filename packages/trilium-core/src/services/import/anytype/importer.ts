@@ -27,6 +27,7 @@
  */
 
 import { t } from "i18next";
+import { imageExtensionForMime, linkPreviewImageName, safeHostname } from "@triliumnext/commons";
 import { parse } from "node-html-parser";
 
 import type BNote from "../../../becca/entities/bnote.js";
@@ -36,7 +37,8 @@ import imageService from "../../image.js";
 import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
 import type TaskContext from "../../task_context.js";
-import { decodeUtf8, encodeBase64 } from "../../utils/binary.js";
+import { inspectImage, UNKNOWN_FORMAT } from "../../image_inspect.js";
+import { decodeUtf8 } from "../../utils/binary.js";
 import date_utils from "../../utils/date.js";
 import { newEntityId } from "../../utils/index.js";
 import { basename } from "../../utils/path.js";
@@ -462,10 +464,12 @@ function createFileMemberNote(parentNoteId: string, info: FileObjectInfo, bytes:
  * `section.link-embed`). For a file placeholder it looks the id up in the export's file metadata and bytes,
  * then saves the bytes as an attachment and rewrites the reference to point at it — an inline `role:"image"`
  * for an image, a `role:"file"` attachment reference-link for any other file type (matching the Notion
- * importer). A bookmark's favicon/preview id is instead resolved to an inline base64 `data:` URI (the form
- * Trilium natively stores a link-embed favicon/image in), never an attachment. A placeholder whose file is
- * missing from the export (no metadata or bytes — e.g. a still-uploading file) is dropped (image /
- * favicon / preview) or left as plain text (other file). Only re-saves the content when something changed.
+ * importer). A bookmark's favicon/cover goes the same way, under the `favicon` / `coverImage` role and
+ * titled after the site or page it belongs to, which is the shape a preview fetched live is stored in and
+ * what lets a card that recurs across an export keep one picture rather than one per card. A placeholder
+ * whose file is missing from the export (no metadata or bytes — e.g. a still-uploading file), or whose
+ * bytes are not a picture at all, is dropped (image / favicon / cover) or left as plain text (other file).
+ * Only re-saves the content when something changed.
  */
 function applyInlineFiles(note: BNote, fileObjects: Map<string, FileObjectInfo>, files: Map<string, Uint8Array>, shrinkImages: boolean) {
     const content = decodeUtf8(note.getContent());
@@ -477,18 +481,21 @@ function applyInlineFiles(note: BNote, fileObjects: Map<string, FileObjectInfo>,
     const root = parse(content);
     let changed = false;
 
-    // A bookmark card's favicon/preview: resolve each file-id placeholder to an inline base64 data URI, or
-    // drop the attribute when the export has no bytes for it (rather than leaving a bare id that renders as a
-    // broken image; the client already falls back to a placeholder when the attribute is absent).
+    // A bookmark card's favicon/cover: save each file-id placeholder as an attachment and point the
+    // attribute at it, or drop the attribute when the export has no usable bytes for it (rather than
+    // leaving a bare id that renders as a broken image; the client already falls back to a placeholder
+    // when the attribute is absent).
     for (const section of root.querySelectorAll("section.link-embed")) {
-        for (const attr of ["data-favicon", "data-image"]) {
+        const url = section.getAttribute("data-url") ?? "";
+
+        for (const [ attr, role ] of [ [ "data-favicon", "favicon" ], [ "data-image", "coverImage" ] ] as const) {
             const targetId = section.getAttribute(attr);
             if (!targetId) {
                 continue;
             }
-            const dataUri = inlineFileDataUri(targetId, fileObjects, files);
-            if (dataUri) {
-                section.setAttribute(attr, dataUri);
+            const reference = saveBookmarkPicture(note, url, role, targetId, fileObjects, files, shrinkImages);
+            if (reference) {
+                section.setAttribute(attr, reference);
             } else {
                 section.removeAttribute(attr);
             }
@@ -555,15 +562,57 @@ function inlineFileBytes(targetId: string, fileObjects: Map<string, FileObjectIn
     return info ? files.get(normalizePath(info.source)) : undefined;
 }
 
-/** A file id resolved to an inline `data:<mime>;base64,<bytes>` URI (for a bookmark card's favicon/preview,
- * stored inline rather than as an attachment), or undefined when the export has no bytes for it. */
-function inlineFileDataUri(targetId: string, fileObjects: Map<string, FileObjectInfo>, files: Map<string, Uint8Array>): string | undefined {
+/**
+ * Saves one of a bookmark card's two pictures as an attachment of the note the card sits in, and
+ * answers with the URL that references it — or undefined when the export carries no usable bytes.
+ *
+ * The same shape a preview fetched live is stored in, so an imported card is indistinguishable from
+ * one made here: the picture is a note attachment rather than base64 inside the note's HTML, under
+ * the role that says which of the two it is, and titled after the thing it is a picture of. The
+ * title is what a deduplicated role reuses an existing attachment by, so an export whose pages link
+ * one site many times ends up with one icon rather than one per card.
+ *
+ * The bytes are asked what they are rather than the export's own metadata being taken for it, and
+ * anything that is not a picture is refused — a card is not a place to put a PDF.
+ */
+function saveBookmarkPicture(
+    note: BNote,
+    url: string,
+    role: "favicon" | "coverImage",
+    targetId: string,
+    fileObjects: Map<string, FileObjectInfo>,
+    files: Map<string, Uint8Array>,
+    shrinkImages: boolean
+): string | undefined {
     const bytes = inlineFileBytes(targetId, fileObjects, files);
+
     if (!bytes) {
         return undefined;
     }
-    const mime = fileObjects.get(targetId)?.mime || "application/octet-stream";
-    return `data:${mime};base64,${encodeBase64(bytes)}`;
+
+    const { format, mime } = inspectImage(bytes);
+
+    if (format === UNKNOWN_FORMAT) {
+        return undefined;
+    }
+
+    const baseName = role === "favicon" ? safeHostname(url) : linkPreviewImageName(url);
+    const { attachmentId, title } = imageService.saveImageToAttachment(
+        note.noteId,
+        bytes,
+        `${baseName}.${imageExtensionForMime(mime)}`,
+        // An icon has nothing to gain from being put through the compression pipeline — it is a few
+        // KB of flat colour already, and far below any size it would be scaled to. A cover may be a
+        // full-size social image, so it follows whatever the import was told to do with pictures.
+        role === "coverImage" && shrinkImages,
+        // The title is the key the attachment is reused by; shortening it would have every site
+        // past the length limit share one picture.
+        false,
+        role
+    );
+
+    /* v8 ignore next -- saveImageToAttachment always returns the id of the attachment it just created */
+    return attachmentId ? `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}` : undefined;
 }
 
 /**

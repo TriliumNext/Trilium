@@ -52,6 +52,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         this.#setMotion();
         this.#setShadows();
         this.#setBackdropEffects();
+        this.#setMonospaceLigatures();
         updateThemeCapabilities();
         this.#setLocaleAndDirection(options.get("locale"));
         this.#setExperimentalFeatures();
@@ -79,6 +80,10 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
 
         if (loadResults.isOptionReloaded("backdropEffectsEnabled")) {
             this.#setBackdropEffects();
+        }
+
+        if (loadResults.isOptionReloaded("monospaceLigaturesEnabled")) {
+            this.#setMonospaceLigatures();
         }
 
         if (loadResults.isOptionReloaded("maxContentWidth")
@@ -131,6 +136,16 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     #setBackdropEffects() {
         const enabled = options.is("backdropEffectsEnabled") && !isMobile();
         document.body.classList.toggle("backdrop-effects-disabled", !enabled);
+    }
+
+    /**
+     * Ligatures are a property of how the monospace font renders, not of which font is selected, so
+     * this rides a body class rather than the server-generated fonts stylesheet — no round-trip to
+     * `api/fonts` is needed to flip it.
+     */
+    #setMonospaceLigatures() {
+        const enabled = options.is("monospaceLigaturesEnabled");
+        document.body.classList.toggle("monospace-ligatures-disabled", !enabled);
     }
 
     #setExperimentalFeatures() {

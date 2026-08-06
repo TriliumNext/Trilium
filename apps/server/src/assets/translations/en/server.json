@@ -401,6 +401,13 @@
     "show-windows": "Show windows",
     "open_new_window": "Open new window"
   },
+  "backup": {
+    "custom_directory_unwritable": "Database backup failed: unable to write to {{- location}}. Backing up to the default location instead.",
+    "passphrase_unavailable": "The backup password could not be read, so this backup is not encrypted. It has been saved to the default location instead of the chosen one."
+  },
+  "dialog": {
+    "select_directory": "Select folder"
+  },
   "migration": {
     "old_version": "Direct migration from your current version is not supported. Please upgrade to the latest v0.60.4 first and only then to this version.",
     "error_message": "Error during migration to version {{version}}: {{stack}}",
@@ -471,6 +478,17 @@
       "fulltext-after-expression": "\"{{- token}}\" is not a valid expression. To search for text, place it before attribute filters (e.g., \"{{- token}} #label\" instead of \"#label {{- token}}\").",
       "unrecognized-expression": "Unrecognized expression \"{{- token}}\""
     }
+  },
+  "backup-password-dialog": {
+    "cancel": "Cancel",
+    "set-title": "Set the backup password?",
+    "set-message": "Future backups will be encrypted with this password.",
+    "set-detail": "Trilium cannot show this password again, so keep a copy somewhere safe: without it, a backup cannot be restored.\n\nIf you were not expecting to be asked, cancel — a note or a script may have requested this.",
+    "set-confirm": "Set password",
+    "clear-title": "Forget the backup password?",
+    "clear-message": "Backups will no longer be encrypted.",
+    "clear-detail": "Backups already written keep the password they were made with, and can still be restored with it.\n\nIf you were not expecting to be asked, cancel — a note or a script may have requested this.",
+    "clear-confirm": "Forget password"
   },
   "security-dialog": {
     "enable-title": "Enable {{settingLabel}}",

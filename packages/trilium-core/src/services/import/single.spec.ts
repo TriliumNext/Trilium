@@ -13,7 +13,17 @@ import sql_init from "../sql_init.js";
 import single from "./single.js";
 import { encodeUtf8, stripBom } from "../utils/binary.js";
 import { getContext } from "../context.js";
+import { mapByNoteType } from "../export/single.js";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
+
+/** A vector icon, as GitHub and many other sites serve — markup, so its content is a string. */
+const TINY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M0 0h16v16H0z"/></svg>`;
+
+/** A 1x1 PNG. The bytes are asked what they are, so a placeholder buffer would rightly be refused. */
+const PIXEL_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+    "base64"
+);
 
 async function testImport(fileName: string, mimetype: string, bufferOverride?: Buffer, extraOptions?: Record<string, unknown>) {
     const buffer = bufferOverride ?? fs.readFileSync(`${scriptDir}/samples/${fileName}`);
@@ -203,6 +213,47 @@ describe("processNoteContent", () => {
         const sheet = parsed.workbook.sheets[parsed.workbook.sheetOrder[0]];
         expect(sheet.cellData[0][0].v).toBe("a");
         expect(sheet.cellData[1][1].v).toBe(2);
+    });
+
+    it("carries a link preview's pictures through a single-file export and back", async () => {
+        // A single-file export has nowhere to put an attachment, so it inlines every picture as base64
+        // — which is only half an answer unless the import unpacks them again. Left inline they cost a
+        // third more than the bytes they encode, in every revision of the note, once per card.
+        //
+        // The favicon is deliberately an SVG: its content is markup rather than bytes, and the export
+        // used to skip it on exactly that basis, writing out `api/attachments/<id>` instead. That is
+        // not merely unresolvable elsewhere — the id is the source instance's, so the file names an
+        // attachment belonging to somebody else's note.
+        const { note: source } = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "Preview Source", type: "text", content: ""
+        }));
+        getContext().init(() => {
+            const favicon = source.saveAttachment({ role: "favicon", mime: "image/svg+xml", title: "example.com.svg", content: TINY_SVG });
+            const cover = source.saveAttachment({ role: "coverImage", mime: "image/png", title: "example.com-page", content: PIXEL_PNG });
+            source.setContent(`<section class="link-embed" data-url="https://example.com/page" data-embed-type="opengraph"`
+                + ` data-favicon="api/attachments/${favicon.attachmentId}/image/example.com.svg"`
+                + ` data-image="api/attachments/${cover.attachmentId}/image/example.com-page"></section>`);
+        });
+
+        const exported = String(mapByNoteType(source, source.getContent(), "html").payload);
+        // Both pictures travel in the file itself, naming nothing back in this instance.
+        expect(exported).toContain("data-favicon=\"data:image/svg+xml;base64,");
+        expect(exported).toContain("data-image=\"data:image/png;base64,");
+        expect(exported).not.toContain("api/attachments");
+
+        const { importedNote } = await testImport("Preview Source.html", "text/html", Buffer.from(exported));
+
+        // Back to attachments on the far side, roled and named as a preview made here would store them.
+        expect(importedNote.getAttachments().map((a) => [a.role, a.title]).sort()).toStrictEqual([
+            ["coverImage", expect.stringMatching(/^example\.com-page-[0-9a-f]{8}\.png$/)],
+            ["favicon", "example.com.svg"]
+        ]);
+
+        const content = importedNote.getContent().toString();
+        expect(content).not.toContain("base64");
+        for (const attachment of importedNote.getAttachments()) {
+            expect(content).toContain(`api/attachments/${attachment.attachmentId}/image/`);
+        }
     });
 
     it("sanitizes rendered Markdown when safeImport is on", async () => {

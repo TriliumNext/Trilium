@@ -9,7 +9,24 @@ vi.mock("../components/app_context.js", () => ({
     }
 }));
 
-import toast, { removeToastFromStore, showError, showErrorForScriptNote, toasts } from "./toast.js";
+const dialogInfo = vi.hoisted(() => vi.fn());
+vi.mock("./dialog.js", () => ({ default: { info: dialogInfo } }));
+
+import toast, { removeToastFromStore, showError, showErrorForScriptNote, showUnhandledError, toasts } from "./toast.js";
+
+/** Flattens the text of a JSX tree, so a test can assert on what a dialog body actually says. */
+function collectText(node: any): string {
+    if (node === null || node === undefined || typeof node === "boolean") {
+        return "";
+    }
+    if (typeof node === "string" || typeof node === "number") {
+        return String(node);
+    }
+    if (Array.isArray(node)) {
+        return node.map(collectText).join("");
+    }
+    return collectText(node.props?.children);
+}
 
 describe("toast store", () => {
     beforeEach(() => {
@@ -123,6 +140,38 @@ describe("toast store", () => {
             // The script note is attached as a reference link instead of a bespoke open-note button.
             notes: [ "scriptNote1" ]
         });
+        expect(created?.buttons).toBeUndefined();
+    });
+
+    it("showUnhandledError keeps the stack behind a details dialog the user can copy", async () => {
+        showUnhandledError("Note 'abc' doesn't exist.", "NotFoundError: Note 'abc' doesn't exist.\n    at getNoteOrThrow");
+
+        const created = toasts.value.find(t => t.id === "unhandled-error");
+        expect(created).toMatchObject({
+            icon: "bx bx-error-circle",
+            message: "Note 'abc' doesn't exist.",
+            messageMonospace: true,
+            timeout: 20000
+        });
+
+        const dismissToast = vi.fn();
+        expect(created?.buttons).toHaveLength(1);
+        await created?.buttons?.[0].onClick({ dismissToast });
+
+        // The notification gets out of the way before the dialog takes over.
+        expect(dismissToast).toHaveBeenCalledOnce();
+        expect(dialogInfo).toHaveBeenCalledOnce();
+
+        const [ body, options ] = dialogInfo.mock.calls[0];
+        expect(collectText(body)).toContain("at getNoteOrThrow");
+        expect(options).toMatchObject({ size: "lg", copyToClipboardButton: true });
+    });
+
+    it("showUnhandledError offers no details button when the error carried no stack", () => {
+        showUnhandledError("Unknown Error");
+
+        const created = toasts.value.find(t => t.id === "unhandled-error");
+        expect(created?.message).toBe("Unknown Error");
         expect(created?.buttons).toBeUndefined();
     });
 

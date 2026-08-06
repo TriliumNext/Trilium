@@ -5,8 +5,12 @@ import {
     chooseLinkPreviewKind,
     extractYouTubeVideoId,
     isHttpUrl,
+    isLocalPreviewImageSrc,
     isUrlAloneInBlock,
+    linkPreviewImageName,
+    safeHostname,
     safeLinkPreviewHref,
+    safeLinkPreviewImageSrc,
     YOUTUBE_REGEX
 } from "./link_embed.js";
 
@@ -69,6 +73,123 @@ describe("isHttpUrl / safeLinkPreviewHref", () => {
         expect(safeLinkPreviewHref("https://example.com/page")).toBe("https://example.com/page");
         expect(safeLinkPreviewHref("javascript:alert(document.cookie)")).toBe("about:blank");
         expect(safeLinkPreviewHref(undefined)).toBe("about:blank");
+    });
+});
+
+describe("isLocalPreviewImageSrc / safeLinkPreviewImageSrc", () => {
+    it("accepts the inline images and own attachments the metadata pipeline produces", () => {
+        expect(isLocalPreviewImageSrc("data:image/png;base64,iVBORw0KGgo=")).toBe(true);
+        expect(isLocalPreviewImageSrc("data:image/jpeg;base64,/9j/4AAQ")).toBe(true);
+        // The server emits one of these for a vector favicon; an SVG loaded through <img> runs no script.
+        expect(isLocalPreviewImageSrc("data:image/svg+xml;base64,PHN2Zz4=")).toBe(true);
+        expect(isLocalPreviewImageSrc("api/attachments/abc123DEF_/image/preview.png")).toBe(true);
+        expect(isLocalPreviewImageSrc("  api/attachments/abc123/image/x.png  ")).toBe(true);
+    });
+
+    it("rejects anything that would make the reader fetch from a third party", () => {
+        // The whole point: an <img> fires on load, so a remote favicon/image would announce every
+        // reader of the note — and every visitor to it as a shared page — to whoever it points at.
+        expect(isLocalPreviewImageSrc("https://evil.test/pixel.gif")).toBe(false);
+        expect(isLocalPreviewImageSrc("http://169.254.169.254/latest/meta-data/")).toBe(false);
+        expect(isLocalPreviewImageSrc("//evil.test/api/attachments/abc123/image/x.png")).toBe(false);
+        expect(isLocalPreviewImageSrc("https://evil.test/api/attachments/abc123/image/x.png")).toBe(false);
+        expect(isLocalPreviewImageSrc("/api/attachments/abc123/image/x.png")).toBe(false);
+        expect(isLocalPreviewImageSrc("../../api/attachments/abc123/image/x.png")).toBe(false);
+    });
+
+    it("rejects non-image data URIs and other schemes", () => {
+        expect(isLocalPreviewImageSrc("data:text/html,<script>alert(1)</script>")).toBe(false);
+        expect(isLocalPreviewImageSrc("javascript:alert(1)")).toBe(false);
+        expect(isLocalPreviewImageSrc("file:///etc/passwd")).toBe(false);
+        expect(isLocalPreviewImageSrc(undefined)).toBe(false);
+        expect(isLocalPreviewImageSrc("")).toBe(false);
+    });
+
+    it("degrades a rejected value to no image at all, so the caller shows its placeholder", () => {
+        expect(safeLinkPreviewImageSrc("data:image/png;base64,iVBORw0KGgo=")).toBe("data:image/png;base64,iVBORw0KGgo=");
+        expect(safeLinkPreviewImageSrc("  api/attachments/abc123/image/x.png  ")).toBe("api/attachments/abc123/image/x.png");
+        expect(safeLinkPreviewImageSrc("https://evil.test/pixel.gif")).toBeUndefined();
+        expect(safeLinkPreviewImageSrc(undefined)).toBeUndefined();
+    });
+});
+
+describe("safeHostname", () => {
+    it("names the host, and answers with the address itself where there is no host to name", () => {
+        expect(safeHostname("https://en.wikipedia.org/wiki/Russo-Japanese_War")).toBe("en.wikipedia.org");
+        // An international host is punycoded by the parse, which is what makes it a file name.
+        expect(safeHostname("https://münchen.de/x")).toBe("xn--mnchen-3ya.de");
+
+        // Not an address at all. Both the label a preview falls back to and the title its favicon is
+        // stored under come from here, so answering with nothing would leave a preview unnamed.
+        expect(safeHostname("not a url")).toBe("not a url");
+    });
+});
+
+describe("linkPreviewImageName", () => {
+    const wiki = "https://en.wikipedia.org/wiki/Russo-Japanese_War";
+
+    it("names the page it is a picture of, readably", () => {
+        // The attachment list shows this, where several rows of "image.jpeg" say nothing about
+        // which is which.
+        expect(linkPreviewImageName(wiki)).toMatch(/^en\.wikipedia\.org-Russo-Japanese-War-[0-9a-f]{8}$/);
+    });
+
+    it("spells the site the same way its favicon does", () => {
+        // A favicon is titled by the bare hostname, so reducing the hostname here would put the
+        // two pictures of one site under two different-looking names in the same list.
+        // Matched to where the hostname ends, not merely to where it starts: a bare `startsWith`
+        // says nothing about what follows, which is how a host check is normally got wrong.
+        expect(linkPreviewImageName(wiki)).toMatch(/^en\.wikipedia\.org-/);
+        expect(linkPreviewImageName("https://example.com/")).toMatch(/^example\.com-[0-9a-f]{8}$/);
+    });
+
+    it("gives the same URL the same name, which is what makes pasting it twice reuse one picture", () => {
+        expect(linkPreviewImageName(wiki)).toBe(linkPreviewImageName(wiki));
+    });
+
+    it("never gives two different URLs the same name, however alike they reduce to", () => {
+        // The readable part alone could not be the key: reducing a URL to filename-safe characters
+        // is lossy, and these two collapse to the same letters.
+        const slash = "https://example.com/a/b";
+        const dash = "https://example.com/a-b";
+        expect(linkPreviewImageName(slash)).not.toBe(linkPreviewImageName(dash));
+
+        // Same page, different query — a different picture as far as the site is concerned.
+        expect(linkPreviewImageName("https://example.com/p?id=1")).not.toBe(linkPreviewImageName("https://example.com/p?id=2"));
+    });
+
+    it("ignores the fragment, which never changed the picture", () => {
+        // Two links into different sections of one page show the cover they both showed anyway.
+        expect(linkPreviewImageName(`${wiki}#Background`)).toBe(linkPreviewImageName(wiki));
+        expect(linkPreviewImageName(`${wiki}#Aftermath`)).toBe(linkPreviewImageName(wiki));
+    });
+
+    it("treats the same page written two ways as one page", () => {
+        // A bare host and a trailing slash address the same thing, so they share the picture.
+        expect(linkPreviewImageName("https://example.com")).toBe(linkPreviewImageName("https://example.com/"));
+    });
+
+    it("stays a usable file name whatever the address looks like", () => {
+        const names = [
+            linkPreviewImageName("https://example.com/"),
+            linkPreviewImageName("https://exämple.com/ünïcode path/§±!"),
+            linkPreviewImageName(`https://example.com/${"very-long-segment".repeat(20)}`),
+            linkPreviewImageName("not a url at all"),
+            linkPreviewImageName("")
+        ];
+
+        for (const name of names) {
+            // Nothing a file system, a URL or an export archive would have to escape. Dots are in,
+            // being what a hostname is written with.
+            expect(name, name).toMatch(/^[a-zA-Z0-9.-]+$/);
+            expect(name.startsWith("-") || name.startsWith("."), name).toBe(false);
+            expect(name.endsWith("-") || name.endsWith("."), name).toBe(false);
+            // Bounded, so a long path cannot crowd the attachment list out.
+            expect(name.length, name).toBeLessThanOrEqual(70);
+        }
+
+        // And these are all different addresses, so they are all different names.
+        expect(new Set(names).size).toBe(names.length);
     });
 });
 

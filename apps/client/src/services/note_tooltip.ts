@@ -130,7 +130,13 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
     // since the operation to get tooltip content was async, it is possible that
     // we now create tooltip which won't close because it won't receive mouseleave event
     // — or that a context menu was invoked in the meantime, which the preview must not cover.
-    if ($link.filter(":hover").length > 0 && !isContextMenuShown()) {
+    //
+    // The opt-out is re-read for the same reason: an element may take it on while its preview is
+    // being fetched, which is how a surface that opens over the pointer says the preview is no
+    // longer wanted — a calendar chip clicked gains it as the popover opens (see the class in
+    // CalendarView's eventClassNames), and the pointer is still on the chip, so the hover test
+    // alone would let the preview land on top of what the click just opened.
+    if ($link.filter(":hover").length > 0 && !isContextMenuShown() && !$link.hasClass("no-tooltip-preview")) {
         $link.tooltip({
             container: "body",
             // https://github.com/zadam/trilium/issues/2794 https://github.com/zadam/trilium/issues/2988

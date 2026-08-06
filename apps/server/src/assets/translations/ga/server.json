@@ -494,5 +494,23 @@
   "note_conversion": {
     "revision_before_markdown": "Roimh an gcomhshó go Markdown",
     "revision_before_text": "Roimh an gcomhshó go Nóta Téacs"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Theip ar chúltaca bunachar sonraí: ní féidir scríobh chuig {{- location}}. Ag déanamh cúltaca chuig an suíomh réamhshocraithe ina ionad.",
+    "passphrase_unavailable": "Níorbh fhéidir an focal faire cúltaca a léamh, mar sin níl an cúltaca seo criptithe. Tá sé sábháilte chuig an suíomh réamhshocraithe in ionad an cheann roghnaithe."
+  },
+  "dialog": {
+    "select_directory": "Roghnaigh fillteán"
+  },
+  "backup-password-dialog": {
+    "cancel": "Cealaigh",
+    "set-title": "An bhfuil focal faire cúltaca socraithe?",
+    "set-message": "Déanfar cúltacaí amach anseo a chriptiú leis an bpasfhocal seo.",
+    "set-detail": "Ní féidir le Trilium an pasfhocal seo a thaispeáint arís, mar sin coinnigh cóip in áit shábháilte: gan é, ní féidir cúltaca a athchóiriú.\n\nMura raibh súil agat go n-iarrfaí ort é, cealaigh — b’fhéidir gur iarr nóta nó script é seo.",
+    "set-confirm": "Socraigh pasfhocal",
+    "clear-title": "An bhfuil dearmad déanta agat ar an bpasfhocal cúltaca?",
+    "clear-message": "Ní bheidh cúltacaí criptithe a thuilleadh.",
+    "clear-detail": "Coinníonn cúltacaí atá scríofa cheana an focal faire a úsáideadh chun iad a úsáid, agus is féidir iad a athchóiriú leis fós.\n\nMura raibh súil agat go n-iarrfaí ort é sin a dhéanamh, cealaigh — b’fhéidir gur iarr nóta nó script é seo.",
+    "clear-confirm": "Dearmad ar an bhfocal faire"
   }
 }

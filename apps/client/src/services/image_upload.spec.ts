@@ -13,8 +13,12 @@ describe("parseImageDataUrl", () => {
         expect(parseImageDataUrl("data:image/jpeg;base64,BBBB")?.ext).toBe("jpeg");
     });
 
-    it("maps svg+xml to a clean 'svg' extension", () => {
+    it("names a format the way people write it", () => {
         expect(parseImageDataUrl("data:image/svg+xml;base64,Q0M=")?.ext).toBe("svg");
+        // A favicon used to be stored as "example.com.xicon", the subtype having had its
+        // punctuation stripped out rather than being recognised.
+        expect(parseImageDataUrl("data:image/x-icon;base64,Q0M=")?.ext).toBe("ico");
+        expect(parseImageDataUrl("data:image/vnd.microsoft.icon;base64,Q0M=")?.ext).toBe("ico");
     });
 
     it("returns null for non-base64 data URLs and plain URLs", () => {

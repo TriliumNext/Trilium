@@ -17,6 +17,196 @@
         gap: 0.5em;
     }
 }
+/*
+ * The switcher between the reader's own attachments and the app's, which only appears once there is a
+ * second group to switch to. Sits under the header rather than in it: the header's row is already
+ * shared between the owning note and the upload actions, and on a narrow window that row wraps into a
+ * column the choice would land in the middle of.
+ */
+/*
+ * The listing is a grid of cards, drawn to match the one a collection lays its notes out in — same
+ * track sizing, same frame, same header rule, same content padding, so that a note's attachments and
+ * a note's children look like one idea rather than two. The rules are restated here rather than
+ * shared: the collection's belong to its own markup (`.note-book-card`, `.note-book-header`), which
+ * an attachment has nothing corresponding to, and reaching for that markup would tie a listing to a
+ * view mode it has no other business with. The values they agree on are the card variables from
+ * `react/Card.css` wherever there is one to use.
+ *
+ * The full-detail page is left alone: it shows one attachment in a pane of its own, which is not a
+ * grid of anything.
+ */
+.attachment-list .attachment-list-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* One card per attachment. `.attachment-detail-widget` is the direct child, so the track sizing goes
+   here and the frame goes on the wrapper it holds. */
+.attachment-list .attachment-detail-widget {
+    display: flex;
+    flex-shrink: 0;
+    flex-grow: 1;
+    flex-basis: 300px;
+    /* Overrides the height:100% the widget carries for the full-detail page, where it is the pane. */
+    height: auto;
+    max-height: 300px;
+    min-width: 0;
+
+    body.mobile & {
+        flex-basis: 150px;
+    }
+}
+
+.attachment-list .attachment-detail-wrapper.list-view {
+    flex-grow: 1;
+    /* Let the card shrink to its track: without it the default min-width:auto keeps it as wide as the
+       longest unbroken thing inside — a title that is a URL, in a list full of them. */
+    min-width: 0;
+    margin-bottom: 0;
+    border: 1px solid var(--card-border-color, var(--main-border-color));
+    border-radius: var(--card-border-radius, 8px);
+    background: var(--card-background-color);
+    overflow: hidden;
+
+    .attachment-title-line {
+        flex-shrink: 0;
+        /* Column only. A `gap` spaces the wrapped metadata line off the title as well, on top of the
+           room the 32px menu button already leaves under a 19px title by being what decides how tall
+           their line is. */
+        column-gap: 8px;
+        row-gap: 0;
+        border-bottom: 1px solid var(--card-border-color, var(--main-border-color));
+        padding: .5rem 1rem;
+        padding-inline-end: 8px;
+        /* The metadata takes the line under the title rather than competing with it for a card's
+           width. It is still the sentence it was — that is a separate question from this one. */
+        flex-wrap: wrap;
+    }
+
+    /* The card is what the icon lies on here, so that is what its paperclip is knocked out of. */
+    .attachment-icon-marker {
+        --attachment-icon-marker-tint: var(--card-background-color, transparent);
+    }
+
+    .attachment-title {
+        /* A zero basis, not `auto`: the row wraps, and a title measured at its own width — these are
+           hostnames and URLs — would take the whole line and send the menu below it. */
+        flex: 1 1 0;
+        min-width: 0;
+        font-size: 1em;
+        font-weight: 500;
+        /* One line, cut short where it does not fit. A screenshot's name or a page's URL is long
+           enough to take three rows of a card, which pushes the metadata and the preview down for
+           the sake of characters the reader can see in full by opening the attachment. */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        /* A heading that happens to be a link, so not dressed as one: `a.tn-link:hover` draws a
+           tinted pill wider than the words. Same two lines as `.note-book-title`. */
+        a {
+            --link-hover-background: transparent;
+            --link-hover-color: currentColor;
+        }
+    }
+
+    /* The menu closes the header, as the note menu does on a collection's cards; it opens the row
+       here only because that is the order the markup happens to be in. */
+    .attachment-actions-container {
+        order: 1;
+        flex-shrink: 0;
+    }
+
+    .attachment-details {
+        /* After the menu, so the header's own line ends with it as a card's does; the full basis then
+           takes the metadata to a line of its own rather than squeezing the title. */
+        order: 2;
+        flex-basis: 100%;
+        margin-inline-start: 0;
+        font-size: .85em;
+        color: var(--muted-text-color);
+    }
+
+    .attachment-content-wrapper {
+        flex: 1;
+        max-height: none;
+        overflow: hidden;
+        font-size: 0.8rem;
+    }
+
+    .attachment-content-wrapper .rendered-content {
+        padding: .5rem 1rem 1rem 1rem;
+    }
+
+    /* A picture is the card's content rather than something set in it, so it goes to the edges — the
+       collection does the same for an image note, off a type class the renderer gives it there and
+       not here. */
+    .attachment-content-wrapper .rendered-content:has(> img) {
+        padding: 0;
+    }
+
+    .attachment-content-wrapper img,
+    .attachment-content-wrapper video {
+        max-width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+    }
+}
+
+/* The header stays put and only the listing under it scrolls, so the owning note and the upload actions
+   are still reachable from the bottom of a long list. */
+.attachment-list .attachment-list-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.attachment-list .attachment-list-body {
+    flex-grow: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+
+    /* Nothing in here is squeezed to fit the pane — a listing longer than it scrolls instead. */
+    > * {
+        flex-shrink: 0;
+    }
+
+    /* The placeholder stands in for the listing rather than for the pane. Its own `height: 100%` is
+       measured against the whole body, which on a note whose only attachments are the app's would
+       push the row offering them past the bottom edge. */
+    > .no-items {
+        height: auto;
+    }
+
+    /* And where there is such a row, the placeholder stops growing into the space above it as well, so
+       that the two read as the one answer they are rather than as a message and, an inch of nothing
+       later, an unrelated line at the foot of the pane. */
+    > .no-items.beside-folded-away {
+        flex-grow: 0;
+    }
+}
+
+/*
+ * The app's own attachments, folded away under the reader's.
+ *
+ * Dressed as an aside rather than as a control: a muted line the width of its own words, set off from the
+ * listing above it but given no frame, no fill and no place of its own in the layout. What is behind it is
+ * a footnote to the note's attachments, and anything heavier — the button group this replaced, centred and
+ * 20em wide — reads as a question the reader has to answer before the list means anything.
+ */
+.attachment-list .attachment-system-group {
+    margin-top: 20px;
+
+    .collapsible-title {
+        /* `Collapsible` lays its button out as a flex row, which makes it block-level and hands it the
+           whole pane — a hover tint the width of the listing, for a line of words. */
+        width: fit-content;
+        color: var(--muted-text-color);
+        font-size: .9em;
+    }
+}
 /* #endregion */
 
 /* #region Attachment info */
@@ -29,6 +219,8 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    /* What the deletion badge is pinned to. */
+    position: relative;
 }
 
 .attachment-detail-wrapper.list-view {
@@ -42,6 +234,47 @@
     a {
         color: inherit !important;
     }
+}
+
+/* What the attachment is, ahead of its name — the role's own mark where the role says something, and
+   the media type's where it only says the reader put it there. Sized and placed as the note icon on a
+   collection's cards is, since the two sit in the same kind of header. */
+.attachment-icon {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: 1.2em;
+}
+
+/* The paperclip overprinted on the corner, saying the thing the mark underneath cannot: this belongs to
+   a note rather than being one.
+
+   Built the way the tree builds a protected note's lock (`theme-next/shell.css`): held in the corner
+   rather than hung off it, knocked out of the glyph by a disc of the surface behind, and left in the
+   icon's own colour. Nothing of its own — no ring, no fill, no padding around it — so it reads as part
+   of the mark it qualifies rather than as something stuck on top.
+
+   The disc has to be the surface the icon is actually lying on, as the tree's is the left pane's own
+   colour. It cannot simply *be* `--card-background-color`: that is a tint of a few percent alpha, and the
+   glyph's strokes would show through the paperclip's hole. So the tint is composited over the opaque
+   window background the way the card itself composites it — a gradient of one flat colour, which is the
+   only way to lay a second background layer over a background colour. Where there is no card, the tint is
+   transparent and the disc is the window's background alone. */
+.attachment-icon-marker {
+    --attachment-icon-marker-tint: transparent;
+
+    position: absolute;
+    bottom: 0;
+    inset-inline-end: 0;
+    transform: translateX(25%);
+    font-size: 0.6em;
+    border-radius: 50%;
+    background-color: var(--main-background-color);
+    background-image: linear-gradient(var(--attachment-icon-marker-tint), var(--attachment-icon-marker-tint));
+}
+
+body[dir=rtl] .attachment-icon-marker {
+    transform: translateX(-25%);
 }
 
 .attachment-title-line {
@@ -86,22 +319,9 @@
     height: 100%;
 }
 
-.attachment-detail-wrapper.list-view {
-    border-radius: 12px;
-    background-color: var(--card-background-color);
-    padding: 6px;
-    box-shadow: var(--card-box-shadow);
-}
-
 .attachment-detail-wrapper.list-view .attachment-content-wrapper pre {
     max-height: 400px;
     padding: 0;
-}
-
-.attachment-detail-wrapper.list-view .attachment-content-wrapper img, .attachment-detail-wrapper.list-view .attachment-content-wrapper video {
-    max-height: 300px;
-    max-width: 90%;
-    object-fit: contain;
 }
 
 .attachment-detail-wrapper.full-detail .attachment-content-wrapper img {
@@ -130,12 +350,43 @@
     overflow: hidden;
 }
 
-.attachment-detail-wrapper.scheduled-for-deletion .attachment-content-wrapper img {
-    filter: contrast(10%);
-}
+/*
+ * The countdown to an unlinked attachment's erasure.
+ *
+ * Laid over the attachment's own corner rather than given a place in the header: the header is a row the
+ * title is already sharing with the menu, so a pill there is read as part of the heading and takes width
+ * from it, and it lands at a different height on every card besides. Over the content it belongs plainly
+ * to the one attachment under it, in the same corner every time. Bottom rather than top, and trailing:
+ * that leaves the header alone and keeps clear of the image viewer's own overlay, which sits bottom-left.
+ *
+ * Dressed as the overlay controls elsewhere are — the same frosted neutral the sibling navigator wears in
+ * the opposite corner of this very card — rather than filled with the destructive colour. A red pill the
+ * width of a sentence reads as an error the reader has to answer, and this is a date: nothing is wrong,
+ * nothing is being asked, and the attachment can sit like this for a month. The trash icon keeps the
+ * colour, which is as much of it as the message needs.
+ *
+ * Not the outline variant, which is what an overlay costs: it is transparent, and a picture reads
+ * straight through the words.
+ */
+.attachment-deletion-badge {
+    position: absolute;
+    bottom: 10px;
+    inset-inline-end: 10px;
+    z-index: 1;
+    max-width: calc(100% - 20px);
 
-.attachment-detail-wrapper .attachment-deletion-warning {
-    margin: 0.5em 0;
+    /* Fallbacks for themes without the overlay palette: opaque, since the blur is then absent too. */
+    background-color: var(--overlay-button-background, var(--main-background-color));
+    backdrop-filter: var(--overlay-button-backdrop-filter);
+    color: var(--overlay-button-color, var(--main-text-color));
+    /* Enough separation from whatever it covers to read as sitting above it rather than in it. */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+
+    .tn-icon {
+        color: var(--dropdown-item-icon-destructive-color);
+        /* The badge dims its icon to sit behind the text; here it is the only thing carrying the tone. */
+        opacity: 1;
+    }
 }
 /* #endregion */
 

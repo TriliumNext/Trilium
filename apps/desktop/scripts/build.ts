@@ -14,6 +14,9 @@ async function main() {
     // built after, leaves the final meta.json.
     await build.buildBackend([ "src/preload.ts" ], { importMetaUrlShim: false });
     await build.buildBackend([ "src/main.ts" ]);
+    // The image compression worker, which lives in the server it embeds. Built here too so the
+    // desktop app can compress off-thread rather than falling back to doing it in the main process.
+    await build.buildBackend([ "../server/src/services/image_worker.ts" ]);
 
     // Copy assets.
     build.copy("src/assets", "assets/");

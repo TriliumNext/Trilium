@@ -9,6 +9,12 @@ import dialogService from "../../../../../services/dialog";
 import { t } from "../../../../../services/i18n";
 import toast from "../../../../../services/toast";
 import { formatSize, isStandalone } from "../../../../../services/utils";
+import type { ImageCompressionToolOptions } from "../../../../dialogs/image_compression/image_compression_options";
+import {
+    JpegHandlingSection,
+    PngHandlingSection,
+    ResizeImageSection
+} from "../../../../dialogs/image_compression/image_compression_sections";
 import { ExtendedAdmonition } from "../../../../react/Admonition";
 import Button from "../../../../react/Button";
 import { Card, CardSection } from "../../../../react/Card";
@@ -16,11 +22,13 @@ import DonutChart, { type DonutRing } from "../../../../react/charts/DonutChart"
 import ContextualHelp from "../../../../react/ContextualHelp";
 import FormTextBox from "../../../../react/FormTextBox";
 import FormToggle from "../../../../react/FormToggle";
-import { useTriliumOptionJson } from "../../../../react/hooks";
+import { useDebouncedValue, useTriliumOptionJson } from "../../../../react/hooks";
 import Modal from "../../../../react/Modal";
+import { useFetch } from "../../../../react/use_fetch";
 import {
     CLEANUP_ITEMS,
     type CleanupPhase,
+    type CleanupProgress,
     type CleanupToolOptions,
     computeCleanupSizes,
     hasWorkToDo,
@@ -29,7 +37,6 @@ import {
     runCleanup,
     storedCleanupOptions
 } from "./cleanup_operation";
-import { useSpaceUsageFetch } from "./use_space_usage_fetch";
 
 /**
  * Opens the cleanup dialog, and resolves once it has finished with the database: the bytes the run
@@ -73,14 +80,20 @@ function CleanupDialog({ onFinished }: { onFinished: (reclaimed: number | null) 
         setOptions(next);
         void setStored(storedCleanupOptions(next));
     };
+    // The compression rows report patches against their own settings, which are one field of these.
+    const compressionProps = {
+        options: options.imageCompression,
+        onChange: (patch: Partial<ImageCompressionToolOptions>) =>
+            update({ imageCompression: { ...options.imageCompression, ...patch } })
+    };
 
     // Measured with the history erased outright: the whole the reading is "of", and fixed for as
     // long as the dialog is open, since no setting here can reclaim more than that.
-    const everything = useSpaceUsageFetch<SpaceUsageNoteResponse>(`${ROOT_USAGE_URL}?snapshotsToKeep=0`);
+    const everything = useFetch<SpaceUsageNoteResponse>(`${ROOT_USAGE_URL}?snapshotsToKeep=0`);
     // Measured as the settings would trim it. The retention trails the field being typed in, so a
     // number entered digit by digit costs one measurement rather than one per keystroke.
     const settledSnapshotsToKeep = useDebouncedValue(options.snapshotsToKeep, ESTIMATE_DEBOUNCE_MS);
-    const trimmed = useSpaceUsageFetch<SpaceUsageNoteResponse>(
+    const trimmed = useFetch<SpaceUsageNoteResponse>(
         `${ROOT_USAGE_URL}?snapshotsToKeep=${settledSnapshotsToKeep}&keepNamedSnapshots=${options.keepNamedSnapshots}`);
 
     // What a rebuild would return, and what the file occupies now — read once on open: only erasures
@@ -252,6 +265,29 @@ function CleanupDialog({ onFinished }: { onFinished: (reclaimed: number | null) 
                     </CardSection>
                 ))}
 
+                {/* No swatch and no figure, unlike every row above it: what recompressing will save
+                    cannot be known without doing it, so there is no arc for it in the chart and
+                    nothing honest to print here. The settings hang beneath the switch, the same
+                    rows the image compression dialog is built from. */}
+                <CardSection
+                    className="cleanup-item cleanup-item-compress"
+                    subSectionsVisible={options.compressImages}
+                    subSections={[
+                        <ResizeImageSection key="resize" {...compressionProps} />,
+                        <JpegHandlingSection key="jpeg" {...compressionProps} />,
+                        <PngHandlingSection key="png" {...compressionProps} />
+                    ]}
+                >
+                    {/* Carries no color, having no arc to name — it is here so the title starts
+                        where every other row's does, rather than half a swatch to its left. */}
+                    <span className="cleanup-item-swatch" aria-hidden="true" />
+                    <span className="cleanup-item-title">{t("compress-images")}</span>
+                    <FormToggle
+                        currentValue={options.compressImages}
+                        onChange={(value) => update({ compressImages: value })}
+                    />
+                </CardSection>
+
                 {/* Its figure is the pages already free inside the file, which only a rebuild
                     returns — no part of any content figure, and so an arc and a color of its own.
                     Absent where the endpoint is: vacuuming lives in the server build, not in the
@@ -338,23 +374,45 @@ export const CLEANUP_TOAST_ID = "content-manager-cleanup";
 const CLEANUP_DONE_TIMEOUT_MS = 15000;
 
 /**
- * The app's in-progress toast, the same one printing raises: a spinning icon rather than a bar,
- * since none of this can say how far along it is. Compacting names itself, being the step that can
- * hold the server for minutes with nothing at all to show meanwhile.
+ * The app's in-progress toast, the same one printing raises: a spinning icon rather than a bar.
+ * Compressing and compacting each name themselves, being the steps that can hold the server for
+ * minutes with nothing at all to show meanwhile.
  *
- * Raised again per phase rather than replaced — the toast service updates the one already carrying
+ * Raised again per report rather than replaced — the toast service updates the one already carrying
  * this id, so the message changes in place instead of stacking a second toast beside the first.
  */
-function showCleanupProgress(phase: CleanupPhase) {
+function showCleanupProgress(phase: CleanupPhase, progress?: CleanupProgress) {
     toast.showPersistent({
         id: CLEANUP_TOAST_ID,
         icon: "bx bx-loader-circle bx-spin",
-        message: t(phase === "compacting" ? "space_usage.cleanup_compacting" : "space_usage.cleanup_running"),
+        message: phaseMessage(phase, progress),
         // Nothing here to cancel: the server carries on whatever the client does, so a close button
         // would read as a stop that stops nothing.
         dismissible: false
     });
 }
+
+/**
+ * A phase counts itself off where it can, and merely names itself where it cannot.
+ *
+ * Recompressing is the only one that can, and only once its first report has arrived: the total
+ * comes from the server along with the count, so until then this reads as the other phases do.
+ */
+function phaseMessage(phase: CleanupPhase, progress?: CleanupProgress): string {
+    return progress?.total
+        ? t("space_usage.compress_running_progress", { done: progress.done, total: progress.total })
+        : t(CLEANUP_PHASE_MESSAGES[phase]);
+}
+
+/**
+ * Compressing borrows the image tool's own wording rather than keeping a second copy of it: the
+ * step is that tool, run from here, and the two would only ever be corrected together.
+ */
+const CLEANUP_PHASE_MESSAGES: Record<CleanupPhase, Parameters<typeof t>[0]> = {
+    erasing: "space_usage.cleanup_running",
+    compressing: "space_usage.compress_running",
+    compacting: "space_usage.cleanup_compacting"
+};
 
 /**
  * The width the dialog starts at, narrow on purpose: a short list of choices, read top to bottom
@@ -372,15 +430,3 @@ const DONUT_THICKNESS = 40;
 
 /** Long enough to type a two-digit retention through without measuring the database twice. */
 const ESTIMATE_DEBOUNCE_MS = 500;
-
-/** Trails `value` by `delay`, so a field being typed in does not fire a measurement per keystroke. */
-function useDebouncedValue<T>(value: T, delay: number): T {
-    const [ settled, setSettled ] = useState(value);
-
-    useEffect(() => {
-        const timer = setTimeout(() => setSettled(value), delay);
-        return () => clearTimeout(timer);
-    }, [ value, delay ]);
-
-    return settled;
-}

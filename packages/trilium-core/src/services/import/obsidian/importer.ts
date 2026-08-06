@@ -20,7 +20,8 @@
  * root either way, so the redundant wrapper folder is stripped and the import root is named after the vault.
  *
  * Obsidian-specific inline syntax is handled during Markdown rendering (gated by the `obsidian` flag):
- * `==highlight==` becomes `<mark>` and `%% comment %%` becomes an HTML comment.
+ * `%% comment %%` becomes an HTML comment, and callouts become admonitions. `==highlight==` needs no
+ * flag — it is supported for all Markdown rendering.
  *
  * Front matter (parsed by {@link ../frontmatter.js}) becomes labels via {@link mapObsidianFrontmatter}: tags
  * become individual labels, aliases become `#alias` labels, cssclasses/publish/permalink are dropped, and

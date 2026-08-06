@@ -2,7 +2,7 @@ import { MESSAGE_KEY_PREFIX, MESSAGE_OVERRIDES, slugify } from "@triliumnext/cke
 import { dayjs, findDuplicateJsonKeys, findPluralKeyConflicts, LOCALES } from "@triliumnext/commons";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock the http backend so i18next.init() never hits the network. The real
 // backend would try to fetch translation JSON over HTTP and the awaited init()
@@ -222,8 +222,88 @@ describe("i18n", () => {
     });
 
     describe("getAvailableLocales", () => {
+        function setDevBuild(isDev: boolean) {
+            (window as unknown as { glob: { isDev: boolean } }).glob.isDev = isDev;
+        }
+
+        /**
+         * Stands in for the name table `Intl` brings, so the answers it can give for a tag it cannot
+         * name — a throw, or nothing at all — can be had from the locales we actually ship. No entry
+         * in `LOCALES` draws either today: `en_rtl`, the one malformed tag among them, is turned away
+         * by the English check before `Intl` ever sees it.
+         */
+        function stubDisplayNames(of: () => string | undefined) {
+            vi.spyOn(Intl, "DisplayNames").mockImplementation(
+                // A plain function rather than an arrow: this stands in for a constructor, and is
+                // reached through `new`. Returning an object from one is what makes it the result.
+                function () {
+                    return { of };
+                } as unknown as typeof Intl.DisplayNames
+            );
+        }
+
+        afterEach(() => {
+            setDevBuild(false);
+            vi.restoreAllMocks();
+        });
+
         it("returns the full LOCALES list", () => {
             expect(getAvailableLocales()).toBe(LOCALES);
+        });
+
+        it("annotates the names with their English equivalent in a development build", () => {
+            setDevBuild(true);
+            const names = Object.fromEntries(getAvailableLocales().map((l) => [ l.id, l.name ]));
+
+            expect(names).toMatchObject({
+                de: "Deutsch (German)",
+                ko: "한국어 (Korean)",
+                pt_br: "Português (Brasil) (Brazilian Portuguese)",
+                // Resolved through `zh-Hans`/`zh-Hant`, so the script — the thing that separates the
+                // two entries — is what the annotation states.
+                cn: "简体中文 (Simplified Chinese)",
+                tw: "繁體中文 (Traditional Chinese)"
+            });
+        });
+
+        it("leaves the English entries alone, including the malformed dev-only tag", () => {
+            setDevBuild(true);
+            const names = Object.fromEntries(getAvailableLocales().map((l) => [ l.id, l.name ]));
+
+            expect(names).toMatchObject({
+                en: "English (United States)",
+                "en-GB": "English (United Kingdom)",
+                en_rtl: "English RTL"
+            });
+        });
+
+        it("shows the native name alone for a tag Intl refuses", () => {
+            // A tag `Intl` cannot parse is a RangeError rather than an empty answer, and a locale
+            // added later with an id like `en_rtl`'s would be one. The list has to survive it.
+            setDevBuild(true);
+            stubDisplayNames(() => { throw new RangeError("malformed tag"); });
+
+            const names = Object.fromEntries(getAvailableLocales().map((l) => [ l.id, l.name ]));
+
+            expect(names.de).toBe("Deutsch");
+            expect(names.ko).toBe("한국어");
+        });
+
+        it("shows the native name alone where Intl has no name to give", () => {
+            setDevBuild(true);
+            stubDisplayNames(() => undefined);
+
+            const names = Object.fromEntries(getAvailableLocales().map((l) => [ l.id, l.name ]));
+
+            expect(names.de).toBe("Deutsch");
+        });
+
+        it("does not mutate the shared LOCALES entries", () => {
+            const before = LOCALES.map((l) => l.name);
+            setDevBuild(true);
+            getAvailableLocales();
+
+            expect(LOCALES.map((l) => l.name)).toEqual(before);
         });
     });
 

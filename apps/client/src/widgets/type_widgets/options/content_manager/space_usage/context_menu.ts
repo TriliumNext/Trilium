@@ -12,6 +12,7 @@ import { downloadFileNote } from "../../../../../services/open";
 import options from "../../../../../services/options";
 import server from "../../../../../services/server";
 import toast from "../../../../../services/toast";
+import { showImageCompressionDialog } from "../../../../dialogs/image_compression/image_compression_dialog";
 
 const ROOT_NOTE_ID = "root";
 
@@ -81,6 +82,21 @@ export async function openSpaceUsageContextMenu(
             title: t("space_usage.menu_show_details"),
             uiIcon: "bx bx-detail",
             handler: () => onShowDetails(notePath)
+        },
+        {
+            title: t("compress-images"),
+            uiIcon: "bx bx-image",
+            handler: () => {
+                // An image note *is* one image, so the dialog is told its type and offers only the
+                // settings that could reach it; any other note is a collection of however many.
+                const mime = note.type === "image" ? note.mime : undefined;
+
+                // Only once images were actually replaced: their notes just changed size, and the
+                // views take a reading when asked rather than following the database. A run that
+                // compressed nothing — or failed, which answers as no run — leaves them be.
+                void showImageCompressionDialog({ type: "note", noteId, mime })
+                    .then((result) => result?.compressedCount && onContentChanged());
+            }
         },
 
         { kind: "separator" },

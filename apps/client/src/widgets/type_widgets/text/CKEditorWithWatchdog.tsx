@@ -54,6 +54,21 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     // Read purely as a rebuild trigger: the value is consumed by buildToolbarConfig() via options.get() at
     // editor-creation time, so the editor must be recreated when it changes.
     const [ multilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
+    // Rebuild triggers for the same reason, and there is no cheaper option for these: CKEditor bakes
+    // the transformation list at plugin init — `normalizeTransformations` runs once inside
+    // `_enableTransformationWatchers` — so unlike the settings read through a getter (link previews,
+    // clipboard image embedding) a live editor has nothing left to re-read.
+    const [ doubleQuoteStyle ] = useTriliumOption("textNoteDoubleQuoteStyle");
+    const [ singleQuoteStyle ] = useTriliumOption("textNoteSingleQuoteStyle");
+    const [ punctuationReplacements ] = useTriliumOptionBool("textNotePunctuationReplacementsEnabled");
+    const [ mathReplacements ] = useTriliumOptionBool("textNoteMathReplacementsEnabled");
+    const [ symbolReplacements ] = useTriliumOptionBool("textNoteSymbolReplacementsEnabled");
+    // The raw JSON, deliberately: `useTriliumOptionJson` parses on every render and would hand back a
+    // new array each time, rebuilding the editor continuously. A string compares by value.
+    const [ customReplacements ] = useTriliumOption("textNoteCustomReplacements");
+    // Which language a note with no `#language` of its own is written in, and so which quotes it
+    // gets. The UI locale it can fall back to is already covered by `uiLanguage` above.
+    const [ defaultContentLanguage ] = useTriliumOption("defaultContentLanguage");
     const [ editor, setEditor ] = useState<CKTextEditor>();
     const { parentComponent, ntxId, note } = useNoteContext();
 
@@ -162,7 +177,15 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
             await link.loadReferenceLinkTitle($el, href);
         },
         async fetchLinkMetadata(url: string) {
-            return await linkEmbedService.fetchMetadata(url, note?.noteId);
+            // The preview's pictures are stored as attachments of the note being edited, so there
+            // is nothing to fetch into before the note context has resolved one. Answering as
+            // unresolved leaves the URL a plain link, which is what the editor does with any
+            // preview it could not build.
+            if (!note) {
+                return linkEmbedService.unresolvedMetadata(url);
+            }
+
+            return await linkEmbedService.fetchMetadata(url, note.noteId);
         },
         detectEmbedType(url: string) {
             return linkEmbedService.detectEmbedType(url);
@@ -266,7 +289,16 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         };
         // `templates` is intentionally excluded: snippet changes are pushed into the live editor by the
         // effect below, so they must not trigger a full editor rebuild.
-    }, [ contentLanguage, uiLanguage, isClassicEditor, multilineToolbar ]);
+        //
+        // The options below are not read in this effect — `buildConfig` goes to the options store
+        // itself — but they are listed so that changing one rebuilds the editor. The rebuild is what
+        // makes them apply to an already-open note; it costs the cursor position and undo history,
+        // which is acceptable for a change made deliberately over in the settings.
+    }, [
+        contentLanguage, uiLanguage, isClassicEditor, multilineToolbar,
+        doubleQuoteStyle, singleQuoteStyle, punctuationReplacements, mathReplacements, symbolReplacements,
+        customReplacements, defaultContentLanguage
+    ]);
 
     // Push snippet ("template") definitions into the live editor instead of rebuilding it. The premium
     // Template plugin read its definitions once at init; TriliumSnippets keeps them in a live

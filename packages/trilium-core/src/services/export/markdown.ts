@@ -1,5 +1,6 @@
 import { safeLinkPreviewHref, type TaskStateDef } from "@triliumnext/commons";
 import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
+import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
 import { gfm, serializeStructuralHtml } from "@triliumnext/turndown-plugin-gfm";
 import escapeHtml from "escape-html";
 import { parse as parseHtml } from "node-html-parser";
@@ -67,6 +68,9 @@ function toMarkdown(content: string) {
         instance.addRule("inlineLink", buildInlineLinkFilter());
         instance.addRule("figure", buildFigureFilter());
         instance.addRule("linkPreview", buildLinkPreviewFilter());
+        // Before "math": rules are consulted in reverse registration order, so a highlighted
+        // formula stays a formula instead of being flattened into `==\(x\)==`.
+        instance.addRule("highlight", buildHighlightFilter());
         instance.addRule("math", buildMathFilter());
         instance.addRule("li", buildListItemFilter());
         instance.use(gfm);
@@ -406,6 +410,96 @@ function buildMathFilter(): Rule {
             return content;
         }
     };
+}
+
+/**
+ * Coloured inline text, in every shape it reaches the exporter: CKEditor's Font Color and Font
+ * Background Color emit `<span style="color:…">` / `<span style="background-color:…">`, and
+ * `<mark>` arrives from pasted or imported HTML. None has a rule of its own, so without this
+ * the wrapper is dropped and only the text survives — the colour is silently lost on export.
+ *
+ * A *plain default-yellow* highlight collapses to `==text==`: that is the colour `==…==`
+ * imports to and CKEditor's stock Yellow, so the syntax survives a round-trip unchanged. Every
+ * other colour is kept as inline HTML, which Markdown passes through and the importer accepts
+ * verbatim — lossless, where `==…==` would silently repaint it yellow.
+ *
+ * "Plain" means the element carries nothing else that `==…==` cannot express: no second
+ * declaration, no class. Anything more and the element is kept whole rather than partly lost.
+ * The content is Markdown either way, since Markdown inside an inline tag is still parsed.
+ */
+function buildHighlightFilter(): Rule {
+    // Only a `color`/`background-color` declaration of its own — `border-color` and friends have
+    // a `-` before "color" rather than the start of the attribute or a `;`.
+    const COLOR_DECLARATION = /(?:^|;)\s*(?:background-)?color\s*:/i;
+
+    return {
+        filter(node) {
+            return node.nodeName === "MARK"
+                || (node.nodeName === "SPAN" && COLOR_DECLARATION.test(node.getAttribute("style") ?? ""));
+        },
+        replacement(content: string, node: HTMLElement) {
+            // Turnish hoists flanking whitespace out of the delimiters, but an element whose only
+            // content is a `<br>` still lands here; `==  ==` would not parse back as a highlight.
+            if (!content.trim()) {
+                return content;
+            }
+
+            if (isPlainDefaultHighlight(node)) {
+                return `==${content}==`;
+            }
+
+            const attributes = Array.from(node.attributes)
+                .map((attribute) => ` ${attribute.name}="${escapeHtml(attribute.value)}"`)
+                .join("");
+            const tag = node.nodeName.toLowerCase();
+
+            return `<${tag}${attributes}>${content}</${tag}>`;
+        }
+    };
+}
+
+/** Whether the element is a highlight in the default colour and carries nothing else. */
+function isPlainDefaultHighlight(node: HTMLElement): boolean {
+    if (Array.from(node.attributes).some((attribute) => attribute.name !== "style")) {
+        return false;
+    }
+
+    const declarations = parseStyleDeclarations(node.getAttribute("style"));
+
+    // A bare `<mark>` is a highlight with no colour of its own; a span always has a declaration,
+    // since that is what the filter matched on.
+    if (declarations.length === 0) {
+        return true;
+    }
+
+    if (declarations.length > 1) {
+        return false;
+    }
+
+    const [ declaration ] = declarations;
+
+    return declaration.property === "background-color"
+        && normalizeColor(declaration.value) === normalizeColor(HIGHLIGHT_BACKGROUND);
+}
+
+function parseStyleDeclarations(style: string | null) {
+    return (style ?? "")
+        .split(";")
+        .map((declaration) => declaration.trim())
+        .filter((declaration) => declaration.length > 0)
+        .map((declaration) => {
+            const [ property, ...value ] = declaration.split(":");
+
+            return {
+                property: property.trim().toLowerCase(),
+                value: value.join(":").trim()
+            };
+        });
+}
+
+/** Colours are compared ignoring case and the spacing browsers and sanitizers move around. */
+function normalizeColor(color: string) {
+    return color.replace(/\s+/g, "").toLowerCase();
 }
 
 // Taken from upstream since it's not exposed.

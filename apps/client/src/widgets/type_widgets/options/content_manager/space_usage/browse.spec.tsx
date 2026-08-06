@@ -30,8 +30,8 @@ vi.mock("./context_menu", () => ({
     openSpaceUsageContextMenu: (...args: unknown[]) => mocks.openContextMenu(...args)
 }));
 
-vi.mock("./use_space_usage_fetch", () => ({
-    useSpaceUsageFetch: (url: string) => {
+vi.mock("../../../../react/use_fetch", () => ({
+    useFetch: (url: string) => {
         mocks.fetchedUrls.push(url);
         return { data: mocks.usage, failed: mocks.failed, loading: mocks.loading };
     }

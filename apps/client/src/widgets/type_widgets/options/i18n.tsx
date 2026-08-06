@@ -33,7 +33,7 @@ export default function InternationalizationOptions() {
 }
 
 function LocalizationOptions() {
-    const { uiLocales, formattingLocales: contentLocales } = useMemo<{ uiLocales: Locale[], formattingLocales: Locale[] }>(() => {
+    const { uiLocales, formattingLocales: contentLocales, writingLocales } = useMemo<{ uiLocales: Locale[], formattingLocales: Locale[], writingLocales: Locale[] }>(() => {
         const allLocales = getAvailableLocales();
         return {
             uiLocales: allLocales.filter(locale => {
@@ -41,6 +41,9 @@ function LocalizationOptions() {
                 if (locale.devOnly && !glob.isDev) return false;
                 return true;
             }),
+            // Anything a note can be written in, so unlike the formatting list this keeps the
+            // content-only right-to-left locales.
+            writingLocales: allLocales.filter(locale => !locale.devOnly || glob.isDev),
             formattingLocales: [
                 ...allLocales.filter(locale => {
                     if (!locale.electronLocale) return false;
@@ -53,6 +56,7 @@ function LocalizationOptions() {
 
     const [ locale, setLocale ] = useTriliumOption("locale");
     const [ formattingLocale, setFormattingLocale ] = useTriliumOption("formattingLocale");
+    const [ defaultContentLanguage, setDefaultContentLanguage ] = useTriliumOption("defaultContentLanguage");
 
     return (
         <OptionsSection title={t("i18n.title")}>
@@ -63,6 +67,19 @@ function LocalizationOptions() {
             {<OptionsRow name="formatting-locale" label={t("i18n.formatting-locale")}>
                 <LocaleSelector locales={contentLocales} currentValue={formattingLocale} onChange={setFormattingLocale} defaultLocale={{ id: "", name: t("i18n.formatting-locale-auto") }} />
             </OptionsRow>}
+
+            <OptionsRow
+                name="default-content-language"
+                label={t("i18n.default-content-language")}
+                description={t("i18n.default-content-language-description")}
+            >
+                <LocaleSelector
+                    locales={writingLocales}
+                    currentValue={defaultContentLanguage}
+                    onChange={setDefaultContentLanguage}
+                    defaultLocale={{ id: "", name: t("i18n.default-content-language-auto") }}
+                />
+            </OptionsRow>
 
             <DateSettings />
         </OptionsSection>

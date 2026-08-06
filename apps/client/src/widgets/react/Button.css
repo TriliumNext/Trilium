@@ -1,0 +1,5 @@
+/* Takes the button's place in the layout rather than adding a box of its own, but still has one for
+   the pointer to reach — a disabled button emits no events for the tooltip to hang off. */
+.tn-disabled-reason {
+    display: inline-flex;
+}

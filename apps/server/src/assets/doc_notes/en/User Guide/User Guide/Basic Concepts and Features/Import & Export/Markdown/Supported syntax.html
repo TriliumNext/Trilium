@@ -57,3 +57,16 @@
       archive root (containing all of these items) is considered the root.</li>
   </ul>
 </aside>
+<h2>Highlights</h2>
+<p>Background highlights are supported in two ways:</p>
+<ul>
+  <li>
+    <p>The Markdown <code spellcheck="false">==</code> extension which is supported
+      by other Markdown-based applications such as Obsidian:</p><pre><code class="language-text-x-trilium-auto">==highlighted==</code></pre>
+  </li>
+  <li>
+    <p>The canonical HTML representation of highlights, as supported by Trilium:</p><pre><code class="language-text-html">&lt;span style="background-color:hsl(0,0%,100%);"&gt;Highlighted&lt;/span&gt;</code></pre>
+  </li>
+</ul>
+<p>When the yellow highlight is used, import/export prefers the <code spellcheck="false">==</code> syntax
+  whereas the canonical HTML reprepresentation is used otherwise.</p>

@@ -271,7 +271,7 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): 
         },
         {
             el: <HighlightsList />,
-            enabled: noteType === "text" && highlightsList.length > 0,
+            enabled: (noteType === "text" || !!note?.isMarkdown()) && highlightsList.length > 0,
             tab: "outline"
         },
         {

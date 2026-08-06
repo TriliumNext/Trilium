@@ -397,6 +397,9 @@ corsAllowOrigin=https://ini-cors.com
             expect(config.MultiFactorAuthentication.oauthIssuerBaseUrl).toBe("https://accounts.google.com");
             expect(config.MultiFactorAuthentication.oauthIssuerName).toBe("Google");
             expect(config.MultiFactorAuthentication.oauthIssuerIcon).toBe("");
+            // Empty means "detect from the provider's discovery document" for both of these.
+            expect(config.MultiFactorAuthentication.oauthClientAuthMethod).toBe("");
+            expect(config.MultiFactorAuthentication.oauthIdTokenSigningAlg).toBe("");
 
             // Logging defaults
             expect(config.Logging.retentionDays).toBe(90);

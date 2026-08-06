@@ -1,12 +1,11 @@
 import $ from "jquery";
-import { beforeAll, vi } from "vitest";
+import { vi } from "vitest";
+
+// Top level, not in a beforeAll: vi.mock is hoisted either way, and nesting it only makes the order lie.
+vi.mock("../services/ws.js", mockWebsocket);
+vi.mock("../services/server.js", mockServer);
 
 injectGlobals();
-
-beforeAll(() => {
-    vi.mock("../services/ws.js", mockWebsocket);
-    vi.mock("../services/server.js", mockServer);
-});
 
 function injectGlobals() {
     const uncheckedWindow = window as any;

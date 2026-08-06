@@ -127,3 +127,104 @@
 .code-sample-wrapper {
     padding-top: 0.75em;
 }
+
+.custom-replacements {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 0.75em;
+
+    /*
+     * The two boxes, the arrow between them and the button asking for what they hold, kept together
+     * as the one thing they are: a pair is entered, not a value, so they move and wrap as a unit
+     * rather than the `to` box stranding itself under the chips.
+     *
+     * Given the whole line at the foot of the field rather than a place in among the chips. A pair
+     * needs two boxes and reads as a row of its own, where a single value's box can sit at the end
+     * of the set it adds to; and where the next one is entered stays put as chips are taken and
+     * dropped, instead of moving with the end of a set that wraps.
+     */
+    .custom-replacement-entry {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 100%;
+        min-width: 0;
+    }
+
+    /*
+     * Told apart from the set above it, once there is one: what is held and what is being added are
+     * two different things, and the field would otherwise read as a single run of controls. Nothing
+     * to divide it from while the set is empty, where the bar is the whole of the field.
+     */
+    .custom-replacement-entry:not(:first-child) {
+        margin-top: 4px;
+        padding-top: 8px;
+        border-top: 1px solid var(--main-border-color);
+    }
+
+    /*
+     * The boxes keep an edge of their own, which the chips above them give up. `.tn-field` strips it
+     * from the boxes it holds directly so they read as lying on the field rather than sitting in it —
+     * but that is for a box standing among chips, which would otherwise read as another one. This bar
+     * is a row apart below them and is the only place a pair can be entered, so it says where to type
+     * the way `values_input` does for the same reason: with neither edge nor ground, a box reads as a
+     * gap rather than as somewhere to write. Said here rather than left to Bootstrap, whose border
+     * this happens to inherit only because the child selector above does not reach a nested box.
+     */
+    .custom-replacement-entry > .form-control {
+        flex: 1 1 0;
+        min-width: 6ch;
+        background-color: var(--input-background-color);
+        border: 1px solid var(--main-border-color);
+        border-radius: var(--badge-radius, 12px);
+        padding: 4px 10px;
+
+        /* The same ring the field wears, so a box showing its own focus looks no different from the
+           field having shown it. Bootstrap's shadow is cleared rather than left under it, two focus
+           treatments on one box being what this whole rule set is avoiding. */
+        &:focus {
+            outline: 2px solid var(--input-focus-outline-color);
+            box-shadow: none;
+        }
+    }
+
+    /* Roomier than a chip field packed for a note's side pane: this one sits on a settings page with
+       width to spare, and holds a set to read as well as a bar to type in. */
+    > .tn-field {
+        gap: 6px;
+        padding: 6px 8px;
+
+        /*
+         * The field rings itself when something inside takes the focus, standing in for boxes that
+         * have given up frames of their own. These have kept theirs and ring themselves, so the
+         * field doing it too draws a second ring around the first. Only for the boxes: a chip's
+         * remove button has nothing of its own to show focus with, and still needs the field for it.
+         */
+        &:focus-within:has(> .custom-replacement-entry > .form-control:focus) {
+            outline: none;
+        }
+    }
+
+    .custom-replacement-arrow {
+        flex-shrink: 0;
+        opacity: 0.5;
+    }
+
+    /*
+     * Sized to the button a chip is removed by rather than to an icon button anywhere else, so the
+     * field does not grow the moment a pair is complete and shrink again once it is taken — a field
+     * is as tall as the tallest thing in it.
+     */
+    .custom-replacement-add {
+        --icon-button-size: 20px;
+        --icon-button-icon-ratio: 0.9;
+
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        font-size: 18px;
+        line-height: 1;
+    }
+}

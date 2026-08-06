@@ -9,7 +9,7 @@
     "picocolors": "1.1.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "7.6.13",
+    "@types/better-sqlite3": "9.6.0",
     "vitest": "4.1.10"
   },
   "scripts": {

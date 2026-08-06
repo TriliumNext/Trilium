@@ -2,6 +2,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import options from "../../services/options";
 import { isWithinPeek, PaneModeController, persistedPaneVisible, reducePaneMode, usePaneMode, usePeekDismiss } from "./peek_pane";
 
 describe("reducePaneMode", () => {
@@ -69,6 +70,46 @@ describe("usePaneMode", () => {
 
         act(() => render(null, host));
     });
+
+    it("opens docked where the option says so, and writes the distinction back as it changes", () => {
+        // The pane was left docked last time, which is the one thing the option remembers.
+        const isOption = vi.spyOn(options, "is").mockReturnValue(true);
+        const save = vi.spyOn(options, "save").mockResolvedValue(undefined);
+
+        let controller: PaneModeController | undefined;
+        const host = document.createElement("div");
+        document.body.appendChild(host);
+        function Harness() {
+            controller = usePaneMode("rightPaneVisible");
+            return null;
+        }
+        act(() => render(<Harness />, host));
+
+        expect(isOption).toHaveBeenCalledWith("rightPaneVisible");
+        expect(controller?.mode).toBe("docked");
+        expect(controller?.mounted).toBe(true);
+        // Nothing is written for merely arriving at what the option already said.
+        expect(save).not.toHaveBeenCalled();
+
+        // Leaving docked is a change of the distinction, so it is remembered.
+        act(() => controller?.toggleDocked());
+        expect(controller?.mode).toBe("closed");
+        expect(save).toHaveBeenCalledWith("rightPaneVisible", "false");
+
+        // A peek is not, being ephemeral: it comes and goes without touching the option.
+        save.mockClear();
+        act(() => controller?.togglePeek());
+        act(() => controller?.dismiss());
+        expect(save).not.toHaveBeenCalled();
+
+        // Docking again writes it back.
+        act(() => controller?.dock());
+        expect(save).toHaveBeenCalledWith("rightPaneVisible", "true");
+
+        act(() => render(null, host));
+        isOption.mockRestore();
+        save.mockRestore();
+    });
 });
 
 describe("persistedPaneVisible", () => {
@@ -111,11 +152,11 @@ describe("usePeekDismiss", () => {
         document.body.innerHTML = "";
     });
 
-    function renderHook(active: boolean, onDismiss: () => void, keepOpenSelector = "#right-pane") {
+    function renderHook(active: boolean, onDismiss: () => void, keepOpenSelector = "#right-pane", focusSelector?: string) {
         const host = document.createElement("div");
         document.body.appendChild(host);
         function Harness() {
-            usePeekDismiss(active, onDismiss, { keepOpenSelector });
+            usePeekDismiss(active, onDismiss, { keepOpenSelector, focusSelector });
             return null;
         }
         // act() flushes the effect so the document listeners are attached before we dispatch.
@@ -168,5 +209,36 @@ describe("usePeekDismiss", () => {
         document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
         expect(onDismiss).toHaveBeenCalledTimes(1);
         unmountActive();
+    });
+
+    it("leaves an Escape an inner element already answered alone", () => {
+        const onDismiss = vi.fn();
+        const unmount = renderHook(true, onDismiss);
+
+        // What a dropdown closing itself on Escape leaves behind: the press is spent, and the pane
+        // it was opened from stays where it is.
+        const handled = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+        handled.preventDefault();
+        document.dispatchEvent(handled);
+        expect(onDismiss).not.toHaveBeenCalled();
+
+        // Any other key is not this hook's business either.
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+        expect(onDismiss).not.toHaveBeenCalled();
+
+        unmount();
+    });
+
+    it("hands the focus back to what opened the peek, where it was told what that is", () => {
+        document.body.innerHTML = `<button class="peek-button"></button>`;
+        const onDismiss = vi.fn();
+        const unmount = renderHook(true, onDismiss, "#right-pane", ".peek-button");
+
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        expect(onDismiss).toHaveBeenCalledTimes(1);
+        // Escape is a keyboard gesture, so the keyboard is left somewhere it can go on from.
+        expect(document.activeElement).toBe(document.querySelector(".peek-button"));
+
+        unmount();
     });
 });

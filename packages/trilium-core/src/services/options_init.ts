@@ -162,10 +162,24 @@ const defaultOptions: DefaultOption[] = [
     { name: "detailFontSize", value: "110", isSynced: false },
     { name: "monospaceFontFamily", value: "theme", isSynced: false },
     { name: "monospaceFontSize", value: "110", isSynced: false },
+    // Off rather than on: the theme default is JetBrains Mono, whose ligatures nobody opted into,
+    // and which have been reported as characters being replaced often enough to be worth defaulting
+    // away from (#2851, #6224). Not synced, matching the font options it sits with in the UI.
+    { name: "monospaceLigaturesEnabled", value: "false", isSynced: false },
     { name: "spellCheckEnabled", value: "true", isSynced: false },
     { name: "spellCheckLanguageCode", value: "en-US", isSynced: false },
     { name: "imageMaxWidthHeight", value: "2000", isSynced: true },
     { name: "imageJpegQuality", value: "75", isSynced: true },
+    // What automatic compression does to an arriving image, said out loud rather than left implicit.
+    // Scaling and recompressing are what it always did; the PNG answer is not. It used to turn every
+    // PNG into a JPEG, which is lossy, permanent, and throws away transparency — the only thing it
+    // could do before there was anything else. Optimizing makes a PNG smaller and leaves it a PNG,
+    // which is the right default for a step that runs unattended on everything a user pastes.
+    // Converting is still there for anyone who wants the space more than the format.
+    { name: "imageResize", value: "true", isSynced: true },
+    { name: "imageJpegHandling", value: "compress", isSynced: true },
+    { name: "imagePngHandling", value: "optimize", isSynced: true },
+    { name: "imageConversionQuality", value: "75", isSynced: true },
     { name: "autoFixConsistencyIssues", value: "true", isSynced: false },
     { name: "vimKeymapEnabled", value: "false", isSynced: false },
     { name: "codeLineWrapEnabled", value: "true", isSynced: false },
@@ -200,6 +214,9 @@ const defaultOptions: DefaultOption[] = [
     { name: "dailyBackupEnabled", value: "true", isSynced: false },
     { name: "weeklyBackupEnabled", value: "true", isSynced: false },
     { name: "monthlyBackupEnabled", value: "true", isSynced: false },
+    { name: "customDbBackupDir", value: "", isSynced: false },
+    { name: "backupEnableCompression", value: "false", isSynced: false },
+    { name: "backupEnableEncryption", value: "false", isSynced: false },
     { name: "maxContentWidth", value: "1200", isSynced: false },
     { name: "centerContent", value: "false", isSynced: false },
     { name: "compressImages", value: "true", isSynced: true },
@@ -258,6 +275,10 @@ const defaultOptions: DefaultOption[] = [
     // Internationalization
     { name: "locale", value: "en", isSynced: true },
     { name: "formattingLocale", value: "", isSynced: true }, // no value means auto-detect
+    // English rather than "" (which would follow the application's language), so that an install
+    // that never touches this keeps writing the quotes it wrote before the setting existed. An
+    // empty value is still honoured if the user picks the auto entry.
+    { name: "defaultContentLanguage", value: "en", isSynced: true },
     { name: "firstDayOfWeek", value: "1", isSynced: true },
     { name: "firstWeekOfYear", value: "0", isSynced: true },
     { name: "minDaysInFirstWeek", value: "4", isSynced: true },
@@ -284,11 +305,25 @@ const defaultOptions: DefaultOption[] = [
     // Text note configuration
     { name: "textNoteEditorType", value: "ckeditor-balloon", isSynced: true },
     { name: "textNoteEditorMultilineToolbar", value: "false", isSynced: true },
+    // The four groups of as-you-type replacements. All on, which is how the editor behaved before
+    // they could be turned off; the point of the setting is that the behaviour is now visible and
+    // refusable, not that it changes for anyone who leaves it alone.
+    // "auto" keeps the marks following the note's language, which is what the editor did before the
+    // setting existed. An explicit preset overrides the language entirely — the point of offering
+    // it. The two keys are set apart because the conventions disagree about which pair belongs on
+    // which: British typography puts the single curly marks where American puts the double ones.
+    { name: "textNoteDoubleQuoteStyle", value: "auto", isSynced: true },
+    { name: "textNoteSingleQuoteStyle", value: "auto", isSynced: true },
+    { name: "textNotePunctuationReplacementsEnabled", value: "true", isSynced: true },
+    { name: "textNoteMathReplacementsEnabled", value: "true", isSynced: true },
+    { name: "textNoteSymbolReplacementsEnabled", value: "true", isSynced: true },
+    { name: "textNoteCustomReplacements", value: "[]", isSynced: true },
     { name: "textNoteEmojiCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
     { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
     { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
+    { name: "clipboardImageEmbedEnabled", value: "true", isSynced: true },
     { name: "includeNoteDefaultBoxSize", value: "medium", isSynced: true },
 
     // HTML import configuration
@@ -303,6 +338,11 @@ const defaultOptions: DefaultOption[] = [
     // Empty rather than a set of defaults: nothing the cleanup tool erases is picked until the user
     // picks it, so an uninitialized setting has to mean "nothing selected".
     { name: "cleanupToolOptions", value: "{}", isSynced: true },
+
+    // Likewise empty: the compression tool fills its dimensions and quality in from the image
+    // options, so an uninitialized setting opens on those rather than on a second set of defaults
+    // that could disagree with them.
+    { name: "imageCompressionToolOptions", value: "{}", isSynced: true },
 
     // Share settings
     { name: "redirectBareDomain", value: "false", isSynced: true },

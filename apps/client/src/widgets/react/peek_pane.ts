@@ -2,6 +2,7 @@ import { OptionNames } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import options from "../../services/options";
+import { FLOATING_LAYER_SELECTOR } from "./floating_layers";
 
 /**
  * A reusable side pane that can be in one of three modes:
@@ -105,12 +106,9 @@ export function usePaneMode(visibleOption: OptionNames): PaneModeController {
     return { mode, visible: mode !== "closed", mounted, togglePeek, toggleDocked, dock, close, dismiss };
 }
 
-// App-wide popup roots that render outside the pane (on document.body) but must NOT dismiss a peek:
-// resize gutters, Bootstrap dropdowns/tooltips/modals (and their backdrop)/popovers, CKEditor balloons,
-// Flatpickr calendars, the attribute detail popup, the context menu, and both autocomplete dropdowns
-// (Preact `FormAutocomplete` and the jQuery note autocomplete).
-const DEFAULT_KEEP_OPEN_SELECTOR = ".gutter, .dropdown-menu, .tooltip, .modal, .modal-backdrop, .popover, .ck-balloon-panel, .ck-body, .flatpickr-calendar, "
-    + ".attr-detail, #context-menu-container, .form-autocomplete-dropdown, .aa-dropdown-menu";
+// The app-wide popup roots that render outside the pane (on document.body) but must NOT dismiss a
+// peek — shared with every other surface that closes on an outside press (see floating_layers.ts).
+const DEFAULT_KEEP_OPEN_SELECTOR = FLOATING_LAYER_SELECTOR;
 
 /** Whether an event target lies within the peek pane or an allowlisted popup (i.e. should keep it open). */
 export function isWithinPeek(target: EventTarget | null, keepOpenSelector: string): boolean {

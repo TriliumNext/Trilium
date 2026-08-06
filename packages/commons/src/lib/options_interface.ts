@@ -1,4 +1,5 @@
 import type { KeyboardActionNames } from "./keyboard_actions_interface.js";
+import type { ImageJpegHandling, ImagePngHandling } from "./server_api.js";
 
 /**
  * A dictionary where the keys are the option keys (e.g. `theme`) and their corresponding values.
@@ -54,6 +55,12 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     lastDailyBackupDate: string;
     lastWeeklyBackupDate: string;
     lastMonthlyBackupDate: string;
+    /**
+     * Directory the database backups are written to, replacing the default one inside the data
+     * directory. Empty means "use the default". Honoured on the desktop application only; the server
+     * is configured through the `TRILIUM_BACKUP_DIR` environment variable instead.
+     */
+    customDbBackupDir: string;
     dbVersion: string;
     theme: string;
     syncServerHost: string;
@@ -76,6 +83,14 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     customSearchEngineUrl: string;
     locale: string;
     formattingLocale: string;
+    /**
+     * The language a note is written in when it carries no `#language` label of its own — which is
+     * almost every note, the label being opt-in. Governs what the content language drives: text
+     * direction and which typographic quotes typing produces.
+     *
+     * An empty value means "follow the application's language" rather than "no language".
+     */
+    defaultContentLanguage: string;
     codeBlockTheme: string;
     codeBlockThemeMatchesApp: boolean;
     codeBlockThemeLight: string;
@@ -85,6 +100,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     allowedHtmlTags: string;
     /** JSON: what the Content Manager's cleanup tool was last set to erase — see `CleanupToolOptions`. */
     cleanupToolOptions: string;
+    /** JSON: how the image compression tool was last set to compress — see `ImageCompressionToolOptions`. */
+    imageCompressionToolOptions: string;
     documentId: string;
     documentSecret: string;
     passwordVerificationHash: string;
@@ -119,6 +136,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     monospaceFontSize: number;
     imageMaxWidthHeight: number;
     imageJpegQuality: number;
+    /** JPEG quality a lossless image is converted at, kept apart from {@link imageJpegQuality}. */
+    imageConversionQuality: number;
     leftPaneWidth: number;
     rightPaneWidth: number;
     rightPaneCollapsedItems: string;
@@ -166,6 +185,12 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     hasUserBackendScripts: boolean;
     isPasswordSet: boolean;
     overrideThemeFonts: boolean;
+    /**
+     * Whether the monospace font's programming ligatures (`!=` rendered as `≠`, `->` as `→`) are
+     * left on. Off by default: the bundled JetBrains Mono ships them enabled, so users get them
+     * without choosing them and repeatedly mistake them for their characters having been replaced.
+     */
+    monospaceLigaturesEnabled: boolean;
     spellCheckEnabled: boolean;
     autoFixConsistencyIssues: boolean;
     vimKeymapEnabled: boolean;
@@ -180,7 +205,27 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     dailyBackupEnabled: boolean;
     weeklyBackupEnabled: boolean;
     monthlyBackupEnabled: boolean;
+    /**
+     * Whether backups are gzip-compressed. Compression or encryption switches the backup from a
+     * plain database file to a backup container; with both off, backups stay plain `.db` copies.
+     */
+    backupEnableCompression: boolean;
+    /**
+     * Whether backups are encrypted with the stored backup passphrase. Desktop only, and only where
+     * the OS offers a keyring to keep that passphrase in, since unattended backups cannot ask for
+     * it.
+     */
+    backupEnableEncryption: boolean;
     compressImages: boolean;
+    /**
+     * Whether an image above {@link imageMaxWidthHeight} is scaled down on its way in. Off, the
+     * bound governs nothing and only the re-encoding choices below can shrink anything.
+     */
+    imageResize: boolean;
+    /** What becomes of an already-lossy image on its way in: left as encoded, or recompressed. */
+    imageJpegHandling: ImageJpegHandling;
+    /** What becomes of a lossless image on its way in: left alone, quantized, or converted. */
+    imagePngHandling: ImagePngHandling;
     downloadImagesAutomatically: boolean;
     checkForUpdates: boolean;
     disableTray: boolean;
@@ -196,6 +241,22 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     codeNoteTabWidth: number;
     codeNoteIndentWithTabs: boolean;
     textNoteEditorMultilineToolbar: boolean;
+    /**
+     * Which marks a typed `"…"` becomes: `auto` to follow the note's content language, `off` to
+     * leave straight quotes alone, or the id of one of `QUOTE_MARK_PRESETS` to always use that pair
+     * whatever the note is written in.
+     */
+    textNoteDoubleQuoteStyle: string;
+    /** The same for a typed `'…'`, which conventions set a nested quotation in. */
+    textNoteSingleQuoteStyle: string;
+    /** Whether `...` becomes `…`, and ` -- ` / ` --- ` become an en/em dash, as they are typed. */
+    textNotePunctuationReplacementsEnabled: boolean;
+    /** Whether `1/2`, `!=`, `->` and their kin become `½`, `≠`, `→` as they are typed. */
+    textNoteMathReplacementsEnabled: boolean;
+    /** Whether `(c)`, `(r)` and `(tm)` become `©`, `®` and `™` as they are typed. */
+    textNoteSymbolReplacementsEnabled: boolean;
+    /** JSON: the user's own replacements, as `{ from, to }` pairs — see `CustomReplacement`. */
+    textNoteCustomReplacements: string;
     /** Whether keyboard auto-completion for emojis is triggered when typing `:`. */
     textNoteEmojiCompletionEnabled: boolean;
     /** Whether keyboard auto-completion for notes is triggered when typing `@` in text notes (attribute editing is not affected). */
@@ -206,6 +267,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteContentHintsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
+    /** Whether copying note content embeds internal images as data: URIs so they paste into external apps (internal paste stays reference-based). Hidden kill-switch. */
+    clipboardImageEmbedEnabled: boolean;
     backgroundEffects: boolean;
     newLayout: boolean;
 

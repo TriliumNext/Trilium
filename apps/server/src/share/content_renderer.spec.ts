@@ -1,4 +1,5 @@
 import { trimIndentation } from "@triliumnext/commons";
+import { parse } from "node-html-parser";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
@@ -297,17 +298,17 @@ describe("content_renderer", () => {
 
             const content = String(getContent(note).content);
             expect(content).toContain(`<div class="link-embed-card-url">`
-                + `<img class="link-embed-mention-favicon" src="${FAVICON}" width="16" height="16">`
+                + `<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" width="16" height="16">`
                 + `<span>Example</span></div>`);
         });
 
-        it("falls back to a dot when the site has no favicon", () => {
+        it("shows the site name alone when the site has no favicon", () => {
             const note = buildShareNote({
                 content: `<section class="link-embed" data-url="https://example.com/page" data-embed-type="opengraph" data-title="A title"></section>`
             });
 
             const content = String(getContent(note).content);
-            expect(content).toContain(`<div class="link-embed-card-url"><span class="link-embed-mention-dot"></span><span>example.com</span></div>`);
+            expect(content).toContain(`<div class="link-embed-card-url"><span>example.com</span></div>`);
         });
 
         it("renders a video as a click-to-play facade, without contacting YouTube", () => {
@@ -342,14 +343,137 @@ describe("content_renderer", () => {
             expect(content).toContain(`<a class="link-embed-mention" href="about:blank"`);
         });
 
+        it("keeps a stored attachment reference, which is served from this instance", () => {
+            const note = buildShareNote({
+                content: `<section class="link-embed" data-url="https://example.com/page" data-embed-type="opengraph"`
+                    + ` data-title="A title" data-image="api/attachments/abc123/image/preview.png"></section>`
+            });
+
+            const content = String(getContent(note).content);
+            expect(content).toContain(`<img class="link-embed-card-image" src="api/attachments/abc123/image/preview.png"`);
+        });
+
+        it("drops a remote favicon/image rather than have every visitor fetch it", () => {
+            // Same route in as the hostile `data-url` above: `data-*` survives the sanitizer, so a
+            // note from import, ETAPI or sync can name any URL here. An <img> needs no click, so
+            // leaving it in place would announce every visitor to whoever it points at — and the
+            // metadata pipeline only ever stores an inline image or an attachment, so a remote URL
+            // is illegitimate by construction.
+            const note = buildShareNote({
+                content: `<section class="link-embed" data-url="https://example.com/page" data-embed-type="opengraph"`
+                    + ` data-title="A title" data-favicon="http://169.254.169.254/latest/meta-data/"`
+                    + ` data-image="https://tracker.test/pixel.gif"></section>`
+                    + `<section class="link-embed" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
+                    + ` data-embed-type="youtube" data-image="https://tracker.test/thumb.jpg"></section>`
+                    + `<p><span class="link-mention" data-url="https://example.com/page" data-title="A title"`
+                    + ` data-favicon="https://tracker.test/favicon.ico"></span></p>`
+            });
+
+            const content = String(getContent(note).content);
+            // As with the hostile data-url above, the element keeps its inert attribute — no browser
+            // fetches a `data-favicon` — but nothing reaches an `src`, which is what would be fetched.
+            expect(content).not.toContain(`src="http://169.254.169.254`);
+            expect(content).not.toContain(`src="https://tracker.test`);
+            // Each sink degrades to what it already shows for a preview that has no such picture:
+            // the card keeps a placeholder in the hole its cover would fill, the favicon simply goes.
+            expect(content).not.toContain(`class="link-embed-mention-favicon"`);
+            expect(content).toContain(`<a class="link-embed-mention" href="https://example.com/page" target="_blank" rel="noopener noreferrer">`
+                + `<span class="link-embed-mention-title">A title</span></a>`);
+            expect(content).toContain(`<div class="link-embed-card-image-placeholder">`);
+            expect(content).not.toContain(`class="link-embed-video-thumbnail"`);
+        });
+
         it("renders an inline mention with the same favicon markup", () => {
             const note = buildShareNote({
                 content: `<p><span class="link-mention" data-url="https://example.com/page" data-title="A title" data-favicon="${FAVICON}"></span></p>`
             });
 
             const content = String(getContent(note).content);
-            expect(content).toContain(`<img class="link-embed-mention-favicon" src="${FAVICON}" width="16" height="16">`);
+            expect(content).toContain(`<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" width="16" height="16">`);
             expect(content).toContain(`<span class="link-embed-mention-title">A title</span>`);
+        });
+    });
+
+    describe("Web view note", () => {
+        const SANDBOX = "allow-same-origin allow-scripts allow-popups";
+
+        /**
+         * Renders a web view note and reads back the element the share page ends up with, so a test
+         * can assert the whole of it — every attribute the browser sees, and nothing besides.
+         */
+        function renderWebViewNote(src?: string) {
+            const note = buildShareNote({
+                type: "webView",
+                content: "",
+                ...(src !== undefined ? { "#webViewSrc": src } : {})
+            });
+            const root = parse(String(getContent(note).content));
+            return { root, frame: root.querySelector("iframe") };
+        }
+
+        it("renders a frame carrying the source URL, and nothing else", () => {
+            const { root, frame } = renderWebViewNote("https://example.com/page");
+            expect(root.childNodes.length).toBe(1);
+            expect(frame?.rawTagName).toBe("iframe");
+            expect(frame?.attributes).toStrictEqual({
+                class: "webview",
+                src: "https://example.com/page",
+                sandbox: SANDBOX
+            });
+            expect(frame?.innerHTML).toBe("");
+        });
+
+        it("renders nothing at all when the note carries no source", () => {
+            const { root, frame } = renderWebViewNote();
+            expect(frame).toBeNull();
+            expect(root.childNodes.length).toBe(0);
+        });
+
+        it("loads an absolute http(s) source URL, normalising only its scheme and host", () => {
+            for (const [src, expected] of [
+                ["https://example.com/page", "https://example.com/page"],
+                ["http://example.com/a?b=1&c=2", "http://example.com/a?b=1&c=2"],
+                ["HTTPS://Example.com/Page", "https://example.com/Page"]
+            ]) {
+                expect(renderWebViewNote(src).frame?.getAttribute("src")).toBe(expected);
+            }
+        });
+
+        it("renders nothing for a source URL a frame has no business loading", () => {
+            // A web view frames a website, and the setup form only ever writes an absolute URL.
+            // Anything else reaches the label by another route — a hand-edited attribute, an
+            // import, ETAPI, a sync — and either cannot be framed at all or would frame this very
+            // server, which the sandbox's allow-same-origin would then not isolate from the page
+            // doing the framing.
+            for (const src of [
+                "/relative/path",
+                "//example.com/protocol-relative",
+                "./a",
+                "mailto:a@b.com",
+                "ftp://example.com/file",
+                "javascript:alert(1)",
+                "JaVaScRiPt:alert(1)",
+                "data:text/html,<script>alert(1)</script>",
+                "vbscript:msgbox",
+                "not a url at all"
+            ]) {
+                const { root, frame } = renderWebViewNote(src);
+                expect(frame).toBeNull();
+                expect(root.childNodes.length).toBe(0);
+            }
+        });
+
+        it("never lets a source URL add attributes of its own to the frame", () => {
+            // Whatever the URL carries, it can only ever be read back as the frame's source: an
+            // attribute value cannot end early and leave the rest of itself to be read as markup.
+            for (const src of [
+                `https://example.com/?a=" onload="alert(1)" data-x="`,
+                `https://example.com/#" onload="alert(1)" data-x="`
+            ]) {
+                expect(Object.keys(renderWebViewNote(src).frame?.attributes ?? {})).toStrictEqual([
+                    "class", "src", "sandbox"
+                ]);
+            }
         });
     });
 

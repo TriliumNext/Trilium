@@ -2,10 +2,12 @@ import "./File.css";
 
 import { isOfficeMimeType } from "@triliumnext/commons";
 
+import { GPX_MIME } from "../../services/gpx";
 import { t } from "../../services/i18n";
 import Alert from "../react/Alert";
 import CodeBlock from "../react/CodeBlock";
 import { useNoteBlob } from "../react/hooks";
+import GpxPreview from "./file/GpxPreview";
 import MediaPreview from "./file/MediaPreview";
 import OfficePreview from "./file/Office";
 import PdfPreview from "./file/Pdf";
@@ -23,6 +25,8 @@ export default function FileTypeWidget({ note, parentComponent, noteContext, isV
     // would otherwise be caught by the blob.content branch below and shown as raw markup.
     if (isOffice) {
         return <OfficePreview note={note} />;
+    } else if (note.mime === GPX_MIME) {
+        return <GpxPreview note={note} blob={blob} />;
     } else if (blob?.content) {
         return <TextPreview content={blob.content} mime={note.mime} />;
     } else if (note.mime === "application/pdf") {

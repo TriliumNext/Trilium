@@ -365,6 +365,25 @@ describe("mouseEnterHandler", () => {
         expect($.fn.tooltip as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
     });
 
+    it("shows nothing for a link that takes the opt-out while its preview is in flight", async () => {
+        vi.useFakeTimers();
+        const $link = makeLink('<a data-href="#root/abc">x</a>');
+        parseNavigationStateFromUrl.mockReturnValue({ notePath: "root/abc", noteId: "abc", viewScope: { viewMode: "default" } });
+        froca.getNote = vi.fn(async () => fakeNote({ noteId: "abc", bestPath: "root/abc" })) as unknown as typeof froca.getNote;
+        hoverActive = true;
+
+        // The pointer stays on the link throughout — a calendar chip keeps it after the click that
+        // opens the popover — so the hover test alone cannot hold the preview back. Only the
+        // opt-out, taken on while the preview was being fetched, says it is no longer wanted.
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        $link.addClass("no-tooltip-preview");
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+
+        expect(parseNavigationStateFromUrl).toHaveBeenCalled();
+        expect($.fn.tooltip as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    });
+
     it("short-circuits when a tooltip for this link is already visible", async () => {
         const $link = makeLink('<a data-link-id="existing" href="#root/abc">x</a>');
         parseNavigationStateFromUrl.mockReturnValue({ notePath: "root/abc", noteId: "abc", viewScope: { viewMode: "default" } });

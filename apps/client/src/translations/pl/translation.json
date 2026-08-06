@@ -45,7 +45,13 @@
     },
     "widget-missing-parent": "Niestandardowy widżet nie ma zdefiniowanej obowiązkowej właściwości „{{property}}”.\n\nJeśli skrypt ma działać bez interfejsu użytkownika (UI) wyłącz go: '#run=frontendStartup'.",
     "open-script-note": "Otwórz notatkę ze skryptem",
-    "scripting-error": "Błąd skryptu użytkownika: {{title}}"
+    "scripting-error": "Błąd skryptu użytkownika: {{title}}",
+    "unhandled-error": {
+      "title": "Zadanie w tle zakończyło się błędem",
+      "details-button": "Wyświetl szczegóły...",
+      "details-intro": "Aplikacja nie została zamknięta, a wprowadzone przez Ciebie zmiany nie zostały anulowane. Jeżeli ten błąd będzie się powtarzał, możesz zgłosić go na GitHubie wklejając informacje wylistowane poniżej.",
+      "details-title": "Informacje techniczne"
+    }
   },
   "add_link": {
     "add_link": "Dodaj link",
@@ -55,7 +61,11 @@
     "link_title": "Tytuł linku",
     "button_add_link": "Dodaj link",
     "help_on_links": "Pomoc dotycząca linków",
-    "link_title_mirrors": "Tytuł linku odzwierciedla obecną nazwę notatki"
+    "link_title_mirrors": "Tytuł linku odzwierciedla obecną nazwę notatki",
+    "edit_link": "Edycja linku",
+    "anchor": "Zakotwiczenie (opcjonalne)",
+    "anchor_none": "Brak (link do notatki)",
+    "button_edit_link": "Zapisz link"
   },
   "branch_prefix": {
     "save": "Zapisz",
@@ -1622,10 +1632,6 @@
     "close": "Zamknij"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Ten załącznik zostanie automatycznie usunięty za {{time}}",
-    "will_be_deleted_soon": "Ten załącznik zostanie wkrótce automatycznie usunięty",
-    "deletion_reason": ", ponieważ załącznik nie jest podlinkowany w treści notatki. Aby zapobiec usunięciu, dodaj link do załącznika z powrotem do treści lub przekonwertuj załącznik na notatkę.",
-    "role_and_size": "Rola: {{role}}, Rozmiar: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Link do załącznika skopiowany do schowka.",
     "unrecognized_role": "Nierozpoznana rola załącznika '{{role}}'."
   },
@@ -1940,8 +1946,7 @@
   "geo-map": {
     "create-child-note-title": "Utwórz nową notatkę podrzędną i dodaj ją do mapy",
     "create-child-note-instruction": "Kliknij na mapie, aby utworzyć nową notatkę w tej lokalizacji lub naciśnij Escape, aby anulować.",
-    "unable-to-load-map": "Nie można załadować mapy.",
-    "create-child-note-text": "Dodaj zaznaczenie"
+    "unable-to-load-map": "Nie można załadować mapy."
   },
   "geo-map-context": {
     "open-location": "Otwórz lokalizację",

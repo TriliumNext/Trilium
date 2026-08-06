@@ -59,6 +59,12 @@ export function formatTimeToLocalISO(date: Date | null | undefined) {
         .substring(0, 5);
 }
 
+/** The labels the calendar draws an event by, each of which a note may rename for itself via the
+ *  matching `#calendar:` label (see {@link getCustomisableLabel}). */
+export type EventLabelName = "startDate" | "endDate" | "startTime" | "endTime" | "recurrence";
+
+export const EVENT_LABELS: EventLabelName[] = [ "startDate", "endDate", "startTime", "endTime", "recurrence" ];
+
 /**
  * Allows the user to customize the attribute from which to obtain a particular value. For example, if `customLabelNameAttribute` is `calendar:startDate`
  * and `defaultLabelName` is `startDate` and the note at hand has `#calendar:startDate=myStartDate #myStartDate=2025-02-26` then the value returned will
@@ -85,13 +91,25 @@ export function getCustomisableLabel(note: FNote, defaultLabelName: string, cust
 const MIN_DURATION_SECONDS = 60; // 1 minute
 const MAX_DURATION_SECONDS = 24 * 60 * 60; // 24 hours
 
-export function isValidDuration(str: string | null | undefined): boolean {
-    // The regex already constrains minutes/seconds to 00–59, so only the total needs bounding.
+/**
+ * How long a `HH:MM:SS` duration lasts, in seconds, or `null` for anything not written that way.
+ * Says nothing about whether the length is one a calendar will take (see {@link isValidDuration});
+ * a caller that has already asked that can read the answer here.
+ */
+export function parseDurationSeconds(str: string | null | undefined): number | null {
     const match = str?.match(/^(\d{2}):([0-5]\d):([0-5]\d)$/);
-    if (!match) return false;
+    if (!match) return null;
 
     const [, hours, minutes, seconds] = match;
-    const totalSeconds = Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
+    return Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
+}
+
+/** Whether a duration is written as `HH:MM:SS` and lasts a length a calendar will take. Answers
+ *  as a narrowing, a duration that passes being a string a caller can go on to use. */
+export function isValidDuration(str: string | null | undefined): str is string {
+    // The regex already constrains minutes/seconds to 00–59, so only the total needs bounding.
+    const totalSeconds = parseDurationSeconds(str);
+    if (totalSeconds === null) return false;
 
     return totalSeconds >= MIN_DURATION_SECONDS && totalSeconds <= MAX_DURATION_SECONDS;
 }

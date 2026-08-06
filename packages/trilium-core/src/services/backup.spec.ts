@@ -7,7 +7,7 @@ import dateUtils from "./utils/date.js";
 
 /**
  * A simple in-memory options service used to drive the abstract backup logic.
- * Mirrors the three methods the real BackupOptionsService exposes.
+ * Mirrors the methods the real BackupOptionsService exposes.
  */
 class FakeOptions implements BackupOptionsService {
     private readonly store: Record<string, string>;
@@ -18,6 +18,10 @@ class FakeOptions implements BackupOptionsService {
 
     getOption(name: OptionNames): string {
         return this.store[name] ?? "";
+    }
+
+    getOptionOrNull(name: OptionNames): string | null {
+        return this.store[name] ?? null;
     }
 
     getOptionBool(name: FilterOptionsByType<boolean>): boolean {

@@ -18,6 +18,7 @@ import { TypeWidgetProps } from "../type_widget";
 import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
 import linkEmbedService from "../../../services/link_embed";
+import { usesClassicToolbar } from "./toolbar";
 import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
 /**
@@ -35,7 +36,11 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
     const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
-    const isClassicEditor = isMobile() || textNoteEditorType === "ckeditor-classic";
+    const isClassicEditor = usesClassicToolbar({
+        floatingToolbarRequested: noteContext?.viewScope?.floatingToolbar,
+        isMobile: isMobile(),
+        textNoteEditorType
+    });
     const initialized = useRef(deferred<void>());
     const spacedUpdate = useEditorSpacedUpdate({
         note,

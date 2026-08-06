@@ -12,7 +12,7 @@ import BNote from "../../becca/entities/bnote.js";
 import noteService from "../notes.js";
 import TaskContext from "../task_context.js";
 import sql_init from "../sql_init.js";
-import { trimIndentation } from "@triliumnext/commons";
+import { isLocalPreviewImageSrc, trimIndentation } from "@triliumnext/commons";
 import { getContext } from "../context.js";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -177,6 +177,52 @@ describe("processNoteContent", () => {
         expect(content).toContain("![photo](api/attachments/");
         expect(content).toContain("/image/image.jpg)");
         expect(content).not.toContain("Markdown Note_image.jpg");
+    });
+
+    it("points the pictures of an imported mind map at the attachments as they were recreated", async () => {
+        // The map carries the address each picture was served from where it was exported, and every
+        // attachment is given a new id on the way in — so without rewriting, the pictures of an
+        // imported map would point at attachments of the instance it left.
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "mindMapNote1",
+                title: "Mind Map",
+                type: "mindMap",
+                mime: "application/json",
+                dataFileName: "Mind Map.json",
+                attachments: [{
+                    attachmentId: "mapPicture1",
+                    title: "photo.png",
+                    role: "image",
+                    mime: "image/png",
+                    position: 10,
+                    dataFileName: "Mind Map_photo.png"
+                }]
+            }]
+        };
+        const mapData = {
+            nodeData: {
+                id: "root",
+                topic: "Root",
+                image: { url: "api/attachments/mapPicture1/image/photo.png", width: 240, height: 180 }
+            }
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Mind Map.json": JSON.stringify(mapData),
+            "Mind Map_photo.png": Buffer.from("fake image data")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer);
+        const [ picture ] = importedNote.getAttachmentsByRole("image");
+        const content = importedNote.getContent() as string;
+
+        expect(picture.attachmentId).not.toBe("mapPicture1");
+        expect(content).toContain(`api/attachments/${picture.attachmentId}/image/photo.png`);
+        expect(content).not.toContain("mapPicture1");
     });
 
     it("restores an embedded mermaid diagram as a note reference, not as a raw attachment", async () => {
@@ -934,6 +980,66 @@ describe("link and image rewriting on import", () => {
         expect(content).toContain(`href="%E0%A4%A"`);
         // A link that walks past the end of the metadata still yields a note path rather than blowing up.
         expect(content).toContain(`href="#root/`);
+    });
+
+    it("rewrites a link preview's picture references back onto the imported attachments", async () => {
+        // The counterpart of the export's `data-image`/`data-favicon` rewrite. A preview keeps its two
+        // pictures in those attributes rather than in an <img src>, and the render sinks accept only an
+        // `api/attachments/…` URL (see `isLocalPreviewImageSrc`), so an archived relative filename left
+        // as it stands renders as no picture at all — with both attachments sitting right there.
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "previewHost01",
+                title: "Preview Host",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dataFileName: "Preview Host.html",
+                attributes: [],
+                attachments: [{
+                    attachmentId: "previewCover01",
+                    title: "https://example.com/page",
+                    role: "coverImage",
+                    mime: "image/jpeg",
+                    position: 10,
+                    dataFileName: "Preview Host_cover.jpg"
+                }, {
+                    attachmentId: "previewIcon001",
+                    title: "example.com",
+                    role: "favicon",
+                    mime: "image/png",
+                    position: 20,
+                    dataFileName: "Preview Host_example.com.png"
+                }]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Preview Host.html": `<section class="link-embed" data-url="https://example.com/page"`
+                + ` data-embed-type="opengraph" data-title="Example"`
+                + ` data-image="Preview Host_cover.jpg"`
+                + ` data-favicon="Preview Host_example.com.png"></section>`,
+            "Preview Host_cover.jpg": Buffer.from("jpeg-bytes"),
+            "Preview Host_example.com.png": Buffer.from("png-bytes")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-link-preview-pictures");
+        const content = importedNote.getContent().toString();
+        const idOf = (role: string) => importedNote.getAttachments().find((a) => a.role === role)?.attachmentId;
+
+        // The attachment's title, encoded — not the archive file name. The owner note's title is
+        // prefixed onto that, so with a space in it ("Preview Host_cover.jpg", and "New note_…" for
+        // anyone who never renamed the note) the reference would be right and still render nothing:
+        // the sink admits no whitespace.
+        expect(content).toContain(`data-image="api/attachments/${idOf("coverImage")}/image/https%3A%2F%2Fexample.com%2Fpage"`);
+        expect(content).toContain(`data-favicon="api/attachments/${idOf("favicon")}/image/example.com"`);
+
+        for (const [, src] of content.matchAll(/data-(?:image|favicon)="([^"]*)"/g)) {
+            expect(isLocalPreviewImageSrc(src), src).toBe(true);
+        }
     });
 
     it("remaps an includeNoteLink target inside the note's own content", async () => {

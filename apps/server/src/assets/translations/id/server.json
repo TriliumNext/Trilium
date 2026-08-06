@@ -52,5 +52,19 @@
     "toggle-link-map": "Alihkan Peta Tautan",
     "other": "Yang lain",
     "toggle-right-pane": "Alihkan tampilan panel kanan, yang mencakup Daftar Isi dan Sorotan"
+  },
+  "login": {
+    "password": "Kata sandi",
+    "remember-me": "Ingat saya",
+    "incorrect-password": "Kata sandi salah. Silakan coba lagi.",
+    "sso-wrong-account": "Akun tersebut bukan akun yang ditautkan ke instans Trilium ini. Masuklah menggunakan akun yang ditautkan.",
+    "sso-not-enrolled": "Single sign-on belum dikonfigurasi. Masuk terlebih dahulu menggunakan kata sandi Anda, lalu tautkan akun Anda melalui pengaturan."
+  },
+  "set_password": {
+    "heading": "Tetapkan kata sandi",
+    "description": "Sebelum Anda dapat mulai menggunakan Trilium melalui web, Anda harus menetapkan kata sandi terlebih dahulu. Kata sandi ini nantinya akan digunakan untuk masuk.",
+    "password": "Kata sandi",
+    "password-confirmation": "Konfirmasi kata sandi",
+    "button": "Tetapkan kata sandi"
   }
 }

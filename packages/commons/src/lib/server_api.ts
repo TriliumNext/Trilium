@@ -173,6 +173,18 @@ export interface DatabaseBackup {
     mtime: Date;
     /** Size of the backup file, in bytes. */
     fileSize: number;
+    /**
+     * Whether the backup is gzip-compressed. Absent for a plain database copy, and for a container
+     * whose header could not be read.
+     */
+    compressed?: boolean;
+    /** Whether the backup is encrypted. Absent under the same conditions as {@link compressed}. */
+    encrypted?: boolean;
+    /**
+     * Size of the wrapped database before compression, in bytes, as recorded by the writer. Absent
+     * for a plain copy, where the file size already says it.
+     */
+    plaintextSize?: number;
 }
 
 export interface ExistingBackupsResponse {
@@ -281,6 +293,259 @@ export interface NoteSizeResponse {
 export interface SubtreeSizeResponse {
     subTreeNoteCount: number;
     subTreeSize: number;
+}
+
+/**
+ * How far an on-demand image compression run should go. Every field is optional, and what is left
+ * out falls back to the corresponding option — so an empty request compresses exactly the way the
+ * automatic import-time shrinking would, only without needing that shrinking to be enabled.
+ *
+ * Unlike the `compressImages` option, this is always a deliberate act by the user on one note or
+ * one image, so it runs whether or not automatic compression is switched on.
+ */
+/** The three things that can become of a lossless image; see {@link ImageCompressionOptions}. */
+export const IMAGE_PNG_HANDLINGS = [ "keep", "optimize", "jpeg" ] as const;
+
+export type ImagePngHandling = (typeof IMAGE_PNG_HANDLINGS)[number];
+
+/** The two things that can become of an already-lossy image; see {@link ImageCompressionOptions}. */
+export const IMAGE_JPEG_HANDLINGS = [ "keep", "compress" ] as const;
+
+export type ImageJpegHandling = (typeof IMAGE_JPEG_HANDLINGS)[number];
+
+/**
+ * The formats a compression run can act on at all. Named once and read by both the encoder that
+ * enforces it and the inventory that reports against it, so the two cannot come to disagree about
+ * which images are worth offering to compress.
+ */
+export const IMAGE_COMPRESSIBLE_FORMATS = [ "jpg", "png" ] as const;
+
+export type ImageCompressibleFormat = (typeof IMAGE_COMPRESSIBLE_FORMATS)[number];
+
+/**
+ * What one image is, read from its own bytes.
+ *
+ * Every measurement is nullable and null means one thing throughout: the format does not state it,
+ * or the file is too damaged to. Nothing here is a default standing in for something unread.
+ */
+export interface ImageInfoResponse {
+    entityType: "note" | "attachment";
+    entityId: string;
+    title: string;
+    /** The mime it is stored under, which is not always what the bytes turn out to say. */
+    mime: string;
+    /** What the bytes say it is: "jpg", "png", "gif", "webp", "bmp", "svg", "unknown". */
+    format: string;
+    /** The mime that format implies, for comparing against {@link mime}. */
+    detectedMime: string;
+    /** Bytes on disk. */
+    size: number;
+    width: number | null;
+    height: number | null;
+    /** Bits per channel — 8 for almost everything, 16 for a deep PNG. */
+    bitDepth: number | null;
+    /** Channels per pixel: 1 greyscale or indexed, 3 colour, 4 colour with alpha or CMYK. */
+    channels: number | null;
+    /** Whether the format stores an alpha channel; not whether any pixel actually uses it. */
+    hasAlpha: boolean | null;
+    /** Stored as a palette rather than colour per pixel — already quantized, in other words. */
+    indexed: boolean | null;
+    /** For a JPEG, the quality it appears to have been written at; null for anything else. */
+    quality: number | null;
+    /** Whether a compression run could act on it at all. */
+    compressible: boolean;
+}
+
+/** A count of images and what they weigh between them. */
+export interface ImageInventoryTally {
+    count: number;
+    /** Bytes, summed over the images counted. */
+    size: number;
+}
+
+export interface ImageInventoryFormat extends ImageInventoryTally {
+    /** Read from the content rather than the mime: "jpg", "png", "gif", "webp", "bmp", "svg". */
+    format: string;
+}
+
+/**
+ * What images a note holds, and what compressing them could reach.
+ *
+ * Measured over exactly the images a compression run with the same `recursive` setting would visit,
+ * so the two never describe different sets — see `getNoteImageInventory`.
+ */
+export interface ImageInventoryResponse {
+    /** The note the reading was taken on, so a caller need not look it up to name it. */
+    title: string;
+    /** How many notes it covered: the note alone, or it and its descendants when descending. */
+    noteCount: number;
+    /** Every image found, whatever its format. */
+    total: ImageInventoryTally;
+    /**
+     * Those a run could actually act on: a supported format, and not one of the generated pictures
+     * a canvas or spreadsheet note keeps, which are rebuilt on save and so left alone.
+     */
+    compressible: ImageInventoryTally;
+    /** Compressible images whose longest edge exceeds {@link maxWidthHeight}. */
+    oversized: ImageInventoryTally;
+    /** Every format found, heaviest first. */
+    formats: ImageInventoryFormat[];
+    /**
+     * The formats among which at least one image could actually be compressed, in the same order.
+     *
+     * Narrower than filtering {@link formats} by what the encoder supports: a note whose only PNG is
+     * the picture it regenerates on save holds a PNG that nothing will act on, and offering to
+     * configure one would be offering a setting with nothing to apply it to.
+     */
+    compressibleFormats: ImageCompressibleFormat[];
+    /** What {@link oversized} was measured against. */
+    maxWidthHeight: number;
+    /** Images whose content could not be read — protected, with no session open. Counted nowhere else. */
+    unreadable: number;
+}
+
+export interface ImageCompressionOptions {
+    /**
+     * Whether an image larger than {@link maxWidthHeight} is scaled down to fit. On its own this
+     * reaches only oversized images; one already within the bound is left exactly as it is.
+     *
+     * Defaults to on, as does {@link reencode}: the endpoint is only ever invoked deliberately, and
+     * a request that asked for compression and got a no-op would be the surprising answer.
+     */
+    resize?: boolean;
+    /** Longest edge in pixels. Omitted, it falls back to the `imageMaxWidthHeight` option. */
+    maxWidthHeight?: number;
+    /**
+     * What is done with an image that is *already* lossy — a JPEG:
+     *
+     * - `keep` leaves its encoding alone. Scaling still has to write a JPEG back, but at a quality
+     *   high enough not to be a further deliberate degradation.
+     * - `compress` recompresses it at {@link quality}, whatever its size. It costs quality every
+     *   time it runs, on an image that has already paid that cost once.
+     *
+     * Says nothing about lossless sources, which is {@link pngHandling}'s to answer: squeezing the
+     * JPEGs harder is no reason to stop a PNG being a PNG. Defaults to `compress`.
+     */
+    jpegHandling?: ImageJpegHandling;
+    /**
+     * What is done with a lossless image — a PNG. Only ever one of the three, since a PNG either
+     * survives as it is, survives smaller, or stops being a PNG:
+     *
+     * - `keep` leaves it entirely alone; scaling is then the only thing that can reach it.
+     * - `optimize` reduces it to a palette and writes it back as a PNG. Lossy, but gently so — the
+     *   saving comes from storing an index per pixel rather than 24-bit colour — and it keeps the
+     *   alpha channel, so it reaches transparent images too.
+     * - `jpeg` re-encodes it as a JPEG at {@link conversionQuality}, which usually saves the most
+     *   but costs the format. A transparent image cannot be converted, JPEG having no alpha channel
+     *   to keep it in, so it is optimized instead: the best that can be done for it.
+     *
+     * Defaults to `optimize`, the choice that shrinks an image without changing what it is.
+     */
+    pngHandling?: ImagePngHandling;
+    /**
+     * JPEG quality, 10 to 100, used when recompressing an image that is *already* lossy — so only
+     * where {@link jpegHandling} is `compress`. A JPEG merely being scaled is written back at a
+     * near-lossless quality of the implementation's own instead, `keep` meaning what it says.
+     *
+     * Omitted, it falls back to the `imageJpegQuality` option (75 by default).
+     */
+    quality?: number;
+    /**
+     * JPEG quality, 10 to 100, used when converting a lossless image — {@link pngHandling} of
+     * `jpeg` — rather than when recompressing one that was lossy already.
+     *
+     * Its own setting because the two are not the same trade. Converting is a one-time transition
+     * away from a pristine original, where every byte of quality given up is detail that genuinely
+     * was there; recompressing works on an image that has already been through an encoder once, so
+     * spending quality on it largely buys back nothing. Defaults higher than {@link quality}
+     * accordingly.
+     */
+    conversionQuality?: number;
+    /**
+     * Whether the run visits the note's whole subtree rather than the note alone. Off by default,
+     * and opt-in for a reason: a descendant may be a clone, so compressing it degrades an image
+     * that other notes show too.
+     *
+     * Each note is visited once however many placements it has. Archived notes are included, the
+     * hidden subtree is not, and a search note's results are left to whatever holds them — the run
+     * follows the tree, not what a query happens to match.
+     *
+     * Only the note endpoint reads this; an attachment has no subtree to descend into.
+     */
+    recursive?: boolean;
+    /**
+     * Names a task to report progress against, so a caller watching a long run can be told how far
+     * it has got. Left out, the run reports only when it finishes.
+     */
+    taskId?: string;
+}
+
+/**
+ * Why a particular image was left exactly as it was. Every image the run visited is reported, so
+ * "nothing happened" always comes with the reason it didn't.
+ */
+export type ImageCompressionSkipReason =
+    /** Not a format that can be recompressed — SVG, an unrecognised buffer, GIF, WebP, BMP … */
+    | "unsupported-format"
+    /** Animated (APNG, animated GIF/WebP): recompressing would flatten it to a single frame. */
+    | "animated"
+    /** The rendered picture of a canvas/mermaid/mind map/spreadsheet note, regenerated on save. */
+    | "generated"
+    /** Protected, with no protected session open to decrypt it. */
+    | "protected"
+    /**
+     * Nothing was asked of this image that would change it — an image within the bound with
+     * re-encoding off, or both switched off — or compressing it produced nothing smaller.
+     */
+    | "no-gain"
+    /** This build has no image compression at all (the standalone/WASM runtime). */
+    | "unsupported-platform"
+    /**
+     * Too many pixels to decode within the memory a single image is allowed. Read off the header,
+     * so the image is refused before the attempt rather than after it has failed part-way.
+     */
+    | "too-large"
+    /**
+     * The image was replaced while it was being re-encoded — by another request, or by a
+     * synchronisation update — so the result was derived from content that no longer exists. Writing
+     * it would have put the superseded picture back; the newer one is kept instead.
+     */
+    | "changed"
+    /**
+     * The run was called off before reaching this image. Nothing was read and nothing weighed, so
+     * it reports no size — it is here to be counted, so that a run stopped half way says so rather
+     * than reporting the part it did as the whole.
+     */
+    | "cancelled"
+    /** Compression failed; the original was kept and the failure logged. */
+    | "error";
+
+/** One image visited by a compression run, whether or not it ended up compressed. */
+export interface ImageCompressionItem {
+    entityType: "note" | "attachment";
+    /** The `noteId` of an image note, or the `attachmentId` of an image attachment. */
+    entityId: string;
+    title: string;
+    /** The mime after the run: the new one when compressed, the untouched one otherwise. */
+    mime: string;
+    originalSize: number;
+    /** Equal to {@link originalSize} whenever the image was left alone. */
+    newSize: number;
+    compressed: boolean;
+    /** Present exactly when {@link compressed} is false. */
+    skipReason?: ImageCompressionSkipReason;
+}
+
+export interface ImageCompressionResponse {
+    /** Every image the run visited, skipped ones included, in the order they were visited. */
+    items: ImageCompressionItem[];
+    compressedCount: number;
+    skippedCount: number;
+    /** Summed over {@link items}, so skipped images weigh the same on both sides. */
+    originalSize: number;
+    newSize: number;
+    /** `originalSize - newSize`; never negative, an image is only replaced when it got smaller. */
+    savedSize: number;
 }
 
 /**

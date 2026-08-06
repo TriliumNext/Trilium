@@ -1483,7 +1483,8 @@ body.experimental-feature-new-layout #center-pane .note-split > div.alert {
 
 /* The promoted attributes section */
 div.promoted-attributes-container {
-    display: flex;
+    /* The cards are sized by the container query below instead of wrapping. */
+    flex-wrap: nowrap;
     margin-inline-end: 10%;
     padding: 6px 0;
     gap: 8px;
