@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@types/yauzl": "3.4.0",
-    "pdfjs-dist": "6.1.200",
+    "pdfjs-dist": "6.2.108",
     "yauzl": "3.4.0"
   }
 }
