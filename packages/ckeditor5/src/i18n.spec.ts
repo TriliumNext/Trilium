@@ -213,6 +213,7 @@ describe("getCkLocale", () => {
         [ "pt", "pt" ],
         [ "pt_br", "pt-br" ],
         [ "ro", "ro" ],
+        [ "tr", "tr" ],
         [ "tw", "zh-tw" ],
         [ "uk", "uk" ],
         [ "ru", "ru" ]
