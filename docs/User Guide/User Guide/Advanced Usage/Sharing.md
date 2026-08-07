@@ -190,7 +190,7 @@ Shared notes typically have URLs like `http://domain.tld/share/knvU8aJy4dJ7`, wh
 **Important**:
 
 1.  Ensure that aliases are unique.
-2.  Using slashes (`/`) within aliases to create subpaths is not supported.
+2.  You can use slashes (`/`) within aliases to create subpaths (e.g. `#shareAlias=a/b/c` changes the URL to `/share/a/b/c`).
 
 > [!TIP]
 > *   To easily identify pages that don't have a share alias, run a <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> with `#!shareAlias`.

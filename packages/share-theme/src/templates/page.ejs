@@ -100,7 +100,7 @@
 const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
 const logoHeight = subRoot.note.getLabelValue("shareLogoHeight") ?? 40;
 const mobileLogoHeight = logoHeight && logoWidth ? 32 / (logoWidth / logoHeight) : "";
-const shareRootLink = subRoot.note.hasLabel("shareRootLink") ? sanitizeUrl(subRoot.note.getLabelValue("shareRootLink") ?? "") : `./${subRoot.note.noteId}`;
+const shareRootLink = subRoot.note.hasLabel("shareRootLink") ? sanitizeUrl(subRoot.note.getLabelValue("shareRootLink") ?? "") : `${relativeBasePath}${subRoot.note.noteId}`;
 const headingRe = /(<h[1-6]>)(.+?)(<\/h[1-6]>)/g;
 const headingMatches = [...content.matchAll(headingRe)];
 // Unique slug per heading (in document order) so duplicate titles get distinct
@@ -153,7 +153,7 @@ content = content.replaceAll(headingRe, (...match) => {
             </div>
         <% if (hasTree) { %>
             <nav id="menu">
-                <%- include("tree_item", {note: subRoot.note, activeNote: note, subRoot: subRoot, ancestors}) %>
+                <%- include("tree_item", {note: subRoot.note, activeNote: note, subRoot: subRoot, relativeBasePath: relativeBasePath, ancestors}) %>
             </nav>
         <% } %>   
         </div>
@@ -185,7 +185,7 @@ content = content.replaceAll(headingRe, (...match) => {
                         const action = note.type === "book" ? "getChildNotes" : "getVisibleChildNotes";
                         for (const childNote of note[action]()) {
                             const isExternalLink = childNote.hasLabel("shareExternal") || childNote.hasLabel("shareExternalLink");
-                            const rawHref = isExternalLink ? childNote.getLabelValue("shareExternal") ?? childNote.getLabelValue("shareExternalLink") : `./${childNote.shareId}`;
+                            const rawHref = isExternalLink ? childNote.getLabelValue("shareExternal") ?? childNote.getLabelValue("shareExternalLink") : `${relativeBasePath}${childNote.shareId}`;
                             const linkHref = isExternalLink ? sanitizeUrl(rawHref ?? "") : rawHref;
                             const target = isExternalLink ? ` target="_blank" rel="noopener noreferrer"` : "";
                         %>
@@ -206,12 +206,12 @@ content = content.replaceAll(headingRe, (...match) => {
                 <% } %>
 
                 <% if (hasTree) { %>
-                    <%- include("prev_next", { note: note, subRoot: subRoot }) %>
+                    <%- include("prev_next", { note: note, subRoot: subRoot, relativeBasePath: relativeBasePath }) %>
                 <% } %>
 
                 <% if (showLoginInShareTheme && !isStatic) { %>
                     <div class="login">
-                        <a href="../login" class="login-link"><%= t("share_theme.login") %></a>
+                        <a href="${relativeBasePath}../login" class="login-link"><%= t("share_theme.login") %></a>
                     </div>
                 <% } %>
             </footer>

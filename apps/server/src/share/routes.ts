@@ -259,10 +259,10 @@ function register(router: Router) {
         renderNote(shaca.shareRootNote, req, res);
     });
 
-    router.get("/share/:shareId", (req, res) => {
+    router.get("/share/*shareId", (req, res) => {
         shacaLoader.ensureLoad();
 
-        const { shareId } = req.params;
+        const shareId = req.params.shareId.join('/');
 
         const note = shaca.aliasToNote[shareId] || shaca.notes[shareId];
 

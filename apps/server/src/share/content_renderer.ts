@@ -98,6 +98,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
     return renderNoteContentInternal(note, {
         subRoot,
         rootNoteId: parentBranch.noteId,
+        relativeBasePath: './',
         cssToLoad: [
             `${basePath}assets/styles.css`,
             `${basePath}assets/scripts.css`,
@@ -120,6 +121,12 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
 export function renderNoteContent(note: SNote) {
     const subRoot = getSharedSubTreeRoot(note);
 
+    // Get the relative URL to the share root. This is required for links to
+    // other notes, assets, etc.
+    const shareAlias = note.getLabelValue("shareAlias") ?? note.noteId;
+    const shareAliasSlashCount = (shareAlias.match(/\//g)||[]).length
+    const relativeBasePath = shareAliasSlashCount > 0 ? "../".repeat(shareAliasSlashCount) : "./";
+
     const ancestors: string[] = [];
     let notePointer = note;
     while (notePointer.parents[0]?.noteId !== subRoot.note?.noteId) {
@@ -134,38 +141,39 @@ export function renderNoteContent(note: SNote) {
     // Determine CSS to load.
     const cssToLoad: string[] = [];
     if (!note.isLabelTruthy("shareOmitDefaultCss")) {
-        cssToLoad.push(`assets/styles.css`);
-        cssToLoad.push(`assets/scripts.css`);
+        cssToLoad.push(`${relativeBasePath}assets/styles.css`);
+        cssToLoad.push(`${relativeBasePath}assets/scripts.css`);
     }
     for (const cssRelation of note.getRelations("shareCss")) {
-        cssToLoad.push(`api/notes/${cssRelation.value}/download`);
+        cssToLoad.push(`${relativeBasePath}api/notes/${cssRelation.value}/download`);
     }
 
     // Determine JS to load.
     const jsToLoad: string[] = [
-        "assets/scripts.js"
+        `${relativeBasePath}assets/scripts.js`
     ];
     for (const jsRelation of note.getRelations("shareJs")) {
-        jsToLoad.push(`api/notes/${jsRelation.value}/download`);
+        jsToLoad.push(`${relativeBasePath}api/notes/${jsRelation.value}/download`);
     }
 
     const customLogoId = note.getRelation("shareLogo")?.value;
-    const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
+    const logoUrl = customLogoId ? `${relativeBasePath}api/images/${customLogoId}/image.png` : `${relativeBasePath}../${assetUrlFragment}/images/icon-color.svg`;
     const iconPacks = iconPackService.getIconPacks().filter(p => p.builtin || !!shaca.notes[p.manifestNoteId]);
 
     return renderNoteContentInternal(note, {
         subRoot,
         rootNoteId: "_share",
+        relativeBasePath,
         cssToLoad,
         jsToLoad,
         logoUrl,
         ancestors,
         isStatic: false,
-        faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
+        faviconUrl: note.hasRelation("shareFavicon") ? `${relativeBasePath}api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
         iconPackCss: [
             ...iconPacks.map(p => iconPackService.generateCss(p, p.builtin
-                ? `assets/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-                : `api/attachments/${p.fontAttachmentId}/download`
+                ? `${relativeBasePath}assets/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+                : `${relativeBasePath}api/attachments/${p.fontAttachmentId}/download`
             )),
             task_states.generateTaskStateCss()
         ]
@@ -178,6 +186,7 @@ export function renderNoteContent(note: SNote) {
 interface RenderArgs {
     subRoot: Subroot;
     rootNoteId: string;
+    relativeBasePath: string;
     cssToLoad: string[];
     jsToLoad: string[];
     logoUrl: string;
