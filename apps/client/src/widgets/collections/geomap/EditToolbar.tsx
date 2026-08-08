@@ -15,6 +15,10 @@ interface EditToolbarProps {
     /** Arms the map for a note to be placed, or stands it down again — the visible counterpart of
      *  the Escape the instruction toast offers (see index.tsx). */
     onTogglePlacement: () => void;
+    /** The map is armed for clicks to draw a line, worn held-down the way `placing` is. */
+    drawing: boolean;
+    /** Arms the map for a line to be drawn, or stands it down again (see index.tsx). */
+    onToggleDrawing: () => void;
     /** Asks for a GPX file and brings it onto the map (see `addGpxTrack` in index.tsx). */
     onAddGpxTrack: () => void;
 }
@@ -36,15 +40,20 @@ interface EditToolbarProps {
  * is what goes fullscreen (see MapToolbar): the collection bar stays behind, and while the button
  * lived there, a fullscreen map could only be added to through its right-click menu.
  */
-export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, onAddGpxTrack }: EditToolbarProps) {
+export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, drawing, onToggleDrawing, onAddGpxTrack }: EditToolbarProps) {
     const map = useContext(ParentMap);
     const addMarkerRef = useRef<HTMLButtonElement>(null);
+    const drawLineRef = useRef<HTMLButtonElement>(null);
     const gpxRef = useRef<HTMLButtonElement>(null);
 
     // Standing at the foot of the map, the tooltips open away from that edge, where they would
     // otherwise fall off.
     useStaticTooltip(addMarkerRef, {
         title: placing ? t("geo-map.create-child-note-cancel") : t("geo-map.create-child-note-title"),
+        placement: "top"
+    });
+    useStaticTooltip(drawLineRef, {
+        title: drawing ? t("geo-map.draw-line-cancel") : t("geo-map.draw-line"),
         placement: "top"
     });
     useStaticTooltip(gpxRef, { title: t("geo-map.add-gpx-track"), placement: "top" });
@@ -71,9 +80,17 @@ export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, on
                     the pointer once armed. A child rather than a class on the button: the boxicons
                     class sets the icon font on whatever wears it, and the words beside it are to
                     stay words. */}
-                <span className="bx bx-pin" aria-hidden="true"></span>
+                <span className="bx bx-pin" aria-hidden="true" />
                 {placing ? t("geo-map.add-marker-cancel") : t("geo-map.add-marker")}
             </button>
+            <button
+                ref={drawLineRef}
+                type="button"
+                className={`tn-overlay-icon-button bx bx-vector ${drawing ? "active" : ""}`}
+                aria-label={drawing ? t("geo-map.draw-line-cancel") : t("geo-map.draw-line")}
+                disabled={isReadOnly}
+                onClick={onToggleDrawing}
+            />
             <button
                 ref={gpxRef}
                 type="button"

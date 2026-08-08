@@ -287,6 +287,9 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "endTime", valueType: "time", hasUserValue: true },
     { type: "label", name: "recurrence", valueType: "text", hasUserValue: true },
     { type: "label", name: "geolocation", valueType: "text", hasUserValue: true },
+    // A shape drawn onto a geo map, held as `kind:` and then a `lat,lng` per vertex — the
+    // geolocation format walked along a path (see the client's geomap/shapes.ts).
+    { type: "label", name: "geoShape", valueType: "text", hasUserValue: true },
     // Which note map a note map note draws; anything but `tree` is read as `link`.
     { type: "label", name: "mapType", valueType: "select", hasUserValue: true, selectOptions: [
         "link", "tree"

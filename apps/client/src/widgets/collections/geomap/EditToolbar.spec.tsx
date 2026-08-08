@@ -1,7 +1,7 @@
 /**
- * The bar of editing actions over a geo map (see EditToolbar.tsx). What is checked is the one
- * button it holds so far: that a press arms the map and a press on an armed one stands it down,
- * that the mode is worn as held down, and that a map that may not be edited refuses it.
+ * The bar of editing actions over a geo map (see EditToolbar.tsx). What is checked of each button
+ * is that a press arms the map and a press on an armed one stands it down, that an armed mode is
+ * worn as held down, and that a map that may not be edited refuses them all.
  */
 import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
@@ -11,14 +11,15 @@ import EditToolbar from "./EditToolbar";
 import { ParentMap } from "./map";
 
 /** Builds the bar over a map, which it asks nothing more of than being there at all. */
-function renderBar({ map = {} as never, isReadOnly = false, placing = false } = {}) {
+function renderBar({ map = {} as never, isReadOnly = false, placing = false, drawing = false } = {}) {
     const onTogglePlacement = vi.fn();
+    const onToggleDrawing = vi.fn();
     const onAddGpxTrack = vi.fn();
     let container: HTMLElement | undefined;
     act(() => {
         container = renderInto(
             <ParentMap.Provider value={map}>
-                <EditToolbar isReadOnly={isReadOnly} placing={placing} onTogglePlacement={onTogglePlacement} onAddGpxTrack={onAddGpxTrack} />
+                <EditToolbar isReadOnly={isReadOnly} placing={placing} onTogglePlacement={onTogglePlacement} drawing={drawing} onToggleDrawing={onToggleDrawing} onAddGpxTrack={onAddGpxTrack} />
             </ParentMap.Provider>
         );
     });
@@ -27,11 +28,13 @@ function renderBar({ map = {} as never, isReadOnly = false, placing = false } = 
     const all = () => [ ...container?.querySelectorAll<HTMLButtonElement>(".geo-edit-toolbar button") ?? [] ];
     return {
         onTogglePlacement,
+        onToggleDrawing,
         onAddGpxTrack,
         buttons: all,
         /** The first button, which is the +. */
         button: () => all()[0] ?? null,
-        gpxButton: () => all()[1] ?? null
+        drawButton: () => all()[1] ?? null,
+        gpxButton: () => all()[2] ?? null
     };
 }
 
@@ -55,6 +58,19 @@ describe("geo map EditToolbar", () => {
 
         act(() => button()?.click());
         expect(onTogglePlacement).toHaveBeenCalledTimes(1);
+    });
+
+    it("offers to draw a line, wears an armed session as held down, and hands both to the map view", () => {
+        const { drawButton, onToggleDrawing } = renderBar();
+
+        expect(drawButton()?.className).toContain("bx-vector");
+        expect(drawButton()?.classList.contains("active")).toBe(false);
+
+        act(() => drawButton()?.click());
+        expect(onToggleDrawing).toHaveBeenCalledTimes(1);
+
+        const armed = renderBar({ drawing: true });
+        expect(armed.drawButton()?.classList.contains("active")).toBe(true);
     });
 
     it("offers to bring in a GPX track, and hands the asking to the map view", () => {

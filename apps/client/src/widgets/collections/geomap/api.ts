@@ -7,9 +7,13 @@ import { deleteNoteOrBranch } from "../../../services/note_deletion";
 import { GPX_MIME } from "./GpxTrack";
 import type { GeoMouseEvent } from "./map";
 import { LOCATION_ATTRIBUTE } from "./Markers";
+import { serializeLine, SHAPE_ATTRIBUTE } from "./shapes";
 
 /** The icon a note created on the map is given, and so what the ghost pin previews for one. */
 export const CHILD_NOTE_ICON = "bx bx-pin";
+
+/** The icon a note drawn as a line is given — the shape of the tool that made it. */
+export const LINE_NOTE_ICON = "bx bx-vector";
 
 export async function moveMarker(noteId: string, latLng: { lat: number; lng: number } | null) {
     const value = latLng ? [latLng.lat, latLng.lng].join(",") : "";
@@ -103,6 +107,30 @@ export async function createNewNote(parentNote: FNote, e: GeoMouseEvent) {
         attributes: [
             { type: "label", name: LOCATION_ATTRIBUTE, value: [e.latlng.lat, e.latlng.lng].join(",") },
             { type: "label", name: "iconClass", value: CHILD_NOTE_ICON }
+        ]
+    });
+
+    return note;
+}
+
+/**
+ * Makes a note of a line drawn on the map, and hands it back for the pane to open on.
+ *
+ * A marker note in every way but the label: an ordinary text note, stock-named for the pane to
+ * offer the title for typing over, whose place on the map is written in an attribute — the whole
+ * line in `#geoShape` where a marker keeps its point in `#geolocation` (see shapes.ts). The note
+ * is the shape the way a marker note is its pin; the content stays the user's to write.
+ */
+export async function createLineNote(parentNote: FNote, coordinates: [number, number][]) {
+    const { note } = await note_create.createNote(parentNote.noteId, {
+        title: t("relation_map.default_new_note_title"),
+        content: "",
+        type: "text",
+        activate: false,
+        isProtected: parentNote.isProtected,
+        attributes: [
+            { type: "label", name: SHAPE_ATTRIBUTE, value: serializeLine(coordinates) },
+            { type: "label", name: "iconClass", value: LINE_NOTE_ICON }
         ]
     });
 
