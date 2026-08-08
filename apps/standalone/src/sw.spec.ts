@@ -282,8 +282,9 @@ describe("forwardToClientLocalServer", () => {
         (self as unknown as SwGlobals).clients = { claim: vi.fn(), matchAll: vi.fn(async () => [client]) };
         const event = await dispatchLocal(handlers, "GET");
         const rejection = expect(event._response).rejects.toThrow("Local server timeout");
-        // Flushes the pending matchAll microtask, then fires the 30s timeout.
-        await vi.advanceTimersByTimeAsync(30_000);
+        // Flushes the pending matchAll microtask, then fires the timeout, which sits just under
+        // the ~5 minutes the browser gives a fetch event.
+        await vi.advanceTimersByTimeAsync(270_000);
         await rejection;
         vi.useRealTimers();
     });

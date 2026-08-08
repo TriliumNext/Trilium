@@ -9,11 +9,13 @@ import {
 } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import { isBackupDownloadSupported } from "../../../services/backup_download";
 import { describeDatabaseFormat } from "../../../services/database_files";
 import dialogService from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import options from "../../../services/options";
 import server from "../../../services/server";
+import { bootToSetup, canBootToSetup } from "../../../services/setup_mode";
 import toast from "../../../services/toast";
 import { isElectron } from "../../../services/utils";
 import Button from "../../react/Button";
@@ -25,10 +27,18 @@ import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import Modal from "../../react/Modal";
+import SetupForm from "../helpers/SetupForm";
 import DatabaseFileList from "./components/DatabaseFileList";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 
 export default function BackupSettings() {
+    // Standalone keeps no backups anywhere: its one backup is a manual download, streamed straight
+    // off the live database, so the page reduces to that action and the way back in.
+    return isBackupDownloadSupported() ? <StandaloneBackupSettings /> : <StoredBackupSettings />;
+}
+
+/** The page everywhere backups are kept as files: the server, the desktop. */
+function StoredBackupSettings() {
     const [backups, setBackups] = useState<DatabaseBackup[]>([]);
     const [backupFolderPath, setBackupFolderPath] = useState<string | null>(null);
 
@@ -56,6 +66,87 @@ export default function BackupSettings() {
     );
 }
 
+/**
+ * The whole backup page on the standalone platform: the summary says how backups work there, the
+ * same "Backup now" button as everywhere else hands one to the browser as a download, and restore
+ * boots to the setup screen the way it does on the other platforms. There is no list, location,
+ * schedule or format to configure, because nothing is ever stored.
+ */
+function StandaloneBackupSettings() {
+    return (
+        <>
+            <OptionsPageHeader />
+            <StandaloneBackupSection />
+        </>
+    );
+}
+
+/**
+ * The whole of what the standalone platform offers: back up, and restore.
+ *
+ * A page rather than a row of buttons, because there is nothing else on it: no list of backups, no
+ * location and no schedule, since nothing is ever stored. Both actions leave for the setup screen,
+ * which is where the database can be held still long enough to be copied or replaced.
+ */
+export function StandaloneBackupSection() {
+    return (
+        <div className="options-section standalone-backup">
+            <SetupForm icon="bx bx-data">
+                <h3>{t("backup.standalone_heading")}</h3>
+                <p>{t("backup.standalone_description")}</p>
+
+                {canBootToSetup() && (
+                    <div className="standalone-backup-actions">
+                        <Button
+                            name="backup-database-now-button"
+                            text={t("backup.create_and_download")}
+                            kind="primary"
+                            onClick={() => void backUpInSetup()}
+                        />
+
+                        <Button
+                            name="restore-backup-button"
+                            text={t("backup.upload_and_restore")}
+                            onClick={() => void restoreInSetup()}
+                        />
+                    </div>
+                )}
+            </SetupForm>
+        </div>
+    );
+}
+
+/**
+ * Restarts into the setup screen, where the backup is actually taken.
+ *
+ * A backup is streamed off the live database over minutes, and a page of it read after a write
+ * would not match the pages read before: the copy has to come from a database nothing is touching.
+ * Only setup mode gives that — the database is open, but becca, sync and migrations are all held
+ * back — so the backup is taken there and the instance comes straight back here.
+ */
+async function backUpInSetup() {
+    if (!await dialogService.confirm(t("backup.restart_for_backup"))) {
+        return;
+    }
+
+    await bootToSetup({ targetScreen: "backup-database" });
+}
+
+/**
+ * Restarts into the setup screen, which is where a backup can replace the database.
+ *
+ * Asked about on every platform that can restart itself, because the restart is the surprising part
+ * and because what follows it reads as destructive until the user knows they will be offered a copy
+ * of what is about to be replaced.
+ */
+async function restoreInSetup() {
+    if (!await dialogService.confirm(t("backup.restart_for_restore"))) {
+        return;
+    }
+
+    await bootToSetup({ targetScreen: "restore-backup" });
+}
+
 interface BackupStatusProps {
     backups: DatabaseBackup[];
     refreshCallback: () => void;
@@ -66,12 +157,23 @@ interface BackupStatusProps {
  * of the page's own header rather than of the list below it: the list card answers for what it
  * holds, which is not the same as what the page is for.
  */
-function BackupStatus({ backups, refreshCallback }: BackupStatusProps) {
+export function BackupStatus({ backups, refreshCallback }: BackupStatusProps) {
     const [backupInProgress, setBackupInProgress] = useState(false);
 
     return (
         <div className="backup-status">
             <span className="backup-status-summary">{summarizeBackups(backups)}</span>
+
+            {/* Offered only where the app can start itself again, which is what a restore needs:
+                it happens in the setup screen, with this database closed. */}
+            {canBootToSetup() && (
+                <Button
+                    name="restore-backup-button"
+                    text={t("backup.restore_backup")}
+                    size="micro"
+                    onClick={() => void restoreInSetup()}
+                />
+            )}
 
             <Button
                 name="backup-database-now-button"

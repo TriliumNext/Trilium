@@ -4,7 +4,7 @@ import type { DatabaseBackup, ExistingBackupsResponse } from "@triliumnext/commo
 import type { ComponentChildren } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { uploadInChunks } from "./services/chunked_upload";
+import { ChunkedUploadError, uploadInChunks } from "./services/chunked_upload";
 import { describeDatabaseFile, describeDatabaseFormat } from "./services/database_files";
 import { t } from "./services/i18n";
 import server from "./services/server";
@@ -146,7 +146,7 @@ export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () =
         uploadCancellation.current = cancellation;
 
         setStep("uploading");
-        setUpload({ sentBytes: 0, totalBytes: file.size, fraction: 0, bytesPerSecond: 0 });
+        setUpload({ sentBytes: 0, totalBytes: file.size, fraction: 0, bytesPerSecond: 0, reconnecting: false });
 
         try {
             const uploaded = await uploadInChunks<{ fileName: string; encrypted: boolean }>({
@@ -154,8 +154,8 @@ export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () =
                 blob: file,
                 fileName: file.name,
                 signal: cancellation.signal,
-                onProgress: ({ sentBytes, totalBytes, fraction, bytesPerSecond }) =>
-                    setUpload({ sentBytes, totalBytes, fraction, bytesPerSecond })
+                onProgress: ({ sentBytes, totalBytes, fraction, bytesPerSecond, reconnecting }) =>
+                    setUpload({ sentBytes, totalBytes, fraction, bytesPerSecond, reconnecting })
             });
 
             await restore({ source: "pending", fileName: uploaded.fileName, encrypted: uploaded.encrypted });
@@ -165,7 +165,7 @@ export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () =
             // An upload the user walked away from ends in a failure they chose, and being told
             // about it would read as something having gone wrong.
             if (!cancellation.signal.aborted) {
-                raiseError(t("setup.restore-error-upload-failed"), detailOf(e));
+                raiseError(uploadFailureHeadline(e), detailOf(e));
             }
         } finally {
             uploadCancellation.current = null;
@@ -267,6 +267,20 @@ function Failure({ headline, detail }: { headline: string; detail?: string }) {
     );
 }
 
+/**
+ * The sentence for an upload that did not finish.
+ *
+ * A connection that goes away is waited out rather than reported, so an upload only fails here once
+ * there is nothing left to wait for. The two endings differ in what the user should do next: an
+ * upload the server no longer holds has to be started again, while anything else is a reason it
+ * refused, and telling them to try again would be telling them to repeat it.
+ */
+function uploadFailureHeadline(e: unknown): string {
+    const gone = e instanceof ChunkedUploadError && (e.status === 404 || e.status === 410);
+
+    return gone ? t("setup.restore-error-upload-interrupted") : t("setup.restore-error-upload-failed");
+}
+
 /** What a thrown failure has to say for itself, for the detail line under the headline. */
 function detailOf(e: unknown): string | undefined {
     const message = e instanceof Error ? e.message : String(e);
@@ -311,6 +325,8 @@ interface UploadState {
     fraction: number;
     /** Averaged over the transfer so far, so it settles rather than jumping about between pieces. */
     bytesPerSecond: number;
+    /** Whether the upload is waiting on a connection that has gone away. */
+    reconnecting: boolean;
 }
 
 /** The backups already here, and the way to a file that is not. */
@@ -440,12 +456,21 @@ function UploadProgress({ upload }: { upload: UploadState }) {
                         })}
                     </span>
 
-                    {/* Only once something has actually gone out: before the first piece lands there
-                        is no elapsed time to divide by, and a rate of nothing says nothing. */}
-                    {upload.bytesPerSecond > 0 && (
-                        <span class="restore-upload-speed">
-                            {t("setup.restore-upload-speed", { speed: formatSize(upload.bytesPerSecond) })}
+                    {/* In place of the speed while the connection is gone, which is where the eye
+                        already is and where a rate averaged over a transfer that has stopped would
+                        otherwise sit unchanged, saying everything is fine. */}
+                    {upload.reconnecting ? (
+                        <span class="restore-upload-reconnecting">
+                            <Icon icon="bx bx-wifi-off" /> {t("setup.restore-upload-reconnecting")}
                         </span>
+                    ) : (
+                        // Only once something has actually gone out: before the first piece lands
+                        // there is no elapsed time to divide by, and a rate of nothing says nothing.
+                        upload.bytesPerSecond > 0 && (
+                            <span class="restore-upload-speed">
+                                {t("setup.restore-upload-speed", { speed: formatSize(upload.bytesPerSecond) })}
+                            </span>
+                        )
                     )}
                 </div>
             </CardSection>

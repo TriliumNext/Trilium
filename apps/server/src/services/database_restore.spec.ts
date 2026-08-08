@@ -202,6 +202,18 @@ describe("what the log is told", () => {
         expect(said[1]).toContain("<temporary files>");
     });
 
+    it("leaves ordinary words alone, however the data directory happens to be configured", () => {
+        const said: string[] = [];
+        vi.spyOn(getLog(), "info").mockImplementation((message) => said.push(String(message)));
+
+        // A relatively configured data directory ("TRILIUM_DATA_DIR=data", which the development
+        // scripts use) was replaced as a bare substring, turning every "database" into
+        // "<data directory>base" and making the log read as nonsense.
+        logRestore("detaching the database being replaced");
+
+        expect(said[0]).toContain("detaching the database being replaced");
+    });
+
     it("names every step it enters and where it stopped, without naming the backup", async () => {
         const said: string[] = [];
         vi.spyOn(getLog(), "info").mockImplementation((message) => said.push(String(message)));

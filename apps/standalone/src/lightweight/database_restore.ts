@@ -243,7 +243,8 @@ async function swapIn(target: RestoreTarget, previous: string, candidate: string
     await removeQuietly(target.pool, previous);
 }
 
-async function writeCurrentDatabaseName(dbName: string): Promise<void> {
+/** Points the next start at `dbName`, which is the whole of what makes a database the live one. */
+export async function writeCurrentDatabaseName(dbName: string): Promise<void> {
     const root = await navigator.storage.getDirectory();
     const handle = await root.getFileHandle(POINTER_FILE, { create: true });
     const writable = await handle.createWritable();

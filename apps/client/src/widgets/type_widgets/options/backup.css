@@ -22,6 +22,45 @@
     }
 }
 
+/* The standalone page is this one block, so the setup form is asked to sit in a page among cards
+   rather than fill a note's pane the way it does where it came from. */
+.options-section.standalone-backup {
+    .setup-form {
+        height: auto;
+        padding-inline: 0;
+    }
+
+    .tn-centered-form {
+        margin-bottom: 0;
+    }
+
+    /* Sized for an empty note pane where it is the only thing on screen; here it shares a dialog
+       with the rest of the settings, and at its own size it would be the settings. */
+    .form-icon {
+        font-size: 80px;
+    }
+
+    h3 {
+        margin-bottom: 4px;
+    }
+
+    p {
+        /* The form centres its children, which leaves a paragraph's own lines ragged. */
+        max-width: 460px;
+        text-align: center;
+        color: var(--muted-text-color);
+    }
+
+    /* The form stacks whatever it is given, so the two actions are handed to it as one thing.
+       They wrap where a phone's dialog cannot hold both. */
+    .standalone-backup-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+}
+
 .backup-location .tn-card-section {
     display: grid;
     grid-template-columns: auto 1fr auto;

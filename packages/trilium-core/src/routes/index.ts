@@ -48,6 +48,15 @@ const GET = "get",
 interface SharedApiRoutesContext {
     route: any;
     asyncRoute: any;
+    /**
+     * Like `asyncRoute`, minus the transaction, on every platform.
+     *
+     * `asyncRoute` is transactional in the browser and not on the server, which is fine for handlers
+     * that only read or write rows. It is not fine for the handful that close the database and open
+     * another one: the transaction they started belongs to a connection that is gone by the time it
+     * would be committed, and SQLite says so.
+     */
+    asyncRouteWithoutTransaction: any;
     apiRoute: any;
     asyncApiRoute: any;
     checkApiAuth: any;
@@ -61,7 +70,7 @@ interface SharedApiRoutesContext {
     csrfMiddleware: any;
 }
 
-export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
+export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTransaction, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
     apiRoute(GET, '/api/tree', treeApiRoute.getTree);
     apiRoute(PST, '/api/tree/load', treeApiRoute.load);
 
@@ -157,6 +166,19 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     asyncRoute(PST, "/api/setup/sync-from-server", [checkAppNotInitialized], setupApiRoute.setupSyncFromServer, apiResultHandler);
     route(GET, "/api/setup/sync-seed", [loginRateLimiter, checkCredentials], setupApiRoute.getSyncSeed, apiResultHandler);
     asyncRoute(PST, "/api/setup/sync-seed", [checkAppNotInitialized], setupApiRoute.saveSyncSeed, apiResultHandler);
+    // The one setup route that belongs to a running instance rather than to one without a database:
+    // it is how the app asks the next start to be the wizard.
+    asyncApiRoute(PST, "/api/setup/boot", setupApiRoute.bootToSetup);
+
+    // What becomes of the database the wizard was booted away from. Guarded like the rest of setup,
+    // and refused again inside on an instance that has no such database. Not transactional: the
+    // backup runs for minutes, and keeping the database reopens it.
+    // Without a transaction, on every platform: the backup runs for minutes with the database in
+    // use, and erasing or keeping it closes the connection any transaction would belong to.
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/backup", [checkAppNotInitialized], setupApiRoute.backUpExisting, apiResultHandler);
+    asyncRouteWithoutTransaction(GET, "/api/setup/existing/status", [checkAppNotInitialized], setupApiRoute.existingBackupStatus, apiResultHandler);
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/delete", [checkAppNotInitialized], setupApiRoute.deleteExisting, apiResultHandler);
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/keep", [checkAppNotInitialized], setupApiRoute.keepExisting, apiResultHandler);
 
     asyncApiRoute(PST, "/api/sync/test", syncApiRoute.testSync);
     asyncApiRoute(PST, "/api/sync/now", syncApiRoute.syncNow);

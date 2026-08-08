@@ -1,6 +1,13 @@
 import sqlInit from "../../services/sql_init.js";
 import setupService from "../../services/setup.js";
 import { getRunningSetupOperation, withSetupLock } from "../../services/setup_lock.js";
+import {
+    deleteExistingData,
+    getExistingBackupStatus,
+    keepExistingData,
+    startBackUpExistingData
+} from "../../services/setup_existing.js";
+import { asSetupTargetScreen, getSetupPlatform } from "../../services/setup_mode.js";
 import { getLog } from "../../services/log.js";
 import appInfo from "../../services/app_info.js";
 import optionService from "../../services/options.js";
@@ -29,6 +36,57 @@ function getStatus() {
             }
             : {})
     };
+}
+
+/**
+ * Asks the next start of this instance to come up in the setup wizard rather than in the app.
+ *
+ * Writes the marker and answers; restarting is the caller's half, since only the client knows how
+ * this platform restarts. The language is filled in here from the instance's own option rather than
+ * taken from the request: it has to be the language whose database is about to be left closed.
+ */
+async function bootToSetup(req: Request) {
+    const targetScreen = asSetupTargetScreen(req.body?.targetScreen);
+
+    await getSetupPlatform().writeMarker({
+        lang: optionService.getOptionOrNull("locale") ?? "en",
+        ...(targetScreen ? { targetScreen } : {})
+    });
+
+    getLog().info(`Boot to setup requested${targetScreen ? ` for "${targetScreen}"` : ""}.`);
+}
+
+/**
+ * Starts backing up the database the wizard was booted away from.
+ *
+ * Answers as soon as the write is underway rather than once it is done: the write runs for minutes
+ * on a large database, and on standalone a request rides the service worker, whose fetches the
+ * browser reclaims after a few minutes no matter how patient the caller is. The screen follows the
+ * write, and learns where it went, through {@link existingBackupStatus}.
+ */
+function backUpExisting() {
+    startBackUpExistingData(new Date());
+}
+
+/**
+ * Where the backup stands, for the screen waiting on it: how far along, and once it is over, what
+ * was written or what stopped it.
+ *
+ * Polled rather than pushed: the screen is the only thing asking, and a push would need a channel
+ * that setup does not otherwise have.
+ */
+function existingBackupStatus() {
+    return getExistingBackupStatus();
+}
+
+/** Erases that database. Everything else in the data directory, backups included, stays. */
+async function deleteExisting() {
+    await deleteExistingData();
+}
+
+/** Abandons setup and opens the database that was there all along. */
+async function keepExisting() {
+    await keepExistingData();
 }
 
 async function setupNewDocument(req: Request) {
@@ -115,6 +173,11 @@ function getSyncSeed() {
 
 export default {
     getStatus,
+    bootToSetup,
+    backUpExisting,
+    existingBackupStatus,
+    deleteExisting,
+    keepExisting,
     setupNewDocument,
     setupSyncFromServer,
     getSyncSeed,

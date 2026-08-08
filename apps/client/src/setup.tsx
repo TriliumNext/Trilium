@@ -1,6 +1,6 @@
 import "./setup.css";
 
-import { LOCALES, MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE, NetworkAddressesResponse, SetupSyncFromServerResponse } from "@triliumnext/commons";
+import { LOCALES, MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE, NetworkAddressesResponse, SetupSyncFromServerResponse, type SetupTargetScreen } from "@triliumnext/commons";
 import clsx from "clsx";
 import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -10,6 +10,8 @@ import logo from "./assets/icon-color.svg?url";
 import { getCurrentLanguage, initLocale, t } from "./services/i18n";
 import server from "./services/server";
 import { isElectron, isMobileApp } from "./services/utils";
+import SetupBackupDatabase from "./setup_backup";
+import ExistingData, { keepExistingData } from "./setup_existing";
 import RestoreFromBackup from "./setup_restore";
 import Admonition, { ExtendedAdmonition } from "./widgets/react/Admonition";
 import Button from "./widgets/react/Button";
@@ -40,12 +42,21 @@ async function main() {
     document.body.replaceChildren(bodyWrapper);
 }
 
-type State = "selectLanguage" | "firstOptions" | "createNewDocumentOptions" | "createNewDocumentWithDemo" | "createNewDocumentEmpty" | "restoreFromBackup" | "syncFromDesktop" | "syncFromServer" | "syncFromServerInProgress" | "syncFromDesktopInProgress" | "syncFailed";
+type State = "backupDatabase" | "existingData" | "selectLanguage" | "firstOptions" | "createNewDocumentOptions" | "createNewDocumentWithDemo" | "createNewDocumentEmpty" | "restoreFromBackup" | "syncFromDesktop" | "syncFromServer" | "syncFromServerInProgress" | "syncFromDesktopInProgress" | "syncFailed";
 
-const STATE_ORDER: State[] = ["selectLanguage", "firstOptions", "createNewDocumentOptions", "createNewDocumentWithDemo", "createNewDocumentEmpty", "restoreFromBackup", "syncFromDesktop", "syncFromServer", "syncFromServerInProgress", "syncFromDesktopInProgress", "syncFailed"];
+const STATE_ORDER: State[] = ["backupDatabase", "existingData", "selectLanguage", "firstOptions", "createNewDocumentOptions", "createNewDocumentWithDemo", "createNewDocumentEmpty", "restoreFromBackup", "syncFromDesktop", "syncFromServer", "syncFromServerInProgress", "syncFromDesktopInProgress", "syncFailed"];
 
 export function renderState(state: State, setState: (state: State) => void) {
     switch (state) {
+        // Leads nowhere by design: the wizard was opened to take a backup of the database it is
+        // sitting on, so the only way out of it is back into that database.
+        case "backupDatabase": return <SetupBackupDatabase onDone={() => void onExistingDataKept()} />;
+        case "existingData": return (
+            <ExistingData
+                onProceed={() => setState(afterExistingData(window.glob))}
+                onKept={onSetupFinished}
+            />
+        );
         case "selectLanguage": return <SelectLanguage setState={setState} />;
         case "firstOptions": return <SetupOptions setState={setState} />;
         case "createNewDocumentOptions": return <CreateNewDocumentOptions setState={setState} />;
@@ -65,7 +76,7 @@ function App() {
     // A sync that already created the schema but was interrupted before finishing
     // resumes straight on the progress screen instead of restarting the wizard.
     const resuming = window.glob.syncInProgress === true;
-    const [state, setState] = useState<State>(resuming ? "syncFromServerInProgress" : "selectLanguage");
+    const [state, setState] = useState<State>(initialState(window.glob));
 
     useEffect(() => {
         if (!resuming) {
@@ -88,6 +99,58 @@ function App() {
             </SlidePages>
         </div>
     );
+}
+
+/** What the wizard needs to know from the bootstrap to decide where it opens and where it goes next. */
+interface SetupGlob {
+    syncInProgress?: boolean;
+    initialSetup?: boolean;
+    setupTargetScreen?: SetupTargetScreen;
+}
+
+/**
+ * Where the wizard opens.
+ *
+ * A first run starts at the language step and works forward. Three things come in already knowing
+ * better: a sync interrupted after it created the schema, an instance with a knowledge base still
+ * behind the wizard, which has to answer for that before anything else, and an instance sent to a
+ * particular screen through a `setup.json` marker.
+ */
+export function initialState(glob: SetupGlob): State {
+    if (glob.syncInProgress) {
+        return "syncFromServerInProgress";
+    }
+
+    // Asked for by a running instance that wants its database held still long enough to be copied.
+    // It skips the question below because it answers it: nothing here is being replaced or erased,
+    // and the instance goes back to the same database when the screen is done with.
+    if (glob.setupTargetScreen === "backup-database" && glob.initialSetup === false) {
+        return "backupDatabase";
+    }
+
+    // Before the language, before the menu: everything past this point replaces or erases what is
+    // already here, and the user has not been asked about that yet.
+    if (glob.initialSetup === false) {
+        return "existingData";
+    }
+
+    return afterExistingData(glob);
+}
+
+/**
+ * Where the wizard goes once there is nothing left to lose.
+ *
+ * The same answer a first run gets, which is the point: by the time this is reached the instance has
+ * no database, so it is being set up exactly as a new one would be, except that it may have been
+ * told which screen the user was heading for.
+ */
+function afterExistingData(glob: SetupGlob): State {
+    switch (glob.setupTargetScreen) {
+        case "restore-backup": return "restoreFromBackup";
+        // Deliberately not a lookup table: two of the states below create a document the moment they
+        // are shown, and nothing outside this file should be able to name one.
+        default: return "selectLanguage";
+    }
 }
 
 function SelectLanguage({ setState }: { setState: (state: State) => void }) {
@@ -653,6 +716,24 @@ async function allowLanAccessAndRestart() {
     if (confirmed) {
         window.electronApi?.window.restartApp();
     }
+}
+
+/**
+ * Leaves setup and opens the database that was behind it all along.
+ *
+ * The way out of the backup screen, which is the one screen that changes nothing: the instance
+ * comes back up on the same database it was asked to hold still. A failure here still ends in a
+ * reload, because the marker that sent the instance to the wizard is consumed at start — so the
+ * next start comes back to the application whatever this call did.
+ */
+async function onExistingDataKept() {
+    try {
+        await keepExistingData();
+    } catch (e) {
+        console.error("Could not leave setup cleanly; restarting anyway.", e);
+    }
+
+    onSetupFinished();
 }
 
 function onSetupFinished() {

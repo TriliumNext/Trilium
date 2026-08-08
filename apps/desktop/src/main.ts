@@ -9,6 +9,7 @@ import config from "@triliumnext/server/src/services/config.js";
 import { recoverInterruptedRestore } from "@triliumnext/server/src/services/database_restore.js";
 import dataDirs from "@triliumnext/server/src/services/data_dir.js";
 import port from "@triliumnext/server/src/services/port.js";
+import { consumeSetupMarker, setupPlatform } from "@triliumnext/server/src/services/setup_marker.js";
 import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import WebSocketMessagingProvider from "@triliumnext/server/src/services/ws_messaging_provider.js";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
@@ -278,6 +279,10 @@ export async function main() {
         ),
         image: (await import("@triliumnext/server/src/services/image_provider.js")).serverImageProvider,
         config,
+        // Read before core exists, because what it says is whether to open the database at all: a
+        // relaunch asked for by the app itself comes back here and goes to the setup window instead.
+        setupMarker: consumeSetupMarker(),
+        setupPlatform,
         extraAppInfo: {
             nodeVersion: process.version,
             dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)

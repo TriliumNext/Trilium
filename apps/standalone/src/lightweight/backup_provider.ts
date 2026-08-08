@@ -1,189 +1,66 @@
 import type { DatabaseBackup } from "@triliumnext/commons";
-import { BackupOptionsService, BackupService, getSql } from "@triliumnext/core";
-
-const BACKUP_DIR_NAME = "backups";
-const BACKUP_FILE_PATTERN = /^backup-.*\.db$/;
+import { BackupService } from "@triliumnext/core";
 
 /**
- * How large a database may be and still be backed up here.
- *
- * A backup on this platform is a `serialize()`, which builds the whole database as one array inside
- * the WebAssembly heap and then copies it out to JavaScript: two copies of it in memory at once, in
- * an address space a fraction of what a native process has. Past a certain size that allocation does
- * not fail, it takes the tab down with it, so anything larger is left unbacked-up instead.
- *
- * The size that matters is the one a restore can bring in: a database restored from a large backup
- * migrates on the next start, and the migration asks for a backup first.
+ * Pool entries earlier versions could leave behind: they vacuumed a snapshot into the pool, and a
+ * backup interrupted mid-vacuum left the snapshot, up to the database's own size, or its journal
+ * sitting there. Swept for as long as such pools may still be around.
  */
-const MAX_SERIALIZABLE_BYTES = 256 * 1024 * 1024;
+const SNAPSHOT_LEFTOVERS = [ "/backup-snapshot.db", "/backup-snapshot.db-journal" ];
+
+/** The slice of the SAH pool the leftover sweep needs. `SAHPoolUtil` matches it as it stands. */
+export interface SnapshotPool {
+    unlink(filename: string): boolean;
+}
 
 /**
- * Standalone backup service using OPFS (Origin Private File System).
- * Stores database backups as serialized byte arrays in OPFS.
- * Falls back to no-op behavior when OPFS is not available (e.g., in tests).
+ * Standalone backup service: a stub, deliberately.
+ *
+ * The platform keeps no backups anywhere. Its one backup is manual: the options screen and the
+ * setup screen stream the live database straight into a browser download, through the service
+ * worker, without a byte of it landing in the browser's own storage — which is the point, since
+ * that storage holds the live database and can rarely hold a copy of it beside itself. So nothing
+ * here schedules, stores, lists or serves anything.
+ *
+ * The pre-migration backup is skipped with a warning rather than refused: the only backup this
+ * platform has needs a user at a screen, and blocking a migration on a backup nobody can take
+ * would leave the application unable to start at all.
  */
 export default class StandaloneBackupService extends BackupService {
-    private backupDir: FileSystemDirectoryHandle | null = null;
-    private opfsAvailable: boolean | null = null;
-
-    constructor(options: BackupOptionsService) {
-        super(options);
-    }
 
     override scheduleBackups(): void {
-        // No scheduled backups on standalone/mobile
-    }
-
-    private isOpfsAvailable(): boolean {
-        if (this.opfsAvailable === null) {
-            this.opfsAvailable = typeof navigator !== "undefined"
-                && navigator.storage
-                && typeof navigator.storage.getDirectory === "function";
-        }
-        return this.opfsAvailable;
-    }
-
-    private async ensureBackupDirectory(): Promise<FileSystemDirectoryHandle | null> {
-        if (!this.isOpfsAvailable()) {
-            return null;
-        }
-
-        if (!this.backupDir) {
-            const root = await navigator.storage.getDirectory();
-            this.backupDir = await root.getDirectoryHandle(BACKUP_DIR_NAME, { create: true });
-        }
-        return this.backupDir;
+        // Nothing is ever stored, so there is nothing to schedule.
     }
 
     override async backupNow(name: string): Promise<string> {
-        const fileName = `backup-${name}.db`;
-
-        // Check if OPFS is available
-        if (!this.isOpfsAvailable()) {
-            console.warn(`[Backup] OPFS not available, skipping backup: ${fileName}`);
-            return `/${BACKUP_DIR_NAME}/${fileName}`;
-        }
-
-        try {
-            const dir = await this.ensureBackupDirectory();
-            if (!dir) {
-                console.warn(`[Backup] Backup directory not available, skipping: ${fileName}`);
-                return `/${BACKUP_DIR_NAME}/${fileName}`;
-            }
-
-            const size = this.databaseSize();
-            if (size > MAX_SERIALIZABLE_BYTES) {
-                console.warn(`[Backup] Database is too large to back up in the browser (${size} bytes), skipping: ${fileName}`);
-                return `/${BACKUP_DIR_NAME}/${fileName}`;
-            }
-
-            // Serialize the database
-            const data = getSql().serialize();
-
-            // Write to OPFS
-            const fileHandle = await dir.getFileHandle(fileName, { create: true });
-            const writable = await fileHandle.createWritable();
-            await writable.write(data);
-            await writable.close();
-
-            console.log(`[Backup] Created backup: ${fileName} (${data.byteLength} bytes)`);
-            return `/${BACKUP_DIR_NAME}/${fileName}`;
-        } catch (error) {
-            console.error(`[Backup] Failed to create backup ${fileName}:`, error);
-            // Don't throw - backup failure shouldn't block operations
-            return `/${BACKUP_DIR_NAME}/${fileName}`;
-        }
-    }
-
-    /** How many bytes the live database occupies, asked of the database rather than of a copy of it. */
-    private databaseSize(): number {
-        const size = getSql().getValue<number>(
-            "SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()"
-        );
-
-        return typeof size === "number" ? size : 0;
+        console.warn(`[Backup] Stored backups are not supported on this platform, so "${name}" `
+            + "was not created. The options screen backs up by downloading a copy instead.");
+        return "";
     }
 
     override async getExistingBackups(): Promise<DatabaseBackup[]> {
-        if (!this.isOpfsAvailable()) {
-            return [];
-        }
-
-        try {
-            const dir = await this.ensureBackupDirectory();
-            if (!dir) {
-                return [];
-            }
-
-            const backups: DatabaseBackup[] = [];
-
-            for await (const [name, handle] of dir.entries()) {
-                if (handle.kind !== "file" || !BACKUP_FILE_PATTERN.test(name)) {
-                    continue;
-                }
-
-                const file = await (handle as FileSystemFileHandle).getFile();
-                backups.push({
-                    fileName: name,
-                    filePath: `/${BACKUP_DIR_NAME}/${name}`,
-                    mtime: new Date(file.lastModified),
-                    fileSize: file.size
-                });
-            }
-
-            // Sort by modification time, newest first
-            backups.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
-            return backups;
-        } catch (error) {
-            console.error("[Backup] Failed to list backups:", error);
-            return [];
-        }
+        return [];
     }
 
-    /**
-     * Delete a backup by filename.
-     */
-    async deleteBackup(fileName: string): Promise<void> {
-        if (!this.isOpfsAvailable()) {
-            return;
-        }
-
-        try {
-            const dir = await this.ensureBackupDirectory();
-            if (!dir) {
-                return;
-            }
-            await dir.removeEntry(fileName);
-            console.log(`[Backup] Deleted backup: ${fileName}`);
-        } catch (error) {
-            console.error(`[Backup] Failed to delete backup ${fileName}:`, error);
-        }
+    override async getBackupContent(): Promise<Uint8Array | null> {
+        return null;
     }
 
-    override async getBackupContent(filePath: string): Promise<Uint8Array | null> {
-        if (!this.isOpfsAvailable()) {
-            return null;
-        }
+}
 
+/**
+ * Removes whatever an earlier version's snapshot machinery left in the pool. Unlinking truncates
+ * the pool's physical file, so the quota comes back with it.
+ *
+ * Called by the worker at startup: the space should not stay lost just because the machinery that
+ * would have reclaimed it is gone. Never the reason anything fails.
+ */
+export function removeBackupLeftovers(pool: SnapshotPool): void {
+    for (const name of SNAPSHOT_LEFTOVERS) {
         try {
-            const dir = await this.ensureBackupDirectory();
-            if (!dir) {
-                return null;
-            }
-
-            // Extract fileName from filePath (e.g., "/backups/backup-now.db" -> "backup-now.db")
-            const fileName = filePath.split("/").pop();
-            if (!fileName || !BACKUP_FILE_PATTERN.test(fileName)) {
-                return null;
-            }
-
-            const fileHandle = await dir.getFileHandle(fileName);
-            const file = await fileHandle.getFile();
-            const data = await file.arrayBuffer();
-            return new Uint8Array(data);
-        } catch (error) {
-            console.error(`[Backup] Failed to get backup content ${filePath}:`, error);
-            return null;
+            pool.unlink(name);
+        } catch {
+            // A leftover entry costs a pool slot and its bytes, which the next sweep tries again.
         }
     }
 }

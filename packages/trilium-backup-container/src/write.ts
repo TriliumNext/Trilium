@@ -42,8 +42,20 @@ const EMPTY = new Uint8Array(0);
 export type PatchHeader = (offset: number, data: Uint8Array) => Promise<void> | void;
 
 export interface WriteBackupContainerOptions extends ProgressOptions {
-    /** Patches the payload digest into the header once the payload is complete. Required. */
-    patchHeader: PatchHeader;
+    /**
+     * Patches the payload digest into the header once the payload is complete. Required, except
+     * for a {@link streamed} container, which records no digest and never writes backwards.
+     */
+    patchHeader?: PatchHeader;
+    /**
+     * Write front to back, recording no payload digest â€” for a destination that cannot be
+     * revisited, such as a download already on its way to the user.
+     *
+     * Encrypted, the GCM frame tags stand in for the digest. Unencrypted, {@link
+     * WriteBackupContainerOptions.plaintextSize} does, so it is required: without either, nothing
+     * about the payload could be checked.
+     */
+    streamed?: boolean;
     /** Compress the payload with gzip. */
     compress?: boolean;
     /** Encrypt the payload. Encryption is on exactly when a passphrase is given. */
@@ -94,7 +106,15 @@ export async function writeContainer(
     backend: ContainerBackend,
     options: WriteBackupContainerOptions
 ): Promise<WriteBackupContainerResult> {
-    if (typeof options.patchHeader !== "function") {
+    const streamed = options.streamed === true;
+    if (streamed && options.passphrase === undefined && !(options.plaintextSize ?? 0)) {
+        throw new BackupContainerError(
+            "invalid-options",
+            "A streamed container that is not encrypted must record its plaintext size: with "
+                + "neither that nor frame tags, nothing about the payload could be checked."
+        );
+    }
+    if (!streamed && typeof options.patchHeader !== "function") {
         throw new BackupContainerError(
             "invalid-options",
             "patchHeader is required to write the payload digest."
@@ -119,6 +139,7 @@ export async function writeContainer(
         version: FORMAT_VERSION,
         compressed,
         encrypted,
+        streamed,
         plaintextSize,
         headerLength: headerLengthFor(encrypted),
         encryption: null,
@@ -141,7 +162,10 @@ export async function writeContainer(
     }
 
     const headerBytes = encodeHeader(header);
-    const aad = headerBytes.subarray(0, authenticatedHeaderEnd(header.headerLength));
+    // A copy rather than a view: the header is about to be handed to the sink, and a sink is free
+    // to transfer the buffer away (the streamed download does), which would detach any view still
+    // held here while every frame's authentication still needs it.
+    const aad = headerBytes.slice(0, authenticatedHeaderEnd(header.headerLength));
 
     if (header.encryption && key !== null) {
         const verifier = await backend.gcmSeal(
@@ -177,7 +201,11 @@ export async function writeContainer(
     await output.end();
 
     const digest = hash.digest();
-    await options.patchHeader(digestOffset(header.headerLength), digest);
+    // A streamed container keeps the zeros: its frames authenticate themselves, and there is no
+    // going back to the header of a destination already streamed away.
+    if (!streamed) {
+        await options.patchHeader?.(digestOffset(header.headerLength), digest);
+    }
 
     // After the patch rather than after the payload: the container is not written until the digest
     // is in its header.

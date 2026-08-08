@@ -509,3 +509,56 @@ describe("ServerBackupService.getBackupContent", () => {
         expect(await desktopService("").getBackupContent(path.join(DEFAULT_DIR, "backup-absent.db"))).toBeNull();
     });
 });
+
+describe("ServerBackupService: sending a backup for download", () => {
+    /** Collects what was written to it, and records the moment the headers were committed. */
+    function fakeResponse() {
+        const headers: Record<string, string> = {};
+        const chunks: Buffer[] = [];
+        let flushedAfter: number | null = null;
+
+        const res = new Writable({
+            write(chunk: Buffer, _encoding, callback) {
+                chunks.push(Buffer.from(chunk));
+                callback();
+            }
+        }) as Writable & {
+            setHeader(name: string, value: string): void;
+            flushHeaders(): void;
+        };
+        res.setHeader = (name, value) => { headers[name] = value; };
+        res.flushHeaders = () => { flushedAfter = chunks.length; };
+
+        return { res, headers, chunks, flushed: () => flushedAfter };
+    }
+
+    async function written(res: Writable): Promise<void> {
+        await new Promise((resolve) => res.on("finish", resolve));
+    }
+
+    it("streams it with its headers committed first, so nothing downstream buffers it whole", async () => {
+        const filePath = path.join(CUSTOM_DIR, "Backup 2026-08-07 10-32-21.tnbackup");
+        fs.mkdirSync(CUSTOM_DIR, { recursive: true });
+        fs.writeFileSync(filePath, "backup-bytes");
+        const { res, headers, chunks, flushed } = fakeResponse();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the express Response surface this uses.
+        expect(desktopService(CUSTOM_DIR).sendBackup?.(filePath, res as any)).toBe(true);
+        await written(res);
+
+        expect(Buffer.concat(chunks).toString()).toBe("backup-bytes");
+        expect(headers["Content-Disposition"])
+            .toBe('attachment; filename="Backup 2026-08-07 10-32-21.tnbackup"');
+        expect(headers["Content-Length"]).toBe("12");
+        // Before any of the body: the desktop's protocol bridge streams only once headers are
+        // flushed, and buffers a multi-gigabyte backup whole otherwise.
+        expect(flushed()).toBe(0);
+    });
+
+    it("refuses anything that is not an existing backup, rather than sending a file", () => {
+        const { res } = fakeResponse();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- as above.
+        expect(desktopService(CUSTOM_DIR).sendBackup?.("/etc/passwd", res as any)).toBe(false);
+    });
+});

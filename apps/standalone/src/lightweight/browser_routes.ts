@@ -131,7 +131,7 @@ function createRoute(router: BrowserRouter) {
  * transactional() wrapper, which would commit an empty transaction immediately when
  * passed an async callback.
  */
-function createAsyncRoute(router: BrowserRouter) {
+function createAsyncRoute(router: BrowserRouter, { transactional = true } = {}) {
     return (method: HttpMethod, path: string, _middleware: any[], handler: (req: any, res: any) => Promise<unknown>, resultHandler?: ((req: any, res: any, result: unknown) => unknown) | null) => {
         router.register(method, path, (req: BrowserRequest) => {
             // Exclusive: this transaction stays open across awaits, so no other
@@ -140,7 +140,8 @@ function createAsyncRoute(router: BrowserRouter) {
                 setContextFromHeaders(req);
                 const expressLikeReq = toExpressLikeReq(req);
                 const mockRes = createMockExpressResponse();
-                const result = await getSql().transactionalAsync(() => handler(expressLikeReq, mockRes));
+                const run = () => handler(expressLikeReq, mockRes);
+                const result = transactional ? await getSql().transactionalAsync(run) : await run();
 
                 // If the handler used the mock response (e.g. image routes that call res.send()),
                 // return it as a raw response so BrowserRouter doesn't JSON-serialize it.
@@ -279,6 +280,7 @@ export function registerRoutes(router: BrowserRouter): void {
     routes.buildSharedApiRoutes({
         route: createRoute(router),
         asyncRoute: createAsyncRoute(router),
+        asyncRouteWithoutTransaction: createAsyncRoute(router, { transactional: false }),
         apiRoute,
         asyncApiRoute: createApiRoute(router, false),
         apiResultHandler,

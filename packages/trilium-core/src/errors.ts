@@ -38,6 +38,22 @@ export class ConflictError extends HttpError {
 
 }
 
+/**
+ * What the request names is gone for good, so asking again will not bring it back.
+ *
+ * Distinct from a 404 in the one way that matters to a client holding a reference: a 404 may be a
+ * mistyped reference to something that never existed, while this is the thing it meant, and the
+ * answer is to start over rather than to retry.
+ */
+export class GoneError extends HttpError {
+
+    constructor(message: string) {
+        super(message, 410);
+        this.name = "GoneError";
+    }
+
+}
+
 export class OpenIdError {
     message: string;
 

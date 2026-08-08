@@ -42,7 +42,34 @@ export interface StandaloneRestoreApi {
     }): Promise<StandaloneRestoreResult>;
 }
 
+/** How a database download ended, for the screen that gates its Continue on it. */
+export interface StandaloneDownloadResult {
+    status: "done" | "cancelled" | "failed";
+    /** What stopped it, when `status` is `failed`. */
+    message?: string;
+}
+
+export interface StandaloneBackupApi {
+    /**
+     * Streams a copy of the live database straight into a browser download.
+     *
+     * Straight through: nothing is staged in the origin's own storage, which may not have room
+     * for a second copy of a large database, and nothing is ever compressed, which a low-end
+     * device cannot afford at these sizes. The bytes go from the database to the disk a page at a
+     * time, and the browser's own download UI shows the transfer itself.
+     *
+     * Given a passphrase, the download is a streamed encrypted container (`.tnbackup`); without
+     * one it is the plain database (`.db`). The file name should carry the matching extension.
+     *
+     * Resolves when the stream has been fully produced, one way or the other, which is as close
+     * to "the download finished" as the application can see: the browser's download manager may
+     * still be settling the last bytes to disk for a moment after.
+     */
+    downloadDatabase(fileName: string, passphrase?: string): Promise<StandaloneDownloadResult>;
+}
+
 /** The complete surface the standalone build exposes to the client. */
 export interface StandaloneApi {
     restore: StandaloneRestoreApi;
+    backup: StandaloneBackupApi;
 }

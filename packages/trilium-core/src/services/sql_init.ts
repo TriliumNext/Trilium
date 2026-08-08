@@ -14,6 +14,7 @@ import TaskContext from "./task_context";
 import BOption from "../becca/entities/boption";
 import migrationService from "./migration";
 import passwordService from "./encryption/password";
+import { isSetupRequested, leaveSetupMode } from "./setup_mode";
 
 export const dbReady = deferred<void>();
 
@@ -34,6 +35,12 @@ function schemaExists() {
 }
 
 function isDbInitialized() {
+    // An instance asked to boot into setup answers as one that has nothing to open, which is what
+    // keeps the database closed and every uninitialized-only guard in force. See setup_mode.
+    if (isSetupRequested()) {
+        return false;
+    }
+
     try {
         if (!schemaExists()) {
             return false;
@@ -75,6 +82,9 @@ async function initDbConnection() {
 }
 
 function setDbAsInitialized() {
+    // A database is being brought up, so whatever asked for setup has had its answer.
+    leaveSetupMode();
+
     if (!isDbInitialized()) {
         optionService.setOption("initialized", "true");
 

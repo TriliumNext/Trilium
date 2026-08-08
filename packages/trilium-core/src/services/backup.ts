@@ -1,4 +1,6 @@
-import type { DatabaseBackup, FilterOptionsByType, OptionNames } from "@triliumnext/commons";
+import type { DatabaseBackup, FilterOptionsByType, OptionNames, SetupExistingBackup } from "@triliumnext/commons";
+import type { Response } from "express";
+
 import { getContext } from "./context.js";
 import dateUtils from "./utils/date.js";
 
@@ -27,6 +29,19 @@ export default abstract class BackupService {
      * Returns the backup file path/name.
      */
     abstract backupNow(name: string): Promise<string>;
+
+    /**
+     * Create a backup under a name of the caller's choosing, reporting what was written.
+     *
+     * For the setup screen's offer to save the existing database before replacing it, where the user
+     * is shown the file afterwards and so has to be told its name, its path and its size. Left out by
+     * platforms with nowhere to write a file the user could then find.
+     *
+     * @param onProgress how far through the write it is, from 0 to 1. A backup of a large knowledge
+     *                   base runs for minutes, and a screen with nothing to show for that long is
+     *                   indistinguishable from one that has stopped.
+     */
+    backupAs?(baseName: string, onProgress?: (fraction: number) => void): Promise<SetupExistingBackup>;
 
     /**
      * Perform regular scheduled backups (daily, weekly, monthly).
@@ -65,6 +80,19 @@ export default abstract class BackupService {
      * Returns null if the backup doesn't exist or access is denied.
      */
     abstract getBackupContent(filePath: string): Promise<Uint8Array | null>;
+
+    /**
+     * Sends an existing backup to `res` as a download, a piece at a time.
+     *
+     * Neither reading it first nor handing the path to Express will do. {@link getBackupContent}
+     * holds the whole thing in memory, which Node refuses outright above 2 GiB, and `res.download`
+     * never flushes its headers, which is the signal the desktop's protocol bridge waits for before
+     * it streams — without it a multi-gigabyte backup is buffered whole on its way to the renderer
+     * and takes the application down with it.
+     *
+     * @returns whether it was sent; `false` for anything that is not an existing backup.
+     */
+    sendBackup?(filePath: string, res: Response): boolean;
 
     /**
      * Run the scheduled backup checks for daily, weekly, and monthly backups.

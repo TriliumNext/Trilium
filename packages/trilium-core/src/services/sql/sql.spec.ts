@@ -1,7 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { getContext } from "../context.js";
+import { getLog } from "../log.js";
 import { getSql } from "./index.js";
+import { SqlService, type SqlServiceParams } from "./sql.js";
 
 // happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
 const isBrowserRuntime = typeof window !== "undefined";
@@ -347,6 +349,28 @@ describe("SqlService (real DB)", () => {
                 ).toThrow("inner-fail");
                 expect(getContext().get("disableSlowQueryLogging")).toBeFalsy();
             });
+        });
+    });
+
+    describe("detaching", () => {
+        it("lets go once, and says nothing the second time", () => {
+            // The setup screen erases the database, which detaches it; a restore started straight
+            // afterwards detaches again on its way to swapping the files in. That second one has
+            // nothing to do, and used to fail on a connection that was already gone.
+            let attached = true;
+            const provider = {
+                detach: () => { attached = false; },
+                isAttached: () => attached,
+                get inTransaction(): boolean {
+                    if (!attached) throw new Error("DB not open.");
+                    return false;
+                }
+            };
+            const sql = new SqlService({ provider } as unknown as SqlServiceParams, getLog());
+
+            sql.detachConnection();
+            expect(attached).toBe(false);
+            expect(() => sql.detachConnection()).not.toThrow();
         });
     });
 

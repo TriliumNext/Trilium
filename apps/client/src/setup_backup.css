@@ -1,0 +1,32 @@
+/* The download action, with what it will write above it and how it is going below. */
+.backup-download {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+    margin-block: 3em;
+
+    .backup-download-file {
+        /* A file name has no spaces to break at, and it is the one thing on this screen the user
+           has to recognise afterwards. */
+        overflow-wrap: anywhere;
+        text-align: center;
+    }
+
+    .backup-download-message {
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+    }
+
+    .backup-download-hint {
+        text-align: center;
+        opacity: 0.7;
+    }
+
+    .backup-download-outcome {
+        /* The panel centres its children, which would leave a full-width block floating. */
+        align-self: stretch;
+        margin-bottom: 40px;
+    }
+}

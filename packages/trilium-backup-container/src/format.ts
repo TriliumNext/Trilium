@@ -18,7 +18,17 @@ export const FORMAT_VERSION = 1;
 
 export const FLAG_COMPRESSED = 0b0000_0001;
 export const FLAG_ENCRYPTED = 0b0000_0010;
-export const FLAG_RESERVED = 0b1111_1100;
+/**
+ * Written front to back, with no payload digest: the destination could not be revisited to patch
+ * one in — a download already on its way to the user, for instance.
+ *
+ * What stands in for the digest depends on the other flags. Encrypted, every frame carries its own
+ * authentication tag, which covers each payload byte. Unencrypted, the recorded plaintext size is
+ * the check: the reader refuses output that does not measure exactly that, which is what a
+ * truncated download looks like. A streamed container therefore always records its size.
+ */
+export const FLAG_STREAMED = 0b0000_0100;
+export const FLAG_RESERVED = 0b1111_1000;
 
 export const FIXED_HEADER_BYTES = 32;
 export const DIGEST_BYTES = 32;
@@ -84,6 +94,8 @@ export interface ContainerHeader {
     version: number;
     compressed: boolean;
     encrypted: boolean;
+    /** Written front to back, so the digest field holds zeros. See {@link FLAG_STREAMED}. */
+    streamed: boolean;
     /**
      * Size of the wrapped database before compression, or 0 when unknown. A hint, never an
      * instruction.
@@ -139,7 +151,8 @@ export function encodeHeader(header: ContainerHeader): Uint8Array {
     buffer[MAGIC.length] = header.version;
     const compressed = header.compressed ? FLAG_COMPRESSED : 0;
     const encrypted = header.encrypted ? FLAG_ENCRYPTED : 0;
-    buffer[21] = compressed | encrypted;
+    const streamed = header.streamed ? FLAG_STREAMED : 0;
+    buffer[21] = compressed | encrypted | streamed;
     writeU16LE(buffer, 22, header.headerLength);
     writeU64LE(buffer, 24, BigInt(header.plaintextSize));
 
@@ -163,6 +176,7 @@ export interface FixedHeader {
     version: number;
     compressed: boolean;
     encrypted: boolean;
+    streamed: boolean;
     plaintextSize: number;
     headerLength: number;
 }
@@ -201,6 +215,7 @@ export function decodeFixedHeader(buffer: Uint8Array, maxHeaderBytes: number): F
         );
     }
     const encrypted = (flags & FLAG_ENCRYPTED) !== 0;
+    const streamed = (flags & FLAG_STREAMED) !== 0;
 
     const headerLength = readU16LE(buffer, 22);
     if (headerLength > maxHeaderBytes) {
@@ -225,9 +240,30 @@ export function decodeFixedHeader(buffer: Uint8Array, maxHeaderBytes: number): F
         version,
         compressed: (flags & FLAG_COMPRESSED) !== 0,
         encrypted,
+        streamed,
         plaintextSize: plaintextSize > BigInt(Number.MAX_SAFE_INTEGER) ? 0 : Number(plaintextSize),
         headerLength
     };
+}
+
+/**
+ * Exact byte length of a streamed, uncompressed container wrapping `plaintextSize` bytes.
+ *
+ * Encrypted, that is the header, the payload, and the length field and tag around every frame —
+ * including the final frame, which is empty when the payload is an exact multiple of the frame
+ * size. Unencrypted, the payload is written as it stands and only the header precedes it.
+ *
+ * Exactness is the point: a download that states its size correctly is one the browser can draw a
+ * progress bar for.
+ */
+export function streamedContainerSize(plaintextSize: number, encrypted: boolean): number {
+    if (!encrypted) {
+        return HEADER_BYTES_PLAIN + plaintextSize;
+    }
+
+    const frames = Math.floor(plaintextSize / FRAME_SIZE) + 1;
+
+    return HEADER_BYTES_ENCRYPTED + plaintextSize + frames * (4 + TAG_BYTES);
 }
 
 /**

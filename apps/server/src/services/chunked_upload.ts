@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError, utils as coreUtils, ValidationError } from "@triliumnext/core";
+import { ConflictError, GoneError, type HttpError, NotFoundError, utils as coreUtils, ValidationError } from "@triliumnext/core";
 import { Mutex } from "async-mutex";
 import type { Request } from "express";
 import { createWriteStream } from "fs";
@@ -16,6 +16,11 @@ import { pipeline } from "stream/promises";
  * much the server has already received. Sparse writes, duplicated chunks and two clients writing to
  * one session all fail that check, and a client that lost a response only has to ask where the file
  * got to and carry on from there.
+ *
+ * Sessions live in memory while their files do not, so an upload cannot outlive the process that is
+ * receiving it. What it can do is say so: every upload id is stamped with the process that issued
+ * it, and one presented to a later process is answered as gone rather than as expired, which is the
+ * difference between a client waiting out a retry and one starting again.
  *
  * Nothing here knows what the file is for. A consumer supplies {@link ChunkedUploadConfig.onComplete},
  * which is handed the assembled file and takes ownership of it.
@@ -40,6 +45,8 @@ export const DEFAULT_CHUNK_SIZE = 32 * 1024 * 1024;
 
 const DEFAULT_SESSION_TTL_MS = 60 * 60 * 1000;
 const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+/** How many endings are kept, which only has to cover the clients still talking about them. */
+const REMEMBERED_ENDINGS = 16;
 
 /** The assembled file, handed to the consumer once every byte is in. */
 export interface CompletedUpload {
@@ -69,6 +76,16 @@ export interface ChunkedUploadConfig<T> {
     sessionTtlMs?: number;
     /** Sessions that may be open at once. Defaults to one. */
     maxConcurrentSessions?: number;
+    /**
+     * What one more session than {@link maxConcurrentSessions} allows does: `refuse` turns the new
+     * one away, `supersede` ends the oldest to make room for it. Defaults to refusing.
+     *
+     * Superseding is for an upload that is the only way into what it feeds. A client whose
+     * connection is gone cannot tell the server to forget its session, so that session stands in the
+     * way for the whole of {@link sessionTtlMs} — and the user, who knows only that their upload
+     * failed, is refused every attempt to start it again for the next hour.
+     */
+    whenAtCapacity?: "refuse" | "supersede";
     /**
      * Checks the filesystem has room for the whole file before accepting it, so an upload that
      * cannot possibly fit fails at the start rather than after hours.
@@ -130,8 +147,19 @@ export function createChunkedUpload<T>(config: ChunkedUploadConfig<T>): ChunkedU
     const maxConcurrentSessions = config.maxConcurrentSessions ?? 1;
     const directory = path.resolve(config.directory, config.name);
     const sessions = new Map<string, Session>();
+    /** What became of the sessions that ended recently, for a client that comes back to one. */
+    const endings = new Map<string, Ending<T>>();
     /** Lets one caller at a time open a session, so the limit on how many are open holds. */
     const admission = new Mutex();
+    /**
+     * Stamped onto every upload id this process issues, so one issued by the process before it is
+     * recognised as such. A restart ends every session while leaving the client mid-upload none the
+     * wiser, and "the server restarted" is something it can act on where "no such upload" is not.
+     *
+     * Minted when it is first wanted rather than here: an upload service is built as its module
+     * loads, which is before there is any crypto to draw a random string from.
+     */
+    let instanceId: string | null = null;
 
     // Unreferenced so neither a test nor a shutdown waits on it.
     const timer = setInterval(() => void sweep(), SWEEP_INTERVAL_MS);
@@ -156,9 +184,9 @@ export function createChunkedUpload<T>(config: ChunkedUploadConfig<T>): ChunkedU
         // Before the count is checked, so an abandoned session never blocks the next one.
         await sweep();
 
-        if (sessions.size >= maxConcurrentSessions) {
-            throw new ConflictError("Another upload is already in progress.");
-        }
+        // Everything the request can be turned away for comes first: where a new session takes the
+        // place of an old one, a malformed request must not cost a healthy upload its session on its
+        // way to being refused.
         if (typeof totalBytes !== "number" || !Number.isSafeInteger(totalBytes) || totalBytes <= 0) {
             throw new ValidationError("The size of the upload must be stated as a positive integer.");
         }
@@ -167,13 +195,29 @@ export function createChunkedUpload<T>(config: ChunkedUploadConfig<T>): ChunkedU
                 `The upload is ${totalBytes} bytes, above the limit of ${config.maxTotalBytes}.`
             );
         }
+
+        while (sessions.size >= maxConcurrentSessions) {
+            if (config.whenAtCapacity !== "supersede") {
+                throw new ConflictError("Another upload is already in progress.");
+            }
+
+            // Oldest first, the map keeping them in the order they were opened. Remembered as
+            // superseded, so the client it belonged to is told what became of it rather than left to
+            // conclude that its own upload timed out.
+            const [ oldest ] = sessions.values();
+            remember(oldest.uploadId, { kind: "superseded" });
+            await drop(oldest);
+        }
+
+        // After the room an ended session gave back, which is the difference between fitting and not
+        // when the upload being replaced is another copy of the same database.
         if (config.requireFreeSpace) {
             await requireRoomFor(directory, totalBytes);
         }
 
         await fsp.mkdir(directory, { recursive: true });
 
-        const uploadId = coreUtils.randomString(20);
+        const uploadId = `${stamp()}-${coreUtils.randomString(20)}`;
         const session: Session = {
             uploadId,
             // A base name, so a crafted name cannot reach outside the upload directory. Only ever
@@ -248,6 +292,14 @@ export function createChunkedUpload<T>(config: ChunkedUploadConfig<T>): ChunkedU
     }
 
     async function finish(req: Request): Promise<T> {
+        // A `finish` whose answer never arrived is asked again, and by then the session is gone and
+        // the file with it. Without the answer being kept, the only way back for that client would
+        // be to send the whole upload a second time.
+        const completed = endings.get(String(req.params.uploadId));
+        if (completed?.kind === "completed") {
+            return completed.result;
+        }
+
         const session = sessionFor(req);
 
         return session.writing.runExclusive(async () => {
@@ -262,12 +314,15 @@ export function createChunkedUpload<T>(config: ChunkedUploadConfig<T>): ChunkedU
             sessions.delete(session.uploadId);
 
             try {
-                return await config.onComplete({
+                const result = await config.onComplete({
                     path: session.path,
                     fileName: session.fileName,
                     totalBytes: session.totalBytes,
                     metadata: session.metadata
                 });
+                remember(session.uploadId, { kind: "completed", result });
+
+                return result;
             } catch (e) {
                 // The consumer may have taken the file or may have failed before touching it; either
                 // way nothing else will come back for it.
@@ -312,11 +367,46 @@ export function createChunkedUpload<T>(config: ChunkedUploadConfig<T>): ChunkedU
     }
 
     function sessionFor(req: Request): Session {
-        const session = sessions.get(String(req.params.uploadId));
+        const uploadId = String(req.params.uploadId);
+        const session = sessions.get(uploadId);
         if (!session) {
-            throw new NotFoundError("No such upload. It may have expired.");
+            throw endingOf(uploadId);
         }
         return session;
+    }
+
+    /**
+     * Why an upload is no longer here, in the terms a client can act on.
+     *
+     * The two that are worth telling apart from an expiry are the ones the client did not cause and
+     * cannot wait out: an upload that another took the place of, and one issued by the process that
+     * was running before this one. Both are final, where an expiry at least reads as something that
+     * took too long.
+     */
+    function endingOf(uploadId: string): HttpError {
+        if (endings.get(uploadId)?.kind === "superseded") {
+            return new GoneError("Another upload took over. Only one upload runs at a time.");
+        }
+        if (!uploadId.startsWith(`${stamp()}-`)) {
+            return new GoneError("The server restarted, so the upload it was holding is gone.");
+        }
+
+        return new NotFoundError("No such upload. It may have expired.");
+    }
+
+    /** This process's mark, made the first time anything needs it. */
+    function stamp(): string {
+        return instanceId ??= coreUtils.randomString(8);
+    }
+
+    /** Keeps the last few endings, so the map cannot grow with every upload the process ever saw. */
+    function remember(uploadId: string, ending: Ending<T>): void {
+        endings.set(uploadId, ending);
+
+        while (endings.size > REMEMBERED_ENDINGS) {
+            const [ oldest ] = endings.keys();
+            endings.delete(oldest);
+        }
     }
 
     /**
@@ -376,6 +466,16 @@ interface Session {
     /** Serialises writes, so the offset a chunk is checked against is the one it is written at. */
     writing: Mutex;
 }
+
+/**
+ * What became of a session that is no longer open, for as long as a client may still ask after it.
+ *
+ * Only the endings a client has something to do about are kept. An expiry is not one of them: it is
+ * what an unknown upload id means already.
+ */
+type Ending<T> =
+    | { kind: "superseded" }
+    | { kind: "completed"; result: T };
 
 interface BeginBody {
     fileName?: string;

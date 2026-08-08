@@ -56,6 +56,30 @@ describe("Backup API (core)", () => {
             expect(res.status).toBe(404);
         });
 
+        it("lets the platform send the file rather than reading it into memory", async () => {
+            // Reading it first is what the route used to do, and Node refuses a file over 2 GiB
+            // outright, so every real backup failed to download with nothing shown to the user.
+            const backup = getBackup() as { sendBackup?: (filePath: string, res: unknown) => boolean };
+            const previous = backup.sendBackup;
+            const sent: string[] = [];
+            backup.sendBackup = (filePath, res) => {
+                sent.push(filePath);
+                (res as { send(body: unknown): unknown }).send("streamed");
+                return true;
+            };
+            const read = vi.spyOn(getBackup(), "getBackupContent");
+
+            const res = await api.get(`/api/database/backup/download`, {
+                query: { filePath: "/backups/Backup 2026-08-07 10-32-21.tnbackup" }
+            });
+
+            expect(res.status).toBe(200);
+            expect(sent).toEqual([ "/backups/Backup 2026-08-07 10-32-21.tnbackup" ]);
+            expect(read).not.toHaveBeenCalled();
+
+            backup.sendBackup = previous;
+        });
+
         it("streams the backup content with download headers", async () => {
             vi.spyOn(getBackup(), "getBackupContent").mockResolvedValue(Buffer.from("SQLite format 3 ") as never);
 

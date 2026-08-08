@@ -15,7 +15,16 @@ const serverMock = vi.hoisted(() => ({
 }));
 vi.mock("./services/server", () => ({ default: serverMock }));
 
-const uploadMock = vi.hoisted(() => ({ uploadInChunks: vi.fn() }));
+const uploadMock = vi.hoisted(() => ({
+    uploadInChunks: vi.fn(),
+    // Stands in for the real one, which the screen tests failures against: mocking the module whole
+    // would otherwise leave it undefined.
+    ChunkedUploadError: class ChunkedUploadError extends Error {
+        constructor(message: string, readonly status: number) {
+            super(message);
+        }
+    }
+}));
 vi.mock("./services/chunked_upload", () => uploadMock);
 
 import RestoreFromBackup from "./setup_restore";
@@ -404,6 +413,33 @@ describe("uploading a backup", () => {
         expect(container.querySelector("input[type=password]")).toBeTruthy();
     });
 
+    it("says it is waiting on the connection, in place of a rate that has stopped meaning anything", async () => {
+        let report: (progress: unknown) => void = () => {};
+        uploadMock.uploadInChunks.mockImplementation(async ({ onProgress }: { onProgress: (p: unknown) => void }) => {
+            report = onProgress;
+            report({ sentBytes: 1024, totalBytes: 4096, fraction: 0.25, bytesPerSecond: 512, reconnecting: false });
+
+            return new Promise(() => {});
+        });
+        renderRestore();
+        await flushEffects();
+        await chooseFile(new File([ "database bytes" ], "backup.db"));
+
+        report({ sentBytes: 1024, totalBytes: 4096, fraction: 0.25, bytesPerSecond: 512, reconnecting: true });
+        await flushEffects();
+
+        expect(container.querySelector(".restore-upload-reconnecting")?.textContent)
+            .toContain("setup.restore-upload-reconnecting");
+        expect(container.querySelector(".restore-upload-speed")).toBeFalsy();
+        // Still on the upload rather than thrown back to the picker: waiting is not failing.
+        expect(container.querySelector("progress")).toBeTruthy();
+
+        report({ sentBytes: 2048, totalBytes: 4096, fraction: 0.5, bytesPerSecond: 512, reconnecting: false });
+        await flushEffects();
+
+        expect(container.querySelector(".restore-upload-reconnecting")).toBeFalsy();
+    });
+
     it("goes back to the picker with the reason when the upload fails", async () => {
         uploadMock.uploadInChunks.mockRejectedValue(new Error("the disk is full"));
         renderRestore();
@@ -414,6 +450,20 @@ describe("uploading a backup", () => {
         expect(container.querySelector(".restore-error-headline")?.textContent).toBe("setup.restore-error-upload-failed");
         expect(container.querySelector(".restore-error-detail")?.textContent).toBe("the disk is full");
         expect(container.querySelector(".restore-file-input")).toBeTruthy();
+    });
+
+    it("says an upload the server no longer holds has to be started again, not retried", async () => {
+        uploadMock.uploadInChunks.mockRejectedValue(
+            new uploadMock.ChunkedUploadError("The server restarted, so the upload it was holding is gone.", 410)
+        );
+        renderRestore();
+        await flushEffects();
+
+        await chooseFile(new File([ "database bytes" ], "backup.db"));
+
+        expect(container.querySelector(".restore-error-headline")?.textContent).toBe("setup.restore-error-upload-interrupted");
+        expect(container.querySelector(".restore-error-detail")?.textContent)
+            .toBe("The server restarted, so the upload it was holding is gone.");
     });
 });
 

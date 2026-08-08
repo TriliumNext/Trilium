@@ -106,6 +106,25 @@ describe("i18n service (core)", () => {
         });
     });
 
+    it("initTranslations loads the language it is handed, for a start with no database to read one from", async () => {
+        const asked: string[] = [];
+        const load = async (_i18next: unknown, locale: string) => { asked.push(locale); };
+        const previous = options.getOption("locale");
+
+        try {
+            cls.init(() => options.setOption("locale", "en"));
+
+            await initTranslations(load, "ro");
+            // Anything that is not a language this application displays leaves the document's own.
+            await initTranslations(load, "kl");
+            await initTranslations(load);
+
+            expect(asked).toEqual([ "ro", "en", "en" ]);
+        } finally {
+            cls.init(() => options.setOption("locale", previous));
+        }
+    });
+
     it("initTranslations logs a fallback when the locale option is empty", async () => {
         const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
         const previous = options.getOption("locale");

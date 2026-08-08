@@ -3,10 +3,11 @@ import {
     peekBackupContainer,
     writeBackupContainer
 } from "@triliumnext/backup-container";
-import type { DatabaseBackup } from "@triliumnext/commons";
+import type { DatabaseBackup, SetupExistingBackup } from "@triliumnext/commons";
 import { BackupOptionsService, BackupService, getLog, sync_mutex as syncMutexService, utils as coreUtils, ws } from "@triliumnext/core";
 import fs from "fs";
 import fsp from "fs/promises";
+import type { Response } from "express";
 import { t } from "i18next";
 import path from "path";
 
@@ -103,6 +104,41 @@ export default class ServerBackupService extends BackupService {
         });
     }
 
+    /**
+     * Writes a backup under the given name, and says what was written.
+     *
+     * The name is used as it stands, spaces and all, because the setup screen shows it to the user
+     * and the user then goes looking for it in a file manager. It never reaches a shell, and the
+     * directory is this instance's own, so the sanitising `backupNow` does for names that arrive
+     * from a schedule would only make this one harder to read.
+     */
+    override async backupAs(
+        baseName: string,
+        onProgress?: (fraction: number) => void
+    ): Promise<SetupExistingBackup> {
+        const written = await syncMutexService.doExclusively(async () => {
+            const format = await this.resolveFormat();
+            const directory = (format.keepLocal ? null : this.getCustomBackupDir()) ?? getDefaultBackupDir();
+
+            return {
+                filePath: await writeBackup(directory, baseName, format, "default", onProgress),
+                // What was actually written, not what was asked for: encryption falls back to an
+                // unencrypted local copy where the passphrase cannot be read, and the screen that
+                // tells the user to keep their password safe must not appear over one of those.
+                encrypted: format.passphrase !== null
+            };
+        });
+        const stat = fs.statSync(written.filePath);
+
+        return {
+            fileName: path.basename(written.filePath),
+            filePath: written.filePath,
+            directoryPath: path.dirname(written.filePath),
+            fileSize: stat.size,
+            encrypted: written.encrypted
+        };
+    }
+
     override async getBackupContent(filePath: string): Promise<Uint8Array | null> {
         const resolvedPath = this.resolveBackupPath(filePath);
 
@@ -117,6 +153,24 @@ export default class ServerBackupService extends BackupService {
      * path use this directly rather than {@link getBackupContent}, which reads the whole file into
      * memory — no use at all for a backup measured in gigabytes.
      */
+    override sendBackup(filePath: string, res: Response): boolean {
+        const resolved = this.resolveBackupPath(filePath);
+        if (!resolved) {
+            return false;
+        }
+
+        res.setHeader("Content-Type", "application/octet-stream");
+        res.setHeader("Content-Disposition", `attachment; filename="${path.basename(resolved)}"`);
+        res.setHeader("Content-Length", String(fs.statSync(resolved).size));
+        // Committed before a single byte of the body: the desktop serves the renderer through a
+        // protocol bridge that only streams once headers are flushed, and buffers everything
+        // otherwise. A backup is exactly the response that must not be buffered.
+        res.flushHeaders();
+        fs.createReadStream(resolved).pipe(res);
+
+        return true;
+    }
+
     resolveBackupPath(filePath: string): string | null {
         const resolvedPath = path.resolve(filePath);
 
@@ -211,7 +265,9 @@ function listBackupsIn(directory: string): DatabaseBackup[] {
     return fileNames
         // The extension check excludes intermediate files (e.g. *.db-journal, *.part) created while
         // a backup is in progress.
-        .filter((fileName) => fileName.includes("backup")
+        // Case-insensitively: the backup the setup screen takes before replacing a database is named
+        // for a person reading a directory listing, and starts with a capital.
+        .filter((fileName) => fileName.toLowerCase().includes("backup")
             && (fileName.endsWith(DATABASE_EXTENSION) || fileName.endsWith(CONTAINER_EXTENSION)))
         .flatMap((fileName) => {
             const filePath = path.resolve(directory, fileName);
@@ -272,7 +328,8 @@ async function writeBackup(
     directory: string,
     baseName: string,
     format: BackupFormat,
-    location: "default" | "custom"
+    location: "default" | "custom",
+    onProgress?: (fraction: number) => void
 ): Promise<string> {
     const isContainer = format.compress || format.passphrase !== null;
     const fileName = `${baseName}${isContainer ? CONTAINER_EXTENSION : DATABASE_EXTENSION}`;
@@ -283,10 +340,12 @@ async function writeBackup(
     getLog().info("Creating backup...");
     try {
         if (isContainer) {
-            await writeContainer(backupFile, baseName, format);
+            await writeContainer(backupFile, baseName, format, onProgress);
         } else {
+            // A plain copy has nothing to report along the way, only that it is over.
             await sql.copyDatabase(backupFile);
         }
+        onProgress?.(1);
     } catch (e) {
         // Whatever was written before the failure is not a usable backup, and would otherwise be
         // listed and offered for download as if it were one.
@@ -314,7 +373,8 @@ async function writeBackup(
 async function writeContainer(
     backupFile: string,
     baseName: string,
-    format: BackupFormat
+    format: BackupFormat,
+    onProgress?: (fraction: number) => void
 ): Promise<void> {
     const snapshot = path.resolve(dataDir.TMP_DIR, `${baseName}.snapshot.db`);
     const partial = `${backupFile}.part`;
@@ -326,6 +386,7 @@ async function writeContainer(
             compress: format.compress,
             passphrase: format.passphrase ?? undefined,
             plaintextSize: fs.statSync(snapshot).size,
+            onProgress,
             // The digest is only known once the payload is written, so it is patched in afterwards.
             patchHeader: async (offset, data) => {
                 const handle = await fsp.open(partial, "r+");

@@ -1,4 +1,4 @@
-import { routes, sql_init } from "@triliumnext/core";
+import { getSql, routes, sql_init } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BrowserRouter } from "./browser_router.js";
@@ -121,7 +121,7 @@ describe("route wrapper branches (via controlled handlers)", () => {
     function buildRouter(): BrowserRouter {
         vi.spyOn(routes, "buildSharedApiRoutes").mockImplementation((received: RouteCtx) => {
             ctx = received;
-            const { route, asyncRoute, apiRoute, asyncApiRoute, apiResultHandler } = received;
+            const { route, asyncRoute, asyncRouteWithoutTransaction, apiRoute, asyncApiRoute, apiResultHandler } = received;
 
             apiRoute("get", "/t/api", (req: { originalUrl: string }) => ({ url: req.originalUrl }));
             asyncApiRoute("get", "/t/asyncapi", () => ({ ok: true }));
@@ -143,6 +143,7 @@ describe("route wrapper branches (via controlled handlers)", () => {
             asyncRoute("get", "/t/async-obj", [], async () => ({ z: 9 }), apiResultHandler);
             asyncRoute("get", "/t/async-res", [], async (_req: unknown, res: MockRes) => { res.send("async-body"); });
             asyncRoute("get", "/t/async-noresult", [], async () => ({ done: true }));
+            asyncRouteWithoutTransaction("get", "/t/async-no-tx", [], async () => ({ bare: true }), apiResultHandler);
         });
         return createConfiguredRouter();
     }
@@ -163,6 +164,22 @@ describe("route wrapper branches (via controlled handlers)", () => {
         const apiRes = await router.dispatch("GET", "http://localhost/t/api");
         expect((parseJson(apiRes.body) as { url: string }).url).toBe("http://localhost/t/api");
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/asyncapi")).body)).toEqual({ ok: true });
+    });
+
+    it("leaves the database alone for a route that says it wants no transaction", async () => {
+        // The setup screen's erase closes the database and opens another one. A transaction opened
+        // around it belongs to a connection that is gone by the time it would be committed, and
+        // SQLite answers "cannot rollback - no transaction is active".
+        const router = buildRouter();
+        const transactional = vi.spyOn(getSql(), "transactionalAsync");
+
+        expect(parseJson((await router.dispatch("GET", "http://localhost/t/async-no-tx")).body))
+            .toEqual({ bare: true });
+        expect(transactional).not.toHaveBeenCalled();
+
+        // The ordinary async route is unchanged: it still gets one.
+        await router.dispatch("GET", "http://localhost/t/async-obj");
+        expect(transactional).toHaveBeenCalled();
     });
 
     it("formats route() results through apiResultHandler (object, tuple, undefined)", async () => {

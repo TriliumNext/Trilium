@@ -27,7 +27,9 @@ export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";
 // The spreadsheet modules are deliberately not re-exported here: they pull in numfmt, and the
 // barrel is imported by virtually every client module. Import them via their subpath instead,
 // e.g. "@triliumnext/commons/src/lib/spreadsheet/render_to_html".
+export * from "./lib/backup_name.js";
 export * from "./lib/electron_api_interface.js";
+export * from "./lib/setup_marker.js";
 export * from "./lib/standalone_api_interface.js";
 export * from "./lib/favicon_contrast.js";
 export * from "./lib/link_embed.js";

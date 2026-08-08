@@ -25,6 +25,7 @@ function plainHeader(overrides: Partial<ContainerHeader> = {}): ContainerHeader 
         version: 1,
         compressed: true,
         encrypted: false,
+        streamed: false,
         plaintextSize: 4096,
         headerLength: HEADER_BYTES_PLAIN,
         encryption: null,
@@ -132,7 +133,7 @@ describe("fixed header validation", () => {
         [ "a newer version", (bytes: Buffer) => bytes.writeUInt8(2, 20), "unsupported-version" ],
         [
             "a reserved flag bit",
-            (bytes: Buffer) => bytes.writeUInt8(0b100, 21),
+            (bytes: Buffer) => bytes.writeUInt8(0b1000, 21),
             "unsupported-flags"
         ],
         [

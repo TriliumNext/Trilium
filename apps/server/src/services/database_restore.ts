@@ -12,6 +12,7 @@ import {
     events as eventService,
     getLog,
     getSql,
+    leaveSetupMode,
     sql_init as sqlInit,
     utils as coreUtils
 } from "@triliumnext/core";
@@ -74,17 +75,37 @@ function withoutPaths(text: string): string {
     let scrubbed = text;
 
     // Longest first, so a path inside the data directory is not reduced to the data directory and a
-    // leftover fragment of itself.
+    // leftover fragment of itself. Each is scrubbed both as configured and as resolved, since an
+    // error quotes back whichever form the call that failed was given.
     for (const [ directory, name ] of [
         [ dataDir.DOCUMENT_PATH, "<database>" ],
         [ dataDir.TMP_DIR, "<temporary files>" ],
         [ dataDir.BACKUP_DIR, "<backup location>" ],
         [ dataDir.TRILIUM_DATA_DIR, "<data directory>" ]
     ] as const) {
-        scrubbed = coreUtils.replaceAll(scrubbed, directory, name);
+        for (const form of pathForms(directory)) {
+            scrubbed = coreUtils.replaceAll(scrubbed, form, name);
+        }
     }
 
     return scrubbed;
+}
+
+/**
+ * The spellings of a configured location that could turn up in an error, longest first.
+ *
+ * A data directory may be configured relatively — `TRILIUM_DATA_DIR=data` is what the development
+ * scripts use — so the resolved form is what a filesystem error names, while our own calls pass the
+ * configured one. A bare word is dropped: replacing "data" as a substring turns every "database" in
+ * a sentence into "<data directory>base".
+ */
+function pathForms(directory: string): string[] {
+    const resolved = path.resolve(directory);
+    const looksLikePath = directory.includes(path.sep) || directory.includes("/");
+
+    return resolved === directory || !looksLikePath
+        ? [ resolved ]
+        : [ resolved, directory ].sort((a, b) => b.length - a.length);
 }
 
 /**
@@ -532,6 +553,10 @@ async function openRestoredDatabase(needsMigration: boolean): Promise<void> {
     logRestore(needsMigration
         ? "opening the restored database, which is being migrated first and may take a while"
         : "opening the restored database");
+
+    // Whatever asked this instance into setup has had its answer, and until this is said the
+    // instance keeps reporting that it has nothing to open, which is what `initDbConnection` checks.
+    leaveSetupMode();
 
     try {
         await sqlInit.initDbConnection();

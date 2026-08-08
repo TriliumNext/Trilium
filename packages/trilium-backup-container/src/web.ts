@@ -34,7 +34,8 @@ export {
     FRAME_SIZE,
     SCRYPT_BOUNDS,
     SCRYPT_DEFAULTS,
-    type ScryptParams
+    type ScryptParams,
+    streamedContainerSize
 } from "./format.js";
 export {
     DEFAULT_PROGRESS_INTERVAL_MS,

@@ -55,6 +55,12 @@ export class SqlService {
         if (!this.dbConnection.detach) {
             throw new Error("Database provider does not support detaching.");
         }
+        // Nothing to let go of: the database was erased before this, which is what the setup screen
+        // does when the user asks for it, and a restore that follows would otherwise fail here on a
+        // connection that is already gone.
+        if (this.dbConnection.isAttached?.() === false) {
+            return;
+        }
         if (this.dbConnection.inTransaction) {
             throw new Error("Cannot detach the database in the middle of a transaction.");
         }

@@ -1,4 +1,8 @@
-import type { StandaloneRestoreProgress, StandaloneRestoreResult } from "@triliumnext/commons";
+import type {
+    StandaloneDownloadResult,
+    StandaloneRestoreProgress,
+    StandaloneRestoreResult
+} from "@triliumnext/commons";
 
 import { showErrorOverlay } from "./error-overlay.js";
 import { isLeader } from "./leader_election.js";
@@ -91,6 +95,111 @@ export function restoreBackup(opts: {
             passphrase: opts.passphrase
         });
     });
+}
+
+/**
+ * How long the download's frame is kept in the page: comfortably past the service worker's own
+ * 30-second wait for the stream to open, after which the response has either been handed to the
+ * browser's download manager, which no longer needs the frame, or failed inside it invisibly.
+ */
+const DOWNLOAD_FRAME_LINGER_MS = 60_000;
+
+/** Well inside the ~30 seconds of eventlessness after which browsers reclaim a service worker. */
+const BACKUP_PING_INTERVAL_MS = 10_000;
+
+let backupPing: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Keeps the service worker alive while it streams a backup download, by fetching a no-op URL it
+ * answers: a fetch event is what resets the browser's idle clock on it. Runs for exactly as long
+ * as the local worker says a stream is running, and never twice at once.
+ */
+function setBackupPinging(active: boolean): void {
+    if (active && !backupPing) {
+        backupPing = setInterval(
+            () => void fetch("/local-backup-ping").catch(() => undefined),
+            BACKUP_PING_INTERVAL_MS
+        );
+    } else if (!active && backupPing) {
+        clearInterval(backupPing);
+        backupPing = null;
+    }
+}
+
+/** How long the chain gets to reach the worker and open the stream before it is called dead. */
+const DOWNLOAD_START_TIMEOUT_MS = 45_000;
+
+/** The one download in flight, waiting for the worker to say how the stream ended. */
+let pendingDownload: {
+    resolve: (result: StandaloneDownloadResult) => void;
+    startTimer: ReturnType<typeof setTimeout>;
+} | null = null;
+
+/** Carried from {@link downloadDatabase} to the stream relay, so it never rides the URL. */
+let pendingDownloadPassphrase: string | undefined;
+
+/**
+ * Hands the browser a download of the live database, streamed by the service worker.
+ *
+ * A navigation rather than a request: the URL is answered by the service worker with a response
+ * body it pulls from the local worker chunk by chunk, so the browser's own download manager
+ * receives, shows and stores the file, and nothing is staged in the origin's storage first.
+ * The worker is started here because the service worker's first act is to ask the page for it.
+ * The passphrase, when there is one, travels to the worker on the relayed message, never in the
+ * URL a browser would put in its history.
+ *
+ * The navigation is a hidden iframe rather than an anchor click: anchors with the `download`
+ * attribute are not routed through service workers everywhere (Firefox never sends them there),
+ * while a frame's navigation always is, and the response's `Content-Disposition` is what makes it
+ * a download either way. A failure renders invisibly inside the frame instead of navigating the
+ * application away.
+ *
+ * Resolves when the worker has finished producing the stream, one way or the other — which is as
+ * close to "the download finished" as anything on this side of the browser's download manager can
+ * see. A chain that dies silently inside the hidden frame (a stale service worker, say) resolves
+ * as failed after a timeout rather than never.
+ *
+ * Only the leader tab can do this, as for a restore: the worker that streams the database is the
+ * leader's, and the passphrase asked for here never leaves this tab, so a follower would produce
+ * either no backup or an unencrypted one under the belief it was encrypted.
+ */
+export function downloadDatabase(fileName: string, passphrase?: string): Promise<StandaloneDownloadResult> {
+    if (!isLeader()) {
+        return Promise.resolve({
+            status: "failed",
+            message: "A backup can only be downloaded from the tab that owns the database. "
+                + "Close the other Trilium tabs and try again."
+        });
+    }
+
+    startLocalServerWorker();
+    // A newer download supersedes one still unaccounted for, rather than stacking behind it.
+    settlePendingDownload({ status: "cancelled" });
+    pendingDownloadPassphrase = passphrase;
+
+    const frame = document.createElement("iframe");
+    frame.hidden = true;
+    frame.src = `/local-backup-download?fileName=${encodeURIComponent(fileName)}`;
+    document.body.appendChild(frame);
+    setTimeout(() => frame.remove(), DOWNLOAD_FRAME_LINGER_MS);
+
+    return new Promise((resolve) => {
+        pendingDownload = {
+            resolve,
+            startTimer: setTimeout(
+                () => settlePendingDownload({ status: "failed", message: "The download did not start." }),
+                DOWNLOAD_START_TIMEOUT_MS
+            )
+        };
+    });
+}
+
+function settlePendingDownload(result: StandaloneDownloadResult): void {
+    if (pendingDownload) {
+        clearTimeout(pendingDownload.startTimer);
+        pendingDownload.resolve(result);
+        pendingDownload = null;
+    }
 }
 
 export function isLocalApiRequest(url: URL): boolean {
@@ -227,6 +336,24 @@ export function startLocalServerWorker() {
             return;
         }
 
+        // A backup download is streaming through the service worker, which receives no events of
+        // its own while a response body streams: browsers reclaim such "idle" workers within a
+        // minute or so, killing the download mid-file. A real fetch is a functional event that
+        // resets that clock, so one is sent for as long as the worker says the stream is running.
+        // The end of the stream also carries its outcome, which is what the caller of
+        // downloadDatabase() has been waiting on.
+        if (msg?.type === "BACKUP_STREAM_ACTIVE") {
+            setBackupPinging(msg.active === true);
+            if (msg.active === true) {
+                if (pendingDownload) {
+                    clearTimeout(pendingDownload.startTimer);
+                }
+            } else {
+                settlePendingDownload(msg.result ?? { status: "done" });
+            }
+            return;
+        }
+
         // Handle WebSocket-like messages from the worker (for frontend updates)
         if (msg?.type === "WS_MESSAGE" && msg.message) {
             // Dispatch a custom event that ws.ts listens to in standalone mode
@@ -288,6 +415,34 @@ export function attachServiceWorkerBridge() {
         if (msg?.type === "WHO_IS_LEADER") {
             const replyPort = event.ports && event.ports[0];
             replyPort?.postMessage({ type: "LEADER_REPLY", isLeader: isLeader() });
+            return;
+        }
+
+        // A backup download's channel: handed straight through to the worker, which streams the
+        // database into it. The page is only the relay, because the service worker cannot reach
+        // the local worker itself.
+        if (msg?.type === "LOCAL_BACKUP_STREAM") {
+            const streamPort = event.ports && event.ports[0];
+            if (!streamPort) {
+                return;
+            }
+
+            // As for any other request: only the leader has a worker, and starting one here
+            // would open a second database. The download is refused rather than served wrongly.
+            if (!isLeader()) {
+                streamPort.postMessage({
+                    type: "error",
+                    message: "This tab does not own the database."
+                });
+                return;
+            }
+
+            startLocalServerWorker().postMessage({
+                type: "BACKUP_STREAM",
+                port: streamPort,
+                passphrase: pendingDownloadPassphrase
+            }, [ streamPort ]);
+            pendingDownloadPassphrase = undefined;
             return;
         }
 

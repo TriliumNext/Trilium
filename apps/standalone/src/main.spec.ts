@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
     attachServiceWorkerBridge: vi.fn(),
     registerNativeHttpHandler: vi.fn(),
     restoreBackup: vi.fn(),
+    downloadDatabase: vi.fn(),
     announceLeadership: vi.fn(),
     capacitorHttpHandler: vi.fn()
 }));
@@ -18,6 +19,7 @@ vi.mock("./local-bridge.js", () => ({
     attachServiceWorkerBridge: mocks.attachServiceWorkerBridge,
     registerNativeHttpHandler: mocks.registerNativeHttpHandler,
     restoreBackup: mocks.restoreBackup,
+    downloadDatabase: mocks.downloadDatabase,
     announceLeadership: mocks.announceLeadership
 }));
 vi.mock("./leader_election.js", () => ({

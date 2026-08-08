@@ -1,3 +1,5 @@
+import type { SetupMarker } from "@triliumnext/commons";
+
 import { ExecutionContext, initContext } from "./services/context";
 import { CryptoProvider, initCrypto } from "./services/encryption/crypto";
 import LogService, { getLog, initLog } from "./services/log";
@@ -7,6 +9,7 @@ import { SqlService, SqlServiceParams } from "./services/sql/sql";
 import { initMessaging, MessagingProvider } from "./services/messaging/index";
 import { initRequest, RequestProvider } from "./services/request";
 import { initTranslations, TranslationProvider } from "./services/i18n";
+import { enterSetupMode, initSetupPlatform, type SetupPlatform } from "./services/setup_mode";
 import { initSchema, initDemoArchive } from "./services/sql_init";
 import appInfo from "./services/app_info";
 import { type PlatformProvider, initPlatform } from "./services/platform";
@@ -23,6 +26,15 @@ export type * from "./services/sql/types";
 export * from "./services/sql/index";
 export { default as sql_init } from "./services/sql_init";
 export { getRunningSetupOperation, holdSetup, withSetupLock } from "./services/setup_lock";
+export {
+    getSetupLanguage,
+    getSetupTargetScreen,
+    isInitialSetup,
+    isSetupRequested,
+    leaveSetupMode,
+    parseSetupMarker,
+    type SetupPlatform
+} from "./services/setup_mode";
 export {
     type CandidateDatabase,
     type DatabaseRejection,
@@ -150,7 +162,7 @@ export { default as scriptService } from "./services/script";
 export { default as BackendScriptApi, type Api as BackendScriptApiInterface } from "./services/backend_script_api";
 export * as scheduler from "./services/scheduler";
 
-export async function initializeCore({ dbConfig, executionContext, crypto, zip, zipExportProviderFactory, translations, messaging, request, schema, extraAppInfo, platform, getDemoArchive, inAppHelp, log, backup, image, config }: {
+export async function initializeCore({ dbConfig, executionContext, crypto, zip, zipExportProviderFactory, translations, messaging, request, schema, extraAppInfo, platform, getDemoArchive, inAppHelp, log, backup, image, config, setupMarker, setupPlatform }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
     crypto: CryptoProvider,
@@ -171,6 +183,13 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     backup: BackupService;
     image: ImageProvider;
     config?: CoreConfig;
+    /**
+     * The `setup.json` a running instance left behind for this start, already read and deleted by
+     * the platform. Its presence keeps the database closed and sends the client to the setup screen.
+     */
+    setupMarker?: SetupMarker | null;
+    /** How this platform writes that file, for the route that asks for the next start to be setup. */
+    setupPlatform?: SetupPlatform;
 }) {
     if (config) {
         initConfig(config);
@@ -178,7 +197,16 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     initPlatform(platform);
     initLog(log);
     initBackup(backup);
-    await initTranslations(translations);
+    // Before anything reads the database: from here on this instance answers as one with nothing to
+    // open, which is what `initSql` below relies on to leave the existing database alone.
+    enterSetupMode(setupMarker ?? null);
+    if (setupPlatform) {
+        initSetupPlatform(setupPlatform);
+    }
+    // The wizard is for a user who has already chosen a language, so it opens in theirs. Passed in
+    // here, where the resources for a language are actually loaded, because the place that language
+    // is normally read from is the database this start is deliberately not opening.
+    await initTranslations(translations, setupMarker?.lang);
     initCrypto(crypto);
     initZipProvider(zip);
     initZipExportProviderFactory(zipExportProviderFactory);
