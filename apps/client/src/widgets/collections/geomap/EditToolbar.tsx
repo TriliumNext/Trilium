@@ -4,6 +4,7 @@ import { useContext, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { useStaticTooltip } from "../../react/hooks";
+import type { DrawTool } from "./DrawShape";
 import { ParentMap } from "./map";
 
 interface EditToolbarProps {
@@ -15,19 +16,24 @@ interface EditToolbarProps {
     /** Arms the map for a note to be placed, or stands it down again — the visible counterpart of
      *  the Escape the instruction toast offers (see index.tsx). */
     onTogglePlacement: () => void;
-    /** The map is armed for clicks to draw a line, worn held-down the way `placing` is. */
-    drawing: boolean;
-    /** Arms the map for a line to be drawn, or stands it down again (see index.tsx). */
-    onToggleDrawing: () => void;
+    /** The tool the map is armed to draw with, if any — its button worn held-down like `placing`. */
+    drawingTool: DrawTool | null;
+    /** Arms the map to draw with the tool, or stands it down again (see index.tsx). */
+    onToggleDrawing: (tool: DrawTool) => void;
     /** Asks for a GPX file and brings it onto the map (see `addGpxTrack` in index.tsx). */
     onAddGpxTrack: () => void;
 }
 
+/** The drawing tools in the order they stand on the bar, each wearing the shape it draws. */
+const DRAW_TOOLS: { tool: DrawTool; icon: string; title: () => string }[] = [
+    { tool: "line", icon: "bx-vector", title: () => t("geo-map.draw-line") },
+    { tool: "polygon", icon: "bx-shape-polygon", title: () => t("geo-map.draw-polygon") }
+];
+
 /**
  * The editing actions, standing in the middle of the map's foot on a control group of their own
- * (`tn-overlay-control-group`, the surface every group over this map stands on): adding a marker and
- * bringing in a GPX track today, with room along the row for whatever editing the map comes to offer
- * next.
+ * (`tn-overlay-control-group`, the surface every group over this map stands on): adding a marker,
+ * the drawing tools, and bringing in a GPX track.
  *
  * A group of its own rather than more buttons on {@link MapToolbar}: that one is the camera — how
  * close in the map is drawn, how much screen it gets — and what changes the map is another kind of
@@ -40,20 +46,15 @@ interface EditToolbarProps {
  * is what goes fullscreen (see MapToolbar): the collection bar stays behind, and while the button
  * lived there, a fullscreen map could only be added to through its right-click menu.
  */
-export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, drawing, onToggleDrawing, onAddGpxTrack }: EditToolbarProps) {
+export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, drawingTool, onToggleDrawing, onAddGpxTrack }: EditToolbarProps) {
     const map = useContext(ParentMap);
     const addMarkerRef = useRef<HTMLButtonElement>(null);
-    const drawLineRef = useRef<HTMLButtonElement>(null);
     const gpxRef = useRef<HTMLButtonElement>(null);
 
     // Standing at the foot of the map, the tooltips open away from that edge, where they would
     // otherwise fall off.
     useStaticTooltip(addMarkerRef, {
         title: placing ? t("geo-map.create-child-note-cancel") : t("geo-map.create-child-note-title"),
-        placement: "top"
-    });
-    useStaticTooltip(drawLineRef, {
-        title: drawing ? t("geo-map.draw-line-cancel") : t("geo-map.draw-line"),
         placement: "top"
     });
     useStaticTooltip(gpxRef, { title: t("geo-map.add-gpx-track"), placement: "top" });
@@ -83,14 +84,16 @@ export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, dr
                 <span className="bx bx-pin" aria-hidden="true" />
                 {placing ? t("geo-map.add-marker-cancel") : t("geo-map.add-marker")}
             </button>
-            <button
-                ref={drawLineRef}
-                type="button"
-                className={`tn-overlay-icon-button bx bx-vector ${drawing ? "active" : ""}`}
-                aria-label={drawing ? t("geo-map.draw-line-cancel") : t("geo-map.draw-line")}
-                disabled={isReadOnly}
-                onClick={onToggleDrawing}
-            />
+            {DRAW_TOOLS.map(({ tool, icon, title }) => (
+                <DrawToolButton
+                    key={tool}
+                    icon={icon}
+                    title={drawingTool === tool ? t("geo-map.draw-cancel") : title()}
+                    active={drawingTool === tool}
+                    disabled={isReadOnly}
+                    onClick={() => onToggleDrawing(tool)}
+                />
+            ))}
             <button
                 ref={gpxRef}
                 type="button"
@@ -101,4 +104,28 @@ export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, dr
             />
         </div>
     );
+}
+
+/**
+ * One drawing tool's button — a component apiece rather than markup in the loop above, because
+ * each needs a tooltip of its own and a tooltip is a hook on a ref.
+ */
+function DrawToolButton({ icon, title, active, disabled, onClick }: {
+    icon: string;
+    title: string;
+    active: boolean;
+    disabled: boolean;
+    onClick: () => void;
+}) {
+    const ref = useRef<HTMLButtonElement>(null);
+    useStaticTooltip(ref, { title, placement: "top" });
+
+    return <button
+        ref={ref}
+        type="button"
+        className={`tn-overlay-icon-button bx ${icon} ${active ? "active" : ""}`}
+        aria-label={title}
+        disabled={disabled}
+        onClick={onClick}
+    />;
 }

@@ -13,20 +13,20 @@ import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import { useCollectionTreeDrag, useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate } from "../../react/hooks";
 import { ViewModeProps } from "../interface";
-import { createLineNote, createNewNote, importGpxTrack, moveMarker } from "./api";
+import { createNewNote, createShapeNote, importGpxTrack, moveMarker } from "./api";
 import Buildings from "./Buildings";
 import ContextMenus from "./ContextMenus";
 import DetailPane, { PaneSelection } from "./DetailPane";
-import DrawLine from "./DrawLine";
+import DrawShape, { DrawTool } from "./DrawShape";
 import EditToolbar from "./EditToolbar";
 import GhostPin from "./GhostPin";
 import { GPX_MIME, GpxTrack } from "./GpxTrack";
-import { LineShape } from "./LineShape";
 import Map, { DEFAULT_ZOOM, GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import MapToolbar from "./MapToolbar";
 import Markers, { DEFAULT_MARKER_COLOR, LOCATION_ATTRIBUTE } from "./Markers";
-import { parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
+import { GeoShape, parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
+import { ShapeLayer } from "./ShapeLayer";
 import Tooltips from "./Tooltips";
 
 const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
@@ -61,7 +61,7 @@ interface MapData {
 type Placement =
     | { mode: "new" }
     | { mode: "move"; noteId: string }
-    | { mode: "draw" };
+    | { mode: "draw"; tool: DrawTool };
 
 export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<MapData>) {
     const [ placement, setPlacement ] = useState<Placement>();
@@ -105,19 +105,21 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
         setPlacement((current) => current?.mode === "new" ? undefined : { mode: "new" });
     }, []);
     const startMarkerRelocation = useCallback((noteId: string) => setPlacement({ mode: "move", noteId }), []);
-    const toggleLineDrawing = useCallback(() => {
-        setPlacement((current) => current?.mode === "draw" ? undefined : { mode: "draw" });
+    const toggleDrawing = useCallback((tool: DrawTool) => {
+        // A press on the armed tool stands the map down; a press on another switches to it, the
+        // way + takes over a map armed to move a marker.
+        setPlacement((current) => current?.mode === "draw" && current.tool === tool ? undefined : { mode: "draw", tool });
     }, []);
 
     /**
-     * Makes a note of a finished line and opens the pane on it, title selected, exactly as a
+     * Makes a note of a finished shape and opens the pane on it, title selected, exactly as a
      * placed marker is offered for naming (see createNoteAt). Disarming comes first so a failure
-     * to create the note does not leave the map drawing a line nobody is looking at any more.
+     * to create the note does not leave the map drawing a shape nobody is looking at any more.
      */
-    const finishLine = useCallback(async (coordinates: [number, number][]) => {
+    const finishShape = useCallback(async (shape: GeoShape) => {
         setPlacement(undefined);
 
-        const created = await createLineNote(note, coordinates);
+        const created = await createShapeNote(note, shape);
         if (!created) return;
 
         setNotes((current) => current.some((n) => n.noteId === created.noteId) ? current : [ ...current, created ]);
@@ -184,11 +186,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                         title: t("geo-map.move-marker-toast-title"),
                         message: t("geo-map.move-marker-instruction")
                     }
-                    : {
-                        icon: "vector",
-                        title: t("geo-map.draw-line-toast-title"),
-                        message: t("geo-map.draw-line-instruction")
-                    })
+                    : drawingToast(placement.tool))
         });
 
         const globalKeyListener = (e: KeyboardEvent) => {
@@ -280,8 +278,8 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                     isReadOnly={isReadOnly}
                     placing={placement?.mode === "new"}
                     onTogglePlacement={toggleNotePlacement}
-                    drawing={placement?.mode === "draw"}
-                    onToggleDrawing={toggleLineDrawing}
+                    drawingTool={placement?.mode === "draw" ? placement.tool : null}
+                    onToggleDrawing={toggleDrawing}
                     onAddGpxTrack={addGpxTrack}
                 />
                 <Tooltips selectedNoteId={selection?.noteId ?? null} />
@@ -289,7 +287,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                     being moved wearing its own pin, a note to be created wearing the pin it will be
                     given (see api.ts). A drawing session previews itself, so no ghost then. */}
                 {placement && placement.mode !== "draw" && <GhostPin note={placement.mode === "move" ? notes.find((n) => n.noteId === placement.noteId) : undefined} />}
-                {placement?.mode === "draw" && <DrawLine onFinish={finishLine} />}
+                {placement?.mode === "draw" && <DrawShape tool={placement.tool} onFinish={finishShape} />}
                 <DetailPane notes={notes} parentNote={note} placing={!!placement} isReadOnly={isReadOnly} selection={selection} onSelect={setSelection} onRelocate={startMarkerRelocation} />
                 <ContextMenus parentNote={note} isReadOnly={isReadOnly} onRelocate={startMarkerRelocation} onCreateNote={createNoteAt} />
                 {/* Stood up only while the view is leaned over, so the 3D button changes the map
@@ -419,7 +417,7 @@ function NoteGpxTrack({ note, hideLabels, isDarkTheme }: { note: FNote, hideLabe
 }
 
 /**
- * A note's drawn shape, where the note carries one — a line written into its `#geoShape` label
+ * A note's drawn shape, where the note carries one — a shape written into its `#geoShape` label
  * (see shapes.ts). A label the shape cannot be read from draws nothing, the same nothing a note
  * with no shape at all draws: the label is user-editable like any other, and a map is no place to
  * report a parse error.
@@ -433,10 +431,28 @@ function NoteShapeWrapper({ note }: { note: FNote }) {
         return null;
     }
 
-    return <LineShape
+    return <ShapeLayer
         noteId={note.noteId}
-        coordinates={shape.coordinates}
+        shape={shape}
         color={color ?? "blue"}
     />;
+}
+
+/** What the instruction toast says while each tool is armed (see the placement toast above). */
+function drawingToast(tool: DrawTool): { icon: string; title: string; message: string } {
+    switch (tool) {
+        case "line":
+            return {
+                icon: "vector",
+                title: t("geo-map.draw-line-toast-title"),
+                message: t("geo-map.draw-line-instruction")
+            };
+        case "polygon":
+            return {
+                icon: "shape-polygon",
+                title: t("geo-map.draw-polygon-toast-title"),
+                message: t("geo-map.draw-polygon-instruction")
+            };
+    }
 }
 
