@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { circleRing, closeRing, parseGeoShape, polygonFromRing, ringCenter, serializeGeoShape } from "./shapes";
+import { circleRing, closeRing, type GeoShape, parseGeoShape, polygonFromRing, ringCenter, serializeGeoShape } from "./shapes";
 
 describe("serializeGeoShape", () => {
     it("writes lat,lng pairs behind the kind's prefix, rounded but not padded", () => {
@@ -36,7 +36,7 @@ describe("serializeGeoShape", () => {
             expect(parseGeoShape(serializeGeoShape({ type, coordinates }))).toEqual({ type, coordinates });
         }
 
-        const circle = { type: "circle", center: [ 13.404954, 52.520008 ], radiusMeters: 500 } as const;
+        const circle: GeoShape = { type: "circle", center: [ 13.404954, 52.520008 ], radiusMeters: 500 };
         expect(parseGeoShape(serializeGeoShape(circle))).toEqual(circle);
     });
 });
@@ -53,7 +53,7 @@ describe("parseGeoShape", () => {
     });
 
     it("tolerates surrounding and repeated whitespace", () => {
-        expect(parseGeoShape("line: 1,2  3,4 ")?.coordinates).toEqual([ [ 2, 1 ], [ 4, 3 ] ]);
+        expect(parseGeoShape("line: 1,2  3,4 ")).toEqual({ type: "line", coordinates: [ [ 2, 1 ], [ 4, 3 ] ] });
     });
 
     it("refuses what is not a shape", () => {

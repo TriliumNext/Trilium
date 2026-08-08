@@ -5,10 +5,11 @@
  */
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import DrawShape, { type DrawTool, shapeFromFeature } from "./DrawShape";
 import { MapStyleLoaded, ParentMap } from "./map";
+import type { GeoShape } from "./shapes";
 
 vi.mock("terra-draw", () => {
     /** Terra Draw as this component uses it: events, a snapshot, and a lifecycle. */
@@ -80,7 +81,7 @@ const CIRCLE_FEATURE = {
 
 describe("DrawShape", () => {
     let container: HTMLElement;
-    let onFinish: ReturnType<typeof vi.fn>;
+    let onFinish: Mock<(shape: GeoShape) => void>;
 
     beforeEach(() => {
         instances().length = 0;
