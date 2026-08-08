@@ -1,0 +1,36 @@
+.protected-session-lock-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding-top: max(24px, env(safe-area-inset-top));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    padding-left: max(20px, env(safe-area-inset-left));
+    background: rgb(0 0 0 / 0.35);
+    backdrop-filter: blur(10px);
+    -webkit-app-region: no-drag;
+}
+
+.protected-session-lock-screen__panel {
+    width: min(100%, 560px);
+    padding: 32px 24px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 20px;
+    background: var(--modal-background-color, var(--main-background-color));
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.25);
+}
+
+.protected-session-lock-screen .protected-session-password-form {
+    margin-bottom: 0;
+}
+
+@media (max-width: 575px) {
+    .protected-session-lock-screen__panel {
+        padding: 28px 20px;
+        border-radius: 16px;
+    }
+}
