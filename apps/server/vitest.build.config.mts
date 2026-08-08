@@ -8,7 +8,6 @@ export default defineConfig(() => ({
   test: {
     watch: false,
     globals: true,
-    setupFiles: ["./spec/setup.ts"],
     environment: "node",
     include: ['spec/build-checks/**'],
     reporters: [

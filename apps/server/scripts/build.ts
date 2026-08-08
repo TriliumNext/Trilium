@@ -21,7 +21,10 @@ async function main() {
 
     // Copy node modules dependencies
     build.copyNodeModules([ "better-sqlite3" ]);
-    build.trimBetterSqlite3();
+    // The server artifact is also the input to both AMD64 and ARM64 Docker
+    // images. Keep the host binary for local production runs, plus all Linux
+    // glibc/musl variants so a macOS build is still usable by Docker Desktop.
+    build.trimBetterSqlite3({ includeAllLinuxArchitectures: true });
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
 
     build.buildFrontend();
