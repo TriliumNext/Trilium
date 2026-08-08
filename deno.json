@@ -1,0 +1,23 @@
+{
+    "//": "Deno workspace root for the apps/desktop-deno prototype (branch deno-desktop). Inert to the rest of the monorepo — pnpm, Vite, and tsc do not read deno.json. This config covers packages/, so the @triliumnext import map here (unlike one in the member) governs trilium-core's own cross-package imports. sloppy-imports remaps core's relative .js->.ts specifiers; bare cross-package ones (@triliumnext/*/....js) are not remapped by sloppy, so they are listed explicitly.",
+    "workspace": ["apps/desktop-deno"],
+    "unstable": ["sloppy-imports"],
+    "nodeModulesDir": "manual",
+    "imports": {
+        "@triliumnext/core": "./packages/trilium-core/src/index.ts",
+        "@triliumnext/core/": "./packages/trilium-core/",
+        "@triliumnext/commons": "./packages/commons/src/index.ts",
+        "@triliumnext/commons/": "./packages/commons/",
+        "@triliumnext/commons/src/lib/csv.js": "./packages/commons/src/lib/csv.ts",
+        "@triliumnext/commons/src/lib/llm/extract_chat_text.js": "./packages/commons/src/lib/llm/extract_chat_text.ts",
+        "@triliumnext/commons/src/lib/markdown_renderer.js": "./packages/commons/src/lib/markdown_renderer.ts",
+        "@triliumnext/commons/src/lib/mime_type.js": "./packages/commons/src/lib/mime_type.ts",
+        "@triliumnext/commons/src/lib/script_api.js": "./packages/commons/src/lib/script_api.ts",
+        "@triliumnext/commons/src/lib/spreadsheet/extract_text.js": "./packages/commons/src/lib/spreadsheet/extract_text.ts",
+        "@triliumnext/commons/src/lib/spreadsheet/parse_from_csv.js": "./packages/commons/src/lib/spreadsheet/parse_from_csv.ts",
+        "@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js": "./packages/commons/src/lib/spreadsheet/parse_from_xlsx.ts",
+        "@triliumnext/core/src/services/export/zip/html.js": "./packages/trilium-core/src/services/export/zip/html.ts",
+        "@triliumnext/core/src/services/export/zip/markdown.js": "./packages/trilium-core/src/services/export/zip/markdown.ts",
+        "@triliumnext/core/src/services/zip_provider.js": "./packages/trilium-core/src/services/zip_provider.ts"
+    }
+}

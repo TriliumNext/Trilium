@@ -26,8 +26,16 @@ export default class StandaloneLogService extends FileBasedLogService {
     }
 
     protected override async ensureLogDirectory(): Promise<void> {
-        const root = await navigator.storage.getDirectory();
-        this.logDir = await root.getDirectoryHandle(LOG_DIR_NAME, { create: true });
+        try {
+            const root = await navigator.storage.getDirectory();
+            this.logDir = await root.getDirectoryHandle(LOG_DIR_NAME, { create: true });
+        } catch (error) {
+            // OPFS is not available in every environment (e.g. WebKitGTK
+            // webviews) — fall back to console-only logging instead of
+            // failing the whole worker initialization.
+            console.warn("[LogService] OPFS unavailable, using console-only logging:", error);
+            this.logDir = null;
+        }
     }
 
     protected override async openLogFile(fileName: string): Promise<void> {
@@ -41,7 +49,12 @@ export default class StandaloneLogService extends FileBasedLogService {
             this.currentFile = null;
         }
 
-        const fileHandle = await this.logDir!.getFileHandle(fileName, { create: true });
+        if (!this.logDir) {
+            // Console-only mode (no OPFS).
+            return;
+        }
+
+        const fileHandle = await this.logDir.getFileHandle(fileName, { create: true });
 
         // Try to create sync access handle with retry logic for worker restarts
         // Previous worker may have left handle open before being terminated

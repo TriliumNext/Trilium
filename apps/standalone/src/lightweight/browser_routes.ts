@@ -308,7 +308,9 @@ function bootstrapRoute(req: { query: Record<string, string | undefined> }): Boo
     const isDbInitialized = sql_init.isDbInitialized();
     const commonItems = {
         ...getSharedBootstrapItems(assetPath, isDbInitialized),
-        isDev: import.meta.env.DEV,
+        // import.meta.env is a Vite-ism; guard for non-Vite runtimes (the
+        // Deno desktop shell dispatches this route table natively).
+        isDev: typeof import.meta.env === "undefined" ? false : !!import.meta.env.DEV,
         isStandalone: true,
         // A window torn off into its own popup carries `?extraWindow`, same as on the server. It has
         // to be told, or it restores the saved tab set on load and then writes its own back over it.
