@@ -8,6 +8,7 @@ import { t } from "./i18n.js";
 import link from "./link.js";
 import { applyLinkEmbeds } from "./link_embed.js";
 import { getMermaidConfig, loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
+import { looksLikeMermaidDiagram } from "@triliumnext/commons";
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 import tree from "./tree.js";
@@ -139,17 +140,29 @@ function replaceIncludesWithReferenceLinks(contentEl: HTMLElement) {
 
 /** Rewrite the code block from <pre><code> to <div> in order not to apply a codeblock style to it. */
 export async function rewriteMermaidDiagramsInContainer(container: HTMLDivElement) {
-    const mermaidBlocks = container.querySelectorAll('pre:has(code[class="language-mermaid"])');
-    if (!mermaidBlocks.length) return;
-    const nodes: HTMLElement[] = [];
+    const candidates = container.querySelectorAll("pre:has(code)");
+    if (!candidates.length) return;
 
-    for (const mermaidBlock of mermaidBlocks) {
+    for (const mermaidBlock of candidates) {
+        const code = mermaidBlock.querySelector("code");
+        if (!code) continue;
+
+        const className = code.className || "";
+        const source = code.textContent ?? "";
+        const isExplicitMermaid = /(?:^|\s)language-mermaid(?:\s|$)/.test(className);
+        const isAutoMermaid =
+            /(?:^|\s)language-text-x-trilium-auto(?:\s|$)/.test(className) &&
+            looksLikeMermaidDiagram(source);
+
+        if (!isExplicitMermaid && !isAutoMermaid) {
+            continue;
+        }
+
         const div = document.createElement("div");
         div.classList.add("mermaid-diagram");
-        /* v8 ignore next -- defensive fallback: the `:has(code[...])` selector guarantees a `<code>` child whose innerHTML is always a string */
-        div.innerHTML = mermaidBlock.querySelector("code")?.innerHTML ?? "";
+        /* v8 ignore next -- defensive fallback: textContent is always a string here */
+        div.textContent = source;
         mermaidBlock.replaceWith(div);
-        nodes.push(div);
     }
 }
 

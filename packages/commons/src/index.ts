@@ -38,3 +38,4 @@ export * from "./lib/marked_extensions.js";
 // e.g. "@triliumnext/commons/src/lib/markdown_renderer".
 export * from "./lib/task_states.js";
 export * from "./lib/keyboard_shortcut_display.js";
+export * from "./lib/mermaid_detect.js";

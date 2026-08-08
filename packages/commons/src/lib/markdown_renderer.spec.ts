@@ -195,6 +195,18 @@ describe("renderToHtml", () => {
             expect(html).toBe('<pre><code class="language-mermaid">graph TD</code></pre>');
         });
 
+        it("promotes unlabeled fences whose body is a Mermaid diagram", () => {
+            const html = render("```\nsequenceDiagram\nA->>B: hi\n```");
+            expect(html).toBe(
+                '<pre><code class="language-mermaid">sequenceDiagram\nA-&gt;&gt;B: hi</code></pre>'
+            );
+        });
+
+        it("does not promote unlabeled fences that are not Mermaid", () => {
+            const html = render("```\nplain\n```");
+            expect(html).toBe('<pre><code class="language-text-x-trilium-auto">plain</code></pre>');
+        });
+
         it("renders nothing (no <pre>) for an empty code block", () => {
             const html = render("```js\n```");
             expect(html).toBe("");

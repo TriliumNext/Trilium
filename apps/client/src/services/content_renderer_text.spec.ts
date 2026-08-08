@@ -462,14 +462,24 @@ describe("rewriteMermaidDiagramsInContainer", () => {
         await rewriteMermaidDiagramsInContainer(container);
         const div = container.querySelector("div.mermaid-diagram");
         expect(div).not.toBeNull();
-        expect(div?.innerHTML).toContain("graph TD;");
+        expect(div?.textContent).toContain("graph TD;");
+        expect(container.querySelector("pre")).toBeNull();
+    });
+
+    it("promotes auto language blocks whose body looks like Mermaid", async () => {
+        const container = document.createElement("div");
+        container.innerHTML = `<pre><code class="language-text-x-trilium-auto">sequenceDiagram\nA->>B: hi</code></pre>`;
+        await rewriteMermaidDiagramsInContainer(container);
+        const div = container.querySelector("div.mermaid-diagram");
+        expect(div).not.toBeNull();
+        expect(div?.textContent).toContain("sequenceDiagram");
         expect(container.querySelector("pre")).toBeNull();
     });
 
     it("uses an empty body when the code element is missing", async () => {
         const container = document.createElement("div");
         // A <pre> matched by :has(code[...]) but where querySelector("code") returns
-        // the matched code (with no inner content) -> innerHTML falls back to "".
+        // the matched code (with no inner content) -> textContent falls back to "".
         container.innerHTML = `<pre><code class="language-mermaid"></code></pre>`;
         await rewriteMermaidDiagramsInContainer(container);
         const div = container.querySelector("div.mermaid-diagram");

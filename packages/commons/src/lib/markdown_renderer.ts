@@ -2,6 +2,7 @@ import { Marked, type MarkedOptions, Renderer, type Token, type Tokens } from "m
 import markedFootnote from "marked-footnote";
 
 import { DEFAULT_TASK_STATES, type TaskStateDef } from "./task_states.js";
+import { looksLikeMermaidDiagram } from "./mermaid_detect.js";
 
 type TaskListItem = Tokens.ListItem & { _taskState?: string };
 
@@ -422,7 +423,15 @@ export class CustomMarkdownRenderer extends Renderer {
         // `mermaid` isn't in the MIME dictionary, but CKEditor/Trilium's
         // mermaid rewrite specifically looks for `language-mermaid`, so
         // preserve the fence language verbatim instead of falling back to auto.
-        const ckEditorLanguage = lang === "mermaid" ? "mermaid" : getNormalizedMimeFromMarkdownLanguage(lang);
+        // Also promote unlabeled fences whose body is clearly a Mermaid diagram —
+        // docs often omit the `mermaid` language tag, which would otherwise land
+        // as language-text-x-trilium-auto and never render as a widget.
+        const decodedForDetect = text
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&amp;/g, "&");
+        const treatAsMermaid = lang === "mermaid" || (!lang && looksLikeMermaidDiagram(decodedForDetect));
+        const ckEditorLanguage = treatAsMermaid ? "mermaid" : getNormalizedMimeFromMarkdownLanguage(lang);
         return `<pre><code class="language-${ckEditorLanguage}">${text}</code></pre>`;
     }
 

@@ -63,6 +63,29 @@ describe( 'MermaidEditing', () => {
 					expect( getModelData( model, { withoutSelection: true } ) ).to.not.contain( '<mermaid' );
 				} );
 
+				it( 'promotes auto language code blocks whose body is Mermaid', () => {
+					editor.setData(
+						'<pre spellcheck="false">' +
+							'<code class="language-text-x-trilium-auto">sequenceDiagram\nA->>B: hi</code>' +
+						'</pre>'
+					);
+
+					expect( getModelData( model, { withoutSelection: true } ) ).to.equal(
+						'<mermaid displayMode="split" source="sequenceDiagram\nA->>B: hi">' +
+						'</mermaid>'
+					);
+				} );
+
+				it( 'leaves auto language code blocks that are not Mermaid alone', () => {
+					editor.setData(
+						'<pre spellcheck="false">' +
+							'<code class="language-text-x-trilium-auto">plain text</code>' +
+						'</pre>'
+					);
+
+					expect( getModelData( model, { withoutSelection: true } ) ).to.not.contain( '<mermaid' );
+				} );
+
 				it( 'ignores a mermaid block nested inside another code element', () => {
 					editor.setData(
 						'<pre spellcheck="false"><code class="language-plaintext">' +

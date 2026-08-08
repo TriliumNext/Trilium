@@ -136,16 +136,112 @@ describe( 'MermaidEditing rendering', () => {
 
 		const stale = plugin._renderMermaid( target, 'first' );
 		await waitFor( () => pending.length >= 1 );
+		// Queue the newer render while the first is still in flight. Renders are serialized,
+		// so the second mermaid.render() only starts after the first settles — but the
+		// generation bump must still discard the stale SVG.
 		const latest = plugin._renderMermaid( target, 'second' );
-		await waitFor( () => pending.length >= 2 );
 
-		// Resolve the newer render first, then let the stale one finish.
-		pending[ 1 ]?.( { svg: '<svg id="second"></svg>' } );
-		await latest;
 		pending[ 0 ]?.( { svg: '<svg id="first"></svg>' } );
 		await stale;
+		await waitFor( () => pending.length >= 2 );
+		pending[ 1 ]?.( { svg: '<svg id="second"></svg>' } );
+		await latest;
 
 		expect( target.innerHTML ).to.equal( '<svg id="second"></svg>' );
+	} );
+
+	it( 'keeps concurrent renders on different preview elements independent', async () => {
+		const pending = new Map<string, ( value: { svg: string } ) => void>();
+		const instance = createFakeMermaid( ( _id: string, source: string ) => new Promise( resolve => {
+			pending.set( source, resolve );
+		} ) );
+		editor = await createEditor( { lazyLoad: async () => instance } );
+
+		const plugin = editor.plugins.get( MermaidEditing ) as unknown as {
+			_renderMermaid( domElement: HTMLElement, source: string ): Promise<void>;
+		};
+		const first = document.createElement( 'div' );
+		const second = document.createElement( 'div' );
+
+		const firstRender = plugin._renderMermaid( first, 'diagram-a' );
+		const secondRender = plugin._renderMermaid( second, 'diagram-b' );
+
+		// Serialized queue: only the first render is in flight initially.
+		await waitFor( () => pending.has( 'diagram-a' ) );
+		expect( pending.has( 'diagram-b' ) ).to.equal( false );
+
+		pending.get( 'diagram-a' )?.( { svg: '<svg id="a"></svg>' } );
+		await firstRender;
+		await waitFor( () => pending.has( 'diagram-b' ) );
+		pending.get( 'diagram-b' )?.( { svg: '<svg id="b"></svg>' } );
+		await secondRender;
+
+		expect( first.innerHTML ).to.equal( '<svg id="a"></svg>' );
+		expect( second.innerHTML ).to.equal( '<svg id="b"></svg>' );
+	} );
+
+	it( 'clears the preview when the source becomes empty', async () => {
+		const instance = createFakeMermaid( async () => ( { svg: '<svg id="rendered"></svg>' } ) );
+		editor = await createEditor( { lazyLoad: async () => instance } );
+
+		const plugin = editor.plugins.get( MermaidEditing ) as unknown as {
+			_renderMermaid( domElement: HTMLElement, source: string ): Promise<void>;
+		};
+		const target = document.createElement( 'div' );
+		target.innerHTML = '<svg id="stale"></svg>';
+
+		await plugin._renderMermaid( target, '   ' );
+
+		expect( target.innerHTML ).to.equal( '' );
+		expect( instance.render ).not.toHaveBeenCalled();
+	} );
+
+	it( 'does not restore a stale SVG after the source is cleared mid-render', async () => {
+		const pending: Array<( value: { svg: string } ) => void> = [];
+		const instance = createFakeMermaid( () => new Promise( resolve => {
+			pending.push( resolve );
+		} ) );
+		editor = await createEditor( { lazyLoad: async () => instance } );
+
+		const plugin = editor.plugins.get( MermaidEditing ) as unknown as {
+			_renderMermaid( domElement: HTMLElement, source: string ): Promise<void>;
+		};
+		const target = document.createElement( 'div' );
+
+		const first = plugin._renderMermaid( target, 'graph TD; A-->B;' );
+		await waitFor( () => pending.length >= 1 );
+
+		await plugin._renderMermaid( target, '   ' );
+		expect( target.innerHTML ).to.equal( '' );
+
+		pending[ 0 ]?.( { svg: '<svg id="stale"></svg>' } );
+		await first;
+
+		expect( target.innerHTML ).to.equal( '' );
+	} );
+
+	it( 'removes the temporary mermaid probe node after a successful render', async () => {
+		const instance = createFakeMermaid( async ( id: string ) => {
+			const probe = document.createElement( 'div' );
+			probe.id = id;
+			document.body.appendChild( probe );
+			// Real mermaid SVGs reuse the render id; ensure we don't delete that
+			// after inserting it into the preview.
+			return { svg: `<svg id="${ id }"></svg>` };
+		} );
+		editor = await createEditor( { lazyLoad: async () => instance } );
+
+		const plugin = editor.plugins.get( MermaidEditing ) as unknown as {
+			_renderMermaid( domElement: HTMLElement, source: string ): Promise<void>;
+		};
+		const target = document.createElement( 'div' );
+
+		await plugin._renderMermaid( target, 'graph TD; A-->B;' );
+
+		expect( target.querySelector( 'svg' ) ).to.not.equal( null );
+		expect( target.contains( target.querySelector( 'svg' )! ) ).to.equal( true );
+		// Probe on document.body is gone; only the preview SVG remains.
+		expect( document.body.querySelector( '[id^="ck-mermaid-"]' ) ).to.equal( null );
 	} );
 
 	it( 'does nothing when the host configured no lazyLoad', async () => {
