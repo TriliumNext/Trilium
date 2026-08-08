@@ -141,6 +141,22 @@ describe("ShapeLayer", () => {
         expect(map.layers.size).toBe(0);
     });
 
+    it("draws a circle as the ring its two numbers walk out, worn like any other area", () => {
+        map.loadStyle();
+        renderShape({ type: "circle", center: [ 2.29, 48.85 ], radiusMeters: 500 });
+
+        const source = map.sources.get(shapeSourceId(NOTE_ID)) as {
+            data: { geometry: { type: string; coordinates: [number, number][][] } };
+        };
+        expect(source.data.geometry.type).toBe("Polygon");
+        const ring = source.data.geometry.coordinates[0];
+        // The generated ring, closed back up: sixty-four corners and the closing repeat.
+        expect(ring).toHaveLength(65);
+        expect(ring[0]).toEqual(ring[ring.length - 1]);
+        expect(map.layers.has(`shape-fill-${NOTE_ID}`)).toBe(true);
+        expect(map.layers.has(`shape-stroke-${NOTE_ID}`)).toBe(true);
+    });
+
     it("waits for the style, and is put back when a style switch wipes the map", () => {
         // Mounted before the style has loaded — as a shape whose note arrives early always is —
         // nothing can go on yet.

@@ -44,7 +44,8 @@ function renderBar({ map = {} as never, isReadOnly = false, placing = false, dra
 const DRAW_TOOL_ICONS: { tool: DrawTool; icon: string }[] = [
     { tool: "line", icon: "bx-vector" },
     { tool: "polygon", icon: "bx-shape-polygon" },
-    { tool: "rectangle", icon: "bx-rectangle" }
+    { tool: "rectangle", icon: "bx-rectangle" },
+    { tool: "circle", icon: "bx-shape-circle" }
 ];
 
 describe("geo map EditToolbar", () => {

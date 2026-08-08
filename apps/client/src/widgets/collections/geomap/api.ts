@@ -15,7 +15,8 @@ export const CHILD_NOTE_ICON = "bx bx-pin";
 /** The icon a shape note wears, by the kind of shape its label spells. */
 export const SHAPE_NOTE_ICONS = {
     line: "bx bx-vector",
-    polygon: "bx bx-shape-polygon"
+    polygon: "bx bx-shape-polygon",
+    circle: "bx bx-shape-circle"
 } as const satisfies Record<GeoShape["type"], string>;
 
 export async function moveMarker(noteId: string, latLng: { lat: number; lng: number } | null) {

@@ -1,12 +1,12 @@
 import { useContext, useEffect, useRef } from "preact/hooks";
-import { type GeoJSONStoreFeatures, TerraDraw, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawRectangleMode } from "terra-draw";
+import { type GeoJSONStoreFeatures, TerraDraw, TerraDrawCircleMode, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawRectangleMode } from "terra-draw";
 import { TerraDrawMapLibreGLAdapter } from "terra-draw-maplibre-gl-adapter";
 
 import { MapStyleLoaded, ParentMap } from "./map";
-import { type GeoShape, polygonFromRing } from "./shapes";
+import { type GeoShape, polygonFromRing, ringCenter } from "./shapes";
 
 /** The drawing tools on offer, each arming Terra Draw with a mode of its own. */
-export type DrawTool = "line" | "polygon" | "rectangle";
+export type DrawTool = "line" | "polygon" | "rectangle" | "circle";
 
 interface DrawShapeProps {
     tool: DrawTool;
@@ -78,6 +78,8 @@ function buildMode(tool: DrawTool) {
             return new TerraDrawPolygonMode();
         case "rectangle":
             return new TerraDrawRectangleMode();
+        case "circle":
+            return new TerraDrawCircleMode();
     }
 }
 
@@ -87,7 +89,9 @@ function buildMode(tool: DrawTool) {
  *
  * Every area tool comes through the polygon branch: whatever hand movement made it, what was made
  * is a ring, and a ring is a polygon note (with its closing repeat left behind — the label does
- * not spell it; see shapes.ts).
+ * not spell it; see shapes.ts). The circle alone is read back out of its ring: Terra Draw draws
+ * one as a many-cornered polygon carrying its radius in the properties, and the note stores what
+ * the drawing meant — a centre and a reach — rather than the ring that approximated it.
  */
 export function shapeFromFeature(tool: DrawTool, feature: GeoJSONStoreFeatures): GeoShape | null {
     if (tool === "line") {
@@ -98,5 +102,14 @@ export function shapeFromFeature(tool: DrawTool, feature: GeoJSONStoreFeatures):
 
     if (feature.geometry.type !== "Polygon") return null;
     const ring = feature.geometry.coordinates[0] as [number, number][] | undefined;
-    return ring ? polygonFromRing(ring) : null;
+    if (!ring) return null;
+
+    if (tool === "circle") {
+        const radiusKilometers = Number(feature.properties.radiusKilometers);
+        const center = ringCenter(polygonFromRing(ring).coordinates);
+        if (!center || !Number.isFinite(radiusKilometers) || radiusKilometers <= 0) return null;
+        return { type: "circle", center, radiusMeters: radiusKilometers * 1000 };
+    }
+
+    return polygonFromRing(ring);
 }

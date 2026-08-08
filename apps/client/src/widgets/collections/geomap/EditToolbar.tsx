@@ -28,7 +28,8 @@ interface EditToolbarProps {
 const DRAW_TOOLS: { tool: DrawTool; icon: string; title: () => string }[] = [
     { tool: "line", icon: "bx-vector", title: () => t("geo-map.draw-line") },
     { tool: "polygon", icon: "bx-shape-polygon", title: () => t("geo-map.draw-polygon") },
-    { tool: "rectangle", icon: "bx-rectangle", title: () => t("geo-map.draw-rectangle") }
+    { tool: "rectangle", icon: "bx-rectangle", title: () => t("geo-map.draw-rectangle") },
+    { tool: "circle", icon: "bx-shape-circle", title: () => t("geo-map.draw-circle") }
 ];
 
 /**

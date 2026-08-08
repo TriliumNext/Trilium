@@ -42,7 +42,8 @@ vi.mock("terra-draw", () => {
         TerraDraw,
         TerraDrawLineStringMode: class { mode = "linestring"; },
         TerraDrawPolygonMode: class { mode = "polygon"; },
-        TerraDrawRectangleMode: class { mode = "rectangle"; }
+        TerraDrawRectangleMode: class { mode = "rectangle"; },
+        TerraDrawCircleMode: class { mode = "circle"; }
     };
 });
 
@@ -64,10 +65,17 @@ function instances(): FakeTerraDraw[] {
 }
 
 const LINE_FEATURE = {
+    properties: {},
     geometry: { type: "LineString", coordinates: [ [ 1, 2 ], [ 3, 4 ] ] }
 };
 const RING_FEATURE = {
+    properties: {},
     geometry: { type: "Polygon", coordinates: [ [ [ 1, 2 ], [ 3, 4 ], [ 5, 6 ], [ 1, 2 ] ] ] }
+};
+/** A circle as Terra Draw finishes one: a ring around (10, 20), its radius in the properties. */
+const CIRCLE_FEATURE = {
+    properties: { mode: "circle", radiusKilometers: 0.5 },
+    geometry: { type: "Polygon", coordinates: [ [ [ 10, 21 ], [ 11, 20 ], [ 10, 19 ], [ 9, 20 ], [ 10, 21 ] ] ] }
 };
 
 describe("DrawShape", () => {
@@ -139,6 +147,14 @@ describe("DrawShape", () => {
         expect(onFinish).toHaveBeenCalledWith({ type: "polygon", coordinates: [ [ 1, 2 ], [ 3, 4 ], [ 5, 6 ] ] });
     });
 
+    it("hands a finished circle over as its centre and reach, read back out of the ring", () => {
+        renderSession("circle");
+
+        expect(instances()[0].modeName).toBe("circle");
+        act(() => instances()[0].finish("f1", "draw", CIRCLE_FEATURE));
+        expect(onFinish).toHaveBeenCalledWith({ type: "circle", center: [ 10, 20 ], radiusMeters: 500 });
+    });
+
     it("leaves alone what is not a drawing being finished", () => {
         renderSession("line");
 
@@ -157,6 +173,13 @@ describe("shapeFromFeature", () => {
     });
 
     it("survives a polygon with no ring at all", () => {
-        expect(shapeFromFeature("polygon", { geometry: { type: "Polygon", coordinates: [] } } as never)).toBeNull();
+        expect(shapeFromFeature("polygon", { properties: {}, geometry: { type: "Polygon", coordinates: [] } } as never)).toBeNull();
+    });
+
+    it("refuses a circle whose radius the properties do not carry", () => {
+        expect(shapeFromFeature("circle", {
+            ...CIRCLE_FEATURE,
+            properties: { mode: "circle" }
+        } as never)).toBeNull();
     });
 });

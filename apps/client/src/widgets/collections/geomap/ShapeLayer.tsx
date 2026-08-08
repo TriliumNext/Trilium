@@ -1,7 +1,7 @@
 import { useContext, useEffect } from "preact/hooks";
 
 import { MapStyleLoaded, ParentMap } from "./map";
-import { closeRing, type GeoShape } from "./shapes";
+import { circleRing, closeRing, type GeoShape, serializeGeoShape } from "./shapes";
 
 interface ShapeLayerProps {
     /** The note the shape belongs to, which is what its source and layers are named after. */
@@ -28,7 +28,8 @@ export function ShapeLayer({ noteId, shape, color }: ShapeLayerProps) {
 
     // The shape as a dependency the effect can compare: the object is rebuilt on every parse of
     // the label, so handing it over as-is would tear the layers down and put them back per render.
-    const shapeKey = `${shape.type}:${shape.coordinates.flat().join(",")}`;
+    // Its label spelling is exactly such a comparison — one string, stable across parses.
+    const shapeKey = serializeGeoShape(shape);
 
     useEffect(() => {
         if (!parentMap) return;
@@ -54,7 +55,13 @@ export function ShapeLayer({ noteId, shape, color }: ShapeLayerProps) {
                             properties: { id: noteId },
                             geometry: shape.type === "line"
                                 ? { type: "LineString", coordinates: shape.coordinates }
-                                : { type: "Polygon", coordinates: [ closeRing(shape.coordinates) ] }
+                                // An area is its ring closed back up — the ring the label spells
+                                // for a polygon, or the one walked out of a circle's two numbers.
+                                : { type: "Polygon", coordinates: [ closeRing(
+                                    shape.type === "circle"
+                                        ? circleRing(shape.center, shape.radiusMeters)
+                                        : shape.coordinates
+                                ) ] }
                         }
                     });
                 }

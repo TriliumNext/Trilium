@@ -459,6 +459,12 @@ function drawingToast(tool: DrawTool): { icon: string; title: string; message: s
                 title: t("geo-map.draw-rectangle-toast-title"),
                 message: t("geo-map.draw-rectangle-instruction")
             };
+        case "circle":
+            return {
+                icon: "shape-circle",
+                title: t("geo-map.draw-circle-toast-title"),
+                message: t("geo-map.draw-circle-instruction")
+            };
     }
 }
 
