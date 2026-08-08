@@ -62,6 +62,11 @@ describe("hidden_subtree (real DB)", () => {
                 ).toBe(true);
             }
 
+            const plugins = becca.notes["_optionsPlugins"];
+            expect(plugins).toBeDefined();
+            expect(plugins.title).toBe("Plugins");
+            expect(plugins.getParentBranches().some((b) => b.parentNoteId === "_options")).toBe(true);
+
             // Nested children are placed under their declared parent, not the root.
             const taskStateNone = becca.notes["_taskStateNone"];
             expect(taskStateNone).toBeDefined();

@@ -300,6 +300,7 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                     { id: "_optionsTextNotes", title: t("hidden-subtree.text-notes"), type: "contentWidget", icon: "bx-text" },
                     { id: "_optionsCodeNotes", title: t("hidden-subtree.code-notes-title"), type: "contentWidget", icon: "bx-code" },
                     { id: "_optionsContentManager", title: t("hidden-subtree.content-manager-title"), type: "contentWidget", icon: "bx-package" },
+                    { id: "_optionsPlugins", title: t("hidden-subtree.plugins-title"), type: "contentWidget", icon: "bx-extension" },
                     { id: "_optionsImages", title: "Images", type: "contentWidget", enforceDeleted: true },
                     { id: "_optionsMedia", title: t("hidden-subtree.images-title"), type: "contentWidget", icon: "bx-image" },
                     { id: "_optionsSpellcheck", title: t("hidden-subtree.spellcheck-title"), type: "contentWidget", icon: "bx-check-double", attributes: [{ type: "label", name: "electronOnly" }] },
