@@ -754,6 +754,7 @@
     "end_time": "The time an event ends at, read against <code>#endDate</code> where there is one and <code>#startDate</code> otherwise.",
     "recurrence": "A CalDAV <code>RRULE</code> string making the event repeat. The start is taken from <code>#startDate</code> and <code>#startTime</code>, so the rule leaves <code>DTSTART</code> out.",
     "geolocation": "The latitude and longitude the note is placed at on a geo map.",
+    "geo_shape": "A shape the note is drawn as on a geo map: the kind of shape, then the latitude and longitude of each point, e.g. <code>line:48.85,2.29 48.86,2.35</code>.",
     "map_type": "Which note map is drawn: <code>link</code> for the relations between notes, or <code>tree</code> for the hierarchy.",
     "map_style": "Which style a geo map is drawn in, chosen from the raster and vector styles offered in the collection properties.",
     "map_dark_style": "Tells a geo map that the custom style given in <code>map:style</code> is a dark one, so that the marker titles are drawn light over it. The styles offered in the collection properties say so for themselves and need no such label.",

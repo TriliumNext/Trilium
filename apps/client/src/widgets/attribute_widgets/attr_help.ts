@@ -173,6 +173,7 @@ export const ATTR_HELP: AttrHelpMap = {
         endTime: t("attribute_detail.end_time"),
         recurrence: t("attribute_detail.recurrence"),
         geolocation: t("attribute_detail.geolocation"),
+        geoShape: t("attribute_detail.geo_shape"),
         mapType: t("attribute_detail.map_type"),
         "map:style": t("attribute_detail.map_style"),
         "map:darkStyle": t("attribute_detail.map_dark_style"),
