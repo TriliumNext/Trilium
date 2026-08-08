@@ -5,29 +5,11 @@
 
 Global events are attached to the script note via label. Simply create e.g. "run" label with some of these values and script note will be executed once the event occurs.
 
-<table>
-    <thead>
-        <tr>
-            <th>Label</th>
-            <th>Description</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><code spellcheck="false">run</code></td>
-            <td><p>Defines on which events script should run. Possible values are:</p><ul><li><code spellcheck="false">backendStartup</code> - when Trilium backend starts up</li><li><code spellcheck="false">hourly</code> - run once an hour. You can use additional label <code spellcheck="false">runAtHour</code> to specify at which hour, on the back-end.</li><li><code spellcheck="false">daily</code> - run once a day, on the back-end</li></ul></td>
-        </tr>
-        <tr>
-            <td><code spellcheck="false">runOnInstance</code></td>
-            <td>Specifies that the script should only run on a particular&nbsp;<a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables)/Trilium%20instance.md">Trilium instance</a>.</td>
-        </tr>
-        <tr>
-            <td><code spellcheck="false">runAtHour</code></td>
-            <td>On which hour should this run. Should be used together with <code spellcheck="false">#run=hourly</code>. Can be defined multiple times for more runs during the day.</td>
-        </tr>
-    </tbody>
-</table>
-
+| Label           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `run`           | Defines on which events script should run. Possible backend values are:<br>- `backendStartup` – when Trilium backend starts up<br>- `hourly` – run once an hour. You can use additional label `runAtHour` to specify at which hour, on the back-end.<br>- `daily` – run once a day, on the back-end<br><br>There are two frontend values:<br>- `frontendStartup` – when Trilium frontend starts up (e.g. browser reload)<br>- `mobileStartup` – when mobile frontend starts up. See [mobile frontend](../../../setup/mobile-frontend) <br>Note that all event values for run attributes are mutually exclusive. To get the same script to trigger on multiple events, create multiple copies of the script and assign each the key value pair you need. |
+| `runOnInstance` | Specifies that the script should only run on a particular [Trilium instance](../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables)/Trilium%20instance.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `runAtHour`     | On which hour should this run. Should be used together with `#run=hourly`. Can be defined multiple times for more runs during the day.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 ## Entity events
 
 Other events are bound to some entity, these are defined as [relations](../../Advanced%20Usage/Attributes.md) - meaning that script is triggered only if note has this script attached to it through relations (or it can inherit it).
