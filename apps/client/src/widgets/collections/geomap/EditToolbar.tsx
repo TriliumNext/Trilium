@@ -27,7 +27,8 @@ interface EditToolbarProps {
 /** The drawing tools in the order they stand on the bar, each wearing the shape it draws. */
 const DRAW_TOOLS: { tool: DrawTool; icon: string; title: () => string }[] = [
     { tool: "line", icon: "bx-vector", title: () => t("geo-map.draw-line") },
-    { tool: "polygon", icon: "bx-shape-polygon", title: () => t("geo-map.draw-polygon") }
+    { tool: "polygon", icon: "bx-shape-polygon", title: () => t("geo-map.draw-polygon") },
+    { tool: "rectangle", icon: "bx-rectangle", title: () => t("geo-map.draw-rectangle") }
 ];
 
 /**

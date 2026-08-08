@@ -43,7 +43,8 @@ function renderBar({ map = {} as never, isReadOnly = false, placing = false, dra
 /** Every drawing tool on the bar, by the icon its button wears. */
 const DRAW_TOOL_ICONS: { tool: DrawTool; icon: string }[] = [
     { tool: "line", icon: "bx-vector" },
-    { tool: "polygon", icon: "bx-shape-polygon" }
+    { tool: "polygon", icon: "bx-shape-polygon" },
+    { tool: "rectangle", icon: "bx-rectangle" }
 ];
 
 describe("geo map EditToolbar", () => {

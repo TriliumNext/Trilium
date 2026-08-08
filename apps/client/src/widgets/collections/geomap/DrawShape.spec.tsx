@@ -41,7 +41,8 @@ vi.mock("terra-draw", () => {
     return {
         TerraDraw,
         TerraDrawLineStringMode: class { mode = "linestring"; },
-        TerraDrawPolygonMode: class { mode = "polygon"; }
+        TerraDrawPolygonMode: class { mode = "polygon"; },
+        TerraDrawRectangleMode: class { mode = "rectangle"; }
     };
 });
 
@@ -125,6 +126,16 @@ describe("DrawShape", () => {
         renderSession("polygon");
 
         act(() => instances()[0].finish("f1", "draw", RING_FEATURE));
+        expect(onFinish).toHaveBeenCalledWith({ type: "polygon", coordinates: [ [ 1, 2 ], [ 3, 4 ], [ 5, 6 ] ] });
+    });
+
+    it("draws a rectangle with its own mode, but what it made is a polygon note", () => {
+        renderSession("rectangle");
+
+        const [ session ] = instances();
+        expect(session.modeName).toBe("rectangle");
+
+        act(() => session.finish("f1", "draw", RING_FEATURE));
         expect(onFinish).toHaveBeenCalledWith({ type: "polygon", coordinates: [ [ 1, 2 ], [ 3, 4 ], [ 5, 6 ] ] });
     });
 

@@ -453,6 +453,12 @@ function drawingToast(tool: DrawTool): { icon: string; title: string; message: s
                 title: t("geo-map.draw-polygon-toast-title"),
                 message: t("geo-map.draw-polygon-instruction")
             };
+        case "rectangle":
+            return {
+                icon: "rectangle",
+                title: t("geo-map.draw-rectangle-toast-title"),
+                message: t("geo-map.draw-rectangle-instruction")
+            };
     }
 }
 

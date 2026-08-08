@@ -1,12 +1,12 @@
 import { useContext, useEffect, useRef } from "preact/hooks";
-import { type GeoJSONStoreFeatures, TerraDraw, TerraDrawLineStringMode, TerraDrawPolygonMode } from "terra-draw";
+import { type GeoJSONStoreFeatures, TerraDraw, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawRectangleMode } from "terra-draw";
 import { TerraDrawMapLibreGLAdapter } from "terra-draw-maplibre-gl-adapter";
 
 import { MapStyleLoaded, ParentMap } from "./map";
 import { type GeoShape, polygonFromRing } from "./shapes";
 
 /** The drawing tools on offer, each arming Terra Draw with a mode of its own. */
-export type DrawTool = "line" | "polygon";
+export type DrawTool = "line" | "polygon" | "rectangle";
 
 interface DrawShapeProps {
     tool: DrawTool;
@@ -76,6 +76,8 @@ function buildMode(tool: DrawTool) {
             return new TerraDrawLineStringMode();
         case "polygon":
             return new TerraDrawPolygonMode();
+        case "rectangle":
+            return new TerraDrawRectangleMode();
     }
 }
 
