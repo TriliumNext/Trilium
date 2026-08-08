@@ -6338,6 +6338,338 @@ button.hasPopupMenu{
 }
 
 :root{
+  --sig-card-border:light-dark(rgb(228 228 232), rgb(82 82 86));
+  --sig-card-bg:var(--field-bg-color, light-dark(white, rgb(64 64 68)));
+  --sig-card-nested-bg:light-dark(rgb(252 252 253), rgb(72 72 76));
+  --sig-row-color:light-dark(rgb(58 58 60), rgb(228 228 232));
+  --sig-detail-color:light-dark(rgb(96 96 96), rgb(180 180 184));
+  --sig-divider-color:light-dark(rgb(228 228 232), rgb(82 82 86));
+  --sig-summary-hover-color:light-dark(rgb(28 67 138), rgb(126 169 255));
+  --sig-link-color:light-dark(rgb(28 113 216), rgb(126 169 255));
+  --sig-link-hover-bg:light-dark(
+    rgb(28 113 216 / 0.1),
+    rgb(126 169 255 / 0.15)
+  );
+  --sig-banner-verified-bg:light-dark(rgb(228 247 235), rgb(28 84 49));
+  --sig-banner-verified-color:light-dark(rgb(16 92 47), rgb(176 232 196));
+  --sig-banner-warn-bg:light-dark(rgb(255 247 217), rgb(95 67 9));
+  --sig-banner-warn-color:light-dark(rgb(124 84 9), rgb(255 222 153));
+  --sig-banner-error-bg:light-dark(rgb(254 226 235), rgb(122 21 51));
+  --sig-banner-error-color:light-dark(rgb(167 26 70), rgb(255 188 207));
+  --sig-icon-default:light-dark(rgb(150 150 150), rgb(180 180 184));
+  --sig-icon-warn:light-dark(rgb(217 142 27), rgb(255 178 77));
+  --sig-icon-error:light-dark(rgb(196 31 71), rgb(255 117 145));
+  --sig-icon-verified:light-dark(rgb(29 142 61), rgb(106 210 126));
+
+  @media screen and (forced-colors: active){
+    --sig-card-border:ButtonBorder;
+    --sig-card-bg:Canvas;
+    --sig-card-nested-bg:ButtonFace;
+    --sig-row-color:ButtonText;
+    --sig-detail-color:GrayText;
+    --sig-divider-color:GrayText;
+    --sig-summary-hover-color:AccentColor;
+    --sig-link-color:LinkText;
+    --sig-link-hover-bg:transparent;
+    --sig-banner-verified-bg:ButtonFace;
+    --sig-banner-verified-color:ButtonText;
+    --sig-banner-warn-bg:ButtonFace;
+    --sig-banner-warn-color:ButtonText;
+    --sig-banner-error-bg:ButtonFace;
+    --sig-banner-error-color:ButtonText;
+    --sig-icon-default:GrayText;
+    --sig-icon-warn:AccentColor;
+    --sig-icon-error:AccentColor;
+    --sig-icon-verified:AccentColor;
+  }
+}
+
+#signaturePropertiesButton{
+  &::before{
+    -webkit-mask-image:var(--toolbarButton-editorSignature-icon);
+            mask-image:var(--toolbarButton-editorSignature-icon);
+    transform:scaleX(var(--dir-factor));
+  }
+  &.state-verified::before,
+  &.state-warn::before,
+  &.state-error::before{
+    opacity:1;
+  }
+  &.state-verified::before{
+    -webkit-mask-image:var(--toolbarButton-signaturePropertiesVerified-icon);
+            mask-image:var(--toolbarButton-signaturePropertiesVerified-icon);
+    background-color:var(--sig-icon-verified);
+  }
+  &.state-warn::before{
+    -webkit-mask-image:var(--toolbarButton-signaturePropertiesError-icon);
+            mask-image:var(--toolbarButton-signaturePropertiesError-icon);
+    background-color:var(--sig-icon-warn);
+  }
+  &.state-error::before{
+    -webkit-mask-image:var(--toolbarButton-signaturePropertiesError-icon);
+            mask-image:var(--toolbarButton-signaturePropertiesError-icon);
+    background-color:var(--sig-icon-error);
+  }
+  &.state-loading{
+    &::before{
+      display:none;
+    }
+    .loadingDot{
+      display:inline-block;
+      width:4px;
+      height:4px;
+      margin:0 1px;
+      border-radius:50%;
+      background:var(--toolbar-icon-bg-color);
+      animation:signaturePropertiesDot 1.2s ease-in-out infinite both;
+
+      &:nth-child(2){
+        animation-delay:0.2s;
+      }
+      &:nth-child(3){
+        animation-delay:0.4s;
+      }
+    }
+  }
+}
+
+@keyframes signaturePropertiesDot{
+  0%,
+  80%,
+  100%{
+    opacity:0.3;
+    transform:scale(0.85);
+  }
+  40%{
+    opacity:1;
+    transform:scale(1);
+  }
+}
+
+#signaturePropertiesPanel{
+  width:320px;
+  padding:0;
+}
+
+.signaturePropertiesContainer{
+  display:flex;
+  flex-direction:column;
+  max-height:70vh;
+  overflow:hidden;
+}
+
+.sigBanner{
+  margin:12px 12px 8px;
+  padding:10px 12px;
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:12.5px;
+  line-height:1.35;
+  border-inline-start:3px solid currentcolor;
+
+  &.verified{
+    background:var(--sig-banner-verified-bg);
+    color:var(--sig-banner-verified-color);
+    border-inline-start-color:var(--sig-icon-verified);
+  }
+  &.warn{
+    background:var(--sig-banner-warn-bg);
+    color:var(--sig-banner-warn-color);
+    border-inline-start-color:var(--sig-icon-warn);
+  }
+  &.error{
+    background:var(--sig-banner-error-bg);
+    color:var(--sig-banner-error-color);
+    border-inline-start-color:var(--sig-icon-error);
+  }
+}
+
+.signaturePropertiesList{
+  list-style:none;
+  margin:0;
+  padding:0 12px 12px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.sigCard{
+  border:1px solid var(--sig-card-border);
+  border-radius:6px;
+  padding:8px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  background:var(--sig-card-bg);
+
+  .signer{
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.1px;
+    margin-bottom:1px;
+  }
+
+  .row{
+    display:flex;
+    flex-wrap:nowrap;
+    gap:2px 6px;
+    align-items:flex-start;
+    font-size:12px;
+    color:var(--sig-row-color);
+    min-height:18px;
+
+    > span{
+      flex:1 1 auto;
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+
+    &::before{
+      content:"";
+      display:inline-block;
+      width:14px;
+      height:14px;
+      flex-shrink:0;
+      margin-top:1px;
+      -webkit-mask-position:center;
+              mask-position:center;
+      -webkit-mask-repeat:no-repeat;
+              mask-repeat:no-repeat;
+      -webkit-mask-size:contain;
+              mask-size:contain;
+      -webkit-mask-image:var(--signatureProperties-rowCheck-icon);
+              mask-image:var(--signatureProperties-rowCheck-icon);
+      background-color:var(--sig-icon-default);
+      transform:scaleX(var(--dir-factor));
+    }
+    &.status--verified::before,
+    &.status--untrusted::before,
+    &.status--expired::before,
+    &.status--revoked::before,
+    &.cert--trusted::before{
+      -webkit-mask-image:var(--signatureProperties-rowCheck-icon);
+              mask-image:var(--signatureProperties-rowCheck-icon);
+      background-color:var(--sig-icon-default);
+    }
+    &.cert--untrusted::before,
+    &.cert--expired::before{
+      -webkit-mask-image:var(--toolbarButton-signaturePropertiesError-icon);
+              mask-image:var(--toolbarButton-signaturePropertiesError-icon);
+      background-color:var(--sig-icon-warn);
+    }
+    &.cert--revoked::before,
+    &.status--invalid::before,
+    &.status--unknown::before,
+    &.cert--unknown::before{
+      -webkit-mask-image:var(--toolbarButton-signaturePropertiesError-icon);
+              mask-image:var(--toolbarButton-signaturePropertiesError-icon);
+      background-color:var(--sig-icon-error);
+    }
+  }
+  &.sigCard--top-allfine > .row.status--verified::before,
+  &.sigCard--top-allfine > .row.cert--trusted::before{
+    -webkit-mask-image:var(--toolbarButton-signaturePropertiesVerified-icon);
+            mask-image:var(--toolbarButton-signaturePropertiesVerified-icon);
+    background-color:var(--sig-icon-verified);
+  }
+
+  .detail{
+    font-size:11.5px;
+    color:var(--sig-detail-color);
+    margin-inline-start:20px;
+    line-height:1.35;
+  }
+
+  .viewCert{
+    align-self:center;
+    margin-top:4px;
+    color:var(--sig-link-color);
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-size:12px;
+    padding:2px 4px;
+    border-radius:4px;
+    white-space:nowrap;
+
+    &:hover{
+      background:var(--sig-link-hover-bg);
+      text-decoration:underline;
+    }
+    &:focus-visible{
+      outline:2px solid var(--sig-link-color);
+      outline-offset:1px;
+    }
+  }
+
+  .subSignatures{
+    margin-top:4px;
+    border-top:1px dashed var(--sig-divider-color);
+    padding-top:4px;
+    font-size:12px;
+
+    > summary{
+      cursor:pointer;
+      -webkit-user-select:none;
+         -moz-user-select:none;
+              user-select:none;
+      list-style:none;
+      color:var(--sig-detail-color);
+      display:flex;
+      align-items:center;
+      gap:4px;
+      padding:2px 0;
+
+      &:hover{
+        color:var(--sig-summary-hover-color);
+      }
+      &::-webkit-details-marker{
+        display:none;
+      }
+      &::before{
+        content:"";
+        display:inline-block;
+        width:0;
+        height:0;
+        border-top:4px solid transparent;
+        border-bottom:4px solid transparent;
+        border-inline-start:5px solid currentcolor;
+        transition:transform 0.15s;
+      }
+    }
+    &[open] > summary::before{
+      transform:rotate(90deg);
+    }
+  }
+
+  .nested,
+  .subSignatures > .signaturePropertiesList{
+    padding:4px 0 2px;
+    margin-inline-start:0;
+    gap:4px;
+  }
+
+  .nested{
+    margin-top:4px;
+  }
+  .subSignatures .sigCard,
+  .nested .sigCard{
+    padding:6px 8px;
+    background:var(--sig-card-nested-bg);
+    gap:2px;
+  }
+
+  .subSignatures .signer,
+  .nested .signer{
+    font-size:12px;
+    font-weight:500;
+  }
+}
+
+:root{
   --dir-factor:1;
 
   --sidebar-width:200px;
@@ -6403,6 +6735,9 @@ button.hasPopupMenu{
   --toolbarButton-editorInk-icon:url(images/toolbarButton-editorInk.svg);
   --toolbarButton-editorStamp-icon:url(images/toolbarButton-editorStamp.svg);
   --toolbarButton-editorSignature-icon:url(images/toolbarButton-editorSignature.svg);
+  --toolbarButton-signaturePropertiesVerified-icon:url(images/toolbarButton-signaturePropertiesVerified.svg);
+  --toolbarButton-signaturePropertiesError-icon:url(images/toolbarButton-signaturePropertiesError.svg);
+  --signatureProperties-rowCheck-icon:url(images/signature-properties-row-check.svg);
   --toolbarButton-menuArrow-icon:url(images/toolbarButton-menuArrow.svg);
   --toolbarButton-viewsManagerToggle-icon:url(images/toolbarButton-viewsManagerToggle.svg);
   --toolbarButton-secondaryToolbarToggle-icon:url(images/toolbarButton-secondaryToolbarToggle.svg);
