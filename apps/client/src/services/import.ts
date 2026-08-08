@@ -19,6 +19,8 @@ export interface UploadFilesOptions {
     spreadsheetImportedAsSpreadsheet?: BooleanLike;
     explodeArchives?: BooleanLike;
     replaceUnderscoresWithSpaces?: BooleanLike;
+    /** Attaches the importer's raw source to each imported note (OneNote importers only). */
+    debug?: BooleanLike;
 }
 
 export async function uploadFiles(entityType: string, parentNoteId: string, files: string[] | File[], options: UploadFilesOptions) {

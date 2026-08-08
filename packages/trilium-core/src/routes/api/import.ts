@@ -27,7 +27,9 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
         codeImportedAsCode: req.body.codeImportedAsCode !== "false",
         spreadsheetImportedAsSpreadsheet: req.body.spreadsheetImportedAsSpreadsheet !== "false",
         explodeArchives: req.body.explodeArchives !== "false",
-        replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false"
+        replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false",
+        // Opt-in, unlike the flags above: a debug import attaches the importer's raw source to every note.
+        debug: req.body.debug === "true"
     };
 
     const file = req.file;

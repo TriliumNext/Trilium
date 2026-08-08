@@ -585,6 +585,8 @@ export interface NativeImportOptions {
     spreadsheetImportedAsSpreadsheet: boolean;
     explodeArchives: boolean;
     replaceUnderscoresWithSpaces: boolean;
+    /** Attaches the importer's raw source alongside each imported note (OneNote importers only). */
+    debug?: boolean;
 }
 
 /** A single user-chosen file: a capability token (redeemed to import it) and its display name — never a path. */

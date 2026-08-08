@@ -9,6 +9,7 @@ import enexImportService from "./enex.js";
 import keepImportService from "./keep/importer.js";
 import notionImportService from "./notion/importer.js";
 import obsidianImportService from "./obsidian/importer.js";
+import oneNoteFileImportService from "./onenote-file/importer.js";
 import opmlImportService from "./opml.js";
 import singleImportService from "./single.js";
 import zipImportService from "./zip.js";
@@ -21,6 +22,12 @@ export interface ImportOptions {
     spreadsheetImportedAsSpreadsheet: boolean;
     explodeArchives: boolean;
     replaceUnderscoresWithSpaces: boolean;
+    /**
+     * Attaches the importer's raw source alongside each imported note, for diagnosing conversions. Only the
+     * OneNote importers honour it (the `.one` importer attaches its parsed object graph); off by default,
+     * unlike the flags above, since it's a developer aid rather than an import preference.
+     */
+    debug?: boolean;
 }
 
 /**
@@ -85,6 +92,11 @@ async function routeToImporter(taskContext: TaskContext<"importNotes">, file: Fi
         return await opmlImportService.importOpml(taskContext, file.buffer, parentNote);
     } else if (extension === ".enex" && options.explodeArchives) {
         return await enexImportService.importEnex(taskContext, file, parentNote);
+    } else if ((extension === ".one" || extension === ".onetoc2") && typeof file.buffer !== "string") {
+        // A OneNote desktop section file, parsed offline from its binary (no Microsoft Graph). Routed by
+        // extension: the whole file is read into `file.buffer` (it's not streamed like a zip), so no `format`
+        // tag is needed. See services/import/onenote-file.
+        return oneNoteFileImportService.importOneFile(taskContext, file.buffer, parentNote, file.originalname);
     } else {
         return await singleImportService.importSingleFile(taskContext, file, parentNote);
     }
