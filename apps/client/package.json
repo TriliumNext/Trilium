@@ -70,7 +70,9 @@
     "rrule": "2.8.1",
     "svg-pan-zoom": "3.6.2",
     "tabulator-tables": "6.5.2",
-    "temporal-polyfill": "1.0.3"
+    "temporal-polyfill": "1.0.3",
+    "terra-draw": "1.32.3",
+    "terra-draw-maplibre-gl-adapter": "1.4.1"
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": "5.0.3",

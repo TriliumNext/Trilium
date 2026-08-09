@@ -1,24 +1,26 @@
 /**
- * The bar of editing actions over a geo map (see EditToolbar.tsx). What is checked is the one
- * button it holds so far: that a press arms the map and a press on an armed one stands it down,
- * that the mode is worn as held down, and that a map that may not be edited refuses it.
+ * The bar of editing actions over a geo map (see EditToolbar.tsx). What is checked of each button
+ * is that a press arms the map and a press on an armed one stands it down, that an armed mode is
+ * worn as held down, and that a map that may not be edited refuses them all.
  */
 import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderInto } from "../../../test/render";
+import type { DrawTool } from "./DrawShape";
 import EditToolbar from "./EditToolbar";
 import { ParentMap } from "./map";
 
 /** Builds the bar over a map, which it asks nothing more of than being there at all. */
-function renderBar({ map = {} as never, isReadOnly = false, placing = false } = {}) {
+function renderBar({ map = {} as never, isReadOnly = false, placing = false, drawingTool = null as DrawTool | null } = {}) {
     const onTogglePlacement = vi.fn();
+    const onToggleDrawing = vi.fn();
     const onAddGpxTrack = vi.fn();
     let container: HTMLElement | undefined;
     act(() => {
         container = renderInto(
             <ParentMap.Provider value={map}>
-                <EditToolbar isReadOnly={isReadOnly} placing={placing} onTogglePlacement={onTogglePlacement} onAddGpxTrack={onAddGpxTrack} />
+                <EditToolbar isReadOnly={isReadOnly} placing={placing} onTogglePlacement={onTogglePlacement} drawingTool={drawingTool} onToggleDrawing={onToggleDrawing} onAddGpxTrack={onAddGpxTrack} />
             </ParentMap.Provider>
         );
     });
@@ -27,13 +29,24 @@ function renderBar({ map = {} as never, isReadOnly = false, placing = false } = 
     const all = () => [ ...container?.querySelectorAll<HTMLButtonElement>(".geo-edit-toolbar button") ?? [] ];
     return {
         onTogglePlacement,
+        onToggleDrawing,
         onAddGpxTrack,
         buttons: all,
         /** The first button, which is the +. */
         button: () => all()[0] ?? null,
-        gpxButton: () => all()[1] ?? null
+        /** The drawing tools, one button per tool, standing between the + and the GPX button. */
+        drawButton: (icon: string) => all().find((b) => b.classList.contains(icon)) ?? null,
+        gpxButton: () => all()[all().length - 1] ?? null
     };
 }
+
+/** Every drawing tool on the bar, by the icon its button wears. */
+const DRAW_TOOL_ICONS: { tool: DrawTool; icon: string }[] = [
+    { tool: "line", icon: "bx-vector" },
+    { tool: "polygon", icon: "bx-shape-polygon" },
+    { tool: "rectangle", icon: "bx-rectangle" },
+    { tool: "circle", icon: "bx-shape-circle" }
+];
 
 describe("geo map EditToolbar", () => {
     it("offers to add a note, and hands the arming to the map view", () => {
@@ -57,6 +70,19 @@ describe("geo map EditToolbar", () => {
         expect(onTogglePlacement).toHaveBeenCalledTimes(1);
     });
 
+    it("offers every drawing tool, wears the armed one as held down, and hands the arming to the map view", () => {
+        for (const { tool, icon } of DRAW_TOOL_ICONS) {
+            const { drawButton, onToggleDrawing } = renderBar();
+
+            expect(drawButton(icon)?.classList.contains("active")).toBe(false);
+            act(() => drawButton(icon)?.click());
+            expect(onToggleDrawing).toHaveBeenCalledWith(tool);
+
+            const armed = renderBar({ drawingTool: tool });
+            expect(armed.drawButton(icon)?.classList.contains("active")).toBe(true);
+        }
+    });
+
     it("offers to bring in a GPX track, and hands the asking to the map view", () => {
         const { gpxButton, onAddGpxTrack } = renderBar();
 
@@ -69,6 +95,7 @@ describe("geo map EditToolbar", () => {
     it("refuses every button on a map that may not be edited", () => {
         const { buttons } = renderBar({ isReadOnly: true });
 
+        expect(buttons().length).toBeGreaterThan(2);
         for (const button of buttons()) {
             expect(button.disabled).toBe(true);
         }

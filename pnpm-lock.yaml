@@ -357,6 +357,12 @@ importers:
       temporal-polyfill:
         specifier: 1.0.3
         version: 1.0.3
+      terra-draw:
+        specifier: 1.32.3
+        version: 1.32.3
+      terra-draw-maplibre-gl-adapter:
+        specifier: 1.4.1
+        version: 1.4.1(maplibre-gl@5.24.0)(terra-draw@1.32.3)
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.3
@@ -11525,6 +11531,15 @@ packages:
 
   temporal-utils@1.0.1:
     resolution: {integrity: sha512-HAixuesxFQIUaQk3ptX2jhfO/FsOkgVkDDMawvp6n/fkB1q6BKfs3lURw9I+pK/2e2e/q/vrLrxmeqauBoyGMQ==}
+
+  terra-draw-maplibre-gl-adapter@1.4.1:
+    resolution: {integrity: sha512-qZ/bc9bVPnyt0keLVTofV8xiTPkdkbO6RzqrfNLe9zH/edW5PsjvJw97m1EksPZeXNJtFxsVbhi12cPaoNiWfg==}
+    peerDependencies:
+      maplibre-gl: '>=4'
+      terra-draw: ^1.0.0
+
+  terra-draw@1.32.3:
+    resolution: {integrity: sha512-pQpwL8winsDW6/DbBgsaZKeMc83D+HqokxR+t1AbrN4U7C4mGgEfCtmRix1/5L4GfkLh1FE7pq44SWt76vK2Bw==}
 
   terser-webpack-plugin@5.6.0:
     resolution: {integrity: sha512-Eum+5ajkaOhf5KbM26osvv21kLD7BaGqQ1UA4Ami4arYwylmGUQTgHFpHDdmJod1q4QXa66p0to/FBKID+J1vA==}
@@ -25383,6 +25398,13 @@ snapshots:
   temporal-spec@1.0.1: {}
 
   temporal-utils@1.0.1: {}
+
+  terra-draw-maplibre-gl-adapter@1.4.1(maplibre-gl@5.24.0)(terra-draw@1.32.3):
+    dependencies:
+      maplibre-gl: 5.24.0
+      terra-draw: 1.32.3
+
+  terra-draw@1.32.3: {}
 
   terser-webpack-plugin@5.6.0(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.20)(webpack@5.106.2(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.20)):
     dependencies:

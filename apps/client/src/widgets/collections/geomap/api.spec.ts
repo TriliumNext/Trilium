@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import note_create from "../../../services/note_create";
 import { buildNote } from "../../../test/easy-froca";
-import { createNewNote, importGpxTrack } from "./api";
+import { createNewNote, createShapeNote, importGpxTrack } from "./api";
 
 vi.mock("../../../services/note_create", () => ({
     default: { createNote: vi.fn(async () => ({ note: { noteId: "created" }, branch: null })) }
@@ -34,6 +34,25 @@ describe("geo map api", () => {
             attributes: expect.arrayContaining([
                 { type: "label", name: "geolocation", value: "48.85,2.36" },
                 { type: "label", name: "iconClass", value: "bx bx-pin" }
+            ])
+        }));
+    });
+
+    it("creates a shape note under the stock name, its geometry in the label and its icon the tool's", async () => {
+        const parent = buildNote({ title: "The map" });
+
+        const created = await createShapeNote(parent, {
+            type: "polygon",
+            coordinates: [ [ 2.29, 48.85 ], [ 2.35, 48.86 ], [ 2.3, 48.9 ] ]
+        });
+
+        expect(created).toEqual({ noteId: "created" });
+        expect(createNote).toHaveBeenCalledWith(parent.noteId, expect.objectContaining({
+            type: "text",
+            activate: false,
+            attributes: expect.arrayContaining([
+                { type: "label", name: "geoShape", value: "polygon:48.85,2.29 48.86,2.35 48.9,2.3" },
+                { type: "label", name: "iconClass", value: "bx bx-shape-polygon" }
             ])
         }));
     });
