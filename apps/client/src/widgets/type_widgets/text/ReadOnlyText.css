@@ -7,33 +7,12 @@
     h5 { font-size: 1.1em; }
     h6 { font-size: 1.0em; }
 
-    /* Keep the heading of the section being read in view. Every level pins to the same edge, so a
-       deeper heading slides over its parent and exactly one is ever shown. The space above a
-       heading has to be padding rather than margin: sticky positions the margin box, so a margin
-       would pin the heading that far down and leave the gap transparent for the text to run
-       through. */
-    :is(h1, h2, h3, h4, h5, h6) {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        background-color: var(--main-background-color);
-        margin-top: 0;
-        padding-top: 0.83em;
-        padding-bottom: 0.15em;
-    }
-
     .mermaid-diagram,
     .mermaid-diagram svg,
     img {
         max-width: 100%;
         height: auto;
     }
-}
-
-/* Dialogs (e.g. the quick-edit popup) paint their content area with the modal background, so a
-   pinned heading has to match it there instead of the main background. */
-.modal .note-detail-readonly-text-content :is(h1, h2, h3, h4, h5, h6) {
-    background-color: var(--modal-background-color);
 }
 
 /* Top-level (not scoped to the note view) so a swallowed mermaid failure is
