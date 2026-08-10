@@ -47,7 +47,7 @@ body.heading-style-underline .note-detail-readonly-text-content {
 }
 
 .note-detail-readonly-text {
-    padding-inline-start: 24px;
+    padding-inline: 24px;
     padding-top: 10px;
     font-family: var(--detail-font-family);
     min-height: 50px;
