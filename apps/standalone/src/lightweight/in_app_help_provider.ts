@@ -1,4 +1,4 @@
-import type { HiddenSubtreeItem } from "@triliumnext/commons";
+import type { HelpBundle, HiddenSubtreeItem } from "@triliumnext/commons";
 import { InAppHelpProvider } from "@triliumnext/core";
 
 import helpMeta from "../assets/help_meta.json";
@@ -11,5 +11,12 @@ export default class StandaloneInAppHelpProvider extends InAppHelpProvider {
 
     getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
         return helpMeta as HiddenSubtreeItem[];
+    }
+
+    getHelpContent(): HelpBundle {
+        // Standalone's help pages are web views onto the online documentation, so they hold no
+        // content of their own. They move to the bundled content once this build consumes the
+        // same artifacts the server does.
+        return {};
     }
 }
