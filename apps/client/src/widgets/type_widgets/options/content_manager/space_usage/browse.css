@@ -1,0 +1,74 @@
+.space-usage-browse {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+
+    .space-usage-breadcrumb {
+        display: flex;
+        flex: 0 0 auto;
+        justify-content: center;
+        align-items: center;
+        gap: 0.35em;
+        padding-block: 6px;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    /* Names what the path leads to, so a lone root crumb still reads as a location. */
+    .space-usage-crumb-label {
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+
+    .space-usage-crumb {
+        display: inline-block;
+        overflow: hidden;
+        max-width: 14em;
+        border: none;
+        background: none;
+        padding: 0;
+        color: var(--main-text-color);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .space-usage-crumb:hover {
+        text-decoration: underline;
+    }
+
+    .space-usage-crumb-current {
+        font-weight: 600;
+        cursor: default;
+    }
+
+    .space-usage-crumb-current:hover {
+        text-decoration: none;
+    }
+
+    .space-usage-crumb-separator {
+        flex-shrink: 0;
+        opacity: 0.6;
+    }
+
+    .space-usage-browse-chart {
+        display: flex;
+        flex: 1 1 auto;
+        min-height: 0;
+        padding-block: 8px;
+    }
+
+    /* At the root there is nowhere to go back to: the arrow disappears but keeps its box, so the
+       center text doesn't jump between levels. */
+    .space-usage-back.disabled {
+        visibility: hidden;
+    }
+
+    /* Not a note: nothing to navigate into, painted like the revisions it will one day free.
+       Repeats .donut-segment to outrank the primitive's clickable-cursor rule. */
+    .donut-segment.space-usage-segment-deleted {
+        --donut-segment-color: var(--space-usage-revisions-color);
+        cursor: default;
+    }
+}

@@ -1,0 +1,78 @@
+.donut-chart {
+    display: flex;
+    position: relative;
+    margin: auto;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 100%;
+
+    svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* The empty band the segments are laid on, in the color of any other divider — a ring with
+       nothing on it still has to read as a ring rather than as a blank square. */
+    .donut-track {
+        stroke: var(--donut-track-color, var(--main-border-color));
+    }
+
+    /* Colored through a variable, not a competing rule: consumers set `--donut-segment-color` and
+       never race this stylesheet's cascade position. */
+    .donut-segment {
+        stroke: var(--donut-segment-color, var(--accented-background-color));
+        /* Dash geometry is the segment's shape, so transitions carry re-layouts and the keyframe
+           sweeps a freshly mounted segment in from zero length. */
+        transition: stroke-dasharray 0.45s ease, stroke-dashoffset 0.45s ease;
+        animation: donut-sweep 0.45s ease;
+    }
+
+    /* The same tint recipe as the treemap cells, so the two charts speak one color language. */
+    .donut-segment.donut-colored {
+        --donut-segment-color: color-mix(
+            in srgb,
+            var(--accented-background-color) 55%,
+            hsl(var(--donut-hue) 65% 55%) 45%
+        );
+    }
+
+    /* An outline that traces the arc rather than its box: `outline` on a dashed circle would frame
+       the entire ring, since that is the element's extent. Blur-less shadows in the four directions
+       hug the painted shape instead, and stay inside the inter-segment gap. */
+    .donut-segment:hover {
+        filter:
+            brightness(1.12)
+            drop-shadow(2px 0 0 var(--input-focus-outline-color))
+            drop-shadow(-2px 0 0 var(--input-focus-outline-color))
+            drop-shadow(0 2px 0 var(--input-focus-outline-color))
+            drop-shadow(0 -2px 0 var(--input-focus-outline-color));
+    }
+
+    .donut-clickable {
+        cursor: pointer;
+    }
+
+    .donut-chart-center {
+        display: flex;
+        position: absolute;
+        inset: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        /* The hole is inside the rings' hit area; only the actual content should catch the pointer. */
+        pointer-events: none;
+    }
+
+    .donut-chart-center > * {
+        pointer-events: auto;
+    }
+
+}
+
+@keyframes donut-sweep {
+    from {
+        stroke-dasharray: 0 var(--donut-circumference);
+    }
+}

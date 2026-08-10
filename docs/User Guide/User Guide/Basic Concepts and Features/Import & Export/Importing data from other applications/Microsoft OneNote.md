@@ -15,13 +15,19 @@ Trilium allows importing from OneNote. Currently the only mechanism supported is
 
 The following features are preserved by Trilium during the import process:
 
-*   Basic formatting (bold, italic, underline, strikethrough, subscript, super script, inline code, font sizes, headings, colors, highlights).
+*   Basic formatting (bold, italic, underline, strikethrough, subscript, super script, font sizes, headings, colors, highlights).
     *   Black-colored text is intentionally stripped to allow it to work in dark themes.
+*   Inline code is automatically detected and formatted. Paragraphs that use the Code style are also converted to <a class="reference-link" href="../../../Note%20Types/Text/Developer-specific%20formatting/Code%20blocks.md">Code blocks</a>.
+    *   Unfortunately the indentation of the code might be lost because the information is simply not present in the data from the Microsoft API.
 *   <a class="reference-link" href="../../../Note%20Types/Text/Lists.md">Lists</a> with different bullet types.
 *   <a class="reference-link" href="../../../Note%20Types/Text/Tables.md">Tables</a>
+    *   Cell backgrounds are preserved, including a best-effort hue correction because the colors returned by the Graph API are sometimes incorrect.
+    *   Cell widths are also preserved proportionally, with the only difference that tables in Trilium have a percentage-based width, not fixed pixel sizes.
 *   Images and <a class="reference-link" href="../../Notes/Attachments.md">Attachments</a>.
+    *   Screen clippings are also properly supported since v0.104.1, displaying their timestamp as a figure caption.
 *   To-do lists
-*   Hand-drawing is preserved and displayed as an SVG image (however there are some
+*   Hand-drawing is preserved and displayed as an SVG image inside the note
+    *   OneNote's default color (black) is special since it also renders as white for dark themes. Since v0.104.1, this is also supported by using a special SVG tweak which reacts to light/dark themes.
 *   Links between other imported pages are converted to <a class="reference-link" href="../../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> if the text of the link matches the name of the page, or plain links otherwise. If the pages are not part of the import, the original `onenote:` link is kept.
 *   Tags (apart from to-do lists) are mildly preserved by converting them to emojis. This loses their searchability. Since Trilium has no concept of inline attributes or badges, this is considered a middle-ground.
 
@@ -69,14 +75,23 @@ In addition, drawing in OneNote can be interleaved with text boxes. Text notes i
 > [!NOTE]
 > There are plans to support drawing-heavy notes that interleave with text boxes by converting them to a <a class="reference-link" href="../../../Note%20Types/Canvas.md">Canvas</a> instead.
 
+### Password-protected sections
+
+OneNote supports encryption at section level; when importing a notebook that contains these password-protection sections, Trilium will not be able to read the content of password-protected sections so they will appear empty. This is not a limitation of Trilium, the information is simply not available from the source (Graph API).
+
+The section itself is kept for reference and all the sections that could not be imported will be shown in the report (the top-level note called _OneNote import_).
+
+To unprotect a section in OneNote Desktop, right click on the protected section → _Password Protect This Section_ and press _Remove Password_ and sync. Then reimport either only the protected sessions or the remove everything and start the import from scratch.
+
 ## Other limitations
 
 The following are known limitations due to how the information comes from the import (Microsoft Graph API), which means that they cannot be fixed.
 
 *   The order of the sections (and section groups) is not available, the sections are ordered by creation date instead.
 *   Revision history.
-*   Paragraph indentation.
+*   Paragraph indentation, as well as code block indentation.
 *   Section colors.
+*   Drawings inside titles, the title might appear incomplete or “Untitled”.
 
 ## Reporting issues
 

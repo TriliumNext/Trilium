@@ -50,6 +50,18 @@ const MAX_GATEWAY_TIMEOUT_RETRIES = 5;
 // "don't send until" timestamp that ALL requests wait on, so the whole pool backs off together.
 let throttledUntilMs = 0;
 
+// Notified whenever the shared throttle gate is extended — i.e. Graph is actively throttling and every
+// request is now waiting. The importer uses this to flip its progress toast to a "waiting out rate
+// limiting" message: during a long throttle window no page completes, so the progress count sits still
+// for up to an hour and is otherwise indistinguishable from a hang (users have killed multi-hour
+// imports — losing all fetched work — over exactly that).
+let throttleListener: ((waitMs: number) => void) | null = null;
+
+/** Registers (or clears, with null) the single throttle-gate listener. */
+export function setThrottleListener(listener: ((waitMs: number) => void) | null): void {
+    throttleListener = listener;
+}
+
 // Aggregate throttle statistics for the current import, surfaced in the import report (they answer
 // "why did this take hours?"). `requestCount` counts throttled (429/503) responses; `waitMs`
 // accumulates net extensions of the shared gate — wall-clock time spent waiting out throttles —
@@ -126,6 +138,7 @@ async function graphFetch(getAccessToken: AccessTokenProvider, url: string): Pro
         throttledUntilMs = Math.max(throttledUntilMs, Date.now() + waitMs);
         throttleAttempt++;
         getLog().info(`OneNote import: Graph throttled (HTTP ${response.status}) on ${sanitizeGraphUrl(url)}; retry ${throttleAttempt} after ${waitMs}ms (${Math.round((giveUpAtMs - Date.now()) / 60_000)}min of wait budget left)`);
+        throttleListener?.(waitMs);
     }
 }
 
@@ -398,19 +411,51 @@ async function graphGetAll<T>(getAccessToken: AccessTokenProvider, pathOrUrl: st
 }
 
 /**
+ * A failed Graph request, carrying the HTTP status and (when present) the Graph error code from the
+ * response body alongside the human-readable message, so callers can react to specific failures — e.g.
+ * {@link isEncryptedSectionError} — instead of parsing the message string.
+ */
+export class GraphRequestError extends Error {
+    readonly status: number;
+    /** The `error.code` from Graph's JSON error envelope, if the body was one (e.g. "20185"). */
+    readonly code?: string;
+
+    constructor(message: string, status: number, code?: string) {
+        super(message);
+        this.name = "GraphRequestError";
+        this.status = status;
+        this.code = code;
+    }
+}
+
+/**
+ * The Graph error code returned (with HTTP 403) when a section is encrypted/password-protected: its
+ * pages can't be listed or read through the API at all. Not in Microsoft's published error-code list —
+ * that only documents the write-side 10004 ("can't create a page … protected by a password") — so it
+ * was captured from a live import. See {@link isEncryptedSectionError}.
+ */
+export const ENCRYPTED_SECTION_ERROR_CODE = "20185";
+
+/** Whether an error is Graph rejecting a section because it is encrypted/password-protected. */
+export function isEncryptedSectionError(e: unknown): boolean {
+    return e instanceof GraphRequestError && e.status === 403 && e.code === ENCRYPTED_SECTION_ERROR_CODE;
+}
+
+/**
  * Builds the error for a failed Graph request. A bare HTTP status is not actionable when an import of
  * thousands of pages fails on one of them, so the message carries the request URL plus whatever error
  * code/message Graph itself returned in the response body.
  */
-async function graphRequestError(summary: string, url: string, response: Response): Promise<Error> {
+async function graphRequestError(summary: string, url: string, response: Response): Promise<GraphRequestError> {
     let body = "";
     try {
         body = await response.text();
     } catch {
         // The status and URL are still worth reporting when the body cannot be read.
     }
+    const { code } = parseGraphError(body);
     const detail = extractGraphErrorDetail(body);
-    return new Error(`${summary} (HTTP ${response.status}${detail ? `: ${detail}` : ""}) from ${sanitizeGraphUrl(url)}`);
+    return new GraphRequestError(`${summary} (HTTP ${response.status}${detail ? `: ${detail}` : ""}) from ${sanitizeGraphUrl(url)}`, response.status, code);
 }
 
 /**
@@ -428,16 +473,25 @@ export function sanitizeGraphUrl(url: string): string {
 }
 
 /**
+ * Parses Graph's standard JSON error envelope (`{"error": {"code": "...", "message": "..."}}`) into its
+ * code and message, or an empty object when the body is not one.
+ */
+function parseGraphError(body: string): { code?: string; message?: string } {
+    try {
+        const parsed = JSON.parse(body) as { error?: { code?: string; message?: string } };
+        return { code: parsed?.error?.code, message: parsed?.error?.message };
+    } catch {
+        return {};
+    }
+}
+
+/**
  * Extracts "code: message" from Graph's standard JSON error envelope
  * (`{"error": {"code": "...", "message": "..."}}`), or "" when the body is not one.
  */
 export function extractGraphErrorDetail(body: string): string {
-    try {
-        const parsed = JSON.parse(body) as { error?: { code?: string; message?: string } };
-        return [parsed?.error?.code, parsed?.error?.message].filter(Boolean).join(": ");
-    } catch {
-        return "";
-    }
+    const { code, message } = parseGraphError(body);
+    return [code, message].filter(Boolean).join(": ");
 }
 
 export default {
@@ -447,5 +501,7 @@ export default {
     getPageContent,
     getResource,
     getThrottleStats,
-    resetThrottleStats
+    resetThrottleStats,
+    setThrottleListener,
+    isEncryptedSectionError
 };

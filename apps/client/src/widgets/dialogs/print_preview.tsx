@@ -3,6 +3,7 @@ import "./print_preview.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
+import { getBuiltinLabelSelectOptions } from "../../services/attributes";
 import { t } from "../../services/i18n";
 import toast from "../../services/toast";
 import Button, { ButtonGroup } from "../react/Button";
@@ -17,7 +18,11 @@ import PdfViewer from "../type_widgets/file/PdfViewer";
 import OptionsRow from "../type_widgets/options/components/OptionsRow";
 import OptionsSection from "../type_widgets/options/components/OptionsSection";
 
-const PAGE_SIZES = ["A0", "A1", "A2", "A3", "A4", "A5", "A6", "Legal", "Letter", "Tabloid", "Ledger"] as const;
+/**
+ * Read from the `#printPageSize` label's own vocabulary rather than listed again here: the dialog
+ * stores what it picks in that label, and the attribute editor offers the same list back.
+ */
+const PAGE_SIZES = getBuiltinLabelSelectOptions("printPageSize") ?? [];
 
 /** Pseudo-printer name used to route the Print button to the PDF export flow. */
 const DESTINATION_PDF = "__pdf__";

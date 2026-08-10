@@ -611,6 +611,40 @@ describe("preload script", () => {
         });
     });
 
+    describe("backupPassphrase", () => {
+        const backupPassphrase = () => getGroup("backupPassphrase");
+
+        it("getStatus invokes the corresponding IPC channel", async () => {
+            await backupPassphrase().getStatus();
+            expect(ipcRendererInvoked).toContainEqual({
+                channel: "backup-passphrase-status",
+                args: []
+            });
+        });
+
+        it("set invokes the corresponding IPC channel", async () => {
+            await backupPassphrase().set("hunter2");
+            expect(ipcRendererInvoked).toContainEqual({
+                channel: "backup-passphrase-set",
+                args: [ "hunter2" ]
+            });
+        });
+
+        it("clear invokes the corresponding IPC channel", async () => {
+            await backupPassphrase().clear();
+            expect(ipcRendererInvoked).toContainEqual({
+                channel: "backup-passphrase-clear",
+                args: []
+            });
+        });
+
+        it("exposes no way to read the passphrase back", () => {
+            const exposed = Object.keys(backupPassphrase()).sort();
+
+            expect(exposed).toEqual([ "clear", "getStatus", "set" ]);
+        });
+    });
+
     describe("onenote", () => {
         const onenote = () => getGroup("onenote");
 
@@ -649,6 +683,29 @@ describe("preload script", () => {
             // The second file has no backing path (a script-built blob / browser drag) → getPathForFile yields "".
             await grantDroppedFiles([{ path: "/data/a.zip" }, { /* no path */ }]);
             expect(ipcRendererInvoked).toContainEqual({ channel: "import-grant-dropped", args: [["/data/a.zip"]] });
+        });
+    });
+
+    describe("dialog", () => {
+        const dialog = () => getGroup("dialog");
+
+        it("pickDirectory forwards the starting location to its IPC channel", async () => {
+            await dialog().pickDirectory({ defaultPath: "/data/backup" });
+            expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-pick-directory", args: [{ defaultPath: "/data/backup" }] });
+        });
+
+        it("pickDirectory may be called without a starting location", async () => {
+            await dialog().pickDirectory();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-pick-directory", args: [undefined] });
+        });
+    });
+
+    describe("restore", () => {
+        const restore = () => getGroup("restore");
+
+        it("pickBackup invokes the open-dialog IPC channel, passing nothing it could steer", async () => {
+            await restore().pickBackup();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "restore-pick-backup", args: [] });
         });
     });
 });

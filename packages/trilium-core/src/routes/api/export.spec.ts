@@ -72,6 +72,25 @@ describe("Export API (core)", () => {
         expect(res.headers["Content-Type"]).toBe("text/plain");
     });
 
+    it("answers a single-note export of an image or file note instead of leaving it hanging", async () => {
+        // Regression: exportSingleNote used to *return* a [400, message] tuple, which this route
+        // discards (it writes to `res` itself and has no result handler), so the request got no
+        // response at all. It now throws, which the catch below turns into a real reply.
+        for (const type of ["image", "file"] as const) {
+            const created = await api.post<{ branch: { branchId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: `Binary ${type}`, type, mime: "application/octet-stream", content: "" } }
+            );
+            expect(created.status).toBe(200);
+
+            const res = await api.get<string>(`/api/branches/${created.body.branch.branchId}/export/single/html/exportTask`);
+
+            expect(res.status).toBe(500);
+            expect(res.headers["Content-Type"]).toBe("text/plain");
+            expect(String(res.body)).toContain(`Note type '${type}' cannot be exported as single file.`);
+        }
+    });
+
     it("exports an unhandled note type as a .dat file instead of a zero-byte .undefined download", async () => {
         // Regression: note types mapByNoteType doesn't handle (book, webView, mindMap, …) used to fall
         // through to res.send(undefined), producing a "<title>.undefined", zero-byte download. They now

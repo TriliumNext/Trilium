@@ -1,10 +1,12 @@
 // @vitest-environment happy-dom
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import interceptPersistence from "./persistence";
+import { allFeaturesPdf } from "./test/fixture_pdf";
+import { InstalledViewer, installViewerApp, uninstallViewerApp } from "./test/viewer_app";
+import { resolveViewerBundle } from "./test/viewer_bundle";
 
 const SIGNATURE_KEY = "pdfjs.signature";
 const ENTRY = { description: "Mine", signatureData: "data-1" };
@@ -43,6 +45,20 @@ afterEach(() => {
 /** Reads the real backing store, bypassing the interception patch installed on the prototype. */
 function readRealStore(key: string) {
     return realGetItem.call(localStorage, key);
+}
+
+/**
+ * Reads through the currently installed interception, as pdf.js does.
+ *
+ * happy-dom's `localStorage` is a proxy that resolves `getItem` once and then caches it, so
+ * after the first test in this file touches it, `localStorage.getItem` stays pinned to
+ * whichever patch was installed at that moment and never sees a later one. In a real browser
+ * there is no proxy and `localStorage.getItem` *is* `Storage.prototype.getItem`, so going
+ * through the prototype here is equivalent to what the viewer actually does — and, unlike the
+ * bare instance call, it reads the patch the test under way installed.
+ */
+function readThroughPatch(key: string) {
+    return Storage.prototype.getItem.call(localStorage, key);
 }
 
 describe("signature-library interception", () => {
@@ -156,6 +172,71 @@ describe("real pdf.js SignatureStorage against the interception", () => {
     });
 });
 
+describe("preferences and pass-through reads", () => {
+    it("serves the injected viewer options and leaves other keys to the real store", () => {
+        interceptPersistence({ disablePreferences: true, sidebarViewOnLoad: 0 });
+
+        // pdf.js reads its preferences out of localStorage on boot; this is how the options
+        // Trilium passes through the iframe URL reach it.
+        expect(JSON.parse(readThroughPatch("pdfjs.preferences") ?? "null"))
+            .toEqual({ disablePreferences: true, sidebarViewOnLoad: 0 });
+
+        realSetItem.call(localStorage, "unrelated", "kept");
+        expect(readThroughPatch("unrelated")).toBe("kept");
+        expect(readThroughPatch("never-written")).toBeNull();
+    });
+});
+
+describe("view-history persistence", () => {
+    let viewer: InstalledViewer;
+
+    afterEach(() => {
+        vi.useRealTimers();
+        uninstallViewerApp();
+    });
+
+    it("debounces bursts of writes and keeps only the current document's entry", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        // A real fingerprint from the real document — pdf.js derives it from the file's
+        // contents, so hard-coding one here would drift the moment the fixture changed.
+        const fingerprint = viewer.pdfDocument.fingerprints?.[0];
+        expect(fingerprint).toBeTruthy();
+        vi.useFakeTimers();
+        interceptPersistence();
+
+        const history = { files: [ { fingerprint, page: 3 }, { fingerprint: "some-other-document" } ] };
+        localStorage.setItem("pdfjs.history", JSON.stringify({ files: [] }));
+        localStorage.setItem("pdfjs.history", JSON.stringify(history));
+
+        // pdf.js writes on every scroll, so nothing may be sent until the burst settles.
+        expect(viewer.messagesOfType("pdfjs-viewer-save-view-history")).toHaveLength(0);
+        await vi.advanceTimersByTimeAsync(2_000);
+
+        const sent = viewer.messagesOfType("pdfjs-viewer-save-view-history");
+        expect(sent).toHaveLength(1);
+        expect(sent[0]).toMatchObject({ noteId: "note-1", ntxId: "ntx-1" });
+        // Entries for other documents would otherwise accumulate in this note's option
+        // forever, since each note stores the whole history blob.
+        expect(JSON.parse(sent[0].data).files).toEqual([ { fingerprint, page: 3 } ]);
+
+        // And the real store never sees the key.
+        expect(readRealStore("pdfjs.history")).toBeNull();
+    });
+
+    it("keeps every entry when no document is loaded to filter against", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        delete window.PDFViewerApplication;
+        vi.useFakeTimers();
+        interceptPersistence();
+
+        localStorage.setItem("pdfjs.history", JSON.stringify({ files: [ { fingerprint: "a" } ] }));
+        await vi.advanceTimersByTimeAsync(2_000);
+
+        const [ sent ] = viewer.messagesOfType("pdfjs-viewer-save-view-history");
+        expect(JSON.parse(sent.data).files).toEqual([ { fingerprint: "a" } ]);
+    });
+});
+
 /**
  * Extracts the real `SignatureStorage` class from the vendored pdf.js viewer bundle and evaluates
  * it with its two module-private dependencies injected. pdf.js does not export this class (it lives
@@ -189,25 +270,6 @@ function loadRealSignatureStorage(): { SignatureStorage: any } {
     // Expose the key pdf.js actually uses so the contract test can assert on it.
     SignatureStorage.EXPECTED_KEY = key;
     return { SignatureStorage };
-}
-
-/** Finds `viewer/viewer.mjs` by walking up from the working directory (or its package root). */
-function resolveViewerBundle(): string {
-    const relative = join("viewer", "viewer.mjs");
-    let dir = process.cwd();
-    for (;;) {
-        const candidates = [ join(dir, relative), join(dir, "packages", "pdfjs-viewer", relative) ];
-        for (const candidate of candidates) {
-            if (existsSync(candidate)) {
-                return candidate;
-            }
-        }
-        const parent = dirname(dir);
-        if (parent === dir) {
-            throw new Error("Could not locate the pdf.js viewer bundle (viewer/viewer.mjs)");
-        }
-        dir = parent;
-    }
 }
 
 /** Returns the index just past the `}` that closes the first `{` at or after `from`. */

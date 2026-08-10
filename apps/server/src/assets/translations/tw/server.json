@@ -368,9 +368,6 @@
     "db_not_initialized_desktop": "資料庫尚未初始化，請依螢幕指示操作。",
     "db_not_initialized_server": "資料庫尚未初始化，請前往設定頁面 http://[your-server-host]:{{port}} 查看如何初始化 Trilium。"
   },
-  "desktop": {
-    "instance_already_running": "已經有一個執行中的實例，正在將焦點切換到該實例。"
-  },
   "search": {
     "error": {
       "in-context": "{{- context}} 發生錯誤：{{- message}}",

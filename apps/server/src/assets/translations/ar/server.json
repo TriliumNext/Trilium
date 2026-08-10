@@ -380,9 +380,6 @@
     "db_not_initialized_desktop": "لم تتم تهيئة قاعدة البيانات، يرجى اتباع التعليمات الظاهرة على الشاشة.",
     "db_not_initialized_server": "لم تتم تهيئة قاعدة البيانات، يرجى زيارة صفحة الإعداد: http://[your-server-host]:{{port}} للاطلاع على تعليمات تهيئة Trilium."
   },
-  "desktop": {
-    "instance_already_running": "هناك نسخة قيد التشغيل بالفعل، سيتم التركيز على تلك النسخة بدلًا من تشغيل نسخة جديدة."
-  },
   "script": {
     "wrong-environment": "لا يمكن تنفيذ الملاحظة \"{{- noteTitle}}\" ({{- noteId}}). هذا سكربت خاص بـ {{- actualEnv}}، لكن تم محاولة تشغيله في بيئة {{- expectedEnv}}."
   },

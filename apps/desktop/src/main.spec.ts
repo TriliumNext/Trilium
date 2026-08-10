@@ -41,6 +41,7 @@ const h = vi.hoisted(() => ({
     streamErrorHandlers: [] as Handler[],
     // Captured commandLine.appendSwitch calls.
     appendSwitch: vi.fn(),
+    recoverInterruptedRestore: vi.fn(),
     onBeforeSendHeaders: vi.fn(),
     setName: vi.fn(),
     quit: vi.fn(),
@@ -53,6 +54,8 @@ const h = vi.hoisted(() => ({
     isPrimaryInstance: true as boolean,
     allWindows: [] as unknown[],
     smoothScroll: "true" as string | null,
+    hardwareAcceleration: "true" as string | null,
+    disableHardwareAcceleration: vi.fn(),
     // When true, reading an option throws (simulates first run before the schema exists).
     dbUninitialized: false as boolean,
     isDbInitialized: true as boolean,
@@ -91,6 +94,7 @@ vi.mock("electron", () => {
         setName: (...a: unknown[]) => h.setName(...a),
         setUserTasks: (...a: unknown[]) => h.setUserTasks(...a),
         commandLine: { appendSwitch: (...a: unknown[]) => h.appendSwitch(...a) },
+        disableHardwareAcceleration: (...a: unknown[]) => h.disableHardwareAcceleration(...a),
         on: (event: string, cb: Handler) => h.appOn.set(event, cb),
         quit: (...a: unknown[]) => h.quit(...a),
         exit: (...a: unknown[]) => h.exit(...a),
@@ -108,7 +112,7 @@ vi.mock("electron", () => {
         handle: (channel: string, fn: Handler) => h.ipcHandle.set(channel, fn)
     };
     // onReady() installs the embed-Referer hook, whose default argument reads
-    // `electron.session.defaultSession` (see services/embed_referer.ts).
+    // `electron.session.defaultSession` (see services/referer.ts).
     const session = {
         defaultSession: {
             webRequest: {
@@ -183,6 +187,7 @@ vi.mock("@triliumnext/server/src/sql_provider.js", () => ({
             if (h.dbUninitialized) throw new Error("no such table: options");
             const values: Record<string, string | null> = {
                 smoothScrollEnabled: h.smoothScroll,
+                hardwareAccelerationEnabled: h.hardwareAcceleration,
                 locale: h.locale,
                 formattingLocale: h.formattingLocale
             };
@@ -234,6 +239,11 @@ vi.mock("./services/auto_launch", () => ({
 }));
 vi.mock("./services/shell", () => ({ setupShellHandlers: vi.fn() }));
 vi.mock("./services/onenote", () => ({ setupOneNoteHandlers: vi.fn() }));
+// Reaches the server's restore session, and through it the data directory, which this spec does not have.
+vi.mock("./services/restore", () => ({ setupRestoreHandlers: vi.fn() }));
+vi.mock("@triliumnext/server/src/services/database_restore.js", () => ({
+    recoverInterruptedRestore: (...a: unknown[]) => h.recoverInterruptedRestore(...a)
+}));
 vi.mock("./services/security_settings", () => ({
     getSecuritySettings: () => h.securitySettings,
     registerSecurityIpcHandlers: vi.fn()
@@ -264,6 +274,8 @@ function resetState() {
     h.isPrimaryInstance = true;
     h.allWindows = [];
     h.smoothScroll = "true";
+    h.hardwareAcceleration = "true";
+    h.disableHardwareAcceleration.mockClear();
     h.dbUninitialized = false;
     h.isDbInitialized = true;
     h.securitySettings = {};
@@ -333,6 +345,13 @@ describe("main() bootstrap", () => {
         // Streams got an error handler; squirrel false → no exit.
         expect(h.streamErrorHandlers.length).toBe(2);
         expect(exitSpy).not.toHaveBeenCalled();
+
+        // A restore interrupted partway through exchanging the files is undone before anything opens
+        // the database. The "lang" switch is the first thing read out of it, so it comes after.
+        expect(h.recoverInterruptedRestore).toHaveBeenCalled();
+        const langSwitch = h.appendSwitch.mock.calls.findIndex(([ name ]) => name === "lang");
+        expect(h.recoverInterruptedRestore.mock.invocationCallOrder[0])
+            .toBeLessThan(h.appendSwitch.mock.invocationCallOrder[langSwitch]);
 
         // Smooth-scroll disabled + linux switches + lang switch were appended.
         const switches = h.appendSwitch.mock.calls.map((c) => c[0]);
@@ -406,6 +425,28 @@ describe("main() bootstrap", () => {
         expect(switches).not.toContain("disable-smooth-scrolling");
     });
 
+    // #10572: hardware acceleration is disabled before `ready` from the shared provider
+    // (same reason as smooth-scroll — core options aren't wired up yet).
+    it("disables hardware acceleration when the option is off", async () => {
+        setPlatform("darwin");
+        h.hardwareAcceleration = "false";
+        const { main } = await importMain();
+        await main();
+        expect(h.disableHardwareAcceleration).toHaveBeenCalled();
+    });
+
+    it("keeps hardware acceleration when the option is on, absent, or the DB has no schema yet", async () => {
+        for (const scenario of [{ value: "true" as string | null }, { value: null }, { value: "false" as string | null, uninitialized: true }]) {
+            resetState();
+            setPlatform("darwin");
+            h.hardwareAcceleration = scenario.value;
+            if (scenario.uninitialized) h.dbUninitialized = true;
+            const { main } = await importMain();
+            await main();
+            expect(h.disableHardwareAcceleration).not.toHaveBeenCalled();
+        }
+    });
+
     // Regression for #10559 (sibling of the smooth-scroll bug): the --lang switch is set
     // before core init from the same provider, so it must reflect the configured locale
     // instead of always falling back to "en".
@@ -424,6 +465,38 @@ describe("main() bootstrap", () => {
         const { main } = await importMain();
         await expect(main()).rejects.toThrow("__exit__");
         expect(exitSpy).toHaveBeenCalledWith(0);
+    });
+
+    // The single-instance guard runs *before* initializeCore() wires up
+    // translations, so it must log a plain, translation-independent string. It
+    // once passed the message through i18next's t(), which returns undefined
+    // when uninitialized — so a second launch printed a bare "undefined".
+    //
+    // This models that uninitialized behaviour (t() -> undefined) to guard
+    // against anyone reintroducing a `t()` call on this path — the file-level
+    // `vi.mock("i18next")` echoes the key back and the test-suite's shared,
+    // already-initialized i18next singleton would both otherwise mask it.
+    it("logs a non-empty message (never undefined) even though translations aren't initialized yet", async () => {
+        vi.doMock("i18next", () => ({ t: () => undefined }));
+        h.isPrimaryInstance = false;
+        const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+        try {
+            const { main } = await importMain();
+            await expect(main()).rejects.toThrow("__exit__");
+
+            // Regression guard: the second instance exits before initializeCore()
+            // runs, so translations are unavailable — the message must not fall
+            // through to a bare `undefined`.
+            const { initializeTranslations } = await import("@triliumnext/server/src/services/i18n.js");
+            expect(initializeTranslations).not.toHaveBeenCalled();
+            expect(infoSpy).toHaveBeenCalledTimes(1);
+            const logged = infoSpy.mock.calls[0]?.[0];
+            expect(typeof logged).toBe("string");
+            expect(logged).not.toBe("");
+        } finally {
+            infoSpy.mockRestore();
+            vi.doUnmock("i18next");
+        }
     });
 });
 

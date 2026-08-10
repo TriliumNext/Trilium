@@ -134,6 +134,20 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
             import('@univerjs/preset-sheets-hyper-link/locales/ja-JP')
         ])
     },
+    ko: {
+        type: LocaleType.KO_KR,
+        load: () => Promise.all([
+            import('@univerjs/preset-sheets-core/locales/ko-KR'),
+            import('@univerjs/preset-sheets-drawing/locales/ko-KR'),
+            import('@univerjs/preset-sheets-find-replace/locales/ko-KR'),
+            import('@univerjs/preset-sheets-note/locales/ko-KR'),
+            import('@univerjs/preset-sheets-filter/locales/ko-KR'),
+            import('@univerjs/preset-sheets-sort/locales/ko-KR'),
+            import('@univerjs/preset-sheets-data-validation/locales/ko-KR'),
+            import('@univerjs/preset-sheets-conditional-formatting/locales/ko-KR'),
+            import('@univerjs/preset-sheets-hyper-link/locales/ko-KR')
+        ])
+    },
     pt_br: null,
     pt: null,
     pl: null,

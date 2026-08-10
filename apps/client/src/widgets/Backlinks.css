@@ -1,83 +1,116 @@
+/*
+ * The backlinks of a note, as the sidebar's connections tab and the mobile note menu show them —
+ * read as the quick search reads its results (see quick_search.ts and theme-next/shell.css): the note
+ * named on a line of its own, its excerpt quoted in the block below, and the link the excerpt is
+ * about picked out the way a search picks out its match. Both are already framed by what holds them,
+ * a card or a modal, so the items carry no frame of their own.
+ */
 .tn-backlinks-widget .backlinks-items {
     list-style-type: none;
     margin: 0;
     padding: 0;
-    position: static;
-    width: unset;
 
     > li {
-        --border-radius: 8px;
-
-        max-width: 600px;
-        padding: 10px 20px;
-        background: var(--card-background-color);
-
-        & + li {
-            margin-top: 2px;
-        }
+        padding-block: 8px;
 
         &:first-child {
-            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            padding-top: 0;
         }
+    }
 
-        &:last-child {
-            border-radius: 0 0 var(--border-radius) var(--border-radius);
-        }
+    /* The note the backlink comes from: its ancestors above it, as the quick search sets its path.
+       The link builder nests the parts in a span of its own (see createLink in services/link.ts). */
+    .backlink-header {
+        display: block;
 
-        /* Card header */
-        & > span:first-child {
-            display: block;
+        > span {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
 
-            > span {
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
+            /* The path comes after the note in the markup, and reads before it. */
+            > small {
+                flex: 100%;
+                order: -1;
+                opacity: .5;
+                font-size: .75em;
 
-                /* Note path */
-                > small {
-                    flex: 100%;
-                    order: -1;
-                    font-size: .65rem;
-
-                    .note-path {
-                        padding: 0;
-                    }
-                }
-
-                /* Note icon */
-                > .tn-icon {
-                    color: var(--menu-item-icon-color);
-                }
-
-                /* Note title */
-                > a {
-                    margin-inline-start: 4px;
-                    color: currentColor;
-                    font-weight: 500;
+                .note-path {
+                    padding: 0;
                 }
             }
-        }
 
-        /* Card content - excerpt */
-        .backlink-excerpt {
-            all: unset; /* TODO: Remove after disposing the old style from FloatingButtons.css */
-            display: block;
-
-            margin: 8px 0;
-            border-radius: 4px;
-            background: var(--quick-search-result-content-background);
-            padding: 8px;
-            font-size: .75rem;
-
-            a {
-                background: transparent;
-                color: var(--quick-search-result-highlight-color);
-                text-decoration: underline;
+            > .tn-icon {
+                color: var(--menu-item-icon-color);
             }
 
-            p {
-                margin: 0;
+            > a {
+                margin-inline-start: 4px;
+                color: currentColor;
+                font-weight: 500;
             }
         }
     }
+
+    /* What the note says around the link, in the block the search snippets are set in. */
+    .backlink-excerpt {
+        margin-top: 8px;
+        border-radius: 4px;
+        /* The colour the theme gives a search snippet, falling back — as the quick search does — to
+           what every theme defines, since only theme-next names one of its own. */
+        background: var(--quick-search-result-content-background, var(--accented-background-color));
+        padding: 8px;
+        font-size: .85em;
+
+        p {
+            margin: 0;
+        }
+
+        /* An excerpt is a slice of a note, headings and all, and a heading is sized for a page it
+           titles — in `rem` at that (Bootstrap's), so it ignores the size of the excerpt around it
+           entirely. Brought back to that size, with a step between the levels and the weight the
+           theme takes off a page's headings, so they still read as headings at nearly the text's size. */
+        h1, h2, h3, h4, h5, h6 {
+            margin: .4em 0 .15em;
+            font-weight: 600;
+
+            &:first-child {
+                margin-top: 0;
+            }
+        }
+
+        h1 { font-size: 1.15em; }
+        h2 { font-size: 1.1em; }
+        h3 { font-size: 1.05em; }
+        h4, h5, h6 { font-size: 1em; }
+
+        /* Only the link the excerpt is quoted for is picked out — the others are links like any
+           other in a note, and colouring them all says nothing about which one is the backlink. */
+        .backlink-link {
+            color: var(--quick-search-result-highlight-color, var(--admonition-warning-accent-color));
+            font-weight: 600;
+        }
+    }
+
+    /* A backlink that is a relation rather than a link in the text names the relation instead, as
+       quietly as the quick search names the attributes it matched. */
+    .backlink-relation {
+        margin: 4px 0 0;
+        opacity: .5;
+        font-size: .85em;
+    }
+}
+
+/* The placeholder for a note nothing points at stands in the list as an item of it, so that it is
+   held by whichever container the list is given (see BacklinksList in FloatingButtonsDefinitions).
+   The card it stands in within the sidebar takes the height the tab leaves over, and the placeholder
+   is handed that height down the chain — it is the card's whole answer, not the first row of a list
+   that isn't there. */
+#right-pane .tn-backlinks-widget:has(.backlinks-empty),
+#right-pane .tn-backlinks-widget .backlinks-items:has(.backlinks-empty),
+#right-pane .backlinks-empty {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
 }

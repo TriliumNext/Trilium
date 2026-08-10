@@ -229,13 +229,20 @@ describe("streamChatCompletion", () => {
         expect(cb.onUsage).not.toHaveBeenCalled();
     });
 
-    it("forwards an error event to onError", async () => {
-        const chunks = [`data: ${JSON.stringify({ type: "error", error: "model failed" })}\n`];
+    it("forwards an error event to onError, with the provider-call details when present", async () => {
+        const errorDetails = { statusCode: 400, url: "https://api.test/v1", responseBody: "{}" };
+        const chunks = [
+            `data: ${JSON.stringify({ type: "error", error: "model failed" })}\n`,
+            `data: ${JSON.stringify({ type: "error", error: "api failed", errorDetails })}\n`
+        ];
         vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse(chunks)));
 
         const cb = makeCallbacks();
         await streamChatCompletion(messages, config, cb);
-        expect(cb.onError).toHaveBeenCalledWith("model failed");
+        expect(cb.onError.mock.calls).toEqual([
+            ["model failed", undefined],
+            ["api failed", errorDetails]
+        ]);
     });
 
     it("skips optional callbacks that are not provided", async () => {

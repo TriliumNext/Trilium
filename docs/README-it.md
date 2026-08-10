@@ -354,6 +354,12 @@ collegamenti presenti nella precedente sezione "Discuti con noi".
   colorazione della sintassi.
 * [Tabler Icons](https://tabler.io/icons) per le icone della barra delle
   applicazioni.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 Trilium non sarebbe possibile senza le tecnologie che lo supportano:
 

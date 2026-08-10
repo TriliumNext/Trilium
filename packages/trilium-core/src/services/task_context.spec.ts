@@ -135,6 +135,45 @@ describe("TaskContext", () => {
         });
     });
 
+    describe("reportPhase and clearPhase", () => {
+        it("pushes the phase immediately and drops it from the next flushed count", () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(1_000);
+            const ctx = new TaskContext("phase-2", "importNotes", importData);
+            ctx.setTotalCount(10);
+            sendMessageToAllClients.mockClear();
+
+            // reportPhase must not wait for the next unit of work — its whole point is signalling a
+            // stall (e.g. Graph throttling) while no counts are flowing, so it sends even inside the
+            // 300ms coalescing window and without an increment.
+            vi.setSystemTime(1_100);
+            ctx.reportPhase("throttled");
+            expect(sendMessageToAllClients).toHaveBeenCalledTimes(1);
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.objectContaining({ phase: "throttled", progressCount: 0, totalCount: 10 }));
+
+            // clearPhase alone sends nothing, but forces the next increment out immediately (still
+            // inside the window) — one message carrying the corrected label and count together.
+            vi.setSystemTime(1_200);
+            ctx.clearPhase();
+            expect(sendMessageToAllClients).toHaveBeenCalledTimes(1);
+            ctx.increaseProgressCount();
+            expect(sendMessageToAllClients).toHaveBeenCalledTimes(2);
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.not.objectContaining({ phase: expect.anything() }));
+
+            // With no phase set, clearPhase is inert — it must not defeat the coalescing window.
+            ctx.clearPhase();
+            vi.setSystemTime(1_300);
+            ctx.increaseProgressCount();
+            expect(sendMessageToAllClients).toHaveBeenCalledTimes(2);
+        });
+
+        it("stays silent for the reserved no-progress-reporting id", () => {
+            const ctx = new TaskContext("no-progress-reporting", "importNotes", importData);
+            ctx.reportPhase("throttled");
+            expect(sendMessageToAllClients).not.toHaveBeenCalled();
+        });
+    });
+
     describe("reportError", () => {
         it("broadcasts a taskError message with the failure text and task metadata", () => {
             const ctx = new TaskContext("err-1", "importNotes", importData);

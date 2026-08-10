@@ -96,7 +96,11 @@ export default class FNote {
         this.isProtected = !!row.isProtected;
         this.type = row.type;
 
-        this.mime = row.mime;
+        // The server can send a row without a mime: becca materialises "skeleton" notes for
+        // entities that arrive out of order during sync, and their undefined mime/title are dropped
+        // outright by JSON serialisation. Defaulting keeps the mime predicates (isTriliumScript(),
+        // isJavaScript(), ...) from throwing until the real row syncs in.
+        this.mime = row.mime ?? "";
 
         this.blobId = row.blobId;
     }
@@ -880,9 +884,29 @@ export default class FNote {
         return promotedAttrs;
     }
 
+    /**
+     * The attribute definitions that apply to this note, at most one per defined name.
+     *
+     * A definition can reach a note from several places at once — its own, an ancestor's, a
+     * template's — and the nearest one wins: a note redefining `label:status` describes it for
+     * itself rather than gaining a second field beside the one it inherited. `getAttributes()`
+     * already lists owned attributes before inherited ones and inherited before templated ones, at
+     * every level, so keeping the first of each name is keeping the nearest.
+     */
     getAttributeDefinitions() {
-        return this.getAttributes()
-            .filter((attr) => attr.isDefinition());
+        const definitions: FAttribute[] = [];
+        const seenNames = new Set<string>();
+
+        for (const attr of this.getAttributes()) {
+            if (!attr.isDefinition() || seenNames.has(attr.name)) {
+                continue;
+            }
+
+            seenNames.add(attr.name);
+            definitions.push(attr);
+        }
+
+        return definitions;
     }
 
     hasAncestor(ancestorNoteId: string, followTemplates = false, visitedNoteIds: Set<string> | null = null) {

@@ -1,4 +1,5 @@
 import type { CKTextEditor, AttributeEditor, EditorConfig, ModelPosition } from "@triliumnext/ckeditor5";
+import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { useEffect, useImperativeHandle, useRef } from "preact/compat";
 import { MutableRef } from "preact/hooks";
 
@@ -30,6 +31,17 @@ interface CKEditorOpts {
     className: string;
     tabIndex?: number;
     config: EditorConfig;
+    /**
+     * The language the editor's own strings — a toolbar's tooltips, the link balloon — are to be
+     * shown in, whose dictionary is fetched and laid within reach before the editor is raised (see
+     * `registerCkTranslations`). Settled here rather than in the configuration a caller hands over
+     * because the editor is already built from within an effect, where waiting costs a field
+     * nothing; a caller that waited would be holding back its own mounting instead.
+     *
+     * Left out, the editor speaks whatever its configuration says, which is the English it was
+     * written in.
+     */
+    uiLanguage?: DISPLAYABLE_LOCALE_IDS;
     editor: typeof AttributeEditor;
     disableNewlines?: boolean;
     disableSpellcheck?: boolean;
@@ -40,9 +52,12 @@ interface CKEditorOpts {
     onInitialized?: (editorInstance: CKTextEditor) => void;
 }
 
-export default function CKEditor({ apiRef, currentValue, editor, config, disableNewlines, disableSpellcheck, onChange, onClick, onInitialized, ...restProps }: CKEditorOpts) {
+export default function CKEditor({ apiRef, currentValue, editor, config, uiLanguage, disableNewlines, disableSpellcheck, onChange, onClick, onInitialized, ...restProps }: CKEditorOpts) {
     const editorContainerRef = useRef<HTMLDivElement>(null);
     const textEditorRef = useRef<CKTextEditor>(null);
+    /** The value as it stands now, for the building of the editor to end on rather than begin with. */
+    const currentValueRef = useRef(currentValue);
+    currentValueRef.current = currentValue;
     useImperativeHandle(apiRef, () => {
         return {
             focus() {
@@ -104,9 +119,26 @@ export default function CKEditor({ apiRef, currentValue, editor, config, disable
     }, [ editorContainerRef ]);
 
     useEffect(() => {
-        if (!editorContainerRef.current) return;
+        const container = editorContainerRef.current;
+        if (!container) return;
+        let unmounted = false;
 
-        editor.create(editorContainerRef.current, config).then((textEditor) => {
+        // Raised at once where no language was asked for, which is how every field that asks for
+        // none has always been built. Where one was, the dictionary it is to speak from is laid
+        // within reach first: an editor reads from what was there when it was raised, so a catalog
+        // arriving after it would be a catalog it never looks in.
+        const created = uiLanguage
+            ? layTranslationsWithinReach(uiLanguage).then((language) => editor.create(container, { ...config, ...language }))
+            : editor.create(container, config);
+
+        created.then((textEditor) => {
+            // Gone before it was ready: build no further, and take with it what it has put on the
+            // page, or the next editor would find it there and take it for its own content.
+            if (unmounted) {
+                void textEditor.destroy();
+                return;
+            }
+
             textEditorRef.current = textEditor;
 
             if (disableNewlines) {
@@ -134,12 +166,24 @@ export default function CKEditor({ apiRef, currentValue, editor, config, disable
                 });
             }
 
-            if (currentValue) {
-                textEditor.setData(currentValue);
-            }
+            // Read as the editor is ready rather than as it was asked for: building one takes a
+            // while, and a value handed over in the meantime would otherwise be passed over — the
+            // effect watching it having had no editor to give it to, and this one holding the value
+            // as it stood when the building began.
+            //
+            // Set even when there is nothing to set: an editor built upon an element takes what
+            // that element holds as its content, so anything left there — by an editor that stood
+            // here before this one — would otherwise become the content of this one.
+            textEditor.setData(currentValueRef.current ?? "");
 
             onInitialized?.(textEditor);
         });
+
+        return () => {
+            unmounted = true;
+            void textEditorRef.current?.destroy();
+            textEditorRef.current = null;
+        };
     }, []);
 
     useEffect(() => {
@@ -159,6 +203,21 @@ export default function CKEditor({ apiRef, currentValue, editor, config, disable
             {...restProps}
         />
     )
+}
+
+/**
+ * Lays the locale's CKEditor dictionary within reach of the editor about to be raised, and says
+ * which language it is then to speak.
+ *
+ * Fetched rather than named outright at the head of this module: everything else this module takes
+ * from the editor package is a type, and a value taken from it here would put the whole of CKEditor
+ * into every module that so much as mounts a field — the script API among them, which carries none
+ * of it today. Nothing is really fetched: whoever asks for a language handed over an editor class
+ * to build from, so the package is already in hand.
+ */
+async function layTranslationsWithinReach(uiLanguage: DISPLAYABLE_LOCALE_IDS) {
+    const { registerCkTranslations } = await import("@triliumnext/ckeditor5");
+    return registerCkTranslations(uiLanguage);
 }
 
 /**

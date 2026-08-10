@@ -207,6 +207,10 @@ function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, g
                 breakpoints: [{ w: SINGLE_COLUMN_BREAKPOINT, c: 1 }]
             }
         }, container);
+        // Gridstack only declines to initialize without a DOM (server-side rendering) or without the
+        // element it was pointed at — neither happens once the container ref is attached.
+        if (!grid) return;
+
         gridRef.current = grid;
         grid.on("change", () => persistLayout(grid));
 

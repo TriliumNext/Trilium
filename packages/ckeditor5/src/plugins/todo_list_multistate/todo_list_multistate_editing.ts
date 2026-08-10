@@ -1,8 +1,9 @@
-import { DEFAULT_TASK_STATES, DONE_STATE_NAME, formatShortcut, isAnchorState, joinShortcut, NONE_STATE_NAME, type TaskStateDef } from "@triliumnext/commons";
-import { Command, env, ListEditing, Plugin, TodoList, type Editor, type ModelElement, type ViewElement } from "ckeditor5";
+import { DEFAULT_TASK_STATES, DONE_STATE_NAME, isAnchorState, NONE_STATE_NAME, type TaskStateDef } from "@triliumnext/commons";
+import { Command, ListEditing, Plugin, TodoList, type Editor, type ModelElement, type ViewElement } from "ckeditor5";
 
 import { onTodoRowSplit } from "../todo_list_uncheck_on_enter.js";
-import { ContentHintManager, type HintHandle } from "@triliumnext/ckeditor5-utils";
+import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
+import { renderShortcut } from "../../shortcut.js";
 
 /**
  * Dwell delay before a hover or a stationary caret pops the checkbox tooltip.
@@ -73,15 +74,10 @@ export default class TodoListMultistateEditing extends Plugin {
     /** State-name → definition, keyed for `buildTooltipTitle` calls. */
     private _stateByName!: Map<string, TaskStateDef>;
 
-    /** Translate function resolved once from editor config; identity fallback. */
-    private _translate!: TranslateFn;
-
     init() {
         const editor = this.editor;
         const states = getConfiguredTaskStates(editor);
         this._stateByName = new Map(states.map((state) => [state.name, state]));
-        this._translate = (editor.config.get("translate") as TranslateFn | undefined)
-            ?? ((key: string) => key);
         const stateByName = this._stateByName;
         // Global user preference: skip all content-hint wiring when off. The
         // rest of `init()` (schema, keystroke, downcast/upcast, post-fixer)
@@ -440,7 +436,8 @@ export default class TodoListMultistateEditing extends Plugin {
             input.ownerDocument,
             readTaskState(input),
             this._stateByName,
-            this._translate
+            this.editor.t,
+            renderShortcut(this.editor, STATE_CYCLE_SHORTCUT)
         );
     }
 
@@ -478,8 +475,6 @@ export default class TodoListMultistateEditing extends Plugin {
 
 }
 
-export type TranslateFn = (key: string, params?: Record<string, unknown>) => string;
-
 /**
  * The task state applied to the todo item that owns the given checkbox. Anchor
  * states (`none`/`done`) never carry a `data-trilium-task-state`, so this
@@ -508,16 +503,20 @@ function readTaskState(input: HTMLInputElement): string | null {
  *
  * Exported so specs can verify the assembled HTML directly, without having to
  * introspect Bootstrap Tooltip's private `_config` field.
+ *
+ * @param t the editor's translation function, for the strings this package owns.
+ * @param shortcut the cycle shortcut, already rendered as `<kbd>` markup by
+ *                 {@link renderShortcut} — the host renders it, so it arrives as content. Nothing
+ *                 escapes it here, and the tooltip opts out of Bootstrap's sanitizer.
  */
 export function buildTooltipTitle(
     doc: Document,
     state: string | null,
     stateByName: Map<string, TaskStateDef>,
-    translate: TranslateFn
+    t: (message: string, ...values: string[]) => string,
+    shortcut: string
 ): string {
-    const body = translate("text-editor.checkbox-tooltip", {
-        shortcut: renderCycleShortcut(translate)
-    });
+    const body = t("Right-click or press %0 to change state.", shortcut);
     if (!state) {
         return body;
     }
@@ -527,9 +526,9 @@ export function buildTooltipTitle(
         : buildUnknownStateSuffixHtml(
             doc,
             state,
-            translate("text-editor.checkbox-tooltip-state-unknown-suffix")
+            t("(missing definition)")
         );
-    const label = translate("text-editor.checkbox-tooltip-state-label");
+    const label = t("Task state:");
     // The status line is a block-level <div> so it forces a line break before
     // the body and the CSS `margin-bottom: 8px` cleanly separates the two.
     return `<div class="tn-task-tooltip-state">${label} ${suffix}</div>${body}`;
@@ -542,18 +541,6 @@ export function buildTooltipTitle(
  * both places share, so a rebinding in one has to be mirrored in the other.
  */
 const STATE_CYCLE_SHORTCUT = "Ctrl+Shift+Enter";
-
-/**
- * Render the state-cycle shortcut as `<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>`
- * (or `<kbd>⌃</kbd><kbd>⇧</kbd><kbd>↩</kbd>` on macOS). Uses the shared
- * `formatShortcut`/`joinShortcut` from `@triliumnext/commons` so key labels
- * flow through the same i18n and Mac-glyph rules as the rest of the app.
- */
-function renderCycleShortcut(translate: TranslateFn): string {
-    const kbdTokens = formatShortcut(STATE_CYCLE_SHORTCUT, translate, env.isMac)
-        .map((token) => `<kbd>${token}</kbd>`);
-    return joinShortcut(kbdTokens, env.isMac);
-}
 
 /**
  * "<mini-checkbox> <strong>Name</strong>" — the icon and name flow inline

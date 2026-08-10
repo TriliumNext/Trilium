@@ -2,9 +2,8 @@ import debounce from "../../../services/debounce.js";
 import froca from "../../../services/froca.js";
 import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
-import type { TemplateDefinition } from "@triliumnext/ckeditor5";
+import type { SnippetDefinition } from "@triliumnext/ckeditor5";
 import type FNote from "../../../entities/fnote.js";
-import { escapeHtml } from "../../../services/utils.js";
 
 interface TemplateData {
     title: string;
@@ -29,14 +28,15 @@ export default async function getTemplates() {
         // corrupts the parse and matches every note.
         const snippets = (await search.searchForNotes("#textSnippet OR #snippet"))
             .filter((snippet) => snippet.type === "text" && !snippet.isArchived && snippet.isContentAvailable());
-        const definitions: TemplateDefinition[] = [];
+        const definitions: SnippetDefinition[] = [];
         for (const snippet of snippets) {
             const { description } = await invalidateCacheFor(snippet);
 
             definitions.push({
                 title: snippet.title,
                 data: () => templateCache.get(snippet.noteId)?.content ?? "",
-                icon: buildIcon(snippet),
+                iconClass: snippet.getIcon(),
+                iconColorClass: snippet.getColorClass() || undefined,
                 description
             });
         }
@@ -51,25 +51,19 @@ async function invalidateCacheFor(snippet: FNote) {
     // Prefer the unified `snippetDescription`, falling back to the legacy `textSnippetDescription`
     // so existing text snippets keep showing their description without any migration.
     const description = snippet.getLabelValue("snippetDescription") ?? snippet.getLabelValue("textSnippetDescription");
+    const content = await snippet.getContent();
     const data: TemplateData = {
         title: snippet.title,
-        description: description ?? undefined,
-        content: await snippet.getContent()
+        // The user's own description always wins; without one, preview the snippet's content so
+        // the entry still reads as "this inserts that text" in the palette and the dropdown.
+        description: description ?? buildContentPreview(content),
+        content
     };
     templateCache.set(snippet.noteId, data);
     return data;
 }
 
-function buildIcon(snippet: FNote) {
-    return /*xml*/`\
-<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-  <foreignObject x="0" y="0" width="20" height="20">
-    <span class="note-icon ${escapeHtml(snippet.getIcon())} ${escapeHtml(snippet.getColorClass())}" xmlns="http://www.w3.org/1999/xhtml"></span>
-  </foreignObject>
-</svg>`
-}
-
-async function handleContentUpdate(affectedNoteIds: string[], setTemplates: (value: TemplateDefinition[]) => void) {
+async function handleContentUpdate(affectedNoteIds: string[], setTemplates: (value: SnippetDefinition[]) => void) {
     const updatedNoteIds = new Set(affectedNoteIds);
     const templateNoteIds = new Set(templateCache.keys());
     const affectedTemplateNoteIds = templateNoteIds.intersection(updatedNoteIds);
@@ -85,13 +79,16 @@ async function handleContentUpdate(affectedNoteIds: string[], setTemplates: (val
                 continue;
             }
 
-            const newTitle = template.title;
-            if (templateCache.get(affectedTemplateNoteId)?.title !== newTitle) {
+            const previous = templateCache.get(affectedTemplateNoteId);
+            const updated = await invalidateCacheFor(template);
+
+            // A changed title or description is baked into the definition list (unlike content,
+            // which stays live through the `data` getter), so the list must be rebuilt. Content
+            // edits land here too: without a user description they shift the derived preview.
+            if (previous?.title !== updated.title || previous?.description !== updated.description) {
                 fullReloadNeeded = true;
                 break;
             }
-
-            await invalidateCacheFor(template);
         } catch (e) {
             // If a note was not found while updating the cache, it means we need to do a full reload.
             fullReloadNeeded = true;
@@ -103,13 +100,49 @@ async function handleContentUpdate(affectedNoteIds: string[], setTemplates: (val
     }
 }
 
-export async function updateTemplateCache(loadResults: LoadResults, setTemplates: (value: TemplateDefinition[]) => void) {
+/** Longest content-derived description shown under a snippet's title. */
+const PREVIEW_MAX_LENGTH = 80;
+
+/**
+ * Derives a plain-text preview from a snippet's HTML content, used as the description when the
+ * note carries no `#snippetDescription` of its own. Returns `undefined` for empty content, so
+ * such snippets keep rendering without a description element.
+ */
+export function buildContentPreview(html: string | undefined): string | undefined {
+    if (!html) {
+        return undefined;
+    }
+
+    // Block boundaries carry an implicit line break that `textContent` drops, gluing paragraphs
+    // together ("<p>a</p><p>b</p>" → "ab"); turn them into spaces before parsing.
+    const withBreaks = html.replace(/<(?:br\b|\/(?:p|div|li|h[1-6]|blockquote|figcaption|pre|td|th|tr)\b)[^>]*>/gi, " ");
+    const text = (new DOMParser().parseFromString(withBreaks, "text/html").body.textContent ?? "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (!text) {
+        return undefined;
+    }
+
+    if (text.length <= PREVIEW_MAX_LENGTH) {
+        return text;
+    }
+
+    // Cut at the last word boundary that fits, unless the text is one giant word.
+    const cut = text.lastIndexOf(" ", PREVIEW_MAX_LENGTH);
+    return `${text.slice(0, cut > 0 ? cut : PREVIEW_MAX_LENGTH)}…`;
+}
+
+export async function updateTemplateCache(loadResults: LoadResults, setTemplates: (value: SnippetDefinition[]) => void) {
     const affectedNoteIds = loadResults.getNoteIds();
 
     // React to creation or deletion of text snippets.
     if (loadResults.getAttributeRows().find((attr) => {
         if (attr.type === "label") {
-            return (attr.name === "textSnippet" || attr.name === "textSnippetDescription");
+            // Both the unified `#snippet(Description)` labels and their legacy `#textSnippet`
+            // forms mark a note as a snippet, so all four must trigger a rebuild.
+            return (attr.name === "snippet" || attr.name === "snippetDescription"
+                || attr.name === "textSnippet" || attr.name === "textSnippetDescription");
         } else if (attr.type === "relation") {
             return (attr.value === "_template_text_snippet");
         }

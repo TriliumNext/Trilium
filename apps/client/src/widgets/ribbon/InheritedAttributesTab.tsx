@@ -1,14 +1,14 @@
 import "./InheritedAttributesTab.css";
 
 import { createPortal } from "preact/compat";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import FAttribute from "../../entities/fattribute";
 import attribute_renderer from "../../services/attribute_renderer";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
-import AttributeDetailWidget from "../attribute_widgets/attribute_detail";
-import { useLegacyWidget, useTriliumEvent } from "../react/hooks";
+import { AttributeDetail, AttributeDetailOpts } from "../attribute_widgets/attribute_detail";
+import { useTriliumEvent } from "../react/hooks";
 import RawHtml from "../react/RawHtml";
 import { joinElements } from "../react/react_utils";
 import { TabContext } from "./ribbon-interface";
@@ -19,9 +19,13 @@ type InheritedAttributesTabArgs = Pick<TabContext, "note" | "componentId"> & {
 
 export default function InheritedAttributesTab({ note, componentId, emptyListString }: InheritedAttributesTabArgs) {
     const [ inheritedAttributes, setInheritedAttributes ] = useState<FAttribute[]>();
-    const [ attributeDetailWidgetEl, attributeDetailWidget ] = useLegacyWidget(() => new AttributeDetailWidget());
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [ detailOpts, setDetailOpts ] = useState<AttributeDetailOpts | null>(null);
 
     function refresh() {
+        // switching note or tab should close the detail popup
+        setDetailOpts(null);
+
         if (!note) return;
         const attrs = note.getAttributes().filter((attr) => attr.noteId !== note.noteId);
         attrs.sort((a, b) => {
@@ -46,29 +50,36 @@ export default function InheritedAttributesTab({ note, componentId, emptyListStr
 
     return (
         <div className="inherited-attributes-widget">
-            <div className="inherited-attributes-container selectable-text">
+            <div
+                className="inherited-attributes-container selectable-text"
+                ref={containerRef}
+                // Presses inside the container do not dismiss the popup (so that clicking
+                // another attribute swaps it in place instead of flickering), which leaves
+                // closing on a click next to an attribute up to this handler.
+                onClick={() => setDetailOpts(null)}
+            >
                 {inheritedAttributes?.length ? (
                     joinElements(inheritedAttributes.map(attribute => (
                         <InheritedAttribute
                             key={attribute.attributeId}
                             attribute={attribute}
                             onClick={(e) => {
-                                setTimeout(
-                                    () =>
-                                        attributeDetailWidget.showAttributeDetail({
-                                            attribute: {
-                                                noteId: attribute.noteId,
-                                                type: attribute.type,
-                                                name: attribute.name,
-                                                value: attribute.value,
-                                                isInheritable: attribute.isInheritable
-                                            },
-                                            isOwned: false,
-                                            x: e.pageX,
-                                            y: e.pageY
-                                        }),
-                                    100
-                                );
+                                // Keep the container's closing handler from undoing this.
+                                e.stopPropagation();
+
+                                setDetailOpts({
+                                    attribute: {
+                                        noteId: attribute.noteId,
+                                        type: attribute.type,
+                                        name: attribute.name,
+                                        value: attribute.value,
+                                        isInheritable: attribute.isInheritable
+                                    },
+                                    isOwned: false,
+                                    x: e.pageX,
+                                    y: e.pageY,
+                                    parent: containerRef.current ?? undefined
+                                });
                             }}
                         />
                     )), " ")
@@ -77,7 +88,15 @@ export default function InheritedAttributesTab({ note, componentId, emptyListStr
                 )}
             </div>
 
-            {createPortal(attributeDetailWidgetEl, document.body)}
+            {createPortal(
+                <AttributeDetail
+                    opts={detailOpts}
+                    currentNoteId={note?.noteId}
+                    onDismiss={() => setDetailOpts(null)}
+                    // Inherited attributes are read-only here, so there is nothing to revert.
+                    onCancel={() => setDetailOpts(null)}
+                />,
+                document.body)}
         </div>
     );
 }

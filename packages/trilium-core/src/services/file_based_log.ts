@@ -168,6 +168,15 @@ export default abstract class FileBasedLogService extends LogService {
 
         const entry = `${this.formatTime(millisSinceMidnight)} ${str}${this.eol}`;
         this.writeEntry(entry);
+        this.echoToConsole(str);
+    }
+
+    /**
+     * Mirrors an entry to stdout, which is how `docker logs`/journalctl surface server activity.
+     * Overridable so a runtime that captures stdout through a costly channel can opt out while
+     * still writing the entry to the log file.
+     */
+    protected echoToConsole(str: string): void {
         console.log(str);
     }
 

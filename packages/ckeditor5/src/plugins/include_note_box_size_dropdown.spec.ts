@@ -71,9 +71,8 @@ describe("IncludeNoteBoxSizeDropdown", () => {
 
         const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as { value: string | null };
         expect(command.value).toBe("small");
-        // The button label should reflect the BOX_SIZE label for "small"
-        const expectedLabel = BOX_SIZES.find((s) => s.value === "small")?.label ?? "small";
-        expect(dropdownView.buttonView.label).toBe(expectedLabel);
+        // No dictionary is configured, so the label renders its English message id.
+        expect(dropdownView.buttonView.label).toBe("Small");
     });
 
     it("button label falls back to raw value for an unknown size", () => {
@@ -251,8 +250,7 @@ describe("IncludeNoteBoxSizeDropdown", () => {
         expect(command.value).toBe("medium");
 
         // The "medium" index in BOX_SIZES
-        const mediumIndex = BOX_SIZES.findIndex((s) => s.value === "medium");
-        expect(mediumIndex).toBeGreaterThanOrEqual(0);
+        expect(BOX_SIZES.indexOf("medium")).toBeGreaterThanOrEqual(0);
     });
 
     it("_getBoxSizeListItemDefinitions returns one item per BOX_SIZES entry", () => {

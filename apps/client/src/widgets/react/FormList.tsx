@@ -109,6 +109,8 @@ export interface FormListBadge {
 export interface FormListItemOpts {
     children: ComponentChildren;
     icon?: string;
+    /** Extra class for the icon itself, e.g. to hang a marker off its corner. */
+    iconClassName?: string;
     value?: string;
     title?: string;
     active?: boolean;
@@ -134,7 +136,7 @@ const TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
     animation: false
 };
 
-export function FormListItem({ className, icon, value, title, active, disabled, checked, container, onClick, selected, rtl, triggerCommand, description, itemRef: externalItemRef, ...contentProps }: FormListItemOpts) {
+export function FormListItem({ className, icon, iconClassName, value, title, active, disabled, checked, container, onClick, selected, rtl, triggerCommand, description, itemRef: externalItemRef, ...contentProps }: FormListItemOpts) {
     const itemRef = useSyncedRef<HTMLLIElement>(externalItemRef, null);
 
     if (checked) {
@@ -153,7 +155,7 @@ export function FormListItem({ className, icon, value, title, active, disabled, 
             data-trigger-command={triggerCommand}
             dir={rtl ? "rtl" : undefined}
         >
-            <Icon icon={icon} />&nbsp;
+            <Icon icon={icon} className={iconClassName} />&nbsp;
             {description ? (
                 <div>
                     <FormListContent description={description} disabled={disabled} {...contentProps} />

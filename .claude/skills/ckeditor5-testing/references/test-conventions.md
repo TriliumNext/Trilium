@@ -4,22 +4,22 @@ Trilium never used Karma/Mocha/Sinon — the plugin tests are Vitest from the st
 migration to do. This reference collects the Trilium-specific conventions and traps when writing
 CKEditor 5 plugin tests.
 
-## Choosing an environment: happy-dom vs. browser mode
+## The environment: WebdriverIO browser mode
 
-Pick per package (set in the package's `vitest.config.ts`):
+`packages/ckeditor5` runs its tests in **real headless Chrome** via
+`@vitest/browser-webdriverio`, so layout, `getBoundingClientRect()`, `elementFromPoint()` and
+pointer events all behave as they do in a browser. Both gate `src/**` at 100% coverage.
 
-- **happy-dom** (`admonition`, `collapsible`) — fast, but **not a real browser**.
-  `getBoundingClientRect()` returns zeros, layout is stubbed, `ResizeObserver` is stubbed. Good
-  for model logic, schema, conversion, and command behavior that never measures the DOM.
-- **WebdriverIO browser mode** (`footnotes`, `keyboard-marker`, `math`, `mermaid`) — real headless
-  Chrome, real layout. Required for anything that measures or positions DOM: widget rendering,
-  balloon/toolbar placement, focus, scrolling, `getBoundingClientRect`. Gates `src/**` at 100%
-  coverage.
+Trilium used to run some plugins on happy-dom. Nothing does now, but the difference matters when
+porting an older test:
 
-If a test depends on real measurements and the package is on happy-dom, it will silently get zero
-sizes — move the package (or the test) to browser mode rather than working around stubs. The
-general `writing-unit-tests` skill reserves `@vitest/browser` for exactly these real-layout needs
-(CKEditor, Excalidraw).
+- happy-dom returned **zeros** from layout APIs, so measurement-dependent code appeared to work
+  while never really being exercised.
+- happy-dom dispatched some events **synchronously** that a real browser defers. `<details>` fires
+  `toggle` on a later task, for instance, so assert after awaiting the event rather than straight
+  after the click.
+- Synthetic events need `cancelable: true` for `preventDefault()` to have any effect. Without it,
+  native behaviour (a `<summary>` toggling, say) still runs and the test reads as a product bug.
 
 ## Real-editor lifecycle & teardown
 
@@ -71,18 +71,18 @@ directly: `expect( _getModelData( model ) ).toEqual( '<paragraph>…</paragraph>
 - Import `_setModelData`, `_getModelData`, `_getViewData` (and editor classes, `keyCodes`, etc.)
   from `'ckeditor5'`. In-package source imports use a file extension (`../src/foo.js`).
 - Spies/mocks via `vi` (`vi.spyOn` / `vi.fn` / `vi.useFakeTimers`).
-- Test-file location: **co-located `*.spec.ts`** by default (aggregator, in-aggregator plugins,
-  new code; `include: ['src/**/*.spec.ts']`). The existing standalone packages keep a `tests/` dir
-  (`tests/**/*.[jt]s`, no `.spec` suffix); new packages should use co-located `.spec.ts`.
+- Test-file location: **co-located `*.spec.ts`** in `packages/ckeditor5`, including inside plugin
+  folders (`include: ['src/**/*.spec.ts']`).
 
-## Running math & mermaid
+## Running the browser-mode packages
 
-`math` and `mermaid` run **sequentially** at the root (`pnpm test:sequential`) because each spins
-up headless Chrome and they exhaust resources if run in parallel. Other packages run via
-`pnpm test:parallel`. When running a single package, use `pnpm --filter @triliumnext/ckeditor5-<name> test`.
+`ckeditor5` runs **sequentially** at the root (`pnpm test:sequential`) because
+each spins up headless Chrome and they exhaust resources in parallel. Everything else runs via
+`pnpm test:parallel`. For a single package, use `pnpm --filter @triliumnext/ckeditor5 test` (or
+`...-math`).
 
 ## See also
 
 For general (non-CKEditor) Trilium testing — Preact components, jQuery widgets, client services,
-server routes — use the `writing-unit-tests` skill, which also documents happy-dom's limits and
-when to reach for `@vitest/browser`.
+server routes — use the `writing-unit-tests` skill, which also documents when to reach for
+`@vitest/browser` rather than the default happy-dom environment those tests use.

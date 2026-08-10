@@ -356,6 +356,12 @@ les liens décrits dans la section "Discuter avec nous" ci-dessus.
   syntaxique original.
 * [Tabler Icons](https://tabler.io/icons) pour les icônes de la barre d'état
   système.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 Trilium ne serait pas possible sans les technologies qui le sous-tendent :
 

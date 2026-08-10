@@ -19,7 +19,8 @@ async function createZipBuffer(files: Record<string, string | Buffer>, dates: Re
     passthrough.on("data", (chunk: Buffer) => chunks.push(chunk));
     archive.pipe(passthrough);
     for (const [name, content] of Object.entries(files)) {
-        archive.append(content, { name, date: dates[name] });
+        // A name ending in "/" is an explicit directory entry, which OS-created vault zips include.
+        archive.append(name.endsWith("/") ? null : content, { name, date: dates[name] });
     }
     await archive.finalize();
     return Buffer.concat(chunks);
@@ -88,6 +89,19 @@ describe("Obsidian importer — integration", () => {
 
         const welcome = children.find((n) => n.title === "Welcome");
         expect(decodeUtf8(welcome?.getContent() ?? "")).toBe("<p>This is your new <em>vault</em>.</p>");
+    });
+
+    it("ignores explicit directory entries and gives a folder's notes a single container", async () => {
+        const importRoot = await importObsidian({
+            ".obsidian/app.json": "{}",
+            "Folder 1/": "",
+            "Folder 1/A.md": "a",
+            "Folder 1/B.md": "b"
+        });
+
+        // The directory entry contributes no note of its own, and both notes share one "Folder 1" container.
+        expect(importRoot.getChildNotes().map((n) => n.title)).toEqual(["Folder 1"]);
+        expect(importRoot.getChildNotes()[0]?.getChildNotes().map((n) => n.title)).toEqual(["A", "B"]);
     });
 
     it("renders an Obsidian callout (with fold marker and custom title) as an admonition", async () => {
@@ -173,6 +187,17 @@ describe("Obsidian importer — integration", () => {
         expect(note.getOwnedLabelValue("label:checkboxProp")).toBe("promoted,single,boolean,alias=Checkbox prop");
     });
 
+    it("falls back to text when types.json holds no types map or a non-string type", async () => {
+        const frontmatter = "---\nNumber: 5\n---\nBody.";
+        const noTypes = await importObsidian({ ".obsidian/types.json": "{}", "Note.md": frontmatter });
+        const badType = await importObsidian({ ".obsidian/types.json": JSON.stringify({ types: { Number: 5 } }), "Note.md": frontmatter });
+
+        for (const importRoot of [noTypes, badType]) {
+            const note = importRoot.getChildNotes().find((n) => n.title === "Note");
+            expect(note?.getOwnedLabelValue("label:number")).toBe("promoted,single,text,alias=Number");
+        }
+    });
+
     it("preserves a note's modification date from its zip entry, with created falling back to it", async (ctx) => {
         // The standalone/browser zip provider (fflate) doesn't expose entry mtimes, so there's no date to
         // preserve; the note keeps its import-time dates. Skip rather than assert provider-specific behavior.
@@ -192,6 +217,14 @@ describe("Obsidian importer — integration", () => {
         // store local DOS time that yauzl reads back correctly.
         expect(note.utcDateModified?.startsWith("2020-")).toBe(true);
         expect(note.utcDateCreated).toBe(note.utcDateModified);
+    });
+
+    it("ignores the DOS-epoch sentinel a date-less zip entry yields", async () => {
+        const importRoot = await importObsidian({ "Note.md": "Body." }, undefined, { "Note.md": new Date(1980, 0, 1) });
+
+        const note = importRoot.getChildNotes().find((n) => n.title === "Note");
+        // 1980 is the ZIP format's zero date, not a real modification time, so the import-time dates stand.
+        expect(note?.utcDateModified?.startsWith("1980-")).toBe(false);
     });
 
     it("converts ==highlights== to a coloured span and %%comments%% to dropped HTML comments", async () => {
@@ -239,6 +272,13 @@ describe("Obsidian importer — integration", () => {
 
         expect(importRoot.title).toBe("My Vault");
         expect(importRoot.getChildNotes().map((n) => n.title)).toEqual(["Welcome"]);
+    });
+
+    it("uses the default root title when the zip name is nothing but an extension", async () => {
+        const named = await importObsidian({ "Note.md": "x" }, ".zip");
+        const unnamed = await importObsidian({ "Note.md": "x" });
+
+        expect(named.title).toBe(unnamed.title);
     });
 
     it("falls back to stripping a single shared wrapper folder when there is no .obsidian", async () => {
@@ -303,14 +343,20 @@ describe("Obsidian importer — integration", () => {
         const importRoot = await importObsidian({
             "Note.md": "Just a note, linking nothing.",
             "Attachments/report.pdf": Buffer.from("%PDF-1.4 fake"),
+            "Attachments/data.unknownext": Buffer.from("raw bytes"),
             ".obsidian/app.json": "{}"
         }, "Vault.zip");
 
         const attachmentsFolder = importRoot.getChildNotes().find((n) => n.title === "Attachments");
-        const orphan = attachmentsFolder?.getChildNotes()[0];
+        const orphan = attachmentsFolder?.getChildNotes().find((n) => n.title === "report");
         if (!orphan) {
             throw new Error("orphan file was not imported");
         }
+
+        // A file whose extension has no known MIME still imports, as a generic binary keeping its full name.
+        const unknown = attachmentsFolder?.getChildNotes().find((n) => n.title === "data.unknownext");
+        expect(unknown?.type).toBe("file");
+        expect(unknown?.mime).toBe("application/octet-stream");
 
         // The .pdf extension is stripped from the title (Trilium convention) and preserved in a label.
         expect(orphan.title).toBe("report");
@@ -437,16 +483,22 @@ describe("Obsidian importer — integration", () => {
         const importRoot = await importObsidian({
             "Drawing.excalidraw.md": excalidrawFile({
                 type: "excalidraw",
-                elements: [{ id: "img", type: "image", fileId: "abc123def456" }],
+                elements: [
+                    { id: "img", type: "image", fileId: "abc123def456" },
+                    { id: "doc", type: "image", fileId: "aaa111bbb222" },
+                    { id: "gone", type: "image", fileId: "ccc333ddd444" }
+                ],
                 appState: {},
                 files: {}
-            }, "## Embedded Files\nabc123def456: [[shot.png]]\n"),
-            "shot.png": Buffer.from("\x89PNG\r\n\x1a\nfake-png")
+            }, "## Embedded Files\nabc123def456: [[shot.png]]\naaa111bbb222: [[doc.rtf]]\nccc333ddd444: [[missing.png]]\n"),
+            "shot.png": Buffer.from("\x89PNG\r\n\x1a\nfake-png"),
+            "doc.rtf": Buffer.from("{\\rtf1 hello}")
         });
 
         const drawing = importRoot.getChildNotes().find((n) => n.title === "Drawing");
         // The image is stored as an `image`-role attachment whose title is the fileId the scene references,
-        // matching how the canvas editor persists images so it renders on load.
+        // matching how the canvas editor persists images so it renders on load. A reference the vault doesn't
+        // hold, and one that resolves to a non-image, are both skipped rather than attached.
         const images = drawing?.getAttachmentsByRole("image");
         expect(images?.map((a) => a.title)).toEqual(["abc123def456"]);
     });

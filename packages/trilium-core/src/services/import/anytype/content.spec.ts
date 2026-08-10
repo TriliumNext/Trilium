@@ -320,6 +320,57 @@ describe("extractContent", () => {
     });
 });
 
+describe("sparse block shapes", () => {
+    // Every field of an exported block is optional, so the renderer has to cope with blocks carrying
+    // nothing beyond their id and style.
+    const noResolve: LinkResolver = () => undefined;
+
+    it("falls back to the first block when no root id is given, and tolerates a childless root", () => {
+        expect(extractContent([{ id: "obj" }], "", noResolve)).toEqual({ html: "", linkTargetIds: [], fileTargetIds: [] });
+    });
+
+    it("renders a list item carrying no text, marks or children", () => {
+        expect(extractContent([{ id: "obj", childrenIds: ["m1"] }, { id: "m1", text: { style: "Marked" } }], "obj", noResolve).html)
+            .toBe("<ul><li></li></ul>");
+    });
+
+    it("ends a list run at an id that repeats or is missing from the export", () => {
+        const blocks: AnytypeBlock[] = [
+            { id: "obj", childrenIds: ["m1", "m1", "gone"] },
+            { id: "m1", text: { text: "One", style: "Marked" }, childrenIds: [] }
+        ];
+        expect(extractContent(blocks, "obj", noResolve).html).toBe("<ul><li>One</li></ul>");
+    });
+
+    it("drops a link block with no target and a latex block with no text", () => {
+        const blocks: AnytypeBlock[] = [
+            { id: "obj", childrenIds: ["l1", "x1"] },
+            { id: "l1", link: {} },
+            { id: "x1", latex: { processor: "Mermaid" } }
+        ];
+        expect(extractContent(blocks, "obj", noResolve).html).toBe("");
+    });
+
+    it("renders empty toggle / quote / callout blocks with neither body text nor children", () => {
+        const blocks: AnytypeBlock[] = [
+            { id: "obj", childrenIds: ["t1", "q1", "c1"] },
+            { id: "t1", text: { text: "", style: "Toggle" } },
+            { id: "q1", text: { text: "  ", style: "Quote" } },
+            { id: "c1", text: { text: "", style: "Callout" } }
+        ];
+        expect(extractContent(blocks, "obj", noResolve).html).toBe(
+            '<details class="trilium-collapsible"><summary></summary></details>'
+            + "<blockquote></blockquote>"
+            + '<aside class="admonition tip"></aside>'
+        );
+    });
+
+    it("ignores a mark with no range, on its own and around an inline formula", () => {
+        expect(renderInlineText("x", [{ type: "Bold" }])).toBe("x");
+        expect(renderInlineText("a $x$ b", [{ type: "Bold" }])).toBe('a <span class="math-tex">\\( x \\)</span> b');
+    });
+});
+
 describe("renderInlineText", () => {
     it("returns escaped plain text when there are no marks", () => {
         expect(renderInlineText("a < b & c > d", [])).toBe("a &lt; b &amp; c &gt; d");
@@ -576,6 +627,27 @@ describe("tables", () => {
             ["rows", { id: "rows", childrenIds: [] }]
         ]);
         expect(renderTable(byId.get("tbl") ?? { id: "x" }, byId)).toBe("");
+    });
+
+    it("returns empty for a table block with no children, or whose layout blocks are missing", () => {
+        expect(renderTable({ id: "t" }, new Map())).toBe("");
+        const byId = new Map<string, AnytypeBlock>([["t", { id: "t", table: {}, childrenIds: ["cols", "rows"] }]]);
+        expect(renderTable(byId.get("t") ?? { id: "t" }, byId)).toBe("");
+    });
+
+    it("ignores a child that isn't one of the row's cells, and a cell block carrying no text", () => {
+        const byId = new Map<string, AnytypeBlock>([
+            ["t", { id: "t", table: {}, childrenIds: ["cols", "rows"] }],
+            ["cols", { id: "cols", childrenIds: ["c1"] }],
+            ["rows", { id: "rows", childrenIds: ["r1", "r2"] }],
+            // "stray" isn't addressed as `${rowId}-${columnId}`, so it's no cell of r1; r2 lists no cells at all.
+            ["r1", { id: "r1", childrenIds: ["stray", "r1-c1"] }],
+            ["stray", { id: "stray", text: { text: "off-grid", marks: { marks: [] } } }],
+            ["r1-c1", { id: "r1-c1" }],
+            ["r2", { id: "r2" }]
+        ]);
+        expect(renderTable(byId.get("t") ?? { id: "t" }, byId))
+            .toBe('<figure class="table"><table><tbody><tr><td></td></tr><tr><td></td></tr></tbody></table></figure>');
     });
 
     it("skips a row whose block is missing from the export", () => {

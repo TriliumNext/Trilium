@@ -4,79 +4,17 @@
  * Images are saved as-is without resizing.
  */
 
-import type { ImageProvider, ImageFormat, ProcessedImage } from "@triliumnext/core";
+import type { ImageCompressionOutcome, ImageCompressionPlan, ImageFormat, ImageProvider, PreviewResizeOutcome, ProcessedImage } from "@triliumnext/core";
+import { inspectImage, UNKNOWN_FORMAT } from "@triliumnext/core/src/services/image_inspect.js";
 
 /**
- * Detect image type from buffer using magic bytes.
+ * Detect image type from buffer, delegating to the shared inspector so this runtime and the
+ * inventory recognise exactly the same formats by exactly the same bytes.
  */
 function getImageTypeFromBuffer(buffer: Uint8Array): ImageFormat | null {
-    if (buffer.length < 12) {
-        return null;
-    }
+    const { format, mime } = inspectImage(buffer);
 
-    // Check for SVG (text-based)
-    if (isSvg(buffer)) {
-        return { ext: "svg", mime: "image/svg+xml" };
-    }
-
-    // JPEG: FF D8 FF
-    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-        return { ext: "jpg", mime: "image/jpeg" };
-    }
-
-    // PNG: 89 50 4E 47 0D 0A 1A 0A
-    if (
-        buffer[0] === 0x89 &&
-        buffer[1] === 0x50 &&
-        buffer[2] === 0x4e &&
-        buffer[3] === 0x47 &&
-        buffer[4] === 0x0d &&
-        buffer[5] === 0x0a &&
-        buffer[6] === 0x1a &&
-        buffer[7] === 0x0a
-    ) {
-        return { ext: "png", mime: "image/png" };
-    }
-
-    // GIF: "GIF"
-    if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) {
-        return { ext: "gif", mime: "image/gif" };
-    }
-
-    // WebP: RIFF....WEBP
-    if (
-        buffer[0] === 0x52 &&
-        buffer[1] === 0x49 &&
-        buffer[2] === 0x46 &&
-        buffer[3] === 0x46 &&
-        buffer[8] === 0x57 &&
-        buffer[9] === 0x45 &&
-        buffer[10] === 0x42 &&
-        buffer[11] === 0x50
-    ) {
-        return { ext: "webp", mime: "image/webp" };
-    }
-
-    // BMP: "BM"
-    if (buffer[0] === 0x42 && buffer[1] === 0x4d) {
-        return { ext: "bmp", mime: "image/bmp" };
-    }
-
-    return null;
-}
-
-/**
- * Check if buffer contains SVG content.
- */
-function isSvg(buffer: Uint8Array): boolean {
-    const maxBytes = Math.min(buffer.length, 1000);
-    let str = "";
-    for (let i = 0; i < maxBytes; i++) {
-        str += String.fromCharCode(buffer[i]);
-    }
-
-    const trimmed = str.trim().toLowerCase();
-    return trimmed.startsWith("<svg") || (trimmed.startsWith("<?xml") && trimmed.includes("<svg"));
+    return format === UNKNOWN_FORMAT ? null : { ext: format, mime };
 }
 
 export const standaloneImageProvider: ImageProvider = {
@@ -92,5 +30,35 @@ export const standaloneImageProvider: ImageProvider = {
             buffer,
             format
         };
+    },
+
+    async compressImage(): Promise<ImageCompressionOutcome> {
+        // No decoder here, so there is nothing to recompress with — the request is answered rather
+        // than refused, and the caller reports the images as untouched along with the reason.
+        return { compressed: false, reason: "unsupported-platform" };
+    },
+
+    compressionConcurrency(): number {
+        // Nothing to compress with, so nothing to spread over threads.
+        return 1;
+    },
+
+    async planCompression(): Promise<ImageCompressionPlan> {
+        // Settled before an image is so much as weighed: nothing here is going to compress it
+        // whatever its header says, so a run over a tree reads none of them.
+        return { skip: "unsupported-platform", decodeCost: null };
+    },
+
+    /**
+     * Declined for the same reason as everything else on this runtime: there is no decoder to scale
+     * a picture with.
+     *
+     * The preview is not lost to it. The caller keeps a cover image that is already small enough to
+     * store as it came, and shows a preview without a picture where it is not — which is exactly
+     * what the server does for a WebP its own decoder cannot read, so this is a path already
+     * travelled rather than a new kind of degradation.
+     */
+    async resizeForPreview(): Promise<PreviewResizeOutcome> {
+        return { resized: false, reason: "unsupported-platform" };
     }
 };

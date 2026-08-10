@@ -1,4 +1,4 @@
-import { findDuplicateJsonKeys, LOCALES } from "@triliumnext/commons";
+import { findDuplicateJsonKeys, findPluralKeyConflicts, LOCALES } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
 import { hidden_subtree, options } from "@triliumnext/core";
 import { readFileSync } from "fs";
@@ -35,6 +35,16 @@ describe("i18n", () => {
                 duplicates,
                 `Duplicate keys in locale '${locale.id}' at "${translationPath}":\n` +
                     duplicates.map((d) => `  - "${d.key}" (line ${d.line})`).join("\n")
+            ).toEqual([]);
+
+            // Weblate reads these files as i18next JSON v4, where a `_one`/`_other`/… suffix
+            // marks a plural form. A section named that way is combined with the key before it
+            // into a multistring and breaks the import of the whole file.
+            const pluralConflicts = findPluralKeyConflicts(JSON.parse(translationFile));
+            expect(
+                pluralConflicts,
+                `Keys in locale '${locale.id}' at "${translationPath}" that Weblate would read as plural forms but that are not translated strings:\n` +
+                    pluralConflicts.map((c) => `  - "${c.path}" (plural form '_${c.suffix}')`).join("\n")
             ).toEqual([]);
         }
     });

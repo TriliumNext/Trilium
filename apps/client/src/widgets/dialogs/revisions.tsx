@@ -4,7 +4,7 @@ import { dayjs, type RevisionItem, type RevisionPojo } from "@triliumnext/common
 import clsx from "clsx";
 import { diffWords } from "diff";
 import HtmlDiff from "htmldiff-js";
-import { ComponentChildren, Fragment } from "preact";
+import { Fragment } from "preact";
 import type { CSSProperties } from "preact/compat";
 import { Dispatch, StateUpdater, useEffect, useRef, useState } from "preact/hooks";
 
@@ -25,7 +25,8 @@ import Button from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import FormList, { FormDropdownDivider, FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
-import { useMobileMasterDetail, useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
+import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } from "../react/master_detail";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
 import { RawHtmlBlock, SanitizedHtml } from "../react/RawHtml";
@@ -42,7 +43,7 @@ export default function RevisionsDialog() {
     const [ showDiff, setShowDiff ] = useState(true);
     const [ refreshCounter, setRefreshCounter ] = useState(0);
     const modalRef = useRef<HTMLDivElement>(null);
-    const { isMasterDetail, mobileView, switchMobileView, resetMobileView } = useMobileMasterDetail(modalRef, "revision-slide");
+    const { isMasterDetail, mobileView, switchMobileView, resetMobileView } = useMobileMasterDetail(modalRef);
     const isMobile = utils.isMobile();
 
     useTriliumEvent("showRevisions", async ({ noteId }) => {
@@ -157,11 +158,14 @@ export default function RevisionsDialog() {
             helpPageId="vZWERwf8U3nx"
             header={isMasterDetail
                 ? (
-                    <RevisionsMobileHeader
+                    <MasterDetailHeader
                         inPage={mobileView === "page"}
                         onBack={() => switchMobileView("list")}
-                        revisionItem={currentRevision}
-                        menu={menu}
+                        backTitle={t("revisions.back")}
+                        pageTitle={revisionTitle(currentRevision)}
+                        listTitle={t("revisions.note_revisions")}
+                        listIcon="bx bx-history"
+                        listActions={menu}
                     />
                 )
                 : menu}
@@ -169,12 +173,8 @@ export default function RevisionsDialog() {
             onHidden={onHidden}
             show={shown}
         >
-            {isMasterDetail && (
-                <div className="revision-mobile-nav">
-                    {revisionsList}
-                </div>
-            )}
-            <div className="revision-detail">
+            {isMasterDetail && <MasterPane className="revision-mobile-nav">{revisionsList}</MasterPane>}
+            <DetailPane className="revision-detail">
                 <RevisionToolbar
                     revisionItem={currentRevision}
                     showDiff={showDiff}
@@ -209,37 +209,16 @@ export default function RevisionsDialog() {
                         />
                     </div>
                 )}
-            </div>
+            </DetailPane>
         </Modal>
     );
 }
 
-/**
- * Replaces the static "Note revisions" title on narrow mobile (the master-detail flow). In the list
- * view a decorative history icon precedes the dialog title and the actions menu stays available; in
- * the page view a back button returns to the list, followed by the revision's date.
- */
-function RevisionsMobileHeader({ inPage, onBack, revisionItem, menu }: {
-    inPage: boolean,
-    onBack: () => void,
-    revisionItem?: RevisionItem,
-    menu?: ComponentChildren
-}) {
-    const pageTitle = revisionItem?.dateCreated
+/** How the page showing one revision is headed: the moment it was taken. */
+function revisionTitle(revisionItem?: RevisionItem) {
+    return revisionItem?.dateCreated
         ? dayjs(revisionItem.dateCreated).format("MMM D, YYYY · HH:mm")
         : t("revisions.note_revisions");
-
-    return (
-        <div className="revision-mobile-header">
-            {inPage ? (
-                <ActionButton icon="bx bx-chevron-left" text={t("revisions.back")} onClick={onBack} />
-            ) : (
-                <span className="revision-header-icon icon-action bx bx-history" aria-hidden="true" />
-            )}
-            <h5 className="revision-mobile-title">{inPage ? pageTitle : t("revisions.note_revisions")}</h5>
-            {!inPage && menu}
-        </div>
-    );
 }
 
 function RevisionsMenu({ note, onRevisionSaved, onAllDeleted, hasRevisions }: {

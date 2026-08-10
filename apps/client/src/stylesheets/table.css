@@ -120,7 +120,7 @@
     padding: var(--cell-vert-padding-size) var(--cell-horiz-padding-size);
 }
 
-.tabulator-row .tabulator-cell input {
+.tabulator-row .tabulator-cell input:not([type="color"]) {
     padding-inline-start: var(--cell-horiz-padding-size) !important;
     padding-inline-end: var(--cell-horiz-padding-size) !important;
 }

@@ -4,12 +4,12 @@
   "private": true,
   "description": "Tool to compare content of Trilium databases. Useful for debugging sync problems.",
   "dependencies": {
-    "better-sqlite3": "12.11.1",
+    "better-sqlite3": "13.0.3",
     "diff": "9.0.0",
     "picocolors": "1.1.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "7.6.13",
+    "@types/better-sqlite3": "9.6.0",
     "vitest": "4.1.10"
   },
   "scripts": {

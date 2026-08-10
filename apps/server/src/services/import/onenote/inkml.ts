@@ -18,6 +18,8 @@
 
 import { HTMLElement, parse } from "node-html-parser";
 
+import { parseColor, reflectLightness } from "./color.js";
+
 /** Padding around the rendered strokes, in coordinate units. */
 const PADDING = 10;
 
@@ -39,12 +41,66 @@ interface Trace {
 const DEFAULT_BRUSH: Brush = { color: "#000000", width: 70, height: 70, transparency: 0 };
 
 /**
+ * Ink darker than this HSL lightness (0-100) is unreadable against a dark canvas, so it gets a
+ * lightness-reflected dark-mode variant. Matches the threshold correctTableShadingColors
+ * (converter.ts) uses for the same judgement on cell backgrounds.
+ */
+const DARK_INK_MAX_LIGHTNESS = 50;
+
+/**
+ * Ink at least this light is unreadable against a light canvas (it's near-white ink laid down on
+ * OneNote's dark canvas — most commonly the automatic pen's white inverse), so it gets a reflected
+ * light-mode variant. Deliberately high: mid-light colors like highlighter yellows and pastels are
+ * chosen for a light canvas and read fine there, so only the near-white band is adapted.
+ */
+const LIGHT_INK_MIN_LIGHTNESS = 90;
+
+/**
+ * Enables the `light-dark()` function used by adapted strokes. The used scheme is inherited from the
+ * embedding `<img>` — Trilium sets `color-scheme` from its active theme on `:root`
+ * (theme-next/base.css) and Chromium propagates it into the referenced SVG — so adapted ink follows
+ * Trilium's light/dark toggle. Emitted only when at least one adapted stroke is present.
+ */
+const COLOR_SCHEME_STYLE = `<style>svg{color-scheme:light dark}</style>`;
+
+/**
  * The on-screen stroke thickness. Pens carry equal width/height, but highlighters (rectangle tip)
  * carry a small width and a large height — so taking the larger dimension renders highlighters as the
  * wide swath they are rather than a thin pen line.
  */
 function strokeWidth(brush: Brush): number {
     return Math.max(brush.width, brush.height);
+}
+
+/**
+ * The theme-adaptive `light-dark()` paint for an ink color that would be unreadable under one theme,
+ * or null for a color readable under both (kept literal, exactly as OneNote sent it).
+ *
+ * Contrast — not provenance — is the rule, because InkML gives no way to tell the automatic pen from
+ * a chosen color, and "black" ink is rarely literal `#000000`: each OneNote client's palette has its
+ * own near-black (`#404040`, `#333333`, …). OneNote's own dark mode remaps a hard-coded lookup of
+ * exact swatch values (`#000000`→`#edebe9`, `#333333`→`#cbc8c8`) and renders everything else
+ * verbatim, unreadable included — a table not worth reproducing. Reflecting the HSL lightness
+ * (L → 1 − L, hue/saturation untouched — the same correction correctTableShadingColors applies to
+ * cell backgrounds) matches OneNote's sensible mappings to within a rounding error (`#333333` →
+ * `#cccccc` vs its `#cbc8c8`) and also covers the colors OneNote itself gets wrong. A false positive
+ * is cheap by construction: the light-mode rendering keeps the exact original, and a wrongly-adapted
+ * dark color becomes a readable same-hue light one in dark mode instead of an invisible one.
+ */
+function adaptInkColor(color: string): string | null {
+    const literal = color.trim();
+    const parsed = parseColor(literal);
+    if (!parsed) {
+        return null;
+    }
+    const lightness = parsed.lightness();
+    if (lightness < DARK_INK_MAX_LIGHTNESS) {
+        return `light-dark(${literal}, ${reflectLightness(parsed)})`;
+    }
+    if (lightness >= LIGHT_INK_MIN_LIGHTNESS) {
+        return `light-dark(${reflectLightness(parsed)}, ${literal})`;
+    }
+    return null;
 }
 
 export function inkmlToSvg(inkml: string): string | null {
@@ -68,10 +124,11 @@ export function inkmlToSvg(inkml: string): string | null {
     const height = maxY - minY + PADDING * 2;
     const scale = Math.min(1, MAX_DISPLAY_SIZE / Math.max(width, height, 1));
 
+    const hasAdaptedInk = traces.some((trace) => adaptInkColor(trace.brush.color) !== null);
     const shapes = traces.flatMap((trace) => traceToSvg(trace, minX, minY)).join("");
     return (
         `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(width * scale)}" height="${Math.round(height * scale)}" ` +
-        `viewBox="0 0 ${width} ${height}">${shapes}</svg>`
+        `viewBox="0 0 ${width} ${height}">${hasAdaptedInk ? COLOR_SCHEME_STYLE : ""}${shapes}</svg>`
     );
 }
 
@@ -170,14 +227,19 @@ function traceToSvg(trace: Trace, minX: number, minY: number): string[] {
     const opacity = 1 - transparency;
     const opacityAttr = opacity < 1 ? ` opacity="${opacity.toFixed(2)}"` : "";
     const point = (coord: number[]) => [coord[0] - minX + PADDING, coord[1] - minY + PADDING];
+    // Adapted paints go through `style` because `light-dark()` needs CSS value resolution, which
+    // presentation attributes don't reliably get; literal colors stay plain attributes.
+    const adapted = adaptInkColor(color);
 
     if (trace.coords.length === 1) {
         const [x, y] = point(trace.coords[0]);
-        return [`<circle cx="${x}" cy="${y}" r="${width / 2}" fill="${color}"${opacityAttr}/>`];
+        const fillAttr = adapted ? ` style="fill:${adapted}"` : ` fill="${color}"`;
+        return [`<circle cx="${x}" cy="${y}" r="${width / 2}"${fillAttr}${opacityAttr}/>`];
     }
 
     const path = trace.coords.map((coord, index) => `${index === 0 ? "M" : "L"} ${point(coord).join(" ")}`).join(" ");
-    return [`<path d="${path}" stroke="${color}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round"${opacityAttr}/>`];
+    const strokeAttr = adapted ? ` style="stroke:${adapted}"` : ` stroke="${color}"`;
+    return [`<path d="${path}"${strokeAttr} stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round"${opacityAttr}/>`];
 }
 
 export default { inkmlToSvg };

@@ -30,10 +30,6 @@
                 align-items: center;
                 border: 0;
 
-                span:first-of-type {
-                    font-size: 1rem;
-                }
-
                 &.active,
                 &.dropdown-toggle.show,
                 &:focus,
@@ -66,19 +62,6 @@
         .dropdown-note-info {
             padding: 1em !important;
         }
-
-        .dropdown-note-paths {
-            .note-paths-widget {
-                padding: 0.5em;
-            }
-        }
-
-        .backlinks-widget > .dropdown-menu {
-            --menu-padding-size: .9em;
-
-            max-height: 60vh;
-            overflow-y: scroll;
-        }
     }
 
     > .attribute-list {
@@ -90,8 +73,7 @@
             font-weight: 600;
         }
 
-        .inherited-attributes-widget,
-        .auto-link-attributes-widget {
+        .inherited-attributes-widget {
             display: inline;
 
             > div {
@@ -158,15 +140,6 @@ body.experimental-feature-new-layout .note-info-content {
                     }
                 }
             }
-}
-
-body.experimental-feature-new-layout div.similar-notes-widget div.similar-notes-wrapper {
-    max-height: unset;
-}
-
-body.experimental-feature-new-layout.mobile div.similar-notes-widget div.similar-notes-wrapper {
-    max-height: unset;
-    padding: 0;
 }
 
 .bottom-panel {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import { getContext } from "./context.js";
@@ -32,6 +32,23 @@ describe("options service (real DB)", () => {
 
         it("returns null from getOptionOrNull for a non-existent option", () => {
             expect(optionService.getOptionOrNull("doesNotExistOption" as any)).toBeNull();
+        });
+
+        it("returns null when becca is not loaded and the DB query fails", () => {
+            // Before becca is loaded (e.g. during initial sync) the value is read straight
+            // from the DB, which is not necessarily initialized yet.
+            const getRowSpy = vi.spyOn(getSql(), "getRow").mockImplementation(() => {
+                throw new Error("DB is not initialized");
+            });
+            const wasLoaded = becca.loaded;
+            becca.loaded = false;
+
+            try {
+                expect(optionService.getOptionOrNull("mainFontSize" as any)).toBeNull();
+            } finally {
+                becca.loaded = wasLoaded;
+                getRowSpy.mockRestore();
+            }
         });
 
         it("throws from getOption for a non-existent option", () => {

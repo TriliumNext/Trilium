@@ -23,16 +23,27 @@ async function downloadBackup(req: Request, res: Response): Promise<void> {
         return;
     }
 
-    const content = await getBackup().getBackupContent(filePath);
+    const backup = getBackup();
+    // Sent a piece at a time wherever the platform can: reading it first means holding a whole
+    // backup in memory, which Node refuses above 2 GiB and which any real one will exceed.
+    if (backup.sendBackup?.(filePath, res)) {
+        return;
+    }
+
+    const content = await backup.getBackupContent(filePath);
     if (!content) {
         res.status(404).send("Backup not found");
         return;
     }
 
-    const fileName = filePath.split("/").pop() || "backup.db";
     res.set("Content-Type", "application/x-sqlite3");
-    res.set("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.set("Content-Disposition", `attachment; filename="${fileNameOf(filePath)}"`);
     res.send(content);
+}
+
+/** The last segment of a path, on either kind of separator: these are read off a Windows disk too. */
+function fileNameOf(filePath: string): string {
+    return filePath.split(/[\\/]/).pop() || "backup.db";
 }
 
 export default {

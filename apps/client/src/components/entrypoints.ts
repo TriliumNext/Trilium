@@ -136,15 +136,13 @@ export default class Entrypoints extends Component {
         utils.reloadFrontendApp("Switching to mobile version");
     }
 
-    async openInWindowCommand({ notePath, hoistedNoteId, viewScope }: NoteCommandData) {
-        const extraWindowHash = linkService.calculateHash({ notePath, hoistedNoteId, viewScope });
+    async openInWindowCommand({ notePath, hoistedNoteId, viewScope, splits, activeSplit }: NoteCommandData) {
+        const target = { notePath, hoistedNoteId, viewScope, splits, activeSplit };
 
         if (window.electronApi) {
-            window.electronApi.window.createExtraWindow(extraWindowHash);
+            window.electronApi.window.createExtraWindow(linkService.calculateHash(target));
         } else {
-            const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?extraWindow=1${extraWindowHash}`;
-
-            window.open(url, "", "width=1000,height=800");
+            window.open(linkService.calculateExtraWindowUrl(target), "", "width=1000,height=800");
         }
     }
 

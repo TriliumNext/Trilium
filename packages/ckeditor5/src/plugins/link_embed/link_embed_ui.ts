@@ -1,7 +1,6 @@
 import { isHttpUrl } from '@triliumnext/commons';
 import { ButtonView, clickOutsideHandler, ContextualBalloon, Plugin, type Editor, type Observable } from 'ckeditor5';
 import linkPreviewIcon from '../../icons/link-preview.svg?raw';
-import { translate } from '../translate.js';
 import { LINK_EMBED_COMMAND } from './link_embed_commands.js';
 import LinkEmbedFormView from './link_embed_form.js';
 
@@ -89,7 +88,7 @@ export default class LinkEmbedUI extends Plugin {
         if (this._formView) return this._formView;
 
         const editor = this.editor;
-        const form = new LinkEmbedFormView(editor.locale, (key, fallback) => translate(editor, key, fallback));
+        const form = new LinkEmbedFormView(editor.locale, editor.t);
         this._formView = form;
 
         // The mode selector only offers "Embed" for a URL that has a player behind it — the same

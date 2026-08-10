@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
-import onenoteImport, { buildSectionSelections, type OneNoteAccount, type OneNoteContainer, type OneNoteDeviceLogin, type OneNoteNotebook, orderedChildren } from "../../../services/onenote_import.js";
+import onenoteImport, { buildSectionSelections, collectSectionIds, extractServerMessage, type OneNoteAccount, type OneNoteContainer, type OneNoteDeviceLogin, type OneNoteNotebook, orderedChildren } from "../../../services/onenote_import.js";
 import toast from "../../../services/toast.js";
 import { isElectron, randomString } from "../../../services/utils.js";
 import Button from "../../react/Button.js";
 import { Card, CardSection } from "../../react/Card.js";
-import FormCheckbox from "../../react/FormCheckbox.js";
+import CheckboxTree, { type CheckboxTreeNode } from "../../react/CheckboxTree.js";
 import { useTriliumOptionBool } from "../../react/hooks.js";
 import LoadingSpinner from "../../react/LoadingSpinner.js";
 import NoItems from "../../react/NoItems.js";
@@ -20,7 +20,12 @@ function OneNotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPa
     const [phase, setPhase] = useState<Phase>("checking");
     const [account, setAccount] = useState<OneNoteAccount | null>(null);
     const [notebooks, setNotebooks] = useState<OneNoteNotebook[]>([]);
+    // Set when listing the notebooks failed, so the panel can say so instead of reporting an empty
+    // account — an expired connection or a Graph error is not "you have no notebooks".
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    // Set while a user-triggered notebook reload is in flight, to spin and disable the refresh button.
+    const [refreshing, setRefreshing] = useState(false);
     const [debug, setDebug] = useState(false);
     const [compressImages] = useTriliumOptionBool("compressImages");
     const [shrinkImages, setShrinkImages] = useState(compressImages);
@@ -40,13 +45,34 @@ function OneNotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPa
     }, []);
 
     const loadNotebooks = useCallback(async () => {
+        setLoadError(null);
         try {
             const { notebooks } = await onenoteImport.getNotebooks();
             setNotebooks(notebooks);
-        } catch {
-            toast.showError(t("onenote_import.load_failed"));
+            // Drop selected ids whose section no longer exists (deleted/moved in OneNote since the
+            // last load), so a refresh can't leave the import button counting phantom sections.
+            const validIds = collectSectionIds(notebooks);
+            setSelectedIds((prev) => new Set([...prev].filter((id) => validIds.has(id))));
+        } catch (e) {
+            // The server's wording is the useful part (an expired sign-in says to sign in again, a
+            // Graph failure names the Graph error); fall back to the generic message only when the
+            // response carried none. The stale list is cleared: a tree that can't import (the same
+            // dead connection would fail the import too) is worse than the explanation.
+            setNotebooks([]);
+            setLoadError(extractServerMessage(e) ?? t("onenote_import.load_failed"));
         }
     }, []);
+
+    // User-triggered reload of the notebook list, e.g. after creating a section in OneNote while the
+    // dialog is open. Wraps loadNotebooks purely to drive the refresh button's spinner/disabled state.
+    const refresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            await loadNotebooks();
+        } finally {
+            setRefreshing(false);
+        }
+    }, [loadNotebooks]);
 
     // On mount, see whether this session is already connected.
     useEffect(() => {
@@ -59,7 +85,7 @@ function OneNotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPa
                 setPhase("disconnected");
             }
         }).catch((e) => {
-            toast.showError(e instanceof Error ? e.message : String(e));
+            toast.showError(extractServerMessage(e) ?? t("onenote_import.load_failed"));
             setPhase("disconnected");
         });
         return stopPolling;
@@ -136,7 +162,7 @@ function OneNotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPa
             };
             pollRef.current = setTimeout(() => void poll(), intervalMs);
         } catch (e) {
-            toast.showError(e instanceof Error ? e.message : String(e));
+            toast.showError(extractServerMessage(e) ?? String(e));
             setPhase("disconnected");
         }
     }, [loadNotebooks, stopPolling]);
@@ -152,21 +178,16 @@ function OneNotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPa
         await onenoteImport.disconnect();
         setAccount(null);
         setNotebooks([]);
+        setLoadError(null);
         setSelectedIds(new Set());
         setPhase("disconnected");
     }, [stopPolling]);
 
-    const toggleSection = useCallback((id: string, checked: boolean) => {
-        setSelectedIds((prev) => {
-            const next = new Set(prev);
-            if (checked) {
-                next.add(id);
-            } else {
-                next.delete(id);
-            }
-            return next;
-        });
-    }, []);
+    const treeNodes = useMemo(() => notebooks.map((notebook): CheckboxTreeNode => ({
+        id: notebook.id,
+        label: notebook.title,
+        children: buildTreeNodes(notebook)
+    })), [notebooks]);
 
     const doImport = useCallback(async () => {
         const sections = buildSectionSelections(notebooks, selectedIds);
@@ -181,7 +202,7 @@ function OneNotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPa
         try {
             await onenoteImport.runImport({ parentNoteId, sections, taskId: randomString(10), debug, shrinkImages: compressImages && shrinkImages });
         } catch (e) {
-            toast.showError(e instanceof Error ? e.message : String(e));
+            toast.showError(extractServerMessage(e) ?? String(e));
         }
     }, [notebooks, selectedIds, parentNoteId, debug, compressImages, shrinkImages, closeDialog]);
 
@@ -193,18 +214,19 @@ function OneNotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPa
     doImportRef.current = doImport;
 
     // Surface the import button in the dialog's pinned footer once notebooks are loaded; the other
-    // phases set it to null so the connect screens show no footer.
-    const importDisabled = selectedIds.size === 0;
+    // phases set it to null so the connect screens show no footer. The button carries the selection
+    // count as feedback that a bulk (notebook/group) toggle selected what the user expected.
+    const selectedCount = selectedIds.size;
     useEffect(() => {
         setFooter(phase !== "ready" ? null : (
             <Button
-                text={t("onenote_import.import")}
+                text={selectedCount > 0 ? t("onenote_import.import_count", { count: selectedCount }) : t("onenote_import.import")}
                 kind="primary"
-                disabled={importDisabled}
+                disabled={selectedCount === 0}
                 onClick={() => void doImportRef.current()}
             />
         ));
-    }, [phase, importDisabled, setFooter]);
+    }, [phase, selectedCount, setFooter]);
 
     if (phase === "checking") {
         return (
@@ -251,73 +273,74 @@ function OneNotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPa
             <CardSection className="onenote-panel">
                 <div className="onenote-account">
                     <span>{t("onenote_import.connected_as", { name: account?.name ?? "" })}</span>
-                    <Button text={t("onenote_import.disconnect")} kind="lowProfile" size="small" onClick={disconnect} />
+                    <div className="onenote-account-actions">
+                        <Button
+                            text={t("onenote_import.refresh")}
+                            kind="lowProfile"
+                            size="small"
+                            icon={refreshing ? "bx-refresh bx-spin" : "bx-refresh"}
+                            disabled={refreshing}
+                            onClick={() => void refresh()}
+                        />
+                        <Button text={t("onenote_import.disconnect")} kind="lowProfile" size="small" onClick={disconnect} />
+                    </div>
                 </div>
 
-                {notebooks.length === 0
-                    ? <p>{t("onenote_import.no_notebooks")}</p>
-                    : (
-                        <>
-                            <OptionsRow name="onenote-sections" label={t("onenote_import.select_sections")} description={t("onenote_import.select_sections_hint")} stacked>
-                                <div className="onenote-notebooks">
-                                    {notebooks.map((notebook) => (
-                                        <div className="onenote-notebook" key={notebook.id}>
-                                            <strong>{notebook.title}</strong>
-                                            <SectionTree container={notebook} selectedIds={selectedIds} onToggle={toggleSection} />
-                                        </div>
-                                    ))}
-                                </div>
-                            </OptionsRow>
-                            <OptionsRowWithToggle
-                                name="onenote-shrink-images"
-                                label={t("import.shrinkImages")}
-                                description={t("import.shrinkImagesProviderTooltip")}
-                                currentValue={compressImages && shrinkImages}
-                                onChange={setShrinkImages}
-                                disabled={!compressImages}
-                            />
-                            <OptionsRowWithToggle
-                                name="onenote-debug"
-                                label={t("onenote_import.attach_source")}
-                                description={t("onenote_import.attach_source_hint")}
-                                currentValue={debug}
-                                onChange={setDebug}
-                            />
-                        </>
-                    )}
+                {loadError && (
+                    <NoItems icon="bx bx-error-circle" text={loadError}>
+                        <Button
+                            text={t("onenote_import.load_retry")}
+                            kind="primary"
+                            disabled={refreshing}
+                            onClick={() => void refresh()}
+                        />
+                    </NoItems>
+                )}
+
+                {!loadError && notebooks.length === 0 && (
+                    <>
+                        <p>{t("onenote_import.no_notebooks")}</p>
+                        <p className="onenote-hint">{t("onenote_import.no_notebooks_hint")}</p>
+                    </>
+                )}
+
+                {!loadError && notebooks.length > 0 && (
+                    <>
+                        <OptionsRow name="onenote-sections" label={t("onenote_import.select_sections")} description={t("onenote_import.select_sections_hint")} stacked>
+                            <div className="onenote-notebooks">
+                                <CheckboxTree nodes={treeNodes} selectedIds={selectedIds} onChange={setSelectedIds} />
+                            </div>
+                        </OptionsRow>
+                        <OptionsRowWithToggle
+                            name="onenote-shrink-images"
+                            label={t("import.shrinkImages")}
+                            description={t("import.shrinkImagesProviderTooltip")}
+                            currentValue={compressImages && shrinkImages}
+                            onChange={setShrinkImages}
+                            disabled={!compressImages}
+                        />
+                        <OptionsRowWithToggle
+                            name="onenote-debug"
+                            label={t("onenote_import.attach_source")}
+                            description={t("onenote_import.attach_source_hint")}
+                            currentValue={debug}
+                            onChange={setDebug}
+                        />
+                    </>
+                )}
             </CardSection>
         </Card>
     );
 }
 
-/** Renders a notebook's (or section group's) sections as checkboxes and recurses into nested section
- *  groups. Sections and groups are interleaved in creation-date order so the picker mirrors the OneNote
- *  left rail (which the API can't reproduce exactly — see the order caveat above the list). */
-function SectionTree({ container, selectedIds, onToggle }: {
-    container: OneNoteContainer;
-    selectedIds: Set<string>;
-    onToggle: (id: string, checked: boolean) => void;
-}) {
-    return (
-        <>
-            {orderedChildren(container).map((child) => (child.type === "section"
-                ? (
-                    <FormCheckbox
-                        key={child.section.id}
-                        name={`onenote-section-${child.section.id}`}
-                        label={child.section.title}
-                        currentValue={selectedIds.has(child.section.id)}
-                        onChange={(checked) => onToggle(child.section.id, checked)}
-                    />
-                )
-                : (
-                    <div className="onenote-section-group" key={child.group.id}>
-                        <span className="onenote-section-group-title">{child.group.title}</span>
-                        <SectionTree container={child.group} selectedIds={selectedIds} onToggle={onToggle} />
-                    </div>
-                )))}
-        </>
-    );
+/** Maps a notebook's (or section group's) children onto picker tree nodes: sections become leaves,
+ *  section groups become (recursed) containers. Sections and groups are interleaved in creation-date
+ *  order so the picker mirrors the OneNote left rail (which the API can't reproduce exactly — see the
+ *  order caveat above the list). */
+function buildTreeNodes(container: OneNoteContainer): CheckboxTreeNode[] {
+    return orderedChildren(container).map((child) => (child.type === "section"
+        ? { id: child.section.id, label: child.section.title }
+        : { id: child.group.id, label: child.group.title, children: buildTreeNodes(child.group) }));
 }
 
 const provider: ImportProvider = {

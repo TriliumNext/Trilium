@@ -1,4 +1,4 @@
-import { BulkAction } from "@triliumnext/commons";
+import { BulkAction, type DefinitionObject, promotedAttributeDefinitionParser } from "@triliumnext/commons";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
@@ -9,7 +9,9 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import note_create from "../../../services/note_create";
 import server from "../../../services/server";
-import { BoardViewData } from ".";
+import toast from "../../../services/toast";
+import { BoardColumnData, BoardViewData } from ".";
+import { type BoardStatusDefinition, canStoreColumnsInDefinition, DEFAULT_GROUP_BY } from "./columns";
 import { ColumnMap } from "./data";
 
 export default class BoardApi {
@@ -24,7 +26,8 @@ export default class BoardApi {
         statusAttribute: string,
         private viewConfig: BoardViewData,
         private saveConfig: (newConfig: BoardViewData) => void,
-        private setBranchIdToEdit: (branchId: string | undefined) => void
+        private setBranchIdToEdit: (branchId: string | undefined) => void,
+        private statusDefinition?: BoardStatusDefinition
     ) {
         this.isRelationMode = statusAttribute.startsWith("~");
 
@@ -64,19 +67,11 @@ export default class BoardApi {
             return;
         }
 
-        if (!this.viewConfig) {
-            this.viewConfig = {};
-        }
-
-        if (!this.viewConfig.columns) {
-            this.viewConfig.columns = [];
-        }
+        const columns = this.viewConfig?.columns ?? [];
 
         // Add the new column to persisted data if it doesn't exist
-        const existingColumn = this.viewConfig.columns.find(col => col.value === columnName);
-        if (existingColumn) return false;
-        this.viewConfig.columns.push({ value: columnName });
-        this.saveConfig(this.viewConfig);
+        if (columns.some(col => col.value === columnName)) return false;
+        this.storeColumns([ ...columns, { value: columnName } ]);
         return true;
     }
 
@@ -88,8 +83,7 @@ export default class BoardApi {
             ? { name: "deleteRelation", relationName: this.statusAttribute }
             : { name: "deleteLabel", labelName: this.statusAttribute };
         await executeBulkActions(noteIds, [ action ]);
-        this.viewConfig.columns = (this.viewConfig.columns ?? []).filter(col => col.value !== column);
-        this.saveConfig(this.viewConfig);
+        this.storeColumns((this.viewConfig?.columns ?? []).filter(col => col.value !== column));
     }
 
     async renameColumn(oldValue: string, newValue: string) {
@@ -102,12 +96,8 @@ export default class BoardApi {
         await executeBulkActions(noteIds, [ action ]);
 
         // Rename the column in the persisted data.
-        for (const column of this.viewConfig.columns || []) {
-            if (column.value === oldValue) {
-                column.value = newValue;
-            }
-        }
-        this.saveConfig(this.viewConfig);
+        this.storeColumns((this.viewConfig?.columns ?? [])
+            .map(col => col.value === oldValue ? { ...col, value: newValue } : col));
     }
 
     reorderColumn(fromIndex: number, toIndex: number) {
@@ -125,14 +115,98 @@ export default class BoardApi {
 
         newColumns.splice(adjustedToIndex, 0, movedColumn);
 
-        // Update view config with new column order
-        const newViewConfig = {
-            ...this.viewConfig,
-            columns: newColumns.map(col => ({ value: col }))
+        // `columns` is derived render state and can lag behind the persisted config (it is rebuilt
+        // only once the view re-renders), so anything it hasn't caught up with yet is kept at the
+        // end instead of being dropped from the config.
+        const missingColumns = (this.viewConfig?.columns ?? []).filter(col => !newColumns.includes(col.value));
+        this.storeColumns([ ...newColumns.map(value => ({ value })), ...missingColumns ]);
+
+        return newColumns;
+    }
+
+    /**
+     * Persists a new column list, into the definition the board groups by as well as into the view
+     * config — every column change funnels through here, so the two cannot drift apart.
+     *
+     * The config is always replaced with a fresh object instead of being edited in place: the board
+     * re-renders off the identity of the config it was handed, so an in-place edit would be written
+     * to disk but stay invisible until the view is re-entered.
+     */
+    private storeColumns(columns: BoardColumnData[]) {
+        this.viewConfig = { ...this.viewConfig, columns };
+        this.saveConfig(this.viewConfig);
+        // Not awaited — every caller is the tail of a user gesture the board has already rendered —
+        // so the failure is caught here rather than left to reject unhandled. The columns are still
+        // in the view config, so the board is not wrong, only out of step with the definition.
+        this.syncColumnsToDefinition(columns.map(({ value }) => value))
+            .catch((e) => {
+                console.error("Failed to store the board columns in the attribute definition:", e);
+                toast.showError(t("board_view.column-definition-save-error"));
+            });
+    }
+
+    /**
+     * Brings the board's own definition in line with the columns it shows, so that the same list is
+     * what the promoted field offers, what the table view's dropdown offers, and what the board shows.
+     *
+     * Called both when the user changes a column and on every render, because a column can appear
+     * without the board's column UI ever being used: a note given a new value from the table view, a
+     * script or a synced instance shows up as a column here, and the definition has to learn about it
+     * too. The render call is also what gives a newly created board its definition — nothing else
+     * would, since migration 0240 only ever saw the boards that existed when it ran.
+     *
+     * Writing only on a real difference is what makes that safe to call every time: the write lands as
+     * an entity change, which re-renders the board, which would write again.
+     */
+    async syncColumnsToDefinition(columns: string[]) {
+        if (this.isRelationMode || !canStoreColumnsInDefinition(this.statusDefinition)) {
+            return;
+        }
+
+        // A board showing nothing has no column list to describe and must not gain an empty
+        // definition; one that already owns one is still emptied, since that is its last column going.
+        if (!columns.length && !this.statusDefinition?.isOwned) {
+            return;
+        }
+
+        const current = this.statusDefinition?.options ?? [];
+        const isUpToDate = this.statusDefinition?.definition.labelType === "select"
+            && current.length === columns.length
+            && current.every((option, index) => option === columns[index]);
+        if (isUpToDate) {
+            return;
+        }
+
+        // What a board with no definition of its own is given. Promoted, because the column a card
+        // sits in is the point of the board, and a field that is not promoted is one the card never
+        // shows — the status would be reachable only by dragging the card. Named only where the name
+        // is ours to give: a board grouping by anything else is named by its own label.
+        const created: DefinitionObject = {
+            isPromoted: true,
+            promotedAlias: this.statusAttribute === DEFAULT_GROUP_BY ? t("board_view.status-alias") : undefined
         };
 
-        this.saveConfig(newViewConfig);
-        return newColumns;
+        // An existing definition is updated as it stands, so a board deliberately left unpromoted —
+        // by the user, or by migration 0240 where it had no field to begin with — does not gain one.
+        const definition = {
+            ...(this.statusDefinition?.definition ?? created),
+            labelType: "select" as const,
+            selectOptions: columns
+        };
+
+        // Written by name rather than by attribute id, so that two syncs which overlap — a column
+        // edit landing mid-refresh, or one refresh starting before the previous write is back —
+        // converge on one row instead of each creating one. Addressing it by id cannot: both would
+        // have read the same "no definition yet" state and both would ask for a new attribute. Only
+        // the board's own attributes are matched, so a definition it merely inherits is still copied
+        // into one of its own rather than edited where it lives.
+        await attributes.setLabel(
+            this.parentNote.noteId,
+            `label:${this.statusAttribute}`,
+            promotedAttributeDefinitionParser.serialize(definition, "label"),
+            // A definition that is not inheritable would not reach the notes on the board at all.
+            this.statusDefinition?.attribute.isInheritable ?? true
+        );
     }
 
     async insertRowAtPosition(

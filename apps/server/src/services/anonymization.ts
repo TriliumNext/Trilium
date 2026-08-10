@@ -9,8 +9,10 @@ import sql from "./sql.js";
 
 function getFullAnonymizationScript() {
     // we want to delete all non-builtin attributes because they can contain sensitive names and values
-    // on the other hand builtin/system attrs should not contain any sensitive info
-    const builtinAttrNames = BUILTIN_ATTRIBUTES.filter((attr) => !["shareCredentials", "shareAlias"].includes(attr.name))
+    // on the other hand builtin/system attrs should not contain any sensitive info -- except for the
+    // ones whose name is system-defined but whose value is authored by the user (`#shareCredentials`,
+    // `#geolocation`, ...), which `hasUserValue` marks so they get scrubbed like any other attribute
+    const builtinAttrNames = BUILTIN_ATTRIBUTES.filter((attr) => !("hasUserValue" in attr && attr.hasUserValue))
         .map((attr) => `'${attr.name}'`)
         .join(", ");
 

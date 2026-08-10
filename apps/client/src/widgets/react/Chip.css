@@ -1,0 +1,130 @@
+/*
+ * The field itself: whatever it is edited through — chips standing for the values held, a box typed
+ * into, a swatch — is framed as the one thing, so that its parts read as being in the field rather
+ * than stacked within it. Each gives up a frame of its own, the box taking what room is left on the
+ * line and wrapping onto the next once the chips have filled it.
+ *
+ * Named for the field rather than for the chips because a field need hold none: one value picked from
+ * a list is framed the same way, and by this same class.
+ */
+.tn-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    background: var(--input-background-color);
+
+    &:focus-within {
+        outline: 2px solid var(--input-focus-outline-color);
+    }
+
+    /* Also reaching a box one step down: some boxes come wrapped in a group of their own — the note
+       autocomplete brings one — and left there the box would keep its frame, drawing a second border
+       just within the field's. */
+    > input.form-control,
+    > .input-group > input.form-control {
+        flex: 1;
+        min-width: 6ch;
+        width: auto;
+        padding: 2px 0;
+        border: none;
+        outline: none;
+
+        &,
+        &:hover,
+        &:focus {
+            background: transparent;
+        }
+    }
+
+    /* The group is only the box's wrapping, so it takes the room the box would and adds nothing of
+       its own to the eye — in any state: a group is elsewhere a field in its own right, wearing a
+       focus ring and a ground of its own, which here would draw a second frame just within the
+       field's whenever the box in it is hovered or focused. */
+    > .input-group {
+        flex: 1;
+        border: none;
+
+        &,
+        &:hover,
+        &:focus-within {
+            outline: none;
+            background: transparent;
+        }
+    }
+
+    /* Never wider than the field it lies in: a value long enough to outgrow the line — a note's
+       full title — is clipped to an ellipsis rather than carrying the chip past the field's edge.
+       The remove button keeps its place either way, having already refused to shrink. */
+    > .tn-chip {
+        max-width: 100%;
+
+        /* A chip standing for a value holds text rather than a box to type in, so it needs none of
+           the field styling the chip leaves to its contents — only room for the word itself. */
+        > span {
+            padding-block: 2px;
+            white-space: nowrap;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+}
+
+/*
+ * One entry of a set: a rounded chip holding whatever it stands for, and a button removing it. The
+ * chip is the surface — its contents give up borders and backgrounds of their own — so that a set
+ * being read and a set being edited come out looking alike.
+ */
+.tn-chip {
+    --chip-remove-size: 18px;
+
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    /* Tighter at the trailing edge, where the remove button brings padding of its own. */
+    padding-inline: 8px 3px;
+    border-radius: var(--badge-radius, 12px);
+    background-color: var(--hover-item-background-color);
+
+    /* The chip carries the focus ring, anything typed into it having given up one of its own —
+       otherwise a field's outline would be drawn inside a chip that already looks like a box. */
+    &:focus-within {
+        outline: 2px solid var(--input-focus-outline-color);
+    }
+
+    > .tn-chip-remove {
+        --icon-button-size: var(--chip-remove-size);
+        --icon-button-icon-ratio: 0.9;
+
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--chip-remove-size);
+        height: var(--chip-remove-size);
+        padding: 0;
+        font-size: calc(var(--chip-remove-size) * 0.9);
+        line-height: 1;
+
+        /* Blank until aimed at, where the theme's own hover treatment takes back over — the chip is
+           the surface it sits on, not a button plate of its own. */
+        &:not(:hover):not(:focus-visible) {
+            background: transparent;
+        }
+    }
+
+    /* Nothing to press where the set is read-only: the chips are then only a display of it, and a
+       button offering a removal that is not on the table would say otherwise. */
+    > .tn-chip-remove:disabled {
+        display: none;
+    }
+
+    /* With no button at the trailing edge, the chip pads itself as evenly as it started. */
+    &:has(> .tn-chip-remove:disabled) {
+        padding-inline-end: 8px;
+    }
+}

@@ -8,6 +8,7 @@ import * as cls from "./context.js";
 import entityChangesService from "./entity_changes.js";
 import getInstanceId from "./instance_id.js";
 import options from "./options.js";
+import { fakeRequestProvider } from "../test/request_provider.js";
 import { type ExecOpts, initRequest, type RequestProvider } from "./request.js";
 import { getSql } from "./sql/index.js";
 import setupService from "./setup.js";
@@ -41,8 +42,8 @@ let changedIdx = 0;
 let checkIdx = 0;
 const requestLog: Array<{ method: string; url: string }> = [];
 
-const fakeRequest: RequestProvider = {
-    exec: (<T>(opts: ExecOpts): Promise<T> => {
+const fakeRequest: RequestProvider = fakeRequestProvider({
+    exec: (<T,>(opts: ExecOpts): Promise<T> => {
         requestLog.push({ method: opts.method, url: opts.url });
         const url = opts.url;
         const reply = (value: unknown) => Promise.resolve(value as T);
@@ -68,7 +69,7 @@ const fakeRequest: RequestProvider = {
         return reply({});
     }) as RequestProvider["exec"],
     getImage: async () => new ArrayBuffer(0)
-};
+});
 initRequest(fakeRequest);
 
 const runSync = () => cls.init(() => syncService.sync());

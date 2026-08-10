@@ -1,5 +1,7 @@
+import { showErrorOverlay } from "./error-overlay.js";
 import { installIosInterceptors } from "./ios-interceptors.js";
-import { attachServiceWorkerBridge, registerNativeHttpHandler, startLocalServerWorker } from "./local-bridge.js";
+import { claimLeadership } from "./leader_election.js";
+import { announceLeadership, attachServiceWorkerBridge, downloadDatabase, registerNativeHttpHandler, restoreBackup, startLocalServerWorker } from "./local-bridge.js";
 
 async function waitForServiceWorkerControl(): Promise<void> {
     if (!("serviceWorker" in navigator) || !navigator.serviceWorker) {
@@ -44,6 +46,13 @@ async function bootstrap() {
     /* fixes https://github.com/webpack/webpack/issues/10035 */
     window.global = globalThis;
 
+    // The client's way to the worker for the few things that carry a file, which the request path
+    // would serialise whole and time out on. The desktop's `window.electronApi` is the same idea.
+    window.standaloneApi = {
+        restore: { importBackup: restoreBackup },
+        backup: { downloadDatabase }
+    };
+
     try {
         // When running inside a Capacitor WebView, register the native HTTP
         // handler so outbound sync requests bypass CORS and cookie restrictions.
@@ -52,8 +61,15 @@ async function bootstrap() {
             registerNativeHttpHandler(capacitorHttpHandler);
         }
 
-        // 1) Start local worker ASAP (so /bootstrap is fast)
-        startLocalServerWorker();
+        // 1) Start the local worker ASAP (so /bootstrap is fast) — but only in
+        // the tab that wins the database lock. A second worker cannot open the
+        // OPFS database at all; before this gate it silently fell back to an
+        // empty in-memory one. Other tabs reach this worker through the service
+        // worker instead. See leader_election.ts.
+        claimLeadership(() => {
+            startLocalServerWorker();
+            announceLeadership();
+        });
 
         // iOS Capacitor loads on the capacitor:// scheme, where WebKit rejects
         // service worker registration. Fall back to in-page request interceptors
@@ -73,17 +89,10 @@ async function bootstrap() {
         }
 
         console.error("[Bootstrap] Fatal error:", err);
-        document.body.innerHTML = `
-            <div style="padding: 40px; max-width: 600px; margin: 0 auto; font-family: system-ui, sans-serif;">
-                <h1 style="color: #d32f2f;">Failed to Initialize</h1>
-                <p>The application failed to start. Please check the browser console for details.</p>
-                <pre style="background: #f5f5f5; padding: 16px; border-radius: 4px; overflow: auto; white-space: pre-wrap; word-wrap: break-word;">${err instanceof Error ? err.message : String(err)}</pre>
-                <button onclick="location.reload()" style="padding: 12px 24px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-                    Reload Page
-                </button>
-            </div>
-        `;
-        document.body.style.display = "block";
+        showErrorOverlay(
+            "Failed to Initialize",
+            err instanceof Error ? err.message : String(err)
+        );
     }
 }
 

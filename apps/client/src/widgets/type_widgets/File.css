@@ -11,17 +11,19 @@
     padding: 0;
 }
 
-.note-detail.full-height .note-detail-file[data-preview-type="pdf"],
-.note-detail.full-height .note-detail-file[data-preview-type="video"] {
-    overflow: hidden;
-}
-
-.file-preview-content {
-    background-color: var(--accented-background-color);
+/* Rendered by CodeBlock, so the same <pre> also carries .code-block; the element selector keeps
+   these layout rules winning that equal-specificity fight regardless of bundle order. */
+pre.file-preview-content {
     padding: 15px;
     height: 100%;
     overflow: auto;
     margin: 10px;
+}
+
+/* Only when not highlighted: a highlighted block carries `hljs`, whose runtime-injected theme
+   stylesheet brings its own background (see CodeBlock.css). */
+pre.file-preview-content:not(.hljs) {
+    background-color: var(--accented-background-color);
 }
 
 .note-detail-file > .pdf-preview {
@@ -37,4 +39,14 @@
     right: 15px;
     width: calc(100% - 30px);
     transform: translateY(-50%);
+}
+
+/* base .office-preview-body / .office-preview-loading styles live in content_renderer.css.
+   The unpadded wrapper is the scroll host (like .scrolling-container for text notes):
+   the scrollbar hugs the split edge and the body's padding scrolls with the document.
+   The GPX preview needs the same: a file note is full-height, so nothing above scrolls for it. */
+.note-detail-file:has(> .office-preview-body),
+.note-detail-file:has(> .gpx-preview) {
+    overflow: auto;
+    padding: 0;
 }

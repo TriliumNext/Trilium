@@ -1,0 +1,26 @@
+{
+  "name": "@triliumnext/backup-container",
+  "description": "Reader and writer for the Trilium backup container format: a SQLite database wrapped with optional gzip compression and optional AES-256-GCM encryption.",
+  "license": "MIT",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./web": "./src/web.ts"
+  },
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.2.0"
+  },
+  "keywords": [
+    "backup",
+    "container",
+    "aes-256-gcm",
+    "gzip",
+    "sqlite"
+  ]
+}

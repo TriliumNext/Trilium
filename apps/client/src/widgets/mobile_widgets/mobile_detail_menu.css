@@ -1,3 +1,11 @@
 .code-note-switcher-modal .dropdown-menu {
     background: none !important;
 }
+
+/* The modal is the frame here, so the list keeps neither the cap nor the padding it is given for the
+   ribbon's tab (see SimilarNotesTab.css). Kept to the new layout, as it was when it lived in
+   StatusBar.css — the old mobile look is not this change's to alter. */
+body.experimental-feature-new-layout .similar-notes-modal .similar-notes-wrapper {
+    max-height: unset;
+    padding: 0;
+}

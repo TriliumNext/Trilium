@@ -6,6 +6,7 @@ export const COMMAND_NAME = 'insertDateTimeToText';
 export default class InsertDateTimePlugin extends Plugin {
     init() {
         const editor = this.editor;
+        const t = editor.t;
 
         editor.commands.add(COMMAND_NAME, new InsertDateTimeCommand(editor));
 
@@ -13,7 +14,7 @@ export default class InsertDateTimePlugin extends Plugin {
             const view = new ButtonView( locale );
 
             view.set( {
-                label: 'Date time',
+                label: t('Insert date/time'),
                 icon: dateTimeIcon,
                 tooltip: true
             } );

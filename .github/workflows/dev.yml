@@ -25,6 +25,75 @@ permissions:
   pull-requests: write  # for PR comments
 
 jobs:
+  # Decides which of the two heavyweight suites a given push/PR can actually
+  # affect. Both suites also run the shared trilium-core spec set, so anything
+  # under that package (or the workspace roots) has to trigger both.
+  changes:
+    name: Detect affected suites
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      standalone: ${{ steps.filter.outputs.standalone }}
+      ckeditor5: ${{ steps.filter.outputs.ckeditor5 }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            # Workspace-wide inputs: these change how anything installs or builds.
+            # Kept as its own anchor so the ckeditor5 filter can pick it up
+            # without inheriting the much wider trilium-core closure below.
+            workspace: &workspace
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+              - 'tsconfig*.json'
+              - '.npmrc'
+              - '.nvmrc'
+              # pnpm-workspace.yaml patches @excalidraw/excalidraw, so editing a
+              # patch changes what actually gets installed.
+              - 'patches/**'
+              - '.github/workflows/dev.yml'
+            # apps/server and apps/standalone each include
+            # ../../packages/trilium-core/src/**/*.spec.ts in their vitest
+            # `include` — the standalone suite exists precisely to re-run that
+            # set under happy-dom + sql.js — so both need core and everything
+            # core pulls in. turndown-plugin-gfm is here because trilium-core
+            # depends on it; it is not a direct dependency of either app.
+            core: &core
+              - 'packages/trilium-core/**'
+              - 'packages/commons/**'
+              - 'packages/turndown-plugin-gfm/**'
+              - 'packages/trilium-backup-container/**'
+              - 'packages/highlightjs/**'
+            server:
+              - *workspace
+              - *core
+              - 'apps/server/**'
+            # Widest closure in the repo: apps/standalone depends on eight
+            # workspace packages. It reaches into apps/client too, but only
+            # through ../../client/src/index.js, which main.spec.ts mocks — no
+            # client code executes in this suite, so apps/client is left out.
+            standalone:
+              - *workspace
+              - *core
+              - 'apps/standalone/**'
+              - 'packages/ckeditor5/**'
+              - 'packages/codemirror/**'
+              - 'packages/share-theme/**'
+              - 'packages/splitjs/**'
+            # Narrowest closure of the three: the aggregate depends only on
+            # commons. Note this filter does not guard the t()/translation-key
+            # contract — apps/client/src/services/i18n.spec.ts reads
+            # packages/ckeditor5/src off disk to enforce that, and it runs in
+            # test_dev, which is ungated.
+            ckeditor5:
+              - *workspace
+              - 'packages/ckeditor5/**'
+              - 'packages/commons/**'
+
   test_dev:
     name: Test development
     runs-on: ubuntu-latest
@@ -43,7 +112,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Run the repo-script tests
+        run: pnpm scripts:test
+
       - name: Run the client-side tests
+        id: test-client
         run: pnpm run --filter=client test --coverage
 
       - name: Upload client test report
@@ -54,52 +127,233 @@ jobs:
           path: apps/client/test-output/vitest/html/
           retention-days: 30
 
+      - name: Upload client coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: ${{ !cancelled() && steps.test-client.outcome == 'success' }}
+        with:
+          files: apps/client/test-output/vitest/coverage/lcov.info
+          flags: client
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload client test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() && steps.test-client.outcome != 'skipped' }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/client/test-output/vitest/junit.xml
+          flags: client
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Run the desktop tests
+        id: test-desktop
+        run: pnpm run --filter=desktop test --coverage
+
+      - name: Upload desktop coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: ${{ !cancelled() && steps.test-desktop.outcome == 'success' }}
+        with:
+          files: apps/desktop/test-output/vitest/coverage/lcov.info
+          flags: desktop
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload desktop test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() && steps.test-desktop.outcome != 'skipped' }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/desktop/test-output/vitest/junit.xml
+          flags: desktop
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Run the commons tests
+        id: test-commons
+        run: pnpm run --filter=commons test --coverage
+
+      - name: Upload commons coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: ${{ !cancelled() && steps.test-commons.outcome == 'success' }}
+        with:
+          files: packages/commons/test-output/vitest/coverage/lcov.info
+          flags: commons
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload commons test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() && steps.test-commons.outcome != 'skipped' }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/commons/test-output/vitest/junit.xml
+          flags: commons
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Run the codemirror tests
+        id: test-codemirror
+        run: pnpm run --filter=codemirror test --coverage
+
+      - name: Upload codemirror coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: ${{ !cancelled() && steps.test-codemirror.outcome == 'success' }}
+        with:
+          files: packages/codemirror/test-output/vitest/coverage/lcov.info
+          flags: codemirror
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload codemirror test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() && steps.test-codemirror.outcome != 'skipped' }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/codemirror/test-output/vitest/junit.xml
+          flags: codemirror
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Run the highlightjs tests
+        id: test-highlightjs
+        run: pnpm run --filter=highlightjs test --coverage
+
+      - name: Upload highlightjs coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: ${{ !cancelled() && steps.test-highlightjs.outcome == 'success' }}
+        with:
+          files: packages/highlightjs/test-output/vitest/coverage/lcov.info
+          flags: highlightjs
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload highlightjs test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() && steps.test-highlightjs.outcome != 'skipped' }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/highlightjs/test-output/vitest/junit.xml
+          flags: highlightjs
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Run the pdfjs-viewer tests
+        id: test-pdfjs-viewer
+        run: pnpm run --filter=pdfjs-viewer test --coverage
+
+      - name: Upload pdfjs-viewer coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: ${{ !cancelled() && steps.test-pdfjs-viewer.outcome == 'success' }}
+        with:
+          files: packages/pdfjs-viewer/test-output/vitest/coverage/lcov.info
+          flags: pdfjs-viewer
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload pdfjs-viewer test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() && steps.test-pdfjs-viewer.outcome != 'skipped' }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/pdfjs-viewer/test-output/vitest/junit.xml
+          flags: pdfjs-viewer
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Run the rest of the tests
+        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!ckeditor5 --filter=\!codemirror --filter=\!highlightjs --filter=\!pdfjs-viewer test
+
+  # The two suites below are split out of test_dev so they run concurrently with
+  # it (and each other) rather than queueing behind the client/package suites.
+  #
+  # Each job always starts and gates its *steps* on the filter, rather than
+  # carrying a job-level `if:`. A job skipped at the job level reports no result
+  # to a branch-protection required check, and propagates the skip through
+  # `needs:` to build_docker. Gating the steps keeps the job green and the
+  # dependency graph intact on a run that touches neither suite; the cost is one
+  # checkout on an unaffected run.
+  test_server:
+    name: Test server
+    runs-on: ubuntu-latest
+    needs: changes
+    env:
+      AFFECTED: ${{ needs.changes.outputs.server }}
+    steps:
+      - name: Checkout the repository
+        if: env.AFFECTED == 'true'
+        uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        if: env.AFFECTED == 'true'
+      - name: Set up node & dependencies
+        if: env.AFFECTED == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - name: Install dependencies
+        if: env.AFFECTED == 'true'
+        run: pnpm install --frozen-lockfile
+
       - name: Run the server-side tests
+        id: test-server
+        if: env.AFFECTED == 'true'
         run: pnpm run --filter=server test --coverage
 
       - name: Upload server test report
         uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() && steps.test-server.outcome != 'skipped' }}
         with:
           name: server-test-report
           path: apps/server/test-output/vitest/html/
           retention-days: 30
 
-      - name: Upload client coverage to Codecov
-        uses: codecov/codecov-action@v7
-        if: always()
-        with:
-          files: apps/client/test-output/vitest/coverage/lcov.info
-          flags: client
-          fail_ci_if_error: false
-
-      - name: Upload client test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: apps/client/test-output/vitest/junit.xml
-          flags: client
-          fail_ci_if_error: false
-
       - name: Upload server coverage to Codecov
         uses: codecov/codecov-action@v7
-        if: always()
+        if: ${{ !cancelled() && steps.test-server.outcome == 'success' }}
         with:
           files: apps/server/test-output/vitest/coverage/lcov.info
           flags: server
+          disable_search: true
           fail_ci_if_error: false
 
       - name: Upload server test results to Codecov
         uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.test-server.outcome != 'skipped' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/server/test-output/vitest/junit.xml
           flags: server
+          disable_search: true
           fail_ci_if_error: false
 
+  test_standalone:
+    name: Test standalone
+    runs-on: ubuntu-latest
+    needs: changes
+    env:
+      AFFECTED: ${{ needs.changes.outputs.standalone }}
+    steps:
+      - name: Checkout the repository
+        if: env.AFFECTED == 'true'
+        uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        if: env.AFFECTED == 'true'
+      - name: Set up node & dependencies
+        if: env.AFFECTED == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - name: Install dependencies
+        if: env.AFFECTED == 'true'
+        run: pnpm install --frozen-lockfile
+
       - name: Run the standalone tests
+        id: test-standalone
+        if: env.AFFECTED == 'true'
         # Runs the same trilium-core spec set as the server suite, but in
         # happy-dom + sql.js WASM via BrowserSqlProvider (see
         # apps/standalone/src/test_setup.ts). Catches differences
@@ -108,122 +362,169 @@ jobs:
 
       - name: Upload standalone coverage to Codecov
         uses: codecov/codecov-action@v7
-        if: always()
+        if: ${{ !cancelled() && steps.test-standalone.outcome == 'success' }}
         with:
           files: apps/standalone/test-output/vitest/coverage/lcov.info
           flags: standalone
+          disable_search: true
           fail_ci_if_error: false
 
       - name: Upload standalone test results to Codecov
         uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.test-standalone.outcome != 'skipped' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/standalone/test-output/vitest/junit.xml
           flags: standalone
+          disable_search: true
           fail_ci_if_error: false
 
-      - name: Run CKEditor e2e tests
-        run: |
-          export CHROMEDRIVER_PATH=$(which chromedriver || find /usr/local/share -name chromedriver -type f 2>/dev/null | head -1)
-          echo "Using chromedriver at: $CHROMEDRIVER_PATH"
-          pnpm run --filter=ckeditor5-mermaid test
-          pnpm run --filter=ckeditor5-math test
+  # The two shards the suite was already split into now run as separate jobs
+  # rather than back-to-back in one step, and a merge job evaluates the coverage
+  # gate over the combined blob reports. Sharding exists for renderer memory, not
+  # speed (see the comment on the test step); running the shards concurrently is
+  # what makes it also a speedup.
+  test_ckeditor5:
+    name: Test CKEditor 5 (shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    needs: changes
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      AFFECTED: ${{ needs.changes.outputs.ckeditor5 }}
+    steps:
+      - name: Checkout the repository
+        if: env.AFFECTED == 'true'
+        uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        if: env.AFFECTED == 'true'
+      - name: Set up node & dependencies
+        if: env.AFFECTED == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - name: Install dependencies
+        if: env.AFFECTED == 'true'
+        run: pnpm install --frozen-lockfile
 
       - name: Run the CKEditor 5 aggregate tests
+        id: test-ckeditor5
+        if: env.AFFECTED == 'true'
+        # The suite drives a real headless Chrome through webdriverio. When the browser session
+        # fails to start, vitest waits on it rather than erroring, so cap the step instead of
+        # letting it sit until the job's default timeout.
+        timeout-minutes: 15
         run: |
           export CHROMEDRIVER_PATH=$(which chromedriver || find /usr/local/share -name chromedriver -type f 2>/dev/null | head -1)
           echo "Using chromedriver at: $CHROMEDRIVER_PATH"
-          pnpm run --filter=ckeditor5 test --coverage
+          # A chromedriver whose major version does not match the installed Chrome fails the
+          # session handshake, which surfaces as a hang or a mid-run disconnect rather than a
+          # clear error — so record both up front.
+          "$CHROMEDRIVER_PATH" --version || echo "could not read the chromedriver version"
+          (google-chrome --version || chromium --version || chromium-browser --version) 2>/dev/null \
+            || echo "could not read the Chrome version"
+          # Browser mode keeps one page for the whole run, and v8 coverage data accumulates in it:
+          # measured locally, the heap reaches ~850MB by the 100th spec file with --coverage against
+          # ~240MB without it. That is where a CI runner's renderer gives out — the session either
+          # drops mid-run or stops responding. Each shard is ~60 files, peaking around 500MB. The
+          # thresholds are zeroed here and evaluated once over the merged report instead, so the
+          # gate still covers the whole suite rather than each shard separately.
+          pnpm run --filter=ckeditor5 test --shard=${{ matrix.shard }}/${{ strategy.job-total }} \
+            --reporter=blob --coverage \
+            --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 \
+            --coverage.thresholds.branches=0 --coverage.thresholds.statements=0
+
+      # Vitest names blobs `.vitest-reports/blob-<index>-<count>.json`, so the two
+      # shards produce distinct filenames and merge-multiple cannot clobber them.
+      # That directory is dot-prefixed, and upload-artifact skips hidden paths
+      # unless told otherwise — without include-hidden-files it silently matches
+      # nothing.
+      - name: Upload the shard blob report
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() && steps.test-ckeditor5.outcome == 'success' }}
+        with:
+          name: ckeditor5-blob-${{ matrix.shard }}
+          path: packages/ckeditor5/.vitest-reports/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  test_ckeditor5_merge:
+    name: CKEditor 5 coverage gate
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - test_ckeditor5
+    env:
+      AFFECTED: ${{ needs.changes.outputs.ckeditor5 }}
+    steps:
+      - name: Checkout the repository
+        if: env.AFFECTED == 'true'
+        uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        if: env.AFFECTED == 'true'
+      - name: Set up node & dependencies
+        if: env.AFFECTED == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - name: Install dependencies
+        if: env.AFFECTED == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Download the shard blob reports
+        if: env.AFFECTED == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: ckeditor5-blob-*
+          merge-multiple: true
+          path: packages/ckeditor5/.vitest-reports
+
+      # Re-runs no tests; it replays the blobs to produce the junit and lcov
+      # output and to evaluate the package's real coverage thresholds over the
+      # whole suite.
+      - name: Merge the shard reports and evaluate the coverage gate
+        id: test-ckeditor5
+        if: env.AFFECTED == 'true'
+        run: pnpm run --filter=ckeditor5 test --mergeReports --coverage
 
       - name: Upload ckeditor5 coverage to Codecov
         uses: codecov/codecov-action@v7
-        if: always()
+        if: ${{ !cancelled() && steps.test-ckeditor5.outcome == 'success' }}
         with:
           files: packages/ckeditor5/test-output/vitest/coverage/lcov.info
           flags: ckeditor5
+          disable_search: true
           fail_ci_if_error: false
 
       - name: Upload ckeditor5 test results to Codecov
         uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.test-ckeditor5.outcome != 'skipped' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/ckeditor5/test-output/vitest/junit.xml
           flags: ckeditor5
+          disable_search: true
           fail_ci_if_error: false
 
-      - name: Run the CKEditor 5 utils tests
-        run: |
-          export CHROMEDRIVER_PATH=$(which chromedriver || find /usr/local/share -name chromedriver -type f 2>/dev/null | head -1)
-          echo "Using chromedriver at: $CHROMEDRIVER_PATH"
-          pnpm run --filter=ckeditor5-utils test --coverage
-
-      - name: Upload ckeditor5-utils coverage to Codecov
-        uses: codecov/codecov-action@v7
-        if: always()
-        with:
-          files: packages/ckeditor5-utils/test-output/vitest/coverage/lcov.info
-          flags: ckeditor5-utils
-          fail_ci_if_error: false
-
-      - name: Upload ckeditor5-utils test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: packages/ckeditor5-utils/test-output/vitest/junit.xml
-          flags: ckeditor5-utils
-          fail_ci_if_error: false
-
-      - name: Run the desktop tests
-        run: pnpm run --filter=desktop test --coverage
-
-      - name: Upload desktop coverage to Codecov
-        uses: codecov/codecov-action@v7
-        if: always()
-        with:
-          files: apps/desktop/test-output/vitest/coverage/lcov.info
-          flags: desktop
-          fail_ci_if_error: false
-
-      - name: Upload desktop test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: apps/desktop/test-output/vitest/junit.xml
-          flags: desktop
-          fail_ci_if_error: false
-
-      - name: Run the commons tests
-        run: pnpm run --filter=commons test --coverage
-
-      - name: Upload commons coverage to Codecov
-        uses: codecov/codecov-action@v7
-        if: always()
-        with:
-          files: packages/commons/test-output/vitest/coverage/lcov.info
-          flags: commons
-          fail_ci_if_error: false
-
-      - name: Upload commons test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: packages/commons/test-output/vitest/junit.xml
-          flags: commons
-          fail_ci_if_error: false
-
-      - name: Run the rest of the tests
-        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!ckeditor5-mermaid --filter=\!ckeditor5-math --filter=\!ckeditor5 --filter=\!ckeditor5-utils test
-
+  # Deliberately ungated: this validates that the client and server build and
+  # that the image assembles, none of which depends on a test outcome. Waiting
+  # for the suites put ~4m of Docker work in series behind the slowest of them
+  # for no signal. It now runs alongside them, so the workflow finishes with the
+  # longest test job rather than after it.
+  #
+  # The trade is that a push whose tests fail still spends runner time building
+  # images. That is the accepted cost of taking the Docker work off the critical
+  # path; the concurrency group above still cancels superseded runs.
   build_docker:
     name: Build Docker image
     runs-on: ubuntu-latest
-    needs:
-      - test_dev
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -251,6 +552,10 @@ jobs:
   test_docker:
     name: Check Docker build
     runs-on: ubuntu-latest
+    # Kept: build_docker populates the type=gha buildx cache this job reads. The
+    # two together (~4m) still finish well inside the slowest test job, so
+    # breaking the chain would buy nothing and would leave both jobs racing to
+    # write the same cache.
     needs:
       - build_docker
     strategy:

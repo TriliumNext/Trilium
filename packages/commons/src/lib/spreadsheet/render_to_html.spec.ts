@@ -1352,6 +1352,85 @@ describe("renderSpreadsheetToHtml", () => {
         expect(html.indexOf("AAAAAAAAAAAA")).toBeLessThan(html.indexOf("BBBBBBBBBBBB"));
     });
 
+    it("falls back to insertion order when a cell document has no drawingsOrder", () => {
+        // `drawingsOrder` is only written once a document has reordered its images, so a
+        // single-image cell commonly arrives without it.
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                p: {
+                    drawings: {
+                        first: { drawingId: "first", source: "api/attachments/AAAAAAAAAAAA/image/a.png", transform: { width: 5, height: 5 } },
+                        second: { drawingId: "second", source: "api/attachments/BBBBBBBBBBBB/image/b.png", transform: { width: 5, height: 5 } }
+                    }
+                }
+            })
+        );
+        expect(html.indexOf("AAAAAAAAAAAA")).toBeLessThan(html.indexOf("BBBBBBBBBBBB"));
+    });
+
+    it("skips an id in drawingsOrder that has no matching drawing", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                p: {
+                    drawings: {
+                        d1: { drawingId: "d1", source: "api/attachments/AAAAAAAAAAAA/image/a.png", transform: { width: 5, height: 5 } }
+                    },
+                    drawingsOrder: ["stale", "d1"]
+                }
+            })
+        );
+        expect(html.match(/<img/g)?.length).toBe(1);
+        expect(html).toContain("AAAAAAAAAAAA");
+    });
+
+    it("omits the style attribute when a cell image has no usable dimensions", () => {
+        // Univer can store a drawing before its size is measured; the image should still render,
+        // just without width/height so it falls back to its intrinsic size.
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                p: {
+                    drawings: {
+                        d1: { drawingId: "d1", source: "api/attachments/AAAAAAAAAAAA/image/a.png" },
+                        d2: { drawingId: "d2", source: "api/attachments/BBBBBBBBBBBB/image/b.png", transform: { width: "wide", height: null } }
+                    },
+                    drawingsOrder: ["d1", "d2"]
+                }
+            })
+        );
+        const imgs = html.match(/<img[^>]*>/g) ?? [];
+        expect(imgs.length).toBe(2);
+        expect(imgs.every((img) => !img.includes("style="))).toBe(true);
+    });
+
+    it("emits only the dimension that is present", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                p: {
+                    drawings: {
+                        d1: { drawingId: "d1", source: "api/attachments/AAAAAAAAAAAA/image/a.png", transform: { width: 20 } }
+                    },
+                    drawingsOrder: ["d1"]
+                }
+            })
+        );
+        expect(html).toContain('style="width:20px"');
+    });
+
+    it("skips a cell image whose source is missing or not a string", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                p: {
+                    drawings: {
+                        d1: { drawingId: "d1", transform: { width: 10, height: 10 } },
+                        d2: { drawingId: "d2", source: 42, transform: { width: 10, height: 10 } }
+                    },
+                    drawingsOrder: ["d1", "d2"]
+                }
+            })
+        );
+        expect(html).not.toContain("<img");
+    });
+
     it("skips a cell image with an unsafe source", () => {
         const html = renderSpreadsheetToHtml(
             singleCellWorkbook({
@@ -1537,6 +1616,66 @@ describe("renderSpreadsheetToHtml", () => {
         expect(html).not.toContain("spreadsheet-sheet");
         expect(html).not.toContain("<img");
         expect(html).not.toContain("evil.example");
+    });
+
+    it("treats a floating image's missing coordinates as zero", () => {
+        // Univer writes a transform as soon as an image is inserted, but individual fields can be
+        // absent before the image is moved or resized; those must read as 0, not NaN.
+        const html = renderSpreadsheetToHtml(
+            workbookWithFloatingDrawings([
+                { drawingId: "img1", source: "api/attachments/cgN4jEBCA1Kn/image/image.png", transform: { angle: 0 } }
+            ])
+        );
+        expect(html).toContain("left:0px;top:0px;width:0px;height:0px");
+    });
+
+    it("extends the grid using the default track sizes when the sheet declares none", () => {
+        // A sheet saved without explicit defaults still has to grow enough rows and columns to
+        // contain an image that reaches past the last populated cell.
+        const html = renderSpreadsheetToHtml(
+            workbookWithFloatingDrawings(
+                [urlDrawing("img1", "api/attachments/cgN4jEBCA1Kn/image/image.png", { left: 300, top: 200, width: 100, height: 80 })],
+                { sheetExtra: { defaultColumnWidth: undefined, defaultRowHeight: undefined, rowCount: undefined, columnCount: undefined } }
+            )
+        );
+        // 280px of height at the default 24px row is ~12 rows; the single-cell sheet had one.
+        expect((html.match(/<tr/g) ?? []).length).toBeGreaterThan(5);
+        expect(html).toContain("spreadsheet-sheet");
+    });
+
+    it("does not grow an axis the images do not reach past", () => {
+        // A flat image extends the sheet rightwards only; the vertical walk gets a non-positive
+        // target and must stop immediately rather than counting rows.
+        const html = renderSpreadsheetToHtml(
+            workbookWithFloatingDrawings([
+                urlDrawing("img1", "api/attachments/cgN4jEBCA1Kn/image/image.png", { left: 300, top: 0, width: 100, height: 0 })
+            ])
+        );
+        expect((html.match(/<tr/g) ?? []).length).toBe(1);
+    });
+
+    it("stops extending an axis whose default track size is degenerate", () => {
+        const html = renderSpreadsheetToHtml(
+            workbookWithFloatingDrawings(
+                [urlDrawing("img1", "api/attachments/cgN4jEBCA1Kn/image/image.png", { left: 0, top: 300, width: 10, height: 100 })],
+                { sheetExtra: { defaultRowHeight: 0 } }
+            )
+        );
+        expect((html.match(/<tr/g) ?? []).length).toBe(1);
+    });
+
+    it("counts hidden and explicitly sized tracks correctly when extending the grid", () => {
+        // Hidden rows occupy no space, so they must not consume any of the image's reach, while
+        // rows carrying an explicit height are counted at that height rather than the default.
+        const html = renderSpreadsheetToHtml(
+            workbookWithFloatingDrawings(
+                [urlDrawing("img1", "api/attachments/cgN4jEBCA1Kn/image/image.png", { left: 0, top: 0, width: 10, height: 200 })],
+                { rowData: { "0": { hd: 1 }, "1": { h: 100 }, "2": { h: 100 } } }
+            )
+        );
+        // Row 0 contributes nothing, rows 1-2 contribute 100px each: the image ends on row 2, so
+        // the grid grows to three rows — of which the hidden one is not emitted.
+        expect((html.match(/<tr/g) ?? []).length).toBe(2);
     });
 
     it("does not add a floating wrapper to a sheet without drawings", () => {

@@ -47,6 +47,16 @@ describe("triliumLogHighlighter", () => {
             .toContain("cm-log-status cm-log-status-5xx");
     });
 
+    it("leaves a status family it has no colour for unmarked", () => {
+        // Only 2xx-5xx have a palette entry; a 1xx still has to render the rest of the line
+        // rather than being skipped or throwing.
+        const classes = classesOf("18:18:38.904 100 GET /api/x with 0 bytes took 2ms");
+
+        expect(classes.some((c) => c.startsWith("cm-log-status"))).toBe(false);
+        expect(classes).toContain("cm-log-verb");
+        expect(classes).toContain("cm-log-url");
+    });
+
     it("colours an error line and its timestamp-less continuation lines", () => {
         const doc = [
             "17:34:08.519 JS Error: Uncaught error: boom",

@@ -68,6 +68,20 @@ npm run test
 
 Note that some integration tests rely on an in-memory database in order to function. 
 
+### Browser-mode tests for the text editor
+
+`packages/ckeditor5` runs its tests in a real headless Chrome, through `@vitest/browser-webdriverio`, because the editor needs a real DOM and real selection handling. By default webdriverio downloads both a Chrome for Testing build and a matching chromedriver, which is what happens on a normal machine and needs no setup.
+
+Where those downloaded binaries cannot run — NixOS being the case in point, since they are dynamically linked against libraries no store path provides and die on a missing `libxcb.so.1` — point the suite at a system browser and driver instead:
+
+```
+CHROME_BIN=/path/to/chromium CHROMEDRIVER_PATH=/path/to/chromedriver pnpm --filter @triliumnext/ckeditor5 test
+```
+
+`CHROMEDRIVER_PATH` is webdriverio's own variable; `CHROME_BIN` is read by the package's `vitest.config.ts` and passed through as a capability, which also stops webdriverio from downloading a browser at all. The two versions have to match, at least in their major.
+
+The Nix dev shell (`nix develop`) sets both from `pkgs.chromium` and `pkgs.chromedriver`, so inside it the tests run unchanged.
+
 ### REST API testing for the server
 
 API tests are handled via `vitest` and `supertest` to initialize the Express server and run assertions without having to make actual requests to the server.

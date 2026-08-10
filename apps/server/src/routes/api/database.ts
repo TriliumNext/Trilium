@@ -1,5 +1,11 @@
-import { BackupDatabaseNowResponse, DatabaseCheckIntegrityResponse, ExistingAnonymizedDatabasesResponse } from "@triliumnext/commons";
-import { becca_loader, consistency_checks as consistencyChecksService, getBackup, getLog, ValidationError } from "@triliumnext/core";
+import {
+    BackupDatabaseNowResponse,
+    CompactionEstimateResponse,
+    DatabaseCheckIntegrityResponse,
+    ExistingAnonymizedDatabasesResponse,
+    VacuumDatabaseResponse
+} from "@triliumnext/commons";
+import { becca_loader, consistency_checks as consistencyChecksService, getBackup, getLog, utils, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import fs, { readFileSync } from "fs";
 import path from "path";
@@ -20,9 +26,52 @@ async function backupDatabase() {
 }
 
 function vacuumDatabase() {
-    sql.execute("VACUUM");
+    // Timed from here, the two readings included: they are a pragma query each, and what the log is
+    // answering for is how long the whole thing held the database.
+    const startedAt = Date.now();
+    const sizeBefore = databaseBytes();
 
-    getLog().info("Database has been vacuumed.");
+    // Announced before the rebuild starts, not only once it ends: this holds the process for minutes
+    // on a large database, and if it is killed or the machine goes down in the meantime, this line
+    // is the only record that one was ever under way.
+    getLog().info(`Compacting the database (${utils.formatSize(sizeBefore)}). This may take several minutes.`);
+
+    sql.execute("VACUUM");
+    const sizeAfter = databaseBytes();
+
+    getLog().info(`Compacted the database from ${utils.formatSize(sizeBefore)}`
+        + ` to ${utils.formatSize(sizeAfter)} in ${Date.now() - startedAt} ms.`);
+
+    return { sizeBefore, sizeAfter } satisfies VacuumDatabaseResponse;
+}
+
+/**
+ * What a rebuild would hand back, read before running one. Erasing content does not shrink the file
+ * — the pages it frees stay allocated in it, on the freelist — so this is where that space shows up
+ * until a vacuum returns it.
+ */
+function getCompactionEstimate() {
+    return {
+        reclaimableBytes: reclaimableBytes(),
+        databaseBytes: databaseBytes()
+    } satisfies CompactionEstimateResponse;
+}
+
+/**
+ * The database's own view of its size: every page it has allocated, the free ones included. Read
+ * through pragma functions rather than the file itself, so there is no path to resolve and no race
+ * with the filesystem — and it is exactly the figure a vacuum moves.
+ *
+ * Covers the main database alone; in WAL mode the `-wal` sidecar is not part of it.
+ */
+function databaseBytes(): number {
+    return sql.getValue<number>("SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()");
+}
+
+/** Pages already free inside the file. A floor, not a promise: a rebuild also recovers the slack
+ *  left inside pages that are still in use, which no count of whole pages can see. */
+function reclaimableBytes(): number {
+    return sql.getValue<number>("SELECT freelist_count * page_size FROM pragma_freelist_count(), pragma_page_size()");
 }
 
 function findAndFixConsistencyIssues() {
@@ -72,6 +121,7 @@ export default {
     getExistingBackups,
     backupDatabase,
     vacuumDatabase,
+    getCompactionEstimate,
     findAndFixConsistencyIssues,
     rebuildIntegrationTestDatabase,
     getExistingAnonymizedDatabases,

@@ -58,6 +58,8 @@ export interface TestResponse<T = unknown> {
     status: number;
     headers: Record<string, string>;
     body: T;
+    /** The file a handler asked Express to send rather than write itself, if it did. */
+    sentFile?: string;
 }
 
 export interface RequestOptions {
@@ -148,6 +150,8 @@ class MockResponse extends Writable {
     statusCode = 200;
     headers: Record<string, string> = {};
 
+    sentFile?: string;
+
     private chunks: Buffer[] = [];
     private sendBody: unknown;
     private hasSendBody = false;
@@ -157,6 +161,16 @@ class MockResponse extends Writable {
     setHeader(name: string, value: string) { this.headers[name] = value; return this; }
     removeHeader(name: string) { delete this.headers[name]; return this; }
     send(body: unknown) { this.used = true; this.hasSendBody = true; this.sendBody = body; return this; }
+    /**
+     * Express sends the file itself from here, so nothing passes through this object. Recorded
+     * rather than read, which is the whole point of a handler choosing this over `send`.
+     */
+    download(filePath: string, fileName?: string) {
+        this.used = true;
+        this.sentFile = filePath;
+        this.headers["Content-Disposition"] = `attachment; filename="${fileName ?? filePath}"`;
+        return this;
+    }
     json(body: unknown) { return this.send(body); }
     sendStatus(code: number) { this.used = true; this.statusCode = code; return this; }
 
@@ -173,7 +187,7 @@ class MockResponse extends Writable {
         } else if (this.hasSendBody) {
             body = normalizeResponseBody(this.sendBody);
         }
-        return { status: this.statusCode, headers: this.headers, body };
+        return { status: this.statusCode, headers: this.headers, body, sentFile: this.sentFile };
     }
 
 }
@@ -250,6 +264,7 @@ export class CoreApiTester {
         routes.buildSharedApiRoutes({
             route: buildRoute(true),
             asyncRoute: buildRoute(false),
+            asyncRouteWithoutTransaction: buildRoute(false),
             apiRoute,
             asyncApiRoute,
             apiResultHandler,

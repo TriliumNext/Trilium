@@ -4,33 +4,28 @@ body.experimental-feature-new-layout .note-paths-widget {
     }
 
     .note-path-list {
-        margin: 12px 0;
+        margin: 8px 0;
         padding: 0;
         list-style: none;
 
-        /* Note path card */
+        /* The room is for what the list is set between — the intro line, the clone link. Where it is
+           all the widget holds, as in the sidebar's card, the card's own padding is the room. */
+        &:first-child { margin-top: 0; }
+        &:last-child { margin-bottom: 0; }
+
+        /* A path is framed already by what holds the list — a card, or the mobile note menu — so it
+           carries no frame of its own: what tells one path from the next is the room around it, and
+           the gutter each hangs its marks in. */
         li {
-            --border-radius: 6px;
-
             position: relative;
-            background: var(--card-background-color);
-            padding: 8px 20px 8px 25px;
+            padding-block: 5px;
+            padding-inline-start: 17px;
+            /* A path is read for where the note sits, not for the words themselves, so it is set a
+               step below the text around it — the separators and the marks with it, hence the size
+               on the path rather than on its links. */
+            font-size: .9em;
 
-            &:first-child {
-                border-top-left-radius: var(--border-radius);
-                border-top-right-radius: var(--border-radius);
-            }
-
-            &:last-child {
-                border-bottom-left-radius: var(--border-radius);
-                border-bottom-right-radius: var(--border-radius);
-            }
-
-            & + li {
-                margin-top: 2px;
-            }
-
-            /* Current path arrow */
+            /* Current path arrow, in the gutter the paths are indented for. */
             &.path-current::before {
                 position: absolute;
                 display: flex;
@@ -38,8 +33,8 @@ body.experimental-feature-new-layout .note-paths-widget {
                 align-items: center;
                 content: "\ee8f";
                 top: 0;
-                left: 0;
-                width: 20px;
+                inset-inline-start: 0;
+                width: 12px;
                 bottom: 0;
                 font-family: "boxicons";
                 font-size: .75em;
@@ -49,8 +44,7 @@ body.experimental-feature-new-layout .note-paths-widget {
 
         /* Note path segment */
         a {
-            margin-inline: 2px;
-            padding-inline: 2px;
+            padding-inline: 1px;
             color: currentColor;
             font-weight: normal;
             text-decoration: none;

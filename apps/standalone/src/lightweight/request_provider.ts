@@ -1,4 +1,5 @@
-import type { ExecOpts, RequestProvider } from "@triliumnext/core";
+import type { ExecOpts, FetchedResource, FetchResourceOpts, RequestProvider } from "@triliumnext/core";
+import { readCappedResponse, validateFetchableUrl } from "@triliumnext/core/src/services/request.js";
 
 /**
  * Fetch-based implementation of RequestProvider for browser environments.
@@ -90,4 +91,41 @@ export default class FetchRequestProvider implements RequestProvider {
 
         return await response.arrayBuffer();
     }
+
+    /**
+     * Fetches a third-party resource with the page's own `fetch`, which means the same-origin
+     * policy decides whether the answer can be read at all.
+     *
+     * A great many sites do not send `Access-Control-Allow-Origin`, and for those this throws
+     * however healthy the response was — the request goes out, the browser refuses to hand back
+     * what came of it. That is not a fault to work around here: it is what running with no server
+     * costs, and the caller is expected to degrade rather than to retry.
+     *
+     * Notably it is not universal. Static and documentation hosting frequently sends `*`, and the
+     * oEmbed endpoints of the large video and audio providers all do, so a good deal is readable
+     * this way. Where it is not, the native transport in the sibling provider is the way through.
+     *
+     * `credentials` stays at its default of `same-origin`: nothing here should carry the user's
+     * cookies to a third party just because a link to it was pasted into a note.
+     */
+    async fetchResource(resourceUrl: string, opts: FetchResourceOpts): Promise<FetchedResource> {
+        const validated = validateFetchableUrl(resourceUrl).toString();
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), FETCH_RESOURCE_TIMEOUT_MS);
+
+        try {
+            const response = await fetch(validated, {
+                headers: opts.headers,
+                signal: controller.signal
+            });
+
+            return await readCappedResponse(response, opts.maxBytes);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
 }
+
+/** Matches the server's own fetch timeout, a preview not being worth waiting on for longer. */
+const FETCH_RESOURCE_TIMEOUT_MS = 5000;

@@ -22,7 +22,9 @@
  */
 
 import { sanitize, utils } from "@triliumnext/core";
-import { HTMLElement, parse } from "node-html-parser";
+import { HTMLElement, NodeType, parse } from "node-html-parser";
+
+import { parseColor, reflectLightness } from "./color.js";
 
 /**
  * The marker class the importer keys on to find OneNote file attachments (see importer.ts). The href
@@ -107,17 +109,37 @@ export function convertPageHtml(rawHtml: string): string {
 
     sortPositionedOutlines(scope);
     convertResourceReferences(scope);
+    wrapFloatingImages(scope);
     convertTags(scope);
+    convertCodeBlocks(scope);
     convertInlineFormatting(scope);
     normalizeNamedColors(scope);
     removeDefaultTextColor(scope);
     unwrapListItemParagraphs(scope);
     normalizeListMarkers(scope);
     normalizeTableBorders(scope);
+    correctTableShadingColors(scope);
     removeEmptyListItems(scope);
     removeBlockLevelBreaks(scope);
+    resizeTables(scope);
 
     return sanitize.sanitizeHtml(scope.innerHTML);
+}
+
+/**
+ * Extracts the page's authored creation timestamp from the Graph page document's
+ * `<meta name="created">` header, or undefined when the meta is absent or unparseable.
+ *
+ * This is the creation date OneNote displays under the page title: it lives in the page *content*
+ * and survives moves, copies and notebook migrations, whereas the page object's `createdDateTime`
+ * metadata is re-stamped by them (a moved page can report an object date years after the authored
+ * one). Graph emits the value without a UTC offset (e.g. "2026-07-23T21:28:00.0000000"), i.e. as
+ * wall-clock time, so `new Date()` parses it as server-local time — exact when the server runs in
+ * the notebook owner's timezone, and still the right day otherwise.
+ */
+export function extractPageCreatedDate(rawHtml: string): string | undefined {
+    const content = parse(rawHtml).querySelector('meta[name="created"]')?.getAttribute("content");
+    return content && !Number.isNaN(Date.parse(content)) ? content : undefined;
 }
 
 /**
@@ -174,6 +196,70 @@ function convertResourceReferences(scope: HTMLElement) {
             }
         }
     }
+}
+
+/** Block contexts whose direct <img> children are standalone (block) images, not inline runs. */
+const FLOATING_IMAGE_PARENTS = new Set(["body", "div", "section", "article"]);
+
+/**
+ * OneNote lays a standalone image out as a bare <img> floating in the outline <div>, frequently
+ * trailed — across OneNote's block-level <br> spacing — by a <cite> caption (e.g. a screen clipping's
+ * "Screen clipping taken: …"). Left verbatim the caption renders as loose body text beside the image.
+ *
+ * CKEditor represents a block image as `<figure class="image">`, with any caption as its
+ * `<figcaption>`, so wrap each floating image in a figure, carry its width/height into an
+ * `aspect-ratio` (the form CKEditor stores so the image reserves space and resizes proportionally),
+ * and pull a trailing <cite> in as the caption. Inline images (inside a <p>/<a>/<span>) are left alone.
+ */
+function wrapFloatingImages(scope: HTMLElement) {
+    for (const img of scope.querySelectorAll("img")) {
+        const parent = img.parentNode;
+        if (!(parent instanceof HTMLElement) || !FLOATING_IMAGE_PARENTS.has(parent.tagName?.toLowerCase() ?? "")) {
+            continue;
+        }
+
+        const width = img.getAttribute("width");
+        const height = img.getAttribute("height");
+        const style = parseStyle(img.getAttribute("style") ?? "");
+        if (width && height && !style.has("aspect-ratio") && /^\d+(\.\d+)?$/.test(width) && /^\d+(\.\d+)?$/.test(height)) {
+            style.set("aspect-ratio", `${width}/${height}`);
+            img.setAttribute("style", serializeStyle(style));
+        }
+
+        const caption = takeTrailingCaption(img);
+        const figcaption = caption ? `<figcaption>${caption}</figcaption>` : "";
+        img.insertAdjacentHTML("beforebegin", `<figure class="image">${img.toString()}${figcaption}</figure>`);
+        img.remove();
+    }
+}
+
+/**
+ * Consumes the <cite> caption that trails a floating image (OneNote separates the two with block-level
+ * <br>s), returning the markup for the image's <figcaption> and removing the cite and the intervening
+ * breaks from the document. The caption's text is placed in a fresh <cite>, wrapped in its font-size
+ * class (e.g. text-small) — OneNote's inline caption styling (its grey chrome colour, point size and
+ * zero margins) is dropped so the caption inherits the theme foreground. Returns null when the image
+ * has no trailing cite. Runs before convertInlineFormatting so the fresh cite's content is still
+ * formatted (a caption's own bold/italic runs survive).
+ */
+function takeTrailingCaption(img: HTMLElement): string | null {
+    const breaks: HTMLElement[] = [];
+    let sibling = img.nextElementSibling;
+    while (sibling && sibling.tagName?.toLowerCase() === "br") {
+        breaks.push(sibling);
+        sibling = sibling.nextElementSibling;
+    }
+    if (!sibling || sibling.tagName?.toLowerCase() !== "cite") {
+        return null;
+    }
+
+    const sizeClass = fontSizeClass(parseStyle(sibling.getAttribute("style") ?? "").get("font-size"), sibling);
+    const cite = `<cite>${sibling.innerHTML}</cite>`;
+    const caption = sizeClass ? `<span class="${sizeClass}">${cite}</span>` : cite;
+
+    breaks.forEach((br) => br.remove());
+    sibling.remove();
+    return caption;
 }
 
 /**
@@ -268,8 +354,11 @@ function convertInlineFormatting(scope: HTMLElement) {
         if (decorations.includes("line-through")) {
             wrap("del");
         }
-        // OneNote's "Code" style is just a Consolas font; map it to an inline <code> element.
-        if ((style.get("font-family") ?? "").includes("consolas")) {
+        // OneNote's "Code" style is just a Consolas font; map it to an inline <code> element — but
+        // only when some of the element's own text actually renders in it. After leaving the code
+        // style, OneNote keeps Consolas on the paragraph mark while every text run overrides it
+        // back to the body font, and that dead paragraph-level Consolas must not become <code>.
+        if ((style.get("font-family") ?? "").includes(MONOSPACE_FONT) && hasUnoverriddenText(el)) {
             wrap("code");
         }
         // OneNote carries explicit point sizes; map them onto CKEditor's tiny/small/big/huge scale.
@@ -283,6 +372,117 @@ function convertInlineFormatting(scope: HTMLElement) {
             el.set_content(`${open.join("")}${el.innerHTML}${close.join("")}`);
         }
     }
+}
+
+/** The font-family OneNote's community "Code" style applies; its only marker for code-styled text. */
+const MONOSPACE_FONT = "consolas";
+
+/**
+ * Whether any of the element's text actually renders in the element's own font — i.e. some
+ * non-empty text node is not inside a descendant that declares a font-family of its own. A
+ * descendant that declares one either overrides the font away (its text doesn't count) or restates
+ * a monospace font (and then gets its own <code> wrap on its own visit), so either way its subtree
+ * is skipped.
+ */
+function hasUnoverriddenText(el: HTMLElement): boolean {
+    for (const child of el.childNodes) {
+        if (child instanceof HTMLElement) {
+            if (!declaredFontFamily(child) && hasUnoverriddenText(child)) {
+                return true;
+            }
+        } else if (child.nodeType === NodeType.TEXT_NODE && child.text.trim().length > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * OneNote has no code-block construct: its community "Code" style is just Consolas-styled ordinary
+ * paragraphs. A run of two or more consecutive paragraphs whose entire text renders in Consolas is
+ * a code block in all but markup, so merge it into one <pre><code> (with the language-autodetect
+ * class the Markdown and ENEX importers use). Blank lines survive as OneNote's block-level <br>
+ * spacing between code paragraphs; lines are flattened to plain text, matching CKEditor's code
+ * blocks, so any inline formatting within them is dropped. A lone all-Consolas paragraph is left to
+ * convertInlineFormatting's inline <code> treatment — one line reads fine inline, and eagerly
+ * promoting every such paragraph to a block would catch code-styled asides like filenames. Runs
+ * before convertInlineFormatting so the merged lines aren't first wrapped as inline <code>.
+ */
+function convertCodeBlocks(scope: HTMLElement) {
+    const consumed = new Set<HTMLElement>();
+    for (const paragraph of scope.querySelectorAll("p")) {
+        if (consumed.has(paragraph) || !isCodeParagraph(paragraph)) {
+            continue;
+        }
+
+        // Gather the run: consecutive code paragraphs, bridging bare <br> gaps as blank lines.
+        // A trailing gap with no code paragraph after it is left in place, not consumed.
+        const members: HTMLElement[] = [paragraph];
+        const lines: string[] = [paragraph.text];
+        let paragraphCount = 1;
+        let cursor = paragraph.nextElementSibling;
+        while (cursor) {
+            const gap: HTMLElement[] = [];
+            while (cursor && cursor.tagName?.toLowerCase() === "br") {
+                gap.push(cursor);
+                cursor = cursor.nextElementSibling;
+            }
+            if (!cursor || cursor.tagName?.toLowerCase() !== "p" || !isCodeParagraph(cursor)) {
+                break;
+            }
+            members.push(...gap, cursor);
+            lines.push(...gap.map(() => ""), cursor.text);
+            paragraphCount++;
+            cursor = cursor.nextElementSibling;
+        }
+        if (paragraphCount < 2) {
+            continue;
+        }
+
+        for (const member of members) {
+            consumed.add(member);
+        }
+        const code = lines.map((line) => utils.escapeHtml(line)).join("\n");
+        paragraph.insertAdjacentHTML("beforebegin", `<pre><code class="language-text-x-trilium-auto">${code}</code></pre>`);
+        for (const member of members) {
+            member.remove();
+        }
+    }
+}
+
+/**
+ * Whether a paragraph is one line of code-styled text: every non-empty text node in it renders in
+ * Consolas — via the paragraph's own font or a wrapping span's — with descendant font-family
+ * declarations overriding the inherited state either way. A paragraph with no text at all only
+ * qualifies through its own Consolas paragraph mark (a blank line inside a code passage).
+ */
+function isCodeParagraph(paragraph: HTMLElement): boolean {
+    const base = (declaredFontFamily(paragraph) ?? "").includes(MONOSPACE_FONT);
+    if (paragraph.text.trim().length === 0) {
+        return base;
+    }
+    return allTextMonospace(paragraph, base);
+}
+
+/** Whether every non-empty text node under `el` renders in Consolas, given the inherited state. */
+function allTextMonospace(el: HTMLElement, inherited: boolean): boolean {
+    for (const child of el.childNodes) {
+        if (child instanceof HTMLElement) {
+            const family = declaredFontFamily(child);
+            const monospace = family ? family.includes(MONOSPACE_FONT) : inherited;
+            if (!allTextMonospace(child, monospace)) {
+                return false;
+            }
+        } else if (child.nodeType === NodeType.TEXT_NODE && child.text.trim().length > 0 && !inherited) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** The element's own font-family declaration, if any. */
+function declaredFontFamily(el: HTMLElement): string | undefined {
+    return parseStyle(el.getAttribute("style") ?? "").get("font-family");
 }
 
 /**
@@ -456,6 +656,110 @@ function normalizeTableBorders(scope: HTMLElement) {
     }
 }
 
+/**
+ * OneNote carries a resized column's width as a bare pixel `width` on every cell of that column
+ * (e.g. `<td style="width:150;…">`), a per-cell form the sanitizer drops — so column widths are lost.
+ * CKEditor instead stores column widths as percentages in a <colgroup> on a `ck-table-resized` table
+ * wrapped in `<figure class="table" style="width:100%;">`. When every column carries an explicit width,
+ * translate OneNote's pixel widths into that representation: emit a <colgroup> of proportional
+ * percentages (summing to 100), strip the now-redundant per-cell widths, tag the table resized and wrap
+ * it in a table figure. Tables that don't width every column, or that merge cells (colspan/rowspan,
+ * which this flat column model can't represent), are left untouched.
+ */
+function resizeTables(scope: HTMLElement) {
+    for (const table of scope.querySelectorAll("table")) {
+        const cellRows = table.querySelectorAll("tr").map((row) => row.querySelectorAll("td, th"));
+        const columnCount = Math.max(0, ...cellRows.map((cells) => cells.length));
+        if (columnCount === 0 || cellRows.some((cells) => cells.some(hasCellSpan))) {
+            continue;
+        }
+
+        // A resized column repeats its width on every cell; take the first one seen per column. Bail
+        // unless every column has one — a partial set can't be faithfully turned into a full colgroup.
+        const widths: number[] = [];
+        for (let column = 0; column < columnCount; column++) {
+            const width = cellRows.map((cells) => columnWidth(cells[column])).find((value) => value !== undefined);
+            if (width === undefined) {
+                break;
+            }
+            widths.push(width);
+        }
+        if (widths.length !== columnCount) {
+            continue;
+        }
+
+        for (const cells of cellRows) {
+            for (const cell of cells) {
+                const style = parseStyle(cell.getAttribute("style") ?? "");
+                if (style.delete("width")) {
+                    if (style.size === 0) {
+                        cell.removeAttribute("style");
+                    } else {
+                        cell.setAttribute("style", serializeStyle(style));
+                    }
+                }
+            }
+        }
+
+        const colgroup = `<colgroup>${columnPercentages(widths).map((percent) => `<col style="width:${percent}%;">`).join("")}</colgroup>`;
+        const existingClass = table.getAttribute("class");
+        table.setAttribute("class", existingClass ? `${existingClass} ck-table-resized` : "ck-table-resized");
+        table.set_content(`${colgroup}<tbody>${table.innerHTML}</tbody>`);
+        table.insertAdjacentHTML("beforebegin", `<figure class="table" style="width:100%;">${table.toString()}</figure>`);
+        table.remove();
+    }
+}
+
+/** Whether a cell spans multiple rows/columns, which the flat column model in resizeTables can't map. */
+function hasCellSpan(cell: HTMLElement): boolean {
+    return cell.getAttribute("colspan") != null || cell.getAttribute("rowspan") != null;
+}
+
+/** A cell's positive pixel `width` (OneNote writes it unit-less, e.g. `width:150`), or undefined. */
+function columnWidth(cell: HTMLElement | undefined): number | undefined {
+    const value = cell && parseStyle(cell.getAttribute("style") ?? "").get("width");
+    const pixels = value ? parseFloat(value) : NaN;
+    return Number.isFinite(pixels) && pixels > 0 ? pixels : undefined;
+}
+
+/**
+ * Turns pixel column widths into percentages of their total, rounded to two decimals. The last column
+ * takes the remainder so the set sums to exactly 100% (matching CKEditor's normalized colgroup) rather
+ * than drifting a hundredth off through independent rounding.
+ */
+function columnPercentages(widths: number[]): number[] {
+    const total = widths.reduce((sum, width) => sum + width, 0);
+    let allocated = 0;
+    return widths.map((width, index) => {
+        if (index === widths.length - 1) {
+            return Math.round((100 - allocated) * 100) / 100;
+        }
+        const percent = Math.round((width / total) * 10000) / 100;
+        allocated += percent;
+        return percent;
+    });
+}
+
+/**
+ * OneNote's Graph API exports table cell shading as a dark *shade* of the colour OneNote actually
+ * displays: it keeps the hue and saturation but inverts the lightness (e.g. a cell shown as #b6d9a1
+ * comes back as #375623). Left as-is the cell imports far too dark — commonly dark-on-dark and
+ * unreadable. So for a cell whose background is dark, reflect its lightness (L → 100 − L,
+ * hue/saturation untouched) to recover the displayed light tint; light backgrounds (plausible shading
+ * as-is, and the form correctly-exported colours arrive in) are left alone.
+ */
+function correctTableShadingColors(scope: HTMLElement) {
+    for (const cell of scope.querySelectorAll("td, th")) {
+        const style = parseStyle(cell.getAttribute("style") ?? "");
+        const background = parseColor(style.get("background-color") ?? "");
+        if (!background || background.lightness() >= 50) {
+            continue;
+        }
+        style.set("background-color", reflectLightness(background));
+        cell.setAttribute("style", serializeStyle(style));
+    }
+}
+
 /** Drops list items that hold nothing but whitespace/<br> (OneNote's "exited the list" remnant). */
 function removeEmptyListItems(scope: HTMLElement) {
     for (const li of scope.querySelectorAll("li")) {
@@ -477,4 +781,4 @@ function removeBlockLevelBreaks(scope: HTMLElement) {
     }
 }
 
-export default { convertPageHtml };
+export default { convertPageHtml, extractPageCreatedDate };

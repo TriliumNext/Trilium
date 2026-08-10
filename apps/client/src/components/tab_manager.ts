@@ -9,7 +9,7 @@ import appContext from "./app_context.js";
 import Mutex from "../utils/mutex.js";
 import linkService from "../services/link.js";
 import { partitionPinnedFirst } from "../services/tab_pinning.js";
-import type { EventData } from "./app_context.js";
+import type { EventData, NoteCommandData } from "./app_context.js";
 import type FNote from "../entities/fnote.js";
 
 /** Where a newly created tab is inserted in the row: appended to the end, or right after the active tab. */
@@ -20,7 +20,7 @@ interface TabState {
     position: number;
 }
 
-interface NoteContextState {
+export interface NoteContextState {
     ntxId: string;
     mainNtxId: string | null;
     notePath: string | null;
@@ -102,13 +102,9 @@ export default class TabManager extends Component {
             if (filteredNoteContexts.length === 0) {
                 parsedFromUrl.ntxId = parsedFromUrl.ntxId || NoteContext.generateNtxId(); // generate already here, so that we later know which one to activate
 
-                filteredNoteContexts.push({
-                    notePath: parsedFromUrl.notePath || "root",
-                    ntxId: parsedFromUrl.ntxId,
-                    active: true,
-                    hoistedNoteId: parsedFromUrl.hoistedNoteId || "root",
-                    viewScope: parsedFromUrl.viewScope || {}
-                });
+                filteredNoteContexts.push(
+                    ...buildNoteContextStatesFromUrl(parsedFromUrl, parsedFromUrl.ntxId)
+                );
             } else if (!filteredNoteContexts.find((tab: NoteContextState) => tab.active)) {
                 filteredNoteContexts[0].active = true;
             }
@@ -133,7 +129,9 @@ export default class TabManager extends Component {
 
             // if there's a notePath in the URL, make sure it's open and active
             // (useful, for e.g., opening clipped notes from clipper or opening link in an extra window)
-            if (parsedFromUrl.notePath) {
+            // Splits are skipped: the panes were just built from this very URL, with the
+            // intended one focused, so switching would only pull focus back to the first pane.
+            if (parsedFromUrl.notePath && !parsedFromUrl.splits?.length) {
                 await appContext.tabManager.switchToNoteContext(
                     parsedFromUrl.ntxId,
                     parsedFromUrl.notePath,
@@ -744,18 +742,57 @@ export default class TabManager extends Component {
     }
 
     async moveTabToNewWindowCommand({ ntxId }: { ntxId: string }) {
-        const { notePath, hoistedNoteId, viewScope } = this.getNoteContextById(ntxId);
+        // capture before removing: closing the tab takes its split panes down with it
+        const target = this.captureTabAsWindowTarget(ntxId);
 
-        const removed = await this.removeNoteContext(ntxId);
-
-        if (removed) {
-            this.triggerCommand("openInWindow", { notePath, hoistedNoteId, viewScope });
+        if (target && await this.removeNoteContext(ntxId)) {
+            this.triggerCommand("openInWindow", target);
         }
     }
 
     async copyTabToNewWindowCommand({ ntxId }: { ntxId: string }) {
-        const { notePath, hoistedNoteId, viewScope } = this.getNoteContextById(ntxId);
-        this.triggerCommand("openInWindow", { notePath, hoistedNoteId, viewScope });
+        const target = this.captureTabAsWindowTarget(ntxId);
+
+        if (target) {
+            this.triggerCommand("openInWindow", target);
+        }
+    }
+
+    /** Every pane of one tab — its main context and the splits beside it — in row order. */
+    getTabPanes(mainNtxId: string | null) {
+        return this.noteContexts.filter((nc) =>
+            nc.ntxId === mainNtxId || nc.mainNtxId === mainNtxId);
+    }
+
+    /**
+     * Describes a whole tab — every split pane in order, and which of them is focused — as a target
+     * for `openInWindow`.
+     *
+     * Returns `null` when the tab is already gone. The tear-off drag fires from `dragMove`,
+     * which can deliver several events before the first removal completes, so a second call for
+     * the same tab is expected rather than exceptional.
+     */
+    captureTabAsWindowTarget(ntxId: string): NoteCommandData | null {
+        const mainContext = this.noteContexts.find((nc) => nc.ntxId === ntxId);
+
+        if (!mainContext) {
+            return null;
+        }
+
+        const panes = this.getTabPanes(ntxId);
+        const splits = panes.filter((nc) => nc.ntxId !== mainContext.ntxId);
+
+        return {
+            notePath: mainContext.notePath,
+            hoistedNoteId: mainContext.hoistedNoteId,
+            viewScope: mainContext.viewScope,
+            splits: splits.map((nc) => ({
+                notePath: nc.notePath,
+                hoistedNoteId: nc.hoistedNoteId,
+                viewScope: nc.viewScope
+            })),
+            activeSplit: Math.max(panes.indexOf(getFocusedPane(mainContext, panes)), 0)
+        };
     }
 
     async reopenLastTabCommand() {
@@ -888,4 +925,62 @@ export default class TabManager extends Component {
             await this.updateDocumentTitle(activeContext);
         }
     }
+}
+
+/**
+ * The pane holding the focus within a tab: the one remembered as last active if it is still open,
+ * otherwise the main pane — the same choice activating the tab would make.
+ */
+function getFocusedPane(mainContext: NoteContext, panes: NoteContext[]) {
+    return panes.find((nc) => nc.ntxId === mainContext.lastActiveNtxId) ?? mainContext;
+}
+
+/**
+ * Turns the navigation state parsed out of the address into the contexts to open at boot: the main
+ * pane, plus the split panes that a tab moved into a window of its own brought along with it.
+ */
+export function buildNoteContextStatesFromUrl(
+    parsed: NoteCommandData,
+    mainNtxId: string
+): NoteContextState[] {
+    const panes = [
+        {
+            notePath: parsed.notePath,
+            hoistedNoteId: parsed.hoistedNoteId,
+            viewScope: parsed.viewScope
+        },
+        ...(parsed.splits ?? [])
+    ];
+    // a bare boot with nothing in the address lands on root, but a pane torn off empty stays empty
+    const notePaths = panes.map((pane) => pane.notePath || (panes.length === 1 ? "root" : null));
+    const activeIdx = pickActivePane(notePaths, parsed.activeSplit ?? 0);
+
+    const states: NoteContextState[] = panes.map((pane, idx) => ({
+        notePath: notePaths[idx],
+        ntxId: idx === 0 ? mainNtxId : NoteContext.generateNtxId(),
+        mainNtxId: idx === 0 ? null : mainNtxId,
+        active: idx === activeIdx,
+        hoistedNoteId: pane.hoistedNoteId || "root",
+        viewScope: pane.viewScope || {}
+    }));
+
+    // so that leaving the tab and coming back returns to the pane that was focused
+    states[0].lastActiveNtxId = states[activeIdx].ntxId;
+
+    return states;
+}
+
+/**
+ * Which pane opens focused. The index comes off the address bar, so it is clamped into range; and
+ * because a pane holding no note never takes the focus anyway (`openContextWithNote` activates only
+ * once a note is set), an empty one hands over to the first pane that has one.
+ */
+function pickActivePane(notePaths: (string | null)[], requested: number) {
+    const clamped = Math.min(Math.max(requested, 0), notePaths.length - 1);
+
+    if (notePaths[clamped]) {
+        return clamped;
+    }
+
+    return Math.max(notePaths.findIndex((notePath) => !!notePath), 0);
 }

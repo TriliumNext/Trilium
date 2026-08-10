@@ -28,6 +28,15 @@ Also follow `CLAUDE.md`: write **concise** tests (group related assertions in on
 
 ## Running tests
 
+> **Run the narrowest thing that covers the change, and never the full suite.** `pnpm test:all`,
+> `test:parallel`, `test:sequential` and `pnpm coverage` take minutes and are CI's job — reach for one
+> only if the user asks. **Never run ESLint** either (`pnpm dev:linter-check`/`-fix`, `npx eslint`): it
+> currently dies out-of-memory, so a run costs minutes and tells you nothing. Typecheck with
+> `pnpm typecheck` (never a raw `tsc -p`/`tsc -b`, which misses the project references) — cheaper than a
+> suite, but not instant, so run it once a change is finished rather than after every edit.
+
+- Filtered (preferred): `pnpm --filter <pkg> test <path-or-pattern>` — the trailing argument is a
+  substring filter over spec paths, so `pnpm --filter server test special_notes` runs every match.
 - Whole package: `pnpm --filter <pkg> test` (e.g. `@triliumnext/client`, `@triliumnext/server`, `@triliumnext/commons`).
 - Single file (server): `pnpm --filter server test spec/etapi/search.spec.ts`
 - Single file (client): `pnpm --filter @triliumnext/client exec vitest run src/widgets/react/Button.spec.tsx`

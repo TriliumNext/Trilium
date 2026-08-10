@@ -48,6 +48,16 @@ describe("isValidDocName", () => {
         expect(isValidDocName("User Guide/Basic Concepts and Features/Import & Export/Microsoft OneNote")).toBe(true);
     });
 
+    // A docName is a path built out of page titles, so it carries whatever punctuation the titles do.
+    // These are all real pages of the user guide.
+    it("accepts the punctuation real page titles carry", () => {
+        expect(isValidDocName("User Guide/User Guide/Advanced Usage/Note Map (Link map, Tree map)")).toBe(true);
+        expect(isValidDocName("User Guide/User Guide/Advanced Usage/Configuration (config.ini or environment variables)")).toBe(true);
+        expect(isValidDocName("User Guide/User Guide/Installation & Setup/Server Installation/1. Installing the server/Using Docker")).toBe(true);
+        expect(isValidDocName("User Guide/User Guide/Scripting/Script API/Day.js")).toBe(true);
+        expect(isValidDocName("User Guide/User Guide/Scripting/Breaking changes/v0.103.0 `cheerio` is now deprecated")).toBe(true);
+    });
+
     it("rejects path traversal attacks", () => {
         expect(isValidDocName("..")).toBe(false);
         expect(isValidDocName("../etc/passwd")).toBe(false);
@@ -55,6 +65,12 @@ describe("isValidDocName", () => {
         expect(isValidDocName("../../../../api/notes/_malicious/open")).toBe(false);
         expect(isValidDocName("..\\etc\\passwd")).toBe(false);
         expect(isValidDocName("foo\\bar")).toBe(false);
+        // Dots are allowed within a segment (see above), so a segment made of nothing else — which is
+        // what climbs out of the doc directory — has to be turned away in its own right.
+        expect(isValidDocName("...")).toBe(false);
+        expect(isValidDocName("foo/..")).toBe(false);
+        expect(isValidDocName("foo/./bar")).toBe(false);
+        expect(isValidDocName("Day.js/../../etc/passwd")).toBe(false);
     });
 
     it("rejects URL manipulation attacks", () => {
@@ -120,6 +136,12 @@ describe("renderDoc", () => {
         const loadSpy = stubLoad(() => {});
         await renderDoc(fakeNote("User Guide/Basic Concepts and Features/Import & Export/Microsoft OneNote"));
         expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/en/User%20Guide/Basic%20Concepts%20and%20Features/Import%20%26%20Export/Microsoft%20OneNote.html");
+    });
+
+    it("leaves the rest of a title's punctuation to the browser's own URL encoding", async () => {
+        const loadSpy = stubLoad(() => {});
+        await renderDoc(fakeNote("User Guide/User Guide/Advanced Usage/Note Map (Link map, Tree map)"));
+        expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/en/User%20Guide/User%20Guide/Advanced%20Usage/Note%20Map%20(Link%20map,%20Tree%20map).html");
     });
 
     it("falls back to the English doc when the localized load errors", async () => {

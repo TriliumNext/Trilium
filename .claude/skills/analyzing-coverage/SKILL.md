@@ -7,6 +7,11 @@ description: Use when measuring or chasing Vitest/v8 code coverage in the Triliu
 
 There is **one** coverage analyzer — `coverage.mjs` in this skill folder. Don't write a new throwaway parser; every past session that did (`cov-analyze.mjs`, `cov-parse.mjs`, `cov-lines.mjs`, `cov-gaps.cjs`) reinvented the same two operations. Use this instead.
 
+> **Analyzing existing coverage data is free; producing it is not.** A coverage run is a full suite run
+> plus instrumentation — minutes, and normally CI's job. Prefer whatever `lcov.info` is already on
+> disk, and when you do need fresh numbers, scope the run to the package or path in question rather
+> than running `pnpm coverage`. Generating repo-wide coverage is an explicit-request activity.
+
 ```
 node .claude/skills/analyzing-coverage/coverage.mjs <coverage-file> [summary|gaps] [options]
 ```

@@ -61,7 +61,7 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
 
     return (
         <div className="chat-message-list-wrapper">
-            <div className={`chat-message-list ${className ?? ""}`} ref={chat.scrollContainerRef}>
+            <div className={`chat-message-list scroll-edge-fade ${className ?? ""}`} ref={chat.scrollContainerRef}>
                 {messages.length === 0 && !isStreaming && (
                     <NoItems icon="bx bx-conversation" text={emptyStateText} />
                 )}

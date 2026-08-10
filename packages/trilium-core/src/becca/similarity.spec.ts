@@ -208,6 +208,25 @@ describe("buildRewardMap", () => {
         expect(xMap.get("xcustom")).toBeUndefined();
     });
 
+    it("stems english plurals instead of discarding the word, both the 'es' and the plain 's' form", () => {
+        const note = buildNote({ title: "Foxes churches docs links", content: "<p>b</p>" });
+        const map = buildRewardMap(note);
+
+        // "foxes" -> "fox", "churches" -> "church"; the stemmed forms carry the
+        // reward and the original plural forms are absent.
+        expect(typeof map.get("fox")).toStrictEqual("number");
+        expect(typeof map.get("church")).toStrictEqual("number");
+        expect(map.get("foxes")).toBeUndefined();
+        expect(map.get("churches")).toBeUndefined();
+
+        // Same for a plural that is a bare trailing "s": these used to be blanked
+        // altogether, so a note about "docs" shared no word with another one.
+        expect(typeof map.get("doc")).toStrictEqual("number");
+        expect(typeof map.get("link")).toStrictEqual("number");
+        expect(map.get("docs")).toBeUndefined();
+        expect(map.get("links")).toBeUndefined();
+    });
+
     it("returns early for text notes whose content is not a string", () => {
         const note = buildNote({ title: "Binary backed", type: "text" });
         // Simulate WASM/binary content: getContent yields a non-string.
@@ -252,8 +271,7 @@ describe("findSimilarNotes", () => {
         }
 
         const result = await similarity.findSimilarNotes(base.noteId);
-        const matches = result ?? [];
-        expect(matches.length).toBe(200);
+        expect(result.length).toBe(200);
     });
 
     it("finds similar notes sharing distinctive title words", async () => {
@@ -266,10 +284,8 @@ describe("findSimilarNotes", () => {
         buildRootNote({ title: `${word} alpha beta delta`, type: "text" });
         buildRootNote({ title: `${word} alpha beta epsilon`, type: "text" });
 
-        const result = await similarity.findSimilarNotes(base.noteId);
+        const matches = await similarity.findSimilarNotes(base.noteId);
 
-        expect(Array.isArray(result)).toBe(true);
-        const matches = result ?? [];
         expect(matches.length).toBeGreaterThanOrEqual(2);
         // Each result has the expected shape and the base note is excluded.
         for (const r of matches) {
@@ -371,8 +387,7 @@ describe("findSimilarNotes", () => {
             isInheritable: false
         });
 
-        const result = await similarity.findSimilarNotes(base.noteId);
-        const matches = result ?? [];
+        const matches = await similarity.findSimilarNotes(base.noteId);
         expect(matches.some((r) => r.noteId === linked.noteId)).toBe(false);
     });
 
@@ -385,20 +400,23 @@ describe("findSimilarNotes", () => {
             "#archived": ""
         });
 
-        const result = await similarity.findSimilarNotes(base.noteId);
-        const matches = result ?? [];
+        const matches = await similarity.findSimilarNotes(base.noteId);
         expect(matches.length).toBeGreaterThanOrEqual(1);
     });
 
-    it("returns undefined when a high-scoring candidate has no resolvable note path", async () => {
+    it("skips a high-scoring candidate with no resolvable note path instead of aborting", async () => {
         const word = "phantompathword";
         const base = buildRootNote({ title: `${word} sun moon star`, type: "text" });
         const orphan = buildRootNote({ title: `${word} sun moon star`, type: "text" });
+        // Built after the orphan so the candidate loop reaches it only if the
+        // orphan is skipped rather than aborting the whole search.
+        const healthy = buildRootNote({ title: `${word} sun moon comet`, type: "text" });
 
         // Force the (hoisting) edge case where a scoring candidate yields no path.
         orphan.getBestNotePath = () => undefined as unknown as string[];
 
-        const result = await similarity.findSimilarNotes(base.noteId);
-        expect(result).toBeUndefined();
+        const matches = await similarity.findSimilarNotes(base.noteId);
+        expect(matches.some((r) => r.noteId === healthy.noteId)).toBe(true);
+        expect(matches.some((r) => r.noteId === orphan.noteId)).toBe(false);
     });
 });

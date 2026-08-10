@@ -11,3 +11,20 @@
         letter-spacing: .5pt;
     }
 }
+
+.shortcut-hint-button-group {
+    inset-inline-end: 10px;
+    z-index: 2;
+    transition: opacity .3s;
+    position: absolute;
+    top: 10px;
+}
+
+/* If the floating buttons are displayed, reposition the button group to avoid overlapping
+ * them on the old layout or popup editor. */
+:is(.note-split, .popup-editor-dialog > .modal-dialog > .modal-content > .modal-body):has(
+    > .floating-buttons > .floating-buttons-children.temporarily-hidden,
+    > .floating-buttons > .floating-buttons-children > .close-floating-buttons:not(:first-child)
+) .shortcut-hint-button-group {
+    top: 60px;
+}

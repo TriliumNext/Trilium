@@ -20,13 +20,13 @@ import {
 import LinkEmbed, {
     CHANGE_LINK_DISPLAY_COMMAND,
     CHANGE_LINK_PREVIEW_TITLE_COMMAND,
+    getLinkDisplayModeLabel,
     LINK_DISPLAY_MODES,
     REMOVE_LINK_EMBED_COMMAND,
     type LinkDisplayMode
 } from "./link_embed.js";
 import LinkEmbedTitleFormView from "./link_embed_title_form.js";
 import { createCopyUrlButton } from "../copy_link_url.js";
-import { translate } from "../translate.js";
 
 export default class LinkEmbedToolbar extends Plugin {
 
@@ -82,7 +82,7 @@ class LinkEmbedDisplayDropdown extends Plugin {
         componentFactory.add("linkEmbedDisplayDropdown", _locale => {
             const dropdownView = createDropdown(editor.locale, DropdownButtonView);
 
-            const displayLabel = translate(editor, "link_embed.display", "Display");
+            const displayLabel = editor.t("Display");
 
             dropdownView.buttonView.set({
                 withText: true,
@@ -98,8 +98,7 @@ class LinkEmbedDisplayDropdown extends Plugin {
 
             dropdownView.buttonView.bind("label").to(command, "value", (value) => {
                 if (!value) return displayLabel;
-                const mode = LINK_DISPLAY_MODES.find(m => m.value === value);
-                return mode ? translate(editor, mode.labelKey, mode.label) : value;
+                return getLinkDisplayModeLabel(editor.t, value);
             });
 
             dropdownView.on("execute", evt => {
@@ -118,23 +117,23 @@ class LinkEmbedDisplayDropdown extends Plugin {
     private _getItemDefinitions(command: Command & { value: LinkDisplayMode | null; embedAvailable: boolean }): Collection<ListDropdownButtonDefinition> {
         const items = new Collection<ListDropdownButtonDefinition>();
 
-        for (const modeDef of LINK_DISPLAY_MODES) {
+        for (const mode of LINK_DISPLAY_MODES) {
             const definition: ListDropdownButtonDefinition = {
                 type: "button",
                 model: new ViewModel({
-                    _displayMode: modeDef.value,
-                    label: translate(this.editor, modeDef.labelKey, modeDef.label),
+                    _displayMode: mode,
+                    label: getLinkDisplayModeLabel(this.editor.t, mode),
                     role: "menuitemradio",
                     withText: true
                 })
             };
 
             definition.model.bind("isOn").to(command, "value", value => {
-                return value === modeDef.value;
+                return value === mode;
             });
 
             // Hide "Embed" when the URL doesn't support it.
-            if (modeDef.value === "embed") {
+            if (mode === "embed") {
                 definition.model.bind("isVisible").to(command, "embedAvailable");
             }
 
@@ -256,7 +255,7 @@ class LinkEmbedEditTitleButton extends Plugin {
             const button = new ButtonView(locale);
 
             button.set({
-                label: translate(editor, "link_embed.edit_title", "Edit title"),
+                label: editor.t("Edit title"),
                 icon: IconPencil,
                 tooltip: true
             });
@@ -318,7 +317,7 @@ class LinkEmbedEditTitleButton extends Plugin {
         if (this._formView) return this._formView;
 
         const editor = this.editor;
-        const form = new LinkEmbedTitleFormView(editor.locale, (key, fallback) => translate(editor, key, fallback));
+        const form = new LinkEmbedTitleFormView(editor.locale, editor.t);
         this._formView = form;
 
         form.on("submit", () => {

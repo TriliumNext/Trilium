@@ -10,7 +10,7 @@ import { getLog } from "@triliumnext/core";
 import { isInternalElectronRequest } from "../services/electron_request.js";
 import port from "../services/port.js";
 import openID from "../services/open_id.js";
-import { isDev, isElectron, isMac, supportsBackgroundMaterial } from "../services/utils.js";
+import { isDev, isMac, supportsBackgroundMaterial } from "../services/utils.js";
 import totp from "../services/totp.js";
 import { generateCsrfToken } from "./csrf_protection.js";
 
@@ -186,14 +186,18 @@ export function bootstrap(req: Request, res: Response) {
     } satisfies BootstrapDefinition);
 }
 
-function getView(req: Request): View {
+export function getView(req: Request): View {
     // Special override for printing.
     if ("print" in req.query) {
         return "print";
     }
 
-    // Electron always uses the desktop view.
-    if (isElectron) {
+    // The trusted Electron renderer always uses the desktop view. This must key
+    // off the per-request marker, not the process-wide `isElectron` flag: on a
+    // desktop build a plain browser hits the same HTTP listener, and forcing
+    // "desktop" for it ignored the `trilium-device=mobile` cookie set by
+    // "Switch to Mobile Version" (#10720). Same per-request vs. global fix as #10589.
+    if (isInternalElectronRequest(req)) {
         return "desktop";
     }
 

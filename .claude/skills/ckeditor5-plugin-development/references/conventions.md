@@ -57,9 +57,10 @@ Follow the existing files in the package you touch; don't add or strip headers w
   `@ckeditor/ckeditor5-*` paths (`allow-imports-only-from-main-package-entry-point`,
   `no-legacy-imports`). The only allowed `@ckeditor/*` deep imports are the dev/debug packages
   `@ckeditor/ckeditor5-icons` and `@ckeditor/ckeditor5-inspector`.
-- **Cross-plugin** imports use the workspace package name
-  (`import { Kbd } from '@triliumnext/ckeditor5-keyboard-marker';`); **same-package** imports are
-  relative (`import FooEditing from './fooediting.js';`).
+- **Cross-plugin** imports inside `packages/ckeditor5` are relative
+  (`import Kbd from './keyboard_marker/keyboard_marker.js';`), as are same-plugin imports
+  (`import FooEditing from './foo_editing.js';`). The former plugin packages were the one
+  remaining workspace-package import.
 - **All imports include file extensions** (`.ts`/`.js`/`.json`) — `import './augmentation.js';`
   even though the source is `.ts` (`require-file-extensions-in-imports`).
 - SVG icons import with the `?raw` suffix (`import fooIcon from '../theme/icons/foo.svg?raw';`) and
@@ -94,12 +95,13 @@ declare module 'ckeditor5' {
 
 ## Package & workspace
 
-- Scope is **`@triliumnext/`**; package name `@triliumnext/ckeditor5-<feature>`,
-  `"type": "module"`, `"main": "src/index.ts"` (ships TS source — no per-package dist for
-  consumers), `peerDependencies: { "ckeditor5": "48.2.0" }`.
-- Cross-package deps use the **`workspace:*`** protocol; the aggregator pulls plugins in via
-  `"@triliumnext/ckeditor5-<feature>": "workspace:*"`. See `references/tooling-and-packaging.md`
-  for the full registration flow.
+- A new plugin needs **no packaging at all** — it is a folder under
+  `packages/ckeditor5/src/plugins/` and is registered by editing `plugins.ts`. See
+  `references/tooling-and-packaging.md` for the registration flow.
+- The former plugin packages showed an older shape, still visible in history:
+  scope `@triliumnext/`, `"type": "module"`, `"main": "src/index.ts"` (ships TS source — no
+  per-package dist), a `peerDependencies` entry for `ckeditor5` matching the repo's pin, pulled in with
+  `workspace:*`. Don't copy it for new work.
 
 ## TypeScript config
 
@@ -109,8 +111,12 @@ extends it for tests.
 
 ## Localization
 
-User-facing strings go through `editor.t( … )`. Translations live in `lang/en.po` (gettext PO) with
-disambiguation/notes in `lang/contexts.json`.
+User-facing strings go through `editor.t( … )`, passing **the English text itself** as the message
+id. The English entry then goes under `text-editor.ck` in
+`apps/client/src/translations/en/translation.json`, keyed by the slug of that text. Two silent
+traps: the function must be *named* `t`, and its first argument must be a literal — anything else
+renders English forever. There are no `lang/en.po`/`contexts.json` catalogs (removed) and no host
+`translate` config (retired). Full rules in `references/ui-and-localization.md`.
 
 ## Visibility & documentation
 

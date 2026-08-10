@@ -13,14 +13,26 @@ interface FormCheckboxProps {
      */
     hint?: string;
     currentValue: boolean;
+    /**
+     * Shows the native mixed state (a dash), e.g. for a parent whose children are partially selected.
+     * `indeterminate` is a DOM property only (there is no HTML attribute), so it is applied via a ref.
+     */
+    indeterminate?: boolean;
     disabled?: boolean;
     onChange(newValue: boolean): void;
     containerStyle?: CSSProperties;
 }
 
-export default function FormCheckbox({ name, disabled, label, currentValue, onChange, hint, containerStyle }: FormCheckboxProps) {
+export default function FormCheckbox({ name, disabled, label, currentValue, indeterminate, onChange, hint, containerStyle }: FormCheckboxProps) {
     const labelRef = useRef<HTMLLabelElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const id = useUniqueName(name);
+
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.indeterminate = indeterminate ?? false;
+        }
+    }, [indeterminate]);
 
     useEffect(() => {
         if (!hint || !labelRef.current) return;
@@ -54,6 +66,7 @@ export default function FormCheckbox({ name, disabled, label, currentValue, onCh
             >
                 <input
                     id={id}
+                    ref={inputRef}
                     className="form-check-input"
                     type="checkbox"
                     name={id}

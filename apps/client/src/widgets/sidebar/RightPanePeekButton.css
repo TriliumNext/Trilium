@@ -30,13 +30,16 @@ body.desktop.background-effects #center-pane:has(.note-split.last-visible.bgfx) 
     align-items: center;
     justify-content: center;
     border: 0;
-    border-bottom: 1px solid var(--status-bar-border-color);
     background: transparent;
     padding: 0;
     font-size: 16px;
     cursor: pointer;
     color: var(--peek-button-arrow-color);
     transition: background 250ms ease-in, color 250ms ease-in;
+
+    body.experimental-feature-new-layout.layout-vertical & {
+        border-bottom: 1px solid var(--status-bar-border-color);
+    }
 
     &.right-pane-peek-button-action-expand {
         background: var(--peek-button-expand-background-color);

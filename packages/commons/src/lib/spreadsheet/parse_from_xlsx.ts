@@ -182,6 +182,9 @@ function buildDrawing(wb: ExcelJS.Workbook, sheet: IWorksheetData, sheetId: stri
     if (!source) return null;
 
     const box = anchorToBox(sheet, image.range);
+    /* v8 ignore next -- exceljs refuses to *write* an anchor with no tl or no br/ext, so this
+       guard is only reachable from a malformed third-party file; anchorToBox's own null returns
+       are covered directly in the spec. */
     if (!box) return null;
 
     // Univer keeps the orientation fields on every transform; imports are always upright.
@@ -204,7 +207,7 @@ function buildDrawing(wb: ExcelJS.Workbook, sheet: IWorksheetData, sheetId: stri
 }
 
 /** Converts an exceljs media entry to a base64 `data:` URL, or null for an unsupported format. */
-function mediaToDataUrl(media: { extension?: string; buffer?: Uint8Array | ArrayBuffer } | undefined): string | null {
+export function mediaToDataUrl(media: { extension?: string; buffer?: Uint8Array | ArrayBuffer } | undefined): string | null {
     const mime = imageMime(media?.extension);
     if (!mime || !media?.buffer) return null;
     const bytes = media.buffer instanceof Uint8Array ? media.buffer : new Uint8Array(media.buffer);
@@ -226,7 +229,7 @@ function imageMime(extension: string | undefined): string | null {
  * the absolute `left`/`top`/`width`/`height`. The top-left comes from `tl`; the bottom-right from
  * `br` (two-cell anchor) or `tl + ext` (one-cell anchor).
  */
-function anchorToBox(sheet: IWorksheetData, range: ExcelJS.ImageRange): { from: CellAnchor; to: CellAnchor; left: number; top: number; width: number; height: number } | null {
+export function anchorToBox(sheet: IWorksheetData, range: ExcelJS.ImageRange): { from: CellAnchor; to: CellAnchor; left: number; top: number; width: number; height: number } | null {
     const tl = range?.tl as { col: number; row: number } | undefined;
     if (!tl) return null;
 
@@ -311,7 +314,7 @@ function rowHeightPx(sheet: IWorksheetData, row: number): number {
 }
 
 /** Base64-encodes raw bytes in both Node (server import) and the browser. */
-function bytesToBase64(bytes: Uint8Array): string {
+export function bytesToBase64(bytes: Uint8Array): string {
     if (typeof Buffer !== "undefined") {
         return Buffer.from(bytes).toString("base64");
     }

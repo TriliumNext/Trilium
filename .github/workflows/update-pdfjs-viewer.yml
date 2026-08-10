@@ -1,0 +1,152 @@
+name: Update PDF.js viewer
+
+# Owns the whole pdfjs-dist bump, because half of one is worse than none.
+#
+# Two copies of pdf.js meet at runtime: the viewer application vendored under
+# packages/pdfjs-viewer/viewer, and the library copied out of the npm package at build
+# time. pdf.js compares their versions when the viewer starts, so bumping the
+# dependency without re-vendoring produces a tree that cannot open a single PDF. That
+# is why Renovate is disabled for pdfjs-dist (see renovate.json) — a bare version bump
+# is never a useful change.
+#
+# So this polls npm instead: bump the dependency, re-vendor the viewer from the
+# matching pdf.js release, verify, and open one PR carrying all of it.
+#
+# Deliberately not triggered by pushes to packages/pdfjs-viewer/package.json: a human
+# pinning pdfjs-dist to a particular version would find it dragged straight back to
+# latest. A hand bump that forgets the re-vendor is caught by src/vendored_viewer.spec.ts
+# instead.
+on:
+  schedule:
+    - cron: "0 5 * * 2" # Tuesdays 05:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  vendor-viewer:
+    # Matched to the e2e-pdfjs-viewer job in playwright.yml, which runs the same suite.
+    runs-on: ubuntu-22.04
+    name: Bump pdf.js and re-vendor the viewer
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Bump pdfjs-dist
+        id: bump
+        # `update --latest` writes both package.json and the lockfile, and keeps the
+        # exact pin exact. It installs too, which the re-vendor and the suites below
+        # need — build.ts copies the library straight out of node_modules.
+        run: |
+          read_version() { node -p "require('./packages/pdfjs-viewer/package.json').devDependencies['pdfjs-dist']"; }
+          from=$(read_version)
+          pnpm --filter pdfjs-viewer update pdfjs-dist --latest
+          to=$(read_version)
+          [ "$from" = "$to" ] && changed=false || changed=true
+          {
+            echo "from=$from"
+            echo "to=$to"
+            echo "changed=$changed"
+          } >> "$GITHUB_OUTPUT"
+      - name: Re-vendor the viewer
+        # Fails loudly if our viewer.html patches no longer match upstream's markup.
+        if: steps.bump.outputs.changed == 'true'
+        run: pnpm --filter pdfjs-viewer update-viewer
+      - name: Unit tests
+        if: steps.bump.outputs.changed == 'true'
+        run: pnpm --filter pdfjs-viewer test
+      - name: Install Playwright browsers
+        if: steps.bump.outputs.changed == 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: End-to-end tests
+        # Worth running here even though playwright.yml covers pull requests: a PR opened
+        # by a *scheduled* run carries the Actions bot as its triggering actor, and GitHub
+        # will not start workflows for it (the exception is a run someone dispatched by
+        # hand, which propagates their identity). So on the normal path this is the only
+        # thing that drives the regenerated viewer in a browser — which is the only way an
+        # upstream change that breaks our integration, rather than our patches, shows up.
+        if: steps.bump.outputs.changed == 'true'
+        run: pnpm --filter pdfjs-viewer e2e
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pdfjs-viewer e2e report
+          path: packages/pdfjs-viewer/test-output
+      - name: Compose the PR body
+        # Written to a file rather than inlined below, because upstream's release notes
+        # run to tens of kilobytes of markdown and would not survive YAML interpolation.
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FROM: ${{ steps.bump.outputs.from }}
+          TO: ${{ steps.bump.outputs.to }}
+        run: |
+          body="$RUNNER_TEMP/pr-body.md"
+          printf 'Updates `pdfjs-dist` from %s to %s **and** re-vendors the viewer under\n' "$FROM" "$TO" > "$body"
+          cat >> "$body" <<'EOF'
+          `packages/pdfjs-viewer/viewer` from the matching pdf.js release. The two have to
+          move together — pdf.js refuses to start when their versions disagree — which is
+          why neither Renovate nor Dependabot handles this dependency.
+
+          Re-vendoring re-applies our patches to `viewer.html` (the custom stylesheet and
+          script, and the relaxed `style-src-elem` CSP) and fails if upstream's markup moved
+          out from under them.
+
+          CI ran the unit and Playwright suites against the result before opening this PR,
+          since a scheduled run's PR does not start workflows of its own.
+
+          ### Vendored files changed
+
+          Only `viewer.html` is patched by us; everything else is upstream verbatim.
+
+          ```
+          EOF
+          git diff --stat --stat-count=12 -- packages/pdfjs-viewer/viewer >> "$body"
+          printf '```\n\n' >> "$body"
+
+          # Upstream's notes are cumulative since the previous stable release, so they cover
+          # this hop exactly — unless more than one release was skipped, hence the compare
+          # link, which is always exact.
+          printf '[Upstream comparison](https://github.com/mozilla/pdf.js/compare/v%s...v%s)\n\n' "$FROM" "$TO" >> "$body"
+          notes=$(gh api "/repos/mozilla/pdf.js/releases/tags/v$TO" --jq .body 2>/dev/null || true)
+          if [ -n "$notes" ]; then
+            if [ "${#notes}" -gt 30000 ]; then
+              notes=$(printf '%s' "$notes" | head -c 30000)
+              notes="$notes"$'\n\n_Release notes truncated._'
+            fi
+            {
+              printf '<details>\n<summary>pdf.js release notes for v%s</summary>\n\n' "$TO"
+              printf '%s\n\n' "$notes"
+              printf '</details>\n'
+            } >> "$body"
+          else
+            printf '_No GitHub release notes found for v%s._\n' "$TO" >> "$body"
+          fi
+      - name: Open a PR
+        if: steps.bump.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          add-paths: |
+            packages/pdfjs-viewer/package.json
+            packages/pdfjs-viewer/viewer
+            pnpm-lock.yaml
+          branch: chore/update-pdfjs-viewer
+          commit-message: "build(pdfjs): update to pdf.js ${{ steps.bump.outputs.to }}"
+          title: "build(pdfjs): update to pdf.js ${{ steps.bump.outputs.to }}"
+          body-path: ${{ runner.temp }}/pr-body.md
+          labels: dependencies

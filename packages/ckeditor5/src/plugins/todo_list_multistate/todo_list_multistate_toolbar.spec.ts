@@ -205,17 +205,17 @@ describe("TodoListMultistateToolbar", () => {
         expect(balloon.visibleView).toBeNull();
     });
 
-    it("uses the configured translate function for labels", async () => {
-        const translate = vi.fn((key: string) => `T:${key}`);
-        await createEditor({ translate });
+    it("labels the edit button from the editor dictionary", async () => {
+        // Keyed by `en`, the language the editor resolves messages under when none is configured.
+        await createEditor({ translations: [ {}, { en: { dictionary: { "Edit task states": "Editează stările" } } } ] });
         rightClick(getCheckbox(0));
-        // The edit button tooltip is routed through translate().
-        expect(translate).toHaveBeenCalledWith("text-editor.edit-states-tooltip");
+
+        const editButton = getBalloon().view.element?.querySelector(".ck-task-state-edit");
+        expect(editButton?.getAttribute("data-cke-tooltip-text")).toBe("Editează stările");
     });
 
     it("appends an unknown-state label for an unconfigured task state", async () => {
-        const translate = vi.fn((key: string) => key === "text-editor.unknown-task-state" ? "Unknown state" : key);
-        await createEditor({ translate });
+        await createEditor();
         // Give the first todo item a state not present in the configured set.
         editor.model.change((writer) => {
             writer.setAttribute("taskState", "mystery", getBlock(0));
@@ -225,6 +225,8 @@ describe("TodoListMultistateToolbar", () => {
 
         const unknown = balloon.view.element?.querySelector(".tn-task-state-unknown");
         expect(unknown).not.toBeNull();
+        // No dictionary is configured, so the prefix renders its English message id.
+        expect(unknown?.textContent).toBe("Undefined custom task state: mystery");
         const name = balloon.view.element?.querySelector(".tn-task-state-unknown-name");
         expect(name?.textContent).toBe("mystery");
     });

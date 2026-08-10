@@ -17,9 +17,12 @@ describe("CopyToClipboardButton", () => {
         expect(editor.ui.componentFactory.has("copyToClipboard")).toBe(true);
     });
 
-    it("creates a button with the correct tooltip", () => {
-        const button = editor.ui.componentFactory.create("copyToClipboard") as { tooltip: string; fire(name: string): void };
-        expect(button.tooltip).toBe("Copy to clipboard");
+    // No dictionary is configured here, so `t()` renders the message id, which is the English
+    // label. The label doubles as the tooltip and as the icon-only button's accessible name.
+    it("creates a button labelled for the tooltip and for screen readers", () => {
+        const button = editor.ui.componentFactory.create("copyToClipboard") as { label: string; tooltip: boolean };
+        expect(button.label).toBe("Copy to clipboard");
+        expect(button.tooltip).toBe(true);
     });
 
     it("wires the button to execute the copyToClipboard command", () => {

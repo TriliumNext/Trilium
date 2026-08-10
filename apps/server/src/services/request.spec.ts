@@ -1,3 +1,4 @@
+import dns from "node:dns";
 import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -117,7 +118,9 @@ vi.mock("http-proxy-agent", () => ({ HttpProxyAgent }));
 vi.mock("https-proxy-agent", () => ({ HttpsProxyAgent }));
 vi.mock("@triliumnext/core", () => ({
     getLog: () => getLogMock,
-    sync_options: { getSyncProxy: getSyncProxyMock }
+    sync_options: { getSyncProxy: getSyncProxyMock },
+    // safe_fetch, reached through getImage's address validation, raises this one.
+    ValidationError: class ValidationError extends Error {}
 }));
 
 import type { ExecOpts } from "@triliumnext/core";
@@ -470,6 +473,77 @@ describe("NodeRequestProvider.getImage", () => {
         state.onEnd = null;
         fakeHttp.request.mockClear();
         getSyncProxyMock.mockReturnValue(null);
+        // Every image URL is resolved before it is fetched, so the hostnames used throughout have
+        // to resolve to something — and to something public, or the download is refused.
+        vi.spyOn(dns.promises, "lookup").mockResolvedValue([
+            { address: "93.184.216.34", family: 4 }
+        ] as unknown as dns.LookupAddress);
+    });
+
+    describe("address validation", () => {
+        /** The bytes an allowed download would have produced, so a leak would be visible. */
+        const respondWithBytes = (req: FakeRequest) => {
+            const res = makeResponse(200, "OK");
+            req.triggerResponse(res);
+            res.emitData(Buffer.from([1, 2, 3]));
+            res.emitEnd();
+        };
+
+        it("refuses an address inside the network the server itself sits on", async () => {
+            state.onEnd = respondWithBytes;
+
+            for (const imageUrl of [
+                "http://127.0.0.1/pic.png",
+                "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+                "http://10.0.0.1/pic.png",
+                "http://192.168.1.1/pic.png",
+                "http://172.16.0.1/pic.png",
+                "http://[::1]/pic.png"
+            ]) {
+                await expect(provider.getImage(imageUrl)).rejects.toThrow(/private\/internal/);
+            }
+
+            // Refused before anything is sent: the request must not be what discovers the problem.
+            expect(state.requests).toHaveLength(0);
+        });
+
+        it("refuses a hostname that resolves into that network, however public it looks", async () => {
+            vi.spyOn(dns.promises, "lookup").mockResolvedValue([
+                { address: "127.0.0.1", family: 4 }
+            ] as unknown as dns.LookupAddress);
+            state.onEnd = respondWithBytes;
+
+            await expect(provider.getImage("http://images.example.com/pic.png"))
+                .rejects.toThrow(/private\/internal/);
+            expect(state.requests).toHaveLength(0);
+        });
+
+        it("connects only to the address it validated, so a second lookup cannot redirect it", async () => {
+            state.onEnd = respondWithBytes;
+            await provider.getImage("http://images.example.com/pic.png");
+
+            // The connection resolves the hostname through this, rather than asking DNS again —
+            // which is what a rebinding answer would otherwise get to reply to.
+            const lookup = state.requests[0].opts.lookup;
+            expect(typeof lookup).toBe("function");
+
+            const resolved = await new Promise((resolve, reject) => {
+                lookup("images.example.com", { all: true }, (err: Error | null, addresses: unknown) =>
+                    err ? reject(err) : resolve(addresses));
+            });
+            expect(resolved).toEqual([{ address: "93.184.216.34", family: 4 }]);
+        });
+
+        it("refuses a URL that is not http(s), or that carries credentials", async () => {
+            state.onEnd = respondWithBytes;
+
+            await expect(provider.getImage("file:///etc/passwd")).rejects.toThrow(/http and https/);
+            await expect(provider.getImage("ftp://example.com/pic.png")).rejects.toThrow(/http and https/);
+            await expect(provider.getImage("not-a-url")).rejects.toThrow(/Invalid URL/);
+            await expect(provider.getImage("http://user:secret@example.com/pic.png"))
+                .rejects.toThrow(/credentials/);
+            expect(state.requests).toHaveLength(0);
+        });
     });
 
     it("downloads image bytes and resolves an ArrayBuffer", async () => {

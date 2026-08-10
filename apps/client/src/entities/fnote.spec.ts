@@ -605,6 +605,39 @@ describe("FNote attributes & inheritance", () => {
         // definitions originate from three different notes -> the cross-note sort branch runs both ways
         expect(noteIds.size).toBeGreaterThanOrEqual(3);
     });
+
+    it("getAttributeDefinitions lets a note's own definition win over the one it inherits", () => {
+        const parent = buildNote({
+            id: "shadowParent",
+            title: "shadowParent",
+            "#label:status(inheritable)": "promoted,single,text"
+        });
+        const child = buildNote({
+            id: "shadowChild",
+            title: "shadowChild",
+            "#label:status(inheritable)": "promoted,single,select,options=Todo;Done"
+        });
+        registerBranch("br-shadow", "shadowChild", "shadowParent", 0);
+        parent.addChild("shadowChild", "br-shadow", false);
+        child.addParent("shadowParent", "br-shadow", false);
+
+        delete noteAttributeCache.attributes["shadowChild"];
+        delete noteAttributeCache.attributes["shadowParent"];
+
+        // Both definitions reach the child, but only the nearest describes the field — otherwise the
+        // child would show two Status inputs for the same label.
+        expect(child.getAttributes().filter((attr) => attr.name === "label:status")).toHaveLength(2);
+
+        const definitions = child.getAttributeDefinitions().filter((attr) => attr.name === "label:status");
+        expect(definitions).toHaveLength(1);
+        expect(definitions[0].noteId).toBe("shadowChild");
+        expect(definitions[0].getDefinition().selectOptions).toEqual([ "Todo", "Done" ]);
+
+        // The parent still sees its own, unchanged.
+        expect(parent.getAttributeDefinitions()
+            .filter((attr) => attr.name === "label:status")
+            .map((attr) => attr.noteId)).toEqual([ "shadowParent" ]);
+    });
 });
 
 describe("FNote paths & hierarchy", () => {
@@ -1025,6 +1058,24 @@ describe("FNote system-note predicates", () => {
 
         expect(makeNote({ mime: "application/javascript;env=backend" }).isTriliumScript()).toBe(true);
         expect(makeNote({ mime: "text/plain" }).isTriliumScript()).toBe(false);
+    });
+
+    it("mime predicates survive a note row that arrives without a mime", () => {
+        const note = makeNote({ type: "code", mime: "application/javascript;env=backend" });
+        expect(note.isTriliumScript()).toBe(true);
+
+        // What froca_updater does with a ws payload: `note.update(ec.entity as FNoteRow)`. A server
+        // that builds that payload from a becca skeleton note (a note referenced by a branch that
+        // synced ahead of it) has `mime`/`title` undefined, and JSON.stringify drops the keys
+        // entirely - so the cast hides a row that is missing them. froca is the last line of
+        // defence here since it cannot tell such a row apart from a complete one.
+        note.update({ noteId: note.noteId, blobId: "blob1", isProtected: false } as unknown as FNoteRow);
+
+        expect(() => note.isTriliumScript()).not.toThrow();
+        expect(note.isTriliumScript()).toBe(false);
+        expect(note.isJavaScript()).toBe(false);
+        expect(note.isTriliumSqlite()).toBe(false);
+        expect(note.getScriptEnv()).toBeNull();
     });
 
     it("getScriptEnv returns frontend / backend / null", () => {

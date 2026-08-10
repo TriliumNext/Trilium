@@ -35,7 +35,9 @@ function fakeRequest(oneNoteImport?: Request["session"]["oneNoteImport"]): Reque
 beforeEach(() => {
     oauthMock.requestDeviceCode.mockReset();
     oauthMock.pollDeviceToken.mockReset();
+    oauthMock.refreshAccessToken.mockReset();
     graphMock.getAccount.mockReset();
+    graphMock.listNotebooks.mockReset();
 });
 
 describe("deviceLogin", () => {
@@ -77,6 +79,31 @@ describe("deviceLogin", () => {
 
         expect(req.session.oneNoteImport?.accessToken).toBeUndefined();
         expect(req.session.oneNoteImport?.account).toBeUndefined();
+    });
+});
+
+describe("getNotebooks", () => {
+    it("lists the notebooks while the stored token is still valid", async () => {
+        graphMock.listNotebooks.mockResolvedValue([{ id: "nb1", title: "Notebook 1", sections: [], sectionGroups: [] }]);
+        const req = fakeRequest({ accessToken: "access-token", refreshToken: "refresh-token", expiresAt: Date.now() + 3_600_000 });
+
+        expect(await onenoteImportRoute.getNotebooks(req)).toEqual({ notebooks: [{ id: "nb1", title: "Notebook 1", sections: [], sectionGroups: [] }] });
+        expect(oauthMock.refreshAccessToken).not.toHaveBeenCalled();
+    });
+
+    it("reports why an expired connection failed instead of an empty notebook list", async () => {
+        // The status endpoint still calls this session connected (a token is stored), so a flat 401 would
+        // leave the dialog showing "no notebooks were found" for what is really an expired sign-in.
+        oauthMock.refreshAccessToken.mockRejectedValue(new Error("OAuth token request failed: AADSTS700082: The refresh token has expired."));
+        const req = fakeRequest({ accessToken: "stale-token", refreshToken: "dead-refresh-token", expiresAt: Date.now() - 1000 });
+
+        expect(await onenoteImportRoute.getNotebooks(req)).toEqual([401, expect.stringContaining("The refresh token has expired.")]);
+        expect(graphMock.listNotebooks).not.toHaveBeenCalled();
+    });
+
+    it("tells a disconnected session to sign in again rather than listing nothing", async () => {
+        expect(await onenoteImportRoute.getNotebooks(fakeRequest())).toEqual([401, expect.stringContaining("sign in again")]);
+        expect(graphMock.listNotebooks).not.toHaveBeenCalled();
     });
 });
 

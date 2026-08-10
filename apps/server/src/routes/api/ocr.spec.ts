@@ -1,4 +1,4 @@
-import { becca, cls, getSql, note_service as noteService } from "@triliumnext/core";
+import { cls, note_service as noteService } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -84,24 +84,4 @@ describe("OCR API", () => {
         });
     });
 
-    describe("OCR text retrieval", () => {
-        it("returns 404 for a missing note / attachment", async () => {
-            expect(await ocrRoutes.getNoteOCRText({ params: { noteId: "missing" } } as unknown as Request<{ noteId: string }>))
-                .toEqual([404, { success: false, message: "Note not found" }]);
-            expect(await ocrRoutes.getAttachmentOCRText({ params: { attachmentId: "missing" } } as unknown as Request<{ attachmentId: string }>))
-                .toEqual([404, { success: false, message: "Attachment not found" }]);
-        });
-
-        it("reports no OCR text when none is stored", async () => {
-            const result = await ocrRoutes.getNoteOCRText({ params: { noteId } } as unknown as Request<{ noteId: string }>);
-            expect(result).toEqual({ success: true, text: "", hasOcr: false });
-        });
-
-        it("returns stored OCR text from the blob", async () => {
-            const blobId = becca.getNoteOrThrow(noteId).blobId;
-            cls.init(() => getSql().execute("UPDATE blobs SET textRepresentation = ? WHERE blobId = ?", ["scanned text", blobId]));
-            const result = await ocrRoutes.getNoteOCRText({ params: { noteId } } as unknown as Request<{ noteId: string }>);
-            expect(result).toEqual({ success: true, text: "scanned text", hasOcr: true });
-        });
-    });
 });

@@ -1,0 +1,62 @@
+<p>Since v0.105.0, office documents stored in Trilium display an inline preview
+  of their content, without the need to download them or open them in an
+  external application.</p>
+<h2>Supported formats</h2>
+<ul>
+  <li>Microsoft Office formats: Word (<code spellcheck="false">.docx</code>),
+    Excel (<code spellcheck="false">.xlsx</code>) and PowerPoint (<code spellcheck="false">.pptx</code>).</li>
+  <li>The OpenDocument alternatives to the previous formats (Text, Spreadsheet,
+    Presentation), created by editors such as LibreOffice and OpenOffice.</li>
+  <li><a href="https://en.wikipedia.org/wiki/Rich_Text_Format">Rich Text Format (RTF)</a>.</li>
+  <li><a href="https://en.wikipedia.org/wiki/EPUB">EPUB</a> e-books.</li>
+</ul>
+<aside class="admonition note">
+  <p>Older Microsoft Office formats (<code spellcheck="false">.doc</code>,
+    <code
+    spellcheck="false">.xls</code>, <code spellcheck="false">.ppt</code>) are not supported.</p>
+</aside>
+<h2>How it works</h2>
+<p>The document is converted to a simplified representation on the server
+  and rendered as read-only content, similar to a&nbsp;<a class="reference-link"
+  href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note.</p>
+<p>The preview generally preserves:</p>
+<ul>
+  <li>Headings, paragraphs and text alignment.</li>
+  <li>Text formatting: bold, italic, underline, strikethrough, subscript/superscript,
+    text and highlight colors, fonts and font sizes.</li>
+  <li>Bulleted and numbered lists.</li>
+  <li>Tables, including merged cells and cell background colors.</li>
+  <li>Embedded images.</li>
+  <li>Links and footnotes.</li>
+</ul>
+<p>To keep links readable regardless of the theme, the default hyperlink
+  color applied automatically by word processors is ignored; links that were
+  deliberately given a custom color by the author keep it.</p>
+<h2>Limitations</h2>
+<ul>
+  <li>The preview is read-only. To edit the document, download it or open it
+    in an external application; the content of the note is not affected by
+    the preview. Alternatively copy and paste it into a text note.</li>
+  <li>The preview is a simplified rendering: complex layouts (columns, text
+    boxes, headers and footers), charts and the precise styling of table borders
+    are not reproduced.</li>
+  <li>Documents larger than 20 MB are not previewed, to keep the server responsive.
+    The usual download and open actions remain available.</li>
+  <li>If the document cannot be converted, a notice is displayed instead and
+    the file can still be downloaded or opened externally.</li>
+</ul>
+<h2>Relation with other features</h2>
+<ul>
+  <li>The same preview is used when an office document is displayed in the&nbsp;
+    <a
+    class="reference-link" href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;or embedded in a text note via&nbsp;<a class="reference-link"
+      href="#root/_help_nBAXQFj20hS1">Include Note</a>, as well as for office documents
+      stored as&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>.</li>
+  <li>Independently of the preview, the text content of office documents is
+    also extracted in the background so that it can be found with&nbsp;<a class="reference-link"
+    href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;via&nbsp;<a class="reference-link"
+    href="#root/_help_TiQbQDgP8L5t">Text Extraction (OCR)</a>.</li>
+  <li><code spellcheck="false">.csv</code> and <code spellcheck="false">.xlsx</code> files
+    can be converted to&nbsp;<a class="reference-link" href="#root/_help_GWHEkY4I4OE3">Spreadsheets</a>&nbsp;via
+    the <a href="#root/_help_mHbBMPDPkVV5">import</a> function.</li>
+</ul>

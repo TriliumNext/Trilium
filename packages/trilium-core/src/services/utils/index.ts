@@ -26,8 +26,13 @@ export function md5(content: string | Uint8Array) {
     return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function isStringNote(type: string | undefined, mime: string) {
-    return (type && STRING_NOTE_TYPES.has(type)) || mime.startsWith("text/") || STRING_MIME_TYPES.has(mime);
+/**
+ * `mime` is optional because becca materialises "skeleton" notes for entities that arrive out of
+ * order during sync (see `BBranch.childNote`), and those carry neither a type nor a mime until the
+ * real row lands. Such a note is reported as binary rather than crashing the caller.
+ */
+export function isStringNote(type: string | undefined, mime: string | undefined) {
+    return (type && STRING_NOTE_TYPES.has(type)) || (!!mime && (mime.startsWith("text/") || STRING_MIME_TYPES.has(mime)));
 }
 
 export function randomString(length: number) {
@@ -173,7 +178,7 @@ export function sanitizeSvg(svg: string): string {
 export function getContentDisposition(filename: string) {
     const sanitizedFilename = sanitizeFileName(filename).trim() || "file";
     const uriEncodedFilename = encodeURIComponent(sanitizedFilename);
-    return `file; filename="${uriEncodedFilename}"; filename*=UTF-8''${uriEncodedFilename}`;
+    return `attachment; filename="${uriEncodedFilename}"; filename*=UTF-8''${uriEncodedFilename}`;
 }
 
 export function formatDownloadTitle(fileName: string, type: string | null, mime: string) {

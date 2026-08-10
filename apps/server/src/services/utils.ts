@@ -85,7 +85,7 @@ export function getContentDisposition(filename: string) {
 }
 
 /** @deprecated */
-export function isStringNote(type: string | undefined, mime: string) {
+export function isStringNote(type: string | undefined, mime: string | undefined) {
     return coreUtils.isStringNote(type, mime);
 }
 

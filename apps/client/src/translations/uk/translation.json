@@ -7,20 +7,25 @@
     "link_title_mirrors": "заголовок посилання відображає поточний заголовок нотатки",
     "link_title_arbitrary": "заголовок посилання можна змінювати довільно",
     "link_title": "Заголовок посилання",
-    "button_add_link": "Додати посилання"
+    "button_add_link": "Додати посилання",
+    "edit_link": "Редагувати посилання"
   },
   "branch_prefix": {
     "save": "Зберегти",
     "edit_branch_prefix": "Редагувати префікс гілки",
     "help_on_tree_prefix": "Довідка щодо префіксу дерева",
-    "prefix": "Префікс: ",
+    "prefix": "Префікс",
     "branch_prefix_saved": "Префікс гілки збережено.",
     "edit_branch_prefix_multiple": "Редагувати префікс гілки для {{count}} гілок",
     "branch_prefix_saved_multiple": "Префікс гілки збережено для {{count}} гілок.",
-    "affected_branches": "Уражені гілки ({{count}}):"
+    "affected_branches": "Уражені гілки ({{count}}):",
+    "cancel": "Скасувати"
   },
   "about": {
-    "data_directory": "Каталог даних:"
+    "data_directory": "Каталог даних:",
+    "version_label": "Версія:",
+    "version": "{{appVersion}} (база даних: {{dbVersion}}, протокол синхронізації: {{syncVersion}})",
+    "license_tooltip": "Переглянути ліцензійну угоду"
   },
   "global_menu": {
     "about": "Про Trilium Notes",
@@ -55,7 +60,8 @@
   },
   "modal": {
     "help_title": "Показати більше інформації про це вікно",
-    "close": "Закрити"
+    "close": "Закрити",
+    "cancel": "Скасувати"
   },
   "toast": {
     "critical-error": {
@@ -185,7 +191,9 @@
     "notes_to_be_deleted": "Наступні нотатки будуть видалені ({{notesCount}})",
     "no_note_to_delete": "Жодну нотатку не буде видалено (лише клони).",
     "broken_relations_to_be_deleted": "Наступні зв'язки будуть розірвані та видалені ({{ relationCount}})",
-    "cancel": "Скасувати"
+    "cancel": "Скасувати",
+    "title": "Видалити нотатки",
+    "delete": "Видалити"
   },
   "export": {
     "export_note_title": "Експорт нотатки",
@@ -295,7 +303,8 @@
     "deleted_notes_message": "Видалені нотатки стерто.",
     "no_changes_message": "Поки що жодних змін...",
     "undelete_link": "відновити",
-    "confirm_undelete": "Ви хочете відновити цю нотатку та її піднотатки?"
+    "confirm_undelete": "Ви хочете відновити цю нотатку та її піднотатки?",
+    "deleted_notes_title": "Видалені нотатки"
   },
   "include_note": {
     "dialog_title": "Включити нотатку",
@@ -373,23 +382,18 @@
     "tooltip": "Якщо ви позначите цей параметр, Trilium спробує зменшити розмір завантажених зображень шляхом масштабування та оптимізації, що може вплинути на сприйняту якість зображення. Якщо вимкнути цей параметр, зображення будуть завантажені без змін."
   },
   "attribute_detail": {
-    "attr_detail_title": "Деталі Атрибуту Заголовок",
     "close_button_title": "Скасувати зміни та закрити",
-    "attr_is_owned_by": "Атрибут належить",
-    "attr_name_title": "Ім'я атрибута може складатися лише з буквено-цифрових символів, двокрапки та символу підкреслення",
     "name": "Назва",
     "value": "Значення",
     "target_note_title": "Зв'язок — це іменований зв'язок між джерелом та цільовою нотаткою.",
     "target_note": "Цільова нотатка",
     "promoted_title": "Просунутий атрибут відображається на нотатці у помітному вигляді.",
     "promoted": "Просунуті",
-    "promoted_alias_title": "Назва, яка відображатиметься в інтерфейсі просунутих атрибутів.",
     "promoted_alias": "Псевдонім",
     "multiplicity_title": "Множинність визначає, скільки атрибутів з однаковою назвою можна створити — максимум 1 або більше 1.",
     "multiplicity": "Множинність",
     "single_value": "Одне значення",
     "multi_value": "Декілька значень",
-    "label_type_title": "Тип мітки допоможе Trilium вибрати відповідний інтерфейс для введення значення мітки.",
     "label_type": "Тип",
     "text": "Текст",
     "number": "Номер",
@@ -405,14 +409,11 @@
     "inverse_relation": "Інверсний зв'язок",
     "inheritable_title": "Спадковий атрибут буде успадкований усіма нащадками в цьому дереві.",
     "inheritable": "Спадковий",
-    "save_and_close": "Зберегти & закрити <kbd>Ctrl+Enter</kbd>",
     "delete": "Видалити",
     "related_notes_title": "Інші нотатки з цією міткою",
     "more_notes": "Більше нотаток",
     "label": "Деталі мітки",
-    "label_definition": "Деталі визначення мітки",
     "relation": "Деталі зв'язку",
-    "relation_definition": "Деталі визначення зв'язку",
     "disable_versioning": "вимикає автоматичне керування версіями. Корисно, наприклад, для великих, але неважливих нотаток, наприклад, великих JS-бібліотек, що використовуються для написання скриптів",
     "calendar_root": "позначити нотатку, яка буде використовуватись для денних нотатків за замовчуванням. Тільки одна може бути такою.",
     "archived": "нотатки з цією міткою не будуть видимими за замовчуванням у результатах пошуку (також у діалогових вікнах Перейти до..., Додати посилання... тощо).",
@@ -492,7 +493,6 @@
     "share_favicon": "Нотатку до значка веб-сторінки, яку потрібно встановити на спільній сторінці. Зазвичай потрібно встановити її як спільний кореневий каталог і зробити успадковуваною. Нотатку до значка веб-сторінки також потрібно розмістити у спільному піддереві. Розгляньте можливість використання 'share_hidden_from_tree'.",
     "is_owned_by_note": "належить до нотатки",
     "other_notes_with_name": "Інші нотатки {{attributeType}} з назвою \"{{attributeName}}\"",
-    "and_more": "... та ще {{count}}.",
     "print_landscape": "Під час експорту в PDF змінює орієнтацію сторінки на альбомну замість портретної.",
     "print_page_size": "Під час експорту в PDF змінює розмір сторінки. Підтримувані значення: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
     "color_type": "Колір"
@@ -1044,7 +1044,7 @@
     "no_attachments": "Ця нотатка не має вкладень."
   },
   "book": {
-    "no_children_help": "Ця колекція не має дочірніх нотаток, тому нічого відображати. Див. <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">вікі</a> для отримання детальної інформації.",
+    "no_children_help": "Ця колекція не має дочірніх нотаток, тому нічого відображати.",
     "drag_locked_title": "Заблоковано для редагування",
     "drag_locked_message": "Перетягування заборонено, оскільки колекцію заблоковано для редагування."
   },
@@ -1205,12 +1205,12 @@
     "enable_monthly_backup": "Увімкнути щомісячне резервне копіювання",
     "backup_recommendation": "Рекомендується залишати резервне копіювання ввімкненим, але це може уповільнити запуск програм із великими базами даних та/або повільними пристроями зберігання даних.",
     "backup_now": "Резервне копіювання зараз",
-    "backup_database_now": "Резервне копіювання бази даних зараз",
     "existing_backups": "Існуючі резервні копії",
     "date-and-time": "Дата & час",
     "path": "Шлях",
     "database_backed_up_to": "Резервну копію бази даних створено у {{backupFilePath}}",
-    "no_backup_yet": "резервної копії поки що немає"
+    "no_backup_yet": "резервної копії поки що немає",
+    "title": "Резервна копія"
   },
   "etapi": {
     "description": "ETAPI — це REST API, який використовується для програмного доступу до екземпляра Trilium без інтерфейсу користувача.",
@@ -1255,7 +1255,8 @@
     "set_password_heading": "Встановити Пароль",
     "set_password": "Встановити Пароль",
     "password_mismatch": "Нові паролі не однакові.",
-    "password_changed_success": "Пароль змінено. Trilium буде перезавантажено після натискання кнопки OK."
+    "password_changed_success": "Пароль змінено. Trilium буде перезавантажено після натискання кнопки OK.",
+    "cancel": "Скасувати"
   },
   "zoom_factor": {
     "title": "Коефіцієнт масштабування (лише для ПК)",
@@ -1268,10 +1269,15 @@
     "unit": "символи"
   },
   "code-editor-options": {
-    "title": "Редактор"
+    "title": "Редактор",
+    "tab_width": "Ширина табуляції",
+    "tab_width_unit": "пробіли"
   },
   "code_mime_types": {
-    "title": "Доступні типи MIME у спадаючому списку"
+    "title": "Доступні типи MIME у спадаючому списку",
+    "tooltip_syntax_highlighting": "Підсвічування синтаксису",
+    "tooltip_code_note_syntax": "Нотатки з кодом",
+    "tooltip_code_block_syntax": "Блоки коду в Текстових нотатках"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Комбінації клавіш Vim",
@@ -1283,9 +1289,8 @@
   },
   "images": {
     "images_section_title": "Зображення",
-    "download_images_automatically": "Автоматично завантажувати зображення для використання офлайн.",
+    "download_images_automatically": "Завантажувати зображення автоматично",
     "download_images_description": "Вставлений HTML-код може містити посилання на онлайн-зображення, Trilium знайде ці посилання та завантажить зображення, щоб вони були доступні офлайн.",
-    "enable_image_compression": "Увімкнути стиснення зображень",
     "max_image_dimensions": "Максимальна ширина / висота зображення (розмір зображення буде змінено, якщо воно перевищить це значення).",
     "max_image_dimensions_unit": "пікселів",
     "jpeg_quality_description": "Якість JPEG (10 – найгірша якість, 100 – найкраща якість, рекомендовано 50–85)"
@@ -1388,7 +1393,12 @@
     "first-week-has-minimum-days": "Перший тиждень має мінімальну кількість днів",
     "min-days-in-first-week": "Мінімальна кількість днів у першому тижні",
     "first-week-warning": "Зміна параметрів першого тижня може призвести до дублювання з існуючими нотатками тижня, і існуючі нотатки тижня не будуть оновлені відповідно.",
-    "formatting-locale": "Формат дати & числа"
+    "formatting-locale": "Формат дати & числа",
+    "tuesday": "Вівторок",
+    "wednesday": "Середа",
+    "thursday": "Четвер",
+    "friday": "П'ятниця",
+    "saturday": "Субота"
   },
   "quick-search": {
     "no-results": "Результатів не знайдено",
@@ -1414,7 +1424,9 @@
     "toggle-sidebar": "Перемикання бічної панелі",
     "subtree-hidden-tooltip_one": "{{count}} дочірня нотатка, прихована від дерев",
     "subtree-hidden-tooltip_few": "{{count}} дочірніх нотатки, прихованих від дерев",
-    "subtree-hidden-tooltip_many": "{{count}} дочірніх нотаток, прихованих від дерев"
+    "subtree-hidden-tooltip_many": "{{count}} дочірніх нотаток, прихованих від дерев",
+    "subtree-hidden-moved-description-collection": "Ця колекція приховує свої дочірні нотатки в дереві.",
+    "subtree-hidden-moved-title": "Додано до {{title}}"
   },
   "title_bar_buttons": {
     "window-on-top": "Тримати вікно зверху"
@@ -1426,7 +1438,12 @@
     "print_report_collection_content_many": "{{count}} нотаток з колекції не вдалося роздрукувати, тому що вони не підтримуються або захищені."
   },
   "note_title": {
-    "placeholder": "введіть тут заголовок нотатки..."
+    "placeholder": "введіть тут заголовок нотатки...",
+    "note_type_switcher_label": "Змінити з {{type}} на:",
+    "note_type_switcher_collection": "Колекція",
+    "note_type_switcher_others": "Інший тип нотатки",
+    "created_on": "Створено <Value />",
+    "last_modified": "Змінено <Value />"
   },
   "search_result": {
     "no_notes_found": "За заданими параметрами пошуку нотаток не знайдено.",
@@ -1527,7 +1544,8 @@
   "geo-map": {
     "create-child-note-title": "Створіть нову дочірню нотатку та додайте її до карти",
     "create-child-note-instruction": "Клацніть на карті, щоб створити нову нотатку в цьому місці, або натисніть Escape, щоб закрити.",
-    "unable-to-load-map": "Не вдалося завантажити карту."
+    "unable-to-load-map": "Не вдалося завантажити карту.",
+    "add-marker-cancel": "Скасувати"
   },
   "geo-map-context": {
     "open-location": "Відкрити місцезнаходження",
@@ -1672,10 +1690,6 @@
     "close": "Закрити"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Це вкладення буде автоматично видалено через {{time}}",
-    "will_be_deleted_soon": "Це вкладення незабаром буде автоматично видалено",
-    "deletion_reason": ", оскільки вкладення не має посилання у вмісті нотатки. Щоб запобігти видаленню, додайте посилання на вкладення назад у вміст або перетворіть вкладення на нотатку.",
-    "role_and_size": "Роль: {{role}}, розмір: {{size}}, формат даних: {{- mimeType}}",
     "link_copied": "Посилання на вкладення скопійовано в буфер обміну.",
     "unrecognized_role": "Нерозпізнана роль вкладення '{{role}}'."
   },
@@ -1725,13 +1739,16 @@
     "export": "Експорт",
     "import-into-note": "Імпортувати в нотатку",
     "apply-bulk-actions": "Застосувати масові дії",
-    "converted-to-attachments_one": "({{count}}) нотаток перетворено на вкладення.",
-    "converted-to-attachments_few": "",
-    "converted-to-attachments_many": "",
+    "converted-to-attachments_one": "({{count}}) нотатка перетворена на вкладення.",
+    "converted-to-attachments_few": "({{count}}) нотатки перетворено на вкладення.",
+    "converted-to-attachments_many": "({{count}}) нотаток перетворено на вкладення.",
     "convert-to-attachment-confirm": "Ви впевнені, що хочете конвертувати вибрані нотатки у вкладення до їхніх батьківських нотаток? Ця операція застосовується лише до нотаток із зображеннями, інші нотатки будуть пропущені.",
     "open-in-popup": "Швидке редагування",
     "archive": "Архівувати",
-    "unarchive": "Розархівувати"
+    "unarchive": "Розархівувати",
+    "hide-subtree": "Сховати піддерево",
+    "open-in-a-new-window": "Відкрити у новому вікні",
+    "show-subtree": "Показати піддерево"
   },
   "shared_info": {
     "shared_publicly": "Ця нотатка опублікована на {{- link}}.",
@@ -1859,7 +1876,9 @@
     "enable-shadows": "Увімкнути тіні",
     "enable-backdrop-effects": "Увімкнути фонові ефекти для меню, спливаючих вікон та панелей",
     "enable-smooth-scroll": "Увімкнути плавне прокручування",
-    "app-restart-required": "(щоб зміни набули чинності, потрібен перезапуск програми)"
+    "app-restart-required": "Потрібен перезапуск програми",
+    "enable-hardware-acceleration": "Апаратне прискорення (графічний процесор)",
+    "enable-hardware-acceleration-description": "Вимкніть цю функцію, якщо програма відображає порожнє вікно або має збої відображення, спричинені драйверами графічного процесора. Потребує перезапуску програми."
   },
   "pagination": {
     "total_notes_one": "{{count}} нотаток",
@@ -1898,12 +1917,64 @@
     "layers_many": "{{count}} шарів",
     "pages_one": "{{count}} сторінка",
     "pages_few": "{{count}} сторінки",
-    "pages_many": "{{count}} сторінок"
+    "pages_many": "{{count}} сторінок",
+    "pages_loading": "Завантаження..."
   },
   "render": {
     "setup_title": "Відображати власний HTML або Preact JSX у цій нотатці",
     "setup_create_sample_preact": "Створіть зразок нотатки за допомогою Preact",
     "setup_create_sample_html": "Створити зразок нотатки за допомогою HTML",
     "setup_sample_created": "Зразок нотатки було створено як дочірню нотатку."
+  },
+  "revisions": {
+    "delete_button": "Видалити"
+  },
+  "keyboard_shortcut_keys": {
+    "delete": "Видалити"
+  },
+  "sidebar_chat": {
+    "delete": "Видалити"
+  },
+  "llm": {
+    "delete_provider": "Видалити"
+  },
+  "dashboard_view": {
+    "refresh-widget": "Оновити"
+  },
+  "breadcrumb_badges": {
+    "save_status_saved": "Збережено",
+    "save_status_saving": "Збереження...",
+    "save_status_unsaved": "Не збережено",
+    "save_status_error": "Помилка збереження",
+    "save_status_saving_tooltip": "Збереження змін.",
+    "execute_sql": "Виконати SQL",
+    "execute_sql_description": "Ця нотатка містить SQL. Натисніть, щоб виконати SQL запит.",
+    "execute_script_description": "Ця нотатка містить скрипт. Натисніть, щоб виконати скрипт.",
+    "save_status_unsaved_tooltip": "Є незбережені зміни. Вони будуть збережені автоматично за мить.",
+    "save_status_error_tooltip": "Під час збереження нотатки сталася помилка. Якщо можливо, спробуйте скопіювати вміст нотатки в інше місце та перезавантажити програму."
+  },
+  "media": {
+    "playback-speed": "Швидкість відтворення",
+    "hints": {
+      "playback": "Відтворення"
+    }
+  },
+  "read-only-info": {
+    "auto-read-only-note": "Для швидшого завантаження ця нотатка відображається в режимі \"лише для читання\".",
+    "edit-note": "Редагувати нотатку"
+  },
+  "note-color": {
+    "set-color": "Обрати колір нотатки",
+    "set-custom-color": "Обрати власний колір нотатки"
+  },
+  "calendar_view": {
+    "delete_note": "Видалити нотатку..."
+  },
+  "common": {
+    "cancel": "Скасувати"
+  },
+  "space_usage": {
+    "compress_cancel": "Скасувати",
+    "cleanup_cancel": "Скасувати"
   }
 }

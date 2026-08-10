@@ -74,7 +74,9 @@
 .options-page-header {
     position: sticky;
     top: 0;
-    z-index: 1;
+    /* Above the 1–5 Bootstrap gives a control to lift it over its neighbours, below a dropdown
+       menu (999), which is meant to open over the header. */
+    z-index: 10;
     border-bottom: 1px solid var(--main-border-color);
     padding-block: 10px;
 }
@@ -97,4 +99,32 @@ body.experimental-feature-new-layout .options-page-header {
 .note-split .options-page-header {
     background: var(--main-background-color);
     margin-bottom: 1em;
+}
+
+/* In the mobile master-detail flow the page is already named beside the way back, in the dialog's own
+   header (see MasterDetailHeader) — the small title a phone has the width for. The banner drops its
+   copy rather than saying it twice down the screen. */
+.modal.mobile-master-detail {
+    .options-page-header-icon,
+    .options-page-header-title {
+        display: none;
+    }
+
+    /* The name was all it carried, so it stands down rather than leaving an empty band above the
+       first card. */
+    .options-page-header-title-only:not(:has(.options-page-header-help)) {
+        display: none;
+    }
+
+    /* All but the help button, which stays reachable — as a page action at the head of the content,
+       though, rather than as a bar: the bar was there to hold the name. */
+    .options-page-header-title-only {
+        position: static;
+        border-bottom: none;
+        padding-block: 0;
+
+        .options-page-header-main {
+            justify-content: flex-end;
+        }
+    }
 }

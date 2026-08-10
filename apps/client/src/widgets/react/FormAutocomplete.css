@@ -1,0 +1,46 @@
+/*
+ * A field carrying chips ahead of the box typed into (see the component's `leading`) looks the same
+ * here as anywhere else a field is framed, so it wears the shared `tn-field` and adds nothing of its
+ * own. The class remains as the handle the dropdown is measured against.
+ */
+
+/*
+ * The suggestion list, dressed as one of the application's menus — the same metrics the mention list
+ * in a text note is given, since both are a list of choices floating over the thing being edited.
+ * Every variable below is defined by each theme; the two the older themes leave out (the inner
+ * padding and the corner radius) fall back to the values those themes use for their own menus.
+ */
+.form-autocomplete-dropdown {
+    position: fixed;
+    z-index: 2000;
+    margin: 0;
+    /* The entries sit inside the rounded border rather than against it, so a highlighted one is a
+       rounded chip within the menu instead of a band across it. */
+    padding: var(--menu-padding-size, 6px);
+    list-style: none;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    color: var(--menu-text-color);
+    background-color: var(--menu-background-color);
+    /* Only the themes that blur their menus define a filter; in the rest this resolves to no blur. */
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    border: 1px solid var(--dropdown-border-color);
+    border-radius: var(--dropdown-border-radius, 6px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity, 0.2));
+}
+
+.form-autocomplete-dropdown .form-autocomplete-item {
+    cursor: pointer;
+    padding: 4px 8px;
+    margin: 0;
+    border-radius: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Pointer and keyboard share the one highlight: hovering an entry makes it the active one. */
+.form-autocomplete-dropdown .form-autocomplete-item.active {
+    color: var(--active-item-text-color);
+    background-color: var(--active-item-background-color);
+}

@@ -4,6 +4,7 @@ import { buildNote } from "../test/easy-froca";
 import open, { checkType, downloadFileNote, getUrlForDownload, openNoteExternally } from "./open.js";
 import options from "./options.js";
 import server from "./server.js";
+import toast from "./toast.js";
 import utils from "./utils.js";
 
 const realWindow = window as any;
@@ -242,22 +243,30 @@ describe("open service", () => {
             expect(errSpy).not.toHaveBeenCalled();
         });
 
-        it("logs an error under Electron when openPath returns an error string", async () => {
+        it("reports to the user, not only the console, when openPath returns an error string", async () => {
             const shell = installElectronApi();
             vi.spyOn(utils, "isElectron").mockReturnValue(true);
             shell.openPath.mockResolvedValue("ENOENT"); // failure
             const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+            const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
+
             await open.openDirectory("/bad/dir");
-            expect(errSpy).toHaveBeenCalledWith("Failed to open directory:", "ENOENT");
+
+            expect(errSpy).toHaveBeenCalledWith("Failed to open directory:", "/bad/dir", "ENOENT");
+            expect(toastSpy).toHaveBeenCalled();
         });
 
-        it("catches and logs filesystem errors thrown by openPath", async () => {
+        it("reports filesystem errors thrown by openPath the same way", async () => {
             const shell = installElectronApi();
             vi.spyOn(utils, "isElectron").mockReturnValue(true);
             shell.openPath.mockRejectedValue(new Error("boom"));
             const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+            const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
+
             await open.openDirectory("/throws");
-            expect(errSpy).toHaveBeenCalledWith("Error:", "boom");
+
+            expect(errSpy).toHaveBeenCalledWith("Failed to open directory:", "/throws", "boom");
+            expect(toastSpy).toHaveBeenCalled();
         });
     });
 });

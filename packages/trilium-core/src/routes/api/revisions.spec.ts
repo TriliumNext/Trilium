@@ -34,6 +34,10 @@ async function createNoteWithRevision(
     return { noteId, revisionId: res.body.revisionId };
 }
 
+function blobExists(blobId: string): boolean {
+    return getSql().getRowOrNull("SELECT blobId FROM blobs WHERE blobId = ?", [ blobId ]) !== null;
+}
+
 function revisionExists(revisionId: string): boolean {
     const row = getSql().getRowOrNull<{ revisionId: string }>(
         "SELECT revisionId FROM revisions WHERE revisionId = ?",
@@ -315,12 +319,116 @@ describe("Revisions API (core)", () => {
     });
 
     describe("excess revisions", () => {
-        it("erases excess revision snapshots across notes", async () => {
+        /**
+         * A note carrying one revision per description, their creation times spaced a day apart:
+         * snapshots are trimmed oldest first, and several saved within the same millisecond would
+         * leave that order — and with it the outcome — up to the database.
+         */
+        async function createNoteWithRevisions(title: string, descriptions: (string | undefined)[]) {
+            const { noteId } = await createTextNote(api, { title });
+            const revisionIds: string[] = [];
+
+            for (const [ index, description ] of descriptions.entries()) {
+                const res = await api.post<ForceSaveResponse>(`/api/notes/${noteId}/revision`, {
+                    body: { description }
+                });
+                expect(res.status).toBe(200);
+
+                getSql().execute("UPDATE revisions SET utcDateCreated = ? WHERE revisionId = ?", [
+                    `2026-02-${String(index + 1).padStart(2, "0")} 00:00:00.000Z`,
+                    res.body.revisionId
+                ]);
+                revisionIds.push(res.body.revisionId);
+            }
+
+            return { noteId, revisionIds };
+        }
+
+        function revisionIdsOf(noteId: string) {
+            return getSql().getColumn<string>(
+                "SELECT revisionId FROM revisions WHERE noteId = ? ORDER BY utcDateCreated ASC", [ noteId ]);
+        }
+
+        async function eraseExcess(body?: Record<string, unknown>) {
+            const res = await api.post<{ erasedCount: number }>(
+                "/api/revisions/erase-all-excess-revisions", body ? { body } : undefined);
+            expect(res.status).toBe(200);
+            return res.body.erasedCount;
+        }
+
+        it("erases excess revision snapshots across notes, reporting how many went", async () => {
             const { noteId } = await createTextNote(api, { title: "Excess" });
             await api.post(`/api/notes/${noteId}/revision`, { body: {} });
 
-            const res = await api.post("/api/revisions/erase-all-excess-revisions");
-            expect(res.status).toBe(204);
+            // No limit is configured in a fresh database, so nothing is excess and the sweep is a
+            // no-op — the case the button guards against, answered rather than refused.
+            expect(await eraseExcess()).toBe(0);
+            expect(revisionIdsOf(noteId).length).toBe(1);
+        });
+
+        it("purges the content the erased snapshots held, rather than leaving it for later", async () => {
+            const { noteId } = await createTextNote(api, { title: "Excess orphan" });
+            const content = `<p>${"excess-orphan-".repeat(80)}</p>`;
+
+            // Snapshot content the live note no longer holds, so the blob is the snapshot's alone.
+            expect((await api.put(`/api/notes/${noteId}/data`, { body: { content } })).status).toBe(204);
+            const saved = await api.post<ForceSaveResponse>(`/api/notes/${noteId}/revision`, { body: {} });
+            expect(saved.status).toBe(200);
+            expect((await api.put(`/api/notes/${noteId}/data`, { body: { content: "<p>moved on</p>" } })).status).toBe(204);
+
+            const blobId = getSql().getValue<string>(
+                "SELECT blobId FROM revisions WHERE revisionId = ?", [ saved.body.revisionId ]);
+            expect(blobExists(blobId)).toBe(true);
+
+            await eraseExcess({ snapshotsToKeep: 0 });
+
+            expect(revisionIdsOf(noteId)).toEqual([]);
+            expect(blobExists(blobId)).toBe(false);
+        });
+
+        it("keeps only the newest snapshots the override asks for", async () => {
+            const { noteId, revisionIds } = await createNoteWithRevisions("Excess override",
+                [ undefined, undefined, undefined, undefined ]);
+
+            // Other notes of the shared database are swept too, so the total can only be a floor;
+            // what this note keeps is the exact statement.
+            expect(await eraseExcess({ snapshotsToKeep: 1 })).toBeGreaterThanOrEqual(3);
+            expect(revisionIdsOf(noteId)).toEqual([ revisionIds[3] ]);
+        });
+
+        it("spares named snapshots without counting them against the limit", async () => {
+            const { noteId, revisionIds } = await createNoteWithRevisions("Excess named",
+                [ undefined, "release", undefined, "before the refactor", undefined ]);
+
+            await eraseExcess({ snapshotsToKeep: 1, keepNamedSnapshots: true });
+
+            // Both named snapshots survive, and the one automatic snapshot the limit allows is the
+            // newest of them — the named ones did not eat into that allowance.
+            expect(revisionIdsOf(noteId)).toEqual([ revisionIds[1], revisionIds[3], revisionIds[4] ]);
+        });
+
+        it("erases nothing at all when the override keeps every snapshot", async () => {
+            const { noteId, revisionIds } = await createNoteWithRevisions("Excess kept",
+                [ undefined, undefined ]);
+
+            expect(await eraseExcess({ snapshotsToKeep: -1 })).toBe(0);
+            expect(revisionIdsOf(noteId)).toEqual(revisionIds);
+        });
+
+        it("400s on options it cannot honour, rather than erasing by some other rule", async () => {
+            const { noteId, revisionIds } = await createNoteWithRevisions("Excess rejected", [ undefined ]);
+
+            for (const body of [
+                { snapshotsToKeep: -2 },
+                { snapshotsToKeep: 1.5 },
+                { snapshotsToKeep: "2" },
+                { keepNamedSnapshots: "yes" }
+            ]) {
+                const res = await api.post("/api/revisions/erase-all-excess-revisions", { body });
+                expect(res.status).toBe(400);
+            }
+
+            expect(revisionIdsOf(noteId)).toEqual(revisionIds);
         });
     });
 

@@ -1,6 +1,6 @@
 {
   "keyboard_actions": {
-    "open-jump-to-note-dialog": "„Zu Notiz springen\" öffnen",
+    "open-jump-to-note-dialog": "„Zu Notiz springen“ öffnen",
     "search-in-subtree": "Nach Notizen im Unterbaum der aktuellen Notiz suchen",
     "expand-subtree": "Unterbaum der aktuellen Notiz ausklappen",
     "collapse-tree": "Gesamten Notizbaum einklappen",
@@ -25,7 +25,7 @@
     "show-note-source": "Notizquellen-Dialog anzeigen",
     "show-options": "Optionen-Dialog anzeigen",
     "show-revisions": "Notizrevisionen-Dialog anzeigen",
-    "show-recent-changes": "Letzte Änderungen-Dialog anzeigen",
+    "show-recent-changes": "Dialog „Letzte Änderungen“ anzeigen",
     "show-sql-console": "SQL-Konsole-Dialog anzeigen",
     "show-backend-log": "Backend-Logs-Dialog anzeigen",
     "text-note-operations": "Textnotiz-Operationen",
@@ -40,18 +40,18 @@
     "create-new-relation": "Neue Verknüpfung erstellen",
     "ribbon-tabs": "Ribbon-Tabs",
     "toggle-link-map": "Link-Karte umschalten",
-    "other": "Sonstige",
+    "other": "Andere",
     "toggle-right-pane": "Rechte Leiste umschalten (enthält Inhaltsverzeichnis und Markierungen)",
     "open-note-externally": "Notiz als Datei mit Standardanwendung öffnen",
     "render-active-note": "Aktive Notiz rendern (erneut rendern)",
-    "run-active-note": "Aktive JavaScript(Frontend/Backend)-Codenotiz ausführen",
+    "run-active-note": "Aktive JavaScript (Frontend/Backend)-Codenotiz ausführen",
     "toggle-note-hoisting": "Notiz-Fokus der aktiven Notiz umschalten",
     "unhoist": "Notiz-Fokus aufheben",
     "toggle-left-note-tree-panel": "Linke Notizbaum-Leiste umschalten",
     "note-navigation": "Notiznavigation",
     "copy-without-formatting": "Ausgewählten Text ohne Formatierung kopieren",
     "force-save-revision": "Erstellen / Speichern einer neuen Notizrevision der aktiven Notiz erzwingen",
-    "show-help": "Eingebaute Hilfe / Cheat-Sheet anzeigen",
+    "show-help": "Eingebautes Nutzerhandbuch öffnen",
     "toggle-book-properties": "Buch-Eigenschaften umschalten",
     "clone-notes-to": "Ausgewählte Notizen duplizieren",
     "back-in-note-history": "Zur vorherigen Notiz im Verlauf navigieren",
@@ -66,7 +66,10 @@
     "toggle-classic-editor-toolbar": "Formatierungs-Tab für den Editor mit fester Werkzeugleiste umschalten",
     "toggle-zen-mode": "Zen-Modus ein-/ausschalten (reduzierte Benutzeroberfläche für ablenkungsfreies Arbeiten)",
     "save-named-revision": "Eine benannte Revision der aktuellen Notiz speichern",
-    "toggle-archived-notes": "Archivierte Notizen im Notizbaum anzeigen/ausblenden"
+    "toggle-archived-notes": "Archivierte Notizen im Notizbaum anzeigen/ausblenden",
+    "show-deleted-notes": "Dialog „Gelöschte Notizen“ anzeigen",
+    "show-shortcut-hints": "Tastenkürzel für das fokussierte Widget anzeigen",
+    "peek-right-pane": "Rechten Bereich als temporäres Panel einblenden, das über dem Inhalt schwebt und beim Verlust des Fokus geschlossen wird"
   },
   "login": {
     "title": "Anmeldung",
@@ -75,15 +78,15 @@
     "password": "Passwort",
     "remember-me": "Angemeldet bleiben",
     "button": "Anmelden",
-    "incorrect-totp": "Das Einmalpasswort ist falsch. Bitte erneut versuchen.",
+    "incorrect-totp": "TOTP ist falsch. Bitte versuchen Sie es erneut.",
     "sign_in_with_sso": "Mit {{ ssoIssuerName }} anmelden",
     "sso-wrong-account": "Dieses Konto ist nicht mit dieser Trilium-Instanz verknüpft. Melden Sie sich mit dem verknüpften Konto an.",
-    "sso-not-enrolled": "Single Sign-On ist noch nicht eingerichtet. Melden Sie sich zunächst mit Ihrem Passwort an und verknüpfen Sie Ihr Konto anschließend in den Einstellungen."
+    "sso-not-enrolled": "Single Sign-on ist noch nicht eingerichtet. Melden Sie sich zuerst mit Ihrem Passwort an und verknüpfen Sie anschließend Ihr Konto in den Einstellungen."
   },
   "set_password": {
     "title": "Passwort festlegen",
     "heading": "Passwort festlegen",
-    "description": "Bevor Sie Trilium im Web nutzen können, müssen Sie zunächst ein Passwort festlegen. Mit diesem Passwort melden Sie sich anschließend an.",
+    "description": "Bevor Sie Trilium im Web verwenden können, müssen Sie zuerst ein Passwort festlegen. Anschließend verwenden Sie dieses Passwort zum Anmelden.",
     "password": "Passwort",
     "password-confirmation": "Passwortbestätigung",
     "button": "Passwort festlegen"
@@ -126,21 +129,21 @@
     "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
-    "not-configured": "Der Synchronisations-Server-Host ist nicht konfiguriert. Bitte konfiguriere zuerst die Synchronisation.",
-    "successful": "Die Server-Verbindung wurde erfolgreich hergestellt, die Synchronisation wurde gestartet."
+    "not-configured": "Der Synchronisierungs-Server-Host ist nicht konfiguriert. Bitte konfigurieren Sie zuerst die Synchronisierung.",
+    "successful": "Die Server-Verbindung wurde erfolgreich hergestellt, die Synchronisierung wurde gestartet."
   },
   "hidden-subtree": {
     "root-title": "Versteckte Notizen",
     "search-history-title": "Suchverlauf",
-    "note-map-title": "Notiz-Karte",
+    "note-map-title": "Notizkarte",
     "sql-console-history-title": "SQL-Konsolen-Verlauf",
     "shared-notes-title": "Geteilte Notizen",
     "bulk-action-title": "Massenverarbeitung",
     "backend-log-title": "Backend-Log",
     "user-hidden-title": "Versteckt vom Nutzer",
-    "launch-bar-templates-title": "Startleiste Vorlagen",
-    "base-abstract-launcher-title": "Basis Abstrakte Startleiste",
-    "command-launcher-title": "Befehls-Launcher",
+    "launch-bar-templates-title": "Starterleiste-Vorlagen",
+    "base-abstract-launcher-title": "Abstrakter Basis-Starter",
+    "command-launcher-title": "Befehls-Starter",
     "note-launcher-title": "Notiz-Starter",
     "script-launcher-title": "Skript-Starter",
     "built-in-widget-title": "Eingebautes Widget",
@@ -158,20 +161,20 @@
     "open-today-journal-note-title": "Heutigen Journaleintrag öffnen",
     "quick-search-title": "Schnellsuche",
     "protected-session-title": "Geschützte Sitzung",
-    "sync-status-title": "Status Synchronisation",
+    "sync-status-title": "Synchronisierungsstatus",
     "settings-title": "Einstellungen",
     "options-title": "Optionen",
     "appearance-title": "Erscheinungsbild",
     "shortcuts-title": "Tastenkürzel",
-    "text-notes": "Text Notizen",
-    "code-notes-title": "Code Notizen",
+    "text-notes": "Textnotizen",
+    "code-notes-title": "Codenotizen",
     "images-title": "Medien",
     "spellcheck-title": "Rechtschreibprüfung",
     "password-title": "Passwort & Authentifizierung",
     "etapi-title": "ETAPI",
     "backup-title": "Sicherung",
-    "sync-title": "Synchronisation",
-    "other": "Weitere",
+    "sync-title": "Sync",
+    "other": "Andere",
     "advanced-title": "Erweitert",
     "visible-launchers-title": "Sichtbare Starter",
     "user-guide": "Nutzerhandbuch",
@@ -182,8 +185,8 @@
     "zen-mode": "Zen-Modus",
     "command-palette": "Befehlspalette öffnen",
     "tab-switcher-title": "Tab-Auswahl",
-    "llm-chat-history-title": "KI-Chat Historie",
-    "custom-dictionary-title": "Benutzerdefiniertes Verzeichnis",
+    "llm-chat-history-title": "KI-Chat-Verlauf",
+    "custom-dictionary-title": "Benutzerdefiniertes Wörterbuch",
     "llm-title": "KI / LLM",
     "sidebar-chat-title": "KI-Chat",
     "task-states-title": "Aufgabenzustände",
@@ -198,7 +201,9 @@
     "task-state-attr-color": "Farbe",
     "task-state-attr-is-hidden": "Aus Liste ausblenden",
     "security-title": "Sicherheit",
-    "desktop-title": "Desktop"
+    "desktop-title": "Desktop",
+    "deleted-notes-title": "Gelöschte Notizen",
+    "color-scheme-switcher-title": "Farbschema-Umschalter"
   },
   "notes": {
     "new-note": "Neue Notiz",
@@ -213,7 +218,7 @@
     "note-cannot-be-displayed": "Dieser Notiztyp kann nicht angezeigt werden."
   },
   "pdf": {
-    "export_filter": "PDF Dokument (*.pdf)",
+    "export_filter": "PDF-Dokument (*.pdf)",
     "unable-to-export-message": "Die aktuelle Notiz konnte nicht als PDF exportiert werden.",
     "unable-to-export-title": "Export als PDF fehlgeschlagen",
     "unable-to-save-message": "Die ausgewählte Datei konnte nicht beschrieben werden. Erneut versuchen oder ein anderes Ziel auswählen.",
@@ -224,7 +229,7 @@
     "close": "Trilium schließen",
     "recents": "Kürzliche Notizen",
     "bookmarks": "Lesezeichen",
-    "today": "Heutigen Journal Eintrag öffnen",
+    "today": "Heutigen Journaleintrag öffnen",
     "new-note": "Neue Notiz",
     "show-windows": "Fenster anzeigen",
     "open_new_window": "Neues Fenster öffnen"
@@ -269,10 +274,10 @@
     "command-palette": "Befehlsübersicht",
     "scroll-to-active-note": "Zur aktiven Notiz scrollen",
     "quick-search": "Schnellsuche",
-    "search-in-subtree": "Im Unterzweig suchen",
-    "expand-subtree": "Unterzweig aufklappen",
+    "search-in-subtree": "Im Unterbaum suchen",
+    "expand-subtree": "Unterbaum aufklappen",
     "collapse-tree": "Baumstruktur einklappen",
-    "collapse-subtree": "Unterzweig einklappen",
+    "collapse-subtree": "Unterbaum einklappen",
     "sort-child-notes": "Untergeordnete Notizen sortieren",
     "create-note-after": "Notiz danach erstellen",
     "create-note-into": "Unternotiz erstellen",
@@ -292,18 +297,18 @@
     "activate-next-tab": "Nächsten Tab aktivieren",
     "activate-previous-tab": "Vorherigen Tab aktivieren",
     "open-new-window": "Neues Fenster öffnen",
-    "toggle-system-tray-icon": "Systemablage-Symbol umschalten",
+    "toggle-system-tray-icon": "Systemtray-Symbol umschalten",
     "toggle-zen-mode": "Zen-Modus umschalten",
-    "switch-to-first-tab": "Wechsle zum ersten Tab",
-    "switch-to-second-tab": "Wechsle zum zweiten Tab",
-    "switch-to-third-tab": "Wechsle zum dritten Tab",
-    "switch-to-fourth-tab": "Wechsle zum vierten Tab",
-    "switch-to-fifth-tab": "Wechsle zum fünften Tab",
-    "switch-to-sixth-tab": "Wechsle zum sechsten Tab",
-    "switch-to-seventh-tab": "Wechsle zum siebten Tab",
-    "switch-to-eighth-tab": "Wechsle zum achten Tab",
-    "switch-to-ninth-tab": "Wechsle zum neunten Tab",
-    "switch-to-last-tab": "Wechsle zum letzten Tab",
+    "switch-to-first-tab": "Zum ersten Tab wechseln",
+    "switch-to-second-tab": "Zum zweiten Tab wechseln",
+    "switch-to-third-tab": "Zum dritten Tab wechseln",
+    "switch-to-fourth-tab": "Zum vierten Tab wechseln",
+    "switch-to-fifth-tab": "Zum fünften Tab wechseln",
+    "switch-to-sixth-tab": "Zum sechsten Tab wechseln",
+    "switch-to-seventh-tab": "Zum siebten Tab wechseln",
+    "switch-to-eighth-tab": "Zum achten Tab wechseln",
+    "switch-to-ninth-tab": "Zum neunten Tab wechseln",
+    "switch-to-last-tab": "Zum letzten Tab wechseln",
     "show-note-source": "Notizquelle anzeigen",
     "show-options": "Optionen anzeigen",
     "show-revisions": "Revisionen anzeigen",
@@ -313,7 +318,7 @@
     "show-help": "Hilfe anzeigen",
     "show-cheatsheet": "Cheatsheet anzeigen",
     "add-link-to-text": "Link zum Text hinzufügen",
-    "cut-into-note": "In neue Notiz verschieben",
+    "cut-into-note": "In Unternotiz ausschneiden",
     "add-new-label": "Neues Label hinzufügen",
     "add-new-relation": "Neue Beziehung hinzufügen",
     "print-active-note": "Aktive Notiz drucken",
@@ -357,7 +362,10 @@
     "copy-without-formatting": "Kopieren ohne Formatierung",
     "force-save-revision": "Speichern der Notizrevision erzwingen",
     "save-named-revision": "Benannte Revision speichern",
-    "toggle-archived-notes": "Sichtbarkeit archivierter Notizen umschalten"
+    "toggle-archived-notes": "Sichtbarkeit archivierter Notizen umschalten",
+    "show-deleted-notes": "Gelöschte Notizen anzeigen",
+    "show-shortcut-hints": "Tastenkürzel-Hinweise anzeigen",
+    "peek-right-pane": "Rechten Bereich einblenden"
   },
   "weekdayNumber": "Woche {weekNumber}",
   "quarterNumber": "Quartal {quarterNumber}",
@@ -365,30 +373,28 @@
     "old_version": "Eine direkte Migration von Ihrer aktuellen Version wird nicht unterstützt. Bitte führen Sie zunächst ein Upgrade auf die neueste Version v0.60.4 durch und erst dann auf diese Version.",
     "error_message": "Fehler bei der Migration zu Version {{version}}: {{stack}}",
     "wrong_db_version": "Die Version der Datenbank ({{version}}) ist neuer als die von der Anwendung erwartete Version ({{targetVersion}}), was bedeutet, dass diese mit einer neueren und inkompatiblen Version von Trilium erstellt wurde. Führen Sie ein Upgrade auf die neueste Version von Trilium durch, um dieses Problem zu beheben.",
-    "invalid_db_version": "Die Datenbankversion ist nicht lesbar, Ursache davon ist normalerweise eine defekte \"dbVersion\" der Datenbank. Eine Wiederherstellung aus einem Backup ist erforderlich.",
+    "invalid_db_version": "Die Datenbankversion ist keine gültige Zahl. Dies deutet in der Regel auf eine beschädigte Option 'dbVersion' in der Datenbank hin. Bitte stellen Sie sie aus einer Sicherung wieder her.",
     "automatic_migrations_disabled": "Automatische Datenbank-Migrationen sind über die Umgebungsvariable TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}} deaktiviert"
   },
   "modals": {
     "error_title": "Fehler"
   },
   "share_theme": {
-    "site-theme": "Webseiten Stil",
+    "site-theme": "Website-Design",
     "search_placeholder": "Suche...",
-    "image_alt": "Artikel Bild",
+    "image_alt": "Artikelbild",
     "last-updated": "Zuletzt aktualisiert am {{- date}}",
     "subpages": "Unterseiten:",
     "on-this-page": "Auf dieser Seite",
     "expand": "Erweitern",
     "toggle-navigation": "Navigation umschalten",
     "toggle-toc": "Inhaltsverzeichnis umschalten",
-    "logo-alt": "Logo"
+    "logo-alt": "Logo",
+    "login": "Anmelden"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Datenbank nicht initialisiert, bitte folgen Sie den Anweisungen auf dem Bildschirm.",
-    "db_not_initialized_server": "DB nicht initialisiert, bitte besuchen Sie die Einrichtungsseite – http://[Server-Host]:{{port}}, um Anweisungen zur Initialisierung von Trilium zu erhalten."
-  },
-  "desktop": {
-    "instance_already_running": "Es läuft bereits eine Instanz. Diese wird stattdessen in den Vordergrund geholt."
+    "db_not_initialized_server": "Datenbank nicht initialisiert, bitte besuchen Sie die Einrichtungsseite – http://[Server-Host]:{{port}}, um Anweisungen zur Initialisierung von Trilium zu erhalten."
   },
   "password": {
     "incorrect": "Das eingegebene Passwort ist nicht korrekt."
@@ -399,10 +405,10 @@
   "search": {
     "error": {
       "in-context": "Fehler in {{- context}}: {{- message}}",
-      "reserved-keyword": "\"{{- token}}\" ist ein reserviertes Stichwort. Um eine wörtliche Suche durchzuführen, verwende Anführungszeichen \"{{- token}}\"",
-      "cannot-compare-with": "Vergleich mit \"{{- token}}\" nicht möglich. Um eine wörtliche Suche durchzuführen, verwende Anführungszeichen \"{{- token}}\"",
+      "reserved-keyword": "\"{{- token}}\" ist ein reserviertes Stichwort. Um eine wörtliche Suche durchzuführen, verwenden Sie Anführungszeichen: \"{{- token}}\"",
+      "cannot-compare-with": "Vergleich mit \"{{- token}}\" nicht möglich. Um eine wörtliche Suche durchzuführen, verwenden Sie Anführungszeichen: \"{{- token}}\"",
       "misplaced-expression": "Fehlplatzierter oder unvollständiger Ausdruck \"{{- token}}\"",
-      "fulltext-after-expression": "\"{{- token}}\" ist kein valider Ausdruck. Um einen Text zu suchen, platziere ihn vor den Attributfiltern (z.B. \"{{- token}} #label\" anstatt \"#label {{- token}}\").",
+      "fulltext-after-expression": "\"{{- token}}\" ist kein valider Ausdruck. Um einen Text zu suchen, platzieren Sie ihn vor den Attributfiltern (z. B. \"{{- token}} #label\" anstatt \"#label {{- token}}\").",
       "unrecognized-expression": "Nicht erkannter Ausdruck \"{{- token}}\""
     }
   },
@@ -422,9 +428,64 @@
     "sql-console-warning": "Die SQL-Konsole ermöglicht die Ausführung beliebiger SQL-Abfragen gegen die Datenbank.",
     "enable-detail": "{{warning}}\n\nAktivieren Sie dies nur, wenn Sie diese Funktion ausdrücklich verwenden möchten. Aktivieren Sie es nicht, wenn Sie dazu von einem Skript oder einer unbekannten Notiz aufgefordert werden.\n\nDiese Änderung erfordert einen Neustart, um wirksam zu werden.",
     "lan-access": "Netzwerkzugriff",
-    "lan-access-warning": "Andere Geräte in Ihrem lokalen Netzwerk können sich mit dieser Trilium-Instanz verbinden."
+    "lan-access-warning": "Die App und Ihre geteilten Notizen werden über das Netzwerk bereitgestellt – erreichbar über einen Browser auf diesem Computer und von anderen Geräten in Ihrem lokalen Netzwerk."
   },
   "onenote_import": {
-    "root-title": "OneNote-Import"
+    "root-title": "OneNote-Import",
+    "failed-page-placeholder": "Diese Seite konnte nicht aus OneNote importiert werden. Fehler: {{error}}",
+    "failed-section-placeholder": "Dieser Abschnitt konnte nicht aus OneNote importiert werden und wurde daher leer erstellt. Fehler: {{error}}",
+    "protected-section-error": "Dieser Abschnitt ist passwortgeschützt. Entfernen Sie das Passwort in OneNote und importieren Sie ihn anschließend erneut.",
+    "protected-section-placeholder": "Dieser Abschnitt ist passwortgeschützt, daher konnten seine Seiten nicht importiert werden und er wurde leer erstellt. Öffnen Sie zum Importieren den Abschnitt in OneNote, entfernen Sie seinen Passwortschutz (Rechtsklick auf den Abschnitt &rarr; Kennwortschutz &rarr; Kennwort entfernen) und führen Sie den Import anschließend erneut aus.",
+    "report": {
+      "row-pages": "Seiten erfolgreich importiert",
+      "row-notebooks": "Notizbücher importiert",
+      "row-sections": "Abschnitte importiert",
+      "row-duration": "Gesamtdauer des Imports",
+      "row-images": "Bilder",
+      "row-attachments": "Dateianhänge",
+      "row-ink": "Seiten mit Handschrift oder Zeichnungen",
+      "row-links": "Seitenübergreifende Links",
+      "row-throttling": "Durch Microsoft Graph verursachte Wartezeit",
+      "value-links": "{{resolved}} aufgelöst, {{unresolved}} verweisen außerhalb der importierten Auswahl",
+      "value-throttling_one": "{{- wait}} ({{count}} gedrosselte Anfrage)",
+      "value-throttling_other": "{{- wait}} ({{count}} gedrosselte Anfragen)",
+      "skipped-sections-title": "Nicht importierbare Abschnitte",
+      "skipped-sections-section": "Abschnitt",
+      "skipped-sections-notebook": "Notizbuch",
+      "skipped-sections-error": "Fehler",
+      "failed-pages-title": "Nicht importierbare Seiten",
+      "failed-pages-page": "Seite",
+      "failed-pages-section": "Abschnitt",
+      "failed-pages-error": "Fehler",
+      "failed-resources-title": "Fehlende Bilder und Anhänge",
+      "failed-resources-item_one": "{{- pageLink}}: {{count}} Ressource konnte nicht heruntergeladen werden",
+      "failed-resources-item_other": "{{- pageLink}}: {{count}} Ressourcen konnten nicht heruntergeladen werden"
+    }
+  },
+  "note_conversion": {
+    "revision_before_markdown": "Vor der Konvertierung in Markdown",
+    "revision_before_text": "Vor der Konvertierung in eine Textnotiz"
+  },
+  "notion_import": {
+    "root-title": "Notion-Import",
+    "markdown-export-unsupported": "Dies scheint ein Notion-Export im Format „Markdown & CSV“ zu sein, den Trilium nicht importieren kann. Exportieren Sie Ihren Notion-Arbeitsbereich erneut im Exportformat „HTML“ und importieren Sie diesen stattdessen.",
+    "subpage-folders-disabled": "Dieser Notion-Export wurde ohne die Option „Ordner für Unterseiten erstellen“ erstellt, daher kann die Seitenhierarchie nicht wiederhergestellt werden. Exportieren Sie erneut aus Notion mit aktivierter Option „Ordner für Unterseiten erstellen“ und importieren Sie diesen Export stattdessen."
+  },
+  "keep_import": {
+    "root-title": "Google-Keep-Import"
+  },
+  "anytype_import": {
+    "root-title": "Anytype-Import",
+    "protobuf-export-unsupported": "Dies scheint ein Anytype-Export im Format „Protobuf“ zu sein, den Trilium nicht importieren kann. Exportieren Sie Ihren Anytype-Bereich erneut im Format „Any-Block“ mit ausgewähltem „JSON“ und importieren Sie diesen Export stattdessen.",
+    "markdown-export-unsupported": "Dies scheint ein Anytype-Export im Format „Markdown“ zu sein, den Trilium nicht importieren kann. Exportieren Sie Ihren Anytype-Bereich erneut im Format „Any-Block“ mit ausgewähltem „JSON“ und importieren Sie diesen Export stattdessen."
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian-Import"
+  },
+  "export": {
+    "zip_filter": "ZIP-Archiv (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "Die Dateiauswahl ist abgelaufen oder ungültig. Bitte wählen Sie die Datei erneut aus."
   }
 }

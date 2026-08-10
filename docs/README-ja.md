@@ -292,6 +292,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei) Canvasへのオリジナルな取り組み。
 * [antoniotejada](https://github.com/nriver) オリジナルの構文ハイライトウィジェット。
 * [Tabler Icons](https://tabler.io/icons) システムトレイアイコン。
+*   インポートダイアログ内のアプリケーションアイコンは以下から取得されています:
+    *   OneNote, Google Keep, Evernote には[Material Design
+        Icons](https://pictogrammers.com/library/mdi/)。
+    *   Notion, Obsidian には [Font Awesome](https://fontawesome.com/) 。
+    *   Anytype には [SVGicons.com](https://svgicons.com/icon/187676/anytype)。
+*  LLM プロバイダーのアイコンは [Lobe Icons](https://lobehub.com/icons) を使用。
 
 Trilium は、その基盤となる技術なしには実現できませんでした:
 

@@ -1,0 +1,48 @@
+/*
+ * One row of an attribute name completion, shared by the detail popup's name field and by the `#`/`~`
+ * completion in the inline attribute editor. Both list the very same names, so both mark the ones
+ * Trilium attaches a meaning to in the same way.
+ *
+ * Deliberately not nested under a widget root: the popup portals its dropdown to the body and the
+ * inline editor's panel lives in a CKEditor balloon, so neither row shares an ancestor with the
+ * widget that spawned it.
+ */
+
+.attr-name-suggestion {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.attr-name-suggestion .attr-name-suggestion-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attr-name-suggestion .ext-badge {
+    --color: var(--muted-text-color);
+    flex-shrink: 0;
+}
+
+/*
+ * The badge is sized relative to the row it sits in, and the popup's dropdown still carries a
+ * slightly larger font than the mention panel does — so the same rule leaves the marker heavier
+ * here. Nudged down so that the two lists read alike.
+ */
+.form-autocomplete-dropdown .attr-name-suggestion .ext-badge {
+    font-size: 0.65em;
+}
+
+/*
+ * The mention panel sizes its rows to their content, so without a width the markers would sit right
+ * after each name and zig-zag down the list. The popup's dropdown takes the width of its input and
+ * needs none of this.
+ */
+.ck-mentions .ck.ck-button.attr-name-suggestion-button {
+    display: flex;
+    justify-content: flex-start;
+    min-width: 220px;
+}

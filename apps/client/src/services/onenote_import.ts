@@ -43,7 +43,9 @@ function disconnect() {
 }
 
 function getNotebooks() {
-    return server.get<{ notebooks: OneNoteNotebook[] }>("onenote-import/notebooks");
+    // silent: a 401 here (expired/lost connection) is presented inline by the import dialog with the
+    // server's reason and a retry button — the generic "unknown HTTP error" toast would double-report.
+    return server.getWithSilentUnauthorized<{ notebooks: OneNoteNotebook[] }>("onenote-import/notebooks");
 }
 
 // Kicks off the import and returns as soon as the server has accepted it. The import itself runs in the
@@ -61,6 +63,28 @@ export default {
     getNotebooks,
     runImport
 };
+
+/**
+ * Pulls the human-readable reason out of a rejected API call, so the dialog can show what actually went
+ * wrong instead of a generic failure. The request layer rejects with the raw response body, which is
+ * either a JSON error envelope (`{"message": …}`, from a server error) or plain text (from a
+ * `[status, message]` route result) — both shapes are unwrapped here. Returns null when the response
+ * carried no usable message and the caller should fall back to its own wording.
+ */
+export function extractServerMessage(e: unknown): string | null {
+    const raw = typeof e === "string" ? e : e instanceof Error ? e.message : null;
+    const trimmed = raw?.trim();
+    if (!trimmed) {
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(trimmed) as { message?: unknown };
+        return typeof parsed.message === "string" && parsed.message.trim() ? parsed.message : null;
+    } catch {
+        // Not JSON: a plain-text body is already the message.
+        return trimmed;
+    }
+}
 
 export type OneNoteContainer = OneNoteNotebook | OneNoteSectionGroup;
 
@@ -103,6 +127,21 @@ export function buildSectionSelections(notebooks: OneNoteNotebook[], selectedIds
     }
 
     return selections;
+}
+
+/**
+ * Collects the ids of every section anywhere in the given notebooks, including those nested inside
+ * section groups. Used to prune a selection after the notebook list is refreshed, so ids of sections
+ * that no longer exist can't linger in the selection (and inflate the import button's count).
+ */
+export function collectSectionIds(containers: OneNoteContainer[], into = new Set<string>()): Set<string> {
+    for (const container of containers) {
+        for (const section of container.sections) {
+            into.add(section.id);
+        }
+        collectSectionIds(container.sectionGroups, into);
+    }
+    return into;
 }
 
 /**

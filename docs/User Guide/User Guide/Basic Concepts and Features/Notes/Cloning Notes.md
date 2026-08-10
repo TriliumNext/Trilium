@@ -47,7 +47,10 @@ So now the "Bash" subtree appears on multiple locations in the hierarchy. Both t
 
 In the demo, you can see how a clone can be created using the context menu. It's possible to do this also using the Add Link dialog or with <kbd>Ctrl</kbd>+<kbd>C</kbd> and <kbd>Ctrl</kbd>+<kbd>V</kbd> [keyboard shortcuts](../Keyboard%20Shortcuts.md).
 
-As seen in the demo, you can view the list of all available clones in the "Note Paths" tab in the Ribbon toolbar.
+You can view the list of all available clones:
+
+*   In the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> for the <a class="reference-link" href="../UI%20Elements/New%20Layout.md">New Layout</a>.
+*   For the old layout, in the "Note Paths" tab in the <a class="reference-link" href="../UI%20Elements/Ribbon.md">Ribbon</a>.
 
 Titles of cloned notes in the tree view have an asterisk to the right to easily see that the note is also placed into some other location.
 

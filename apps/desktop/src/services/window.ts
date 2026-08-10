@@ -179,11 +179,13 @@ function getWindowExtraOpts() {
         if (coreUtils.isMac()) {
             extraOpts.titleBarStyle = "hiddenInset";
             extraOpts.titleBarOverlay = true;
-        } else if (coreUtils.isWindows()) {
+        } else if (coreUtils.isWindows() || coreUtils.isLinux()) {
+            // Window Controls Overlay: Chromium draws the caption buttons itself, following the
+            // platform's own conventions (button glyphs, order and which side they sit on).
+            // Supported on Windows and, since Electron 27, on Linux too.
             extraOpts.titleBarStyle = "hidden";
             extraOpts.titleBarOverlay = true;
         } else {
-            // Linux or other platforms.
             extraOpts.frame = false;
         }
 
@@ -535,7 +537,7 @@ export function setupWindowing() {
     });
 
     // Window management IPC handlers (replacing @electron/remote for renderer access)
-    electron.ipcMain.on("set-title-bar-overlay", (event, options: { color: string; symbolColor: string }) => {
+    electron.ipcMain.on("set-title-bar-overlay", (event, options: { color: string; symbolColor: string; height?: number }) => {
         electron.BrowserWindow.fromWebContents(event.sender)?.setTitleBarOverlay(options);
     });
 

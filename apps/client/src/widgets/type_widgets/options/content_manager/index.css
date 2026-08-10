@@ -1,0 +1,18 @@
+/* The header's action slot right-aligns what it holds, which suits page-level actions. This switch
+   is the page's primary navigation rather than an action, so it leads the row instead: the auto
+   margin on its trailing side pushes it back to the start. */
+.content-manager-section-switcher {
+    margin-inline-end: auto;
+}
+
+/* Full width: the split resolves the cap for tabs, the header inner for the settings dialog. */
+.note-split.options:has(.content-manager-section-switcher),
+.note-detail-content-widget-content:has(.content-manager-section-switcher) {
+    --options-card-max-width: 100%;
+}
+
+/* Each section's own view choice reads as secondary to the section switch above it. Set on the
+   buttons, which carry their own font size and so would not inherit one from the group. */
+.content-manager-view-choice button {
+    font-size: 0.85em;
+}

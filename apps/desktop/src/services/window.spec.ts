@@ -8,6 +8,7 @@ const state = vi.hoisted(() => ({
     isDev: true,
     isMac: false,
     isWindows: false,
+    isLinux: false,
     supportsBackgroundMaterial: false,
     appVersion: "1.0.0",
     options: {} as Record<string, string>,
@@ -222,7 +223,8 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
             ...actual.utils,
             isDev: () => state.isDev,
             isMac: () => state.isMac,
-            isWindows: () => state.isWindows
+            isWindows: () => state.isWindows,
+            isLinux: () => state.isLinux
         },
         options: {
             ...actual.options,
@@ -281,6 +283,7 @@ beforeEach(() => {
     state.isDev = true;
     state.isMac = false;
     state.isWindows = false;
+    state.isLinux = false;
     state.supportsBackgroundMaterial = false;
     state.appVersion = "1.0.0";
     state.options = { spellCheckLanguageCode: "en-US, de , " };
@@ -352,12 +355,20 @@ describe("window service", () => {
             expect(opts.backgroundMaterial).toBeUndefined();
         });
 
-        it("does not apply Linux transparent effect when background effects enabled", async () => {
+        it("applies the Linux window controls overlay without a transparent effect", async () => {
+            state.isLinux = true;
             state.optionBools = { backgroundEffects: true };
             await windowService.createMainWindow();
             const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
-            expect(opts.frame).toBe(false);
+            expect(opts.titleBarStyle).toBe("hidden");
+            expect(opts.titleBarOverlay).toBe(true);
             expect(opts.transparent).toBe(undefined);
+        });
+
+        it("falls back to a frameless window on platforms without a controls overlay", async () => {
+            await windowService.createMainWindow();
+            const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+            expect(opts.frame).toBe(false);
         });
 
         it("keeps native title bar when option enabled", async () => {

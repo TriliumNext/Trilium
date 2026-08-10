@@ -5,13 +5,13 @@ import { t } from "../../services/i18n";
 import { LaunchBarActionButton, LauncherNoteProps } from "./launch_bar_widgets";
 
 /**
- * Launcher button to open the sidebar (which contains the chat).
- * The chat widget is always visible in the sidebar for non-chat notes.
+ * Launcher button to open the sidebar on the chat.
+ * The chat is one of the sidebar's tabs, available for non-chat notes.
  */
 export default function SidebarChatButton({ launcherNote }: LauncherNoteProps) {
     const handleClick = useCallback(() => {
-        // Open right pane if hidden, or toggle it if visible
-        appContext.triggerEvent("toggleRightPane", {});
+        // Opens the right pane on the chat tab, or closes it if the chat is what it is already showing.
+        appContext.triggerEvent("selectRightPaneTab", { tabId: "chat" });
     }, []);
 
     return (

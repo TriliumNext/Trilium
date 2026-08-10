@@ -1,6 +1,6 @@
 import { t } from "./i18n";
 import options from "./options";
-import { isMobile, isStandalone } from "./utils";
+import { isMobile } from "./utils";
 
 export interface ExperimentalFeature {
     id: string;
@@ -23,9 +23,9 @@ export const experimentalFeatures = [
 
 export type ExperimentalFeatureId = typeof experimentalFeatures[number]["id"];
 
-/** Returns experimental features available for the current platform (excludes LLM in standalone mode). */
+/** Returns experimental features available for the current platform. */
 export function getAvailableExperimentalFeatures() {
-    return experimentalFeatures.filter(f => !(f.id === "llm" && isStandalone));
+    return experimentalFeatures;
 }
 
 let enabledFeatures: Set<ExperimentalFeatureId> | null = null;
@@ -36,9 +36,7 @@ export function isExperimentalFeatureEnabled(featureId: ExperimentalFeatureId): 
     }
 
     if (featureId === "llm") {
-        // LLM features require server-side API calls that don't work in standalone mode
-        // due to CORS restrictions from LLM providers (OpenAI, Google don't allow browser requests)
-        return !isStandalone && options.is("aiEnabled");
+        return options.is("aiEnabled");
     }
 
     return getEnabledFeatures().has(featureId);
@@ -49,7 +47,7 @@ export function getEnabledExperimentalFeatureIds() {
     if (isMobile() || options.is("newLayout")) {
         values.push("new-layout");
     }
-    if (!isStandalone && options.is("aiEnabled")) {
+    if (options.is("aiEnabled")) {
         values.push("llm");
     }
     return values;

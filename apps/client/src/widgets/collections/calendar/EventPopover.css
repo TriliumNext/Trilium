@@ -1,0 +1,94 @@
+.calendar-event-popover {
+    /* Held to the window: Popper shifts a card too wide for the room into the viewport rather than
+       narrowing it, so an unclamped width would hang off the edge.
+       Must agree with `MAX_ANCHOR_WIDTH` in selection.ts. */
+    width: min(480px, calc(100vw - 4rem));
+    /* As tall as the event needs; what it holds scrolls within it (see the body below). */
+    max-height: min(640px, 85vh);
+
+    /* The same card grown to the window (see the maximize in EventDetails); it takes its height
+       from the insets in `.maximized` in Popover.css, so the anchored ceiling is given up here. */
+    &.maximized {
+        width: min(var(--preferred-max-content-width, 900px), calc(100vw - 4rem));
+        max-height: none;
+
+        /* The card is now taller than the event, so the column has to take up the difference. */
+        .calendar-event-popover-inner {
+            flex: 1;
+        }
+    }
+
+    .calendar-event-popover-inner {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .calendar-event-popover-header {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 9px;
+        border-bottom: 1px solid var(--main-border-color);
+        flex-shrink: 0;
+
+        > .title-row {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+
+    /* The note's own widgets are laid out by the shared class (see EmbeddedNotePane.css), which
+       also brings the column they stand in; what is peculiar to the popover is that its body is
+       the thing that scrolls. */
+    .calendar-event-popover-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 10px;
+        /* The scrollbar's room is kept whether or not it shows, so the fields hold one width
+           across events instead of narrowing by its thickness when a longer note brings it. */
+        scrollbar-gutter: stable;
+    }
+}
+
+/*
+ * The same event as a sheet (see EventSheet). What heads it, the surface and the way out are the
+ * dialog's, and its head is dressed as the quick editor's (see the shared rules in
+ * PopupEditor.css); what is left here is how tall it stands and the body inside it.
+ */
+.modal.calendar-event-sheet .modal-dialog {
+    /* As tall as a dialog may stand, the quick editor's own bargain: a note's editor wants the
+       room, and a sheet sized to its contents would jump between one event and the next. */
+    max-height: var(--tn-modal-max-height);
+    height: 100%;
+}
+
+/* The head carries a background of its own, which would square off the corners the dialog is
+   rounded by — the very thing a page-high sheet gives up (see EventSheet). */
+.modal.calendar-event-sheet .modal-content {
+    overflow: hidden;
+}
+
+/*
+ * The dialog's own body takes what the head leaves and scrolls within it, which is what holds the
+ * sheet at its full height however little the event has to say. Its own scrolling rather than
+ * Bootstrap's `scrollable`: that hands the dialog back to its contents on a phone
+ * (`body.mobile .modal-dialog.modal-dialog-scrollable` in style.css sets `height: unset`), so the
+ * sheet would stand only as tall as the note within it. The quick editor scrolls its body for the
+ * same reason.
+ */
+.modal.calendar-event-sheet .modal-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* The note's widgets give up the padding and the scrolling they keep for themselves in the
+   popover, both being the dialog's above. */
+.modal.calendar-event-sheet .calendar-event-popover-body {
+    padding: 0;
+    overflow: visible;
+    scrollbar-gutter: auto;
+}

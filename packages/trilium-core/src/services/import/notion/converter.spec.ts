@@ -158,6 +158,10 @@ describe("convertNotionHtml — toggle headings", () => {
             `<details open class="trilium-collapsible"><summary>Plain</summary><p>x</p></details>`
         );
     });
+
+    it("leaves a <details> with no summary alone (there's no title to lift into a heading)", () => {
+        expect(convertNotionHtml(`<details><p>Body</p></details>`)).toBe(`<details><p>Body</p></details>`);
+    });
 });
 
 describe("convertNotionHtml — table of contents", () => {
@@ -258,6 +262,20 @@ describe("convertNotionHtml — columns", () => {
             `<td style="border-color:transparent;width:50%;">2/2</td>` +
             `</tr></tbody></table></figure>`
         );
+    });
+
+    it("shares the row evenly between width-less columns, and survives an all-zero layout", () => {
+        const bare = (text: string) => dc(`<div class="column">${dc(`<p class="">${text}</p>`)}</div>`);
+        const cell = (width: string, text: string) => `<td style="border-color:transparent;width:${width}%;">${text}</td>`;
+        const table = (...cells: string[]) =>
+            `<figure class="table"><table style="border-color:transparent;"><tbody><tr>${cells.join("")}</tr></tbody></table></figure>`;
+
+        // No `width:` style on either column, so each takes an equal share of the row.
+        expect(convertNotionHtml(dc(`<div id="x" class="column-list">${bare("A")}${bare("B")}</div>`)))
+            .toBe(table(cell("50", "A"), cell("50", "B")));
+        // Widths that sum to zero would divide by zero; the row degenerates to zero-width cells instead.
+        expect(convertNotionHtml(columnList(column("0%", "A"), column("0%", "B"))))
+            .toBe(table(cell("0", "A"), cell("0", "B")));
     });
 
     it("keeps a column with loose content and a nested list as one cell (nested table inside), not losing content", () => {

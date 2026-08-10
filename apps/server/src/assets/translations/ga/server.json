@@ -68,7 +68,8 @@
     "save-named-revision": "Sábháil athbhreithniú ainmnithe den nóta gníomhach",
     "toggle-archived-notes": "Taispeáin/folaigh nótaí cartlannaithe sa chrann nótaí",
     "peek-right-pane": "Féach ar an bpainéal ar dheis mar phainéal sealadach a shnámhann os cionn an ábhair agus a dhúnann nuair a chailleann sé fócas",
-    "show-deleted-notes": "Taispeáin an dialóg \"Nótaí Scriosta\""
+    "show-deleted-notes": "Taispeáin an dialóg \"Nótaí Scriosta\"",
+    "show-shortcut-hints": "Taispeáin aicearraí méarchláir don ghiuirléid atá dírithe"
   },
   "keyboard_action_names": {
     "back-in-note-history": "Ar ais i Stair na Nótaí",
@@ -169,7 +170,8 @@
     "save-named-revision": "Sábháil Athbhreithniú Ainmnithe",
     "toggle-archived-notes": "Infheictheacht Nótaí Cartlainne a Athrú",
     "peek-right-pane": "Féach ar an bPanáil Ar Dheis",
-    "show-deleted-notes": "Taispeáin Nótaí Scriosta"
+    "show-deleted-notes": "Taispeáin Nótaí Scriosta",
+    "show-shortcut-hints": "Taispeáin Leideanna Aicearraí"
   },
   "login": {
     "title": "Logáil Isteach",
@@ -305,7 +307,8 @@
     "security-title": "Slándáil",
     "desktop-title": "Deasc",
     "deleted-notes-title": "Nótaí scriosta",
-    "color-scheme-switcher-title": "Athraitheoir Scéim Dathanna"
+    "color-scheme-switcher-title": "Athraitheoir Scéim Dathanna",
+    "content-manager-title": "Bainisteoir Ábhair"
   },
   "notes": {
     "new-note": "Nóta nua",
@@ -394,9 +397,6 @@
     "db_not_initialized_desktop": "Níl an bunachar sonraí tosaithe, lean na treoracha ar an scáileán le do thoil.",
     "db_not_initialized_server": "Níl an bunachar sonraí tosaithe, tabhair cuairt ar an leathanach socraithe - http://[your-server-host]:{{port}} le treoracha a fheiceáil maidir le conas Trilium a thosú."
   },
-  "desktop": {
-    "instance_already_running": "Tá sampla ag rith cheana féin, agus tá fócas á chur ar an sampla sin ina ionad."
-  },
   "script": {
     "wrong-environment": "Ní féidir an nóta \"{{- noteTitle}}\" ({{- noteId}}) a fhorghníomhú. Is script {{- actualEnv}} é seo, ach rinneadh iarracht é a fhorghníomhú sa {{- expectedEnv}}."
   },
@@ -429,10 +429,45 @@
     "sql-console": "Consól SQL",
     "sql-console-warning": "Ceadaíonn consól SQL ceisteanna SQL treallacha a fhorghníomhú i gcoinne an bhunachar sonraí.",
     "lan-access": "rochtain líonra",
-    "lan-access-warning": "Beidh gléasanna eile ar do líonra áitiúil in ann ceangal leis an gcás Trilium seo."
+    "lan-access-warning": "Déanfar an aip agus do nótaí comhroinnte a sheirbheáil thar an líonra — beidh siad inrochtana ó bhrabhsálaí ar an ríomhaire seo agus ó ghléasanna eile ar do líonra áitiúil."
   },
   "onenote_import": {
-    "root-title": "Allmhairiú OneNote"
+    "root-title": "Allmhairiú OneNote",
+    "failed-page-placeholder": "Níorbh fhéidir an leathanach seo a allmhairiú ó OneNote. Earráid: {{error}}",
+    "failed-section-placeholder": "Níorbh fhéidir an chuid seo a allmhairiú ó OneNote, mar sin cruthaíodh é folamh. Earráid: {{error}}",
+    "protected-section-error": "Tá an chuid seo cosanta ag pasfhocal. Bain a pasfhocal in OneNote, agus ansin iompórtáil arís í.",
+    "protected-section-placeholder": "Tá an chuid seo cosanta ag pasfhocal, mar sin níorbh fhéidir a leathanaigh a allmhairiú agus cruthaíodh é folamh. Chun é a allmhairiú, oscail an chuid in OneNote, bain a chosaint pasfhocail (cliceáil ar dheis ar an gcuid &rarr; Cosaint Pasfhocail &rarr; Bain Pasfhocal), ansin rith an t-allmhairiú arís.",
+    "report": {
+      "row-pages": "Leathanaigh allmhairithe go rathúil",
+      "row-notebooks": "Leabhair nótaí allmhairithe",
+      "row-sections": "Rannóga allmhairithe",
+      "row-duration": "Fad iomlán an allmhairithe",
+      "row-images": "Íomhánna",
+      "row-attachments": "Ceangaltáin chomhaid",
+      "row-ink": "Leathanaigh le lámhscríbhneoireacht nó líníochtaí",
+      "row-links": "Naisc trasleathanaigh",
+      "row-throttling": "Am laghdaithe ag Microsoft Graph",
+      "value-links": "{{resolved}} réitithe, {{unresolved}} ag pointeáil lasmuigh den roghnú allmhairithe",
+      "value-throttling_one": "{{- wait}} ({{count}} iarratas srianta)",
+      "value-throttling_two": "{{- wait}} ({{count}} iarratais srianta)",
+      "value-throttling_few": "{{- wait}} ({{count}} iarratais srianta)",
+      "value-throttling_many": "{{- wait}} ({{count}} iarratais srianta)",
+      "value-throttling_other": "{{- wait}} ({{count}} iarratais srianta)",
+      "skipped-sections-title": "Rannóga nárbh fhéidir a allmhairiú",
+      "skipped-sections-section": "Roinn",
+      "skipped-sections-notebook": "Leabhar nótaí",
+      "skipped-sections-error": "Earráid",
+      "failed-pages-title": "Leathanaigh nárbh fhéidir a allmhairiú",
+      "failed-pages-page": "Leathanach",
+      "failed-pages-section": "Roinn",
+      "failed-pages-error": "Earráid",
+      "failed-resources-title": "Íomhánna agus ceangaltáin ar iarraidh",
+      "failed-resources-item_one": "{{- pageLink}}: Níorbh fhéidir {{count}} acmhainn a íoslódáil",
+      "failed-resources-item_two": "{{- pageLink}}: Níorbh fhéidir {{count}} acmhainní a íoslódáil",
+      "failed-resources-item_few": "{{- pageLink}}: Níorbh fhéidir {{count}} acmhainní a íoslódáil",
+      "failed-resources-item_many": "{{- pageLink}}: Níorbh fhéidir {{count}} acmhainní a íoslódáil",
+      "failed-resources-item_other": "{{- pageLink}}: Níorbh fhéidir {{count}} acmhainní a íoslódáil"
+    }
   },
   "notion_import": {
     "root-title": "Iompórtáil Notion",
@@ -459,5 +494,28 @@
   "note_conversion": {
     "revision_before_markdown": "Roimh an gcomhshó go Markdown",
     "revision_before_text": "Roimh an gcomhshó go Nóta Téacs"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Theip ar chúltaca bunachar sonraí: ní féidir scríobh chuig {{- location}}. Ag déanamh cúltaca chuig an suíomh réamhshocraithe ina ionad.",
+    "passphrase_unavailable": "Níorbh fhéidir an focal faire cúltaca a léamh, mar sin níl an cúltaca seo criptithe. Tá sé sábháilte chuig an suíomh réamhshocraithe in ionad an cheann roghnaithe."
+  },
+  "dialog": {
+    "select_directory": "Roghnaigh fillteán"
+  },
+  "backup-password-dialog": {
+    "cancel": "Cealaigh",
+    "set-title": "An bhfuil focal faire cúltaca socraithe?",
+    "set-message": "Déanfar cúltacaí amach anseo a chriptiú leis an bpasfhocal seo.",
+    "set-detail": "Ní féidir le Trilium an pasfhocal seo a thaispeáint arís, mar sin coinnigh cóip in áit shábháilte: gan é, ní féidir cúltaca a athchóiriú.\n\nMura raibh súil agat go n-iarrfaí ort é, cealaigh — b’fhéidir gur iarr nóta nó script é seo.",
+    "set-confirm": "Socraigh pasfhocal",
+    "clear-title": "An bhfuil dearmad déanta agat ar an bpasfhocal cúltaca?",
+    "clear-message": "Ní bheidh cúltacaí criptithe a thuilleadh.",
+    "clear-detail": "Coinníonn cúltacaí atá scríofa cheana an focal faire a úsáideadh chun iad a úsáid, agus is féidir iad a athchóiriú leis fós.\n\nMura raibh súil agat go n-iarrfaí ort é sin a dhéanamh, cealaigh — b’fhéidir gur iarr nóta nó script é seo.",
+    "clear-confirm": "Dearmad ar an bhfocal faire"
+  },
+  "restore": {
+    "pick_backup_title": "Roghnaigh cúltaca le hathchóiriú",
+    "backup_filter": "Cúltaca trilium (*.db, *.tnbackup)",
+    "any_file_filter": "Gach comhad"
   }
 }

@@ -13,6 +13,37 @@
     color: var(--muted-text-color);
 }
 
+/*
+ * On a narrow card the font takes a line of its own, under the name rather than beside it.
+ *
+ * The value in this row is not a word but a specimen — the family drawn in itself, at the size it is
+ * set to — so its width is the user's to decide and can exceed the screen's: "American Typewriter"
+ * at 150% measures 400px on a 412px phone. `.option-row-input` does not shrink, so beside a name
+ * there was nowhere for that to go but off the card, taking the chevron with it.
+ *
+ * Matches the width the other rows stack at (see OptionsRow.css), which this row is held out of:
+ * that exclusion is for the link rows carrying nothing but a chevron, which have no reason to.
+ */
+@container (max-width: 600px) {
+    .font-option-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .font-option-row .font-option-preview {
+        /* The chevron stays at the far edge, where it is on every other row that leads somewhere. */
+        justify-content: space-between;
+    }
+
+    .font-option-row .font-option-specimen {
+        /* A long name breaks rather than overflowing: `anywhere` because a family name is one word
+           as often as not, and there is no break the browser would take on its own. */
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+}
+
 /* Font Picker Modal */
 body.desktop .modal.font-picker-modal {
     .modal-content-with-sidebar {

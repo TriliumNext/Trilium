@@ -6,44 +6,60 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getContext } from "../context.js";
+import { getLog } from "../log.js";
+import noteService from "../notes.js";
+import protectedSessionService from "../protected_session.js";
 import sql_init from "../sql_init.js";
 import TaskContext from "../task_context.js";
-import { decodeUtf8 } from "../utils/binary.js";
+import { decodeUtf8, encodeUtf8 } from "../utils/binary.js";
 import imageService from "../image.js";
 import enex from "./enex.js";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
-async function testImport(fileName: string) {
-    const sample = fs.readFileSync(path.join(scriptDir, "samples", fileName));
+interface ImportOverrides {
+    /** Upload name, when it should differ from the sample's file name (e.g. a non-`.enex` extension). */
+    originalname?: string;
+    /** Raw body, when the sample shouldn't be read from disk (e.g. to exercise the string-body path). */
+    buffer?: string | Uint8Array;
+    /** Import target, defaulting to `root`. */
+    parentNote?: BNote;
+}
+
+async function testImport(fileName: string, { originalname = fileName, buffer, parentNote }: ImportOverrides = {}) {
     const taskContext = TaskContext.getInstance("import-enex", "importNotes", {});
+    const rootNote = parentNote ?? becca.getNoteOrThrow("root");
 
-    return new Promise<{ importedNote: BNote; rootNote: BNote; taskContext: TaskContext<"importNotes"> }>((resolve, reject) => {
-        getContext().init(async () => {
-            const rootNote = becca.getNote("root");
-            if (!rootNote) {
-                expect(rootNote).toBeTruthy();
-                return;
-            }
+    const importedNote = await getContext().init(() =>
+        enex.importEnex(taskContext, {
+            originalname,
+            mimetype: "application/enex+xml",
+            buffer: buffer ?? fs.readFileSync(path.join(scriptDir, "samples", fileName))
+        }, rootNote)
+    );
 
-            const importedNote = await enex.importEnex(taskContext, {
-                originalname: fileName,
-                mimetype: "application/enex+xml",
-                buffer: sample
-            }, rootNote as BNote);
-            resolve({
-                importedNote,
-                rootNote,
-                taskContext
-            });
-        });
-    });
+    return { importedNote, rootNote, taskContext };
 }
 
 describe("importEnex", () => {
     beforeAll(async () => {
         sql_init.initializeDb();
         await sql_init.dbReady;
+    });
+
+    // Must stay the FIRST import in this file: the parser's note accumulator is module state, so it is only
+    // empty (the state a stray pre-<note> element hits) before the first note of the process is parsed.
+    it("ignores note-attributes, resources and tasks that appear before the first note", async () => {
+        const { importedNote } = await testImport("Stray elements.enex");
+
+        // The stray elements belong to no note, so they are dropped and the following note imports normally.
+        const note = importedNote.getChildNotes().find(n => n.title === "After strays");
+        if (!note) {
+            throw new Error("'After strays' note was not imported");
+        }
+        expect(note.getOwnedAttributes()).toHaveLength(0);
+        expect(note.getAttachments()).toHaveLength(0);
+        expect(decodeUtf8(note.getContent())).toContain("Body");
     });
 
     it("imports non-image resources as attachments instead of child notes", async () => {
@@ -275,5 +291,83 @@ describe("importEnex", () => {
         expect(content).toContain(`<span class="todo-list__label__description">Investigate bug</span>`);
         // The checked item ("Investigate bug") carries the checked state.
         expect(content).toContain(`checked="checked"`);
+    });
+
+    it("imports a note without an <en-note> wrapper, a creation date or a resource mime", async () => {
+        const { importedNote } = await testImport("Bare note.enex");
+
+        const note = importedNote.getChildNotes().find(n => n.title === "Bare");
+        if (!note) {
+            throw new Error("'Bare' note was not imported");
+        }
+
+        // The body is taken as-is when the ENML wrapper tags are missing.
+        expect(decodeUtf8(note.getContent())).toContain("No en-note wrapper");
+
+        // A resource without a <mime> falls back to a binary attachment, and without a <file-name> it keeps
+        // the generic "resource" title.
+        expect(note.getAttachmentsByRole("file").map(a => ({ title: a.title, mime: a.mime }))).toEqual([
+            { title: "resource", mime: "application/octet-stream" }
+        ]);
+
+        // With no <created>/<updated> the note keeps the date it was created with, for both timestamps.
+        expect(note.utcDateModified).toBe(note.utcDateCreated);
+    });
+
+    it("keeps a non-.enex upload name as the root title and imports an export with no notes", async () => {
+        // The body is handed over as a string (the browser/WASM upload path) rather than as bytes.
+        const buffer = fs.readFileSync(path.join(scriptDir, "samples", "No notes.enex")).toString();
+        const setTotalCount = vi.spyOn(TaskContext.prototype, "setTotalCount");
+        try {
+            const { importedNote } = await testImport("No notes.enex", { originalname: "Evernote export.xml", buffer });
+
+            // Only a ".enex" suffix is stripped from the root title.
+            expect(importedNote.title).toBe("Evernote export.xml");
+            expect(importedNote.getChildNotes()).toHaveLength(0);
+            // Without notes there is no denominator to report, so no progress total is set.
+            expect(setTotalCount).not.toHaveBeenCalled();
+        } finally {
+            setTotalCount.mockRestore();
+        }
+    });
+
+    it("rejects a note that carries no title", async () => {
+        await expect(testImport("Missing title.enex")).rejects.toThrow("Missing title or content for note.");
+    });
+
+    it("logs a malformed XML fragment and resumes parsing the remaining notes", async () => {
+        const logError = vi.spyOn(getLog(), "error");
+        try {
+            const { importedNote } = await testImport("Broken markup.enex");
+
+            expect(logError).toHaveBeenCalled();
+            // The parser is resumed after the error, so the well-formed note still imports.
+            expect(importedNote.getChildNotes().map(n => n.title)).toContain("Recovered");
+        } finally {
+            logError.mockRestore();
+        }
+    });
+
+    it("marks the imported notes protected when the parent is protected and a session is available", async () => {
+        // Protection propagates only via `parentNote.isProtected && isProtectedSessionAvailable()`, so both
+        // a protected target and a data key are needed.
+        protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef")); // exactly 16 bytes
+        try {
+            const parentNote = await getContext().init(async () => noteService.createNewNote({
+                parentNoteId: "root",
+                title: "protected enex target",
+                content: "",
+                type: "text",
+                mime: "text/html",
+                isProtected: true
+            }).note);
+
+            const { importedNote } = await testImport("Legacy checkboxes.enex", { parentNote });
+
+            expect(importedNote.isProtected).toBe(true);
+            expect(importedNote.getChildNotes().every(n => n.isProtected)).toBe(true);
+        } finally {
+            protectedSessionService.resetDataKey();
+        }
     });
 }, 60_000);

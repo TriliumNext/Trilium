@@ -407,9 +407,9 @@ describe("LinkEmbedToolbar", () => {
             writer.setSelection(embed, "on");
         });
         const dropdown = editor.ui.componentFactory.create("linkEmbedDisplayDropdown") as unknown as DropdownView;
-        // embedType "opengraph" maps to mode "card"
-        const cardMode = LINK_DISPLAY_MODES.find(m => m.value === "card");
-        expect(dropdown.buttonView.label).toBe(cardMode?.label);
+        // embedType "opengraph" maps to mode "card". No dictionary is configured, so the label
+        // renders its English message id.
+        expect(dropdown.buttonView.label).toBe("Card");
     });
 
     // -----------------------------------------------------------------------
@@ -429,19 +429,21 @@ describe("LinkEmbedToolbar", () => {
         for (let i = 0; i < LINK_DISPLAY_MODES.length; i++) {
             const item = listView.items.get(i);
             const button = item.children.get(0);
-            expect(button._displayMode).toBe(LINK_DISPLAY_MODES[i].value);
+            expect(button._displayMode).toBe(LINK_DISPLAY_MODES[i]);
         }
     });
 
     it("each list item has the correct label", () => {
         const dropdown = editor.ui.componentFactory.create("linkEmbedDisplayDropdown") as unknown as DropdownView;
         const listView = openDropdown(dropdown);
+        const labels = [];
 
         for (let i = 0; i < LINK_DISPLAY_MODES.length; i++) {
-            const item = listView.items.get(i);
-            const button = item.children.get(0);
-            expect(button.label).toBe(LINK_DISPLAY_MODES[i].label);
+            labels.push(listView.items.get(i).children.get(0).label);
         }
+
+        // No dictionary is configured, so each label renders its English message id.
+        expect(labels).toEqual([ "Inline", "Card", "Embed", "Plain link" ]);
     });
 
     it("list item isOn is true for the matching mode when a card linkEmbed is selected", () => {
@@ -625,11 +627,11 @@ describe("LinkEmbedToolbar", () => {
 
         beforeEach(async () => {
             copy = vi.fn();
-            // The copy button reaches the host through these two config entries, which the editor
-            // config type does not declare (the host sets them the same way, via a cast).
+            // The copy button reaches the host through `clipboard`, which the editor config type
+            // does not declare (the host sets it the same way, via a cast). Its label comes from
+            // the editor's own dictionary, not from the host.
             const hostConfig = {
-                clipboard: { copy },
-                translate: (key: string) => `translated:${key}`
+                clipboard: { copy }
             } as unknown as Parameters<typeof createTestEditor>[1];
 
             editor = await createTestEditor([Essentials, Paragraph, LinkEmbed, LinkEmbedToolbar], hostConfig);
@@ -669,7 +671,7 @@ describe("LinkEmbedToolbar", () => {
 
         it("linkEmbedCopyUrl copies the selected widget's URL through the host clipboard", () => {
             const button = createButton("linkEmbedCopyUrl");
-            expect(button.label).toBe("translated:link.copy_url");
+            expect(button.label).toBe("Copy URL");
 
             // With nothing selected there is no URL, so nothing is copied.
             button.fire("execute");

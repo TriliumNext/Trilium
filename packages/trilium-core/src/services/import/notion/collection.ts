@@ -13,7 +13,7 @@ import { dayjs } from "@triliumnext/commons";
 import type { HTMLElement } from "node-html-parser";
 
 import type BNote from "../../../becca/entities/bnote.js";
-import { applyUrlScheme, attachmentReferenceLink, buildPromotedDefinition, saveFileAttachment, toAttributeName } from "../collection_utils.js";
+import { attachmentReferenceLink, buildPromotedDefinition, saveFileAttachment, stripUrlScheme, toAttributeName } from "../collection_utils.js";
 import type { LinkTarget, NotionProperty, ParsedPage } from "./model.js";
 import { getNotionId, stripNotionId } from "./notion_id.js";
 import { baseName, internalPageId, ownedFolderKey, parentFolderKey, removeExtension, resolveResourcePath } from "./paths.js";
@@ -69,7 +69,7 @@ export function resolveDatabaseContainers(pages: ParsedPage[], csvPaths: string[
  *  - `number`: the cell's text, normalized to a bare number → one single-valued `number` label;
  *  - `auto_increment_id`: a bare integer → a `number` label, a prefixed id (e.g. `TASK-1`) → a `text` label;
  *  - `multi_select`: each `<span class="selected-value">` option → one entry of a multi-valued property;
- *  - `url` / `email` / `phone_number`: the anchor's href → one single-valued url-typed property (email gets `mailto:`, phone `tel:`);
+ *  - `url` / `email` / `phone_number`: the anchor's href → one single-valued `url`/`email`/`phone` property (bare address, schemes stripped);
  *  - `date`: the `<time>` value → a `date`/`datetime` label; a range adds a separate `<name> end` column;
  *  - `checkbox`: `checkbox-on`/`checkbox-off` → a `true`/`false` boolean label;
  *  - `formula` / `rollup`: a computed value with no type signal, inferred from the rendered cell shape —
@@ -119,11 +119,11 @@ export function extractProperties(root: HTMLElement): NotionProperty[] {
                 }
             }
         } else if (type === "url" || type === "email" || type === "phone_number") {
-            // All three render as `<a class="url-value">`; the href is the canonical value. Email/phone hrefs
-            // are bare addresses, so give them a `mailto:`/`tel:` scheme to stay clickable as url labels.
+            // All three render as `<a class="url-value">`; the href is the canonical value. Email and phone
+            // become typed labels of their own, holding the bare address their inputs expect.
             const href = cell.querySelector("a")?.getAttribute("href")?.trim();
             if (href) {
-                properties.push({ name, value: toUrlValue(type, href), labelType: "url", multiplicity: "single" });
+                properties.push({ name, ...toLinkProperty(type, href), multiplicity: "single" });
             }
         } else if (type === "date") {
             properties.push(...parseDateProperties(name, cell));
@@ -248,15 +248,19 @@ function numericFormulaValue(text: string): string | undefined {
     return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(core) ? core : undefined;
 }
 
-/** Gives an email/phone href a clickable scheme (`mailto:`/`tel:`); a plain url href is returned as-is. */
-function toUrlValue(type: string, href: string): string {
+/**
+ * Types a `url`/`email`/`phone_number` column's href. An email/phone href is usually the bare address
+ * already, but a `mailto:`/`tel:` scheme is stripped in case one sneaks in — the typed inputs hold the
+ * address alone (and reject a schemed one as invalid).
+ */
+function toLinkProperty(type: string, href: string): Pick<NotionProperty, "value" | "labelType"> {
     if (type === "email") {
-        return applyUrlScheme(href, "mailto:");
+        return { value: stripUrlScheme(href, "mailto:"), labelType: "email" };
     }
     if (type === "phone_number") {
-        return applyUrlScheme(href, "tel:");
+        return { value: stripUrlScheme(href, "tel:"), labelType: "phone" };
     }
-    return href;
+    return { value: href, labelType: "url" };
 }
 
 /**

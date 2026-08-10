@@ -109,6 +109,15 @@ Tables can be set to have invisible borders in order to allow for basic layouts 
     3.  Width to `1px`.
 4.  In Cell Properties, set the same as on the previous step.
 
+## Table indentation
+
+Since v0.104.1, tables can be indented as a block (the whole table moves, rather than just the content of a cell).
+
+1.  Click the <img src="5_Tables_image.png" width="24" height="26"> button to select the entire table. Otherwise, the indentation applies only to the current cell's content.
+2.  Press <kbd>Tab</kbd> to increase the indent, or <kbd>Shift</kbd>+<kbd>Tab</kbd> to decrease it. Alternatively, use the indentation buttons in the formatting toolbar.
+
+Markdown does not support indented tables, so the indentation is lost when converting to Markdown.
+
 ## Markdown import/export
 
 Simple tables are exported in GitHub-flavored Markdown format (e.g. a series of `|` items). If the table is found to be more complex (it contains HTML elements, has custom sizes or images), the table is converted to a HTML one instead.

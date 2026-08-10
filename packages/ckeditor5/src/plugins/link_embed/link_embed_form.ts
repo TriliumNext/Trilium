@@ -20,10 +20,10 @@ import {
     ViewModel
 } from "ckeditor5";
 
-import { LINK_DISPLAY_MODES, type LinkDisplayMode } from "./link_embed_commands.js";
+import { getLinkDisplayModeLabel, LINK_DISPLAY_MODES, type LinkDisplayMode } from "./link_embed_commands.js";
 
-/** Resolves a translation key, falling back to the given English text. See `translate.ts`. */
-type Translate = (key: string, fallback: string) => string;
+/** The editor's translation function, taking an English message id. */
+type Translate = (message: string) => string;
 
 /**
  * The balloon form behind the "Link preview" toolbar button: a URL field, a display-mode selector
@@ -54,7 +54,7 @@ export default class LinkEmbedFormView extends View {
     private readonly _focusables = new ViewCollection<FocusableView>();
     private readonly _focusCycler: FocusCycler;
 
-    constructor(locale: Locale, translate: Translate) {
+    constructor(locale: Locale, t: Translate) {
         super(locale);
 
         this.set("url", "");
@@ -62,9 +62,9 @@ export default class LinkEmbedFormView extends View {
         this.set("embedAvailable", false);
         this.set("isFetching", false);
 
-        this.urlInputView = this._createUrlInput(locale, translate);
-        this.modeDropdownView = this._createModeDropdown(locale, translate);
-        this.insertButtonView = this._createInsertButton(locale, translate);
+        this.urlInputView = this._createUrlInput(locale, t);
+        this.modeDropdownView = this._createModeDropdown(locale, t);
+        this.insertButtonView = this._createInsertButton(locale, t);
 
         this.setTemplate({
             tag: "form",
@@ -77,7 +77,7 @@ export default class LinkEmbedFormView extends View {
                 {
                     tag: "div",
                     attributes: { class: ["ck", "ck-link-embed-form__heading"] },
-                    children: [{ text: translate("link_embed.title", "Link preview") }]
+                    children: [{ text: t("Link preview") }]
                 },
                 this.urlInputView,
                 {
@@ -140,9 +140,9 @@ export default class LinkEmbedFormView extends View {
         this._focusCycler.focusFirst();
     }
 
-    private _createUrlInput(locale: Locale, translate: Translate) {
+    private _createUrlInput(locale: Locale, t: Translate) {
         const urlInput = new LabeledFieldView(locale, createLabeledInputText);
-        urlInput.label = translate("link_embed.url", "URL");
+        urlInput.label = t("URL");
         urlInput.fieldView.placeholder = "http://";
 
         // Two-way: the field drives `url`, and reset() drives the field.
@@ -156,29 +156,29 @@ export default class LinkEmbedFormView extends View {
         return urlInput;
     }
 
-    private _createModeDropdown(locale: Locale, translate: Translate) {
+    private _createModeDropdown(locale: Locale, t: Translate) {
         const dropdown = createDropdown(locale, DropdownButtonView);
 
         dropdown.buttonView.set({ withText: true, tooltip: true });
-        dropdown.buttonView.bind("label").to(this, "mode", (mode) => modeLabel(mode, translate));
+        dropdown.buttonView.bind("label").to(this, "mode", (mode) => getLinkDisplayModeLabel(t, mode));
         dropdown.bind("isEnabled").to(this, "isFetching", (isFetching) => !isFetching);
 
         const items = new Collection<ListDropdownButtonDefinition>();
-        for (const modeDef of LINK_DISPLAY_MODES) {
+        for (const mode of LINK_DISPLAY_MODES) {
             const definition: ListDropdownButtonDefinition = {
                 type: "button",
                 model: new ViewModel({
-                    _displayMode: modeDef.value,
-                    label: translate(modeDef.labelKey, modeDef.label),
+                    _displayMode: mode,
+                    label: getLinkDisplayModeLabel(t, mode),
                     role: "menuitemradio",
                     withText: true
                 })
             };
 
-            definition.model.bind("isOn").to(this, "mode", (mode) => mode === modeDef.value);
+            definition.model.bind("isOn").to(this, "mode", (current) => current === mode);
 
             // A player only exists for a URL that has one.
-            if (modeDef.value === "embed") {
+            if (mode === "embed") {
                 definition.model.bind("isVisible").to(this, "embedAvailable");
             }
 
@@ -193,12 +193,12 @@ export default class LinkEmbedFormView extends View {
         return dropdown;
     }
 
-    private _createInsertButton(locale: Locale, translate: Translate) {
+    private _createInsertButton(locale: Locale, t: Translate) {
         const button = new ButtonView(locale);
 
         // A text button, like the Insert button of the editor's own link form.
         button.set({
-            label: translate("link_embed.insert", "Insert"),
+            label: t("Insert"),
             withText: true,
             type: "submit",
             class: "ck-button-action ck-button-bold"
@@ -213,11 +213,4 @@ export default class LinkEmbedFormView extends View {
 
         return button;
     }
-}
-
-/** A display mode's label, in the user's language. */
-function modeLabel(mode: LinkDisplayMode, translate: Translate): string {
-    const found = LINK_DISPLAY_MODES.find((modeDef) => modeDef.value === mode);
-    /* v8 ignore next -- `mode` is only ever set from LINK_DISPLAY_MODES, so the fallback is unreachable */
-    return found ? translate(found.labelKey, found.label) : String(mode);
 }

@@ -28,7 +28,11 @@ execSync(`${getElectronPath()} ${args.join(" ")} --no-sandbox`, {
         NODE_ENV: "development",
         TRILIUM_ENV: "dev",
         TRILIUM_RESOURCE_DIR: "../server/src",
-        BETTERSQLITE3_NATIVE_PATH: "node_modules/better-sqlite3/build/Release/better_sqlite3.node",
+        // No BETTERSQLITE3_NATIVE_PATH: since better-sqlite3 v13 the addon is
+        // N-API based and ships prebuilt binaries for every supported
+        // platform/arch, which load unchanged under Electron. Its own resolver
+        // picks prebuilds/<platform>-<arch>.node, so there is no Electron-
+        // specific build in build/Release/ to point at any more.
         LD_LIBRARY_PATH
     }
 });

@@ -1,4 +1,4 @@
-import { trimIndentation } from "@triliumnext/commons";
+import { NoteMapNote, trimIndentation } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
@@ -8,13 +8,13 @@ import { buildNote, buildNotes } from "../../test/becca_easy_mocking";
 import note_map from "./note_map";
 
 interface LinkMapResponse {
-    notes: [string, string, string, string | null][];
+    notes: NoteMapNote[];
     noteIdToDescendantCountMap: Record<string, number>;
     links: { id: string; sourceNoteId: string; targetNoteId: string; name: string }[];
 }
 
 interface TreeMapResponse {
-    notes: [string, string, string, string | null][];
+    notes: NoteMapNote[];
     noteIdToDescendantCountMap: Record<string, number>;
     links: { sourceNoteId: string; targetNoteId: string }[];
 }
@@ -242,6 +242,35 @@ describe("Note map service (branch coverage)", () => {
         expect(exNames).not.toContain("friend");
     });
 
+    it("keeps archived notes only for a map rooted at an archived note", () => {
+        const archivedRoot = buildNote({
+            id: "arcRoot",
+            title: "Archived root",
+            "#archived": "true",
+            children: [
+                { id: "arcChild", title: "Archived child", "#archived": "true", "~friend": "arcRoot" }
+            ]
+        });
+
+        // Without this, the walk skips the root as archived and the map comes out empty: the root is
+        // missing from its own map, and the relation goes with it since a link needs both of its ends.
+        const linkMap = note_map.getLinkMap(req(archivedRoot.noteId)) as LinkMapResponse;
+        expect(linkMap.notes.map((n) => n[0])).toEqual(expect.arrayContaining([ "arcRoot", "arcChild" ]));
+        expect(linkMap.links.map((l) => l.name)).toContain("friend");
+
+        const treeMap = note_map.getTreeMap(req(archivedRoot.noteId)) as TreeMapResponse;
+        expect(treeMap.notes.map((n) => n[0])).toEqual(expect.arrayContaining([ "arcRoot", "arcChild" ]));
+
+        // A map rooted at a note that isn't archived keeps hiding the archived notes under it.
+        const liveRoot = buildNote({
+            id: "arcLiveRoot",
+            title: "Live root",
+            children: [ { id: "arcHidden", title: "Archived child", "#archived": "true" } ]
+        });
+        const liveMap = note_map.getLinkMap(req(liveRoot.noteId)) as LinkMapResponse;
+        expect(liveMap.notes.map((n) => n[0])).not.toContain("arcHidden");
+    });
+
     it("getLinkMap: imageLink retained only when target is not a child of the source", () => {
         // source -> imageLink -> external image note (not a child) => retained as a link
         const mapRoot = buildNote({
@@ -387,6 +416,78 @@ describe("Note map service (branch coverage)", () => {
             `<p><a href="#root/${target}">link</a></p><p>${big}</p>`
         );
         expect(excerpts[0]).toContain("…");
+    });
+
+    function chatBacklink(sourceId: string, messages: unknown[] | string) {
+        const target = buildNote({ id: `${sourceId}_t`, title: "Chat target" });
+        buildNote({
+            id: sourceId,
+            title: "Chat",
+            type: "llmChat",
+            "~internalLink": target.noteId,
+            content: typeof messages === "string" ? messages : JSON.stringify({ messages })
+        });
+        const res = note_map.getBacklinks(req(target.noteId));
+        return res.find((b) => b.noteId === sourceId) as any;
+    }
+
+    // The excerpt HTML itself is covered by services/llm_chat_excerpts.spec.ts;
+    // these only pin how getBacklinks routes llmChat sources.
+    it("llmChat backlinks: a quotable mention yields excerpts instead of the relation name", () => {
+        const backlink = chatBacklink("chatWiki", [
+            {
+                role: "assistant",
+                content: [ { type: "text", content: "I found it in [[chatWiki_t]]." } ]
+            }
+        ]);
+
+        expect(backlink.relationName).toBeUndefined();
+        expect(backlink.excerpts).toHaveLength(1);
+        expect(backlink.excerpts[0]).toContain(`<a class="reference-link backlink-link" href="#root/chatWiki_t">`);
+    });
+
+    it("llmChat backlinks: an excerpt-less chat falls back to the relation name", () => {
+        const toolCallOnly = chatBacklink("chatTool", [
+            {
+                role: "assistant",
+                content: [ { type: "tool_call", toolCall: { input: { noteId: "chatTool_t" } } } ]
+            }
+        ]);
+        expect(toolCallOnly).toEqual({ noteId: "chatTool", relationName: "internalLink" });
+    });
+
+    function mapBacklink(sourceId: string, nodeData: unknown) {
+        const target = buildNote({ id: `${sourceId}_t`, title: "Map target" });
+        buildNote({
+            id: sourceId,
+            title: "Map",
+            type: "mindMap",
+            "~internalLink": target.noteId,
+            content: JSON.stringify({ nodeData })
+        });
+        const res = note_map.getBacklinks(req(target.noteId));
+        return res.find((b) => b.noteId === sourceId) as any;
+    }
+
+    // As for chats, the excerpt HTML is covered by services/backlink_excerpts.spec.ts; these pin
+    // how getBacklinks routes a map.
+    it("mindMap backlinks: the node the link sits on is quoted instead of the relation name", () => {
+        const backlink = mapBacklink("mapNode", {
+            topic: "Root",
+            children: [ { topic: "The node", hyperLink: "#root/mapNode_t" } ]
+        });
+
+        expect(backlink.relationName).toBeUndefined();
+        expect(backlink.excerpts).toEqual([
+            `<div class="ck-content backlink-excerpt">Root › <a class="backlink-link" href="#root/mapNode_t">The node</a></div>`
+        ]);
+    });
+
+    it("mindMap backlinks: a map with no node to quote falls back to the relation name", () => {
+        // The relation says the two are linked, but nothing in the map does — a map whose link was
+        // taken off a node between the scan and the asking.
+        const noNode = mapBacklink("mapGone", { topic: "Root", children: [] });
+        expect(noNode).toEqual({ noteId: "mapGone", relationName: "internalLink" });
     });
 });
 

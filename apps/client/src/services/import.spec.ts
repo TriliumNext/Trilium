@@ -197,6 +197,25 @@ describe("importNotes ws handler", () => {
         tSpy.mockRestore();
     });
 
+    it("shows the explicit throttled message while Graph rate-limits, with and without a total", async () => {
+        const tSpy = vi.spyOn(i18n, "t").mockImplementation(((key: string) => key) as typeof i18n.t);
+
+        // The count can legitimately sit still for a long time, so the throttled phase overrides the
+        // usual count message — but the bar stays, since the counted progress is still real.
+        await handler()({ type: "taskProgressCount", taskType: "importNotes", taskId: "t2", progressCount: 3, totalCount: 12, phase: "throttled" } as any);
+        let toast = (toastService.showPersistent as any).mock.calls.at(-1)[0];
+        expect(toast.message).toBe("import.throttled-with-total");
+        expect(toast.progress).toBe(3 / 12);
+
+        // Throttled before any total is known: no count to show, no bar.
+        await handler()({ type: "taskProgressCount", taskType: "importNotes", taskId: "t2", progressCount: 0, phase: "throttled" } as any);
+        toast = (toastService.showPersistent as any).mock.calls.at(-1)[0];
+        expect(toast.message).toBe("import.throttled");
+        expect(toast.progress).toBeUndefined();
+
+        tSpy.mockRestore();
+    });
+
     it("shows a generic 'starting' message (no bar) before anything is counted", async () => {
         const tSpy = vi.spyOn(i18n, "t").mockImplementation(((key: string) => key) as typeof i18n.t);
         await handler()({ type: "taskProgressCount", taskType: "importNotes", taskId: "t2", progressCount: 0 } as any);

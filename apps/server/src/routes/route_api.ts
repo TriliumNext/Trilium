@@ -1,4 +1,4 @@
-import { entity_changes as entityChangesService, NotFoundError, routes, utils as coreUtils, ValidationError } from "@triliumnext/core";
+import { entity_changes as entityChangesService, HttpError, routes, utils as coreUtils } from "@triliumnext/core";
 import express, { type RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
 import { mkdirSync } from "fs";
@@ -137,7 +137,9 @@ function handleException(e: unknown | Error, method: HttpMethod, path: string, r
         return;
     }
 
-    const resStatusCode = (e instanceof ValidationError || e instanceof NotFoundError) ? e.statusCode : 500;
+    // Any HttpError states its own code — 400 and 404 as before, plus 403 and 409, which used to be
+    // flattened into a 500 that told the client nothing about what to do differently.
+    const resStatusCode = e instanceof HttpError ? e.statusCode : 500;
 
     res.status(resStatusCode).json({
         message: errMessage

@@ -1,4 +1,4 @@
-import { BootstrapDefinition, ElectronApi, ElectronContextMenuParams } from "@triliumnext/commons";
+import { BootstrapDefinition, ElectronApi, ElectronContextMenuParams, StandaloneApi } from "@triliumnext/commons";
 
 import appContext, { AppContext } from "./components/app_context";
 import type FNote from "./entities/fnote";
@@ -58,6 +58,8 @@ declare global {
         };
 
         electronApi?: ElectronApi;
+        /** Present only in the standalone build, where the stack runs in this browser. */
+        standaloneApi?: StandaloneApi;
     }
 
 

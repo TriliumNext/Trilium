@@ -9,6 +9,7 @@ import otherRoute from "./api/others";
 import branchesApiRoute from "./api/branches";
 import appInfoRoute from "./api/app_info";
 import statsRoute from "./api/stats";
+import spaceUsageRoute from "./api/space_usage";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import cloningApiRoute from "./api/cloning";
 import sqlRoute from "./api/sql";
@@ -33,6 +34,10 @@ import backendLogRoute from "./api/backend_log";
 import backupRoute from "./api/backup";
 import passwordApiRoute from "./api/password";
 import loginApiRoute from "./api/login";
+import fontsRoute from "./api/fonts";
+import ocrRoute from "./api/ocr";
+import linkEmbedRoute from "./api/link_embed";
+import llmRoute from "./api/llm";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -44,6 +49,15 @@ const GET = "get",
 interface SharedApiRoutesContext {
     route: any;
     asyncRoute: any;
+    /**
+     * Like `asyncRoute`, minus the transaction, on every platform.
+     *
+     * `asyncRoute` is transactional in the browser and not on the server, which is fine for handlers
+     * that only read or write rows. It is not fine for the handful that close the database and open
+     * another one: the transaction they started belongs to a connection that is gone by the time it
+     * would be committed, and SQLite says so.
+     */
+    asyncRouteWithoutTransaction: any;
     apiRoute: any;
     asyncApiRoute: any;
     checkApiAuth: any;
@@ -57,7 +71,7 @@ interface SharedApiRoutesContext {
     csrfMiddleware: any;
 }
 
-export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
+export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTransaction, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
     apiRoute(GET, '/api/tree', treeApiRoute.getTree);
     apiRoute(PST, '/api/tree/load', treeApiRoute.load);
 
@@ -129,15 +143,44 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     route(GET, "/api/revisions/:revisionId/image/:filename", [checkApiAuthOrElectron], imageRoute.returnImageFromRevision);
     route(GET, "/api/attachments/:attachmentId/image/:filename", [checkApiAuthOrElectron], imageRoute.returnAttachedImage);
     route(GET, "/api/images/:noteId/:filename", [checkApiAuthOrElectron], imageRoute.returnImageFromNote);
-    route(PUT, "/api/images/:noteId", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], imageRoute.updateImage, apiResultHandler);
-    route(PST, "/api/notes/:noteId/attachments/upload", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], attachmentsApiRoute.uploadAttachment, apiResultHandler);
+    asyncRoute(PUT, "/api/images/:noteId", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], imageRoute.updateImage, apiResultHandler);
+    // Readings rather than runs: headers only, so they are cheap enough to open a dialog with.
+    apiRoute(GET, "/api/notes/:noteId/image-info", imageRoute.getNoteImageInfo);
+    apiRoute(GET, "/api/attachments/:attachmentId/image-info", imageRoute.getAttachmentImageInfo);
+    apiRoute(GET, "/api/notes/:noteId/image-inventory", imageRoute.getImageInventory);
+    // Recompressing decodes and re-encodes each image, so these run outside a transaction and open
+    // one per image written instead of holding a single one across the whole (asynchronous) run.
+    asyncApiRoute(PST, "/api/notes/:noteId/compress-images", imageRoute.compressNoteImages);
+    apiRoute(PST, "/api/image-compression/:taskId/cancel", imageRoute.cancelImageCompression);
+    asyncApiRoute(PST, "/api/attachments/:attachmentId/compress-image", imageRoute.compressAttachmentImage);
+    asyncRoute(PST, "/api/notes/:noteId/attachments/upload", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], attachmentsApiRoute.uploadAttachment, apiResultHandler);
+
+    // POSTed rather than taking the URL in a query string: a link can carry a one-time token or a
+    // signature, and a query string ends up in every access log along the way.
+    asyncApiRoute(PST, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
 
     // group of the services below are meant to be executed from the outside
-    route(GET, "/api/setup/status", [], setupApiRoute.getStatus, apiResultHandler);
+    // Not transactional: a status read needs no transaction, and one is unopenable during the moment
+    // a restore has the database detached — which is exactly when the wizard is polling hardest.
+    asyncRoute(GET, "/api/setup/status", [], setupApiRoute.getStatus, apiResultHandler);
     asyncRoute(PST, "/api/setup/new-document", [checkAppNotInitialized], setupApiRoute.setupNewDocument, apiResultHandler);
     asyncRoute(PST, "/api/setup/sync-from-server", [checkAppNotInitialized], setupApiRoute.setupSyncFromServer, apiResultHandler);
     route(GET, "/api/setup/sync-seed", [loginRateLimiter, checkCredentials], setupApiRoute.getSyncSeed, apiResultHandler);
     asyncRoute(PST, "/api/setup/sync-seed", [checkAppNotInitialized], setupApiRoute.saveSyncSeed, apiResultHandler);
+    // The one setup route that belongs to a running instance rather than to one without a database:
+    // it is how the app asks the next start to be the wizard.
+    asyncApiRoute(PST, "/api/setup/boot", setupApiRoute.bootToSetup);
+
+    // What becomes of the database the wizard was booted away from. Guarded like the rest of setup,
+    // and refused again inside on an instance that has no such database. Not transactional: the
+    // backup runs for minutes, and keeping the database reopens it.
+    // Without a transaction, on every platform: the backup runs for minutes with the database in
+    // use, and erasing or keeping it closes the connection any transaction would belong to.
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/backup", [checkAppNotInitialized], setupApiRoute.backUpExisting, apiResultHandler);
+    asyncRouteWithoutTransaction(GET, "/api/setup/existing/backup-defaults", [checkAppNotInitialized], setupApiRoute.existingBackupDefaults, apiResultHandler);
+    asyncRouteWithoutTransaction(GET, "/api/setup/existing/status", [checkAppNotInitialized], setupApiRoute.existingBackupStatus, apiResultHandler);
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/delete", [checkAppNotInitialized], setupApiRoute.deleteExisting, apiResultHandler);
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/keep", [checkAppNotInitialized], setupApiRoute.keepExisting, apiResultHandler);
 
     asyncApiRoute(PST, "/api/sync/test", syncApiRoute.testSync);
     asyncApiRoute(PST, "/api/sync/now", syncApiRoute.syncNow);
@@ -153,7 +196,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
 
     //#region Import/export
     asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
-    route(PST, "/api/notes/:parentNoteId/attachments-import", [checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
+    asyncRoute(PST, "/api/notes/:parentNoteId/attachments-import", [checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
     asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
     //#endregion
 
@@ -163,6 +206,12 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     apiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
     apiRoute(GET, "/api/search/:searchString", searchRoute.search);
     apiRoute(GET, "/api/search-templates", searchRoute.searchTemplates);
+
+    // Streaming a chat is not here — it has no single form every runtime can serve.
+    // The server and the desktop app answer `/api/llm-chat/stream` with Server-Sent
+    // Events; standalone, whose bridge cannot hold a response open, registers
+    // `llmRoute.startChatStream` itself. See `apps/standalone`'s browser_routes.ts.
+    asyncApiRoute(PST, "/api/llm-chat/provider-models", llmRoute.getProviderModels);
 
     apiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);
     apiRoute(GET, "/api/autocomplete/notesCount", autocompleteApiRoute.getNotesCount);
@@ -187,6 +236,11 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     apiRoute(PST, "/api/special-notes/launchers/:noteId/reset", specialNotesRoute.resetLauncher);
     apiRoute(PST, "/api/special-notes/launchers/:parentNoteId/:launcherType", specialNotesRoute.createLauncher);
     apiRoute(PUT, "/api/special-notes/api-script-launcher", specialNotesRoute.createOrUpdateScriptLauncherFromApi);
+    apiRoute(PST, "/api/special-notes/llm-chat", specialNotesRoute.createLlmChat);
+    apiRoute(GET, "/api/special-notes/most-recent-llm-chat", specialNotesRoute.getMostRecentLlmChat);
+    apiRoute(GET, "/api/special-notes/get-or-create-llm-chat", specialNotesRoute.getOrCreateLlmChat);
+    apiRoute(GET, "/api/special-notes/recent-llm-chats", specialNotesRoute.getRecentLlmChats);
+    apiRoute(PST, "/api/special-notes/save-llm-chat", specialNotesRoute.saveLlmChat);
 
     apiRoute(PST, "/api/note-map/:noteId/tree", noteMapRoute.getTreeMap);
     apiRoute(PST, "/api/note-map/:noteId/link", noteMapRoute.getLinkMap);
@@ -200,6 +254,10 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
 
     apiRoute(GET, "/api/stats/note-size/:noteId", statsRoute.getNoteSize);
     apiRoute(GET, "/api/stats/subtree-size/:noteId", statsRoute.getSubtreeSize);
+
+    apiRoute(GET, "/api/space-usage/overview", spaceUsageRoute.getOverview);
+    apiRoute(GET, "/api/space-usage/note/:noteId", spaceUsageRoute.getNoteUsage);
+    apiRoute(PST, "/api/space-usage/cleanup-completed", spaceUsageRoute.logCleanupCompleted);
 
     apiRoute(GET, "/api/sql/schema", sqlRoute.getSchema);
     apiRoute(PST, "/api/sql/execute/:noteId", sqlRoute.execute);
@@ -219,6 +277,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);
     apiRoute(PST, "/api/other/to-markdown", otherRoute.toMarkdown);
 
+    route(GET, "/api/fonts", [checkApiAuthOrElectron], fontsRoute.getFontCss);
+
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
@@ -228,6 +288,11 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
 
     //#region Files
     route(GET, "/api/notes/:noteId/open", [checkApiAuthOrElectron], filesRoute.openFile);
+    // What the media players stream from: same content as /open, but answering byte ranges so they can seek.
+    route(GET, "/api/notes/:noteId/open-partial", [checkApiAuthOrElectron], filesRoute.openPartialFile);
+    route(GET, "/api/attachments/:attachmentId/open-partial", [checkApiAuthOrElectron], filesRoute.openPartialAttachment);
+    asyncApiRoute(GET, "/api/notes/:noteId/office-preview", filesRoute.getNoteOfficePreview);
+    asyncApiRoute(GET, "/api/attachments/:attachmentId/office-preview", filesRoute.getAttachmentOfficePreview);
     route(GET, "/api/notes/:noteId/download", [checkApiAuthOrElectron], filesRoute.downloadFile);
     // this "hacky" path is used for easier referencing of CSS resources
     route(GET, "/api/notes/download/:noteId", [checkApiAuthOrElectron], filesRoute.downloadFile);
@@ -236,6 +301,13 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     // this "hacky" path is used for easier referencing of CSS resources
     route(GET, "/api/attachments/download/:attachmentId", [checkApiAuthOrElectron], filesRoute.downloadAttachment);
     route(GET, "/api/revisions/:revisionId/download", [checkApiAuthOrElectron], revisionsApiRoute.downloadRevision);
+    route(PUT, "/api/notes/:noteId/file", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], filesRoute.updateFile, apiResultHandler);
+    route(PUT, "/api/attachments/:attachmentId/file", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], filesRoute.updateAttachment, apiResultHandler);
+
+    // Reading the OCR text only. Extracting it needs the engine, which stays in the server — but the
+    // text is stored on the blob and syncs with it, so every client can show what was extracted.
+    apiRoute(GET, "/api/ocr/notes/:noteId/text", ocrRoute.getNoteOCRText);
+    apiRoute(GET, "/api/ocr/attachments/:attachmentId/text", ocrRoute.getAttachmentOCRText);
     //#endregion
 
     //#region Export

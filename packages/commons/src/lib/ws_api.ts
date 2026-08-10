@@ -1,3 +1,5 @@
+import type { LlmStreamChunk } from "./llm_api.js";
+
 export interface EntityChange {
     id?: number | null;
     noteId?: string;
@@ -42,7 +44,8 @@ type TaskDataDefinitions = {
         shrinkImages?: boolean;
         safeImport?: boolean;
     } | null,
-    importAttachments: null
+    importAttachments: null,
+    compressImages: null
 }
 
 type TaskResultDefinitions = {
@@ -59,6 +62,7 @@ type TaskResultDefinitions = {
         parentNoteId?: string;
         importedNoteId?: string
     };
+    compressImages: null;
 }
 
 export type TaskType = keyof TaskDataDefinitions | keyof TaskResultDefinitions;
@@ -69,8 +73,12 @@ export type TaskResult<T extends TaskType> = TaskResultDefinitions[T];
  * Identifies which phase of a multi-phase task a progress message belongs to, so the client can label
  * the bar accordingly (e.g. zip import counts archive entries while "extracting", then notes while
  * "processing"). Single-phase tasks omit it and the client falls back to a generic message.
+ *
+ * "throttled" is a transient state rather than a pipeline stage: the task is alive but deliberately
+ * waiting out an external service's rate limiting (e.g. the OneNote importer under Graph throttling),
+ * so the count will not move for a while and the client should say why instead of looking hung.
  */
-export type ProgressPhase = "extracting" | "processing";
+export type ProgressPhase = "extracting" | "processing" | "throttled";
 
 type TaskDefinition<T extends TaskType> = {
     type: "taskProgressCount",
@@ -159,4 +167,39 @@ export type WebSocketMessage = AllTaskDefinitions | {
     lastSyncedPush: number;
 } | {
     type: "consistency-checks-failed"
+} | {
+    /**
+     * An error that escaped every other handler and reached the process-level safety net — typically a
+     * throw from deferred background work (a timer, a floating promise), which has no request to fail.
+     * The backend keeps running; this only tells the user that something went wrong, since the failure
+     * would otherwise be invisible outside the log.
+     */
+    type: "unhandled-error";
+    /** The error message, shown directly in the notification. */
+    message: string;
+    /**
+     * The stack trace, kept behind a "view more details" step rather than shown up front: it is what
+     * makes a bug report actionable, and nothing the user is expected to read. Absent when the thrown
+     * value carried no stack.
+     */
+    stack?: string;
+} | {
+    /**
+     * One chunk of an LLM chat completion, for runtimes that cannot carry the Server-Sent Events the
+     * `llm-chat/stream` route replies with — the standalone build answers a request with a single
+     * buffered body, so its chunks ride this channel instead. `streamId` is minted by the client
+     * before it asks for the completion, and is what lets the tab that asked pick its own chunks out
+     * of a channel every tab receives.
+     */
+    type: "llm-stream";
+    streamId: string;
+    chunk: LlmStreamChunk;
+} | {
+    /**
+     * Marks the end of an {@link WebSocketMessage} `llm-stream` sequence, whether it ended in a `done`
+     * chunk, an error or an abort. It is deliberately not a `done` chunk: an errored stream must not
+     * finalize the assistant message, and the last chunk alone cannot say which case it was.
+     */
+    type: "llm-stream-end";
+    streamId: string;
 }

@@ -122,12 +122,17 @@ function createSegment(start: number, length: number, currentPage: number, setPa
     return children;
 }
 
-export function usePagination(note: FNote, noteIds: string[]): PaginationContext {
+/**
+ * @param pageSizeOverride page size to use instead of the note's `#pageSize` label, for callers that
+ *                         list notes which aren't the children of a collection the user can label.
+ */
+export function usePagination(note: FNote, noteIds: string[], pageSizeOverride?: number): PaginationContext {
     const [ page, setPage ] = useState(1);
     const [ pageNotes, setPageNotes ] = useState<FNote[]>();
 
     // Parse page size.
-    const [ pageSize ] = useNoteLabelInt(note, "pageSize");
+    const [ labelPageSize ] = useNoteLabelInt(note, "pageSize");
+    const pageSize = pageSizeOverride ?? labelPageSize;
     const normalizedPageSize = (pageSize && pageSize > 0 ? pageSize : 20);
 
     // Calculate start/end index.

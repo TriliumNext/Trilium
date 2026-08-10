@@ -1,9 +1,10 @@
 import BAttribute from "../../becca/entities/battribute";
 import BNote from "../../becca/entities/bnote";
 import becca from "../../becca/becca";
-import type { BacklinkCountResponse, BacklinksResponse } from "@triliumnext/commons";
+import type { BacklinkCountResponse, BacklinksResponse, NoteMapNote } from "@triliumnext/commons";
 import type { Request } from "express";
-import { HTMLElement, parse, TextNode } from "node-html-parser";
+
+import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
 
 interface TreeLink {
     sourceNoteId: string;
@@ -103,6 +104,11 @@ function getLinkMap(req: Request<{ noteId: string }>) {
     // if the map root itself has "excludeFromNoteMap" attribute (journal typically) then there wouldn't be anything
     // to display, so we'll just ignore it
     const ignoreExcludeFromNoteMap = mapRootNote.isLabelTruthy("excludeFromNoteMap");
+    // a subtree walk skips an archived note along with everything below it — the map root included,
+    // which left an archived note out of its own map, and its relations dropped with it (a link needs
+    // both of its ends in the map). Someone reading an archived note is already looking at the
+    // archive, so there we keep the archived notes instead of hiding them.
+    const includeArchived = mapRootNote.isArchived;
     let unfilteredNotes;
 
     const toSet = (data: unknown) => new Set<string>(data instanceof Array ? data : []);
@@ -115,7 +121,7 @@ function getLinkMap(req: Request<{ noteId: string }>) {
         unfilteredNotes = mapRootNote.getSearchResultNotes();
     } else {
         unfilteredNotes = mapRootNote.getSubtree({
-            includeArchived: false,
+            includeArchived,
             resolveSearch: true,
             includeHidden: mapRootNote.isInHiddenSubtree()
         }).notes;
@@ -133,10 +139,10 @@ function getLinkMap(req: Request<{ noteId: string }>) {
 
     const noteIdsArray = Array.from(noteIds);
 
-    const notes = noteIdsArray.map((noteId) => {
+    const notes: NoteMapNote[] = noteIdsArray.map((noteId) => {
         const note = becca.getNoteOrThrow(noteId);
 
-        return [note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color")];
+        return [ note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color"), note.getIcon() ];
     });
 
     const links = Object.values(becca.attributes)
@@ -180,8 +186,9 @@ function getTreeMap(req: Request<{ noteId: string }>) {
     // if the map root itself has "excludeFromNoteMap" (journal typically) then there wouldn't be anything to display,
     // so we'll just ignore it
     const ignoreExcludeFromNoteMap = mapRootNote.isLabelTruthy("excludeFromNoteMap");
+    // the map of an archived note keeps the archived notes — see getLinkMap
     const subtree = mapRootNote.getSubtree({
-        includeArchived: false,
+        includeArchived: mapRootNote.isArchived,
         resolveSearch: true,
         includeHidden: mapRootNote.isInHiddenSubtree()
     });
@@ -201,7 +208,7 @@ function getTreeMap(req: Request<{ noteId: string }>) {
 
             return !note.getParentNotes().find((parentNote) => parentNote.noteId === imageLinkRelation.noteId);
         })
-        .map((note) => [note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color")]);
+        .map((note): NoteMapNote => [ note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color"), note.getIcon() ]);
 
     const noteIds = new Set<string>();
     notes.forEach(([noteId]) => noteId && noteIds.add(noteId));
@@ -242,105 +249,6 @@ function updateDescendantCountMapForSearch(noteIdToDescendantCountMap: Record<st
     }
 }
 
-function removeImages(document: HTMLElement) {
-    const images = document.getElementsByTagName("img");
-    for (const image of images) {
-        image.remove();
-    }
-}
-
-const EXCERPT_CHAR_LIMIT = 200;
-type ElementOrText = HTMLElement | TextNode;
-
-export function findExcerpts(sourceNote: BNote, referencedNoteId: string) {
-    const html = sourceNote.getContent();
-    const document = parse(html.toString());
-
-    const excerpts: string[] = [];
-
-    removeImages(document);
-
-    for (const linkEl of document.querySelectorAll("a")) {
-        const href = linkEl.getAttribute("href");
-
-        if (!href || !href.endsWith(referencedNoteId)) {
-            continue;
-        }
-
-        linkEl.classList.add("backlink-link");
-
-        let centerEl: HTMLElement = linkEl;
-
-        while (centerEl.tagName !== "BODY" && centerEl.parentNode && (centerEl.parentNode?.textContent?.length || 0) <= EXCERPT_CHAR_LIMIT) {
-            centerEl = centerEl.parentNode;
-        }
-
-        const excerptEls: ElementOrText[] = [centerEl];
-        let excerptLength = centerEl.textContent?.length || 0;
-        let left: ElementOrText = centerEl;
-        let right: ElementOrText = centerEl;
-
-        while (excerptLength < EXCERPT_CHAR_LIMIT) {
-            let added = false;
-
-            const prev: HTMLElement | null = left.previousElementSibling;
-
-            if (prev) {
-                const prevText = prev.textContent || "";
-
-                if (prevText.length + excerptLength > EXCERPT_CHAR_LIMIT) {
-                    const prefix = prevText.substr(prevText.length - (EXCERPT_CHAR_LIMIT - excerptLength));
-
-                    const textNode = new TextNode(`…${prefix}`);
-                    excerptEls.unshift(textNode);
-
-                    break;
-                }
-
-                left = prev;
-                excerptEls.unshift(left);
-                excerptLength += prevText.length;
-                added = true;
-            }
-
-            const next: HTMLElement | null = right.nextElementSibling;
-
-            if (next) {
-                const nextText = next.textContent;
-
-                if (nextText && nextText.length + excerptLength > EXCERPT_CHAR_LIMIT) {
-                    const suffix = nextText.substr(nextText.length - (EXCERPT_CHAR_LIMIT - excerptLength));
-
-                    const textNode = new TextNode(`${suffix}…`);
-                    excerptEls.push(textNode);
-
-                    break;
-                }
-
-                right = next;
-                excerptEls.push(right);
-                excerptLength += nextText?.length || 0;
-                added = true;
-            }
-
-            if (!added) {
-                break;
-            }
-        }
-
-        const excerptWrapper = new HTMLElement("div", {});
-        excerptWrapper.classList.add("ck-content");
-        excerptWrapper.classList.add("backlink-excerpt");
-
-        for (const childEl of excerptEls) {
-            excerptWrapper.appendChild(childEl);
-        }
-
-        excerpts.push(excerptWrapper.outerHTML);
-    }
-    return excerpts;
-}
-
 function getFilteredBacklinks(note: BNote): BAttribute[] {
     return (
         note
@@ -358,8 +266,9 @@ function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
 
     return getFilteredBacklinks(note).map((backlink) => {
         const sourceNote = backlink.note;
+        const supportsExcerpts = sourceNote.type === "text" || sourceNote.type === "llmChat" || sourceNote.type === "mindMap";
 
-        if (sourceNote.type !== "text" || backlinksWithExcerptCount > 50) {
+        if (!supportsExcerpts || backlinksWithExcerptCount > 50) {
             return {
                 noteId: sourceNote.noteId,
                 relationName: backlink.name
@@ -368,12 +277,37 @@ function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
 
         backlinksWithExcerptCount++;
 
-        const excerpts = findExcerpts(sourceNote, noteId);
+        const excerpts = findSourceExcerpts(sourceNote, noteId);
+
+        // A chat that references the note only through tool calls has no quotable prose, and a map
+        // whose link sits somewhere its nodes are not has no node to quote; name the relation
+        // instead, as for other excerpt-less sources.
+        if (sourceNote.type !== "text" && excerpts.length === 0) {
+            return {
+                noteId: sourceNote.noteId,
+                relationName: backlink.name
+            } satisfies BacklinksResponse[number];
+        }
+
         return {
             noteId: sourceNote.noteId,
             excerpts
         } satisfies BacklinksResponse[number];
     });
+}
+
+/** Quotes what surrounds a link, in the terms the note holding it is written in. */
+function findSourceExcerpts(sourceNote: BNote, referencedNoteId: string): string[] {
+    const content = sourceNote.getContent().toString();
+
+    switch (sourceNote.type) {
+        case "llmChat":
+            return findLlmChatExcerpts(content, referencedNoteId);
+        case "mindMap":
+            return findMindMapExcerpts(content, referencedNoteId);
+        default:
+            return findExcerpts(content, referencedNoteId);
+    }
 }
 
 function getBacklinkCount(req: Request<{ noteId: string }>): BacklinkCountResponse {

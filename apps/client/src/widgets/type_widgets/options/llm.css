@@ -8,3 +8,37 @@
 .llm-provider-name .masked-icon {
     --masked-icon-size: 1.2em;
 }
+
+/* MCP endpoint list: one group per reachability scope (this device / LAN), each
+   listing its URLs as read-only, selectable fields. */
+.mcp-endpoint-list {
+    display: flex;
+    gap: 1em;
+    flex-direction: column;
+
+    @media (min-width: 992px) {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.mcp-endpoint-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+}
+
+.mcp-endpoint-group-label {
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+.mcp-endpoint-note {
+    margin: 0;
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+.mcp-config-warning {
+    margin: 0.25em 0 0;
+}

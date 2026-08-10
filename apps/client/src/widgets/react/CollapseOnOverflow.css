@@ -1,0 +1,22 @@
+/* A control drawn one of two ways — wide, or folded into a menu — by whether the wide one has the
+   room it wants. See CollapseOnOverflow.tsx, which measures the two classes below. */
+.tn-collapse-on-overflow {
+    display: flex;
+    /* Free to be handed less than it asks for: what cannot be squeezed never reports being too wide. */
+    min-width: 0;
+}
+
+/*
+ * While the wide rendering is up it keeps its own width and is cut off rather than squeezed, so that
+ * what it spills is the measure of how much room is missing.
+ *
+ * Left off the folded rendering, which is a dropdown: this would cut its menu off at the control's
+ * own edge.
+ */
+.tn-collapse-on-overflow-wide {
+    overflow: hidden;
+}
+
+.tn-collapse-on-overflow-wide > * {
+    flex-shrink: 0;
+}

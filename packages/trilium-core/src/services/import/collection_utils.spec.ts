@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { buildPromotedDefinition, toAttributeName } from "./collection_utils.js";
+import type BNote from "../../becca/entities/bnote.js";
+import { buildPromotedDefinition, saveFileAttachment, stripUrlScheme, toAttributeName } from "./collection_utils.js";
 
 describe("toAttributeName", () => {
     it("camelCases a multi-word name, lower-casing the first word", () => {
@@ -65,5 +66,35 @@ describe("buildPromotedDefinition", () => {
 
     it("omits the value type for a relation column (no labelType)", () => {
         expect(buildPromotedDefinition({ alias: "Related", multiplicity: "multi" })).toBe("promoted,multi,alias=Related");
+    });
+});
+
+describe("stripUrlScheme", () => {
+    it("strips the given scheme and leaves a value without it untouched", () => {
+        expect(stripUrlScheme("mailto:a@b.com", "mailto:")).toBe("a@b.com");
+        expect(stripUrlScheme("tel:12345", "tel:")).toBe("12345");
+        expect(stripUrlScheme("a@b.com", "mailto:")).toBe("a@b.com");
+        // Only the scheme asked for is stripped — a mismatched one is somebody else's value.
+        expect(stripUrlScheme("tel:12345", "mailto:")).toBe("tel:12345");
+    });
+});
+
+describe("saveFileAttachment", () => {
+    it("prefers the given MIME, else derives it from the title, else falls back to octet-stream", () => {
+        // Only the attachment payload is under test here; persisting it is covered by the importer specs.
+        const saveAttachment = vi.fn();
+        const note = { saveAttachment } as unknown as BNote;
+        const content = new Uint8Array([1, 2, 3]);
+
+        saveFileAttachment(note, "notes.txt", content, "application/x-custom");
+        saveFileAttachment(note, "script.py", content);
+        saveFileAttachment(note, "blob.unknownext", content);
+
+        expect(saveAttachment.mock.calls.map(([attachment]) => attachment.mime)).toEqual([
+            "application/x-custom",
+            "text/x-python",
+            "application/octet-stream"
+        ]);
+        expect(saveAttachment.mock.calls[0][0]).toMatchObject({ role: "file", title: "notes.txt", content });
     });
 });

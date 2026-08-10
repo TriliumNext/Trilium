@@ -1,0 +1,9 @@
+/* The "Create" entry of a select's list, set apart from the options it sits under: it makes a new
+   option rather than picking one. Scoped to the dropdown, which is portaled to the body. */
+.form-autocomplete-dropdown .select-create-option {
+    font-style: italic;
+
+    > .bx {
+        color: var(--muted-text-color);
+    }
+}

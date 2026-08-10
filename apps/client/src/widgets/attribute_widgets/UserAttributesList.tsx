@@ -91,6 +91,14 @@ function buildUserAttribute(attr: AttributeWithDefinitions): ComponentChildren {
             case "url":
                 content = <a href={value} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{attr.friendlyName}</a>;
                 break;
+            // The address is short enough to show, and is the part worth clicking; the scheme check
+            // keeps a value imported as a url label (already schemed) from being doubled.
+            case "email":
+                content = <>{defaultLabel}<a href={value.startsWith("mailto:") ? value : `mailto:${value}`} onClick={(e) => e.stopPropagation()}>{value}</a></>;
+                break;
+            case "phone":
+                content = <>{defaultLabel}<a href={value.startsWith("tel:") ? value : `tel:${value}`} onClick={(e) => e.stopPropagation()}>{value}</a></>;
+                break;
             case "color":
                 style = { backgroundColor: value, color: getReadableTextColor(value) };
                 content = <>{attr.friendlyName}</>;

@@ -1,6 +1,6 @@
 
 
-import type { AttachmentRow } from "@triliumnext/commons";
+import { type AttachmentRow, isImageAttachmentRole } from "@triliumnext/commons";
 
 import dateUtils from "../../services/utils/date";
 import { getLog } from "../../services/log.js";
@@ -14,6 +14,9 @@ import { escapeRegExp, formatDownloadTitle, isStringNote, replaceAll } from "../
 
 const attachmentRoleToNoteTypeMapping = {
     image: "image",
+    // A site icon converted to a note is an image note like any other; only where it came from
+    // differs, and that is not something the resulting note carries.
+    favicon: "image",
     file: "file"
 };
 
@@ -187,9 +190,10 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
 
             let fixedContent = origContent;
 
-            if (this.role === "image") {
+            if (isImageAttachmentRole(this.role)) {
                 // Rewrite embedded images (`<img src="api/attachments/{attachmentId}/image/...">`)
-                // to point at the new image note.
+                // to point at the new image note. A link preview's `data-image` / `data-favicon`
+                // carry the same URL, so replacing the prefix covers them too.
                 const oldAttachmentUrl = `api/attachments/${attachmentId}/image/`;
                 const newNoteUrl = `api/images/${note.noteId}/`;
 
@@ -220,7 +224,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
     }
 
     getFileName() {
-        const type = this.role === "image" ? "image" : "file";
+        const type = isImageAttachmentRole(this.role) ? "image" : "file";
 
         return formatDownloadTitle(this.title, type, this.mime);
     }

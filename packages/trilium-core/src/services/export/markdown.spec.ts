@@ -1,7 +1,7 @@
 import { trimIndentation } from "@triliumnext/commons";
 import { describe, expect,it } from "vitest";
 
-import markdownExportService from "./markdown.js";
+import markdownExportService, { DEFAULT_ADMONITION_TYPE } from "./markdown.js";
 
 describe("Markdown export", () => {
 
@@ -139,6 +139,25 @@ describe("Markdown export", () => {
         // `data-url` attribute (which round-trips losslessly on reimport), never as a linkable href.
         expect(exported).toContain('<a href="about:blank">Evil</a>');
         expect(exported).not.toContain('href="javascript:');
+    });
+
+    it("preserves a link preview that has no data-url, and still drops ordinary blank nodes", () => {
+        // Without a data-url there is nothing to build a fallback anchor from, so the element stays
+        // blank and only the blank-node handling can keep it from being dropped along with its metadata.
+        expect(markdownExportService.toMarkdown(
+            '<section class="link-embed" data-embed-type="opengraph" data-title="Example"></section>'
+        )).toBe('<section class="link-embed" data-embed-type="opengraph" data-title="Example"></section>');
+
+        // The trailing space is collapsed away here, because turndown assumes an empty inline element
+        // renders as nothing; a mention with a URL keeps it thanks to the injected fallback anchor.
+        expect(markdownExportService.toMarkdown(
+            '<p>See <span class="link-mention" data-title="Example"></span> for details.</p>'
+        )).toBe('See <span class="link-mention" data-title="Example"></span>for details.');
+
+        // Every other blank node keeps upstream's behaviour: a paragraph break for a block element,
+        // nothing at all for an inline one.
+        expect(markdownExportService.toMarkdown("<p>a</p><p></p><p>b</p>")).toBe("a\n\nb");
+        expect(markdownExportService.toMarkdown("<p>a<span></span>b</p>")).toBe("ab");
     });
 
     it("exports strikethrough text correctly", () => {
@@ -280,6 +299,13 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("falls back to the default admonition type for an unrecognized class", () => {
+        // Markdown alerts only define a fixed set of types, so anything Trilium can't map (a stale or
+        // hand-written class) degrades to the default rather than emitting an invalid alert.
+        const html = /*html*/`<aside class="admonition something-else"><p>Body</p></aside>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(`> [!${DEFAULT_ADMONITION_TYPE}]\n> Body`);
+    });
+
     it("exports code in tables properly", () => {
         const html = trimIndentation`\
         <table>
@@ -339,6 +365,11 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("keeps the link title, escaping quotes inside it", () => {
+        const html = /*html*/`<p><a href="https://www.google.com" title='a "quoted" title'>Google</a></p>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(String.raw`[Google](https://www.google.com "a \"quoted\" title")`);
+    });
+
     it("exports reference links verbatim", () => {
         const html = /*html*/`<p><a class="reference-link" href="../../Canvas.html">Canvas</a></p>`;
         const expected = `<a class="reference-link" href="../../Canvas.html">Canvas</a>`;
@@ -362,6 +393,22 @@ describe("Markdown export", () => {
             const html = /*html*/`<p>${expected}</p>`;
             expect(markdownExportService.toMarkdown(html)).toBe(expected);
         }
+    });
+
+    it("escapes markdown syntax in the image alt text and quotes in its title", () => {
+        // Unescaped, these would be re-parsed as emphasis/link syntax on reimport.
+        expect(markdownExportService.toMarkdown(/*html*/`<img src="a.png" alt="a*b_c[d]">`))
+            .toBe(String.raw`![a\*b\_c\[d\]](a.png)`);
+        // The trailing-pattern branch: a leading number followed by a dot would start a list.
+        expect(markdownExportService.toMarkdown(/*html*/`<img src="a.png" alt="1. first">`))
+            .toBe(String.raw`![1\. first](a.png)`);
+        // A quote in the title would otherwise close the title string early.
+        expect(markdownExportService.toMarkdown(/*html*/`<img src="a.png" title='He said "hi"'>`))
+            .toBe(String.raw`![](a.png "He said \"hi\"")`);
+    });
+
+    it("drops an image with no source", () => {
+        expect(markdownExportService.toMarkdown(/*html*/`<p>before<img alt="x">after</p>`)).toBe("beforeafter");
     });
 
     it("preserves figures", () => {
@@ -425,6 +472,14 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("numbers an ordered list from its start attribute", () => {
+        const html = /*html*/`<ol start="3"><li>Third</li><li>Fourth</li></ol>`;
+        const expected = trimIndentation`\
+            3.  Third
+            4.  Fourth`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
     it("converts inline math expressions into proper Markdown syntax", () => {
         const html = /*html*/String.raw`<span class="math-tex">\(H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}\)</span></span>`;
         const expected = String.raw`$H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}$`;
@@ -435,6 +490,13 @@ describe("Markdown export", () => {
         const html = /*html*/String.raw`<span class="math-tex">\[H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}\]</span></span>`;
         const expected = String.raw`$$H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}$$`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("keeps a math expression without delimiters verbatim", () => {
+        // Neither \( \) nor \[ \] — nothing can be inferred, so the raw text is passed through
+        // rather than guessed into the wrong math mode.
+        const html = /*html*/`<span class="math-tex">E = mc^2</span>`;
+        expect(markdownExportService.toMarkdown(html)).toBe("E = mc^2");
     });
 
     it("does not generate additional spacing when exporting lists with paragraph", () => {
@@ -708,6 +770,102 @@ describe("Markdown export", () => {
         const html = /*html*/`<p>This is <em>underlined</em> text.</p>`;
         const expected = `This is _underlined_ text.`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    describe("highlights and coloured text", () => {
+        it("renders a default-yellow highlight and a bare <mark> as ==text==", () => {
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p>A <span style="background-color:hsl(60, 75%, 60%);">highlight</span> here.</p>`
+            )).toBe("A ==highlight== here.");
+
+            // The same colour however the sanitizer or the editor spaced it out.
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><span style="BACKGROUND-COLOR: hsl(60,75%,60%)">highlight</span></p>`
+            )).toBe("==highlight==");
+
+            expect(markdownExportService.toMarkdown(/*html*/`<p>A <mark>highlight</mark> here.</p>`))
+                .toBe("A ==highlight== here.");
+        });
+
+        it("keeps any other colour as inline HTML rather than repainting it yellow", () => {
+            // A different background colour...
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p>A <span style="background-color:rgb(0, 255, 0)">green</span> one.</p>`
+            )).toBe(`A <span style="background-color:rgb(0, 255, 0)">green</span> one.`);
+
+            // ...a foreground colour, which used to be dropped entirely...
+            expect(markdownExportService.toMarkdown(/*html*/`<p><span style="color:#ff0000">red</span></p>`))
+                .toBe(`<span style="color:#ff0000">red</span>`);
+
+            // ...and both at once.
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><span style="color:#ffffff;background-color:#000000">both</span></p>`
+            )).toBe(`<span style="color:#ffffff;background-color:#000000">both</span>`);
+
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<mark style="background-color:rgb(0, 255, 0)">green</mark>`
+            )).toBe(`<mark style="background-color:rgb(0, 255, 0)">green</mark>`);
+        });
+
+        it("keeps a default-yellow highlight whole when it carries anything ==…== cannot", () => {
+            // A second declaration would be lost by `==…==`, so the element is kept as-is.
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><span style="background-color:hsl(60, 75%, 60%);font-family:serif">y</span></p>`
+            )).toBe(`<span style="background-color:hsl(60, 75%, 60%);font-family:serif">y</span>`);
+
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><span class="tag" style="background-color:hsl(60, 75%, 60%)">y</span></p>`
+            )).toBe(`<span class="tag" style="background-color:hsl(60, 75%, 60%)">y</span>`);
+        });
+
+        it("converts the content to Markdown inside a preserved colour", () => {
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><span style="color:#ff0000"><strong>bold</strong> and <em>italic</em></span></p>`
+            )).toBe(`<span style="color:#ff0000">**bold** and _italic_</span>`);
+        });
+
+        it("keeps inline formatting inside and around a highlight", () => {
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><span style="background-color:hsl(60, 75%, 60%)"><strong>bold</strong></span></p>`
+            )).toBe("==**bold**==");
+
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><strong><span style="background-color:hsl(60, 75%, 60%)">bold</span></strong></p>`
+            )).toBe("**==bold==**");
+        });
+
+        it("hoists whitespace out of the delimiters so the result parses back", () => {
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p>a<span style="background-color:hsl(60, 75%, 60%)"> hi </span>b</p>`
+            )).toBe("a ==hi== b");
+        });
+
+        it("leaves a coloured block and a highlighted formula alone", () => {
+            // Only inline colours are handled; a coloured block would wrap its whole text.
+            expect(markdownExportService.toMarkdown(/*html*/`<p style="background-color:yellow">para</p>`))
+                .toBe("para");
+
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><span class="math-tex" style="background-color:yellow">\\(x^2\\)</span></p>`
+            )).toBe("$x^2$");
+        });
+
+        it("ignores a border colour, which is not a text colour", () => {
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p><span style="border-color:#ff0000">plain</span></p>`
+            )).toBe("plain");
+        });
+
+        it("emits no delimiters for a highlight with no text of its own", () => {
+            expect(markdownExportService.toMarkdown(
+                /*html*/`<p>a<span style="background-color:hsl(60, 75%, 60%)"><br></span>b</p>`
+            )).not.toContain("==");
+        });
+
+        it("does not touch == inside a code block", () => {
+            const html = /*html*/`<pre><code class="language-text-x-trilium-auto">a ==b== c</code></pre>`;
+            expect(markdownExportService.toMarkdown(html)).toBe("```\na ==b== c\n```");
+        });
     });
 
 });

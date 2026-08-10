@@ -1,6 +1,9 @@
 #toast-container {
     display: flex;
     flex-direction: column;
+    /* The vertical gap between stacked toasts. Bootstrap's own spacing rule targets `.toast-container`,
+       which this element isn't, so without this stacked toasts touch. */
+    gap: 10px;
     justify-content: center;
     align-items: center;
     position: absolute;
@@ -10,9 +13,19 @@
     contain: none;
 }
 
+/* Fallback colours for a theme that dresses no toast of its own. Kept at this specificity so a theme's
+   own `#toast-container .toast` still wins — the layout below deliberately sits a level higher. */
 .toast {
     --bs-toast-bg: var(--accented-background-color);
     --bs-toast-color: var(--main-text-color);
+}
+
+/* Scoped to the container so the `display` beats Bootstrap's `.toast:not(.show) { display: none }` —
+   the toast is rendered by Preact and never carries Bootstrap's `show` class, so without this the
+   layout comes from whichever theme happens to define it, and toasts vanish under every other one. */
+#toast-container .toast {
+    display: flex;
+    flex-direction: column;
     z-index: 9999999999 !important;
     pointer-events: all;
     overflow: hidden;

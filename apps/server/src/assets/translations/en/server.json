@@ -293,6 +293,7 @@
     "shortcuts-title": "Shortcuts",
     "text-notes": "Text Notes",
     "code-notes-title": "Code Notes",
+    "content-manager-title": "Content Manager",
     "images-title": "Media",
     "spellcheck-title": "Spellcheck",
     "desktop-title": "Desktop",
@@ -331,6 +332,9 @@
   "onenote_import": {
     "root-title": "OneNote import",
     "failed-page-placeholder": "This page could not be imported from OneNote. Error: {{error}}",
+    "failed-section-placeholder": "This section could not be imported from OneNote, so it was created empty. Error: {{error}}",
+    "protected-section-error": "This section is password-protected. Remove its password in OneNote, then import it again.",
+    "protected-section-placeholder": "This section is password-protected, so its pages could not be imported and it was created empty. To import it, open the section in OneNote, remove its password protection (right-click the section &rarr; Password Protection &rarr; Remove Password), then run the import again.",
     "report": {
       "row-pages": "Pages imported successfully",
       "row-notebooks": "Notebooks imported",
@@ -344,6 +348,10 @@
       "value-links": "{{resolved}} resolved, {{unresolved}} pointing outside the imported selection",
       "value-throttling_one": "{{- wait}} ({{count}} throttled request)",
       "value-throttling_other": "{{- wait}} ({{count}} throttled requests)",
+      "skipped-sections-title": "Sections that could not be imported",
+      "skipped-sections-section": "Section",
+      "skipped-sections-notebook": "Notebook",
+      "skipped-sections-error": "Error",
       "failed-pages-title": "Pages that could not be imported",
       "failed-pages-page": "Page",
       "failed-pages-section": "Section",
@@ -375,6 +383,11 @@
   "import": {
     "invalid_file_grant": "The file selection has expired or is invalid. Please choose the file again."
   },
+  "restore": {
+    "pick_backup_title": "Choose a backup to restore",
+    "backup_filter": "Trilium backup (*.db, *.tnbackup)",
+    "any_file_filter": "All files"
+  },
   "pdf": {
     "export_filter": "PDF Document (*.pdf)",
     "unable-to-export-message": "The current note could not be exported as a PDF.",
@@ -391,6 +404,13 @@
     "new-note": "New note",
     "show-windows": "Show windows",
     "open_new_window": "Open new window"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Database backup failed: unable to write to {{- location}}. Backing up to the default location instead.",
+    "passphrase_unavailable": "The backup password could not be read, so this backup is not encrypted. It has been saved to the default location instead of the chosen one."
+  },
+  "dialog": {
+    "select_directory": "Select folder"
   },
   "migration": {
     "old_version": "Direct migration from your current version is not supported. Please upgrade to the latest v0.60.4 first and only then to this version.",
@@ -450,9 +470,6 @@
     "db_not_initialized_desktop": "DB not initialized, please follow on-screen instructions.",
     "db_not_initialized_server": "DB not initialized, please visit setup page - http://[your-server-host]:{{port}} to see instructions on how to initialize Trilium."
   },
-  "desktop": {
-    "instance_already_running": "There's already an instance running, focusing that instance instead."
-  },
   "script": {
     "wrong-environment": "Cannot execute note \"{{- noteTitle}}\" ({{- noteId}}). This is a {{- actualEnv}} script, but execution was attempted in the {{- expectedEnv}}."
   },
@@ -465,6 +482,17 @@
       "fulltext-after-expression": "\"{{- token}}\" is not a valid expression. To search for text, place it before attribute filters (e.g., \"{{- token}} #label\" instead of \"#label {{- token}}\").",
       "unrecognized-expression": "Unrecognized expression \"{{- token}}\""
     }
+  },
+  "backup-password-dialog": {
+    "cancel": "Cancel",
+    "set-title": "Set the backup password?",
+    "set-message": "Future backups will be encrypted with this password.",
+    "set-detail": "Trilium cannot show this password again, so keep a copy somewhere safe: without it, a backup cannot be restored.\n\nIf you were not expecting to be asked, cancel — a note or a script may have requested this.",
+    "set-confirm": "Set password",
+    "clear-title": "Forget the backup password?",
+    "clear-message": "Backups will no longer be encrypted.",
+    "clear-detail": "Backups already written keep the password they were made with, and can still be restored with it.\n\nIf you were not expecting to be asked, cancel — a note or a script may have requested this.",
+    "clear-confirm": "Forget password"
   },
   "security-dialog": {
     "enable-title": "Enable {{settingLabel}}",

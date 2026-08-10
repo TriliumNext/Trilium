@@ -1,10 +1,46 @@
-/* Input form */
+/*
+ * The composer "island": one rounded surface holding the attachment strip, the
+ * text editor and the control row. Everything inside is deliberately de-boxed —
+ * no borders or backgrounds of its own — so the whole thing reads as a single
+ * control rather than a stack of nested boxes. Outer spacing is a margin applied
+ * by the host (LlmChat.css / SidebarChat.css), since the padding here is the
+ * island's own inner padding.
+ */
 .llm-chat-input-form {
+    /*
+     * Trilium has no general-purpose warning/danger token — the only semantic error colours
+     * in the themes are domain-specific (`--log-*`, `--sync-status-*`) — so these are local,
+     * picked to read against both the light and dark card fills. Declared here rather than on
+     * the indicator itself so the bar and the alert beside it both inherit them; a theme-level
+     * token would override them here if one ever lands.
+     */
+    --llm-chat-context-neutral: var(--muted-text-color);
+    --llm-chat-context-warning: #d98c1f;
+    --llm-chat-context-critical: #d9534f;
+
+    /* Positioning context for the context hairline, which rides the bottom edge. */
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--main-border-color);
+    gap: 0.375rem;
+    padding: 0.5rem;
+    /* The theme's card recipe, as `.options-section-card` uses it, at the 10px radius
+       shared by the center pane, dropdown menus and tool dialogs. Both themes set
+       `--card-box-shadow: none` — a Trilium surface is defined by its fill, not a shadow. */
+    border: 1px solid var(--card-border-color, var(--main-border-color));
+    border-radius: 10px;
+    background: var(--card-background-color, var(--accented-background-color));
+    box-shadow: var(--card-box-shadow, none);
+    outline: 2px solid transparent;
+    transition: outline-color 100ms linear;
+}
+
+/* Focus lives on the island, not on the editor inside it. Keyed off CKEditor's own
+   `.ck-focused` rather than `:focus-within` so tabbing to the model picker or the
+   send button doesn't light up the whole card. Uses the same 2px focus outline the
+   theme gives icon buttons and dialog buttons. */
+.llm-chat-input-form:has(.llm-chat-input.ck-focused) {
+    outline-color: var(--input-focus-outline-color, var(--muted-text-color));
 }
 
 /* Attachment preview row above the editor */
@@ -12,6 +48,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    padding: 0.125rem 0.125rem 0;
 }
 
 .llm-chat-attachment-chip {
@@ -87,23 +124,25 @@
     cursor: not-allowed;
 }
 
-.llm-chat-attach-btn {
-    font-size: 1.1rem;
-}
-
+/*
+ * The editor. Stripped of its own chrome so the island owns the border, the
+ * background and the focus ring. The `!important`s override CKEditor's bundled
+ * inline-editable styling, which lands at equal specificity from a stylesheet
+ * whose load order relative to this file isn't guaranteed.
+ */
 .llm-chat-input {
     flex: 1;
-    min-height: 60px;
+    min-height: 46px;
     max-height: 200px;
     overflow-y: auto;
-    padding: 0.5rem !important;
-    border: 1px solid var(--main-border-color) !important;
-    border-radius: 4px !important;
+    padding: 0.25rem 0.375rem !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent;
+    color: var(--main-text-color);
     font-family: inherit;
     font-size: inherit;
-    background: var(--main-background-color);
-    color: var(--main-text-color);
-    transition: border-color 0.1s linear, box-shadow 0.1s linear;
 }
 
 /* CKEditor adds .ck-content / .ck-focused to the same element it took over. */
@@ -123,56 +162,108 @@
     }
 }
 
-.llm-chat-input.ck-focused {
-    border-color: var(--main-selection-color);
-    box-shadow: 0 0 0 2px var(--main-selection-color-soft, rgba(0, 123, 255, 0.25));
-}
-
 .llm-chat-input.ck-read-only {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
 .llm-chat-input.ck-content .mention {
-    color: var(--main-selection-color, #007bff);
+    color: var(--link-color, #007bff);
     background: transparent;
 }
 
-/* Options row */
+/* Control row, inside the island */
 .llm-chat-options {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-}
-
-.llm-chat-send-btn {
-    margin-left: auto;
-    font-size: 1.25rem;
-}
-
-.llm-chat-send-btn.disabled {
-    opacity: 0.4;
-}
-
-.llm-chat-stop-btn {
-    color: var(--danger-color, #dc3545);
+    gap: 0.25rem;
 }
 
 /* Model selector */
 .llm-chat-model-selector {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem;
+    /* The only item allowed to give: everything else in the row is a fixed-size icon. */
+    min-width: 0;
     font-size: 0.85rem;
     color: var(--muted-text-color);
 }
 
-.llm-chat-model-selector .bx {
-    font-size: 1rem;
+/*
+ * Capability toggles — what the model can reach this turn. They sit with the model
+ * because that is what they qualify, and they are the lightest tier in the row: state
+ * you glance at far more often than you change. Deliberately the smallest targets, and
+ * carrying no resting fill even when on, so a row of them reads as indicators you can
+ * press rather than as a strip of buttons. The hover fill stays — it costs nothing when
+ * idle and keeps them obviously clickable.
+ */
+.llm-chat-capabilities {
+    display: flex;
+    align-items: center;
+    gap: 0.0625rem;
+    margin-inline-end: auto;
+    flex-shrink: 0;
+}
+
+.llm-chat-capability-unavailable {
+    display: inline-flex;
+}
+
+.llm-chat-input-form .llm-chat-capability.icon-action {
+    --icon-button-size: 24px;
+    --icon-button-icon-ratio: 0.65;
+    --icon-button-color: var(--muted-text-color);
+    --icon-button-hover-color: var(--main-text-color);
+}
+
+/* On: colour alone. `--icon-button-hover-color` is set because the theme's hover rule
+   reads it and nothing defines it by default. */
+.llm-chat-input-form .llm-chat-capability.icon-action.active {
+    --icon-button-color: var(--link-color);
+    --icon-button-hover-color: var(--link-color);
+}
+
+/*
+ * The actions. A fixed gap rather than relying on the capability group's `auto` margin,
+ * which resolves to zero the moment the row is full — the normal state in the sidebar,
+ * where the grouping is needed most.
+ */
+.llm-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    margin-inline-start: 0.5rem;
+    flex-shrink: 0;
 }
 
 .llm-chat-model-selector .dropdown {
     display: flex;
+    min-width: 0;
+}
+
+.llm-chat-model-select-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+ * The provider's mark, standing in for the vendor word `shortModelName` drops — the same
+ * information in a glyph's width rather than a word's. Sized just under the label so it
+ * reads as a marker rather than competing with the name it qualifies.
+ */
+.llm-chat-model-icon {
+    --masked-icon-size: 1.05em;
+
+    opacity: 0.8;
+}
+
+/* In the menu the mark sits ahead of the name, which is plain text rather than a wrapped
+   element — so the gap is the icon's own margin. */
+.llm-chat-model-dropdown .llm-chat-model-icon {
+    margin-inline-end: 0.45em;
+    vertical-align: -0.15em;
 }
 
 /* Scoped to the dropdown wrapper (not `.llm-chat-model-selector`) so these menu styles
@@ -193,77 +284,229 @@
     top: auto;
 }
 
-.llm-chat-model-select.select-button {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--main-border-color);
-    border-radius: 4px;
-    background: var(--main-background-color);
-    color: var(--main-text-color);
+/*
+ * The model picker stays the theme's own combo box (`.select-button.dropdown-toggle.btn`
+ * — its fill, its 6px radius, its caret, its focus outline), so it reads as the same
+ * control as every other Trilium selector; it is only made compact, the way the theme
+ * itself compacts one.
+ *
+ * The default is sized for a form row: `padding-inline-end: calc(15px + 1.5rem)` alone
+ * reserves ~39px for the caret. Restating `--dropdown-arrow` — the custom property the
+ * theme's own `background` shorthand resolves — shrinks the glyph and pulls it in
+ * without reaching into the theme's rules, as the calendar month selector does with
+ * `--select-arrow-svg`. Matching the theme's selector verbatim keeps this at a
+ * specificity that actually wins.
+ */
+.llm-chat-input-form .llm-chat-model-select.select-button.dropdown-toggle.btn {
+    --dropdown-arrow: var(--select-arrow-svg) right 0.4em center/10px 14px no-repeat;
+
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 15rem;
+    padding: 0.15em 0.5em;
+    padding-inline-end: calc(10px + 0.8em);
     font-family: inherit;
     font-size: 0.85rem;
-    cursor: pointer;
-    min-width: 140px;
-    text-align: left;
+    text-align: start;
 }
 
-.llm-chat-model-select.select-button:focus {
-    outline: none;
-    border-color: var(--main-selection-color);
+/* The theme flips the caret to the left edge for RTL with a `background-position`
+   longhand, which would otherwise override the compact offset carried in the
+   shorthand above and leave the caret sitting at the default 0.75rem. */
+body[dir=rtl] .llm-chat-input-form .llm-chat-model-select.select-button.dropdown-toggle.btn {
+    background-position: left 0.4em center;
 }
 
-.llm-chat-model-select.select-button:disabled {
+.llm-chat-input-form .llm-chat-model-select.select-button.dropdown-toggle.btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-/* Note context toggle */
-.llm-chat-note-context.tn-low-profile {
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    opacity: 0.5;
-    background: none;
-    border: none;
-}
-
-.llm-chat-note-context.tn-low-profile:hover:not(:disabled) {
-    opacity: 0.8;
-    background: none;
-}
-
-.llm-chat-note-context.tn-low-profile.active {
-    opacity: 1;
-}
-
-/* Context window indicator */
-.llm-chat-context-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    margin-left: 0.5rem;
-    cursor: help;
-}
-
-.llm-chat-context-pie {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.llm-chat-context-text {
-    font-size: 0.75rem;
+.llm-chat-model-placeholder {
     color: var(--muted-text-color);
 }
 
-/* No provider state */
+/*
+ * Note context toggle. Icon-only and sized to match the paperclip it sits beside, since
+ * both are "what goes into this prompt" controls; the note title lives in the tooltip.
+ *
+ * State is carried entirely by colour. The `--icon-button-hover-*` pair is set explicitly
+ * in both states because the theme's hover rule reads `--icon-button-hover-color`, which
+ * nothing defines by default — leaving it unset makes that declaration invalid at computed
+ * value time and drops the colour back to `inherit` mid-hover.
+ */
+.llm-chat-input-form .llm-chat-note-context.icon-action {
+    --icon-button-size: 30px;
+    --icon-button-icon-ratio: 0.6;
+    --icon-button-color: var(--muted-text-color);
+    --icon-button-hover-color: var(--main-text-color);
+
+    flex-shrink: 0;
+}
+
+/* On: the note really is in the prompt, so the accent says so — the same signal the
+   note context used when it still had a border to put it on. */
+.llm-chat-input-form .llm-chat-note-context.icon-action.active {
+    --icon-button-color: var(--link-color);
+    --icon-button-hover-color: var(--link-color);
+    --icon-button-hover-background: var(--hover-item-background-color, var(--accented-background-color));
+
+    background: var(--hover-item-background-color, var(--accented-background-color));
+}
+
+/*
+ * Context window indicator.
+ *
+ * A hairline riding the island's bottom edge rather than an element in the control row:
+ * it costs no width, and length is read far more accurately than the angle of the 14px
+ * pie it replaces. It only exists once the window is at least half gone (see
+ * chat_context_usage), so it is absent for most of most conversations.
+ */
+/*
+ * Full-bleed, so the outer element is a clipper rather than the line itself: `inset: -1px`
+ * resolves against the containing block's padding box, which expands it to exactly the
+ * island's border box, and `border-radius: inherit` then matches the island's curve exactly.
+ * Without that clip a 2px line running edge to edge would poke ~5px past each bottom corner,
+ * since the curve is still 5px inboard at that height.
+ */
+.llm-chat-context-bar {
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    overflow: hidden;
+    /* The clipper covers the whole island, so it must not intercept presses meant for the
+       editor. Only the strip at the bottom takes pointer events, for the tooltip. */
+    pointer-events: none;
+    display: flex;
+    align-items: flex-end;
+}
+
+.llm-chat-context-bar-track {
+    position: relative;
+    width: 100%;
+    height: 2px;
+    background: var(--main-border-color);
+    pointer-events: auto;
+    cursor: help;
+}
+
+/* A hairline is far too small to hover, and the tooltip is where the token counts live, so
+   the hit area is extended upward without drawing anything. Kept inside the island's 8px
+   bottom padding so it can't sit over the controls. */
+.llm-chat-context-bar-track::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 8px;
+}
+
+.llm-chat-context-bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    background: var(--llm-chat-context-neutral);
+    transition: width 150ms linear, background-color 150ms linear;
+}
+
+.llm-chat-context-bar-warning .llm-chat-context-bar-fill {
+    background: var(--llm-chat-context-warning);
+}
+
+.llm-chat-context-bar-critical .llm-chat-context-bar-fill {
+    background: var(--llm-chat-context-critical);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .llm-chat-context-bar-fill {
+        transition: none;
+    }
+}
+
+/* At the critical threshold the bar is no longer enough — the consequence gets said. */
+.llm-chat-context-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0 0.375rem;
+    color: var(--main-text-color);
+    font-size: 0.8rem;
+}
+
+.llm-chat-context-alert .bx {
+    color: var(--llm-chat-context-critical);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/*
+ * Trailing actions. Both are sized through the theme's `--icon-button-*` knobs
+ * rather than by overriding width/border, which the theme locks with `!important`.
+ *
+ * `flex-shrink: 0` because the theme's `width` is a basis a flex container is free to
+ * shrink below: a long model name or note title would otherwise squeeze these two into
+ * ovals. They are fixed-size targets — the model selector is the item that gives.
+ */
+.llm-chat-input-form .llm-chat-attach-btn.icon-action,
+.llm-chat-input-form .llm-chat-send-btn.icon-action {
+    flex-shrink: 0;
+}
+
+.llm-chat-input-form .llm-chat-attach-btn.icon-action {
+    --icon-button-size: 30px;
+    --icon-button-icon-ratio: 0.6;
+}
+
+/* Filled circular send — the one primary affordance in the island. Monochrome
+   (text color on background color) rather than an accent, because no theme here
+   defines a brand accent variable. */
+.llm-chat-input-form .llm-chat-send-btn.icon-action {
+    --icon-button-size: 32px;
+    /* A touch larger than the paper plane it replaced: an arrow glyph carries less ink
+       and reads smaller at the same nominal size. */
+    --icon-button-icon-ratio: 0.65;
+    --icon-button-color: var(--main-background-color);
+    --icon-button-hover-color: var(--main-background-color);
+    --icon-button-hover-background: var(--main-text-color);
+
+    border-radius: 50%;
+    background: var(--main-text-color);
+}
+
+.llm-chat-input-form .llm-chat-send-btn.icon-action:hover:not(.disabled) {
+    opacity: 0.85;
+}
+
+.llm-chat-input-form .llm-chat-send-btn.icon-action.disabled {
+    --icon-button-color: var(--muted-text-color);
+
+    background: var(--accented-background-color);
+    opacity: 1;
+}
+
+.llm-chat-input-form .llm-chat-send-btn.icon-action.disabled::before {
+    opacity: 1;
+}
+
+.llm-chat-input-form .llm-chat-send-btn.llm-chat-stop-btn.icon-action {
+    --icon-button-color: #fff;
+    --icon-button-hover-color: #fff;
+    --icon-button-hover-background: var(--danger-color, #dc3545);
+
+    background: var(--danger-color, #dc3545);
+}
+
+/* No provider state — same island, standing in for the composer */
 .llm-chat-no-provider {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
-    border-top: 1px solid var(--main-border-color);
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--card-border-color, var(--main-border-color));
+    border-radius: 10px;
+    background: var(--card-background-color, var(--accented-background-color));
+    box-shadow: var(--card-box-shadow, none);
 }
 
 .llm-chat-no-provider-content {

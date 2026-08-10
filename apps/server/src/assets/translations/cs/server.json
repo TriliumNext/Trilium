@@ -358,8 +358,5 @@
   "sql_init": {
     "db_not_initialized_desktop": "DB není inicializována, postupujte podle pokynů na obrazovce.",
     "db_not_initialized_server": "DB není inicializována, navštivte prosím stránku pro nastavení - http://[your-server-host]:{{port}}, kde najdete pokyny, jak inicializovat Trilium."
-  },
-  "desktop": {
-    "instance_already_running": "Instance již běží, místo vytváření nové se zaměříme na tu stávající."
   }
 }

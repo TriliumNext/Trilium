@@ -41,6 +41,43 @@ export class SqlService {
         this.dbConnection.loadFromBuffer(buffer);
     }
 
+    /**
+     * Releases the database file so it can be replaced, and refuses every query until
+     * {@link attachFromFile} puts one back.
+     *
+     * The pair exists for restoring a backup, which cannot be done through the connection it is
+     * replacing: on Windows the file cannot even be renamed while it is open. Only sound while
+     * nothing is using the database, which on the setup screen is the case by construction.
+     *
+     * @throws Error inside a transaction, which detaching would abandon halfway.
+     */
+    detachConnection() {
+        if (!this.dbConnection.detach) {
+            throw new Error("Database provider does not support detaching.");
+        }
+        // Nothing to let go of: the database was erased before this, which is what the setup screen
+        // does when the user asks for it, and a restore that follows would otherwise fail here on a
+        // connection that is already gone.
+        if (this.dbConnection.isAttached?.() === false) {
+            return;
+        }
+        if (this.dbConnection.inTransaction) {
+            throw new Error("Cannot detach the database in the middle of a transaction.");
+        }
+
+        this.statementCache = {};
+        this.dbConnection.detach();
+    }
+
+    /**
+     * Attaches to the database file at `path`, clearing the prepared-statement cache: cached
+     * statements belong to the connection that prepared them and mean nothing to a new one.
+     */
+    attachFromFile(path: string, isReadOnly = this.params.isReadOnly) {
+        this.statementCache = {};
+        this.dbConnection.loadFromFile(path, isReadOnly);
+    }
+
     insert<T extends {}>(tableName: string, rec: T, replace = false) {
         const keys = Object.keys(rec || {});
         if (keys.length === 0) {

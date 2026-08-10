@@ -52,7 +52,7 @@ const mutateRegistry: any = [
     ["mutate_tool", { description: "m", inputSchema: {}, mutates: true, execute: mutateExecute }]
 ];
 
-vi.mock("../llm/tools/index.js", () => ({
+vi.mock("@triliumnext/core/src/services/llm/tools/index.js", () => ({
     allToolRegistries: [readRegistry, mutateRegistry]
 }));
 

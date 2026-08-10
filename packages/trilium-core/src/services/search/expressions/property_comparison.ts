@@ -36,6 +36,20 @@ const PROP_MAPPING: Record<string, string> = {
     revisioncount: "revisionCount"
 };
 
+/**
+ * Properties that aren't held on the becca note and have to be computed from the database by
+ * `loadNeededInfoFromDatabase()` in the search service, which only runs when `dbLoadNeeded` is set.
+ *
+ * These are lower-cased, like the search string and {@link PROP_MAPPING}'s keys, so they must be
+ * matched against the raw `propertyName` argument — NOT against the case-mapped `this.propertyName`.
+ */
+const DB_BACKED_PROPERTIES = new Set([
+    "contentsize",
+    "contentandattachmentssize",
+    "contentandattachmentsandrevisionssize",
+    "revisioncount"
+]);
+
 interface SearchContext {
     dbLoadNeeded?: boolean;
 }
@@ -58,7 +72,7 @@ class PropertyComparisonExp extends Expression {
         this.comparedValue = comparedValue; // for DEBUG mode
         this.comparator = buildComparator(operator, comparedValue);
 
-        if (["contentsize", "contentandattachmentssize", "contentandattachmentsandrevisionssize", "revisioncount"].includes(this.propertyName)) {
+        if (DB_BACKED_PROPERTIES.has(propertyName)) {
             searchContext.dbLoadNeeded = true;
         }
     }

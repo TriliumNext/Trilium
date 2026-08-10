@@ -1,4 +1,5 @@
 /// <reference types='vitest' />
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig(() => ({
@@ -31,6 +32,21 @@ export default defineConfig(() => ({
     ],
     hookTimeout: 20_000,
     testTimeout: 40_000,
+    // Write worker console output straight to stdout instead of forwarding each call to the main
+    // process over the worker RPC. With the interception on, the suite intermittently failed with
+    // every test passing:
+    //
+    //   EnvironmentTeardownError: [vitest-worker]: Closing rpc while "onUserConsoleLog" was pending
+    //
+    // `buildApp()` — called by ~60 spec files — starts the server's background jobs, which schedule
+    // work for +4s (consistency checks), +5s (sync) and +10s (backendStartup scripts) and chain off
+    // `sqlInit.dbReady`. Each runs through `cls.wrap`, whose catch logs with a raw `console.log`, so
+    // a file whose tests end inside that window tears its worker down with log output still in
+    // flight and the run exits 1 regardless of the results. Suppressing individual log sources only
+    // narrows the window (see log_provider.ts); removing the RPC hop removes the failure mode.
+    // Cost: log lines are no longer prefixed with the originating test, nor captured by the HTML and
+    // JUnit reporters.
+    disableConsoleIntercept: true,
     reporters: [
       "verbose",
       ["html", { outputFile: "./test-output/vitest/html/index.html" }],
@@ -39,7 +55,12 @@ export default defineConfig(() => ({
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',
       provider: 'v8' as const,
-      reporter: [ "text", "html", "lcov" ],
+      // Codecov resolves an lcov `SF:` path by matching it against the repo's file list. Vitest
+      // defaults the lcov reporter's `projectRoot` to the Vite `root`, which would emit paths
+      // relative to this app (`src/…`, `../../packages/trilium-core/src/…`); the shallow ones are
+      // ambiguous in this monorepo and get attributed to whichever project wins the match. Anchor
+      // to the repo root so every path is unambiguous.
+      reporter: [ "text", "html", ["lcov", { projectRoot: resolve(__dirname, '../..') }] ],
       allowExternal: true,
       include: ["src/**/*.{ts,tsx}", "../../packages/trilium-core/src/**/*.{ts,tsx}"],
       exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"]

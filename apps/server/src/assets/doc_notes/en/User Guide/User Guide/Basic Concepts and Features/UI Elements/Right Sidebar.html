@@ -1,25 +1,50 @@
 <figure class="image">
-  <img style="aspect-ratio:1036/372;" src="Right Sidebar_image.png"
-  width="1036" height="372">
+  <img style="aspect-ratio:1990/1168;" src="1_Right Sidebar_image.png"
+  width="1990" height="1168">
 </figure>
-<p>The right sidebar displays specific content for the current note. Currently
-  it includes:</p>
+<p>The right sidebar displays specific content for the current note. The
+  sidebar is grouped into multiple tabs:</p>
 <ul>
-  <li><a class="reference-link" href="#root/_help_BFvAtE74rbP6">Table of contents</a>
-  </li>
-  <li><a class="reference-link" href="#root/_help_AxshuNRegLAv">Highlights list</a>
-  </li>
+  <li><a class="reference-link" href="#root/_help_2dcGDhp9WFKb">Outline tab</a>, which
+    displays the table of contents, highlights and other navigation-related
+    sections depending on the note type.</li>
+  <li><a class="reference-link" href="#root/_help_uNtgN0cUKEBc">Attributes tab</a>,
+    which provides a visual editor for the current note's&nbsp;<a class="reference-link"
+    href="#root/_help_zEY4DaJG4YT5">Attributes</a>.</li>
+  <li><a class="reference-link" href="#root/_help_LrKznOtw9cQD">AI chat tab</a>, which
+    uses the&nbsp;<a class="reference-link" href="#root/_help_GBBMSlVSOIGP">AI</a>&nbsp;integration
+    to chat, with optional access to the current note.</li>
+  <li><a class="reference-link" href="#root/_help_KRlZFoIH0j6p">Connections tab</a>,
+    which groups together the note map, note paths, backlinks and similar notes.</li>
 </ul>
-<p>Note that the sidebar is not displayed if it would otherwise be empty,
-  for example if there are too few headings and there are no highlights.</p>
+<aside class="admonition warning">
+  <p>There are currently two types of sidebars; the documentation here refers
+    only to the one defined in the&nbsp;<a class="reference-link" href="#root/_help_IjZS7iK5EXtb">New Layout</a>.
+    The old layout has a different sidebar mechanism which only shows the table
+    of contents and highlights.</p>
+</aside>
 <h2>Toggling the right sidebar</h2>
-<p>The sidebar can be hidden or shown by using the <code spellcheck="false">toggleRightPane</code> keyboard
-  shortcut, which is not assigned by default.</p>
-<h2>Relation with splits</h2>
-<p>When using&nbsp;<a class="reference-link" href="#root/_help_luNhaphA37EO">Split View</a>,
-  there is a single sidebar serving all the open splits for the current
-  <a
-  href="#root/_help_3seOhtN8uLIY">tab</a>.</p>
-<p>Clicking on a note within the split view will display the sidebar for
-  that note. If there are no items to display in the sidebar, it will remain
-  closed.</p>
+<p>There are two ways to toggle the right sidebar:</p>
+<ul>
+  <li>Via the
+    <img src="Right Sidebar_image.png" width="25"
+    height="21">icon near the title bar, which toggles whether the sidebar is docked.</li>
+  <li>Via the <em>Toggle right pane</em>  <a href="#root/_help_A9Oc6YKKc65v">keyboard shortcut</a>,
+    which is not assigned by default.</li>
+</ul>
+<h2>Peeking the sidebar</h2>
+<p>There is a small strip near the right edge of the app which shows an arrow
+  icon.</p>
+<ul>
+  <li>When the sidebar is hidden, pressing the edge will <em>peek</em> the sidebar.
+    <ul>
+      <li>In this mode the sidebar is shown temporarily above the content, without
+        shifting the content of your notes.</li>
+      <li>Clicking outside the sidebar while in peek mode will simply hide the sidebar.
+        Same goes for the X button and clicking on the right edge.</li>
+      <li>Pressing the pin icon will dock the sidebar.</li>
+    </ul>
+  </li>
+  <li>When the sidebar is docked, pressing the edge will hide the sidebar (similar
+    to the toggle icon at the top).</li>
+</ul>

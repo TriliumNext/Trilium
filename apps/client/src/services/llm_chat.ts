@@ -1,6 +1,8 @@
-import type { LlmChatConfig, LlmCitation, LlmMessage, LlmModelInfo,LlmUsage } from "@triliumnext/commons";
+import type { LlmChatConfig, LlmCitation, LlmErrorDetails, LlmMessage, LlmModelInfo, LlmStreamChunk, LlmUsage, WebSocketMessage } from "@triliumnext/commons";
 
 import server from "./server.js";
+import { isStandalone, randomString } from "./utils.js";
+import { subscribeToMessages, unsubscribeToMessage } from "./ws.js";
 
 /** Credentials describing a provider whose live model list should be fetched. */
 export interface ProviderModelsQuery {
@@ -52,14 +54,39 @@ export interface StreamCallbacks {
     onToolResult?: (toolCallId: string, toolName: string, result: string, isError?: boolean) => void;
     onCitation?: (citation: LlmCitation) => void;
     onUsage?: (usage: LlmUsage) => void;
-    onError: (error: string) => void;
+    /**
+     * @param error human-readable message.
+     * @param details provider-call context (status, URL, response body), present only
+     *   for failures that reached a provider — never for connection/transport errors raised here.
+     */
+    onError: (error: string, details?: LlmErrorDetails) => void;
     onDone: () => void;
 }
 
 /**
- * Stream a chat completion from the LLM API using Server-Sent Events.
+ * Stream a chat completion from the LLM API.
+ *
+ * Two transports, one contract: the completion is delivered chunk by chunk to
+ * {@link StreamCallbacks} and the promise settles when it is over, rejecting with
+ * an `AbortError` if `abortSignal` fired. Which transport is used depends on what
+ * the backend can be reached over — see {@link streamChatOverMessages}.
  */
-export async function streamChatCompletion(
+export function streamChatCompletion(
+    messages: LlmMessage[],
+    config: LlmChatConfig,
+    callbacks: StreamCallbacks,
+    abortSignal?: AbortSignal
+): Promise<void> {
+    return isStandalone
+        ? streamChatOverMessages(messages, config, callbacks, abortSignal)
+        : streamChatOverSse(messages, config, callbacks, abortSignal);
+}
+
+/**
+ * Stream a chat completion over Server-Sent Events, the response of a request
+ * that stays open for the whole completion.
+ */
+async function streamChatOverSse(
     messages: LlmMessage[],
     config: LlmChatConfig,
     callbacks: StreamCallbacks,
@@ -115,51 +142,7 @@ export async function streamChatCompletion(
             for (const line of lines) {
                 if (line.startsWith("data: ")) {
                     try {
-                        const data = JSON.parse(line.slice(6));
-
-                        switch (data.type) {
-                            case "text":
-                                callbacks.onChunk(data.content);
-                                break;
-                            case "thinking":
-                                callbacks.onThinking?.(data.content);
-                                break;
-                            case "tool_input_start":
-                                callbacks.onToolInputStart?.(data.toolCallId, data.toolName);
-                                // Yield to force Preact to commit the pending tool call
-                                // state before any deltas arrive.
-                                await new Promise((r) => setTimeout(r, 1));
-                                break;
-                            case "tool_input_delta":
-                                callbacks.onToolInputDelta?.(data.toolCallId, data.delta);
-                                break;
-                            case "tool_use":
-                                callbacks.onToolUse?.(data.toolCallId, data.toolName, data.toolInput);
-                                // Yield to force Preact to commit the pending tool call
-                                // state before we process the result.
-                                await new Promise((r) => setTimeout(r, 1));
-                                break;
-                            case "tool_result":
-                                callbacks.onToolResult?.(data.toolCallId, data.toolName, data.result, data.isError);
-                                await new Promise((r) => setTimeout(r, 1));
-                                break;
-                            case "citation":
-                                if (data.citation) {
-                                    callbacks.onCitation?.(data.citation);
-                                }
-                                break;
-                            case "usage":
-                                if (data.usage) {
-                                    callbacks.onUsage?.(data.usage);
-                                }
-                                break;
-                            case "error":
-                                callbacks.onError(data.error);
-                                break;
-                            case "done":
-                                callbacks.onDone();
-                                break;
-                        }
+                        await handleChunk(JSON.parse(line.slice(6)), callbacks);
                     } catch (e) {
                         console.error("Failed to parse SSE data line:", line, e);
                     }
@@ -174,5 +157,135 @@ export async function streamChatCompletion(
         callbacks.onError(`LLM stream interrupted: ${message}`);
     } finally {
         reader.releaseLock();
+    }
+}
+
+/**
+ * Stream a chat completion over the WebSocket-style message channel, for the
+ * standalone build: its backend runs in a worker reached through a request bridge
+ * that answers with one buffered body, so a response cannot stay open. The
+ * request here only starts the completion; the chunks arrive as `llm-stream`
+ * messages and an `llm-stream-end` says when there are no more.
+ *
+ * The stream id is minted here, before the completion is asked for, so the
+ * subscription is already in place when the first chunk lands. Every tab receives
+ * the messages — only the leader holds the worker, and the rest hear it through a
+ * relay — so the id is also what makes a tab keep just its own.
+ */
+async function streamChatOverMessages(
+    messages: LlmMessage[],
+    config: LlmChatConfig,
+    callbacks: StreamCallbacks,
+    abortSignal?: AbortSignal
+): Promise<void> {
+    const streamId = randomString(12);
+    let resolveEnd: () => void = () => undefined;
+    const ended = new Promise<void>((resolve) => { resolveEnd = resolve; });
+    // Handlers are dispatched without being awaited, so nothing else keeps the
+    // chunks in order: each is chained onto the one before it.
+    let handled: Promise<void> = Promise.resolve();
+
+    const onMessage = (message: WebSocketMessage) => {
+        if (message.type === "llm-stream" && message.streamId === streamId) {
+            handled = handled.then(() => handleChunk(message.chunk, callbacks));
+            // Marks the link handled the moment it is made. `await handled` below
+            // still rethrows, but without this a chunk handler that threw would sit
+            // as an unhandled rejection until the stream ends — and in the
+            // standalone build a stray rejection is reported, not ignored.
+            handled.catch(() => undefined);
+        } else if (message.type === "llm-stream-end" && message.streamId === streamId) {
+            resolveEnd();
+        }
+    };
+    subscribeToMessages(onMessage);
+
+    try {
+        try {
+            await server.post("llm-chat/stream-start", { streamId, messages, config });
+        } catch (e) {
+            callbacks.onError(`Failed to start the LLM stream: ${serverErrorMessage(e)}`);
+            return;
+        }
+
+        try {
+            await Promise.race([ended, rejectWhenAborted(abortSignal)]);
+        } catch (e) {
+            // Tell the backend to stop the completion; it has no disconnect to notice.
+            void server.post("llm-chat/stream-abort", { streamId }).catch(() => undefined);
+            throw e;
+        }
+
+        // Chunks delivered right before the end marker may still be in the chain.
+        await handled;
+    } finally {
+        unsubscribeToMessage(onMessage);
+    }
+}
+
+/**
+ * A promise that rejects the way an aborted `fetch` does, so both transports fail
+ * a stopped generation identically. Never settles when there is no signal.
+ */
+function rejectWhenAborted(signal?: AbortSignal): Promise<never> {
+    return new Promise((_resolve, reject) => {
+        if (!signal) {
+            return;
+        }
+        const fail = () => reject(new DOMException("The LLM stream was aborted.", "AbortError"));
+        if (signal.aborted) {
+            fail();
+        } else {
+            signal.addEventListener("abort", fail, { once: true });
+        }
+    });
+}
+
+/**
+ * Dispatch one chunk to the callbacks. Shared by both transports, so a chunk means
+ * the same thing however it arrived.
+ */
+async function handleChunk(chunk: LlmStreamChunk, callbacks: StreamCallbacks): Promise<void> {
+    switch (chunk.type) {
+        case "text":
+            callbacks.onChunk(chunk.content);
+            break;
+        case "thinking":
+            callbacks.onThinking?.(chunk.content);
+            break;
+        case "tool_input_start":
+            callbacks.onToolInputStart?.(chunk.toolCallId, chunk.toolName);
+            // Yield to force Preact to commit the pending tool call
+            // state before any deltas arrive.
+            await new Promise((r) => setTimeout(r, 1));
+            break;
+        case "tool_input_delta":
+            callbacks.onToolInputDelta?.(chunk.toolCallId, chunk.delta);
+            break;
+        case "tool_use":
+            callbacks.onToolUse?.(chunk.toolCallId, chunk.toolName, chunk.toolInput);
+            // Yield to force Preact to commit the pending tool call
+            // state before we process the result.
+            await new Promise((r) => setTimeout(r, 1));
+            break;
+        case "tool_result":
+            callbacks.onToolResult?.(chunk.toolCallId, chunk.toolName, chunk.result, chunk.isError);
+            await new Promise((r) => setTimeout(r, 1));
+            break;
+        case "citation":
+            if (chunk.citation) {
+                callbacks.onCitation?.(chunk.citation);
+            }
+            break;
+        case "usage":
+            if (chunk.usage) {
+                callbacks.onUsage?.(chunk.usage);
+            }
+            break;
+        case "error":
+            callbacks.onError(chunk.error, chunk.errorDetails);
+            break;
+        case "done":
+            callbacks.onDone();
+            break;
     }
 }

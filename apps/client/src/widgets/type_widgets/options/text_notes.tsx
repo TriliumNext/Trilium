@@ -3,12 +3,14 @@ import "./text_notes.css";
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { getThemeVariant, Themes } from "@triliumnext/highlightjs";
 import type { CSSProperties } from "preact/compat";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
 import { formatDateTime, toggleBodyClass } from "../../../services/utils";
+import ActionButton from "../../react/ActionButton";
+import Chip from "../../react/Chip";
 import Dropdown from "../../react/Dropdown";
 import FormGroup from "../../react/FormGroup";
 import { FormListItem } from "../../react/FormList";
@@ -17,6 +19,8 @@ import FormText from "../../react/FormText";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { getHtml } from "../../react/RawHtml";
+import { QUOTE_MARK_PRESETS } from "../text/quotes";
+import { type CustomReplacement, parseCustomReplacements } from "../text/replacements";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
@@ -33,6 +37,7 @@ export default function TextNoteSettings() {
             <OptionsPageHeader />
             <FormattingToolbar />
             <EditorFeatures />
+            <AutomaticReplacements />
             <Editor />
             <CodeBlockStyle />
             <TableOfContent />
@@ -177,6 +182,197 @@ function EditorFeatures() {
     );
 }
 
+/**
+ * The as-you-type replacements, grouped the way CKEditor groups them. Each description names what
+ * the group actually does to your text: the complaints these settings answer were as much about the
+ * behaviour being undocumented as about it being unwanted, so the examples are the point.
+ */
+function AutomaticReplacements() {
+    const [doubleQuoteStyle, setDoubleQuoteStyle] = useTriliumOption("textNoteDoubleQuoteStyle");
+    const [singleQuoteStyle, setSingleQuoteStyle] = useTriliumOption("textNoteSingleQuoteStyle");
+    const [punctuationEnabled, setPunctuationEnabled] = useTriliumOptionBool("textNotePunctuationReplacementsEnabled");
+    const [mathEnabled, setMathEnabled] = useTriliumOptionBool("textNoteMathReplacementsEnabled");
+    const [symbolsEnabled, setSymbolsEnabled] = useTriliumOptionBool("textNoteSymbolReplacementsEnabled");
+
+    return (
+        <OptionsSection title={t("automatic_replacements.title")} description={t("automatic_replacements.description")}>
+            <OptionsRow
+                name="double-quote-style"
+                label={t("automatic_replacements.double_quotes")}
+                description={t("automatic_replacements.double_quotes_description")}
+            >
+                <QuoteStyleSelect currentValue={doubleQuoteStyle} onChange={setDoubleQuoteStyle} />
+            </OptionsRow>
+
+            <OptionsRow
+                name="single-quote-style"
+                label={t("automatic_replacements.single_quotes")}
+                description={t("automatic_replacements.single_quotes_description")}
+            >
+                <QuoteStyleSelect currentValue={singleQuoteStyle} onChange={setSingleQuoteStyle} />
+            </OptionsRow>
+
+            <OptionsRowWithToggle
+                name="punctuation-replacements-enabled"
+                label={t("automatic_replacements.punctuation")}
+                description={t("automatic_replacements.punctuation_description")}
+                currentValue={punctuationEnabled}
+                onChange={setPunctuationEnabled}
+            />
+
+            <OptionsRowWithToggle
+                name="math-replacements-enabled"
+                label={t("automatic_replacements.math")}
+                description={t("automatic_replacements.math_description")}
+                currentValue={mathEnabled}
+                onChange={setMathEnabled}
+            />
+
+            <OptionsRowWithToggle
+                name="symbol-replacements-enabled"
+                label={t("automatic_replacements.symbols")}
+                description={t("automatic_replacements.symbols_description")}
+                currentValue={symbolsEnabled}
+                onChange={setSymbolsEnabled}
+            />
+
+            <CustomReplacements />
+        </OptionsSection>
+    );
+}
+
+/**
+ * The choice offered for one of the two quote keys. The same list serves both: which pair belongs on
+ * which key is a convention rather than a property of the marks, and the conventions disagree —
+ * British typography puts `‘…’` where American puts `“…”`.
+ */
+function QuoteStyleSelect({ currentValue, onChange }: { currentValue: string, onChange: (newValue: string) => void }) {
+    return (
+        <FormSelect
+            currentValue={currentValue || "auto"}
+            onChange={onChange}
+            keyProperty="value" titleProperty="label"
+            values={[
+                { value: "auto", label: t("automatic_replacements.quotes_auto") },
+                { value: "off", label: t("automatic_replacements.quotes_off") },
+                // The marks are their own label — no wording to translate, and nothing between the
+                // choice and what it produces.
+                ...QUOTE_MARK_PRESETS.map(({ id, marks }) => ({
+                    value: id,
+                    label: `${marks[0]}…${marks[1]}`
+                }))
+            ]}
+        />
+    );
+}
+
+/**
+ * The user's own replacements: those already held as chips, and a pair of boxes after them for the
+ * next one.
+ *
+ * Nothing is copied into local state but the pair being typed. What is held *is* the option, read
+ * back on every render, so a list arriving from another device or a second settings tab is simply
+ * what is drawn next — there is no second copy to fall behind it, and none to be written back over
+ * it. The rows this replaced needed a guard for each of those; a set that is added to and removed
+ * from rather than edited in place has neither problem to guard against.
+ *
+ * A pair cannot be edited once taken, which is what a chip costs. Typing a `from` already held
+ * replaces that entry instead of adding a second one, which gives the editing back without an
+ * affordance for it — and a second entry under the same `from` would in any case be dead weight,
+ * since the first match is the one that fires.
+ */
+export function CustomReplacements() {
+    const [ storedJson, setStoredJson ] = useTriliumOption("textNoteCustomReplacements");
+    const replacements = parseCustomReplacements(storedJson);
+
+    const [ draftFrom, setDraftFrom ] = useState("");
+    const [ draftTo, setDraftTo ] = useState("");
+    const fromRef = useRef<HTMLInputElement>(null);
+    const entryRef = useRef<HTMLDivElement>(null);
+
+    const isComplete = draftFrom.trim().length > 0 && draftTo.trim().length > 0;
+
+    function save(next: CustomReplacement[]) {
+        void setStoredJson(JSON.stringify(next.map(({ from, to }) => ({ from, to }))));
+    }
+
+    function take() {
+        const from = draftFrom.trim();
+        const to = draftTo.trim();
+        if (!from || !to) return;
+
+        // Matching ignores case, so what counts as the same shortcut has to as well — otherwise
+        // `TN` and `tn` would sit there as two entries of which only the first could ever fire.
+        const kept = replacements.filter((replacement) => replacement.from.toLowerCase() !== from.toLowerCase());
+        save([ ...kept, { from, to } ]);
+
+        setDraftFrom("");
+        setDraftTo("");
+        fromRef.current?.focus();
+    }
+
+    return (
+        <div className="custom-replacements">
+            <div className="option-row-label">
+                <label>{t("automatic_replacements.custom")}</label>
+                <small className="option-row-description">{t("automatic_replacements.custom_description")}</small>
+            </div>
+
+            <div className="tn-field">
+                {replacements.map((replacement) => (
+                    <Chip
+                        key={replacement.from}
+                        removeButtonText={t("automatic_replacements.custom_remove")}
+                        onRemove={() => save(replacements.filter((held) => held.from !== replacement.from))}
+                    >
+                        <span>{replacement.from} → {replacement.to}</span>
+                    </Chip>
+                ))}
+
+                {/* The two boxes and the button asking for what they hold are one thing on the page,
+                    so they wrap as one rather than the button stranding itself on a line of its own. */}
+                <div
+                    className="custom-replacement-entry"
+                    ref={entryRef}
+                    onFocusOut={(e) => {
+                        // Moving between the two boxes is not leaving the pair. Only a complete one
+                        // is taken on the way out: half of a replacement is not a replacement, and
+                        // storing it would put an entry in the set that could never fire.
+                        if (e.relatedTarget instanceof Node && entryRef.current?.contains(e.relatedTarget)) return;
+                        if (isComplete) take();
+                    }}
+                >
+                    <FormTextBox
+                        inputRef={fromRef}
+                        currentValue={draftFrom}
+                        placeholder={t("automatic_replacements.custom_from_placeholder")}
+                        onChange={setDraftFrom}
+                        onKeyDown={(e) => e.key === "Enter" && take()}
+                    />
+                    <span className="custom-replacement-arrow" aria-hidden="true">→</span>
+                    <FormTextBox
+                        currentValue={draftTo}
+                        placeholder={t("automatic_replacements.custom_to_placeholder")}
+                        onChange={setDraftTo}
+                        onKeyDown={(e) => e.key === "Enter" && take()}
+                    />
+
+                    {/* Enter takes the pair, but nothing on the page says so — so once there is a
+                        whole one to take, the same offer appears where it can be seen. */}
+                    {isComplete && (
+                        <ActionButton
+                            className="custom-replacement-add"
+                            icon="bx bx-plus"
+                            text={t("automatic_replacements.custom_add")}
+                            onClick={take}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function Editor() {
     const [headingStyle, setHeadingStyle] = useTriliumOption("headingStyle");
     const [autoReadonlySize, setAutoReadonlySize] = useTriliumOption("autoReadonlySizeText");
@@ -225,7 +421,7 @@ function HeadingStyleSelector({ currentValue, onChange }: { currentValue: string
     const currentStyle = HEADING_STYLES.find(s => s.value === currentValue) ?? HEADING_STYLES[0];
 
     return (
-        <Dropdown text={t(currentStyle.labelKey)}>
+        <Dropdown text={t(currentStyle.labelKey)} mobileBottomSheet>
             {HEADING_STYLES.map(({ value, labelKey }) => (
                 <FormListItem
                     key={value}

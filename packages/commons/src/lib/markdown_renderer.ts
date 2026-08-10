@@ -83,6 +83,7 @@ import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, normalizeMimeTypeForCKEdit
 import {
     createCommentExtension,
     createHighlightExtension,
+    createLiteralTildeExtension,
     createTransclusionExtension,
     createWikiLinkExtension,
     transclusionExtension,
@@ -183,10 +184,12 @@ export interface RenderToHtmlOptions {
      */
     taskStates?: TaskStateDef[];
     /**
-     * Enable Obsidian-specific Markdown syntax: `==highlight==` → `<mark>` and
-     * `%% comment %%` → an HTML comment. Off by default so generic Markdown import,
-     * paste and the live editor preview are unaffected — only the Obsidian importer
-     * opts in.
+     * Enable Obsidian-specific Markdown syntax: `%% comment %%` → an HTML comment,
+     * plus Obsidian callouts. Off by default so generic Markdown import, paste and
+     * the live editor preview are unaffected — only the Obsidian importer opts in.
+     *
+     * Note that `==highlight==` is *not* gated on this: it is supported everywhere,
+     * since it is the de-facto standard highlight syntax outside of GFM.
      */
     obsidian?: boolean;
 }
@@ -580,10 +583,12 @@ export function renderToHtml(content: string, title: string, options: RenderToHt
     // Order is important, especially for wikilinks.
     const extensions = [
         options.transclusion ? createTransclusionExtension(options.transclusion) : transclusionExtension,
-        options.wikiLink ? createWikiLinkExtension(options.wikiLink) : wikiLinkExtension
+        options.wikiLink ? createWikiLinkExtension(options.wikiLink) : wikiLinkExtension,
+        createHighlightExtension(),
+        createLiteralTildeExtension()
     ];
     if (options.obsidian) {
-        extensions.push(createHighlightExtension(), createCommentExtension());
+        extensions.push(createCommentExtension());
     }
     marked.use({ extensions });
 

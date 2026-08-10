@@ -15,6 +15,8 @@ function exportToOpml(taskContext: TaskContext<"export">, branch: BBranch, res: 
         }
 
         const note = branch.getNote();
+        /* v8 ignore next 3 -- unreachable: BBranch.getNote() resolves through becca's childNote
+           getter, which materialises a skeleton note rather than ever returning a falsy value. */
         if (!note) {
             throw new Error("Unable to find note.");
         }

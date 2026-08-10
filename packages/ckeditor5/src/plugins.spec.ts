@@ -1,15 +1,22 @@
-import { BlockToolbar } from "ckeditor5";
+import { BalloonToolbar, BlockToolbar, Bold, Code, Italic, Strikethrough } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
-import { Admonition } from "@triliumnext/ckeditor5-admonition";
-import { COMMON_PLUGINS, CORE_PLUGINS, loadPremiumPlugins, POPUP_EDITOR_PLUGINS } from "./plugins.js";
+import { createTestEditor } from "../test/editor-kit.js";
+import { AttributeEditor } from "./index.js";
+import Admonition from "./plugins/admonition/admonition.js";
+import ItalicAsEmPlugin from "./plugins/italic_as_em.js";
+import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
+import { CHAT_INPUT_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
+import TriliumFormatPainter from "./plugins/format_painter/format_painter.js";
 import IncludeNote from "./plugins/includenote.js";
 import InternalLinkPlugin from "./plugins/internallink.js";
 import LinkEmbed from "./plugins/link_embed/link_embed.js";
+import TriliumSlashCommands from "./plugins/mention/slash_commands.js";
 import MentionCustomization from "./plugins/mention_customization.js";
 import ReferenceLink from "./plugins/referencelink.js";
+import TriliumSnippets from "./plugins/snippets/snippets.js";
 
 describe("plugin lists", () => {
     it("CORE_PLUGINS is a non-empty array", () => {
@@ -83,23 +90,90 @@ describe("plugin lists", () => {
         expect(POPUP_EDITOR_PLUGINS).toContain(BlockToolbar);
         expect(COMMON_PLUGINS).not.toContain(BlockToolbar);
     });
+
+    // Each of these replaced a premium plugin, which is why `ckeditor5-premium-features` is no
+    // longer a dependency at all. Dropping one of the registrations silently would put the editor
+    // back to missing the feature outright, so pin them here.
+    it("COMMON_PLUGINS includes the GPL replacements for the former premium plugins", () => {
+        expect(COMMON_PLUGINS).toContain(TriliumSlashCommands);
+        expect(COMMON_PLUGINS).toContain(TriliumFormatPainter);
+        expect(COMMON_PLUGINS).toContain(TriliumSnippets);
+    });
+
+    it("MEMO_PLUGINS marks up a sentence, which the chat input deliberately goes without", () => {
+        for (const plugin of CHAT_INPUT_PLUGINS) {
+            expect(MEMO_PLUGINS).toContain(plugin);
+        }
+        for (const plugin of [ Bold, Italic, Strikethrough, Code ]) {
+            expect(MEMO_PLUGINS).toContain(plugin);
+            // Not added to the set the memo builds on: what is typed in the chat box is turned into
+            // markdown before it is sent, and that pass keeps the text of an inline wrapper and
+            // drops the wrapper. Bold offered there would be bold lost on its way to the model.
+            expect(CHAT_INPUT_PLUGINS).not.toContain(plugin);
+        }
+        // What writes italics as `<em>` and a strikethrough as `<del>`, as the rest of Trilium
+        // stores both; they are downcast converters and do nothing without the marks above.
+        expect(MEMO_PLUGINS).toContain(ItalicAsEmPlugin);
+        expect(MEMO_PLUGINS).toContain(StrikethroughAsDel);
+    });
 });
 
-describe("loadPremiumPlugins", () => {
-    it("returns a non-empty array of plugin constructors", async () => {
-        const plugins = await loadPremiumPlugins();
-        expect(Array.isArray(plugins)).toBe(true);
-        expect(plugins.length).toBeGreaterThan(0);
-        for (const plugin of plugins) {
-            expect(typeof plugin).toBe("function");
+describe("an editor raised on MEMO_PLUGINS", () => {
+    /** As the memo is built: the plugins every minimal editor carries, and the memo's own upon them. */
+    const memoEditor = () => createTestEditor([ ...CORE_PLUGINS, ...MEMO_PLUGINS ]);
+
+    it("carries every button the memo's toolbar is built from", async () => {
+        const editor = await memoEditor();
+
+        // The toolbar of a `BalloonEditor` is raised from the names it is configured with, and a
+        // name nothing answers to is dropped with a warning rather than reported. The memo's list
+        // (see NodeMemo.tsx) is pinned here so that thinning this set turns the suite red instead.
+        for (const item of [
+            "bold", "italic", "strikethrough", "code",
+            "link", "bulletedList", "numberedList", "blockQuote", "codeBlock"
+        ]) {
+            expect(editor.ui.componentFactory.has(item)).toBe(true);
         }
     });
 
-    it("includes SlashCommand, Template, and FormatPainter", async () => {
-        const { SlashCommand, Template, FormatPainter } = await import("ckeditor5-premium-features");
-        const plugins = await loadPremiumPlugins();
-        expect(plugins).toContain(SlashCommand);
-        expect(plugins).toContain(Template);
-        expect(plugins).toContain(FormatPainter);
+    it("registers the markdown spellings of those marks, which follow from the commands", async () => {
+        const editor = await memoEditor();
+
+        // Autoformat adds `**bold**`, `_italic_`, `` `code` `` and `~~struck~~` only where the
+        // matching command answers, so a set without the marks leaves those spellings inert too —
+        // which is what the memo's field did before them.
+        for (const command of [ "bold", "italic", "strikethrough", "code" ]) {
+            expect(editor.commands.get(command)).toBeDefined();
+        }
+    });
+
+    it("raises a toolbar over the selection out of the items it is configured with", async () => {
+        // What the memo's field relies on, and the whole of how it gets a toolbar: an
+        // `AttributeEditor` is a `BalloonEditor`, whose constructor loads `BalloonToolbar` itself
+        // and defines `balloonToolbar` from `toolbar`. The field passed an empty list until now,
+        // which is the only reason nothing was ever shown.
+        const editorElement = document.createElement("div");
+        document.body.appendChild(editorElement);
+        const editor = await AttributeEditor.create(editorElement, {
+            licenseKey: "GPL",
+            extraPlugins: MEMO_PLUGINS,
+            toolbar: { items: [ "bold", "italic" ] }
+        });
+
+        try {
+            const balloonToolbar = editor.plugins.get("BalloonToolbar") as BalloonToolbar;
+            expect(balloonToolbar.toolbarView.items.length).toBe(2);
+        } finally {
+            await editor.destroy();
+            editorElement.remove();
+        }
+    });
+
+    it("writes italics and strikethrough the way the rest of Trilium stores them", async () => {
+        const editor = await memoEditor();
+
+        editor.setData("<p><i>slanted</i> and <s>struck</s></p>");
+
+        expect(editor.getData()).toBe("<p><em>slanted</em> and <del>struck</del></p>");
     });
 });

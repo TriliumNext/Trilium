@@ -1,0 +1,75 @@
+/*
+ * The button asking for what the box holds. It comes and goes with there being something to take, so
+ * it must not be what decides how tall the field is: left at the size an icon button is given
+ * everywhere else, it stands taller than the line the chips and the box make, and the field — as
+ * tall as the tallest thing in it — would grow the moment anything is typed and shrink again on
+ * taking it. Sized to the button a chip is removed by, which the field already sits around, so it
+ * both keeps its place and reads as one of the pair.
+ *
+ * Only the mind map's node panel shows the growth: the promoted-attribute row and the table's
+ * editor each give the field a height to sit against, which swallows it.
+ */
+.values-input .values-input-add {
+    --values-input-add-size: 20px;
+    /* Read by the themes that size an icon button through it; the rest is for those that don't. */
+    --icon-button-size: var(--values-input-add-size);
+    --icon-button-icon-ratio: 0.9;
+
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--values-input-add-size);
+    height: var(--values-input-add-size);
+    padding: 0;
+    font-size: calc(var(--values-input-add-size) * 0.9);
+    line-height: 1;
+}
+
+/*
+ * The picker at the end of a field of colours. A colour is chosen rather than typed, so it asks for
+ * no room to type in: it sits at its own size beside the chips instead of taking the line a text box
+ * would, and keeps a frame of its own — a swatch with nothing around it would read as another chip.
+ */
+.values-input input[type="color"].form-control {
+    flex: 0 0 auto;
+    /* Cleared as well as set: the field gives a box room to type in, which a picker would otherwise
+       hold on to — it is the wider of the two that decides. */
+    min-width: 0;
+    width: 1.75em;
+    height: 1.75em;
+    padding: 2px;
+    border: 1px solid var(--main-border-color);
+}
+
+/*
+ * A field whose values are entered through a widget the browser brings: a calendar, a clock, a colour
+ * dialog. The values share the field's line with the box they are entered in, wrapping onto the next
+ * once it is full, and the box follows them — where the next value is entered is after the ones
+ * already taken, as in a field typed into.
+ */
+.values-input.widget-entry {
+    > .values-input-entry {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /*
+     * The box a value is entered into, told apart from the values beside it. Those are chips lying on
+     * the field's own surface, so a box with neither edge nor ground of its own reads as a gap between
+     * them rather than as somewhere to type — the more so for a widget, which draws only its own
+     * placeholder until something is entered.
+     */
+    .form-control:not([type="color"]) {
+        /* As wide as the widget in it needs and no wider. Said again here because the box is wrapped
+           up with its button rather than sitting in the field itself, which puts it out of reach of
+           the field's own rule — leaving it the full width Bootstrap gives a form control. */
+        flex: 0 1 auto;
+        width: auto;
+        background-color: var(--input-background-color);
+        border: 1px solid var(--main-border-color);
+        border-radius: var(--badge-radius, 12px);
+        padding-inline: 8px;
+    }
+}

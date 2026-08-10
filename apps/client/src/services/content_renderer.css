@@ -43,3 +43,62 @@
     flex: 1;
     min-height: 8rem;
 }
+
+/* Office document preview — shared by this rendered-content path and the file type
+   widget (Office.tsx); this stylesheet is part of the startup bundle.
+   Mirroring the read-only text structure, the body is plain padded content while
+   scrolling happens on an unpadded ancestor (.office-preview-scroll here,
+   .note-detail-file in the type widget) — a scroller's own bottom padding is not
+   reliably part of the scrollable area across browsers. */
+.office-preview-body {
+    padding: 15px;
+}
+
+.office-preview-scroll {
+    overflow: auto;
+}
+
+.office-preview-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 15px;
+    opacity: 0.7;
+}
+
+.rendered-content .office-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .office-preview-scroll {
+        flex-grow: 1;
+    }
+}
+
+/* Companion styles for the native spreadsheet renderer used by XLSX previews. The
+   renderer emits classed markup (spreadsheet-table / show-gridlines / has-fill) and
+   relies on each host to provide these rules — share-theme and print.css carry their
+   own copies; these mirror the share-theme semantics (see its comments for the why
+   of every rule, notably gridlines-as-borders and the fixed layout). */
+.office-preview-body .spreadsheet-table {
+    border-collapse: collapse;
+    width: auto;
+    margin-top: 1em;
+    table-layout: fixed;
+}
+
+.office-preview-body .spreadsheet-table td {
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.office-preview-body .spreadsheet-table.show-gridlines td:not(.has-fill) {
+    border: 1px solid var(--spreadsheet-gridline-color, var(--main-border-color));
+}
+
+.office-preview-body .spreadsheet-sheet {
+    font-size: 11pt;
+    line-height: 1.2;
+}

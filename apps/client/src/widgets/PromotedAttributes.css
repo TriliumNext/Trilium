@@ -8,12 +8,14 @@ body.mobile .promoted-attributes-widget {
     contain: none;
 }
 
+/* The cells lay out as a row here rather than in whichever theme happens to be loaded: as a table with
+   flex cells, each one took an anonymous row of its own and the attributes stacked one per line. */
 .promoted-attributes-container {
     margin: 0 1.5em;
     overflow: auto;
     max-height: 400px;
+    display: flex;
     flex-wrap: wrap;
-    display: table;
 }
 
 body.experimental-feature-new-layout .promoted-attributes-container {
@@ -58,44 +60,35 @@ body.experimental-feature-new-layout .promoted-attributes-container {
     appearance: auto;
 }
 
-.promoted-attribute-cell input[type="color"] {
-    width: 24px;
-    height: 24px;
-    margin-top: 2px;
-    appearance: none;
-    padding: 0;
-    border: 0;
-    outline: none;
-    border-radius: 25% !important;
-}
-
-.promoted-attribute-cell input[type="color"]::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-.promoted-attribute-cell input[type="color"]::-webkit-color-swatch {
-    border: none;
-    border-radius: 25%;
-}
+/* The colour swatch, and how it shows an unset label, are dressed with the field itself — see
+   label_value_input.css — so that a promoted colour and one edited anywhere else look alike. */
 
 .promoted-attribute-label-number input {
     text-align: right;
     width: 120px;
 }
 
-.promoted-attribute-label-color input[type="hidden"][value=""] + input[type="color"] {
-    position: relative;
-    opacity: 0.5;
+/*
+ * A label holding several values: one field carrying the whole set as chips, where the other kinds
+ * carry a single box. Laid out as the group around a single field is — the same gap after the name,
+ * the same height to sit against — so a note mixing the two reads as one grid rather than two.
+ */
+.promoted-attribute-cell > .promoted-attribute-values {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-height: 40px;
+    margin-inline-start: 10px;
+    padding: 1px 0;
+
+    > * {
+        flex: 1;
+    }
 }
 
-.promoted-attribute-label-color input[type="hidden"][value=""] + input[type="color"]:after {
-    content: "";
-    position: absolute;
-    top: 10px;
-    inset-inline-start: 0px;
-    inset-inline-end: 0;
-    height: 2px;
-    background: rgba(0, 0, 0, 0.5);
-    transform: rotate(45deg);
-    pointer-events: none;
+/* A number is read right-aligned in a box of its own; a chip is as wide as the number on it, and
+   pushing the text to its trailing edge would only leave a gap inside the chip. */
+.promoted-attribute-label-number .promoted-attribute-values input {
+    text-align: start;
+    width: auto;
 }

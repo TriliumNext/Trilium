@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useState } from "preact/hooks";
+import { useCallback, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
@@ -20,9 +20,11 @@ import SyncStatus from "./SyncStatus";
 
 export default function LauncherContainer({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const childNotes = useLauncherChildNotes();
+    const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
 
     return (
         <div
+            ref={containerRef}
             id="launcher-container"
             style={{
                 display: "flex",
@@ -142,4 +144,42 @@ export function useLauncherChildNotes() {
     });
 
     return childNotes;
+}
+
+// Measures the scrollbar's actual consumed size (which varies by browser and the OS "show scroll
+// bars" setting) and publishes it as `--launcher-scrollbar-size`; shell.css reserves that much on
+// the opposite edge so the bar never shifts the centred buttons. Recomputed on resize and whenever
+// the set of launchers changes; scroll position doesn't affect the measurement.
+// Recomputed on resize and whenever the set of launchers changes (which is what makes the rail
+// start or stop overflowing); scroll position doesn't affect the measurement.
+function useLauncherScrollbarCompensation(isHorizontalLayout: boolean, childNotes: FNote[] | undefined) {
+    const ref = useRef<HTMLDivElement>(null);
+
+    const update = useCallback(() => {
+        const el = ref.current;
+        if (!el) return;
+
+        // `offsetSize - clientSize` is the space taken by the scrollbar (the container has no
+        // border); 0 when the bar overlays or the rail doesn't overflow. Unaffected by the padding
+        // we set, so this can't feed back on itself.
+        const scrollbarSize = isHorizontalLayout
+            ? el.offsetHeight - el.clientHeight
+            : el.offsetWidth - el.clientWidth;
+        const value = `${scrollbarSize}px`;
+        if (el.style.getPropertyValue("--launcher-scrollbar-size") !== value) {
+            el.style.setProperty("--launcher-scrollbar-size", value);
+        }
+    }, [ isHorizontalLayout ]);
+
+    useLayoutEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [ update, childNotes ]);
+
+    return ref;
 }

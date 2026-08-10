@@ -1,4 +1,5 @@
 import { getBackup } from "./backup.js";
+import { OLDEST_SUPPORTED_DB_VERSION } from "./database_validation.js";
 import { getSql } from "./sql/index.js";
 import { getLog } from "./log.js";
 import { getPlatform } from "./platform.js";
@@ -20,7 +21,7 @@ interface MigrationInfo {
 async function migrate() {
     const currentDbVersion = getDbVersion();
 
-    if (currentDbVersion < 214) {
+    if (currentDbVersion < OLDEST_SUPPORTED_DB_VERSION) {
         getPlatform().crash(t("migration.old_version"));
     }
 

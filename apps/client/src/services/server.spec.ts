@@ -206,6 +206,16 @@ describe("ajax error handling", () => {
         expect((window as any).logError).not.toHaveBeenCalled();
     });
 
+    it("stays silent on 401 when silentUnauthorized is set, still rejecting with the body", async () => {
+        (window as any).$.ajax = (opts: AjaxOptions) => {
+            opts.error({ status: 401, responseText: "The OneNote connection was lost." });
+        };
+        // The caller presents the failure itself, so it must still receive the server's reason.
+        await expect(server.getWithSilentUnauthorized("url")).rejects.toBe("The OneNote connection was lost.");
+        expect(toastMock.showError).not.toHaveBeenCalled();
+        expect((window as any).logError).not.toHaveBeenCalled();
+    });
+
     it("reports validation errors (400) and still rejects when reportError throws", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
             opts.error({ status: 400, responseText: JSON.stringify({ message: "Bad input" }) });

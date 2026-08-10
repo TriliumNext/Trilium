@@ -102,7 +102,9 @@ describe("createGraphTokenProvider", () => {
         refresh.mockRejectedValueOnce(new Error("invalid_grant"));
         refresh.mockResolvedValueOnce(refreshResult);
 
-        await expect(getAccessToken()).rejects.toThrow("invalid_grant");
+        // The provider's reason is kept, but paired with the remedy — the message is shown verbatim in
+        // the import report and the import dialog, where a bare OAuth code says nothing to the user.
+        await expect(getAccessToken()).rejects.toThrow(/invalid_grant.*sign in again/is);
         // The failed refresh must not wedge the single-flight latch shut.
         await expect(getAccessToken()).resolves.toBe("new-access");
         expect(refresh).toHaveBeenCalledTimes(2);

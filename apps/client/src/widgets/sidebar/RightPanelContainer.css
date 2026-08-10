@@ -6,7 +6,10 @@
     --right-pane-peek-border-radius: 8px 0 0 8px;
     --right-pane-peek-background: #ffffffe7;
     --right-pane-peek-backdrop-filter: blur(12px) saturate(1.5);
-    --right-pane-header-height: 30px;
+    --right-pane-header-height: 34px;
+    /* How far a `grow` card may be squeezed by the cards around it — its header, its padding and a
+       row or three, so it is still something to read rather than a title. See `.card.grow` below. */
+    --right-pane-grow-min-height: 110px;
 }
 
 /* Reserve a fixed-width gutter on the viewport's right edge for the peek button, which is
@@ -19,6 +22,10 @@ body.experimental-feature-new-layout #vertical-main-container {
     --right-pane-peek-button-gutter: calc(var(--right-pane-peek-button-width) + 4px);
     position: relative;
     padding-inline-end: var(--right-pane-peek-button-gutter);
+}
+
+body.experimental-feature-new-layout.layout-horizontal #vertical-main-container {
+    --right-pane-peek-button-gutter: calc(var(--right-pane-peek-button-width) + 2px);
 }
 
 /* Persistent host wrapping the spacer + #right-pane (see RightPanelContainer.tsx), so #right-pane
@@ -88,7 +95,7 @@ body.experimental-feature-new-layout #right-pane-host.peek > .right-pane-peek-sp
 /* Pin/close controls, shown whenever the pane is open (pin only in peek mode). */
 body.experimental-feature-new-layout #right-pane .right-pane-actions {
     --icon-button-size: 24px;
-    
+
     position: absolute;
     top: 0;
     right: 0;
@@ -105,6 +112,9 @@ body.experimental-feature-new-layout #right-pane {
     position: relative;
     display: flex;
     flex-direction: column;
+    /* The scrolling belongs to the shown tab's body rather than to the pane, which would carry the tab
+       strip (and the actions overlaying it) off the top with it. */
+    overflow: hidden;
 
     &.right-pane-mode-peek {
         background: var(--right-pane-peek-background);
@@ -116,6 +126,11 @@ body.experimental-feature-new-layout #right-pane {
         margin-inline: 0;
         border-bottom: 1px solid var(--main-border-color);
         border-radius: 0;
+        /* A card that ends up shorter than what is in it keeps it to itself: whatever it cannot show
+           is cut off at its own edge rather than painted over the card below. Which no card should
+           be doing in the first place (see `.card.grow` below) — this is what keeps a header from
+           landing on another one where one manages to. */
+        overflow: hidden;
 
         .card-header {
             padding: 1px 0 0 0;
@@ -149,19 +164,68 @@ body.experimental-feature-new-layout #right-pane {
         &.collapsed .card-header > .icon-action {
             transform: rotate(-90deg);
         }
-    }
 
-    .right-pane-actions + * {
-    /* TODO: Find a more elegant way to avoid the right-pane-actions overlapping the card-header. */
-        .card-header {
-            padding-inline-end: 80px;
+        /* Where a press from outside the pane (the status bar's connection badges) landed: the card
+           is named by a flash that fades out, since the sections of a tab look much alike and the
+           scroll that brings one into view can be a few pixels or none at all. A layer over the card
+           rather than its own background, which is left to whatever the theme makes it — the card is
+           `overflow: hidden` (above), so the layer keeps to it. */
+        &.highlighted {
+            position: relative;
+
+            &::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                background: var(--active-item-background-color);
+                /* Where the animation leaves it, and where it stands should there be none at all
+                   (the layer is otherwise a cover rather than a flash). */
+                opacity: 0;
+                animation: right-pane-widget-highlight 1s ease-out;
+            }
+        }
+
+        /* The only widget of a tab has no chevron (see RightPanelWidget.tsx): its header is not
+           something to press, and its title takes over where the chevron would have started. */
+        &.not-collapsible .card-header {
+            cursor: default;
+            padding-inline-start: 8px;
         }
     }
 
-    .card.grow:not(.collapsed) {
+    /* One per opened tab, all but the shown one display:none (see RightPanelContainer.tsx). Takes the
+       pane's leftover height so a `grow` card inside it can still claim it. */
+    .right-pane-tab-body {
         flex: 1;
-        flex-shrink: 1;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    /* The strip is what the pane's actions overlay, so the cards no longer make room for them (the
+       first card's header used to be what they sat over); it sits right under the strip's border. */
+    .right-pane-tab-body > .card:first-child .card-header {
+        padding-top: 0;
+    }
+
+    /* The one card of a tab that takes the height the others leave over (see RightPanelWidget.tsx).
+       It is also the only one of them that can be sized down at all — the rest keep to their content
+       (`flex-shrink: 0`, see style.css) — so it is what the tab spends when there is not enough room
+       to go round, and it needs a floor to stop at: without one it is spent all the way down to
+       nothing, leaving the note's own attributes as a header printed over the card below them. Once
+       it reaches the floor there is nowhere left to take the room from, which is where
+       `.right-pane-tab-body` starts scrolling instead — the outcome wanted all along. */
+    .card.grow:not(.collapsed) {
+        /* Offered from nothing rather than from its content, as the cards that keep to theirs are
+           (below): two growing cards in a tab — a PDF's outline has its contents and its pages — then
+           take an equal share of what is going, instead of the longer one taking nearly all of it and
+           leaving the other at its floor. Which is the wrong way round of the two: what a card grows
+           for is what it cannot show at its content's height anyway. */
+        flex: 1 1 0;
+        min-height: var(--right-pane-grow-min-height);
         display: flex;
         flex-direction: column;
 
@@ -182,9 +246,73 @@ body.experimental-feature-new-layout #right-pane {
         }
     }
 
+    /* Several cards open at once share the pane between them instead of being laid out one under the
+       next, where the one section a note has dozens of rows in (a template's definitions, say) is
+       laid out in full and pushes everything after it off the pane. Each card gives up room and
+       scrolls within itself instead — as little as it can, which is the rule below; this much is
+       what every engine can be counted on for, and it crops each card a little rather than any one
+       of them badly.
+
+       Every card but the growing one, which keeps both its claim on the room the others leave over
+       and the floor it stops at (see `.card.grow` above). Company is no reason to take that away: a
+       card asks to grow because what is in it is worth the room, and one of them cannot be measured
+       for it at all — a PDF's pages are drawn to fill the card they are in, so a card capped at what
+       it holds holds nothing, and holding nothing is what caps it. */
+    .right-pane-tab-body:has(> .card:not(.collapsed) ~ .card:not(.collapsed)) > .card:not(.collapsed):not(.grow) {
+        flex: 0 1 auto;
+        /* No card is given less than its own header, so a pane too short to hold even those is
+           scrolled rather than being split into slivers with the titles cut off. */
+        min-height: var(--right-pane-header-height);
+
+        .body-wrapper {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            /* Its own height rather than the `height: 100%` it is given otherwise (see style.css),
+               so that measuring a card by its content below is measuring what is in it rather than
+               the height the card happens to have been given. */
+            height: auto;
+        }
+    }
+
+    /* Where a card can be capped at its own content, the room is shared by need rather than in
+       equal parts: every card is offered the same share of the pane, hands back whatever it has
+       nothing to put there (`max-content`), and what is handed back is offered again to the cards
+       still short. So the sections with a row or two in them are shown whole and the long one takes
+       everything left over — instead of each section being cropped a little for the sake of a
+       section that had room to spare. */
+    @supports (max-height: max-content) {
+        .right-pane-tab-body:has(> .card:not(.collapsed) ~ .card:not(.collapsed)) > .card:not(.collapsed):not(.grow) {
+            /* Offered from nothing rather than from its content: a card asking for its content up
+               front leaves the pane over-subscribed, and nothing to hand back out. */
+            flex: 1 1 0;
+            max-height: max-content;
+        }
+    }
+
     .gutter-vertical + .card .card-header {
         padding-top: 0;
     }
+
+    .card-body.no-padding {
+        padding: 0;
+    }
+}
+
+/* A wash rather than a cover: what is in the card stays readable throughout the flash. */
+@keyframes right-pane-widget-highlight {
+    from { opacity: 0.4; }
+    to { opacity: 0; }
 }
 
 /* Backdrop effects are disabled, so peek mode needs a solid background. */

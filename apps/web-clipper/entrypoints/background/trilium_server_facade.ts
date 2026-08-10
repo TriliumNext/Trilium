@@ -69,7 +69,7 @@ export default class TriliumServerFacade {
     }
 
     setTriliumSearchWithVersionCheck(json: { protocolVersion: string }, resp: TriliumSearchStatus) {
-        const [ major ] = json.protocolVersion
+        const [ major = NaN ] = json.protocolVersion
             .split(".")
             .map(chunk => parseInt(chunk, 10));
 

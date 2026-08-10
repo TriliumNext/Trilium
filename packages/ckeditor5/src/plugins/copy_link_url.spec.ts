@@ -137,23 +137,24 @@ describe("CopyLinkUrlButton", () => {
         });
     });
 
-    describe("_translate", () => {
-        it("uses the translate function from config when provided", async () => {
-            const translateFn = vi.fn((key: string) => `translated:${key}`);
+    describe("label", () => {
+        it("comes from the editor's dictionary when one is configured", async () => {
+            // Keyed by `en`, the language the editor resolves messages under when none is configured.
             editor = await createEditor({
-                translate: translateFn
+                translations: [ {}, { en: { dictionary: { "Copy URL": "Copiază adresa" } } } ]
             });
 
             const button = editor.ui.componentFactory.create("copyLinkUrl") as { label: string };
-            expect(translateFn).toHaveBeenCalledWith("link.copy_url");
-            expect(button.label).toBe("translated:link.copy_url");
+            expect(button.label).toBe("Copiază adresa");
         });
 
-        it("returns the key as-is when no translate function is in config", async () => {
+        // No dictionary is configured here, so `t()` renders the message id, which is the English
+        // label — never a raw `link.…` key, as the retired host bridge would have shown.
+        it("is the English message id when no dictionary is configured", async () => {
             editor = await createEditor();
 
             const button = editor.ui.componentFactory.create("copyLinkUrl") as { label: string };
-            expect(button.label).toBe("link.copy_url");
+            expect(button.label).toBe("Copy URL");
         });
     });
 });

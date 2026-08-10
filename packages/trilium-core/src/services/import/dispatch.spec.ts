@@ -88,6 +88,19 @@ describe("importFile (dispatch)", () => {
             expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, { path: "/tmp/obs.zip" }, parentNote, "MyVault.zip");
         });
 
+        it("falls back to the raw bytes for the other tagged providers too", async () => {
+            const buffer = new Uint8Array([5, 5, 5]);
+
+            await importFile(taskContext, makeFile({ originalname: "keep.zip", buffer, path: undefined }), parentNote, makeOptions(), "keep");
+            expect(stubbed.importKeep).toHaveBeenCalledWith(taskContext, buffer, parentNote);
+
+            await importFile(taskContext, makeFile({ originalname: "any.zip", buffer, path: undefined }), parentNote, makeOptions(), "anytype");
+            expect(stubbed.importAnytype).toHaveBeenCalledWith(taskContext, buffer, parentNote, "any.zip");
+
+            await importFile(taskContext, makeFile({ originalname: "obs.zip", buffer, path: undefined }), parentNote, makeOptions(), "obsidian");
+            expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, buffer, parentNote, "obs.zip");
+        });
+
         it("ignores the format tag and falls through to single import when the upload is a bare string body", async () => {
             // No path and a string buffer means there are no real bytes to hand a zip-reading importer, so
             // the provider guards short-circuit and the file is imported as a single note.

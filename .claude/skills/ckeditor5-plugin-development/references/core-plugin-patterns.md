@@ -3,7 +3,7 @@
 > **The source paths below (`packages/ckeditor5-basic-styles`, `-link`, `-image`, `-ui`, etc.)
 > point into the CKEditor 5 *library* source
 > ([github.com/ckeditor/ckeditor5](https://github.com/ckeditor/ckeditor5)) — the external
-> dependency Trilium pins at `48.2.0` — NOT into Trilium's monorepo.** They show where each idiom
+> dependency Trilium tracks at **48 or later** — NOT into Trilium's monorepo.** They show where each idiom
 > lives in the library's own source. These are the upstream library packages (basic-styles, link,
 > image, engine, ui, core, widget, typing); do **not** confuse them with Trilium's own
 > `packages/ckeditor5-*` plugins (admonition, collapsible, footnotes, keyboard-marker, math,
@@ -11,7 +11,7 @@
 > Trilium files — the symbols ship inside the `ckeditor5` npm package.
 
 Real-world idioms mined from the actual library `packages/*/src` source (verified against
-`ckeditor5@48.2.0`). These go beyond the tutorials and are the patterns the official plugins
+`ckeditor5` 48 or later). These go beyond the tutorials and are the patterns the official plugins
 actually use — and the patterns Trilium's plugins follow. Each item cites its source file in the
 CKEditor library repository.
 
@@ -69,7 +69,7 @@ untyped. (See also `tooling-and-packaging.md`.)
 
 Inline-style features don't hand-roll the command — they reuse `AttributeCommand` and tag the
 attribute as formatting so it behaves natively (copied on Enter, replicated on paste). Trilium's
-`ckeditor5-keyboard-marker` follows this exactly: it registers a built-in `AttributeCommand` for
+`keyboard_marker` follows this exactly: it registers a built-in `AttributeCommand` for
 its `$text` attribute rather than writing a custom command.
 
 ```ts
@@ -260,7 +260,7 @@ editor.editing.view.document.registerPostFixer( writer => { /* view-side cleanup
 
 Post-fixers run after each change (model) or downcast (view) and re-run until all return `false`.
 Use to guarantee structure (e.g. a required paragraph inside an editable, no two adjacent X).
-Trilium's `ckeditor5-admonition` and `ckeditor5-collapsible` register **multiple**
+Trilium's `admonition` and `collapsible` register **multiple**
 `registerPostFixer`s to keep their block structure valid (e.g. an enforced title/content region).
 
 ## Inserting content — option details

@@ -8,8 +8,12 @@ import { isElectron } from "./utils.js";
  * Paths that stay reachable on the desktop's loopback listener even when the user
  * has NOT enabled network access. These are same-machine integrations rather than
  * the web app:
- *  - `/mcp` — the MCP transport, which additionally self-restricts to loopback with
- *    DNS-rebinding protection (see routes/mcp.ts), so it never reaches the LAN.
+ *  - `/mcp` — the MCP transport, which requires an ETAPI token on every request
+ *    (see routes/mcp.ts), exactly like `/etapi`. The loopback Host check below applies on
+ *    top of that token, which is why this middleware must stay mounted ahead of the MCP
+ *    routes in app.ts. Note it is the loopback *bind* (see host.ts), not this gate, that
+ *    keeps MCP off the LAN while network access is off — the check here only refuses a
+ *    rebound Host on a connection that already reached the loopback listener.
  *  - `/api/clipper` — the web clipper endpoint the browser extension talks to.
  *  - `/etapi` — the token-authenticated External API used by local automation.
  *

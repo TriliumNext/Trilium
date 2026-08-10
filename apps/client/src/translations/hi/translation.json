@@ -333,23 +333,18 @@
     "tooltip": "अगर आप इस विकल्प को चुनते हैं, तो ट्रिलियम अपलोड की गई तस्वीरों के साइज़ को कम करने की कोशिश करेगा, जिससे क्वालिटी पर असर पड़ सकता है। अगर अनचेक किया गया है, तो तस्वीरें बिना किसी बदलाव के अपलोड होंगी।"
   },
   "attribute_detail": {
-    "attr_detail_title": "एट्रिब्यूट विवरण",
     "close_button_title": "बदलाव रद्द करें और बंद करें",
-    "attr_is_owned_by": "एट्रिब्यूट इसका हिस्सा है:",
-    "attr_name_title": "एट्रिब्यूट का नाम केवल अक्षरों, अंकों, कोलन (:) और अंडरस्कोर (_) से बना हो सकता है",
     "name": "नाम",
     "value": "वैल्यू",
     "target_note_title": "रिलेशन सोर्स नोट और टारगेट नोट के बीच एक नाम दिया गया संबंध है।",
     "target_note": "Target note",
     "promoted_title": "प्रमोटेड एट्रिब्यूट नोट पर प्रमुखता से दिखाई देता है।",
     "promoted": "प्रमोटेड",
-    "promoted_alias_title": "प्रमोटेड एट्रिब्यूट्स UI में दिखाई देने वाला नाम।",
     "promoted_alias": "एलियास",
     "multiplicity_title": "मल्टीप्लिसिटी यह तय करती है कि एक ही नाम के कितने एट्रिब्यूट्स बनाए जा सकते हैं - अधिकतम 1 या 1 से ज़्यादा।",
     "multiplicity": "मल्टीप्लिसिटी",
     "single_value": "सिंगल वैल्यू",
     "multi_value": "मल्टी वैल्यू",
-    "label_type_title": "लेबल का टाइप ट्रिलियम को सही इंटरफ़ेस चुनने में मदद करेगा।",
     "label_type": "टाइप",
     "text": "टेक्स्ट",
     "number": "नंबर",
@@ -365,14 +360,11 @@
     "inverse_relation": "विपरीत रिलेशन",
     "inheritable_title": "इनहेरिटेबल एट्रिब्यूट इस ट्री के नीचे के सभी वंशजों को विरासत में मिलेगा।",
     "inheritable": "इनहेरिटेबल",
-    "save_and_close": "सेव करें और बंद करें <kbd>Ctrl+Enter</kbd>",
     "delete": "डिलीट करें",
     "related_notes_title": "इस लेबल वाले अन्य नोट्स",
     "more_notes": "और नोट्स",
     "label": "लेबल विवरण",
-    "label_definition": "लेबल डेफ़िनेशन विवरण",
     "relation": "रिलेशन विवरण",
-    "relation_definition": "रिलेशन डेफ़िनेशन विवरण",
     "disable_versioning": "ऑटो-वर्जनिंग को बंद करता है। बड़े लेकिन कम ज़रूरी नोट्स के लिए उपयोगी - जैसे स्क्रिप्टिंग के लिए इस्तेमाल होने वाली बड़ी JS लाइब्रेरीज़",
     "calendar_root": "उस नोट को मार्क करता है जिसका उपयोग दिन के नोट्स के लिए रूट के रूप में किया जाना चाहिए। केवल एक को ऐसा मार्क किया जाना चाहिए।",
     "archived": "इस लेबल वाले नोट्स डिफ़ॉल्ट रूप से सर्च रिज़ल्ट्स (जैसे Jump To, Add Link डायलॉग आदि) में नहीं दिखेंगे।",
@@ -452,7 +444,6 @@
     "share_favicon": "शेयर पेज के लिए फ़ेविकॉन (Favicon)",
     "is_owned_by_note": "नोट का हिस्सा है",
     "other_notes_with_name": "{{attributeType}} नाम \"{{attributeName}}\" वाले अन्य नोट्स",
-    "and_more": "... और {{count}} और।",
     "print_landscape": "PDF एक्सपोर्ट करते समय पेज को लैंडस्केप मोड में रखें।",
     "print_page_size": "PDF एक्सपोर्ट करते समय पेज का साइज़ बदलें।",
     "color_type": "रंग",
@@ -1273,7 +1264,6 @@
     "images_section_title": "तस्वीरें (Images)",
     "download_images_automatically": "ऑफलाइन इस्तेमाल के लिए तस्वीरें अपने-आप डाउनलोड करें।",
     "download_images_description": "पेस्ट किए गए HTML में ऑनलाइन तस्वीरों के लिंक हो सकते हैं, ट्रिलियम उन्हें ढूंढकर डाउनलोड कर लेगा ताकि वे ऑफलाइन भी उपलब्ध रहें।",
-    "enable_image_compression": "इमेज कंप्रेशन चालू करें",
     "max_image_dimensions": "तस्वीर की अधिकतम चौड़ाई / ऊंचाई (इससे ज़्यादा होने पर तस्वीर का साइज़ बदल दिया जाएगा)।",
     "max_image_dimensions_unit": "पिक्सेल (pixels)",
     "jpeg_quality_description": "JPEG क्वालिटी (10 - सबसे खराब, 100 - सबसे अच्छी, 50-85 की सलाह दी जाती है)",
@@ -1426,7 +1416,6 @@
     "enable_monthly_backup": "महीने में एक बार बैकअप लें",
     "backup_recommendation": "बैकअप चालू रखने की सलाह दी जाती है, लेकिन बड़े डेटाबेस होने पर इससे ऐप शुरू होने में थोड़ा समय लग सकता है।",
     "backup_now": "अभी बैकअप लें",
-    "backup_database_now": "डेटाबेस का बैकअप अभी लें",
     "existing_backups": "पुराने बैकअप्स",
     "date-and-time": "तारीख और समय",
     "path": "रास्ता (Path)",
@@ -1435,7 +1424,6 @@
     "title": "बैकअप",
     "automatic_backups_title": "ऑटोमैटिक बैकअप",
     "automatic_backups_description": "ट्रिलियम डेटाबेस का बैकअप स्वचालित रूप से ले सकता है। बैकअप को चालू रखने की अनुशंसा की जाती है, लेकिन बड़े डेटाबेस और/या धीमी स्टोरेज डिवाइसेज के साथ यह एप्लिकेशन स्टार्टअप को धीमा कर सकता है।",
-    "backup_location_description": "बैकअप {{- backupFolder}} में स्टोर किए जाते हैं।",
     "download": "डाउनलोड करें"
   },
   "etapi": {
@@ -1634,10 +1622,6 @@
     "close": "बंद करें"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "यह अटैचमेंट {{time}} में अपने-आप डिलीट हो जाएगा",
-    "will_be_deleted_soon": "यह अटैचमेंट जल्द ही अपने-आप डिलीट हो जाएगा",
-    "deletion_reason": ", क्योंकि इस अटैचमेंट का नोट में कोई लिंक नहीं है। इसे बचाने के लिए लिंक वापस जोड़ें या इसे नोट में बदल दें।",
-    "role_and_size": "रोल: {{role}}, साइज़: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "अटैचमेंट लिंक कॉपी कर लिया गया है।",
     "unrecognized_role": "अटैचमेंट रोल '{{role}}' की पहचान नहीं हुई।"
   },
@@ -1767,7 +1751,6 @@
     "title_with_count_one": "{{count}} हाइलाइट",
     "title_with_count_other": "",
     "options": "विकल्प",
-    "modal_title": "हाइलाइट्स लिस्ट सेटिंग्स",
     "menu_configure": "हाइलाइट्स लिस्ट सेट करें..।",
     "no_highlights": "कोई हाइलाइट नहीं मिली।"
   },
@@ -1882,8 +1865,6 @@
   "image": {
     "copied-to-clipboard": "तस्वीर का लिंक कॉपी हो गया है। इसे किसी भी टेक्स्ट नोट में पेस्ट किया जा सकता है।",
     "cannot-copy": "तस्वीर का लिंक कॉपी नहीं हो सका।",
-    "copy-to-clipboard": "इमेज क्लिपबोर्ड पर कॉपी करें",
-    "download": "इमेज डाउनलोड करें",
     "image-copied-to-clipboard": "इमेज को क्लिपबोर्ड पर कॉपी कर दिया गया है।",
     "cannot-copy-image": "इमेज को क्लिपबोर्ड पर कॉपी नहीं किया जा सका।",
     "cannot-download": "इमेज डाउनलोड नहीं की जा सकी।"
@@ -2015,7 +1996,6 @@
   },
   "geo-map": {
     "create-child-note-title": "नया चाइल्ड नोट बनाकर मैप पर जोड़ें",
-    "create-child-note-text": "मार्कर जोड़ें",
     "create-child-note-instruction": "नई जगह पर नोट बनाने के लिए मैप पर क्लिक करें, या बंद करने के लिए Escape दबाएं।",
     "unable-to-load-map": "मैप लोड नहीं हो सका।"
   },
@@ -2432,25 +2412,6 @@
       "collapsible_details": "विवरण (Details)"
     }
   },
-  "slash_commands": {
-    "bulleted_list_description": "बुलेटेड लिस्ट बनाएं",
-    "numbered_list_description": "नंबर वाली लिस्ट बनाएं",
-    "todo_list_description": "टू-डू लिस्ट बनाएं",
-    "align_left_description": "टेक्स्ट को बाईं ओर संरेखित (align) करें",
-    "align_center_description": "टेक्स्ट को बीच में संरेखित करें",
-    "align_right_description": "टेक्स्ट को दाईं ओर संरेखित करें",
-    "justify_description": "टेक्स्ट अलाइनमेंट जस्टिफाई करें",
-    "admonition_description": "एक नया एडमोनिशन (admonition) डालें",
-    "collapsible_description": "एक टॉगल करने योग्य सेक्शन डालें जो क्लिक करने पर कंटेंट को छुपाता/दिखाता है।",
-    "footnote_description": "एक नया फुटनोट बनाएं और उसका संदर्भ (reference) यहाँ दें",
-    "datetime_description": "करंट डेट और टाइम डालें",
-    "internal_link_description": "दूसरे ट्रिलियम नोट का लिंक डालें",
-    "math_description": "मैथ इक्वेशन डालें",
-    "include_note_description": "इस नोट में दूसरे नोट की कंटेंट दिखाएं",
-    "page_break_description": "पेज ब्रेक डालें (प्रिंट करने के लिए)",
-    "markdown_import_description": "इस नोट में एक मार्कडाउन फ़ाइल इम्पोर्ट करें",
-    "anchor_description": "इंटरनल लिंकिंग के लिए एक एंकर डालें"
-  },
   "revisions": {
     "note_revisions": "नोट रिवीजन्स",
     "back": "पीछे जाएं",
@@ -2524,9 +2485,6 @@
   },
   "image_viewer": {
     "loading_error": "इमेज लोड करने में त्रुटि हुई थी।"
-  },
-  "auto_link_attribute_list": {
-    "title": "सिस्टम एट्रिब्यूट्स"
   },
   "split_editor": {
     "render_error": "प्रीव्यू रेंडर करने में असमर्थ",
@@ -2616,7 +2574,6 @@
     "sources": "स्रोत (Sources)",
     "sources_summary": "{{sites}} साइटों से {{count}} स्रोत",
     "extended_thinking": "गहन चिंतन (Extended thinking)",
-    "legacy_models": "लेगेसी मॉडल",
     "thinking": "सोचा जा रहा है..।",
     "thought_process": "विचार प्रक्रिया",
     "tool_calls": "{{count}} टूल कॉल",
@@ -2633,7 +2590,6 @@
     "tokens_used_with_model": "{{model}}: {{prompt}} प्रॉम्प्ट + {{completion}} कम्प्लीशन = {{total}} टोकन",
     "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} प्रॉम्प्ट + {{completion}} कम्प्लीशन = {{total}} टोकन (~${{cost}})",
     "tokens": "टोकन",
-    "context_used": "{{percentage}}% उपयोग किया गया",
     "note_context_enabled": "नोट संदर्भ (context) अक्षम करने के लिए क्लिक करें: {{title}}",
     "note_context_disabled": "संदर्भ में वर्तमान नोट शामिल करने के लिए क्लिक करें",
     "no_provider_message": "कोई एआई प्रोवाइडर कॉन्फ़िगर नहीं है। चैट शुरू करने के लिए एक जोड़ें।",
@@ -2661,8 +2617,7 @@
     "remove_from_launch_bar": "लॉन्च बार से हटाएं"
   },
   "link": {
-    "failed_to_open": "लिंक '{{- href}}' खोलने में विफल: {{- message}}",
-    "copy_url": "URL कॉपी करें"
+    "failed_to_open": "लिंक '{{- href}}' खोलने में विफल: {{- message}}"
   },
   "display_mode": {
     "source": "सोर्स व्यू",
@@ -2731,8 +2686,6 @@
   "mermaid": {
     "placeholder": "अपने मरमेड डायग्राम का कंटेंट टाइप करें या नीचे दिए गए सैंपल डायग्राम्स में से एक का उपयोग करें।",
     "sample_diagrams": "सैंपल डायग्राम्स:",
-    "slash_command_blank_description": "एक खाली मरमेड डायग्राम डालें",
-    "slash_command_description": "\"{{name}}\" मरमेड डायग्राम टेम्पलेट डालें",
     "sample_flowchart": "फ्लोचार्ट (Flowchart)",
     "sample_class": "क्लास (Class)",
     "sample_sequence": "सीक्वेंस (Sequence)",
@@ -2824,21 +2777,17 @@
     "cancelFocus": "फोकस मोड रद्द करें",
     "moveUp": "ऊपर ले जाएं",
     "moveDown": "नीचे ले जाएं",
-    "link": "लिंक (Link)",
-    "linkBidirectional": "द्विदिश लिंक (Bidirectional Link)",
     "clickTips": "कृपया लक्षित (target) नोड पर क्लिक करें",
     "summary": "सारांश (Summary)"
   },
   "llm": {
     "disabled_placeholder": "एआई फीचर्स बंद हैं। प्रोवाइडर्स और MCP कॉन्फ़िगर करने के लिए उन्हें इनेबल करें।",
-    "not_available_in_standalone": "ट्रिलियम के स्टैंडअलोन संस्करण में AI/LLM फीचर्स उपलब्ध नहीं हैं, क्योंकि LLM प्रोवाइडर्स ब्राउज़र से सीधे एक्सेस की अनुमति नहीं देते हैं।",
     "feature_not_enabled": "AI इंटीग्रेशन का उपयोग करने के लिए सेटिंग्स → एडवांस्ड → एक्सपेरिमेंटल फीचर्स में LLM एक्सपेरिमेंटल फीचर को इनेबल करें।",
     "add_provider": "प्रोवाइडर जोड़ें",
     "add_provider_title": "AI प्रोवाइडर जोड़ें",
     "configured_providers": "कॉन्फ़िगर किए गए प्रोवाइडर्स",
     "no_providers_configured": "अभी तक कोई प्रोवाइडर कॉन्फ़िगर नहीं है।",
     "provider_name": "नाम",
-    "provider_type": "प्रोवाइडर",
     "actions": "क्रियाएं",
     "delete_provider": "डिलीट करें",
     "delete_provider_confirmation": "क्या आप वाकई प्रोवाइडर \"{{name}}\" को डिलीट करना चाहते हैं?",
@@ -2847,7 +2796,6 @@
     "base_url": "बेस URL",
     "base_url_description": "वैकल्पिक। डिफ़ॉल्ट एपीआई एंडपॉइंट को ओवरराइड करें — यह खुद से होस्ट किए गए मॉडल (Ollama, LM Studio, vLLM) या प्रॉक्सी के लिए उपयोगी है।",
     "base_url_invalid": "बेस URL एक वैध http:// या https:// URL होना चाहिए",
-    "cancel": "रद्द करें",
     "mcp_title": "MCP (Model Context Protocol)",
     "mcp_enabled": "MCP सर्वर",
     "mcp_enabled_description": "एक मॉडल कॉन्टेक्स्ट प्रोटोकॉल (MCP) एंडपॉइंट एक्सपोज करें ताकि एआई कोडिंग असिस्टेंट्स (जैसे Claude Code, GitHub Copilot) आपके नोट्स को पढ़ और संशोधित कर सकें। एंडपॉइंट केवल लोकलहोस्ट से ही एक्सेस किया जा सकता है।",
@@ -2892,17 +2840,6 @@
     "export-csv-failed": "स्प्रेडशीट को CSV में एक्सपोर्ट करने में विफल।"
   },
   "text-editor": {
-    "checkbox-tooltip": "अधिक टास्क स्टेट्स के लिए राइट क्लिक करें।\nस्टेट्स के बीच साइकिल करने के लिए {{shortcut}} दबाएं।",
-    "collapsible-body-placeholder": "यहाँ कंटेंट टाइप करें..।",
-    "collapsible-button-label": "कोलाप्सिबल ब्लॉक",
-    "collapsible-handle-tooltip": "कोलाप्सिबल ब्लॉक को फिर से स्थानांतरित करने के लिए ड्रैग करें",
-    "collapsible-select-label": "कोलाप्सिबल ब्लॉक चुनें",
-    "collapsible-title-placeholder": "सारांश",
-    "collapsible-toggle-label": "कोलाप्सिबल ब्लॉक टॉगल करें",
-    "collapsible-tooltip": "सिकुड़ने/फैलने के लिए तीर पर क्लिक करें या {{shortcut}} दबाएं।",
-    "edit-states-tooltip": "टास्क स्टेट्स संपादित करें",
-    "unknown-task-state": "अपरिभाषित कस्टम टास्क स्टेट",
-    "task-state-dropped": "कस्टम टास्क स्टेट परिभाषा \"{{title}}\" ({{id}}) को इस कारण से छोड़ दिया गया: {{reason}}",
     "validation-errors": {
       "undefined-name": "अपरिभाषित आइडेंटिफायर",
       "invalid-name": "अमान्य आइडेंटिफायर",
@@ -2911,6 +2848,39 @@
       "missing-icon": "लापता आइकन",
       "invalid-symbol": "मार्कडाउन सिंबल एक वर्ण होना चाहिए, \"[\", \" \", \"X\", और \"]\" को छोड़कर",
       "duplicate-symbol": "डुप्लिकेट मार्कडाउन सिंबल"
+    },
+    "ck": {
+      "align-text-to-the-center": "टेक्स्ट को बीच में संरेखित करें",
+      "align-text-to-the-left": "टेक्स्ट को बाईं ओर संरेखित (align) करें",
+      "align-text-to-the-right": "टेक्स्ट को दाईं ओर संरेखित करें",
+      "click-on-the-arrow-or-press-0-to-collapse-expand": "सिकुड़ने/फैलने के लिए तीर पर क्लिक करें या %0 दबाएं।",
+      "collapsible-block": "कोलाप्सिबल ब्लॉक",
+      "copy-image-to-clipboard": "इमेज क्लिपबोर्ड पर कॉपी करें",
+      "copy-url": "URL कॉपी करें",
+      "create-a-bulleted-list": "बुलेटेड लिस्ट बनाएं",
+      "create-a-new-footnote-and-reference-it-here": "एक नया फुटनोट बनाएं और उसका संदर्भ (reference) यहाँ दें",
+      "create-a-numbered-list": "नंबर वाली लिस्ट बनाएं",
+      "create-a-to-do-list": "टू-डू लिस्ट बनाएं",
+      "display-the-content-of-another-note-in-this-note": "इस नोट में दूसरे नोट की कंटेंट दिखाएं",
+      "download-image": "इमेज डाउनलोड करें",
+      "drag-to-reposition-the-collapsible-block": "कोलाप्सिबल ब्लॉक को फिर से स्थानांतरित करने के लिए ड्रैग करें",
+      "edit-task-states": "टास्क स्टेट्स संपादित करें",
+      "insert-a-0-mermaid-diagram-template": "\"%0\" मरमेड डायग्राम टेम्पलेट डालें",
+      "insert-a-link-to-another-trilium-note": "दूसरे ट्रिलियम नोट का लिंक डालें",
+      "insert-a-math-equation": "मैथ इक्वेशन डालें",
+      "insert-a-new-admonition": "एक नया एडमोनिशन (admonition) डालें",
+      "insert-a-page-break-for-printing": "पेज ब्रेक डालें (प्रिंट करने के लिए)",
+      "insert-a-toggleable-section-that-hides-shows-content-on-click": "एक टॉगल करने योग्य सेक्शन डालें जो क्लिक करने पर कंटेंट को छुपाता/दिखाता है।",
+      "insert-an-anchor-for-internal-linking": "इंटरनल लिंकिंग के लिए एक एंकर डालें",
+      "insert-an-empty-mermaid-diagram": "एक खाली मरमेड डायग्राम डालें",
+      "insert-the-current-date-and-time": "करंट डेट और टाइम डालें",
+      "justify-text-alignment": "टेक्स्ट अलाइनमेंट जस्टिफाई करें",
+      "right-click-or-press-0-to-change-state": "अधिक टास्क स्टेट्स के लिए राइट क्लिक करें।\nस्टेट्स के बीच साइकिल करने के लिए %0 दबाएं।",
+      "select-collapsible-block": "कोलाप्सिबल ब्लॉक चुनें",
+      "summary": "सारांश",
+      "toggle-collapsible-block": "कोलाप्सिबल ब्लॉक टॉगल करें",
+      "type-the-content-here": "यहाँ कंटेंट टाइप करें..।",
+      "undefined-custom-task-state": "अपरिभाषित कस्टम टास्क स्टेट"
     }
   }
 }

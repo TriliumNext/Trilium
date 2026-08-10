@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getLog } from "./log.js";
 import oneTimeTimer from "./one_time_timer.js";
 
 describe("oneTimeTimer", () => {
@@ -84,6 +85,35 @@ describe("oneTimeTimer", () => {
             oneTimeTimer.scheduleExecution("throwing", 100, next);
             vi.advanceTimersByTime(100);
             expect(next).toHaveBeenCalledTimes(1);
+        });
+
+        it("falls back to console.error when the log service itself throws", () => {
+            const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+            const logSpy = vi.spyOn(getLog(), "error").mockImplementation(() => {
+                throw new Error("log service unavailable");
+            });
+            const stackless = new Error("stackless failure");
+            delete stackless.stack;
+
+            try {
+                // A non-Error rejection value and an Error without a stack both have to be
+                // rendered into the message without the handler throwing.
+                oneTimeTimer.scheduleExecution("log-broken-string", 100, () => {
+                    throw "plain string failure";
+                });
+                oneTimeTimer.scheduleExecution("log-broken-stackless", 100, () => {
+                    throw stackless;
+                });
+
+                expect(() => vi.advanceTimersByTime(100)).not.toThrow();
+
+                expect(logSpy).toHaveBeenCalledTimes(2);
+                expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("plain string failure"));
+                expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("stackless failure"));
+            } finally {
+                logSpy.mockRestore();
+                consoleSpy.mockRestore();
+            }
         });
 
         it("allows re-scheduling the same name from within the callback", () => {

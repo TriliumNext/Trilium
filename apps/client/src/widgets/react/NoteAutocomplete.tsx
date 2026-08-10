@@ -19,9 +19,11 @@ interface NoteAutocompleteProps {
     onBlur?: (newValue: string) => void;
     noteIdChanged?: (noteId: string) => void;
     noteId?: string;
+    /** Shows the selected note without allowing a different one to be picked. */
+    readOnly?: boolean;
 }
 
-export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onBlur }: NoteAutocompleteProps) {
+export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onBlur, readOnly }: NoteAutocompleteProps) {
     const ref = useSyncedRef<HTMLInputElement>(externalInputRef);
 
     useEffect(() => {
@@ -103,6 +105,7 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
                 id={id}
                 ref={ref}
                 className="note-autocomplete form-control"
+                readOnly={readOnly}
                 placeholder={placeholder ?? t("add_link.search_note")} />
         </div>
     );

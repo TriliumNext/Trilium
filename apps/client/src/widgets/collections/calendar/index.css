@@ -1,10 +1,4 @@
 .calendar-view {
-    --fc-event-border-color: var(--calendar-coll-event-text-color, var(--main-text-color));
-    --fc-event-bg-color: var(--calendar-coll-event-background-color, var(--accented-background-color));
-    --fc-event-text-color: var(--calendar-coll-event-text-color, var(--main-text-color));
-    --fc-event-selected-overlay-color: transparent;
-    --fc-today-bg-color: var(--calendar-coll-today-background-color, var(--more-accented-background-color));
-
     overflow: hidden;
     position: relative;
     outline: 0;
@@ -13,7 +7,6 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    padding-bottom: 16px;
     box-sizing: border-box;
 
     @media (max-width: 991px) {
@@ -26,11 +19,6 @@
     }
 }
 
-.calendar-view a,
-:root .calendar-view a.fc-daygrid-event:hover {
-    color: var(--fc-event-text-color);
-}
-
 .search-result-widget-content .calendar-view {
     position: absolute;
     top: 0;
@@ -41,19 +29,24 @@
 
 .calendar-container {
     height: 100%;
-    --fc-page-bg-color: var(--main-background-color);
-    --fc-border-color: var(--main-border-color);
-    --fc-neutral-bg-color: var(--launcher-pane-background-color);
-    --fc-list-event-hover-bg-color: var(--left-pane-item-hover-background);
-    padding: 0 var(--content-margin-inline);
 }
 
-.calendar-container .fc-list-sticky .fc-list-day > * {
-    z-index: 50;
+/* Stacked beneath the title. Kept narrow so the overflow below has something to bite on. */
+.calendar-view .calendar-event-attributes {
+    min-width: 0;
 }
 
-.calendar-container .fc-button {
-    padding: 0.2em 0.5em;
+/* A month cell's chip is a row, so the title is fallen beneath rather than followed down: the
+   chip's own container is asked to wrap (see eventInnerClass) and the attributes claim a whole
+   line of it. The inline padding is the one the row's title wears — Forma states it on the title
+   rather than on the container — so that the two read as one column of text. */
+.calendar-view .calendar-event-inner-wrapped {
+    flex-wrap: wrap;
+
+    > .calendar-event-attributes {
+        flex-basis: 100%;
+        padding-inline: 4px;
+    }
 }
 
 .calendar-container .promoted-attribute {
@@ -71,6 +64,15 @@
             font-size: 1.2em;
             text-align: center;
         }
+    }
+
+    /* The end the view switcher stands at is the one asked to give where the bar is short: it holds
+       a row that folds into a menu when it no longer fits (see CollapseOnOverflow), which is a
+       better answer than either half of what happens otherwise — a flex item keeps its content's
+       width unless told it may not, so the bar would grow past the pane rather than hand the
+       switcher less, and the switcher would never learn that it was short. */
+    .right-container {
+        min-width: 0;
     }
 
     @media (max-width: 991px) {
@@ -94,24 +96,65 @@
 
 /* #region Events */
 
-/*
- * week, month, year views
- */
-
-.calendar-container a.fc-event {
+.calendar-view .calendar-event:hover {
     text-decoration: none;
 }
 
-.calendar-container a.fc-event.archived {
+/*
+ * Forma draws a chip out of a single accent colour: a solid bar down its leading edge, and a 30%
+ * tint of that same colour for the body. Trilium's chip is a pair rather than a derivation — a
+ * black bar over a flat #eaeaea body — so the two are split. The accent is handed to the bar
+ * through the palette's --fc-forma-event, and the body is stated here, on a class eventClass puts
+ * on every chip.
+ */
+.calendar-view .calendar-event {
+    background: var(--calendar-coll-event-background-color, var(--accented-background-color));
+
+    /* Said outright, and so beyond the reach of the app-wide a:hover, the chip being an anchor. */
+    color: var(--calendar-coll-event-text-color, var(--main-text-color));
+}
+
+/*
+ * A note carrying a colour of its own says both: the bar takes the colour, the body a pale wash of
+ * the same hue. Said as border-color rather than through --fc-event-color, which FullCalendar
+ * writes inline on the chip and a stylesheet therefore cannot reach.
+ */
+.calendar-view .calendar-event.with-hue {
+    border-color: var(--custom-color);
+    color: var(--custom-color);
+    background: hsl(var(--custom-color-hue),
+                    var(--calendar-coll-event-background-saturation, 80%),
+                    var(--calendar-coll-event-background-lightness, 95%));
+}
+
+/* Flat body and all, a chip still has to answer the pointer; Forma's own hover tint is what the
+   rule above overrides. */
+.calendar-view .calendar-event:hover {
+    filter: var(--calendar-coll-event-hover-filter, none);
+}
+
+/* The shading a dragged range stands in, named by us rather than left to the theme's hashed class
+   so the ghost can anchor to it; the colour is still Forma's, off the palette. */
+.calendar-view .calendar-highlight {
+    background-color: var(--fc-forma-highlight);
+}
+
+/* The note's icon, leading its title on the chip (see eventContent). */
+.calendar-view .calendar-event-icon {
+    margin-inline-end: .25em;
+}
+
+/* An archived note is faded and hatched, the stripes drawn behind its content. */
+.calendar-view .calendar-event.archived {
     opacity: .65;
 }
 
-.calendar-container a.fc-event.archived::after {
+.calendar-view .calendar-event.archived::after {
     content: "";
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     bottom: 0;
     z-index: -1;
 
@@ -122,75 +165,11 @@
                                           var(--c2) 8px, var(--c2) 16px);
 }
 
-.calendar-view a.fc-timegrid-event,
-.calendar-view a.fc-daygrid-event,
-.calendar-view .fc-daygrid-dot-event .fc-event-title {
-    font-weight: 500;
-}
-
-.calendar-view a.fc-timegrid-event,
-.calendar-view a.fc-daygrid-event {
-    --border-color: transparent;
-
-    border: 2px solid;
-    border-left-width: 4px;
-    border-color: var(--border-color) var(--border-color) var(--border-color)
-                  var(--fc-event-text-color) !important;
-    background: var(--fc-event-bg-color) !important;
-
-    padding-left: 8px;
-}
-
-.calendar-view .fc-timegrid-event.with-hue,
-.calendar-view .fc-daygrid-event.with-hue {
-    --fc-event-text-color: var(--custom-color);
-
-    --fc-event-bg-color: hsl(var(--custom-color-hue),
-                    var(--calendar-coll-event-background-saturation, 80%),
-                    var(--calendar-coll-event-background-lightness, 95%)) !important;
-}
-
-.calendar-view a.fc-timegrid-event:focus-visible,
-.calendar-view a.fc-daygrid-event:focus-visible {
-    outline: none;
-}
-
-.calendar-view a.fc-timegrid-event.fc-event-selected,
-.calendar-view a.fc-timegrid-event.fc-event:focus,
-.calendar-view a.fc-daygrid-event.fc-event-selected,
-.calendar-view a.fc-daygrid-event.fc-event:focus {
-    --border-color: var(--custom-color, var(--input-focus-outline-color));
-}
-
-.calendar-view a.fc-timegrid-event:hover,
-.calendar-view a.fc-daygrid-event:hover {
-    filter: var(--calendar-coll-event-hover-filter, none);
-    border-color: var(--fc-event-text-color);
-    text-decoration: none;
-    color: currentColor;
-    opacity: 1;
-}
-
-.calendar-view .fc-daygrid-event-dot {
-    display: none;
-}
-
-
-.calendar-view .fc-event-time {
-    opacity: .75;
-}
-
-/*
- * List view
- */
-
-.fc-list-table tr.fc-event.archived {
-    opacity: .5;
-}
-
-.fc-list-table .fc-list-event-dot {
-    /* Apply note colors to the list item dots */
-    --fc-event-border-color: var(--custom-color);
+/* The event the popover stands for, marked the way a focused event is. An outline rather than a
+   border, the chip's only border being the bar down its leading edge. */
+.calendar-view .calendar-event-selected {
+    outline: 2px solid var(--custom-color, var(--input-focus-outline-color));
+    outline-offset: -2px;
 }
 
 /* #endregion */

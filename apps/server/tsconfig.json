@@ -10,9 +10,6 @@
       "path": "../../packages/turndown-plugin-gfm"
     },
     {
-      "path": "../../packages/express-partial-content"
-    },
-    {
       "path": "../../packages/commons"
     },
     {

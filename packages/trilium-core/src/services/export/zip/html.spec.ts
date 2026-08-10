@@ -238,6 +238,46 @@ describe("HtmlExportProvider", () => {
             expect(appendCalls.map((c) => c.name).sort()).toEqual(["index.html", "navigation.html"]);
         });
 
+        it("skips every extra file whose meta carries no data file name", () => {
+            const { provider, appendCalls } = buildProvider({ options: { contentCss: "body {}" } });
+            const metaFile = buildMetaFile();
+            provider.prepareMeta(metaFile);
+            // prepareMeta publishes the very meta objects the provider writes out later, so clearing
+            // the (optional) file names leaves it with nothing to name the archive entries after.
+            for (const file of metaFile.files) {
+                file.dataFileName = undefined;
+            }
+
+            provider.afterDone(buildRootMeta());
+
+            expect(appendCalls).toHaveLength(0);
+        });
+
+        it("does not pretty-print a very large navigation tree", () => {
+            const { provider, appendCalls } = buildProvider();
+            provider.prepareMeta(buildMetaFile());
+            const rootMeta: NoteMeta = {
+                noteId: "root",
+                title: "Root",
+                dataFileName: "Root.html",
+                children: Array.from({ length: 2000 }, (_, i) => ({
+                    noteId: `note${i}`,
+                    title: `Note number ${i}`,
+                    dataFileName: `note${i}.html`,
+                    children: []
+                }))
+            };
+
+            provider.afterDone(rootMeta);
+
+            const navigation = appendCalls.find((c) => c.name === "navigation.html")?.content;
+            expect(typeof navigation).toBe("string");
+            expect(String(navigation).length).toBeGreaterThan(100_000);
+            // Emitted verbatim past the threshold, so the list still sits on the template's own line
+            // instead of being broken up one tag per line by the pretty printer.
+            expect(String(navigation)).toContain("<ul><li>");
+        });
+
         it("throws when meta was never prepared", () => {
             const { provider } = buildProvider();
 

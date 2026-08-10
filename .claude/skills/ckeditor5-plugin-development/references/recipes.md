@@ -1,7 +1,7 @@
 # Recipes (task-oriented how-tos)
 
 Task-oriented snippets for Trilium's CKEditor plugins (`packages/ckeditor5-*`). All library
-symbols import from `ckeditor5` (48.2.0); local imports carry file extensions. All model
+symbols import from `ckeditor5` (48 or later); local imports carry file extensions. All model
 mutations run inside `editor.model.change( writer => … )`. In Trilium the "document" is the
 content of a single text note, so these recipes operate over that note's model root.
 

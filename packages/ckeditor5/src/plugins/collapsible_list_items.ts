@@ -1,6 +1,6 @@
 import "../theme/collapsible_list_items.css";
 
-import { Command, DomEventObserver, ListEditing, MouseObserver, Plugin, type Editor, type ModelElement, type ModelNode, type ModelWriter, type ViewDocumentDomEventData, type ViewDocumentMouseDownEvent, type ViewDocumentMouseOutEvent, type ViewElement } from "ckeditor5";
+import { Command, DomEventObserver, FindAndReplaceEditing, ListEditing, MouseObserver, Plugin, type Editor, type FindResultType, type ModelElement, type ModelNode, type ModelWriter, type ViewDocumentDomEventData, type ViewDocumentMouseDownEvent, type ViewDocumentMouseOutEvent, type ViewElement } from "ckeditor5";
 
 export const LIST_COLLAPSED_ATTRIBUTE = "listCollapsed";
 
@@ -8,6 +8,13 @@ const COLLAPSED_DATA_ATTRIBUTE = "data-trilium-collapsed";
 
 /** Marks the item whose arrow the pointer is on, so the stylesheet can give it a filled circle. */
 const ARROW_HOVERED_CLASS = "trilium-list-arrow-hovered";
+
+/**
+ * View-only class placed on a collapsed `<li>` whose hidden children are temporarily shown to
+ * reveal a find-in-note match inside them. It only exists in the editing view (the hiding CSS
+ * opts out when it is present), so the persisted `data-trilium-collapsed` state is never touched.
+ */
+const TEMPORARILY_EXPANDED_CLASS = "trilium-list-temporarily-expanded";
 
 /**
  * Allows collapsing/expanding nested list items, similar to outliners such as Dynalist or Roam.
@@ -19,6 +26,15 @@ const ARROW_HOVERED_CLASS = "trilium-list-arrow-hovered";
 export default class CollapsibleListItems extends Plugin {
 
     private _hoveredArrowItem: ViewElement | null = null;
+    /** Collapsed list items currently force-expanded (view-only) to reveal a find highlight. */
+    private readonly _findRevealed = new Set<ModelElement>();
+    /**
+     * True only for the microtask in which find is closing. Closing drops the caret onto the match
+     * (see find_in_text.findBoxClosed); without this, that caret landing inside a re-collapsed item
+     * would make {@link _enableAutoExpand} permanently expand it. While set, the caret is moved to
+     * the collapsed item's line instead — the way the collapsible <details> reveal leaves it.
+     */
+    private _findClosing = false;
 
     static get requires() {
         return [ListEditing] as const;
@@ -55,6 +71,94 @@ export default class CollapsibleListItems extends Plugin {
         this._enableArrowHoverFeedback();
         this._enableToggleOnKeystroke();
         this._enableAutoExpand();
+        this._enableFindReveal();
+    }
+
+    /**
+     * Temporarily reveals a collapsed item's hidden children while a find-in-note highlight sits
+     * inside them, re-collapsing once the highlight moves away — the same treatment collapsible
+     * `<details>` blocks get. Unlike {@link _enableAutoExpand} (which permanently drops the
+     * collapsed state when the caret enters a hidden block), this is view-only and never touches
+     * the persisted attribute: search must not rewrite the user's collapsed layout. No-op when
+     * the editor has no find plugin.
+     */
+    private _enableFindReveal() {
+        const editor = this.editor;
+        if (!editor.plugins.has(FindAndReplaceEditing)) {
+            return;
+        }
+        // Wire up on "ready", not here: FindAndReplaceEditing may load after this plugin and only
+        // creates its state in its own init(), so the state isn't available yet at this point.
+        this.listenTo(editor, "ready", () => {
+            const state = editor.plugins.get(FindAndReplaceEditing).state;
+            /* v8 ignore next 3 -- by "ready" FindAndReplaceEditing has initialized and always has a state; the guard only satisfies the optional type. */
+            if (!state) {
+                return;
+            }
+            this.listenTo(state, "change:highlightedResult", (_evt, _name, highlighted) => {
+                this._syncFindReveal(highlighted as FindResultType | null);
+            });
+        });
+    }
+
+    /**
+     * Reconcile {@link _findRevealed} with the collapsed items hiding the current highlight:
+     * reveal ancestors newly hiding it, re-collapse ones that no longer do. A `null` highlight
+     * (search cleared) collapses everything.
+     */
+    private _syncFindReveal(highlighted: FindResultType | null) {
+        const wanted = new Set<ModelElement>();
+        // Split from `highlighted` so a cleared highlight (null) leaves `marker` undefined, keeping
+        // the marker-absent path reachable rather than short-circuited away on the first `?.`.
+        const marker = highlighted?.marker;
+        const block = marker?.getStart().parent;
+        // getCollapsedAncestors tolerates any block (a non-list block has no collapsed ancestors),
+        // so no list-specific guard is needed beyond narrowing the position parent to an element.
+        if (block?.is("element")) {
+            for (const ancestor of getCollapsedAncestors(block)) {
+                wanted.add(ancestor);
+            }
+        }
+
+        // A cleared highlight means find is closing (or moving off): flag the current microtask so
+        // the caret it is about to drop on the match doesn't permanently expand the item that
+        // {@link _enableAutoExpand} would otherwise open. Reset after the tick, so it only affects
+        // that synchronous caret landing and never a later real navigation.
+        if (!highlighted) {
+            this._findClosing = true;
+            void Promise.resolve().then(() => {
+                this._findClosing = false;
+            });
+        }
+
+        for (const revealed of this._findRevealed) {
+            if (!wanted.has(revealed)) {
+                this._applyFindReveal(revealed, false);
+                this._findRevealed.delete(revealed);
+            }
+        }
+        for (const target of wanted) {
+            if (!this._findRevealed.has(target)) {
+                this._findRevealed.add(target);
+                this._applyFindReveal(target, true);
+            }
+        }
+    }
+
+    /** Add or remove the view-only "temporarily expanded" class on the collapsed item's `<li>`. */
+    private _applyFindReveal(block: ModelElement, reveal: boolean) {
+        const viewItem = this.editor.editing.mapper.toViewElement(block)?.findAncestor("li");
+        /* v8 ignore next 3 -- defensive: a rendered collapsed ancestor always maps to its <li>. */
+        if (!viewItem) {
+            return;
+        }
+        this.editor.editing.view.change((writer) => {
+            if (reveal) {
+                writer.addClass(TEMPORARILY_EXPANDED_CLASS, viewItem);
+            } else {
+                writer.removeClass(TEMPORARILY_EXPANDED_CLASS, viewItem);
+            }
+        });
     }
 
     /**
@@ -161,6 +265,17 @@ export default class CollapsibleListItems extends Plugin {
 
             const collapsedAncestors = getCollapsedAncestors(block);
             if (collapsedAncestors.length === 0) {
+                return;
+            }
+
+            if (this._findClosing) {
+                // Find is closing and dropped the caret on the match inside a re-collapsed item.
+                // Keep the saved layout collapsed: move the caret to the outermost collapsed
+                // ancestor's line instead of expanding (mirrors the <details> reveal on close).
+                const outermost = collapsedAncestors[collapsedAncestors.length - 1];
+                model.enqueueChange({isUndoable: false}, (writer) => {
+                    writer.setSelection(writer.createPositionAt(outermost, 0));
+                });
                 return;
             }
 

@@ -7,11 +7,11 @@ import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
-import utils, { isElectron } from "../../services/utils";
+import utils, { isElectron, isStandalone } from "../../services/utils";
 import NoteDetail from "../NoteDetail";
-import ActionButton from "../react/ActionButton";
 import FormList, { FormListItem } from "../react/FormList";
-import { useChildNotes, useContainedLinkNavigation, useMobileMasterDetail, useNoteContext, useTriliumEvent } from "../react/hooks";
+import { useChildNotes, useContainedLinkNavigation, useNoteContext, useTriliumEvent } from "../react/hooks";
+import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } from "../react/master_detail";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import SettingsNavigation from "../type_widgets/options/components/SettingsNavigation";
@@ -36,7 +36,7 @@ export default function OptionsDialog() {
     const [ lastSection, setLastSection ] = useState<string | null>(null);
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
-    const { isMasterDetail, mobileView, switchMobileView, resetMobileView } = useMobileMasterDetail(modalRef, "options-slide");
+    const { isMasterDetail, mobileView, switchMobileView, resetMobileView } = useMobileMasterDetail(modalRef);
 
     useTriliumEvent("showOptions", async ({ section }) => {
         const noteContext = new NoteContext("_options-dialog");
@@ -66,7 +66,16 @@ export default function OptionsDialog() {
             <Modal
                 modalRef={modalRef}
                 title={t("options.title")}
-                header={isMasterDetail && (mobileView === "page" ? <MobilePageHeader onBack={() => switchMobileView("list")} /> : <MobilePageHeader />)}
+                header={isMasterDetail && (
+                    <MasterDetailHeader
+                        inPage={mobileView === "page"}
+                        onBack={() => switchMobileView("list")}
+                        backTitle={t("options.back")}
+                        pageTitle={<ActivePageTitle />}
+                        listTitle={t("options.title")}
+                        listIcon="bx bx-cog"
+                    />
+                )}
                 sidebar={isMasterDetail ? undefined : <SettingsSidebar />}
                 isFullPageOnMobile
                 customTitleBarButtons={!isMobile ? [{
@@ -91,18 +100,31 @@ export default function OptionsDialog() {
                 }}
             >
                 {isMasterDetail && (
-                    <div className="options-mobile-nav">
+                    <MasterPane className="options-mobile-nav">
                         <MobileSettingsList onSelect={(noteId) => {
                             void noteContext.setNote(noteId, { keepActiveDialog: true });
                             switchMobileView("page");
                         }} />
-                    </div>
+                    </MasterPane>
                 )}
                 <SettingsScrollReset modalRef={modalRef} />
-                <NoteDetail />
+                {/* The settings page is the detail half of the flow, and is wrapped as a pane only where
+                    there is a flow for it to be half of: the sidebar layout expects it as the body's own
+                    child. */}
+                {isMasterDetail ? <DetailPane><NoteDetail /></DetailPane> : <NoteDetail />}
             </Modal>
         </NoteContextContext.Provider>
     );
+}
+
+/**
+ * Names the settings page on show, for the master-detail header to carry beside the way back. A
+ * component of its own rather than something the dialog reads: the dialog is what provides the note
+ * context the title comes from, so it cannot consume it itself.
+ */
+function ActivePageTitle() {
+    const { note } = useNoteContext();
+    return <>{note?.title}</>;
 }
 
 /**
@@ -117,13 +139,19 @@ export function useOptionPages() {
 
 /**
  * Whether an option page applies to the running platform. A page note in the hidden subtree (see
- * `hidden_subtree.ts`) can carry a boolean label restricting it to one platform: `#electronOnly`
- * hides it on the server (web/mobile) clients, `#serverOnly` hides it on the desktop (Electron) app.
- * Pages without either label apply everywhere. The page still exists in the note tree and stays
- * reachable directly; only the modal's navigation hides it.
+ * `hidden_subtree.ts`) can carry a boolean label restricting where it appears: `#electronOnly`
+ * hides it on the server (web/mobile) clients, `#serverOnly` hides it on the desktop (Electron)
+ * app, and `#notInStandalone` hides it in the standalone build. Pages without any of them apply
+ * everywhere. The page still exists in the note tree and stays reachable directly; only the modal's
+ * navigation hides it.
  *
- * This is the platform axis (Electron app vs. served over HTTP), distinct from the layout axis
- * (`isDesktop`/`isMobile`) that the launcher's `desktopOnly` label uses.
+ * The first two are one axis — where the stack is served from — and are written as `Only` labels
+ * because each names a single platform. Standalone is neither: its server runs in this browser, so
+ * it is Electron and server at once for some purposes and neither for others. What a page needs
+ * there is stated as the exclusion it is.
+ *
+ * All of this is the platform axis, distinct from the layout axis (`isDesktop`/`isMobile`) that the
+ * launcher's `desktopOnly` label uses.
  */
 export function isOptionPageVisibleOnPlatform(page: FNote) {
     if (!isElectron() && page.isLabelTruthy("electronOnly")) {
@@ -131,6 +159,10 @@ export function isOptionPageVisibleOnPlatform(page: FNote) {
     }
 
     if (isElectron() && page.isLabelTruthy("serverOnly")) {
+        return false;
+    }
+
+    if (isStandalone && page.isLabelTruthy("notInStandalone")) {
         return false;
     }
 
@@ -192,29 +224,3 @@ function MobileSettingsList({ onSelect }: { onSelect: (noteId: string) => void }
     );
 }
 
-/**
- * Replaces the static "Options" title on mobile. In the page view it shows just a back button
- * returning to the master list — the page title itself is rendered by the page's own
- * {@link OptionsPageHeader} below. In the list view a decorative settings icon and the dialog title
- * take its place.
- */
-function MobilePageHeader({ onBack }: { onBack?: () => void }) {
-    if (onBack) {
-        return (
-            <div className="options-mobile-page-header">
-                <ActionButton
-                    icon="bx bx-chevron-left"
-                    text={t("options.back")}
-                    onClick={onBack}
-                />
-            </div>
-        );
-    }
-
-    return (
-        <div className="options-mobile-page-header">
-            <span className="options-header-icon icon-action bx bx-cog" aria-hidden="true" />
-            <h5 className="options-mobile-page-title">{t("options.title")}</h5>
-        </div>
-    );
-}

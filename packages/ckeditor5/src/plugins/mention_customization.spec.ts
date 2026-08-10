@@ -3,13 +3,14 @@ import {
     _setModelData as setModelData,
     ClassicEditor,
     Essentials,
-    Mention,
+    MentionEditing,
     Paragraph
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import { installGlobMock } from "../../test/globals-test-kit.js";
+import TriliumMentionUI from "./mention/trilium_mention_ui.js";
 import MentionCustomization from "./mention_customization.js";
 import ReferenceLink from "./referencelink.js";
 
@@ -31,16 +32,18 @@ describe("MentionCustomization", () => {
         editor = await createTestEditor([
             Essentials,
             Paragraph,
-            Mention,
+            MentionEditing,
+            TriliumMentionUI,
             ReferenceLink,
             MentionCustomization
         ]);
     });
 
-    it("loads the plugin, requires Mention and overrides the mention command", () => {
+    it("loads the plugin, requires the mention editing/UI pair and overrides the mention command", () => {
         expect(editor.plugins.get(MentionCustomization)).toBeInstanceOf(MentionCustomization);
         expect(MentionCustomization.pluginName).toBe("MentionCustomization");
-        expect(MentionCustomization.requires).toContain(Mention);
+        expect(MentionCustomization.requires).toContain(MentionEditing);
+        expect(MentionCustomization.requires).toContain(TriliumMentionUI);
         expect(editor.commands.get("mention")).toBeDefined();
     });
 

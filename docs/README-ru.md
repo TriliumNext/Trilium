@@ -1,12 +1,12 @@
 # Trilium Notes
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Спонсоры GitHub](https://img.shields.io/github/sponsors/eliandoran) ![Спонсоры
+LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
 ![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![Загрузки с GitHub (все ресурсы, все
+релизы)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Статус
+перевода](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -217,22 +217,23 @@ Trilium и TriliumDroid.
 
 #### Pocket Trilium
 
-If you want a full-featured native Android app, check out [Pocket
-Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
-instance on your phone, supports full offline use, and allows you to sync with
-your server.
+Если вам нужно полнофункциональное приложение для Android, ознакомьтесь с
+[Pocket Trilium](https://github.com/Nriver/pocket-trilium). Оно запускает полный
+экземпляр Trilium на вашем телефоне, поддерживает полноценное автономное
+использование и позволяет синхронизироваться с вашим сервером.
 
 #### Trinote
 
-If you want a native iOS app, you can use
-[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
-client for your self-hosted Trilium / TriliumNext server. It lets you browse and
-organize your note tree, search for notes on the server, read and edit all note
-types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
-available and editable offline. Here's the
-[repo](https://github.com/StephenArg/Trinote) if you're interested in
-contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
-server if you have any feedback or suggestions you want to discuss.
+Если вам нужно приложение для iOS, вы можете использовать
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), клиент с открытым
+исходным кодом для вашего собственного сервера Trilium / TriliumNext. Оно
+позволяет просматривать и упорядочивать дерево заметок, искать заметки на
+сервере, читать и редактировать все типы заметок (текст, код, ментальную карту,
+таблицу, карту, холст и т.д.), а также сохраняет заметки доступными для
+редактирования в автономном режиме. Вот
+[репозиторий](https://github.com/StephenArg/Trinote), если вы заинтересованы в
+участии, и вот сервер [discord](https://discord.com/invite/ghjJG56EUS), если у
+вас есть какие-либо отзывы или предложения, которые вы хотели бы обсудить.
 
 ### Сервер
 
@@ -348,6 +349,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [antoniotejada](https://github.com/nriver) за оригинальный виджет подсветки
   синтаксиса.
 * [Tabler Icons](https://tabler.io/icons) за системные иконки.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 Trilium не существовал бы без технологий, лежащих в его основе:
 

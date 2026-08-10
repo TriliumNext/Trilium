@@ -8,6 +8,7 @@ import { getCurrentLocale } from "./i18n";
 import attributes from "./attributes";
 import BNote from "../becca/entities/bnote";
 import { getPlatform } from "./platform";
+import { getSetupTargetScreen, isInitialSetup, isSetupRequested } from "./setup_mode";
 import sqlInit from "./sql_init";
 
 export default function getSharedBootstrapItems(assetPath: string, dbInitialized: boolean) {
@@ -25,8 +26,13 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
         componentId: "",
         // Schema present but not yet initialized means a sync was started and interrupted, so the
         // setup screen resumes it instead of starting over. A fully initialized DB is never mid-sync.
-        // Kept in the common items so both payload shapes carry the flag uniformly.
-        syncInProgress: !dbInitialized && sqlInit.schemaExists(),
+        // Kept in the common items so both payload shapes carry the flag uniformly. An instance that
+        // was asked into setup has a finished database behind it, so its schema says nothing here.
+        syncInProgress: !dbInitialized && !isSetupRequested() && sqlInit.schemaExists(),
+        // Where the wizard should open, and whether it has anywhere to go back to. Only a marker
+        // says otherwise; a first run leaves both at their first-run answers.
+        initialSetup: isInitialSetup(),
+        setupTargetScreen: getSetupTargetScreen(),
         ...getIconConfig(assetPath)
     };
 

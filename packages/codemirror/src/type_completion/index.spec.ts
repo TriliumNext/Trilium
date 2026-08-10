@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { getScriptCompletions, getScriptDiagnosticCodes, SCRIPT_MIME_BACKEND, SCRIPT_MIME_FRONTEND, SCRIPT_MIME_JSX } from "./index.js";
+import {
+    buildTypeCompletion,
+    getScriptCompletions,
+    getScriptDiagnosticCodes,
+    renderHoverTooltip,
+    SCRIPT_MIME_BACKEND,
+    SCRIPT_MIME_FRONTEND,
+    SCRIPT_MIME_JSX
+} from "./index.js";
 
 /** Returns completions at the `|` marker in `source` (the marker is stripped). */
 function completionsAtMarker(mime: string, source: string, context?: { customRequestHandler?: boolean }) {
@@ -426,5 +434,93 @@ describe("JSX component typing", () => {
             "import { Admonition } from \"trilium:preact\";\nexport default () => <Admonition>hi</Admonition>;"
         );
         expect(codes).toContain(TS_TYPE_NOT_ASSIGNABLE);
+    }, TIMEOUT);
+});
+
+describe("buildTypeCompletion", () => {
+    it("returns nothing for a MIME type that is not a script note", async () => {
+        // Ordinary code notes are highlighted only; the TypeScript service is not built for them.
+        for (const mime of [ "text/plain", "text/css", "application/json", "text/javascript" ]) {
+            expect(await buildTypeCompletion(mime)).toEqual({ extensions: [], source: null });
+        }
+    });
+
+    it("builds the language-service extensions and a completion source for a script note", async () => {
+        const { extensions, source } = await buildTypeCompletion(SCRIPT_MIME_BACKEND);
+
+        expect(Array.isArray(extensions)).toBe(true);
+        expect(extensions.length).toBeGreaterThan(0);
+        // The source is handed to the editor's single autocompletion rather than adding its own.
+        expect(typeof source).toBe("function");
+    }, TIMEOUT);
+
+    it("builds for a frontend script note and honours the api context", async () => {
+        const frontend = await buildTypeCompletion(SCRIPT_MIME_FRONTEND);
+        expect(frontend.source).toBeTruthy();
+
+        const handler = await buildTypeCompletion(SCRIPT_MIME_BACKEND, { customRequestHandler: true });
+        expect(handler.source).toBeTruthy();
+    }, TIMEOUT);
+});
+
+describe("renderHoverTooltip", () => {
+    it("renders the signature, the JSDoc body and each tag", () => {
+        const { dom } = renderHoverTooltip({
+            quickInfo: {
+                displayParts: [
+                    { text: "function ", kind: "keyword" },
+                    { text: "showMessage", kind: "functionName" }
+                ],
+                documentation: [ { text: "Shows a toast." } ],
+                tags: [
+                    { name: "param", text: [ { text: "message the text" } ] },
+                    { name: "returns", text: [ { text: "nothing" } ] }
+                ]
+            }
+        });
+
+        expect(dom.querySelector(".cm-ts-hover-signature")?.textContent).toBe("function showMessage");
+        expect(dom.querySelector(".quick-info-keyword")?.textContent).toBe("function ");
+        expect(dom.querySelector(".cm-ts-hover-doc")?.textContent).toBe("Shows a toast.");
+
+        const tags = [ ...dom.querySelectorAll(".cm-ts-hover-tag") ].map((el) => el.textContent);
+        expect(tags).toEqual([ "@param message the text", "@returns nothing" ]);
+    });
+
+    it("omits the doc block when there is no documentation", () => {
+        const { dom } = renderHoverTooltip({
+            quickInfo: { displayParts: [ { text: "const x: number" } ] }
+        });
+
+        expect(dom.querySelector(".cm-ts-hover-doc")).toBeNull();
+        expect(dom.querySelectorAll(".cm-ts-hover-tag")).toHaveLength(0);
+        // A part with no kind falls back to the generic text class.
+        expect(dom.querySelector(".quick-info-text")?.textContent).toBe("const x: number");
+    });
+
+    it("renders a tag that carries no text", () => {
+        const { dom } = renderHoverTooltip({
+            quickInfo: { tags: [ { name: "deprecated" } ] }
+        });
+
+        expect(dom.querySelector(".cm-ts-hover-tag")?.textContent).toBe("@deprecated");
+    });
+
+    it("renders an empty tooltip when the language service returned no quick info", () => {
+        // Hovering whitespace yields no quickInfo at all; the renderer still has to return a node.
+        const { dom } = renderHoverTooltip({});
+
+        expect(dom.className).toBe("cm-ts-hover");
+        expect(dom.querySelector(".cm-ts-hover-signature")?.textContent).toBe("");
+        expect(dom.querySelector(".cm-ts-hover-doc")).toBeNull();
+    });
+});
+
+describe("empty script notes", () => {
+    it("analyses an empty document without tripping the language service", async () => {
+        // A newly created script note has no content; the empty string is substituted with a
+        // space so TypeScript still gets a valid file to parse.
+        expect(await getScriptDiagnosticCodes(SCRIPT_MIME_BACKEND, "")).toEqual([]);
+        expect(await getScriptCompletions(SCRIPT_MIME_BACKEND, "", 0)).toEqual(expect.any(Array));
     }, TIMEOUT);
 });

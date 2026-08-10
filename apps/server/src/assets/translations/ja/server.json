@@ -51,7 +51,7 @@
     "copy-without-formatting": "選択したテキストを書式なしでコピーする",
     "quick-search": "クイック検索バーを有効にする",
     "sort-child-notes": "子ノートを並べ替える",
-    "create-note-into-inbox": "inbox（定義されている場合）またはデイノートにノートを作成する",
+    "create-note-into-inbox": "inbox（定義されている場合）または日ノートにノートを作成する",
     "note-clipboard": "ノートクリップボード",
     "edit-branch-prefix": "「ブランチ接頭辞の編集」ダイアログを表示",
     "show-revisions": "「ノートの変更履歴」ダイアログを表示",
@@ -68,7 +68,8 @@
     "save-named-revision": "アクティブなノートの変更履歴を名前を付けて保存",
     "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする",
     "peek-right-pane": "右ペインを、コンテンツの上にフローティング表示し、フォーカスが外れると閉じる一時的なパネルとしてプレビューします",
-    "show-deleted-notes": "\"削除されたノート\" ダイアログを表示"
+    "show-deleted-notes": "\"削除されたノート\" ダイアログを表示",
+    "show-shortcut-hints": "フォーカスされているウィジェットのキーボードショートカットを表示"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -169,7 +170,8 @@
     "save-named-revision": "変更履歴を名前を付けて保存",
     "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え",
     "peek-right-pane": "右ペインをピーク表示",
-    "show-deleted-notes": "削除されたノートを表示"
+    "show-deleted-notes": "削除されたノートを表示",
+    "show-shortcut-hints": "ショートカットのヒントを表示"
   },
   "login": {
     "title": "ログイン",
@@ -293,7 +295,8 @@
     "security-title": "セキュリティ",
     "desktop-title": "デスクトップ",
     "deleted-notes-title": "削除されたノート",
-    "color-scheme-switcher-title": "配色の切り替え"
+    "color-scheme-switcher-title": "配色の切り替え",
+    "content-manager-title": "コンテンツマネージャー"
   },
   "notes": {
     "new-note": "新しいノート",
@@ -394,9 +397,6 @@
     "db_not_initialized_desktop": "DB が初期化されていません。画面の指示に従ってください。",
     "db_not_initialized_server": "DB が初期化されていません。セットアップ ページ 「http://[your-server-host]:{{port}}」 にアクセスして、Trilium を初期化する方法の説明を確認してください。"
   },
-  "desktop": {
-    "instance_already_running": "すでにインスタンスが実行されているので、代わりにそのインスタンスにフォーカスします。"
-  },
   "search": {
     "error": {
       "in-context": "{{- context}} でエラーが発生しました: {{- message}}",
@@ -429,10 +429,37 @@
     "sql-console": "SQL コンソール",
     "sql-console-warning": "SQL コンソールを使用すると、データベースに対して任意の SQL クエリを実行できます。",
     "lan-access": "ネットワークアクセス",
-    "lan-access-warning": "ローカルネットワーク上の他のデバイスが、この Trilium インスタンスに接続できるようになります。"
+    "lan-access-warning": "アプリと共有ノートはネットワーク経由で配信されます — このコンピュータのブラウザや、ローカルネットワーク上の他のデバイスからアクセス可能です。"
   },
   "onenote_import": {
-    "root-title": "OneNote インポート"
+    "root-title": "OneNote インポート",
+    "failed-page-placeholder": "このページを OneNote からインポートできませんでした。エラー: {{error}}",
+    "report": {
+      "row-pages": "ページのインポートが完了しました",
+      "row-notebooks": "インポートされたノートブック",
+      "row-sections": "インポートされたセクション",
+      "row-duration": "インポートにかかった合計時間",
+      "row-images": "画像",
+      "row-attachments": "添付ファイル",
+      "row-ink": "手書きや描画を含むページ",
+      "row-links": "ページ間リンク",
+      "row-throttling": "Microsoft Graph による速度制限",
+      "value-links": "{{resolved}} 解決済み、{{unresolved}} はインポート範囲外を指しています",
+      "value-throttling_other": "{{- wait}} ({{count}} 件の要求が制限されました)",
+      "skipped-sections-title": "インポートできなかったセクション",
+      "skipped-sections-section": "セクション",
+      "skipped-sections-notebook": "ノートブック",
+      "skipped-sections-error": "エラー",
+      "failed-pages-title": "インポートできなかったページ",
+      "failed-pages-page": "ページ",
+      "failed-pages-section": "セクション",
+      "failed-pages-error": "エラー",
+      "failed-resources-title": "画像や添付ファイルが見つかりません",
+      "failed-resources-item_other": "{{- pageLink}}: {{count}} 件のリソースをダウンロードできませんでした"
+    },
+    "failed-section-placeholder": "このセクションは OneNote からインポートできなかったため、空の状態で作成されました。エラー: {{error}}",
+    "protected-section-error": "このセクションはパスワードで保護されています。OneNote でパスワードを解除してから、再度インポートしてください。",
+    "protected-section-placeholder": "このセクションはパスワードで保護されているため、ページをインポートできず、空の状態で作成されました。インポートするには、OneNote でセクションを開き、パスワード保護を解除（セクションを右クリック → パスワード保護 → パスワードの解除）してから、インポートを再度実行してください。"
   },
   "notion_import": {
     "root-title": "Notion インポート",
@@ -459,5 +486,28 @@
   "note_conversion": {
     "revision_before_markdown": "マークダウンへの変換前",
     "revision_before_text": "テキストノートへの変換前"
+  },
+  "backup": {
+    "custom_directory_unwritable": "データベースのバックアップに失敗しました: {{- location}} への書き込みができませんでした。代わりにデフォルトの場所にバックアップします。",
+    "passphrase_unavailable": "バックアップパスワードが読み取れなかったため、このバックアップは暗号化されません。選択した場所ではなく、デフォルトの場所に保存されました。"
+  },
+  "dialog": {
+    "select_directory": "フォルダを選択"
+  },
+  "backup-password-dialog": {
+    "cancel": "キャンセル",
+    "set-title": "バックアップパスワードを設定しますか？",
+    "set-message": "今後のバックアップはこのパスワードで暗号化されます。",
+    "set-detail": "Trilium はこのパスワードを再度表示できないため、安全な場所にコピーを保管してください。パスワードがないとバックアップを復元できません。\n\nこの確認画面が表示されることを予期していなかった場合は、キャンセルしてください — ノートやスクリプトによってパスワードが要求された可能性があります。",
+    "set-confirm": "パスワードを設定",
+    "clear-title": "バックアップパスワードを解除（消去）しますか？",
+    "clear-message": "今後作成されるバックアップは暗号化されなくなります。",
+    "clear-detail": "既に作成されたバックアップには、作成時に使用されたパスワードが保持されており、そのパスワードを使用して復元することができます。\n\nこの確認画面が表示されることを予期していなかった場合は、キャンセルしてください — ノートやスクリプトによってパスワードが要求された可能性があります。",
+    "clear-confirm": "パスワードを解除"
+  },
+  "restore": {
+    "pick_backup_title": "復元するバックアップを選択",
+    "backup_filter": "Trilium バックアップ (*.db, *.tnbackup)",
+    "any_file_filter": "すべてのファイル"
   }
 }

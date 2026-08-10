@@ -15,6 +15,18 @@ function getOptionValue(name: string): string | null {
     return getSql().getValue<string | null>("SELECT value FROM options WHERE name = ?", [name]);
 }
 
+/** Creates a code note carrying a `#run` label and returns its note ID. */
+async function createCodeNote(title: string, mime: string): Promise<string> {
+    const created = await api.post<{ note: { noteId: string } }>("/api/notes/root/children?target=into", {
+        body: { title, type: "code", mime, content: "api.log('hi');" }
+    });
+    const { noteId } = created.body.note;
+    await api.put(`/api/notes/${noteId}/set-attribute`, {
+        body: { type: "label", name: "run", value: "backendStartup" }
+    });
+    return noteId;
+}
+
 describe("Options API (core)", () => {
     beforeAll(() => {
         api = CoreApiTester.build();
@@ -48,6 +60,50 @@ describe("Options API (core)", () => {
         } finally {
             initConfig(original);
         }
+    });
+
+    it("exposes the read-only security config flags", async () => {
+        const original = getConfig();
+        initConfig({
+            ...original,
+            Security: {
+                ...original.Security,
+                backendScriptingEnabled: true,
+                sqlConsoleEnabled: true,
+                allowLanAccess: true
+            }
+        });
+        try {
+            const res = await api.get<Record<string, string>>("/api/options");
+            expect(res.body.backendScriptingEnabled).toBe("true");
+            expect(res.body.sqlConsoleEnabled).toBe("true");
+            expect(res.body.allowLanAccess).toBe("true");
+        } finally {
+            initConfig(original);
+        }
+    });
+
+    it("flags backend scripts, ignoring #run labels on frontend scripts", async () => {
+        expect((await api.get<Record<string, string>>("/api/options")).body.hasUserBackendScripts).toBe("false");
+
+        // #run also appears on frontend scripts, so only the backend MIME type counts.
+        await createCodeNote("Frontend script", "application/javascript;env=frontend");
+        expect((await api.get<Record<string, string>>("/api/options")).body.hasUserBackendScripts).toBe("false");
+
+        await createCodeNote("Backend script", "application/javascript;env=backend");
+        expect((await api.get<Record<string, string>>("/api/options")).body.hasUserBackendScripts).toBe("true");
+    });
+
+    it("accepts write-only secrets but reports them only as a boolean flag", async () => {
+        expect((await api.put("/api/options/openaiApiKey/sk-secret-value")).status).toBe(204);
+        // openNoteContexts skips the logging branch entirely
+        expect((await api.put("/api/options/openNoteContexts/%5B%5D")).status).toBe(204);
+
+        const res = await api.get<Record<string, string>>("/api/options");
+        expect(res.body.openaiApiKey).toBeUndefined();
+        expect(res.body.isOpenaiApiKeySet).toBe("true");
+        // the other secret was never written
+        expect(res.body.isAnthropicApiKeySet).toBe("false");
     });
 
     it("updates a single allowed option via PUT /api/options/:name/:value", async () => {

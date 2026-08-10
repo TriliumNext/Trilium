@@ -1,32 +1,43 @@
+// FullCalendar v7 ships no bundled CSS of its own — the skeleton and the chosen theme have to be
+// pulled in by hand. The theme's own palette is deliberately not among them: palette.css states
+// the same variables in terms of Trilium's, which is the whole of the theming (see there).
+// Imported ahead of index.css so our own rules still come last.
+import "fullcalendar/skeleton.css";
+import "fullcalendar/themes/forma/theme.css";
+
+import "./palette.css";
 import "./index.css";
 
-import { Calendar as FullCalendar } from "@fullcalendar/core";
-import { DateSelectArg, EventChangeArg, EventMountArg, EventSourceFuncArg, LocaleInput, PluginDef } from "@fullcalendar/core/index.js";
-import { DateClickArg } from "@fullcalendar/interaction";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import clsx from "clsx";
+import { Calendar as FullCalendar, DateClickInfo, DateSelectInfo, EventChangeInfo, EventClickInfo, EventDisplayInfo, EventSourceFuncInfo, LocaleInput, MountInfo, PluginInput } from "fullcalendar";
 import { RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
+import contextMenu from "../../../menus/context_menu";
 import date_notes from "../../../services/date_notes";
-import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import { escapeHtml, isMobile } from "../../../services/utils";
+import note_tooltip from "../../../services/note_tooltip";
+import { isMobile } from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import Button, { ButtonGroup } from "../../react/Button";
+import CollapseOnOverflow from "../../react/CollapseOnOverflow";
 import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
-import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
+import { useNoteLabel, useNoteLabelBoolean, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
 import { changeEvent, newEvent } from "./api";
 import Calendar from "./calendar";
+import EventPopover from "./EventPopover";
+import GhostPopover from "./GhostPopover";
 import { openCalendarContextMenu } from "./context_menu";
+import { CalendarSelection, EventDraft } from "./selection";
 import { buildEvents, buildEventsForCalendar } from "./event_builder";
-import { formatDateToLocalISO, isValidDuration, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
+import { formatDateToLocalISO, formatTimeToLocalISO, isAttributeChangeAffecting, isBranchChangeAffecting, isValidDuration, parseDurationSeconds, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 interface CalendarViewData {
 
@@ -84,33 +95,37 @@ const DEFAULT_SLOT_LABEL_INTERVAL = "01:00:00";
 
 // Here we hard-code the imports in order to ensure that they are embedded by webpack without having to load all the languages.
 export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ default: LocaleInput }>) | null> = {
-    de: () => import("@fullcalendar/core/locales/de"),
-    es: () => import("@fullcalendar/core/locales/es"),
-    fr: () => import("@fullcalendar/core/locales/fr"),
-    it: () => import("@fullcalendar/core/locales/it"),
-    hi: () => import("@fullcalendar/core/locales/hi"),
-    id: () => import("@fullcalendar/core/locales/id"),
+    de: () => import("fullcalendar/locales/de"),
+    es: () => import("fullcalendar/locales/es"),
+    fr: () => import("fullcalendar/locales/fr"),
+    it: () => import("fullcalendar/locales/it"),
+    hi: () => import("fullcalendar/locales/hi"),
+    id: () => import("fullcalendar/locales/id"),
     ga: null,
-    cn: () => import("@fullcalendar/core/locales/zh-cn"),
-    cs: () => import("@fullcalendar/core/locales/cs"),
-    tw: () => import("@fullcalendar/core/locales/zh-tw"),
-    ro: () => import("@fullcalendar/core/locales/ro"),
-    ru: () => import("@fullcalendar/core/locales/ru"),
-    ja: () => import("@fullcalendar/core/locales/ja"),
-    pt: () => import("@fullcalendar/core/locales/pt"),
-    pl: () => import("@fullcalendar/core/locales/pl"),
-    "pt_br": () => import("@fullcalendar/core/locales/pt-br"),
-    uk: () => import("@fullcalendar/core/locales/uk"),
+    cn: () => import("fullcalendar/locales/zh-cn"),
+    cs: () => import("fullcalendar/locales/cs"),
+    tw: () => import("fullcalendar/locales/zh-tw"),
+    ro: () => import("fullcalendar/locales/ro"),
+    ru: () => import("fullcalendar/locales/ru"),
+    ja: () => import("fullcalendar/locales/ja"),
+    ko: () => import("fullcalendar/locales/ko"),
+    pt: () => import("fullcalendar/locales/pt"),
+    pl: () => import("fullcalendar/locales/pl"),
+    "pt_br": () => import("fullcalendar/locales/pt-br"),
+    uk: () => import("fullcalendar/locales/uk"),
     en: null,
-    "en-GB": () => import("@fullcalendar/core/locales/en-gb"),
+    "en-GB": () => import("fullcalendar/locales/en-gb"),
     "en_rtl": null,
-    ar: () => import("@fullcalendar/core/locales/ar")
+    ar: () => import("fullcalendar/locales/ar")
 };
 
 export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarViewData>) {
     const parentComponent = useContext(ParentComponent);
     const containerRef = useRef<HTMLDivElement>(null);
     const calendarRef = useRef<FullCalendar>(null);
+    // The event the view's popovers stand for — a chip clicked, or a range just dragged out (see
+    // CalendarSelection).
+    const [ selection, setSelection ] = useState<CalendarSelection | null>(null);
 
     const [ calendarRoot ] = useNoteLabelBoolean(note, "calendarRoot");
     const [ workspaceCalendarRoot ] = useNoteLabelBoolean(note, "workspaceCalendarRoot");
@@ -123,36 +138,186 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const [ slotLabelInterval ] = useNoteLabel(note, "calendar:slotLabelInterval");
     const initialView = useRef(calendarView);
     const viewSpacedUpdate = useSpacedUpdate(() => setCalendarView(initialView.current));
-    useResizeObserver(containerRef, () => calendarRef.current?.updateSize());
+    // FullCalendar v7 sizes itself from its own ResizeObserver; the v6 `updateSize()` nudge this
+    // used to need is gone along with the method.
     const isCalendarRoot = (calendarRoot || workspaceCalendarRoot);
     const isEditable = !isCalendarRoot;
-    const eventBuilder = useMemo(() => {
-        if (!isCalendarRoot) {
-            return async () => await buildEvents(noteIds);
-        }
-        return async (e: EventSourceFuncArg) => await buildEventsForCalendar(note, e);
-    }, [isCalendarRoot, noteIds]);
+    // Worked out once and handed to both the grid and the tap that makes an event of one of its
+    // slots (see draftFromDateClick), so that the two cannot come to disagree on a slot's length.
+    const effectiveSlotDuration = isValidDuration(slotDuration) ? slotDuration : DEFAULT_SLOT_DURATION;
+    // Memoized apart, and each on only what it reads: FullCalendar knows a source by the identity
+    // of the function, and a new one empties the grid before it fetches.
+    const rootEventBuilder = useMemo(() =>
+        async (e: EventSourceFuncInfo) => await buildEventsForCalendar(note, e), [note]);
+    const collectionEventBuilder = useMemo(() => async () => await buildEvents(noteIds), [noteIds]);
+    const eventBuilder = isCalendarRoot ? rootEventBuilder : collectionEventBuilder;
 
     const plugins = usePlugins(isEditable, isCalendarRoot);
     const locale = useLocale();
 
-    const { eventDidMount } = useEventDisplayCustomization(note, parentComponent?.componentId);
-    const editingProps = useEditing(note, isEditable, isCalendarRoot, parentComponent?.componentId);
+    /**
+     * Puts away whatever surface stands over the calendar, answering whether there was one.
+     *
+     * Read through a ref because what asks is bound to a chip as it is drawn (see eventDidMount),
+     * once and for all events, and so cannot be given the selection as it changes.
+     */
+    const selectionRef = useRef(selection);
+    selectionRef.current = selection;
+    const dismissSurface = useCallback(() => {
+        if (!selectionRef.current) return false;
+        setSelection(null);
+        return true;
+    }, []);
+
+    const { eventContent, eventDidMount, eventInnerClass } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface);
+    const editingProps = useEditing(note, isEditable, isCalendarRoot, parentComponent?.componentId,
+        setSelection, effectiveSlotDuration);
+
+    /**
+     * Turns the standing ghost into the note: created only now, at the commit, and — where the
+     * reader typed nothing — named by the calendar's own titleTemplate, the very thing the old
+     * title prompt used to override.
+     *
+     * The calendar is then left as it was found, the new chip standing on it. Nothing is opened on
+     * the note: the ghost asked for everything a quick addition needs, and a surface raised over
+     * the very stretch of grid just worked in would have to be dismissed before the next event
+     * could be dragged out beside it. Whatever else the note may hold is a click on its chip away
+     * — which is where such a surface would have opened anyway.
+     */
+    const commitDraft = useCallback(async (title: string) => {
+        if (!selection || !("draft" in selection)) return;
+
+        await newEvent(note, {
+            title: title.trim() || undefined,
+            ...selection.draft,
+            componentId: parentComponent?.componentId
+        });
+
+        // The range has become an event and its shading has nothing left to stand for; the chip
+        // takes its place. Said here because no press said it: committing is a key or a button
+        // within the ghost, and the ghost is exempt from clearing the shading.
+        calendarRef.current?.unselect();
+        setSelection(null);
+    }, [ selection, note, parentComponent?.componentId ]);
+
+    /**
+     * The ghost given up on rather than pressed away from — Escape, or its own close button.
+     * Neither is a press on anything that would settle the shading, so it is let go by hand.
+     */
+    const cancelDraft = useCallback(() => {
+        calendarRef.current?.unselect();
+        setSelection(null);
+    }, []);
+
+    /**
+     * The ghost pressed away from, which is a different thing: the press itself settles what
+     * becomes of the shading, and saying anything here would be saying it too early. A press on the
+     * grid has already begun the next selection by the time this runs — the drag starts on the
+     * press, `selectMinDistance` being 0 — so clearing here would wipe the very range just started,
+     * which is why a click used to open a ghost over no shading at all while a drag kept its own
+     * (the drag's later moves made the selection again). A press anywhere else clears it through
+     * `unselectAuto`, and a press within the ghost is spared by `unselectCancel`.
+     */
+    const dismissDraft = useCallback(() => setSelection(null), []);
+
+    // An event taken off the calendar takes the dock with it. Not in calendar-root mode, whose
+    // events (day notes and their children) are not in the collection's noteIds at all.
+    useEffect(() => {
+        if (!isCalendarRoot && selection && "noteId" in selection && !noteIds.includes(selection.noteId)) {
+            setSelection(null);
+        }
+    }, [ isCalendarRoot, selection, noteIds ]);
+
+    /**
+     * Follows a link inside the event surface whose note stands on this calendar: the surface
+     * switches to it — the same as if its chip had been clicked — and the calendar turns to its
+     * date, whatever the view (a day, a month), so the chip the surface re-anchors to is on the
+     * grid. Answers whether the note stands on the calendar at all, a link to anything else
+     * keeping its ordinary meaning (see useFollowLinksWithin in EmbeddedNotePane, and the geo
+     * map's followLink, whose bargain this is).
+     *
+     * The calendar itself is asked rather than the note's labels read: every chip is built with
+     * its noteId for an id (see buildEvent), so this honours whatever label names the calendar
+     * builds its events by. In calendar-root mode events are fetched by visible range, so a note
+     * beyond it is not found and its link keeps its ordinary meaning — a bounded loss, as root
+     * calendars are read rather than cross-linked.
+     */
+    const followLink = useCallback((noteId: string) => {
+        const event = calendarRef.current?.getEventById(noteId);
+        if (!event) return false;
+
+        // Where the chip is named by the anchor of last resort: null, there being no press on the
+        // grid to name one — the popover re-anchors to the first chip drawn (see eventAnchorRect).
+        setSelection({ noteId, anchor: null });
+        if (event.start) calendarRef.current?.gotoDate(event.start);
+        return true;
+    }, []);
+
+    // A click on an event opens it into the event surface instead of navigating to the popup the
+    // event's `url` names — a popover beside the chip, or a sheet where there is no beside (see
+    // EventPopover).
+    const onEventClick = useCallback((e: EventClickInfo) => {
+        // The chip is an anchor at the event's `url`, and the app's document-level link handler
+        // (see the delegated listeners in link.ts) would open the popup it names no matter what
+        // FullCalendar makes of the click — so the click must not reach the document at all.
+        e.jsEvent.preventDefault();
+        e.jsEvent.stopPropagation();
+
+        // Which also keeps the click from the tooltip service, whose own document listener is what
+        // ordinarily puts a preview away when something is done (see note_tooltip.ts). Said here
+        // instead: a preview left standing would cover the very popover the click opens, at the
+        // chip both of them are drawn beside.
+        note_tooltip.dismissAllTooltips();
+
+        // A menu standing open is what the click is for: putting it away is what a click anywhere
+        // means while one is up, and the stop above is what kept this one from saying so on its own
+        // (see isShown in context_menu.ts). The event is not opened as well — one press, one thing.
+        if (contextMenu.isShown()) {
+            void contextMenu.hide();
+            return;
+        }
+
+        const noteId = e.event.extendedProps.noteId;
+        if (noteId) {
+            // The click names which of the event's chips to stand by (see eventAnchorRect).
+            setSelection({ noteId, anchor: { x: e.jsEvent.clientX, y: e.jsEvent.clientY } });
+        }
+    }, []);
 
     // React to changes.
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const api = calendarRef.current;
         if (!api) return;
 
-        // Subnote attribute change.
-        if (loadResults.getAttributeRows(parentComponent?.componentId).some((a) => noteIds.includes(a.noteId ?? ""))) {
+        // Attribute change on a note the calendar draws — written on the note itself, or inherited
+        // from an ancestor or a template, which is just as much a change to the chip (see
+        // isAttributeChangeAffecting).
+        //
+        // The notes asked about are the collection's own plus whatever chips stand on the grid: a
+        // calendar root draws day notes and their children, which are in no `noteIds` at all, and
+        // so answered nothing here.
+        const drawnNoteIds = new Set(noteIds);
+        for (const event of api.getEvents()) {
+            const noteId = event.extendedProps.noteId;
+            if (noteId) drawnNoteIds.add(String(noteId));
+        }
+
+        // A note filed anywhere in the journal may be a chip on a calendar root, which draws its
+        // day notes and their children rather than a list of ids (see isBranchChangeAffecting).
+        // Only for a root: a collection's own source is built from the ids, so it is renewed as
+        // they are, and asking here as well would fetch the same events twice.
+        const isFilingAffecting = isCalendarRoot
+            && isBranchChangeAffecting(loadResults.getBranchRows(), note.noteId, drawnNoteIds);
+
+        if (isFilingAffecting
+            || isAttributeChangeAffecting(loadResults.getAttributeRows(parentComponent?.componentId), drawnNoteIds)) {
             // Defer execution after the load results are processed so that the event builder has the updated data to work with.
             setTimeout(() => api.refetchEvents(), 0);
             return; // early return since we'll refresh the events anyway
         }
 
         // Title change.
-        for (const noteId of loadResults.getNoteIds().filter(noteId => noteIds.includes(noteId))) {
+        for (const noteId of loadResults.getNoteIds().filter(noteId => drawnNoteIds.has(noteId))) {
             const event = api.getEventById(noteId);
             const note = froca.getNoteFromCache(noteId);
             if (!event || !note) continue;
@@ -167,7 +332,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
 
     return (plugins &&
         <div className="calendar-view" ref={containerRef} tabIndex={100}>
-            <CalendarCollectionProperties note={note} calendarRef={calendarRef} />
+            <CalendarCollectionProperties note={note} calendarRef={calendarRef} containerRef={containerRef} />
             <Calendar
                 events={eventBuilder}
                 calendarRef={calendarRef}
@@ -177,14 +342,41 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
-                slotDuration={isValidDuration(slotDuration) ? slotDuration : DEFAULT_SLOT_DURATION}
-                slotLabelInterval={isValidDuration(slotLabelInterval) ? slotLabelInterval : DEFAULT_SLOT_LABEL_INTERVAL}
+                slotDuration={effectiveSlotDuration}
+                slotHeaderInterval={isValidDuration(slotLabelInterval) ? slotLabelInterval : DEFAULT_SLOT_LABEL_INTERVAL}
                 height="100%"
                 nowIndicator
-                handleWindowResize={false}
+                borderless
                 initialDate={initialDate || undefined}
                 locale={locale}
                 {...editingProps}
+                // The shading of a dragged range is FullCalendar's to keep and to clear, which it
+                // does on the press that follows — except a press within the ghost standing for
+                // that very range, whichever shell it wears, which is what the exemption names.
+                // Letting it decide is what spares a press on the grid: the next selection has
+                // already begun by then, and FullCalendar knows not to clear what the same press
+                // has just made.
+                unselectCancel=".calendar-ghost-popover, .calendar-ghost-sheet"
+                // Named by us so the ghost can find the shading it stands beside, v7 drawing it
+                // under a hashed class otherwise (see ghostAnchorRect in GhostPopover). The look
+                // is Forma's own, which is one declaration off the palette.
+                highlightClass="calendar-highlight"
+                eventClick={onEventClick}
+                // The event the popover stands for is marked as such, and asks for no hover
+                // preview while it does: the popover beside it already says everything the
+                // preview would, at full length and editable, and the two are drawn beside the
+                // same chip. The geo map's marker previews keep clear of its detail pane the same
+                // way (see Tooltips there).
+                eventClass={(arg) => clsx(
+                    // What the chip's own colouring hangs off, Forma's single-accent chip not
+                    // being able to say Trilium's pair of a dark bar over a flat body (see
+                    // index.css).
+                    "calendar-event",
+                    selection && "noteId" in selection && arg.event.extendedProps.noteId === selection.noteId
+                        && "calendar-event-selected no-tooltip-preview"
+                )}
+                eventContent={eventContent}
+                eventInnerClass={eventInnerClass}
                 eventDidMount={eventDidMount}
                 viewDidMount={({ view }) => {
                     if (initialView.current !== view.type) {
@@ -193,13 +385,37 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                     }
                 }}
             />
+            {selection && "noteId" in selection && (
+                <EventPopover
+                    noteId={selection.noteId}
+                    anchor={selection.anchor}
+                    container={containerRef.current}
+                    parentNote={note}
+                    isEditable={isEditable}
+                    onClose={() => setSelection(null)}
+                    onFollowLink={followLink}
+                />
+            )}
+            {selection && "draft" in selection && (
+                <GhostPopover
+                    draft={selection.draft}
+                    anchor={selection.anchor}
+                    container={containerRef.current}
+                    /* Handed over whole rather than fired and forgotten: a creation that fails has
+                       to reach the ghost, which is what opens its form again for another try. */
+                    onCommit={commitDraft}
+                    onCancel={cancelDraft}
+                    onDismiss={dismissDraft}
+                />
+            )}
         </div>
     );
 }
 
-function CalendarCollectionProperties({ note, calendarRef }: {
+function CalendarCollectionProperties({ note, calendarRef, containerRef }: {
     note: FNote;
     calendarRef: RefObject<FullCalendar>;
+    containerRef: RefObject<HTMLDivElement>;
 }) {
     const { title, viewType: currentViewType } = useOnDatesSet(calendarRef);
     const currentViewData = CALENDAR_VIEWS.find(v => calendarRef.current && v.type === currentViewType);
@@ -214,10 +430,12 @@ function CalendarCollectionProperties({ note, calendarRef }: {
                 <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} onClick={() => calendarRef.current?.next()} />
                 <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
                 <PinDateButton note={note} calendarRef={calendarRef} />
-                {isMobileLocal && <MobileCalendarViewSwitcher calendarRef={calendarRef} />}
+                {/* On a phone the switcher is a menu whatever the width, and stands with the date
+                    rather than on a right-hand end the wrapped bar no longer has. */}
+                {isMobileLocal && <CalendarViewSwitcher calendarRef={calendarRef} containerRef={containerRef} />}
             </>}
             rightChildren={<>
-                {!isMobileLocal && <DesktopCalendarViewSwitcher calendarRef={calendarRef} />}
+                {!isMobileLocal && <CalendarViewSwitcher calendarRef={calendarRef} containerRef={containerRef} />}
             </>}
         />
     );
@@ -248,58 +466,68 @@ function PinDateButton({ note, calendarRef }: {
     );
 }
 
-function DesktopCalendarViewSwitcher({ calendarRef }: { calendarRef: RefObject<FullCalendar> }) {
-    const { viewType: currentViewType } = useOnDatesSet(calendarRef);
-
-    return (
-        <>
-            <ButtonGroup>
-                {CALENDAR_VIEWS.map(viewData => (
-                    <Button
-                        key={viewData.type}
-                        text={viewData.name}
-                        className={currentViewType === viewData.type ? "active" : ""}
-                        onClick={() => calendarRef.current?.changeView(viewData.type)}
-                    />
-                ))}
-            </ButtonGroup>
-        </>
-    );
-}
-
-function MobileCalendarViewSwitcher({ calendarRef }: { calendarRef: RefObject<FullCalendar> }) {
+/**
+ * The choice of view, as a row of buttons where the bar has the width for one and as a menu where it
+ * has not — five names beside the date and its buttons outgrow a split pane long before they outgrow
+ * a screen, which is why the fold is decided by the view's own width rather than by the device.
+ */
+function CalendarViewSwitcher({ calendarRef, containerRef }: {
+    calendarRef: RefObject<FullCalendar>;
+    /** The view's own element, whose width the row of buttons is weighed against. */
+    containerRef: RefObject<HTMLDivElement>;
+}) {
     const { viewType: currentViewType } = useOnDatesSet(calendarRef);
     const currentViewTypeData = CALENDAR_VIEWS.find(view => view.type === currentViewType);
 
     return (
-        <Dropdown
-            text={currentViewTypeData?.name}
-        >
-            {CALENDAR_VIEWS.map(viewData => (
-                <FormListItem
-                    key={viewData.type}
-                    selected={currentViewType === viewData.type}
-                    icon={viewData.icon}
-                    onClick={() => calendarRef.current?.changeView(viewData.type)}
-                >{viewData.name}</FormListItem>
-            ))}
-        </Dropdown>
+        <CollapseOnOverflow container={containerRef} alwaysCollapsed={isMobile()}>
+            {(collapsed) => (collapsed
+                ? (
+                    // A handful of views, so the menu never scrolls and can be frosted the way that
+                    // survives being opened inside the note's own content (see noDropdownListStyle).
+                    <Dropdown text={currentViewTypeData?.name} noDropdownListStyle>
+                        {CALENDAR_VIEWS.map(viewData => (
+                            <FormListItem
+                                key={viewData.type}
+                                selected={currentViewType === viewData.type}
+                                icon={viewData.icon}
+                                onClick={() => calendarRef.current?.changeView(viewData.type)}
+                            >{viewData.name}</FormListItem>
+                        ))}
+                    </Dropdown>
+                )
+                : (
+                    <ButtonGroup>
+                        {CALENDAR_VIEWS.map(viewData => (
+                            <Button
+                                key={viewData.type}
+                                text={viewData.name}
+                                className={currentViewType === viewData.type ? "active" : ""}
+                                onClick={() => calendarRef.current?.changeView(viewData.type)}
+                            />
+                        ))}
+                    </ButtonGroup>
+                ))}
+        </CollapseOnOverflow>
     );
 }
 
 function usePlugins(isEditable: boolean, isCalendarRoot: boolean) {
-    const [ plugins, setPlugins ] = useState<PluginDef[]>();
+    const [ plugins, setPlugins ] = useState<PluginInput[]>();
 
     useEffect(() => {
         async function loadPlugins() {
-            const plugins: PluginDef[] = [];
-            plugins.push((await import("@fullcalendar/daygrid")).default);
-            plugins.push((await import("@fullcalendar/timegrid")).default);
-            plugins.push((await import("@fullcalendar/list")).default);
-            plugins.push((await import("@fullcalendar/multimonth")).default);
+            const plugins: PluginInput[] = [];
+            // v7 pulled the theme out of core and made it a plugin; without one the calendar draws
+            // with no styling at all.
+            plugins.push((await import("fullcalendar/themes/forma")).default);
+            plugins.push((await import("fullcalendar/daygrid")).default);
+            plugins.push((await import("fullcalendar/timegrid")).default);
+            plugins.push((await import("fullcalendar/list")).default);
+            plugins.push((await import("fullcalendar/multimonth")).default);
             plugins.push((await import("@fullcalendar/rrule")).default);
             if (isEditable || isCalendarRoot) {
-                plugins.push((await import("@fullcalendar/interaction")).default);
+                plugins.push((await import("fullcalendar/interaction")).default);
             }
             setPlugins(plugins);
         }
@@ -327,22 +555,28 @@ function useLocale() {
     return calendarLocale;
 }
 
-function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, componentId: string | undefined) {
-    const onCalendarSelection = useCallback(async (e: DateSelectArg) => {
+function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, componentId: string | undefined,
+    /** What the view's surfaces are to stand for from now on (see {@link CalendarSelection}). */
+    onSelect: (selection: CalendarSelection) => void,
+    /** The length of one of the grid's slots, which is how long a tapped event lasts. */
+    slotDuration: string) {
+    const onCalendarSelection = useCallback((e: DateSelectInfo) => {
         const { startDate, endDate } = parseStartEndDateFromEvent(e);
         if (!startDate) return;
         const { startTime, endTime } = parseStartEndTimeFromEvent(e);
 
-        // Ask for the title
-        const title = await dialog.prompt({ message: t("relation_map.enter_title_of_new_note"), defaultValue: t("relation_map.default_new_note_title") });
-        if (!title?.trim()) {
-            return;
-        }
+        // Nothing is created yet: the range is handed over as a draft for the ghost, and a note is
+        // made only when the draft is committed (see commitDraft) — a stray drag dismissed costs
+        // nothing. The range keeps its shading meanwhile, standing on the grid for the event to be;
+        // the view lets it go when the draft resolves. Where the drag ended anchors the ghost
+        // beside it (see ghostAnchorRect), which a sheet has no use for.
+        onSelect({
+            draft: { startDate, endDate, startTime, endTime },
+            anchor: e.jsEvent ? { x: e.jsEvent.clientX, y: e.jsEvent.clientY } : null
+        });
+    }, [ onSelect ]);
 
-        newEvent(note, { title, startDate, endDate, startTime, endTime, componentId });
-    }, [ note, componentId ]);
-
-    const onEventChange = useCallback(async (e: EventChangeArg) => {
+    const onEventChange = useCallback(async (e: EventChangeInfo) => {
         // Only process actual date/time changes, not other property changes (e.g., title via setProp).
         const datesChanged = e.oldEvent.start?.getTime() !== e.event.start?.getTime()
             || e.oldEvent.end?.getTime() !== e.event.end?.getTime()
@@ -358,92 +592,196 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, c
         changeEvent(note, { startDate, endDate, startTime, endTime, componentId });
     }, [ componentId ]);
 
-    // Called upon when clicking the day number in the calendar, opens or creates the day note but only if in a calendar root.
-    const onDateClick = useCallback(async (e: DateClickArg) => {
-        const eventNote = await date_notes.getDayNote(e.dateStr, note.noteId);
-        if (eventNote) {
-            appContext.triggerCommand("openInPopup", { noteIdOrPath: eventNote.noteId });
+    /**
+     * A tap or click on the grid itself. In a calendar root that opens or creates the day's note,
+     * which is what a day means there. Elsewhere it is the phone's way of making an event: a touch
+     * drag asks for a long press before it selects anything (`selectLongPressDelay`), so a tap
+     * selects no range and nothing would open at all — the tap stands for a draft instead, which
+     * costs nothing if it was a mistake.
+     *
+     * The day's note opens into the view's own event surface — the popover beside the day pressed,
+     * or a sheet where there is no beside — rather than the quick editor it used to be handed to.
+     * A day note is an event of this calendar like any other, and a click on the chip it will have
+     * from now on opens exactly that surface: the note just made and the note come back to are then
+     * the same thing to look at, and neither covers the grid the reader is working down.
+     */
+    const onDateClick = useCallback(async (e: DateClickInfo) => {
+        if (isCalendarRoot) {
+            const eventNote = await date_notes.getDayNote(e.dateStr, note.noteId);
+            if (eventNote) {
+                // Where the press fell, which is the anchor of last resort until the chip for the
+                // day appears on the grid — a day note made only now has nothing on the grid yet
+                // to stand beside (see eventAnchorRect in EventPopover).
+                onSelect({
+                    noteId: eventNote.noteId,
+                    anchor: { x: e.jsEvent.clientX, y: e.jsEvent.clientY }
+                });
+            }
+            return;
         }
-    }, [ note ]);
+
+        const draft = draftFromDateClick(e, slotDuration);
+        if (draft) onSelect({ draft, anchor: null });
+    }, [ note, isCalendarRoot, onSelect, slotDuration ]);
 
     return {
         select: onCalendarSelection,
         eventChange: onEventChange,
-        dateClick: isCalendarRoot ? onDateClick : undefined,
+        // A desktop leaves this alone where there are events to make: a click there already
+        // selects the range it fell in, and answering the tap as well would raise two ghosts.
+        dateClick: isCalendarRoot || (isMobile() && isEditable) ? onDateClick : undefined,
         editable: isEditable,
         selectable: isEditable
     };
 }
 
-function useEventDisplayCustomization(parentNote: FNote, componentId: string | undefined) {
-    const eventDidMount = useCallback((e: EventMountArg) => {
+/**
+ * The draft a tap stands for, a tap naming a moment where a drag names a range: the whole of a day
+ * where the view deals in days, and the slot it landed in where the view deals in hours.
+ *
+ * One slot rather than any length of our own, because that is what a click makes of a moment on a
+ * desktop — a click selects the slot it fell in, `selectMinDistance` being 0 — and a tap and a
+ * click are the same wish. An hour, which this used to give, was an hour whichever way the grid was
+ * divided, and a tap between two slots then made an event starting at the quarter or half hour and
+ * running an hour from there.
+ */
+function draftFromDateClick(e: DateClickInfo, slotDuration: string): EventDraft | null {
+    const startDate = formatDateToLocalISO(e.date);
+    if (!startDate) return null;
+
+    if (e.allDay) {
+        return { startDate };
+    }
+
+    const slotSeconds = parseDurationSeconds(slotDuration) ?? 0;
+    const end = new Date(e.date.getTime() + slotSeconds * 1000);
+    const endDate = formatDateToLocalISO(end);
+    return {
+        startDate,
+        // Only where the slot runs into the next day; a single day says itself with the start.
+        endDate: endDate !== startDate ? endDate : undefined,
+        startTime: formatTimeToLocalISO(e.date),
+        endTime: formatTimeToLocalISO(end)
+    };
+}
+
+function useEventDisplayCustomization(parentNote: FNote, componentId: string | undefined,
+    /** Puts away whatever surface stands over the calendar, answering whether there was one. */
+    dismissSurface: () => boolean) {
+    /**
+     * The chip's own content, drawn so the note's icon can lead its title.
+     *
+     * Rendered rather than reached for after the fact, which is how the icon used to be put there:
+     * v7 names its elements with hashed classes, so there is no `.fc-event-title` left to find. The
+     * theme hands out the very classes its time and title would have worn, so what is drawn here is
+     * Forma's chip with an icon in it rather than something of ours standing in for one.
+     */
+    const eventContent = useCallback((e: EventDisplayInfo) => {
         const { iconClass, promotedAttributes } = e.event.extendedProps;
 
-        // Prepend the icon to the title, if any.
-        if (iconClass) {
-            let titleContainer: HTMLElement | null = null;
-            switch (e.view.type) {
-                case "timeGridDay":
-                case "timeGridWeek":
-                case "dayGridMonth":
-                    titleContainer = e.el.querySelector(".fc-event-title");
-                    break;
-                case "multiMonthYear":
-                    break;
-                case "listMonth":
-                    titleContainer = e.el.querySelector(".fc-list-event-title a");
-                    break;
-            }
+        return (
+            <>
+                {e.timeText && <div className={e.timeClass}>{e.timeText}</div>}
+                <div className={e.titleClass}>
+                    {iconClass && <span className={`calendar-event-icon ${iconClass}`} />}
+                    {e.event.title}
+                </div>
+                {!!promotedAttributes?.length && roomForAttributes(e) && (
+                    <div className="calendar-event-attributes">
+                        {(promotedAttributes as Array<[string, string]>).map(([name, value], i) => (
+                            <div className="promoted-attribute" key={`${name}-${i}`}>
+                                <span className="promoted-attribute-name">{name}</span>
+                                {": "}
+                                <span className="promoted-attribute-value">{value}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </>
+        );
+    }, []);
 
-            if (titleContainer) {
-                const icon = /*html*/`<span class="${escapeHtml(iconClass)}"></span> `;
-                titleContainer.insertAdjacentHTML("afterbegin", icon);
-            }
+    const eventDidMount = useCallback((e: MountInfo<EventDisplayInfo>) => {
+        // The chip is tagged with its note, which is how the event popover finds the chip to
+        // stand beside — FullCalendar redraws chips at will, so an element held onto would go
+        // stale (see eventAnchorRect in EventPopover).
+        if (e.event.extendedProps.noteId) {
+            e.el.dataset.eventNoteId = String(e.event.extendedProps.noteId);
         }
 
         // Disable the default context menu.
         e.el.dataset.noContextMenu = "true";
 
-        // Append promoted attributes to the end of the event container.
-        if (promotedAttributes) {
-            let promotedAttributesHtml = "";
-            for (const [name, value] of promotedAttributes) {
-                promotedAttributesHtml = `${promotedAttributesHtml  /*html*/}\
-                <div class="promoted-attribute">
-                    <span class="promoted-attribute-name">${name}</span>: <span class="promoted-attribute-value">${value}</span>
-                </div>`;
-            }
-
-            let mainContainer;
-            switch (e.view.type) {
-                case "timeGridDay":
-                case "timeGridWeek":
-                case "dayGridMonth":
-                    mainContainer = e.el.querySelector(".fc-event-main");
-                    break;
-                case "multiMonthYear":
-                    break;
-                case "listMonth":
-                    mainContainer = e.el.querySelector(".fc-list-event-title");
-                    break;
-            }
-            $(mainContainer ?? e.el).append($(promotedAttributesHtml));
-        }
-
         async function onContextMenu(contextMenuEvent: PointerEvent) {
+            // A surface standing open is what the press is for. A menu raised over it would cover
+            // the very event it belongs to — the surface is drawn beside that chip — and offer a
+            // second, smaller way to do what the surface already offers in full. So the press puts
+            // the surface away and stops there; a second one raises the menu over a clear grid.
+            //
+            // Said here rather than left to the popover's own outside-press dismissal, which spares
+            // a press on a chip: that exemption is for a press that switches the surface to another
+            // event (see keepOpenSelector), and a right-click asks for no such thing.
+            if (dismissSurface()) {
+                contextMenuEvent.preventDefault();
+                return;
+            }
+
             const note = await froca.getNote(e.event.extendedProps.noteId);
             if (!note) return;
 
             openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId);
         }
 
-        if (isMobile()) {
-            e.el.addEventListener("click", onContextMenu);
-        } else {
-            e.el.addEventListener("contextmenu", onContextMenu);
-        }
-    }, []);
-    return { eventDidMount };
+        // A long press raises it on a phone, as a right-click does on a desktop; the tap itself now
+        // belongs to the event sheet, which offers what the menu offers and more (see onEventClick).
+        e.el.addEventListener("contextmenu", onContextMenu);
+    }, [ dismissSurface ]);
+    return { eventContent, eventDidMount, eventInnerClass };
+}
+
+/**
+ * Whether a chip has the room to say anything beyond its title, and how that room is come by.
+ *
+ * A chip drawn as a row — a month cell's, and an all-day band's, which is the very same row drawn
+ * above a time grid — is one centred line however wide it gets, so attributes put there would
+ * crowd the title along it. The row is asked to wrap instead and they take a line of their own
+ * beneath the title (see eventInnerClass), which is where they stood before v7.
+ *
+ * However narrow the cell: a phone's month is seven columns of some fifty pixels, and the fields
+ * asked for are wanted there as much as anywhere — read a few characters to the line, as they were
+ * before v7, rather than not at all.
+ *
+ * A timed event on a time grid is a column already, wherever it is tall enough to be one, and its
+ * attributes follow the title down it with nothing further asked of the chip.
+ *
+ * Which leaves a year's chips and a list's, both of them one line with nothing to spare.
+ */
+export function roomForAttributes(e: EventDisplayInfo): "stacked" | "wrapped" | null {
+    const isTimeGrid = e.view.type.startsWith("timeGrid");
+
+    // An all-day event is the only kind the band above a time grid draws (see AllDaySplitter): a
+    // timed one is sliced into the columns below, however many days it runs.
+    if (e.view.type === "dayGridMonth" || (isTimeGrid && e.event.allDay)) {
+        return "wrapped";
+    }
+
+    if (isTimeGrid) {
+        return !e.isShort ? "stacked" : null;
+    }
+
+    return null;
+}
+
+/**
+ * Turns the chip's inner — Forma's, and a row wherever this says anything at all — into something
+ * the attributes can fall beneath: a row that wraps, of which they claim a whole line (see
+ * index.css). Said as a class on the inner rather than drawn in eventContent because wrapping is
+ * the container's to declare and the container is the theme's, not ours.
+ */
+export function eventInnerClass(e: EventDisplayInfo) {
+    const { promotedAttributes } = e.event.extendedProps;
+    return clsx(!!promotedAttributes?.length && roomForAttributes(e) === "wrapped"
+        && "calendar-event-inner-wrapped");
 }
 
 function useOnDatesSet(calendarRef: RefObject<FullCalendar>) {

@@ -9,6 +9,17 @@ RUN apt-get update && \
     g++ && \
     rm -rf /var/lib/apt/lists/*
 
+# Unlike the other images, this one cannot use better-sqlite3 v13's bundled
+# N-API prebuilds and must keep compiling from source:
+#   - 32-bit ARM (linux/arm/v7) has no prebuild at all;
+#   - linux/arm/v8 normalizes to arm64, whose prebuild needs glibc >= 2.38,
+#     while this image stays on bullseye (glibc 2.31) to support old hosts.
+# Asking for it is not implicit: better-sqlite3's binding.gyp resolves both of
+# its targets to `type: none` whenever a prebuild for the host exists, so the
+# node-gyp run would emit a stamp file and no addon. force_build restores the
+# real compile and link rules.
+ENV npm_config_force_build=1
+
 # Install native dependencies since we might be building cross-platform.
 WORKDIR /usr/src/app/build
 COPY ./docker/package.json ./docker/pnpm-workspace.yaml /usr/src/app/

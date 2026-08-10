@@ -1,0 +1,62 @@
+.treemap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
+    /* The icon's tint is composed in HSL from the cell's own hue, so it reads as belonging to the
+       cell rather than sitting on it. Kept as separate knobs a theme can retune — how saturated and
+       how light the tint is, and how much of it survives the mix into the theme's text color — so
+       the contrast can be adjusted without restating the derivation below. */
+    --treemap-icon-saturation: 70%;
+    --treemap-icon-lightness: 30%;
+    --treemap-icon-tint: 40%;
+
+    /* Painted through a variable, not a competing rule: consumers set `--treemap-cell-background`
+       and never race this stylesheet's cascade position. */
+    /* The corner rounding is per cell — a cell rounds only the corners its block owns — so it is
+       computed with the geometry rather than set here. */
+    .treemap-cell {
+        display: flex;
+        position: absolute;
+        align-items: center;
+        justify-content: center;
+        background: var(--treemap-cell-background, var(--accented-background-color));
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    /* The group tint stays a mix into the theme's own surface, so the map keeps a coherent look
+       under light and dark themes alike. */
+    .treemap-cell.treemap-colored {
+        --treemap-cell-background: color-mix(
+            in srgb,
+            var(--accented-background-color) 55%,
+            hsl(var(--treemap-hue) 65% 55%) 45%
+        );
+    }
+
+    /* Sized inline from the cell's geometry; the pointer belongs to the cell, so the glyph never
+       intercepts a hover, a click or a right-click meant for it. */
+    .treemap-cell-icon {
+        color: var(--treemap-cell-icon-color, var(--muted-text-color));
+        line-height: 1;
+        pointer-events: none;
+    }
+
+    /* Same hue as the cell it sits in, pushed away from it in saturation and lightness, then mixed
+       into the theme's text color so it stays legible under light and dark themes alike. */
+    .treemap-cell.treemap-colored > .treemap-cell-icon {
+        --treemap-cell-icon-color: color-mix(
+            in srgb,
+            hsl(var(--treemap-hue) var(--treemap-icon-saturation) var(--treemap-icon-lightness)) var(--treemap-icon-tint),
+            var(--main-text-color)
+        );
+    }
+
+    .treemap-cell:hover {
+        outline: 2px solid var(--main-text-color);
+        outline-offset: -1px;
+        z-index: 1;
+    }
+}

@@ -38,7 +38,7 @@ async function addClipping(req: Request) {
         clippingNote.setLabel("iconClass", "bx bx-globe");
     }
 
-    const rewrittenContent = processContent(images, clippingNote, content);
+    const rewrittenContent = await processContent(images, clippingNote, content);
 
     const existingContent = clippingNote.getContent();
     if (typeof existingContent !== "string") {
@@ -125,7 +125,7 @@ async function createNote(req: Request) {
     if (typeof existingContent !== "string") {
         throw new ValidationError("Invalid note content type.");
     }
-    const rewrittenContent = processContent(images, note, content);
+    const rewrittenContent = await processContent(images, note, content);
     const newContent = `${existingContent}${existingContent.trim() ? "<br/>" : ""}${rewrittenContent}`;
     note.setContent(newContent);
 
@@ -136,7 +136,7 @@ async function createNote(req: Request) {
     };
 }
 
-export function processContent(images: Image[], note: BNote, content: string) {
+export async function processContent(images: Image[], note: BNote, content: string) {
     let rewrittenContent = sanitize.sanitizeHtml(content);
 
     if (images) {
@@ -153,6 +153,11 @@ export function processContent(images: Image[], note: BNote, content: string) {
             const buffer = Buffer.from(dataUrl.split(",")[1], "base64");
 
             const attachment = imageService.saveImageToAttachment(note.noteId, buffer, filename, true);
+
+            // The URL below goes into the note as an image source, and the note is opened as soon
+            // as this answers. Waiting for the bytes is what stops the clipping from being read
+            // with a hole where its picture should be.
+            await imageService.awaitImageWrite(attachment.attachmentId);
 
             const encodedTitle = encodeURIComponent(attachment.title);
             const url = `api/attachments/${attachment.attachmentId}/image/${encodedTitle}`;

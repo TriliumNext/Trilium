@@ -3,16 +3,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import appInfo from "./app_info.js";
 import * as cls from "./context.js";
 import options from "./options.js";
+import { fakeRequestProvider } from "../test/request_provider.js";
 import { type ExecOpts, initRequest, type RequestProvider } from "./request.js";
 import setupService from "./setup.js";
 import sqlInit from "./sql_init.js";
 import syncService from "./sync.js";
 
 let execImpl: (opts: ExecOpts) => Promise<unknown> = async () => ({});
-const fakeRequest: RequestProvider = {
-    exec: <T>(opts: ExecOpts) => execImpl(opts) as Promise<T>,
+const fakeRequest: RequestProvider = fakeRequestProvider({
+    exec: <T,>(opts: ExecOpts) => execImpl(opts) as Promise<T>,
     getImage: async () => new ArrayBuffer(0)
-};
+});
 initRequest(fakeRequest);
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));

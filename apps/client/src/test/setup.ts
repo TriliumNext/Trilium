@@ -1,12 +1,11 @@
 import $ from "jquery";
-import { beforeAll, vi } from "vitest";
+import { vi } from "vitest";
+
+// Top level, not in a beforeAll: vi.mock is hoisted either way, and nesting it only makes the order lie.
+vi.mock("../services/ws.js", mockWebsocket);
+vi.mock("../services/server.js", mockServer);
 
 injectGlobals();
-
-beforeAll(() => {
-    vi.mock("../services/ws.js", mockWebsocket);
-    vi.mock("../services/server.js", mockServer);
-});
 
 function injectGlobals() {
     const uncheckedWindow = window as any;
@@ -72,7 +71,13 @@ function mockServer() {
                 if (url === "tree/load") {
                     throw new Error(`A module tried to load from the server the following notes: ${((data as any).noteIds || []).join(",")}\nThis is not supported, use Froca mocking instead and ensure the note exist in the mock.`);
                 }
-            }
+            },
+
+            // Widgets that persist as the user edits (attribute writes, view configs) reach for
+            // these; without them the write rejects and surfaces as an unhandled rejection rather
+            // than as whatever the test was actually asserting.
+            async put(_url: string, _data?: object) {},
+            async remove(_url: string) {}
         }
     };
 }

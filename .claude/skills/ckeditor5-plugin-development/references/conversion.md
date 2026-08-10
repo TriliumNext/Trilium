@@ -5,10 +5,10 @@ of truth**; HTML/data is just I/O. That is why helper names look "reversed": con
 `<mark>` element ↔ `highlight` model attribute uses `attributeToElement` (you name the
 **model** side first).
 
-> All helpers and writers here come from the **`ckeditor5` library** (`48.2.0`); import as
+> All helpers and writers here come from the **`ckeditor5` library** (**48 or later**); import as
 > `from 'ckeditor5'` with file extensions. Trilium's own plugins under `packages/ckeditor5-*`
 > register converters via `editor.conversion`; real examples cited below are
-> `ckeditor5-math` and `ckeditor5-mermaid` (external/async-rendered widgets built with
+> `math` and `mermaid` (external/async-rendered widgets built with
 > `createUIElement` render callbacks plus a data-processor wrap) and Trilium's reference-link
 > conversion.
 
@@ -195,7 +195,7 @@ processor.toView = data => toView( preprocess( data ) );   // and mirror toData 
 
 Use sparingly — prefer real converters. It's for cases the converter layer can't reach, such as
 preserving newlines inside a formula or shielding a fragment from generic HTML normalization.
-This is the pattern Trilium's `ckeditor5-math` / `ckeditor5-mermaid` use: a data-processor wrap
+This is the pattern Trilium's `math` / `mermaid` plugins use: a data-processor wrap
 guards the raw formula/diagram source while a `createUIElement` render callback (see the element
 callbacks above) renders the external/async output into the editing view.
 

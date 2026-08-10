@@ -108,7 +108,7 @@ describe("deprecated core delegations", () => {
         expect(randomString(10)).toHaveLength(10);
         expect(hashedBlobId("content")).toBe("stHShbUZnIX5iNA2ScNX");
         expect(getContentDisposition("file.txt"))
-            .toBe("file; filename=\"file.txt\"; filename*=UTF-8''file.txt");
+            .toBe("attachment; filename=\"file.txt\"; filename*=UTF-8''file.txt");
         expect(isStringNote("text", "text/html")).toBe(true);
         expect(quoteRegex("a.b")).toBe("a\\.b");
         expect(replaceAll("a-b-c", "-", "+")).toBe("a+b+c");

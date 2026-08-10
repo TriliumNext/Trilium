@@ -3,10 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import LinkEmbedTitleFormView from "./link_embed_title_form.js";
 
-const translate = (_key: string, fallback: string) => fallback;
+// Stands in for `editor.t`: no dictionary, so each message id renders as its own English text.
+const t = (message: string) => message;
 
 function createForm(): LinkEmbedTitleFormView {
-    const form = new LinkEmbedTitleFormView(new Locale(), translate);
+    const form = new LinkEmbedTitleFormView(new Locale(), t);
     form.render();
     return form;
 }

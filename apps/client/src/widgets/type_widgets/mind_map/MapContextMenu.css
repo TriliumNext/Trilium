@@ -1,0 +1,23 @@
+/*
+ * What is asked of the user while an arrow waits for its far end: the one thing they are meant to
+ * do next, said at the head of the map where the eye already is after a menu closes.
+ *
+ * On the same glass the bars stand on (see MapToolbar.css), a hand's width in from the top so that
+ * it does not sit on the bar of direction buttons in the corner. It takes no clicks of its own —
+ * the very next one belongs to the node being chosen, wherever that node happens to be.
+ */
+.mind-map-container .mind-map-overlay .mind-map-arrow-hint {
+    position: absolute;
+    top: var(--mind-map-inset-top);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 14px;
+    max-width: calc(100% - var(--mind-map-inset) * 2);
+    background: var(--menu-background-color);
+    color: var(--menu-text-color);
+    border: 1px solid var(--dropdown-border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px #0003;
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+}

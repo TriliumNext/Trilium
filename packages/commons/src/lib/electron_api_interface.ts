@@ -76,10 +76,11 @@ export interface ElectronWindowApi {
     // #region Title bar
 
     /**
-     * Customizes the colors of the Windows native title bar overlay
-     * (the area containing the minimize / maximize / close buttons).
+     * Customizes the Windows and Linux native title bar overlay (the area containing the
+     * minimize / maximize / close buttons). `height` also controls their vertical placement,
+     * since the buttons are centred within the overlay.
      */
-    setTitleBarOverlay(options: { color: string; symbolColor: string }): void;
+    setTitleBarOverlay(options: { color: string; symbolColor: string; height?: number }): void;
 
     /**
      * Repositions the macOS traffic-light window buttons.
@@ -491,6 +492,49 @@ export interface ElectronSecurityApi {
     setLanAccessEnabled(enabled: boolean): Promise<boolean>;
 }
 
+/** What the Options UI needs to know about the stored backup passphrase. */
+export interface BackupPassphraseStatus {
+    /**
+     * Whether the OS offers a keyring to keep the passphrase in. Without one it cannot be stored
+     * safely, and since unattended backups cannot ask for it, encryption is unavailable altogether.
+     */
+    available: boolean;
+    /** Whether a passphrase is currently stored. */
+    set: boolean;
+}
+
+/** What became of a request to change the stored backup passphrase. */
+export type BackupPassphraseChange =
+    /** The change was confirmed and carried out. */
+    | "applied"
+    /** The user declined the OS confirmation, so nothing changed. */
+    | "cancelled"
+    /** There is no keyring on this system to keep a passphrase in. */
+    | "unavailable";
+
+/**
+ * The backup passphrase, kept encrypted by the OS keyring in a file outside the database (the
+ * database is what ends up inside the backup, so a passphrase stored there would ride along inside
+ * the very container it protects).
+ *
+ * Deliberately write-only: there is no way to read the passphrase back, so a frontend script cannot
+ * exfiltrate it. Only the main process ever sees the plaintext again, when it writes a backup.
+ *
+ * Both changes are also gated on a native OS confirmation, which a script can request but cannot
+ * answer. Without that, a script could quietly swap in a passphrase of its own and every later
+ * backup would be encrypted to it.
+ */
+export interface ElectronBackupPassphraseApi {
+    /** Whether a passphrase can be stored on this system, and whether one already is. */
+    getStatus(): Promise<BackupPassphraseStatus>;
+    /** Stores a passphrase, replacing any existing one, once the user has confirmed it. */
+    set(passphrase: string): Promise<BackupPassphraseChange>;
+    /**
+     * Forgets the stored passphrase. Existing backups keep the passphrase they were written with.
+     */
+    clear(): Promise<BackupPassphraseChange>;
+}
+
 /** Outcome of a {@link ElectronOneNoteApi.login} attempt. */
 export interface OneNoteLoginResult {
     /** True if sign-in completed and a Microsoft Graph token was stored. */
@@ -596,6 +640,54 @@ export interface ElectronNativeImportApi {
 }
 
 /**
+ * Outcome of {@link ElectronRestoreApi.pickBackup}: what the chosen backup is, never where it is.
+ *
+ * The file itself stays with the main process, which holds it as the one waiting to be restored, so
+ * the renderer is given only what the screen has to show and decide with.
+ */
+export interface NativeBackupPickResult {
+    status: "selected" | "cancelled" | "error";
+    /** Display name of the chosen backup (when `status === "selected"`). */
+    fileName?: string;
+    /** Whether a passphrase has to be asked for before it can be restored. */
+    encrypted?: boolean;
+    /** Failure detail (when `status === "error"`), e.g. setup already being busy. */
+    message?: string;
+}
+
+/**
+ * Choosing a backup to restore from the desktop, where the file is already on the same disk as the
+ * database it is going to replace and has no business being uploaded to reach it.
+ *
+ * Only usable during setup: what it puts forward is restored by the ordinary
+ * `POST /api/setup/restore/start`, which refuses once the application is initialized.
+ */
+export interface ElectronRestoreApi {
+    /**
+     * Prompts a native "open file" dialog for a `.db` or `.tnbackup` backup and, if one is chosen,
+     * makes it the backup waiting to be restored.
+     */
+    pickBackup(): Promise<NativeBackupPickResult>;
+}
+
+/** Outcome of {@link ElectronDialogApi.pickDirectory}. */
+export interface NativeDirectoryPickResult {
+    status: "selected" | "cancelled";
+    /** Absolute path of the chosen directory (when `status === "selected"`). */
+    path?: string;
+}
+
+/** Native OS pickers that hand the renderer a location the user chose themselves. */
+export interface ElectronDialogApi {
+    /**
+     * Prompts a native "select folder" dialog, starting at `defaultPath` when it is given. The renderer
+     * cannot supply the answer: a script can at most pop the dialog, which the user still has to accept
+     * before any path comes back.
+     */
+    pickDirectory(opts?: { defaultPath?: string }): Promise<NativeDirectoryPickResult>;
+}
+
+/**
  * The complete surface exposed to the renderer as `window.electronApi` via
  * `contextBridge`. The renderer must access Electron-only functionality through
  * this object — direct `require("electron")` and `@electron/remote` are
@@ -627,10 +719,16 @@ export interface ElectronApi {
     ws: ElectronWsApi;
     /** Security settings (backend scripting, SQL console) stored outside the DB. */
     security: ElectronSecurityApi;
+    /** Write-only access to the backup passphrase, kept in the OS keyring. */
+    backupPassphrase: ElectronBackupPassphraseApi;
     /** OneNote importer sign-in via a loopback OAuth redirect (desktop only). */
     onenote: ElectronOneNoteApi;
     /** Desktop-native subtree export that streams a `.zip` straight to a file. */
     nativeExport: ElectronNativeExportApi;
     /** Desktop-native large-`.zip` import that reads the user's file in place via a capability token. */
     nativeImport: ElectronNativeImportApi;
+    /** Native OS pickers that hand the renderer a location the user chose themselves. */
+    dialog: ElectronDialogApi;
+    /** Choosing a backup to restore during setup, read where it lies rather than uploaded. */
+    restore: ElectronRestoreApi;
 }

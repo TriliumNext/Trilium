@@ -10,18 +10,18 @@
 	},
 	"dependencies": {
 		"i18next": "26.3.6",
-		"preact": "10.29.7",
-		"preact-iso": "2.12.0",
+		"preact": "10.29.8",
+		"preact-iso": "2.12.1",
 		"preact-render-to-string": "6.7.0",
-		"react-i18next": "17.0.10"
+		"react-i18next": "17.0.11"
 	},
 	"devDependencies": {
 		"@preact/preset-vite": "2.10.6",
-		"eslint": "10.7.0",
+		"eslint": "10.8.0",
 		"eslint-config-preact": "2.0.0",
 		"typescript": "6.0.3",
 		"user-agent-data-types": "0.4.3",
-		"vite": "8.1.5",
+		"vite": "8.2.0",
 		"vitest": "4.1.10"
 	},
 	"eslintConfig": {

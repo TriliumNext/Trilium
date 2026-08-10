@@ -19,6 +19,7 @@ import dataDirs from "./services/data_dir.js";
 import port from "./services/port.js";
 import NodeRequestProvider from "./services/request.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
+import { consumeSetupMarker, setupPlatform } from "./services/setup_marker.js";
 import WebSocketMessagingProvider from "./services/ws_messaging_provider.js";
 import BetterSqlite3Provider from "./sql_provider.js";
 import NodejsZipProvider from "./zip_provider.js";
@@ -26,6 +27,11 @@ import NodejsZipProvider from "./zip_provider.js";
 async function startApplication() {
     const config = (await import("./services/config.js")).default;
     const { DOCUMENT_PATH } = (await import("./services/data_dir.js")).default;
+
+    // Before anything opens the database: a restore that was interrupted between moving the old
+    // document aside and opening the new one is undone here, so the instance starts on a database
+    // that is whole rather than on whichever half the interruption left behind.
+    (await import("./services/database_restore.js")).recoverInterruptedRestore();
 
     const dbProvider = new BetterSqlite3Provider();
     if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {
@@ -83,6 +89,9 @@ async function startApplication() {
         backup: new ServerBackupService(options),
         image: (await import("./services/image_provider.js")).serverImageProvider,
         config,
+        // Read before core exists, because what it says is whether to open the database at all.
+        setupMarker: consumeSetupMarker(),
+        setupPlatform,
         extraAppInfo: {
             nodeVersion: process.version,
             dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)

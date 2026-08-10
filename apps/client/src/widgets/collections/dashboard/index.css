@@ -7,7 +7,7 @@
         flex: 1;
         overflow-y: auto;
         position: relative;
-        padding: 0 calc(var(--content-margin-inline) - 8px);
+        padding: calc(var(--content-margin-inline) - 8px);
     }
 
     /* Empty-state illustration: ghost tiles laid out on the same metrics as the real grid

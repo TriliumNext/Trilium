@@ -1,4 +1,4 @@
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, filterAttributeName, isValidAttributeName } from "@triliumnext/commons";
 
 import FNote from "../entities/fnote";
 import type { ViewMode, ViewScope } from "./link.js";
@@ -163,7 +163,7 @@ export function isPWA() {
         window.matchMedia('(display-mode: standalone)').matches
         || window.matchMedia('(display-mode: window-controls-overlay)').matches
         || window.navigator.standalone
-        || window.navigator.windowControlsOverlay
+        || !!window.navigator.windowControlsOverlay
     );
 }
 
@@ -185,6 +185,28 @@ export function isMac() {
  */
 export function isLinux() {
     return window.glob?.platform === "linux";
+}
+
+/**
+ * Returns `true` when the native caption buttons sit on the leading (left) edge of the title bar,
+ * where they overlap the top of a vertical launcher pane. Always the case on macOS; on Linux it
+ * follows the desktop's decoration layout (e.g. GNOME's `button-layout`), which Chromium mirrors
+ * into the Window Controls Overlay geometry. Windows always keeps them on the right.
+ *
+ * Reflects the layout as of the call; it is not re-evaluated if the desktop setting changes while
+ * the app is running.
+ */
+export function areWindowControlsOnLeft() {
+    if (isMac()) {
+        return true;
+    }
+
+    const overlay = window.navigator.windowControlsOverlay;
+    if (!overlay?.visible) {
+        return false;
+    }
+
+    return overlay.getTitlebarAreaRect().x > 0;
 }
 
 /**
@@ -469,16 +491,6 @@ export async function openInReusableSplit(targetNoteId: string, targetViewMode: 
         // There is already a target split open, make sure it opens on the right note.
         existingSubcontext.setNote(targetNoteId, { viewScope });
     }
-}
-
-function filterAttributeName(name: string) {
-    return name.replace(/[^\p{L}\p{N}_:]/gu, "");
-}
-
-const ATTR_NAME_MATCHER = new RegExp("^[\\p{L}\\p{N}_:]+$", "u");
-
-function isValidAttributeName(name: string) {
-    return ATTR_NAME_MATCHER.test(name);
 }
 
 function sleep(time_ms: number) {
@@ -937,6 +949,7 @@ export default {
     isMac,
     isLinux,
     isWindows,
+    areWindowControlsOnLeft,
     isCtrlKey,
     assertArguments,
     escapeHtml,

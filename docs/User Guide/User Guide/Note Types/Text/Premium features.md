@@ -3,12 +3,11 @@ The text editor we are using for <a class="reference-link" href="../Text.md">Te
 
 We have reached out to the CKEditor team in order to obtain a license in order to have some of these extra features and they have agreed, based on a signed agreement.
 
-## How the license works
-
-The license key is stored in the application and it enables the use of the previously described premium features. The license key has an expiration date which means that the features can become disabled if using an older version of the application for extended periods of time.
-
-## Can I opt out of these features?
-
-At this moment there is no way to disable these features, apart from manually modifying the source code. If this is a problem, [let us know](../../Troubleshooting/Reporting%20issues.md).
-
-If you have the possibility of rebuilding the source code (e.g. if a package maintainer), then modify `VITE_CKEDITOR_KEY` in `apps/client/.env` to be `GPL`.
+> [!NOTE]
+> Since v0.105.0, all premium features were replaced with plugins written specifically for for Trilium, from scratch and under an AGPL license.
+> 
+> The premium features used to be:
+> 
+> *   <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>
+> *   <a class="reference-link" href="Text%20Snippets.md">Text Snippets</a>
+> *   <a class="reference-link" href="Format%20Painter.md">Format Painter</a>

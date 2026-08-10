@@ -13,7 +13,6 @@
 
 .table-view-container {
     height: 100%;
-    margin-inline-start: var(--content-margin-inline);
 }
 
 .search-result-widget-content .table-view {
@@ -54,6 +53,25 @@
 .tabulator .tabulator-footer .tabulator-footer-contents {
     justify-content: left;
     gap: 0.5em;
+}
+
+/* The "new row" strip under the last row. Part of the scrolled content vertically, so it follows
+   the rows; pinned to the visible edge horizontally, so it reads whole at any scroll position.
+   The strip itself takes no clicks — only the button within it does, sitting past the "#" column
+   so that it lines up with the title a new row would get. */
+.table-view .tabulator-tableholder > .table-new-row-strip {
+    position: sticky;
+    inset-inline-start: 0;
+    width: 100%;
+    padding-inline-start: var(--row-handle-column-width, 0px);
+
+    > .table-new-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4em;
+        padding: 5px 8px;
+        color: var(--muted-text-color);
+    }
 }
 
 .tabulator button.tree-expand,

@@ -6,6 +6,7 @@ import { useMemo, useState } from "preact/hooks";
 import { Trans } from "react-i18next";
 
 import { t } from "../../../../services/i18n";
+import { isStandalone } from "../../../../services/utils";
 import { Badge } from "../../../react/Badge";
 import { Card, CardSection } from "../../../react/Card";
 import FormTextBox from "../../../react/FormTextBox";
@@ -13,15 +14,8 @@ import MaskedIcon from "../../../react/MaskedIcon";
 import SelectableCard, { SelectableCardGrid } from "../../../react/SelectableCard";
 import WizardModal, { type WizardStep } from "../../../react/WizardModal";
 import OptionsRow from "../components/OptionsRow";
-import anthropicIcon from "./icons/anthropic.svg?url";
-import claudeAgentIcon from "./icons/claude-ai.svg?url";
-import deepseekIcon from "./icons/deepseek.svg?url";
-import geminiIcon from "./icons/gemini.svg?url";
-import lmStudioIcon from "./icons/lmstudio.svg?url";
-import ollamaIcon from "./icons/ollama.svg?url";
-import openaiIcon from "./icons/openai.svg?url";
-import openAiCompatibleIcon from "./icons/robot.svg?url";
 import ModelSelection from "./ModelSelection";
+import { PROVIDER_ICONS } from "./provider_icons.js";
 
 export interface LlmProviderConfig {
     id: string;
@@ -59,6 +53,15 @@ export interface ProviderType {
     setupHintKey?: string;
     /** Marks the provider as beta, shown as a badge next to its name. */
     beta?: boolean;
+    /**
+     * The provider drives a program on the machine, so the standalone build —
+     * where the whole server is a worker inside the page — has nothing to run it
+     * on; core refuses to instantiate it there at all. Such a card is shown
+     * disabled with the reason in place of its blurb, rather than dropped: the
+     * provider is documented and the user may well be looking for it, and a list
+     * that silently omits it leaves them hunting.
+     */
+    needsHostProcess?: boolean;
     /**
      * How the provider authenticates: a key it requires (vendor APIs), one it may
      * take (self-hosted endpoints that sit behind a proxy or gateway), or none at
@@ -101,34 +104,37 @@ const PROVIDER_GROUPS = [
 type ProviderGroupId = (typeof PROVIDER_GROUPS)[number]["id"];
 
 export const PROVIDER_TYPES: ProviderType[] = [
-    { id: "anthropic", name: "Anthropic", group: "cloud", defaultBaseUrl: "https://api.anthropic.com/v1", iconUrl: anthropicIcon },
-    { id: "openai", name: "OpenAI", group: "cloud", defaultBaseUrl: "https://api.openai.com/v1", iconUrl: openaiIcon },
-    { id: "google", name: "Google Gemini", group: "cloud", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: geminiIcon },
+    { id: "anthropic", name: "Anthropic", group: "cloud", defaultBaseUrl: "https://api.anthropic.com/v1", iconUrl: PROVIDER_ICONS.anthropic },
+    { id: "openai", name: "OpenAI", group: "cloud", defaultBaseUrl: "https://api.openai.com/v1", iconUrl: PROVIDER_ICONS.openai },
+    { id: "google", name: "Google Gemini", group: "cloud", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: PROVIDER_ICONS.google },
     // Reachable through the custom endpoint card too — it speaks the OpenAI API —
     // but carded here so its models resolve against the committed price table,
     // which a nameless endpoint never can.
-    { id: "deepseek", name: "DeepSeek", group: "cloud", defaultBaseUrl: "https://api.deepseek.com/v1", iconUrl: deepseekIcon },
+    { id: "deepseek", name: "DeepSeek", group: "cloud", defaultBaseUrl: "https://api.deepseek.com/v1", iconUrl: PROVIDER_ICONS.deepseek, beta: true },
     // Uses the Claude Agent SDK on the server; auth belongs to Claude Code (`claude /login`),
     // and usage is covered by the subscription rather than charged per token.
-    { id: "claude-agent", name: "Claude Code", group: "subscription", defaultBaseUrl: "", iconUrl: claudeAgentIcon, description: t("llm.provider_desc_claude_agent"), beta: true, apiKey: "none", baseUrl: "none" },
+    { id: "claude-agent", name: "Claude Code", group: "subscription", defaultBaseUrl: "", iconUrl: PROVIDER_ICONS["claude-agent"], description: t("llm.provider_desc_claude_agent"), beta: true, apiKey: "none", baseUrl: "none", needsHostProcess: true },
     // The three self-hosted cards share one server-side provider; they differ only in
     // the endpoint they prefill and the setup hint they show.
     // No blurbs: the group heading already says local/self-hosted, and how to start
     // each server belongs on the connection step, where the setup hints live.
     {
         id: "ollama", name: "Ollama", group: "local", defaultBaseUrl: "http://localhost:11434", prefillBaseUrl: true,
-        iconUrl: ollamaIcon,
-        setupHintKey: "llm.setup_hint_ollama", apiKey: "none", baseUrl: "required"
+        iconUrl: PROVIDER_ICONS.ollama,
+        setupHintKey: "llm.setup_hint_ollama", apiKey: "none", baseUrl: "required",
+        beta: true
     },
     {
         id: "lmstudio", name: "LM Studio", group: "local", defaultBaseUrl: "http://localhost:1234/v1", prefillBaseUrl: true,
-        iconUrl: lmStudioIcon,
-        setupHintKey: "llm.setup_hint_lmstudio", apiKey: "none", baseUrl: "required"
+        iconUrl: PROVIDER_ICONS.lmstudio,
+        setupHintKey: "llm.setup_hint_lmstudio", apiKey: "none", baseUrl: "required",
+        beta: true
     },
     {
         id: "openai-compatible", name: t("llm.provider_openai_compatible"), group: "custom", defaultBaseUrl: "http://localhost:8080/v1",
-        iconUrl: openAiCompatibleIcon, description: t("llm.provider_desc_openai_compatible"),
-        setupHintKey: "llm.setup_hint_openai_compatible", apiKey: "optional", baseUrl: "required"
+        iconUrl: PROVIDER_ICONS["openai-compatible"], description: t("llm.provider_desc_openai_compatible"),
+        setupHintKey: "llm.setup_hint_openai_compatible", apiKey: "optional", baseUrl: "required",
+        beta: true
     }
 ];
 
@@ -429,18 +435,27 @@ function ProviderGroup({ heading, description, columns, providers, selectedProvi
             <CardSection>
                 <p className="add-provider-group-description">{description}</p>
                 <SelectableCardGrid columns={columns}>
-                    {providers.map((provider) => (
-                        <SelectableCard
-                            key={provider.id}
-                            iconUrl={provider.iconUrl}
-                            title={provider.beta
-                                ? <span className="add-provider-card-heading">{provider.name}<Badge text={t("llm.beta")} className="add-provider-beta-badge" outline /></span>
-                                : provider.name}
-                            description={provider.description}
-                            selected={selectedProvider === provider.id}
-                            onSelect={() => onSelect(provider.id)}
-                        />
-                    ))}
+                    {providers.map((provider) => {
+                        // A provider this build can't run keeps its place in the list but
+                        // states why in place of its blurb — the blurb describes a setup
+                        // that isn't on offer here, so it would only mislead.
+                        const unavailableReason = provider.needsHostProcess && isStandalone
+                            ? t("llm.provider_unavailable_standalone")
+                            : undefined;
+                        return (
+                            <SelectableCard
+                                key={provider.id}
+                                iconUrl={provider.iconUrl}
+                                title={provider.beta
+                                    ? <span className="add-provider-card-heading">{provider.name}<Badge text={t("llm.beta")} className="add-provider-beta-badge" outline /></span>
+                                    : provider.name}
+                                description={unavailableReason ?? provider.description}
+                                selected={selectedProvider === provider.id}
+                                onSelect={() => onSelect(provider.id)}
+                                disabled={!!unavailableReason}
+                            />
+                        );
+                    })}
                 </SelectableCardGrid>
             </CardSection>
         </Card>

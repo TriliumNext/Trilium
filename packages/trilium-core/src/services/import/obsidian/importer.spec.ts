@@ -29,6 +29,15 @@ describe("mapObsidianFrontmatter", () => {
         ]);
     });
 
+    it("flattens a YAML timestamp (parsed as a Date) and a false boolean into label values", () => {
+        expect(mapObsidianFrontmatter({ Created: new Date("2026-06-27T15:10:00Z"), Flag: false }, new Map([["Created", "datetime"]]))).toEqual([
+            { name: "created", value: "2026-06-27T15:10" },
+            { name: "label:created", value: "promoted,single,datetime,alias=Created" },
+            { name: "flag", value: "false" },
+            { name: "label:flag", value: "promoted,single,text,alias=Flag" }
+        ]);
+    });
+
     it("treats a list (or a multitext property) as a multi-valued promoted attribute", () => {
         expect(mapObsidianFrontmatter({ List: ["a", "b"] }, new Map([["List", "multitext"]]))).toEqual([
             { name: "list", value: "a" },

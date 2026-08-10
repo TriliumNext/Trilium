@@ -70,7 +70,8 @@ export function sanitizeHtml(dirtyHtml: string) {
                 height: sizeRegex
             },
             img: {
-                "aspect-ratio": [ /^\d+\/\d+$/ ],
+                // Allow fractional ratios too (e.g. OneNote reports 577.5×277.5 screen clippings).
+                "aspect-ratio": [ /^\d+(\.\d+)?\/\d+(\.\d+)?$/ ],
                 width: sizeRegex,
                 height: sizeRegex
             },

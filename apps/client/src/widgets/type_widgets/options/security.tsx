@@ -3,6 +3,7 @@ import { useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import { isElectron, restartDesktopApp } from "../../../services/utils";
 import Button from "../../react/Button";
+import CodeBlock from "../../react/CodeBlock";
 import Collapsible from "../../react/Collapsible";
 import { useTriliumOptionBool } from "../../react/hooks";
 import OptionsPageHeader from "./components/OptionsPageHeader";
@@ -70,9 +71,11 @@ function ServerConfigHint({ configKey, envVar }: { configKey: string; envVar: st
     return (
         <Collapsible title={t("security.how_to_enable")}>
             <p>{t("security.server_config_hint")}</p>
-            <pre><code>{`[Security]\n${configKey}=true`}</code></pre>
+            {/* `text/x-toml` is Trilium's entry for INI-family files — it is backed by
+                highlight.js's `ini` grammar, which is what config.ini actually is. */}
+            <CodeBlock mimeType="text/x-toml" code={`[Security]\n${configKey}=true`} />
             <p>{t("security.server_env_hint")}</p>
-            <pre><code>{envVar}=true</code></pre>
+            <CodeBlock mimeType="text/x-sh" code={`${envVar}=true`} />
         </Collapsible>
     );
 }

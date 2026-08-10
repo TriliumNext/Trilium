@@ -1,0 +1,24 @@
+/*
+ * A flex box of its own, so the icon centres on whatever it sits beside rather than on the text baseline
+ * of the span holding it — which carries the line height around it and drops the icon below the middle.
+ * It centres on both axes: where the span is the icon itself, being a flex box takes the glyph out of
+ * the reach of the `text-align` the theme centres it with.
+ */
+.help-tooltip-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    color: var(--muted-text-color);
+    cursor: help;
+}
+
+.help-tooltip-button:hover {
+    color: var(--main-text-color);
+}
+
+/* Explanations run to several lines, which Bootstrap's default 200px would stack into a narrow column. */
+.help-tooltip .tooltip-inner {
+    max-width: 320px;
+    text-align: start;
+}

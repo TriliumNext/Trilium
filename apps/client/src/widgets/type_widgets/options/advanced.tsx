@@ -86,13 +86,18 @@ function DatabaseOptions() {
                 buttonText={t("vacuum_database.button_text")}
                 onClick={async () => {
                     toast.showMessage(t("vacuum_database.vacuuming_database"));
-                    await server.post("database/vacuum-database");
+                    // A rebuild runs in minutes on a large database — half an hour on 36 GiB — so
+                    // the default minute would report a failure for something still succeeding.
+                    await server.postWithTimeout("database/vacuum-database", VACUUM_TIMEOUT_MS);
                     toast.showMessage(t("vacuum_database.database_vacuumed"));
                 }}
             />
         </OptionsSection>
     );
 }
+
+/** Rebuilding runs in minutes on a large database, and the client must not give up before it ends. */
+const VACUUM_TIMEOUT_MS = 60 * 60 * 1000;
 
 function DatabaseAnonymizationOptions() {
     const [databases, setDatabases] = useState<AnonymizedDbResponse[]>([]);
@@ -161,10 +166,15 @@ function ExistingAnonymizedDatabases({ databases, anonymizedFolderPath }: { data
     return (
         <DatabaseFileList
             title={t("database_anonymization.existing_anonymized_databases")}
-            locationDescription={anonymizedFolderPath && t("database_anonymization.anonymized_databases_location", { anonymizedFolder: anonymizedFolderPath })}
+            description={anonymizedFolderPath && (
+                <span className="selectable-text">
+                    {t("database_anonymization.anonymized_databases_location", {
+                        anonymizedFolder: anonymizedFolderPath
+                    })}
+                </span>
+            )}
             files={databases}
             downloadEndpoint="api/database/anonymized/download"
-            rowName="anonymized-database"
             downloadText={t("database_anonymization.download")}
             emptyIcon="bx bx-glasses"
             emptyText={t("database_anonymization.no_anonymized_database_yet")}

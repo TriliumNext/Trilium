@@ -40,6 +40,21 @@ describe("extractLlmChatText", () => {
         expect(extractLlmChatText(content)).toEqual("First part. Second part.");
     });
 
+    it("skips turns whose content is neither a string nor a block list", () => {
+        // A turn can arrive with no content at all (a bare tool-call turn), or with a shape the
+        // schema does not describe; neither should contribute text or throw.
+        const content = JSON.stringify({
+            version: 1,
+            messages: [
+                { id: "1", role: "assistant" },
+                { id: "2", role: "assistant", content: null },
+                { id: "3", role: "assistant", content: { text: "not a block list" } },
+                { id: "4", role: "user", content: "Only this survives." }
+            ]
+        });
+        expect(extractLlmChatText(content)).toEqual("Only this survives.");
+    });
+
     it("skips thinking and error turns", () => {
         const content = JSON.stringify({
             version: 1,

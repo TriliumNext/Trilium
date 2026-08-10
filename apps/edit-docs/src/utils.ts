@@ -24,7 +24,7 @@ registerTriliumAppScheme();
 // Stub backup service (not used in edit-docs, but required by initializeCore)
 class StubBackupService extends BackupService {
     constructor() {
-        super({ getOption: () => "", getOptionBool: () => false, setOption: () => {} });
+        super({ getOption: () => "", getOptionOrNull: () => null, getOptionBool: () => false, setOption: () => {} });
     }
     scheduleBackups(): void {}
     async backupNow(_name: string): Promise<string> {

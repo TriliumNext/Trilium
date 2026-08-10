@@ -2,19 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Shared, mutable control state for the utils mock. `vi.hoisted` runs before
 // the hoisted `vi.mock` factory, so the factory can safely reference it.
-const ctrl = vi.hoisted(() => ({ standalone: false, mobile: false }));
+const ctrl = vi.hoisted(() => ({ mobile: false }));
 
-// Partial-mock ./utils so we can flip `isStandalone` (a const in the target,
-// read here as a live getter) and `isMobile` at runtime, while keeping the
+// Partial-mock ./utils so we can flip `isMobile` at runtime, while keeping the
 // rest of the real module intact (e.g. `isShare` used by options.ts).
 vi.mock("./utils.js", async (orig) => {
     const actual = (await orig()) as Record<string, unknown>;
     return {
         ...actual,
-        isMobile: () => ctrl.mobile,
-        get isStandalone() {
-            return ctrl.standalone;
-        }
+        isMobile: () => ctrl.mobile
     };
 });
 
@@ -38,19 +34,13 @@ async function freshModule(stored: unknown, opts: { newLayout?: boolean; aiEnabl
 
 describe("experimental_features", () => {
     beforeEach(() => {
-        ctrl.standalone = false;
         ctrl.mobile = false;
         vi.restoreAllMocks();
     });
 
-    it("lists all features when not standalone, hides llm in standalone", async () => {
+    it("lists every feature", async () => {
         const { mod } = await freshModule([]);
-
-        ctrl.standalone = false;
         expect(mod.getAvailableExperimentalFeatures().map((f) => f.id)).toEqual(["new-layout", "llm"]);
-
-        ctrl.standalone = true;
-        expect(mod.getAvailableExperimentalFeatures().map((f) => f.id)).toEqual(["new-layout"]);
     });
 
     it("new-layout is enabled via mobile or the newLayout option", async () => {
@@ -69,15 +59,7 @@ describe("experimental_features", () => {
         expect(opt.mod.isExperimentalFeatureEnabled("new-layout")).toBe(true);
     });
 
-    it("llm is always disabled in standalone mode", async () => {
-        const { mod } = await freshModule([], { aiEnabled: true });
-        ctrl.standalone = true;
-        expect(mod.isExperimentalFeatureEnabled("llm")).toBe(false);
-    });
-
-    it("non-standalone llm enablement is driven by the aiEnabled option", async () => {
-        ctrl.standalone = false;
-
+    it("llm enablement is driven by the aiEnabled option", async () => {
         const enabled = await freshModule([], { aiEnabled: true });
         expect(enabled.mod.isExperimentalFeatureEnabled("llm")).toBe(true);
 
@@ -87,7 +69,6 @@ describe("experimental_features", () => {
     });
 
     it("drops new-layout and llm from the persisted set and re-derives them separately", async () => {
-        ctrl.standalone = false;
         ctrl.mobile = false;
 
         // both stored entries are stripped; with the options off nothing is re-added
@@ -99,16 +80,13 @@ describe("experimental_features", () => {
         expect(readded.mod.getEnabledExperimentalFeatureIds().sort()).toEqual(["llm", "new-layout"]);
     });
 
-    it("adds new-layout via mobile and keeps llm out in standalone", async () => {
+    it("adds new-layout via mobile alongside an option-driven llm", async () => {
         const { mod } = await freshModule([], { aiEnabled: true });
-        ctrl.standalone = true;
         ctrl.mobile = true;
-        // mobile -> new-layout added; standalone -> llm not added despite aiEnabled
-        expect(mod.getEnabledExperimentalFeatureIds()).toEqual(["new-layout"]);
+        expect(mod.getEnabledExperimentalFeatureIds()).toEqual(["new-layout", "llm"]);
     });
 
     it("warns and treats the set as empty when persisted JSON is invalid", async () => {
-        ctrl.standalone = false;
         ctrl.mobile = false;
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         const { mod } = await freshModule("not-json");
@@ -117,7 +95,6 @@ describe("experimental_features", () => {
     });
 
     it("toggleExperimentalFeature adds/removes a feature and persists the set", async () => {
-        ctrl.standalone = false;
         const { mod, options } = await freshModule([]);
         const save = vi.spyOn(options, "save").mockResolvedValue(undefined);
 

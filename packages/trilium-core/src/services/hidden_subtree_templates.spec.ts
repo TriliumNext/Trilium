@@ -170,8 +170,9 @@ describe("buildHiddenSubtreeTemplates", () => {
         const templates = buildHiddenSubtreeTemplates();
         const board = childById(templates, "_template_board");
 
-        const statusDefinition = board.attributes?.find((a) => a.name === "label:status");
-        expect(statusDefinition?.isInheritable).toBe(true);
+        // The status definition belongs to each board, not to the template every board shares: one
+        // option list here would be everyone's option list. Boards write their own.
+        expect(board.attributes?.some((a) => a.name === "label:status")).toBe(false);
 
         const childIds = (board.children ?? []).map((c) => c.id);
         expect(childIds).toEqual([

@@ -1,5 +1,6 @@
 import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
+import { resolveBoardColumns } from "./columns";
 import { BoardViewData } from "./index";
 
 export type ColumnMap = Map<string, {
@@ -7,57 +8,44 @@ export type ColumnMap = Map<string, {
     note: FNote;
 }[]>;
 
-export async function getBoardData(parentNote: FNote, groupByColumn: string, persistedData: BoardViewData, includeArchived: boolean) {
+/**
+ * @param definitionOptions the choices the board's group-by definition offers, empty when it has no
+ *                          select definition of its own to lead the column order.
+ */
+export async function getBoardData(
+    parentNote: FNote,
+    groupByColumn: string,
+    persistedData: BoardViewData,
+    includeArchived: boolean,
+    definitionOptions: string[] = []
+) {
     const byColumn: ColumnMap = new Map();
 
     // First, scan all notes to find what columns actually exist
     await recursiveGroupBy(parentNote.getChildBranches(), byColumn, groupByColumn, includeArchived, new Set<string>());
 
-    // Get all columns that exist in the notes
-    const columnsFromNotes = [...byColumn.keys()];
+    const persistedColumns = (persistedData.columns ?? []).map(c => c.value);
+    const columns = resolveBoardColumns(definitionOptions, persistedColumns, [ ...byColumn.keys() ]);
 
-    // Get existing persisted columns and preserve their order
-    const existingPersistedColumns = persistedData.columns || [];
-    const existingColumnValues = existingPersistedColumns.map(c => c.value);
-
-    // Find truly new columns (exist in notes but not in persisted data)
-    const newColumnValues = columnsFromNotes.filter(col => !existingColumnValues.includes(col));
-
-    // Build the complete correct column list: existing + new
-    const allColumns = [
-        ...existingPersistedColumns, // Preserve existing order
-        ...newColumnValues.map(value => ({ value })) // Add new columns
-    ];
-
-    // Remove duplicates (just in case) and ensure we only keep columns that exist in notes or are explicitly preserved
-    const deduplicatedColumns = allColumns.filter((column, index) => {
-        const firstIndex = allColumns.findIndex(c => c.value === column.value);
-        return firstIndex === index; // Keep only the first occurrence
-    });
-
-    // Ensure all persisted columns have empty arrays in byColumn (even if no notes use them)
-    for (const column of deduplicatedColumns) {
-        if (!byColumn.has(column.value)) {
-            byColumn.set(column.value, []);
+    // A column the notes have nothing in is still a column, so every resolved one gets an entry.
+    for (const column of columns) {
+        if (!byColumn.has(column)) {
+            byColumn.set(column, []);
         }
     }
 
-    // Return updated persisted data only if there were changes
-    let newPersistedData: BoardViewData | undefined;
-    const hasChanges = newColumnValues.length > 0 ||
-                      existingPersistedColumns.length !== deduplicatedColumns.length ||
-                      !existingPersistedColumns.every((col, idx) => deduplicatedColumns[idx]?.value === col.value);
-
-    if (hasChanges) {
-        newPersistedData = {
-            ...persistedData,
-            columns: deduplicatedColumns
-        };
-    }
+    // The attachment mirrors the resolved list, so a board whose columns now come from its definition
+    // stays readable by anything still reading the attachment. Written only when it actually differs,
+    // or every refresh would save.
+    const hasChanges = persistedColumns.length !== columns.length
+        || persistedColumns.some((value, index) => columns[index] !== value);
 
     return {
         byColumn,
-        newPersistedData,
+        columns,
+        newPersistedData: hasChanges
+            ? { ...persistedData, columns: columns.map(value => ({ value })) }
+            : undefined,
         isInRelationMode: groupByColumn.startsWith("~")
     };
 }

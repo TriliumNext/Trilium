@@ -66,19 +66,29 @@
     flex-shrink: 0;
 }
 
-.link-embed-mention-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--muted-text-color, #ccc);
-    flex-shrink: 0;
+/* A site draws its icon for one background, usually its own, and ours is not always that one:
+   GitHub's octocat is black on nothing and vanishes on a dark theme, while a mark drawn white for a
+   dark header vanishes on a light one. Which icons those are is measured from their own pixels (see
+   favicon_contrast.ts) and arrives here as a class, leaving the theme to decide when to act on it —
+   so switching theme corrects the icons immediately, with nothing measured again.
+   The rotation before the inversion is what keeps this from being vandalism: invert(1) alone also
+   sends every hue to its opposite, turning a navy mark pale yellow. Rotating the hue a half turn
+   first puts it back, so what changes is lightness alone — a black glyph turns white, and a
+   coloured one goes on being its own colour. */
+body.dark-theme .link-embed-favicon-dark,
+body.light-theme .link-embed-favicon-light {
+    filter: hue-rotate(180deg) invert(1);
+}
+
+.ck-content .image img.link-embed-mention-favicon {
+    min-width: unset;
+    margin: 0 4px 0 0;
+    display: unset;
 }
 
 /* Sits the favicon before the link text and spaces it off the title. Scoped to the mention so
    it doesn't disturb the same favicon reused in the card's flex URL row. */
-.link-embed-mention > .link-embed-mention-favicon,
-.link-embed-mention > .link-embed-mention-dot {
+.link-embed-mention > .link-embed-mention-favicon {
     vertical-align: -0.2em;
     margin-right: 4px;
 }
@@ -136,7 +146,7 @@
 /* ---------- Click-to-play facade ----------
    Shown in place of the player until the user asks for it, so opening a note never contacts
    YouTube. The thumbnail is the one stored in the note, not a remote one. */
-   
+
 
 .link-embed-video-facade {
     position: relative;
@@ -219,7 +229,9 @@
 :root *:not(.link-embed-preview-wrapper) > a.link-embed-card:hover {
     background: var(--card-background-hover-color);
 
-    & img {
+    /* The cover image alone, not every img in the card: the favicon is the card's other one, and
+       brightening it says nothing while replacing the halo that keeps a dark icon legible. */
+    & .link-embed-card-image {
         filter: var(--link-preview-card-image-hover-filter);
     }
 }
@@ -344,10 +356,5 @@ section.link-embed:has(+ section.link-embed) {
     & .link-embed-mention-favicon {
         width: 14px;
         height: 14px;
-    }
-
-    & .link-embed-mention-dot {
-        width: 6px;
-        height: 6px;
     }
 }

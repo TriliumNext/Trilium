@@ -2,10 +2,10 @@
 name: ckeditor5-testing
 description: >-
   Testing CKEditor 5 plugins in the Trilium monorepo. Use when adding or
-  reviewing unit tests for a packages/ckeditor5-* package, debugging a failing
-  test, or setting up a package's test runner. Covers the two Vitest
-  environments Trilium uses (happy-dom and the WebdriverIO browser mode), the
-  per-package vitest.config.ts, testing against a real ClassicEditor, the
+  reviewing unit tests for the packages/ckeditor5 aggregate (including its
+  in-tree plugins under src/plugins/), debugging a
+  failing test, or setting up a package's test runner. Covers the WebdriverIO
+  browser-mode Vitest setup, the vitest.config.ts, testing against a real ClassicEditor, the
   model/view helpers imported from 'ckeditor5' (_setModelData / _getModelData /
   _getViewData and their {}/[] selection syntax), vi spies/mocks, idiomatic
   patterns for schema/conversion/command/UI tests, the pnpm --filter runner, and
@@ -15,17 +15,20 @@ description: >-
 
 # CKEditor 5 testing (Trilium)
 
-Testing CKEditor 5 plugins in the **Trilium (TriliumNext Notes) monorepo**. **Tests are co-located
-`*.spec.ts` next to the source** for the aggregator (`packages/ckeditor5`), in-aggregator plugins,
-and any new code — matching the repo-wide convention. The existing standalone packages
-(`packages/ckeditor5-<name>/`) keep their legacy `tests/` directories. Browser-mode packages gate
-`src/**` at **100% coverage**, so every code change should ship with a test.
+Testing CKEditor 5 plugins in the **Trilium (TriliumNext Notes) monorepo**. Nearly everything lives
+in one package, `packages/ckeditor5`, with **tests co-located as `*.spec.ts` next to the source** —
+including every plugin under `src/plugins/`. It gates `src/**` at **100% coverage** on all four
+metrics, so every code change must ship with a test.
 
 ## Scope & sources
 
 This skill covers testing CKEditor 5 plugins in the **Trilium (TriliumNext Notes) monorepo**
-(`packages/ckeditor5-*`). The CKEditor 5 library is pinned to 48.2.0. For general (non-CKEditor)
-Trilium testing, see the `writing-unit-tests` skill.
+(`packages/ckeditor5`). The CKEditor 5 library is 48 or later.
+For general (non-CKEditor) Trilium testing, see the `writing-unit-tests` skill.
+
+**On versions:** these skills name **major versions only** ("48 or later"). Trilium tracks CKEditor
+5 closely, so an exact pin written here would be stale within weeks — read the current one from
+`packages/ckeditor5/package.json`.
 
 ## When to use this skill
 
@@ -35,38 +38,38 @@ Trilium testing (Preact components, jQuery widgets, server routes), use `writing
 
 ## The current setup at a glance
 
-- **Runner:** Vitest (`vitest@4.1.8`). **No shared factory** — each package has its own
+- **Runner:** Vitest 4 or later. **No shared factory** — each package has its own
   `vitest.config.ts` built with `defineConfig` directly.
-- **Two environments**, chosen per package:
-  - **happy-dom** (`environment: "happy-dom"`) — used by `admonition`, `collapsible`. Light, no
-    coverage thresholds. happy-dom is **not a real browser**: `getBoundingClientRect()` returns
-    zeros, layout is stubbed, `ResizeObserver` is stubbed. Fine for model/conversion/command
-    logic; wrong for anything that measures the DOM.
-  - **WebdriverIO browser mode** (`@vitest/browser-webdriverio`, headless Chrome) — used by
-    `footnotes`, `keyboard-marker`, `math`, `mermaid`. Real DOM/layout. Gates `src/**` coverage
-    at 100% (lines/functions/branches/statements). This is **not Playwright**.
+- **One environment: WebdriverIO browser mode** (`@vitest/browser-webdriverio`, headless Chrome),
+  used by `ckeditor5`. Real DOM and real layout, so
+  `getBoundingClientRect()`, `elementFromPoint()` and pointer events behave as in a browser. Gates
+  `src/**` coverage at 100% (lines/functions/branches/statements). This is **not Playwright**.
+  - Trilium used to run some plugins on **happy-dom**; that is gone. If you are porting an old
+    test, note the two differences that bite: happy-dom returned zeros from layout APIs (so
+    measurement-dependent code silently "passed"), and it fired some DOM events synchronously
+    where a real browser defers them — `<details>` fires `toggle` on a later task, for one.
+    Synthetic events also need `cancelable: true` before `preventDefault()` means anything.
 - **Real editor, no test-editor factories.** Tests create a real `ClassicEditor` against a real
   DOM element (see below). There is **no** `ModelTestEditor`/`VirtualTestEditor`/`ClassicTestEditor`
   in Trilium — those live only in the upstream ckeditor5 monorepo's `tests/_utils`.
 - **Helpers from `'ckeditor5'`:** `_setModelData`, `_getModelData`, `_getViewData` are imported
   from the `ckeditor5` package.
-- **Test-file location:** **co-located `*.spec.ts`** next to the source is the default — the
-  aggregator, in-aggregator plugins (`src/plugins/foo.spec.ts`), and new code, with vitest
-  `include: ['src/**/*.spec.ts']` (as on `feature/collapsible_experiment`). The existing standalone
-  packages instead use a `tests/` dir (`include: ['tests/**/*.[jt]s']`, no `.spec` suffix) — leave
-  them; new standalone packages should use co-located `.spec.ts` too. `globals: true`. Coverage
-  provider `v8`, `include: src/**` (test files themselves excluded from coverage). The aggregate
-  (`packages/ckeditor5`) must also `exclude: ['**/ckeditor5-*/**']` + `allowExternal: false` or the
-  imported sibling packages bleed in (see `references/running-and-config.md`).
+- **Test-file location:** **co-located `*.spec.ts`** next to the source, including inside plugin
+  folders (`src/plugins/<name>/<name>.spec.ts`), with vitest `include: ['src/**/*.spec.ts']`.
+  `globals: true`. Coverage provider `v8`,
+  `include: src/**` (test files themselves excluded from coverage). The aggregate keeps
+  `allowExternal: false` so an imported sibling package cannot bleed into its report (see
+  `references/running-and-config.md`).
 - **Imports** from `'ckeditor5'`; in-package source imports use a file extension.
 - **License key:** tests pass `licenseKey: 'GPL'` in the editor config.
-- Some packages (`admonition`, `footnotes`, `keyboard-marker`) have a vitest config but **no
-  tests yet** — adding tests is encouraged.
+- **Every plugin folded into the aggregate carries its own tests**, and the 100% gate keeps it
+  that way. Unreachable code is the usual reason the gate cannot be met — see
+  `references/test-conventions.md` for how Trilium handles it.
 
 ## Running tests
 
 ```bash
-pnpm --filter @triliumnext/ckeditor5-math test     # one package (from anywhere)
+pnpm --filter @triliumnext/ckeditor5 test     # the whole suite (from anywhere)
 # or, from the package dir:
 vitest run
 ```
@@ -77,10 +80,31 @@ Debug a browser-mode package with a visible browser:
 vitest --inspect-brk --no-file-parallelism --browser.headless=false
 ```
 
-Root orchestration: `pnpm test:parallel` runs the light packages in parallel; `pnpm
-test:sequential` runs `math` and `mermaid` **sequentially** (browser resource limits).
-`pnpm test:all` runs both. Each package exposes `"test": "vitest"` and
+Root orchestration — **what CI runs, not what you run.** `pnpm test:parallel` runs the light
+packages in parallel; `pnpm test:sequential` runs `ckeditor5` **sequentially** (browser resource
+limits), alongside the server. `pnpm test:all` runs both. All three take minutes; during development
+run a filtered package suite instead (`pnpm --filter @triliumnext/ckeditor5 test <pattern>`), and
+leave the aggregates to CI. Each package exposes `"test": "vitest"` and
 `"test:debug": "vitest --inspect-brk --no-file-parallelism --browser.headless=false"`.
+
+**When the downloaded browser cannot run** — on NixOS the Chrome for Testing build and chromedriver
+webdriverio fetches into `/tmp` are linked against libraries no store path provides and die on a
+missing `libxcb.so.1` — point the suite at a system pair instead:
+
+```bash
+CHROME_BIN=/path/to/chromium CHROMEDRIVER_PATH=/path/to/chromedriver \
+    pnpm --filter @triliumnext/ckeditor5 test
+```
+
+`CHROMEDRIVER_PATH` is webdriverio's own variable and makes it spawn that driver on a free port;
+`CHROME_BIN` is read by the package's `vitest.config.ts` and passed as `goog:chromeOptions.binary`,
+which also stops the browser download (`setupPuppeteerBrowser` returns early for a string `binary`).
+The two versions must match at least in their major. `nix develop` sets both from `pkgs.chromium`
+and `pkgs.chromedriver`, so inside the dev shell the plain command works — **don't** start a driver
+by hand or write a local override config.
+
+Failed browser tests dump PNGs into a gitignored `__screenshots__` beside the spec; delete them
+afterwards.
 
 ## Anatomy of a test
 
@@ -124,6 +148,40 @@ Conventions visible here and across the suite:
 - Create the editor in `beforeEach` (return the Promise or use `async`/`await` — Vitest awaits it).
 - Pass `licenseKey: 'GPL'` (the kit does this for you). List only the plugins the test needs
   (commands can also be instantiated directly, e.g. `new InsertMermaidCommand( editor )`).
+
+## Asserting localized strings
+
+Trilium passes the English text itself as the message id (see the **`ckeditor5-plugin-development`**
+skill), so a test editor with no dictionary renders **the English text** — assert that literal:
+
+```ts
+expect( button.label ).toBe( 'Collapsible block' );
+```
+
+Never assert a `text-editor.…` key: that shape belonged to the retired host bridge, and a spec
+expecting one is testing a mechanism that no longer exists.
+
+To prove a string really is translatable rather than hardcoded, configure a dictionary. The entry
+must be keyed by language, and the leading `{}` is load-bearing — CKEditor merges `translations`
+with `reduce(merge)` and no initial value, so without the seed it mutates the first entry:
+
+```ts
+editor = await createTestEditor( [ Essentials, Paragraph, Collapsible ], {
+    translations: [ {}, { en: { dictionary: { 'Collapsible block': 'Bloc pliabil' } } } ]
+} );
+
+expect( createButton( editor ).label ).toBe( 'Bloc pliabil' );
+```
+
+`en` because that is the language the editor resolves under when none is configured. Getting the
+shape wrong (omitting the language key) throws inside `Locale.t` and fails every spec in the file,
+not just the one.
+
+For a helper that takes a translator parameter rather than an editor, pass
+`( message: string ) => message` — the same English-fallback behaviour, no editor needed. To observe
+*which* messages a plugin asked for, spy with `vi.spyOn( editor, 't' )`: `t` is an own property the
+editor assigns in its constructor, so the spy intercepts as long as the code reads `this.editor.t`
+per call. Install it before whatever triggers the render.
 
 ## Model/view test data
 
@@ -172,14 +230,14 @@ into later specs.) See `references/patterns.md` for the recipe.
 |------|-----------|
 | `references/test-utilities.md` | Testing against a real `ClassicEditor` (lifecycle, `licenseKey: 'GPL'`), and the `_setModelData`/`_getModelData`/`_getViewData` helpers from `'ckeditor5'` + the `[]`/`{}` selection syntax. |
 | `references/patterns.md` | Idiomatic recipes per concern (schema, conversion round-trips, commands, UI, keystrokes, events, async), all against a real editor; the `glob`/clipboard/jQuery-`$` stubbing recipe (via the globals kit's `installGlobMock`/`mockClipboard`); note on the 100% coverage gate for browser-mode packages. |
-| `references/running-and-config.md` | Per-package `vitest.config.ts` (happy-dom shape and WebdriverIO browser shape), `pnpm --filter` commands, the debug command, `pnpm test:parallel`/`test:sequential` (math+mermaid sequential), coverage thresholds. |
-| `references/test-conventions.md` | Trilium test **conventions & gotchas**: choosing happy-dom vs. browser mode, real-editor teardown, the both-assertion-styles note, sequential math/mermaid, and the pointer to `writing-unit-tests`. |
+| `references/running-and-config.md` | The WebdriverIO `vitest.config.ts` shape, `pnpm --filter` commands, the debug command, `pnpm test:parallel`/`test:sequential` (ckeditor5 + math sequential), coverage thresholds. |
+| `references/test-conventions.md` | Trilium test **conventions & gotchas**: real-browser event timing, real-editor teardown, the both-assertion-styles note, unreachable code vs. the 100% gate, and the pointer to `writing-unit-tests`. |
 
 ## Quick review checklist
 
 When reviewing tests: editor created in `beforeEach` with `licenseKey: 'GPL'` and **destroyed**
 in `afterEach` (plus `editorElement.remove()`); model/view asserted via
 `_getModelData`/`_getViewData` with correct `[]`/`{}` selection syntax; spies via `vi`; behavior
-covered for collapsed **and** ranged selections and schema-disallowed contexts; for browser-mode
-packages, new `src/` lines covered (100% gate); no reliance on real layout when the package uses
-happy-dom.
+covered for collapsed **and** ranged selections and schema-disallowed contexts; new `src/` lines
+covered (100% gate), with any `/* v8 ignore */` carrying a comment that justifies why the code is
+unreachable.

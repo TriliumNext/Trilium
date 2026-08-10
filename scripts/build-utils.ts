@@ -1,11 +1,11 @@
 import { execSync } from "child_process";
 import { build as esbuild } from "esbuild";
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { delimiter, join } from "path";
 
 export default class BuildHelper {
 
-    private rootDir: string;
+    rootDir: string;
     projectDir: string;
     outDir: string;
 
@@ -143,6 +143,72 @@ export default class BuildHelper {
         }
     }
 
+    /**
+     * Strips everything from the copied better-sqlite3 that a packaged artifact
+     * never uses. Since v13 the package bundles a prebuilt binary for all eight
+     * platforms it supports (~17 MB) plus the SQLite sources needed to compile
+     * from scratch (~10 MB), but an artifact only ever loads one binary and never
+     * compiles: 27 MB -> ~2.2 MB.
+     *
+     * @param opts.platform the platform being built *for*. Defaults to the host's,
+     *   but pass it explicitly for cross-packaging.
+     * @param opts.arch the architecture being built *for* -- not always the host's,
+     *   as the macOS runners are arm64 and also package darwin-x64.
+     * @param opts.includeMusl whether to keep the musl build alongside the glibc one
+     *   on Linux (defaults to `true`). Only the server needs it; see below.
+     */
+    trimBetterSqlite3(opts: { platform?: string; arch?: string; includeMusl?: boolean } = {}) {
+        const { platform = process.platform, arch = targetArch(), includeMusl = true } = opts;
+        const moduleDir = join(this.outDir, "node_modules", "better-sqlite3");
+        const prebuildDir = join(moduleDir, "prebuilds");
+
+        // Every v13 install ships prebuilds/, so its absence means the module that
+        // got copied is not the one the lockfile pins. The usual cause is a stale
+        // pre-v13 tree in <app>/node_modules, which copyNodeModules prefers over the
+        // hoisted root -- pnpm's `hoisted` linker never creates those, so anything
+        // there is leftover residue. Fail here rather than shipping it: a pre-v13
+        // module needs the `bindings` package that is no longer copied, so the
+        // artifact would instead die at startup with a confusing resolution error.
+        if (!existsSync(prebuildDir)) {
+            const version = JSON.parse(readFileSync(join(moduleDir, "package.json"), "utf-8")).version;
+            throw new Error(
+                `better-sqlite3 ${version} in ${moduleDir} has no prebuilds/ directory. `
+                + `Expected a v13+ layout -- delete any <app>/node_modules/better-sqlite3 and reinstall.`
+            );
+        }
+
+        // Keep both libc variants on Linux by default. The server's dist is built
+        // once on a glibc runner and then consumed by both the Debian and the Alpine
+        // images, and better-sqlite3 resolves linuxmusl-* at runtime on the latter --
+        // dropping it there would break the amd64 image at startup. Electron-based
+        // artifacts have no such consumer (Electron ships no musl builds), so they
+        // opt out and save the extra ~2.3 MB.
+        const keep = new Set([ `${platform}-${arch}.node` ]);
+        if (platform === "linux" && includeMusl) {
+            keep.add(`linuxmusl-${arch}.node`);
+        }
+
+        const available = readdirSync(prebuildDir);
+        if (!available.includes(`${platform}-${arch}.node`)) {
+            throw new Error(
+                `better-sqlite3 ships no prebuild for ${platform}-${arch} (found: ${available.join(", ")}). `
+                + `Refusing to trim, since that would leave the artifact with no native addon.`
+            );
+        }
+
+        for (const file of available) {
+            if (!keep.has(file)) {
+                rmSync(join(prebuildDir, file));
+            }
+        }
+
+        // Compile-only: the SQLite amalgamation, the addon's own C++ sources, the
+        // gyp manifest and node-gyp's scratch output. Nothing in lib/ reads them.
+        for (const path of [ "deps", "src", "build", "binding.gyp" ]) {
+            rmSync(join(moduleDir, path), { recursive: true, force: true });
+        }
+    }
+
     writeJson(relativePath: string, data: any) {
         const fullPath = join(this.outDir, relativePath);
         const dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
@@ -152,6 +218,14 @@ export default class BuildHelper {
         writeFileSync(fullPath, JSON.stringify(data, null, 4), "utf-8");
     }
 
+}
+
+/**
+ * The architecture currently being built for. The release workflows set these when
+ * a job's target differs from the runner it happens to be executing on.
+ */
+function targetArch() {
+    return process.env.TARGET_ARCH || process.env.MATRIX_ARCH || process.arch;
 }
 
 function tryPath(paths: string[]) {

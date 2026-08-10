@@ -36,7 +36,7 @@ The same principle applies to all three list types (bullet, numbered and to-do).
 
 ## To-do lists
 
-See <a class="reference-link" href="To-do%20Lists.md">To Do Lists</a>.
+See <a class="reference-link" href="To-do%20Lists.md">To-do Lists</a>.
 
 ## Collapsible lists
 

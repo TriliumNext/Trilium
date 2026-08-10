@@ -1,106 +1,14 @@
-import { note_service as noteService, ValidationError, ws } from "@triliumnext/core";
+import { ValidationError, ws } from "@triliumnext/core";
 import chokidar from "chokidar";
 import type { Request } from "express";
 import fs from "fs";
 import path from "path";
-import { Readable } from "stream";
 import tmp from "tmp";
 
 import { becca } from "@triliumnext/core";
 import dataDirs from "../../services/data_dir.js";
 import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
-
-function updateFile(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
-
-    const file = req.file;
-    if (!file) {
-        return {
-            uploaded: false,
-            message: `Missing file.`
-        };
-    }
-
-    if (req.query.replace !== "1") {
-        note.saveRevision();
-    }
-
-    note.mime = file.mimetype.toLowerCase();
-    note.save();
-
-    note.setContent(file.buffer);
-
-    note.setLabel("originalFileName", file.originalname);
-
-    void noteService.asyncPostProcessContent(note, file.buffer);
-
-    return {
-        uploaded: true
-    };
-}
-
-function updateAttachment(req: Request<{ attachmentId: string }>) {
-    const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
-    const file = req.file;
-    if (!file) {
-        return {
-            uploaded: false,
-            message: `Missing file.`
-        };
-    }
-
-    attachment.getNote().saveRevision();
-
-    attachment.mime = file.mimetype.toLowerCase();
-    attachment.setContent(file.buffer, { forceSave: true });
-
-    return {
-        uploaded: true
-    };
-}
-
-function fileContentProvider(req: Request<{ noteId: string }>) {
-    // Read the file name from route params.
-    const note = becca.getNoteOrThrow(req.params.noteId);
-
-    // blobId is a content hash, so it's a stable ETag that changes only when the content does.
-    return streamContent(note.getContent(), note.getFileName(), note.mime, note.blobId);
-}
-
-function attachmentContentProvider(req: Request<{ attachmentId: string }>) {
-    // Read the file name from route params.
-    const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
-
-    return streamContent(attachment.getContent(), attachment.getFileName(), attachment.mime, attachment.blobId);
-}
-
-async function streamContent(content: string | Uint8Array, fileName: string, mimeType: string, etag?: string) {
-    if (typeof content === "string") {
-        content = Buffer.from(content, "utf8");
-    }
-
-    const totalSize = content.byteLength;
-
-    const getStream = (range: { start: number; end: number }) => {
-        if (!range) {
-            // Request if for complete content.
-            return Readable.from(content);
-        }
-        // Partial content request.
-        const { start, end } = range;
-
-        return Readable.from(content.slice(start, end + 1));
-    };
-
-    return {
-        fileName,
-        totalSize,
-        mimeType,
-        etag,
-        getStream
-    };
-}
 
 function saveNoteToTmpDir(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
@@ -226,12 +134,8 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
 }
 
 export default {
-    updateFile,
-    updateAttachment,
-    fileContentProvider,
     saveNoteToTmpDir,
     saveAttachmentToTmpDir,
-    attachmentContentProvider,
     uploadModifiedFileToNote,
     uploadModifiedFileToAttachment
 };

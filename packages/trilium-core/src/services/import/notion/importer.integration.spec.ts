@@ -5,8 +5,16 @@ import { describe, expect, it } from "vitest";
 import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
+import { fakeRequestProvider } from "../../../test/request_provider.js";
+import { initRequest } from "../../request.js";
 import TaskContext from "../../task_context.js";
 import notionImporter from "./importer.js";
+
+/** A 1x1 PNG. The bytes are asked what they are, so a placeholder buffer would rightly be refused. */
+const PIXEL_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+    "base64"
+);
 
 /** Builds an in-memory zip from a map of entry name -> contents. */
 async function createZipBuffer(files: Record<string, string | Buffer>): Promise<Buffer> {
@@ -116,16 +124,18 @@ describe("Notion importer — integration", () => {
         ).rejects.toThrow(/Create folders for subpages/i);
     });
 
-    it("imports a flat export containing an empty database (no rows) without flagging", async () => {
-        // An empty database (CSV header only) contributes no row titles, so a legitimately flat export that
-        // happens to include one isn't mistaken for a flattened hierarchy.
-        const importRoot = await importNotion({
-            "Empty DB 08d361c59a9940c2a9d7237a4e6cd09a.csv": "Name,Status",
-            "Note A 4f195d8c55fb44f4b94a063e643b0297.html": pageHtml("Note A", "4f195d8c55fb44f4b94a063e643b0297"),
-            "Note B 388c5eca1b8b80929a78da7c68154bd7.html": pageHtml("Note B", "388c5eca1b8b80929a78da7c68154bd7")
-        });
+    it("imports a flat export containing a database with no rows, or only unnamed ones, without flagging", async () => {
+        // A CSV holding only a header — or only rows with a blank first column — contributes no row titles, so
+        // a legitimately flat export that happens to include one isn't mistaken for a flattened hierarchy.
+        for (const csv of ["Name,Status", "Name,Status\n,Done"]) {
+            const importRoot = await importNotion({
+                "Empty DB 08d361c59a9940c2a9d7237a4e6cd09a.csv": csv,
+                "Note A 4f195d8c55fb44f4b94a063e643b0297.html": pageHtml("Note A", "4f195d8c55fb44f4b94a063e643b0297"),
+                "Note B 388c5eca1b8b80929a78da7c68154bd7.html": pageHtml("Note B", "388c5eca1b8b80929a78da7c68154bd7")
+            });
 
-        expect(importRoot.getChildNotes().map((note) => note.title)).toEqual(expect.arrayContaining(["Note A", "Note B"]));
+            expect(importRoot.getChildNotes().map((note) => note.title)).toEqual(expect.arrayContaining(["Note A", "Note B"]));
+        }
     });
 
     it("imports flat top-level pages that only mention each other (no subpage blocks) without flagging", async () => {
@@ -735,7 +745,7 @@ describe("Notion importer — integration", () => {
         expect(row?.getOwnedLabelValue("lastEditedBy")).toBe("Elian Doran");
     });
 
-    it("imports url, email and phone columns as url-typed labels (mailto:/tel: schemes)", async () => {
+    it("imports url, email and phone columns as their own typed labels, holding the bare address", async () => {
         const dbId = "388c5eca1b8b8078a20fd18330d81306";
         const rowId = "388c5eca1b8b80929a78da7c68154bd7";
         // All three render as <a class="url-value">; email/phone hrefs are bare addresses.
@@ -753,16 +763,17 @@ describe("Notion importer — integration", () => {
         });
 
         const db = importRoot.getChildNotes().find((n) => n.title === "DB");
-        // Each column gets a url-typed definition.
+        // Each column gets a definition of the type its values are, rather than all three being urls.
         expect(db?.getOwnedLabel("label:url")?.value).toBe("promoted,single,url,alias=URL");
-        expect(db?.getOwnedLabel("label:email")?.value).toBe("promoted,single,url,alias=Email");
-        expect(db?.getOwnedLabel("label:phone")?.value).toBe("promoted,single,url,alias=Phone");
+        expect(db?.getOwnedLabel("label:email")?.value).toBe("promoted,single,email,alias=Email");
+        expect(db?.getOwnedLabel("label:phone")?.value).toBe("promoted,single,phone,alias=Phone");
 
         const row = db?.getChildNotes().find((n) => n.title === "Row");
         expect(row?.getOwnedLabelValue("url")).toBe("https://triliumnotes.org");
-        // Email/phone are stored as clickable mailto:/tel: links.
-        expect(row?.getOwnedLabelValue("email")).toBe("mailto:test@acme.org");
-        expect(row?.getOwnedLabelValue("phone")).toBe("tel:12345678");
+        // Stored bare, which is what the typed email/phone inputs hold; the scheme is applied where the
+        // value is rendered as a link.
+        expect(row?.getOwnedLabelValue("email")).toBe("test@acme.org");
+        expect(row?.getOwnedLabelValue("phone")).toBe("12345678");
     });
 
     it("imports a dated column with a clock time as a datetime label", async () => {
@@ -1062,6 +1073,48 @@ describe("Notion importer — integration", () => {
         const container = importRoot.getChildNotes().find((note) => note.title === "Database");
         expect(container).toBeDefined();
         expect(container?.getChildNotes().map((note) => note.title)).toEqual(["Row"]);
+    });
+
+    it("fetches a bookmark card's icon and cover, which the export names but does not carry", async () => {
+        // The whole of a Notion bookmark: an <a class="bookmark source"> whose pictures are the
+        // origin's own addresses. The export ships no bytes for them, so unless they are fetched
+        // the card renders with placeholders — the render sinks refuse a remote address outright.
+        const bookmark = `<figure id="3b1c5eca-1b8b-8099-be42-da0f9203f06f">`
+            + `<a href="https://example.com/page" class="bookmark source"><div class="bookmark-info">`
+            + `<div class="bookmark-text"><div class="bookmark-title">A page</div>`
+            + `<div class="bookmark-description">About the page.</div></div>`
+            + `<div class="bookmark-href"><img src="https://example.com/favicon.png" class="icon bookmark-icon"/>`
+            + `https://example.com/page</div></div>`
+            + `<img src="https://cdn.example.com/cover.png" class="bookmark-image"/></a></figure>`;
+
+        const asked: string[] = [];
+        initRequest(fakeRequestProvider({
+            getImage: async (address: string) => {
+                asked.push(address);
+                return PIXEL_PNG.buffer.slice(PIXEL_PNG.byteOffset, PIXEL_PNG.byteOffset + PIXEL_PNG.byteLength) as ArrayBuffer;
+            }
+        }));
+
+        try {
+            const importRoot = await importNotion({
+                "Links 386c5eca1b8b80439520cad27a0d2749.html":
+                    `<html><head><title>Links</title></head><body>`
+                    + `<div id="386c5eca1b8b80439520cad27a0d2749" class="page"><div class="page-body">${bookmark}</div></div>`
+                    + `</body></html>`
+            });
+
+            const note = importRoot.getChildNotes().find((child) => child.title === "Links") ?? importRoot;
+            expect(asked).toEqual([ "https://example.com/favicon.png", "https://cdn.example.com/cover.png" ]);
+
+            expect(note.getAttachments().map((a) => a.role).sort()).toStrictEqual([ "coverImage", "favicon" ]);
+
+            const content = String(note.getContent());
+            expect(content).not.toContain("https://example.com/favicon.png");
+            expect(content).not.toContain("https://cdn.example.com/cover.png");
+            expect(content).toContain("api/attachments/");
+        } finally {
+            initRequest(fakeRequestProvider());
+        }
     });
 
     it("synthesizes a container named after a CSV that carries no Notion id", async () => {

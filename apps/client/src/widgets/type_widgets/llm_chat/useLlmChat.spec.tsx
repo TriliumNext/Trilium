@@ -167,6 +167,57 @@ describe("useLlmChat", () => {
         expect(streamChatCompletionMock.mock.calls[0][1].providerId).toBe("a_1");
     });
 
+    it("tracks what the next request will carry: reported usage, a restored transcript, and the unsent draft", async () => {
+        streamChatCompletionMock.mockImplementation(async (_messages, _options, callbacks) => {
+            callbacks.onUsage({ promptTokens: 1200, completionTokens: 300, totalTokens: 1500 });
+            callbacks.onDone();
+        });
+        await mountChat();
+
+        // The draft is counted before it is ever sent: without it the context indicator
+        // could go from hidden straight to critical inside a single send.
+        await act(async () => {
+            api().setInput("word ".repeat(200));
+        });
+        expect(api().draftTokens).toBeGreaterThan(0);
+
+        await act(async () => {
+            await api().handleSubmit(new Event("submit"));
+        });
+        // The reply counts towards the *next* prompt, so it is tracked alongside it —
+        // prompt tokens alone understate the next request by a whole reply.
+        expect(api().lastPromptTokens).toBe(1200);
+        expect(api().lastCompletionTokens).toBe(300);
+
+        // Reopening a chat restores both from the most recent message carrying usage,
+        // so the indicator is right on the first render rather than after a send.
+        await act(async () => {
+            api().loadFromContent({
+                version: 1,
+                messages: [
+                    { id: "m1", role: "user", content: "hi", createdAt: "2026-01-01T00:00:00.000Z" },
+                    {
+                        id: "m2",
+                        role: "assistant",
+                        content: "hello",
+                        createdAt: "2026-01-01T00:00:01.000Z",
+                        usage: { promptTokens: 90, completionTokens: 10, totalTokens: 100 }
+                    }
+                ]
+            });
+        });
+        expect(api().lastPromptTokens).toBe(90);
+        expect(api().lastCompletionTokens).toBe(10);
+
+        // Emptying the chat empties the accounting with it — the tokens described a
+        // conversation that no longer exists.
+        await act(async () => {
+            api().clearMessages();
+        });
+        expect(api().lastPromptTokens).toBe(0);
+        expect(api().lastCompletionTokens).toBe(0);
+    });
+
     it("round-trips the selected provider through getContent", async () => {
         await mountChat();
 

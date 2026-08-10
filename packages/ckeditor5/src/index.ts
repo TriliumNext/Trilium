@@ -1,22 +1,28 @@
 import "ckeditor5/ckeditor5.css";
-// Premium features CSS loaded dynamically with the plugins
-// import 'ckeditor5-premium-features/ckeditor5-premium-features.css';
+// Baseline block-quote styling from CKEditor's block-quote feature. It arrived here with the
+// admonition plugin (which was forked from block-quote) but styles `blockquote`, not admonitions —
+// the client's theme-next stylesheet overrides parts of it with `!important`.
+import "./theme/blockquote.css";
 import "./theme/code_block_toolbar.css";
 import "./theme/link_embed_form.css";
+import type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 import { COMMON_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
-import "./translation_overrides.js";
 export { default as EditorWatchdog } from "./custom_watchdog";
-export { CHAT_INPUT_PLUGINS, loadPremiumPlugins } from "./plugins.js";
-export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, WatchdogConfig, WatchdogState } from "ckeditor5";
-export type { TemplateDefinition } from "ckeditor5-premium-features";
-export { default as buildExtraCommands } from "./extra_slash_commands.js";
-export { default as getCkLocale } from "./i18n.js";
+export { CHAT_INPUT_PLUGINS, MEMO_PLUGINS } from "./plugins.js";
+export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, TextTransformationConfig, TextTypingTransformationDescription, WatchdogConfig, WatchdogState } from "ckeditor5";
+export type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
+export type { SlashCommandConfig, SlashCommandDefinition } from "./plugins/mention/slash_commands.js";
+export type { TriliumMentionFeed } from "./plugins/mention/types.js";
+export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
+export type { SnippetDefinition } from "./plugins/snippets/snippetsconfig.js";
+export { default as getCkLocale, registerCkTranslations } from "./i18n.js";
+export { MESSAGE_KEY_PREFIX, MESSAGE_OVERRIDES, slugify } from "./messages.js";
 export * from "./utils.js";
 
 // Import with sideffects to ensure that type augmentations are present.
-import "@triliumnext/ckeditor5-math";
-import "@triliumnext/ckeditor5-mermaid";
+import "./plugins/math/math.js";
+import "./plugins/mermaid/mermaid.js";
 
 window[Symbol.for("cke distribution")] = "trilium";
 
@@ -81,6 +87,7 @@ declare module "ckeditor5" {
         },
         clipboard?: {
             copy(text: string): void;
-        }
+        },
+        clipboardImageEmbed?: ClipboardImageEmbedConfig
     }
 }

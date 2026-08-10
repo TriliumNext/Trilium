@@ -88,12 +88,6 @@
 }
 /* #endregion */
 
-/* #region Geo map buttons */
-.leaflet-pane {
-    z-index: 50;
-}
-/* #endregion */
-
 /* #region Close floating buttons */
 .close-floating-buttons {
     margin-inline-start: 5px !important;
@@ -116,47 +110,51 @@
 /* #endregion */
 
 /* #region Backlinks */
+/* The floating button's popup, and its alone: the list within it is the same markup the sidebar's
+   backlinks and the mobile modal show (see Backlinks.css), which frame it their own way — so nothing
+   here is left loose to reach them. */
 .backlinks-widget {
     position: relative;
-}
 
-.backlinks-ticker {
-    border-radius: 10px;
-    border-color: var(--main-border-color);
-    background-color: var(--more-accented-background-color);
-    padding: 4px 10px 4px 10px;
-    opacity: 90%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+    .backlinks-ticker {
+        border-radius: 10px;
+        border-color: var(--main-border-color);
+        background-color: var(--more-accented-background-color);
+        padding: 4px 10px 4px 10px;
+        opacity: 90%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-.backlinks-count {
-    cursor: pointer;
-}
+    .backlinks-count {
+        cursor: pointer;
+    }
 
-.backlinks-items {
-    z-index: 10;
-    position: absolute;
-    top: 50px;
-    inset-inline-end: 10px;
-    width: 400px;
-    border-radius: 10px;
-    background-color: var(--accented-background-color);
-    color: var(--main-text-color);
-    padding: 20px;
-    overflow-y: auto;
-}
+    .backlinks-items {
+        z-index: 10;
+        position: absolute;
+        top: 50px;
+        inset-inline-end: 10px;
+        width: 400px;
+        border-radius: 10px;
+        background-color: var(--accented-background-color);
+        color: var(--main-text-color);
+        padding: 20px;
+        overflow-y: auto;
+    }
 
-.backlink-excerpt {
-    border-inline-start: 2px solid var(--main-border-color);
-    padding-inline-start: 10px;
-    opacity: 80%;
-    font-size: 90%;
-}
+    .backlink-excerpt {
+        border-inline-start: 2px solid var(--main-border-color);
+        padding-inline-start: 10px;
+        opacity: 80%;
+        font-size: 90%;
 
-.backlink-excerpt .backlink-link { /* the actual backlink */
-    font-weight: bold;
-    background-color: yellow;
+        /* The link the excerpt is quoted for. */
+        .backlink-link {
+            font-weight: bold;
+            background-color: yellow;
+        }
+    }
 }
 /* #endregion */

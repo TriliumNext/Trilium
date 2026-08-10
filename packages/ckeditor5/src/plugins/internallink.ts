@@ -12,15 +12,20 @@ export default class InternalLinkPlugin extends Plugin {
 
 	init() {
 		const editor = this.editor;
+		const t = editor.t;
 
         editor.commands.add(COMMAND_NAME, new InsertInternalLinkCommand(editor));
 
 		editor.ui.componentFactory.add('internalLink', locale => {
 			const view = new ButtonView( locale );
 
+			// The shortcut is a `keystroke` rather than part of the label, so CKEditor appends it to
+			// the tooltip itself — rendered as ⌘L on macOS, where the binding really is
+			// `CommandOrControl+L`, and left out of the string translators see.
 			view.set( {
-				label: 'Internal Trilium link (CTRL-L)',
+				label: t('Internal link'),
 				icon: internalLinkIcon,
+				keystroke: 'CTRL+L',
 				tooltip: true
 			} );
 

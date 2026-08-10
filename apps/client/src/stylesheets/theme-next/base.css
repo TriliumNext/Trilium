@@ -56,7 +56,6 @@
 
     --tab-bar-height: 50px;
     --tab-height: 36px;
-    --tab-first-item-horiz-offset: 0;
     --new-tab-button-size: 24px;
 
     --center-pane-border-radius: 10px;
@@ -73,6 +72,8 @@
     --overlay-button-color: var(--opaque-icon-button-color);
     --overlay-button-icon-size: 16px;
     --overlay-button-text-size: 14px;
+    /* How far a group of overlay buttons stands off the corner of the content it floats over. */
+    --overlay-button-inset: 10px;
 
     --menu-padding-size: 8px;
     --menu-item-icon-vert-offset: -2px;
@@ -201,6 +202,23 @@ body.desktop .dropdown-menu.tn-dropdown-list::before {
 body.desktop .dropdown-submenu .dropdown-menu {
     backdrop-filter: var(--dropdown-backdrop-filter);
     background: transparent;
+}
+
+/*
+ * With background effects on, the Electron window is transparent, and that breaks the
+ * list-style menus specifically: they carry `backdrop-filter` on the menu element itself
+ * (a scrollable menu can't use the `::before` layer — the pseudo scrolls away with the
+ * content), and an element that both filters and paints a translucent background gets
+ * flattened into one render surface, which composites wrongly over window-transparent
+ * regions — the background is lost with the filter and the menu renders see-through.
+ * Regular menus survive because their filter is isolated on the background-less pseudo.
+ * The blur also has nothing to sample there anyway: CSS can only blur web-painted pixels,
+ * never the OS-composited material behind the window. So list menus fall back to the
+ * opaque menu color, the same one used when backdrop effects are disabled.
+ */
+body.background-effects .dropdown-menu.tn-dropdown-list {
+    --menu-background-color: var(--menu-background-color-no-backdrop);
+    backdrop-filter: none;
 }
 
 .dropdown-item,
@@ -541,11 +559,6 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
  * TOASTS
  */
 
- #toast-container {
-    /* The vertical gap between toasts */
-    gap: 10px;
-}
-
 #toast-container .toast {
     --bs-toast-padding-x: 12px;
     --bs-border-radius: 8px;
@@ -554,8 +567,6 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     --modal-control-button-background: var(--toast-close-button-background);
     --modal-control-button-color: var(--bs-toast-color);
 
-    display: flex;
-    flex-direction: column;
     backdrop-filter: blur(6px);
 }
 

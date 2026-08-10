@@ -109,6 +109,16 @@ describe("hidden_subtree (real DB)", () => {
                 expect(tpl.getParentBranches().some((b) => b.parentNoteId === LBTPL_ROOT)).toBe(true);
             }
         });
+
+        it("marks the settings pages that have nothing to set in the standalone build", () => {
+            // The client's settings navigation reads these (isOptionPageVisibleOnPlatform); a rename
+            // here would silently put the pages back rather than fail anywhere.
+            for (const pageId of [ "_optionsPassword", "_optionsEtapi" ]) {
+                expect(becca.notes[pageId]?.isLabelTruthy("notInStandalone"), pageId).toBe(true);
+            }
+            // Not a blanket mark: the pages that do apply everywhere carry nothing.
+            expect(becca.notes._optionsAppearance?.isLabelTruthy("notInStandalone")).toBe(false);
+        });
     });
 
     describe("enforceAttributes", () => {

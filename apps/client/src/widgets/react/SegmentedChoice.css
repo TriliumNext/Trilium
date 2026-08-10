@@ -1,0 +1,29 @@
+/*
+ * How much an option holds, shown after its name.
+ *
+ * Bootstrap's `.badge`, which the theme already dresses in a half-transparent fill (see
+ * `--badge-background-color`) — the reason it is the right pill here rather than `.ext-badge`, whose
+ * fill is a solid colour of the caller's choosing: the segment underneath it is a recessed track on
+ * one option and a raised chip on the other, and a transparent fill sits on both without being told
+ * which it is on.
+ */
+/* The name and its count, kept on one line: the two are read as a single label, and the group is free
+   to make a segment narrower than the pair. */
+.tn-segmented-choice .tn-segmented-choice-label {
+    white-space: nowrap;
+}
+
+.tn-segmented-choice .tn-segmented-choice-count {
+    /* Centred on the text rather than on the button: `middle` measures from the baseline in the font's
+       own units, so the pill stays put as the label's size changes. */
+    vertical-align: middle;
+    /* Bootstrap rounds a badge to the same radius as a card; these are single digits beside a word,
+       and want the pill shape the app's other badges have. */
+    border-radius: var(--badge-radius, 12px);
+    /* The theme uppercases badge text for the words most of them hold. Digits have no case, but the
+       letter-spacing it comes with sits a number off-centre in its own pill. */
+    letter-spacing: 0;
+    /* `.badge` carries a lead margin for the sentences it usually trails; this one sits against a
+       single word inside a button. */
+    margin-inline-start: 6px;
+}

@@ -1,0 +1,20 @@
+
+/* The shared styles for the collapsible blocks are located at
+ * apps/client/src/stylesheets/style.css, so the styles are available even when
+ * this plugin is not loaded yet.
+ *
+ * Use only editor-specific styles in the current CSS file. */
+
+/*
+ * Drop indicator drawn while the user drags a collapsible by its handle.
+ * Position is set inline (viewport-relative, from getBoundingClientRect),
+ * so it uses position: fixed to align with those coords.
+ */
+.trilium-collapsible-drop-indicator {
+    position: fixed;
+    height: 2px;
+    background: var(--ck-document-outline-item-active-color);
+    border-radius: 1px;
+    pointer-events: none;
+    z-index: 10000;
+}

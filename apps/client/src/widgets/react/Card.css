@@ -23,11 +23,81 @@
 }
 
 .tn-card-heading {
+    display: flex;
+    align-items: center;
     margin-bottom: 10px;
     font-size: .75rem;
     font-weight: 600;
     letter-spacing: .4pt;
     text-transform: uppercase;
+}
+
+/* Kept at the far end of the heading line, where the options page's own sections keep theirs, and
+   sized against the heading rather than against a full-height toolbar. */
+.tn-card-heading-actions {
+    --icon-button-size: 28px;
+    display: flex;
+    gap: 4px;
+    margin-inline-start: auto;
+}
+
+.tn-card-heading:has(+ .tn-card-description) {
+    margin-bottom: 4px;
+}
+
+.tn-card-description {
+    margin-bottom: 10px;
+    color: var(--muted-text-color);
+    font-size: .9em;
+}
+
+.tn-card-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    /* The controls keep their natural width. Left to shrink, a button's nowrap label spills across
+       its own padding and ends up reading as though it had none; the label below gives instead. */
+    > * {
+        flex-shrink: 0;
+    }
+
+    .tn-card-option-label {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 2px;
+        margin-bottom: 0;
+        min-width: 0;
+
+        /* Tied to a control, so that the text operates it too. */
+        &[for] {
+            cursor: pointer;
+        }
+    }
+
+    .tn-card-option-description {
+        font-size: .85em;
+        opacity: .7;
+    }
+
+    .btn {
+        white-space: nowrap;
+    }
+}
+
+/* On a phone, a control too wide to sit beside the text takes the line below it. A switch is narrow
+   enough to stay put; a button labelled with a sentence is not, and left the description beside it
+   reading a word to the line. */
+body.mobile .tn-card-option:has(> .btn, > .slider) {
+    flex-direction: column;
+    align-items: stretch;
+
+    /* A slider carries its own width (200px), which `stretch` cannot override — and having been
+       given a line, it may as well use it. */
+    > .slider {
+        width: 100%;
+    }
 }
 
 .tn-card-body {

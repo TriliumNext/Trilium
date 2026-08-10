@@ -59,6 +59,7 @@ import { buildNote } from "../test/easy-froca";
 import froca from "./froca.js";
 import treeService from "./tree.js";
 import linkService, {
+    calculateExtraWindowUrl,
     calculateHash,
     goToLinkExt,
     parseNavigationStateFromUrl
@@ -93,6 +94,13 @@ describe("parseNavigationStateFromUrl", () => {
 
     it("parses notePath with extraWindow", () => {
         const output = parseNavigationStateFromUrl(`127.0.0.1:8080/?extraWindow=1#root/QZGqKB7wVZF8?ntxId=0XPvXG`);
+        expect(output).toMatchObject({ notePath: "root/QZGqKB7wVZF8", noteId: "QZGqKB7wVZF8" });
+    });
+
+    it("parses notePath when extraWindow is not the first query parameter", () => {
+        // Standalone carries its environment in the query, so `extraWindow` is not necessarily
+        // the parameter right after the `?`.
+        const output = parseNavigationStateFromUrl(`127.0.0.1:8080/?safeMode=1&extraWindow=1#root/QZGqKB7wVZF8`);
         expect(output).toMatchObject({ notePath: "root/QZGqKB7wVZF8", noteId: "QZGqKB7wVZF8" });
     });
 
@@ -172,6 +180,141 @@ describe("calculateHash", () => {
 
     it("produces only the param string when note path is empty", () => {
         expect(calculateHash({ ntxId: "n1" } as any)).toBe("#?ntxId=n1");
+    });
+});
+
+describe("calculateExtraWindowUrl", () => {
+    it("marks the window as extra and appends the target hash", () => {
+        const url = calculateExtraWindowUrl({ notePath: "root/abc123" }, new URL("http://localhost:8080/"));
+        expect(url).toBe("http://localhost:8080/?extraWindow=1#root/abc123");
+    });
+
+    it("keeps the deployment sub-path, so a standalone build under a prefix still resolves", () => {
+        const url = calculateExtraWindowUrl({ notePath: "root/abc123" }, new URL("https://notes.test/trilium/"));
+        expect(url).toBe("https://notes.test/trilium/?extraWindow=1#root/abc123");
+    });
+
+    it("carries the current query string over instead of replacing it", () => {
+        // In standalone the query *is* the environment (`?safeMode`, `?startNoteId` — see
+        // QUERY_TO_ENV in the standalone platform provider). A window that dropped it would boot
+        // with different settings than the one it was torn from, and would apply those to every
+        // other window once it inherited the database lock.
+        const url = calculateExtraWindowUrl({ notePath: "root/abc123" }, new URL("http://localhost:8080/?safeMode=1"));
+        const { searchParams } = new URL(url);
+        expect(searchParams.get("safeMode")).toBe("1");
+        expect(searchParams.get("extraWindow")).toBe("1");
+    });
+
+    it("produces a URL the receiving window can still navigate from", () => {
+        const url = calculateExtraWindowUrl(
+            { notePath: "root/abc123", hoistedNoteId: "h1" },
+            new URL("http://localhost:8080/?safeMode=1")
+        );
+        expect(parseNavigationStateFromUrl(url)).toMatchObject({
+            notePath: "root/abc123",
+            noteId: "abc123",
+            hoistedNoteId: "h1"
+        });
+    });
+
+    it("omits the hash when there is no target, as when opening a blank window", () => {
+        const url = calculateExtraWindowUrl({ notePath: "", hoistedNoteId: "root" }, new URL("http://localhost:8080/"));
+        expect(url).toBe("http://localhost:8080/?extraWindow=1");
+    });
+});
+
+describe("split panes in the hash", () => {
+    const A = "root/aaaaaaaaaaaa";
+    const B = "root/bbbbbbbbbbbb";
+    const C = "root/cccccccccccc";
+
+    /** Wraps a bare hash in the address a detached window boots from. */
+    const asExtraWindowUrl = (hash: string) => `http://localhost:8080/?extraWindow=1${hash}`;
+
+    it("round-trips a tab's panes, keeping their order, hoisting and view scope", () => {
+        const hash = calculateHash({
+            notePath: A,
+            splits: [
+                { notePath: B, viewScope: { viewMode: "source" } },
+                { notePath: C, hoistedNoteId: "h1" }
+            ],
+            activeSplit: 1
+        });
+
+        // each pane is a hash body of its own, comma-joined and encoded as a single parameter
+        expect(hash).toBe(
+            `#${A}?splits=root%2Fbbbbbbbbbbbb%3FviewMode%3Dsource%2Croot%2Fcccccccccccc%3FhoistedNoteId%3Dh1&activeSplit=1`
+        );
+
+        expect(parseNavigationStateFromUrl(asExtraWindowUrl(hash))).toMatchObject({
+            notePath: A,
+            activeSplit: 1,
+            splits: [
+                { notePath: B, hoistedNoteId: null, viewScope: { viewMode: "source" } },
+                { notePath: C, hoistedNoteId: "h1", viewScope: { viewMode: "default" } }
+            ]
+        });
+    });
+
+    it("honours splits only when booting a detached window", () => {
+        // The same parser backs every link click inside a note. Were splits read there, any note —
+        // including an imported or synced one — could rearrange the panes of the window reading it.
+        const hash = calculateHash({ notePath: A, splits: [{ notePath: B }] });
+
+        expect(parseNavigationStateFromUrl(`http://localhost:8080/${hash}`)).toMatchObject({
+            notePath: A,
+            splits: null
+        });
+    });
+
+    it("keeps the layout of a tab whose first pane held no note", () => {
+        const hash = calculateHash({ notePath: null, splits: [{ notePath: B }] });
+
+        expect(hash).toBe("#?splits=root%2Fbbbbbbbbbbbb");
+        expect(parseNavigationStateFromUrl(asExtraWindowUrl(hash))).toMatchObject({
+            notePath: "",
+            noteId: null,
+            splits: [{ notePath: B }]
+        });
+
+        // without splits an empty note path still means "nothing to navigate to"
+        expect(parseNavigationStateFromUrl(asExtraWindowUrl("#"))).toStrictEqual({});
+    });
+
+    it("keeps empty panes, drops malformed ones and caps how many it will open", () => {
+        const parse = (splits: string) =>
+            parseNavigationStateFromUrl(asExtraWindowUrl(`#${A}?splits=${splits}`));
+
+        // an empty entry is a pane that held no note — kept, so the pane count survives
+        expect(parse(encodeURIComponent(`${B},,${C}`))).toMatchObject({
+            splits: [{ notePath: B }, { notePath: null }, { notePath: C }]
+        });
+
+        // a hand-written address shouldn't be able to open a pane on garbage, nor hundreds of them
+        expect(parse(encodeURIComponent(`${B},zz,${C}`))).toMatchObject({
+            splits: [{ notePath: B }, { notePath: C }]
+        });
+        expect(parse(encodeURIComponent(Array(20).fill(B).join(",")))).toMatchObject({
+            splits: Array(8).fill({ notePath: B })
+        });
+    });
+
+    it("shrugs off an active index that is not a number, and a parameter carrying no value", () => {
+        // Both reach the parser straight off the address bar, where anything at all may be typed.
+        expect(parseNavigationStateFromUrl(
+            asExtraWindowUrl(`#${A}?splits=${encodeURIComponent(B)}&activeSplit=whichever`)
+        )).toMatchObject({ activeSplit: 0, splits: [{ notePath: B }] });
+
+        // `popup` is a flag, so it is written bare — there is no `=` to split on.
+        expect(parseNavigationStateFromUrl(`#${A}?popup`)).toMatchObject({ openInPopup: true });
+    });
+
+    it("ignores parameters that describe a window rather than a pane", () => {
+        const nested = encodeURIComponent(`${B}?ntxId=n1&splits=${encodeURIComponent(C)}`);
+        const parsed = parseNavigationStateFromUrl(asExtraWindowUrl(`#${A}?splits=${nested}`));
+
+        expect(parsed).toMatchObject({ splits: [{ notePath: B, viewScope: { viewMode: "default" } }] });
+        expect((parsed as any).splits[0]).not.toHaveProperty("ntxId");
     });
 });
 
@@ -382,7 +525,15 @@ describe("goToLinkExt", () => {
 
     it("opens in a popup when the url requests it", () => {
         goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa?popup=1");
-        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: "root/aaaaaaaaaaaa" });
+        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: "root/aaaaaaaaaaaa", viewScope: { viewMode: "default" } });
+    });
+
+    it("passes the attachment view scope along when opening in a popup", () => {
+        goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa?popup=1&viewMode=attachments&attachmentId=bbbbbbbbbbbb");
+        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", {
+            noteIdOrPath: "root/aaaaaaaaaaaa",
+            viewScope: { viewMode: "attachments", attachmentId: "bbbbbbbbbbbb" }
+        });
     });
 
     it("opens in a new window on shift+left-click", () => {
@@ -611,6 +762,20 @@ describe("loadReferenceLinkTitle", () => {
         warn.mockRestore();
     });
 
+    it("gives an href with no note id the same [missing note] the title resolvers do", async () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        // Exactly what the editing downcast hands over: an empty <span> that this call is the only
+        // thing ever to fill. An href that is not a hash note URL — an attachment image URL like
+        // this one, an external link, imported HTML — must still leave something in it, or the
+        // reference link renders as a blank widget while the stored HTML says "[missing note]".
+        const $el = $("<span>");
+
+        await linkService.loadReferenceLinkTitle($el, "api/attachments/bc1EIIdlPLKV/image/favicon.ico");
+
+        expect($el.text()).toBe("[missing note]");
+        warn.mockRestore();
+    });
+
     it("sets text, color class, bookmark and icon for a resolved note", async () => {
         const note = buildNote({ title: "Loaded", "#color": "red", "#iconClass": "bx bx-star" });
         const $a = $("<a>").attr("href", `#root/${note.noteId}?bookmark=Sec`);
@@ -731,7 +896,7 @@ describe("module-level click handlers", () => {
         const $a = $("<a href='#root/aaaaaaaaaaaa'>link</a>");
         $("body").append($a);
         $a.trigger($.Event("contextmenu", { button: 2 }));
-        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: "root/aaaaaaaaaaaa" });
+        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: "root/aaaaaaaaaaaa", viewScope: { viewMode: "default" } });
         spy.mockRestore();
         $a.remove();
     });

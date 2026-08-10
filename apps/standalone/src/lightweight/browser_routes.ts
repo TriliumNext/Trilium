@@ -5,9 +5,11 @@
 
 import { BootstrapDefinition } from '@triliumnext/commons';
 import { entity_changes, getContext, getPlatform, getSharedBootstrapItems, getSql, routes, sql_init } from '@triliumnext/core';
+import llmRoute from '@triliumnext/core/src/routes/api/llm.js';
 
 import packageJson from '../../package.json' with { type: 'json' };
 import { type BrowserRequest, BrowserRouter } from './browser_router';
+import { dbLock } from './db_lock';
 
 /** Minimal response object used by apiResultHandler to capture the processed result. */
 interface ResultHandlerResponse {
@@ -62,14 +64,14 @@ function setContextFromHeaders(req: BrowserRequest) {
  */
 function wrapHandler(handler: (req: any) => unknown, transactional: boolean) {
     return (req: BrowserRequest) => {
-        return getContext().init(() => {
+        return dbLock.runShared(() => getContext().init(() => {
             setContextFromHeaders(req);
             const expressLikeReq = toExpressLikeReq(req);
             if (transactional) {
                 return getSql().transactional(() => handler(expressLikeReq));
             }
             return handler(expressLikeReq);
-        });
+        }));
     };
 }
 
@@ -94,7 +96,7 @@ function createApiRoute(router: BrowserRouter, transactional: boolean) {
 function createRoute(router: BrowserRouter) {
     return (method: HttpMethod, path: string, _middleware: any[], handler: (req: any, res: any) => unknown, resultHandler?: ((req: any, res: any, result: unknown) => unknown) | null) => {
         router.register(method, path, (req: BrowserRequest) => {
-            return getContext().init(() => {
+            return dbLock.runShared(() => getContext().init(() => {
                 setContextFromHeaders(req);
                 const expressLikeReq = toExpressLikeReq(req);
                 const mockRes = createMockExpressResponse();
@@ -119,7 +121,7 @@ function createRoute(router: BrowserRouter) {
                 }
 
                 return result;
-            });
+            }));
         });
     };
 }
@@ -130,14 +132,17 @@ function createRoute(router: BrowserRouter) {
  * transactional() wrapper, which would commit an empty transaction immediately when
  * passed an async callback.
  */
-function createAsyncRoute(router: BrowserRouter) {
+function createAsyncRoute(router: BrowserRouter, { transactional = true } = {}) {
     return (method: HttpMethod, path: string, _middleware: any[], handler: (req: any, res: any) => Promise<unknown>, resultHandler?: ((req: any, res: any, result: unknown) => unknown) | null) => {
         router.register(method, path, (req: BrowserRequest) => {
-            return getContext().init(async () => {
+            // Exclusive: this transaction stays open across awaits, so no other
+            // route may touch the connection until it commits. See db_lock.ts.
+            return dbLock.runExclusive(() => getContext().init(async () => {
                 setContextFromHeaders(req);
                 const expressLikeReq = toExpressLikeReq(req);
                 const mockRes = createMockExpressResponse();
-                const result = await getSql().transactionalAsync(() => handler(expressLikeReq, mockRes));
+                const run = () => handler(expressLikeReq, mockRes);
+                const result = transactional ? await getSql().transactionalAsync(run) : await run();
 
                 // If the handler used the mock response (e.g. image routes that call res.send()),
                 // return it as a raw response so BrowserRouter doesn't JSON-serialize it.
@@ -158,7 +163,7 @@ function createAsyncRoute(router: BrowserRouter) {
                 }
 
                 return result;
-            });
+            }) as Promise<unknown>);
         });
     };
 }
@@ -276,6 +281,7 @@ export function registerRoutes(router: BrowserRouter): void {
     routes.buildSharedApiRoutes({
         route: createRoute(router),
         asyncRoute: createAsyncRoute(router),
+        asyncRouteWithoutTransaction: createAsyncRoute(router, { transactional: false }),
         apiRoute,
         asyncApiRoute: createApiRoute(router, false),
         apiResultHandler,
@@ -292,13 +298,24 @@ export function registerRoutes(router: BrowserRouter): void {
     });
     apiRoute('get', '/bootstrap', bootstrapRoute);
 
+    // Streaming a chat, in the only form this runtime can serve it: the request
+    // starts the completion and returns, and the chunks arrive over the
+    // WebSocket-style channel (see core's routes/api/llm.ts). It is registered
+    // here rather than in the shared table because the server and the desktop app
+    // answer `/api/llm-chat/stream` with Server-Sent Events instead — they can
+    // hold a response open, and it delivers the chunks to the one client that
+    // asked rather than broadcasting them to every device signed in.
+    apiRoute('post', '/api/llm-chat/stream-start', llmRoute.startChatStream);
+    apiRoute('post', '/api/llm-chat/stream-abort', llmRoute.abortChatStream);
+
     // Dummy routes for compatibility.
     apiRoute("get", "/api/script/widgets", () => []);
     apiRoute("get", "/api/script/startup", () => []);
     apiRoute("get", "/api/system-checks", () => ({ isCpuArchMismatch: false }));
 }
 
-function bootstrapRoute(): BootstrapDefinition {
+/** The request as `apiRoute` hands it over: the Express-like wrapper, not the raw {@link BrowserRequest}. */
+function bootstrapRoute(req: { query: Record<string, string | undefined> }): BootstrapDefinition {
     const assetPath = ".";
 
     const isDbInitialized = sql_init.isDbInitialized();
@@ -306,7 +323,9 @@ function bootstrapRoute(): BootstrapDefinition {
         ...getSharedBootstrapItems(assetPath, isDbInitialized),
         isDev: import.meta.env.DEV,
         isStandalone: true,
-        isMainWindow: true,
+        // A window torn off into its own popup carries `?extraWindow`, same as on the server. It has
+        // to be told, or it restores the saved tab set on load and then writes its own back over it.
+        isMainWindow: !req.query.extraWindow,
         isElectron: false,
         hasNativeTitleBar: false,
         hasBackgroundEffects: false,
@@ -329,8 +348,6 @@ function bootstrapRoute(): BootstrapDefinition {
         ...commonItems,
         csrfToken: "dummy-csrf-token",
         baseApiUrl: "../api/",
-        headingStyle: "plain",
-        layoutOrientation: "vertical",
         platform: "web",
     };
 }

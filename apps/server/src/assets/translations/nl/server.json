@@ -326,9 +326,6 @@
     "db_not_initialized_desktop": "Database is niet geïnitialiseerd, volg de instructies op het scherm.",
     "db_not_initialized_server": "Database is niet geïnitialiseerd, bezoek de setup pagina - http://[your-server-host]:{{port}} voor instructies om Trilium te initialiseren."
   },
-  "desktop": {
-    "instance_already_running": "Er draait al een instantie, deze wordt in de plaats geopend."
-  },
   "script": {
     "wrong-environment": "Kan de Notitie \"{{- noteTitle}}\" ({{- noteId}}) niet uitvoeren. Dit is een {{- actualEnv}} script, maar werd geprobeerd uit te voeren in de {{- expectedEnv}}."
   },

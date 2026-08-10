@@ -9,9 +9,9 @@ Attributes can be pretty useful since they allow for querying and script automat
 
 ## Attribute definition
 
-In order to have promoted attributes, there needs to be a way to define them.
+<figure class="image image-style-align-right image_resized" style="width:50%;"><img style="aspect-ratio:885/742;" src="2_Promoted Attributes_image.png" width="885" height="742"></figure>
 
-<figure class="image image-style-align-right image_resized" style="width:38.82%;"><img style="aspect-ratio:492/346;" src="1_Promoted Attributes_image.png" width="492" height="346"></figure>
+In order to have promoted attributes, there needs to be a way to define them.
 
 Technically, attributes are only name-value pairs where both name and value are strings.
 
@@ -20,6 +20,33 @@ The _Attribute definition_ specifies how should this value be interpreted:
 *   Is it just string, or is it a date?
 *   Should we allow multiple values or note?
 *   Should we _promote_ the attribute or not?
+
+## Types of attributes
+
+Attribute definitions have a dedicated type field which will change how the value will be edited in the promoted attributes section.
+
+The following types are supported:
+
+*   _Text_, the default option which allows any type of text to be edited, similar to normal labels that don't have a type associated.
+*   _Multi-line text_, similar to a normal text field, but rendered in a bigger text box that also supports writing on multiple lines.
+*   _Number_, will display as a number input field with up/down arrows.
+    *   Optionally a _precision_ which sets how many decimals the value steps by and is displayed with.
+*   _Boolean_, which renders as a checkbox for a true/false value.
+*   _Select,_ which provides a list of user-defined options when editing.
+    *   The list is not fixed, meaning that new options can be easily added from the promoted attribute.
+    *   Renaming an option does not change the existing values since the value is stored as text. Consider a [bulk rename](../Bulk%20Actions.md).
+    *   The items do not have a custom color or icon. This is intentional as selects are meant to be light-weight. For a more customizable option, consider using <a class="reference-link" href="Relations.md">Relations</a> instead which use notes as items and those notes can be colorized and also carry an icon.
+*   _Date,_ which provides a date picker.
+*   _Date & Time,_ which provides a date & time picker.
+*   _Time,_ which provides a time picker.
+*   _URL,_ which provides a button to open the web address in a new window.
+*   _Email_, which provides a button to quickly send an email to that address using your operating system's default app.
+*   _Phone_, which provides a button to quickly call that number using your operating system's default app.
+*   _Color_, which provides a color picker and a way to remove the value.
+*   _Relation_, which points to another note and uses <a class="reference-link" href="Relations.md">Relations</a> instead of <a class="reference-link" href="Labels.md">Labels</a>.
+
+> [!NOTE]
+> For label-based attributes, these types are not enforced by the attribute system, meaning that changing the type afterwards does not guarantee that the values in it correspond to the type (e.g. turning a text into a number).
 
 ## Creating a new promoted attribute definition
 
@@ -47,7 +74,7 @@ The only purpose of the attribute definition is to set up a template. If the att
 
 |  |  |
 | --- | --- |
-| <figure class="image"><img style="aspect-ratio:495/157;" src="2_Promoted Attributes_image.png" width="495" height="157"></figure> | Notice how the promoted attribute definition only creates a “Due date” box above the text content. |
+| <figure class="image"><img style="aspect-ratio:495/157;" src="1_Promoted Attributes_image.png" width="495" height="157"></figure> | Notice how the promoted attribute definition only creates a “Due date” box above the text content. |
 | <figure class="image"><img style="aspect-ratio:663/160;" src="3_Promoted Attributes_image.png" width="663" height="160"></figure> | Once a value is set by the user, a new label (or relation, depending on the type) is created. The name of the attribute matches one set when creating the promoted attribute. |
 
 So there's one attribute for value and one for definition. But notice how an definition attribute can be made [Inheritable](Attribute%20Inheritance.md), meaning that it's also applied to all descendant notes. In this case, the definition used for the whole sub-tree while "value" attributes are for each not individually.
@@ -73,3 +100,7 @@ Another example is with parent-child relationship. Again these always occur in p
 Relation definition allows you to specify such "inverse relation" - for the relation you just define you specify which is the inverse relation. Note that in the second example we should have two relation definitions - one for `isParentOf` which defines `isChildOf` as inverse relation and then second relation definition for `isChildOf` which defines `isParentOf` as inverse relation.
 
 What this does internally is that whenever we save a relation which has defined inverse relation, we check that this inverse relation exists on the relation target note. Similarly, when we delete relation, we also delete inverse relation on the target note.
+
+## See also
+
+*   The <a class="reference-link" href="../../Collections/Table.md">Table</a> collection makes heavy use of promoted attributes to define the columns of the table, since they already carry the type information. When made inheritable, it's also easy to change those fields when the child notes are opened.

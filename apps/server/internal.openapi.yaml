@@ -1855,9 +1855,37 @@ paths:
       tags: [Revisions]
       summary: Cleanup old revisions
       operationId: eraseExcessRevisions
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                snapshotsToKeep:
+                  type: integer
+                  minimum: -1
+                  description: >
+                    Snapshots to keep per note, standing in for the revisionSnapshotNumberLimit
+                    option. -1 keeps every snapshot, 0 keeps none. Omitted, the option applies.
+                    A note carrying a valid #versioningLimit follows its own label instead.
+                keepNamedSnapshots:
+                  type: boolean
+                  description: >
+                    Spare named snapshots (those with a description) from erasure and leave them out
+                    of the count, so the limit governs the automatic snapshots alone.
       responses:
-        '204':
+        '200':
           description: Excess revisions erased
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  erasedCount:
+                    type: integer
+        '400':
+          description: Invalid options
           
   /api/edited-notes/{date}:
     get:

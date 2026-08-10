@@ -1,0 +1,101 @@
+/*
+ * A select combobox is typed into like a text box, so nothing about it says a list of choices waits
+ * underneath — it wears the arrow a `<select>` draws instead, the same one the type dropdown of the
+ * attribute definition shows. Themes defining the arrow lend theirs, which follows their text colour;
+ * the older ones, which draw it inside their own `.form-select` rule, fall back to that very image.
+ *
+ * The arrow sits where a select's does — measured from the edge the user sees, which for a field
+ * inside an input group is the group's rather than the field's own, hence the padding taken off.
+ *
+ * The hover and focus states are listed because the themes restate the whole `background` for them,
+ * which would drop the image; `:root` and the always-present `form-control` are there to outweigh
+ * those rules whichever way the stylesheets happen to be ordered.
+ */
+:root .label-select-combobox.form-control,
+:root .label-select-combobox.form-control:hover,
+:root .label-select-combobox.form-control:focus {
+    background-image: var(--select-arrow-svg, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23ffffff' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/></svg>"));
+    background-repeat: no-repeat;
+    background-position: right calc(0.75rem - var(--input-group-padding-inline-end, 0px)) center;
+    background-size: 15px 20px;
+    /* Keeps a long value from running under the arrow. */
+    padding-inline-end: calc(15px + 1.5rem);
+}
+
+body[dir=rtl] .label-select-combobox.form-control,
+body[dir=rtl] .label-select-combobox.form-control:hover,
+body[dir=rtl] .label-select-combobox.form-control:focus {
+    background-position: left calc(0.75rem - var(--input-group-padding-inline-end, 0px)) center;
+}
+
+/*
+ * A colour is picked from a swatch rather than typed into a box, so it is given a size of its own
+ * instead of running the width a field would — the same size wherever a label is edited: the promoted
+ * grid, the attribute editor, a table cell.
+ *
+ * Stated from `:root` so as to outweigh the group rule that would otherwise have it fill the row
+ * (`.input-group > .form-control`, of the same weight) whichever way the stylesheets are ordered.
+ */
+:root .label-color-picker.form-control {
+    flex: 0 0 auto;
+    align-self: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    outline: none;
+    appearance: none;
+    border-radius: 25%;
+}
+
+/* The swatch is the whole of the field: what the browser would inset it by is room the colour wants.
+   Split by engine because a selector list is dropped whole where one of its parts is not understood. */
+.label-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.label-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 25%;
+}
+
+.label-color-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 25%;
+}
+
+/*
+ * A colour input has no empty value, so an unset label is said by the field rather than by the colour
+ * it shows: the default it falls back to is dimmed and crossed through, so that it does not read as a
+ * colour somebody chose.
+ *
+ * Told by a class rather than by reading the hidden field's `value` attribute, which is never there —
+ * preact assigns a value as a property, so an attribute selector would match nothing.
+ */
+.label-color-picker-unset {
+    /* Named once and used from each engine's own swatch rule below, those having to be stated apart. */
+    --label-color-unset-cross: linear-gradient(
+        to bottom right,
+        transparent calc(50% - 1px),
+        rgb(0 0 0 / 50%) calc(50% - 1px),
+        rgb(0 0 0 / 50%) calc(50% + 1px),
+        transparent calc(50% + 1px)
+    );
+
+    opacity: 0.5;
+}
+
+.label-color-picker-unset::-webkit-color-swatch {
+    background-image: var(--label-color-unset-cross);
+}
+
+.label-color-picker-unset::-moz-color-swatch {
+    background-image: var(--label-color-unset-cross);
+}
+
+/* The group holds the pair to its own width rather than the row's: a swatch and the button emptying it
+   belong together, and stretched apart they would read as two controls that have nothing to do with
+   each other. */
+.input-group:has(> .label-color-picker) {
+    width: fit-content;
+}

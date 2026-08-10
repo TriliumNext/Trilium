@@ -79,7 +79,6 @@ export default defineConfig(() => ({
     },
     optimizeDeps: {
         include: [
-            "ckeditor5-premium-features",
             "ckeditor5",
             "mathlive",
             // Pre-bundle so the first spreadsheet XLSX export (which dynamically imports
@@ -134,7 +133,12 @@ export default defineConfig(() => ({
         coverage: {
             reportsDirectory: "./test-output/vitest/coverage",
             provider: "v8" as const,
-            reporter: ["text", "html", "lcov"],
+            // Codecov resolves an lcov `SF:` path by matching it against the repo's file list.
+            // Vitest defaults the lcov reporter's `projectRoot` to the Vite `root`, which would
+            // emit app-relative paths (`src/…`); the shallow ones are ambiguous in this monorepo
+            // and get attributed to whichever project wins the match. Anchor to the repo root so
+            // every path is unambiguous.
+            reporter: ["text", "html", ["lcov", { projectRoot: join(__dirname, "../..") }]],
             include: ["src/**/*.{ts,tsx}"],
             exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"]
         },

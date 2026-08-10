@@ -57,18 +57,6 @@ There are two different chat interfaces:
 
 ### The sidebar interface
 
-Once the AI integration is activated, a _Chat_ entry will appear in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>.
-
-*   Unlike the dedicated note type, the side bar has optional access to the current note, making it easy to ask for information or modifications to a note without having to search for the note first.
-    *   To toggle whether the current note is visible to the AI, simply click on the file icon at the bottom of the chat interface.
-*   On the top-right of the sidebar there are three buttons:
-    *   Create a new conversation.
-    *   Go to a previous conversation
-    *   Save the current conversation as a dedicated note in the <a class="reference-link" href="Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a>, which turns it into a dedicated chat note.
-
-> [!NOTE]
-> The sidebar chats are stored in the <a class="reference-link" href="Advanced%20Usage/Hidden%20Notes.md">Hidden Notes</a> and can be seen in the _AI Chat History_ section.
-
 ### The dedicated note type
 
 The dedicated chat note is similar to the sidebar interface, but it makes longer conversations more comfortable to read.
@@ -182,32 +170,7 @@ When _Note tools_ are enabled the skills will automatically be made available to
 
 ### MCP
 
-[Model Context Protocol](https://en.wikipedia.org/wiki/Model_Context_Protocol) allows external chat applications such as Claude Code to have access to the Trilium database.
-
-#### Built-in MCP
-
-v0.103.0 comes with a built-in MCP server that is not active by default. To activate it, go to <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → AI/LLM and toggle the _MCP server_ option.
-
-Once the MCP is active, simply add the MCP server to your AI assistant. The URL to use is displayed in the _Endpoint_ _URL_ information underneath the MCP toggle.
-
-Important aspects to consider:
-
-*   Only the HTTP transport is supported, the `stdio` method is not supported. If that is a blocker, consider using a third-party alternative listed below.
-*   The MCP does not have any authentication.
-*   The MCP is currently exposed only on `localhost` to avoid potential security issues, especially given that there is no authentication present.
-
-The tools exposed to the MCP are the same tools that are supported by the internal chat (see the _Note access_ section).
-
-#### Third-party alternatives
-
-The following are alternatives to Trilium's built-in MCP feature. Since Trilium's AI implementation is still experimental, its tooling might not be as mature as external tools.
-
-*   [perfectra1n/triliumnext-mcp](https://github.com/perfectra1n/triliumnext-mcp)
-*   [tan-yong-sheng/triliumnext-mcp](https://github.com/tan-yong-sheng/triliumnext-mcp)
-*   [eliassoares/trilium-fastmcp](https://github.com/eliassoares/trilium-fastmcp)
-
-> [!IMPORTANT]
-> These solutions are third-party and thus not endorsed or supported directly by the Trilium Notes team. Please address questions and issues on their corresponding repository instead.
+Trilium comes with a built-in MCP server which allows you to use an external agent such as Claude Code have access to your database. See the dedicated <a class="reference-link" href="AI/MCP.md">MCP</a> page for more details.
 
 ## History
 

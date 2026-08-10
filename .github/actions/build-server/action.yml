@@ -17,6 +17,14 @@ runs:
   - name: Install dependencies
     shell: bash
     run: pnpm install --frozen-lockfile
+  # better-sqlite3 v13's bundled prebuilds are linked against a much newer glibc
+  # than the assets previous releases shipped, which would drop distributions we
+  # still support. Recompile against an older one before the build copies
+  # node_modules/better-sqlite3 into dist/.
+  - name: Rebuild better-sqlite3 against an older glibc
+    if: ${{ inputs.os == 'linux' }}
+    shell: bash
+    run: bash scripts/build-portable-better-sqlite3.sh ${{ inputs.arch }}
   - name: Run Linux server build
     env:
       MATRIX_ARCH: ${{ inputs.arch }}

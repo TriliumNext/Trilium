@@ -13,6 +13,7 @@ The tabular structure is represented as such:
     *   Actually, both promoted and unpromoted attributes are supported, but it's a requirement to use a label/relation definition.
     *   The promoted attributes are usually defined as inheritable in order to show up in the child notes, but it's not a requirement.
 *   If there are multiple attribute definitions with the same `name`, only one will be displayed.
+*   If an attribute definition has multiple values, they will all be grouped under a single column, with chips indicating individual values.
 
 There are also a few predefined columns:
 
@@ -132,7 +133,6 @@ Limitations:
 
 ## Limitations
 
-*   Multi-value labels and relations are not supported. If a <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> is defined with a _Multi value_ specificity, they will be ignored.
 *   There is no support to filter the rows by a certain criteria. Consider using the table view in search for that use case.
 
 ## Use in search

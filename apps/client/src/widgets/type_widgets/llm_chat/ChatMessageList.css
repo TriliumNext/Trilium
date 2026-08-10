@@ -19,6 +19,9 @@
     /* Layout/paint changes inside the timeline (e.g. streaming appends) stay inside it;
        the element's own size comes from the flex container, so this is safe and free. */
     contain: layout paint;
+    /* Soften the clip edge above the composer island (see `.scroll-edge-fade` in style.css
+       for why a mask). Kept short so the newest streaming line doesn't sit in the fade. */
+    --scroll-fade-bottom: 20px;
 }
 
 /* Content-end sentinel watched by the jump-to-latest IntersectionObserver. A 1px

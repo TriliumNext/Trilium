@@ -72,22 +72,52 @@ class TaskContext<T extends TaskType> {
         this.progressCount = 0;
     }
 
+    /**
+     * Sets the phase and pushes the current progress immediately, without waiting for the next unit of
+     * work. For phases entered while no counts are flowing — e.g. the OneNote importer waiting out Graph
+     * throttling, where the next increaseProgressCount() may be an hour away — setPhase() alone would
+     * leave the client showing the previous label (and a seemingly hung count) the whole time.
+     */
+    reportPhase(phase: ProgressPhase) {
+        this.phase = phase;
+        this.sendProgressMessage();
+    }
+
+    /**
+     * Clears the phase so subsequent progress messages drop the label. Does not send by itself: callers
+     * clear right before counting the unit of work that ended the phase, and the forced flush here makes
+     * that very next increaseProgressCount() deliver the corrected label and count in one message.
+     */
+    clearPhase() {
+        if (this.phase !== null) {
+            this.phase = null;
+            this.lastSentCountTs = 0;
+        }
+    }
+
     increaseProgressCount() {
         this.progressCount++;
 
-        if (Date.now() - this.lastSentCountTs >= 300 && this.taskId !== "no-progress-reporting") {
-            this.lastSentCountTs = Date.now();
-
-            ws.sendMessageToAllClients({
-                type: "taskProgressCount",
-                taskId: this.taskId,
-                taskType: this.taskType,
-                data: this.data,
-                progressCount: this.progressCount,
-                ...(this.totalCount !== null ? { totalCount: this.totalCount } : {}),
-                ...(this.phase !== null ? { phase: this.phase } : {})
-            } as WebSocketMessage);
+        if (Date.now() - this.lastSentCountTs >= 300) {
+            this.sendProgressMessage();
         }
+    }
+
+    private sendProgressMessage() {
+        if (this.taskId === "no-progress-reporting") {
+            return;
+        }
+        this.lastSentCountTs = Date.now();
+
+        ws.sendMessageToAllClients({
+            type: "taskProgressCount",
+            taskId: this.taskId,
+            taskType: this.taskType,
+            data: this.data,
+            progressCount: this.progressCount,
+            ...(this.totalCount !== null ? { totalCount: this.totalCount } : {}),
+            ...(this.phase !== null ? { phase: this.phase } : {})
+        } as WebSocketMessage);
     }
 
     reportError(message: string) {

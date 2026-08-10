@@ -1,0 +1,153 @@
+/*
+ * The mobile master-detail flow: one pane at a time, the detail sliding in over the list. Driven by
+ * useMobileMasterDetail, which toggles every class matched here on the modal element; a dialog opts in by
+ * wrapping its two halves in MasterPane and DetailPane, and is left with whatever is particular to what
+ * is in them (its own padding, what scrolls, a footer).
+ */
+body.mobile .modal.mobile-master-detail {
+    /*
+     * Spelled out through the dialog to out-specify the body a full-page dialog is given
+     * (`overflow: scroll` in style.css, at the same weight as a plainer selector here would carry), and
+     * neither of the two can be left to the other:
+     *
+     *  - a body that scrolls is a body that scrolls sideways through a slide, the pane coming in
+     *    standing a screen's width past its end. A scrollbar appears for as long as the slide lasts,
+     *    and everything under it shifts by its width and back;
+     *  - a body with padding is a body whose panes have two geometries: an absolutely positioned pane
+     *    is placed against the padding box, so a pane at rest sits inside that padding and the same
+     *    pane mid-slide covers it — a jump of the padding's width at each end of the animation. The
+     *    padding belongs to the panes here, which carry it into both states.
+     */
+    > .modal-dialog > .modal-content > .modal-body {
+        position: relative;
+        padding: 0;
+        /* Each pane scrolls itself, which is also what keeps the sliding ones contained. */
+        overflow: hidden;
+    }
+
+    .tn-master-pane,
+    .tn-detail-pane {
+        height: 100%;
+        overflow: auto;
+    }
+
+    /* The header carries the way back and the name of what is on show (see MasterDetailHeader), in
+       place of the dialog's own title. */
+    .modal-header > .modal-title {
+        display: none;
+    }
+
+    /* At rest only the pane being read is drawn; through a transition both are, so that the one being
+       left can slide away as the other slides in. */
+    &.mobile-view-list:not(.mobile-transition-to-list) .tn-detail-pane {
+        display: none;
+    }
+
+    &.mobile-view-page:not(.mobile-transition-to-page) .tn-master-pane {
+        display: none;
+    }
+
+    /* Opening a page, the list slides out towards the start side as the page slides in from the end
+       side; going back reverses both. The page is drawn over the list, and `forwards` holds the pane
+       being left off-screen until the transition classes come off after animationend. The global
+       `motion-disabled` rule suppresses the animations; the flow then switches views directly, without
+       entering a transition at all. */
+    &.mobile-transition-to-page,
+    &.mobile-transition-to-list {
+        .tn-master-pane,
+        .tn-detail-pane {
+            position: absolute;
+            inset: 0;
+            background-color: var(--modal-background-color);
+        }
+
+        .tn-detail-pane {
+            z-index: 1;
+        }
+    }
+
+    &.mobile-transition-to-page {
+        .tn-detail-pane {
+            animation: tn-master-detail-in-end 0.35s ease-in-out forwards;
+        }
+
+        .tn-master-pane {
+            animation: tn-master-detail-out-start 0.35s ease-in-out forwards;
+        }
+    }
+
+    &.mobile-transition-to-list {
+        .tn-detail-pane {
+            animation: tn-master-detail-out-end 0.35s ease-in-out forwards;
+        }
+
+        .tn-master-pane {
+            animation: tn-master-detail-in-start 0.35s ease-in-out forwards;
+        }
+    }
+}
+
+body[dir="rtl"].mobile .modal.mobile-master-detail.mobile-transition-to-page {
+    .tn-detail-pane {
+        animation-name: tn-master-detail-in-start;
+    }
+
+    .tn-master-pane {
+        animation-name: tn-master-detail-out-end;
+    }
+}
+
+body[dir="rtl"].mobile .modal.mobile-master-detail.mobile-transition-to-list {
+    .tn-detail-pane {
+        animation-name: tn-master-detail-out-start;
+    }
+
+    .tn-master-pane {
+        animation-name: tn-master-detail-in-end;
+    }
+}
+
+.tn-master-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-grow: 1;
+    min-width: 0;
+
+    /* Decorative, and pointed at nothing: it stands where the back button stands in the other view. */
+    .tn-master-detail-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        cursor: default;
+    }
+
+    .tn-master-detail-title {
+        margin: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        flex-grow: 1;
+    }
+}
+
+@keyframes tn-master-detail-in-end {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes tn-master-detail-in-start {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes tn-master-detail-out-end {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes tn-master-detail-out-start {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(-100%); opacity: 0; }
+}

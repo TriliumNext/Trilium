@@ -4,56 +4,79 @@
         "desktop_title": "Die Desktop-App herunterladen (v{{version}})",
         "architecture": "Architektur:",
         "older_releases": "Ältere Releases anzeigen",
-        "server_title": "Richte einen Server für den Zugriff auf mehreren Geräten ein"
+        "server_title": "Einen Server für den Zugriff auf mehreren Geräten einrichten"
     },
     "hero_section": {
         "github": "GitHub",
         "get_started": "Loslegen",
         "dockerhub": "Docker Hub",
         "title": "Organisieren Sie Ihre Gedanken. Bauen Sie Ihre persönliche Wissensdatenbank auf.",
-        "subtitle": "Trilium ist eine Open-Source-Lösung zum Erstellen von Notizen und Organisieren einer persönlichen Wissensdatenbank. Sie kann lokal auf dem Desktop verwendet oder mit einem selbst gehosteten Server synchronisieren werden, um erstellte Notizen überall verfügbar zu haben.",
-        "screenshot_alt": "Screenshot der Desktop-Anwendung Trilium Notes"
+        "subtitle": "Trilium ist eine Open-Source-Lösung zum Erstellen von Notizen und Organisieren einer persönlichen Wissensdatenbank. Sie kann lokal auf dem Desktop verwendet oder mit einem selbst gehosteten Server synchronisiert werden, um erstellte Notizen überall verfügbar zu haben.",
+        "screenshot_alt": "Screenshot der Desktop-Anwendung Trilium Notes",
+        "tagline_license": "Lizenziert unter AGPL-3.0",
+        "tagline_no_account": "Kein Konto erforderlich",
+        "tagline_cross_platform": "Funktioniert offline"
     },
     "organization_benefits": {
-        "title": "Organisation",
+        "title": "Strukturieren Sie Ihre Notizen nach Ihren Vorstellungen",
         "note_structure_title": "Notizstruktur",
-        "attributes_title": "Notiz Labels und Beziehungen",
+        "attributes_title": "Notizlabels und Beziehungen",
         "note_structure_description": "Notizen lassen sich hierarchisch anordnen. Ordner sind nicht nötig, da jede Notiz Unternotizen enthalten kann. Eine einzelne Notiz kann an mehreren Stellen in der Hierarchie hinzugefügt werden.",
         "hoisting_description": "Trennen Sie Ihre persönlichen und beruflichen Notizen ganz einfach, indem Sie sie in einem Arbeitsbereich gruppieren. Dadurch wird Ihre Notizstruktur so fokussiert, dass nur ein bestimmter Satz von Notizen angezeigt wird.",
         "hoisting_title": "Arbeitsbereiche und Fokusansicht",
-        "attributes_description": "Nutze Beziehungen zwischen Notizen oder füge Label hinzu um diese einfach zu kategorisieren. Verwende hervorgehobene Attribute um strukturierte Informationen zu hinterlegen die in Tabellen oder Boards verwendet werden."
+        "attributes_description": "Verwenden Sie Beziehungen zwischen Notizen oder fügen Sie Labels zur einfachen Kategorisierung hinzu. Mit hervorgehobenen Attributen können Sie strukturierte Informationen eingeben, die sich in Tabellen und Boards verwenden lassen.",
+        "screenshot_alt": "Hierarchischer Notizbaum in Trilium"
     },
     "productivity_benefits": {
         "revisions_title": "Notizrevisionen",
-        "title": "Produktivität und Sicherheit",
-        "sync_title": "Synchronisation",
+        "title": "Leistungsstarke Funktionen für den Alltag",
+        "sync_title": "Synchronisierung",
         "protected_notes_title": "Geschützte Notizen",
-        "search_title": "Leistungsstarke Suche",
+        "search_title": "Suche und schnelle Navigation",
         "web_clipper_title": "Webschnipsel",
         "revisions_content": "Notizen werden regelmäßig im Hintergrund gespeichert und Revisionen können zur Überprüfung oder zum Rückgängigmachen versehentlicher Änderungen verwendet werden. Revisionen können auch bei Bedarf erstellt werden.",
-        "sync_content": "Verwenden Sie eine selbst gehostete oder Cloud-Instanz, um Ihre Notizen ganz einfach auf mehreren Geräten zu synchronisieren und über eine WebApp von Ihrem mobilen Gerät aus darauf zuzugreifen.",
+        "sync_content": "Verwenden Sie eine selbst gehostete oder Cloud-Instanz, um Ihre Notizen ganz einfach auf mehreren Geräten zu synchronisieren und über eine PWA von Ihrem mobilen Gerät aus darauf zuzugreifen.",
         "protected_notes_content": "Halten Sie vertrauliche Informationen sicher, indem Sie Notizen verschlüsseln und mit einem Passwort schützen.",
-        "search_content": "Oder durchsuchen Sie den Inhalt von Notizen und grenzen Sie die Suche ein, indem Sie nach übergeordneten Notizen oder der Hierarchieebene filtern.",
-        "web_clipper_content": "Webseiten oder Screenshots direkt in Trilium speichern – mit der Web Clipper Browser-Erweiterung."
+        "search_content": "Springen Sie per fehlertoleranter Suche anhand des Titels zu jeder Notiz oder jedem Befehl oder durchsuchen Sie Ihre Notizen per Volltextsuche – dank OCR auch Text in Bildern und PDFs.",
+        "web_clipper_content": "Webseiten oder Screenshots direkt in Trilium speichern – mit der Web Clipper Browser-Erweiterung.",
+        "auth_title": "Sichere Anmeldung",
+        "auth_content": "Schützen Sie die Anmeldung an Ihrem Server mit Mehrfaktorauthentifizierung (TOTP) oder melden Sie sich über Ihren Identitätsanbieter mit OpenID Connect an.",
+        "templates_title": "Vorlagen",
+        "templates_content": "Definieren Sie wiederverwendbare Notizvorlagen mit vorgegebener Struktur, Attributen und Inhalten und erstellen Sie daraus mit einem Klick neue Notizen.",
+        "share_title": "Notizen im Web teilen",
+        "share_content": "Wenn Sie einen Server haben, können Sie jeden Unterbaum Ihrer Notizen als öffentliche, schreibgeschützte Website veröffentlichen, die jede Person ohne Konto durchsuchen kann.",
+        "api_title": "REST-API",
+        "api_content": "Lesen, erstellen und aktualisieren Sie Ihre Notizen programmatisch über HTTP mit Triliums integrierter REST-API – ideal für Automatisierungen und Integrationen von Drittanbietern."
     },
     "note_types": {
-        "text_title": "Text Notizen",
-        "code_title": "Code Notizen",
+        "text_title": "Textnotizen",
+        "code_title": "Code-Notizen",
         "canvas_title": "Leinwand",
-        "mermaid_title": "Mermaid Diagramm",
+        "mermaid_title": "Mermaid-Diagramme",
         "mindmap_title": "Mindmap",
         "text_description": "Die Notizen werden mit einem visuellen Editor (WYSIWYG) bearbeitet, der Tabellen, Bilder, mathematische Ausdrücke und Code-Blöcke mit Syntaxhervorhebung unterstützt. Formatieren Sie den Text schnell mit einer Markdown-ähnlichen Syntax oder mit Slash-Befehlen.",
         "code_description": "Große Quellcode- oder Skriptdateien werden mit einem speziellen Editor bearbeitet, der Syntaxhervorhebung für viele Programmiersprachen und diverse Farbschemata bietet.",
-        "title": "Verschiedene Darstellungsformen für Ihre Informationen",
-        "file_title": "Datei Notizen",
+        "title": "Ein Notiztyp für jede Art von Inhalt",
+        "file_title": "Dateinotizen",
         "file_description": "Betten Sie Multimedia-Dateien wie PDFs, Bilder und Videos mit einer Vorschau innerhalb der Anwendung ein.",
         "canvas_description": "Ordnen Sie Formen, Bilder und Text auf einer unendlichen Leinwand an, indem Sie dieselbe Technologie verwenden, die auch hinter excalidraw.com steckt. Ideal für Diagramme, Skizzen und visuelle Planung.",
         "mermaid_description": "Erstellen Sie Fluss-, Klassen-, Sequenz- sowie Gantt-Diagramme und vieles mehr mit der Mermaid-Syntax.",
-        "mindmap_description": "Strukturieren Sie Ihre Gedanken visuell oder nutzen Sie eine Brainstorming-Sitzung."
+        "mindmap_description": "Strukturieren Sie Ihre Gedanken visuell oder sammeln Sie Ideen in einem Brainstorming.",
+        "subtitle": "Nicht alles passt in einen Absatz. Trilium bietet eine Vielzahl von Notiztypen – von Rich Text und Code bis zu Tabellen, Diagrammen und Mindmaps. So können Sie jede Idee in der passenden Form festhalten und die Formate frei in Ihrem Baum kombinieren.",
+        "others_label": "Und mehr",
+        "notemap_title": "Notizkarte",
+        "relationmap_title": "Beziehungskarte",
+        "savedsearch_title": "Gespeicherte Suchen",
+        "rendernote_title": "Render-Notiz",
+        "webview_title": "Webansichten",
+        "markdown_title": "Markdown",
+        "markdown_description": "Bevorzugen Sie Klartext? Schreiben Sie Ihre Notizen direkt in Markdown. Sie bleiben dadurch portabel und einfach versionierbar, während Tabellen, Codeblöcke und umfangreiche Formatierungen weiterhin in einer nebeneinander angezeigten Vorschau dargestellt werden.",
+        "spreadsheet_title": "Tabellenkalkulation",
+        "spreadsheet_description": "Eine vollwertige Tabellenkalkulation für tabellarische Daten mit Formeln, bedingter Formatierung, Datenvalidierung, Sortierung und Filterung. Importieren und exportieren Sie Excel- (.xlsx) und CSV-Dateien."
     },
     "collections": {
         "calendar_title": "Kalender",
-        "title": "Sammlungen",
+        "title": "Betrachten Sie Ihre Notizen aus jedem Blickwinkel",
         "calendar_description": "Organisieren Sie Ihre privaten oder beruflichen Termine mithilfe eines Kalenders, der ganztägige und mehrtägige Termine unterstützt. Verschaffen Sie sich mit der Wochen-, Monats- und Jahresansicht einen Überblick über Ihre Termine. Einfaches Hinzufügen oder Verschieben von Terminen.",
         "table_title": "Tabelle",
         "table_description": "Zeigen Sie Informationen zu Notizen in einer tabellarischen Ansicht an und bearbeiten Sie diese. Dabei stehen verschiedene Spaltentypen wie Text, Zahlen, Kontrollkästchen, Datum sowie Uhrzeit, Links und Farben zur Verfügung, auch Beziehungen werden unterstützt. Optional können Sie die Notizen innerhalb einer Baumhierarchie in der Tabelle anzeigen.",
@@ -62,14 +85,17 @@
         "geomap_title": "Geokarte",
         "geomap_description": "Planen Sie Ihren Urlaub oder markieren Sie Ihre Sehenswürdigkeiten direkt auf einer geografischen Karte mit individuellen Markierungen. Zeigen Sie aufgezeichnete GPX-Tracks an, um Reiserouten zu verfolgen.",
         "presentation_title": "Präsentation",
-        "presentation_description": "Organisieren Sie Informationen in Folien und präsentieren Sie diese im Vollbildmodus mit flüssigen Übergängen. Die Folien können als PDF gespeichert und einfach geteilt werden."
+        "presentation_description": "Organisieren Sie Informationen in Folien und präsentieren Sie diese im Vollbildmodus mit flüssigen Übergängen. Die Folien können als PDF gespeichert und einfach geteilt werden.",
+        "subtitle": "Sammlungen bieten einer Gruppe von Notizen eine speziell angepasste Ansicht. Zeigen Sie dieselben Notizen als Kalender, Tabelle, Kanban-Board, interaktive Karte und mehr an und wechseln Sie bei Bedarf zwischen den Layouts.",
+        "dashboard_title": "Dashboard",
+        "dashboard_description": "Ordnen Sie Ihre Notizen als verschiebbare und skalierbare Kacheln auf einem Raster an. Notizen werden zu Live-Widgets, die ihren Inhalt auf einen Blick zeigen – ideal für eine persönliche Startseite oder Projektübersicht, die alles an einem Ort zusammenführt."
     },
     "download_helper_desktop_macos": {
         "quick_start": "Installieren mit Homebrew:",
         "download_dmg": "Installer (.dmg) herunterladen",
         "download_zip": "Portable (.zip)",
-        "download_homebrew_cask": "Die Homebrew Cask",
-        "description_arm64": "Für Apple Silicon Macs, beispielsweise mit M1-, M2-, M3- oder M4-Chips.",
+        "download_homebrew_cask": "Homebrew Cask",
+        "description_arm64": "Für Apple Silicon Macs, beispielsweise mit M1- und M2-Chips.",
         "description_x64": "Für Intel-Macs ab macOS Monterey und neuer.",
         "title_x64": "macOS für Intel",
         "title_arm64": "macOS für Apple Silicon"
@@ -112,22 +138,29 @@
         "mobile_answer": "Derzeit gibt es keine offizielle mobile Anwendung. Wenn Sie jedoch über eine Serverinstanz verfügen, können Sie über einen Webbrowser darauf zugreifen und sie sogar als PWA installieren. Für Android gibt es eine inoffizielle Anwendung namens TriliumDroid, die sogar offline funktioniert (genau wie ein Desktop-Client).",
         "database_question": "Wo werden die Daten gespeichert?",
         "database_answer": "Alle Ihre Notizen werden in einer SQLite-Datenbank in einem Anwendungsordner gespeichert. Der Grund, warum Trilium eine Datenbank anstelle von einfachen Textdateien verwendet, liegt sowohl in der Leistung als auch darin, dass einige Funktionen, wie z. B. Klone (gleiche Notiz an mehreren Stellen im Baum), viel schwieriger zu implementieren wären. Um den Anwendungsordner zu finden, gehen Sie einfach zum Fenster „Über“.",
-        "server_question": "Benötige ich einen Server um Trilium zu nutzen?",
+        "server_question": "Benötige ich einen Server, um Trilium zu nutzen?",
         "server_answer": "Nein, der Server ermöglicht den Zugriff über einen Webbrowser und verwaltet die Synchronisierung, wenn Sie mehrere Geräte haben. Um loszulegen, reicht es aus, die Desktop-Anwendung herunterzuladen und zu verwenden.",
         "scaling_question": "Wie gut skaliert die Anwendung bei einer großen Anzahl von Notizen?",
         "scaling_answer": "Je nach Nutzung sollte die Anwendung min. 100.000 Notizen problemlos verarbeiten können. Beachten Sie, dass der Synchronisierungsvorgang manchmal fehlschlagen kann, wenn viele große Dateien (1 GB pro Datei) hochgeladen werden, da Trilium eher als Wissensdatenbank-Anwendung und nicht als Dateispeicher (wie beispielsweise NextCloud) konzipiert ist.",
         "network_share_question": "Kann ich meine Datenbank über ein Netzlaufwerk freigeben?",
         "network_share_answer": "Nein, es ist im Allgemeinen keine gute Idee, eine SQLite-Datenbank über ein Netzlaufwerk freizugeben. Auch wenn dies manchmal funktionieren mag, besteht die Gefahr, dass die Datenbank aufgrund unvollständiger Dateisperren über ein Netzwerk beschädigt wird.",
         "security_question": "Wie werden meine Daten geschützt?",
-        "security_answer": "Standardmäßig sind Notizen nicht verschlüsselt und können direkt aus der Datenbank gelesen werden. Sobald eine Notiz als verschlüsselt markiert ist, wird diese mit AES-128-CBC verschlüsselt."
+        "security_answer": "Standardmäßig sind Notizen nicht verschlüsselt und können direkt aus der Datenbank gelesen werden. Sobald eine Notiz als verschlüsselt markiert ist, wird diese mit AES-128-CBC verschlüsselt.",
+        "free_question": "Ist Trilium kostenlos?",
+        "cloud_question": "Gibt es eine gehostete oder Cloud-Version?",
+        "collaboration_question": "Können mehrere Personen an denselben Notizen zusammenarbeiten?",
+        "more_questions": "Noch Fragen? <0>Fragen Sie die Community</0>",
+        "free_answer": "Ja, vollständig. Trilium ist freie Open-Source-Software unter der AGPL-3.0-Lizenz – ohne kostenpflichtige Tarife, Konten oder Bezahlschranken für Funktionen. Sie können es nach Ihren Vorstellungen nutzen, selbst hosten und verändern.",
+        "cloud_answer": "Noch keine offizielle, auch wenn wir dies künftig anbieten möchten. Derzeit wird Trilium selbst gehostet: Nutzen Sie die Desktop-Anwendung oder hosten Sie den Server selbst. Wenn Sie keinen Server verwalten möchten, bieten Drittanbieter wie <0>PikaPods</0> verwaltetes Trilium-Hosting an.",
+        "collaboration_answer": "Trilium ist als Anwendung für Einzelpersonen konzipiert. Sie können Ihre eigenen Notizen auf all Ihren Geräten synchronisieren und schreibgeschützte Notizen im Web veröffentlichen, damit andere sie ansehen können. Eine gemeinsame Echtzeitbearbeitung derselben Notizen wird nicht unterstützt."
     },
     "final_cta": {
-        "title": "Sind Sie bereit, um mit Trilium Notes zu starten?",
-        "description": "Baue dein persönliches Wissensarchiv mit leistungsstarken Funktionen und vollständigem Datenschutz auf.",
+        "title": "Beginnen Sie mit dem Aufbau Ihrer Wissensdatenbank",
+        "description": "Organisieren Sie alles in einer Open-Source-App: hierarchische Notizen, leistungsstarke Suche und Synchronisierung mit einem Server, den Sie selbst kontrollieren.",
         "get_started": "Loslegen"
     },
     "components": {
-        "link_learn_more": "Mehr erfahren..."
+        "link_learn_more": "Mehr erfahren…"
     },
     "download_now": {
         "text": "Herunterladen ",
@@ -140,8 +173,9 @@
     "header": {
         "get-started": "Loslegen",
         "documentation": "Dokumentation",
-        "support-us": "Unterstützt uns",
-        "resources": "Ressourcen"
+        "support-us": "Uns unterstützen",
+        "resources": "Ressourcen",
+        "language": "Sprache"
     },
     "footer": {
         "copyright_and_the": " und die ",
@@ -154,7 +188,7 @@
         "reddit": "Reddit"
     },
     "support_us": {
-        "title": "Unterstütze uns",
+        "title": "Unterstützen Sie uns",
         "financial_donations_title": "Geldspenden",
         "financial_donations_description": "Trilium wurde mit <Link>Hunderten von Arbeitsstunden</Link> entwickelt und wird mit diesem Aufwand auch gewartet. Ihre Unterstützung sorgt dafür, dass es Open Source bleibt, verbessert die Funktionen und deckt Kosten wie das Hosting.",
         "financial_donations_cta": "Bitte unterstützen Sie den Hauptentwickler (<Link>eliandoran</Link>) der Anwendung über:",
@@ -166,7 +200,7 @@
         "title": "Weitere Möglichkeiten zum Mitwirken",
         "way_translate": "Übersetzen Sie die Anwendung über <Link>Weblate</Link> in Ihre Muttersprache.",
         "way_community": "Interagieren Sie mit der Community auf <Discussions>GitHub Discussions</Discussions> oder auf <Matrix>Matrix</Matrix>.",
-        "way_reports": "Fehlfunktionen über <Link>GitHub-Issues</Link> melden.",
+        "way_reports": "Melden Sie Fehler über <Link>GitHub-Issues</Link>.",
         "way_document": "Verbessern Sie die Dokumentation, indem Sie uns auf Lücken hinweisen oder durch eigene Beiträge wie Anleitungen, FAQs oder Tutorials unterstützen.",
         "way_market": "Weitersagen: Teilen Sie Trilium Notes mit Freunden, in Blogs und sozialen Medien."
     },
@@ -189,6 +223,65 @@
         "download": "Herunterladen",
         "website": "Webseite",
         "title": "Ressourcen",
-        "icon_packs_intro": "Erweitere die Auswahl an verfügbaren Symbolen für deine Notizen, indem du ein Symbolpaket verwendest. Für weitere Informationen zu Symbolpaketen, schaue in die <DocumentationLink>offizielle Dokumentation</DocumentationLink>."
+        "icon_packs_intro": "Erweitern Sie die Auswahl an verfügbaren Symbolen für Ihre Notizen, indem Sie ein Symbolpaket verwenden. Weitere Informationen zu Symbolpaketen finden Sie in der <DocumentationLink>offiziellen Dokumentation</DocumentationLink>."
+    },
+    "section_nav": {
+        "aria_label": "Zum Abschnitt springen",
+        "organization": "Organisieren",
+        "productivity": "Funktionen",
+        "note_types": "Notiztypen",
+        "import": "Import und Export",
+        "collections": "Sammlungen",
+        "scripting": "Skripting",
+        "ai_integration": "KI",
+        "faq": "FAQ"
+    },
+    "import": {
+        "title": "Ihre Notizen bleiben jederzeit frei verfügbar",
+        "subtitle": "Ihre Notizen gehören Ihnen und lassen sich frei bewegen. Importieren Sie sie aus anderen Anwendungen, exportieren Sie sie in offene Formate oder verwandeln Sie sie jederzeit in ansprechende Dokumente.",
+        "pillar_import_title": "Import",
+        "pillar_import_description": "Übernehmen Sie Ihre Notizen aus anderen Anwendungen samt ihrer Struktur oder importieren Sie standardmäßige Markdown-, HTML- und OPML-Dateien.",
+        "pillar_export_title": "Export",
+        "pillar_export_description": "Exportieren Sie jederzeit einzelne Notizen oder Ihren gesamten Baum in ein offenes, portables Format:",
+        "pillar_export_markdown": "Markdown für portablen Klartext",
+        "pillar_export_html": "HTML für eigenständige Seiten",
+        "pillar_export_opml": "OPML für Gliederungen",
+        "pillar_pdf_title": "Als PDF drucken",
+        "pillar_pdf_description": "Verwandeln Sie Ihre Notizen in ein ansprechend gestaltetes, buchähnliches PDF:",
+        "pillar_pdf_single": "Eine einzelne Notiz",
+        "pillar_pdf_subtree": "Einen gesamten Unterbaum in der richtigen Reihenfolge",
+        "pillar_pdf_ready": "Bereit zum Drucken oder Teilen",
+        "sources_label": "Direkter Import aus",
+        "onenote_title": "Microsoft OneNote",
+        "notion_title": "Notion",
+        "keep_title": "Google Keep",
+        "evernote_title": "Evernote",
+        "anytype_title": "Anytype",
+        "obsidian_title": "Obsidian"
+    },
+    "ai_integration": {
+        "title": "KI nach Ihren Regeln",
+        "subtitle": "Optional und vollständig nach Ihren Regeln. KI-Funktionen sind optional und standardmäßig deaktiviert: Ihre Notizen werden nur übertragen, wenn Sie die Funktionen aktivieren und Ihren eigenen Anbieter verbinden.",
+        "screenshot_alt": "Der Trilium-KI-Chat erstellt mit integrierten Werkzeugen Notizen für Sie",
+        "chat_title": "Chatten Sie mit Ihren Notizen",
+        "chat_description": "Stellen Sie Fragen und sammeln Sie Ideen in einem integrierten Chat, der auf die Inhalte Ihrer eigenen Notizen zugreifen kann.",
+        "tools_title": "KI, die mit Ihren Notizen arbeitet",
+        "tools_description": "Lassen Sie einen Assistenten mithilfe integrierter Werkzeuge Notizen für Sie suchen, erstellen und aktualisieren.",
+        "providers_title": "Ihr Anbieter, Ihre Schlüssel",
+        "providers_description": "Verbinden Sie OpenAI, Anthropic oder Google mit Ihrem eigenen API-Schlüssel oder konfigurieren Sie Trilium für ein selbst gehostetes, OpenAI-kompatibles Modell. Stellen Sie Ihre Notizen externen Assistenten über MCP bereit.",
+        "learn_more": "Mehr erfahren"
+    },
+    "scripting": {
+        "title": "Was Sie sich vorstellen können, können Sie skripten",
+        "subtitle": "Trilium ist nicht nur ein Ort zum Speichern von Notizen, sondern programmierbar. Schreiben Sie JavaScript, das in der Anwendung oder auf dem Server läuft, erstellen Sie Ihre eigene Oberfläche und automatisieren Sie Ihre Arbeitsabläufe – von einer einzeiligen Anpassung bis zur vollständig angepassten Anwendung.",
+        "widgets_title": "Benutzerdefinierte Widgets",
+        "backend_title": "Backend-Skripte und Ereignisse",
+        "render_title": "Render-Notizen",
+        "api_title": "Skript-API",
+        "screenshot_alt": "Eine Trilium-Render-Notiz mit einer per Skript erstellten interaktiven Analoguhr",
+        "widgets_description": "Fügen Sie Triliums Oberfläche mit Frontend-JavaScript eigene Schaltflächen, Bereiche und Starter-Widgets hinzu.",
+        "backend_description": "Führen Sie serverseitige Skripte nach Zeitplan oder als Reaktion auf Ereignisse wie das Erstellen oder Ändern einer Notiz aus.",
+        "render_description": "Erstellen Sie interaktive Dashboards und Mini-Anwendungen, die direkt in einer Notiz dargestellt werden, wie die hier gezeigte Uhr.",
+        "api_description": "Eine typisierte API für Notizen, Zweige, Attribute und Suche, verfügbar für Frontend- und Backend-Skripte."
     }
 }

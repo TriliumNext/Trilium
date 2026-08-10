@@ -21,7 +21,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
-Trilium Notes ist eine freie, open-source, plattformfreie, hierarchische
+Trilium Notes ist eine freie, Open-Source, plattformübergreifende, hierarchische
 Notiz-Anwendung mit Fokus auf die Erstellung großer persönlicher
 Wissenssammlungen.
 
@@ -66,7 +66,7 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   [Klonen](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
 * Umfangreicher WYSIWYG-Editor für Notizen, z. B. mit Tabellen, Bildern und
   [Mathematik](https://docs.triliumnotes.org/user-guide/note-types/text) mit
-  Markdown-Autoformatierung
+  Markdown-[Autoformatierung](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
 * Unterstützung für das Bearbeiten von [Notizen mit
   Quellcode](https://docs.triliumnotes.org/user-guide/note-types/code), inkl.
   Syntaxhervorhebung
@@ -76,8 +76,7 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   [Notizhervorhebung](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
 * Nahtlose [Versionierung von
   Notizen](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Notiz
-  [Attribute](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+* Notiz-[Attribute](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
   können zur Organisation von Notizen, für Abfragen und erweiterte
   [Skripterstellung](https://docs.triliumnotes.org/user-guide/scripts) verwendet
   werden
@@ -89,7 +88,7 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
 * [Synchronisierung](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   mit einem selbst gehosteten Synchronisierungsserver
   * Es gibt [Drittanbieter-Dienste für das Hosting von
-    Synchronisationsservern](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+    Synchronisierungsservern](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Freigabe](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (Veröffentlichung) von Notizen im öffentlichen Internet
 * Starke
@@ -109,7 +108,7 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   Showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
 * [REST-API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) für
   die Automatisierung
-* Skalierbar in Bedienbarkeit und Performance — geeignet für über 100.000
+* Skalierbar in Bedienbarkeit und Performance – geeignet für über 100.000
   Notizen
 * Touch-optimiertes [mobiles
   Frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) für
@@ -124,7 +123,7 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   einfachen Speichern von Webinhalten
 * Anpassbare Benutzeroberfläche (Seitenleisten-Schaltflächen, benutzerdefinierte
   Widgets, ...)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+* [Metriken](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
   inklusive eines Grafana-Dashboards.
 
 ✨ Weitere Informationen zu TriliumNext findet man in den folgenden
@@ -152,8 +151,8 @@ Versionen bis einschließlich
 [v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) sind
 kompatibel mit der letzten zadam/trilium-Version
 [v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Alle späteren
-Versionen von TriliumNext/Trilium haben ihre Sync-Versionen erhöht, was eine
-direkte Migration verhindert.
+Versionen von TriliumNext/Trilium haben ihre Synchronisierungsversionen erhöht,
+was eine direkte Migration verhindert.
 
 ## 💬 Mit uns diskutieren
 
@@ -222,22 +221,24 @@ Trilium und TriliumDroid übereinstimmen muss.
 
 #### Pocket Trilium
 
-If you want a full-featured native Android app, check out [Pocket
-Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
-instance on your phone, supports full offline use, and allows you to sync with
-your server.
+Wenn Sie eine vollwertige native Android-App möchten, sehen Sie sich [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium) an. Sie führt eine
+vollständige Trilium-Instanz auf Ihrem Smartphone aus, unterstützt die
+vollständige Offline-Nutzung und ermöglicht die Synchronisierung mit Ihrem
+Server.
 
 #### Trinote
 
-If you want a native iOS app, you can use
-[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
-client for your self-hosted Trilium / TriliumNext server. It lets you browse and
-organize your note tree, search for notes on the server, read and edit all note
-types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
-available and editable offline. Here's the
-[repo](https://github.com/StephenArg/Trinote) if you're interested in
-contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
-server if you have any feedback or suggestions you want to discuss.
+Wenn Sie eine native iOS-App möchten, können Sie
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249) verwenden, einen
+Open-Source-Client für Ihren selbst gehosteten Trilium- bzw. TriliumNext-Server.
+Damit können Sie Ihren Notizbaum durchsuchen und organisieren, auf dem Server
+nach Notizen suchen, alle Notiztypen lesen und bearbeiten (Text, Code, Mindmap,
+Tabellenkalkulation, Geokarte, Leinwand usw.) sowie Notizen offline verfügbar
+und bearbeitbar halten. Das [Repository](https://github.com/StephenArg/Trinote)
+finden Sie hier, wenn Sie beitragen möchten, und den
+[Discord](https://discord.com/invite/ghjJG56EUS)-Server hier, falls Sie Feedback
+oder Vorschläge besprechen möchten.
 
 ### Server
 
@@ -351,17 +352,23 @@ enthält weitere Details. Bei offenen Fragen kann über die im Abschnitt
   Anwendungssymbols.
 * [nriver](https://github.com/nriver) für seine Arbeit zur
   Internationalisierung.
-* [Thomas Frei](https://github.com/thfrei) für seine originelle Arbeit an
+* [Thomas Frei](https://github.com/thfrei) für seine ursprüngliche Arbeit an
   Canvas.
 * [antoniotejada](https://github.com/nriver) für das ursprüngliche
   Syntaxhervorhebungs-Widget.
 * [Tabler-Icons](https://tabler.io/icons) für die Symbole in der Taskleiste.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 Trilium wäre ohne die zugrundeliegenden Technologien nicht möglich:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - der visuelle Editor für
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) – der visuelle Editor für
   Textnotizen.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - Code-Editor mit
+* [CodeMirror](https://github.com/codemirror/CodeMirror) – Code-Editor mit
   Unterstützung für eine Vielzahl von Sprachen.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) – das unendliche
   Whiteboard, verwendet in Leinwand-Notizen.
@@ -369,26 +376,26 @@ Trilium wäre ohne die zugrundeliegenden Technologien nicht möglich:
   Mindmap-Funktionalität.
 * [Leaflet](https://github.com/Leaflet/Leaflet) – für die Darstellung
   geografischer Karten.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - für die interaktive
+* [Tabulator](https://github.com/olifolkerd/tabulator) – für die interaktive
   Tabelle in Kollektionen.
 * [FancyTree](https://github.com/mar10/fancytree) – funktionsreiche
   Baum-Bibliothek ohne echte Konkurrenz.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visuelle
+* [jsPlumb](https://github.com/jsplumb/jsplumb) – visuelle
   Verbindungsbibliothek. Verwendet in
   [Beziehungskarten](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
   und
-  [Verbindungskarten](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+  [Link-Karten](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Unterstützung
 
 Trilium wurde mit [Hunderten von
 Arbeitsstunden](https://github.com/TriliumNext/Trilium/graphs/commit-activity)
 entwickelt und wird auch so weitergeführt. Ihre Unterstützung sorgt dafür, dass
-es Open Source bleibt, verbessert die Funktionen und deckt Kosten wie das
+es Open-Source bleibt, verbessert die Funktionen und deckt Kosten wie das
 Hosting.
 
-Erwäge, den Hauptentwickler ([eliandoran](https://github.com/eliandoran)) der
-Anwendung zu unterstützen über:
+Erwägen Sie, den Hauptentwickler ([eliandoran](https://github.com/eliandoran))
+der Anwendung zu unterstützen über:
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)

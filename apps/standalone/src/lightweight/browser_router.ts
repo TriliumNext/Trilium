@@ -250,7 +250,13 @@ export class BrowserRouter {
             if (raw.body instanceof ArrayBuffer) {
                 body = raw.body;
             } else if (raw.body instanceof Uint8Array) {
-                body = raw.body.buffer as ArrayBuffer;
+                // A view can cover just part of its buffer — a byte range sliced out of a note's
+                // content is exactly that — so handing over the whole buffer would answer with the
+                // entire file. Only the view's own bytes may go out, copied when it isn't the whole
+                // buffer already (the common case, which must not copy a whole video to serve it).
+                body = raw.body.byteOffset === 0 && raw.body.byteLength === raw.body.buffer.byteLength
+                    ? raw.body.buffer as ArrayBuffer
+                    : new Uint8Array(raw.body).buffer;
             } else if (typeof raw.body === 'string') {
                 body = encoder.encode(raw.body).buffer as ArrayBuffer;
             }

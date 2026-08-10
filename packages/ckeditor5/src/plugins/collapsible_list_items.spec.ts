@@ -1,4 +1,4 @@
-import { _setModelData as setModelData, ClassicEditor, keyCodes, List, Paragraph, TodoList, Typing, Undo, type ModelElement } from "ckeditor5";
+import { _setModelData as setModelData, ClassicEditor, FindAndReplace, FindAndReplaceEditing, keyCodes, List, Paragraph, TodoList, Typing, Undo, type ModelElement } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../test/editor-kit.js";
@@ -453,6 +453,83 @@ describe("CollapsibleListItems", () => {
 
         editor.execute("toggleListCollapse");
         expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+    });
+
+    describe("find-in-note reveal", () => {
+        // A fresh editor *with* the find plugin (the default one above deliberately has none, so
+        // the "no find plugin" early-return stays exercised). The parent is collapsed, hiding
+        // "Child" and "Other child".
+        async function createCollapsedFindEditor(): Promise<ClassicEditor> {
+            const findEditor = await createTestEditor([CollapsibleListItems, List, TodoList, Paragraph, Typing, Undo, FindAndReplace]);
+            setModelData(findEditor.model, LIST_FIXTURE);
+            findEditor.execute("toggleListCollapse");
+            return findEditor;
+        }
+
+        function collapsedItem(findEditor: ClassicEditor): { li: HTMLElement; nested: HTMLElement } {
+            const li = findEditor.editing.view.getDomRoot()?.querySelector<HTMLElement>('li[data-trilium-collapsed="true"]');
+            const nested = li?.querySelector<HTMLElement>("ul");
+            if (!li || !nested) {
+                throw new Error("Expected a collapsed list item with a hidden nested list.");
+            }
+            return { li, nested };
+        }
+
+        it("reveals a collapsed item to show a match inside it and follows the highlight, without persisting", async () => {
+            const findEditor = await createCollapsedFindEditor();
+            const { li, nested } = collapsedItem(findEditor);
+            expect(getComputedStyle(nested).display).toBe("none");
+
+            findEditor.execute("find", "child"); // first match: "Child", hidden under the collapsed parent
+
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(true);
+            expect(getComputedStyle(nested).display).not.toBe("none");
+
+            // Advancing to the sibling match keeps the same ancestor revealed (no churn, no error).
+            findEditor.execute("findNext"); // "Other child", still under the same collapsed parent
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(true);
+
+            // The persisted collapsed state is never touched — search must not rewrite the layout.
+            expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+            expect(findEditor.getData()).toContain('data-trilium-collapsed="true"');
+        });
+
+        it("re-collapses once the search is cleared", async () => {
+            const findEditor = await createCollapsedFindEditor();
+            const { li, nested } = collapsedItem(findEditor);
+
+            findEditor.execute("find", "child");
+            expect(getComputedStyle(nested).display).not.toBe("none");
+
+            findEditor.plugins.get(FindAndReplaceEditing).state?.clear(findEditor.model);
+
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(false);
+            expect(getComputedStyle(nested).display).toBe("none");
+        });
+
+        it("does not permanently expand when the search closes with the highlight inside the item", async () => {
+            const findEditor = await createCollapsedFindEditor();
+            const { nested } = collapsedItem(findEditor);
+
+            findEditor.execute("find", "Other child");
+            expect(getComputedStyle(nested).display).not.toBe("none");
+
+            // Reproduce find_in_text.findBoxClosed: clear the highlight, then drop the caret on the
+            // match. Both are synchronous, so the "find is closing" window is still open here.
+            const state = findEditor.plugins.get(FindAndReplaceEditing).state;
+            const range = state?.highlightedResult?.marker?.getRange();
+            expect(range).toBeTruthy();
+            state?.clear(findEditor.model);
+            if (range) {
+                findEditor.model.change((writer) => writer.setSelection(range));
+            }
+
+            // The item stays collapsed (saved layout intact) instead of expanding...
+            expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+            expect(getComputedStyle(nested).display).toBe("none");
+            // ...and the caret sits on the collapsed item's own line, not stranded in the hidden child.
+            expect(findEditor.model.document.selection.getFirstPosition()?.parent).toBe(getBlock(findEditor, 0));
+        });
     });
 });
 

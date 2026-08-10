@@ -10,8 +10,11 @@ export default class CopyToClipboardButton extends Plugin {
         const componentFactory = editor.ui.componentFactory;
         componentFactory.add("copyToClipboard", locale => {
             const button = new ButtonView(locale);
+            // A `label` rather than a literal `tooltip` string: the tooltip reads the same, and the
+            // icon-only button gains the accessible name it had no way to expose before.
             button.set({
-                tooltip: "Copy to clipboard",
+                label: editor.t("Copy to clipboard"),
+                tooltip: true,
                 icon: copyIcon
             });
 

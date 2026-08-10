@@ -7,15 +7,41 @@ export const REMOVE_LINK_EMBED_COMMAND = 'removeLinkEmbed';
 export const CHANGE_LINK_PREVIEW_TITLE_COMMAND = 'changeLinkPreviewTitle';
 
 export const LINK_DISPLAY_MODES = [
-    { value: 'inline', label: 'Inline', labelKey: 'link_embed.mode_inline' },
-    { value: 'card', label: 'Card', labelKey: 'link_embed.mode_card' },
-    { value: 'embed', label: 'Embed', labelKey: 'link_embed.mode_embed' },
+    'inline',
+    'card',
+    'embed',
     // The way out of the preview system: an ordinary <a> link, no widget. Offered in the same
     // dropdowns as the real modes so "back to a normal URL" is found where the user looks for it.
-    { value: 'plain', label: 'Plain link', labelKey: 'link_embed.mode_plain' }
+    'plain'
 ] as const;
 
-export type LinkDisplayMode = typeof LINK_DISPLAY_MODES[number]['value'];
+export type LinkDisplayMode = typeof LINK_DISPLAY_MODES[number];
+
+/**
+ * The user-facing name of a display mode, as shown by the insert form's dropdown and the widget
+ * toolbar's.
+ *
+ * A switch rather than a table of labels, so that each one is written as a literal argument of a
+ * `t()` call: that is how the messages this package owns are discovered (see `messages.ts`) and a
+ * label tucked away in a table would be invisible to translators.
+ *
+ * @param t the editor's translation function.
+ * @param mode the display mode; an unrecognized one has no label and is returned as-is.
+ */
+export function getLinkDisplayModeLabel(t: (message: string) => string, mode: LinkDisplayMode): string {
+    switch (mode) {
+        case 'inline':
+            return t('Inline');
+        case 'card':
+            return t('Card');
+        case 'embed':
+            return t('Embed');
+        case 'plain':
+            return t('Plain link');
+        default:
+            return mode;
+    }
+}
 
 /**
  * What a URL must look like before any conversion — automatic or command-driven — considers turning

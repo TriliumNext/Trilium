@@ -663,6 +663,66 @@ describe("Search", () => {
         expect(searchResults.length).toEqual(4);
     });
 
+    it("test order by multiple properties", () => {
+        // Two notes deliberately share a title: with only one order key their relative order is
+        // whatever the sort happens to produce, so a second key is what makes the result stable.
+        const bravo = new NoteBuilder(new BNote({ noteId: "nB", title: "Shared", type: "text" }));
+        const alpha = new NoteBuilder(new BNote({ noteId: "nA", title: "Shared", type: "text" }));
+        const unique = new NoteBuilder(new BNote({ noteId: "nZ", title: "Unique", type: "text" }));
+
+        rootNote.child(note("Europe").child(bravo).child(alpha).child(unique));
+
+        const searchContext = new SearchContext();
+
+        let searchResults = searchService.findResultsWithQuery("# note.parents.title = Europe orderBy note.title, note.noteId", searchContext);
+        expect(searchResults.map((sr) => sr.noteId)).toEqual([ "nA", "nB", "nZ" ]);
+
+        // The secondary key carries its own direction, independently of the primary one.
+        searchResults = searchService.findResultsWithQuery("# note.parents.title = Europe orderBy note.title, note.noteId DESC", searchContext);
+        expect(searchResults.map((sr) => sr.noteId)).toEqual([ "nB", "nA", "nZ" ]);
+    });
+
+    it("test attribute group AND-ed with a note property, then ordered", () => {
+        // The shape the Content Manager builds when its filter box is used: an OR chain of attribute
+        // filters grouped in parens, AND-ed with a title match, with `orderBy` still at top level.
+        // The title condition leads deliberately — a query *starting* with "(" is mis-lexed, since
+        // the paren is swallowed into the fulltext portion before any token ends it.
+        const alpha = note("Alpha script").label("run", "hourly");
+        const beta = note("Beta script").label("run", "daily");
+        const gamma = note("Gamma other").label("disabled:run", "hourly");
+
+        rootNote.child(note("Scripts").child(alpha).child(beta).child(gamma));
+
+        const searchContext = new SearchContext();
+
+        // The attribute group leads so the cheap index-backed lookup narrows the set before the
+        // title comparison walks it. A bare "#" ends the fulltext portion, which a leading "(" alone
+        // would not do.
+        let searchResults = searchService.findResultsWithQuery(
+            `# (#run OR #disabled:run) AND note.title *=* script orderBy note.title`, searchContext);
+        expect(searchResults.map((sr) => becca.notes[sr.noteId].title)).toEqual([ "Alpha script", "Beta script" ]);
+
+        // Same results with the operands the other way round, confirming the ordering is purely an
+        // optimisation rather than a semantic difference.
+        searchResults = searchService.findResultsWithQuery(
+            `note.title *=* script AND (#run OR #disabled:run) orderBy note.title`, searchContext);
+        expect(searchResults.map((sr) => becca.notes[sr.noteId].title)).toEqual([ "Alpha script", "Beta script" ]);
+
+        // A quoted value keeps a multi-word filter in one token.
+        searchResults = searchService.findResultsWithQuery(
+            `# (#run OR #disabled:run) AND note.title *=* "gamma other" orderBy note.title`, searchContext);
+        expect(searchResults.map((sr) => becca.notes[sr.noteId].title)).toEqual([ "Gamma other" ]);
+
+        // The filter also matches the parent's title, so a second group is AND-ed on as a whole.
+        searchResults = searchService.findResultsWithQuery(
+            `# (#run OR #disabled:run) AND (note.title *=* nothing OR note.parents.title *=* scripts) orderBy note.title`,
+            searchContext);
+        expect(searchResults.map((sr) => becca.notes[sr.noteId].title))
+            .toEqual([ "Alpha script", "Beta script", "Gamma other" ]);
+
+        expect(searchContext.getError()).toBeFalsy();
+    });
+
     it("test not(...)", () => {
         const italy = note("Italy").label("capital", "Rome");
         const slovakia = note("Slovakia").label("capital", "Bratislava");
@@ -769,6 +829,48 @@ describe("Search", () => {
         expect(lastExactIndex).toBeLessThan(firstFuzzyIndex);
     });
 
+
+    it("breaks a collapsible summary onto its own line in the quick-search snippet", () => {
+        // striptags concatenates block text with no separator, which would merge a
+        // collapsible's summary straight into its body ("Summary TitleBody text").
+        const noteBuilder = note("Collapsible note");
+        noteBuilder.note.getContent = () => "<details class=\"trilium-collapsible\"><summary>Summary Title</summary><p>Body text here</p></details><p>After the block</p>";
+        rootNote.child(noteBuilder);
+
+        // The snippet gets a newline at the summary boundary and after the whole block, so
+        // neither the summary nor the body runs into the surrounding text.
+        const snippet = searchService.extractContentSnippet(noteBuilder.note.noteId, [ "body" ]);
+        expect(snippet.split("\n")).toEqual([ "Summary Title", "Body text here", "After the block" ]);
+
+        // ...which the quick-search route (extractContentSnippet -> highlightSearchResults)
+        // turns into <br> tags in the HTML the dropdown renders.
+        const result: any = { notePathTitle: "Collapsible note", contentSnippet: snippet, attributeSnippet: "" };
+        searchService.highlightSearchResults([ result ], [ "body" ]);
+        expect(result.highlightedContentSnippet).toBe("Summary Title<br><b>Body</b> text here<br>After the block");
+    });
+
+    it("surfaces link-preview url/title/description as separate lines in the quick-search snippet", () => {
+        // The url/title/description live in data attributes that striptags would otherwise drop,
+        // leaving a blank snippet even though the note matched on the embedded title. The entity-
+        // encoded ampersand in the title must be decoded rather than shown as "&amp;".
+        const noteBuilder = note("Link preview note");
+        noteBuilder.note.getContent = () => "<section class=\"link-embed\" data-url=\"https://example.com/?a=1&amp;b=2\" data-title=\"Tom &amp; Jerry\" data-description=\"A 1984 science fiction film.\">&nbsp;</section>";
+        rootNote.child(noteBuilder);
+
+        const snippet = searchService.extractContentSnippet(noteBuilder.note.noteId, [ "jerry" ]);
+        expect(snippet.split("\n")).toEqual([ "https://example.com/?a=1&b=2", "Tom & Jerry", "A 1984 science fiction film." ]);
+    });
+
+    it("decodes HTML entities in the quick-search snippet instead of showing escape codes", () => {
+        // striptags leaves entities (&lt;, &gt;, &amp;, &nbsp;) untouched, which would surface as
+        // literal escape codes in the dropdown.
+        const noteBuilder = note("Entity note");
+        noteBuilder.note.getContent = () => "<p>if a &lt; b &amp;&amp; b &gt; c, then&nbsp;done</p>";
+        rootNote.child(noteBuilder);
+
+        const snippet = searchService.extractContentSnippet(noteBuilder.note.noteId, [ "done" ]);
+        expect(snippet).toBe("if a < b && b > c, then done");
+    });
 
     // FIXME: test what happens when we order without any filter criteria
 

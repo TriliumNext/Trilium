@@ -393,7 +393,10 @@ describe("renderSpreadsheetToXlsx", () => {
         const resolveAsPng: NonNullable<Parameters<typeof renderSpreadsheetToXlsx>[1]>["resolveImage"] =
             async (source) => (source ? { base64: PNG, extension: "png" } : null);
 
-        function floatingImageWorkbook(drawing: Record<string, unknown> & { drawingId: string }): string {
+        function floatingImageWorkbook(
+            drawing: Record<string, unknown> & { drawingId: string },
+            sheetExtra: Record<string, unknown> = {}
+        ): string {
             const sheetId = "s1";
             return JSON.stringify({
                 version: 1,
@@ -410,7 +413,8 @@ describe("renderSpreadsheetToXlsx", () => {
                             mergeData: [],
                             cellData: { "0": { "0": { v: "x" } } },
                             rowData: {},
-                            columnData: {}
+                            columnData: {},
+                            ...sheetExtra
                         }
                     },
                     resources: [
@@ -495,6 +499,112 @@ describe("renderSpreadsheetToXlsx", () => {
                 { resolveImage: async () => null }
             ));
             expect(wb.getWorksheet("Sheet1")?.getImages().length).toBe(0);
+        });
+
+        it("embeds cell images in insertion order when the document has no drawingsOrder", async () => {
+            const wb = await load(await renderSpreadsheetToXlsx(
+                singleCellWorkbook({
+                    p: {
+                        drawings: {
+                            d1: { drawingId: "d1", source: "api/attachments/AAAAAAAAAAAA/image/a.png", transform: { width: 10, height: 10 } },
+                            d2: { drawingId: "d2", source: "api/attachments/BBBBBBBBBBBB/image/b.png", transform: { width: 20, height: 20 } }
+                        }
+                    }
+                }),
+                { resolveImage: resolveAsPng }
+            ));
+            expect(wb.worksheets[0].getImages().length).toBe(2);
+        });
+
+        it("skips cell drawings that are stale, unsized or unresolvable", async () => {
+            // Each of these is a drawing exceljs cannot anchor: an id left behind in the order, a
+            // drawing whose size is missing or degenerate, one with no source, and one the caller's
+            // resolver declines. None may abort the export.
+            const wb = await load(await renderSpreadsheetToXlsx(
+                singleCellWorkbook({
+                    p: {
+                        drawings: {
+                            unsized: { drawingId: "unsized", source: "api/attachments/AAAAAAAAAAAA/image/a.png" },
+                            zeroWidth: { drawingId: "zeroWidth", source: "api/attachments/AAAAAAAAAAAA/image/a.png", transform: { width: 0, height: 10 } },
+                            zeroHeight: { drawingId: "zeroHeight", source: "api/attachments/AAAAAAAAAAAA/image/a.png", transform: { width: 10, height: 0 } },
+                            sourceless: { drawingId: "sourceless", transform: { width: 10, height: 10 } },
+                            declined: { drawingId: "declined", source: "decline-me", transform: { width: 10, height: 10 } },
+                            good: { drawingId: "good", source: "api/attachments/BBBBBBBBBBBB/image/b.png", transform: { width: 10, height: 10 } }
+                        },
+                        drawingsOrder: ["stale", "unsized", "zeroWidth", "zeroHeight", "sourceless", "declined", "good"]
+                    }
+                }),
+                { resolveImage: async (source) => (source === "decline-me" ? { base64: "", extension: "png" } : { base64: PNG, extension: "png" }) }
+            ));
+            expect(wb.worksheets[0].getImages().length).toBe(1);
+        });
+
+        it("anchors a floating image at the cell corner when its track has no size", async () => {
+            // A collapsed row/column gives the offset nothing to be a fraction of; the anchor must
+            // fall back to the cell corner instead of dividing by zero.
+            const wb = await load(await renderSpreadsheetToXlsx(
+                floatingImageWorkbook({
+                    drawingId: "img1",
+                    source: "api/attachments/cgN4jEBCA1Kn/image/image.png",
+                    sheetTransform: {
+                        from: { row: 0, rowOffset: 5, column: 0, columnOffset: 5 },
+                        to: { row: 2, rowOffset: 0, column: 2, columnOffset: 0 }
+                    }
+                }, { rowData: { "0": { h: 0 } }, columnData: { "0": { w: 0 } } }),
+                { resolveImage: resolveAsPng }
+            ));
+            const range = wb.getWorksheet("Sheet1")?.getImages()[0]?.range;
+            expect(range?.tl.col).toBeCloseTo(0);
+            expect(range?.tl.row).toBeCloseTo(0);
+        });
+
+        it("uses explicit track sizes, and the built-in defaults when the sheet declares none", async () => {
+            // The offset is expressed as a fraction of the containing cell, so the same offset
+            // resolves differently depending on whether the track carries its own size.
+            const sized = await load(await renderSpreadsheetToXlsx(
+                floatingImageWorkbook({
+                    drawingId: "img1",
+                    source: "api/attachments/cgN4jEBCA1Kn/image/image.png",
+                    sheetTransform: {
+                        from: { row: 0, rowOffset: 25, column: 0, columnOffset: 50 },
+                        to: { row: 2, rowOffset: 0, column: 2, columnOffset: 0 }
+                    }
+                }, { rowData: { "0": { h: 50 } }, columnData: { "0": { w: 100 } } }),
+                { resolveImage: resolveAsPng }
+            ));
+            const sizedRange = sized.getWorksheet("Sheet1")?.getImages()[0]?.range;
+            expect(sizedRange?.tl.col).toBeCloseTo(0.5);
+            expect(sizedRange?.tl.row).toBeCloseTo(0.5);
+
+            // With no per-track and no sheet default, the built-in 88px column / 24px row apply.
+            const defaulted = await load(await renderSpreadsheetToXlsx(
+                floatingImageWorkbook({
+                    drawingId: "img1",
+                    source: "api/attachments/cgN4jEBCA1Kn/image/image.png",
+                    sheetTransform: {
+                        from: { row: 0, rowOffset: 12, column: 0, columnOffset: 44 },
+                        to: { row: 2, rowOffset: 0, column: 2, columnOffset: 0 }
+                    }
+                }, { defaultColumnWidth: undefined, defaultRowHeight: undefined }),
+                { resolveImage: resolveAsPng }
+            ));
+            const defaultedRange = defaulted.getWorksheet("Sheet1")?.getImages()[0]?.range;
+            expect(defaultedRange?.tl.col).toBeCloseTo(0.5);
+            expect(defaultedRange?.tl.row).toBeCloseTo(0.5);
+        });
+
+        it("treats a missing anchor index or offset as zero", async () => {
+            const wb = await load(await renderSpreadsheetToXlsx(
+                floatingImageWorkbook({
+                    drawingId: "img1",
+                    source: "api/attachments/cgN4jEBCA1Kn/image/image.png",
+                    sheetTransform: { from: {}, to: { row: 2, column: 2 } }
+                }),
+                { resolveImage: resolveAsPng }
+            ));
+            const range = wb.getWorksheet("Sheet1")?.getImages()[0]?.range;
+            expect(range?.tl.col).toBeCloseTo(0);
+            expect(range?.tl.row).toBeCloseTo(0);
         });
 
         it("skips a floating drawing that has no from/to anchor", async () => {

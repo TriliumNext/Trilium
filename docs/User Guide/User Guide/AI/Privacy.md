@@ -52,4 +52,4 @@ Trilium itself collects no telemetry from the AI integration.
 
 Your API key is stored in your database, sent only to the provider it belongs to, and is write-only through the options API so that a malevolent <a class="reference-link" href="../Scripting.md">Scripting</a> cannot access it. If you have backend or SQL console access enabled, a malevolent script **could potentially exfiltrate your API keys**.
 
-The built-in MCP server has no authentication and exposes the same note tools to any application on your machine that can reach it. It is off by default and bound to `localhost`.
+The built-in MCP server is off by default. When enabled, every request must carry an ETAPI token, which grants the same full read and write access to your notes as the REST API; treat one like a password. On desktop it is reachable only from `localhost` unless you turn on <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation/Network%20Access.md">Network Access</a>.

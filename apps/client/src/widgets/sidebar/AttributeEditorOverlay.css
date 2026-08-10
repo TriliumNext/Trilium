@@ -1,0 +1,66 @@
+/*
+ * The overlay an attribute row's editor stands on — see AttributeEditorOverlay.tsx for what it is,
+ * and AttributeList.css for the row's own part (un-clipping, coming forward).
+ */
+.attribute-list-panel .attribute-editor-overlay {
+    position: absolute;
+    /* A hair past the row on every side, so the surface reads as standing over it rather than cut
+       to its shape; a host may hold the leading edge off instead (see AttributeValueEditor.css). */
+    inset-block-start: -2px;
+    inset-inline: -2px;
+
+    /* The surface of its own it stands on: opaque, because a field's background is a translucent
+       film meant for the page behind it, through which the row would otherwise be read along. */
+    padding: 2px;
+    background-color: var(--main-background-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, var(--dropdown-shadow-opacity, 0.2));
+
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    /* Sized to sit in a row of text rather than in a form. The colour swatch is left out: it has a
+       size of its own (see label_value_input.css), stated at the same weight as this rule — matching
+       it here would leave the winner to stylesheet order. */
+    & .form-control:not(.label-color-picker),
+    & .form-select {
+        min-width: 0;
+        height: auto;
+        padding: 0 6px;
+        font-size: inherit;
+        line-height: 1.5;
+    }
+
+    /* A checkbox is its own size; the field class would stretch it across the row. */
+    & input[type="checkbox"] {
+        flex: 0 0 auto;
+        width: auto;
+        height: auto;
+    }
+
+    /* The one field that grows, downwards only: sideways there is nothing to grow into. */
+    & textarea.form-control {
+        resize: vertical;
+    }
+
+    /* The buttons beside a field (a colour's reset), trimmed to the row's height. */
+    & .input-group-text {
+        padding: 0 5px;
+        cursor: pointer;
+    }
+
+    /* The group the note search wraps its box in takes the room the box is owed. */
+    & .input-group {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+/* Anchored by its foot instead, so that what it outgrows the row by rises over what has been read
+   already rather than pressing past the foot of the pane. Applied from the shell, which is what can
+   tell the room is short (see useGrowsUpwards). */
+.attribute-list-panel .attribute-editor-overlay.grows-upwards {
+    inset-block-start: auto;
+    inset-block-end: -2px;
+}

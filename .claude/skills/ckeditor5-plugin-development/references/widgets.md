@@ -6,10 +6,10 @@ regions. The widget system ships in `ckeditor5` (engine + widget layer); import 
 from `ckeditor5`.
 
 In the Trilium monorepo the live examples are:
-- **admonition** (`packages/ckeditor5-admonition`) and **collapsible**
-  (`packages/ckeditor5-collapsible`) — block widgets with nested editable content, schema
+- **admonition** (`packages/ckeditor5/src/plugins/admonition`) and **collapsible**
+  (`packages/ckeditor5/src/plugins/collapsible`) — block widgets with nested editable content, schema
   invariants enforced by `registerPostFixer`.
-- **math** (`packages/ckeditor5-math`, KaTeX) and **mermaid** (`packages/ckeditor5-mermaid`) —
+- **math** (`packages/ckeditor5/src/plugins/math`, KaTeX) and **mermaid** (`packages/ckeditor5/src/plugins/mermaid`) —
   external/async-rendered widgets (see the dedicated section below).
 
 Two flavors:
@@ -204,13 +204,13 @@ class SimpleBoxToolbar extends Plugin {
 ```
 
 This is the same mechanism images/tables use to show their contextual toolbars. In Trilium,
-mermaid registers its widget toolbar this way (`packages/ckeditor5-mermaid/src/mermaidtoolbar.ts`),
+mermaid registers its widget toolbar this way (`packages/ckeditor5/src/plugins/mermaid/mermaid_toolbar.ts`),
 hosting the source/preview/split-mode buttons.
 
 ## External / async-rendered widgets (math, mermaid)
 
-Trilium's **math** (KaTeX, `packages/ckeditor5-math`) and **mermaid**
-(`packages/ckeditor5-mermaid`) plugins are the real-world references for this section. Widgets
+Trilium's **math** (KaTeX, `packages/ckeditor5/src/plugins/math`) and **mermaid**
+(`packages/ckeditor5/src/plugins/mermaid`) plugins are the real-world references for this section. Widgets
 that render the output of an external library need a few patterns beyond the static-widget
 basics. The model stores the **source** (the LaTeX string / mermaid diagram code) as an
 attribute; the **data downcast** emits that source wrapped in plain markup (so `getData()` is
@@ -267,8 +267,8 @@ async renderInto( domEl, source ) {
 **Lazy-load the library once.** Cache the load promise so a heavy dependency loads on first use
 and initializes a single time, driven from config so Trilium can supply the loader. Math reads
 `mathConfig.lazyLoad` (and `mathConfig.katexRenderOptions`) from `editor.config`
-(`packages/ckeditor5-math/src/mathediting.ts`, `mathui.ts`); the augmentation in
-`augmentation.ts` types the config shape via `declare module 'ckeditor5'`:
+(`packages/ckeditor5/src/plugins/math/math_editing.ts`, `math_ui.ts`); the glue plugin in
+`math.ts` types the config shape via `declare module 'ckeditor5'`:
 
 ```ts
 this._libPromise ??= Promise.resolve( editor.config.get( 'math.lazyLoad' )() )
@@ -286,7 +286,7 @@ expose one command per mode that sets it, render different DOM per mode in the e
 downcast, and bind the widget-toolbar buttons' `isOn` to each command's value so they reflect
 the current mode. Mermaid is exactly this: separate `mermaidSourceViewCommand`,
 `mermaidPreviewCommand`, and `mermaidSplitViewCommand`
-(`packages/ckeditor5-mermaid/src/commands/`) drive the mode, surfaced through the widget
+(`packages/ckeditor5/src/plugins/mermaid/`) drive the mode, surfaced through the widget
 toolbar from `mermaidtoolbar.ts`.
 
 **Pre-process input with a data processor.** To accept the raw source on load, wrap/transform

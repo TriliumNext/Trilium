@@ -1,6 +1,7 @@
 import "./ChatInputBar.css";
 
 import { AttributeEditor as CKEditorAttributeEditor, CHAT_INPUT_PLUGINS, type CKTextEditor, type MentionFeed } from "@triliumnext/ckeditor5";
+import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -12,14 +13,18 @@ import ActionButton from "../../react/ActionButton.js";
 import Button from "../../react/Button.js";
 import CKEditor, { type CKEditorApi } from "../../react/CKEditor.js";
 import Dropdown from "../../react/Dropdown.js";
-import { FormDropdownDivider, FormListHeader, FormListItem, FormListToggleableItem } from "../../react/FormList.js";
-import { useLegacyImperativeHandlers } from "../../react/hooks.js";
+import { FormListHeader, FormListItem } from "../../react/FormList.js";
+import { useLegacyImperativeHandlers, useTriliumOption } from "../../react/hooks.js";
+import MaskedIcon from "../../react/MaskedIcon.js";
 import AddProviderModal, { type LlmProviderConfig, type ProviderStep } from "../options/llm/AddProviderModal.js";
+import { providerIconUrl } from "../options/llm/provider_icons.js";
+import { computeContextUsage } from "./chat_context_usage.js";
 import { insertNewBlock as insertNewBlockCommand, isSelectionInCodeBlock, outdentListItemAtStart } from "./chat_input_editing.js";
 import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
+import { shortModelName } from "./model_name.js";
 import { SafeImage } from "./retry_image.js";
 import { useChatAttachments } from "./useChatAttachments.js";
-import type { ModelOption, UseLlmChatReturn } from "./useLlmChat.js";
+import { type ModelOption, resolveSelectedModel, type UseLlmChatReturn } from "./useLlmChat.js";
 
 const READ_ONLY_LOCK = "llm-chat-streaming";
 
@@ -94,6 +99,7 @@ export default function ChatInputBar({
     const [openToken, setOpenToken] = useState(0);
     const editorApiRef = useRef<CKEditorApi>();
     const editorInstanceRef = useRef<CKTextEditor>();
+    const [ uiLanguage ] = useTriliumOption("locale");
     // Always-fresh submit handler for the editor's enter listener.
     const submitRef = useRef<(e: Event) => void>(() => {});
 
@@ -115,13 +121,14 @@ export default function ChatInputBar({
     // the draft state) avoids the React-render / CKEditor-change-event race that left
     // the editor visually populated after submit.
     const handleSubmit = useCallback((e: Event) => {
-        const willSubmit = (chat.hasInputText || chat.pendingAttachments.length > 0) && !chat.isStreaming;
+        const hasResolvedModel = !!resolveSelectedModel(chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId);
+        const willSubmit = (chat.hasInputText || chat.pendingAttachments.length > 0) && !chat.isStreaming && hasResolvedModel;
         baseSubmit(e);
         if (willSubmit) {
             editorApiRef.current?.setText("");
             editorApiRef.current?.focus();
         }
-    }, [baseSubmit, chat.hasInputText, chat.isStreaming, chat.pendingAttachments.length]);
+    }, [baseSubmit, chat.hasInputText, chat.isStreaming, chat.pendingAttachments.length, chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId]);
     submitRef.current = handleSubmit;
 
     // Expose the reply-input editor to the chat hook so timeline actions (e.g. quoting a selection)
@@ -200,26 +207,32 @@ export default function ChatInputBar({
 
     const isNoteContextEnabled = !!chat.contextNoteId && !!activeNoteId;
 
-    // Several providers can expose the same model ID (e.g. an Anthropic API key
-    // and a Claude subscription both offering "claude-sonnet-5", or two
-    // OpenAI-compatible endpoints), so identify the active model by its provider
-    // config too. Mirror the sender's resolution: prefer the recorded provider
-    // id/type, else fall back to the first ID match (pre-existing chats).
-    const currentModel = chat.availableModels.find(m =>
-        m.id === chat.selectedModel
-        && (!chat.selectedProvider || m.provider === chat.selectedProvider)
-        && (!chat.selectedProviderId || m.providerId === chat.selectedProviderId));
+    // Identify the active model; mirrors the sender's resolution so what the UI
+    // shows as selected is exactly what will be sent (see resolveSelectedModel).
+    const currentModel = resolveSelectedModel(chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId);
     const isSelectedModel = (m: ModelOption) => m === currentModel;
     // Gemini 2.x cannot combine googleSearch with function tools in a single
     // request. When note tools are enabled on a Gemini model we silently drop
     // web search server-side; reflect that here by disabling the toggle so the
     // user understands the trade-off instead of seeing it mysteriously ignored.
     const webSearchUnavailable = currentModel?.provider === "google" && chat.enableNoteTools;
-    const contextWindow = currentModel?.contextWindow || 200000;
-    const percentage = Math.min((chat.lastPromptTokens / contextWindow) * 100, 100);
-    const isWarning = percentage > 75;
-    const isCritical = percentage > 90;
-    const pieColor = isCritical ? "var(--danger-color, #d9534f)" : isWarning ? "var(--warning-color, #f0ad4e)" : "var(--main-selection-color, #007bff)";
+    // Null until the window is close enough to matter, and null (rather than a guess) when
+    // the model advertises no window at all. See chat_context_usage.
+    const contextUsage = computeContextUsage({
+        promptTokens: chat.lastPromptTokens,
+        completionTokens: chat.lastCompletionTokens,
+        draftTokens: chat.draftTokens,
+        contextWindow: currentModel?.contextWindow
+    });
+    // The bar itself carries no text, so the numbers live in its tooltip (and, for assistive
+    // tech, in `aria-valuetext`).
+    const contextTooltip = contextUsage
+        ? t("llm_chat.context_tooltip", {
+            used: formatTokenCount(contextUsage.usedTokens),
+            total: formatTokenCount(contextUsage.contextWindow),
+            percentage: Math.round(contextUsage.percentage)
+        })
+        : undefined;
 
     // Show setup prompt if no provider is configured
     if (!chat.isCheckingProvider && !chat.hasProvider) {
@@ -293,9 +306,12 @@ export default function ChatInputBar({
                         toolbar: { items: [] },
                         placeholder: t("llm_chat.placeholder"),
                         mention: { feeds: mentionFeeds },
-                        licenseKey: "GPL",
-                        language: "en"
+                        licenseKey: "GPL"
                     }}
+                    // The strings the box shows of its own — the link balloon it raises on Ctrl+K —
+                    // in the language the rest of Trilium is read in; the dictionary is fetched for
+                    // it before the editor is raised.
+                    uiLanguage={uiLanguage as DISPLAYABLE_LOCALE_IDS}
                     onChange={(html) => {
                         chat.setInput(editorHtmlToMarkdown(html ?? ""));
                     }}
@@ -365,12 +381,34 @@ export default function ChatInputBar({
                     onChange={attachments.handleFilePickerChange}
                     style={{ display: "none" }}
                 />
+                {/* At the point the window is nearly gone, say so in words — a 2px bar is not
+                    enough warning for a hard failure. Nothing in the send path trims the
+                    conversation (BaseProvider.chat sends every message; `contextWindow` is
+                    metadata the server never reads), so overflow is not graceful degradation:
+                    the provider rejects the request and the error lands in the transcript. */}
+                {contextUsage?.level === "critical" && (
+                    <p className="llm-chat-context-alert">
+                        <span className="bx bx-error-circle" />
+                        {t("llm_chat.context_nearly_full")}
+                    </p>
+                )}
                 <div className="llm-chat-options">
                     <div className="llm-chat-model-selector">
-                        <span className="bx bx-chip" />
                         <Dropdown
-                            text={<>{currentModel?.name}</>}
+                            // The provider's mark stands in for the vendor word `shortModelName`
+                            // removes — the same information in a glyph's worth of width instead
+                            // of a word's, and the only provider signal the collapsed button has.
+                            text={currentModel
+                                ? <>
+                                    <MaskedIcon url={providerIconUrl(currentModel.provider)} className="llm-chat-model-icon" />
+                                    <span className="llm-chat-model-select-name">{shortModelName(currentModel.name, currentModel.provider)}</span>
+                                </>
+                                : <span className="llm-chat-model-select-name llm-chat-model-placeholder">{t("llm_chat.no_model_selected")}</span>}
                             disabled={chat.isStreaming}
+                            // The selector is the only item in the row that shrinks, so a long
+                            // model name may ellipsize to very little — keep the full one reachable.
+                            title={currentModel?.name}
+                            titlePosition="top"
                             buttonClassName="llm-chat-model-select"
                             className="llm-chat-model-dropdown"
                             // In the sidebar the menu lives inside `.sidebar-chat-container`'s
@@ -398,7 +436,8 @@ export default function ChatInputBar({
                                             onClick={() => handleModelSelect(model)}
                                             checked={isSelectedModel(model)}
                                         >
-                                            {model.name}{model.costDescription && <> <small>({model.costDescription})</small></>}
+                                            <MaskedIcon url={providerIconUrl(model.provider)} className="llm-chat-model-icon" />
+                                            {shortModelName(model.name, model.provider)}{model.costDescription && <> <small>({model.costDescription})</small></>}
                                         </FormListItem>
                                     )) : (
                                     // Provider configured before model selection existed (or with
@@ -409,74 +448,98 @@ export default function ChatInputBar({
                                     )}
                                 </Fragment>
                             ))}
-                            <FormDropdownDivider />
-                            <FormListToggleableItem
-                                icon="bx bx-globe"
-                                title={t("llm_chat.web_search")}
-                                currentValue={chat.enableWebSearch && !webSearchUnavailable}
-                                onChange={handleWebSearchToggle}
-                                disabled={chat.isStreaming || webSearchUnavailable}
-                                disabledTooltip={webSearchUnavailable ? t("llm_chat.web_search_unavailable_gemini") : undefined}
-                            />
-                            <FormListToggleableItem
-                                icon="bx bx-note"
-                                title={t("llm_chat.note_tools")}
-                                currentValue={chat.enableNoteTools}
-                                onChange={handleNoteToolsToggle}
-                                disabled={chat.isStreaming}
-                            />
-                            <FormListToggleableItem
-                                icon="bx bx-brain"
-                                title={t("llm_chat.extended_thinking")}
-                                currentValue={chat.enableExtendedThinking}
-                                onChange={handleExtendedThinkingToggle}
-                                disabled={chat.isStreaming}
-                            />
                         </Dropdown>
+                    </div>
+                    {/* What the model can reach this turn. Lifted out of the model dropdown so
+                        their state reads at a glance and flipping one is a single click — the
+                        system prompt currently has to tell the user where these live, which is
+                        a fair sign a menu was the wrong home. Grouped so they stay together. */}
+                    <div className="llm-chat-capabilities">
+                        <CapabilityToggle
+                            icon="bx bx-globe"
+                            label={t("llm_chat.web_search")}
+                            active={chat.enableWebSearch && !webSearchUnavailable}
+                            onToggle={handleWebSearchToggle}
+                            disabled={chat.isStreaming}
+                            unavailableReason={webSearchUnavailable ? t("llm_chat.web_search_unavailable_gemini") : undefined}
+                        />
+                        <CapabilityToggle
+                            icon="bx bx-note"
+                            label={t("llm_chat.note_tools")}
+                            active={chat.enableNoteTools}
+                            onToggle={handleNoteToolsToggle}
+                            disabled={chat.isStreaming}
+                        />
+                        <CapabilityToggle
+                            icon="bx bx-brain"
+                            label={t("llm_chat.extended_thinking")}
+                            active={chat.enableExtendedThinking}
+                            onToggle={handleExtendedThinkingToggle}
+                            disabled={chat.isStreaming}
+                        />
+                    </div>
+                    {/* The actions, boxed so they keep a fixed gap from the capabilities. The
+                        row's `auto` spacer collapses to nothing once the row is full — which is
+                        the normal state in the sidebar — so grouping can't rest on it alone. */}
+                    <div className="llm-chat-actions">
+                        {/* With the paperclip rather than the model selector: both answer "what
+                            goes into this prompt", not "which model". Icon-only because the label
+                            named the note the user is already looking at, duplicating the title
+                            shown beside it instead of carrying information — it lives in the
+                            tooltip, which is the only place it says anything new. */}
                         {activeNoteId && activeNoteTitle && (
-                            <Button
-                                text={activeNoteTitle}
-                                icon={isNoteContextEnabled ? "bx-file" : "bx-hide"}
-                                kind="lowProfile"
-                                size="micro"
-                                className={`llm-chat-note-context ${isNoteContextEnabled ? "active" : ""}`}
+                            <ActionButton
+                                icon={isNoteContextEnabled ? "bx bx-file" : "bx bx-hide"}
+                                text={isNoteContextEnabled
+                                    ? t("llm_chat.note_context_enabled", { title: activeNoteTitle })
+                                    : t("llm_chat.note_context_disabled", { title: activeNoteTitle })}
+                                active={isNoteContextEnabled}
                                 onClick={handleNoteContextToggle}
                                 disabled={chat.isStreaming}
-                                title={isNoteContextEnabled
-                                    ? t("llm_chat.note_context_enabled", { title: activeNoteTitle })
-                                    : t("llm_chat.note_context_disabled")}
+                                className="llm-chat-note-context"
                             />
                         )}
-                        {chat.lastPromptTokens > 0 && (
-                            <div
-                                className="llm-chat-context-indicator"
-                                title={`${formatTokenCount(chat.lastPromptTokens)} / ${formatTokenCount(contextWindow)} ${t("llm_chat.tokens")}`}
-                            >
-                                <div
-                                    className="llm-chat-context-pie"
-                                    style={{
-                                        background: `conic-gradient(${pieColor} ${percentage}%, var(--accented-background-color) ${percentage}%)`
-                                    }}
-                                />
-                                <span className="llm-chat-context-text">{t("llm_chat.context_used", { percentage: percentage.toFixed(0) })}</span>
-                            </div>
-                        )}
+                        <ActionButton
+                            icon="bx bx-paperclip"
+                            text={t("llm_chat.attach_file")}
+                            onClick={attachments.openFilePicker}
+                            disabled={chat.isStreaming || !chat.chatNoteId}
+                            className="llm-chat-attach-btn"
+                        />
+                        <ActionButton
+                            icon={chat.isStreaming ? "bx bx-stop" : "bx bx-up-arrow-alt"}
+                            text={chat.isStreaming
+                                ? t("llm_chat.stop")
+                                : !currentModel ? t("llm_chat.no_model_selected") : t("llm_chat.send")}
+                            onClick={chat.isStreaming ? chat.stopStreaming : handleSubmit}
+                            disabled={!chat.isStreaming && (!currentModel || (!chat.hasInputText && chat.pendingAttachments.length === 0))}
+                            className={`llm-chat-send-btn ${chat.isStreaming ? "llm-chat-stop-btn" : ""}`}
+                        />
                     </div>
-                    <ActionButton
-                        icon="bx bx-paperclip"
-                        text={t("llm_chat.attach_file")}
-                        onClick={attachments.openFilePicker}
-                        disabled={chat.isStreaming || !chat.chatNoteId}
-                        className="llm-chat-attach-btn"
-                    />
-                    <ActionButton
-                        icon={chat.isStreaming ? "bx bx-stop" : "bx bx-send"}
-                        text={chat.isStreaming ? t("llm_chat.stop") : t("llm_chat.send")}
-                        onClick={chat.isStreaming ? chat.stopStreaming : handleSubmit}
-                        disabled={!chat.isStreaming && !chat.hasInputText && chat.pendingAttachments.length === 0}
-                        className={`llm-chat-send-btn ${chat.isStreaming ? "llm-chat-stop-btn" : ""}`}
-                    />
                 </div>
+                {/* The hairline rides the island's bottom edge, edge to edge, rather than taking
+                    a slot in the control row. The outer element only clips to the island's corners
+                    and takes no pointer events; the track carries the tooltip and the ARIA, so
+                    assistive tech gets the same reading the length gives visually. */}
+                {contextUsage && (
+                    <div className={`llm-chat-context-bar llm-chat-context-bar-${contextUsage.level}`}>
+                        <div
+                            className="llm-chat-context-bar-track"
+                            role="progressbar"
+                            aria-label={t("llm_chat.context_usage_label")}
+                            aria-valuenow={Math.round(contextUsage.percentage)}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuetext={contextTooltip}
+                            title={contextTooltip}
+                        >
+                            <div
+                                className="llm-chat-context-bar-fill"
+                                style={{ width: `${contextUsage.percentage}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
             </form>
             <AddProviderModal
                 key={openToken}
@@ -488,5 +551,37 @@ export default function ChatInputBar({
             />
         </>
     );
+}
+
+/**
+ * One of the model's per-conversation capability switches, as an icon toggle whose state
+ * reads without opening anything. The label is the tooltip.
+ */
+function CapabilityToggle({ icon, label, active, onToggle, disabled, unavailableReason }: {
+    icon: string;
+    label: string;
+    active: boolean;
+    onToggle: (newValue: boolean) => void;
+    disabled?: boolean;
+    /** Why this capability can't be used with the current model, if it can't. */
+    unavailableReason?: string;
+}) {
+    const button = (
+        <ActionButton
+            icon={icon}
+            text={unavailableReason ?? label}
+            active={active}
+            disabled={disabled || !!unavailableReason}
+            onClick={() => onToggle(!active)}
+            className="llm-chat-capability"
+        />
+    );
+
+    // A disabled <button> receives no mouse events, so its own tooltip never fires — which is
+    // why the dropdown this replaced had to put the explanation on a separate info icon. The
+    // wrapper carries it instead, and only exists when there is something to explain.
+    return unavailableReason
+        ? <span className="llm-chat-capability-unavailable" title={unavailableReason}>{button}</span>
+        : button;
 }
 

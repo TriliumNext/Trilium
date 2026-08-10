@@ -4,14 +4,14 @@
   "description": "Standalone tool to dump contents of Trilium document.db file into a directory tree of notes",
   "private": true,
   "dependencies": {
-    "better-sqlite3": "12.11.1",
+    "better-sqlite3": "13.0.3",
     "mime-types": "3.0.2",
     "sanitize-filename": "1.6.4",
-    "tsx": "4.23.1",
-    "yargs": "18.0.0"
+    "tsx": "4.23.10",
+    "yargs": "18.1.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "7.6.13",
+    "@types/better-sqlite3": "9.6.0",
     "@types/mime-types": "3.0.1",
     "@types/yargs": "17.0.35"
   },

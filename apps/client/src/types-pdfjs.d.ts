@@ -112,6 +112,8 @@ interface PdfViewerThumbnailMessage {
 }
 
 interface PdfAttachment {
+    /** Identifies the attachment within the document; filenames are not necessarily unique. */
+    id: string;
     filename: string;
     size: number;
 }
@@ -119,7 +121,7 @@ interface PdfAttachment {
 interface PdfViewerAttachmentsMessage {
     type: "pdfjs-viewer-attachments";
     attachments: PdfAttachment[];
-    downloadAttachment?: (fileName: string) => void;
+    downloadAttachment?: (id: string) => void;
 }
 
 interface PdfLayer {

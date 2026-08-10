@@ -45,7 +45,13 @@
     },
     "widget-missing-parent": "Niestandardowy widżet nie ma zdefiniowanej obowiązkowej właściwości „{{property}}”.\n\nJeśli skrypt ma działać bez interfejsu użytkownika (UI) wyłącz go: '#run=frontendStartup'.",
     "open-script-note": "Otwórz notatkę ze skryptem",
-    "scripting-error": "Błąd skryptu użytkownika: {{title}}"
+    "scripting-error": "Błąd skryptu użytkownika: {{title}}",
+    "unhandled-error": {
+      "title": "Zadanie w tle zakończyło się błędem",
+      "details-button": "Wyświetl szczegóły...",
+      "details-intro": "Aplikacja nie została zamknięta, a wprowadzone przez Ciebie zmiany nie zostały anulowane. Jeżeli ten błąd będzie się powtarzał, możesz zgłosić go na GitHubie wklejając informacje wylistowane poniżej.",
+      "details-title": "Informacje techniczne"
+    }
   },
   "add_link": {
     "add_link": "Dodaj link",
@@ -55,7 +61,11 @@
     "link_title": "Tytuł linku",
     "button_add_link": "Dodaj link",
     "help_on_links": "Pomoc dotycząca linków",
-    "link_title_mirrors": "Tytuł linku odzwierciedla obecną nazwę notatki"
+    "link_title_mirrors": "Tytuł linku odzwierciedla obecną nazwę notatki",
+    "edit_link": "Edycja linku",
+    "anchor": "Zakotwiczenie (opcjonalne)",
+    "anchor_none": "Brak (link do notatki)",
+    "button_edit_link": "Zapisz link"
   },
   "branch_prefix": {
     "save": "Zapisz",
@@ -299,31 +309,24 @@
     "related_notes_title": "Inne notatki z tą etykietą",
     "more_notes": "Więcej notatek",
     "label": "Szczegóły etykiety",
-    "label_definition": "Szczegóły definicji etykiety",
     "relation": "Szczegóły relacji",
-    "relation_definition": "Szczegóły definicji relacji",
     "disable_versioning": "wyłącza automatyczne wersjonowanie. Przydatne np. dla dużych, ale mało ważnych notatek - np. dużych bibliotek JS używanych do skryptów",
     "precision": "Precyzja",
     "digits": "cyfry",
     "inverse_relation_title": "Opcjonalne ustawienie określające, do której relacji ta jest odwrotna. Przykład: Ojciec - Syn to relacje odwrotne.",
     "inverse_relation": "Relacja odwrotna",
-    "attr_detail_title": "Tytuł szczegółów atrybutu",
     "close_button_title": "Anuluj zmiany i zamknij",
-    "attr_is_owned_by": "Atrybut należy do",
-    "attr_name_title": "Nazwa atrybutu może składać się wyłącznie ze znaków alfanumerycznych, dwukropka i podkreślenia",
     "name": "Nazwa",
     "value": "Wartość",
     "target_note_title": "Relacja to nazwane połączenie między notatką źródłową a docelową.",
     "target_note": "Notatka docelowa",
     "promoted_title": "Wyróżniony atrybut jest wyświetlany w widocznym miejscu notatki.",
     "promoted": "Wyróżniony",
-    "promoted_alias_title": "Nazwa wyświetlana w interfejsie wyróżnionych atrybutów.",
     "promoted_alias": "Alias",
     "multiplicity_title": "Krotność określa, ile atrybutów o tej samej nazwie można utworzyć - maksymalnie 1 lub więcej niż 1.",
     "multiplicity": "Krotność",
     "single_value": "Pojedyncza wartość",
     "multi_value": "Wiele wartości",
-    "label_type_title": "Typ etykiety pomoże Trilium wybrać odpowiedni interfejs do wprowadzenia wartości etykiety.",
     "label_type": "Typ",
     "text": "Tekst",
     "number": "Liczba",
@@ -335,7 +338,6 @@
     "precision_title": "Ile cyfr po przecinku powinno być dostępnych w interfejsie ustawiania wartości.",
     "inheritable_title": "Atrybut dziedziczony będzie dziedziczony przez wszystkie elementy podrzędne w tym drzewie.",
     "inheritable": "Dziedziczony",
-    "save_and_close": "Zapisz i zamknij <kbd>Ctrl+Enter</kbd>",
     "calendar_root": "oznacza notatkę, która powinna być używana jako korzeń dla notatek dziennych. Tylko jedna powinna być tak oznaczona.",
     "archived": "notatki z tą etykietą domyślnie nie będą widoczne w wynikach wyszukiwania (również w oknach Przejdź do, Dodaj link itp.).",
     "exclude_from_export": "notatki (wraz z ich poddrzewem) nie zostaną uwzględnione w żadnym eksporcie notatek",
@@ -414,7 +416,6 @@
     "share_favicon": "Notatka Favicon do ustawienia na udostępnionej stronie. Zazwyczaj chcesz ustawić ją w korzeniu udostępniania i uczynić dziedziczoną. Notatka Favicon musi znajdować się również w udostępnionym poddrzewie. Rozważ użycie 'share_hidden_from_tree'.",
     "is_owned_by_note": "jest własnością notatki",
     "other_notes_with_name": "Inne notatki z {{attributeType}} nazwa \"{{attributeName}}\"",
-    "and_more": "... i {{count}} więcej.",
     "print_landscape": "Podczas eksportowania do PDF zmienia orientację strony na poziomą zamiast pionowej.",
     "print_page_size": "Podczas eksportowania do PDF zmienia rozmiar strony. Obsługiwane wartości: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
     "color_type": "Kolor",
@@ -1418,7 +1419,6 @@
     "images_section_title": "Obrazy",
     "download_images_automatically": "Pobieraj obrazy automatycznie do użytku offline.",
     "download_images_description": "Wklejony HTML może zawierać odniesienia do obrazów online, Trilium znajdzie te odniesienia i pobierze obrazy, aby były dostępne offline.",
-    "enable_image_compression": "Włącz kompresję obrazów",
     "max_image_dimensions": "Maksymalna szerokość / wysokość obrazu (obraz zostanie przeskalowany, jeśli przekroczy to ustawienie).",
     "max_image_dimensions_unit": "pikseli",
     "jpeg_quality_description": "Jakość JPEG (10 - najgorsza jakość, 100 - najlepsza jakość, zalecane 50 - 85)"
@@ -1537,7 +1537,6 @@
     "enable_monthly_backup": "Włącz comiesięczną kopię zapasową",
     "backup_recommendation": "Zaleca się włączenie kopii zapasowej, ale może to spowolnić uruchamianie aplikacji przy dużych bazach danych i/lub wolnych urządzeniach pamięci masowej.",
     "backup_now": "Utwórz kopię zapasową teraz",
-    "backup_database_now": "Utwórz kopię zapasową bazy danych teraz",
     "existing_backups": "Istniejące kopie zapasowe",
     "date-and-time": "Data i godzina",
     "path": "Ścieżka",
@@ -1631,10 +1630,6 @@
     "close": "Zamknij"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Ten załącznik zostanie automatycznie usunięty za {{time}}",
-    "will_be_deleted_soon": "Ten załącznik zostanie wkrótce automatycznie usunięty",
-    "deletion_reason": ", ponieważ załącznik nie jest podlinkowany w treści notatki. Aby zapobiec usunięciu, dodaj link do załącznika z powrotem do treści lub przekonwertuj załącznik na notatkę.",
-    "role_and_size": "Rola: {{role}}, Rozmiar: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Link do załącznika skopiowany do schowka.",
     "unrecognized_role": "Nierozpoznana rola załącznika '{{role}}'."
   },
@@ -1756,7 +1751,6 @@
   "highlights_list_2": {
     "title": "Lista wyróżnień",
     "options": "Opcje",
-    "modal_title": "Konfiguracja listy wyróżnień",
     "menu_configure": "Konfiguracja listy wyróżnień...",
     "no_highlights": "Nie znaleziono wyróżnień.",
     "title_with_count_one": "{{count}} wyróżnienie",
@@ -1950,8 +1944,7 @@
   "geo-map": {
     "create-child-note-title": "Utwórz nową notatkę podrzędną i dodaj ją do mapy",
     "create-child-note-instruction": "Kliknij na mapie, aby utworzyć nową notatkę w tej lokalizacji lub naciśnij Escape, aby anulować.",
-    "unable-to-load-map": "Nie można załadować mapy.",
-    "create-child-note-text": "Dodaj zaznaczenie"
+    "unable-to-load-map": "Nie można załadować mapy."
   },
   "geo-map-context": {
     "open-location": "Otwórz lokalizację",

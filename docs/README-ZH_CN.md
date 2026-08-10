@@ -263,6 +263,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei) 因其在 Canvas 方面的原创工作。
 * [antoniotejada](https://github.com/nriver) 原始语法高亮小部件的作者。
 * [Tabler Icons](https://tabler.io/icons) 用于系统托盘图标。
+*   导入对话框中的应用程序图标来自：
+    *   适用于 OneNote、Google Keep 和 Evernote 的 [Material Design
+        Icons](https://pictogrammers.com/library/mdi/) 。
+    *   适用于 Notion 和 Obsidian 的 [Font Awesome](https://fontawesome.com/)。
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) 适用于 Anytype。
+*  LLM 提供商的图标来自 [Lobe Icons](https://lobehub.com/icons)。
 
 Trilium 的诞生离不开其背后的技术支持：
 

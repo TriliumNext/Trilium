@@ -64,10 +64,10 @@ describe("PropertyComparisonExp", () => {
             expect(searchContext.dbLoadNeeded).toBeUndefined();
         });
 
-        it("leaves dbLoadNeeded unset for DB-backed properties (mapped name never matches the lower-cased guard)", () => {
-            // The guard compares the already case-mapped propertyName ("contentSize") against
-            // a list of lower-cased names ("contentsize"), so it can never match - dbLoadNeeded
-            // is therefore never set here. This locks in the current observed behaviour.
+        it("flags dbLoadNeeded for DB-backed properties", () => {
+            // These four aren't held on the becca note; the search service only computes them when
+            // dbLoadNeeded is set. The guard used to test the case-mapped name ("contentSize") against
+            // a lower-cased list, so it never matched and filtering on them always found nothing.
             for (const prop of [
                 "contentsize",
                 "contentandattachmentssize",
@@ -76,7 +76,7 @@ describe("PropertyComparisonExp", () => {
             ]) {
                 const searchContext: any = {};
                 new PropertyComparisonExp(searchContext, prop, ">", "0");
-                expect(searchContext.dbLoadNeeded).toBeUndefined();
+                expect(searchContext.dbLoadNeeded).toBe(true);
             }
         });
     });

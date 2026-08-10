@@ -59,6 +59,13 @@ describe("attributes service", () => {
             expect(isAttributeDangerous("relation", "run")).toBe(false);
         });
 
+        it("flags the script relations, which run only on user action but run all the same", () => {
+            expect(isAttributeDangerous("relation", "script")).toBe(true);
+            expect(isAttributeDangerous("relation", "searchScript")).toBe(true);
+            // Without this a launcher could run its content instead, sidestepping `~script`.
+            expect(isAttributeDangerous("label", "scriptInLauncherContent")).toBe(true);
+        });
+
         it("matches case-insensitively and trims whitespace from the name", () => {
             expect(isAttributeDangerous("label", "RUN")).toBe(true);
             expect(isAttributeDangerous("label", "  run  ")).toBe(true);

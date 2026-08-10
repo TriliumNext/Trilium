@@ -104,8 +104,8 @@ it( 'editing-downcasts to <mark> in the editing view', () => {
 ```
 
 For widgets, assert the editing view contains the widget classes/attributes (`ck-widget`,
-`contenteditable`) while `getData()` stays clean. Widget rendering needs real layout — run such
-tests in a **browser-mode** package, not happy-dom.
+`contenteditable`) while `getData()` stays clean. Widget rendering needs real layout, which the
+browser-mode runner provides.
 
 ## Commands
 
@@ -203,10 +203,20 @@ it( 'throws on invalid config', () => {
 
 For `CKEditorError`, match the error id substring.
 
-## Reaching 100% coverage (browser-mode packages)
+## Reaching 100% coverage
 
-Browser-mode packages (`footnotes`, `keyboard-marker`, `math`, `mermaid`) gate `src/**` at 100%
+`ckeditor5` gates `src/**` at 100%
 (lines/functions/branches/statements, provider `v8`). Every branch needs a test: both states of
 each boolean, each schema-allowed/disallowed path, collapsed vs. ranged selection, and error/guard
-branches. happy-dom packages (`admonition`, `collapsible`) have **no** threshold. Run the package's
-`test` script and read the coverage text report to find uncovered lines before pushing.
+branches. Run the package's `test` script and read the coverage text report to find uncovered
+lines before pushing.
+
+When a branch resists covering, first ask whether it is reachable at all — Trilium's plugins have
+repeatedly turned out to carry guards that nothing can trigger (an `if` over a non-empty array
+literal, a selection fallback on an `isObject` element, a post-fixer branch the model writer
+normalises away). The fix is to delete or simplify the dead code, not to invent a test for it. If
+the guard genuinely earns its keep, keep it and mark it `/* v8 ignore next N -- why */` with the
+reason spelled out. Two traps worth knowing: a disabled CKEditor `Command` silently skips
+`execute()`, so a guard inside it needs `command.isEnabled = true` first; and CKEditor's own
+plugins may call `preventDefault()` on an event, so use a spy on `editor.execute` (or assert the
+model) rather than `preventDefault` to prove your handler ran.

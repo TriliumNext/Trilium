@@ -1,6 +1,7 @@
-import { buildExtraCommands, type EditorConfig, getCkLocale, loadPremiumPlugins, TemplateDefinition } from "@triliumnext/ckeditor5";
+import { type EditorConfig, getCkLocale, SnippetDefinition, type TextTransformationConfig } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
-import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import i18next from "i18next";
 
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { t } from "../../../services/i18n.js";
@@ -11,25 +12,29 @@ import noteAutocompleteService, { type Suggestion } from "../../../services/note
 import options from "../../../services/options.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
+import { isMac } from "../../../services/utils.js";
+import { resolveContentLanguage } from "../../../utils/formatters.js";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams.js";
+import { buildQuoteTransformation, resolveQuoteSetting } from "./quotes.js";
+import { buildCustomTransformations, parseCustomReplacements } from "./replacements.js";
 import { buildToolbarConfig } from "./toolbar.js";
 
+/**
+ * The only license key Trilium ever passes to CKEditor. Every premium plugin the editor used has
+ * been replaced by a GPL in-tree one, so there is no commercial license to configure any more.
+ */
 export const OPEN_SOURCE_LICENSE_KEY = "GPL";
 
 export interface BuildEditorOptions {
-    forceGplLicense: boolean;
     isClassicEditor: boolean;
     uiLanguage: DISPLAYABLE_LOCALE_IDS;
     contentLanguage: string | null;
-    templates: TemplateDefinition[];
+    templates: SnippetDefinition[];
 }
 
 export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfig> {
-    const licenseKey = (opts.forceGplLicense ? OPEN_SOURCE_LICENSE_KEY : getLicenseKey());
-    const hasPremiumLicense = (licenseKey !== OPEN_SOURCE_LICENSE_KEY);
-
     const config: EditorConfig = {
-        licenseKey,
+        licenseKey: OPEN_SOURCE_LICENSE_KEY,
         placeholder: t("editable_text.placeholder"),
         codeBlock: {
             languages: buildListOfLanguages()
@@ -109,7 +114,10 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 "toggleImageCaption"
             ],
             upload: {
-                types: ["jpeg", "png", "gif", "bmp", "webp", "tiff", "svg", "svg+xml", "avif"]
+                // Derived rather than listed, so what the editor inserts as a picture and what the
+                // upload endpoint stores as one cannot drift apart — either direction of a mismatch
+                // is a broken element. See IMAGE_MIMES.
+                types: [ ...IMAGE_UPLOAD_SUBTYPES ]
             }
         },
         heading: {
@@ -170,29 +178,34 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             copy: copyTextWithToast
         },
         slashCommand: {
-            // Drop CKEditor's built-in slash commands whose title/icon we re-define in
-            // buildExtraCommands: the Mermaid one (generic icon) and the list ones
-            // (Title Case titles, normalized to sentence case).
+            // Drop CKEditor's built-in slash commands whose title/icon the palette re-defines: the
+            // Mermaid one (generic icon) and the list ones (Title Case titles, normalized to
+            // sentence case).
             removeCommands: ["insertMermaidCommand", "bulletedList", "numberedList", "todoList"],
-            dropdownLimit: Number.MAX_SAFE_INTEGER,
-            extraCommands: buildExtraCommands((key, params) => t(key, params), SAMPLE_DIAGRAMS)
+            dropdownLimit: Number.MAX_SAFE_INTEGER
         },
-        template: {
+        snippets: {
             definitions: opts.templates
         },
         htmlSupport: {
             allow: JSON.parse(options.get("allowedHtmlTags"))
         },
         removePlugins: getDisabledPlugins(),
-        ...await getCkLocale(opts.uiLanguage)
+        // The locale's CKEditor translations, plus the dictionary of Trilium-authored editor
+        // strings resolved through the app's i18n (see `messages.ts` in the ckeditor5 package).
+        ...await getCkLocale(opts.uiLanguage, { englishMessages: getEnglishEditorMessages(), translate: (key) => t(key) })
     };
 
     // User-configurable todo task states (from the `_taskStates` hidden subtree).
     (config as Record<string, unknown>).taskStates = await getTaskStateDefinitions();
     (config as Record<string, unknown>).editTaskStates = openCustomTaskStateConfig;
 
-    // The app's i18n translate function, so plugins can resolve Trilium translation keys.
-    (config as Record<string, unknown>).translate = (key: string, params?: Record<string, unknown>) => t(key, params);
+    // Renders a keystroke a plugin mentions in a hint. The editor's own strings translate through
+    // its dictionary (see `messages.ts` in the ckeditor5 package), but the key names inside a
+    // shortcut come from `keyboard_shortcut_keys`, which the command palette and the help dialog
+    // read too — so the app renders them and hands the markup over.
+    (config as Record<string, unknown>).renderShortcut = (shortcut: string) =>
+        joinShortcut(formatShortcut(shortcut, t, isMac()).map((token) => `<kbd>${token}</kbd>`), isMac());
 
     // Global on/off switch for content-area hints (bottom-corner popups on task
     // checkboxes, collapsible summaries, drag handles). Plugins consult this via
@@ -216,14 +229,39 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     const imageToolbar = (config.image as { toolbar: (string | object)[] }).toolbar;
     imageToolbar.push("|", ...(imageService.isImageCopySupported() ? ["copyImageToClipboard"] : []), "downloadImage");
 
-    // Set up content language.
-    const { contentLanguage } = opts;
+    // Embed internal images as data: URIs when content is copied out to external apps, while
+    // keeping internal Trilium paste reference-based (see the ClipboardImageEmbed plugin). The
+    // resolver does the synchronous canvas encoding; the hidden option is a kill-switch.
+    // `enabled` is a getter for the same reason as `autoLinkPreviewsEnabled` above, and because the
+    // application-level handler covering read-only surfaces reads the option per copy — a baked-in
+    // boolean would leave an open editor still embedding after the switch was flipped.
+    config.clipboardImageEmbed = {
+        enabled: () => options.get("clipboardImageEmbedEnabled") === "true",
+        embedImage: (src: string) => imageService.embedReferenceImageAsDataUrl(src)
+    };
+
+    // The language this note is written in, which governs both its text direction and which
+    // typographic quotes typing produces.
+    //
+    // The note's own `#language` label wins, being the only per-note signal and the one a
+    // multilingual writer sets deliberately. Almost no note carries one though — the label is
+    // opt-in, and the picker that sets it is empty until content languages are enabled — so the
+    // `defaultContentLanguage` option is what answers in practice. It defaults to English, which is
+    // what every note was implicitly treated as before the option existed; setting it to the empty
+    // "auto" entry follows the application's language instead.
+    //
+    // Deliberately not `formattingLocale`: that one is presented as "Date & number format", so
+    // someone who sets it for unambiguous dates would not expect it to restyle their prose.
+    const contentLanguage = resolveContentLanguage(opts.contentLanguage);
+
     if (contentLanguage) {
         config.language = {
             ui: (typeof config.language === "string" ? config.language : "en"),
             content: contentLanguage
         };
     }
+
+    config.typing = { transformations: buildTransformationsConfig(contentLanguage) };
 
     // Mention customisation.
     if (options.get("textNoteCompletionEnabled") === "true") {
@@ -235,6 +273,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                     itemRenderer: (item) => {
                         const suggestion = item as Suggestion;
                         const itemElement = document.createElement("button");
+                        itemElement.className = "note-mention-suggestion";
 
                         const iconElement = document.createElement("span");
                         // Choose appropriate icon based on action
@@ -244,28 +283,86 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                         }
                         iconElement.className = iconClass;
 
-                        itemElement.append(iconElement, document.createTextNode(" "));
+                        // The title keeps a wrapper of its own rather than being spread into the
+                        // button: the row lays the icon out against the title as a whole (see the
+                        // `note-mention-suggestion` rule), which it cannot do over loose text nodes.
                         const titleContainer = document.createElement("span");
+                        titleContainer.className = "note-mention-suggestion-title";
                         titleContainer.innerHTML = suggestion.highlightedNotePathTitle ?? "";
-                        itemElement.append(...titleContainer.childNodes, document.createTextNode(" "));
+                        itemElement.append(iconElement, titleContainer);
 
                         return itemElement;
                     },
-                    minimumCharacters: 0
+                    minimumCharacters: 0,
+                    // Note titles contain spaces, so the query must be allowed to as well.
+                    allowSpaces: true
                 }
             ],
         };
-    }
-
-    // Enable premium plugins dynamically to avoid eager loading.
-    if (hasPremiumLicense) {
-        config.extraPlugins = await loadPremiumPlugins();
     }
 
     return {
         ...config,
         ...buildToolbarConfig(opts.isClassicEditor)
     };
+}
+
+/**
+ * Which as-you-type replacements the editor runs, expressed as deltas against CKEditor's own default
+ * set rather than by restating it.
+ *
+ * That is deliberate: the dashes and the fractions are boundary-sensitive regexes upstream — ` -- `
+ * needs its surrounding spaces, and `1/2` needs the guards that stop `11/2` becoming `1½` — and
+ * those are exactly the definitions that break subtly when copied by hand. Naming a group in
+ * `remove` disables it without us ever holding its pattern.
+ *
+ * Quotes are the one exception we do own, because which marks they produce depends on the note's
+ * language and upstream has data for three locales. They are removed and re-supplied — but only when
+ * we actually have a pair for the language, so an unmapped locale keeps falling through to
+ * CKEditor's default rather than losing quote replacement altogether.
+ */
+function buildTransformationsConfig(contentLanguage: string | null): TextTransformationConfig {
+    const remove: string[] = [];
+    if (options.get("textNotePunctuationReplacementsEnabled") !== "true") remove.push("typography");
+    if (options.get("textNoteMathReplacementsEnabled") !== "true") remove.push("mathematical");
+    if (options.get("textNoteSymbolReplacementsEnabled") !== "true") remove.push("symbols");
+
+    // The two keys are settled apart, so each is taken over from upstream only when we have
+    // something to put in its place — naming the individual transformations rather than the `quotes`
+    // group, which would take both away together.
+    const double = resolveQuoteSetting(options.get("textNoteDoubleQuoteStyle"), "primary", contentLanguage);
+    const single = resolveQuoteSetting(options.get("textNoteSingleQuoteStyle"), "secondary", contentLanguage);
+    if (double.overridesUpstream) remove.push("quotesPrimary");
+    if (single.overridesUpstream) remove.push("quotesSecondary");
+
+    const extra = [
+        ...(double.marks ? [buildQuoteTransformation("\"", double.marks)] : []),
+        ...(single.marks ? [buildQuoteTransformation("'", single.marks)] : []),
+        ...buildCustomTransformations(parseCustomReplacements(options.get("textNoteCustomReplacements")))
+    ];
+
+    // `include` is typed as required even though upstream's own documented examples pass `remove`
+    // alone, and the plugin defines the default set in its constructor. Narrowed here rather than
+    // restating the default groups, so that a group upstream adds later keeps working.
+    return { remove, extra } as TextTransformationConfig;
+}
+
+/**
+ * The English editor messages, i.e. the `text-editor.ck` section of the English catalog, mapping
+ * each derived key to the English text that plugins pass to `editor.t()`. This section is the
+ * registry of Trilium-authored editor strings — there is no list of them in code — so reading it
+ * back is what lets the message dictionary be built.
+ *
+ * English is always loaded, being i18next's `fallbackLng`; an empty section only means every editor
+ * string renders its English message id, which is what an unconfigured editor does anyway.
+ *
+ * `getResourceBundle` is bound onto the i18next instance by `init()`, so it is missing until
+ * `initLocale()` has run — the case for a test that builds a config without booting i18n.
+ */
+function getEnglishEditorMessages(): Record<string, string> {
+    const bundle = i18next.getResourceBundle?.("en", "translation") as
+        { "text-editor"?: { ck?: Record<string, string> } } | undefined;
+    return bundle?.["text-editor"]?.ck ?? {};
 }
 
 function buildListOfLanguages() {
@@ -290,25 +387,15 @@ function buildListOfLanguages() {
     ];
 }
 
-function getLicenseKey() {
-    const premiumLicenseKey = import.meta.env.VITE_CKEDITOR_KEY;
-    if (!premiumLicenseKey) {
-        logError("CKEditor license key is not set, premium features will not be available.");
-        return OPEN_SOURCE_LICENSE_KEY;
-    }
-
-    return premiumLicenseKey;
-}
-
 function getDisabledPlugins() {
     const disabledPlugins: string[] = [];
 
     if (options.get("textNoteEmojiCompletionEnabled") !== "true") {
-        disabledPlugins.push("EmojiMention");
+        disabledPlugins.push("TriliumEmojiMention");
     }
 
     if (options.get("textNoteSlashCommandsEnabled") !== "true") {
-        disabledPlugins.push("SlashCommand");
+        disabledPlugins.push("TriliumSlashCommands");
     }
 
     return disabledPlugins;

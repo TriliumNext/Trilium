@@ -45,6 +45,17 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
         this.dbConnection = new Database(buffer, dbOpts);
     }
 
+    detach() {
+        // Closing is what folds the -wal file back into the database and lets the file be replaced;
+        // on Windows it cannot even be renamed while a handle is open.
+        this.dbConnection?.close();
+        this.dbConnection = undefined;
+    }
+
+    isAttached() {
+        return this.dbConnection !== undefined;
+    }
+
     async backup(destinationFile: string) {
         try {
             unlinkSync(destinationFile);

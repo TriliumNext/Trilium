@@ -8,6 +8,7 @@ export default defineConfig({
         "apps/*/vitest.config.ts",
         "apps/*/vite.config.ts",
         "apps/*/vite.config.mts",
+        "scripts/vitest.config.ts",
     ],
   },
 })

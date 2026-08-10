@@ -56,7 +56,45 @@
 
 /* End of styling the slider */
 
+/*
+ * The tooltip standing over the note or relation being hovered, dressed as the app's own tooltips
+ * are. The graph brings its own (float-tooltip), styled from a stylesheet it injects itself, which
+ * knows nothing of the theme — so it is dressed here in the same tokens the real ones wear, with
+ * what the themes that predate those tokens can be asked for instead.
+ */
+.note-map-container .float-tooltip-kap {
+    max-width: min(260px, 90%);
+    padding: var(--tooltip-padding, 6px 10px);
+    border-radius: var(--tooltip-border-radius, 5px);
+    background: var(--tooltip-background-color);
+    backdrop-filter: var(--tooltip-backdrop-filter);
+    box-shadow: var(--tooltip-box-shadow, 2px 2px 8px rgba(0, 0, 0, 0.2));
+    color: var(--tooltip-foreground-color, var(--main-text-color));
+    font-family: var(--main-font-family);
+    font-size: var(--tooltip-font-size, 0.9rem);
+    text-align: start;
+}
+
+/*
+ * What the map asks the theme for what it is drawn in, each one wearing the colour it stands for so
+ * that it can be read back off it. The map draws on a canvas, which knows nothing of a stylesheet.
+ */
 .style-resolver {
     color: var(--muted-text-color);
     display: none;
+
+    .style-resolver-background {
+        color: var(--main-background-color);
+    }
+
+    /* What a note's icon is drawn on and in wherever else it is shown at a size — beside the title of
+       the note being read, above all, which is the very note the map is drawn around. The themes that
+       do not name them are answered with what the map drew that note in before they existed. */
+    .style-resolver-anchor {
+        color: var(--note-icon-background-color, var(--link-color));
+    }
+
+    .style-resolver-anchor-icon {
+        color: var(--note-icon-color, var(--main-background-color));
+    }
 }

@@ -21,6 +21,11 @@ describe("CutToNotePlugin", () => {
     it("loads the plugin and registers the toolbar button", () => {
         expect(editor.plugins.get(CutToNotePlugin)).toBeInstanceOf(CutToNotePlugin);
         expect(editor.ui.componentFactory.has("cutToNote")).toBe(true);
+
+        // No dictionary is configured here, so `t()` renders the message id, which is the English
+        // label.
+        const view = editor.ui.componentFactory.create("cutToNote") as { label?: string };
+        expect(view.label).toBe("Cut selection into a sub-note");
     });
 
     it("triggers the cutIntoNote command on the Trilium component when the button is executed", () => {

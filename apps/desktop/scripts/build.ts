@@ -14,16 +14,24 @@ async function main() {
     // built after, leaves the final meta.json.
     await build.buildBackend([ "src/preload.ts" ], { importMetaUrlShim: false });
     await build.buildBackend([ "src/main.ts" ]);
+    // The image compression worker, which lives in the server it embeds. Built here too so the
+    // desktop app can compress off-thread rather than falling back to doing it in the main process.
+    await build.buildBackend([ "../server/src/services/image_worker.ts" ]);
 
     // Copy assets.
     build.copy("src/assets", "assets/");
     build.copy("/apps/server/src/assets", "assets/");
     build.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
+    // The LLM skill sheets moved to core with the rest of the stack, but the
+    // Node hosts still read them from RESOURCE_DIR. See server core_assets.ts.
+    build.copy("/packages/trilium-core/src/assets/llm/skills", "assets/llm/skills/");
     build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 
     // Copy node modules dependencies
-    build.copyNodeModules([ "better-sqlite3", "bindings", "file-uri-to-path" ]);
+    build.copyNodeModules([ "better-sqlite3" ]);
+    // No musl build: Electron itself ships glibc-only Linux binaries.
+    build.trimBetterSqlite3({ includeMusl: false });
 
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
 

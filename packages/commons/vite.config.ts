@@ -1,4 +1,5 @@
 
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig(() => ({
@@ -15,9 +16,19 @@ export default defineConfig(() => ({
             ["junit", { outputFile: "./test-output/vitest/junit.xml", addFileAttribute: true }]
         ],
         'coverage': {
+            'thresholds': {
+                'lines': 100,
+                'functions': 100,
+                'branches': 100,
+                'statements': 100
+            },
             'reportsDirectory': './test-output/vitest/coverage',
             'provider': 'v8' as const,
-            'reporter': ['text', 'html', 'lcov'],
+            // Codecov resolves an lcov `SF:` path by matching it against the repo's file list, so
+            // the package-relative paths istanbul emits by default (`src/lib/utils.ts`, relative
+            // to cwd) are ambiguous in this monorepo and get attributed to whichever package wins
+            // the match. Emit repo-root-relative paths instead.
+            'reporter': ['text', 'html', ['lcov', { projectRoot: resolve(__dirname, '../..') }]],
             'include': ['src/**/*.ts'],
             'exclude': ['src/**/*.spec.ts'],
         }

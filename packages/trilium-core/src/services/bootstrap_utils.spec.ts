@@ -5,6 +5,7 @@ import getSharedBootstrapItems, { getIconConfig } from "./bootstrap_utils.js";
 import * as cls from "./context.js";
 import notes from "./notes.js";
 import options from "./options.js";
+import { enterSetupMode, leaveSetupMode } from "./setup_mode.js";
 import sqlInit from "./sql_init.js";
 
 const ASSET_PATH = "assets-x";
@@ -55,6 +56,27 @@ describe("bootstrap_utils (real DB)", () => {
             schemaSpy.mockReturnValue(false);
             expect(getSharedBootstrapItems(ASSET_PATH, false).syncInProgress).toBe(false);
         } finally {
+            schemaSpy.mockRestore();
+        }
+    });
+
+    it("tells the wizard where to open, and that it has a database to go back to", () => {
+        const schemaSpy = vi.spyOn(sqlInit, "schemaExists").mockReturnValue(true);
+        try {
+            // A first run: nowhere in particular to go, and nothing behind the wizard.
+            expect(getSharedBootstrapItems(ASSET_PATH, false)).toMatchObject({
+                initialSetup: true, setupTargetScreen: undefined
+            });
+
+            enterSetupMode({ lang: "ro", targetScreen: "restore-backup" });
+            const items = getSharedBootstrapItems(ASSET_PATH, false);
+
+            expect(items).toMatchObject({ initialSetup: false, setupTargetScreen: "restore-backup" });
+            // The schema of a finished database says nothing about an interrupted sync, so the
+            // wizard must not be sent to the sync-progress screen instead of the one asked for.
+            expect(items.syncInProgress).toBe(false);
+        } finally {
+            leaveSetupMode();
             schemaSpy.mockRestore();
         }
     });

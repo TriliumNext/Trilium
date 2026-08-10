@@ -345,8 +345,5 @@
   "sql_init": {
     "db_not_initialized_desktop": "BD não inicializada, siga as instruções no ecrã.",
     "db_not_initialized_server": "BD não inicializada, visite a página de configuração - http://[anfitrião-do-servidor]:{{port}} para ver instruções sobre como inicializar o Trilium."
-  },
-  "desktop": {
-    "instance_already_running": "Já há uma instância em execução, a focar essa instância."
   }
 }

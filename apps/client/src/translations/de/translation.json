@@ -11,13 +11,13 @@
     },
     "role_brief_history": {
       "lead-dev": "Elian Doran gründete TriliumNext im Jahr 2024, einen Community-Fork, der entstand, nachdem Zadam sich aus dem Projekt zurückzog. Zadam übertrug das ursprüngliche Repository später an das TriliumNext-Team, wodurch beide Projekte wieder zusammengeführt wurden.",
-      "original-dev": "Am 25. Dezember 2017 veröffentlichte Zadam die erste Betaversion von Trilium – anders als die Blume, mit einem einzelnen „l\" geschrieben. Unzufrieden mit bestehenden Notizprogrammen baute er eine leistungsstarke, selbst gehostete, hierarchische Wissensdatenbank, die über 22.000 GitHub-Sterne erhielt. Im Jahr 2024 versetzte er das Projekt in den Wartungsmodus."
+      "original-dev": "Am 25. Dezember 2017 veröffentlichte Zadam die erste Betaversion von Trilium – anders als die Blume, mit einem einzelnen „l“ geschrieben. Unzufrieden mit bestehenden Notizprogrammen baute er eine leistungsstarke, selbst gehostete, hierarchische Wissensdatenbank, die über 22.000 GitHub-Sterne erhielt. Im Jahr 2024 versetzte er das Projekt in den Wartungsmodus."
     },
     "contributor_full_list": "Die gesamte Community anschauen",
-    "github_tooltip": "Fehler melden, Features vorschlagen oder auf Github mitwirken",
+    "github_tooltip": "Fehler melden, Features vorschlagen oder auf GitHub mitwirken",
     "license_tooltip": "Lizenz ansehen",
     "donate": "Spenden",
-    "donate_tooltip": "Spende, um Trillium zu unterstützen",
+    "donate_tooltip": "Spende, um Trilium zu unterstützen",
     "channel": {
       "nightly": "Nightly",
       "standalone": "Standalone"
@@ -26,11 +26,11 @@
   "toast": {
     "critical-error": {
       "title": "Kritischer Fehler",
-      "message": "Ein kritischer Fehler ist aufgetreten, der das Starten der Client-Anwendung verhindert:\n\n{{message}}\n\nDies wird höchstwahrscheinlich durch ein Skript verursacht, das auf unerwartete Weise fehlschlägt. Versuche, die Anwendung im abgesicherten Modus zu starten und das Problem zu lokalisieren."
+      "message": "Ein kritischer Fehler ist aufgetreten, der das Starten der Client-Anwendung verhindert:\n\n{{message}}\n\nDies wird höchstwahrscheinlich durch ein Skript verursacht, das auf unerwartete Weise fehlschlägt. Versuchen Sie, die Anwendung im abgesicherten Modus zu starten und das Problem zu beheben."
     },
     "widget-error": {
       "title": "Ein Widget konnte nicht initialisiert werden",
-      "message-custom": "Benutzerdefiniertes Widget von der Notiz mit der ID \"{{id}}\", und dem Titel \"{{title}}\" konnte nicht initialisiert werden wegen:\n\n{{message}}",
+      "message-custom": "Benutzerdefiniertes Widget von der Notiz mit der ID „{{id}}“, und dem Titel „{{title}}“ konnte nicht initialisiert werden wegen:\n\n{{message}}",
       "message-unknown": "Unbekanntes Widget konnte nicht initialisiert werden wegen:\n\n{{message}}"
     },
     "bundle-error": {
@@ -45,7 +45,11 @@
       "title": "Benutzerdefiniertes React-Widget konnte nicht dargestellt werden"
     },
     "widget-missing-parent": "Benutzerdefiniertes Widget hat die erforderliche '{{property}}'-Eigenschaft nicht korrekt definiert.\n\nFalls dieses Skript ohne UI-Element ausgeführt werden soll, verwenden Sie stattdessen '#run=frontendStartup'.",
-    "scripting-error": "Benutzerdefinierter Skriptfehler: {{title}}"
+    "scripting-error": "Die Skriptnotiz konnte nicht ausgeführt werden",
+    "unhandled-error": {
+      "details-button": "Weitere Details anzeigen...",
+      "title": "Eine Hintergrundaufgabe ist fehlgeschlagen"
+    }
   },
   "add_link": {
     "add_link": "Link hinzufügen",
@@ -57,7 +61,9 @@
     "link_title": "Linktitel",
     "button_add_link": "Link hinzufügen",
     "anchor": "Anker (optional)",
-    "anchor_none": "Link zu Notiz"
+    "anchor_none": "Keine (Link zur Notiz)",
+    "edit_link": "Link bearbeiten",
+    "button_edit_link": "Link speichern"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Zweigpräfix bearbeiten",
@@ -65,8 +71,8 @@
     "prefix": "Präfix",
     "save": "Speichern",
     "branch_prefix_saved": "Zweigpräfix wurde gespeichert.",
-    "branch_prefix_saved_multiple": "Der Zweigpräfix wurde für {{count}} Zweige gespeichert.",
-    "edit_branch_prefix_multiple": "Branch-Präfix für {{count}} Zweige bearbeiten",
+    "branch_prefix_saved_multiple": "Zweigpräfix wurde für {{count}} Zweige gespeichert.",
+    "edit_branch_prefix_multiple": "Zweigpräfix für {{count}} Zweige bearbeiten",
     "affected_branches": "Betroffene Zweige ({{count}}):",
     "cancel": "Abbrechen",
     "preview_in_tree": "Vorschau im Baum",
@@ -80,9 +86,9 @@
     "chosen_actions": "Ausgewählte Aktionen",
     "execute_bulk_actions": "Massenaktionen ausführen",
     "bulk_actions_executed": "Massenaktionen wurden erfolgreich ausgeführt.",
-    "none_yet": "Noch keine … Fügen Sie eine Aktion hinzu, indem Sie oben auf eine der verfügbaren Aktionen klicken.",
+    "none_yet": "Noch keine ... Fügen Sie eine Aktion hinzu, indem Sie oben auf eine der verfügbaren Aktionen klicken.",
     "labels": "Labels",
-    "relations": "Beziehungen",
+    "relations": "Relationen",
     "notes": "Notizen",
     "other": "Andere"
   },
@@ -96,57 +102,78 @@
     "prefix_optional": "Präfix (optional)",
     "clone_to_selected_note": "Auf ausgewählte Notiz klonen",
     "no_path_to_clone_to": "Kein Pfad zum Klonen.",
-    "note_cloned": "Die Notiz \"{{clonedTitle}}\" wurde in \"{{targetTitle}}\" hinein geklont"
+    "note_cloned": "Die Notiz „{{clonedTitle}}“ wurde in „{{targetTitle}}“ hineingeklont"
   },
   "confirm": {
     "confirmation": "Bestätigung",
     "cancel": "Abbrechen",
     "ok": "OK",
-    "are_you_sure_remove_note": "Möchten Sie die Notiz „{{title}}\" wirklich von der Beziehungskarte entfernen? ",
-    "if_you_dont_check": "Wenn Sie dies nicht aktivieren, wird die Notiz nur aus der Beziehungskarte entfernt.",
-    "also_delete_note": "Auch die Notiz löschen"
+    "are_you_sure_remove_note": "Möchten Sie die Notiz „{{title}}“ wirklich von der Relationskarte entfernen? ",
+    "if_you_dont_check": "Wenn Sie dies nicht aktivieren, wird die Notiz nur aus der Relationskarte entfernt.",
+    "also_delete_note": "Auch die Notiz löschen",
+    "delete_note_keeps_note_one": "Die Notiz hat {{count}} weiteren Klon, deswegen wird die Notiz selbst behalten.",
+    "delete_note_keeps_note_other": "Die Notiz hat {{count}} weiter Klone, deswegen wird die Notiz selbst behalten."
   },
   "delete_notes": {
     "close": "Schließen",
-    "delete_all_clones_description": "auch alle Klone löschen (kann bei letzte Änderungen rückgängig gemacht werden)",
-    "erase_notes_description": "Lösche Notizen sofort. Diese Aktion kann nicht rückgängig gemacht werden und erfordert einen Neustart der Applikation.",
+    "delete_all_clones_description": "Auch alle Klone löschen (kann unter „Letzte Änderungen“ rückgängig gemacht werden)",
+    "erase_notes_description": "Notizen sofort löschen, statt sie in den Papierkorb zu verschieben. Dies kann nicht rückgängig gemacht werden und erzwingt ein Neuladen der Anwendung.",
     "erase_notes_warning": "Notizen dauerhaft löschen (kann nicht rückgängig gemacht werden), einschließlich aller Klone. Dadurch wird ein Neuladen der Anwendung erzwungen.",
     "notes_to_be_deleted": "({{notesCount}}) Notizen werden gelöscht",
     "no_note_to_delete": "Es werden keine Notizen gelöscht (nur Klone).",
-    "broken_relations_to_be_deleted": "Unterbrochene Beziehungen ({{relationCount}})",
+    "broken_relations_to_be_deleted": "Unterbrochene Relationen ({{relationCount}})",
     "cancel": "Abbrechen",
     "title": "Notizen löschen",
-    "clones_label": "Duplikate",
-    "delete_clones_description_one": "Löscht {{count}} weiteres Duplikat. Kann unter „Letzte Änderungen“ rückgängig gemacht werden.",
-    "delete_clones_description_other": "Löscht {{count}} weitere Duplikate. Kann unter „Letzte Änderungen“ rückgängig gemacht werden.",
+    "clones_label": "Klone",
+    "delete_clones_description_one": "Löscht {{count}} weiteren Klon. Kann unter „Letzte Änderungen“ rückgängig gemacht werden.",
+    "delete_clones_description_other": "Löscht {{count}} weitere Klone. Kann unter „Letzte Änderungen“ rückgängig gemacht werden.",
     "erase_notes_label": "Permanent löschen",
-    "table_note_with_relation": "Notiz mit Beziehung",
-    "table_relation": "Beziehung",
+    "table_note_with_relation": "Notiz mit Relation",
+    "table_relation": "Relation",
     "delete": "Löschen",
     "table_points_to": "Zeigt auf (gelöscht)"
   },
   "export": {
     "export_note_title": "Notiz exportieren",
     "close": "Schließen",
-    "export_type_subtree": "Diese Notiz und alle ihre Unternotizen",
-    "export_type_single": "Nur diese Notiz ohne ihre Unternotizen",
+    "export_type_subtree": "Diese Notiz und alle Unternotizen",
+    "export_type_single": "Nur diese Notiz",
     "export": "Export",
     "choose_export_type": "Bitte wählen Sie zuerst den Exporttyp aus",
     "export_finished_successfully": "Der Export wurde erfolgreich abgeschlossen.",
-    "format_pdf": "PDF - für Ausdrucke oder Teilen."
+    "format_pdf": "PDF – für Ausdrucke oder Teilen.",
+    "what_to_export": "Was soll exportiert werden",
+    "format": "Format",
+    "format_html_name": "HTML",
+    "format_html_description": "Behält alle Formatierungen bei",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Behält die meisten Formatierungen bei",
+    "format_opml_name": "OPML",
+    "format_opml_description": "Gliederungsformat mit HTML-Inhalten",
+    "format_share_name": "HTML für das Web",
+    "format_share_description": "Veröffentlichbare statische Website mit dem Design für geteilte Notizen",
+    "recommended": "Empfohlen",
+    "result_subtree_html": "Ein ZIP-Archiv, in dem Textnotizen als HTML gespeichert werden. Code, Bilder und andere Dateien behalten ihr ursprüngliches Format bei.",
+    "result_subtree_markdown": "Ein ZIP-Archiv, in dem Textnotizen als Markdown gespeichert werden. Code, Bilder und andere Dateien behalten ihr ursprüngliches Format bei.",
+    "result_share": "Ein ZIP-Archiv mit einer veröffentlichbaren statischen Website, die das Design für geteilte Notizen verwendet.",
+    "result_opml": "Eine einzelne OPML-Gliederungsdatei. Notiztitel und Text sind enthalten; Bilder, Codedateien und Anhänge nicht.",
+    "result_single_html": "Eine einzelne HTML-Datei. Bilder und Anhänge werden darin eingebettet.",
+    "result_single_markdown": "Eine einzelne Markdown-Datei (.md).",
+    "preparing_export": "Export wird vorbereitet …",
+    "export_in_progress_with_total": "{{progressCount}} von {{totalCount}} Notizen exportiert"
   },
   "help": {
-    "noteNavigation": "Notiz Navigation",
+    "noteNavigation": "Notiznavigation",
     "goUpDown": "In der Liste der Notizen nach oben/unten gehen",
     "collapseExpand": "Knoten reduzieren/erweitern",
-    "notSet": "nicht eingestellt",
+    "notSet": "nicht gesetzt",
     "goBackForwards": "in der Historie zurück/vorwärts gehen",
-    "showJumpToNoteDialog": "zeige <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Springe zu\" dialog</a>",
-    "scrollToActiveNote": "Scrolle zur aktiven Notiz",
+    "showJumpToNoteDialog": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">„Springe zu“-Dialog</a> anzeigen",
+    "scrollToActiveNote": "Zur aktiven Notiz scrollen",
     "jumpToParentNote": "Zur übergeordneten Notiz springen",
-    "collapseWholeTree": "Reduziere den gesamten Notizbaum",
+    "collapseWholeTree": "Gesamten Notizbaum reduzieren",
     "collapseSubTree": "Zweig einklappen",
-    "tabShortcuts": "Tab-Tastenkürzel",
+    "tabShortcuts": "Tab-Tastenkombinationen",
     "newTabNoteLink": "auf den Notizlink öffnet die Notiz in einem neuen Tab",
     "onlyInDesktop": "Nur im Desktop (Electron Build)",
     "openEmptyTab": "Leeren Tab öffnen",
@@ -156,29 +183,29 @@
     "creatingNotes": "Notizen erstellen",
     "createNoteAfter": "Neue Notiz nach der aktiven Notiz erstellen",
     "createNoteInto": "Neue Unternotiz in aktive Notiz erstellen",
-    "editBranchPrefix": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">Präfix</a> des aktiven Notizklon bearbeiten",
+    "editBranchPrefix": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">Präfix</a> des aktiven Notizklons bearbeiten",
     "movingCloningNotes": "Notizen verschieben/klonen",
     "moveNoteUpDown": "Notiz in der Notizenliste nach oben/unten verschieben",
-    "moveNoteUpHierarchy": "Verschiebe die Notiz in der Hierarchie nach oben",
+    "moveNoteUpHierarchy": "Notiz in der Hierarchie nach oben verschieben",
     "multiSelectNote": "Mehrfachauswahl von Notizen oben/unten",
     "selectAllNotes": "Alle Notizen in der aktuellen Ebene auswählen",
     "selectNote": "Notiz auswählen",
-    "copyNotes": "Aktive Notiz (oder aktuelle Auswahl) in den Zwischenspeicher kopieren (wird genutzt für <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">Klonen</a>)",
+    "copyNotes": "Aktive Notiz (oder aktuelle Auswahl) in die Zwischenablage kopieren (wird genutzt für <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">Klonen</a>)",
     "cutNotes": "Aktuelle Notiz (oder aktuelle Auswahl) in die Zwischenablage ausschneiden (wird zum Verschieben von Notizen verwendet)",
-    "pasteNotes": "Notiz(en) als Unternotiz in die aktive Notiz einfügen (entweder verschieben oder klonen, je nachdem, ob sie kopiert oder in die Zwischenablag e ausgeschnitten wurde)",
+    "pasteNotes": "Notiz(en) als Unternotiz in die aktive Notiz einfügen (entweder verschieben oder klonen, je nachdem, ob sie kopiert oder in die Zwischenablage ausgeschnitten wurde)",
     "deleteNotes": "Notiz / Unterbaum löschen",
     "editingNotes": "Notizen bearbeiten",
     "editNoteTitle": "Im Baumbereich wird vom Baumbereich zum Notiztitel gewechselt. Beim Druck auf Eingabe im Notiztitel, wechselt der Fokus zum Texteditor. <kbd>Strg+.</kbd> wechselt vom Editor zurück zum Baumbereich.",
     "createEditLink": "Externen Link erstellen/bearbeiten",
     "createInternalLink": "Internen Link erstellen",
-    "followLink": "Folge dem Link unter dem Cursor",
-    "insertDateTime": "Gebe das aktuelle Datum und die aktuelle Uhrzeit an der Einfügemarke ein",
-    "jumpToTreePane": "Springe zum Baumbereich und scrolle zur aktiven Notiz",
+    "followLink": "Dem Link unter dem Cursor folgen",
+    "insertDateTime": "Aktuelles Datum und aktuelle Uhrzeit an der Einfügemarke einfügen",
+    "jumpToTreePane": "Zum Baumbereich springen und zur aktiven Notiz scrollen",
     "markdownAutoformat": "Markdown-ähnliche Autoformatierung",
-    "headings": "<code>##</code>, <code>###</code>, <code>####</code> usw. gefolgt von Platz für Überschriften",
+    "headings": "<code>##</code>, <code>###</code>, <code>####</code> usw. gefolgt von Leerzeichen für Überschriften",
     "bulletList": "<code>*</code> oder <code>-</code> gefolgt von Leerzeichen für Aufzählungsliste",
     "numberedList": "<code>1.</code> oder <code>1)</code> gefolgt von Leerzeichen für nummerierte Liste",
-    "blockQuote": "Beginne eine Zeile mit <code>></code> gefolgt von einem Leerzeichen für Blockzitate",
+    "blockQuote": "Eine Zeile mit <code>></code> gefolgt von einem Leerzeichen für Blockzitate beginnen",
     "troubleshooting": "Fehlerbehebung",
     "reloadFrontend": "Trilium-Frontend neuladen",
     "showDevTools": "Entwicklertools anzeigen",
@@ -188,46 +215,53 @@
     "inPageSearch": "Auf-der-Seite-Suche",
     "newTabWithActivationNoteLink": "auf einen Notiz-Link öffnet und aktiviert die Notiz in einem neuen Tab",
     "title": "Spickzettel",
-    "editShortcuts": "Tastenkürzel bearbeiten",
+    "editShortcuts": "Tastenkombinationen bearbeiten",
     "toggleArchivedNotes": "Archivierte Notizen anzeigen/ausblenden"
   },
   "import": {
     "importIntoNote": "In Notiz importieren",
     "chooseImportFile": "Importdatei auswählen",
     "options": "Optionen",
-    "safeImportTooltip": "Trilium <code>.zip</code>-Exportdateien können ausführbare Skripte enthalten, die möglicherweise schädliches Verhalten aufweisen. Der sichere Import deaktiviert die automatische Ausführung aller importierten Skripte. Deaktivieren Sie 'Sicherer Import' nur, wenn das importierte Archiv ausführbare Skripte enthalten soll und Sie dem Inhalt der Importdatei vollständig vertrauen.",
+    "safeImportTooltip": "Trilium-<code>.zip</code>-Exporte können ausführbare Skripte enthalten. Der sichere Import deaktiviert sie; deaktivieren Sie diese Option nur, wenn das Archiv Skripte ausführen soll und Sie seinem Inhalt vertrauen.",
     "safeImport": "Sicherer Import",
-    "explodeArchivesTooltip": "Wenn dies aktiviert ist, liest Trilium die Dateien <code>.zip</code>, <code>.enex</code> und <code>.opml</code> und erstellt Notizen aus Dateien in diesen Archiven. Wenn diese Option deaktiviert ist, hängt Trilium die Archive selbst an die Notiz an.",
-    "explodeArchives": "Lese den Inhalt der Archive <code>.zip</code>, <code>.enex</code> und <code>.opml</code>.",
-    "shrinkImagesTooltip": "<p>Wenn Sie diese Option aktivieren, versucht Trilium, die importierten Bilder durch Skalierung und Optimierung zu verkleinern, was sich auf die wahrgenommene Bildqualität auswirken kann. Wenn diese Option deaktiviert ist, werden Bilder ohne Änderungen importiert.</p><p>Dies gilt nicht für <code>.zip</code>-Importe mit Metadaten, da davon ausgegangen wird, dass diese Dateien bereits optimiert sind.</p>",
+    "explodeArchivesTooltip": "Erstellt Notizen aus den Dateien in <code>.zip</code>-, <code>.enex</code>- und <code>.opml</code>-Archiven. Wenn deaktiviert, werden die Archive unverändert angehängt.",
+    "explodeArchives": "Inhalt der Archive <code>.zip</code>, <code>.enex</code> und <code>.opml</code> lesen.",
+    "shrinkImagesTooltip": "Skaliert und optimiert Bilder, um Speicherplatz zu sparen, wodurch sich die Qualität leicht verringern kann. Gilt nicht für <code>.zip</code>-Importe mit Metadaten, da diese als bereits optimiert gelten.",
     "shrinkImages": "Bilder verkleinern",
-    "textImportedAsText": "Importiere HTML, Markdown und TXT als Textnotizen, wenn die Metadaten unklar sind",
-    "codeImportedAsCode": "Importiere erkannte Codedateien (z. B. <code>.json</code>) als Codenotizen, wenn die Metadaten unklar sind",
-    "replaceUnderscoresWithSpaces": "Ersetze Unterstriche in importierten Notiznamen durch Leerzeichen",
+    "textImportedAsText": "HTML, Markdown und TXT als Textnotizen importieren, wenn die Metadaten unklar sind",
+    "codeImportedAsCode": "Erkannte Codedateien (z. B. <code>.json</code>) als Codenotizen importieren, wenn die Metadaten unklar sind",
+    "replaceUnderscoresWithSpaces": "Unterstriche in importierten Notiznamen durch Leerzeichen ersetzen",
     "import": "Import",
     "failed": "Import fehlgeschlagen: {{message}}.",
     "html_import_tags": {
-      "title": "HTML Tag Import",
-      "description": "Festlegen, welche HTML tags beim Import von Notizen beibehalten werden sollen. Tags, die nicht in dieser Liste stehen, werden beim Import entfernt. Einige tags (wie bspw. 'script') werden aus Sicherheitsgründen immer entfernt.",
-      "placeholder": "HTML tags eintragen, pro Zeile nur einer pro Zeile",
+      "title": "HTML-Import-Tags",
+      "description": "Festlegen, welche HTML-Tags beim Import von Notizen beibehalten werden sollen. Tags, die nicht in dieser Liste stehen, werden beim Import entfernt. Einige Tags (wie 'script') werden aus Sicherheitsgründen immer entfernt.",
+      "placeholder": "HTML-Tags eintragen, einen pro Zeile",
       "reset_button": "Zur Standardliste zurücksetzen"
     },
-    "in-progress": "Import läuft: {{progress}}",
+    "in-progress": "{{progress}} Notizen importiert",
     "successful": "Import erfolgreich abgeschlossen.",
     "importZipRecommendation": "Beim Import einer ZIP-Datei wird die Notizhierarchie aus der Ordnerstruktur im Archiv übernommen.",
     "spreadsheetImportedAsSpreadsheet": "CSV- und Excel-Dateien als bearbeitbare Tabellen statt als Dateien importieren",
     "starting": "Wird importiert…",
-    "in-progress-with-total": "Importiere {{progress}} von {{total}}"
+    "in-progress-with-total": "{{progress}} von {{total}} Notizen importiert",
+    "importIntoNoteNamed": "In {{- title}} importieren",
+    "import_from": "Importieren aus",
+    "cardName": "Dateien und andere Formate",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, Bilder und mehr",
+    "shrinkImagesProviderTooltip": "Skaliert und optimiert importierte Bilder, um Speicherplatz zu sparen, wodurch sich die Qualität leicht verringern kann.",
+    "extracting": "{{progress}} von {{total}} Elementen extrahiert",
+    "processing": "{{progress}} von {{total}} Notizen verarbeitet"
   },
   "include_note": {
-    "dialog_title": "Notiz beifügen",
+    "dialog_title": "Notiz einbinden",
     "label_note": "Notiz",
     "placeholder_search": "Suche nach einer Notiz anhand ihres Namens",
-    "box_size_prompt": "Kartongröße des beigelegten Zettels:",
+    "box_size_prompt": "Boxgröße der eingebundenen Notiz:",
     "box_size_small": "klein (~ 10 Zeilen)",
     "box_size_medium": "mittel (~ 30 Zeilen)",
-    "box_size_full": "vollständig (Feld zeigt vollständigen Text)",
-    "button_include": "Notiz beifügen",
+    "box_size_full": "vollständig (Box zeigt vollständigen Text)",
+    "button_include": "Notiz einbinden",
     "box_size_expandable": "ausklappbar (standardmäßig eingeklappt)"
   },
   "info": {
@@ -238,30 +272,30 @@
   },
   "jump_to_note": {
     "search_button": "Suche im Volltext",
-    "search_placeholder": "Notiz anhand ihres Titels suchen oder > für Befehle eingeben…"
+    "search_placeholder": "Notiz anhand ihres Titels suchen oder > für Befehle eingeben..."
   },
   "markdown_import": {
     "dialog_title": "Markdown-Import",
-    "modal_body_text": "Aufgrund der Browser-Sandbox ist es nicht möglich, die Zwischenablage direkt aus JavaScript zu lesen. Bitte fügen Sie den zu importierenden Markdown in den Textbereich unten ein und klicken Sie auf die Schaltfläche „Importieren\"",
+    "modal_body_text": "Aufgrund der Browser-Sandbox ist es nicht möglich, die Zwischenablage direkt aus JavaScript zu lesen. Bitte fügen Sie den zu importierenden Markdown in den Textbereich unten ein und klicken Sie auf die Schaltfläche „Importieren“",
     "import_button": "Importieren",
     "import_success": "Markdown-Inhalt wurde in das Dokument importiert."
   },
   "move_to": {
     "dialog_title": "Notizen verschieben nach ...",
     "notes_to_move": "Notizen zum Verschieben",
-    "target_parent_note": "Übergeordnete Notiz bestimmen",
+    "target_parent_note": "Übergeordnete Zielnotiz",
     "search_placeholder": "Suche nach einer Notiz anhand ihres Namens",
-    "move_button": "Zur ausgewählten Notiz wechseln",
-    "error_no_path": "Kein Weg, auf den man sich bewegen kann.",
+    "move_button": "Auf ausgewählte Notiz verschieben",
+    "error_no_path": "Kein Pfad zum Verschieben.",
     "move_success_message": "Ausgewählte Notizen wurden verschoben in "
   },
   "note_type_chooser": {
     "modal_title": "Notiztyp auswählen",
     "modal_body": "Notiztyp / Vorlage der neuen Notiz auswählen:",
     "templates": "Vorlagen",
-    "change_path_prompt": "Ändern wo die neue Notiz erzeugt wird:",
+    "change_path_prompt": "Ändern, wo die neue Notiz erzeugt wird:",
     "search_placeholder": "Pfad nach Namen durchsuchen (Standard falls leer)",
-    "builtin_templates": "Eingebaute Vorlage"
+    "builtin_templates": "Eingebaute Vorlagen"
   },
   "password_not_set": {
     "title": "Das Passwort ist nicht festgelegt",
@@ -287,7 +321,16 @@
     "deleted_notes_message": "Gelöschte Notizen wurden gelöscht.",
     "no_changes_message": "Noch keine Änderungen...",
     "undelete_link": "Wiederherstellen",
-    "confirm_undelete": "Möchten Sie diese Notiz und ihre Unternotizen wiederherstellen?"
+    "confirm_undelete": "Möchten Sie diese Notiz und ihre Unternotizen wiederherstellen?",
+    "deleted_notes_title": "Gelöschte Notizen",
+    "title_with_ancestor": "{{- title}} – {{- ancestorTitle}}",
+    "more_actions": "Weitere Aktionen",
+    "deleted_notes_settings": "Einstellungen für gelöschte Notizen",
+    "no_deleted_notes_message": "Es gibt keine gelöschten Notizen zum Anzeigen.",
+    "no_deleted_notes_erasure_hint": "Gelöschte Notizen werden {{- duration}} lang aufbewahrt, bevor sie endgültig gelöscht werden.",
+    "confirm_undelete_to_default_location": "Die übergeordnete Notiz existiert nicht mehr, daher kann diese Notiz nicht an ihrem ursprünglichen Ort wiederhergestellt werden. Stattdessen am Standardort für neue Notizen wiederherstellen?",
+    "undeleted_to_default_location": "Der ursprüngliche Ort existiert nicht mehr, daher wurde die Notiz in „{{- title}}“ wiederhergestellt.",
+    "undelete_failed": "Die Notiz konnte nicht wiederhergestellt werden – möglicherweise wurde sie endgültig gelöscht."
   },
   "sort_child_notes": {
     "sort_children_by": "Unternotizen sortieren nach...",
@@ -301,9 +344,9 @@
     "folders": "Ordner",
     "sort_folders_at_top": "Ordner oben sortieren",
     "natural_sort": "Natürliche Sortierung",
-    "sort_with_respect_to_different_character_sorting": "Sortierung im Hinblick auf unterschiedliche Sortier- und Sortierregeln für Zeichen in verschiedenen Sprachen oder Regionen.",
+    "sort_with_respect_to_different_character_sorting": "Sortierung unter Berücksichtigung unterschiedlicher Regeln für Zeichensortierung und Kollation in verschiedenen Sprachen oder Regionen.",
     "natural_sort_language": "Natürliche Sortiersprache",
-    "the_language_code_for_natural_sort": "Der Sprachcode für die natürliche Sortierung, z. B. \"de-DE\" für Deutsch.",
+    "the_language_code_for_natural_sort": "Der Sprachcode für die natürliche Sortierung, z. B. \"zh-CN\" für Chinesisch.",
     "sort": "Sortieren"
   },
   "upload_attachments": {
@@ -316,26 +359,21 @@
     "tooltip": "Wenn Sie diese Option aktivieren, versucht Trilium, die hochgeladenen Bilder durch Skalierung und Optimierung zu verkleinern, was sich auf die wahrgenommene Bildqualität auswirken kann. Wenn diese Option deaktiviert ist, werden die Bilder ohne Änderungen hochgeladen."
   },
   "attribute_detail": {
-    "attr_detail_title": "Attributdetailtitel",
     "close_button_title": "Änderungen verwerfen und schließen",
-    "attr_is_owned_by": "Das Attribut ist Eigentum von",
-    "attr_name_title": "Der Attributname darf nur aus alphanumerischen Zeichen, Doppelpunkten und Unterstrichen bestehen",
     "name": "Name",
     "value": "Wert",
-    "target_note_title": "Eine Beziehung ist eine benannte Verbindung zwischen Quellnotiz und Zielnotiz.",
+    "target_note_title": "Eine Relation ist eine benannte Verbindung zwischen Quellnotiz und Zielnotiz.",
     "target_note": "Zielnotiz",
     "promoted_title": "Das heraufgestufte Attribut wird deutlich in der Notiz angezeigt.",
     "promoted": "Hervorgehoben",
-    "promoted_alias_title": "Der Name, der in der Benutzeroberfläche für hervorgehobene Attribute angezeigt werden soll.",
     "promoted_alias": "Alias",
     "multiplicity_title": "Multiplizität definiert, wie viele Attribute mit demselben Namen erstellt werden können – maximal 1 oder mehr als 1.",
-    "multiplicity": "Vielzahl",
+    "multiplicity": "Multiplizität",
     "single_value": "Einzelwert",
     "multi_value": "Mehrfachwert",
-    "label_type_title": "Der Etikettentyp hilft Trilium bei der Auswahl einer geeigneten Schnittstelle zur Eingabe des Etikettenwerts.",
     "label_type": "Typ",
     "text": "Text",
-    "number": "Nummer",
+    "number": "Zahl",
     "boolean": "Boolescher Wert",
     "date": "Datum",
     "date_time": "Datum und Uhrzeit",
@@ -344,78 +382,75 @@
     "precision_title": "Wie viele Nachkommastellen im Wert-Einstellungs-Interface verfügbar sein sollen.",
     "precision": "Präzision",
     "digits": "Ziffern",
-    "inverse_relation_title": "Optionale Einstellung, um zu definieren, zu welcher Beziehung diese entgegengesetzt ist. Beispiel: Vater – Sohn stehen in umgekehrter Beziehung zueinander.",
-    "inverse_relation": "Inverse Beziehung",
+    "inverse_relation_title": "Optionale Einstellung, um zu definieren, zu welcher Relation diese entgegengesetzt ist. Beispiel: Vater – Sohn stehen in umgekehrter Relation zueinander.",
+    "inverse_relation": "Inverse Relation",
     "inheritable_title": "Das vererbbare Attribut wird an alle Nachkommen unter diesem Baum vererbt.",
     "inheritable": "Vererbbar",
-    "save_and_close": "Speichern und schließen <kbd>Strg+Eingabetaste</kbd>",
     "delete": "Löschen",
     "related_notes_title": "Weitere Notizen mit diesem Label",
     "more_notes": "Weitere Notizen",
     "label": "Labeldetail",
-    "label_definition": "Details zur Labeldefinition",
-    "relation": "Beziehungsdetails",
-    "relation_definition": "Details zur Beziehungsdefinition",
-    "disable_versioning": "deaktiviert die automatische Versionierung. Nützlich z.B. große, aber unwichtige Notizen – z.B. große JS-Bibliotheken, die für die Skripterstellung verwendet werden",
+    "relation": "Relationsdetails",
+    "disable_versioning": "deaktiviert die automatische Versionierung. Nützlich für z. B. große, aber unwichtige Notizen – z. B. große JS-Bibliotheken, die für die Skripterstellung verwendet werden",
     "calendar_root": "Markiert eine Notiz, die als Basis für Tagesnotizen verwendet werden soll. Nur einer sollte als solcher gekennzeichnet sein.",
-    "archived": "Notizen mit dieser Bezeichnung werden standardmäßig nicht in den Suchergebnissen angezeigt (auch nicht in den Dialogen „Springen zu“, „Link hinzufügen“ usw.).",
+    "archived": "Notizen mit diesem Label werden standardmäßig nicht in den Suchergebnissen angezeigt (auch nicht in den Dialogen „Springen zu“, „Link hinzufügen“ usw.).",
     "exclude_from_export": "Notizen (mit ihrem Unterbaum) werden nicht im Notizexport inkludiert",
     "run": "Definiert bei welchen Ereignissen das Skript ausgeführt werden soll. Mögliche Werte sind:\n<ul>\n<li>frontendStartup - wenn das Trilium-Frontend startet (oder aktualisiert wird), außer auf mobilen Geräten.</li>\n<li>mobileStartup - wenn das Trilium-Frontend auf einem mobilen Gerät startet (oder aktualisiert wird).</li>\n<li>backendStartup - wenn das Trilium-Backend startet.</li>\n<li>hourly - einmal pro Stunde ausführen. Sie können das zusätzliche Label <code>runAtHour</code> verwenden, um die genaue Stunde festzulegen.</li>\n<li>daily - einmal pro Tag ausführen</li>\n</ul>",
     "run_on_instance": "Legt fest, auf welcher Trilium-Instanz dies ausgeführt werden soll. Standard: alle Instanzen.",
-    "run_at_hour": "Zu welcher Stunde soll das laufen? Sollte zusammen mit <code>#runu003dhourly</code> verwendet werden. Kann für mehr Läufe im Laufe des Tages mehrfach definiert werden.",
-    "disable_inclusion": "Skripte mit dieser Bezeichnung werden nicht in die Ausführung des übergeordneten Skripts einbezogen.",
+    "run_at_hour": "Zu welcher Stunde soll das laufen? Sollte zusammen mit <code>#run=hourly</code> verwendet werden. Kann für mehr Läufe im Laufe des Tages mehrfach definiert werden.",
+    "disable_inclusion": "Skripte mit diesem Label werden nicht in die Ausführung des übergeordneten Skripts einbezogen.",
     "sorted": "Hält untergeordnete Notizen alphabetisch nach Titel sortiert",
     "sort_direction": "ASC (Standard) oder DESC",
     "sort_folders_first": "Ordner (Notizen mit Unternotizen) sollten oben sortiert werden",
-    "top": "Behalte die angegebene Notiz oben in der übergeordneten Notiz (gilt nur für sortierte übergeordnete Notizen)",
+    "top": "Hält die angegebene Notiz oben in der übergeordneten Notiz (gilt nur für sortierte übergeordnete Notizen)",
     "hide_promoted_attributes": "Hervorgehobene Attribute für diese Notiz ausblenden",
     "read_only": "Der Editor befindet sich im schreibgeschützten Modus. Funktioniert nur für Text- und Codenotizen.",
-    "auto_read_only_disabled": "Text-/Codenotizen können automatisch in den Lesemodus versetzt werden, wenn sie zu groß sind. Sie können dieses Verhalten für jede einzelne Notiz deaktivieren, indem Sie diese Beschriftung zur Notiz hinzufügen.",
+    "auto_read_only_disabled": "Text-/Codenotizen können automatisch in den Lesemodus versetzt werden, wenn sie zu groß sind. Sie können dieses Verhalten für jede einzelne Notiz deaktivieren, indem Sie dieses Label zur Notiz hinzufügen.",
     "app_css": "markiert CSS-Notizen, die in die Trilium-Anwendung geladen werden und somit zur Änderung des Aussehens von Trilium verwendet werden können.",
-    "app_theme": "markiert CSS-Notizen, die vollständige Trilium-Themen sind und daher in den Trilium-Optionen verfügbar sind.",
-    "app_theme_base": "markiert Notiz als \"nächste\" in der Reihe für ein Trilium-Theme als Grundlage für ein Custom-Theme. Ersetzt damit das Standard Theme.",
-    "css_class": "Der Wert dieser Bezeichnung wird dann als CSS-Klasse dem Knoten hinzugefügt, der die angegebene Notiz im Baum darstellt. Dies kann für fortgeschrittene Themen nützlich sein. Kann in Vorlagennotizen verwendet werden.",
-    "icon_class": "Der Wert dieser Bezeichnung wird als CSS-Klasse zum Symbol im Baum hinzugefügt, was dabei helfen kann, die Notizen im Baum visuell zu unterscheiden. Beispiel könnte bx bx-home sein – Symbole werden von Boxicons übernommen. Kann in Vorlagennotizen verwendet werden.",
+    "app_theme": "markiert CSS-Notizen, die vollständige Trilium-Designs sind und daher in den Trilium-Optionen verfügbar sind.",
+    "app_theme_base": "Legen Sie \"next\", \"next-light\" oder \"next-dark\" fest, um das entsprechende TriliumNext-Design (auto, hell oder dunkel) als Grundlage für ein benutzerdefiniertes Design zu verwenden, anstelle des alten.",
+    "css_class": "Der Wert dieses Labels wird dann als CSS-Klasse dem Knoten hinzugefügt, der die angegebene Notiz im Baum darstellt. Dies kann für fortgeschrittene Designs nützlich sein. Kann in Vorlagennotizen verwendet werden.",
+    "icon_class": "Der Wert dieses Labels wird als CSS-Klasse zum Symbol im Baum hinzugefügt, was dabei helfen kann, die Notizen im Baum visuell zu unterscheiden. Beispiel könnte bx bx-home sein – Symbole werden von Boxicons übernommen. Kann in Vorlagennotizen verwendet werden.",
     "page_size": "Anzahl der Elemente pro Seite in der Notizliste",
-    "custom_request_handler": "custom request handler",
-    "custom_resource_provider": "custom resource provider",
+    "custom_request_handler": "benutzerdefinierter Anfrage-Handler",
+    "custom_resource_provider": "benutzerdefinierter Ressourcenanbieter",
     "widget": "Markiert diese Notiz als benutzerdefiniertes Widget, das dem Trilium-Komponentenbaum hinzugefügt wird",
-    "workspace": "Markiert diese Notiz als Arbeitsbereich, der ein einfaches Heben ermöglicht",
-    "workspace_icon_class": "Definiert die CSS-Klasse des Boxsymbols, die im Tab verwendet wird, wenn es zu dieser Notiz gehoben wird",
-    "workspace_tab_background_color": "CSS-Farbe, die in der Registerkarte „Notiz“ verwendet wird, wenn sie auf diese Notiz hochgezogen wird",
+    "workspace": "Markiert diese Notiz als Arbeitsbereich, der ein einfaches Fokussieren ermöglicht",
+    "workspace_icon_class": "Definiert die CSS-Klasse des Boxsymbols, die im Tab verwendet wird, wenn auf diese Notiz fokussiert wird",
+    "workspace_tab_background_color": "CSS-Farbe, die im Notiz-Tab verwendet wird, wenn auf diese Notiz fokussiert wird",
     "workspace_calendar_root": "Definiert den Kalenderstamm pro Arbeitsbereich",
-    "workspace_template": "Diese Notiz wird beim Erstellen einer neuen Notiz in der Auswahl der verfügbaren Vorlage angezeigt, jedoch nur, wenn sie in einen Arbeitsbereich verschoben wird, der diese Vorlage enthält",
+    "workspace_template": "Diese Notiz wird beim Erstellen einer neuen Notiz in der Auswahl der verfügbaren Vorlage angezeigt, jedoch nur, wenn auf einen Arbeitsbereich fokussiert wird, der diese Vorlage enthält",
     "search_home": "Neue Suchnotizen werden als untergeordnete Elemente dieser Notiz erstellt",
-    "workspace_search_home": "Neue Suchnotizen werden als untergeordnete Elemente dieser Notiz erstellt, wenn sie zu einem Vorgänger dieser Arbeitsbereichsnotiz verschoben werden",
-    "inbox": "Standard-Inbox-Position für neue Notizen – wenn Sie eine Notiz über den \"Neue Notiz\"-Button in der Seitenleiste erstellen, wird die Notiz als untergeordnete Notiz der Notiz erstellt, die mit dem <code>#inbox</code>-Label markiert ist.",
-    "workspace_inbox": "Standard-Posteingangsspeicherort für neue Notizen, wenn sie zu einem Vorgänger dieser Arbeitsbereichsnotiz verschoben werden",
+    "workspace_search_home": "Neue Suchnotizen werden als untergeordnete Elemente dieser Notiz erstellt, wenn auf einen Vorgänger dieser Arbeitsbereichsnotiz fokussiert wird",
+    "inbox": "Standard-Inbox-Position für neue Notizen – wenn Sie eine Notiz über den „Neue Notiz“-Button in der Seitenleiste erstellen, wird die Notiz als untergeordnete Notiz der Notiz erstellt, die mit dem <code>#inbox</code>-Label markiert ist.",
+    "workspace_inbox": "Standard-Posteingangsspeicherort für neue Notizen, wenn auf einen Vorgänger dieser Arbeitsbereichsnotiz fokussiert wird",
     "sql_console_home": "Standardspeicherort der SQL-Konsolennotizen",
-    "bookmark_folder": "Notizen mit dieser Bezeichnung werden in den Lesezeichen als Ordner angezeigt (und ermöglichen den Zugriff auf ihre untergeordneten Ordner)",
+    "bookmark_folder": "Eine Notiz mit diesem Label wird in den Lesezeichen als Ordner angezeigt (und ermöglicht den Zugriff auf ihre Unternotizen)",
     "share_hidden_from_tree": "Diese Notiz ist im linken Navigationsbaum ausgeblendet, kann aber weiterhin über ihre URL aufgerufen werden",
     "share_external_link": "Die Notiz dient als Link zu einer externen Website im Freigabebaum",
-    "share_alias": "Lege einen Alias fest, mit dem die Notiz unter https://your_trilium_host/share/[dein_alias] verfügbar sein wird",
+    "share_alias": "Legt einen Alias fest, mit dem die Notiz unter https://your_trilium_host/share/[your_alias] verfügbar sein wird",
     "share_omit_default_css": "Das Standard-CSS für die Freigabeseite wird weggelassen. Verwenden Sie es, wenn Sie umfangreiche Stylingänderungen vornehmen.",
     "share_root": "Markiert eine Notiz, die im /share-Root bereitgestellt wird.",
     "share_description": "Legt den Text fest, der dem HTML-Meta-Tag für die Beschreibung hinzugefügt werden soll",
     "share_raw": "Die Notiz wird im Rohformat ohne HTML-Wrapper bereitgestellt",
     "share_disallow_robot_indexing": "verbietet die Robot-Indizierung dieser Notiz über den Header <code>X-Robots-Tag: noindex</code>",
-    "share_credentials": "Für den Zugriff auf diese freigegebene Notiz sind Anmeldeinformationen erforderlich. Es wird erwartet, dass der Wert das Format „Benutzername:Passwort“ hat. Vergessen Sie nicht, dies vererbbar zu machen, um es auf untergeordnete Notizen/Bilder anzuwenden.",
-    "share_index": "Eine Notiz mit dieser Bezeichnung listet alle Wurzeln gemeinsamer Notizen auf",
-    "display_relations": "Durch Kommas getrennte Namen der Beziehungen, die angezeigt werden sollen. Alle anderen werden ausgeblendet.",
-    "hide_relations": "Durch Kommas getrennte Namen von Beziehungen, die ausgeblendet werden sollen. Alle anderen werden angezeigt.",
+    "share_credentials": "Für den Zugriff auf diese freigegebene Notiz sind Anmeldeinformationen erforderlich. Es wird erwartet, dass der Wert das Format 'username:password' hat. Vergessen Sie nicht, dies vererbbar zu machen, um es auf untergeordnete Notizen/Bilder anzuwenden.",
+    "share_index": "Eine Notiz mit diesem Label listet alle Wurzeln gemeinsamer Notizen auf",
+    "display_relations": "Durch Kommas getrennte Namen der Relationen, die angezeigt werden sollen. Alle anderen werden ausgeblendet.",
+    "hide_relations": "Durch Kommas getrennte Namen von Relationen, die ausgeblendet werden sollen. Alle anderen werden angezeigt.",
     "title_template": "Standardtitel von Notizen, die als untergeordnete Notizen dieser Notiz erstellt werden. Der Wert wird als JavaScript-String ausgewertet \n                        und kann daher mit dynamischen Inhalten über die injizierten <code>now</code> und <code>parentNote</code>-Variablen angereichert werden. Beispiele:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literarische Werke</code></li>\n                            <li><code>Logbuch für ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Siehe <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">Wiki mit Details</a>, API-Dokumentation für <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> und <a href=\"https://day.js.org/docs/en/display/format\">now</a> für Details.",
     "template": "Diese Notiz wird beim Erstellen einer neuen Notiz in der Auswahl der verfügbaren Vorlage angezeigt",
-    "toc": "<code>#toc</code> oder <code>#tocu003dshow</code> erzwingen die Anzeige des Inhaltsverzeichnisses, <code>#tocu003dhide</code> erzwingt das Ausblenden. Wenn die Bezeichnung nicht vorhanden ist, wird die globale Einstellung beachtet",
-    "color": "Definiert die Farbe der Notiz im Notizbaum, in Links usw. Verwenden Sie einen beliebigen gültigen CSS-Farbwert wie „red\" oder #a13d5f",
-    "keyboard_shortcut": "Definiert eine Tastenkombination, die sofort zu dieser Notiz springt. Beispiel: „Strg+Alt+E“. Erfordert ein Neuladen des Frontends, damit die Änderung wirksam wird.",
-    "keep_current_hoisting": "Das Öffnen dieses Links ändert das Hochziehen nicht, selbst wenn die Notiz im aktuell hochgezogenen Zweig nicht angezeigt werden kann.",
+    "toc": "<code>#toc</code> oder <code>#toc=show</code> erzwingen die Anzeige des Inhaltsverzeichnisses, <code>#toc=hide</code> erzwingt das Ausblenden. Wenn das Label nicht vorhanden ist, wird die globale Einstellung beachtet",
+    "color": "Definiert die Farbe der Notiz im Notizbaum, in Links usw. Verwenden Sie einen beliebigen gültigen CSS-Farbwert wie 'red' oder #a13d5f",
+    "keyboard_shortcut": "Definiert eine Tastenkombination, die sofort zu dieser Notiz springt. Beispiel: 'ctrl+alt+e'. Erfordert ein Neuladen des Frontends, damit die Änderung wirksam wird.",
+    "keep_current_hoisting": "Das Öffnen dieses Links ändert den Fokus nicht, selbst wenn die Notiz im aktuell fokussierten Zweig nicht angezeigt werden kann.",
     "execute_button": "Titel der Schaltfläche, welche die aktuelle Codenotiz ausführt",
     "execute_description": "Längere Beschreibung der aktuellen Codenotiz, die zusammen mit der Schaltfläche „Ausführen“ angezeigt wird",
-    "exclude_from_note_map": "Notizen mit dieser Bezeichnung werden in der Notizenkarte ausgeblendet",
+    "exclude_from_note_map": "Notizen mit diesem Label werden in der Notizkarte ausgeblendet",
     "new_notes_on_top": "Neue Notizen werden oben in der übergeordneten Notiz erstellt, nicht unten.",
     "hide_highlight_widget": "Widget „Markierungsliste“ ausblenden",
-    "run_on_note_creation": "Wird ausgeführt, wenn eine Notiz im Backend erstellt wird. Verwenden Sie diese Beziehung, wenn Sie das Skript für alle Notizen ausführen möchten, die unter einem bestimmten Zweig erstellt wurden. Erstellen Sie es in diesem Fall auf der Stammnotiz und machen Sie es vererbbar. Eine neue Notiz, die innerhalb des Zweigs (beliebige Tiefe) erstellt wird, löst das Skript aus.",
-    "run_on_child_note_creation": "Wird ausgeführt, wenn eine neue Notiz unter der Notiz erstellt wird, in der diese Beziehung definiert ist",
+    "run_on_note_creation": "Wird ausgeführt, wenn eine Notiz im Backend erstellt wird. Verwenden Sie diese Relation, wenn Sie das Skript für alle Notizen ausführen möchten, die unter einem bestimmten Zweig erstellt wurden. Erstellen Sie es in diesem Fall auf der Stammnotiz und machen Sie es vererbbar. Eine neue Notiz, die innerhalb des Zweigs (beliebige Tiefe) erstellt wird, löst das Skript aus.",
+    "run_on_child_note_creation": "Wird ausgeführt, wenn eine neue Notiz unter der Notiz erstellt wird, in der diese Relation definiert ist",
     "run_on_note_title_change": "Wird ausgeführt, wenn der Notiztitel geändert wird (einschließlich der Notizerstellung)",
     "run_on_note_content_change": "Wird ausgeführt, wenn der Inhalt einer Notiz geändert wird (einschließlich der Erstellung von Notizen).",
     "run_on_note_change": "Wird ausgeführt, wenn eine Notiz geändert wird (einschließlich der Erstellung von Notizen). Enthält keine Inhaltsänderungen",
@@ -423,49 +458,48 @@
     "run_on_branch_creation": "wird ausgeführt, wenn ein Zweig erstellt wird. Der Zweig ist eine Verbindung zwischen der übergeordneten und der untergeordneten Notiz und wird z. B. beim Klonen oder Verschieben von Notizen erstellt.",
     "run_on_branch_change": "wird ausgeführt, wenn ein Zweig aktualisiert wird.",
     "run_on_branch_deletion": "wird ausgeführt, wenn ein Zweig gelöscht wird. Der Zweig ist eine Verknüpfung zwischen der übergeordneten und der untergeordneten Notiz und wird z. B. beim Verschieben der Notiz gelöscht (alter Zweig/Link wird gelöscht).",
-    "run_on_attribute_creation": "wird ausgeführt, wenn für die Notiz ein neues Attribut erstellt wird, das diese Beziehung definiert",
+    "run_on_attribute_creation": "wird ausgeführt, wenn für die Notiz ein neues Attribut erstellt wird, das diese Relation definiert",
     "run_on_attribute_change": " wird ausgeführt, wenn das Attribut einer Notiz geändert wird, die diese Beziehung definiert. Dies wird auch ausgelöst, wenn das Attribut gelöscht wird",
-    "relation_template": "Die Attribute der Notiz werden auch ohne eine Hierarchische-Beziehung vererbt. Der Inhalt und der Zweig werden den Instanznotizen hinzugefügt, wenn sie leer sind. Einzelheiten finden Sie in der Dokumentation.",
-    "inherit": "Die Attribute einer Notiz werden auch ohne eine hierarchische Beziehung vererbt. Ein ähnliches Konzept finden Sie unter Vorlagenbeziehung. Siehe Attributsvererbung in der Dokumentation.",
-    "render_note": "Notizen vom Typ \"HTML-Notiz rendern\" werden mit einer Code-Notiz (HTML oder Skript) gerendert, und es ist notwendig, über diese Beziehung anzugeben, welche Notiz gerendert werden soll",
-    "widget_relation": "Das Ziel dieser Beziehung wird ausgeführt und als Widget in der Seitenleiste gerendert",
-    "share_css": "CSS-Hinweis, der in die Freigabeseite eingefügt wird. Die CSS-Notiz muss sich ebenfalls im gemeinsamen Unterbaum befinden. Ziehen Sie auch die Verwendung von „share_hidden_from_tree\" und „share_omit_default_css\" in Betracht.",
-    "share_js": "JavaScript-Hinweis, der in die Freigabeseite eingefügt wird. Die JS-Notiz muss sich ebenfalls im gemeinsamen Unterbaum befinden. Ziehen Sie die Verwendung von „share_hidden_from_tree\" in Betracht.",
-    "share_template": "Eingebettete JavaScript-Notiz, die als Vorlage für die Anzeige der geteilten Notiz verwendet wird. Greift auf die Standardvorlage zurück. Ziehen Sie die Verwendung von „share_hidden_from_tree\" in Betracht.",
-    "share_favicon": "Favicon-Notiz, die auf der freigegebenen Seite festgelegt werden soll. Normalerweise möchten Sie es so einstellen, dass es Root teilt und vererbbar ist. Die Favicon-Notiz muss sich ebenfalls im freigegebenen Unterbaum befinden. Erwägen Sie die Verwendung von „share_hidden_from_tree“.",
-    "is_owned_by_note": "ist Eigentum von Note",
-    "other_notes_with_name": "Other notes with {{attributeType}} name \"{{attributeName}}\"",
-    "and_more": "... und {{count}} mehr.",
-    "print_landscape": "Beim Export als PDF, wird die Seitenausrichtung Querformat anstatt Hochformat verwendet.",
-    "print_page_size": "Beim Export als PDF, wird die Größe der Seite angepasst. Unterstützte Größen: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
+    "relation_template": "Die Attribute der Notiz werden auch ohne eine hierarchische Beziehung vererbt. Der Inhalt und der Zweig werden den Instanznotizen hinzugefügt, wenn sie leer sind. Einzelheiten finden Sie in der Dokumentation.",
+    "inherit": "Die Attribute einer Notiz werden auch ohne eine hierarchische Beziehung vererbt. Ein ähnliches Konzept finden Sie unter Vorlagenrelation. Siehe Attributsvererbung in der Dokumentation.",
+    "render_note": "Notizen vom Typ „HTML-Notiz rendern“ werden mit einer Code-Notiz (HTML oder Skript) gerendert, und es ist notwendig, über diese Relation anzugeben, welche Notiz gerendert werden soll",
+    "widget_relation": "Das Ziel dieser Relation wird ausgeführt und als Widget in der Seitenleiste gerendert",
+    "share_css": "CSS-Hinweis, der in die Freigabeseite eingefügt wird. Die CSS-Notiz muss sich ebenfalls im gemeinsamen Unterbaum befinden. Ziehen Sie auch die Verwendung von 'share_hidden_from_tree' und 'share_omit_default_css' in Betracht.",
+    "share_js": "JavaScript-Hinweis, der in die Freigabeseite eingefügt wird. Die JS-Notiz muss sich ebenfalls im gemeinsamen Unterbaum befinden. Ziehen Sie die Verwendung von 'share_hidden_from_tree' in Betracht.",
+    "share_template": "Eingebettete JavaScript-Notiz, die als Vorlage für die Anzeige der geteilten Notiz verwendet wird. Greift auf die Standardvorlage zurück. Ziehen Sie die Verwendung von 'share_hidden_from_tree' in Betracht.",
+    "share_favicon": "Favicon-Notiz, die auf der freigegebenen Seite festgelegt werden soll. Normalerweise möchten Sie sie auf die Freigabe-Root-Notiz setzen und vererbbar machen. Die Favicon-Notiz muss sich ebenfalls im freigegebenen Unterbaum befinden. Erwägen Sie die Verwendung von 'share_hidden_from_tree'.",
+    "is_owned_by_note": "gehört zur Notiz",
+    "other_notes_with_name": "Andere Notizen mit dem {{attributeType}}-Namen „{{attributeName}}“",
+    "print_landscape": "Beim Export als PDF wird die Seitenausrichtung Querformat anstatt Hochformat verwendet.",
+    "print_page_size": "Beim Export als PDF wird die Größe der Seite angepasst. Unterstützte Größen: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
     "color_type": "Farbe",
     "textarea": "Mehrzeilen-Text",
     "print_scale": "Beim Exportieren als PDF wird der Maßstab des gerenderten Inhalts geändert. Die Werte reichen von 0,1 (10 %) bis 2 (200 %), der Standardwert ist 1 (100 %).",
-    "print_margins": "Beim Exportieren nach PDF werden die Seitenränder festgelegt. Verwenden Sie <code>default</code>, <code>none</code>, <code>minimum</code> oder benutzerdefinierte Werte als <code>oben,rechts,unten,links</code> in Millimetern."
+    "print_margins": "Beim Exportieren als PDF werden die Seitenränder festgelegt. Verwenden Sie <code>default</code>, <code>none</code>, <code>minimum</code> oder benutzerdefinierte Werte als <code>oben,rechts,unten,links</code> in Millimetern."
   },
   "attribute_editor": {
     "help_text_body1": "Um ein Label hinzuzufügen, geben Sie einfach z. B. <code>#rock</code> ein, oder wenn Sie auch einen Wert hinzufügen möchten, dann z. B. <code>#year = 2020</code>",
-    "help_text_body2": "Geben Sie für die Beziehung <code>~author = @</code> ein, woraufhin eine automatische Vervollständigung angezeigt wird, in der Sie die gewünschte Notiz nachschlagen können.",
-    "help_text_body3": "Alternativ können Sie Label und Beziehung über die Schaltfläche <code>+</code> auf der rechten Seite hinzufügen.",
+    "help_text_body2": "Geben Sie für die Relation <code>~author = @</code> ein, woraufhin eine automatische Vervollständigung angezeigt wird, in der Sie die gewünschte Notiz nachschlagen können.",
+    "help_text_body3": "Alternativ können Sie Label und Relation über die Schaltfläche <code>+</code> auf der rechten Seite hinzufügen.",
     "save_attributes": "Attribute speichern <Enter>",
     "add_a_new_attribute": "Neues Attribut hinzufügen",
     "add_new_label": "Neues Label hinzufügen <kbd data-command=\"addNewLabel\"></kbd>",
-    "add_new_relation": "Neue Beziehung hinzufügen <kbd data-command=\"addNewRelation\"></kbd>",
+    "add_new_relation": "Neue Relation hinzufügen <kbd data-command=\"addNewRelation\"></kbd>",
     "add_new_label_definition": "Neue Label-Definition hinzufügen",
-    "add_new_relation_definition": "Neue Beziehungsdefinition hinzufügen",
-    "placeholder": "Gebe die Labels und Beziehungen hier ein"
+    "add_new_relation_definition": "Neue Relationsdefinition hinzufügen",
+    "placeholder": "Geben Sie die Labels und Relationen hier ein"
   },
   "abstract_bulk_action": {
-    "remove_this_search_action": "Entferne diese Suchaktion"
+    "remove_this_search_action": "Diese Suchaktion entfernen"
   },
   "execute_script": {
     "execute_script": "Skript ausführen",
     "help_text": "Sie können einfache Skripte für die übereinstimmenden Notizen ausführen.",
-    "example_1": "Um beispielsweise eine Zeichenfolge an den Titel einer Notiz anzuhängen, verwende dieses kleine Skript:",
+    "example_1": "Um beispielsweise eine Zeichenfolge an den Titel einer Notiz anzuhängen, verwenden Sie dieses kleine Skript:",
     "example_2": "Ein komplexeres Beispiel wäre das Löschen aller übereinstimmenden Notizattribute:"
   },
   "add_label": {
-    "add_label": "Etikett hinzufügen",
+    "add_label": "Label hinzufügen",
     "label_name_placeholder": "Labelname",
     "label_name_title": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
     "to_value": "auf Wert",
@@ -492,9 +526,9 @@
     "update_label_value": "Labelwert aktualisieren",
     "label_name_placeholder": "Labelname",
     "label_name_title": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to_value": "zum Wert",
+    "to_value": "auf Wert",
     "new_value_placeholder": "neuer Wert",
-    "help_text": "Ändere bei allen übereinstimmenden Notizen den Wert des vorhandenen Labels.",
+    "help_text": "Bei allen übereinstimmenden Notizen den Wert des vorhandenen Labels ändern.",
     "help_text_note": "Sie können diese Methode auch ohne Wert aufrufen. In diesem Fall wird der Notiz ein Label ohne Wert zugewiesen."
   },
   "delete_note": {
@@ -502,7 +536,7 @@
     "delete_matched_notes": "Übereinstimmende Notizen löschen",
     "delete_matched_notes_description": "Dadurch werden übereinstimmende Notizen gelöscht.",
     "undelete_notes_instruction": "Nach dem Löschen ist es möglich, sie im Dialogfeld „Letzte Änderungen“ wiederherzustellen.",
-    "erase_notes_instruction": "Um Notizen dauerhaft zu löschen, gehen Sie nach der Löschung zu Optionen → Andere und klicken Sie auf die Schaltfläche „Gelöschte Notizen jetzt löschen\"."
+    "erase_notes_instruction": "Um Notizen dauerhaft zu löschen, gehen Sie nach der Löschung zu Optionen → Andere und klicken Sie auf die Schaltfläche „Gelöschte Notizen jetzt löschen“."
   },
   "delete_revisions": {
     "delete_note_revisions": "Notizrevisionen löschen",
@@ -511,9 +545,9 @@
   "move_note": {
     "move_note": "Notiz verschieben",
     "to": "nach",
-    "target_parent_note": "Ziel-Übergeordnetenotiz",
+    "target_parent_note": "Übergeordnete Zielnotiz",
     "on_all_matched_notes": "Auf allen übereinstimmenden Notizen",
-    "move_note_new_parent": "Verschiebe die Notiz in die neue übergeordnete Notiz, wenn die Notiz nur eine übergeordnete Notiz hat (d. h. der alte Zweig wird entfernt und ein neuer Zweig in die neue übergeordnete Notiz erstellt)",
+    "move_note_new_parent": "Die Notiz in die neue übergeordnete Notiz verschieben, wenn die Notiz nur eine übergeordnete Notiz hat (d. h. der alte Zweig wird entfernt und ein neuer Zweig in die neue übergeordnete Notiz erstellt)",
     "clone_note_new_parent": "Notiz zur neuen übergeordneten Notiz klonen, wenn die Notiz mehrere Klone/Zweige hat (es ist unklar, welcher Zweig entfernt werden soll)",
     "nothing_will_happen": "Es passiert nichts, wenn die Notiz nicht zur Zielnotiz verschoben werden kann (z.B. wenn dies einen Kreislauf in der Baumstruktur erzeugen würde)"
   },
@@ -529,35 +563,35 @@
     "api_docs": "Siehe API-Dokumentation für <a href='https://zadam.github.io/trilium/backend_api/Note.html'>Notiz</a> und <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj-Eigenschaften</a> für Details."
   },
   "add_relation": {
-    "add_relation": "Beziehung hinzufügen",
-    "relation_name": "Beziehungsname",
+    "add_relation": "Relation hinzufügen",
+    "relation_name": "Relationsname",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
     "to": "zu",
     "target_note": "Zielnotiz",
-    "create_relation_on_all_matched_notes": "Für alle übereinstimmenden Notizen die angegebene Beziehung erstellen."
+    "create_relation_on_all_matched_notes": "Für alle übereinstimmenden Notizen die angegebene Relation erstellen."
   },
   "delete_relation": {
-    "delete_relation": "Beziehung löschen",
-    "relation_name": "Beziehungsname",
+    "delete_relation": "Relation löschen",
+    "relation_name": "Relationsname",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt."
   },
   "rename_relation": {
-    "rename_relation": "Beziehung umbenennen",
-    "rename_relation_from": "Beziehung umbenennen von",
+    "rename_relation": "Relation umbenennen",
+    "rename_relation_from": "Relation umbenennen von",
     "old_name": "alter Name",
     "to": "zu",
     "new_name": "neuer Name",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt."
   },
   "update_relation_target": {
-    "update_relation": "Beziehung aktualisieren",
-    "relation_name": "Beziehungsname",
+    "update_relation": "Relation aktualisieren",
+    "relation_name": "Relationsname",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
     "to": "zu",
     "target_note": "Zielnotiz",
     "on_all_matched_notes": "Auf allen übereinstimmenden Notizen",
-    "change_target_note": "oder ändere die Zielnotiz der bestehenden Beziehung",
-    "update_relation_target": "Beziehungsziel aktualisieren"
+    "change_target_note": "oder die Zielnotiz der bestehenden Relation ändern",
+    "update_relation_target": "Relationsziel aktualisieren"
   },
   "attachments_actions": {
     "open_externally": "Extern öffnen",
@@ -567,18 +601,18 @@
     "download": "Herunterladen",
     "rename_attachment": "Anhang umbenennen",
     "upload_new_revision": "Neue Revision hochladen",
-    "copy_link_to_clipboard": "Link in die Zwischenablage kopieren",
+    "copy_link_to_clipboard": "Verweis in die Zwischenablage kopieren",
     "convert_attachment_into_note": "Anhang in Notiz umwandeln",
     "delete_attachment": "Anhang löschen",
     "upload_success": "Eine neue Revision des Anhangs wurde hochgeladen.",
     "upload_failed": "Das Hochladen einer neuen Anhangrevision ist fehlgeschlagen.",
     "open_externally_detail_page": "Das externe Öffnen des Anhangs ist nur auf der Detailseite möglich. Klicken Sie bitte zuerst auf Details des Anhangs und wiederholen Sie den Vorgang.",
     "open_custom_client_only": "Das benutzerdefinierte Öffnen von Anhängen kann nur über den Desktop-Client erfolgen.",
-    "delete_confirm": "Möchten Sie den Anhang „{{title}}\" wirklich löschen?",
+    "delete_confirm": "Möchten Sie den Anhang „{{title}}“ wirklich löschen?",
     "delete_success": "Anhang „{{title}}“ wurde gelöscht.",
-    "convert_confirm": "Möchten Sie den Anhang „{{title}}\" wirklich in eine separate Notiz umwandeln?",
+    "convert_confirm": "Möchten Sie den Anhang „{{title}}“ wirklich in eine separate Notiz umwandeln?",
     "convert_success": "Anhang „{{title}}“ wurde in eine Notiz umgewandelt.",
-    "enter_new_name": "Bitte gebe den Namen des neuen Anhangs ein"
+    "enter_new_name": "Bitte geben Sie den Namen des neuen Anhangs ein"
   },
   "calendar": {
     "mon": "Mo",
@@ -612,10 +646,15 @@
     "year_previous": "vorheriges Jahr",
     "year_next": "nächstes Jahr",
     "list": "Liste",
-    "today": "Heute"
+    "today": "Heute",
+    "day": "Tag",
+    "day_previous": "Vorheriger Tag",
+    "day_next": "Nächster Tag",
+    "pin_date": "Aktuelles Datum anheften, damit sich der Kalender immer in diesem Zeitraum statt bei heute öffnet",
+    "unpin_date": "Datum lösen, damit sich der Kalender wieder beim heutigen Datum öffnet"
   },
   "close_pane_button": {
-    "close_this_pane": "Schließe diesen Bereich"
+    "close_this_pane": "Diesen Bereich schließen"
   },
   "create_pane_button": {
     "create_new_split": "Neuen Split erstellen"
@@ -640,7 +679,7 @@
     "zoom_out": "Herauszoomen",
     "reset_zoom_level": "Zoomstufe zurücksetzen",
     "zoom_in": "Hineinzoomen",
-    "configure_launchbar": "Konfiguriere die Starterleiste",
+    "configure_launchbar": "Startleiste konfigurieren",
     "show_shared_notes_subtree": "Zweig „Freigegebene Notizen“ anzeigen",
     "advanced": "Erweitert",
     "open_dev_tools": "Entwicklungstools öffnen",
@@ -655,10 +694,11 @@
     "about": "Über Trilium Notes",
     "logout": "Abmelden",
     "show-cheatsheet": "Cheatsheet anzeigen",
-    "toggle-zen-mode": "Zen Modus",
+    "toggle-zen-mode": "Zen-Modus",
     "new-version-available": "Neues Update verfügbar",
     "download-update": "Version {{latestVersion}} herunterladen",
-    "search_notes": "Notizen durchsuchen"
+    "search_notes": "Notizen durchsuchen",
+    "show_deleted_notes": "Gelöschte Notizen anzeigen"
   },
   "sync_status": {
     "unknown": "<p>Der Synchronisations-Status wird bekannt, sobald der nächste Synchronisierungsversuch gestartet wird.</p><p>Klicken Sie hier, um die Synchronisierung jetzt auszulösen.</p>",
@@ -684,31 +724,37 @@
     "note_attachments": "Notizanhänge",
     "open_note_externally": "Notiz extern öffnen",
     "open_note_externally_title": "Die Datei wird in einer externen Anwendung geöffnet und auf Änderungen überwacht. Anschließend können Sie die geänderte Version wieder auf Trilium hochladen.",
-    "open_note_custom": "Benutzerdefiniert Notiz öffnen",
+    "open_note_custom": "Notiz benutzerdefiniert öffnen",
     "import_files": "Dateien importieren",
     "export_note": "Notiz exportieren",
     "delete_note": "Notiz löschen",
-    "print_note": "Notiz drucken…",
+    "print_note": "Notiz drucken...",
     "save_revision": "Revision speichern",
-    "convert_into_attachment_failed": "Konvertierung der Notiz '{{title}}' fehlgeschlagen.",
-    "convert_into_attachment_successful": "Notiz '{{title}}' wurde als Anhang konvertiert.",
-    "convert_into_attachment_prompt": "Möchten Sie die Notiz „{{title}}\" wirklich in einen Anhang der übergeordneten Notiz konvertieren?",
+    "convert_into_attachment_failed": "Konvertierung der Notiz „{{title}}“ fehlgeschlagen.",
+    "convert_into_attachment_successful": "Notiz „{{title}}“ wurde als Anhang konvertiert.",
+    "convert_into_attachment_prompt": "Möchten Sie die Notiz „{{title}}“ wirklich in einen Anhang der übergeordneten Notiz konvertieren?",
     "print_pdf": "Export als PDF...",
     "open_note_on_server": "Notiz auf dem Server öffnen",
     "export_as_image": "Als Bild exportieren",
     "export_as_image_png": "PNG (Raster)",
     "export_as_image_svg": "SVG (Vektor)",
-    "note_map": "Notizen Karte",
+    "note_map": "Notizkarte",
     "view_revisions": "Notizrevisionen...",
     "advanced": "Erweitert",
-    "view_ocr_text": "OCR text anzeigen",
+    "view_ocr_text": "OCR-Text anzeigen",
     "word_wrap": "Zeilenumbruch",
     "word_wrap_auto": "Automatisch",
     "word_wrap_on": "Ein",
     "word_wrap_off": "Aus",
     "print_or_export_to_pdf": "Drucken/als PDF exportieren...",
     "save_named_revision": "Benannte Revision speichern...",
-    "word_wrap_auto_description": "Der globalen Einstellung folgen"
+    "word_wrap_auto_description": "Der globalen Einstellung folgen",
+    "convert_to_markdown": "In Markdown-Notiz konvertieren",
+    "convert_to_text": "In Textnotiz konvertieren",
+    "convert_format_warning": "Bei der Konvertierung können einige Formatierungen verloren gehen und anschließend Anpassungen nötig sein. Vorher wird eine Revision der aktuellen Notiz gespeichert, damit Sie sie wiederherstellen können. Möchten Sie fortfahren?",
+    "convert_format_warning_risky": "Sie konvertieren zwischen zwei Formaten mit unterschiedlichen Möglichkeiten. Dabei können Formatierungen verloren gehen und nicht unterstützte Elemente entfernt werden.<br><br>Möchten Sie dieses Risiko vollständig übernehmen und mit der Konvertierung fortfahren?<br><br>Vorher wird eine Revision der aktuellen Notiz gespeichert, damit Sie zum ursprünglichen Format zurückkehren können.",
+    "convert_to_markdown_successful": "Die Notiz wurde in Markdown konvertiert.",
+    "convert_to_text_successful": "Die Notiz wurde in eine Textnotiz konvertiert."
   },
   "onclick_button": {
     "no_click_handler": "Das Schaltflächen-Widget „{{componentId}}“ hat keinen definierten Klick-Handler"
@@ -718,13 +764,13 @@
     "inactive": "Klicken Sie hier, um die geschützte Sitzung aufzurufen"
   },
   "revisions_button": {
-    "note_revisions": "Notizrevisionen"
+    "note_revisions": "Revisionsverlauf"
   },
   "update_available": {
     "update_available": "Update verfügbar"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "Dieser Starter definiert keine Zielnotiz."
+    "this_launcher_doesnt_define_target_note": "Für diesen Starter ist keine Zielnotiz konfiguriert, daher gibt es nichts zu öffnen. Legen Sie die Relation \"target\" so fest, dass sie auf eine Notiz verweist."
   },
   "code_buttons": {
     "execute_button_title": "Skript ausführen",
@@ -749,20 +795,20 @@
   "relation_map_buttons": {
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
     "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
-    "zoom_in_title": "Hineinzoom",
+    "zoom_in_title": "Hineinzoomen",
     "zoom_out_title": "Herauszoomen"
   },
   "zpetne_odkazy": {
-    "relation": "Beziehung",
-    "backlink_one": "{{count}} Rückverlinkung",
-    "backlink_other": "{{count}} Rückverlinkungen"
+    "relation": "Relation",
+    "backlink_one": "{{count}} Rücklink",
+    "backlink_other": "{{count}} Rücklinks"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Untergeordnete Notiz einfügen",
     "delete_this_note": "Diese Notiz löschen",
     "error_cannot_get_branch_id": "BranchId für notePath „{{notePath}}“ kann nicht abgerufen werden",
     "error_unrecognized_command": "Unbekannter Befehl {{command}}",
-    "note_revisions": "Notiz Revisionen",
+    "note_revisions": "Notizrevisionen",
     "backlinks": "Rücklinks",
     "content_language_switcher": "Inhaltssprache: {{language}}"
   },
@@ -770,13 +816,13 @@
     "change_note_icon": "Notiz-Icon ändern",
     "search": "Suche:",
     "reset-default": "Standard wiederherstellen",
-    "search_placeholder_one": "Suche {{number}} Symbole über {{count}} Pakete",
-    "search_placeholder_other": "Suche {{number}} Symbole über {{count}} Pakete",
+    "search_placeholder_one": "Suche {{number}} Icons über {{count}} Pakete",
+    "search_placeholder_other": "Suche {{number}} Icons über {{count}} Pakete",
     "search_placeholder_filtered": "Suche {{number}} Icons in {{name}}",
     "filter": "Filter",
     "filter-none": "Alle Icons",
-    "filter-default": "Standard Icons",
-    "icon_tooltip": "{{name}}\nIcon Paket: {{iconPack}}",
+    "filter-default": "Standard-Icons",
+    "icon_tooltip": "{{name}}\nIcon-Paket: {{iconPack}}",
     "no_results": "Keine Icons gefunden."
   },
   "basic_properties": {
@@ -797,9 +843,9 @@
     "calendar": "Kalender",
     "book_properties": "Sammlungseigenschaften",
     "table": "Tabelle",
-    "geo-map": "Weltkarte",
+    "geo-map": "Geo-Karte",
     "board": "Tafel",
-    "include_archived_notes": "Zeige archivierte Notizen",
+    "include_archived_notes": "Archivierte Notizen anzeigen",
     "presentation": "Präsentation",
     "expand_all_levels": "Alle Ebenen erweitern",
     "expand_tooltip": "Erweitert die direkten Unterelemente dieser Sammlung (eine Ebene tiefer). Für weitere Optionen auf den Pfeil rechts klicken.",
@@ -834,7 +880,7 @@
     "file_type": "Dateityp",
     "file_size": "Dateigröße",
     "download": "Herunterladen",
-    "open": "Offen",
+    "open": "Öffnen",
     "copy_reference_to_clipboard": "Verweis in die Zwischenablage kopieren",
     "upload_new_revision": "Neue Revision hochladen",
     "upload_success": "Neue Bildrevision wurde hochgeladen.",
@@ -851,14 +897,14 @@
     "created": "Erstellt",
     "modified": "Geändert",
     "type": "Typ",
-    "note_size": "Notengröße",
+    "note_size": "Notizgröße",
     "note_size_info": "Die Notizgröße bietet eine grobe Schätzung des Speicherbedarfs für diese Notiz. Es berücksichtigt den Inhalt der Notiz und den Inhalt ihrer Notizrevisionen.",
     "calculate": "berechnen",
     "subtree_size_one": "(Zweiggröße: {{size}} in {{count}} Notiz)",
     "subtree_size_other": "(Zweiggröße: {{size}} in {{count}} Notizen)",
     "title": "Notizinfo",
-    "mime": "MIME Typ",
-    "show_similar_notes": "Zeige ähnliche Notizen"
+    "mime": "MIME-Typ",
+    "show_similar_notes": "Ähnliche Notizen anzeigen"
   },
   "note_map": {
     "open_full": "Vollständig erweitern",
@@ -893,9 +939,9 @@
     "unknown_label_type": "Unbekannter Labeltyp „{{type}}“",
     "unknown_attribute_type": "Unbekannter Attributtyp „{{type}}“",
     "add_new_attribute": "Neues Attribut hinzufügen",
-    "remove_this_attribute": "Entferne dieses Attribut",
+    "remove_this_attribute": "Dieses Attribut entfernen",
     "unset-field-placeholder": "nicht gesetzt",
-    "remove_color": "Entferne Farblabel"
+    "remove_color": "Farblabel entfernen"
   },
   "script_executor": {
     "query": "Abfrage",
@@ -907,7 +953,7 @@
     "add_search_option": "Suchoption hinzufügen:",
     "search_string": "Suchzeichenfolge",
     "search_script": "Suchskript",
-    "ancestor": "Vorfahr",
+    "ancestor": "Vorfahre",
     "fast_search": "schnelle Suche",
     "fast_search_description": "Die Option „Schnellsuche“ deaktiviert die Volltextsuche von Notizinhalten, was die Suche in großen Datenbanken beschleunigen könnte.",
     "include_archived": "archiviert einschließen",
@@ -933,7 +979,7 @@
     "no_similar_notes_found": "Keine ähnlichen Notizen gefunden."
   },
   "abstract_search_option": {
-    "remove_this_search_option": "Entferne diese Suchoption",
+    "remove_this_search_option": "Diese Suchoption entfernen",
     "failed_rendering": "Fehler beim Rendern der Suchoption: {{dto}} mit Fehler: {{error}} {{stack}}"
   },
   "ancestor": {
@@ -942,14 +988,14 @@
     "depth_label": "Tiefe",
     "depth_doesnt_matter": "spielt keine Rolle",
     "depth_eq": "ist genau {{count}}",
-    "direct_children": "direkte Kinder",
+    "direct_children": "direkte Unternotizen",
     "depth_gt": "ist größer als {{count}}",
     "depth_lt": "ist kleiner als {{count}}"
   },
   "debug": {
     "debug": "Debuggen",
     "debug_info": "Debug gibt zusätzliche Protokolleinträge in der Konsole aus, um die Fehlerdiagnose komplexer Abfragen zu erleichtern.",
-    "access_info": "Um auf die Debug-Informationen zuzugreifen, führen Sie die Abfrage aus und klicken Sie oben links auf „Backend-Log anzeigen\"."
+    "access_info": "Um auf die Debug-Informationen zuzugreifen, führen Sie die Abfrage aus und klicken Sie oben links auf „Backend-Log anzeigen“."
   },
   "fast_search": {
     "fast_search": "Schnelle Suche",
@@ -959,7 +1005,7 @@
     "include_archived_notes": "Archivierte Notizen einbeziehen"
   },
   "limit": {
-    "limit": "Limitierung",
+    "limit": "Limit",
     "take_first_x_results": "Nehmen Sie nur die ersten X angegebenen Ergebnisse."
   },
   "order_by": {
@@ -974,9 +1020,9 @@
     "revision_count": "Anzahl der Revisionen",
     "children_count": "Anzahl der Unternotizen",
     "parent_count": "Anzahl der Klone",
-    "owned_label_count": "Anzahl der Etiketten",
-    "owned_relation_count": "Anzahl der Beziehungen",
-    "target_relation_count": "Anzahl der Beziehungen, die auf die Notiz abzielen",
+    "owned_label_count": "Anzahl der Labels",
+    "owned_relation_count": "Anzahl der Relationen",
+    "target_relation_count": "Anzahl der Relationen, die auf die Notiz abzielen",
     "random": "Zufällige Reihenfolge",
     "asc": "Aufsteigend (Standard)",
     "desc": "Absteigend"
@@ -992,16 +1038,16 @@
   },
   "search_string": {
     "title_column": "Suchbegriff:",
-    "placeholder": "Volltextschlüsselwörter, #tag u003d Wert...",
+    "placeholder": "Volltextschlüsselwörter, #tag = Wert...",
     "search_syntax": "Suchsyntax",
     "also_see": "siehe auch",
     "complete_help": "Vollständige Hilfe zur Suchsyntax",
-    "full_text_search": "Gebe einfach einen beliebigen Text für die Volltextsuche ein",
-    "label_abc": "gibt Notizen mit der Bezeichnung abc zurück",
-    "label_year": "Entspricht Notizen mit der Beschriftung Jahr und dem Wert 2019",
-    "label_rock_pop": "Entspricht Noten, die sowohl Rock- als auch Pop-Bezeichnungen haben",
+    "full_text_search": "Geben Sie einfach einen beliebigen Text für die Volltextsuche ein",
+    "label_abc": "gibt Notizen mit dem Label abc zurück",
+    "label_year": "Entspricht Notizen mit dem Label Jahr und dem Wert 2019",
+    "label_rock_pop": "Entspricht Notizen, die sowohl das Rock- als auch das Pop-Label haben",
     "label_rock_or_pop": "Es darf nur eines der Labels vorhanden sein",
-    "label_year_comparison": "numerischer Vergleich (auch >, >u003d, <).",
+    "label_year_comparison": "numerischer Vergleich (auch >, >=, <).",
     "label_date_created": "Notizen, die im letzten Monat erstellt wurden",
     "error": "Suchfehler: {{error}}",
     "search_prefix": "Suche:"
@@ -1020,11 +1066,11 @@
     "no_attachments": "Diese Notiz enthält keine Anhänge."
   },
   "book": {
-    "no_children_help": "Diese Sammlung enthält keine untergeordnete Notizen, daher gibt es nichts anzuzeigen.",
+    "no_children_help": "Diese Sammlung enthält keine untergeordneten Notizen, daher gibt es nichts anzuzeigen.",
     "drag_locked_title": "Für Bearbeitung gesperrt",
     "drag_locked_message": "Das Ziehen ist nicht möglich, da die Sammlung für die Bearbeitung gesperrt ist.",
-    "archived_notes_hidden_one": "Eine archivierte Notiz wurde hierher kopiert, bleibt aber ausgeblendet bis Sie \"Archivierte Notizen anzeigen\" aktivieren.",
-    "archived_notes_hidden_other": "{{count}} archivierte Notizen wurden hierher kopiert, bleiben aber ausgeblendet bis Sie \"Archivierte Notizen anzeigen\" aktivieren."
+    "archived_notes_hidden_one": "Eine archivierte Notiz wurde hierher kopiert, bleibt aber ausgeblendet bis Sie „Archivierte Notizen anzeigen“ aktivieren.",
+    "archived_notes_hidden_other": "{{count}} archivierte Notizen wurden hierher kopiert, bleiben aber ausgeblendet bis Sie „Archivierte Notizen anzeigen“ aktivieren."
   },
   "editable_code": {
     "placeholder": "Geben Sie hier den Inhalt Ihrer Codenotiz ein..."
@@ -1033,7 +1079,7 @@
     "placeholder": "Geben Sie hier den Inhalt Ihrer Notiz ein...",
     "auto-detect-language": "Automatisch erkannt",
     "keeps-crashing": "Die Bearbeitungskomponente stürzt immer wieder ab. Bitte starten Sie Trilium neu. Wenn das Problem weiterhin besteht, erstellen Sie einen Fehlerbericht.",
-    "editor_crashed_title": "Der Text Editor ist abgestürzt",
+    "editor_crashed_title": "Der Texteditor ist abgestürzt",
     "editor_crashed_content": "Ihr Inhalt wurde erfolgreich wiederhergestellt, aber kürzlich gemachte Änderungen wurden unter Umständen nicht gespeichert.",
     "editor_crashed_details_button": "Mehr Details anzeigen...",
     "editor_crashed_details_intro": "Falls dieser Fehler häufiger auftritt, ziehen Sie in Betracht uns diesen über GitHub zu melden, indem Sie die folgenden Informationen bereitstellen.",
@@ -1042,7 +1088,7 @@
   "empty": {
     "open_note_instruction": "Öffnen Sie eine Notiz, indem Sie den Titel der Notiz in die Eingabe unten eingeben oder eine Notiz in der Baumstruktur auswählen.",
     "search_placeholder": "Suche nach einer Notiz anhand ihres Namens",
-    "enter_workspace": "Betrete den Arbeitsbereich {{title}}"
+    "enter_workspace": "Arbeitsbereich {{title}} betreten"
   },
   "file": {
     "file_preview_not_available": "Für dieses Dateiformat ist keine Dateivorschau verfügbar.",
@@ -1053,8 +1099,8 @@
     "start_session_button": "Geschützte Sitzung starten",
     "started": "Geschützte Sitzung gestartet.",
     "wrong_password": "Passwort falsch.",
-    "protecting-finished-successfully": "Geschützt erfolgreich beendet.",
-    "unprotecting-finished-successfully": "Ungeschützt erfolgreich beendet.",
+    "protecting-finished-successfully": "Schützen erfolgreich beendet.",
+    "unprotecting-finished-successfully": "Entschützen erfolgreich beendet.",
     "protecting-in-progress": "Schützen läuft: {{count}}",
     "unprotecting-in-progress-count": "Entschützen läuft: {{count}}"
   },
@@ -1062,19 +1108,19 @@
     "remove_note": "Notiz entfernen",
     "edit_title": "Titel bearbeiten",
     "rename_note": "Notiz umbenennen",
-    "enter_new_title": "Gebe einen neuen Notiztitel ein:",
-    "remove_relation": "Beziehung entfernen",
-    "confirm_remove_relation": "Möchten Sie die Beziehung wirklich entfernen?",
-    "specify_new_relation_name": "Gebe den neuen Beziehungsnamen an (erlaubte Zeichen: alphanumerisch, Doppelpunkt und Unterstrich):",
+    "enter_new_title": "Geben Sie einen neuen Notiztitel ein:",
+    "remove_relation": "Relation entfernen",
+    "confirm_remove_relation": "Möchten Sie die Relation wirklich entfernen?",
+    "specify_new_relation_name": "Geben Sie den neuen Relationsnamen an (erlaubte Zeichen: alphanumerisch, Doppelpunkt und Unterstrich):",
     "connection_exists": "Die Verbindung „{{name}}“ zwischen diesen Notizen besteht bereits.",
-    "start_dragging_relations": "Beginne hier mit dem Ziehen von Beziehungen und lege sie auf einer anderen Notiz ab.",
+    "start_dragging_relations": "Beginnen Sie hier mit dem Ziehen von Relationen und legen Sie sie auf einer anderen Notiz ab.",
     "note_not_found": "Notiz {{noteId}} nicht gefunden!",
     "cannot_match_transform": "Transformation kann nicht übereinstimmen: {{transform}}",
-    "note_already_in_diagram": "Die Notiz \"{{title}}\" ist schon im Diagram.",
-    "enter_title_of_new_note": "Gebe den Titel der neuen Notiz ein",
+    "note_already_in_diagram": "Die Notiz „{{title}}“ ist schon im Diagramm.",
+    "enter_title_of_new_note": "Geben Sie den Titel der neuen Notiz ein",
     "default_new_note_title": "neue Notiz",
     "click_on_canvas_to_place_new_note": "Klicken Sie auf den Canvas, um eine neue Notiz zu platzieren",
-    "rename_relation": "Beziehung umbenennen"
+    "rename_relation": "Relation umbenennen"
   },
   "backend_log": {
     "refresh": "Aktualisieren"
@@ -1083,23 +1129,23 @@
     "title": "Konsistenzprüfungen",
     "find_and_fix_button": "Probleme beheben",
     "finding_and_fixing_message": "Konsistenzprobleme finden und beheben...",
-    "issues_fixed_message": "Konsistenzprobleme sollten behoben werden.",
+    "issues_fixed_message": "Eventuell gefundene Konsistenzprobleme wurden nun behoben.",
     "find_and_fix_label": "Konsistenzprobleme finden und beheben",
-    "find_and_fix_description": "Suche nach Probleme mit der Datenkonsistenz in der Datenbank und repariere diese automatisch."
+    "find_and_fix_description": "Nach Datenkonsistenzproblemen in der Datenbank suchen und diese automatisch reparieren."
   },
   "database_anonymization": {
     "title": "Datenbankanonymisierung",
     "full_anonymization": "Vollständige Anonymisierung",
-    "full_anonymization_description": "Erstellt eine Kopie der Datenbank, wo der Inhalt der Notizen entfernt wurde. Es vergleicht lediglich die Struktur sowie nicht-kritische Metadaten. Sicher zum teilen für die Fehlerdiagnose.",
+    "full_anonymization_description": "Erstellt eine Kopie der Datenbank, bei der der gesamte Notizinhalt entfernt wurde; es bleiben nur Struktur und unkritische Metadaten erhalten. Sicher zum Teilen bei der Fehlerdiagnose.",
     "save_fully_anonymized_database": "Kopie erstellen",
     "light_anonymization": "Leichte Anonymisierung",
-    "light_anonymization_description": "Erstellt eine Kopie wo der Inhalt der Notiz entfernt ist, jedoch Title, Attribute und benutzerdefinierte Skripte erhalten bleiben. Hilfreich zur Fehlerdiagnose.",
-    "choose_anonymization": "Sie können selbst entscheiden, ob Sie eine vollständig oder leicht anonymisierte Datenbank bereitstellen möchten. Selbst eine vollständig anonymisierte Datenbank ist sehr hilfreich.",
+    "light_anonymization_description": "Erstellt eine Kopie, bei der der Inhalt der Notiz entfernt ist, jedoch Titel, Attribute und benutzerdefinierte Skripte/Widgets erhalten bleiben. Bietet mehr Kontext für die Fehlerdiagnose.",
+    "choose_anonymization": "Sie können selbst entscheiden, ob Sie eine vollständig oder leicht anonymisierte Datenbank bereitstellen möchten. Selbst eine vollständig anonymisierte Datenbank ist sehr hilfreich, in manchen Fällen kann jedoch eine leicht anonymisierte Datenbank den Prozess der Fehleridentifikation und -behebung beschleunigen.",
     "save_lightly_anonymized_database": "Kopie erstellen",
     "existing_anonymized_databases": "Vorhandene anonymisierte Datenbanken",
     "creating_fully_anonymized_database": "Vollständig anonymisierte Datenbank erstellen...",
     "creating_lightly_anonymized_database": "Erstellen einer leicht anonymisierten Datenbank...",
-    "error_creating_anonymized_database": "Die anonymisierte Datenbank konnte nicht erstellt werden. Überprüfe die Backend-Protokolle auf Details",
+    "error_creating_anonymized_database": "Die anonymisierte Datenbank konnte nicht erstellt werden. Überprüfen Sie die Backend-Protokolle für Details",
     "successfully_created_fully_anonymized_database": "Vollständig anonymisierte Datenbank in {{anonymizedFilePath}} erstellt",
     "successfully_created_lightly_anonymized_database": "Leicht anonymisierte Datenbank in {{anonymizedFilePath}} erstellt",
     "no_anonymized_database_yet": "Noch keine anonymisierte Datenbank.",
@@ -1113,8 +1159,8 @@
     "checking_integrity": "Datenbankintegrität prüfen...",
     "integrity_check_succeeded": "Integritätsprüfung erfolgreich – keine Probleme gefunden.",
     "integrity_check_failed": "Integritätsprüfung fehlgeschlagen: {{results}}",
-    "check_integrity_label": "Überprüfe die Datenbankintegrität",
-    "check_integrity_description": "Überprüfe die Datenbank auf SQLite Ebene auf Fehler."
+    "check_integrity_label": "Datenbankintegrität überprüfen",
+    "check_integrity_description": "Überprüft, ob die Datenbank auf SQLite-Ebene beschädigt ist."
   },
   "sync": {
     "title": "Synchronisieren",
@@ -1140,7 +1186,7 @@
     "vacuum_description": "Datenbank neu aufbauen um die Dateigröße zu reduzieren. Keine Daten werden verändert."
   },
   "fonts": {
-    "theme_defined": "Thema definiert",
+    "theme_defined": "Design definiert",
     "fonts": "Schriftarten",
     "main_font": "Benutzeroberflächen-Schriftart",
     "font_family": "Schriftfamilie",
@@ -1157,7 +1203,7 @@
     "serif": "Serif",
     "sans-serif": "Sans Serif",
     "monospace": "Monospace",
-    "system-default": "System Standard",
+    "system-default": "Systemstandard",
     "custom_fonts": "Benutzerdefinierte Schriftarten verwenden",
     "preview": "Vorschau",
     "apply_changes": "Neu laden, damit Änderungen wirksam werden",
@@ -1173,7 +1219,7 @@
   },
   "native_title_bar": {
     "title": "Native Titelleiste (App-Neustart erforderlich)",
-    "enabled": "ermöglicht",
+    "enabled": "aktiviert",
     "disabled": "deaktiviert"
   },
   "ribbon": {
@@ -1181,8 +1227,8 @@
   },
   "theme": {
     "title": "Benutzeroberfläche",
-    "theme_label": "Thema",
-    "override_theme_fonts_label": "Theme-Schriftarten überschreiben",
+    "theme_label": "Design",
+    "override_theme_fonts_label": "Design-Schriftarten überschreiben",
     "triliumnext": "Systemfarbschema folgend",
     "triliumnext-light": "Hell",
     "triliumnext-dark": "Dunkel",
@@ -1191,7 +1237,7 @@
     "layout-horizontal-title": "Horizontal",
     "layout-vertical-description": "Startleiste ist auf der linken Seite (Standard)",
     "layout-horizontal-description": "Startleiste ist unter der Tableiste. Die Tableiste wird dadurch auf die ganze Breite erweitert.",
-    "auto_theme": "Alt (Systemfarbschema)",
+    "auto_theme": "Systemfarbschema folgend",
     "light_theme": "Hell",
     "dark_theme": "Dunkel",
     "modern_themes": "Modern",
@@ -1202,7 +1248,12 @@
     "color_scheme_system": "System",
     "color_scheme_light": "Hell",
     "color_scheme_dark": "Dunkel",
-    "color_scheme_custom_disabled": "Überschreiben des Farbschemas ist für benutzerdefinierte Themes nicht verfügbar"
+    "color_scheme_custom_disabled": "Überschreiben des Farbschemas ist für benutzerdefinierte Designs nicht verfügbar",
+    "color_scheme_switcher_system": "Systemmodus",
+    "color_scheme_switcher_light": "Heller Modus",
+    "color_scheme_switcher_dark": "Dunkler Modus",
+    "color_scheme_switcher_hint": "Klicken Sie, um das Farbschema zu wechseln.",
+    "color_scheme_switcher_unsupported": "Das aktuelle Design unterstützt keinen Wechsel des Farbschemas."
   },
   "zoom_factor": {
     "title": "Zoomfaktor (nur Desktop-Build)",
@@ -1218,11 +1269,12 @@
     "title": "Verfügbare MIME-Typen im Dropdown-Menü",
     "tooltip_syntax_highlighting": "Syntaxhervorhebung",
     "tooltip_code_block_syntax": "Code-Blöcke in Textnotizen",
-    "tooltip_code_note_syntax": "Code-Notizen"
+    "tooltip_code_note_syntax": "Code-Notizen",
+    "trilium_log": "Trilium-Protokoll"
   },
   "vim_key_bindings": {
-    "use_vim_keybindings_in_code_notes": "Vim Tastenbelegung",
-    "enable_vim_keybindings": "Aktiviere Vim-Tastenkombinationen"
+    "use_vim_keybindings_in_code_notes": "Vim-Tastenbelegung",
+    "enable_vim_keybindings": "Vim-Tastenbelegung in Codenotizen aktivieren (kein Ex-Modus)"
   },
   "wrap_lines": {
     "wrap_lines_in_code_notes": "Zeilen in Codenotizen umbrechen",
@@ -1231,18 +1283,17 @@
   "images": {
     "images_section_title": "Bilder",
     "download_images_automatically": "Bilder automatisch herunterladen",
-    "download_images_description": "Referenzierte online Bilder vom eingefügten HTML-Code herunterladen, damit diese offline zur Verfügung stehen.",
-    "enable_image_compression": "Bildkomprimierung",
+    "download_images_description": "Referenzierte Online-Bilder vom eingefügten HTML-Code herunterladen, damit diese offline zur Verfügung stehen.",
     "max_image_dimensions": "Maximale Maße eines Bildes",
-    "jpeg_quality_description": "Empfohlener Bereich liegt zwischen 50-85. Niedrige Werte reduzieren die Dateigröße, höhere Werte bewahren Details.",
+    "jpeg_quality_description": "Empfohlener Bereich liegt zwischen 50–85. Niedrige Werte reduzieren die Dateigröße, höhere Werte bewahren Details.",
     "max_image_dimensions_unit": "Pixel",
-    "enable_image_compression_description": "Komprimieren und skalieren Bilder, wenn diese hochgeladen oder eingefügt werden.",
+    "enable_image_compression_description": "Bilder komprimieren und skalieren, wenn diese hochgeladen oder eingefügt werden.",
     "max_image_dimensions_description": "Bilder, die diese Größe überschreiten, werden automatisch verkleinert.",
-    "jpeg_quality": "JPEG Qualität",
-    "ocr_section_title": "Text Extrahierung (OCR)",
-    "ocr_related_content_languages": "Inhaltssprachen (für Textextrahierung verwendet)",
+    "jpeg_quality": "JPEG-Qualität",
+    "ocr_section_title": "Textextraktion (OCR)",
+    "ocr_related_content_languages": "Inhaltssprachen (für die Textextraktion verwendet)",
     "ocr_auto_process": "Neue Dateien automatisch verarbeiten",
-    "ocr_auto_process_description": "Text automatisch extrahieren von neu hochgeladenen oder eingefügten Dateien.",
+    "ocr_auto_process_description": "Text aus neu hochgeladenen oder eingefügten Dateien automatisch extrahieren.",
     "ocr_min_confidence": "Mindest-Erkennungssicherheit",
     "batch_ocr_title": "Vorhandene Dateien verarbeiten",
     "batch_ocr_start": "Stapelverarbeitung starten",
@@ -1251,12 +1302,13 @@
     "batch_ocr_completed": "Stapelverarbeitung abgeschlossen! {{processed}} Dateien wurden verarbeitet.",
     "batch_ocr_error": "Fehler bei der Stapelverarbeitung: {{error}}",
     "ocr_confidence_description": "Nur Text oberhalb dieses Konfidenzschwellenwerts extrahieren. Niedrigere Werte erfassen mehr Text, können aber ungenauer sein.",
-    "batch_ocr_description": "Text aus allen vorhandenen Bildern, PDFs und Office-Dokumenten in Ihren Notizen extrahieren. Das kann je nach Anzahl der Dateien etwas dauern."
+    "batch_ocr_description": "Text aus allen vorhandenen Bildern, PDFs und Office-Dokumenten in Ihren Notizen extrahieren. Das kann je nach Anzahl der Dateien etwas dauern.",
+    "batch_ocr_completed_with_failures": "Stapelverarbeitung abgeschlossen. {{processed}} Dateien wurden verarbeitet, {{failed}} konnten jedoch nicht gelesen werden (Details im Protokoll)."
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Nicht verwendete Anhänge",
     "erase_attachments_after": "Nicht verwendete Anhänge löschen nach",
-    "manual_erasing_description": "Manuelle Löschung aktivieren, ignoriert den obigen Zeitpunkt.",
+    "manual_erasing_description": "Löschung manuell auslösen, ignoriert den oben eingestellten Zeitraum.",
     "erase_unused_attachments_now": "Ungenutzte Anhänge löschen",
     "unused_attachments_erased": "Nicht verwendete Anhänge wurden gelöscht.",
     "description": "Anhänge, auf die keine Notiz mehr verweist, gelten als ungenutzt und können nach einer gewissen Zeit automatisch gelöscht werden.",
@@ -1265,7 +1317,7 @@
   },
   "network_connections": {
     "network_connections_title": "Netzwerk",
-    "check_for_updates": "Suche automatisch nach Updates",
+    "check_for_updates": "Automatisch nach Updates suchen",
     "check_for_updates_description": "Prüft auf GitHub auf neue Versionen und zeigt bei Verfügbarkeit eine Benachrichtigung im globalen Menü an."
   },
   "note_erasure_timeout": {
@@ -1281,18 +1333,18 @@
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Schnappschuss-Intervall für Notizrevisionen",
     "note_revisions_snapshot_description": "Das Schnappschuss-Zeitintervall für Notizrevisionen ist die Zeit, nach der eine neue Notizrevision erstellt wird. Weitere Informationen finden Sie im <doc>Wiki</doc>.",
-    "snapshot_time_interval_label": "Schnappschuss Intervall",
+    "snapshot_time_interval_label": "Schnappschuss-Intervall",
     "note_revisions_snapshot_description_short": "Zeit, nachdem eine neue Notizrevision erstellt wird."
   },
   "revisions_snapshot_limit": {
-    "note_revisions_snapshot_limit_title": "Limit für Notizrevision-Snapshots",
-    "note_revisions_snapshot_limit_description": "Das Limit für Notizrevision-Snapshots bezieht sich auf die maximale Anzahl von Revisionen, die für jede Notiz gespeichert werden können. Dabei bedeutet -1, dass es kein Limit gibt, und 0 bedeutet, dass alle Revisionen gelöscht werden. Sie können das maximale Limit für Revisionen einer einzelnen Notiz über das Label #versioningLimit festlegen.",
+    "note_revisions_snapshot_limit_title": "Limit für Notizrevisions-Schnappschüsse",
+    "note_revisions_snapshot_limit_description": "Das Limit für Notizrevisions-Schnappschüsse bezieht sich auf die maximale Anzahl von Revisionen, die für jede Notiz gespeichert werden können. Dabei bedeutet -1, dass es kein Limit gibt, und 0 bedeutet, dass alle Revisionen gelöscht werden. Sie können das maximale Limit für Revisionen einer einzelnen Notiz über das Label #versioningLimit festlegen.",
     "snapshot_number_limit_label": "Maximale Revisionen",
-    "erase_excess_revision_snapshots": "Überschüssige Revision-Snapshots löschen",
-    "erase_excess_revision_snapshots_prompt": "Überschüssige Revision-Snapshots wurden gelöscht.",
-    "snapshot_number_limit_unit": "Momentaufnahmen",
-    "note_revisions_snapshot_limit_description_short": "Maximale Anzahl an Revisionen pro Notiz. Nutze -1 für unlimitiert oder 0 zum deaktivieren.",
-    "erase_excess_revision_snapshots_description": "Lösche Revisionen aller Notizen die das Limit überschreiten.",
+    "erase_excess_revision_snapshots": "Überschüssige Revisions-Schnappschüsse löschen",
+    "erase_excess_revision_snapshots_prompt": "Überschüssige Revisions-Schnappschüsse wurden gelöscht.",
+    "snapshot_number_limit_unit": "Schnappschüsse",
+    "note_revisions_snapshot_limit_description_short": "Maximale Anzahl an Revisionen pro Notiz. Verwenden Sie -1 für unlimitiert oder 0 zum Deaktivieren.",
+    "erase_excess_revision_snapshots_description": "Revisionen aller Notizen löschen, die das Limit überschreiten.",
     "erase_now_button": "Jetzt löschen"
   },
   "search_engine": {
@@ -1311,7 +1363,7 @@
     "custom_url_description": "Verwenden Sie {keyword} als Platzhalter für den Suchbegriff."
   },
   "tray": {
-    "title": "Systemablage",
+    "title": "Systemtray",
     "enable_tray": "Tray-Symbol",
     "enable_tray_description": "Änderungen werden sofort übernommen, auf manchen Plattformen ist jedoch ein Neustart von Trilium erforderlich, um das Tray-Symbol auszublenden.",
     "close_to_tray": "In den Tray minimieren",
@@ -1333,12 +1385,12 @@
     "color": "Farbiger Text",
     "bg_color": "Text mit Hintergrundfarbe",
     "visibility_title": "Sichtbarkeit der Markierungsliste",
-    "visibility_description": "Sie können das Markierungs-Widget pro Notiz ausblenden, indem Sie die Beschriftung #hideHighlightWidget hinzufügen.",
+    "visibility_description": "Sie können das Markierungs-Widget pro Notiz ausblenden, indem Sie das Label #hideHighlightWidget hinzufügen.",
     "shortcut_info": "Sie können eine Tastenkombination zum schnellen Umschalten des rechten Bereichs (einschließlich Markierungen) in den Optionen -> Tastenkombinationen konfigurieren (Name „toggleRightPane“)."
   },
   "table_of_contents": {
     "title": "Inhaltsverzeichnis",
-    "description": "Das Inhaltsverzeichnis wird in Textnotizen angezeigt, wenn die Notiz mehr als eine definierte Anzahl von Überschriften enthält. Sie können diese Nummer anpassen:",
+    "description": "Das Inhaltsverzeichnis wird in Textnotizen angezeigt, wenn die Notiz mehr als eine definierte Anzahl von Überschriften enthält. Sie können diese Zahl anpassen:",
     "disable_info": "Sie können diese Option auch verwenden, um TOC effektiv zu deaktivieren, indem Sie eine sehr hohe Zahl festlegen.",
     "shortcut_info": "Sie können eine Tastenkombination zum schnellen Umschalten des rechten Bereichs (einschließlich Inhaltsverzeichnis) unter Optionen -> Tastenkombinationen konfigurieren (Name „toggleRightPane“).",
     "unit": "Überschriften"
@@ -1367,7 +1419,7 @@
     "thursday": "Donnerstag",
     "friday": "Freitag",
     "saturday": "Samstag",
-    "formatting-locale-auto": "Basierend auf die Anwendungssprache"
+    "formatting-locale-auto": "Basierend auf der Anwendungssprache"
   },
   "backup": {
     "automatic_backup": "Automatische Sicherung",
@@ -1377,17 +1429,15 @@
     "enable_monthly_backup": "Monatliche Sicherung",
     "backup_recommendation": "Es wird empfohlen, die Sicherung aktiviert zu lassen. Dies kann jedoch bei großen Datenbanken und/oder langsamen Speichergeräten den Anwendungsstart verlangsamen.",
     "backup_now": "Jetzt sichern",
-    "backup_database_now": "Jetzt Datenbank sichern",
-    "existing_backups": "Vorhandene Backups",
+    "existing_backups": "Vorhandene Sicherungen",
     "date-and-time": "Datum & Uhrzeit",
     "path": "Pfad",
     "database_backed_up_to": "Die Datenbank wurde gesichert unter {{- backupFilePath}}",
-    "no_backup_yet": "noch kein Backup",
+    "no_backup_yet": "noch keine Sicherung",
     "title": "Sicherung",
-    "download": "Download",
+    "download": "Herunterladen",
     "automatic_backups_title": "Automatische Sicherungen",
-    "automatic_backups_description": "Trilium kann die Datenbank automatisch sichern. Es wird empfohlen, die Sicherung aktiviert zu lassen, dies kann jedoch den Programmstart bei großen Datenbanken und/oder langsamen Speichermedien verlangsamen.",
-    "backup_location_description": "Sicherungen werden in {{- backupFolder}} gespeichert."
+    "automatic_backups_description": "Trilium kann die Datenbank automatisch sichern. Es wird empfohlen, die Sicherung aktiviert zu lassen, dies kann jedoch den Programmstart bei großen Datenbanken und/oder langsamen Speichermedien verlangsamen."
   },
   "etapi": {
     "description": "ETAPI ist eine REST-API, die für den programmgesteuerten Zugriff auf die Trilium-Instanz ohne Benutzeroberfläche verwendet wird.",
@@ -1398,15 +1448,15 @@
     "created": "Erstellt",
     "actions": "Aktionen",
     "new_token_title": "Neuer ETAPI-Token",
-    "new_token_message": "Bitte gebe en Namen des neuen Tokens ein",
+    "new_token_message": "Bitte geben Sie den Namen des neuen Tokens ein",
     "default_token_name": "neues Token",
     "error_empty_name": "Der Tokenname darf nicht leer sein",
     "token_created_title": "ETAPI-Token erstellt",
     "token_created_message": "Kopieren Sie den erstellten Token in die Zwischenablage. Trilium speichert den Token gehasht und dies ist das letzte Mal, dass Sie ihn sehen.",
-    "rename_token": "Benenne dieses Token um",
+    "rename_token": "Dieses Token umbenennen",
     "delete_token": "Dieses Token löschen/deaktivieren",
     "rename_token_title": "Token umbenennen",
-    "rename_token_message": "Bitte gebe den Namen des neuen Tokens ein",
+    "rename_token_message": "Bitte geben Sie den Namen des neuen Tokens ein",
     "delete_token_confirmation": "Sind Sie sicher, dass Sie den ETAPI-Token „{{name}}“ löschen möchten?",
     "no_tokens": "Es sind noch keine Token vorhanden."
   },
@@ -1421,19 +1471,19 @@
     "old_password": "Altes Passwort",
     "new_password": "Neues Passwort",
     "new_password_confirmation": "Neue Passwortbestätigung",
-    "change_password": "Kennwort ändern",
+    "change_password": "Passwort ändern",
     "protected_session_timeout": "Geschützte Sitzung",
     "protected_session_timeout_description": "Zeitraum der Inaktivität, nach dem die geschützte Sitzung aus dem Browserspeicher gelöscht wird. Siehe",
     "wiki": "Wiki",
     "for_more_info": "für weitere Informationen.",
-    "protected_session_timeout_label": "Automatisches beenden der Sitzung nach",
+    "protected_session_timeout_label": "Automatisches Beenden der Sitzung nach",
     "reset_confirmation": "Durch das Zurücksetzen des Passworts verlieren Sie für immer den Zugriff auf alle Ihre bestehenden geschützten Notizen. Möchten Sie das Passwort wirklich zurücksetzen?",
     "reset_success_message": "Das Passwort wurde zurückgesetzt. Bitte legen Sie ein neues Passwort fest.",
-    "change_password_heading": "Kennwort ändern",
+    "change_password_heading": "Passwort ändern",
     "set_password_heading": "Passwort festlegen",
     "set_password": "Passwort festlegen",
-    "password_mismatch": "Neue Passwörter sind nicht dasselbe.",
-    "password_changed_success": "Das Passwort wurde geändert. Trilium wird neu geladen, nachdem Sie auf OK geklickt haben.",
+    "password_mismatch": "Neue Passwörter stimmen nicht überein.",
+    "password_changed_success": "Passwort wurde erfolgreich geändert.",
     "change_password_description": "Aktualisieren Sie Ihr aktuelles Passwort",
     "reset_password": "Passwort zurücksetzen",
     "cancel": "Abbrechen",
@@ -1442,8 +1492,8 @@
     "reset_password_button": "Jetzt zurücksetzen"
   },
   "shortcuts": {
-    "keyboard_shortcuts": "Tastaturkürzel",
-    "type_text_to_filter": "Gebe Text ein, um Verknüpfungen zu filtern...",
+    "keyboard_shortcuts": "Tastenkombinationen",
+    "type_text_to_filter": "Geben Sie Text ein, um Verknüpfungen zu filtern...",
     "reload_app": "App neu laden",
     "set_all_to_default": "Alle zurücksetzen",
     "confirm_reset": "Möchten Sie wirklich alle Tastaturkürzel auf die Standardeinstellungen zurücksetzen?",
@@ -1454,7 +1504,7 @@
     "record_shortcut": "Tastenkombination hinzufügen",
     "remove_shortcut": "Diese Tastenkombination entfernen",
     "press_keys": "Tasten drücken…",
-    "recording_toast": "Eine Tastenkombination drücken um sie zuzuweisen, oder Esc zum Abbrechen.",
+    "recording_toast": "Eine Tastenkombination drücken, um sie zuzuweisen, oder Esc zum Abbrechen.",
     "make_global": "Als systemweite (globale) Tastenkombination festlegen",
     "make_local": "Als anwendungsinterne Tastenkombination festlegen",
     "global_shortcut": "Systemweite (globale) Tastenkombination, nur in der Desktop-App aktiv",
@@ -1476,7 +1526,7 @@
     "enable": "Rechtschreibprüfung aktivieren",
     "language_code_label": "Rechtschreibprüfungs-Sprachen",
     "custom_dictionary_title": "Benutzerdefiniertes Wörterbuch",
-    "custom_dictionary_edit": "Benutzerdefiniert Wörter",
+    "custom_dictionary_edit": "Benutzerdefinierte Wörter",
     "custom_dictionary_open": "Wörterbuch bearbeiten",
     "related_description": "Sprachen der Rechtschreibprüfung und benutzerdefiniertes Wörterbuch konfigurieren.",
     "custom_dictionary_description": "Zum Wörterbuch hinzugefügte Wörter werden auf all Ihren Geräten synchronisiert.",
@@ -1489,9 +1539,9 @@
     "timeout": "Verbindungs-Timeout (ms)",
     "proxy_label": "Proxy-Server (optional)",
     "save": "Speichern",
-    "help": "Helfen",
+    "help": "Hilfe",
     "test_title": "Verbindung testen",
-    "test_description": "Die Verbindung zum Synchronisierungsserver wird getestet. Ist der Server noch nicht initialisiert, wird die Synchronisierung mit dem lokalen Dokument eingerichtet.",
+    "test_description": "Die Verbindung zum Synchronisierungsserver wird getestet. Ist der Server noch nicht initialisiert, wird die Synchronisierung eingerichtet.",
     "test_button": "Jetzt testen",
     "handshake_failed": "Handshake des Synchronisierungsservers fehlgeschlagen, Fehler: {{message}}",
     "server_address_description": "URL des Trilium-Servers, mit dem synchronisiert werden soll.",
@@ -1502,11 +1552,7 @@
     "close": "Schließen"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "Dieser Anhang wird in {{time}} automatisch gelöscht",
-    "will_be_deleted_soon": "Dieser Anhang wird bald automatisch gelöscht",
-    "deletion_reason": ", da der Anhang nicht im Inhalt der Notiz verlinkt ist. Um das Löschen zu verhindern, füge den Anhangslink wieder in den Inhalt ein oder wandel den Anhang in eine Notiz um.",
-    "role_and_size": "Rolle: {{role}}, Größe: {{size}}, MIME: {{- mimeType}}",
-    "link_copied": "Anhangslink in die Zwischenablage kopiert.",
+    "link_copied": "Anhangsverweis in die Zwischenablage kopiert.",
     "unrecognized_role": "Unbekannte Anhangsrolle „{{role}}“."
   },
   "bookmark_switch": {
@@ -1515,7 +1561,7 @@
     "remove_bookmark": "Lesezeichen entfernen"
   },
   "editability_select": {
-    "auto": "Auto",
+    "auto": "Automatisch",
     "read_only": "Schreibgeschützt",
     "always_editable": "Immer bearbeitbar",
     "note_is_editable": "Die Notiz kann bearbeitet werden, wenn sie nicht zu lang ist.",
@@ -1523,7 +1569,7 @@
     "note_is_always_editable": "Die Notiz kann immer bearbeitet werden, unabhängig von ihrer Länge."
   },
   "note-map": {
-    "button-link-map": "Beziehungskarte",
+    "button-link-map": "Linkkarte",
     "button-tree-map": "Baumkarte"
   },
   "tree-context-menu": {
@@ -1535,7 +1581,7 @@
     "search-in-subtree": "Im Zweig suchen",
     "hoist-note": "Notiz-Fokus setzen",
     "unhoist-note": "Notiz-Fokus aufheben",
-    "edit-branch-prefix": "Zweig-Präfix bearbeiten",
+    "edit-branch-prefix": "Zweigpräfix bearbeiten",
     "advanced": "Erweitert",
     "expand-subtree": "Zweig aufklappen",
     "collapse-subtree": "Zweig einklappen",
@@ -1559,7 +1605,7 @@
     "converted-to-attachments_other": "{{count}} Notizen wurden als Anhang konvertiert.",
     "convert-to-attachment-confirm": "Sind Sie sicher, dass Sie die ausgewählten Notizen in Anhänge ihrer übergeordneten Notizen umwandeln möchten? Diese Operation wird nur auf Bildnotizen angewandt. Andere Notizen werden übersprungen.",
     "open-in-popup": "Schnellbearbeitung",
-    "archive": "Archiviere",
+    "archive": "Archivieren",
     "unarchive": "Entarchivieren",
     "open-in-a-new-window": "In neuem Fenster öffnen",
     "hide-subtree": "Zweig ausblenden",
@@ -1568,16 +1614,16 @@
   "shared_info": {
     "shared_publicly": "Diese Notiz ist öffentlich freigegeben über {{- link}}.",
     "shared_locally": "Diese Notiz ist lokal freigegeben über {{- link}}.",
-    "help_link": "Für Hilfe besuche <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
+    "help_link": "Für Hilfe <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">Wiki</a> besuchen."
   },
   "note_types": {
     "text": "Text",
     "code": "Code",
     "saved-search": "Gespeicherte Such-Notiz",
-    "relation-map": "Beziehungskarte",
+    "relation-map": "Relationskarte",
     "note-map": "Notizkarte",
-    "render-note": "Render Notiz",
-    "mermaid-diagram": "Mermaid Diagramm",
+    "render-note": "Render-Notiz",
+    "mermaid-diagram": "Mermaid-Diagramm",
     "canvas": "Leinwand",
     "web-view": "Webansicht",
     "mind-map": "Mindmap",
@@ -1614,29 +1660,28 @@
   "template_switch": {
     "template": "Vorlage",
     "toggle-on-hint": "Notiz zu einer Vorlage machen",
-    "toggle-off-hint": "Entferne die Notiz als Vorlage"
+    "toggle-off-hint": "Die Notiz als Vorlage entfernen"
   },
   "open-help-page": "Hilfeseite öffnen",
   "find": {
     "case_sensitive": "Groß-/Kleinschreibung beachten",
-    "match_words": "Wörter genau übereinstimmen",
-    "find_placeholder": "Im Text suchen…",
-    "replace_placeholder": "Ersetze mit...",
+    "match_words": "Nur ganze Wörter",
+    "find_placeholder": "Im Text suchen...",
+    "replace_placeholder": "Ersetzen mit...",
     "replace": "Ersetzen",
-    "replace_all": "Alle Ersetzen"
+    "replace_all": "Alle ersetzen"
   },
   "highlights_list_2": {
     "title": "Markierungsliste",
     "options": "Optionen",
     "title_with_count_one": "{{count}} Markierung",
     "title_with_count_other": "{{count}} Markierungen",
-    "modal_title": "Markierungsliste konfigurieren",
-    "menu_configure": "Markierungsliste konfigurieren…",
+    "menu_configure": "Markierungsliste konfigurieren...",
     "no_highlights": "Keine Markierungen gefunden."
   },
   "quick-search": {
     "placeholder": "Schnellsuche",
-    "searching": "Suche läuft…",
+    "searching": "Suche läuft...",
     "no-results": "Keine Ergebnisse gefunden",
     "more-results": "... und {{number}} weitere Ergebnisse.",
     "show-in-full-search": "In der vollständigen Suche anzeigen"
@@ -1649,7 +1694,7 @@
     "automatically-collapse-notes": "Notizen automatisch zusammenklappen",
     "automatically-collapse-notes-title": "Notizen werden nach einer Inaktivitätsperiode automatisch zusammengeklappt, um den Baum zu entlasten.",
     "save-changes": "Änderungen speichern und anwenden",
-    "auto-collapsing-notes-after-inactivity": "Automatisches Zusammenklappen von Notizen nach Inaktivität…",
+    "auto-collapsing-notes-after-inactivity": "Automatisches Zusammenklappen von Notizen nach Inaktivität...",
     "saved-search-note-refreshed": "Gespeicherte Such-Notiz wurde aktualisiert.",
     "hoist-this-note-workspace": "Diese Notiz fokussieren (Arbeitsbereich)",
     "refresh-saved-search-results": "Gespeicherte Suchergebnisse aktualisieren",
@@ -1658,38 +1703,40 @@
     "toggle-sidebar": "Seitenleiste ein-/ausblenden",
     "dropping-not-allowed": "Ablegen von Notizen an dieser Stelle ist nicht zulässig.",
     "clone-indicator-tooltip": "Diese Notiz hat {{- count}} übergeordnete Knoten: {{- parents}}",
-    "clone-indicator-tooltip-single": "Diese Notiz ist geklont (1 weitere Quelle: {{- parent}})",
+    "clone-indicator-tooltip-single": "Diese Notiz ist geklont (1 weitere übergeordnete Notiz: {{- parent}})",
     "shared-indicator-tooltip": "Diese Notiz ist öffentlich freigegeben",
     "shared-indicator-tooltip-with-url": "Diese Notiz ist öffentlich freigegeben unter: {{- url}}",
     "subtree-hidden-tooltip_one": "{{count}} untergeordnete Notiz, die im Baum ausgeblendet ist",
     "subtree-hidden-tooltip_other": "{{count}} untergeordnete Notizen, die im Baum ausgeblendet sind",
     "subtree-hidden-moved-title": "Zu {{title}} hinzugefügt",
     "subtree-hidden-moved-description-collection": "Diese Sammlung blendet ihre untergeordneten Notizen im Baum aus.",
-    "subtree-hidden-moved-description-other": "Untergeordnete Notizen sind im Baum für diese Notiz ausgeblendet."
+    "subtree-hidden-moved-description-other": "Untergeordnete Notizen sind im Baum für diese Notiz ausgeblendet.",
+    "follow-active-note": "Aktiver Notiz folgen",
+    "follow-active-note-title": "Scrollt im Baum und erweitert übergeordnete Knoten, um die aktive Notiz anzuzeigen. Wenn deaktiviert, bleibt der Baum an seiner Position und nur die Hintergrundmarkierung wird aktualisiert."
   },
   "title_bar_buttons": {
     "window-on-top": "Dieses Fenster immer oben halten"
   },
   "note_detail": {
-    "could_not_find_typewidget": "Konnte typeWidget für Typ ‚{{type}}‘ nicht finden",
-    "printing": "Druckvorgang läuft…",
-    "printing_pdf": "Druckvorschau wird vorbereitet…",
+    "could_not_find_typewidget": "Konnte typeWidget für Typ „{{type}}“ nicht finden",
+    "printing": "Druckvorgang läuft...",
+    "printing_pdf": "Druckvorschau wird vorbereitet...",
     "print_report_title": "Druckreport",
     "print_report_collection_details_button": "Details anzeigen",
     "print_report_collection_details_ignored_notes": "Ignorierte Notizen",
     "print_report_collection_content_one": "{{count}} Notiz in der Sammlung konnte nicht gedruckt werden, weil sie nicht unterstützt oder geschützt ist.",
     "print_report_collection_content_other": "{{count}} Notizen in der Sammlung konnten nicht gedruckt werden, weil sie nicht unterstützt oder geschützt sind.",
     "print_report_error_title": "Druck fehlgeschlagen",
-    "print_report_stack_trace": "Stapelzurückverfolgung",
+    "print_report_stack_trace": "Stacktrace",
     "content_load_error": "Der Inhalt der Notiz konnte nicht geladen werden.",
     "content_load_retry": "Erneut versuchen",
     "content_load_stalled": "Inhalt der Notiz wird noch geladen…"
   },
   "note_title": {
-    "placeholder": "Titel der Notiz hier eingeben…",
+    "placeholder": "Titel der Notiz hier eingeben...",
     "created_on": "Erstellt am <Value />",
     "last_modified": "Bearbeitet am <Value />",
-    "note_type_switcher_label": "Ändere von {{type}} zu:",
+    "note_type_switcher_label": "Von {{type}} wechseln zu:",
     "note_type_switcher_others": "Andere Notizart",
     "note_type_switcher_templates": "Vorlage",
     "note_type_switcher_collection": "Sammlung",
@@ -1740,13 +1787,11 @@
     "please_wait_for_save": "Bitte warte ein paar Sekunden, bis das Speichern abgeschlossen ist, und versuche es dann erneut."
   },
   "note_create": {
-    "duplicated": "Notiz ‚{{title}}‘ wurde dupliziert."
+    "duplicated": "Notiz „{{title}}“ wurde dupliziert."
   },
   "image": {
     "copied-to-clipboard": "Ein Verweis auf das Bild wurde in die Zwischenablage kopiert. Dieser kann in eine beliebige Textnotiz eingefügt werden.",
     "cannot-copy": "Das Bild konnte nicht in die Zwischenablage kopiert werden.",
-    "copy-to-clipboard": "Bild in Zwischenablage kopieren",
-    "download": "Bild herunterladen",
     "image-copied-to-clipboard": "Das Bild wurde in die Zwischenablage kopiert.",
     "cannot-copy-image": "Das Bild konnte nicht in die Zwischenablage kopiert werden.",
     "cannot-download": "Das Bild konnte nicht heruntergeladen werden."
@@ -1754,7 +1799,7 @@
   "clipboard": {
     "cut": "Notiz(en) wurden in die Zwischenablage ausgeschnitten.",
     "copied": "Notiz(en) wurden in die Zwischenablage kopiert.",
-    "copy_failed": "Speichern in Zwischenablage aufgrund von Berechtigungsproblemen gescheitert.",
+    "copy_failed": "Kopieren in die Zwischenablage ist aufgrund von Berechtigungsproblemen fehlgeschlagen.",
     "copy_success": "In Zwischenablage kopiert."
   },
   "entrypoints": {
@@ -1773,17 +1818,22 @@
   },
   "frontend_script_api": {
     "async_warning": "Sie übergeben eine asynchrone Funktion an `api.runOnBackend()`, was wahrscheinlich nicht wie beabsichtigt funktioniert.\\n Entweder machen Sie die Funktion synchron (indem Sie das `async`-Schlüsselwort entfernen) oder benutzen Sie `api.runAsyncOnBackendWithManualTransactionHandling()`.",
-    "sync_warning": "Sie übergeben eine synchrone Funktion an `api.runAsyncOnBackendWithManualTransactionHandling()`,\\n obwohl Sie wahrscheinlich `api.runOnBackend()` verwenden sollten."
+    "sync_warning": "Sie übergeben eine synchrone Funktion an `api.runAsyncOnBackendWithManualTransactionHandling()`,\\n obwohl Sie wahrscheinlich `api.runOnBackend()` verwenden sollten.",
+    "backend_scripting_disabled_title": "Backend-Skripting ist deaktiviert",
+    "backend_scripting_disabled_message": "Ein Skript hat versucht, Code auf dem Server auszuführen, aber Backend-Skripting ist aus Sicherheitsgründen deaktiviert. Aktivieren Sie es unter Optionen → Sicherheit, wenn Sie diesem Skript vertrauen.",
+    "backend_scripting_disabled_notes_heading": "Skripte, die versucht haben, Backend-Code auszuführen:",
+    "backend_scripting_disabled_open_settings": "Sicherheitseinstellungen öffnen",
+    "backend_scripting_disabled_more_info": "Weitere Informationen"
   },
   "ws": {
     "sync-check-failed": "Synchronisationsprüfung fehlgeschlagen!",
     "consistency-checks-failed": "Konsistenzprüfung fehlgeschlagen! Siehe Logs für Details.",
     "encountered-error": "Fehler „{{message}}“ aufgetreten, siehe Konsole für Details.",
     "lost-websocket-connection-title": "Verbindung zum Server verloren",
-    "lost-websocket-connection-message": "Überprüfe die Konfiguration des Reverse-Proxys (z. B. nginx oder Apache), um sicherzustellen, dass WebSocket-Verbindungen zugelassen und nicht blockiert werden."
+    "lost-websocket-connection-message": "Überprüfen Sie die Konfiguration Ihres Reverse-Proxys (z. B. nginx oder Apache), um sicherzustellen, dass WebSocket-Verbindungen zugelassen und nicht blockiert werden."
   },
   "hoisted_note": {
-    "confirm_unhoisting": "Die angeforderte Notiz ‘{{requestedNote}}’ befindet sich außerhalb des hoisted Bereichs der Notiz ‘{{hoistedNote}}’. Sie müssen sie unhoisten, um auf die Notiz zuzugreifen. Möchten Sie mit dem Unhoisting fortfahren?"
+    "confirm_unhoisting": "Die angeforderte Notiz „{{requestedNote}}“ befindet sich außerhalb des Unterbaums der fokussierten Notiz „{{hoistedNote}}“. Sie müssen den Fokus aufheben, um auf die Notiz zuzugreifen. Möchten Sie mit dem Aufheben des Fokus fortfahren?"
   },
   "launcher_context_menu": {
     "reset_launcher_confirm": "Möchten Sie „{{title}}“ wirklich zurücksetzen? Alle Daten / Einstellungen in dieser Notiz (und ihren Unternotizen) gehen verloren und der Starter wird an seinen ursprünglichen Standort zurückgesetzt.",
@@ -1803,10 +1853,10 @@
     "title": "Code-Blöcke"
   },
   "code_block": {
-    "word_wrapping": "Wortumbruch",
+    "word_wrapping": "Zeilenumbruch",
     "theme_none": "Keine Syntaxhervorhebung",
-    "theme_group_light": "Helle Themen",
-    "theme_group_dark": "Dunkle Themen",
+    "theme_group_light": "Helle Designs",
+    "theme_group_dark": "Dunkle Designs",
     "copy_title": "In Zwischenablage kopieren",
     "click_to_copy": "Zum Kopieren klicken",
     "tab_width_unit": "Leerzeichen",
@@ -1827,47 +1877,47 @@
       },
       "fixed": {
         "title": "Fixiert",
-        "description": "Werkzeuge erscheinen im \"Format\" Tab."
+        "description": "Werkzeuge erscheinen im „Format“-Tab."
       },
       "multiline-toolbar": "Toolbar wenn nötig in mehreren Zeilen darstellen",
       "toolbar_style": "Symbolleistenstil"
     }
   },
   "electron_context_menu": {
-    "add-term-to-dictionary": "Begriff \"{{term}}\" zum Wörterbuch hinzufügen",
+    "add-term-to-dictionary": "Begriff „{{term}}“ zum Wörterbuch hinzufügen",
     "cut": "Ausschneiden",
     "copy": "Kopieren",
     "copy-as-markdown": "Als Markdown kopieren",
     "copy-link": "Link kopieren",
     "paste": "Einfügen",
     "paste-as-plain-text": "Als unformatierten Text einfügen",
-    "search_online": "Suche nach \"{{term}}\" mit {{searchEngine}} starten",
-    "search_in_trilium": "Suche nach \"{{term}}\" in Trilium"
+    "search_online": "Suche nach „{{term}}“ mit {{searchEngine}} starten",
+    "search_in_trilium": "Suche nach „{{term}}“ in Trilium"
   },
   "image_context_menu": {
-    "copy_reference_to_clipboard": "Referenz in Zwischenablage kopieren",
+    "copy_reference_to_clipboard": "Verweis in die Zwischenablage kopieren",
     "copy_image_to_clipboard": "Bild in die Zwischenablage kopieren"
   },
   "link_context_menu": {
     "open_note_in_new_tab": "Notiz in neuen Tab öffnen",
     "open_note_in_new_split": "Notiz in neuen geteilten Tab öffnen",
-    "open_note_in_new_window": "Notiz in neuen Fenster öffnen",
+    "open_note_in_new_window": "Notiz in neuem Fenster öffnen",
     "open_note_in_popup": "Schnellbearbeitung",
-    "open_note_in_other_split": "Notiz in neuer Spalte öffnen"
+    "open_note_in_other_split": "Notiz in anderer Spalte öffnen"
   },
   "electron_integration": {
-    "desktop-application": "Desktop Anwendung",
-    "native-title-bar": "Native Anwendungsleiste",
-    "native-title-bar-description": "In Windows und macOS, sorgt das Deaktivieren der nativen Anwendungsleiste für ein kompakteres Aussehen. Unter Linux, sorgt das Aktivieren der nativen Anwendungsleiste für eine bessere Integration mit anderen Teilen des Systems.",
+    "desktop-application": "Desktop-Anwendung",
+    "native-title-bar": "Native Titelleiste",
+    "native-title-bar-description": "In Windows und macOS sorgt das Deaktivieren der nativen Titelleiste für ein kompakteres Aussehen. Unter Linux sorgt das Aktivieren der nativen Titelleiste für eine bessere Integration mit dem Rest des Systems.",
     "background-effects": "Hintergrundeffekte aktivieren",
-    "background-effects-description": "Fügt einen unscharfen, stylischen Hintergrund in das Anwendungsfenstern ein. Dies erzeugt Tiefe und ein modernes Auftreten. \"Native Titelleiste\" muss deaktiviert sein.",
-    "restart-app-button": "Anwendung neustarten um Änderungen anzuwenden",
+    "background-effects-description": "Fügt einen unscharfen, stylischen Hintergrund in das Anwendungsfenstern ein. Dies erzeugt Tiefe und ein modernes Auftreten. „Native Titelleiste“ muss deaktiviert sein.",
+    "restart-app-button": "Anwendung neustarten, um Änderungen anzuwenden",
     "zoom-factor": "Zoomfaktor"
   },
   "note_autocomplete": {
-    "search-for": "Suche nach \"{{term}}\"",
-    "create-note": "Untergeordnete Notiz „{{term}}\" erstellen und verlinken",
-    "insert-external-link": "Einfügen von Externen Link zu \"{{term}}\"",
+    "search-for": "Suche nach „{{term}}“",
+    "create-note": "Untergeordnete Notiz „{{term}}“ erstellen und verlinken",
+    "insert-external-link": "Externen Link zu „{{term}}“ einfügen",
     "clear-text-field": "Textfeldinhalt löschen",
     "show-recent-notes": "Aktuelle Notizen anzeigen",
     "full-text-search": "Volltextsuche"
@@ -1880,7 +1930,7 @@
     "create-child-note-title": "Neue untergeordnete Notiz anlegen und zur Karte hinzufügen",
     "create-child-note-instruction": "Auf die Karte klicken, um eine neue Notiz an der Stelle zu erstellen oder Escape drücken um abzubrechen.",
     "unable-to-load-map": "Karte konnte nicht geladen werden.",
-    "create-child-note-text": "Marker hinzufügen"
+    "create-child-note-toast-title": "Neue Notiz"
   },
   "geo-map-context": {
     "open-location": "Ort öffnen",
@@ -1902,10 +1952,11 @@
   },
   "modal": {
     "close": "Schließen",
-    "help_title": "Zeige mehr Informationen zu diesem Fenster"
+    "help_title": "Mehr Informationen zu diesem Fenster anzeigen",
+    "cancel": "Abbrechen"
   },
   "zen_mode": {
-    "button_exit": "Verlasse Zen Modus"
+    "button_exit": "Zen-Modus verlassen"
   },
   "ui-performance": {
     "title": "Leistung",
@@ -1913,7 +1964,9 @@
     "enable-shadows": "Schatten",
     "enable-backdrop-effects": "Hintergrundeffekte für Menüs, Popups und Panels",
     "enable-smooth-scroll": "Sanftes Scrollen",
-    "app-restart-required": "Neustart der Anwendung erforderlich"
+    "app-restart-required": "Neustart der Anwendung erforderlich",
+    "enable-hardware-acceleration": "Hardwarebeschleunigung (GPU)",
+    "enable-hardware-acceleration-description": "Deaktivieren Sie diese Option, wenn die App aufgrund Ihrer GPU-Treiber ein leeres Fenster oder Darstellungsfehler zeigt. Ein Neustart der App ist erforderlich."
   },
   "code-editor-options": {
     "title": "Editor",
@@ -1922,9 +1975,9 @@
   },
   "custom_date_time_format": {
     "title": "Datums-/Zeitformat",
-    "description": "Passe das Format des Datums und der Uhrzeit an, die über <shortcut /> oder die Symbolleiste eingefügt werden. Die verfügbaren Format-Tokens sind unter <doc>Day.js docs</doc> zu finden.",
-    "format_string": "Format Zeichenfolge",
-    "formatted_time": "Formatiertes Datum/Uhrzeit",
+    "description": "Das Format des Datums und der Uhrzeit anpassen, die über <shortcut /> oder die Symbolleiste eingefügt werden. Die verfügbaren Format-Tokens sind unter <doc>Day.js docs</doc> zu finden.",
+    "format_string": "Formatzeichenfolge",
+    "formatted_time": "Datum/Uhrzeit (formatiert)",
     "preview": "Vorschau: {{preview}}",
     "description_short": "Das Format des über die Werkzeugleiste eingefügten Datums und der Uhrzeit anpassen."
   },
@@ -1938,7 +1991,7 @@
     "oauth_missing_vars": "Noch zu konfigurieren: {{-variables}}",
     "oauth_user_account": "Kontoname",
     "oauth_user_email": "E-Mail-Adresse",
-    "oauth_user_not_logged_in": "Nicht eingeloggt!",
+    "oauth_user_not_logged_in": "Nicht angemeldet!",
     "authentication_title": "Authentifizierung",
     "signin_method": "Anmelden mit",
     "signin_local": "Lokales Passwort (optional mit Zwei-Faktor-Authentifizierung)",
@@ -2009,18 +2062,19 @@
     "oauth_disconnected": "{{account}} wurde von {{provider}} getrennt.",
     "oauth_connect_success": "Als {{account}} mit {{provider}} verbunden.",
     "oauth_connect_success_generic": "Konto erfolgreich verknüpft.",
-    "oauth_account_unknown": "Ihr Konto"
+    "oauth_account_unknown": "Ihr Konto",
+    "oauth_connect_failed": "Verbindung mit dem OpenID-Anbieter konnte nicht hergestellt werden"
   },
   "share": {
     "title": "Freigabe",
     "redirect_bare_domain": "Hauptdomain zur Freigabeseite weiterleiten",
     "redirect_bare_domain_description": "Anonyme Benutzer zur Freigabeseite weiterleiten, anstatt die Anmeldung anzuzeigen",
-    "show_login_link": "Zeige Anmeldelink im Design der Freigabeseite",
+    "show_login_link": "Anmeldelink im Design der Freigabeseite anzeigen",
     "show_login_link_description": "Anmeldelink in die Fußzeile der Freigabeseite einfügen",
     "check_share_root": "Status des Freigabe-Roots prüfen",
     "share_root_found": "Freigabe-Root-Notiz '{{noteTitle}}' ist bereit",
-    "share_root_not_found": "Keine Notiz mit #shareRoot Label gefunden",
-    "share_root_not_shared": "Notiz '{{noteTitle}}' hat das #shareRoot Label, wurde jedoch noch nicht freigegeben"
+    "share_root_not_found": "Keine Notiz mit #shareRoot-Label gefunden",
+    "share_root_not_shared": "Notiz '{{noteTitle}}' hat das #shareRoot-Label, wurde jedoch noch nicht freigegeben"
   },
   "tasks": {
     "due": {
@@ -2034,12 +2088,12 @@
   },
   "note_language": {
     "not_set": "Keine Sprache ausgewählt",
-    "configure-languages": "Konfiguriere Sprachen...",
-    "help-on-languages": "Zu Übersetzungen beitragen..."
+    "configure-languages": "Sprachen konfigurieren...",
+    "help-on-languages": "Hilfe zu Inhaltssprachen..."
   },
   "content_language": {
     "title": "Inhaltssprachen",
-    "description": "Wählen Sie eine oder mehrere Sprachen aus, die in der Sprachauswahl im Abschnitt „Grundlegende Eigenschaften\" einer schreibgeschützten oder bearbeitbaren Textnotiz angezeigt werden sollen. Dadurch stehen Funktionen wie Rechtschreibprüfung oder Unterstützung für Rechts-nach-Links-Sprachen zur Verfügung."
+    "description": "Wählen Sie eine oder mehrere Sprachen aus, die in der Sprachauswahl im Abschnitt „Grundlegende Eigenschaften“ einer schreibgeschützten oder bearbeitbaren Textnotiz angezeigt werden sollen. Dadurch stehen Funktionen wie Rechtschreibprüfung, Unterstützung für Rechts-nach-Links-Sprachen und Texterkennung (OCR) zur Verfügung."
   },
   "switch_layout_button": {
     "title_vertical": "Bearbeitungsbereich nach unten verschieben",
@@ -2050,7 +2104,7 @@
     "lock-editing": "Bearbeitung sperren"
   },
   "png_export_button": {
-    "button_title": "Exportiere Diagramm als PNG"
+    "button_title": "Diagramm als PNG exportieren"
   },
   "svg": {
     "export_to_png": "Das Diagramm konnte als PNG nicht exportiert werden.",
@@ -2068,12 +2122,12 @@
   },
   "cpu_arch_warning": {
     "title": "Bitte laden Sie die ARM64-Version herunter",
-    "message_macos": "TriliumNext läuft aktuell über Rosetta 2. Nutzen Sie die Intel-Version (x64) auf einem Apple-Silicon-Mac, wird dadurch die Leistung und Akkulaufzeit deutlich beeinträchtigt.",
-    "message_windows": "TriliumNext läuft momentan in einer Emulation. Verwenden Sie eine Intel-Version (x64) auf einem Windows ARM Gerät, kann dadurch die Leistung und Akkulaufzeit deutlich beeinträchtigt werden.",
+    "message_macos": "TriliumNext läuft aktuell über die Rosetta-2-Übersetzung, das heißt, Sie verwenden die Intel-Version (x64) auf einem Mac mit Apple Silicon. Dies beeinträchtigt Leistung und Akkulaufzeit erheblich.",
+    "message_windows": "TriliumNext läuft momentan in einer Emulation, das heißt, Sie verwenden die Intel-Version (x64) auf einem Windows-Gerät mit ARM-Prozessor. Dies beeinträchtigt Leistung und Akkulaufzeit erheblich.",
     "recommendation": "Für ein optimales Erlebnis laden Sie bitte die native ARM64-Version von TriliumNext von unserer Release-Seite herunter.",
     "download_link": "Native Version herunterladen",
     "continue_anyway": "Trotzdem fortfahren",
-    "dont_show_again": "Zeige diese Warnung nicht erneut"
+    "dont_show_again": "Diese Warnung nicht erneut anzeigen"
   },
   "editorfeatures": {
     "title": "Funktionen",
@@ -2082,17 +2136,21 @@
     "emoji_completion_description": "Emojis lassen sich einfach einfügen, indem man `:` gefolgt vom Namen des Emojis eingibt.",
     "note_completion_description": "Links zu Notizen lassen sich durch Eingabe von `@` gefolgt vom Notiztitel erstellen.",
     "slash_commands_enabled": "Slash-Befehle",
-    "slash_commands_description": "Bearbeitungsbefehle wie das Einfügen von Zeilenumbrüchen oder Überschriften lassen sich durch Eingabe von `/` aufrufen."
+    "slash_commands_description": "Bearbeitungsbefehle wie das Einfügen von Zeilenumbrüchen oder Überschriften lassen sich durch Eingabe von `/` aufrufen.",
+    "content_hints_enabled": "Inhaltshinweise",
+    "content_hints_description": "Kurze Hinweise in der unteren Ecke des Editors anzeigen, die erklären, wie Sie mit dem Element unter der Einfügemarke oder dem Mauszeiger interagieren.",
+    "auto_link_previews_enabled": "Linkvorschauen automatisch erstellen",
+    "auto_link_previews_description": "Erstellt automatisch aus einem erkannten Link eine Vorschau mit Titel, Beschreibung und Bild der Webseite. Das Einfügen einer Vorschau über die Symbolleiste funktioniert unabhängig von dieser Einstellung immer."
   },
   "table_view": {
     "new-row": "Neue Zeile",
     "new-column": "Neue Spalte",
-    "sort-column-by": "Sortiere nach '{{title}}'",
+    "sort-column-by": "Nach „{{title}}“ sortieren",
     "sort-column-ascending": "Aufsteigend",
     "sort-column-descending": "Absteigend",
     "sort-column-clear": "Sortierung zurücksetzen",
-    "hide-column": "Spalte '{{title}}' ausblenden",
-    "show-hide-columns": "Zeige/verberge Spalten",
+    "hide-column": "Spalte „{{title}}“ ausblenden",
+    "show-hide-columns": "Spalten anzeigen/ausblenden",
     "row-insert-above": "Zeile oberhalb einfügen",
     "row-insert-below": "Zeile unterhalb einfügen",
     "row-insert-child": "Untergeordnete Notiz einfügen",
@@ -2102,35 +2160,35 @@
     "delete_column_confirmation": "Soll diese Spalte wirklich gelöscht werden? Das entsprechende Attribut wird aus allen Notizen entfernt.",
     "delete-column": "Spalte entfernen",
     "new-column-label": "Label",
-    "new-column-relation": "Beziehung"
+    "new-column-relation": "Relation"
   },
   "book_properties_config": {
     "hide-weekends": "Wochenenden ausblenden",
-    "display-week-numbers": "Zeige Kalenderwoche",
+    "display-week-numbers": "Kalenderwoche anzeigen",
     "map-style": "Kartenstil",
     "max-nesting-depth": "Maximale Verschachtelungstiefe:",
     "raster": "Raster",
     "vector_light": "Vektor (Hell)",
     "vector_dark": "Vektor (Dunkel)",
-    "show-scale": "Zeige Skalierung",
-    "show-labels": "Zeige Markierungsnamen"
+    "show-scale": "Skalierung anzeigen",
+    "show-labels": "Markierungsnamen anzeigen"
   },
   "table_context_menu": {
     "delete_row": "Zeile entfernen"
   },
   "board_view": {
-    "delete-note": "Lösche Notiz...",
-    "move-to": "Verschiebe zu",
+    "delete-note": "Notiz löschen...",
+    "move-to": "Verschieben zu",
     "insert-above": "Oberhalb einfügen",
     "insert-below": "Unterhalb einfügen",
     "delete-column": "Spalte entfernen",
     "delete-column-confirmation": "Soll die Spalte wirklich gelöscht werden? Abhängige Attribute werden auch in den Notizen unter dieser Spalte gelöscht.",
-    "new-item": "Neuer Artikel",
+    "new-item": "Neues Element",
     "add-column": "Spalte hinzufügen",
-    "remove-from-board": "Entferne von Tafel",
-    "archive-note": "archiviere Notiz",
-    "unarchive-note": "entarchiviere Notiz",
-    "new-item-placeholder": "Notiz Titel eingeben...",
+    "remove-from-board": "Von Tafel entfernen",
+    "archive-note": "Notiz archivieren",
+    "unarchive-note": "Notiz entarchivieren",
+    "new-item-placeholder": "Notiztitel eingeben...",
     "add-column-placeholder": "Spaltenname eingeben...",
     "edit-note-title": "Zum Bearbeiten des Notiztitels klicken",
     "edit-column-title": "Zum Bearbeiten des Spaltentitels klicken",
@@ -2139,15 +2197,15 @@
   "command_palette": {
     "tree-action-name": "Struktur: {{name}}",
     "export_note_title": "Notiz exportieren",
-    "export_note_description": "aktuelle Notiz exportieren",
-    "show_attachments_title": "Zeige Anhänge",
+    "export_note_description": "Aktuelle Notiz exportieren",
+    "show_attachments_title": "Anhänge anzeigen",
     "show_attachments_description": "Notizanhänge anzeigen",
-    "search_notes_title": "Suche Notiz",
+    "search_notes_title": "Notizen durchsuchen",
     "search_notes_description": "Erweiterte Suche öffnen",
     "search_subtree_title": "Im Zweig suchen",
     "search_subtree_description": "Im aktuellen Zweig suchen",
-    "search_history_title": "Zeige Suchhistorie",
-    "search_history_description": "Zeige vorherige Suchen",
+    "search_history_title": "Suchhistorie anzeigen",
+    "search_history_description": "Vorherige Suchen anzeigen",
     "configure_launch_bar_title": "Startleiste anpassen",
     "configure_launch_bar_description": "Öffnen Sie die Einstellungen der Startleiste, um Elemente hinzuzufügen oder zu entfernen.",
     "pin_tab_title": "Tab anheften",
@@ -2160,16 +2218,16 @@
     "mermaid_diagram_error": "Mermaid-Diagramm konnte nicht gerendert werden: {{error}}"
   },
   "call_to_action": {
-    "next_theme_title": "Teste das neue Trilium Design",
+    "next_theme_title": "Das neue Trilium-Design ausprobieren",
     "next_theme_message": "Es wird aktuell das alte Design verwendet. Möchten Sie das neue Design ausprobieren?",
-    "next_theme_button": "Teste das neue Design",
+    "next_theme_button": "Das neue Design ausprobieren",
     "background_effects_title": "Hintergrundeffekte sind jetzt zuverlässig nutzbar",
     "background_effects_message": "Auf Windows- und macOS-Geräten sind die Hintergrundeffekte nun stabil. Die Hintergrundeffekte verleihen der Benutzeroberfläche einen Farbakzent, indem der Hintergrund dahinter weichgezeichnet wird.",
-    "background_effects_button": "Aktiviere Hintergrundeffekte",
+    "background_effects_button": "Hintergrundeffekte aktivieren",
     "dismiss": "Ablehnen",
     "new_layout_title": "Neues Layout",
-    "new_layout_message": "Wir haben ein modernisiertes Layout für Trilium eingeführt. Die Multifunktionsleiste wurde entfernt und als neue Statusanzeige und ausklappbaren Sektionen (wie hervorgehobenen Attributen), welche Schlüsselfunktionen übernehmen, nahtlos in das Hauptinterface integriert.\n\nDas neue Layout ist standardmäßig aktiviert und kann temporär in Optionen → Anzeige deaktiviert werden.",
-    "new_layout_button": "Mehr Informationen",
+    "new_layout_message": "Wir haben ein modernisiertes Layout für Trilium eingeführt. Die Multifunktionsleiste wurde entfernt und nahtlos in die Hauptoberfläche integriert – eine neue Statusleiste und ausklappbare Bereiche (wie hervorgehobene Attribute) übernehmen nun die wichtigsten Funktionen.\n\nDas neue Layout ist standardmäßig aktiviert und kann temporär über Optionen → Anzeige deaktiviert werden.",
+    "new_layout_button": "Weitere Informationen",
     "scripting_disabled_title": "Backend-Skripting wurde deaktiviert",
     "scripting_disabled_button": "Sicherheitseinstellungen öffnen",
     "scripting_disabled_message": "Backend-Skripting ist aus Sicherheitsgründen jetzt standardmäßig deaktiviert. Ihre Notizen enthalten Backend-Skripte (Notizen mit dem Label #run), die nicht mehr automatisch ausgeführt werden.\n\nWenn Sie auf diese Skripte angewiesen sind, können Sie Backend-Skripting in den Sicherheitseinstellungen wieder aktivieren."
@@ -2209,7 +2267,14 @@
     "edit-note": "Notiz bearbeiten"
   },
   "calendar_view": {
-    "delete_note": "Notiz löschen..."
+    "delete_note": "Notiz löschen...",
+    "time_slots": "Zeitfenster",
+    "slot_duration": "Dauer",
+    "slot_label_interval": "Beschriftungsintervall",
+    "minutes_one": "{{count}} Minute",
+    "minutes_other": "{{count}} Minuten",
+    "hours_one": "{{count}} Stunde",
+    "hours_other": "{{count}} Stunden"
   },
   "note-color": {
     "clear-color": "Notizfarbe entfernen",
@@ -2217,29 +2282,29 @@
     "set-custom-color": "Eigene Notizfarbe wählen"
   },
   "popup-editor": {
-    "maximize": "Wechsele zum vollständigen Editor"
+    "maximize": "Zum vollständigen Editor wechseln"
   },
   "experimental_features": {
     "title": "Experimentelle Optionen",
-    "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Achtsam zu verwenden.",
+    "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Mit Vorsicht verwenden.",
     "new_layout_name": "Neues Layout",
-    "new_layout_description": "Probiere das neue Layout für eine modernere Darstellung und verbesserte Benutzbarkeit aus. Kann sich in Zukunft stark ändern.",
+    "new_layout_description": "Das neue Layout für eine modernere Darstellung und verbesserte Benutzbarkeit ausprobieren. Kann sich in Zukunft stark ändern.",
     "llm_name": "KI- / LLM-Chat",
     "llm_description": "Aktiviert die KI-Chat Seitenleiste sowie LLM-Chat Notizen die von einem Sprachmodell betrieben werden."
   },
   "server": {
     "unknown_http_error_title": "Kommunikationsfehler mit dem Server",
     "unknown_http_error_content": "Statuscode: {{statusCode}}\nURL: {{method}} {{url}}\nNachricht: {{message}}",
-    "traefik_blocks_requests": "Der Traefik Reverse-Proxy hat eine Änderung erfahren, welches die Kommunikation mit dem Server beeinflusst."
+    "traefik_blocks_requests": "Falls Sie den Traefik-Reverse-Proxy verwenden: Dieser hat eine grundlegende Änderung eingeführt, die die Kommunikation mit dem Server beeinträchtigt."
   },
   "tab_history_navigation_buttons": {
-    "go-back": "Zur vorherigen Notiz zurück kehren",
-    "go-forward": "Zur nächsten Notiz"
+    "go-back": "Zur vorherigen Notiz zurückkehren",
+    "go-forward": "Zur nächsten Notiz weitergehen"
   },
   "breadcrumb": {
-    "hoisted_badge": "Gehoben",
-    "hoisted_badge_title": "Abgesenkt",
-    "workspace_badge": "Arbeitsfläche",
+    "hoisted_badge": "Fokussiert",
+    "hoisted_badge_title": "Fokus verlassen",
+    "workspace_badge": "Arbeitsbereich",
     "scroll_to_top_title": "Zum Anfang der Notiz springen",
     "create_new_note": "Neue untergeordnete Notiz erstellen",
     "empty_hide_archived_notes": "Archivierte Notizen ausblenden"
@@ -2256,7 +2321,7 @@
     "shared_copy_to_clipboard": "Link in die Zwischenablage kopieren",
     "shared_open_in_browser": "Link im Browser öffnen",
     "shared_unshare": "Freigabe aufheben",
-    "clipped_note": "Internetschnellverweis",
+    "clipped_note": "Web-Clip",
     "clipped_note_description": "Diese Notiz wurde von {{url}} übernommen.\n\nKlicken Sie hier, um zur Quelle zu navigieren.",
     "execute_script": "Skript ausführen",
     "execute_script_description": "Diese Notiz ist eine Skriptnotiz. Klicken Sie hier, um das Skript auszuführen.",
@@ -2268,13 +2333,13 @@
     "save_status_error": "Speichern fehlgeschlagen",
     "save_status_saving_tooltip": "Änderungen werden gespeichert.",
     "save_status_unsaved_tooltip": "Es gibt ungespeicherte Änderungen, welche gleich automatisch gespeichert werden.",
-    "save_status_error_tooltip": "Beim speichern der Notiz ist ein Fehler aufgetreten. Wenn möglich, versuche die Notiz woandershin zu kopieren und die Anwendung neu zu laden.",
+    "save_status_error_tooltip": "Beim Speichern der Notiz ist ein Fehler aufgetreten. Versuchen Sie nach Möglichkeit, den Notizinhalt an anderer Stelle zu kopieren und die Anwendung neu zu laden.",
     "doc_url": "Online-Dokumentation",
     "doc_url_description": "Klicken Sie, um diese Seite auf der Online-Dokumentationswebsite anzuzeigen."
   },
   "status_bar": {
     "language_title": "Inhaltssprache ändern",
-    "note_info_title": "Notizinfo anzeigen (z.B.: Datum, Notizgröße)",
+    "note_info_title": "Notizinfo anzeigen (z. B. Datum, Notizgröße)",
     "backlinks_one": "{{count}} Rücklink",
     "backlinks_other": "{{count}} Rücklinks",
     "backlinks_title_one": "Rücklink anzeigen",
@@ -2311,7 +2376,11 @@
     "empty_message": "Für diese Notiz gibt es nichts anzuzeigen",
     "empty_button": "Leiste ausblenden",
     "toggle": "Rechte Leiste umschalten",
-    "custom_widget_go_to_source": "Zum Quellcode"
+    "custom_widget_go_to_source": "Zum Quellcode",
+    "peek": "Rechten Bereich einblenden",
+    "hide": "Rechten Bereich ausblenden",
+    "dock": "Bereich andocken",
+    "close": "Bereich schließen"
   },
   "pdf": {
     "attachments_one": "{{count}} Anhang",
@@ -2351,7 +2420,10 @@
     "setup_title": "Benutzerdefiniertes HTML oder Preact JSX in dieser Notiz anzeigen",
     "setup_sample_created": "Eine Beispielnotiz wurde als untergeordnete Notiz erstellt.",
     "disabled_description": "Diese Rendering-Notizen stammen aus einer externen Quelle. Um Sie vor schädlichen Inhalten zu schützen, ist diese Funktion standardmäßig deaktiviert. Stellen Sie sicher, dass Sie der Quelle vertrauen, bevor Sie sie aktivieren.",
-    "disabled_button_enable": "Rendering-Notiz aktivieren"
+    "disabled_button_enable": "Rendering-Notiz aktivieren",
+    "error_title": "Die Skriptnotiz konnte nicht ausgeführt werden",
+    "error_show_details": "Details anzeigen",
+    "error_note_label": "Skriptnotiz:"
   },
   "active_content_badges": {
     "type_icon_pack": "Icon-Paket",
@@ -2361,7 +2433,7 @@
     "type_app_css": "Benutzerdefiniertes CSS",
     "type_render_note": "Rendering-Notiz",
     "type_web_view": "Webansicht",
-    "type_app_theme": "Benutzerdefiniertes Thema",
+    "type_app_theme": "Benutzerdefiniertes Design",
     "toggle_tooltip_enable_tooltip": "Klicken, um diesen {{type}} zu aktivieren.",
     "toggle_tooltip_disable_tooltip": "Klicken, um diesen {{type}} zu deaktivieren.",
     "menu_docs": "Dokumentation öffnen",
@@ -2375,23 +2447,23 @@
     "menu_run_mobile_startup": "Wenn das mobile Frontend startet",
     "menu_change_to_widget": "Zum Widget wechseln",
     "menu_change_to_frontend_script": "Zum Frontend-Skript wechseln",
-    "menu_theme_base": "Themenbasis",
+    "menu_theme_base": "Designbasis",
     "type_custom_request_handler": "Benutzerdefinierter Anfrage-Handler"
   },
   "setup_form": {
     "more_info": "Mehr erfahren"
   },
   "media": {
-    "play": "Abspielen (Arbeitsbereich)",
-    "pause": "Pausieren (Arbeitsbereich)",
-    "back-10s": "10 s zurück (Linke Pfeiltaste)",
-    "mute": "Stumm (M)",
-    "unmute": "Stummschaltung aufheben (M)",
+    "play": "Wiedergabe",
+    "pause": "Pausieren",
+    "back-10s": "10 s zurück",
+    "mute": "Stummschalten",
+    "unmute": "Stummschaltung aufheben",
     "playback-speed": "Wiedergabegeschwindigkeit",
     "rotate": "Rotieren",
     "picture-in-picture": "Bild-in-Bild",
     "exit-picture-in-picture": "Bild-in-Bild verlassen",
-    "fullscreen": "Vollbild (F)",
+    "fullscreen": "Vollbild",
     "exit-fullscreen": "Vollbild verlassen",
     "unsupported-format": "Medienvorschau ist für dieses Format nicht verfügbar:\n{{mime}}",
     "zoom-to-fit": "Zoomen um auszufüllen",
@@ -2400,43 +2472,59 @@
     "next-video": "Nächstes Video: {{- title}}",
     "previous-audio": "Vorherige Audiodatei: {{- title}}",
     "next-audio": "Nächste Audiodatei: {{- title}}",
-    "seek": "Springen (Pfeil links/rechts)",
+    "seek": "Springen",
     "play-mode-title": "Wiedergabemodus: {{mode}}",
     "play-mode-once": "Einmal abspielen",
     "play-mode-loop": "Wiederholen",
-    "play-mode-next": "Nächstes abspielen"
+    "play-mode-next": "Nächstes abspielen",
+    "activate": "{{- title}} wiedergeben",
+    "forward-10s": "10 s vorwärts",
+    "hints": {
+      "playback": "Wiedergabe",
+      "play_pause": "Wiedergabe/Pause",
+      "back_10s": "10 s zurück",
+      "forward_10s": "10 s vorwärts",
+      "jump_start": "Zum Anfang springen",
+      "jump_end": "Zum Ende springen",
+      "mute": "Stummschalten",
+      "fullscreen": "Vollbild",
+      "navigation": "Navigation",
+      "previous": "Zurück",
+      "next": "Weiter"
+    }
   },
   "mermaid": {
-    "placeholder": "Geben den Inhalt des Mermaid-Diagramms ein oder verwenden eine der folgenden Beispieldiagramme.",
+    "placeholder": "Geben Sie den Inhalt des Mermaid-Diagramms ein oder verwenden Sie eines der folgenden Beispieldiagramme.",
     "sample_diagrams": "Beispieldiagramme:",
     "sample_flowchart": "Flussdiagramm",
     "sample_class": "Klasse",
     "sample_sequence": "Abfolge",
-    "sample_entity_relationship": "Entität Beziehung",
-    "sample_state": "Zustandsübergangsdiagramm",
+    "sample_entity_relationship": "Entität-Beziehung",
+    "sample_state": "Zustandsdiagramm",
     "sample_mindmap": "Mindmap",
     "sample_architecture": "Architektur",
     "sample_block": "Block",
     "sample_c4": "C4",
     "sample_gantt": "Gantt",
-    "sample_git": "GitGraph",
+    "sample_git": "Git",
     "sample_kanban": "Kanban",
     "sample_packet": "Paket",
-    "sample_pie": "Kuchen",
+    "sample_pie": "Kreisdiagramm",
     "sample_quadrant": "Quadrant",
     "sample_radar": "Radar",
     "sample_requirement": "Anforderung",
     "sample_sankey": "Sankey",
     "sample_timeline": "Zeitstrahl",
-    "sample_treemap": "Kachel",
-    "sample_user_journey": "Benutzererfahrung",
+    "sample_treemap": "Treemap",
+    "sample_user_journey": "User Journey",
     "sample_xy": "XY",
-    "sample_venn": "Mengen",
+    "sample_venn": "Venn",
     "sample_ishikawa": "Ursache-Wirkung",
     "sample_treeview": "Baumansicht",
     "sample_wardley": "Wardley-Map",
-    "slash_command_blank_description": "Leeres Mermaid-Diagramm einfügen",
-    "slash_command_description": "Mermaid-Diagrammvorlage \"{{name}}\" einfügen"
+    "sample_cynefin": "Cynefin",
+    "sample_swimlane": "Swimlane",
+    "sample_railroad": "Railroad"
   },
   "database": {
     "title": "Datenbank"
@@ -2453,7 +2541,7 @@
     "related_task_states": "Benutzerdefinierte Kontrollkästchen-Zustände für Aufgabenlisten"
   },
   "llm_chat": {
-    "placeholder": "Schreibe eine Nachricht...",
+    "placeholder": "Schreiben Sie eine Nachricht...",
     "send": "Senden",
     "sending": "Sende...",
     "empty_state": "Starten Sie eine Unterhaltung, indem Sie unten eine Nachricht schreiben.",
@@ -2461,7 +2549,6 @@
     "web_search": "Websuche",
     "note_tools": "Notizzugriff",
     "sources": "Quellen",
-    "legacy_models": "Veraltete Modelle",
     "thinking": "Denke...",
     "thought_process": "Denkprozess",
     "result": "Ergebnis",
@@ -2469,8 +2556,7 @@
     "tool_error": "Fehlgeschlagen",
     "total_tokens": "{{total}} Token",
     "tokens": "Token",
-    "context_used": "{{percentage}}% verwendet",
-    "no_provider_message": "Kein KI-Anbieter konfiguriert. Fügen einen hinzu, um zu chatten.",
+    "no_provider_message": "Kein KI-Anbieter konfiguriert. Fügen Sie einen hinzu, um zu chatten.",
     "add_provider": "KI-Anbieter hinzufügen",
     "stop": "Stopp",
     "sources_summary": "{{count}} Quellen von {{sites}} Websites",
@@ -2490,8 +2576,32 @@
     "input_streaming": "Eingabe (wird gestreamt…)",
     "attach_file": "Bild, PDF oder Textdatei anhängen",
     "remove_attachment": "Anhang entfernen",
-    "attachment_upload_failed": "\"{{name}}\" konnte nicht hochgeladen werden.",
-    "attachment_unsupported_type": "\"{{name}}\" ist kein unterstützter Anhangstyp. Bitte ein Bild (PNG, JPEG, GIF, WebP), eine PDF oder eine Text-/Quelldatei verwenden."
+    "attachment_upload_failed": "„{{name}}“ konnte nicht hochgeladen werden.",
+    "attachment_unsupported_type": "„{{name}}“ ist kein unterstützter Anhangstyp. Bitte ein Bild (PNG, JPEG, GIF, WebP), eine PDF oder eine Text-/Quelldatei verwenden.",
+    "scroll_to_bottom": "Zum neuesten Eintrag scrollen",
+    "read_only_notice": "Antworten ist nicht verfügbar, da dieser KI-Chat schreibgeschützt ist.",
+    "toc_file": "Datei: {{name}}",
+    "highlights_title": "Markierungen ({{count}})",
+    "highlights_empty": "Noch keine Markierungen. Wählen Sie Text in einer Nachricht aus und wählen Sie „Markieren“.",
+    "copy": "Kopieren",
+    "highlight_add": "Markieren",
+    "highlight_remove": "Markierung entfernen",
+    "highlight_remove_confirm": "Diese Markierung entfernen?",
+    "quote_selection": "Auswahl zitieren",
+    "quoted_from": "Zitiert aus",
+    "show_quote_source": "Zitatquelle anzeigen",
+    "copy_message": "Nachricht kopieren",
+    "save_to_subnote": "In Unternotiz speichern",
+    "save_as_note": "Als Notiz speichern",
+    "save_note_failed": "Notiz aus der Nachricht konnte nicht erstellt werden.",
+    "regenerate": "Neu generieren",
+    "delete_message": "Nachricht löschen",
+    "delete_message_confirm": "Diese Nachricht löschen? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+    "model_cost_included": "Abonnement",
+    "no_models_selected": "Keine Modelle ausgewählt – klicken Sie zum Auswählen auf den Stift",
+    "no_model_selected": "Modell auswählen",
+    "edit_models": "Modelle bearbeiten",
+    "free": "Kostenlos"
   },
   "sidebar_chat": {
     "title": "KI-Chat",
@@ -2502,7 +2612,14 @@
     "history": "Chathistorie",
     "recent_chats": "Kürzliche Chats",
     "no_chats": "Keine vorherigen Chats",
-    "view_all_chats": "Alle Chats anzeigen"
+    "view_all_chats": "Alle Chats anzeigen",
+    "more_actions": "Weitere Aktionen",
+    "rename": "Umbenennen",
+    "rename_title": "Chat umbenennen",
+    "rename_message": "Geben Sie einen neuen Namen für diesen Chat ein:",
+    "delete": "Löschen",
+    "delete_chat": "Chat löschen",
+    "delete_confirm": "Diesen Chat löschen? Dies kann nicht rückgängig gemacht werden."
   },
   "llm": {
     "tools": {
@@ -2513,7 +2630,7 @@
       "web_search": "Websuche",
       "create_note": "Notiz erstellen",
       "append_to_note": "An Notiz anhängen",
-      "get_note": "Notiz beziehen",
+      "get_note": "Notiz abrufen",
       "search_notes": "Notizen durchsuchen",
       "get_note_content": "Notizinhalt abrufen",
       "update_note_content": "Notiz neu schreiben",
@@ -2529,37 +2646,77 @@
       "get_attachment_content": "Anhangsinhalt lesen",
       "set_note_content": "Notizinhalt ersetzen",
       "edit_note_content": "Notiz bearbeiten",
-      "search_icons": "Symbole suchen"
+      "search_icons": "Symbole suchen",
+      "search_help": "Benutzerhandbuch durchsuchen",
+      "get_help_toc": "Inhalte des Benutzerhandbuchs abrufen"
     },
-    "cancel": "Abbrechen",
-    "api_key": "API Schlüssel",
+    "api_key": "API-Schlüssel",
     "delete_provider": "Löschen",
     "actions": "Aktionen",
-    "provider_type": "Anbieter",
     "provider_name": "Name",
     "add_provider": "Anbieter hinzufügen",
     "add_provider_title": "KI-Anbieter hinzufügen",
     "feature_not_enabled": "Aktivieren Sie die experimentelle LLM-Funktion unter Einstellungen → Erweitert → Experimentelle Funktionen, um KI-Integrationen zu verwenden.",
     "configured_providers": "Konfigurierte Anbieter",
     "no_providers_configured": "Noch keine Anbieter konfiguriert.",
-    "delete_provider_confirmation": "Möchten Sie den Anbieter „{{name}}\" wirklich löschen?",
+    "delete_provider_confirmation": "Möchten Sie den Anbieter „{{name}}“ wirklich löschen?",
     "api_key_placeholder": "Geben Sie Ihren API-Schlüssel ein",
     "mcp_title": "MCP (Model Context Protocol)",
     "mcp_enabled": "MCP-Server",
-    "mcp_enabled_description": "Einen Model-Context-Protocol-(MCP)-Endpunkt bereitstellen, sodass KI-Coding-Assistenten (z. B. Claude Code, GitHub Copilot) Ihre Notizen lesen und ändern können. Der Endpunkt ist nur über localhost erreichbar.",
+    "mcp_enabled_description": "Stellen Sie einen Model-Context-Protocol-(MCP)-Endpunkt bereit, damit KI-Coding-Assistenten (z. B. Claude Code, GitHub Copilot) Ihre Notizen lesen und ändern können. Jede Anfrage muss mit einem ETAPI-Token authentifiziert werden.",
     "mcp_endpoint_title": "Endpunkt-URL",
-    "mcp_endpoint_description": "Fügen Sie diese URL zur MCP-Konfiguration Ihres KI-Assistenten hinzu",
+    "mcp_endpoint_description": "Fügen Sie eine dieser URLs zur MCP-Konfiguration Ihres KI-Assistenten hinzu und verwenden Sie HTTP-Streaming statt SSE.",
     "base_url": "Basis-URL",
-    "base_url_description": "Optional. Überschreibt den Standard-API-Endpunkt – nützlich für selbst gehostete Modelle (Ollama, LM Studio, vLLM) oder Proxys.",
+    "base_url_description": "Optional. Greift über einen Proxy oder ein Gateway auf dieselbe API zu. Um ein Modell selbst auszuführen, fügen Sie stattdessen einen Ollama- oder LM-Studio-Anbieter hinzu.",
     "base_url_invalid": "Die Basis-URL muss eine gültige http://- oder https://-URL sein",
     "disabled_placeholder": "KI-Funktionen sind deaktiviert. Aktivieren Sie sie, um Anbieter und MCP zu konfigurieren.",
-    "not_available_in_standalone": "KI/LLM-Funktionen sind in der Standalone-Version von Trilium nicht verfügbar, da LLM-Anbieter keinen direkten Zugriff aus einem Browser erlauben."
+    "edit_provider_title": "{{- name}} bearbeiten",
+    "edit_provider": "Bearbeiten",
+    "save": "Speichern",
+    "select_models": "Modelle auswählen",
+    "models_loading": "Modelle werden geladen …",
+    "models_load_failed": "Modelle konnten nicht geladen werden: {{error}}",
+    "models_none_available": "Dieser Anbieter hat keine Modelle zurückgegeben.",
+    "models_selected_count": "{{count}} von {{total}} ausgewählt",
+    "model_cost_per_mtok": "${{input}} / ${{output}} pro Mtok",
+    "models_select_all": "Alle auswählen",
+    "models_select_none": "Keine auswählen",
+    "models_reset_defaults": "Auf Standardwerte zurücksetzen",
+    "provider_model_count_one": "{{count}} Modell",
+    "provider_model_count_other": "{{count}} Modelle",
+    "beta": "Beta",
+    "provider_desc_claude_agent": "Erfordert Claude Code auf dem Computer, auf dem Trilium ausgeführt wird.",
+    "claude_agent_description": "Verwendet Ihr Claude-Pro-/Max-Abonnement über Claude Code, daher ist kein API-Schlüssel erforderlich. Claude Code muss auf dem Computer installiert sein, auf dem Trilium ausgeführt wird (beim Self-Hosting der Server, bei der Desktop-App dieser Computer). Melden Sie sich dort einmalig mit „claude /login“ an.",
+    "add_provider_title_named": "{{- name}} hinzufügen",
+    "provider_group_cloud": "Cloud-Anbieter",
+    "provider_group_cloud_description": "Zahlung nach Nutzung mit einem API-Schlüssel, getrennt von einem bereits vorhandenen Abonnement abgerechnet. Ihre Notizen werden an die Server des Anbieters übertragen.",
+    "provider_group_subscription": "Abonnement",
+    "provider_group_subscription_description": "Verwendet ein Abonnement, für das Sie bereits zahlen, ohne zusätzliche Kosten. Ihre Notizen werden an die Server des Anbieters übertragen.",
+    "provider_group_local": "Lokal / selbst gehostet",
+    "provider_group_local_description": "Kein API-Schlüssel, keine Nutzungskosten. Ihre Notizen erreichen nur den Computer, auf dem das Modell ausgeführt wird.",
+    "provider_group_custom": "Benutzerdefinierter Endpunkt",
+    "provider_group_custom_description": "Jede OpenAI-kompatible API, lokal oder gehostet (OpenRouter, Groq, Mistral). Kosten und Datenschutz hängen vom gewählten Endpunkt ab.",
+    "provider_openai_compatible": "OpenAI-kompatibel",
+    "provider_desc_openai_compatible": "Konfigurieren Sie Trilium für einen beliebigen Endpunkt, der die OpenAI-API unterstützt.",
+    "api_key_optional_description": "Optional. Nur erforderlich, wenn sich Ihr Endpunkt hinter einem authentifizierenden Proxy oder Gateway befindet.",
+    "setup_hint_ollama": "Ollama muss unter dieser Adresse ausgeführt werden – starten Sie es bei Bedarf mit <Code>ollama serve</Code>.",
+    "setup_hint_lmstudio": "Starten Sie den Server in LM Studio auf der Registerkarte „Developer“ und prüfen Sie dann, ob der dort angezeigte Port mit dieser Adresse übereinstimmt.",
+    "setup_hint_openai_compatible": "Die Basis-URL der OpenAI-kompatiblen API, die üblicherweise mit <Code>/v1</Code> endet.",
+    "troubleshoot_server_running": "Wird der Server auf dem erwarteten Computer ausgeführt?",
+    "troubleshoot_port": "Stimmt der Port in der URL mit dem vom Server angegebenen Port überein?",
+    "troubleshoot_remote": "Falls der Server auf einem anderen Computer läuft: Ist er so konfiguriert, dass er Netzwerkverbindungen und nicht nur localhost akzeptiert?",
+    "mcp_endpoint_this_device": "Dieses Gerät",
+    "mcp_endpoint_network": "Von anderen Geräten in Ihrem Netzwerk",
+    "mcp_endpoint_loopback_only": "Trilium lauscht nur auf localhost, daher kann der Endpunkt nicht von anderen Geräten erreicht werden.",
+    "mcp_config_title": "Assistenten verbinden",
+    "mcp_config_description": "Erstellen Sie unter Optionen → ETAPI ein Token und fügen Sie anschließend Folgendes zur MCP-Konfiguration Ihres Assistenten hinzu. Ersetzen Sie dabei den Platzhalter durch Ihr Token:",
+    "mcp_config_token_placeholder": "your-etapi-token",
+    "mcp_config_cli_description": "Claude Code kann stattdessen über die Befehlszeile konfiguriert werden:",
+    "mcp_config_warning": "Ein Token gewährt vollständigen Lese- und Schreibzugriff auf alle Ihre Notizen. Behandeln Sie es daher wie ein Passwort. Bevorzugen Sie bei Verbindungen von einem anderen Gerät HTTPS – ein über unverschlüsseltes HTTP übertragenes Token kann abgefangen werden."
   },
   "mind-map": {
     "summary": "Zusammenfassung",
-    "link": "Link",
     "moveDown": "Nach unten",
-    "linkBidirectional": "Bidirektionaler Link",
     "moveUp": "Nach oben",
     "cancelFocus": "Fokusmodus beenden",
     "focus": "Fokusmodus",
@@ -2573,7 +2730,7 @@
     "view_extracted_text": "Extrahierten Text anzeigen (OCR)",
     "open_media_settings": "Einstellungen öffnen",
     "processing": "Verarbeite...",
-    "loading_text": "Lädt OCR Text...",
+    "loading_text": "Lädt OCR-Text...",
     "extracted_text_title": "Extrahierter Text (OCR)",
     "extracted_text": "Extrahierter Text (OCR)",
     "no_text_available": "Kein OCR-Text verfügbar",
@@ -2592,7 +2749,7 @@
     "delete_all_button": "Alle Revisionen löschen",
     "help_title": "Hilfe zu Revisionen",
     "confirm_delete_all": "Möchten Sie alle Revisionen dieser Notiz löschen?",
-    "no_revisions": "Noch keine Revisionen für diese Notiz vorhanden…",
+    "no_revisions": "Noch keine Revisionen für diese Notiz vorhanden...",
     "restore_button": "Wiederherstellen",
     "highlight_changes": "Änderungen hervorheben",
     "diff_on": "Unterschiede anzeigen",
@@ -2609,18 +2766,18 @@
     "snapshot_interval": "Speicherintervall für Revisionsverlauf: {{seconds}} Sek.",
     "maximum_revisions": "Maximale Anzahl gespeicherter Revisionen: {{number}}.",
     "save_revision_now": "Eine Revision jetzt speichern",
-    "save_named_revision": "Eine benannte Revision speichern...",
-    "snapshot_header": "Notizrevision Schnappschuss",
+    "save_named_revision": "Benannte Revision speichern...",
+    "snapshot_header": "Notizrevisions-Schnappschuss",
     "snapshot_interval_value": "Speicherintervall: {{seconds}}s",
     "snapshot_limit_value": "Grenze: {{number}}",
     "settings": "Notizrevisionen-Einstellungen",
-    "menu_tooltip": "Revisionoptionen",
+    "menu_tooltip": "Revisionsoptionen",
     "download_button": "Herunterladen",
     "mime": "MIME: ",
     "file_size": "Dateigröße:",
     "preview_not_available": "Keine Vorschau für diesen Notiztyp verfügbar.",
     "save_revision": "Revision speichern",
-    "save_revision_tooltip": "Einen Schnappschus dieser Notiz speichern",
+    "save_revision_tooltip": "Manuell einen Schnappschuss dieser Notiz speichern",
     "description_placeholder": "Diese Revision benennen",
     "revision_saved": "Notizrevision wurde gespeichert.",
     "edit_description": "Name bearbeiten",
@@ -2645,7 +2802,7 @@
     "back": "Zurück"
   },
   "markdown_editor": {
-    "image_upload_failed": "Bild \"{{name}}\" kann nicht hochgeladen werden."
+    "image_upload_failed": "Bild „{{name}}“ kann nicht hochgeladen werden."
   },
   "markdown_slash_commands": {
     "date": "Aktuelles Datum und aktuelle Uhrzeit einfügen",
@@ -2656,18 +2813,18 @@
     "footnote": "Fußnote einfügen",
     "mermaid": "Mermaid-Diagramm einfügen",
     "admonition": "{{type}}-Hinweisblock einfügen",
-    "mermaid_template": "Ein Mermaid-Diagramm \"{{name}}\" einfügen",
+    "mermaid_template": "Ein Mermaid-Diagramm „{{name}}“ einfügen",
     "collapsible": "Einklappbaren Block einfügen",
-    "todo": "Ein Aufgabenelement \"{{title}}\" einfügen",
-    "todo_nonstandard": "Ein Aufgabenelement \"{{title}}\" einfügen (nicht standardkonform)",
+    "todo": "Ein Aufgabenelement „{{title}}“ einfügen",
+    "todo_nonstandard": "Ein Aufgabenelement „{{title}}“ einfügen (nicht standardkonform)",
     "placeholders": {
       "math": "Gleichung",
       "collapsible_summary": "Zusammenfassung",
-      "collapsible_details": "Details"
-    }
-  },
-  "auto_link_attribute_list": {
-    "title": "Systemattribute"
+      "collapsible_details": "Details",
+      "table_column": "Spalte {{number}}"
+    },
+    "page_break": "Seitenumbruch einfügen (zum Drucken)",
+    "table": "Tabelle einfügen"
   },
   "revisions_snapshot": {
     "title": "Revisionsverlauf"
@@ -2693,11 +2850,13 @@
     "more_actions": "Weitere Aktionen"
   },
   "launcher_button_context_menu": {
-    "remove_from_launch_bar": "Aus der Startleiste entfernen"
+    "remove_from_launch_bar": "Aus der Startleiste entfernen",
+    "configure_launch_bar": "Startleiste konfigurieren",
+    "launch_bar_orientation": "Ausrichtung der Startleiste",
+    "will_reload_frontend": "(App wird neu geladen)"
   },
   "link": {
-    "failed_to_open": "Link '{{- href}}' konnte nicht geöffnet werden: {{- message}}",
-    "copy_url": "URL kopieren"
+    "failed_to_open": "Link '{{- href}}' konnte nicht geöffnet werden: {{- message}}"
   },
   "display_mode": {
     "source": "Quellansicht",
@@ -2762,11 +2921,11 @@
     "sync-from-desktop-step2": "Klicken Sie im Trilium-Menü auf Optionen.",
     "sync-from-desktop-step3": "Klicken Sie im Notizbaum auf die Kategorie „Synchronisierung“.",
     "sync-from-desktop-step4": "Ändern Sie die Serverinstanz-Adresse so, dass sie auf eine der rechts angezeigten Adressen verweist, und klicken Sie auf Speichern.",
-    "sync-from-desktop-step5": "Klicken Sie auf die Schaltfläche \"Synchronisierung testen\", um zu prüfen, ob die Verbindung erfolgreich ist.",
+    "sync-from-desktop-step5": "Klicken Sie auf die Schaltfläche „Synchronisierung testen“, um zu prüfen, ob die Verbindung erfolgreich ist.",
     "sync-from-desktop-warning": "Stellen Sie sicher, dass sich beide Geräte im selben Netzwerk befinden.",
     "sync-from-desktop-waiting": "Warten auf Verbindung...",
     "advanced-options": "Erweiterte Optionen",
-    "sync-failed": "Synchronisierung fehlgeschlagen: {{message}}",
+    "sync-failed": "Synchronisierung fehlgeschlagen: {{- message}}",
     "server-host": "Trilium-Serveradresse",
     "server-host-placeholder": "https://<hostname>:<port>",
     "server-password": "Passwort",
@@ -2788,13 +2947,14 @@
     "dismiss-error": "Fehler schließen",
     "sync-from-desktop-unreachable-title": "Dieses Gerät ist für andere Geräte nicht erreichbar",
     "sync-from-desktop-unreachable-description": "Zur Synchronisierung muss sich der andere Desktop über das Netzwerk mit diesem verbinden. Aus Sicherheitsgründen akzeptiert diese Desktop-App nur Verbindungen von diesem Computer, sodass der andere Desktop sie noch nicht erreichen kann. Erlauben Sie unten den Netzwerkzugriff — Trilium wird neu gestartet, um die Einstellung anzuwenden.",
-    "sync-from-desktop-allow-access": "Netzwerkzugriff erlauben und neu starten"
+    "sync-from-desktop-allow-access": "Netzwerkzugriff erlauben und neu starten",
+    "sync-failed-title": "Synchronisierung fehlgeschlagen",
+    "sync-failed-description": "Die erste Synchronisierung konnte nicht abgeschlossen werden. Sie können es erneut versuchen oder zurückgehen, um Serveradresse und Zugangsdaten zu prüfen.",
+    "sync-failed-admonition-title": "Der letzte Synchronisierungsversuch ist fehlgeschlagen",
+    "sync-failed-hint": "Mögliche Ursachen sind eine falsche Serveradresse, ein Proxy, der die Verbindung beeinträchtigt, oder ein vorübergehend nicht erreichbarer Server.",
+    "button-retry": "Erneut versuchen"
   },
   "text-editor": {
-    "checkbox-tooltip": "Rechtsklick für weitere Aufgabenzustände.\n{{shortcut}} drücken, um zwischen den Zuständen zu wechseln.",
-    "edit-states-tooltip": "Aufgabenzustände bearbeiten",
-    "unknown-task-state": "Unbekannter benutzerdefinierter Aufgabenzustand",
-    "task-state-dropped": "Benutzerdefinierte Aufgabenzustand-Definition \"{{title}}\" ({{id}}) wurde verworfen: {{reason}}",
     "validation-errors": {
       "undefined-name": "undefinierter Bezeichner",
       "invalid-name": "ungültiger Bezeichner",
@@ -2804,32 +2964,55 @@
       "invalid-symbol": "das Markdown-Symbol muss ein einzelnes Zeichen sein, ausgenommen \"[\", \" \", \"X\" und \"]\"",
       "duplicate-symbol": "doppeltes Markdown-Symbol"
     },
-    "collapsible-body-placeholder": "Inhalt hier eingeben...",
-    "collapsible-button-label": "Einklappbarer Block",
-    "collapsible-handle-tooltip": "Ziehen um den einklappbaren Block zu verschieben",
-    "collapsible-select-label": "Einklappbaren Block auswählen",
-    "collapsible-title-placeholder": "Zusammenfassung",
-    "collapsible-toggle-label": "Einklappbaren Block umschalten",
-    "collapsible-tooltip": "Auf den Pfeil klicken oder {{shortcut}} drücken um ein-/auszuklappen."
-  },
-  "slash_commands": {
-    "bulleted_list_description": "Aufzählungsliste erstellen",
-    "numbered_list_description": "Nummerierte Liste erstellen",
-    "todo_list_description": "Aufgabenliste erstellen",
-    "align_left_description": "Text linksbündig ausrichten",
-    "align_center_description": "Text zentrieren",
-    "align_right_description": "Text rechtsbündig ausrichten",
-    "justify_description": "Blocksatz",
-    "admonition_description": "Einen neuen Hinweisblock einfügen",
-    "collapsible_description": "Einen ein-/ausklappbaren Abschnitt einfügen der Inhalt per Klick verbirgt oder anzeigt.",
-    "footnote_description": "Eine neue Fußnote erstellen und hier referenzieren",
-    "datetime_description": "Aktuelles Datum und Uhrzeit einfügen",
-    "internal_link_description": "Link zu einer anderen Trilium-Notiz einfügen",
-    "math_description": "Mathematische Gleichung einfügen",
-    "include_note_description": "Inhalt einer anderen Notiz in dieser Notiz anzeigen",
-    "page_break_description": "Seitenumbruch einfügen (zum Drucken)",
-    "markdown_import_description": "Markdown-Datei in diese Notiz importieren",
-    "anchor_description": "Anker für interne Verlinkung einfügen"
+    "task-state-dropped-title": "Ungültige Aufgabenstatus",
+    "task-state-dropped-message_one": "Eine benutzerdefinierte Aufgabenstatusdefinition ist ungültig und wurde ignoriert.",
+    "task-state-dropped-message_other": "{{count}} benutzerdefinierte Aufgabenstatusdefinitionen sind ungültig und wurden ignoriert.",
+    "task-state-dropped-heading": "Ignorierte Definitionen:",
+    "task-state-dropped-configure": "Aufgabenstatus konfigurieren",
+    "ck": {
+      "align-text-to-the-center": "Text zentrieren",
+      "align-text-to-the-left": "Text linksbündig ausrichten",
+      "align-text-to-the-right": "Text rechtsbündig ausrichten",
+      "card": "Karte",
+      "click-on-the-arrow-or-press-0-to-collapse-expand": "Klicken Sie auf den Pfeil oder drücken Sie %0, um ein- oder auszuklappen.",
+      "collapsible-block": "Einklappbarer Block",
+      "copy-image-to-clipboard": "Bild in die Zwischenablage kopieren",
+      "copy-url": "URL kopieren",
+      "create-a-bulleted-list": "Aufzählungsliste erstellen",
+      "create-a-new-footnote-and-reference-it-here": "Eine neue Fußnote erstellen und hier referenzieren",
+      "create-a-numbered-list": "Nummerierte Liste erstellen",
+      "create-a-to-do-list": "Aufgabenliste erstellen",
+      "display": "Anzeige",
+      "display-the-content-of-another-note-in-this-note": "Inhalt einer anderen Notiz in dieser Notiz anzeigen",
+      "download-image": "Bild herunterladen",
+      "drag-to-reposition-the-collapsible-block": "Ziehen, um den einklappbaren Block zu verschieben",
+      "edit-task-states": "Aufgabenzustände bearbeiten",
+      "edit-title": "Titel bearbeiten",
+      "embed": "Einbetten",
+      "inline": "Inline",
+      "insert-a-0-mermaid-diagram-template": "Mermaid-Diagrammvorlage „%0“ einfügen",
+      "insert-a-link-to-another-trilium-note": "Link zu einer anderen Trilium-Notiz einfügen",
+      "insert-a-math-equation": "Mathematische Gleichung einfügen",
+      "insert-a-new-admonition": "Einen neuen Hinweisblock einfügen",
+      "insert-a-page-break-for-printing": "Seitenumbruch einfügen (zum Drucken)",
+      "insert-a-toggleable-section-that-hides-shows-content-on-click": "Einen ein-/ausklappbaren Abschnitt einfügen, der Inhalt per Klick verbirgt oder anzeigt.",
+      "insert-an-anchor-for-internal-linking": "Anker für interne Verlinkung einfügen",
+      "insert-an-empty-mermaid-diagram": "Leeres Mermaid-Diagramm einfügen",
+      "insert-the-current-date-and-time": "Aktuelles Datum und Uhrzeit einfügen",
+      "justify-text-alignment": "Blocksatz",
+      "link-preview": "Linkvorschau",
+      "missing-definition": "(fehlende Definition)",
+      "plain-link": "Einfacher Link",
+      "right-click-or-press-0-to-change-state": "Klicken Sie mit der rechten Maustaste oder drücken Sie %0, um den Status zu ändern.",
+      "select-collapsible-block": "Einklappbaren Block auswählen",
+      "summary": "Zusammenfassung",
+      "task-state": "Aufgabenstatus:",
+      "title": "Titel",
+      "toggle-collapsible-block": "Einklappbaren Block umschalten",
+      "type-the-content-here": "Inhalt hier eingeben...",
+      "undefined-custom-task-state": "Unbekannter benutzerdefinierter Aufgabenzustand",
+      "url": "URL"
+    }
   },
   "image_buttons": {
     "zoom_in": "Vergrößern",
@@ -2841,7 +3024,24 @@
     "next": "Nächstes Bild: {{- title}}"
   },
   "image_viewer": {
-    "loading_error": "Beim Laden des Bildes ist ein Fehler aufgetreten."
+    "loading_error": "Beim Laden des Bildes ist ein Fehler aufgetreten.",
+    "hints": {
+      "zoom": "Zoom",
+      "zoom_in": "Vergrößern",
+      "zoom_out": "Verkleinern",
+      "reset_zoom": "Zoom zurücksetzen",
+      "pan": "Verschieben",
+      "pan_up": "Nach oben",
+      "pan_down": "Nach unten",
+      "pan_left": "Nach links",
+      "pan_right": "Nach rechts",
+      "pan_fast": "Schneller verschieben",
+      "navigation": "Navigation",
+      "next_image": "Nächstes Bild",
+      "previous_image": "Vorheriges Bild",
+      "first_image": "Erstes Bild",
+      "last_image": "Letztes Bild"
+    }
   },
   "security": {
     "backend_scripting_title": "Backend-Skripting",
@@ -2858,9 +3058,9 @@
     "restart_required": "Ein Neustart ist erforderlich.",
     "restart_now": "Anwendung jetzt neu starten",
     "lan_access_title": "Netzwerkzugriff",
-    "lan_access_section_description": "Standardmäßig akzeptiert die Desktop-App nur Verbindungen von diesem Computer. Erlauben Sie den Zugriff aus Ihrem lokalen Netzwerk, damit andere Geräte sich verbinden können — zum Beispiel zur Synchronisierung. Aktivieren Sie dies nur in vertrauenswürdigen Netzwerken.",
-    "lan_access_label": "Verbindungen von anderen Geräten erlauben",
-    "lan_access_description": "Server an alle Netzwerkschnittstellen statt nur an localhost binden."
+    "lan_access_section_description": "Standardmäßig ist die Desktop-App eigenständig: Die App und Ihre geteilten Notizen werden nicht über das Netzwerk bereitgestellt, und nur lokale Integrationen (Web Clipper, MCP, ETAPI) können von diesem Computer darauf zugreifen. Aktivieren Sie diese Option, um die App und geteilte Notizen im Browser zu öffnen und anderen Geräten beispielsweise die Synchronisierung zu ermöglichen. Aktivieren Sie dies nur in vertrauenswürdigen Netzwerken.",
+    "lan_access_label": "Web- und Netzwerkzugriff erlauben",
+    "lan_access_description": "Stellt die App, geteilte Notizen und Live-Aktualisierungen über HTTP bereit – erreichbar über einen Browser auf diesem Computer und von anderen Geräten in Ihrem Netzwerk. Wenn deaktiviert, bleiben nur lokale Integrationen (Web Clipper, MCP, ETAPI) erreichbar."
   },
   "snippet_badge": {
     "label": "{{type}} Snippet",
@@ -2893,24 +3093,165 @@
     "empty-hint": "Jede untergeordnete Notiz wird zu einem Widget. Ziehen Sie eine Notiz aus der Baumstruktur hierher oder erstellen Sie eine neue."
   },
   "import_provider": {
-    "choose_provider": "Wählen Sie einen Dienst zum Importieren:"
+    "choose_provider": "Wählen Sie oben einen Dienst für den Import aus."
   },
   "onenote_import": {
     "name": "Microsoft OneNote",
-    "description": "Notizbücher, Abschnitte und Seiten aus Ihrem OneNote-Konto importieren.",
+    "description": "Verbindet sich mit Ihrem Konto",
     "connect_description": "Melden Sie sich mit Ihrem Microsoft-Konto an, um Ihre OneNote-Notizbücher zu importieren.",
     "connect": "Mit Microsoft anmelden",
-    "connecting": "Warte auf Abschluss der Anmeldung…",
+    "connecting": "Warten auf Abschluss der Anmeldung…",
     "connected_as": "Verbunden als {{name}}",
     "disconnect": "Trennen",
     "load_failed": "Ihre OneNote-Notizbücher konnten nicht geladen werden.",
     "no_notebooks": "In diesem Konto wurden keine Notizbücher gefunden.",
-    "select_sections": "Wählen Sie die zu importierenden Abschnitte:",
+    "select_sections": "Wählen Sie die zu importierenden Abschnitte aus",
     "import": "Auswahl importieren",
     "attach_source": "Original-HTML anhängen (Debug)",
-    "attach_source_hint": "Speichert das unveränderte OneNote-HTML jeder Seite als Anhang der importierten Notiz, um es mit dem konvertierten Ergebnis zu vergleichen."
+    "attach_source_hint": "Speichert das unveränderte OneNote-HTML jeder Seite als Anhang der importierten Notiz, um es mit dem konvertierten Ergebnis zu vergleichen.",
+    "section_heading": "Microsoft OneNote",
+    "checking": "OneNote-Verbindung wird hergestellt …",
+    "select_sections_hint": "OneNote enthält die ursprüngliche Reihenfolge nicht in den Importdaten. Abschnitte und Gruppen werden daher nach Erstellungsdatum sortiert und können von der Darstellung in OneNote abweichen.",
+    "device_instructions": "Öffnen Sie die Microsoft-Anmeldeseite und geben Sie diesen Code ein:",
+    "device_open_page": "Anmeldeseite öffnen",
+    "device_cancel": "Anmeldung abbrechen",
+    "import_count_one": "{{count}} Abschnitt importieren",
+    "import_count_other": "{{count}} Abschnitte importieren"
   },
   "full_content_width_switch": {
     "title": "Volle Breite"
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Ziehen Sie eine Datei hierher oder klicken Sie zum Durchsuchen",
+    "drop_or_browse_multiple": "Ziehen Sie Dateien hierher oder klicken Sie zum Durchsuchen",
+    "browse_single": "Tippen Sie, um eine Datei auszuwählen",
+    "browse_multiple": "Tippen Sie, um Dateien auszuwählen",
+    "remove_file": "Datei entfernen"
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "Aus einem HTML-Export",
+    "description_long": "Exportieren Sie in Notion Ihren Arbeitsbereich oder eine Seite als HTML inklusive Unterseiten und wählen Sie anschließend hier die entstandene .zip-Datei aus.",
+    "choose_file": "Notion-Export (.zip)",
+    "import": "Importieren"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "Aus einem Takeout-Export",
+    "description_long": "Exportieren Sie Ihre Keep-Daten in Google Takeout als .zip-Datei und wählen Sie anschließend hier die entstandene Datei aus.",
+    "choose_file": "Google-Keep-Export (.zip)",
+    "import": "Importieren"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "Aus einem JSON-Export",
+    "description_long": "Exportieren Sie in Anytype Ihren Bereich im Format „Any-Block“ mit ausgewähltem „JSON“ und wählen Sie anschließend hier die entstandene .zip-Datei aus. Derzeit werden nur Seiten und deren Text importiert.",
+    "choose_file": "Anytype-Export (.zip)",
+    "import": "Importieren"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "Aus einem Vault",
+    "description_long": "Packen Sie Ihren Obsidian-Vault-Ordner als ZIP-Datei und wählen Sie anschließend hier die entstandene .zip-Datei aus.",
+    "choose_file": "Obsidian-Vault (.zip)",
+    "import": "Importieren"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "Aus .enex-Dateien",
+    "description_long": "Exportieren Sie in Evernote ein Notizbuch oder bis zu 100 Notizen gleichzeitig als ENEX-Datei und wählen Sie anschließend hier eine oder mehrere .enex-Dateien aus. Jede Datei wird als separates Notizbuch importiert.",
+    "choose_file": "Evernote-Export (.enex)",
+    "import": "Importieren"
+  },
+  "save_revision": {
+    "save_revision": "Revision speichern",
+    "revision_name_placeholder": "Revisionsname (optional)",
+    "help": "Für jede passende Notiz wird eine benannte Revision mit ihrem aktuellen Inhalt und Titel gespeichert."
+  },
+  "convert_note": {
+    "convert_note": "Konvertieren",
+    "convert_note_to": "Notiz konvertieren",
+    "choose_conversion": "(Konvertierung auswählen)",
+    "conversion_htmlToMarkdown": "Textnotizen → Markdown-Notizen (verlustbehaftet)",
+    "conversion_markdownToHtml": "Markdown-Notizen → Textnotizen",
+    "help_text": "Die Konvertierung wird nur auf Notizen des Quelltyps angewendet; andere Notizen bleiben unverändert. Vorher wird eine Revision jeder konvertierten Notiz gespeichert.",
+    "warning": "Bei der Konvertierung von Notizen können einige Formatierungen verloren gehen und anschließend Anpassungen nötig sein. Vorher wird eine Revision jeder konvertierten Notiz gespeichert, damit Sie sie wiederherstellen können. Möchten Sie fortfahren?",
+    "warning_risky": "Sie konvertieren zwischen zwei Formaten mit unterschiedlichen Möglichkeiten. Dabei können Formatierungen verloren gehen und nicht unterstützte Elemente entfernt werden.<br><br>Möchten Sie dieses Risiko vollständig übernehmen und mit der Konvertierung fortfahren?<br><br>Vorher wird eine Revision jeder konvertierten Notiz gespeichert, damit Sie zum ursprünglichen Format zurückkehren können."
+  },
+  "icon_pack": {
+    "preview_title": "Vorschau des Icon-Pakets",
+    "invalid_manifest": "Das Manifest des Icon-Pakets konnte nicht verarbeitet werden. Prüfen Sie, ob es gültiges JSON ist.",
+    "no_icons": "Dieses Icon-Paket enthält keine Icons.",
+    "count_one": "{{count}} Icon",
+    "count_other": "{{count}} Icons",
+    "tooltip": "Klasse: {{- class}}\nGlyphencode: {{- code}}\nBegriffe: {{- terms}}"
+  },
+  "blob_stub": {
+    "not_synced": "Der Inhalt dieser Notiz ist zu groß, um mit diesem Gerät synchronisiert zu werden. Sie können sie stattdessen auf dem Synchronisierungsserver öffnen.",
+    "open_on_server": "Auf dem Server öffnen"
+  },
+  "keyboard_shortcut_keys": {
+    "ctrl": "Strg",
+    "alt": "Alt",
+    "shift": "Umschalt",
+    "meta": "Meta",
+    "enter": "Eingabe",
+    "escape": "Esc",
+    "delete": "Entf",
+    "backspace": "Rücktaste",
+    "space": "Leertaste",
+    "tab": "Tab",
+    "home": "Pos1",
+    "end": "Ende",
+    "page_up": "Bild auf",
+    "page_down": "Bild ab",
+    "insert": "Einfg"
+  },
+  "time_interval": {
+    "seconds_one": "{{count}} Sekunde",
+    "seconds_other": "{{count}} Sekunden",
+    "minutes_one": "{{count}} Minute",
+    "minutes_other": "{{count}} Minuten",
+    "hours_one": "{{count}} Stunde",
+    "hours_other": "{{count}} Stunden",
+    "days_one": "{{count}} Tag",
+    "days_other": "{{count}} Tage"
+  },
+  "login": {
+    "heading": "Bei Trilium Notes anmelden",
+    "password": "Passwort",
+    "totp-token": "Einmalpasswort oder Wiederherstellungscode",
+    "button": "Anmelden",
+    "remember-me": "Angemeldet bleiben",
+    "incorrect-password": "Das Passwort ist falsch. Bitte versuchen Sie es erneut.",
+    "incorrect-totp": "Das Einmalpasswort ist falsch. Bitte versuchen Sie es erneut.",
+    "incorrect-recovery-code": "Der Wiederherstellungscode ist falsch oder wurde bereits verwendet.",
+    "too-many-attempts": "Zu viele Anmeldeversuche. Bitte warten Sie einige Minuten und versuchen Sie es erneut.",
+    "connection-error": "Der Server konnte nicht erreicht werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "sign_in_with_sso": "Mit {{ssoIssuerName}} anmelden",
+    "sso-wrong-account": "Dieses Konto ist nicht mit dieser Trilium-Instanz verknüpft. Melden Sie sich mit dem verknüpften Konto an.",
+    "sso-not-enrolled": "Single Sign-on ist noch nicht eingerichtet. Melden Sie sich zuerst mit Ihrem Passwort an und verknüpfen Sie anschließend Ihr Konto in den Einstellungen.",
+    "sso-connection-failed": "Der Authentifizierungsanbieter konnte nicht erreicht werden. Versuchen Sie es erneut oder prüfen Sie die Serverprotokolle auf Details."
+  },
+  "set_password": {
+    "heading": "Passwort festlegen",
+    "description": "Bevor Sie Trilium im Web verwenden können, müssen Sie zuerst ein Passwort festlegen. Anschließend verwenden Sie dieses Passwort zum Anmelden.",
+    "password": "Passwort",
+    "password-confirmation": "Passwortbestätigung",
+    "button": "Passwort festlegen",
+    "password-too-short": "Das Passwort muss mindestens {{length}} Zeichen lang sein.",
+    "passwords-dont-match": "Die eingegebenen Passwörter stimmen nicht überein."
+  },
+  "shortcut_hints": {
+    "show_button": "Tastenkürzel-Hinweise anzeigen",
+    "esc_hint": "zum Schließen"
+  },
+  "link_embed": {
+    "play_video": "Video wiedergeben"
+  },
+  "wizard": {
+    "back": "Zurück",
+    "next": "Weiter",
+    "step_progress": "Schritt {{current}} von {{total}}"
   }
 }

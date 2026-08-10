@@ -1,5 +1,5 @@
 import Readability from "@/lib/Readability.js";
-import { createLink, getBaseUrl, getPageLocationOrigin, randomString, Rect } from "@/utils.js";
+import { createLink, getBaseUrl, getPageLocationOrigin, randomString, type Rect } from "@/utils.js";
 
 export default defineContentScript({
     matches: [
@@ -11,7 +11,7 @@ export default defineContentScript({
                 return url;
             }
 
-            const protocol = url.toLowerCase().split(':')[0];
+            const protocol = url.toLowerCase().split(':')[0] ?? "";
             if (['http', 'https', 'file'].indexOf(protocol) >= 0) {
                 return url;
             }
@@ -28,7 +28,7 @@ export default defineContentScript({
         function pageTitle() {
             const titleElements = document.getElementsByTagName("title");
 
-            return titleElements.length ? titleElements[0].text.trim() : document.title.trim();
+            return titleElements[0]?.text.trim() ?? document.title.trim();
         }
 
         function getReadableDocument() {

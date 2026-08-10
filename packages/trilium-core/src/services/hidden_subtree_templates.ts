@@ -247,13 +247,13 @@ export default function buildHiddenSubtreeTemplates() {
                         name: "hidePromotedAttributes",
                         type: "label"
                     },
-                    hideSubtreeAttributes,
-                    {
-                        name: "label:status",
-                        type: "label",
-                        value: `promoted,alias=${t("hidden_subtree_templates.status")},single,text`,
-                        isInheritable: true
-                    }
+                    hideSubtreeAttributes
+                    // Deliberately no `label:status`: the columns a board shows are the options of a
+                    // select definition, and a definition here would be shared by every board in the
+                    // document — one board's columns would be everyone's. Each board owns its own
+                    // instead, written by the board view once it knows its columns (see
+                    // BoardApi#syncColumnsToDefinition) and by migration 0240 for boards that predate
+                    // it. `enforceAttributes` deletes the definition this template used to carry.
                 ],
                 children: [
                     {

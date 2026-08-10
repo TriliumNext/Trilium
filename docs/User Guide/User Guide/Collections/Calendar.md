@@ -1,14 +1,15 @@
 # Calendar
-<figure class="image image-style-align-center"><img style="aspect-ratio:767/606;" src="2_Calendar_image.png" width="767" height="606"></figure>
+<figure class="image"><img style="aspect-ratio:2016/1413;" src="1_Calendar_image.png" width="2016" height="1413"></figure>
 
 The Calendar view will display each child note in a calendar that has a start date and optionally an end date, as an event.
 
 The Calendar view has multiple display modes:
 
-*   Week view, where all the 7 days of the week (or 5 if the weekends are hidden) are displayed in columns. This mode allows entering and displaying time-specific events, not just all-day events.
 *   Month view, where the entire month is displayed and all-day events can be inserted. Both time-specific events and all-day events are listed.
-*   Year view, which displays the entire year for quick reference.
+*   Week view, where all the 7 days of the week (or 5 if the weekends are hidden) are displayed in columns. This mode allows entering and displaying time-specific events, not just all-day events.
+*   Day view, which views only a single day. Especially useful for heavy agendas or mobile views.
 *   List view, which displays all the events of a given month in sequence.
+*   Year view, which displays the entire year for quick reference.
 
 Unlike other Collection view types, the Calendar view also allows some kind of interaction, such as moving events around as well as creating new ones.
 
@@ -18,27 +19,61 @@ Right click on an existing note in the <a class="reference-link" href="../Basic
 
 ## Creating a new event/note
 
-*   Clicking on a day will create a new child note and assign it to that particular day.
-    *   You will be asked for the name of the new note. If the popup is dismissed by pressing the close button or escape, then the note will not be created.
-*   It's possible to drag across multiple days to set both the start and end date of a particular note.  
-    ![](Calendar_image.png)
-*   Creating new notes from the calendar will respect the `~child:template` relation if set on the Collection note.
+To create a new event:
+
+*   First, click the desired day (month & year views) or the desired timeslot (day view).
+*   Alternatively, drag across multiple days (or time slots) to set both the start and end date.
+
+In either cases, a small popup will show with a prompt for a title and the date & time of the event that will be created.
+
+At this point, the event hasn't been created yet to protect against accidental clicks. Add a title optionally and press the _Create_ button. If no title is provided, the event will follow the <a class="reference-link" href="../Advanced%20Usage/Default%20Note%20Title.md">Default Note Title</a> rules.
+
+After creating the event, it will show up on the calendar. To edit the content of the event (including recurrence), click on it to bring it into the popup view.
+
+> [!NOTE]
+> Creating new notes from the calendar will respect the `~child:template` relation if set on the Collection note.
 
 ## Interacting with events
 
 *   Hovering the mouse over an event will display information about the note.  
-    ![](5_Calendar_image.png)
-*   Left clicking the event will open a <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> to edit the note in a popup while allowing easy return to the calendar by just dismissing the popup.
-    *   Middle clicking will open the note in a new tab.
-    *   Right click will offer more options including opening the note in a new split or window.
+    ![](4_Calendar_image.png)
+*   Left clicking the event will open a dedicated popup to quickly configure the event or edit its note content.
+*   Right click will offer more options including opening the note in a new split or window.
 *   Drag and drop an event on the calendar to move it to another day.
 *   The length of an event can be changed by placing the mouse to the right edge of the event and dragging the mouse around.
+
+### Popup view
+
+When an event is clicked, a popup will show near the event which contains the following inforamtion:
+
+*   The title and icon of the event, both editable.
+*   Buttons to interact with the event:
+    *   Open the event in the same pane, new tab, etc.
+    *   Color picker to change the color of the event.
+    *   Button to remove the event from the calendar, which can optionally delete its corresponding note.
+*   Calendar-specific features:
+    *   A toggle for all-day events.
+    *   A start/end date & time selector.
+    *   A full recurrence editor, to have the same event show up weekly, monthly, etc.
+*   The <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> of the marker, if any.
+*   The note's content which can be edited directly from the panel.
+
+To dismiss the popup:
+
+*   Press the X button at the top-right of the popup.
+*   In the calendar, press anywhere outside the popup.
+*   Or simply press the <kbd spellcheck="false">Escape</kbd> key.
+
+It is possible to switch between events by clicking on them even when the popup view is already open.
+
+Events can have <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between them and clicking on such a link will automatically navigate the calendar to the right date and the popup view to the new note.
 
 ## Interaction on mobile
 
 When Trilium is on mobile, the interaction with the calendar is slightly different:
 
-*   Clicking on an event triggers the contextual menu, including the option to open in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>.
+*   Clicking on an event displays the popup view, which allows editing the event.
+*   Long-presing an event triggers the contextual menu, including the option to open in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>.
 *   To insert a new event, touch and hold the empty space. When successful, the empty space will become colored to indicate the selection.
     *   Before releasing, drag across multiple spaces to create multi-day events.
     *   When released, a prompt will appear to enter the note title.
@@ -113,10 +148,10 @@ For each note of the calendar, the following attributes can be used:
 | `#endTime` | Similar to `startTime`, it mentions the time at which the event ends (in relation with `endDate` if present, or `startDate`). |
 | `#recurrence` | This is an optional CalDAV `RRULE` string that if present, determines whether a task should repeat or not. Note that it does not include the `DTSTART` attribute, which is derived from the `#startDate` and `#startTime` directly. For examples of valid `RRULE` strings see [https://icalendar.org/rrule-tool.html](https://icalendar.org/rrule-tool.html) |
 | `#color` | Displays the event with a specified color (named such as `red`, `gray` or hex such as `#FF0000`). This will also change the color of the note in other places such as the note tree. |
-| `#calendar:color` | **❌️ Removed since v0.100.0. Use** `**#color**` **instead.**     <br>  <br>Similar to `#color`, but applies the color only for the event in the calendar and not for other places such as the note tree. |
+| `#calendar:color` | **❌️ Removed since v0.100.0. Use** `#color` **instead.**      <br>  <br>Similar to `#color`, but applies the color only for the event in the calendar and not for other places such as the note tree. |
 | `#iconClass` | If present, the icon of the note will be displayed to the left of the event title. |
 | `#calendar:title` | Changes the title of an event to point to an attribute of the note other than the title, can either a label or a relation (without the `#` or `~` symbol). See _Use-cases_ for more information. |
-| `#calendar:displayedAttributes` | Allows displaying the value of one or more attributes in the calendar like this:          <br>  <br>![](7_Calendar_image.png)         <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`        <br>  <br>It can also be used with relations, case in which it will display the title of the target note:         <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
+| `#calendar:displayedAttributes` | Allows displaying the value of one or more attributes in the calendar like this:           <br>  <br>![](6_Calendar_image.png)          <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`         <br>  <br>It can also be used with relations, case in which it will display the title of the target note:          <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
 | `#calendar:startDate` | Allows using a different label to represent the start date, other than `startDate` (e.g. `expiryDate`). The label name **must not be** prefixed with `#`. If the label is not defined for a note, the default will be used instead. |
 | `#calendar:endDate` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the end date. |
 | `#calendar:startTime` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the start time. |
@@ -124,11 +159,11 @@ For each note of the calendar, the following attributes can be used:
 
 ## How the calendar works
 
-![](9_Calendar_image.png)
+![](8_Calendar_image.png)
 
 The calendar displays all the child notes of the Collection that have a `#startDate`. An `#endDate` can optionally be added.
 
-If editing the start date and end date from the note itself is desirable, the following attributes can be added to the Collection note:
+The start date & end date can easily be edited from the calendar collection itself by clicking on the event. To edit the date while in the event note itself, the following attributes can be added to the Collection note:
 
 ```
 #viewType=calendar #label:startDate(inheritable)="promoted,alias=Start Date,single,date"
@@ -138,13 +173,19 @@ If editing the start date and end date from the note itself is desirable, the fo
 
 This will result in:
 
-![](8_Calendar_image.png)
+![](7_Calendar_image.png)
 
 When not used in a Journal, the calendar is recursive. That is, it will look for events not just in its child notes but also in the children of these child notes.
 
 ## Recurrence
 
-The built in calendar view also supports repeating tasks. If a child note of the calendar has a #recurrence label with a valid recurrence, that event will repeat on the calendar according to the recurrence string. 
+The built in calendar view also supports repeating tasks (e.g. every week, every month as well as more complex recurrency rules).
+
+Starting with v0.105.0, recurrence can be directly edited from the calendar by clicking on an event and then selecting the _Repeats_ option.
+
+### Custom recurrence using a subset of RRULE
+
+If the existing recurrence editor from the event popup is not sufficient, more complex rules can be manually set via the `#recurrence` label.
 
 For example, to make a note repeat on the calendar:
 
@@ -155,7 +196,6 @@ For example, to make a note repeat on the calendar:
 *   Every 3 months - `#recurrence="FREQ=MONTHLY;INTERVAL=3"`
 *   Every 2 months on the First Sunday - `#recurrence="FREQ=MONTHLY;INTERVAL=2;BYDAY=1SU"`
 *   Every month on the Last Friday - `#recurrence="FREQ=MONTHLY;INTERVAL=1;BYDAY=-1FR"`
-*   And so on.
 
 For other examples of valid `RRULE` strings see [https://icalendar.org/rrule-tool.html](https://icalendar.org/rrule-tool.html)
 
@@ -216,6 +256,8 @@ Both values use `HH:mm:ss` format. Hours can go up to `24` (`24:00:00`), while m
 
 It is possible to integrate the calendar view into the Journal with day notes. In order to do so change the note type of the Journal note (calendar root) to Collection and then select the Calendar View.
 
+While in journal mode, the popup editor will not show dates, recurrence, colors or removal, since day notes aren't editable events.
+
 Based on the `#calendarRoot` (or `#workspaceCalendarRoot`) attribute, the calendar will know that it's in a calendar and apply the following:
 
 *   The calendar events are now rendered based on their `dateNote` attribute rather than `startDate`.
@@ -223,63 +265,30 @@ Based on the `#calendarRoot` (or `#workspaceCalendarRoot`) attribute, the calend
 *   Clicking on the empty space on a date will automatically open that day's note or create it if it does not exist.
 *   Direct children of a day note will be displayed on the calendar despite not having a `dateNote` attribute. Children of the child notes will not be displayed.
 
-<img src="6_Calendar_image.png" width="1217" height="724">
+<img src="5_Calendar_image.png" width="1217" height="724">
 
 ### Using a different attribute as event title
 
-By default, events are displayed on the calendar by their note title. However, it is possible to configure a different attribute to be displayed instead.
+<img class="image-style-align-right" src="2_Calendar_image.png" width="445" height="124">By default, events are displayed on the calendar by their note title. However, it is possible to configure a different attribute to be displayed instead.
 
 To do so, assign `#calendar:title` to the child note (not the calendar/Collection note), with the value being `name` where `name` can be any label (make not to add the `#` prefix). The attribute can also come through inheritance such as a template attribute. If the note does not have the requested label, the title of the note will be used instead.
 
-<table>
-    <thead>
-        <tr>
-            <th>&nbsp;</th>
-            <th>&nbsp;</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><pre><code class="language-text-x-trilium-auto">#startDate=2025-02-11 #endDate=2025-02-13 #name="My vacation" #calendar:title="name"</code></pre></td>
-            <td><p>&nbsp;</p><figure class="image image-style-align-center"><img style="aspect-ratio:445/124;" src="3_Calendar_image.png" width="445" height="124"></figure></td>
-        </tr>
-    </tbody>
-</table>
+```
+#startDate=2025-02-11 #endDate=2025-02-13 #name="My vacation" #calendar:title="name"
+```
 
 ### Using a relation attribute as event title
 
-Similarly to using an attribute, use `#calendar:title` and set it to `name` where `name` is the name of the relation to use.
+<img class="image-style-align-right image_resized" style="aspect-ratio:294/151;width:21.22%;" src="3_Calendar_image.png" width="294" height="151">Similarly to using an attribute, use `#calendar:title` and set it to `name` where `name` is the name of the relation to use.
 
 Moreover, if there are more relations of the same name, they will be displayed as multiple events coming from the same note.
 
-<table>
-    <thead>
-        <tr>
-            <th>&nbsp;</th>
-            <th>&nbsp;</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><pre><code class="language-text-x-trilium-auto">#startDate=2025-02-14 #endDate=2025-02-15 ~for=@John Smith ~for=@Jane Doe #calendar:title="for"</code></pre></td>
-            <td><img src="4_Calendar_image.png" width="294" height="151"></td>
-        </tr>
-    </tbody>
-</table>
+```
+#startDate=2025-02-14 #endDate=2025-02-15 ~for=@John Smith ~for=@Jane Doe #calendar:title="for"
+```
 
-Note that it's even possible to have a `#calendar:title` on the target note (e.g. “John Smith”) which will try to render an attribute of it. Note that it's not possible to use a relation here as well for safety reasons (an accidental recursion  of attributes could cause the application to loop infinitely).
+<img class="image-style-align-left" src="Calendar_image.png" width="296" height="150">Note that it's even possible to have a `#calendar:title` on the target note (e.g. “John Smith”) which will try to render an attribute of it. Note that it's not possible to use a relation here as well for safety reasons (an accidental recursion  of attributes could cause the application to loop infinitely).
 
-<table>
-    <thead>
-        <tr>
-            <th>&nbsp;</th>
-            <th>&nbsp;</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><pre><code class="language-text-x-trilium-auto">#calendar:title="shortName" #shortName="John S."</code></pre></td>
-            <td><figure class="image image-style-align-center"><img style="aspect-ratio:296/150;" src="1_Calendar_image.png" width="296" height="150"></figure></td>
-        </tr>
-    </tbody>
-</table>
+```
+#calendar:title="shortName" #shortName="John S."
+```

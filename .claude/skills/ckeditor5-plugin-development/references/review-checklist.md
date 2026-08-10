@@ -1,6 +1,6 @@
 # Reviewing a CKEditor 5 plugin (Trilium)
 
-A structured checklist for reviewing Trilium CKEditor plugin code under `packages/ckeditor5-*`.
+A structured checklist for reviewing Trilium CKEditor plugin code under `packages/ckeditor5/src/plugins/`.
 Pair each item with the relevant reference file when you need the "why". Flag deviations; not
 every item applies to every plugin (e.g. a UI-only or editing-only plugin). The Trilium
 integration items at the end are specific to this monorepo.
@@ -69,13 +69,24 @@ integration items at the end are specific to this monorepo.
 
 ## Localization
 
-- [ ] All user-facing strings go through `editor.t()` with a **literal** first argument (string
-      or object literal), never a variable.
-- [ ] New strings have matching entries in the plugin's `lang/en.po` (`msgctxt` + `msgid` +
-      `msgstr`) **and** `lang/contexts.json` (message id → context). No upstream
-      `window.CKEDITOR_TRANSLATIONS` / `add()` / webpack-language wiring.
-- [ ] Plugins that accept a host `translate` config read it with the identity fallback
-      (`?? ( key => key )`) so labels degrade gracefully (see collapsible).
+- [ ] All user-facing strings go through `editor.t()` with **the English text itself** as the
+      message id — no translation keys in plugin code.
+- [ ] The translation function is **named `t`** at every call site (`t(…)`, `editor.t(…)`,
+      `this.t(…)`). A parameter or local named `translate`/`_t` is invisible to the registry scan,
+      so the string never gets translated in any locale.
+- [ ] Every first argument is a **literal**, never a variable. Labels held in a table and read as
+      `t( def.label )` are the recurring version of this; they belong in a switch
+      (`getAdmonitionTitle()`, `getLinkDisplayModeLabel()`, `getBoxSizeLabel()`).
+- [ ] Each new message has an English entry under `text-editor.ck` in
+      `apps/client/src/translations/en/translation.json`, keyed by the slug of its text — **unless**
+      CKEditor already ships that string, in which case there must be **no** entry (ours merges
+      after core and would override upstream in every locale).
+- [ ] Interpolation uses `%0`/`%1`, not a template literal and not `{{name}}`.
+- [ ] Strings that reach **no** translation function at all — the case no test can catch. Read the
+      plugin's `label:`/`tooltip:`/`title:`/`placeholder:`/`aria-label` and any text built by
+      concatenation or in a `setTemplate` children array.
+- [ ] A keystroke mentioned in a message comes from `renderShortcut( editor, SHORTCUT )`, not from
+      resolving key names inside the package.
 
 ## Conventions & hygiene
 

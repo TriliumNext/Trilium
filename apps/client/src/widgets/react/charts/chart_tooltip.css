@@ -1,0 +1,28 @@
+/* The chart's own tooltip bubble: the app's tooltip look (`tooltip`/`tooltip-inner`, which the
+   themes paint), positioned from the pointer instead of anchored to a mark.
+
+   Fixed rather than absolute, so it escapes the charts' own clipping and the scroll container's —
+   a treemap fills its pane, and a cell near the bottom edge would otherwise show a cut-off bubble.
+   It must never catch the pointer, or it would flicker by stealing the hover it reports. */
+.chart-tooltip {
+    position: fixed;
+    pointer-events: none;
+    transform: translate(14px, 14px);
+}
+
+.chart-tooltip.chart-tooltip-flip-x {
+    transform: translate(calc(-100% - 14px), 14px);
+}
+
+.chart-tooltip.chart-tooltip-flip-y {
+    transform: translate(14px, calc(-100% - 14px));
+}
+
+.chart-tooltip.chart-tooltip-flip-x.chart-tooltip-flip-y {
+    transform: translate(calc(-100% - 14px), calc(-100% - 14px));
+}
+
+.chart-tooltip .tooltip-inner {
+    max-width: none;
+    white-space: nowrap;
+}

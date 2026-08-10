@@ -1,0 +1,65 @@
+/*
+ * How a cell's values read — the chips, the swatch of a colour, the mark of a flag — is dressed with
+ * the values themselves, in label_value_display.css, so that a set reads the same in a cell as in the
+ * note's own promoted field. Only what is the table's own is here.
+ */
+
+/*
+ * The editor opens over its cell rather than inside it. A cell is as tall as one line and as wide as
+ * the column was dragged to, which a set of chips and a box to type in outgrows at once — laid out
+ * within, the chips would wrap out of sight the moment there were two.
+ *
+ * The cell it belongs to therefore stops clipping while it is being edited, and comes forward so the
+ * editor is drawn over the rows below rather than under them.
+ */
+.tabulator-row:not(.tabulator-moving) .tabulator-cell.tabulator-editing:has(> .table-values-editor) {
+    overflow: visible !important;
+    z-index: 10;
+
+    /* The cell also gives up the frame it wears while being edited, the editor standing over it with
+       one of its own: two would be one too many, and the cell's would stop short of the editor —
+       ending at the column's edge while the editor carried on past it. */
+    outline: none;
+    border-color: transparent;
+    background: transparent;
+}
+
+.table-values-editor {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    /* Never narrower than the cell it stands in, and no wider than it needs — up to a ceiling, past
+       which the chips wrap instead of the editor running across the table. */
+    min-width: 100%;
+    width: max-content;
+    max-width: 320px;
+
+    /*
+     * The editor brings a surface of its own, opaque, because it stands over the table rather than in
+     * it. A field's own background is a translucent film — a tint meant to sit on the page behind it,
+     * and in some themes nothing at all — through which the row underneath would otherwise be read
+     * along with the chips.
+     *
+     * The surface is inset by the width of the field's focus ring, since an outline is drawn outside
+     * the element it belongs to: without the room, the ring — translucent in every theme — would fall
+     * past the surface and be tinted by whatever it happened to cross, coming out one colour over the
+     * cell and another over the table beside it.
+     */
+    padding: 2px;
+    background-color: var(--main-background-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, var(--dropdown-shadow-opacity, 0.2));
+
+    /* Over that surface the film reads as it does anywhere else: as a field within the thing it
+       floats on, rather than as a hole in it. */
+    > .tn-field {
+        background-color: var(--input-background-color);
+    }
+}
+
+/* Anchored by its foot instead, so that what it gains rises over the rows above rather than pressing
+   past the foot of the pane. Applied from the editor, which is what can tell the room is short. */
+.table-values-editor.grows-upwards {
+    inset-block-start: auto;
+    inset-block-end: 0;
+}

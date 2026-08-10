@@ -1,0 +1,38 @@
+/* Small, dimmed and asking to be hovered: present without competing with what it explains. */
+.contextual-help {
+    margin-inline-start: 0.25em;
+    color: var(--contextual-help-icon-color);
+    font-size: 0.75rem;
+    opacity: 0.75;
+    cursor: help;
+}
+
+.contextual-help:hover,
+.contextual-help:focus-visible {
+    opacity: 1;
+}
+
+/* Reached by keyboard it is the only thing being pointed at, so it says where the focus is. */
+.contextual-help:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/*
+ * The sheet the explanation rises in on a phone. Every modal is already a bottom sheet there
+ * (see `body.mobile .modal-dialog` in style.css), so all this does is take away the chrome a single
+ * remark has no use for: the header is left holding nothing but the button that dismisses it.
+ */
+.modal.contextual-help-sheet {
+    .modal-header {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .modal-body {
+        padding-top: 0.5em;
+        /* The sheet sits on the bottom edge, where a gesture bar would otherwise cross the text. */
+        padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+    }
+}

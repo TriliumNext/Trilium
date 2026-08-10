@@ -9,8 +9,8 @@
   <table>
     <thead>
       <tr>
-        <th scope="col">Provider type</th>
-        <th scope="col">Destination</th>
+        <th>Provider type</th>
+        <th>Destination</th>
       </tr>
     </thead>
     <tbody>
@@ -38,14 +38,14 @@
   by you, before anything is sent.</p>
 <h2>What is actually sent</h2>
 <ul>
-  <li class="ck-list-marker-bold"><strong>Always, with every message</strong>
+  <li><strong>Always, with every message</strong>
     <ul>
       <li>The conversation itself: your messages and the assistant's replies, including
         earlier turns</li>
       <li>Trilium's system prompt describing how to format answers and use tools.</li>
     </ul>
   </li>
-  <li class="ck-list-marker-bold"><strong>The current note, only when note context is enabled.</strong>
+  <li><strong>The current note, only when note context is enabled.</strong>
     <ul>
       <li>In the sidebar chat this is the file icon at the bottom; the dedicated
         chat note type never sends a current note.</li>
@@ -56,7 +56,7 @@
         the model must call a tool to read further.</li>
     </ul>
   </li>
-  <li class="ck-list-marker-bold"><strong>Any note the model asks for, when note access is enabled.</strong>
+  <li><strong>Any note the model asks for, when note access is enabled.</strong>
     <ul>
       <li>Tools let the model search your tree and read notes, attributes and attachments
         beyond the current one.</li>
@@ -71,8 +71,8 @@
     search terms reach the provider's own search infrastructure.</li>
 </ul>
 <h2>Protected notes</h2>
-<p>While your <a href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_bwg0e8ewQMak">protected session</a> is
-  locked, protected notes send neither title nor content. <strong>While it is unlocked they are treated like any other note</strong> —
+<p>While your <a href="#root/_help_bwg0e8ewQMak">protected session</a> is locked,
+  protected notes send neither title nor content. <strong>While it is unlocked they are treated like any other note</strong> —
   a note the model reads through a tool is sent to the provider in full.
   If you keep sensitive material in protected notes, be aware that unlocking
   them removes that boundary for the duration of the session.</p>
@@ -100,8 +100,10 @@
 <p>Your API key is stored in your database, sent only to the provider it
   belongs to, and is write-only through the options API so that a malevolent&nbsp;
   <a
-  class="reference-link" href="#root/pOsGYCXsbNQG/_help_CdNpE2pqjmI6">Scripting</a>&nbsp;cannot access it. If you have backend or SQL console
+  class="reference-link" href="#root/_help_CdNpE2pqjmI6">Scripting</a>&nbsp;cannot access it. If you have backend or SQL console
     access enabled, a malevolent script <strong>could potentially exfiltrate your API keys</strong>.</p>
-<p>The built-in MCP server has no authentication and exposes the same note
-  tools to any application on your machine that can reach it. It is off by
-  default and bound to <code spellcheck="false">localhost</code>.</p>
+<p>The built-in MCP server is off by default. When enabled, every request
+  must carry an ETAPI token, which grants the same full read and write access
+  to your notes as the REST API; treat one like a password. On desktop it
+  is reachable only from <code spellcheck="false">localhost</code> unless you
+  turn on&nbsp;<a class="reference-link" href="#root/_help_swSFivWk6KkA">Network Access</a>.</p>

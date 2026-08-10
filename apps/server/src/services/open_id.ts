@@ -144,7 +144,11 @@ const OIDC_ROUTES = {
     logout: "/logout",
 } as const;
 
-function generateOAuthConfig(endSessionSupported = false) {
+function generateOAuthConfig(
+    endSessionSupported = false,
+    issuerBaseUrl = config.MultiFactorAuthentication.oauthIssuerBaseUrl,
+    idTokenSigningAlg = resolveIdTokenSigningAlg(null)
+) {
     const logoutParams = {
     };
 
@@ -153,17 +157,24 @@ function generateOAuthConfig(endSessionSupported = false) {
         auth0Logout: false,
         baseURL: config.MultiFactorAuthentication.oauthBaseUrl,
         clientID: config.MultiFactorAuthentication.oauthClientId,
-        issuerBaseURL: config.MultiFactorAuthentication.oauthIssuerBaseUrl,
+        // Not read straight from config: openid-client v6 requires this to match the issuer the provider
+        // advertises character for character, so it comes from the discovery probe via
+        // reconcileIssuerBaseUrl. Defaulted to the raw config value for callers that don't probe.
+        issuerBaseURL: issuerBaseUrl,
         secret: config.MultiFactorAuthentication.oauthClientSecret,
         clientSecret: config.MultiFactorAuthentication.oauthClientSecret,
         clientAuthMethod: resolveClientAuthMethod(),
+        // Also not read straight from config: express-openid-connect hardcodes RS256 unless told
+        // otherwise, so this comes from the discovery probe via resolveIdTokenSigningAlg. Defaulted for
+        // callers that don't probe.
+        idTokenSigningAlg,
         authorizationParams: {
             response_type: "code",
             scope: "openid profile email",
         },
         routes: { ...OIDC_ROUTES },
         // Only enable RP-Initiated Logout when the provider actually advertises an end_session_endpoint
-        // (see isRpInitiatedLogoutSupported). With idpLogout on, express-openid-connect unconditionally
+        // (see supportsRpInitiatedLogout). With idpLogout on, express-openid-connect unconditionally
         // builds a redirect to that endpoint at logout; providers without one (e.g. Google, Authelia)
         // would otherwise crash POST /logout with a 500. When false, logout falls back to clearing the
         // local session and redirecting to postLogoutRedirect.
@@ -256,10 +267,10 @@ type AuthBuilder = typeof import("express-openid-connect").auth;
 interface ReactiveOidcDeps {
     /** Whether OAuth is currently configured and selected as the sign-in method. Re-checked per request. */
     isConfigured: () => boolean;
-    /** Discovery probe deciding whether RP-Initiated Logout (idpLogout) can be safely enabled. */
-    isRpInitiatedLogoutSupported: () => Promise<boolean>;
+    /** Discovery probe supplying the issuer identifier and RP-Initiated Logout support. */
+    probeDiscovery: () => Promise<DiscoveryProbe>;
     /** Builds the express-openid-connect config for the current provider settings. */
-    generateOAuthConfig: (endSessionSupported: boolean) => Parameters<AuthBuilder>[0];
+    generateOAuthConfig: (endSessionSupported: boolean, issuerBaseUrl: string, idTokenSigningAlg: string) => Parameters<AuthBuilder>[0];
     /** The express-openid-connect `auth()` factory (injectable so the middleware is unit-testable). */
     buildAuth: AuthBuilder;
 }
@@ -274,20 +285,20 @@ interface ReactiveOidcDeps {
  * This middleware is mounted unconditionally and instead re-evaluates `isOpenIDConfigured()` on every
  * request: while OAuth is unselected it simply passes through, and the first time OAuth is actually in
  * use it lazily builds the underlying express-openid-connect handler and caches it. The discovery probe
- * (endSessionSupported) only depends on the issuer — which is fixed in config and changes solely on
+ * ({@link probeDiscovery}) only depends on the issuer — which is fixed in config and changes solely on
  * restart — so it is resolved once on that first use. An in-flight guard ensures concurrent first
  * requests build the handler exactly once.
  */
 export function createReactiveOidcMiddleware(deps: Partial<ReactiveOidcDeps> = {}): RequestHandler {
     const {
         isConfigured = isOpenIDConfigured,
-        isRpInitiatedLogoutSupported: probeRpLogout = isRpInitiatedLogoutSupported,
+        probeDiscovery: probe = probeDiscovery,
         generateOAuthConfig: buildOAuthConfig = generateOAuthConfig,
         buildAuth
     } = deps;
 
     let oidcMiddleware: RequestHandler | null = null;
-    let oidcInit: Promise<void> | null = null;
+    let oidcInit: Promise<RequestHandler> | null = null;
 
     return async (req: Request, res: Response, next: NextFunction) => {
         // OAuth not selected as the sign-in method → behave as if the middleware were never mounted.
@@ -295,24 +306,51 @@ export function createReactiveOidcMiddleware(deps: Partial<ReactiveOidcDeps> = {
             return next();
         }
 
-        if (!oidcMiddleware) {
-            oidcInit ??= (async () => {
+        let handler = oidcMiddleware;
+        if (!handler) {
+            const init = (oidcInit ??= (async () => {
                 // Load express-openid-connect lazily so the (heavy) library and its transitive deps are
                 // only evaluated the first time OAuth is actually used, never on a server that runs with
                 // OAuth unselected. The sole static reference to the package is the erased `Session` type
                 // import, so the bundler keeps it out of the eager-init graph (see scripts/build-utils.ts).
                 const authFactory = buildAuth ?? (await import("express-openid-connect")).auth;
-                const endSessionSupported = await probeRpLogout();
-                oidcMiddleware = authFactory(buildOAuthConfig(endSessionSupported));
-            })();
+                const { endSessionSupported, issuerBaseUrl, idTokenSigningAlg, metadataAvailable } = await probe();
+                const built = authFactory(buildOAuthConfig(endSessionSupported, issuerBaseUrl, idTokenSigningAlg));
+
+                // Only commit to the handler when the probe actually read the provider's document.
+                //
+                // A probe that couldn't reach the issuer degrades to fallbacks rather than throwing (see
+                // probeDiscovery), and `auth()` does not itself perform discovery — it only validates
+                // config and builds a router — so the build succeeds and nothing here would notice. The
+                // library recovers from the same blip on its own (it discovers per request, behind a
+                // cache it drops on failure), but these values are frozen into the config object handed
+                // to `auth()`. Caching them would outlive the blip: a provider that signs EdDSA would be
+                // pinned to the RS256 fallback and reject every valid ID token until a restart — exactly
+                // the failure this resolution exists to prevent.
+                if (metadataAvailable) {
+                    oidcMiddleware = built;
+                }
+                return built;
+            })());
+
             try {
-                await oidcInit;
+                handler = await init;
             } catch (error) {
-                // Reset so the next request can retry — otherwise a single failed init (transient
-                // discovery-probe failure, malformed config, etc.) would leave the rejected promise
+                // Reset so the next request can retry — otherwise a single failed init (a malformed
+                // config `auth()` rejects, an import failure, etc.) would leave the rejected promise
                 // cached and break every subsequent OAuth request until a server restart.
-                oidcInit = null;
+                if (oidcInit === init) {
+                    oidcInit = null;
+                }
                 return failRoundTrip(req, res, next, error);
+            }
+
+            // Settled, so drop the in-flight guard — its only job is to make concurrent first requests
+            // share one build. When the probe read the document `oidcMiddleware` now holds the handler
+            // and this is never consulted again; when it didn't, the next request re-probes. The identity
+            // check keeps a request from clearing a *newer* build's guard.
+            if (oidcInit === init) {
+                oidcInit = null;
             }
         }
 
@@ -320,14 +358,14 @@ export function createReactiveOidcMiddleware(deps: Partial<ReactiveOidcDeps> = {
         // (sends a response/redirect or calls next() itself) and returns undefined. We must NOT call
         // next() ourselves afterwards — doing so double-invokes the downstream pipeline and triggers
         // "Cannot set headers after they are sent". The guard only covers a failed build.
-        if (!oidcMiddleware) {
+        if (!handler) {
             return next();
         }
 
         // The library reports a broken round-trip by calling next(err) rather than by rejecting, so the
         // interception has to happen on `next` — a try/catch around this call would never see it. A bare
         // next() (the pass-through for non-OIDC routes) must still propagate untouched.
-        return oidcMiddleware(req, res, (error?: unknown) => {
+        return handler(req, res, (error?: unknown) => {
             if (!error) {
                 return next();
             }
@@ -403,53 +441,162 @@ export default {
     clearSavedUser,
     isTokenValid,
     isUserSaved,
-    isRpInitiatedLogoutSupported,
+    probeDiscovery,
 };
 
 // Cap the startup discovery probe so a slow/unreachable provider can't stall server boot.
 const DISCOVERY_TIMEOUT_MS = 10_000;
 
+/** What {@link probeDiscovery} extracts from the provider's discovery document. */
+interface DiscoveryProbe {
+    /** Whether `idpLogout` can be safely enabled — see {@link supportsRpInitiatedLogout}. */
+    endSessionSupported: boolean;
+    /** The issuer to hand express-openid-connect — see {@link reconcileIssuerBaseUrl}. */
+    issuerBaseUrl: string;
+    /** The ID token signature algorithm to expect — see {@link resolveIdTokenSigningAlg}. */
+    idTokenSigningAlg: string;
+    /**
+     * Whether the provider's discovery document was actually read. False means every field above is a
+     * fallback rather than an answer, which is what stops {@link createReactiveOidcMiddleware} from
+     * caching a handler built from it.
+     */
+    metadataAvailable: boolean;
+}
+
 /**
- * Probes the configured OIDC issuer's discovery document to decide whether RP-Initiated Logout is
- * available, i.e. whether `idpLogout` can be safely enabled in {@link generateOAuthConfig}. The issuer
- * is fixed in config.ini/env and only changes on restart, so this is resolved once at startup rather
- * than per logout. Any fetch/parse failure is treated as "unsupported" so a transient network blip
- * degrades to a working local logout rather than breaking it.
+ * Probes the configured OIDC issuer's discovery document for the facts that must be settled before
+ * express-openid-connect can be built: whether RP-Initiated Logout is available, which spelling of the
+ * issuer identifier the provider actually advertises, and which algorithm it signs ID tokens with. The
+ * issuer is fixed in config.ini/env and only changes on restart, so this is resolved once at first use
+ * rather than per request.
+ *
+ * Any fetch/parse failure degrades to the configured issuer with logout support off and the RS256
+ * default, leaving a transient network blip to break neither sign-in (express-openid-connect runs its
+ * own discovery, which either succeeds or reports the real error) nor logout (which falls back to
+ * clearing the local session). Such a result is flagged `metadataAvailable: false` so the caller can
+ * tell a fallback from an answer and decline to cache it — see {@link createReactiveOidcMiddleware}.
  */
-async function isRpInitiatedLogoutSupported() {
-    const issuer = config.MultiFactorAuthentication.oauthIssuerBaseUrl.replace(/\/+$/, "");
+async function probeDiscovery(): Promise<DiscoveryProbe> {
+    const configuredIssuer = config.MultiFactorAuthentication.oauthIssuerBaseUrl;
+    const metadata = await fetchDiscoveryMetadata(configuredIssuer);
+
+    return {
+        endSessionSupported: supportsRpInitiatedLogout(metadata),
+        issuerBaseUrl: reconcileIssuerBaseUrl(configuredIssuer, readAdvertisedIssuer(metadata)),
+        idTokenSigningAlg: resolveIdTokenSigningAlg(metadata),
+        metadataAvailable: metadata !== null
+    };
+}
+
+/** Fetches the issuer's discovery document, or null if it can't be retrieved or parsed. */
+async function fetchDiscoveryMetadata(configuredIssuer: string): Promise<unknown> {
+    const issuer = configuredIssuer.replace(/\/+$/, "");
     if (!issuer) {
-        return false;
+        return null;
     }
 
-    // The discovery document lives at `{issuer}/.well-known/openid-configuration` — appended to the full
-    // issuer (which may carry a path, e.g. Keycloak realms) rather than resolved against the origin root.
-    const metadataUrl = `${issuer}/.well-known/openid-configuration`;
+    const metadataUrl = discoveryUrlFor(issuer);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), DISCOVERY_TIMEOUT_MS);
     try {
         const response = await fetch(metadataUrl, { signal: controller.signal });
         if (!response.ok) {
-            getLog().info(`OAuth: discovery for ${issuer} returned HTTP ${response.status}; treating RP-Initiated Logout as unsupported.`);
-            return false;
+            getLog().info(`OAuth: discovery for ${issuer} returned HTTP ${response.status}; using the configured issuer and treating RP-Initiated Logout as unsupported.`);
+            return null;
         }
-        const metadata: unknown = await response.json();
-        return supportsRpInitiatedLogout(metadata);
+        return await response.json();
     } catch (error) {
-        getLog().info(`OAuth: discovery fetch for ${issuer} failed, treating RP-Initiated Logout as unsupported. ${error instanceof Error ? error.message : error}`);
-        return false;
+        getLog().info(`OAuth: discovery fetch for ${issuer} failed, using the configured issuer and treating RP-Initiated Logout as unsupported. ${error instanceof Error ? error.message : error}`);
+        return null;
     } finally {
         clearTimeout(timeout);
     }
 }
 
 /**
- * The single field of the OIDC discovery document we consume. The full metadata is large and arrives as
+ * Where an issuer's discovery document lives.
+ *
+ * Normally `{issuer}/.well-known/openid-configuration`, appended to the *full* issuer (which may carry a
+ * path, e.g. Keycloak realms) rather than resolved against the origin root. Callers strip trailing
+ * slashes first, so both spellings of a path-bearing issuer reach the same URL.
+ *
+ * An issuer that already points *at* a discovery document is used as-is. openid-client does exactly the
+ * same — `performDiscovery` skips resolution for any URL containing `/.well-known/`, and skips the
+ * issuer equality check along with it — which is what makes an explicit `.well-known` URL the documented
+ * way out of Authentik's "global" issuer mode (see {@link reconcileIssuerBaseUrl}). Appending a second
+ * `.well-known` there 404s, so the probe would come back blind on a configuration the library itself
+ * handles perfectly well, and everything derived from the document — the signing algorithm above all —
+ * would silently fall back. The `/.well-known/` test is the library's, character for character, so the
+ * two cannot disagree about which URLs are already discovery endpoints.
+ */
+export function discoveryUrlFor(issuer: string) {
+    return issuer.includes("/.well-known/") ? issuer : `${issuer}/.well-known/openid-configuration`;
+}
+
+/**
+ * The fields of the OIDC discovery document we consume. The full metadata is large and arrives as
  * untrusted network JSON, so rather than pull in (and pin) openid-client's transitive `ServerMetadata`
- * type for one property, we mirror just what we read and validate it at runtime.
+ * type for two properties, we mirror just what we read and validate it at runtime.
  */
 interface OidcDiscoveryMetadata {
     end_session_endpoint?: string;
+    issuer?: string;
+    id_token_signing_alg_values_supported?: unknown;
+}
+
+function readAdvertisedIssuer(metadata: unknown) {
+    if (typeof metadata !== "object" || metadata === null) {
+        return undefined;
+    }
+    return (metadata as OidcDiscoveryMetadata).issuer;
+}
+
+/**
+ * Picks the issuer identifier to hand express-openid-connect, reconciling what the user configured with
+ * what the provider advertises when the two differ only by a trailing slash.
+ *
+ * openid-client v6 asserts `new URL(advertised).href === new URL(configured).href` after fetching the
+ * discovery document, and fails the whole round-trip with `OAUTH_JSON_ATTRIBUTE_COMPARISON_FAILED`
+ * otherwise (#10695). v5 never compared them, so 0.104.0 turned a harmless spelling difference into a
+ * hard sign-in failure. `href` supplies a trailing slash for an *empty* path but neither adds nor strips
+ * one on a non-empty path, so the mismatch only bites issuers carrying a path — and it bites in both
+ * directions: Authentik advertises `…/application/o/<slug>/` while Keycloak advertises `…/realms/<name>`.
+ * Normalising in either single direction would therefore fix one provider by breaking the other.
+ *
+ * Adopting the advertised spelling costs nothing in security: it is only taken when it is identical to
+ * the configured issuer up to trailing slashes, so a document claiming a different host, path or scheme
+ * still falls through to the configured value and still fails the library's check. That deliberately
+ * leaves Authentik's "global" issuer mode (every provider reports the instance root, while the document
+ * is served under the per-application path) failing — the difference there is a real one, and the way
+ * out is to configure the issuer as an explicit `.well-known` URL.
+ */
+export function reconcileIssuerBaseUrl(configuredIssuer: string, advertisedIssuer: unknown) {
+    if (typeof advertisedIssuer !== "string" || !advertisedIssuer) {
+        return configuredIssuer;
+    }
+
+    let configuredHref: string;
+    let advertisedHref: string;
+    try {
+        configuredHref = new URL(configuredIssuer).href;
+        advertisedHref = new URL(advertisedIssuer).href;
+    } catch {
+        // A malformed issuer on either side: leave the configured value alone and let
+        // express-openid-connect report it, rather than silently substituting a guess.
+        return configuredIssuer;
+    }
+
+    if (configuredHref === advertisedHref) {
+        return configuredIssuer;
+    }
+
+    const withoutTrailingSlashes = (url: string) => url.replace(/\/+$/, "");
+    if (withoutTrailingSlashes(configuredHref) !== withoutTrailingSlashes(advertisedHref)) {
+        return configuredIssuer;
+    }
+
+    getLog().info(`OAuth: issuer '${configuredIssuer}' differs from the advertised '${advertisedIssuer}' only by a trailing slash; using the advertised spelling.`);
+    return advertisedIssuer;
 }
 
 /**
@@ -462,6 +609,63 @@ export function supportsRpInitiatedLogout(metadata: unknown) {
     }
     const { end_session_endpoint } = metadata as OidcDiscoveryMetadata;
     return typeof end_session_endpoint === "string" && end_session_endpoint.length > 0;
+}
+
+/**
+ * What express-openid-connect assumes when `idTokenSigningAlg` is left unset, and what OIDC Core
+ * requires every provider to support — so it stays the fallback whenever discovery can't tell us better.
+ */
+export const DEFAULT_ID_TOKEN_SIGNING_ALG = "RS256";
+
+/**
+ * Picks the JWS algorithm to expect on ID tokens.
+ *
+ * express-openid-connect defaults `idTokenSigningAlg` to RS256 and passes it to openid-client as the
+ * client's registered `id_token_signed_response_alg`, which is then enforced on every ID token. Trilium
+ * never set it, so a provider signing with anything else failed the round-trip with
+ * "unexpected JWT alg received, expected RS256, got: EdDSA"
+ * (https://github.com/orgs/TriliumNext/discussions/6318). RS256 is merely the *legacy* default: Pocket
+ * ID and Kanidm sign with Ed25519 by default, and others offer ES256.
+ *
+ * The provider already publishes the answer as `id_token_signing_alg_values_supported`, so it is read
+ * from the discovery probe rather than demanded from the user. RS256 wins whenever it's advertised —
+ * that keeps every currently-working deployment on exactly the algorithm it uses today, and the fallback
+ * only engages for the providers that don't offer RS256 at all, which are precisely the broken ones.
+ * `none` is skipped: unsigned ID tokens are not acceptable here (and express-openid-connect's own schema
+ * rejects the value outright, which would take the OIDC round-trip down at build time).
+ *
+ * `oauthIdTokenSigningAlg` overrides all of it, for a provider that misadvertises or signs with an
+ * algorithm we'd rank differently.
+ */
+export function resolveIdTokenSigningAlg(metadata: unknown): string {
+    const configured = config.MultiFactorAuthentication.oauthIdTokenSigningAlg.trim();
+    if (configured) {
+        if (configured.toLowerCase() !== "none") {
+            return configured;
+        }
+        getLog().error(`OAuth: ignoring oauthIdTokenSigningAlg '${configured}' — unsigned ID tokens are not supported.`);
+    }
+
+    const advertised = readAdvertisedSigningAlgs(metadata);
+    if (advertised.length === 0 || advertised.includes(DEFAULT_ID_TOKEN_SIGNING_ALG)) {
+        return DEFAULT_ID_TOKEN_SIGNING_ALG;
+    }
+
+    const [preferred] = advertised;
+    getLog().info(`OAuth: the issuer does not sign ID tokens with ${DEFAULT_ID_TOKEN_SIGNING_ALG}; expecting ${preferred} (advertised: ${advertised.join(", ")}).`);
+    return preferred;
+}
+
+/** The usable entries of `id_token_signing_alg_values_supported`, or an empty list if there are none. */
+function readAdvertisedSigningAlgs(metadata: unknown): string[] {
+    if (typeof metadata !== "object" || metadata === null) {
+        return [];
+    }
+    const advertised = (metadata as OidcDiscoveryMetadata).id_token_signing_alg_values_supported;
+    if (!Array.isArray(advertised)) {
+        return [];
+    }
+    return advertised.filter((alg): alg is string => typeof alg === "string" && alg !== "" && alg.toLowerCase() !== "none");
 }
 
 export const CLIENT_AUTH_METHODS = ["client_secret_basic", "client_secret_post"] as const;

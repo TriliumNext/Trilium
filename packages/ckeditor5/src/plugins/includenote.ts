@@ -4,14 +4,34 @@ import noteIcon from '../icons/note.svg?raw';
 export const COMMAND_NAME = 'insertIncludeNote';
 export const BOX_SIZE_COMMAND_NAME = 'includeNoteBoxSize';
 
-export const BOX_SIZES = [
-	{ value: 'small', label: 'Small' },
-	{ value: 'medium', label: 'Medium' },
-	{ value: 'full', label: 'Full' },
-	{ value: 'expandable', label: 'Expandable' }
-] as const;
+export const BOX_SIZES = [ 'small', 'medium', 'full', 'expandable' ] as const;
 
-export type BoxSizeValue = typeof BOX_SIZES[number]['value'];
+export type BoxSizeValue = typeof BOX_SIZES[number];
+
+/**
+ * The user-facing name of a box size, as shown by the widget toolbar's dropdown.
+ *
+ * A switch rather than a table of labels, so that each one is written as a literal argument of a
+ * `t()` call: that is how the messages this package owns are discovered (see `messages.ts`) and a
+ * label tucked away in a table would be invisible to translators.
+ *
+ * @param t the editor's translation function.
+ * @param size the box size; an unrecognized one has no label and is returned as-is.
+ */
+export function getBoxSizeLabel(t: (message: string) => string, size: BoxSizeValue): string {
+	switch (size) {
+		case 'small':
+			return t('Small');
+		case 'medium':
+			return t('Medium');
+		case 'full':
+			return t('Full');
+		case 'expandable':
+			return t('Expandable');
+		default:
+			return size;
+	}
+}
 
 export default class IncludeNote extends Plugin {
 	static get requires() {
@@ -143,7 +163,9 @@ class IncludeNoteEditing extends Plugin {
 
 				// hasSelectionHandle gives the block widget CKEditor's own drag grip so it moves
 				// atomically, instead of the browser's native drag tearing the embedded note apart.
-				return toWidget( section, viewWriter, { label: 'include note widget', hasSelectionHandle: true } );
+				// The label is announced by screen readers; lowercase to match the "image widget" /
+				// "table widget" labels CKEditor gives its own widgets.
+				return toWidget( section, viewWriter, { label: editor.t('include note widget'), hasSelectionHandle: true } );
 			}
 		} );
 

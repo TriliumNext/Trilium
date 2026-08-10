@@ -22,6 +22,11 @@ describe("MarkdownImportPlugin", () => {
         expect(editor.plugins.get(MarkdownImportPlugin)).toBeInstanceOf(MarkdownImportPlugin);
         expect(editor.commands.get(COMMAND_NAME)).toBeDefined();
         expect(editor.ui.componentFactory.has("markdownImport")).toBe(true);
+
+        // No dictionary is configured here, so `t()` renders the message id, which is the English
+        // label.
+        const view = editor.ui.componentFactory.create("markdownImport") as { label?: string };
+        expect(view.label).toBe("Markdown import from clipboard");
     });
 
     it("triggers pasteMarkdownIntoText on the Trilium component when executed", () => {

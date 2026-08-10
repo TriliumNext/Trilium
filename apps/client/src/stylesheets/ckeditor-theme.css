@@ -106,8 +106,6 @@ body {
 
     --ck-color-engine-placeholder-text: var(--muted-text-color);
 
-    --ck-z-modal: 10000;
-
     --ck-color-widget-type-around-button: var(--main-border-color);
     --ck-color-widget-type-around-button-hover: var(--main-border-color);
 }

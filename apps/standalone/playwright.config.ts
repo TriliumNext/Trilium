@@ -6,6 +6,9 @@ const baseURL = process.env["BASE_URL"] || `http://127.0.0.1:${port}`;
 export default createBaseConfig({
     appDir: __dirname,
     projectName: "standalone",
+    // Multi-tab behaviour is standalone-specific — the server already serves
+    // several browser clients from one backend — so those tests live here.
+    localTestDir: "e2e",
     workers: 1,
     webServer: !process.env.TRILIUM_DOCKER ? {
         command: `pnpm build && pnpm vite preview --host 127.0.0.1 --port ${port}`,

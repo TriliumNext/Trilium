@@ -1,4 +1,6 @@
-import { Command, Mention, Plugin, ModelRange, type ModelSelectable } from "ckeditor5";
+import { Command, MentionEditing, Plugin, ModelRange, type ModelSelectable } from "ckeditor5";
+
+import TriliumMentionUI from "./mention/trilium_mention_ui.js";
 
 /**
  * Overrides the actions taken by the Mentions plugin (triggered by `@` in the text editor, or `~` & `#` in the attribute editor):
@@ -10,7 +12,7 @@ import { Command, Mention, Plugin, ModelRange, type ModelSelectable } from "cked
 export default class MentionCustomization extends Plugin {
 
     static get requires() {
-		return [ Mention ];
+		return [ MentionEditing, TriliumMentionUI ];
 	}
 
     public static get pluginName() {

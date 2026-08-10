@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buildClassicToolbar, buildFloatingToolbar, buildMobileToolbar, buildToolbarConfig } from "./toolbar.js";
+import { buildClassicToolbar, buildFloatingToolbar, buildMobileToolbar, buildToolbarConfig, usesClassicToolbar } from "./toolbar.js";
 
 type ToolbarConfig = string | "|" | { items: ToolbarConfig[] };
 
@@ -10,6 +10,10 @@ const optionsState = vi.hoisted(() => ({ values: {} as Record<string, string | u
 vi.mock("../../../services/options.js", () => ({
     default: { get: (name: string) => optionsState.values[name] }
 }));
+
+// The group labels are translated when the toolbar is built (CKEditor renders a nested dropdown's
+// `label` verbatim), so echo the key back to make the lookup visible to the assertions below.
+vi.mock("../../../services/i18n.js", () => ({ t: (key: string) => key }));
 
 function setDevice(device: "mobile" | "desktop") {
     (window as unknown as { glob?: { device?: string } }).glob = { device };
@@ -56,6 +60,31 @@ describe("buildClassicToolbar", () => {
     });
 });
 
+describe("group labels", () => {
+    // Each nested group carries a translated label; a hardcoded English one would reach the user
+    // untranslated, since CKEditor passes it straight to the dropdown button.
+    function groupLabels(items: unknown[]): string[] {
+        return items
+            .filter((item): item is { label: string } => typeof item === "object" && item !== null && "label" in item)
+            .map((item) => item.label);
+    }
+
+    it("translates every group label, on both the classic and the floating toolbar", () => {
+        expect(groupLabels(buildClassicToolbar(false).toolbar.items)).toStrictEqual([
+            "text-editor.toolbar-groups.text-formatting",
+            "text-editor.toolbar-groups.insert",
+            "text-editor.toolbar-groups.alignment"
+        ]);
+
+        const floating = buildFloatingToolbar();
+        expect(groupLabels(floating.toolbar.items)).toStrictEqual([ "text-editor.toolbar-groups.text-formatting" ]);
+        expect(groupLabels(floating.blockToolbar)).toStrictEqual([
+            "text-editor.toolbar-groups.insert",
+            "text-editor.toolbar-groups.alignment"
+        ]);
+    });
+});
+
 describe("buildMobileToolbar", () => {
     it("flattens nested toolbar groups into a single flat item list", () => {
         const mobile = buildMobileToolbar();
@@ -99,5 +128,36 @@ describe("buildToolbarConfig dispatch", () => {
     it("returns the floating toolbar (with a block toolbar) when not in classic mode", () => {
         const config = buildToolbarConfig(false);
         expect("blockToolbar" in config).toBe(true);
+    });
+});
+
+/**
+ * Which of the two toolbars a text note is edited with. Three things have a say and they do not
+ * carry equal weight, which is the whole of what this settles.
+ */
+describe("usesClassicToolbar", () => {
+    it("follows the reader's option on a desktop that has asked for nothing else", () => {
+        expect(usesClassicToolbar({ isMobile: false, textNoteEditorType: "ckeditor-classic" })).toBe(true);
+        expect(usesClassicToolbar({ isMobile: false, textNoteEditorType: "ckeditor-balloon" })).toBe(false);
+    });
+
+    // A balloon is hard to reach around a virtual keyboard, so the option does not apply there.
+    it("keeps the classic bar on a phone whatever the option says", () => {
+        expect(usesClassicToolbar({ isMobile: true, textNoteEditorType: "ckeditor-balloon" })).toBe(true);
+    });
+
+    // A bar built for the width of a note fits no narrow view, on any device.
+    it("gives way to a view that has asked for the floating toolbar, option and device alike", () => {
+        expect(usesClassicToolbar({
+            floatingToolbarRequested: true,
+            isMobile: false,
+            textNoteEditorType: "ckeditor-classic"
+        })).toBe(false);
+
+        expect(usesClassicToolbar({
+            floatingToolbarRequested: true,
+            isMobile: true,
+            textNoteEditorType: "ckeditor-classic"
+        })).toBe(false);
     });
 });

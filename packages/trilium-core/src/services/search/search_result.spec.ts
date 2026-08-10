@@ -214,5 +214,21 @@ describe("SearchResult", () => {
 
             expect(exactResult.score).toBeGreaterThan(fuzzyResult.score);
         });
+
+        it("suppresses the fuzzy title score once the cumulative fuzzy budget is exhausted", () => {
+            const target = note("Vienna");
+            rootNote.child(target);
+
+            const result = resultFor(target);
+            const fuzzyTitleScore = () => result["calculateFuzzyTitleScore"]("vienna", "vienne");
+
+            expect(fuzzyTitleScore()).toBeGreaterThan(0);
+
+            // Every near-miss token chunk consumes the shared fuzzy budget; once it is spent,
+            // further fuzzy title scoring returns 0. computeScore() resets that budget before
+            // scoring the title, so the cap is only observable on a directly driven instance.
+            result.addScoreForStrings(["vienna"], new Array(80).fill("vienne").join(" "), 10, true);
+            expect(fuzzyTitleScore()).toBe(0);
+        });
     });
 });

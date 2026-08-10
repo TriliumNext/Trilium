@@ -9,9 +9,17 @@ import { formatCodeBlocks } from "./syntax_highlight.js";
  * but blocks traversal sequences and URL manipulation characters.
  */
 export function isValidDocName(docName: string): boolean {
-    // Allow alphanumeric characters, spaces, underscores, hyphens, ampersands, and forward slashes.
-    const validDocNameRegex = /^[a-zA-Z0-9_/\- ()&]+$/;
-    return validDocNameRegex.test(docName);
+    // A docName is a path built out of page titles, so it has to carry the punctuation titles do:
+    // dots ("Day.js", "1. Installing the server", "v0.103.0 ..."), commas ("Note Map (Link map, Tree
+    // map)") and backticks ("`cheerio` is now deprecated"), on top of spaces, underscores, hyphens,
+    // ampersands, brackets and the slashes that separate the segments.
+    const validDocNameRegex = /^[a-zA-Z0-9_/\- ()&.,`]+$/;
+    if (!validDocNameRegex.test(docName)) return false;
+
+    // Dots being allowed above, the traversal they would spell has to be turned away in its own
+    // right: a segment of nothing but dots is the one that climbs out of the doc directory, and no
+    // page title is ever that.
+    return !docName.split("/").some((segment) => /^\.+$/.test(segment));
 }
 
 export default function renderDoc(note: FNote) {

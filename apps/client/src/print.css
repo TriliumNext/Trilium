@@ -48,6 +48,7 @@ body[data-note-type="text"] .ck-content {
     color: #374a75;
 }
 
+.ck-content .todo-list__label,
 .ck-content .todo-list__label * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -82,7 +83,7 @@ body[data-note-type="text"] .ck-content {
         --task-state-glyph-font-family: boxicons;
     }
 
-    .ck-content .todo-list__label__description {
+    .ck-content .todo-list li {
         /* The percentage of the line height that the check box occupies */
         --box-ratio: 0.75;
         /* The size of the gap between the check box and the caption */
@@ -91,9 +92,22 @@ body[data-note-type="text"] .ck-content {
         /* The percentage of the box size that the glyph occupies. */
         --glyph-ratio: .70;
 
+        /* Registered as <length> above, so the `lh` unit is resolved to an
+           absolute length here at the li; descendants and pseudo-elements
+           inherit that frozen value, so changing the glyph's font-size on
+           ::after no longer feeds back into the box dimensions. */
         --box-size: calc(1lh * var(--box-ratio));
         --box-vert-offset: calc((1lh - var(--box-size)) / 2);
+    }
 
+    /* The print document does not load the app stylesheet, so neutralise the UA
+       paragraph margins for real-<p> item descriptions — the box is centred on
+       the li's first line and the text must start there too. */
+    .ck-content .todo-list li p {
+        margin-block: 0;
+    }
+
+    .ck-content .todo-list__label__description {
         display: inline-block;
         padding-inline-start: calc(var(--box-size) + var(--box-text-gap));
         position: relative;
@@ -109,21 +123,47 @@ body[data-note-type="text"] .ck-content {
         height: var(--box-size);
     }
 
-    .ck-content .todo-list__label__description::before {
+    /* The `_without-description` variant has no description span — the item text is
+       a sibling <p>. Turn the (otherwise empty) label itself into the box, anchored
+       on the li's first line, and indent the paragraph(s) to make room for it. */
+    .ck-content .todo-list__label.todo-list__label_without-description {
+        position: absolute;
+        left: 0;
+        top: var(--box-vert-offset);
+        width: var(--box-size);
+        height: var(--box-size);
+    }
+
+    .ck-content .todo-list__label.todo-list__label_without-description::before,
+    .ck-content .todo-list__label.todo-list__label_without-description::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+    }
+
+    .ck-content .todo-list li > .todo-list__label_without-description ~ p {
+        padding-inline-start: calc(var(--box-size) + var(--box-text-gap));
+    }
+
+    .ck-content .todo-list__label__description::before,
+    .ck-content .todo-list__label.todo-list__label_without-description::before {
         --_border-tickness: 1pt;
         outline: var(--_border-tickness) solid black;
         outline-offset: calc(0pt - var(--_border-tickness));
         border-radius: 2pt;
     }
 
-    .ck-content .todo-list__label__description::after {
+    .ck-content .todo-list__label__description::after,
+    .ck-content .todo-list__label.todo-list__label_without-description::after {
         content: var(--task-state-glyph);
         line-height: var(--box-size);
-        vertical-align: middle;
         text-align: center;
         font-family: var(--task-state-glyph-font-family);
-        font-size: calc(var(--box-size) * var(--glyph-ratio));
+        /* Em box == checkbox box, shrink via scale(): geometric centring,
+           consistent with the on-screen checkbox glyph. */
+        font-size: var(--box-size);
         color: var(--task-state-color);
+        transform: scale(var(--glyph-ratio));
     }
 
     .ck-content .todo-list__label input[type="checkbox"] {

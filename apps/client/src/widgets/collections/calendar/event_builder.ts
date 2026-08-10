@@ -1,9 +1,9 @@
-import { EventInput, EventSourceFuncArg, EventSourceInput } from "@fullcalendar/core/index.js";
 import { dayjs } from "@triliumnext/commons";
 import clsx from "clsx";
-import { start } from "repl";
+import { EventInput, EventSourceFuncInfo, EventSourceInput } from "fullcalendar";
 import * as rruleLib from 'rrule';
 
+import FAttribute from "../../../entities/fattribute";
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import server from "../../../services/server";
@@ -49,7 +49,7 @@ export async function buildEvents(noteIds: string[]) {
     return events.flat();
 }
 
-export async function buildEventsForCalendar(note: FNote, e: EventSourceFuncArg) {
+export async function buildEventsForCalendar(note: FNote, e: EventSourceFuncInfo) {
     const events: EventInput[] = [];
 
     // Gather all the required date note IDs.
@@ -106,30 +106,41 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
         displayedAttributesData = await buildDisplayedAttributes(note, calendarDisplayedAttributes);
     }
 
+    // An event with no start time takes the whole day, which is how the editor writes one too (see
+    // EventDatesEditor). When the event repeats this has to be said outright rather than left to
+    // FullCalendar's rrule plugin to infer from the rule: the plugin reads the whole of the rule
+    // looking for a time, so an `UNTIL=…T235959Z` — which the recurrence editor writes for an end
+    // date (see recurrence.ts) — makes it take the event for a timed one whatever its DTSTART says.
+    const allDay = !startTime;
+
+    // When the event happens is the same whatever the note is called, so it is worked out once for
+    // all the titles rather than inside the loop, which used to append the time to the dates again
+    // for every title past the first.
+    if (startTime && endTime && !endDate) {
+        endDate = startDate;
+    }
+
+    startDate = (startTime ? `${startDate}T${startTime}:00` : startDate);
+    if (!startTime) {
+        if (endDate) {
+            endDate = dayjs(endDate).add(1, "day").format("YYYY-MM-DD");
+        } else if (startDate) {
+            endDate = dayjs(startDate).add(1, "day").format("YYYY-MM-DD");
+        }
+    }
+
+    endDate = (endTime ? `${endDate}T${endTime}:00` : endDate);
+    // If the end date is now before the start date, bump it a day forward to account for times spanning the day boundary
+    if (endDate && endTime && dayjs(endDate).isBefore(dayjs(startDate))) {
+        endDate = dayjs(endDate).add(1, "day").format("YYYY-MM-DDTHH:mm:ss");
+    }
+
     for (const title of titles) {
-        if (startTime && endTime && !endDate) {
-            endDate = startDate;
-        }
-
-        startDate = (startTime ? `${startDate}T${startTime}:00` : startDate);
-        if (!startTime) {
-            if (endDate) {
-                endDate = dayjs(endDate).add(1, "day").format("YYYY-MM-DD");
-            } else if (startDate) {
-                endDate = dayjs(startDate).add(1, "day").format("YYYY-MM-DD");
-            }
-        }
-
-        endDate = (endTime ? `${endDate}T${endTime}:00` : endDate);
-        // If the end date is now before the start date, bump it a day forward to account for times spanning the day boundary
-        if (endDate && endTime && dayjs(endDate).isBefore(dayjs(startDate))) {
-            endDate = dayjs(endDate).add(1, "day").format("YYYY-MM-DDTHH:mm:ss");
-        }
-
         const eventData: EventInput = {
             id: note.noteId,
             title,
             start: startDate,
+            allDay,
             url: `#${note.noteId}?popup`,
             noteId: note.noteId,
             iconClass: note.getLabelValue("iconClass"),
@@ -141,8 +152,11 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
         }
 
         if (recurrence) {
-            // Generate rrule string
-            const rruleString = `DTSTART:${dayjs(startDate).format("YYYYMMDD[T]HHmmss")}\n${recurrence}`;
+            // Generate rrule string. A whole day is written as the bare date it is, no midnight
+            // invented for hours the event does not have. `DTSTART;VALUE=DATE:` — the way iCalendar
+            // spells the same thing — is not an option: the rrule library drops a DTSTART written
+            // that way without a word and starts the series from today instead.
+            const rruleString = `DTSTART:${dayjs(startDate).format(allDay ? "YYYYMMDD" : "YYYYMMDD[T]HHmmss")}\n${recurrence}`;
 
             // Validate rrule string
             let rruleValid = true;
@@ -156,8 +170,7 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
                 delete eventData.end;
                 eventData.rrule = rruleString;
                 if (endDate){
-                    const duration = dayjs.duration(dayjs(endDate).diff(dayjs(startDate)));
-                    eventData.duration = duration.format("HH:mm");
+                    eventData.duration = buildOccurrenceDuration(startDate, endDate);
                 }
             } else {
                 throw new Error(`Note "${note.noteId} ${note.title}" has an invalid #recurrence string ${recurrence}. Excluding...`);
@@ -166,6 +179,22 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
         events.push(eventData);
     }
     return events;
+}
+
+/**
+ * How long one occurrence of a recurring event lasts, as the duration object FullCalendar builds
+ * its own from rather than as an `HH:mm` string. A string of hours and minutes has nowhere to put
+ * days: a whole-day occurrence came out of it as `"00:00"` — no length at all — and a span of days
+ * kept only the hours left over past the last of them.
+ */
+function buildOccurrenceDuration(startDate: string, endDate: string) {
+    const minutes = dayjs(endDate).diff(dayjs(startDate), "minute");
+
+    return {
+        days: Math.floor(minutes / (24 * 60)),
+        hours: Math.floor((minutes % (24 * 60)) / 60),
+        minutes: minutes % 60
+    };
 }
 
 async function parseCustomTitle(customTitlettributeName: string | null, note: FNote, allowRelations = true): Promise<string[]> {
@@ -199,9 +228,24 @@ async function buildDisplayedAttributes(note: FNote, calendarDisplayedAttributes
     const result: Array<[string, string]> = [];
 
     for (const attribute of filteredDisplayedAttributes) {
-        if (attribute.type === "label") result.push([attribute.name, attribute.value]);
-        else result.push([attribute.name, (await attribute.getTargetNote())?.title || ""]);
+        const name = displayedAttributeName(note, attribute);
+        if (attribute.type === "label") result.push([name, attribute.value]);
+        else result.push([name, (await attribute.getTargetNote())?.title || ""]);
     }
 
     return result;
+}
+
+/**
+ * What a field is called on the chip: the alias its definition gives it, and the attribute's own
+ * name where no definition gives one.
+ *
+ * Both halves are needed. The alias is the name the reader chose — the promoted field in the note
+ * itself is labelled by it, and a chip saying something else is the same value under two names. The
+ * fallback is what lets the calendar go on showing an attribute that was never promoted, which is
+ * the whole point of `#calendar:displayedAttributes` naming attributes rather than definitions.
+ */
+function displayedAttributeName(note: FNote, attribute: FAttribute) {
+    const definition = note.getAttribute("label", `${attribute.type}:${attribute.name}`);
+    return definition?.getDefinition().promotedAlias || attribute.name;
 }

@@ -8,7 +8,10 @@
         padding: 1em;
     }
 
-    .llm-chat-input-form {
-        padding: 0.5em 1em;
+    /* The composer is an island with its own inner padding, so the gap to the
+       timeline and the pane edges is a margin here rather than padding there. */
+    .llm-chat-input-form,
+    .llm-chat-no-provider {
+        margin: 0 1em 0.75em;
     }
 }

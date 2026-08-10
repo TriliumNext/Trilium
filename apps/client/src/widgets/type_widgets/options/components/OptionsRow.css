@@ -19,17 +19,29 @@
 
 .option-row-input {
     flex-shrink: 0;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .option-row-input > select,
 .option-row-input > .dropdown {
     width: auto;
     min-width: 150px;
+    max-width: 100%;
 }
 
 .option-row-input > .dropdown button {
     width: 100%;
     text-align: start;
+}
+
+/* A choice too long to show is cut short rather than carried off the card. The arrow is a background
+   image with padding reserved for it (forms.css), so it keeps its place at the end. */
+.option-row-input > select,
+.option-row-input > .dropdown > button {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .option-row-description {

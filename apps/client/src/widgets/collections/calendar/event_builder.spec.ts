@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { buildNote, buildNotes } from "../../../test/easy-froca.js";
 import { buildEvent, buildEvents } from "./event_builder.js";
 import { LOCALE_MAPPINGS } from "./index.js";
-import { isValidDuration } from "./utils.js";
+import { isValidDuration, parseDurationSeconds } from "./utils.js";
 import { LOCALES } from "@triliumnext/commons";
 
 describe("Building events", () => {
@@ -143,8 +143,11 @@ describe("Promoted attributes", () => {
         const event = await buildEvent(note, { startDate: "2025-04-04" });
         expect(event).toHaveLength(1);
         expect(event[0]?.promotedAttributes).toMatchObject([
+            // No alias to go by, so the label says itself.
             [ "weight", "75" ],
-            [ "mood", "happy" ]
+            // Named as the definition names it, which is how the note's own promoted field is
+            // labelled — the chip would otherwise say the same value under a second name.
+            [ "Mood", "happy" ]
         ]);
     });
 
@@ -161,7 +164,34 @@ describe("Promoted attributes", () => {
         const event = await buildEvent(note, { startDate: "2025-04-04" });
         expect(event).toHaveLength(1);
         expect(event[0]?.promotedAttributes).toMatchObject([
-            [ "assignee", "Target note" ]
+            [ "Assignee", "Target note" ]
+        ]);
+    });
+
+    it("says nothing for a relation whose target has no title, rather than the word for nothing", async () => {
+        const note = buildNote({
+            "title": "Hello",
+            "~assignee": buildNote({ "title": "" }).noteId,
+            "#calendar:displayedAttributes": "assignee",
+            "#relation:assignee": "promoted,alias=Assignee,single,text"
+        });
+
+        const event = await buildEvent(note, { startDate: "2025-04-04" });
+        expect(event[0]?.promotedAttributes).toMatchObject([
+            [ "Assignee", "" ]
+        ]);
+    });
+
+    it("says an attribute nobody defined by its own name, promotion being no condition of showing one", async () => {
+        const note = buildNote({
+            title: "Hello",
+            "#mood": "happy",
+            "#calendar:displayedAttributes": "mood"
+        });
+
+        const event = await buildEvent(note, { startDate: "2025-04-04" });
+        expect(event[0]?.promotedAttributes).toMatchObject([
+            [ "mood", "happy" ]
         ]);
     });
 
@@ -229,7 +259,7 @@ describe("Recurrence", () => {
         expect(events[0]).toMatchObject({
             title: "Recurring Event Spanning Day Boundary",
             start: "2025-05-05T23:00:00",
-            duration: "02:00"
+            duration: { days: 0, hours: 2, minutes: 0 }
         });
         expect(events[0].rrule).toContain("DTSTART:20250505T230000");
         expect(events[0].end).toBeUndefined();
@@ -251,7 +281,7 @@ describe("Recurrence", () => {
         expect(events[0]).toMatchObject({
             title: "Timed Recurring Event",
             start: "2025-05-05T13:00:00",
-            duration: "02:30"
+            duration: { days: 0, hours: 2, minutes: 30 }
         });
         expect(events[0].rrule).toContain("DTSTART:20250505T130000");
         expect(events[0].end).toBeUndefined();
@@ -271,6 +301,75 @@ describe("Recurrence", () => {
         expect(events).toHaveLength(1);
         expect(events[0].rrule).toBeDefined();
         expect(events[0].end).toBeUndefined();
+    });
+
+    it("keeps a recurring event whole-day where it has no times", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring Whole Day",
+                "#startDate": "2025-05-05",
+                "#recurrence": "FREQ=DAILY;COUNT=5"
+            },
+            {
+                title: "Recurring Timed",
+                "#startDate": "2025-05-05",
+                "#startTime": "13:00",
+                "#endTime": "15:30",
+                "#recurrence": "FREQ=DAILY;COUNT=5"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(2);
+        // Said outright rather than left to FullCalendar to guess: the rrule plugin reads the whole
+        // of the rule for a time, and a `UNTIL=…T235959Z` — which the recurrence editor writes —
+        // makes it guess a timed event however the DTSTART is written.
+        expect(events[0].allDay).toBe(true);
+        expect(events[1].allDay).toBe(false);
+        // And the DTSTART says the same, no midnight invented for a day that has no hours.
+        expect(events[0].rrule).toContain("DTSTART:20250505\n");
+        expect(events[1].rrule).toContain("DTSTART:20250505T130000\n");
+    });
+
+    it("carries the length of a recurring event that runs over days", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring Single Day",
+                "#startDate": "2025-05-05",
+                "#recurrence": "FREQ=WEEKLY;COUNT=3"
+            },
+            {
+                title: "Recurring Three Days",
+                "#startDate": "2025-05-05",
+                "#endDate": "2025-05-07",
+                "#recurrence": "FREQ=WEEKLY;COUNT=3"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(2);
+        // Days rather than hours: an `HH:mm` duration has nowhere to put them, so a whole-day
+        // occurrence used to come out "00:00" — no length at all.
+        expect(events[0].duration).toEqual({ days: 1, hours: 0, minutes: 0 });
+        expect(events[1].duration).toEqual({ days: 3, hours: 0, minutes: 0 });
+    });
+
+    it("gives no length to an occurrence whose event says only when it starts", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring Open-Ended",
+                "#startDate": "2025-05-05",
+                "#startTime": "13:00",
+                "#recurrence": "FREQ=DAILY;COUNT=5"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(1);
+        // Nothing said about how long it runs, so nothing is invented: FullCalendar gives the
+        // occurrence its default length rather than one worked out from an end that isn't there.
+        expect(events[0].duration).toBeUndefined();
+        expect(events[0].rrule).toContain("DTSTART:20250505T130000");
     });
 
     it("writes to console on invalid recurrence rule", async () => {
@@ -325,6 +424,29 @@ describe("isValidDuration", () => {
     it("rejects out-of-range minute/second values", () => {
         expect(isValidDuration("00:60:00")).toBe(false);
         expect(isValidDuration("00:00:60")).toBe(false);
+    });
+});
+
+/**
+ * What the length of a slot is read by, a tap on the grid making an event of exactly one (see
+ * draftFromDateClick in index.tsx). Bounded lengths are {@link isValidDuration}'s business; this
+ * only says how long one lasts.
+ */
+describe("parseDurationSeconds", () => {
+    it("reads a duration written as hours, minutes and seconds", () => {
+        expect(parseDurationSeconds("00:15:00")).toBe(15 * 60);
+        expect(parseDurationSeconds("01:00:00")).toBe(60 * 60);
+        expect(parseDurationSeconds("00:00:30")).toBe(30);
+        expect(parseDurationSeconds("24:00:00")).toBe(24 * 60 * 60);
+    });
+
+    it("answers nothing for what is not written that way", () => {
+        expect(parseDurationSeconds("1:0:0")).toBe(null);
+        expect(parseDurationSeconds("00:60:00")).toBe(null);
+        expect(parseDurationSeconds("abc")).toBe(null);
+        expect(parseDurationSeconds("")).toBe(null);
+        expect(parseDurationSeconds(null)).toBe(null);
+        expect(parseDurationSeconds(undefined)).toBe(null);
     });
 });
 

@@ -11,18 +11,15 @@
   "devDependencies": {
     "@vitest/browser": "4.1.10",
     "vitest": "4.1.10",
-    "webdriverio": "9.29.1"
+    "webdriverio": "9.30.1"
   },
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
-    "@triliumnext/ckeditor5-admonition": "workspace:*",
-    "@triliumnext/ckeditor5-collapsible": "workspace:*",
-    "@triliumnext/ckeditor5-utils": "workspace:*",
-    "@triliumnext/ckeditor5-footnotes": "workspace:*",
-    "@triliumnext/ckeditor5-keyboard-marker": "workspace:*",
-    "@triliumnext/ckeditor5-math": "workspace:*",
-    "@triliumnext/ckeditor5-mermaid": "workspace:*",
-    "ckeditor5": "48.2.0",
-    "ckeditor5-premium-features": "48.2.0"
+    "@ckeditor/ckeditor5-icons": "48.4.0",
+    "ckeditor5": "48.4.0",
+    "mathlive": "0.110.0"
+  },
+  "peerDependencies": {
+    "bootstrap": "^5.3.0"
   }
 }

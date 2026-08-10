@@ -12,32 +12,44 @@
         "get_started": "Mulai",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Cuplikan layar aplikasi desktop Trilium Notes"
+        "screenshot_alt": "Cuplikan layar aplikasi desktop Trilium Notes",
+        "tagline_license": "Berlisensi AGPL-3.0",
+        "tagline_no_account": "Tidak perlu akun",
+        "tagline_cross_platform": "Bekerja luring"
     },
     "organization_benefits": {
-        "title": "Organisasi",
+        "title": "Struktur catatan Anda, cara Anda",
         "note_structure_title": "Struktur catatan",
         "note_structure_description": "Catatan dapat disusun secara hirarkis. Tidak perlu folder, karena setiap catatan dapat mengandung catatan anak. Satu catatan dapat ditambah di beberapa tempat sekaligus dalam hirarki.",
-        "attributes_title": "Label dan hubungan catatan",
-        "attributes_description": "Gunakan relasi antar catatan atau tambahkan label untuk kategorisasi yang mudah. Gunakan atribut utama untuk memasukkan informasi terstruktur yang dapat digunakan dalam tabel atau papan (boards).",
+        "attributes_title": "Label dan relasi catatan",
+        "attributes_description": "Gunakan relasi antar catatan atau tambahkan label untuk kategorisasi mudah. Gunakan atribut yang dipromosikan untuk memasukkan informasi terstruktur yang dapat digunakan dalam tabel dan papan.",
         "hoisting_title": "Workspace dan Area Fokus",
-        "hoisting_description": "Dengan mudah memisahkan catatan personal dan kerjaan dengan grouping dalam workspace, fokus hanya ke catatan-catatan yang spesifik di workspace tertentu."
+        "hoisting_description": "Dengan mudah memisahkan catatan personal dan kerjaan dengan grouping dalam workspace, fokus hanya ke catatan-catatan yang spesifik di workspace tertentu.",
+        "screenshot_alt": "Pohon catatan hierarkis di Trilium"
     },
     "productivity_benefits": {
-        "title": "Produktivitas dan Keamanan",
+        "title": "Fitur andalan sehari-hari",
         "revisions_title": "Revisi Catatan",
         "revisions_content": "Catatan akan secara periodik disimpan dalam bentuk revisi secara otomatis dan versi revisi-revisi bisa digunakan untuk mengulas kembali atau melakukan undo jika ada kesalahan atau perubahan yang tidak disengaja. Versi revisi juga bisa dibuat sesuai kebutuhan.",
         "sync_title": "Sinkronisasi",
         "sync_content": "Gunakan hostinganmu sendiri atau instansi cloud untuk sinkronisasi mudah catatan-catatan anda pada beberapa perangkat, dan untuk akses dari ponsel anda dengan PWA.",
-        "search_content": "Atau cari teks di dalam catatan lalu lebih dalam dengan cari catatan induk, atau berdasarkan kedalaman.",
+        "search_content": "Lompat ke catatan atau perintah apa pun berdasarkan judul dengan pencocokan fuzzy, atau jalankan pencarian teks lengkap di seluruh catatan Anda, bahkan teks di dalam gambar dan PDF melalui OCR.",
         "web_clipper_title": "Penyemat Web",
         "web_clipper_content": "Mengambil halaman web (atau foto halaman web) dan disematkan langsung ke catatan Trilium dengan ekstensi browser penyemat web.",
         "protected_notes_title": "Catatan terlindungi",
         "protected_notes_content": "Lindungi informasi pribadi sensitif dengan mengenkripsi catatan dan menguncinya di balik sesi yang dilindungi kata sandi.",
-        "search_title": "Pencarian mumpuni"
+        "search_title": "Pencarian & navigasi cepat",
+        "auth_title": "Masuk aman",
+        "auth_content": "Lindungi login server Anda dengan autentikasi multi-faktor (TOTP), atau masuk melalui penyedia identitas Anda dengan OpenID Connect.",
+        "templates_title": "Templat",
+        "templates_content": "Definisikan templat catatan yang dapat digunakan kembali dengan struktur, atribut, dan konten preset, lalu buat catatan baru darinya dalam satu klik.",
+        "share_title": "Bagikan catatan di web",
+        "share_content": "Jika Anda memiliki server, terbitkan subpohon catatan Anda apa pun sebagai situs web publik yang hanya dapat dibaca yang dapat dijelajahi siapa saja tanpa akun.",
+        "api_title": "REST API",
+        "api_content": "Baca, buat, dan perbarui catatan Anda secara terprogram melalui HTTP dengan REST API bawaan Trilium, ideal untuk automasi dan integrasi pihak ketiga."
     },
     "note_types": {
-        "title": "Cara-cara menampilkan informasi Anda",
+        "title": "Jenis catatan untuk setiap jenis konten",
         "text_title": "Catatan teks",
         "text_description": "Catatan-catatan ini diedit dengan editor visual (WYSIWYG), dengan dukungan tabel, gambar, ekspresi matematika, blok kode dengan penyorotan sintaks. Format teks catatan anda dengan sintaks Markdown atau gunakan fungsi panggilan slash(/).",
         "code_title": "Catatan kode",
@@ -49,7 +61,18 @@
         "mermaid_title": "Diagram mermaid",
         "mermaid_description": "Buat diagram seperti diagram alur (flowchart), diagram kelas & urutan (class & sequence), bagan Gantt, dan banyak lagi, menggunakan sintaks Mermaid.",
         "mindmap_title": "Peta pikiran (Mindmap)",
-        "mindmap_description": "Organisasikan pemikiran Anda secara visual atau lakukan sesi brainstorming."
+        "mindmap_description": "Atur pemikiran Anda secara visual atau buat ide-ide.",
+        "subtitle": "Tidak semuanya cocok dengan rapi dalam satu paragraf. Trilium menawarkan berbagai jenis catatan, dari teks kaya dan kode hingga spreadsheet, diagram, dan peta pikiran, sehingga Anda dapat menangkap setiap ide dalam bentuk yang paling sesuai dan mencampurnya secara bebas di seluruh pohon Anda.",
+        "others_label": "Dan lainnya",
+        "notemap_title": "Peta catatan",
+        "relationmap_title": "Peta relasi",
+        "savedsearch_title": "Pencarian tersimpan",
+        "rendernote_title": "Render catatan",
+        "webview_title": "Tampilan web",
+        "markdown_title": "Markdown",
+        "markdown_description": "Lebih suka teks biasa? Tulis catatan Anda langsung dalam Markdown, menjadikannya portabel dan mudah diversion, sambil tetap menampilkan tabel, blok kode, dan pemformatan kaya dalam pratinjau berdampingan.",
+        "spreadsheet_title": "Spreadsheet",
+        "spreadsheet_description": "Spreadsheet berfitur lengkap untuk data tabular, dengan rumus, pemformatan bersyarat, validasi data, pengurutan, dan penyaringan. Import dan ekspor file Excel (.xlsx) dan CSV."
     },
     "collections": {
         "table_description": "Tampilkan dan edit informasi catatan dalam struktur tabel, dengan berbagai tipe kolom seperti teks, angka, kotak centang, tanggal & waktu, tautan, dan warna, serta dukungan untuk relasi catatan. Secara opsional, tampilkan catatan dalam hierarki pohon di dalam tabel.",
@@ -60,16 +83,19 @@
         "presentation_title": "Presentasi",
         "presentation_description": "Atur informasi ke dalam slide dan presentasikan dalam layar penuh dengan transisi yang mulus. Slide juga dapat diekspor ke PDF agar mudah dibagikan.",
         "calendar_description": "Kelola acara pribadi atau profesional Anda menggunakan kalender, dengan dukungan untuk acara sepanjang hari dan beberapa hari. Lihat acara Anda sekilas dengan tampilan mingguan, bulanan, dan tahunan. Interaksi mudah untuk menambahkan atau menyeret acara.",
-        "title": "Koleksi",
+        "title": "Lihat catatan Anda dari setiap sudut",
         "calendar_title": "Penanggalan",
-        "table_title": "Tabel"
+        "table_title": "Tabel",
+        "subtitle": "Koleksi memberikan tampilan khusus untuk sekelompok catatan. Tampilkan catatan yang sama sebagai kalender, tabel, papan Kanban, peta interaktif, dan lainnya, lalu beralih antar tata letak kapan pun kebutuhan Anda berubah.",
+        "dashboard_title": "Dasbor",
+        "dashboard_description": "Atur catatan Anda sebagai ubin yang dapat ditarik dan diubah ukurannya pada grid. Catatan menjadi widget langsung yang menampilkan konten mereka sekilas; ideal untuk membangun beranda pribadi atau ringkasan proyek yang menyatukan semuanya dalam satu tempat."
     },
     "faq": {
         "title": "Tanya Jawab",
         "mobile_question": "Apakah ada aplikasi mobile?",
         "mobile_answer": "Saat ini belum ada aplikasi mobile resmi. Namun, jika Anda memiliki server, Anda dapat mengaksesnya menggunakan browser web dan bahkan menginstalnya sebagai PWA. Untuk Android, tersedia aplikasi tidak resmi bernama TriliumDroid yang dapat bekerja secara offline (sama seperti aplikasi desktop).",
         "database_question": "Di manakah data disimpan?",
-        "database_answer": "Semua catatan Anda akan disimpan dalam basis data SQLite di dalam sebuah folder aplikasi. Alasan mengapa Trilium menggunakan basis data alih-alih file teks biasa adalah demi performa dan karena beberapa fitur akan jauh lebih sulit untuk diterapkan, seperti klon (catatan yang sama di beberapa tempat dalam hierarki). Untuk menemukan folder aplikasinya, cukup buka jendela 'Tentang'.",
+        "database_answer": "Semua catatan Anda akan disimpan dalam database SQLite di folder aplikasi. Trilium menggunakan database alih-alih file teks biasa karena dua alasan: kinerja dan beberapa fitur seperti menempatkan catatan yang sama di beberapa tempat di pohon akan jauh lebih sulit untuk diimplementasikan. Untuk menemukan folder aplikasi, cukup buka jendela Tentang.",
         "server_question": "Apakah saya butuh server untuk menjalankan Trilium?",
         "scaling_question": "Seberapa baik aplikasi ini dapat diskalakan dengan jumlah catatan yang besar?",
         "scaling_answer": "Tergantung pada penggunaan, aplikasi ini seharusnya dapat menangani setidaknya 100.000 catatan tanpa masalah. Perlu dicatat bahwa proses sinkronisasi kadang dapat gagal jika mengunggah banyak file berukuran besar (1 GB per file), karena Trilium lebih ditujukan sebagai aplikasi knowledge base daripada penyimpanan file seperti NextCloud, misalnya.",
@@ -77,11 +103,18 @@
         "network_share_answer": "Tidak, secara umum bukan ide yang baik untuk membagikan basis data SQLite melalui drive jaringan. Meskipun kadang-kadang mungkin berfungsi, ada kemungkinan basis data menjadi rusak akibat penguncian file yang tidak sempurna melalui jaringan.",
         "security_question": "Bagaimana data saya dilindungi?",
         "security_answer": "Secara default, catatan tidak terenkripsi dan dapat dibaca langsung dari basis data. Setelah sebuah catatan ditandai sebagai terenkripsi, catatan tersebut dienkripsi menggunakan AES-128-CBC.",
-        "server_answer": "Tidak, server memungkinkan akses melalui browser web dan mengelola sinkronisasi jika Anda memiliki beberapa perangkat. Untuk memulai, cukup download aplikasi desktop dan langsung gunakan."
+        "server_answer": "Tidak, server memungkinkan akses melalui browser web dan mengelola sinkronisasi jika Anda memiliki beberapa perangkat. Untuk memulai, cukup download aplikasi desktop dan langsung gunakan.",
+        "free_question": "Apakah Trilium gratis?",
+        "free_answer": "Ya, sepenuhnya. Trilium gratis dan open-source di bawah lisensi AGPL-3.0, tanpa tingkatan berbayar, akun, atau paywall fitur. Anda bebas menggunakan, menghosting sendiri, dan memodifikasinya sesuka Anda.",
+        "cloud_question": "Apakah ada versi hosting atau cloud?",
+        "cloud_answer": "Belum ada versi resmi, meskipun itu sesuatu yang ingin kami tawarkan di masa depan. Saat ini Trilium dihosting sendiri: jalankan aplikasi desktop, atau host server Anda sendiri. Jika Anda lebih memilih untuk tidak mengelola server, penyedia pihak ketiga seperti <0>PikaPods</0> menawarkan hosting Trilium terkelola.",
+        "collaboration_question": "Dapatkah beberapa orang berkolaborasi pada catatan yang sama?",
+        "collaboration_answer": "Trilium dirancang sebagai aplikasi single-user. Anda dapat menyinkronkan catatan Anda sendiri di semua perangkat, dan memublikasikan catatan read-only ke web untuk dilihat orang lain, tetapi pengeditan multi-user secara real-time pada catatan yang sama tidak didukung.",
+        "more_questions": "Masih ada pertanyaan? <0>Tanyakan kepada komunitas</0>"
     },
     "final_cta": {
-        "title": "Siap memulai dengan Trilium Notes?",
-        "description": "Bangun knowledge base pribadi Anda dengan fitur-fitur canggih dan privasi penuh.",
+        "title": "Mulai bangun basis pengetahuan Anda",
+        "description": "Atur semuanya dalam satu aplikasi open-source: catatan hierarkis, pencarian kuat, dan sinkronisasi ke server yang Anda kendalikan.",
         "get_started": "Mulai"
     },
     "components": {
@@ -99,7 +132,8 @@
         "get-started": "Mulai",
         "documentation": "Dokumentasi",
         "resources": "Sumber daya",
-        "support-us": "Dukung kami"
+        "support-us": "Dukung kami",
+        "language": "Bahasa"
     },
     "footer": {
         "copyright_and_the": " dan ",
@@ -190,5 +224,64 @@
         "icon_packs_intro": "Perluas pilihan ikon yang tersedia untuk catatan Anda dengan menggunakan paket ikon. Untuk informasi lebih lanjut tentang paket ikon, lihat <DocumentationLink>dokumentasi resmi</DocumentationLink>.",
         "download": "Unduh",
         "website": "Situs web"
+    },
+    "section_nav": {
+        "aria_label": "Lompat ke bagian",
+        "organization": "Atur",
+        "productivity": "Fitur",
+        "note_types": "Jenis catatan",
+        "import": "Import & ekspor",
+        "collections": "Koleksi",
+        "scripting": "Skrip",
+        "ai_integration": "AI",
+        "faq": "FAQ"
+    },
+    "import": {
+        "title": "Catatan Anda tidak pernah terkunci",
+        "subtitle": "Catatan Anda bebas Anda pindahkan. Bawa catatan dari aplikasi lain, keluarkan kembali dalam format terbuka, atau ubah menjadi dokumen yang rapi, kapan pun Anda mau.",
+        "pillar_import_title": "Import",
+        "pillar_import_description": "Tarik catatan Anda dari aplikasi lain dengan struktur tetap, atau import file Markdown, HTML, dan OPML standar.",
+        "pillar_export_title": "Ekspor",
+        "pillar_export_description": "Keluarkan catatan apa pun atau seluruh pohon Anda kembali dalam format terbuka dan portabel kapan saja:",
+        "pillar_export_markdown": "Markdown untuk teks biasa portabel",
+        "pillar_export_html": "HTML untuk halaman mandiri",
+        "pillar_export_opml": "OPML untuk outline",
+        "pillar_pdf_title": "Cetak ke PDF",
+        "pillar_pdf_description": "Ubah catatan Anda menjadi PDF yang rapi seperti buku:",
+        "pillar_pdf_single": "Satu catatan",
+        "pillar_pdf_subtree": "Seluruh subpohon, tetap berurutan",
+        "pillar_pdf_ready": "Siap untuk dicetak atau dibagikan",
+        "sources_label": "Import langsung dari",
+        "onenote_title": "Microsoft OneNote",
+        "notion_title": "Notion",
+        "keep_title": "Google Keep",
+        "evernote_title": "Evernote",
+        "anytype_title": "Anytype",
+        "obsidian_title": "Obsidian"
+    },
+    "ai_integration": {
+        "title": "AI sesuai ketentuan Anda",
+        "subtitle": "Opsional, dan sepenuhnya sesuai ketentuan Anda. Fitur AI bersifat opsional dan dinonaktifkan secara default: catatan Anda tidak pernah dikirim ke mana pun kecuali Anda mengaktifkannya dan menghubungkan penyedia Anda sendiri.",
+        "screenshot_alt": "Obrolan AI Trilium membuat catatan atas nama Anda melalui alat bawaan",
+        "chat_title": "Obrolan dengan catatan Anda",
+        "chat_description": "Ajukan pertanyaan dan buat ide dalam obrolan bawaan yang dapat memanfaatkan konten catatan Anda sendiri.",
+        "tools_title": "AI yang bekerja dengan catatan Anda",
+        "tools_description": "Biarkan asisten mencari, membuat, dan memperbarui catatan atas nama Anda melalui seperangkat alat bawaan.",
+        "providers_title": "Penyedia Anda, kunci Anda",
+        "providers_description": "Hubungkan OpenAI, Anthropic, atau Google dengan kunci API Anda sendiri, atau arahkan Trilium ke model yang dihosting sendiri dan kompatibel dengan OpenAI. Ekspos catatan Anda ke asisten eksternal melalui MCP.",
+        "learn_more": "Pelajari lebih lanjut"
+    },
+    "scripting": {
+        "title": "Jika Anda dapat membayangkannya, Anda dapat membuatnya dalam skrip",
+        "subtitle": "Trilium bukan sekadar tempat menyimpan catatan, tetapi dapat diprogram. Tulis JavaScript yang berjalan di aplikasi atau di server, buat antarmuka Anda sendiri, dan otomatiskan alur kerja Anda, dari penyesuaian satu baris hingga aplikasi custom lengkap.",
+        "screenshot_alt": "Catatan render Trilium menampilkan jam analog interaktif yang dibuat dengan skrip",
+        "widgets_title": "Widget custom",
+        "widgets_description": "Tambahkan tombol, panel, dan widget peluncur Anda sendiri ke antarmuka Trilium menggunakan JavaScript frontend.",
+        "backend_title": "Skrip & acara backend",
+        "backend_description": "Jalankan skrip sisi server sesuai jadwal atau sebagai respons terhadap acara seperti membuat atau mengubah catatan.",
+        "render_title": "Render catatan",
+        "render_description": "Bangun dasbor interaktif dan aplikasi mini yang dirender langsung di dalam catatan, seperti jam yang ditampilkan di sini.",
+        "api_title": "API Skrip",
+        "api_description": "API bertipe untuk catatan, cabang, atribut, dan pencarian, tersedia untuk skrip frontend dan backend."
     }
 }

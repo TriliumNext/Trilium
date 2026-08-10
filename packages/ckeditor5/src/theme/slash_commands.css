@@ -1,0 +1,115 @@
+/*
+ * Layout for the `/` command palette rows rendered by `TriliumSlashCommands`.
+ *
+ * Ported from the premium `SlashCommand` stylesheet, which we no longer load. The class names are
+ * kept identical on purpose: Trilium's own overrides in `apps/client/src/stylesheets/style.css` and
+ * in the Next theme already target them, and community (GPL) builds never loaded the premium CSS at
+ * all — so this also gives them a styled palette for the first time.
+ */
+
+:root {
+    /*
+     * Premium sized these 250px/200px, which ellipsised a third of the descriptions. At a 280px text
+     * column all but the longest fit; wider than that buys nothing, since the next-longest message
+     * is far below it. Capped against the viewport so the balloon still fits a phone screen.
+     */
+    --ck-slash-command-button-width: min(350px, 90vw);
+
+    /*
+     * The text column is what is left of the row: the icon chip and the gaps and padding around it.
+     * Derived rather than written out, so widening the row above cannot leave the two disagreeing —
+     * the text would either stop short of the row's edge or overflow it.
+     */
+    --ck-slash-command-description-width: calc(var(--ck-slash-command-button-width) - 4.8em);
+}
+
+.ck-mentions .ck.ck-button.ck-slash-command-button {
+    display: flex;
+    justify-content: flex-start;
+    width: var(--ck-slash-command-button-width);
+    padding: calc(0.2 * var(--ck-line-height-base) * var(--ck-font-size-base));
+
+    & .ck.ck-icon {
+        flex-shrink: 0;
+        box-sizing: initial;
+        margin: 0 var(--ck-spacing-small) 0 0;
+        padding: 5px;
+        border-radius: 2px;
+        color: var(--ck-color-base-text);
+        background-color: var(--ck-color-base-background);
+
+        /*
+         * Premium put `ck-icon` on the `<svg>` itself (via `IconView`), so CKEditor's core
+         * `.ck.ck-icon { width/height: var(--ck-icon-size) }` sized the glyph. Here the class is on
+         * a wrapping span and the raw `<svg>` — injected via innerHTML from mixed sources (CKEditor
+         * 20px viewBoxes, 24px boxicons, custom footnote/math art) — is left unconstrained and
+         * renders at its intrinsic size.
+         *
+         * Fill the span's content box rather than re-applying `--ck-icon-size` to the svg:
+         * the variable is `em`-relative, and the svg carries a larger font-size than the chip, so
+         * `width: var(--ck-icon-size)` on the svg resolves ~20% bigger than the box it sits in and
+         * spills over the padding. `100%` ties it to the box the chip already sized.
+         */
+        & > svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* A snippet note's font icon: the same chip, with a glyph instead of an svg. */
+        &.ck-slash-command-button__note-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            /*
+             * The glyph is sized on the inner span, never on the chip: core's `.ck.ck-icon`
+             * width/height use the em-relative `--ck-icon-size`, so a bigger font on the chip
+             * itself would inflate the chip box (and the whole row) along with the glyph. On the
+             * child, the calc resolves against the chip's untouched font-size, which is also what
+             * `width: var(--ck-icon-size)` resolved against — so 0.85 means 85% of the content box.
+             */
+            & > span {
+                font-size: calc(var(--ck-icon-size) * 0.85);
+                line-height: 1;
+            }
+        }
+    }
+
+    & > .ck-slash-command-button__text-part {
+        display: flex;
+        flex-direction: column;
+        margin-left: var(--ck-spacing-small);
+
+        & > span {
+            width: var(--ck-slash-command-description-width);
+            overflow: hidden;
+            line-height: 1.2em;
+            text-overflow: ellipsis;
+        }
+
+        & > .ck-button__label {
+            font-weight: bold;
+        }
+
+        & > .ck-slash-command-button__description {
+            font-size: var(--ck-font-size-small);
+            opacity: 0.75;
+        }
+    }
+
+    &.ck-on > .ck-slash-command-button__text-part > span {
+        color: var(--ck-color-list-button-on-text);
+    }
+}
+
+[dir="rtl"] .ck-mentions .ck.ck-button.ck-slash-command-button {
+    & .ck.ck-icon {
+        margin: 0 0 0 var(--ck-spacing-small);
+    }
+
+    & > .ck-slash-command-button__text-part {
+        margin-right: var(--ck-spacing-small);
+        margin-left: 0;
+    }
+}

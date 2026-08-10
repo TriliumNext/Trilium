@@ -38,6 +38,11 @@
             "enabled": false
         },
         {
+            "description": "pdfjs-dist is owned by the update-pdfjs-viewer workflow, which bumps it together with the viewer vendored under packages/pdfjs-viewer/viewer. pdf.js refuses to start when the two versions disagree, so a bare version bump is never a usable change",
+            "matchPackageNames": ["pdfjs-dist"],
+            "enabled": false
+        },
+        {
             "matchPackageNames": ["@fsegurai/codemirror-theme-**", "@catppuccin/codemirror"],
             "groupName": "codemirror themes"
         },
@@ -48,8 +53,7 @@
         {
             "matchPackageNames": [
                 "@ckeditor/**",
-                "ckeditor5",
-                "ckeditor5-premium-features"
+                "ckeditor5"
             ],
             "groupName": "ckeditor monorepo"
         },

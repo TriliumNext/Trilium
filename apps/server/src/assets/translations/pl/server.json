@@ -323,9 +323,6 @@
     "db_not_initialized_desktop": "Baza danych nie jest zainicjowana, postępuj zgodnie z instrukcjami na ekranie.",
     "db_not_initialized_server": "Baza danych nie jest zainicjowana, odwiedź stronę konfiguracji - http://[adres-serwera]:{{port}}, aby dowiedzieć się, jak zainicjować Trilium."
   },
-  "desktop": {
-    "instance_already_running": "Inna instancja jest już uruchomiona, przełączam się na nią."
-  },
   "backend_log": {
     "log-does-not-exist": "Plik logów backendu '{{ fileName }}' (jeszcze) nie istnieje.",
     "reading-log-failed": "Błąd odczytu pliku logów backendu '{{ fileName }}'."

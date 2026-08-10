@@ -4,6 +4,9 @@ const build = new BuildHelper("apps/server");
 
 async function main() {
     await build.buildBackend([ "src/main.ts", "src/docker_healthcheck.ts" ])
+    // Its own call so it lands beside the bundle rather than under a `services/` path: the pool
+    // looks for it next to whatever is running, and desktop builds it the same way.
+    await build.buildBackend([ "src/services/image_worker.ts" ]);
 
     // Copy assets
     build.copy("src/assets", "assets/");
@@ -13,11 +16,15 @@ async function main() {
     // alongside the server's own assets and read it via RESOURCE_DIR at
     // runtime. See main.ts.
     build.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
+    // Same story for the LLM skill sheets: core owns them, the server reads them
+    // from RESOURCE_DIR at runtime. See core_assets.ts.
+    build.copy("/packages/trilium-core/src/assets/llm/skills", "assets/llm/skills/");
     build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 
     // Copy node modules dependencies
-    build.copyNodeModules([ "better-sqlite3", "bindings", "file-uri-to-path" ]);
+    build.copyNodeModules([ "better-sqlite3" ]);
+    build.trimBetterSqlite3();
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
 
     build.buildFrontend();

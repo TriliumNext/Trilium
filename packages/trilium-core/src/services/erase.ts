@@ -179,7 +179,15 @@ function eraseScheduledAttachments(eraseUnusedAttachmentsAfterSeconds: number | 
     const cutOffDate = dateUtils.utcDateTimeStr(new Date(Date.now() - eraseUnusedAttachmentsAfterSeconds * 1000));
     const attachmentIdsToErase = getSql().getColumn<string>("SELECT attachmentId FROM attachments WHERE utcDateScheduledForErasureSince < ?", [cutOffDate]);
 
+    if (attachmentIdsToErase.length === 0) {
+        return;
+    }
+
     eraseAttachments(attachmentIdsToErase);
+    // Dropping the rows leaves their content behind, held by nothing: without this the space is not
+    // handed back until some later erasure of deleted entities happens to sweep it up. Reached only
+    // when something actually went, so the hourly pass costs no blob scan on a quiet database.
+    eraseUnusedBlobs();
 }
 
 function startScheduledCleanup() {

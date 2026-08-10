@@ -1,0 +1,40 @@
+/*
+ * The choice of map, offered in the card's header rather than over the map itself. The group is the
+ * theme's (recessed track, raised segment on show), as the pane's tab strip is; only its size is this
+ * card's own business, the theme building it for a toolbar, where it stands taller than a header row.
+ */
+#noteMap .card-header-buttons .map-type-switcher {
+    gap: 2px;
+    padding: 2px;
+
+    .icon-action {
+        --icon-button-size: 22px;
+        /* Kept well inside the segment: the theme's own ratio is meant for a segment half again as
+           tall, where the same glyph has room to breathe. */
+        --icon-button-icon-ratio: 0.62;
+    }
+}
+
+/*
+ * How far the map may be squeezed by the cards around it — the height it used to be held at, and its
+ * own header on top of that, the floor being the card's rather than the map's. A tab with every
+ * section open shows the map it always did; what it no longer does is leave the room a collapsed
+ * section gives back lying empty under the tab.
+ */
+#noteMap {
+    --right-pane-grow-min-height: calc(300px + var(--right-pane-header-height));
+}
+
+.sidebar-note-map {
+    /* Anchors the map's floating buttons (map type, fix nodes), same as the ribbon wrapper. */
+    position: relative;
+    /* Fills the card, which is what takes a height (see NoteMap.tsx): the canvas is drawn to whatever
+       this box is measured at, so the map follows the card without being told a size of its own. */
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+
+    .note-map-container {
+        height: 100%;
+    }
+}

@@ -46,10 +46,18 @@
     --ck-color-button-on-color: currentColor;
 }
 
-/* The toolbar show / hide button for the current text block */
+/* The toolbar show / hide button for the current text block. Unlike the buttons above it, this one
+   floats free and needs a surface of its own; the hover tint is flattened onto it. */
 :root .ck.ck-block-toolbar-button {
+    --block-toolbar-button-hover-surface:
+        linear-gradient(var(--hover-item-background-color), var(--hover-item-background-color)),
+        var(--main-background-color);
+
     --ck-color-block-toolbar-button: var(--muted-text-color);
-    --ck-color-button-on-background: transparent;
+    --ck-color-button-default-background: var(--main-background-color);
+    --ck-color-button-on-background: var(--main-background-color);
+    --ck-color-button-default-hover-background: var(--block-toolbar-button-hover-surface);
+    --ck-color-button-on-hover-background: var(--block-toolbar-button-hover-surface);
     --ck-color-button-on-color: var(--ck-editor-toolbar-button-on-color);
     translate: -40% 0;
     min-width: 0;
@@ -57,9 +65,12 @@
     z-index: 1600;
 }
 
-:root .ck.ck-toolbar .ck-button:not(.ck-disabled):active,
-.ck.ck-block-toolbar-button:active {
+:root .ck.ck-toolbar .ck-button:not(.ck-disabled):active {
     background-color: var(--hover-item-background-color);
+}
+
+:root .ck.ck-block-toolbar-button:active {
+    background: var(--block-toolbar-button-hover-surface);
 }
 
 .ck.ck-toolbar .ck-button:active:not(.ck-list-item-button):not(.ck-button_with-text):not(.ck-disabled) svg:not(.ck-dropdown__arrow),
@@ -428,31 +439,27 @@ div.ck-template-form .ck-labeled-field-view {
     border-color: transparent;
 }
 
-/* Template icon */
-:root .ck-template-form .ck-button__icon {
-    --ck-spacing-medium: 2px;
-}
-
-:root div.ck-template-form .ck-icon foreignObject {
+/* Note icon — a plain font-icon <span>, no SVG <foreignObject> wrapper. The glyph is drawn by the
+   Boxicons font on the element's own ::before, so the circular backdrop goes on ::after to avoid
+   clobbering the glyph's `content`. */
+:root div.ck-template-form .ck-template-icon {
     position: relative;
+    /* Render like a real note icon (cf. the list/grid view's `.note-icon`): a hue-light glyph on a
+       hue-tinted circular backdrop when the note has a `#color`, falling back to the neutral icon
+       colours otherwise. The `--note-icon-custom-*` variables come from the `.with-hue` rule the
+       plugin opts into (see theme-next-{dark,light}.css); they derive from `--custom-color-hue`,
+       which the note's colour class carries. */
+    color: var(--note-icon-custom-color, var(--note-icon-color));
 
-    &::before {
+    &::after {
         display: block;
         content: "";
         position: absolute;
         inset: 2px;
         border-radius: 50%;
-        background: var(--note-icon-hover-background-color);
+        background: var(--note-icon-custom-background-color, var(--note-icon-hover-background-color));
         z-index: -1;
     }
-} 
-
-:root div.ck-template-form .ck-icon .note-icon {
-    display: flex;
-    height: 100%;
-    justify-content: center;
-    align-items: center;
-    color: var(--note-icon-color);
 }
 
 /* Template name */

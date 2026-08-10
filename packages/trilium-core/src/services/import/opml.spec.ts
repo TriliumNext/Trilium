@@ -4,9 +4,10 @@ import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
+import protectedSessionService from "../protected_session.js";
 import sql_init from "../sql_init.js";
 import TaskContext from "../task_context.js";
-import { decodeUtf8 } from "../utils/binary.js";
+import { decodeUtf8, encodeUtf8 } from "../utils/binary.js";
 import opml from "./opml.js";
 
 let counter = 0;
@@ -108,6 +109,21 @@ describe("importOpml (real DB)", () => {
         expect(decodeUtf8(returnNote.getContent())).toBe("");
     });
 
+    it("imports a v1 outline that has no text as an empty note", async () => {
+        const parent = createParent();
+        const xml = `<?xml version="1.0"?>
+            <opml version="1.0">
+                <body>
+                    <outline title="Title only" />
+                </body>
+            </opml>`;
+
+        const returnNote = (await runImport(xml, parent)) as BNote;
+
+        expect(returnNote.title).toBe("Title only");
+        expect(decodeUtf8(returnNote.getContent())).toBe("");
+    });
+
     it("imports a v2.0 outline using text as title and _note as raw HTML content", async () => {
         const parent = createParent();
         const xml = `<?xml version="1.0"?>
@@ -163,6 +179,36 @@ describe("importOpml (real DB)", () => {
 
         expect(returnNote).toBeNull();
         expect(parent.getChildNotes()).toHaveLength(0);
+    });
+
+    it("marks the imported outlines protected when the parent is protected and a session is available", async () => {
+        // Protection propagates only via `parentNote.isProtected && isProtectedSessionAvailable()`, so both
+        // a protected target and a data key are needed.
+        protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef")); // exactly 16 bytes
+        try {
+            const parent = getContext().init(() =>
+                noteService.createNewNote({
+                    parentNoteId: "root",
+                    title: "protected opml parent",
+                    content: "",
+                    type: "text",
+                    isProtected: true
+                }).note
+            );
+            const xml = `<?xml version="1.0"?>
+                <opml version="2.0">
+                    <body>
+                        <outline text="Secret" _note="&lt;p&gt;secret body&lt;/p&gt;" />
+                    </body>
+                </opml>`;
+
+            const returnNote = (await runImport(xml, parent)) as BNote;
+
+            expect(parent.isProtected).toBe(true);
+            expect(returnNote.isProtected).toBe(true);
+        } finally {
+            protectedSessionService.resetDataKey();
+        }
     });
 
     it("rejects malformed XML by throwing", async () => {

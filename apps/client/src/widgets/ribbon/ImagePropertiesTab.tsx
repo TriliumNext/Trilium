@@ -6,6 +6,7 @@ import { downloadFileNote, openNoteExternally } from "../../services/open";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { clearBrowserCache, formatSize } from "../../services/utils";
+import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import Button from "../react/Button";
 import { FormFileUploadButton } from "../react/FormFileUpload";
 import { useNoteBlob, useNoteLabel } from "../react/hooks";
@@ -51,6 +52,12 @@ export default function ImagePropertiesTab({ note, ntxId }: TabContext) {
                             text={t("image_properties.open")}
                             icon="bx bx-link-external"
                             onClick={() => openNoteExternally(note.noteId, note.mime)}
+                        />
+
+                        <Button
+                            text={t("compress-image")}
+                            icon="bx bx-collapse-alt"
+                            onClick={() => void showImageCompressionDialog({ type: "note", noteId: note.noteId, mime: note.mime })}
                         />
 
                         <Button

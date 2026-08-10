@@ -41,8 +41,17 @@ function setupElementTooltip($el: JQuery<HTMLElement>) {
     $el.on("pointerenter", mouseEnterHandler);
 }
 
+/**
+ * A context menu is what the pointer is dealing with while it is up — the element underneath it is
+ * only the menu's subject. `contextMenu.show()` dismisses the open tooltips, but the preview is
+ * delayed and async, so one already in flight when the menu opened would still land on top of it.
+ */
+function isContextMenuShown() {
+    return document.body.classList.contains("context-menu-shown");
+}
+
 export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<T, undefined, T, T>) {
-    if (e.pointerType !== "mouse") return;
+    if (e.pointerType !== "mouse" || isContextMenuShown()) return;
 
     const $link = $(this);
 
@@ -76,6 +85,10 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         return;
     }
 
+    // An optional line the trigger element contributes about the note it links to — a size in a
+    // space-usage cell, say. Plain text: the element states a fact, it does not render markup.
+    const detail = $link.attr("data-tooltip-detail");
+
     let renderPromise;
     let note: FNote | null = null;
     // In-page anchors and footnotes are always bare `#fragment` references; a `?` means this is a
@@ -91,12 +104,12 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         // transitively imports this module via the context menu).
         const { default: DeletedFNote } = await import("../entities/deleted_fnote.js");
         note = await DeletedFNote.load(noteId);
-        renderPromise = renderTooltip(note);
+        renderPromise = renderTooltip(note, detail);
     } else {
         // Default route: a live note. A missing note (deleted/erased) renders the "note has been
         // deleted" placeholder — content previews of deleted notes are opt-in via `data-note-deleted`.
         note = await froca.getNote(noteId);
-        renderPromise = renderTooltip(note);
+        renderPromise = renderTooltip(note, detail);
     }
 
     const [content] = await Promise.all([
@@ -116,7 +129,14 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
     // we need to check if we're still hovering over the element
     // since the operation to get tooltip content was async, it is possible that
     // we now create tooltip which won't close because it won't receive mouseleave event
-    if ($link.filter(":hover").length > 0) {
+    // — or that a context menu was invoked in the meantime, which the preview must not cover.
+    //
+    // The opt-out is re-read for the same reason: an element may take it on while its preview is
+    // being fetched, which is how a surface that opens over the pointer says the preview is no
+    // longer wanted — a calendar chip clicked gains it as the popover opens (see the class in
+    // CalendarView's eventClassNames), and the pointer is still on the chip, so the hover test
+    // alone would let the preview land on top of what the click just opened.
+    if ($link.filter(":hover").length > 0 && !isContextMenuShown() && !$link.hasClass("no-tooltip-preview")) {
         $link.tooltip({
             container: "body",
             // https://github.com/zadam/trilium/issues/2794 https://github.com/zadam/trilium/issues/2988
@@ -162,7 +182,12 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
     }
 }
 
-export async function renderTooltip(note: FNote | null) {
+/**
+ * @param detail plain text the trigger element contributed about this note (see the `data-tooltip-detail`
+ *               attribute), shown under the title. Absent on the vast majority of links, which say
+ *               nothing beyond the note itself.
+ */
+export async function renderTooltip(note: FNote | null, detail?: string) {
     if (!note) {
         return `<div>${t("note_tooltip.note-has-been-deleted")}</div>`;
     }
@@ -204,6 +229,10 @@ export async function renderTooltip(note: FNote | null) {
                     <a href="#${note.noteId}" data-no-context-menu="true">${noteTitleWithPathAsSuffix.prop("outerHTML")}</a>
                 </h5>`;
         }
+    }
+
+    if (detail) {
+        content = `${content}<div class="note-tooltip-detail">${utils.escapeHtml(detail)}</div>`;
     }
 
     content = `${content}<div class="note-tooltip-attributes">${$renderedAttributes[0].outerHTML}</div>`;

@@ -1,4 +1,4 @@
-import { routes, sql_init } from "@triliumnext/core";
+import { getSql, routes, sql_init } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BrowserRouter } from "./browser_router.js";
@@ -28,6 +28,30 @@ describe("registerRoutes (real wiring)", () => {
         expect(parseJson(res.body)).toEqual({ isCpuArchMismatch: false });
     });
 
+    // The model-selection screen calls this while adding a provider. It is an async
+    // handler in the shared table, so reaching its validation error here proves the
+    // browser router registers and awaits it — a provider name is rejected before the
+    // route reaches for the AI SDK, so no provider is contacted.
+    it("serves the LLM provider-models route", async () => {
+        const res = await router.dispatch("POST", "http://localhost/api/llm-chat/provider-models", {});
+        expect(res.status).toBe(400);
+        expect(text(res.body)).toContain("provider is required");
+    });
+
+    // Streaming is registered here rather than in the shared table, so nothing
+    // else would catch its loss. Rejected for a missing stream id, which the
+    // handler checks before starting anything — no completion is begun.
+    it("serves the LLM stream routes, which only this runtime has", async () => {
+        const start = await router.dispatch("POST", "http://localhost/api/llm-chat/stream-start", {});
+        expect(start.status).toBe(400);
+        expect(text(start.body)).toContain("streamId is required");
+
+        // Aborting an id that is not running is a no-op rather than an error, so
+        // reaching a 200 here is what proves the route is wired at all.
+        const abort = await router.dispatch("POST", "http://localhost/api/llm-chat/stream-abort", { streamId: "nope" });
+        expect(abort.status).toBe(200);
+    });
+
     it("serves the compatibility dummy routes", async () => {
         expect(parseJson((await router.dispatch("GET", "http://localhost/api/script/widgets")).body)).toEqual([]);
         expect(parseJson((await router.dispatch("GET", "http://localhost/api/script/startup")).body)).toEqual([]);
@@ -50,6 +74,59 @@ describe("registerRoutes (real wiring)", () => {
         expect(typeof data.triliumVersion).toBe("string");
     });
 
+    it("marks a plain window as the main one, and `?extraWindow` as a detached one", async () => {
+        const main = parseJson((await router.dispatch("GET", "http://localhost/bootstrap")).body) as Record<string, unknown>;
+        expect(main.isMainWindow).toBe(true);
+
+        // The detached window must not restore or persist `openNoteContexts`, otherwise it
+        // overwrites the tab set of the window it was opened from. See TabManager.
+        const extra = parseJson((await router.dispatch("GET", "http://localhost/bootstrap?extraWindow=1")).body) as Record<string, unknown>;
+        expect(extra.isMainWindow).toBe(false);
+    });
+
+    // The upload path end to end: a real FormData body, parsed by the router into the `req.file`
+    // the handler reads. What the PDF viewer saves annotations through, and what "upload new
+    // revision" sends — on the server multer builds that object, here the router does.
+    it("writes an uploaded file over a note", async () => {
+        const created = parseJson((await router.dispatch("POST", "http://localhost/api/notes/root/children?target=into",
+            { title: "notes.txt", type: "file", mime: "text/plain", content: "original" })).body) as { note: { noteId: string } };
+        const { noteId } = created.note;
+
+        const form = new FormData();
+        form.append("upload", new File([ "uploaded" ], "notes.txt", { type: "text/plain" }));
+        // One Response for both: each encoding of a FormData picks its own boundary, so a body and a
+        // content-type taken from two of them describe different messages and parse as neither.
+        const encoded = new Response(form);
+        const contentType = encoded.headers.get("content-type") ?? "";
+        const body = await encoded.arrayBuffer();
+
+        const res = await router.dispatch("PUT", `http://localhost/api/notes/${noteId}/file?replace=1`, body, {
+            "content-type": contentType
+        });
+
+        expect(res.status).toBe(200);
+        expect(parseJson(res.body)).toEqual({ uploaded: true });
+        expect(text((await router.dispatch("GET", `http://localhost/api/notes/${noteId}/open`)).body)).toBe("uploaded");
+    });
+
+    // The whole standalone media path in one request: the core handler slices the note's content,
+    // the mock response carries the slice out as a raw response, and the router turns the view into
+    // exactly those bytes. This is what an <audio>/<video> element does every time it seeks.
+    it("answers a byte range on open-partial with 206 and just that slice", async () => {
+        const created = parseJson((await router.dispatch("POST", "http://localhost/api/notes/root/children?target=into",
+            { title: "clip.mp3", type: "file", mime: "audio/mpeg", content: "0123456789" })).body) as { note: { noteId: string } };
+        const { noteId } = created.note;
+
+        const res = await router.dispatch("GET", `http://localhost/api/notes/${noteId}/open-partial?v=1`, undefined, {
+            range: "bytes=2-5"
+        });
+
+        expect(res.status).toBe(206);
+        expect(text(res.body)).toBe("2345");
+        expect(res.headers["Content-Range"]).toBe("bytes 2-5/10");
+        expect(res.headers["Accept-Ranges"]).toBe("bytes");
+    });
+
     it("returns the setup payload when the database is not initialized", async () => {
         vi.spyOn(sql_init, "isDbInitialized").mockReturnValue(false);
         const data = parseJson((await router.dispatch("GET", "http://localhost/bootstrap")).body) as Record<string, unknown>;
@@ -68,7 +145,7 @@ describe("route wrapper branches (via controlled handlers)", () => {
     function buildRouter(): BrowserRouter {
         vi.spyOn(routes, "buildSharedApiRoutes").mockImplementation((received: RouteCtx) => {
             ctx = received;
-            const { route, asyncRoute, apiRoute, asyncApiRoute, apiResultHandler } = received;
+            const { route, asyncRoute, asyncRouteWithoutTransaction, apiRoute, asyncApiRoute, apiResultHandler } = received;
 
             apiRoute("get", "/t/api", (req: { originalUrl: string }) => ({ url: req.originalUrl }));
             asyncApiRoute("get", "/t/asyncapi", () => ({ ok: true }));
@@ -90,6 +167,7 @@ describe("route wrapper branches (via controlled handlers)", () => {
             asyncRoute("get", "/t/async-obj", [], async () => ({ z: 9 }), apiResultHandler);
             asyncRoute("get", "/t/async-res", [], async (_req: unknown, res: MockRes) => { res.send("async-body"); });
             asyncRoute("get", "/t/async-noresult", [], async () => ({ done: true }));
+            asyncRouteWithoutTransaction("get", "/t/async-no-tx", [], async () => ({ bare: true }), apiResultHandler);
         });
         return createConfiguredRouter();
     }
@@ -110,6 +188,22 @@ describe("route wrapper branches (via controlled handlers)", () => {
         const apiRes = await router.dispatch("GET", "http://localhost/t/api");
         expect((parseJson(apiRes.body) as { url: string }).url).toBe("http://localhost/t/api");
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/asyncapi")).body)).toEqual({ ok: true });
+    });
+
+    it("leaves the database alone for a route that says it wants no transaction", async () => {
+        // The setup screen's erase closes the database and opens another one. A transaction opened
+        // around it belongs to a connection that is gone by the time it would be committed, and
+        // SQLite answers "cannot rollback - no transaction is active".
+        const router = buildRouter();
+        const transactional = vi.spyOn(getSql(), "transactionalAsync");
+
+        expect(parseJson((await router.dispatch("GET", "http://localhost/t/async-no-tx")).body))
+            .toEqual({ bare: true });
+        expect(transactional).not.toHaveBeenCalled();
+
+        // The ordinary async route is unchanged: it still gets one.
+        await router.dispatch("GET", "http://localhost/t/async-obj");
+        expect(transactional).toHaveBeenCalled();
     });
 
     it("formats route() results through apiResultHandler (object, tuple, undefined)", async () => {

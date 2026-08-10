@@ -7,13 +7,13 @@
         "server_title": "设置服务器以供多台设备访问"
     },
     "organization_benefits": {
-        "hoisting_description": "你可以通过将个人笔记和工作笔记分组到不同的工作区中，轻松地将它们分开。每个工作区会聚焦于特定的笔记集合，使你的笔记树仅显示相关内容。",
+        "hoisting_description": "通过将笔记分组到工作区下，轻松分离你的个人笔记和工作笔记——工作区会将笔记树聚焦为仅显示特定的一组笔记。",
         "title": "按你的方式，组织你的笔记",
         "note_structure_title": "笔记结构",
         "note_structure_description": "笔记可按层级排列。由于每条笔记均可包含子笔记，因此无需使用文件夹。单条笔记可在层级结构中的多个位置添加。",
         "attributes_title": "笔记标签及关系",
         "attributes_description": "利用笔记之间的关系或添加标签进行便捷分类。使用提升属性输入结构化信息，这些信息可用于表格和看板中。",
-        "hoisting_title": "工作区与提升",
+        "hoisting_title": "工作区与聚焦",
         "screenshot_alt": "Trilium 中的层级笔记树"
     },
     "productivity_benefits": {
@@ -175,9 +175,9 @@
     },
     "contribute": {
         "title": "其他贡献方式",
-        "way_translate": "通过<Link>Weblate</Link>将应用程序翻译成你的母语。",
-        "way_community": "在 <Discussions>GitHub 讨论</Discussions>或 <Matrix>Matrix</Matrix> 上与社区互动。",
-        "way_reports": "通过<Link>GitHub issues</Link>报告错误。",
+        "way_translate": "通过 <Link>Weblate</Link> 将应用程序翻译成你的母语。",
+        "way_community": "通过 <Discussions>GitHub Discussions</Discussions> 或 <Matrix>Matrix</Matrix> 与社区互动。",
+        "way_reports": "通过 <Link>GitHub issues</Link> 报告错误。",
         "way_document": "通过告知文档中的缺失内容或贡献指南、常见问题解答或教程来完善文档。",
         "way_market": "广而告之：将 Trilium Notes 分享给朋友，或发布在博客和社交媒体上。"
     },
@@ -220,7 +220,7 @@
     },
     "resources": {
         "icon_packs": "图标包",
-        "icon_packs_intro": "使用图标包可以扩展笔记中可用的图标选择。有关图标包的更多信息，请参阅<DocumentationLink>官方文档</DocumentationLink>。",
+        "icon_packs_intro": "使用图标包可以扩展笔记中可用的图标选择。有关图标包的更多信息，请参阅 <DocumentationLink>官方文档</DocumentationLink>。",
         "download": "下载",
         "website": "网站",
         "title": "资源"

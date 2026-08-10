@@ -99,6 +99,22 @@ function fileObjectJson(cid: string, name: string, fileExt: string, fileMimeType
     return JSON.stringify({ sbType: "FileObject", snapshot: { data: { details: { id: cid, name, fileExt, fileMimeType, source } } } });
 }
 
+/**
+ * A real icon directory of one entry. The importer asks the bytes what they are rather than taking
+ * the export's word for it, so a placeholder needs bytes that genuinely are a picture.
+ */
+function icoBytes(): Buffer {
+    const directory = Buffer.alloc(22);
+    directory.writeUInt16LE(1, 2); // type: icon
+    directory.writeUInt16LE(1, 4); // one entry
+    directory.writeUInt8(16, 6); // width
+    directory.writeUInt8(16, 7); // height
+    directory.writeUInt32LE(4, 14); // payload length
+    directory.writeUInt32LE(directory.length, 18); // where the payload starts
+
+    return Buffer.concat([ directory, Buffer.from([ 0, 0, 0, 0 ]) ]);
+}
+
 /** A title-less "row" object whose content is its custom property values (keyed by relation key). */
 function memberObject(id: string, props: Record<string, unknown>): string {
     return JSON.stringify({
@@ -114,6 +130,11 @@ function memberObject(id: string, props: Record<string, unknown>): string {
             }
         }
     });
+}
+
+/** A bare page object carrying only the given timestamp details (Unix seconds). */
+function datedObject(id: string, name: string, dates: { createdDate?: number; lastModifiedDate?: number }): string {
+    return JSON.stringify({ sbType: "Page", snapshot: { data: { blocks: [{ id, childrenIds: [] }], details: { id, name, layout: 0, ...dates } } } });
 }
 
 describe("Anytype importer — integration", () => {
@@ -132,10 +153,11 @@ describe("Anytype importer — integration", () => {
         expect(decodeUtf8(first?.getContent() ?? "")).toBe("<p>Hello world</p><p>Second paragraph</p>");
     });
 
-    it("keeps a bookmark block as a link-embed, inlining its favicon as a base64 data URI", async () => {
+    it("keeps a bookmark block as a link-embed, storing its favicon as an attachment", async () => {
         // A page holding a bookmark card. The card's target is a separate `ot-bookmark` object (a non-page
-        // layout, so not imported); the card carries the url/title/description and a favicon file id (resolved
-        // from the export's filesObjects/files to an inline data URI, how Trilium natively stores a favicon).
+        // layout, so not imported); the card carries the url/title/description and a favicon file id, which
+        // is saved as an attachment of the note and referenced from the card — the shape a preview fetched
+        // live is stored in, rather than base64 inside the note's HTML.
         const page = JSON.stringify({
             sbType: "Page",
             snapshot: {
@@ -156,21 +178,98 @@ describe("Anytype importer — integration", () => {
             sbType: "Page",
             snapshot: { data: { blocks: [{ id: "bookmark-obj", childrenIds: [] }], details: { id: "bookmark-obj", name: "Trilium Notes", resolvedLayout: 11, source: "https://triliumnotes.org/" }, objectTypes: ["ot-bookmark"] } }
         });
-        const faviconBytes = Buffer.from([0x00, 0x01, 0x02, 0x03]);
-
         const importRoot = await importAnytype({
             "objects/page1.pb.json": page,
             "objects/bookmark.pb.json": bookmarkObject,
             "filesObjects/fav.pb.json": fileObjectJson("fav-cid", "triliumnotes_org_icon", "ico", "image/x-icon", "files\\triliumnotes_org_icon.ico"),
-            "files/triliumnotes_org_icon.ico": faviconBytes
+            "files/triliumnotes_org_icon.ico": icoBytes()
         });
 
         const children = importRoot.getChildNotes();
         expect(children.map((note) => note.title)).toEqual(["Links"]);
-        // The favicon file id has been resolved to an inline data URI (mime derived from the .ico name).
+
+        // Under the role that says which of a card's two pictures it is, and titled after the site —
+        // which is the key a second card for the same site reuses it by.
+        const [ favicon ] = children[0]?.getAttachments() ?? [];
+        expect(favicon).toMatchObject({ role: "favicon", title: "triliumnotes.org.ico" });
+
         expect(decodeUtf8(children[0]?.getContent() ?? "")).toBe(
-            `<section class="link-embed" data-url="https://triliumnotes.org/" data-embed-type="opengraph" data-title="Trilium Notes" data-description="An open-source note-taking app." data-favicon="data:image/vnd.microsoft.icon;base64,${faviconBytes.toString("base64")}"></section>`
+            `<section class="link-embed" data-url="https://triliumnotes.org/" data-embed-type="opengraph" data-title="Trilium Notes"`
+            + ` data-description="An open-source note-taking app."`
+            + ` data-favicon="api/attachments/${favicon?.attachmentId}/image/triliumnotes.org.ico"></section>`
         );
+    });
+
+    it("keeps one picture for a site linked by more than one card", async () => {
+        // Two cards for the same site, each carrying its own copy of the icon — as an export does,
+        // the files being content-addressed per object rather than shared.
+        const page = JSON.stringify({
+            sbType: "Page",
+            snapshot: {
+                data: {
+                    blocks: [
+                        { id: "page1", childrenIds: ["header", "one", "two"] },
+                        { id: "header", childrenIds: ["title"] },
+                        { id: "title", text: { text: "", style: "Title" } },
+                        { id: "one", bookmark: { url: "https://example.com/a", title: "A", faviconHash: "fav-a" } },
+                        { id: "two", bookmark: { url: "https://example.com/b", title: "B", faviconHash: "fav-b" } }
+                    ],
+                    details: { id: "page1", name: "Links", resolvedLayout: 0 }
+                }
+            }
+        });
+
+        const importRoot = await importAnytype({
+            "objects/page1.pb.json": page,
+            "filesObjects/a.pb.json": fileObjectJson("fav-a", "icon_a", "ico", "image/x-icon", "files\\icon_a.ico"),
+            "filesObjects/b.pb.json": fileObjectJson("fav-b", "icon_b", "ico", "image/x-icon", "files\\icon_b.ico"),
+            "files/icon_a.ico": icoBytes(),
+            "files/icon_b.ico": icoBytes()
+        });
+
+        // One attachment, titled by the site rather than by either file, and both cards point at it.
+        const attachments = importRoot.getChildNotes()[0]?.getAttachments() ?? [];
+        expect(attachments.map((a) => a.title)).toEqual([ "example.com.ico" ]);
+
+        const referenced = decodeUtf8(importRoot.getChildNotes()[0]?.getContent() ?? "").match(/data-favicon="[^"]+"/g) ?? [];
+        expect(referenced).toHaveLength(2);
+        expect(new Set(referenced).size).toBe(1);
+    });
+
+    it("leaves a card with no favicon/preview untouched, and drops one whose bytes are not a picture", async () => {
+        const bookmarkPage = (bookmark: Record<string, unknown>) => JSON.stringify({
+            sbType: "Page",
+            snapshot: {
+                data: {
+                    blocks: [
+                        { id: "page1", childrenIds: ["header", "bm"] },
+                        { id: "header", childrenIds: ["title"] },
+                        { id: "title", text: { text: "", style: "Title" } },
+                        { id: "bm", bookmark }
+                    ],
+                    details: { id: "page1", name: "Links", resolvedLayout: 0 }
+                }
+            }
+        });
+
+        // No favicon/preview ids at all: there's nothing to resolve, so the body is left exactly as rendered.
+        const plain = await importAnytype({ "objects/page1.pb.json": bookmarkPage({ url: "https://example.com/", title: "Example" }) });
+        expect(decodeUtf8(plain.getChildNotes()[0]?.getContent() ?? "")).toBe(
+            '<section class="link-embed" data-url="https://example.com/" data-embed-type="opengraph" data-title="Example"></section>'
+        );
+
+        // Bytes that are not a picture: the attribute goes, rather than a card being given something
+        // it cannot draw. The export's own metadata is not taken for it — the bytes are asked.
+        const odd = await importAnytype({
+            "objects/page1.pb.json": bookmarkPage({ url: "https://example.com/", faviconHash: "fav-cid" }),
+            "filesObjects/fav.pb.json": fileObjectJson("fav-cid", "icon", "ico", "image/x-icon", "files\\icon.ico"),
+            "files/icon.ico": Buffer.from([ 0x09 ])
+        });
+
+        expect(decodeUtf8(odd.getChildNotes()[0]?.getContent() ?? "")).toBe(
+            '<section class="link-embed" data-url="https://example.com/" data-embed-type="opengraph"></section>'
+        );
+        expect(odd.getChildNotes()[0]?.getAttachments()).toHaveLength(0);
     });
 
     it("drops a bookmark's favicon placeholder when the export has no bytes for it", async () => {
@@ -674,15 +773,16 @@ describe("Anytype importer — integration", () => {
         // Each visible column is a single-valued promoted definition, in the view's order.
         expect(collection.getOwnedAttributes().filter((a) => a.name.startsWith("label:")).map((a) => a.name)).toEqual(["label:url", "label:email"]);
         expect(collection.getOwnedLabelValue("label:url")).toBe("promoted,single,url,alias=URL");
-        expect(collection.getOwnedLabelValue("label:email")).toBe("promoted,single,url,alias=Email");
+        expect(collection.getOwnedLabelValue("label:email")).toBe("promoted,single,email,alias=Email");
 
-        // Members are the table rows, carrying their own values; email gets a clickable mailto: scheme.
+        // Members are the table rows, carrying their own values; an email is stored bare, which is what
+        // the typed input holds.
         const rows = collection.getChildNotes();
         expect(rows.map((n) => n.title).sort()).toEqual(["Untitled", "Untitled"]);
         const byUrl = rows.find((n) => n.getOwnedLabelValue("url"));
         const byEmail = rows.find((n) => n.getOwnedLabelValue("email"));
         expect(byUrl?.getOwnedLabelValue("url")).toBe("https://triliumnotes.org");
-        expect(byEmail?.getOwnedLabelValue("email")).toBe("mailto:contact@acme.com");
+        expect(byEmail?.getOwnedLabelValue("email")).toBe("contact@acme.com");
     });
 
     it("maps each Anytype view layout to the matching Trilium collection view type", async () => {
@@ -1025,14 +1125,14 @@ describe("Anytype importer — integration", () => {
         expect(content).toBe("<p><a>gone.pdf</a></p>");
     });
 
-    it("skips a file property whose file object's bytes are missing, leaving no attachment or link", async () => {
-        // The file property references a FileObject, but its bytes are absent — so no attachment is created and
-        // the body keeps no reference link to it.
+    it("skips a file property whose file object's metadata or bytes are missing, leaving no attachment or link", async () => {
+        // One value references a FileObject whose bytes are absent, the other a file id the export carries no
+        // metadata for — neither yields an attachment, and the body keeps no reference link to them.
         const fileKey = "6a3e3323cafa6953a4661c6f";
         const fileCid = "bafyreimissingprop";
         const importRoot = await importAnytype({
             "objects/coll.pb.json": collectionObject("coll", "Files", ["m1"], [fileKey]),
-            "objects/m1.pb.json": memberObject("m1", { [fileKey]: [fileCid] }),
+            "objects/m1.pb.json": memberObject("m1", { [fileKey]: [fileCid, "bafyreiunknownfile"] }),
             "relations/file.pb.json": relationObject(fileKey, "File", 5),
             "filesObjects/f1.pb.json": fileObjectJson(fileCid, "log", "csv", "text/csv", "files\\log.csv")
             // No files/log.csv entry — the bytes are missing.
@@ -1041,6 +1141,65 @@ describe("Anytype importer — integration", () => {
         const row = importRoot.getChildNotes()[0].getChildNotes()[0];
         expect(row.getAttachmentsByRole("file")).toHaveLength(0);
         expect(decodeUtf8(row.getContent() ?? "")).not.toContain("reference-link");
+    });
+
+    it("falls back between created and modified when a page exports only one of them", async () => {
+        const importRoot = await importAnytype({
+            "objects/a.pb.json": datedObject("a", "Created only", { createdDate: 1735632037 }),
+            "objects/b.pb.json": datedObject("b", "Modified only", { lastModifiedDate: 1735632353 })
+        });
+
+        const createdOnly = importRoot.getChildNotes().find((note) => note.title === "Created only");
+        expect(createdOnly?.utcDateCreated).toBe("2024-12-31 08:00:37.000Z");
+        expect(createdOnly?.utcDateModified).toBe("2024-12-31 08:00:37.000Z");
+
+        // With no exported creation time the note keeps its import-time one; only modified is restored.
+        const modifiedOnly = importRoot.getChildNotes().find((note) => note.title === "Modified only");
+        expect(modifiedOnly?.utcDateModified).toBe("2024-12-31 08:05:53.000Z");
+        expect(modifiedOnly?.utcDateCreated).not.toBe("2024-12-31 08:05:53.000Z");
+    });
+
+    it("ignores a collection member the export doesn't contain", async () => {
+        // Both collections list the same absent member, so the second one reaches the membership (cloning)
+        // pass for it — with no note to clone.
+        const importRoot = await importAnytype({
+            "objects/c1.pb.json": collectionObject("c1", "First", ["ghost"], []),
+            "objects/c2.pb.json": collectionObject("c2", "Second", ["ghost"], [])
+        });
+
+        expect(importRoot.getChildNotes().map((note) => note.getChildNotes().length)).toEqual([0, 0]);
+    });
+
+    it("attaches a file property carried by the collection itself, the link becoming its whole body", async () => {
+        const fileKey = "6a3e3323cafa6953a4661c6f";
+        const fileCid = "bafyreicollfile";
+        const collection = JSON.stringify({
+            sbType: "Page",
+            snapshot: {
+                data: {
+                    blocks: [
+                        { id: "coll", childrenIds: ["header", "dataview"] },
+                        { id: "header", childrenIds: ["title"] },
+                        { id: "title", text: { text: "", style: "Title" } },
+                        { id: "dataview", dataview: { isCollection: true, views: [{ relations: [] }] } }
+                    ],
+                    details: { id: "coll", name: "Files", resolvedLayout: 14, links: [], [fileKey]: [fileCid] }
+                }
+            }
+        });
+        const importRoot = await importAnytype({
+            "objects/coll.pb.json": collection,
+            "relations/file.pb.json": relationObject(fileKey, "File", 5),
+            "filesObjects/f1.pb.json": fileObjectJson(fileCid, "log", "csv", "text/csv", "files\\log.csv"),
+            "files/log.csv": "a,b\n1,2"
+        });
+
+        const note = importRoot.getChildNotes()[0];
+        const attachments = note.getAttachmentsByRole("file");
+        expect(attachments.map((attachment) => attachment.title)).toEqual(["log.csv"]);
+        // A collection note has no body of its own, so the reference link is all of its content.
+        expect(decodeUtf8(note.getContent()))
+            .toBe(`<p><a class="reference-link" href="#root/${note.noteId}?viewMode=attachments&attachmentId=${attachments[0]?.attachmentId}">log.csv</a></p>`);
     });
 
     it("imports a collection-scoped export (no wrapper) as a named table whose columns are synthesized from members", async () => {

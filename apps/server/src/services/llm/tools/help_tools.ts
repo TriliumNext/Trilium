@@ -11,10 +11,9 @@
  */
 
 import { becca, type BNote } from "@triliumnext/core";
+import { getContentPreview, getDocNoteHtml } from "@triliumnext/core/src/services/llm/tools/helpers.js";
+import { defineTools } from "@triliumnext/core/src/services/llm/tools/tool_registry.js";
 import { z } from "zod";
-
-import { getContentPreview, getDocNoteHtml } from "./helpers.js";
-import { defineTools } from "./tool_registry.js";
 
 const HELP_ROOT_NOTE_ID = "_help";
 const DEFAULT_SEARCH_LIMIT = 10;

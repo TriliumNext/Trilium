@@ -8,10 +8,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { app_info as appInfo } from "@triliumnext/core";
-
 import { cls } from "@triliumnext/core";
-import { allToolRegistries } from "../llm/tools/index.js";
-import type { ToolDefinition } from "../llm/tools/tool_registry.js";
+
+import { allToolRegistries } from "@triliumnext/core/src/services/llm/tools/index.js";
+import type { ToolDefinition } from "@triliumnext/core/src/services/llm/tools/tool_registry.js";
+
 import sql from "../sql.js";
 
 /**

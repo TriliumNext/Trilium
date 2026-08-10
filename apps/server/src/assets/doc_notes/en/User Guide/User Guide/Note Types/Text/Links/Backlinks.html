@@ -1,0 +1,81 @@
+<p>A link points from one note to another; a <em>backlink</em> is that same
+  connection seen from the other end: the list of notes that refer to the
+  current one.</p>
+<p>Backlinks are maintained automatically and are read-only from this side.
+  A backlink disappears when the note that created it removes the link; it
+  cannot be deleted from the note being pointed at.</p>
+<h2>What counts as a backlink</h2>
+<p>Any&nbsp;r<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;pointing
+  at the current note, which covers two rather different cases:</p>
+<ul>
+  <li>Relations that Trilium maintains on your behalf.
+    <ul>
+      <li>The most common is <code spellcheck="false">internalLink</code>, created
+        whenever a note refers to another one through&nbsp;<a class="reference-link"
+        href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;in its text.</li>
+      <li>Embedded images (<code spellcheck="false">imageLink</code>), relation
+        map connections (<code spellcheck="false">relationMapLink</code>) and note
+        inclusions (<code spellcheck="false">includeNoteLink</code>) work the same
+        way.</li>
+    </ul>
+  </li>
+  <li>Relations you define yourself.
+    <ul>
+      <li>If another note carries <code spellcheck="false">~author</code> pointing
+        at the current note, that note is listed here as well.</li>
+    </ul>
+  </li>
+</ul>
+<p>Relations coming from a&nbsp;<a class="reference-link" href="#root/_help_m523cpzocqaD">Saved Search</a>&nbsp;are
+  excluded, since a search stores an <code spellcheck="false">ancestor</code> relation
+  that would otherwise list every one of its results as a backlink.</p>
+<aside
+class="admonition note">
+  <p>Only some note types have their content scanned for links:&nbsp;<a class="reference-link"
+    href="#root/_help_iPIMuisry3hd">Text</a>,&nbsp;<a class="reference-link" href="#root/_help_6RM1Q7ppFVoj">Markdown</a>,&nbsp;
+    <a
+    class="reference-link" href="#root/_help_iRwzGnHPzonm">Relation Map</a>&nbsp;and&nbsp;<a class="reference-link" href="#root/_help_GBBMSlVSOIGP">AI</a>&nbsp;chats.
+      A link written inside a&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
+      is not registered and will not appear as a backlink on the target note.
+      A relation set manually on a code note does still count.</p>
+  </aside>
+  <h2>How entries are displayed</h2>
+  <p>Each entry names the note the reference comes from, followed by one of:</p>
+  <ul>
+    <li><strong>An excerpt</strong> of the surrounding content, with the link itself
+      highlighted. This is available for&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes
+      and for&nbsp;<a class="reference-link" href="#root/_help_GBBMSlVSOIGP">AI</a>&nbsp;chat
+      notes. Roughly 200 characters of context are quoted around the link, trimmed
+      with an ellipsis where the surrounding text is longer, and images are left
+      out.</li>
+    <li><strong>The name of the relation</strong>, for every other note type where
+      the source cannot be quoted. This is the case for&nbsp;<a class="reference-link"
+      href="#root/_help_iRwzGnHPzonm">Relation Map</a>&nbsp;notes and for any note
+      carrying a relation you defined yourself.</li>
+  </ul>
+  <p>A note is listed once per reference it makes, so a note that links to
+    the current one three times occupies three rows.</p>
+  <p>Of note:</p>
+  <ul>
+    <li>For AI chat notes, only the assistant's own prose is quoted. A chat that
+      reached the note purely through tool calls has nothing to quote and is
+      listed by relation name instead.</li>
+    <li>Excerpts are only generated for roughly the first 50 sources. On a heavily
+      referenced note, the remaining entries fall back to showing the relation
+      name.</li>
+  </ul>
+  <h2>Where backlinks are shown</h2>
+  <ul>
+    <li>In the&nbsp;<a class="reference-link" href="#root/_help_KRlZFoIH0j6p">Connections tab</a>&nbsp;of
+      the&nbsp;<a class="reference-link" href="#root/_help_RnaPdbciOfeq">Right Sidebar</a>,
+      as a dedicated section.</li>
+    <li>As a badge in the&nbsp;<a class="reference-link" href="#root/_help_AlJ73vBCjWDw">Status bar</a>&nbsp;showing
+      the number of backlinks. The badge only appears when the note is being
+      read normally (not in a revision or attachment view) and when there is
+      at least one backlink; pressing it opens the section above.</li>
+    <li>Incoming links are also drawn on the link map, see&nbsp;<a class="reference-link"
+      href="#root/_help_BCkXAVs63Ttv">Note Map (Link map, Tree map)</a>.</li>
+    <li>On the old layout, backlinks are showed as a dedicated button in the&nbsp;
+      <a
+      class="reference-link" href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>&nbsp;area.</li>
+  </ul>

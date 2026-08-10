@@ -1,4 +1,5 @@
 import type BNote from "../../becca/entities/bnote.js";
+import { awaitPendingImageWrites } from "../image.js";
 import type TaskContext from "../task_context.js";
 import { extname } from "../utils/path.js";
 import type { ZipSource } from "../zip_provider.js";
@@ -35,6 +36,23 @@ export interface ImportOptions {
  * `file.buffer` for the browser/WASM upload that has no temp file.
  */
 export default async function importFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote, options: ImportOptions, format?: string): Promise<BNote | (string | number)[] | null> {
+    const imported = await routeToImporter(taskContext, file, parentNote, options, format);
+
+    // An image note is created empty and filled in when the compression it was handed to answers,
+    // so an importer that has returned is not an import that has finished: its pictures may still
+    // be on their way. Waited out here, in the one place every importer passes through, so that an
+    // import reported as done is one the user can close the lid on — rather than one whose notes
+    // fill in over the following minutes, and stay empty for good if the process stops first.
+    //
+    // Nothing is serialised by this. The images were all handed over as the notes were made and
+    // have been compressing throughout; this only declines to call the import finished while any
+    // of them is outstanding.
+    await awaitPendingImageWrites();
+
+    return imported;
+}
+
+async function routeToImporter(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote, options: ImportOptions, format?: string): Promise<BNote | (string | number)[] | null> {
     const extension = extname(file.originalname).toLowerCase();
 
     // Every zip-reading importer (generic + the tagged providers) reads the archive straight from the temp

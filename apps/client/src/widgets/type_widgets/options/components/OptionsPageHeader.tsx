@@ -1,9 +1,10 @@
 import "./OptionsPageHeader.css";
 
+import clsx from "clsx";
 import { ComponentChildren } from "preact";
 
-import { useNoteContext } from "../../../react/hooks";
 import HelpButton from "../../../react/HelpButton";
+import { useNoteContext } from "../../../react/hooks";
 
 interface OptionsPageHeaderProps {
     /**
@@ -40,7 +41,9 @@ export default function OptionsPageHeader({ actions, below, helpUrl }: OptionsPa
     if (!note && !actions && !below) return null;
 
     return (
-        <div className="options-page-header">
+        // A header carrying nothing but the page's name is marked as such: on a phone the name is
+        // shown beside the way back instead, leaving this with no band of its own to draw (see CSS).
+        <div className={clsx("options-page-header", !actions && !below && "options-page-header-title-only")}>
             <div className="options-page-header-inner">
                 {(note || actions) && (
                     <div className="options-page-header-main">
@@ -48,7 +51,9 @@ export default function OptionsPageHeader({ actions, below, helpUrl }: OptionsPa
                             <div className="options-page-header-titles">
                                 <span className={`options-page-header-icon ${note.getIcon()}`} aria-hidden="true" />
                                 <h2 className="options-page-header-title">{note.title}</h2>
-                                {helpUrl && <HelpButton helpPage={helpUrl} />}
+                                {/* Classed so it can be told from the name it stands beside: on a
+                                    phone the name moves into the dialog's header and this stays. */}
+                                {helpUrl && <HelpButton className="options-page-header-help" helpPage={helpUrl} />}
                             </div>
                         )}
                         {actions && <div className="options-page-header-actions">{actions}</div>}

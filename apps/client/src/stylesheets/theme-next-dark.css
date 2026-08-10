@@ -416,8 +416,10 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 
 .note-split.with-hue,
 .quick-edit-dialog-wrapper.with-hue,
+.geo-detail-pane.with-hue,
 .nested-note-list-item.with-hue,
-.note-book-card.with-hue .note-book-header {
+.note-book-card.with-hue .note-book-header,
+.ck-template-icon.with-hue {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 15.8%, 30.9%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 100%, 76.5%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 28.3%, 36.7%);

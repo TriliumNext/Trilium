@@ -96,6 +96,8 @@ let cachedLibFilesMap: Map<string, string> | null = null;
 
 async function createEnv(mime: string, context: ScriptApiContext = {}) {
     const tsModule = await import("typescript");
+    /* v8 ignore next -- typescript ships as CJS, so the interop namespace always carries
+       `default`; the fallback only covers a future ESM-native build. */
     const ts = tsModule.default ?? tsModule;
     const { createSystem, createVirtualTypeScriptEnvironment } = await import("@typescript/vfs");
     // Dynamically imported so the bundled lib.*.d.ts text lands in the lazy
@@ -259,7 +261,7 @@ interface DisplayPart {
  * `@returns`, `@example`, …). The doc text comes straight from the shared API
  * surface's `/** … *​/` comments.
  */
-function renderHoverTooltip(info: { quickInfo?: { displayParts?: DisplayPart[]; documentation?: DisplayPart[]; tags?: { name: string; text?: DisplayPart[] }[] } }): { dom: HTMLElement } {
+export function renderHoverTooltip(info: { quickInfo?: { displayParts?: DisplayPart[]; documentation?: DisplayPart[]; tags?: { name: string; text?: DisplayPart[] }[] } }): { dom: HTMLElement } {
     const quickInfo = info.quickInfo;
     const dom = document.createElement("div");
     dom.className = "cm-ts-hover";
@@ -357,5 +359,7 @@ export async function getScriptCompletions(mime: string, code: string, offset: n
     const path = scriptPath(mime);
     env.updateFile(path, code.length ? code : " ");
     const completions = env.languageService.getCompletionsAtPosition(path, offset, {});
+    /* v8 ignore next -- the service clamps an out-of-range offset rather than returning nothing,
+       so this only guards a language-service failure. */
     return completions?.entries.map((entry) => entry.name) ?? [];
 }

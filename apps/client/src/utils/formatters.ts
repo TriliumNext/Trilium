@@ -1,4 +1,4 @@
-import { t } from "../services/i18n";
+import { getLocaleById, t } from "../services/i18n";
 import options from "../services/options";
 
 type DateTimeStyle = "full" | "long" | "medium" | "short" | "none" | undefined;
@@ -54,29 +54,8 @@ export function formatDateTime(date: string | Date | number | null | undefined, 
         return "";
     }
 
-    const locale = normalizeLocale(options.get("formattingLocale") || options.get("locale") || navigator.language);
-
-    let parsedDate: Date;
-    if (typeof date === "string" || typeof date === "number") {
-        const dateOnlyMatch = typeof date === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-        if (dateOnlyMatch) {
-            // A date-only string ("YYYY-MM-DD") is parsed as UTC midnight by the Date
-            // constructor, so it rolls back to the previous day when displayed in a
-            // negative UTC offset (e.g. the Recent Changes date headers). Treat it as a
-            // local calendar date so the same day is shown regardless of timezone.
-            const [ , year, month, day ] = dateOnlyMatch;
-            parsedDate = new Date(Number(year), Number(month) - 1, Number(day));
-        } else {
-            // Parse the given string as a date
-            parsedDate = new Date(date);
-        }
-    } else if (date instanceof Date) {
-        // The given date is already a Date instance or a number
-        parsedDate = date;
-    } else {
-        // Invalid type
-        throw new TypeError(`Invalid type for the "date" argument.`);
-    }
+    const locale = getFormattingLocale();
+    const parsedDate = parseDate(date);
 
     if (timeStyle !== "none" && dateStyle !== "none") {
         // Format the date and time
@@ -106,11 +85,145 @@ export function formatDateTime(date: string | Date | number | null | undefined, 
     throw new Error("Incorrect state.");
 }
 
+/**
+ * Formats the given date with all-numeric components and a four-digit year, e.g. "31.01.2026" in
+ * German or "01/31/2026" in US English. The locale still decides field order and separators.
+ *
+ * The `dateStyle` presets cannot express this. They map to each locale's CLDR patterns, which are
+ * authored per locale: "short" drops to a two-digit year in some locales (`31.01.26` in German) but
+ * not others (`31/01/2026` in French), and "medium" spells the month out in some (`Jan 31, 2026`)
+ * while staying numeric in others. Prefer this where a compact, unambiguous and locale-consistent
+ * date matters, such as a table column, and `formatDateTime()` for prose.
+ *
+ * @param withTime also renders the time, for values that carry one.
+ */
+export function formatDateNumeric(date: string | Date | number | null | undefined, withTime = false) {
+    if (!date) {
+        return "";
+    }
+
+    const locale = getFormattingLocale();
+    const parsedDate = parseDate(date);
+    const formatOptions: Intl.DateTimeFormatOptions = { year: "numeric", month: "2-digit", day: "2-digit" };
+    if (withTime) {
+        // Pad the hour the way the locale's own short time pattern does: a 24-hour locale writes
+        // "02:05", a 12-hour one "2:05 AM". Either fixed choice is wrong somewhere, and `timeStyle`
+        // -- which would get both right -- cannot be combined with explicit date components.
+        formatOptions.hour = is12HourLocale(locale) ? "numeric" : "2-digit";
+        formatOptions.minute = "2-digit";
+    }
+
+    try {
+        return new Intl.DateTimeFormat(locale, formatOptions).format(parsedDate);
+    } catch (e) {
+        // An unusable locale (e.g. the dev-only "en_rtl", which normalizes to the invalid "en-rtl")
+        // makes the constructor throw; fall back to the environment default.
+        return new Intl.DateTimeFormat(undefined, formatOptions).format(parsedDate);
+    }
+}
+
+function is12HourLocale(locale: string) {
+    try {
+        return isTwelveHourCycle(new Intl.DateTimeFormat(locale, { hour: "numeric" }));
+    } catch (e) {
+        // Same unusable-locale fallback as the caller, so both agree on which cycle is in play.
+        return isTwelveHourCycle(new Intl.DateTimeFormat(undefined, { hour: "numeric" }));
+    }
+}
+
+function isTwelveHourCycle(formatter: Intl.DateTimeFormat) {
+    const { hourCycle } = formatter.resolvedOptions();
+    return hourCycle === "h11" || hourCycle === "h12";
+}
+
+function getFormattingLocale() {
+    return normalizeLocale(options.get("formattingLocale") || options.get("locale") || navigator.language);
+}
+
+function parseDate(date: string | Date | number): Date {
+    if (typeof date === "string" || typeof date === "number") {
+        const dateOnlyMatch = typeof date === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+        if (dateOnlyMatch) {
+            // A date-only string ("YYYY-MM-DD") is parsed as UTC midnight by the Date
+            // constructor, so it rolls back to the previous day when displayed in a
+            // negative UTC offset (e.g. the Recent Changes date headers). Treat it as a
+            // local calendar date so the same day is shown regardless of timezone.
+            const [ , year, month, day ] = dateOnlyMatch;
+            return new Date(Number(year), Number(month) - 1, Number(day));
+        }
+
+        // Parse the given string as a date
+        return new Date(date);
+    } else if (date instanceof Date) {
+        // The given date is already a Date instance or a number
+        return date;
+    }
+
+    // Invalid type
+    throw new TypeError(`Invalid type for the "date" argument.`);
+}
+
 export function normalizeLocale(locale: string) {
     locale = locale.replaceAll("_", "-");
     switch (locale) {
         case "cn": return "zh-CN";
         case "tw": return "zh-TW";
         default: return locale;
+    }
+}
+
+/**
+ * The language a note is written in.
+ *
+ * A note carries its own language as a `#language` label, set from the Basic Properties ribbon, but
+ * the label is opt-in and the picker that sets it stays empty until content languages are enabled —
+ * so in practice almost no note has one. The `defaultContentLanguage` option answers for all of
+ * them, and an empty value there means "follow the application's language" rather than "none".
+ *
+ * Callers should route the raw label through this rather than reading it directly, so that what the
+ * setting promises to affect — text direction, typographic quotes — actually follows it everywhere.
+ */
+export function resolveContentLanguage(noteLanguage: string | null | undefined): string | null {
+    return noteLanguage || options.get("defaultContentLanguage") || options.get("locale") || null;
+}
+
+/** Whether a note's resolved language is written right-to-left. */
+export function isContentRightToLeft(noteLanguage: string | null | undefined): boolean {
+    return getLocaleById(resolveContentLanguage(noteLanguage))?.rtl ?? false;
+}
+
+/**
+ * Whether distances should be shown in miles or in kilometres, for consumers such as the geo map's
+ * scale bar.
+ *
+ * `Intl` exposes no measurement system (the locale-info proposal dropped it), so the locale's region
+ * is matched against the short list of countries that still state road distances in miles. A locale
+ * carrying no region is maximized first, which is what makes Trilium's plain `en` -- listed as
+ * "English (United States)" -- resolve to `US`; `en-GB` is a separate entry and resolves to `GB`.
+ */
+export function getMeasurementSystem(): "metric" | "imperial" {
+    // An explicitly chosen formatting locale wins. Failing that the browser's locale is preferred
+    // over what getFormattingLocale() would settle on (the UI language), because the UI language
+    // says nothing about where the user is -- an English UI is common well outside the US.
+    for (const candidate of [ options.get("formattingLocale"), navigator.language, getFormattingLocale() ]) {
+        const region = candidate && getRegion(candidate);
+        if (region) {
+            return IMPERIAL_REGIONS.has(region) ? "imperial" : "metric";
+        }
+    }
+
+    return "metric";
+}
+
+/** Regions that state road distances in miles rather than kilometres. */
+const IMPERIAL_REGIONS = new Set([ "US", "GB", "LR", "MM" ]);
+
+function getRegion(locale: string) {
+    try {
+        return new Intl.Locale(normalizeLocale(locale)).maximize().region;
+    } catch (e) {
+        // An unusable locale (e.g. the dev-only "en_rtl") makes the constructor throw; the caller
+        // then falls through to the browser's own locale.
+        return undefined;
     }
 }

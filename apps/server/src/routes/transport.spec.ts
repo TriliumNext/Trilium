@@ -1,10 +1,18 @@
 import { cls, options as optionService, sql_init } from "@triliumnext/core";
 import type { Application } from "express";
 import supertest from "supertest";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { type ApiTestContext, bootLoggedInApp, createTextNote } from "../../spec/support/internal_api.js";
+import etapiTokenService from "../services/etapi_tokens.js";
 import port from "../services/port.js";
+
+const initializeRequest = {
+    jsonrpc: "2.0",
+    method: "initialize",
+    id: 1,
+    params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "spec", version: "1" } }
+};
 
 let ctx: ApiTestContext;
 let app: Application;
@@ -129,35 +137,161 @@ describe("Route transport & middleware", () => {
             expect(res.body.error).toContain("disabled");
         });
 
-        it("reaches the MCP transport over loopback with a valid Host once enabled", async () => {
+        it("rejects an untokened request with 401 even over loopback, with no OAuth challenge", async () => {
             cls.init(() => optionService.setOption("mcpEnabled", "true"));
-            // supertest connects over loopback so the guard passes; a Host matching
-            // the configured port clears DNS-rebinding protection and the request
-            // is handed to the streamable transport (any status is fine — we only
-            // need the handler to execute past header validation).
+            // supertest dials loopback, which used to be sufficient on its own. It no longer
+            // is: any local process can reach the listener, so a token is always required.
             const res = await supertest(app)
                 .post("/mcp")
                 .set("Host", `localhost:${port}`)
                 .set("Content-Type", "application/json")
                 .set("Accept", "application/json, text/event-stream")
-                .send({ jsonrpc: "2.0", method: "initialize", id: 1, params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "spec", version: "1" } } });
-            expect(res.status).toBeGreaterThanOrEqual(200);
-            expect(JSON.stringify(res.body)).not.toContain("Invalid Host header");
+                .send(initializeRequest)
+                .expect(401);
+            expect(res.body.error).toContain("ETAPI token");
+            // A WWW-Authenticate header would send spec-compliant MCP clients into an
+            // OAuth discovery flow Trilium cannot serve.
+            expect(res.headers["www-authenticate"]).toBeUndefined();
         });
 
-        it("rejects a forged Host header (DNS rebinding) with 403", async () => {
+        it("does not accept a logged-in browser session in place of a token", async () => {
             cls.init(() => optionService.setOption("mcpEnabled", "true"));
-            // A DNS-rebinding attacker reaches the loopback listener through the
-            // victim's browser (so the IP guard passes) but carries an attacker-
-            // controlled Host. It must be rejected before any MCP tool can run.
-            const res = await supertest(app)
+            // A session of its own: the shared ctx.agent was logged out by an earlier test,
+            // and a dead session would make this pass without proving anything.
+            const agent = supertest.agent(app);
+            await agent.post("/login").send({ password: "demo1234" }).expect(302);
+            const csrfToken = (await agent.get("/bootstrap").expect(200)).body.csrfToken;
+            await agent.post("/api/tree/load")
+                .set("x-csrf-token", csrfToken)
+                .send({ noteIds: ["root"] })
+                .expect(200);
+
+            // That cookie now demonstrably authenticates the internal API. If it also worked
+            // here, /mcp would be CSRF-able by any page the logged-in user visits — with full
+            // tool access. Only the Authorization header may authenticate.
+            const res = await agent
                 .post("/mcp")
-                .set("Host", "attacker.example.com")
+                .set("Host", `localhost:${port}`)
                 .set("Content-Type", "application/json")
                 .set("Accept", "application/json, text/event-stream")
-                .send({ jsonrpc: "2.0", method: "initialize", id: 1, params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "spec", version: "1" } } })
-                .expect(403);
-            expect(res.body?.error?.message ?? "").toContain("Invalid Host header");
+                .send(initializeRequest)
+                .expect(401);
+            expect(res.body.error).toContain("ETAPI token");
+        });
+
+        it("rejects a bogus token with 401", async () => {
+            cls.init(() => optionService.setOption("mcpEnabled", "true"));
+            const res = await supertest(app)
+                .post("/mcp")
+                .set("Host", `localhost:${port}`)
+                .set("Authorization", "Bearer not_a_real_token")
+                .set("Content-Type", "application/json")
+                .set("Accept", "application/json, text/event-stream")
+                .send(initializeRequest)
+                .expect(401);
+            expect(res.body.error).toContain("ETAPI token");
+        });
+
+        it("serves a token-authenticated caller, including on a foreign Host", async () => {
+            cls.init(() => optionService.setOption("mcpEnabled", "true"));
+            const { authToken } = cls.init(() => etapiTokenService.createToken("mcp transport spec"));
+
+            // A remote client's Host is its own domain and could never satisfy a loopback
+            // allow-list; the token is what authorises it, so no Host check applies.
+            for (const host of [`localhost:${port}`, "trilium.example.com"]) {
+                const res = await supertest(app)
+                    .post("/mcp")
+                    .set("Host", host)
+                    .set("Authorization", `Bearer ${authToken}`)
+                    .set("Content-Type", "application/json")
+                    .set("Accept", "application/json, text/event-stream")
+                    .send(initializeRequest);
+                expect(res.status).toBe(200);
+                expect(JSON.stringify(res.body)).not.toContain("Invalid Host header");
+            }
+        });
+
+        it("accepts the ETAPI Basic-auth form as well as Bearer", async () => {
+            cls.init(() => optionService.setOption("mcpEnabled", "true"));
+            const { authToken } = cls.init(() => etapiTokenService.createToken("mcp basic spec"));
+            // isValidAuthHeader also parses `Basic etapi:<token>`, which some clients emit
+            // when given a username/password pair rather than a raw header.
+            const res = await supertest(app)
+                .post("/mcp")
+                .auth("etapi", authToken, { type: "basic" })
+                .set("Content-Type", "application/json")
+                .set("Accept", "application/json, text/event-stream")
+                .send(initializeRequest);
+            expect(res.status).toBe(200);
+        });
+
+        /**
+         * The limiter's budget is per-IP, and these tests have to exhaust one to say anything.
+         * `trust proxy` makes the limiter key off `X-Forwarded-For`, so each test spends a
+         * bucket of its own instead of the shared loopback one every other test in this file
+         * uses — otherwise the first exhaustion here would 429 all of them.
+         */
+        describe("rate limiting", () => {
+            let authToken: string;
+
+            beforeAll(() => {
+                app.set("trust proxy", 1);
+                cls.init(() => optionService.setOption("mcpEnabled", "true"));
+                ({ authToken } = cls.init(() => etapiTokenService.createToken("mcp rate limit spec")));
+            });
+
+            afterAll(() => {
+                app.set("trust proxy", false);
+            });
+
+            function mcpPostFrom(clientIp: string) {
+                return supertest(app)
+                    .post("/mcp")
+                    .set("X-Forwarded-For", clientIp)
+                    .set("Content-Type", "application/json")
+                    .set("Accept", "application/json, text/event-stream");
+            }
+
+            it("does not spend the token-guessing budget on failures that are not failed authentication", async () => {
+                cls.init(() => optionService.setOption("mcpEnabled", "false"));
+
+                // A full budget's worth of responses that have nothing to do with credentials. A
+                // client polling a server whose MCP toggle is off reaches this on its own, without
+                // anyone ever presenting a bad token — as does one that trips a transport-level
+                // 4xx or a 500.
+                for (let i = 0; i < 10; i++) {
+                    await mcpPostFrom("203.0.113.1").send(initializeRequest).expect(403);
+                }
+
+                cls.init(() => optionService.setOption("mcpEnabled", "true"));
+
+                // Nothing above was an authentication failure, so a valid token must still be
+                // served. If every 4xx/5xx counts, this is a 429 — and since the limiter runs
+                // ahead of the guard, an unauthenticated caller can spend the budget on purpose
+                // and lock out a legitimate client, or everyone sharing a NAT or Docker bridge
+                // address, for fifteen minutes.
+                const res = await mcpPostFrom("203.0.113.1")
+                    .set("Authorization", `Bearer ${authToken}`)
+                    .send(initializeRequest);
+                expect(res.status).toBe(200);
+            });
+
+            it("still throttles a caller guessing tokens", async () => {
+                for (let i = 0; i < 10; i++) {
+                    await mcpPostFrom("203.0.113.2")
+                        .set("Authorization", "Bearer not_a_real_token")
+                        .send(initializeRequest)
+                        .expect(401);
+                }
+
+                // Repeated bad tokens are what the limiter exists for: once the budget is gone
+                // the IP is cut off, valid token or not. Guards against "fixing" the above by
+                // dropping the limiter.
+                const res = await mcpPostFrom("203.0.113.2")
+                    .set("Authorization", `Bearer ${authToken}`)
+                    .send(initializeRequest);
+                expect(res.status).toBe(429);
+            });
         });
     });
 });

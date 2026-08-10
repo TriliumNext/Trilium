@@ -1,0 +1,257 @@
+.attribute-list-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.attribute-list-panel ul.attribute-rows {
+    margin: 0;
+    padding-inline-start: 0;
+    list-style: none;
+}
+
+.attribute-list-panel .attribute-row {
+    /* What the floating action buttons — and, while editing, the overlay — are anchored to. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px;
+    border-radius: var(--border-radius-size, 4px);
+    cursor: pointer;
+    /* A row stands for its attribute rather than spelling it out, so nothing wraps: the name and the
+       value are cut off instead, and the popup the row opens has them in full. */
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.attribute-list-panel .attribute-row:hover,
+.attribute-list-panel .attribute-row.active,
+.attribute-list-panel .attribute-row.editing {
+    background-color: var(--hover-item-background-color);
+}
+
+/* While its value is edited (or the attribute created), the row lets the editor standing over it
+   (see AttributeEditorOverlay.css) spill past the one line the row keeps to, and comes forward so
+   the editor is drawn over the rows below rather than under them. */
+.attribute-list-panel .attribute-row.editing {
+    overflow: visible;
+    z-index: 10;
+}
+
+/*
+ * The kind of the attribute, as the icon of what it is (a label or a relation). It is the only thing
+ * saying so, the row carrying neither the `#`/`~` prefix nor the type as a word.
+ */
+.attribute-list-panel .attribute-kind {
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
+    color: var(--muted-text-color);
+}
+
+/*
+ * A badge on the corner of the icon: a cog for the names Trilium reads for itself (settings of the note
+ * rather than a word for it), a chevron for a definition of a promoted field (one lifted out of the
+ * attributes and into the note's own ribbon). A second glyph rather than an icon of its own, so
+ * `cssClass` still reads as the label it is, and a promoted date field as the date field it defines.
+ */
+.attribute-list-panel .attribute-kind.marker-system::after,
+.attribute-list-panel .attribute-kind.marker-promoted::after {
+    position: absolute;
+    inset-inline-end: -3px;
+    bottom: -2px;
+    font-family: boxicons;
+    font-size: 0.62em;
+    font-weight: normal;
+    line-height: 1;
+    /* Punched out of the icon it sits on, so the two glyphs stay legible where they overlap. */
+    text-shadow:
+        0 0 2px var(--card-background-color, var(--main-background-color)),
+        0 0 2px var(--card-background-color, var(--main-background-color));
+}
+
+.attribute-list-panel .attribute-kind.marker-system::after {
+    content: "\ea6e"; /* lookup code for "cog" in boxicons.css */
+}
+
+.attribute-list-panel .attribute-kind.marker-promoted::after {
+    content: "\ea57"; /* lookup code for "chevron-up" in boxicons.css */
+    /* A single stroke where the cog is a whole shape, so it is drawn a size up to weigh the same. */
+    font-size: 0.8em;
+    inset-inline-end: -4px;
+    bottom: -4px;
+}
+
+/* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort is
+   what carries the split, the rule only marks where it falls. */
+.attribute-list-panel .attribute-rows-divider {
+    margin: 4px 4px 5px;
+    border: none;
+    border-top: 1px solid var(--main-border-color);
+    opacity: 0.6;
+}
+
+.attribute-list-panel .attribute-name {
+    flex-shrink: 0;
+    max-width: 65%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+.attribute-list-panel .attribute-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted-text-color);
+    /* A step below the name it follows: the value is the preview, not the point, and drawn smaller
+       it fits more of itself into the room the row spares it. */
+    font-size: 0.85em;
+}
+
+/* Set against the row's trailing edge rather than trailing the name, so the values line up in a
+   column of their own: name reads from the one edge, value from the other, and the gap between them
+   says how much room is left rather than being dead space after every short value. Where the card
+   asks for it — the two lists of plain attributes, owned and inherited (see AttributeList.tsx);
+   the definitions' summaries keep prose order. */
+.attribute-list-panel.align-values-end .attribute-value {
+    text-align: end;
+}
+
+.attribute-list-panel .attribute-value.empty {
+    font-style: italic;
+    opacity: 0.7;
+}
+
+/* A label's value is edited in place, so the preview itself is a click target of its own: a text
+   cursor over it says as much, where the row around it — which opens the popup — points. */
+.attribute-list-panel .attribute-value.editable {
+    cursor: text;
+}
+
+/* A flag's press toggles rather than types (see startValueEdit), and the pointer says so. */
+.attribute-list-panel .attribute-value.editable.flag {
+    cursor: pointer;
+}
+
+/* The placeholder holding an empty label's slot open. Hidden rather than left out, so the slot keeps
+   the height the text gives it, and shown as the row's buttons are: over the row being pointed at,
+   which is also the only row whose slot could be pressed. */
+.attribute-list-panel .attribute-value.value-placeholder {
+    visibility: hidden;
+}
+
+.attribute-list-panel .attribute-row:is(:hover, .active, .editing) .attribute-value.value-placeholder {
+    visibility: visible;
+}
+
+/* The way in at the foot of the list: a ghost of a row, quiet until pointed at — the standing the
+   table's own add-row keeps. Sized as the values are: an invitation, not an entry. */
+.attribute-list-panel .attribute-add-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px;
+    border-radius: var(--border-radius-size, 4px);
+    cursor: pointer;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+    opacity: 0.75;
+}
+
+.attribute-list-panel .attribute-add-row:hover {
+    background-color: var(--hover-item-background-color);
+    opacity: 1;
+}
+
+/* A colour's chip keeps to its own size: a chip is laid out as a flex box, which alone in the value's
+   slot would run the width of it, a bar rather than a chip. */
+.attribute-list-panel .attribute-value > .label-color-chip {
+    width: fit-content;
+}
+
+/* Being a box rather than text, the chip follows the card's alignment by margin instead. */
+.attribute-list-panel.align-values-end .attribute-value > .label-color-chip {
+    margin-inline-start: auto;
+}
+
+/* A definition's summary: its marks at the leading end, and the alias — the one part the user
+   wrote — at the trailing edge, where the other cards keep their values. */
+.attribute-list-panel .attribute-value.definition {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.attribute-list-panel .definition-marker {
+    flex-shrink: 0;
+}
+
+.attribute-list-panel .definition-display-name {
+    margin-inline-start: auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.attribute-list-panel .attribute-marker,
+.attribute-list-panel .attribute-owner {
+    flex-shrink: 0;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+}
+
+.attribute-list-panel .attribute-owner {
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The row's actions — delete, and for a relation the pencil — float over the row's trailing end
+   instead of reserving room in it; only the row being pointed at shows them. */
+.attribute-list-panel .attribute-row-actions {
+    position: absolute;
+    inset-inline-end: 1px;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    display: none;
+    align-items: center;
+    padding-inline-start: 2px;
+    border-radius: var(--border-radius-size, 4px);
+
+    /* A solid stand-in for the hovered row's composite — its hover film is ~a tenth of ink over the
+       canvas (right-pane cards paint no ground), so the same tenth is mixed from the text colour:
+       opaque by construction, where the film's own alpha cannot be flattened in CSS. */
+    background-color: color-mix(in srgb, var(--main-text-color) 9%, var(--main-background-color));
+}
+
+/* Not while editing: the actions — later in the DOM — would paint over the very overlay that
+   replaces them. */
+.attribute-list-panel .attribute-row:not(.editing):is(:hover, .active) .attribute-row-actions {
+    display: flex;
+}
+
+/* A standing gutter one button wide wherever there are actions at all: the delete cross every such
+   row carries lands in reserved room, so the value never moves nor is covered. Only a relation's
+   second button, the pencil, overlays the value's tail — on the cluster's solid ground. */
+.attribute-list-panel .attribute-row:has(.attribute-row-actions) .attribute-value {
+    padding-inline-end: 27px;
+}
+
+/* Both at the compact size the theme reserves for close crosses (`.icon-action.bx-x`), which the
+   trash and the pencil do not get by name. */
+.attribute-list-panel .attribute-row-actions .icon-action {
+    --icon-button-size: 24px;
+    --icon-button-icon-ratio: 0.8;
+
+    border-radius: 50%;
+}
+
+/* The red the menus give their trash: deleting is the one destructive press on the row. Stated
+   from `:root` and with the button's own class doubled on, so as to outweigh the theme's blanket
+   icon colour (`:root .icon-action:not(...)`) whichever way the stylesheets are ordered. */
+:root .attribute-list-panel .attribute-delete-button.icon-action {
+    color: var(--dropdown-item-icon-destructive-color);
+}
+

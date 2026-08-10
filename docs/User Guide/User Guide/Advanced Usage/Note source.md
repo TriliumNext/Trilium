@@ -8,8 +8,8 @@ For example:
 *   <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes are represented internally as HTML, using the <a class="reference-link" href="Technologies%20used/CKEditor.md">CKEditor</a> representation. Note that due to the custom plugins, some HTML elements are specific to Trilium only, for example the admonitions.
 *   <a class="reference-link" href="../Note%20Types/Code.md">Code</a> notes are plain text and are represented internally as-is.
 *   <a class="reference-link" href="../Collections/Geo%20Map.md">Geo Map</a> notes contain only minimal information (viewport, zoom) as a JSON.
-*   <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> notes are represented as JSON, with Trilium's own information alongside with <a class="reference-link" href="Technologies%20used/Excalidraw.md">Excalidraw</a>'s internal JSON representation format.
-*   <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a> notes are represented as JSON, with the internal format of <a class="reference-link" href="Technologies%20used/MindElixir.md">MindElixir</a>.
+*   <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> notes are represented as JSON, with Trilium's own information alongside with [Excalidraw](Technologies%20used.md)'s internal JSON representation format.
+*   <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a> notes are represented as JSON, with the internal format of [MindElixir](Technologies%20used.md).
 
 Note that some information is also stored as <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>. For example <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> notes use the attachments feature to store the custom libraries, and alongside with <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a> and other similar note types it stores an SVG representation of the content for use in other features such as including in other notes, shared notes, etc.
 

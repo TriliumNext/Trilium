@@ -5,6 +5,7 @@ import { MutableRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, u
 
 import { isMobile } from "../../services/utils";
 import { useTooltip, useUniqueName } from "./hooks";
+import { suspendModalFocusTraps } from "./modal_focustrap";
 
 type DataAttributes = {
     [key: `data-${string}`]: string | number | boolean | undefined;
@@ -23,6 +24,18 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
     /** If set to true, then the dropdown button will be considered an icon action (without normal border and sized for icons only). */
     iconAction?: boolean;
     noSelectButtonStyle?: boolean;
+    /**
+     * Drop the `tn-dropdown-list` class the menu otherwise carries by default.
+     *
+     * That class exists for **scrollable** menus: it moves the theme's backdrop blur off the menu's
+     * `::before` layer — which a scrollable menu would scroll away with its content — and onto the
+     * menu element itself. The element-level filter is the fragile one, though: opened over note
+     * content it blurs nothing at all, leaving the menu merely translucent and reading as
+     * see-through over anything dark.
+     *
+     * So set this on any menu that doesn't scroll (i.e. nearly every action menu) to keep it on the
+     * working pseudo-element layer.
+     */
     noDropdownListStyle?: boolean;
     disabled?: boolean;
     text?: ComponentChildren;
@@ -43,9 +56,27 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
      * class keeps applying even though the menu no longer lives inside the toggle's wrapper.
      */
     portalToBody?: boolean;
+    /**
+     * On a phone, show the menu as a sheet rising from the bottom of the screen over a dimmed page,
+     * the way the app's other mobile menus appear. No effect on a desktop layout.
+     *
+     * Prefer this to setting the pieces by hand. A menu left to place itself on mobile lands as a
+     * narrow box adrift in the middle of the page — Popper computes an offset that the app's own
+     * `body.mobile .dropdown-menu { position: fixed }` then measures from somewhere else — and one
+     * opened inside a dialog needs {@link portalToBody} besides, since a transformed `.modal-dialog`
+     * is both the box a fixed menu is placed against and a stacking context the backdrop, painting
+     * above the whole modal, would otherwise dim the menu through.
+     */
+    mobileBottomSheet?: boolean;
 }
 
-export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop, portalToBody }: DropdownProps) {
+export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop: mobileBackdropProp, portalToBody: portalToBodyProp, mobileBottomSheet }: DropdownProps) {
+    // The sheet is three things at once — placed by the app's own rule, dimming what is behind it,
+    // and lifted out of whatever opened it — so it is asked for as one thing and unpacked here.
+    const bottomSheet = !!mobileBottomSheet && isMobile();
+    const mobileBackdrop = mobileBackdropProp || bottomSheet;
+    const portalToBody = portalToBodyProp || bottomSheet;
+
     const containerRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const dropdownContainerRef = useRef<HTMLUListElement | null>(null);
@@ -61,12 +92,20 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
         // "" shows no tooltip).
         title: title ?? titleOptions?.title ?? "",
         placement: titlePosition ?? "bottom",
-        fallbackPlacements: [ titlePosition ?? "bottom" ],
-        trigger: "manual"
+        fallbackPlacements: [ titlePosition ?? "bottom" ]
     }), [title, titleOptions, titlePosition]);
-    const { showTooltip, hideTooltip } = useTooltip(containerRef, tooltipConfig);
-
     const [ shown, setShown ] = useState(false);
+    // On the wrapper, not on the toggle: Bootstrap keeps one component instance per element and the toggle
+    // is already the dropdown's own, so a tooltip put there is refused registration and can never be
+    // disposed — it goes on showing its title with nothing left to take it down.
+    //
+    // Triggering is Bootstrap's, though, rather than driven from the toggle's mouseenter/mouseleave as it
+    // once was: only Bootstrap's own listeners keep the hover state it decides by, and a tooltip shown
+    // around it is liable to be taken away again under the pointer. What that arrangement was for — the
+    // wrapper holding the open menu too, so the title hung over the menu the pointer had moved into — is
+    // answered by silencing the tooltip for as long as the menu is up.
+    const { hideTooltip } = useTooltip(containerRef, tooltipConfig, !shown);
+
     // A portaled menu lives in `document.body`, detached from the toggle's subtree. Mounting it eagerly
     // for every instance leaves an empty menu wrapper in the body for every note context/tab, so only
     // mount it while it's actually needed: open (`shown`), about to open (`armed` — set on interaction
@@ -137,6 +176,14 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
         }
     }, [ mobileBackdrop ]);
 
+    // A portaled menu lives in `document.body`, outside any modal that opened it. That modal's focus-trap
+    // would keep yanking focus back into the modal, so an input in the menu (e.g. the note-icon picker's
+    // search box) could never hold focus. Suspend the shown modals' traps while the menu is open.
+    useEffect(() => {
+        if (!portalToBody || !shown) return;
+        return suspendModalFocusTraps();
+    }, [ portalToBody, shown ]);
+
     useEffect(() => {
         if (!containerRef.current) return;
         if (externalContainerRef) externalContainerRef.current = containerRef.current;
@@ -164,7 +211,7 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
 
     const menu = (
         <ul
-            class={`dropdown-menu tn-dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} ${!noDropdownListStyle ? "tn-dropdown-list" : ""}`}
+            class={`dropdown-menu tn-dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} ${bottomSheet ? "mobile-bottom-menu" : ""} ${!noDropdownListStyle ? "tn-dropdown-list" : ""}`}
             style={dropdownContainerStyle}
             aria-labelledby={ariaId}
             ref={dropdownContainerRef}
@@ -180,6 +227,8 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
     );
 
     return (
+        // `title` stands in only for the moment before the tooltip is wired: Bootstrap moves the
+        // attribute into the tooltip and drops it, so the browser's own doesn't double up with ours.
         <div ref={containerRef} class={`dropdown ${className ?? ""}`} style={{ display: "flex" }} title={title}>
             <button
                 className={`${iconAction ? "icon-action" : "btn"} ${!noSelectButtonStyle ? "select-button" : ""} ${buttonClassName ?? ""} ${!hideToggleArrow ? "dropdown-toggle" : ""}`}
@@ -191,8 +240,6 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
                 aria-expanded="false"
                 id={id ?? ariaId}
                 disabled={disabled}
-                onMouseEnter={showTooltip}
-                onMouseLeave={hideTooltip}
                 // Mount the portaled menu just before it can open: any interaction that leads to a
                 // Bootstrap open (pointer press, or focusing the toggle ahead of a keyboard open) is
                 // preceded by one of these, so `_menu` is wired by the time the click/keydown fires.

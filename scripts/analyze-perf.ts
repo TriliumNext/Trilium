@@ -131,8 +131,6 @@ function analyzePerf(entries: PerfEntry[]) {
             category = 'CKEditor Core';
         } else if (entry.file.startsWith('pkg:')) {
             category = entry.file.split('/')[0];
-        } else if (entry.file.startsWith('deps:ckeditor5-premium')) {
-            category = 'CKEditor Premium';
         } else if (entry.file.startsWith('deps:ckeditor5')) {
             category = 'CKEditor Core (deps)';
         } else if (entry.file.startsWith('deps:@codemirror')) {
@@ -193,7 +191,7 @@ function analyzePerf(entries: PerfEntry[]) {
          e.file.includes('footnotes') ||
          e.file.includes('math') ||
          e.file.includes('mermaid') ||
-         e.file.includes('keyboard-marker'))
+         e.file.includes('keyboard_marker'))
     );
 
     const byCKPlugin = new Map<string, AggregatedStats>();
@@ -203,7 +201,7 @@ function analyzePerf(entries: PerfEntry[]) {
         else if (entry.file.includes('footnotes')) plugin = 'footnotes';
         else if (entry.file.includes('math')) plugin = 'math';
         else if (entry.file.includes('mermaid')) plugin = 'mermaid';
-        else if (entry.file.includes('keyboard-marker')) plugin = 'keyboard-marker';
+        else if (entry.file.includes('keyboard_marker')) plugin = 'keyboard-marker';
 
         if (!byCKPlugin.has(plugin)) {
             byCKPlugin.set(plugin, { totalTime: 0, count: 0, files: [] });

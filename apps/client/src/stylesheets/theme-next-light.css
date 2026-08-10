@@ -388,8 +388,10 @@
 
 .note-split.with-hue,
 .quick-edit-dialog-wrapper.with-hue,
+.geo-detail-pane.with-hue,
 .nested-note-list-item.with-hue,
-.note-book-card.with-hue .note-book-header {
+.note-book-card.with-hue .note-book-header,
+.ck-template-icon.with-hue {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 44.5%, 43.1%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 91.3%, 91%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 55.1%, 50.2%);

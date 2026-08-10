@@ -80,6 +80,18 @@ describe("validateHostResolution", () => {
         await expect(validateHostResolution("fe80::1")).rejects.toThrow("private/internal");
     });
 
+    it("reads an IPv6 literal still wrapped in the brackets URL.hostname leaves on it", async () => {
+        const lookup = vi.spyOn(dns.promises, "lookup");
+
+        await expect(validateHostResolution("[::1]")).rejects.toThrow("private/internal");
+        await expect(validateHostResolution("[fe80::1]")).rejects.toThrow("private/internal");
+        await expect(validateHostResolution("[2606:4700:4700::1111]")).resolves.toEqual([
+            { address: "2606:4700:4700::1111", family: 6 }
+        ]);
+        // Recognised as an address, so never taken for a name and looked up as one.
+        expect(lookup).not.toHaveBeenCalled();
+    });
+
     it("allows public IP literals and returns validated addresses", async () => {
         await expect(validateHostResolution("8.8.8.8")).resolves.toEqual([{ address: "8.8.8.8", family: 4 }]);
         await expect(validateHostResolution("1.1.1.1")).resolves.toEqual([{ address: "1.1.1.1", family: 4 }]);

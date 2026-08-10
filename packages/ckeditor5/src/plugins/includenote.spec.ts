@@ -225,7 +225,7 @@ describe("IncludeNote", () => {
         expect(command.value).toBe("medium");
 
         // Execute through every defined box size to cover the model write path.
-        for (const { value } of BOX_SIZES) {
+        for (const value of BOX_SIZES) {
             editor.execute(BOX_SIZE_COMMAND_NAME, { value });
             expect(command.value).toBe(value);
             expect(findIncludeNote(editor)?.getAttribute("boxSize")).toBe(value);

@@ -3,6 +3,7 @@ import "./MarkdownCommons.css";
 
 import VanillaCodeMirror from "@triliumnext/codemirror";
 import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";
+import { createLiteralTildeExtension } from "@triliumnext/commons/src/lib/marked_extensions";
 import DOMPurify from "dompurify";
 import { Marked, type Tokens } from "marked";
 import { createContext } from "preact";
@@ -19,6 +20,7 @@ import { removeIndividualBinding } from "../../../services/shortcuts";
 import tree from "../../../services/tree";
 import utils, { isDesktop } from "../../../services/utils";
 import { useLegacyImperativeHandlers, useTriliumEvent } from "../../react/hooks";
+import { extractHighlightsFromStaticHtml, type RawHighlight } from "../../sidebar/highlights_extract";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
@@ -26,6 +28,9 @@ import { useSlashCommands } from "./completions";
 import { insertText, replaceSelection, uploadImageAndInsert } from "./editor_utils";
 
 const marked = new Marked({ breaks: true, gfm: true });
+// Headings in the outline are rendered by this instance rather than by `renderToHtml`, so it needs
+// the same single-tilde handling to stay consistent with the preview body.
+marked.use({ extensions: [createLiteralTildeExtension()] });
 
 /**
  * The default {@link CustomMarkdownRenderer} falls back to
@@ -51,6 +56,11 @@ export interface MarkdownHeading {
     line: number;
 }
 
+/** A formatted run of the rendered note, carrying the source line it came from. */
+export interface MarkdownHighlight extends RawHighlight {
+    line: number;
+}
+
 interface MarkdownContextValue {
     html: string;
     headings: MarkdownHeading[];
@@ -70,7 +80,7 @@ export default function Markdown(props: TypeWidgetProps) {
     const [ content, setContent ] = useState("");
     const [ editorView, setEditorView ] = useState<VanillaCodeMirror | null>(null);
     const [ previewEl, setPreviewEl ] = useState<HTMLDivElement | null>(null);
-    const { html, headings } = useMemo(() => renderWithSourceLines(content), [ content ]);
+    const { html, headings, highlights } = useMemo(() => renderWithSourceLines(content), [ content ]);
 
     // Bind text-detail shortcuts (e.g. Ctrl+L for add link) to CodeMirror's contentDOM,
     // since the outer `dom` only receives events after CodeMirror has already handled them.
@@ -90,6 +100,7 @@ export default function Markdown(props: TypeWidgetProps) {
     useSyncedScrolling(editorView, previewEl);
     useSyncedHighlight(editorView, previewEl, html);
     usePublishToc(props.noteContext, editorView, headings, props.note);
+    usePublishHighlights(props.noteContext, editorView, highlights, props.note);
     useImageDrop(props.note, editorView);
     useTextCommands(props.parentComponent, editorView);
     useSlashCommands(props.parentComponent, editorView, props.note);
@@ -143,14 +154,8 @@ function usePublishToc(
         noteContext.setContextData("toc", {
             headings,
             scrollToHeading(heading) {
-                if (!editorView) return;
                 const mdHeading = headings.find(h => h.id === heading.id);
-                if (!mdHeading) return;
-                const line = editorView.state.doc.line(Math.min(mdHeading.line, editorView.state.doc.lines));
-                const lineBlock = editorView.lineBlockAt(line.from);
-                const scrollerHeight = editorView.scrollDOM.clientHeight;
-                const targetTop = lineBlock.top - scrollerHeight / 2 + lineBlock.height / 2;
-                editorView.scrollDOM.scrollTo({ top: targetTop, behavior: "smooth" });
+                if (mdHeading) scrollEditorToLine(editorView, mdHeading.line);
             }
         });
     }, [ noteContext, headings, editorView, note.noteId ]);
@@ -161,6 +166,53 @@ function usePublishToc(
     // Re-publish after note switches: context data is cleared when the noteId
     // changes, so when our note becomes active again we need to restore it.
     // The noteId guard in publish() prevents overwriting another widget's ToC.
+    useTriliumEvent("noteSwitched", ({ noteContext: ctx }) => {
+        if (ctx === noteContext) {
+            publish();
+        }
+    });
+}
+
+/** Scrolls the source editor so the given 1-indexed line sits in the middle of the viewport. */
+function scrollEditorToLine(editorView: VanillaCodeMirror | null, lineNumber: number) {
+    if (!editorView) return;
+
+    const line = editorView.state.doc.line(Math.min(lineNumber, editorView.state.doc.lines));
+    const lineBlock = editorView.lineBlockAt(line.from);
+    const scrollerHeight = editorView.scrollDOM.clientHeight;
+    const targetTop = lineBlock.top - scrollerHeight / 2 + lineBlock.height / 2;
+
+    editorView.scrollDOM.scrollTo({ top: targetTop, behavior: "smooth" });
+}
+//#endregion
+
+//#region Highlights
+/**
+ * Publishes the note's formatted runs via `setContextData("highlights", ...)`, the same way the
+ * table of contents is published, so the sidebar's Highlights list works for Markdown notes
+ * without needing to know how they are rendered.
+ */
+function usePublishHighlights(
+    noteContext: NoteContext | undefined,
+    editorView: VanillaCodeMirror | null,
+    highlights: MarkdownHighlight[],
+    note: FNote
+) {
+    const publish = useCallback(() => {
+        if (!noteContext || noteContext.noteId !== note.noteId) return;
+        noteContext.setContextData("highlights", {
+            highlights,
+            scrollToHighlight(highlight) {
+                const mdHighlight = highlights.find(h => h.id === highlight.id);
+                if (mdHighlight) scrollEditorToLine(editorView, mdHighlight.line);
+            }
+        });
+    }, [ noteContext, highlights, editorView, note.noteId ]);
+
+    useEffect(() => { publish(); }, [ publish ]);
+
+    // Context data is cleared when the note changes, so restore it when ours becomes active
+    // again — the noteId guard in publish() keeps it from overwriting another note's list.
     useTriliumEvent("noteSwitched", ({ noteContext: ctx }) => {
         if (ctx === noteContext) {
             publish();
@@ -528,7 +580,7 @@ const NON_RENDERED_TOKENS = new Set([ "space", "def" ]);
  * with the matching lexer token's start line. Marked does not emit source
  * positions (markedjs/marked#1267) so we count newlines in `raw` ourselves.
  */
-export function renderWithSourceLines(src: string): { html: string; headings: MarkdownHeading[] } {
+export function renderWithSourceLines(src: string): { html: string; headings: MarkdownHeading[]; highlights: MarkdownHighlight[] } {
     // Compute the start line of each renderable top-level token in source order.
     const tokens = marked.lexer(src);
     const lines: number[] = [];
@@ -557,7 +609,7 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
         demoteH1: false,
         renderer: new MarkdownPreviewRenderer({ async: false })
     });
-    if (!html) return { html: "", headings };
+    if (!html) return { html: "", headings, highlights: [] };
 
     const container = document.createElement("div");
     container.innerHTML = html;
@@ -569,6 +621,26 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
         const sourceLine = lines[i] ?? lines[lines.length - 1] ?? 1;
         children[i].setAttribute("data-source-line", String(sourceLine));
     }
-    return { html: container.innerHTML, headings };
+
+    return { html: container.innerHTML, headings, highlights: extractHighlights(container) };
+}
+
+/**
+ * The note's formatted runs, read off the rendered preview rather than the Markdown source: by
+ * this point `**bold**` is a `<strong>` like any other, so the sidebar's own extractor applies
+ * unchanged — and `==highlight==`, which renders as a coloured span, is picked up too.
+ *
+ * Each run is traced back to the source line of the block it sits in (the attribute tagged on
+ * just above), so clicking it can scroll the editor rather than the preview, which may not even
+ * be on screen.
+ */
+function extractHighlights(container: HTMLElement): MarkdownHighlight[] {
+    return extractHighlightsFromStaticHtml(container).map(({ element, ...highlight }, index) => ({
+        ...highlight,
+        // Stable across re-renders, unlike the random id the extractor assigns: the list is
+        // rebuilt on every keystroke and would otherwise remount each item every time.
+        id: `md-highlight-${index}`,
+        line: Number(element.closest("[data-source-line]")?.getAttribute("data-source-line")) || 1
+    }));
 }
 //#endregion

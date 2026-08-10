@@ -51,6 +51,33 @@ html.theme-dark [data-trilium-task-state] {
     justify-content: center;
     content: var(--task-state-glyph);
     font-family: var(--task-state-glyph-font-family);
-    font-size: calc(var(--ck-content-todo-list-checkmark-size) * 0.8);
+    /* Em box == checkbox box, shrink via scale(): geometric, so the glyph
+       stays centred at any zoom/DPI instead of snapping to the pixel grid. */
+    font-size: var(--ck-content-todo-list-checkmark-size);
+    line-height: 1;
     color: var(--_task-state-color);
+    transform: scale(0.8);
+}
+
+/* One deterministic geometry for both rendering variants (inline description span vs
+   the real-<p> `_without-description` one): the checkbox leaves the inline flow and is
+   centred geometrically on the first text line, and the description always sits on the
+   plain baseline instead of CKEditor's metric-dependent `vertical-align: middle`. */
+.ck-content.ck-content .todo-list li .todo-list__label {
+    /* An empty inline-block label would create a line of its own (see the client
+       stylesheet); keep it collapsible. */
+    display: inline;
+}
+
+.ck-content.ck-content .todo-list li .todo-list__label input[type="checkbox"] {
+    position: absolute;
+    top: calc((1lh - var(--ck-content-todo-list-checkmark-size)) / 2);
+    /* `1lh` must resolve against the text's line height, not the UA form-control
+       font, and the UA's 3px checkbox margins would offset the absolute position. */
+    margin: 0;
+    font: inherit;
+}
+
+.ck-content.ck-content .todo-list li .todo-list__label .todo-list__label__description {
+    vertical-align: baseline;
 }

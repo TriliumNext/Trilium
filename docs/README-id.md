@@ -347,6 +347,12 @@ melalui tautan yang dijelaskan pada bagian "Diskusi bersama kami" di atas.
 * [antoniotejada](https://github.com/nriver) atas widget syntax highlighting
   asli.
 * [Tabler Icons](https://tabler.io/icons) untuk ikon system tray.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 Trilium tidak akan mungkin ada tanpa teknologi yang mendukungnya:
 

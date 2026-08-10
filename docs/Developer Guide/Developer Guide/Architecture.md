@@ -94,12 +94,6 @@ trilium/
 │   ├── ckeditor5/         # Custom rich text editor
 │   ├── codemirror/        # Code editor customizations
 │   ├── highlightjs/       # Syntax highlighting
-│   ├── ckeditor5-admonition/     # CKEditor plugin: admonitions
-│   ├── ckeditor5-footnotes/      # CKEditor plugin: footnotes
-│   ├── ckeditor5-keyboard-marker/# CKEditor plugin: keyboard shortcuts
-│   ├── ckeditor5-math/           # CKEditor plugin: math equations
-│   ├── ckeditor5-mermaid/        # CKEditor plugin: diagrams
-│   ├── express-partial-content/  # HTTP partial content middleware
 │   ├── share-theme/              # Shared note theme
 │   ├── splitjs/                  # Split pane library
 │   └── turndown-plugin-gfm/      # Markdown conversion
@@ -117,7 +111,7 @@ The monorepo uses workspace protocol (`workspace:*`) for internal dependencies:
 desktop → client → commons
 server  → client → commons
 client  → ckeditor5, codemirror, highlightjs
-ckeditor5 → ckeditor5-* plugins
+ckeditor5 → its in-tree plugins (src/plugins/)
 ```
 
 ## Security summary

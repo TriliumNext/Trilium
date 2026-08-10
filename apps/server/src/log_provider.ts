@@ -54,6 +54,20 @@ export default class ServerLogService extends FileBasedLogService {
         this.logFile?.write(entry);
     }
 
+    protected override echoToConsole(str: string): void {
+        // Under vitest every console call is forwarded to the main process over the worker RPC, and
+        // this suite emits tens of thousands of them — the hidden-subtree bootstrap alone logs a
+        // line per created note, for each of the ~60 spec files that build the app. A call still in
+        // flight when its worker tears down surfaces as an unhandled
+        // `EnvironmentTeardownError: Closing rpc while "onUserConsoleLog" was pending`, which fails
+        // the run even though every test passed. The entry is still written to the log file, so
+        // nothing that reads the log is affected.
+        if (process.env.VITEST) {
+            return;
+        }
+        super.echoToConsole(str);
+    }
+
     protected override readLogFile(fileName: string): string | null {
         const filePath = path.join(dataDir.LOG_DIR, fileName);
         try {

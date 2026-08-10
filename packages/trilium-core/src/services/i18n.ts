@@ -7,8 +7,13 @@ import { getContext } from "./context";
 
 export type TranslationProvider = (i18nextInstance: typeof i18next, locale: LOCALE_IDS) => Promise<void>;
 
-export async function initTranslations(translationProvider: TranslationProvider) {
-    const locale = getCurrentLanguage();
+/**
+ * @param preferredLocale the language to load instead of the document's own, for a start that has a
+ *                        language but no open database to read it from — see `setup_mode`. Ignored
+ *                        where it is not a language this application displays.
+ */
+export async function initTranslations(translationProvider: TranslationProvider, preferredLocale?: string) {
+    const locale = isDisplayableLocale(preferredLocale) ? preferredLocale : getCurrentLanguage();
 
     await translationProvider(i18next, locale);
 

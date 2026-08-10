@@ -1,10 +1,13 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import attributeService from "./attributes.js";
 import { getContext } from "./context.js";
 import hoistedNoteService from "./hoisted_note.js";
+import noteService from "./notes.js";
+import SearchContext from "./search/search_context.js";
+import searchService from "./search/services/search.js";
 import specialNotes from "./special_notes.js";
 import { unwrapStringOrBuffer } from "./utils/binary.js";
 
@@ -356,6 +359,158 @@ describe("special_notes (core, real DB)", () => {
             );
 
             expect(launcher.noteId).toMatch(/^tb_/);
+        });
+    });
+    describe("LLM chat", () => {
+        describe("createLlmChat", () => {
+            it("creates an llmChat note with the expected metadata under a monthly parent", () => {
+                const note = getContext().init(() => specialNotes.createLlmChat());
+
+                expect(note.type).toBe("llmChat");
+                expect(note.mime).toBe("application/json");
+                expect(JSON.parse(note.getContent() as string)).toEqual({ version: 1, messages: [] });
+                expect(note.getLabelValue("iconClass")).toBe("bx bx-message-square-dots");
+                expect(note.hasLabel("keepCurrentHoisting")).toBe(true);
+                expectUnderHidden(note, "_llmChat");
+
+                // The monthly parent must be a book note labelled llmChatMonthNote.
+                const parent = note.getParentNotes()[0];
+                expect(parent.type).toBe("book");
+                expect(parent.hasLabel("llmChatMonthNote")).toBe(true);
+            });
+
+            it("reuses the same monthly parent for chats created in the same month", () => {
+                const a = getContext().init(() => specialNotes.createLlmChat());
+                const b = getContext().init(() => specialNotes.createLlmChat());
+
+                expect(a.getParentNotes()[0].noteId).toBe(b.getParentNotes()[0].noteId);
+            });
+        });
+
+        describe("getMostRecentLlmChat / getRecentLlmChats", () => {
+            // Self-contained: don't rely on chats created by a sibling describe block
+            // (the in-memory DB is shared per file, so test order must not matter).
+            beforeAll(() => {
+                getContext().init(() => specialNotes.createLlmChat());
+            });
+
+            it("returns the most recently modified chat and a mapped recent list", () => {
+                const recent = specialNotes.getRecentLlmChats(5);
+                expect(recent.length).toBeGreaterThan(0);
+                for (const entry of recent) {
+                    expect(entry).toHaveProperty("noteId");
+                    expect(entry).toHaveProperty("title");
+                    expect(entry).toHaveProperty("dateModified");
+                }
+
+                const mostRecent = specialNotes.getMostRecentLlmChat();
+                // The newest chat in the recent list should match getMostRecentLlmChat.
+                expect(mostRecent?.type).toBe("llmChat");
+                expect(mostRecent?.noteId).toBe(recent[0].noteId);
+            });
+
+            it("respects the limit argument", () => {
+                expect(specialNotes.getRecentLlmChats(1).length).toBeLessThanOrEqual(1);
+            });
+        });
+
+        describe("getOrCreateLlmChat", () => {
+            it("returns an existing chat when one exists", () => {
+                getContext().init(() => specialNotes.createLlmChat());
+                expect(specialNotes.getOrCreateLlmChat().type).toBe("llmChat");
+            });
+
+            it("creates a new chat when none exist", () => {
+                getContext().init(() => {
+                    for (const chat of searchService.searchNotes(
+                        "note.type = llmChat",
+                        new SearchContext({ ancestorNoteId: "_llmChat" })
+                    )) {
+                        chat.deleteNote();
+                    }
+                });
+                expect(specialNotes.getMostRecentLlmChat()).toBeNull();
+
+                const created = getContext().init(() => specialNotes.getOrCreateLlmChat());
+                expect(created.type).toBe("llmChat");
+                expect(specialNotes.getMostRecentLlmChat()).not.toBeNull();
+            });
+        });
+
+        describe("saveLlmChat", () => {
+            it("rejects a missing id and an id that resolves to nothing", () => {
+                expect(() => specialNotes.saveLlmChat(null)).toThrow();
+                expect(() => specialNotes.saveLlmChat("doesNotExist123")).toThrow();
+            });
+
+            it("clones the chat to the chat home and removes the hidden-subtree parent branch", () => {
+                const chat = getContext().init(() => specialNotes.createLlmChat());
+                expect(chat.hasAncestor("_hidden")).toBe(true);
+
+                const result = getContext().init(() => specialNotes.saveLlmChat(chat.noteId));
+                expect(result.success).toBe(true);
+                expect(result.branchId).toBeTruthy();
+
+                // After saving, the chat no longer hangs off the hidden subtree.
+                const liveParents = chat.getParentBranches().filter(b => !b.isDeleted);
+                expect(liveParents.length).toBeGreaterThan(0);
+                expect(liveParents.some(b => b.parentNote?.hasAncestor("_hidden"))).toBe(false);
+                expect(result.branchId && becca.getBranch(result.branchId)).toBeTruthy();
+            });
+        });
+
+        // Each short-circuit operand of `#workspaceLlmChatHome || #llmChatHome ||
+        // workspaceNote` must resolve to a DISTINCT note, so the chosen target can be
+        // asserted unambiguously.
+        describe("getLlmChatHome branches (via saveLlmChat)", () => {
+            let workspaceHomeId: string;
+            let genericHomeId: string;
+            let fallbackId: string;
+
+            beforeAll(() => {
+                getContext().init(() => {
+                    workspaceHomeId = noteService.createNewNote({
+                        parentNoteId: "root", title: "Workspace LLM Home", content: "", type: "book"
+                    }).note.noteId;
+                    genericHomeId = noteService.createNewNote({
+                        parentNoteId: "root", title: "Generic LLM Home", content: "", type: "book"
+                    }).note.noteId;
+                });
+                // What makeWorkspaceStub proxies, and therefore the last operand.
+                fallbackId = becca.getNoteOrThrow("root").getChildNotes()[0].noteId;
+            });
+
+            function expectClonedUnder(found: Record<string, unknown>, expectedParentId: string) {
+                vi.spyOn(hoistedNoteService, "getWorkspaceNote")
+                    .mockReturnValue(makeWorkspaceStub(found) as never);
+
+                const chat = getContext().init(() => specialNotes.createLlmChat());
+                const result = getContext().init(() => specialNotes.saveLlmChat(chat.noteId));
+
+                expect(result.success).toBe(true);
+                expect(result.branchId && becca.getBranch(result.branchId)?.parentNoteId).toBe(expectedParentId);
+                const liveParents = chat.getParentBranches().filter(b => !b.isDeleted);
+                expect(liveParents.some(b => b.parentNote?.hasAncestor("_hidden"))).toBe(false);
+            }
+
+            it("throws when there is no workspace note", () => {
+                vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(null as never);
+                const chat = getContext().init(() => specialNotes.createLlmChat());
+
+                expect(() => getContext().init(() => specialNotes.saveLlmChat(chat.noteId)))
+                    .toThrow(/workspace note/);
+            });
+
+            it("prefers #workspaceLlmChatHome, then #llmChatHome, then the workspace note itself", () => {
+                expectClonedUnder(
+                    { "#workspaceLlmChatHome": becca.getNoteOrThrow(workspaceHomeId) },
+                    workspaceHomeId
+                );
+                vi.restoreAllMocks();
+                expectClonedUnder({ "#llmChatHome": becca.getNoteOrThrow(genericHomeId) }, genericHomeId);
+                vi.restoreAllMocks();
+                expectClonedUnder({}, fallbackId);
+            });
         });
     });
 });

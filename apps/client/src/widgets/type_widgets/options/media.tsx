@@ -1,15 +1,30 @@
+import "./media.css";
+
+import type { ImageJpegHandling, ImagePngHandling } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import { isElectron } from "../../../services/utils";
-import { FormTextBoxWithUnit } from "../../react/FormTextBox";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { isElectron, isStandalone } from "../../../services/utils";
+import {
+    AUTOMATIC_IMAGE_COMPRESSION_DEFAULTS,
+    type ImageCompressionToolOptions,
+    readImageCompressionOptions
+} from "../../dialogs/image_compression/image_compression_options";
+import {
+    type ImageCompressionSectionProps,
+    JpegHandlingSection,
+    PngHandlingSection,
+    ResizeImageSection
+} from "../../dialogs/image_compression/image_compression_sections";
+import Button from "../../react/Button";
+import { Card, CardOption } from "../../react/Card";
+import FormToggle from "../../react/FormToggle";
+import HelpButton from "../../react/HelpButton";
+import { useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../../react/hooks";
 import Slider from "../../react/Slider";
 import OptionsPageHeader from "./components/OptionsPageHeader";
-import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
-import OptionsSection from "./components/OptionsSection";
 import RelatedSettings from "./components/RelatedSettings";
 
 export default function MediaSettings() {
@@ -22,75 +37,146 @@ export default function MediaSettings() {
     );
 }
 
+/**
+ * What happens to an image on its way in: whether one only referenced is fetched at all, and what
+ * is done to the ones that arrive. Compression is part of the same card rather than a heading of
+ * its own, being one more thing that happens to an arriving image rather than a subject beside it.
+ *
+ * The compression rows are the ones the compression tool is built from, because behind them it is
+ * now the same compression. The one thing said here that the tool never has to say is *when* any of
+ * it happens: on upload, on paste, on import. The descriptions are the ones the settings carried
+ * before they were rows — a settings page is read by someone deciding, where a dialog is read by
+ * someone who has already decided, so here the prose is on the page rather than behind the help
+ * marks the dialogs use.
+ */
 function ImageSettings() {
-    const [ downloadImagesAutomatically, setDownloadImagesAutomatically ] = useTriliumOptionBool("downloadImagesAutomatically");
+    const [ downloadImagesAutomatically, setDownloadImagesAutomatically ] =
+        useTriliumOptionBool("downloadImagesAutomatically");
     const [ compressImages, setCompressImages ] = useTriliumOptionBool("compressImages");
-    const [ imageMaxWidthHeight, setImageMaxWidthHeight ] = useTriliumOption("imageMaxWidthHeight");
-    const [ imageJpegQuality, setImageJpegQuality ] = useTriliumOption("imageJpegQuality");
+    const [ options, update ] = useAutomaticCompressionOptions();
+    const sectionProps: ImageCompressionSectionProps = {
+        options,
+        onChange: update,
+        disabled: !compressImages,
+        descriptions: {
+            resize: t("images.max_image_dimensions_description"),
+            quality: t("images.jpeg_quality_description"),
+            conversionQuality: t("images.jpeg_quality_description")
+        }
+    };
 
     return (
-        <OptionsSection title={t("images.images_section_title")}>
-            <OptionsRowWithToggle
-                name="download-images-automatically"
-                label={t("images.download_images_automatically")}
-                description={t("images.download_images_description")}
-                currentValue={downloadImagesAutomatically}
-                onChange={setDownloadImagesAutomatically}
-            />
+        <div className="options-section media-images">
+            <Card heading={t("images.images_section_title")}>
+                <CardOption
+                    name="download-images-automatically"
+                    label={t("images.download_images_automatically")}
+                    description={t("images.download_images_description")}
+                >
+                    <FormToggle
+                        currentValue={downloadImagesAutomatically}
+                        onChange={setDownloadImagesAutomatically}
+                    />
+                </CardOption>
 
-            <OptionsRowWithToggle
-                name="image-compression-enabled"
-                label={t("images.enable_image_compression")}
-                description={t("images.enable_image_compression_description")}
-                currentValue={compressImages}
-                onChange={setCompressImages}
-            />
-
-            <OptionsRow name="image-max-width-height" label={t("images.max_image_dimensions")} description={t("images.max_image_dimensions_description")}>
-                <FormTextBoxWithUnit
-                    type="number" min="1"
-                    disabled={!compressImages}
-                    unit={t("images.max_image_dimensions_unit")}
-                    currentValue={imageMaxWidthHeight} onChange={setImageMaxWidthHeight}
-                />
-            </OptionsRow>
-
-            <OptionsRow name="image-jpeg-quality" label={`${t("images.jpeg_quality")} (${imageJpegQuality ?? 75}%)`} description={t("images.jpeg_quality_description")}>
-                <Slider
-                    min={10} max={100} step={5}
-                    value={parseInt(imageJpegQuality ?? "75", 10)}
-                    onChange={(v) => setImageJpegQuality(String(v))}
-                />
-            </OptionsRow>
-        </OptionsSection>
+                {/* Not the tool's own "Compress images": that is something the user does to images
+                    already stored, where this is a standing instruction about every image still to
+                    arrive. Saying which is which is the whole of the label. */}
+                <CardOption
+                    name="compress-images"
+                    label={t("images.automatic_image_compression")}
+                    description={t("images.enable_image_compression_description")}
+                    subSectionsVisible={compressImages}
+                    subSections={[
+                        <ResizeImageSection key="resize" {...sectionProps} />,
+                        <JpegHandlingSection key="jpeg" {...sectionProps} />,
+                        <PngHandlingSection key="png" {...sectionProps} />
+                    ]}
+                >
+                    <FormToggle currentValue={compressImages} onChange={setCompressImages} />
+                </CardOption>
+            </Card>
+        </div>
     );
+}
+
+/**
+ * The image options, read and written as one set of compression settings.
+ *
+ * Each is its own synced option rather than a blob, as they always were — an install that has only
+ * ever had a bound and a quality keeps them, and a client too old to know the rest still reads the
+ * two it does. The adapter is what lets the tool's rows drive them: those rows speak in whole
+ * settings objects, and this turns a patch of one back into the writes it stands for.
+ */
+function useAutomaticCompressionOptions(): [ ImageCompressionToolOptions, (patch: Partial<ImageCompressionToolOptions>) => void ] {
+    const [ maxWidthHeight, setMaxWidthHeight ] = useTriliumOptionInt("imageMaxWidthHeight");
+    const [ quality, setQuality ] = useTriliumOptionInt("imageJpegQuality");
+    const [ conversionQuality, setConversionQuality ] = useTriliumOptionInt("imageConversionQuality");
+    const [ resize, setResize ] = useTriliumOptionBool("imageResize");
+    const [ jpegHandling, setJpegHandling ] = useTriliumOption("imageJpegHandling");
+    const [ pngHandling, setPngHandling ] = useTriliumOption("imagePngHandling");
+
+    const options = readImageCompressionOptions({
+        resize,
+        maxWidthHeight,
+        quality,
+        conversionQuality,
+        jpegHandling: jpegHandling as ImageJpegHandling,
+        pngHandling: pngHandling as ImagePngHandling,
+        // Automatic compression reaches every image that arrives; there is no subtree to choose,
+        // and no row here offers one. Held only because the rows share one settings type.
+        processChildNotes: false
+    }, AUTOMATIC_IMAGE_COMPRESSION_DEFAULTS);
+
+    // Each write is left to settle on its own: a row changes one setting, the option is saved, and
+    // nothing here waits on the round trip — the control already shows the new value.
+    return [ options, (patch) => {
+        if (patch.resize !== undefined) void setResize(patch.resize);
+        if (patch.maxWidthHeight !== undefined) void setMaxWidthHeight(patch.maxWidthHeight);
+        if (patch.quality !== undefined) void setQuality(patch.quality);
+        if (patch.conversionQuality !== undefined) void setConversionQuality(patch.conversionQuality);
+        if (patch.jpegHandling !== undefined) void setJpegHandling(patch.jpegHandling);
+        if (patch.pngHandling !== undefined) void setPngHandling(patch.pngHandling);
+    } ];
 }
 
 function OcrSettings() {
     const [ ocrAutoProcess, setOcrAutoProcess ] = useTriliumOptionBool("ocrAutoProcessImages");
     const [ ocrMinConfidence, setOcrMinConfidence ] = useTriliumOption("ocrMinConfidence");
+    const confidence = Math.round(parseFloat(ocrMinConfidence ?? "0.75") * 100);
 
     return (
         <>
-            <OptionsSection title={t("images.ocr_section_title")} helpUrl="TiQbQDgP8L5t">
-                <OptionsRowWithToggle
-                    name="ocr-auto-process"
-                    label={t("images.ocr_auto_process")}
-                    description={t("images.ocr_auto_process_description")}
-                    currentValue={ocrAutoProcess}
-                    onChange={setOcrAutoProcess}
-                />
+            <div className="options-section media-ocr">
+                <Card
+                    heading={t("images.ocr_section_title")}
+                    actions={<HelpButton helpPage="TiQbQDgP8L5t" />}
+                >
+                    <CardOption
+                        name="ocr-auto-process"
+                        label={t("images.ocr_auto_process")}
+                        description={t("images.ocr_auto_process_description")}
+                    >
+                        <FormToggle currentValue={ocrAutoProcess} onChange={setOcrAutoProcess} />
+                    </CardOption>
 
-                <OptionsRow name="ocr-min-confidence" label={`${t("images.ocr_min_confidence")} (${Math.round(parseFloat(ocrMinConfidence ?? "0.75") * 100)}%)`} description={t("images.ocr_confidence_description")}>
-                    <Slider
-                        min={0} max={100} step={5}
-                        value={Math.round(parseFloat(ocrMinConfidence ?? "0.75") * 100)}
-                        onChange={(v) => setOcrMinConfidence(String(v / 100))}
-                    />
-                </OptionsRow>
+                    <CardOption
+                        name="ocr-min-confidence"
+                        label={`${t("images.ocr_min_confidence")} (${confidence}%)`}
+                        description={t("images.ocr_confidence_description")}
+                    >
+                        <Slider
+                            min={0} max={100} step={5}
+                            value={confidence}
+                            onChange={(value) => setOcrMinConfidence(String(value / 100))}
+                        />
+                    </CardOption>
 
-                <BatchProcessing />
-            </OptionsSection>
+                    {/* Running OCR needs the engine the server holds; a standalone client only ever
+                        reads text extracted elsewhere and synced to it. */}
+                    {!isStandalone && <BatchProcessing />}
+                </Card>
+            </div>
 
             <RelatedSettings items={[
                 {
@@ -157,28 +243,30 @@ function BatchProcessing() {
     const isRunning = progress?.inProgress ?? false;
 
     return (
-        <OptionsRow name="batch-ocr" label={t("images.batch_ocr_title")} description={t("images.batch_ocr_description")}>
+        <CardOption
+            className="media-batch-ocr"
+            label={t("images.batch_ocr_title")}
+            description={t("images.batch_ocr_description")}
+        >
             {isRunning ? (
-                <div style={{ width: "100%" }}>
-                    <div className="progress" style={{ height: "24px" }}>
-                        <div
-                            className="progress-bar progress-bar-striped progress-bar-animated"
-                            role="progressbar"
-                            style={{ width: `${progress?.percentage ?? 0}%` }}
-                        >
-                            {t("images.batch_ocr_progress", { processed: progress?.processed ?? 0, total: progress?.total ?? 0 })}
-                        </div>
+                <div className="progress media-batch-ocr-progress">
+                    <div
+                        className="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar"
+                        style={{ width: `${progress?.percentage ?? 0}%` }}
+                    >
+                        {t("images.batch_ocr_progress", { processed: progress?.processed ?? 0, total: progress?.total ?? 0 })}
                     </div>
                 </div>
             ) : (
-                <button
-                    type="button"
-                    className="btn btn-secondary"
+                <Button
+                    name="batch-ocr-start-button"
+                    text={t("images.batch_ocr_start")}
+                    icon="bx-play"
+                    size="micro"
                     onClick={startBatch}
-                >
-                    <span className="bx bx-play" />{" "}{t("images.batch_ocr_start")}
-                </button>
+                />
             )}
-        </OptionsRow>
+        </CardOption>
     );
 }

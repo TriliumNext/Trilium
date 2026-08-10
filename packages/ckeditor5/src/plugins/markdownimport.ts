@@ -6,6 +6,7 @@ export const COMMAND_NAME = 'importMarkdownInline';
 export default class MarkdownImportPlugin extends Plugin {
 	init() {
 		const editor = this.editor;
+		const t = editor.t;
 
         editor.commands.add(COMMAND_NAME, new ImportMarkdownCommand(editor));
 
@@ -13,7 +14,7 @@ export default class MarkdownImportPlugin extends Plugin {
 			const view = new ButtonView( locale );
 
 			view.set( {
-				label: 'Markdown import from clipboard',
+				label: t('Markdown import from clipboard'),
 				icon: markdownIcon,
 				tooltip: true
 			} );

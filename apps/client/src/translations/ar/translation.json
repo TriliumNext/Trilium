@@ -121,23 +121,14 @@
     "label": "تفاصيل التسمية",
     "relation": "تفاصيل العلاقة",
     "date_time": "التاريخ والوقت",
-    "label_definition": "تفاصيل تعريف التصنيف",
-    "relation_definition": "تفاصيل تعريف العلاقة",
-    "attr_detail_title": "عنوان تفاصيل السمة",
     "close_button_title": "الغاء التغييرات و اغلاق",
-    "attr_is_owned_by": "السمة مملوكة ل",
-    "save_and_close": "حفظ ونسخ <kbd>Ctrl+Enter</kbd>",
     "workspace_calendar_root": "‎تحديد جذر التقويم لكل مساحة عمل",
     "hide_highlight_widget": "اخفاء عنصر واجهة قائمة التمييزات",
     "is_owned_by_note": "تخص الملاحظة",
-    "and_more": "... و {{count}}مرات اكثر.",
     "related_notes_title": "ملاحظات اخرى بنفس التسمية",
-    "attr_name_title": "يمكن أن يتكوّن اسم الخاصية من أحرف أبجدية رقمية، والنقطتين الرأسيتين، والشرطة السفلية فقط",
     "target_note_title": "العلاقة هي اتصال مُسمّى بين ملاحظة مصدر وملاحظة هدف.",
     "promoted_title": "الخاصية المُروّجة تُعرض بشكل بارز داخل الملاحظة.",
-    "promoted_alias_title": "الاسم الذي سيتم عرضه في واجهة الخصائص المُروّجة.",
     "multiplicity_title": "التعددية تحدد عدد الخصائص التي يمكن إنشاؤها بنفس الاسم — إما واحدة كحد أقصى أو أكثر من واحدة.",
-    "label_type_title": "نوع الوسم يساعد Trilium على اختيار الواجهة المناسبة لإدخال قيمة الوسم.",
     "textarea": "نص متعدد الأسطر",
     "precision_title": "عدد الخانات بعد الفاصلة العشرية التي يجب إتاحتها في واجهة ضبط القيمة.",
     "inverse_relation_title": "إعداد اختياري لتحديد العلاقة المعاكسة لهذه العلاقة. مثال: الأب - الابن هما علاقتان متعاكستان لبعضهما البعض.",
@@ -856,7 +847,6 @@
   "images": {
     "images_section_title": "صور",
     "max_image_dimensions_unit": "بكسل",
-    "enable_image_compression": "ضغط الصورة",
     "jpeg_quality": "جودة JPEG",
     "ocr_min_confidence": "الحد الأدنى من الثقة",
     "ocr_section_title": "استخراج النص (OCR)",
@@ -946,7 +936,6 @@
     "date-and-time": "التاريخ والوقت",
     "no_backup_yet": "لايوجد نسخة احتياطية لحد الان",
     "enable_daily_backup": "النسخ الاحتياطي اليومي",
-    "backup_database_now": "نسخ اختياطي لقاعدة البيانات الان",
     "download": "تنزيل",
     "title": "نسخة احتياطية",
     "backup_recommendation": "يُنصح بالإبقاء على النسخ الاحتياطي مفعّلًا، لكن قد يؤدي ذلك إلى بطء تشغيل التطبيق مع قواعد البيانات الكبيرة و/أو أجهزة التخزين البطيئة.",
@@ -1223,7 +1212,6 @@
   "highlights_list_2": {
     "options": "خيارات",
     "title": "قائمة التضليلات",
-    "modal_title": "تهيئة قائمة التمييزات",
     "menu_configure": "تهيئة قائمة التمييزات...",
     "no_highlights": "لا توجد عناصر مميزة.",
     "title_with_count_zero": "{{count}} تمييز",
@@ -1982,12 +1970,8 @@
     "print_report_collection_content_other": "تعذّر طباعة {{count}} ملاحظة في المجموعة لأنها غير مدعومة أو محمية."
   },
   "attachment_detail_2": {
-    "role_and_size": "الدور: {{role}}، الحجم: {{size}}",
     "unrecognized_role": "دور المرفق '{{role}}'الغير معروف.",
-    "link_copied": "تم نسخ رابط المرفق إلى الحافظة.",
-    "deletion_reason": "لأن المرفق غير مرتبط بمحتوى الملاحظة. ولمنع حذفه، أضف رابط المرفق مرة أخرى داخل المحتوى أو قم بتحويل المرفق إلى ملاحظة.",
-    "will_be_deleted_in": "سيتم حذف هذا المرفق تلقائيًا خلال {{time}}",
-    "will_be_deleted_soon": "سيتم حذف هذا المرفق تلقائيًا قريبًا"
+    "link_copied": "تم نسخ رابط المرفق إلى الحافظة."
   },
   "title_bar_buttons": {
     "window-on-top": "ابقاء النافذة في الاعلى"
@@ -2009,7 +1993,6 @@
   },
   "geo-map": {
     "unable-to-load-map": "تعذر تحميل الخريطة.",
-    "create-child-note-text": "إضافة علامة",
     "create-child-note-instruction": "انقر على الخريطة لإنشاء ملاحظة جديدة في ذلك الموقع أو اضغط مفتاح Escape للإغلاق.",
     "create-child-note-title": "إنشاء ملاحظة فرعية جديدة وإضافتها إلى الخريطة"
   },
@@ -2232,14 +2215,12 @@
     "web_search": "بحث الويب",
     "note_tools": "وصول الملاحظة",
     "extended_thinking": "تفكير موسّع",
-    "legacy_models": "النماذج القديمة",
     "thought_process": "عملية التفكير",
     "placeholder": "اكتب رسالة...",
     "searching_web": "جارٍ البحث في الويب...",
     "add_provider": "إضافة مزوّد ذكاء اصطناعي",
     "edit_index": "تحرير {{index}} من {{total}}",
     "tool_calls": "{{count}} استدعاء/استدعاءات أداة",
-    "context_used": "تم استخدام {{percentage}}٪",
     "sources_summary": "{{count}} مصدر من {{sites}} مواقع",
     "no_provider_message": "لم يتم إعداد مزوّد ذكاء اصطناعي. أضف مزوّدًا لبدء المحادثة.",
     "total_tokens": "{{total}} رمزًا (Tokens)",
@@ -2260,10 +2241,8 @@
   },
   "llm": {
     "provider_name": "اسم",
-    "provider_type": "المجهز",
     "actions": "الإجراءات",
     "delete_provider": "حذف",
-    "cancel": "الغاء",
     "add_provider": "إضافة مزود",
     "configured_providers": "المزوّدون المُهيّؤون",
     "api_key": "مفتاح API",
@@ -2328,7 +2307,6 @@
   },
   "mind-map": {
     "summary": "الملخص",
-    "link": "رابط",
     "addChild": "إضافة عنصر فرعي",
     "addParent": "إضافة عنصر رئيسي",
     "addSibling": "إضافة عنصر شقيق",
@@ -2336,7 +2314,6 @@
     "focus": "وضع التركيز",
     "moveUp": "تحريك للأعلى",
     "moveDown": "تحريك للاسفل",
-    "linkBidirectional": "رابط ثنائي الاتجاه",
     "cancelFocus": "إلغاء وضع التركيز",
     "clickTips": "يرجى النقر على العقدة المستهدفة"
   },
@@ -2615,7 +2592,6 @@
     "view_all_chats": "عرض جميع المحادثات"
   },
   "text-editor": {
-    "edit-states-tooltip": "تعديل حالات المهام",
     "validation-errors": {
       "duplicate-symbol": "رمز Markdown مكرر",
       "undefined-name": "معرّف غير مُعرّف",
@@ -2625,9 +2601,11 @@
       "missing-icon": "الأيقونة مفقودة",
       "invalid-symbol": "يجب أن يكون رمز Markdown عبارة عن حرف واحد، باستثناء \"[\", \" \", \"X\", و \"]\""
     },
-    "unknown-task-state": "حالة مهمة مخصصة غير مُعرّفة",
-    "task-state-dropped": "تم تجاهل تعريف حالة المهمة المخصصة \"{{title}}\" ({{id}}) بسبب: {{reason}}",
-    "checkbox-tooltip": "انقر بزر الفأرة الأيمن لمزيد من حالات المهمة.\nاضغط {{shortcut}} للتنقل بين الحالات."
+    "ck": {
+      "edit-task-states": "تعديل حالات المهام",
+      "right-click-or-press-0-to-change-state": "انقر بزر الفأرة الأيمن لمزيد من حالات المهمة.\nاضغط %0 للتنقل بين الحالات.",
+      "undefined-custom-task-state": "حالة مهمة مخصصة غير مُعرّفة"
+    }
   },
   "note-color": {
     "set-custom-color": "تعيين لون مخصص للملاحظة",
@@ -2651,9 +2629,6 @@
   },
   "revisions_snapshot": {
     "title": "إصدارات الملاحظة"
-  },
-  "auto_link_attribute_list": {
-    "title": "سمات النظام"
   },
   "platform_indicator": {
     "available_on": "متاح على {{platform}}"

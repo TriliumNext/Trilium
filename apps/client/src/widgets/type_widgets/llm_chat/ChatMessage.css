@@ -47,6 +47,19 @@
     background: var(--accented-background-color);
 }
 
+/*
+ * Under background effects the panes turn glassy, and the bubble's fully opaque grey reads
+ * as a slab pasted over the material. Borderless like the theme's own bgfx surfaces —
+ * definition comes from the fill alone, so if it ever needs more presence the knob is the
+ * fill percentage, not an outline.
+ */
+body.background-effects.theme-supports-background-effects .llm-chat-message-user {
+    /* Mostly material, faintly tinted: the bubble is a whisper of the normal fill with the
+       Mica/vibrancy doing the actual surface work — the same weight class as the theme's
+       own bgfx tints (cards at ~7% alpha). */
+    background: color-mix(in srgb, var(--accented-background-color) 35%, transparent);
+}
+
 .llm-chat-message-content {
     word-wrap: break-word;
     line-height: 1.5;
@@ -154,12 +167,33 @@
     text-align: right;
 }
 
-/* Error message — rendered as a real "caution" admonition (styled by
-   packages/ckeditor5/src/theme/ck-content.css) so it stays visually identical to
-   admonitions the model itself emits. Only chat-specific tweaks live here. */
+/* Error message — rendered as a "caution" extended admonition (see
+   widgets/react/Admonition.css, layered on the base admonition styling from
+   packages/ckeditor5/src/theme/ck-content.css). Only chat-specific tweaks live here. */
 .admonition.llm-chat-error {
     margin: 0;
     user-select: text;
+}
+
+/* The body is the provider's raw error text: monospace, with newlines kept and
+   long unbroken tokens (URLs, JSON payloads) allowed to break mid-word so they
+   can't push the card wider than the chat column. */
+.llm-chat-error-text {
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Endpoint + raw response body, revealed by the details toggle. Same treatment as the
+   message above, minus the `<pre>` default margin. */
+.llm-chat-error-details {
+    margin: 0;
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--muted-text-color);
 }
 
 .llm-chat-error-actions {
@@ -329,24 +363,44 @@
     transition: opacity 0.15s ease;
 }
 
-.llm-chat-footer-user {
-    justify-content: flex-end;
+/* The footer is one line, always. It is positioned out of flow against a fixed reserve of
+   wrapper padding, so a second line has nowhere to go but up and over the last line of the
+   message. Entries therefore never wrap and never shrink; the model name below is the sole
+   exception and absorbs the whole squeeze. */
+.llm-chat-footer > * {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.llm-chat-footer .bx {
-    font-size: 0.875rem;
+/* Separators are generated on each item after the first rather than being elements of their
+   own: a dot that belongs to the item it precedes can never be orphaned onto a line by
+   itself, and it always shares that item's baseline. `gap` spaces the dot from the item
+   before it, the margin from the item it introduces. */
+.llm-chat-footer > * + *::before {
+    content: "·";
+    margin-inline-end: 0.375rem;
+    opacity: 0.5;
+}
+
+.llm-chat-footer-user {
+    justify-content: flex-end;
 }
 
 .llm-chat-footer-time {
     cursor: help;
 }
 
+/* The one entry that gives way when the row runs out of room: the others are short, fixed
+   and each carries a whole fact, whereas a model name is long, open-ended and still legible
+   truncated. `min-width: 0` is what lets a flex item shrink past its content at all — the
+   ellipsis is inert without it. The generated separator sits inside this box, so it is
+   clipped last rather than being stranded when the name disappears entirely. */
 .llm-chat-usage-model {
     font-weight: 500;
-}
-
-.llm-chat-usage-separator {
-    opacity: 0.5;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .llm-chat-usage-tokens {

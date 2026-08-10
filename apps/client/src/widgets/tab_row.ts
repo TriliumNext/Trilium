@@ -18,7 +18,6 @@ const isDesktop = utils.isDesktop();
 
 const TAB_CONTAINER_MIN_WIDTH = 100;
 const TAB_CONTAINER_MAX_WIDTH = 240;
-const TAB_CONTAINER_LEFT_PADDING = 5;
 const SCROLL_BUTTON_WIDTH = 36;
 const NEW_TAB_WIDTH = 36;
 const MIN_FILLER_WIDTH = isDesktop ? 50 : 15;
@@ -534,7 +533,7 @@ export default class TabRowWidget extends BasicWidget {
             this.setScrollButtonVisibility(false);
         }
 
-        const marginWidth = (numberOfTabs - 1) * MARGIN_WIDTH + TAB_CONTAINER_LEFT_PADDING;
+        const marginWidth = (numberOfTabs - 1) * MARGIN_WIDTH;
         const targetWidth = (tabsContainerWidth - marginWidth) / numberOfTabs;
         const clampedTargetWidth = Math.max(TAB_CONTAINER_MIN_WIDTH, Math.min(TAB_CONTAINER_MAX_WIDTH, targetWidth));
         const flooredClampedTargetWidth = Math.floor(clampedTargetWidth);
@@ -560,7 +559,7 @@ export default class TabRowWidget extends BasicWidget {
     getTabPositions() {
         const tabPositions: number[] = [];
 
-        let position = TAB_CONTAINER_LEFT_PADDING;
+        let position = 0;
         this.tabWidths.forEach((width) => {
             tabPositions.push(position);
             position += width + MARGIN_WIDTH;

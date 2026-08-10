@@ -6,6 +6,7 @@ import { useEffect, useState } from "preact/hooks";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
+import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
 import { TabContext } from "./ribbon-interface";
 
@@ -27,23 +28,27 @@ export default function SimilarNotesTab({ note }: Pick<TabContext, "note">) {
 
     return (
         <div className="similar-notes-widget">
-            <div className="similar-notes-wrapper">
-                {similarNotes?.length ? (
-                    <div>
-                        {similarNotes.map(({notePath, score}) => (
-                            <NoteLink
-                                notePath={notePath}
-                                noTnLink
-                                style={{
-                                    "font-size": (1 - 1 / (1 + score)) + "em"
-                                }}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <>{t("similar_notes.no_similar_notes_found")}</>
-                )}
-            </div>
+            {similarNotes?.length ? (
+                <div className="similar-notes-wrapper">
+                    {similarNotes.map(({notePath, score}) => (
+                        <NoteLink
+                            key={notePath.join("/")}
+                            notePath={notePath}
+                            noTnLink
+                            style={{
+                                "font-size": (1 - 1 / (1 + score)) + "em"
+                            }}
+                        />
+                    ))}
+                </div>
+            ) : similarNotes && (
+                // Outside the list's wrapper, whose font size is that of the most similar link.
+                <NoItems
+                    size="small"
+                    icon="bx bx-bar-chart"
+                    text={t("similar_notes.no_similar_notes_found")}
+                />
+            )}
         </div>
     );
 }

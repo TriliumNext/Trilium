@@ -1,0 +1,99 @@
+/*
+ * Adds no box of its own, so the pages fill whatever the caller already positioned them against
+ * rather than a wrapper that would inset them by its own padding.
+ */
+.slide-pages {
+    display: contents;
+}
+
+.slide-page {
+    position: absolute;
+    inset: 0;
+}
+
+/*
+ * Pages that keep their place in the flow, so the container is as tall as whatever is arriving
+ * rather than as tall as it was told to be. Only the page leaving is lifted out, since two pages in
+ * the flow at once would stack into the height of both.
+ */
+.slide-pages-in-flow {
+    display: block;
+    position: relative;
+    /*
+     * The page on its way out is translated a full width sideways, which would otherwise reach past
+     * the container and give the scrolling ancestor something to scroll to. Anything that then asks
+     * to be revealed, a field taking focus most of all, scrolls the whole screen sideways mid-slide.
+     */
+    overflow: clip;
+
+    > .slide-page {
+        position: static;
+    }
+
+    > .slide-page.slide-out-forward,
+    > .slide-page.slide-out-backward {
+        position: absolute;
+        inset: 0 0 auto;
+    }
+}
+
+.slide-out-forward,
+.slide-out-backward,
+.slide-in-forward,
+.slide-in-backward {
+    animation-duration: 0.35s;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: forwards;
+}
+
+.slide-out-forward {
+    animation-name: slide-out-left;
+}
+
+.slide-out-backward {
+    animation-name: slide-out-right;
+}
+
+.slide-in-forward {
+    animation-name: slide-in-right;
+}
+
+.slide-in-backward {
+    animation-name: slide-in-left;
+}
+
+body[dir=rtl] .slide-out-forward {
+    animation-name: slide-out-right;
+}
+
+body[dir=rtl] .slide-out-backward {
+    animation-name: slide-out-left;
+}
+
+body[dir=rtl] .slide-in-forward {
+    animation-name: slide-in-left;
+}
+
+body[dir=rtl] .slide-in-backward {
+    animation-name: slide-in-right;
+}
+
+@keyframes slide-out-left {
+    from { transform: translateX(0); opacity: 1; }
+    to   { transform: translateX(-100%); opacity: 0; }
+}
+
+@keyframes slide-out-right {
+    from { transform: translateX(0); opacity: 1; }
+    to   { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes slide-in-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-in-left {
+    from { transform: translateX(-100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+}

@@ -81,6 +81,14 @@ describe("AddProviderModal provider cards", () => {
         expect(byId.get("claude-agent")?.baseUrl).toBe("none");
     });
 
+    it("marks Claude Code as the only card a browser-only build cannot run", () => {
+        // It works by running the Claude Code CLI as a separate process, which the
+        // standalone build — whose entire server is a worker in the page — has
+        // nowhere to do; the picker disables that card there rather than dropping
+        // it. Every other provider is reached over HTTP and so runs anywhere.
+        expect(PROVIDER_TYPES.filter(p => p.needsHostProcess).map(p => p.id)).toEqual(["claude-agent"]);
+    });
+
     it("gives every card a logo", () => {
         // SelectableCard is only passed `iconUrl`, so a card without one renders
         // with an empty icon slot rather than falling back to anything.

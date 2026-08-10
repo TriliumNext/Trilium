@@ -196,6 +196,18 @@ describe("BrowserRouter result formatting", () => {
         expect(nullRes.status).toBe(304);
         expect(nullRes.body).toBeNull();
     });
+
+    it("sends only a view's own bytes, not the whole buffer behind it", async () => {
+        // How a byte range arrives: the handler slices the note's content, which leaves a view over
+        // the full blob. Handing over its `.buffer` would answer a seek with the entire file.
+        const router = new BrowserRouter();
+        const whole = encoder.encode("0123456789");
+        router.get("/raw-slice", () => ({ [RAW_RESPONSE]: true, status: 206, headers: {}, body: whole.subarray(3, 7) }));
+
+        const res = await router.dispatch("GET", "http://localhost/raw-slice");
+        expect(res.status).toBe(206);
+        expect(decodeBody(res.body)).toBe("3456");
+    });
 });
 
 describe("BrowserRouter error formatting", () => {

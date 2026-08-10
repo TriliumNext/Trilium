@@ -81,7 +81,7 @@ When pasting content that comes with undesired formatting, an alternative to pas
 
 ## Format painter
 
-The <a class="reference-link" href="Premium%20features/Format%20Painter.md">Format Painter</a> allows users to copy the formatting of text (such as bold, italic, Strikethrough, etc.) and apply it to other parts of the document. It helps maintain consistent formatting and accelerates the creation of rich content.
+The <a class="reference-link" href="Format%20Painter.md">Format Painter</a> allows users to copy the formatting of text (such as bold, italic, Strikethrough, etc.) and apply it to other parts of the document. It helps maintain consistent formatting and accelerates the creation of rich content.
 
 ## Support for Markdown
 

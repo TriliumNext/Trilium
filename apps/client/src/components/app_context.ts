@@ -8,7 +8,7 @@ import bundleService from "../services/bundle.js";
 import froca from "../services/froca.js";
 import { initLocale, t } from "../services/i18n.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
-import linkService, { type ViewScope } from "../services/link.js";
+import linkService, { type HashPane, type ViewScope } from "../services/link.js";
 import type LoadResults from "../services/load_results.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
 import options from "../services/options.js";
@@ -27,6 +27,7 @@ import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx
 import type { PrintPreviewData } from "../widgets/dialogs/print_preview.jsx";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
+import type { RightPaneTabId } from "../widgets/sidebar/RightPaneTabs.jsx";
 import Component from "./component.js";
 import Entrypoints from "./entrypoints.js";
 import MainTreeExecutors from "./main_tree_executors.js";
@@ -75,6 +76,13 @@ export interface NoteCommandData extends CommandData {
     notePath?: string | null;
     hoistedNoteId?: string | null;
     viewScope?: ViewScope;
+    /**
+     * Panes to open beside `notePath`, in order — how a tab moved or copied into a window of its own
+     * takes its splits along. Honoured only while booting a detached window.
+     */
+    splits?: HashPane[] | null;
+    /** Index into `[main pane, ...splits]` of the pane to focus. Defaults to the main pane. */
+    activeSplit?: number;
 }
 
 export interface ExecuteCommandData<T> extends CommandData {
@@ -147,7 +155,10 @@ export type CommandMappings = {
     showImportDialog: CommandData & { noteId: string };
     openNewNoteSplit: NoteCommandData;
     openInWindow: NoteCommandData;
-    openInPopup: CommandData & { noteIdOrPath: string; };
+    /** Opens a note in the quick-edit popup. A `viewScope` carrying an `attachmentId` opens that attachment instead of the note itself. */
+    openInPopup: CommandData & { noteIdOrPath: string; viewScope?: ViewScope; };
+    /** Dismisses the quick-edit popup, for something within it that has sent the reader elsewhere. Does nothing if it isn't open. */
+    closePopupEditor: CommandData;
     openInTreePopup: CommandData & { noteIdOrPath: string; hoistedNoteId: string; };
     openNoteInNewTab: CommandData;
     openNoteInNewSplit: CommandData;
@@ -158,6 +169,7 @@ export type CommandMappings = {
     showCpuArchWarning: CommandData;
     showLeftPane: CommandData;
     showAttachments: CommandData;
+    showNoteAttributes: CommandData;
     showSearchHistory: CommandData;
     showShareSubtree: CommandData;
     hoistNote: CommandData & { noteId: string };
@@ -355,6 +367,20 @@ export type CommandMappings = {
     toggleRibbonTabSimilarNotes: CommandData;
     toggleRightPane: CommandData;
     peekRightPane: CommandData;
+    /** Shows the given tab of the right pane, opening the pane if it is closed. */
+    selectRightPaneTab: CommandData & {
+        tabId: RightPaneTabId;
+        /**
+         * Peek the pane rather than dock it when it is closed, for an entry point that is only a glance
+         * at the tab and shouldn't reflow the content around it. An already docked pane stays docked.
+         */
+        peek?: boolean;
+        /**
+         * The id of a widget of that tab (see `RightPanelWidget`) to expand, so that an entry point
+         * aimed at one widget doesn't land on it collapsed.
+         */
+        expandWidgetId?: string;
+    };
     printActiveNote: CommandData;
     exportAsPdf: CommandData;
     showPrintPreview: PrintPreviewData;
@@ -372,9 +398,6 @@ export type CommandMappings = {
     zoomIn: CommandData;
     zoomReset: CommandData;
     copyWithoutFormatting: CommandData;
-
-    // Geomap
-    deleteFromMap: { noteId: string };
 
     toggleZenMode: CommandData;
 

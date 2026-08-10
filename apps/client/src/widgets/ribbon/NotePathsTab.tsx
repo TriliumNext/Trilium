@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { useContext, useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote, { NotePathRecord } from "../../entities/fnote";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { t } from "../../services/i18n";
 import { NOTE_PATH_TITLE_SEPARATOR } from "../../services/tree";
 import { useTriliumEvent } from "../react/hooks";
@@ -17,32 +18,48 @@ export default function NotePathsTab({ note, hoistedNoteId, notePath }: TabConte
     return <NotePathsWidget sortedNotePaths={sortedNotePaths} currentNotePath={notePath} />;
 }
 
-export function NotePathsWidget({ sortedNotePaths, currentNotePath }: {
+export function NotePathsWidget({ sortedNotePaths, currentNotePath, cloneButton = true }: {
     sortedNotePaths: NotePathRecord[] | undefined;
     currentNotePath?: string | null | undefined;
+    /**
+     * Offer cloning the note below the list. Turned off by whoever offers it elsewhere — the sidebar's
+     * card puts the action in its header, where the widget's own buttons go.
+     */
+    cloneButton?: boolean;
 }) {
     const parentComponent = useContext(ParentComponent);
+    // What holds the list in the new layout — the sidebar's card, the mobile note menu's modal — is
+    // titled for the paths already, so the line saying the note is placed in them is left to the
+    // ribbon's tab, which carries no title of its own. A note placed nowhere still says so wherever
+    // it is shown: the list is then empty, and nothing else would account for it.
+    const intro = sortedNotePaths?.length
+        ? (isExperimentalFeatureEnabled("new-layout") ? null : t("note_paths.intro_placed"))
+        : t("note_paths.intro_not_placed");
+
     return (
         <div class="note-paths-widget">
             <>
-                <div className="note-path-intro">
-                    {sortedNotePaths?.length ? t("note_paths.intro_placed") : t("note_paths.intro_not_placed")}
-                </div>
+                {intro && <div className="note-path-intro">{intro}</div>}
 
                 <ul className="note-path-list">
                     {sortedNotePaths?.length ? sortedNotePaths.map(sortedNotePath => (
                         <NotePath
-                            key={sortedNotePath.notePath}
+                            // Keyed by the joined path, not the array: `getAllNotePaths()` hands back
+                            // fresh arrays on every refresh, so an array key never matches the previous
+                            // one and each row would remount — blanking its links until they resolve.
+                            key={sortedNotePath.notePath.join("/")}
                             currentNotePath={currentNotePath}
                             notePathRecord={sortedNotePath}
                         />
                     )) : undefined}
                 </ul>
 
-                <LinkButton
-                    text={t("note_paths.clone_button")}
-                    onClick={() => parentComponent?.triggerCommand("cloneNoteIdsTo")}
-                />
+                {cloneButton && (
+                    <LinkButton
+                        text={t("note_paths.clone_button")}
+                        onClick={() => void parentComponent?.triggerCommand("cloneNoteIdsTo")}
+                    />
+                )}
             </>
         </div>
     );

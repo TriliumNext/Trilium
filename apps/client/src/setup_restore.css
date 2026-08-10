@@ -1,0 +1,158 @@
+.page.restore-from-backup {
+    /* Two lines, not one sentence: what happened, then what the server said about it. */
+    .page-error {
+        .restore-error-headline {
+            display: block;
+        }
+
+        .restore-error-detail {
+            display: block;
+            margin-top: 0.4em;
+            opacity: 0.75;
+            font-size: 0.85em;
+            /* Filesystem errors arrive as one long line with no spaces to break at. */
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .restore-backup-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+        cursor: pointer;
+
+        /* The leading icon only: the chevron at the other end stays the size of the text. */
+        > .tn-icon:first-child {
+            font-size: 2em;
+        }
+
+        > .bx-chevron-right {
+            margin-left: auto;
+            opacity: 0.5;
+        }
+    }
+
+    /* Set apart from the backups below it: the same kind of row, but not one of them. */
+    .tn-card:has(.restore-choose-file) {
+        margin-bottom: 12px;
+    }
+
+    .restore-backup-details {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .restore-backup-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .restore-backup-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .restore-backup-description {
+        font-size: 0.85em;
+        opacity: 0.7;
+    }
+
+    .restore-loading {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        opacity: 0.7;
+    }
+
+    /* Driven by the row above it, which is the only thing the user should be aiming at. */
+    .restore-file-input {
+        display: none;
+    }
+
+    .restore-passphrase input {
+        margin-block: 8px;
+    }
+
+    .restore-passphrase-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1em;
+    }
+
+    .restore-progress {
+        .restore-progress-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+
+        progress {
+            width: 100%;
+            margin-top: 0.75em;
+        }
+
+        .restore-progress-detail {
+            display: flex;
+            gap: 1em;
+            margin-top: 0.35em;
+            font-size: 0.85em;
+            opacity: 0.7;
+
+            /* Pushed over rather than spaced apart, so how much has gone stays on the left whether
+               or not there is a rate to put opposite it. */
+            .restore-upload-speed {
+                margin-inline-start: auto;
+                font-variant-numeric: tabular-nums;
+            }
+
+            /* Takes the rate's place, so the line does not shift as the connection comes and goes. */
+            .restore-upload-reconnecting {
+                display: flex;
+                align-items: center;
+                gap: 0.4em;
+                margin-inline-start: auto;
+            }
+        }
+    }
+
+    .restore-current-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75em;
+        margin-block: 3em;
+        text-align: center;
+    }
+
+    .restore-step-name {
+        font-size: 1.1em;
+    }
+
+    .restore-stage-progress {
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+        /* Wide enough to read as a measure of the whole step, whatever the step is called, and
+           never wider than the page it is centred on. */
+        width: min(100%, 27.5em);
+
+        progress {
+            flex: 1;
+        }
+
+        span {
+            min-width: 3em;
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+            opacity: 0.7;
+        }
+    }
+
+    .restore-do-not-close {
+        opacity: 0.6;
+    }
+}

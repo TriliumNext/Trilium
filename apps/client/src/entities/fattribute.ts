@@ -1,5 +1,6 @@
+import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
+
 import type { Froca } from "../services/froca-interface.js";
-import promotedAttributeDefinitionParser from "../services/promoted_attribute_definition_parser.js";
 
 /**
  * There are currently only two types of attributes, labels or relations.
@@ -82,7 +83,7 @@ class FAttribute {
     }
 
     isDefinition() {
-        return this.type === "label" && (this.name.startsWith("label:") || this.name.startsWith("relation:"));
+        return this.type === "label" && isDefinitionName(this.name);
     }
 
     getDefinition() {
@@ -99,6 +100,16 @@ class FAttribute {
 
         return dto;
     }
+}
+
+const DEFINITION_PREFIXES = [ "label:", "relation:" ];
+
+/**
+ * A definition needs an attribute name after its prefix: `#label:` on its own defines nothing, so it
+ * is treated as an ordinary label rather than as a definition for a nameless attribute.
+ */
+export function isDefinitionName(name: string) {
+    return DEFINITION_PREFIXES.some((prefix) => name.startsWith(prefix) && name.length > prefix.length);
 }
 
 export default FAttribute;

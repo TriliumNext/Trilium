@@ -259,6 +259,24 @@
   "text-editor": {
     "validation-errors": {
       "missing-icon": "eksik simge"
+    },
+    "ck": {
+      "align-text-to-the-center": "Metni merkeze hizala",
+      "align-text-to-the-left": "Metni sola hizala",
+      "align-text-to-the-right": "Metni sağa hizala",
+      "create-a-bulleted-list": "Madde işaretli liste oluştur",
+      "create-a-new-footnote-and-reference-it-here": "Yeni bir dipnot oluşturup buraya referans verin",
+      "create-a-numbered-list": "Numaralı liste oluştur",
+      "create-a-to-do-list": "Yapılacaklar listesi oluştur",
+      "display-the-content-of-another-note-in-this-note": "Bu notta başka bir notun içeriğini görüntüle",
+      "insert-a-link-to-another-trilium-note": "Başka Trilium notuna link ekleyin",
+      "insert-a-math-equation": "Matematiksel bir denklem ekle",
+      "insert-a-new-admonition": "Yeni bir uyarı ekler",
+      "insert-a-page-break-for-printing": "Sayfa sonu ekle (yazdırma için)",
+      "insert-a-toggleable-section-that-hides-shows-content-on-click": "Tıklandığında içeriği gizleyen/gösteren, açılıp kapanabilir bir bölüm ekleyin.",
+      "insert-an-anchor-for-internal-linking": "Dahili linkleme için bir bağlantı metni ekleyin",
+      "insert-the-current-date-and-time": "Geçerli tarih ve saati girin",
+      "justify-text-alignment": "Metni iki yana hizala"
     }
   },
   "include_note": {
@@ -303,25 +321,6 @@
       "collapsible_summary": "Özet",
       "collapsible_details": "Ayrıntılar"
     }
-  },
-  "slash_commands": {
-    "bulleted_list_description": "Madde işaretli liste oluştur",
-    "numbered_list_description": "Numaralı liste oluştur",
-    "todo_list_description": "Yapılacaklar listesi oluştur",
-    "align_left_description": "Metni sola hizala",
-    "align_center_description": "Metni merkeze hizala",
-    "align_right_description": "Metni sağa hizala",
-    "justify_description": "Metni iki yana hizala",
-    "admonition_description": "Yeni bir uyarı ekler",
-    "collapsible_description": "Tıklandığında içeriği gizleyen/gösteren, açılıp kapanabilir bir bölüm ekleyin.",
-    "footnote_description": "Yeni bir dipnot oluşturup buraya referans verin",
-    "datetime_description": "Geçerli tarih ve saati girin",
-    "internal_link_description": "Başka Trilium notuna link ekleyin",
-    "math_description": "Matematiksel bir denklem ekle",
-    "include_note_description": "Bu notta başka bir notun içeriğini görüntüle",
-    "page_break_description": "Sayfa sonu ekle (yazdırma için)",
-    "markdown_import_description": "Bu notun içine bir markdown dosyası aktarın",
-    "anchor_description": "Dahili linkleme için bir bağlantı metni ekleyin"
   },
   "move_to": {
     "dialog_title": "Notları ... konumuna taşı.",
@@ -443,23 +442,18 @@
     "tooltip": "Bu seçeneği işaretlerseniz, Trilium yüklenen görüntüleri ölçeklendirme ve optimizasyon yoluyla küçültmeye çalışacaktır; bu da algılanan görüntü kalitesini etkileyebilir. İşaretlenmezse, görüntüler değişiklik yapılmadan yüklenecektir."
   },
   "attribute_detail": {
-    "attr_detail_title": "Öznitelik Detay Başlığı",
     "close_button_title": "Değişiklikleri iptal et ve kapat",
-    "attr_is_owned_by": "Öznitelik sahibi",
-    "attr_name_title": "Öznitelik adı yalnızca alfanümerik karakterler, iki nokta üst üste ve alt çizgiden oluşabilir",
     "name": "İsim",
     "value": "Değer",
     "target_note_title": "İlişki, kaynak not ile hedef not arasında kurulan adlandırılmış bir bağlantıdır.",
     "target_note": "Hedef not",
     "promoted_title": "Öne çıkarılan öznitelik, not üzerinde belirgin bir şekilde gösterilir.",
     "promoted": "Öne Çıkarılan",
-    "promoted_alias_title": "“Öne çıkarılan öznitelikler arayüzünde gösterilecek ad.",
     "promoted_alias": "Takma ad",
     "multiplicity_title": "Çokluk, aynı isimde kaç tane öznitelik oluşturulabileceğini belirler. (sadece 1 veya 1 den fazla)",
     "multiplicity": "Çokluk",
     "single_value": "Tek değerli",
     "multi_value": "Çok değerli",
-    "label_type_title": "Etiket türü, Trilium'un etiket değerini girmek için uygun arayüzü seçmesine yardımcı olacaktır.",
     "label_type": "Tür",
     "text": "Metin",
     "textarea": "Çok Satırlı Metin",
@@ -471,13 +465,10 @@
     "inverse_relation": "Ters ilişki",
     "inheritable_title": "Kalıtsal özellik, bu ağacın altındaki tüm alt ögelere aktarılacaktır.",
     "inheritable": "Kalıtsal",
-    "save_and_close": "Kaydet & kapat <kbd>Ctrl+Enter</kbd>",
     "delete": "Sil",
     "related_notes_title": "Bu etiketle ilişkili diğer notlar",
     "more_notes": "Diğer notlar",
     "label": "Etiket ayrıntısı",
-    "label_definition": "Etiket tanımı ayrıntısı",
-    "relation": "İlişki ayrıntısı",
-    "relation_definition": "İlişki tanımı ayrıntısı"
+    "relation": "İlişki ayrıntısı"
   }
 }

@@ -347,6 +347,12 @@ legăturile descrise în secțiunea „Discutați cu noi” de mai sus.
 * [antoniotejada](https://github.com/nriver) pentru implementarea originală a
   widget-ului de evidențiere al sintaxei.
 * [Tabler Icons](https://tabler.io/icons) pentru iconițele din bara de sistem.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 Trilium nu ar fi fost posibil fără tehnologiile pe care este bazat:
 

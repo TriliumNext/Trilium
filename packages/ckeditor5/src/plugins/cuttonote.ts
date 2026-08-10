@@ -6,13 +6,15 @@ export default class CutToNotePlugin extends Plugin {
     private htmlDataProcessor!: HtmlDataProcessor;
 
 	init() {
+		const t = this.editor.t;
+
 		this.htmlDataProcessor = new HtmlDataProcessor(this.editor.editing.view.document);
 
 		this.editor.ui.componentFactory.add( 'cutToNote', locale => {
 			const view = new ButtonView( locale );
 
 			view.set( {
-				label: 'Cut & paste selection to sub-note',
+				label: t('Cut selection into a sub-note'),
 				icon: scissorsIcon,
 				tooltip: true
 			} );

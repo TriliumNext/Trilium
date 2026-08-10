@@ -20,3 +20,12 @@
         margin-top: 1em;
     }
 }
+
+.no-items.no-items-small {
+    padding: 1.25em 0.75em;
+
+    .tn-icon {
+        font-size: 2em;
+        margin-bottom: 0.5rem;
+    }
+}

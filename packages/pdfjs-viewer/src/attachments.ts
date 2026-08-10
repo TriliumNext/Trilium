@@ -8,64 +8,70 @@ export async function setupPdfAttachments() {
         if (event.origin !== window.location.origin) return;
 
         if (event.data?.type === "trilium-download-attachment") {
-            const filename = event.data.filename;
-            await downloadAttachment(filename);
+            await downloadAttachment(event.data.id);
         }
     });
 }
 
-async function extractAndSendAttachments() {
-    const app = window.PDFViewerApplication;
-
-    try {
-        const attachments = await app.pdfDocument.getAttachments();
-
-        if (!attachments) {
-            window.parent.postMessage({
-                type: "pdfjs-viewer-attachments",
-                attachments: []
-            } satisfies PdfViewerAttachmentsMessage, window.location.origin);
-            return;
-        }
-
-        // Convert attachments object to array
-        const attachmentList = Object.entries(attachments).map(([filename, data]: [string, any]) => ({
-            filename,
-            content: data.content, // Uint8Array
-            size: data.content?.length || 0
-        }));
-
-        // Send metadata only (not the full content)
-        window.parent.postMessage({
-            type: "pdfjs-viewer-attachments",
-            attachments: attachmentList.map(att => ({
-                filename: att.filename,
-                size: att.size
-            }))
-        } satisfies PdfViewerAttachmentsMessage, window.location.origin);
-    } catch (error) {
-        console.error("Error extracting attachments:", error);
-        window.parent.postMessage({
-            type: "pdfjs-viewer-attachments",
-            attachments: []
-        } satisfies PdfViewerAttachmentsMessage, window.location.origin);
+/**
+ * Maps the attachments reported by pdf.js into the metadata sent to the client.
+ *
+ * Since pdf.js 6.1 `getAttachments()` returns a `Map` whose entries no longer carry the file
+ * content: it has to be pulled separately via `getAttachmentContent(id)`, keyed by the map key.
+ * The content is still needed here to report the file size, but it is deliberately not forwarded
+ * to the client — only the metadata crosses the frame boundary, and the bytes are re-read on
+ * demand when the user actually downloads an attachment.
+ */
+export async function collectAttachments(
+    attachments: Map<string, { filename?: string }> | null | undefined,
+    getContent: (id: string) => Promise<Uint8Array | null | undefined>
+): Promise<PdfAttachment[]> {
+    if (!attachments?.size) {
+        return [];
     }
+
+    return Promise.all(Array.from(attachments, async ([id, attachment]) => ({
+        id,
+        filename: attachment.filename || id,
+        size: (await getContent(id))?.length ?? 0
+    })));
 }
 
-async function downloadAttachment(filename: string) {
+async function extractAndSendAttachments() {
+    const app = window.PDFViewerApplication;
+    let attachments: PdfAttachment[] = [];
+
+    try {
+        attachments = await collectAttachments(
+            await app.pdfDocument.getAttachments(),
+            (id) => app.pdfDocument.getAttachmentContent(id));
+    } catch (error) {
+        console.error("Error extracting attachments:", error);
+    }
+
+    window.parent.postMessage({
+        type: "pdfjs-viewer-attachments",
+        attachments
+    } satisfies PdfViewerAttachmentsMessage, window.location.origin);
+}
+
+async function downloadAttachment(id: string) {
     const app = window.PDFViewerApplication;
 
     try {
-        const attachments = await app.pdfDocument.getAttachments();
-        const attachment = attachments?.[filename];
+        const content = await app.pdfDocument.getAttachmentContent(id);
 
-        if (!attachment) {
-            console.error("Attachment not found:", filename);
+        if (!content) {
+            console.error("Attachment not found:", id);
             return;
         }
 
+        const attachments = await app.pdfDocument.getAttachments();
+        const filename = attachments?.get(id)?.filename || id;
+
         // Create blob and download
-        const blob = new Blob([attachment.content], { type: "application/octet-stream" });
+        // Copied into a fresh view since pdf.js types the content as a possibly shared buffer.
+        const blob = new Blob([new Uint8Array(content)], { type: "application/octet-stream" });
         const url = URL.createObjectURL(blob);
 
         const a = document.createElement("a");

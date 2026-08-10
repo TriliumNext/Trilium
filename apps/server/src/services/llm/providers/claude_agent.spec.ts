@@ -9,11 +9,12 @@ vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
 }));
 
 vi.mock("@triliumnext/core", () => ({
-    getLog: () => ({ info: vi.fn(), error: errorLogMock }),
-    // buildSystemPrompt (reached via composeSystemPrompt) reads the workspace
-    // task states; no custom states in this unit test.
-    task_states: { getTaskStates: () => [] }
+    getLog: () => ({ info: vi.fn(), error: errorLogMock })
 }));
+
+// buildSystemPrompt (reached via composeSystemPrompt) reads the workspace task
+// states; no custom states in this unit test.
+vi.mock("@triliumnext/core/src/services/task_states.js", () => ({ getTaskStates: () => [] }));
 
 // In-process MCP: the provider hands the agent Trilium's own MCP server
 // instance; stub the factory so tests don't build the real tool registry.
@@ -29,7 +30,7 @@ vi.mock("../../data_dir.js", async () => {
 vi.mock("../../port.js", () => ({ default: 8080 }));
 
 const buildNoteHintMock = vi.hoisted(() => vi.fn((noteId: string): string | null => `NOTE_META(${noteId})`));
-vi.mock("../note_hint.js", () => ({ buildNoteHint: buildNoteHintMock }));
+vi.mock("@triliumnext/core/src/services/llm/note_hint.js", () => ({ buildNoteHint: buildNoteHintMock }));
 
 // BYO binary resolution shells out to the user's `claude`; stub it so tests
 // don't depend on a real install. Resolves a path by default; can be made to
@@ -40,7 +41,7 @@ vi.mock("./claude_binary.js", () => ({ resolveClaudeBinaryPath: resolveClaudeBin
 // Attachment resolution reads bytes out of Becca, which the core mock above
 // omits — stub it so the multimodal tests drive block construction directly.
 const resolveAttachmentPartMock = vi.hoisted(() => vi.fn());
-vi.mock("../attachment_content.js", () => ({ resolveAttachmentPart: resolveAttachmentPartMock }));
+vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", () => ({ resolveAttachmentPart: resolveAttachmentPartMock }));
 
 // The Windows `.cmd` shim delegates to child_process.spawn; the provider never
 // spawns otherwise, so mocking the whole module is safe.
@@ -170,7 +171,7 @@ describe("ClaudeAgentProvider.chatChunks", () => {
                 type: "usage",
                 // No cost even though the SDK result carries total_cost_usd: usage is
                 // covered by the subscription, so a per-turn dollar figure isn't shown.
-                usage: { promptTokens: 100, completionTokens: 40, totalTokens: 140, model: "Claude Sonnet 5" }
+                usage: { promptTokens: 100, completionTokens: 40, totalTokens: 140, model: "Claude Sonnet 5", provider: "claude-agent" }
             },
             { type: "done" }
         ]);
@@ -187,6 +188,9 @@ describe("ClaudeAgentProvider.chatChunks", () => {
 
         // A known model ID is mapped to its display name (the chat pane renders it verbatim).
         expect(await usageModel({ model: "claude-fable-5" })).toBe("Claude Fable 5");
+        // A long-context ID is named after the model it varies, rather than falling
+        // through to the raw `claude-opus-4-8[1m]`.
+        expect(await usageModel({ model: "claude-opus-4-8[1m]" })).toBe("Claude Opus 4.8 (1M)");
         // An unrecognized ID passes through unchanged rather than becoming undefined.
         expect(await usageModel({ model: "some-unknown-model" })).toBe("some-unknown-model");
     });
@@ -548,7 +552,10 @@ describe("ClaudeAgentProvider.chatChunks", () => {
         const models = provider.getAvailableModels();
         expect(models.some(m => m.id === "claude-sonnet-5" && m.isDefault)).toBe(true);
         expect(provider.getModelPricing("claude-sonnet-5")).toEqual(expect.objectContaining({ input: 0, output: 0 }));
+        // A long-context variant prices like its base model, not as an unknown.
+        expect(provider.getModelPricing("claude-opus-4-8[1m]")).toEqual(expect.objectContaining({ input: 0, output: 0 }));
         expect(provider.getModelPricing("no-such-model")).toBeUndefined();
+        expect(provider.getModelPricing("no-such-model[1m]")).toBeUndefined();
         expect(() => provider.chat()).toThrow(/chatChunks/);
     });
 
@@ -909,6 +916,35 @@ describe("buildSubscriptionModelList", () => {
         const fable = merged.find(m => m.id === "claude-fable-9");
         expect(fable).toEqual({ id: "claude-fable-9", name: "Claude Fable 9", contextWindow: undefined, isSubscription: true, pricing: { input: 0, output: 0 } });
     });
+
+    it("drops the `default` alias so the concrete row it shadows keeps its own name", () => {
+        // Claude Code lists `default` first, resolving to the same id as `opus[1m]`.
+        // Kept, it would win the dedupe and label the row "Default (recommended)".
+        const merged = buildSubscriptionModelList([
+            { value: "default", resolvedModel: "claude-opus-4-6[1m]", displayName: "Default (recommended)" },
+            { value: "opus[1m]", resolvedModel: "claude-opus-4-6[1m]", displayName: "Opus" },
+            { value: "sonnet", resolvedModel: "claude-sonnet-5", displayName: "Sonnet" }
+        ], curated);
+
+        expect(merged.map(m => m.name)).toEqual(["Sonnet", "Opus"]);
+        expect(merged.some(m => m.id === "claude-opus-4-6")).toBe(false);
+    });
+
+    it("treats a long-context id as a variant of its base model, next to it and without its default flag", () => {
+        const merged = buildSubscriptionModelList([
+            { value: "sonnet", resolvedModel: "claude-sonnet-5", displayName: "Sonnet" },
+            { value: "sonnet[1m]", resolvedModel: "claude-sonnet-5[1m]" },
+            { value: "claude-opus-4-6[1m]", displayName: "Opus" }
+        ], curated);
+
+        // Curated ordering survives: each variant sits directly after its base.
+        expect(merged.map(m => m.id)).toEqual(["claude-sonnet-5", "claude-sonnet-5[1m]", "claude-opus-4-6[1m]"]);
+        // Curated metadata is inherited, and the CLI's silence leaves the derived name.
+        expect(merged[1]).toMatchObject({ name: "Claude Sonnet 5 (1M)", contextWindow: 1000000, isSubscription: true, isDefault: false });
+        // ...including flags the base carries — but never a second default.
+        expect(merged[2]).toMatchObject({ name: "Opus", contextWindow: 1000000, isLegacy: true, isDefault: false });
+        expect(merged.filter(m => m.isDefault)).toHaveLength(1);
+    });
 });
 
 describe("ClaudeAgentProvider.listModels", () => {
@@ -1097,5 +1133,14 @@ describe("ClaudeAgentProvider.recommendedModelIds", () => {
         expect([...ids].sort()).toEqual([
             "claude-fable-5", "claude-haiku-4-5-20251001", "claude-opus-4-8", "claude-sonnet-5"
         ]);
+    });
+
+    it("ranks long-context ids under their base model so they are recommended too", () => {
+        // `claude-opus-4-8[1m]` doesn't parse as a family/version on its own; unranked
+        // it would be left out even though it is the only Opus row Claude Code offers.
+        const ids = new ClaudeAgentProvider().recommendedModelIds(
+            ["claude-opus-4-8[1m]", "claude-opus-4-7", "claude-sonnet-5"].map(id => ({ id, name: id }))
+        );
+        expect([...ids].sort()).toEqual(["claude-opus-4-8[1m]", "claude-sonnet-5"]);
     });
 });

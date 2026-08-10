@@ -25,6 +25,20 @@ body {
     --native-titlebar-darwin-y-offset: 12 !important;
 }
 
+/*
+ * The caption buttons are centred within the overlay, so its height has to be twice the centre
+ * line of the tab bar's own buttons for the two to line up. Those buttons are top-aligned
+ * (`margin: 3px ... auto ...` below), so the centre line follows the tab bar height: 3 + 30/2 = 18
+ * here, and 26 in the taller horizontal layout. Linux-only, as in the base stylesheet.
+ */
+body.platform-linux {
+    --native-titlebar-height: 36 !important;
+}
+
+body.platform-linux.layout-horizontal {
+    --native-titlebar-height: 52 !important;
+}
+
 body.layout-horizontal {
     --active-tab-background-color: var(--launcher-pane-horiz-background-color);
     --active-tab-hover-background-color: var(--active-tab-background-color);
@@ -111,7 +125,6 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 /* Matches when the left pane is collapsed */
 #horizontal-main-container.left-pane-hidden {
     --note-split-top-border-radius: 0;
-    --tab-first-item-horiz-offset: 5px;
 }
 
 /* Matches when a status bar panel is open */
@@ -164,8 +177,27 @@ body.layout-horizontal > .horizontal {
     align-items: center;
 }
 
-body[dir=ltr] #launcher-container {
-    scrollbar-gutter: stable both-edges;
+/* Thin launcher-rail scrollbar; the padding below (set from the JS-measured
+ * `--launcher-scrollbar-size`) offsets its width so it never shifts the centred buttons. */
+#launcher-container {
+    --scrollbar-thickness: 4px;
+    --scrollbar-thumb-thickness: 4px;
+    --scrollbar-thumb-hover-thickness: 4px;
+    scrollbar-width: thin;
+}
+
+/* Style the base pseudo (forms.css styles only :vertical) so WebKit shows a persistent bar
+ * instead of an auto-hiding overlay. */
+#launcher-container::-webkit-scrollbar {
+    width: var(--scrollbar-thickness);
+    height: var(--scrollbar-thickness);
+}
+
+@supports (-webkit-box-reflect: below) {
+    /* Let ::-webkit-scrollbar win over scrollbar-width on WebKit (mirrors forms.css's :root reset). */
+    #launcher-container {
+        scrollbar-width: unset;
+    }
 }
 
 #launcher-pane.vertical {
@@ -192,6 +224,7 @@ body[dir=ltr] #launcher-container {
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+    padding-inline-start: var(--launcher-scrollbar-size, 0px);
 }
 
 #launcher-pane.horizontal {
@@ -217,6 +250,7 @@ body[dir=ltr] #launcher-container {
     height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    padding-block-start: var(--launcher-scrollbar-size, 0px);
 }
 
 @media (max-width: 991px) {
@@ -623,16 +657,6 @@ div.quick-search .search-button.show {
 div.quick-search .dropdown-menu {
     --quick-search-item-delimiter-color: transparent;
     --menu-item-icon-vert-offset: -.065em;
-}
-
-/*
- * TO FIX: The quick search results dropdown has a backdrop issue with the tree panel
- * when background effects are enabled in Electron.
- * As a temporary workaround, the backdrop and transparency are disabled for the
- * vertical layout.
- */
-body.layout-vertical.background-effects div.quick-search .dropdown-menu {
-    --menu-background-color: var(--menu-background-color-no-backdrop) !important;
 }
 
 /* Item */
@@ -1159,10 +1183,6 @@ body.desktop:not(.background-effects) #root-widget.horizontal-layout {
     transition: none;
 }
 
-.tab-row-container .title-bar-buttons {
-    margin-top: calc((var(--tab-bar-height) - var(--tab-height)) * -1);
-}
-
 body.layout-horizontal div.tab-row-widget div.note-tab div.note-tab-wrapper {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
@@ -1180,10 +1200,6 @@ body.layout-horizontal div.tab-row-widget div.note-tab div.note-tab-wrapper {
     inset-inline-end: 0;
     height: 3px;
     background-color: var(--workspace-tab-background-color);
-}
-
-body:not([dir=rtl]) .tab-row-widget .note-tab:nth-child(1) {
-    transform: translate3d(var(--tab-first-item-horiz-offset), 0, 0);
 }
 
 :root .tab-row-widget .note-tab .note-tab-icon {
@@ -1488,7 +1504,6 @@ body.experimental-feature-new-layout #center-pane .note-split > div.alert {
 
 /* The promoted attributes section */
 div.promoted-attributes-container {
-    display: flex;
     margin-inline-end: 10%;
     padding: 6px 0;
     gap: 8px;
@@ -1548,6 +1563,23 @@ div.promoted-attribute-cell div.input-group {
     padding: 1px 6px;
 }
 
+/*
+ * The field of a label holding several values, which in this theme sits inside a card of its own. The
+ * card is the frame — as it already is for the group around a single value's box, whose input gives up
+ * its border and background here — so the field brings none, a second rounded edge just within the
+ * first reading as two boxes where there is one.
+ *
+ * The border is kept and made invisible rather than dropped, so the chips sit where they would in a
+ * theme that does frame the field.
+ */
+div.promoted-attribute-cell div.promoted-attribute-values {
+    min-height: auto;
+
+    > .tn-field {
+        border-color: transparent;
+    }
+}
+
 div.promoted-attribute-cell input {
     padding: 2px 8px;
     font-weight: 500;
@@ -1568,13 +1600,18 @@ div.promoted-attribute-cell span.open-external-link-button {
 }
 
 div.promoted-attribute-cell .tn-checkbox {
-    --box-label-gap: 0;
+    --box-label-gap: 0px;
 
-    height: 1cap;
+    height: 1em;
+    vertical-align: calc((1cap - 1em) / 2);
+}
+
+div.promoted-attribute-cell .tn-checkbox > input[type="checkbox"] {
+    width: var(--box-size) !important;
 }
 
 div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type {
-    margin-inline-end: 1.5em;
+    margin-inline-end: 0.5em;
 }
 
 /* The element containing the "new attribute" and "remove this attribute button" */

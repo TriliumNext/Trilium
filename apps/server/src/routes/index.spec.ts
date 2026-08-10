@@ -34,14 +34,20 @@ vi.mock("@triliumnext/core", () => ({
     getLog: () => ({ info: () => {}, error: () => {} })
 }));
 
-const { bootstrap } = await import("./index.js");
+const { bootstrap, getView } = await import("./index.js");
 
-function makeReq(overrides: { loggedIn?: boolean; internal?: boolean } = {}): Request {
+function makeReq(overrides: {
+    loggedIn?: boolean;
+    internal?: boolean;
+    query?: Record<string, unknown>;
+    cookies?: Record<string, string>;
+    userAgent?: string;
+} = {}): Request {
     const req = {
         session: { loggedIn: overrides.loggedIn ?? false },
-        query: {},
-        headers: {},
-        cookies: {}
+        query: overrides.query ?? {},
+        headers: overrides.userAgent ? { "user-agent": overrides.userAgent } : {},
+        cookies: overrides.cookies ?? {}
     } as unknown as Request;
     if (overrides.internal) {
         markAsInternalElectronRequest(req);
@@ -90,5 +96,47 @@ describe("bootstrap auth gating (desktop build, #10589)", () => {
         // absolute renderer-only URLs it can't derive from trilium-app://.
         expect(body().isElectron).toBe(true);
         expect(body().wsBaseUrl).toBeTruthy();
+    });
+});
+
+describe("getView view resolution (desktop build, #10720)", () => {
+    it("resolves the mobile view when a browser hits a desktop build with the trilium-device=mobile cookie", () => {
+        // "Switch to Mobile Version" sets this cookie and reloads. On a desktop
+        // build the process-wide isElectron flag is true, but this browser request
+        // is NOT the trusted renderer, so the cookie must still be honoured.
+        // Previously getView short-circuited on the global flag and always returned
+        // "desktop", so the mobile layout never activated.
+        const req = makeReq({ internal: false, cookies: { "trilium-device": "mobile" } });
+
+        expect(getView(req)).toBe("mobile");
+    });
+
+    it("keeps the desktop view for the trusted Electron renderer even with a mobile cookie", () => {
+        const req = makeReq({ internal: true, cookies: { "trilium-device": "mobile" } });
+
+        expect(getView(req)).toBe("desktop");
+    });
+
+    it("honours the print override above everything else", () => {
+        const req = makeReq({ query: { print: "" }, cookies: { "trilium-device": "mobile" } });
+
+        expect(getView(req)).toBe("print");
+    });
+
+    it("respects the ?mobile and ?desktop query overrides on a browser request", () => {
+        expect(getView(makeReq({ query: { mobile: "" } }))).toBe("mobile");
+        expect(getView(makeReq({ query: { desktop: "" } }))).toBe("desktop");
+    });
+
+    it("respects an explicit trilium-device=desktop cookie", () => {
+        expect(getView(makeReq({ cookies: { "trilium-device": "desktop" } }))).toBe("desktop");
+    });
+
+    it("falls back to user-agent detection when no override is present", () => {
+        const mobileUa = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15";
+        expect(getView(makeReq({ userAgent: mobileUa }))).toBe("mobile");
+
+        const desktopUa = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome";
+        expect(getView(makeReq({ userAgent: desktopUa }))).toBe("desktop");
     });
 });

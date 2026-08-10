@@ -9,14 +9,10 @@ coverage:
         target: 80%
         threshold: 5%
 
-# trilium-core has no test runner of its own; its specs run *through* the server
-# and standalone suites. Vitest's v8 provider emits those external files with
-# paths relative to each suite's project root, so they arrive as `../../packages/…`
-# (server, root = apps/server) and `../../../packages/…` (standalone, root = apps/standalone/src).
-# Strip the leading `../` segments so the paths resolve to the repo-root tree.
-fixes:
-  - "../../../packages/::packages/"
-  - "../../packages/::packages/"
+# No `fixes:` needed: every suite pins the lcov reporter's `projectRoot` to the repo root, so
+# `SF:` paths already arrive repo-root-relative. Leaving them project-relative would make the
+# shallow ones (`src/index.ts`, `src/utils.ts`) ambiguous across the monorepo, and Codecov would
+# attribute their coverage to whichever project won the match.
 
 flags:
   client:
@@ -44,6 +40,18 @@ flags:
   ckeditor5:
     paths:
       - packages/ckeditor5/src/
+    carryforward: true
+  codemirror:
+    paths:
+      - packages/codemirror/src/
+    carryforward: true
+  highlightjs:
+    paths:
+      - packages/highlightjs/src/
+    carryforward: true
+  pdfjs-viewer:
+    paths:
+      - packages/pdfjs-viewer/src/
     carryforward: true
 
 comment:

@@ -56,6 +56,19 @@
         border-bottom: 1px solid var(--main-border-color);
     }
 
+    /* Refresh + Disconnect stay grouped on the row's right edge. */
+    .onenote-account-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    /* Secondary explanation under a message (e.g. why an account can look notebook-less). */
+    .onenote-hint {
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+    }
+
     .onenote-status {
         display: flex;
         align-items: center;
@@ -89,31 +102,16 @@
     }
 
     .onenote-notebooks {
-        display: flex;
-        flex-direction: column;
-        gap: 1em;
         max-height: 45vh;
         overflow-y: auto;
-    }
 
-    .onenote-notebook {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25em;
-    }
+        /* Notebooks are the tree's roots; set them apart like the headings they replaced. */
+        > .checkbox-tree {
+            gap: 0.5em;
+        }
 
-    .onenote-section-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25em;
-        padding-left: 1.25em;
-        border-left: 1px solid var(--main-border-color);
-        margin-left: 0.25em;
-    }
-
-    .onenote-section-group-title {
-        color: var(--muted-text-color);
-        font-size: 0.9em;
-        font-weight: bold;
+        > .checkbox-tree > .checkbox-tree-container > .checkbox-tree-row .form-check-label {
+            font-weight: bold;
+        }
     }
 }

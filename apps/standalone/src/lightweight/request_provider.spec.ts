@@ -150,3 +150,51 @@ describe("FetchRequestProvider.getImage", () => {
         await expect(provider.getImage(`${location.origin}/missing.png`)).rejects.toThrow("404 GET");
     });
 });
+
+describe("FetchRequestProvider.fetchResource", () => {
+    it("reads a capped body and the type it came under", async () => {
+        const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("<html/>", { headers: { "content-type": "text/html; charset=utf-8" } })
+        );
+
+        const read = await provider.fetchResource("https://example.com/p", {
+            maxBytes: 1000,
+            headers: { "user-agent": "TriliumNotes" }
+        });
+
+        expect(read).toEqual({
+            status: 200,
+            ok: true,
+            contentType: "text/html",
+            bytes: new TextEncoder().encode("<html/>")
+        });
+        expect(spy.mock.calls[0][1]).toMatchObject({ headers: { "user-agent": "TriliumNotes" } });
+    });
+
+    it("refuses an address before a request is made of it", async () => {
+        const spy = vi.spyOn(globalThis, "fetch");
+
+        await expect(provider.fetchResource("file:///etc/passwd", { maxBytes: 10 })).rejects.toThrow(/http and https/);
+        await expect(provider.fetchResource("https://u:p@example.com/", { maxBytes: 10 })).rejects.toThrow(/credentials/);
+        expect(spy).not.toHaveBeenCalled();
+    });
+
+    it("refuses a body over the ceiling", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("x".repeat(50)));
+
+        await expect(provider.fetchResource("https://example.com/big", { maxBytes: 10 }))
+            .rejects.toThrow(/exceeds the 10 byte limit/);
+    });
+
+    /**
+     * The case with no server behind it: a site that sends no CORS headers fails the fetch itself,
+     * however healthy the response was. Nothing here can fix that — what matters is that it surfaces
+     * as a rejection the caller can degrade on, rather than as an empty preview.
+     */
+    it("propagates the failure a cross-origin refusal shows up as", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+
+        await expect(provider.fetchResource("https://example.com/p", { maxBytes: 10 }))
+            .rejects.toThrow(/Failed to fetch/);
+    });
+});

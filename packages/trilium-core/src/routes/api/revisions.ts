@@ -1,4 +1,10 @@
-import { EditedNotesResponse, RevisionItem, RevisionPojo } from "@triliumnext/commons";
+import {
+    EditedNotesResponse,
+    EraseExcessRevisionsOptions,
+    EraseExcessRevisionsResponse,
+    RevisionItem,
+    RevisionPojo
+} from "@triliumnext/commons";
 import type { Request, Response } from "express";
 
 import becca from "../../becca/becca.js";
@@ -121,11 +127,47 @@ function updateRevisionDescription(req: Request<{ revisionId: string }>) {
     revision.save();
 }
 
-function eraseAllExcessRevisions() {
+function eraseAllExcessRevisions(req: Request) {
+    const options = parseEraseExcessRevisionsOptions(req.body);
+
+    if (typeof options === "string") {
+        return [ 400, options ];
+    }
+
     const allNoteIds = getSql().getRows("SELECT noteId FROM notes WHERE SUBSTRING(noteId, 1, 1) != '_'") as { noteId: string }[];
-    allNoteIds.forEach((row) => {
-        becca.getNote(row.noteId)?.eraseExcessRevisionSnapshots();
-    });
+    let erasedCount = 0;
+
+    for (const row of allNoteIds) {
+        erasedCount += becca.getNote(row.noteId)?.eraseExcessRevisionSnapshots(options) ?? 0;
+    }
+
+    if (erasedCount > 0) {
+        // Dropping the snapshots leaves their content behind, held by nothing. Purged here rather
+        // than in the entity method, which also runs after every saved revision — a blob scan per
+        // note save would be far too expensive for what it collects.
+        eraseService.eraseUnusedBlobs();
+    }
+
+    return { erasedCount } satisfies EraseExcessRevisionsResponse;
+}
+
+/**
+ * Reads the operation's options off the request body, or returns the message to answer 400 with.
+ * Both are optional and an empty body is the configured behaviour, so only values that were sent
+ * are checked — a wrong one must fail loudly rather than quietly erase by some other rule.
+ */
+function parseEraseExcessRevisionsOptions(body: unknown): EraseExcessRevisionsOptions | string {
+    const { snapshotsToKeep, keepNamedSnapshots } = (body ?? {}) as EraseExcessRevisionsOptions;
+
+    if (snapshotsToKeep !== undefined && (!Number.isInteger(snapshotsToKeep) || Number(snapshotsToKeep) < -1)) {
+        return "snapshotsToKeep must be an integer of -1 (keep every snapshot) or above.";
+    }
+
+    if (keepNamedSnapshots !== undefined && typeof keepNamedSnapshots !== "boolean") {
+        return "keepNamedSnapshots must be a boolean.";
+    }
+
+    return { snapshotsToKeep, keepNamedSnapshots };
 }
 
 function restoreRevision(req: Request<{ revisionId: string }>) {

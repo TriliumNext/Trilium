@@ -1,4 +1,4 @@
-import { randomString, Rect } from "@/utils";
+import { randomString, type Rect } from "@/utils";
 
 import setupContextMenu from "./context_menu";
 import TriliumServerFacade from "./trilium_server_facade";
@@ -124,7 +124,12 @@ export default defineBackground(() => {
             currentWindow: true
         });
 
-        return tabs[0];
+        const activeTab = tabs[0];
+        if (!activeTab) {
+            throw new Error("No active tab.");
+        }
+
+        return activeTab;
     }
 
     async function getWindowTabs() {

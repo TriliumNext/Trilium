@@ -1,0 +1,80 @@
+name: Sync README
+
+# docs/README.md is not documentation anyone reads directly — it is the base file Weblate
+# generates all 39 docs/README-*.md translations from. It is the root README with its
+# relative links rewritten for the subdirectory it lives in, plus a language switcher
+# filtered to the locales above 75% coverage.
+#
+# So it has to be regenerated whenever the root README changes, or every translation is
+# produced from a stale base. scripts/translation/manage-readme.ts does that, and was
+# previously only ever run by hand — which is how docs/README.md came to be missing a
+# whole block of credits.
+#
+# Note this does not cover the language switcher drifting on its own, as locales cross the
+# 75% threshold without the README being touched. Dispatch the workflow by hand for that.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - README.md
+  workflow_dispatch:
+
+# The regeneration is not additive, so two runs racing to push the same PR branch would
+# just overwrite each other. The later README is the one worth propagating.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sync-readme:
+    name: Regenerate the translation base README
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Regenerate
+        id: sync
+        # Reads coverage from the public Weblate API — no token needed. The stats cache it
+        # writes is gitignored, so a runner always starts from fresh numbers.
+        run: |
+          pnpm tsx scripts/translation/manage-readme.ts
+          git diff --quiet -- README.md docs/README.md && changed=false || changed=true
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+      - name: Open a PR
+        if: steps.sync.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          add-paths: |
+            README.md
+            docs/README.md
+          branch: chore/sync-readme
+          commit-message: "docs: sync the translation base README"
+          title: "docs: sync the translation base README"
+          body: |
+            Regenerates `docs/README.md` from the root `README.md` via
+            `scripts/translation/manage-readme.ts`, so that the base file Weblate
+            generates the 39 `docs/README-*.md` translations from matches what the root
+            README actually says.
+
+            The script rewrites relative links for the `docs/` subdirectory, and refreshes
+            the language switcher in both files from Weblate coverage — so the root README
+            may appear in the diff too, whenever a locale has crossed or fallen below the
+            75% threshold.
+
+            Purely generated output: re-running the script on this branch produces no
+            further changes, and nothing here needs testing beyond reading the diff.
+          labels: "Type: Documentation"

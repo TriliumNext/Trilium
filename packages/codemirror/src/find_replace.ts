@@ -125,6 +125,8 @@ export class SearchHighlighter {
         const parsedMatches: Match[] = [];
         const text = view.state.doc.toString();
         let match: RegExpExecArray | null | undefined;
+        /* v8 ignore next -- searchRegexp is assigned alongside the matcher this method returns
+           early without, so the optional call never short-circuits. */
         while ((match = this.searchRegexp?.exec(text))) {
             const from = match.index ?? 0;
             const to = from + match[0].length;

@@ -24,20 +24,43 @@
 <p>The following features are preserved by Trilium during the import process:</p>
 <ul>
   <li>Basic formatting (bold, italic, underline, strikethrough, subscript, super
-    script, inline code, font sizes, headings, colors, highlights).
+    script, font sizes, headings, colors, highlights).
     <ul>
       <li>Black-colored text is intentionally stripped to allow it to work in dark
         themes.</li>
     </ul>
   </li>
+  <li>Inline code is automatically detected and formatted. Paragraphs that use
+    the Code style are also converted to&nbsp;<a class="reference-link" href="#root/_help_QxEyIjRBizuC">Code blocks</a>.
+    <ul>
+      <li>Unfortunately the indentation of the code might be lost because the information
+        is simply not present in the data from the Microsoft API.</li>
+    </ul>
+  </li>
   <li><a class="reference-link" href="#root/_help_S6Xx8QIWTV66">Lists</a>&nbsp;with
     different bullet types.</li>
   <li><a class="reference-link" href="#root/_help_NdowYOC1GFKS">Tables</a>
+    <ul>
+      <li>Cell backgrounds are preserved, including a best-effort hue correction
+        because the colors returned by the Graph API are sometimes incorrect.</li>
+      <li>Cell widths are also preserved proportionally, with the only difference
+        that tables in Trilium have a percentage-based width, not fixed pixel sizes.</li>
+    </ul>
   </li>
-  <li>Images and&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>.</li>
+  <li>Images and&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>.
+    <ul>
+      <li>Screen clippings are also properly supported since v0.104.1, displaying
+        their timestamp as a figure caption.</li>
+    </ul>
+  </li>
   <li>To-do lists</li>
-  <li>Hand-drawing is preserved and displayed as an SVG image (however there
-    are some</li>
+  <li>Hand-drawing is preserved and displayed as an SVG image inside the note
+    <ul>
+      <li>OneNote's default color (black) is special since it also renders as white
+        for dark themes. Since v0.104.1, this is also supported by using a special
+        SVG tweak which reacts to light/dark themes.</li>
+    </ul>
+  </li>
   <li>Links between other imported pages are converted to&nbsp;<a class="reference-link"
     href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;if the text
     of the link matches the name of the page, or plain links otherwise. If
@@ -116,6 +139,18 @@
   <p>There are plans to support drawing-heavy notes that interleave with text
     boxes by converting them to a&nbsp;<a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>&nbsp;instead.</p>
 </aside>
+<h3>Password-protected sections</h3>
+<p>OneNote supports encryption at section level; when importing a notebook
+  that contains these password-protection sections, Trilium will not be able
+  to read the content of password-protected sections so they will appear
+  empty. This is not a limitation of Trilium, the information is simply not
+  available from the source (Graph API).</p>
+<p>The section itself is kept for reference and all the sections that could
+  not be imported will be shown in the report (the top-level note called <em>OneNote import</em>).</p>
+<p>To unprotect a section in OneNote Desktop, right click on the protected
+  section → <em>Password Protect This Section</em> and press <em>Remove Password</em> and
+  sync. Then reimport either only the protected sessions or the remove everything
+  and start the import from scratch.</p>
 <h2>Other limitations</h2>
 <p>The following are known limitations due to how the information comes from
   the import (Microsoft Graph API), which means that they cannot be fixed.</p>
@@ -123,8 +158,9 @@
   <li>The order of the sections (and section groups) is not available, the sections
     are ordered by creation date instead.</li>
   <li>Revision history.</li>
-  <li>Paragraph indentation.</li>
+  <li>Paragraph indentation, as well as code block indentation.</li>
   <li>Section colors.</li>
+  <li>Drawings inside titles, the title might appear incomplete or “Untitled”.</li>
 </ul>
 <h2>Reporting issues</h2>
 <p>When importing notes, you might find that some text is not rendered properly

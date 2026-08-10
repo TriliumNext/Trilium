@@ -43,16 +43,18 @@ async function extractAndSendLayers() {
             return;
         }
 
-        // Flatten the order array (it can be nested) and extract group IDs
+        // Flatten the order and extract group IDs. pdf.js produces exactly two kinds of entry
+        // (see parseOrder/parseNestedOrder in its catalog): a group id string, or a
+        // `{ name, order }` wrapper. The wrapper covers both layers the document nests under a
+        // label and a synthetic, null-named entry collecting groups left out of /Order — so
+        // failing to recurse into it hides those layers entirely.
         const groupIds: string[] = [];
         const flattenOrder = (items: any[]) => {
             for (const item of items) {
-                if (typeof item === 'string') {
+                if (typeof item === "string") {
                     groupIds.push(item);
-                } else if (Array.isArray(item)) {
-                    flattenOrder(item);
-                } else if (item && typeof item === 'object' && item.id) {
-                    groupIds.push(item.id);
+                } else if (item?.order) {
+                    flattenOrder(item.order);
                 }
             }
         };

@@ -1,0 +1,136 @@
+.attr-detail {
+    display: block;
+    background-color: var(--accented-background-color);
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    /* Above a modal (1055): the attributes it is editing may well be listed in one, and the popup is
+       always the topmost thing while it is open. Below the confirmations and prompts it summons itself
+       (2000), which have to come out above it in turn. */
+    z-index: 1060;
+    padding: 15px;
+    position: absolute;
+    width: 600px;
+    /* Narrower than that on a phone, where the popup is wider than the screen it is being placed on:
+       its host measures it to place it (see positionPopupBesideAnchor), so capping the width here is
+       what keeps it on screen. */
+    max-width: calc(100vw - 20px);
+    max-height: 600px;
+    overflow: auto;
+    box-shadow: 10px 10px 93px -25px black;
+    contain: none;
+}
+
+/* The type menu is portaled to `document.body` (see the Dropdown's `portalToBody`): the popup is a
+   scroll container (`overflow: auto` above), so an inline menu could only open by scrolling the form
+   under itself. In body it competes with the popup in the root stacking context, where the global
+   dropdown z-index (999) loses to the popup's 1060 — raise it above the popup, staying below the
+   confirmations and prompts (2000) the popup summons. */
+body > div.attr-input-label-type > .dropdown-menu {
+    --bs-dropdown-zindex: 1100;
+}
+
+/*
+ * The same mark the name completion puts against a system name, and so the same colour: quiet, because
+ * it tells the reader whose name this is rather than asking anything of them. Without a `--color` the
+ * outline variant has neither border nor text colour to draw, and reads as a bare word.
+ */
+.attr-detail-system-badge {
+    --color: var(--muted-text-color);
+    flex-shrink: 0;
+}
+
+/* The help sits beside the name rather than under it: only a handful of names have any, and the ones
+   that do run to several lines, which would push the rest of the form out of reach. */
+.attr-name-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.attr-name-field > input {
+    flex: 1;
+    min-width: 0;
+}
+
+/*
+ * Settings-style rows, but in 500px rather than a settings page: the fields are what the popup is for, so
+ * they get a column of their own wide enough to type a note title into, instead of being sized to their
+ * content and pushed against the right edge. Every control fills that column, so they share an edge.
+ */
+.attr-edit-rows .option-row-input {
+    flex: 0 0 260px;
+}
+
+.attr-edit-rows .option-row-input > input,
+.attr-edit-rows .option-row-input > select,
+.attr-edit-rows .option-row-input > .dropdown {
+    width: 100%;
+}
+
+/* A toggle takes no such column: nothing is typed into it, so leaving it at its own width keeps it at the
+   end of the row as in the settings, and gives the label and its description the rest of the room. */
+.attr-edit-rows .option-row:has(.switch-widget) .option-row-input {
+    flex: 0 0 auto;
+}
+
+/* The title takes the leftover room, so the badge follows it and the close button stays at the end. */
+.attr-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.attr-detail-title {
+    margin: 0;
+    margin-inline-end: auto;
+}
+
+.close-attr-detail-button {
+    font-size: x-large;
+    cursor: pointer;
+}
+
+/*
+ * The count of the other notes carrying the attribute. It is advisory, so it stays quiet: a neutral fill
+ * rather than a color of its own, and an outline while the attribute is unique to this note.
+ */
+.related-notes-badge {
+    --color: var(--input-background-color);
+    color: var(--main-text-color);
+    flex-shrink: 0;
+
+    &.outline {
+        --color: var(--muted-text-color);
+    }
+}
+
+.dropdown-related-notes-badge .related-notes-menu {
+    max-width: 400px;
+
+    /* The links carry the icon and the title, so the item's own icon slot only applies to the search entry. */
+    .dropdown-item .tn-link {
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.attr-save-delete-button-container {
+    display: flex;
+    margin-top: 15px;
+}
+
+.attr-save-delete-button-container .attr-save-changes-and-close-button {
+    flex-grow: 1;
+    margin-inline-end: 20px;
+}
+
+.attr-detail input[readonly] {
+    background-color: var(--accented-background-color) !important;
+}
+
+.attr-edit-table td {
+    padding: 4px 0;
+}

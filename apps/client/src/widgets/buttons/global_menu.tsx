@@ -11,7 +11,7 @@ import { t } from "../../services/i18n";
 import utils, { isElectron, isMobile, isStandalone, reloadFrontendApp } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
-import { useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks";
+import { useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool } from "../react/hooks";
 import KeyboardShortcut from "../react/KeyboardShortcut";
 import { ParentComponent } from "../react/react_utils";
 
@@ -249,37 +249,64 @@ function ToggleWindowOnTop() {
     );
 }
 
-function useTriliumUpdateStatus() {
+/** GitHub's "latest release" endpoint, which already excludes drafts and pre-releases. */
+export const RELEASES_API_URL = "https://api.github.com/repos/TriliumNext/Trilium/releases/latest";
+
+/** How often to re-check for a newer release, in milliseconds. */
+export const UPDATE_CHECK_INTERVAL = 8 * 60 * 60 * 1000;
+
+/**
+ * Watches GitHub for a release newer than the version this client is running, so the menu can show
+ * the update badge and a download link.
+ *
+ * Standalone is left out: it is served from the web and picks up new versions on reload, so there is
+ * no release for the user to go and download. Every other client — desktop and server alike — is
+ * updated by hand and wants the hint.
+ */
+export function useTriliumUpdateStatus() {
     const [ latestVersion, setLatestVersion ] = useState<string>();
     const [ checkForUpdates ] = useTriliumOptionBool("checkForUpdates");
     const isUpdateAvailable = utils.isUpdateAvailable(latestVersion, window.glob.triliumVersion);
 
-    async function updateVersionStatus() {
-        const RELEASES_API_URL = "https://api.github.com/repos/TriliumNext/Trilium/releases/latest";
-
-        let latestVersion: string | undefined;
-        try {
-            const resp = await fetch(RELEASES_API_URL);
-            const data = await resp.json();
-            latestVersion = data?.tag_name?.substring(1);
-        } catch (e) {
-            console.warn("Unable to fetch latest version info from GitHub releases API", e);
-        }
-
-        setLatestVersion(latestVersion);
-    }
-
     useEffect(() => {
-        if (!checkForUpdates || !isStandalone) {
+        if (!checkForUpdates || isStandalone) {
             setLatestVersion(undefined);
             return;
         }
 
-        updateVersionStatus();
+        // A request still in flight when the option is switched off (or the menu unmounts) must not
+        // resurrect the version afterwards, so ignore whatever it resolves to.
+        let cancelled = false;
 
-        const interval = setInterval(() => updateVersionStatus(), 8 * 60 * 60 * 1000);
-        return () => clearInterval(interval);
+        async function updateVersionStatus() {
+            let latestVersion: string | undefined;
+            try {
+                const resp = await fetch(RELEASES_API_URL);
+                const data = await resp.json();
+                latestVersion = parseLatestVersion(data);
+            } catch (e) {
+                console.warn("Unable to fetch latest version info from GitHub releases API", e);
+            }
+
+            if (!cancelled) {
+                setLatestVersion(latestVersion);
+            }
+        }
+
+        void updateVersionStatus();
+
+        const interval = setInterval(() => void updateVersionStatus(), UPDATE_CHECK_INTERVAL);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
     }, [ checkForUpdates ]);
 
     return { isUpdateAvailable, latestVersion };
+}
+
+/** Reads the version off a GitHub release payload, stripping the tag prefix (`v0.104.1` → `0.104.1`). */
+export function parseLatestVersion(payload: unknown): string | undefined {
+    const tagName = (payload as { tag_name?: unknown } | null | undefined)?.tag_name;
+    return typeof tagName === "string" ? tagName.replace(/^v/, "") : undefined;
 }

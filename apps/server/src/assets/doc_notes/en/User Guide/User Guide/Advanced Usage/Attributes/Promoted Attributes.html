@@ -12,12 +12,12 @@
   automation etc. but they are also inconveniently hidden. This allows you
   to select few of the important ones and push them to the front of the user.</p>
 <h2>Attribute definition</h2>
+<figure class="image image-style-align-right image_resized" style="width:50%;">
+  <img style="aspect-ratio:885/742;" src="2_Promoted Attributes_image.png"
+  width="885" height="742">
+</figure>
 <p>In order to have promoted attributes, there needs to be a way to define
   them.</p>
-<figure class="image image-style-align-right image_resized" style="width:38.82%;">
-  <img style="aspect-ratio:492/346;" src="1_Promoted Attributes_image.png"
-  width="492" height="346">
-</figure>
 <p>Technically, attributes are only name-value pairs where both name and
   value are strings.</p>
 <p>The <em>Attribute definition</em> specifies how should this value be interpreted:</p>
@@ -26,6 +26,55 @@
   <li>Should we allow multiple values or note?</li>
   <li>Should we <em>promote</em> the attribute or not?</li>
 </ul>
+<h2>Types of attributes</h2>
+<p>Attribute definitions have a dedicated type field which will change how
+  the value will be edited in the promoted attributes section.</p>
+<p>The following types are supported:</p>
+<ul>
+  <li><em>Text</em>, the default option which allows any type of text to be
+    edited, similar to normal labels that don't have a type associated.</li>
+  <li><em>Multi-line text</em>, similar to a normal text field, but rendered
+    in a bigger text box that also supports writing on multiple lines.</li>
+  <li><em>Number</em>, will display as a number input field with up/down arrows.
+    <ul>
+      <li>Optionally a <em>precision</em> which sets how many decimals the value steps
+        by and is displayed with.</li>
+    </ul>
+  </li>
+  <li><em>Boolean</em>, which renders as a checkbox for a true/false value.</li>
+  <li><em>Select,</em> which provides a list of user-defined options when editing.
+    <ul>
+      <li>The list is not fixed, meaning that new options can be easily added from
+        the promoted attribute.</li>
+      <li>Renaming an option does not change the existing values since the value
+        is stored as text. Consider a <a href="#root/_help_ivYnonVFBxbQ">bulk rename</a>.</li>
+      <li>The items do not have a custom color or icon. This is intentional as selects
+        are meant to be light-weight. For a more customizable option, consider
+        using&nbsp;<a class="reference-link" href="#root/_help_Cq5X6iKQop6R">Relations</a>&nbsp;instead
+        which use notes as items and those notes can be colorized and also carry
+        an icon.</li>
+    </ul>
+  </li>
+  <li><em>Date,</em> which provides a date picker.</li>
+  <li><em>Date &amp; Time,</em> which provides a date &amp; time picker.</li>
+  <li><em>Time,</em> which provides a time picker.</li>
+  <li><em>URL,</em> which provides a button to open the web address in a new
+    window.</li>
+  <li><em>Email</em>, which provides a button to quickly send an email to that
+    address using your operating system's default app.</li>
+  <li><em>Phone</em>, which provides a button to quickly call that number using
+    your operating system's default app.</li>
+  <li><em>Color</em>, which provides a color picker and a way to remove the
+    value.</li>
+  <li><em>Relation</em>, which points to another note and uses&nbsp;<a class="reference-link"
+    href="#root/_help_Cq5X6iKQop6R">Relations</a>&nbsp;instead of&nbsp;<a class="reference-link"
+    href="#root/_help_HI6GBBIduIgv">Labels</a>.</li>
+</ul>
+<aside class="admonition note">
+  <p>For label-based attributes, these types are not enforced by the attribute
+    system, meaning that changing the type afterwards does not guarantee that
+    the values in it correspond to the type (e.g. turning a text into a number).</p>
+</aside>
 <h2>Creating a new promoted attribute definition</h2>
 <p>To create a new promoted attribute:</p>
 <ol>
@@ -65,7 +114,7 @@
       <tr>
         <td>
           <figure class="image">
-            <img style="aspect-ratio:495/157;" src="2_Promoted Attributes_image.png"
+            <img style="aspect-ratio:495/157;" src="1_Promoted Attributes_image.png"
             width="495" height="157">
           </figure>
         </td>
@@ -135,3 +184,10 @@
   defined inverse relation, we check that this inverse relation exists on
   the relation target note. Similarly, when we delete relation, we also delete
   inverse relation on the target note.</p>
+<h2>See also</h2>
+<ul>
+  <li>The&nbsp;<a class="reference-link" href="#root/_help_2FvYrpmOXm29">Table</a>&nbsp;collection
+    makes heavy use of promoted attributes to define the columns of the table,
+    since they already carry the type information. When made inheritable, it's
+    also easy to change those fields when the child notes are opened.</li>
+</ul>

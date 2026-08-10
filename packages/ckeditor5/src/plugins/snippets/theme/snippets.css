@@ -1,0 +1,107 @@
+:root {
+    --ck-template-dropdown-width: 345px;
+    --ck-template-dropdown-height: 300px;
+    --ck-template-icon-size: 45px;
+}
+
+.ck.ck-template-form {
+    width: var(--ck-template-dropdown-width);
+
+    & > .ck-labeled-field-view {
+        padding: var(--ck-spacing-large);
+    }
+
+    & > .ck-search__results {
+        border-top: 1px solid var(--ck-color-base-border);
+    }
+
+    & > .ck-search__results > .ck.ck-list.ck-template-list {
+        max-height: var(--ck-template-dropdown-height);
+        padding: var(--ck-spacing-large);
+        overflow: hidden auto;
+        overscroll-behavior: contain;
+        border-radius: 0;
+
+        & > .ck.ck-list__item:not(.ck-hidden) ~ .ck.ck-list__item {
+            margin-top: var(--ck-spacing-large);
+        }
+
+        & > .ck.ck-list__item > .ck.ck-button {
+            display: grid;
+            grid-template-columns: var(--ck-template-icon-size) 1fr;
+            grid-template-rows: var(--ck-template-icon-size);
+            grid-template-areas: "ck-template-icon ck-template-content";
+            gap: var(--ck-spacing-large);
+            align-items: center;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            border-radius: var(--ck-border-radius);
+
+            &:not(:focus) {
+                border-color: var(--ck-color-dropdown-panel-background);
+            }
+
+            /* The note's font icon, rendered as a plain <span> (no SVG wrapper). */
+            & > .ck-template-icon {
+                grid-area: ck-template-icon;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: var(--ck-template-icon-size);
+                height: var(--ck-template-icon-size);
+                margin: 0;
+                font-size: calc(var(--ck-template-icon-size) * 0.55);
+                line-height: 1;
+            }
+
+            & > .ck-template-form__text-part {
+                grid-area: ck-template-content;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-evenly;
+                min-width: 0;
+                height: 100%;
+                margin: 0;
+
+                & > .ck.ck-button__label {
+                    display: block;
+                    overflow: hidden;
+                    font-weight: bold;
+                    font-size: var(--ck-font-size-base);
+                    line-height: 1.1;
+                    color: var(--ck-color-text);
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+
+                & .ck-template-form__description {
+                    display: -webkit-box;
+                    overflow: hidden;
+                    margin-top: var(--ck-spacing-tiny);
+                    font-size: 0.85em;
+                    line-height: 1.1;
+                    color: var(--ck-color-text);
+                    white-space: normal;
+                    text-overflow: ellipsis;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                }
+
+                & mark {
+                    background: var(--ck-color-highlight-background);
+                    font: inherit;
+                    line-height: inherit;
+                    vertical-align: initial;
+                }
+            }
+        }
+    }
+}
+
+@media screen and (width <= 600px) {
+    .ck.ck-template-form {
+        --ck-template-dropdown-width: 260px;
+    }
+}

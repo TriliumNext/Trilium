@@ -80,6 +80,14 @@ runs:
       wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${APPIMAGETOOL_ARCH}.AppImage" -O /usr/local/bin/appimagetool
       chmod +x /usr/local/bin/appimagetool
 
+  # See the equivalent step in build-server: substitute an addon built against an
+  # older glibc for better-sqlite3's bundled prebuild, before electron-forge
+  # packages node_modules/better-sqlite3 into the app.
+  - name: Rebuild better-sqlite3 against an older glibc
+    if: ${{ inputs.os == 'linux' }}
+    shell: ${{ inputs.shell }}
+    run: bash scripts/build-portable-better-sqlite3.sh ${{ inputs.arch }}
+
   - name: Update build info
     shell: ${{ inputs.shell }}
     run: pnpm run chore:update-build-info

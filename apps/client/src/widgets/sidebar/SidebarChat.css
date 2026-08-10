@@ -8,16 +8,23 @@
     overflow: hidden; /* Contain children within available space */
 }
 
-.sidebar-chat-container .llm-chat-input-form {
+/* The composer island carries its own padding; the gap to the sidebar edges is a margin. */
+.sidebar-chat-container .llm-chat-input-form,
+.sidebar-chat-container .llm-chat-no-provider {
     flex-shrink: 0;
-    padding: 8px;
+    margin: 0 8px 8px;
     font-size: 0.9em;
-    min-height: 40px;
 }
 
 /* Scroll-container essentials (flex/min-height/overflow) come from .chat-message-list. */
 .sidebar-chat-messages {
+    /* Messages scrolling up dissolve under the section's title bar instead of clipping
+       against it. Sidebar-only for now: the note-type chat has no chrome at its top edge. */
+    --scroll-fade-top: 20px;
     padding: 0.5rem;
+    /* Room past the fade, so the first message at rest sits fully legible and only
+       content actually scrolling away enters the dissolve. */
+    padding-top: calc(var(--scroll-fade-top) + 0.25rem);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;

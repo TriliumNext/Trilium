@@ -25,9 +25,11 @@ Weblate is linked to this repo with the **GitHub pull-request push method**: `.g
 | Scope | English source | Target locale |
 |---|---|---|
 | Client UI | `apps/client/src/translations/en/translation.json` | `apps/client/src/translations/<locale>/translation.json` |
-| Server (hidden subtree titles, dialogs, migration/search messages) | `apps/server/src/assets/translations/en/server.json` | `apps/server/src/assets/translations/<locale>/server.json` |
+| Everything else (hidden subtree titles, dialogs, migration/search messages) | `apps/server/src/assets/translations/en/server.json` | `apps/server/src/assets/translations/<locale>/server.json` |
 
-Both client and server have their own EN↔locale pair — check **both**.
+Both have their own EN↔locale pair — check **both**.
+
+`server.json` is misnamed: it is the catalog for **every** runtime outside the browser UI — `apps/server`, the Electron main process, `packages/trilium-core`, and the standalone worker, which loads it with `ns: "server"` from the copy of `apps/server/src/assets` that its vite build emits under `server-assets`. Translating it therefore covers the standalone and mobile builds too, and a missing key there is not "server-only" breakage.
 
 ## Workflow
 

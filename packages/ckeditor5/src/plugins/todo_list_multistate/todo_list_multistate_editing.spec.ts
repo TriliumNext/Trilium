@@ -391,13 +391,12 @@ describe("TodoListMultistateEditing", () => {
             expect(command?.value).toBe("doing");
         });
 
-        it("downcasts a default custom state; the identity translate fallback doesn't crash the tooltip pipeline", () => {
+        it("downcasts a default custom state without a host translator configured", () => {
             editor.execute("setTaskState", { state: "doing" });
             expect(editor.getData()).toContain('data-trilium-task-state="doing"');
-            // No `translate` config → the identity `(key) => key` fallback feeds
-            // the raw i18n keys straight into `buildTooltipTitle`. It must not
-            // crash the render loop even though the assembled HTML then reads
-            // like `"…{{shortcut}}…"` because the fallback echoes keys back.
+            // No dictionary and no host bridge: the tooltip messages fall back to their English
+            // ids and the shortcut key names to the identity `(key) => key`. Neither may crash the
+            // render loop.
             const domRoot = editor.editing.view.getDomRoot();
             const input = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
             expect(input).not.toBeNull();
@@ -405,14 +404,14 @@ describe("TodoListMultistateEditing", () => {
     });
 
     describe("helper functions and tooltip lifecycle", () => {
-        let translate: ReturnType<typeof vi.fn>;
+        let t: ReturnType<typeof vi.spyOn>;
 
         beforeEach(async () => {
-            translate = vi.fn((key: string) => `T:${key}`);
-            editor = await createEditor({
-                taskStates: CUSTOM_STATES,
-                translate
-            });
+            editor = await createEditor({ taskStates: CUSTOM_STATES });
+            // `editor.t` is an own property assigned in the editor's constructor, and
+            // `_computeContent` reads it fresh on each rebuild, so spying here intercepts every
+            // tooltip message. Installed before the fixture, which is what triggers the first render.
+            t = vi.spyOn(editor, "t");
             setModelData(editor.model, TODO_FIXTURE);
         });
 
@@ -423,14 +422,10 @@ describe("TodoListMultistateEditing", () => {
             expect(active).not.toContain("secret");
         });
 
-        it("consults the configured translate provider for the tooltip content on each rendered checkbox", () => {
-            // Render creates hover handles eagerly per checkbox; each handle's
-            // initial content is assembled via `buildTooltipTitle` which calls
-            // `translate("text-editor.checkbox-tooltip", { shortcut: … })`.
-            // We don't need the popup on screen to verify that.
-            expect(translate).toHaveBeenCalledWith("text-editor.checkbox-tooltip", expect.objectContaining({
-                shortcut: expect.any(String)
-            }));
+        it("builds the tooltip content on each rendered checkbox", () => {
+            // Render creates hover handles eagerly per checkbox; each handle's initial content is
+            // assembled via `buildTooltipTitle`. We don't need the popup on screen to verify that.
+            expect(t).toHaveBeenCalledWith("Right-click or press %0 to change state.", expect.any(String));
         });
 
         it("disposes the hover handle of a checkbox that becomes disconnected and re-attaches to the fresh input", () => {
@@ -459,59 +454,56 @@ describe("TodoListMultistateEditing", () => {
             // this test exists to verify.
         });
 
-        it("consults the state-label translation key when a configured state is set", () => {
-            translate.mockClear();
+        it("includes the state label when a configured state is set", () => {
+            t.mockClear();
             editor.execute("setTaskState", { state: "doing" });
-            expect(translate).toHaveBeenCalledWith("text-editor.checkbox-tooltip-state-label");
+            expect(t).toHaveBeenCalledWith("Task state:");
         });
 
-        it("consults the unknown-state suffix translation when the state has no definition", () => {
-            translate.mockClear();
+        it("uses the unknown-state suffix when the state has no definition", () => {
+            t.mockClear();
             editor.model.change((writer) => {
                 writer.setAttribute(TASK_STATE_ATTRIBUTE, "ghost", getBlock(editor, 0));
             });
-            expect(translate).toHaveBeenCalledWith("text-editor.checkbox-tooltip-state-label");
-            expect(translate).toHaveBeenCalledWith("text-editor.checkbox-tooltip-state-unknown-suffix");
+            expect(t).toHaveBeenCalledWith("Task state:");
+            expect(t).toHaveBeenCalledWith("(missing definition)");
         });
 
         it("omits the state prefix entirely for anchor states (unchecked / checked)", () => {
             // Starting fixture has no taskState → anchor. Re-render explicitly and assert
             // neither state-prefix key was consulted.
-            translate.mockClear();
+            t.mockClear();
             editor.editing.view.forceRender();
-            expect(translate).not.toHaveBeenCalledWith("text-editor.checkbox-tooltip-state-label");
-            expect(translate).not.toHaveBeenCalledWith("text-editor.checkbox-tooltip-state-unknown-suffix");
+            expect(t).not.toHaveBeenCalledWith("Task state:");
+            expect(t).not.toHaveBeenCalledWith("(missing definition)");
         });
 
         it("rebuilds hover-handle content when the state changes on a rendered checkbox", () => {
-            translate.mockClear();
+            t.mockClear();
 
             // A state change on the todo item triggers a reconvert of the list
             // item block (any scope-`item` attribute mutation does), which
             // gives us a new `<input>` and a new hover handle. Either way the
-            // plugin must consult `translate` for the fresh content — including
-            // the state-prefix keys — so a subsequent hover shows the right
-            // tooltip.
+            // plugin must rebuild the fresh content — including the state
+            // prefix — so a subsequent hover shows the right tooltip.
             editor.execute("setTaskState", { state: "doing" });
 
-            expect(translate).toHaveBeenCalledWith("text-editor.checkbox-tooltip", expect.objectContaining({
-                shortcut: expect.any(String)
-            }));
-            expect(translate).toHaveBeenCalledWith("text-editor.checkbox-tooltip-state-label");
+            expect(t).toHaveBeenCalledWith("Right-click or press %0 to change state.", expect.any(String));
+            expect(t).toHaveBeenCalledWith("Task state:");
         });
 
         it("does not touch handle content when a render fires without any state change", () => {
             const input = editor.editing.view.getDomRoot()?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
             expect(input).not.toBeNull();
-            translate.mockClear();
+            t.mockClear();
 
             // Render fires but the tracked state on every input matches the DOM,
             // so the plugin does no work.
             editor.editing.view.forceRender();
 
             // No content-rebuild keys were consulted.
-            expect(translate).not.toHaveBeenCalledWith("text-editor.checkbox-tooltip", expect.anything());
-            expect(translate).not.toHaveBeenCalledWith("text-editor.checkbox-tooltip-state-label");
+            expect(t).not.toHaveBeenCalledWith("Right-click or press %0 to change state.", expect.anything());
+            expect(t).not.toHaveBeenCalledWith("Task state:");
         });
     });
 
@@ -823,21 +815,14 @@ describe("TodoListMultistateEditing", () => {
     // returned string directly rather than introspecting Bootstrap Tooltip
     // instances — no `_config` peeking, no editor scaffolding needed.
     describe("buildTooltipTitle", () => {
-        const translate = (key: string, params: Record<string, unknown> = {}) => {
-            if (key === "text-editor.checkbox-tooltip") {
-                return `Right-click or press ${params.shortcut} to change state.`;
-            }
-            if (key === "text-editor.checkbox-tooltip-state-label") {
-                return "Task state:";
-            }
-            if (key === "text-editor.checkbox-tooltip-state-unknown-suffix") {
-                return "(missing definition)";
-            }
-            return key;
-        };
+        // Stands in for `editor.t`: no dictionary, so each message id renders as its own English
+        // text, with `%0` substituted the way CKEditor would.
+        const t = (message: string, ...values: string[]) =>
+            message.replace(/%(\d+)/g, (placeholder, index) => values[Number(index)] ?? placeholder);
+        const SHORTCUT = "<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd>";
 
         it("returns just the body for an anchor state (null)", () => {
-            const title = buildTooltipTitle(document, null, new Map(), translate);
+            const title = buildTooltipTitle(document, null, new Map(), t, SHORTCUT);
             expect(title).toContain("Right-click or press");
             expect(title).toContain("to change state.");
             expect(title).not.toContain("Task state:");
@@ -845,7 +830,7 @@ describe("TodoListMultistateEditing", () => {
 
         it("prepends the state prefix with a bold state title for a configured state", () => {
             const stateByName = new Map(CUSTOM_STATES.map((state) => [state.name, state]));
-            const title = buildTooltipTitle(document, "doing", stateByName, translate);
+            const title = buildTooltipTitle(document, "doing", stateByName, t, SHORTCUT);
             expect(title).toContain("Task state:");
             expect(title).toContain("<strong>Doing</strong>"); // state.title takes precedence over name
             expect(title).toContain('data-trilium-task-state="doing"');
@@ -856,12 +841,12 @@ describe("TodoListMultistateEditing", () => {
             const stateByName = new Map<string, TaskStateDef>([
                 ["bare", { id: "_bare", name: "bare", title: "", markdownSymbol: "b", isCompleted: false, icon: "bx bx-x" }]
             ]);
-            const title = buildTooltipTitle(document, "bare", stateByName, translate);
+            const title = buildTooltipTitle(document, "bare", stateByName, t, SHORTCUT);
             expect(title).toContain("<strong>bare</strong>");
         });
 
         it("uses the unknown-state suffix for a state with no definition, without bold or icon", () => {
-            const title = buildTooltipTitle(document, "ghost", new Map(), translate);
+            const title = buildTooltipTitle(document, "ghost", new Map(), t, SHORTCUT);
             expect(title).toContain("Task state:");
             expect(title).toContain("ghost (missing definition)");
             expect(title).not.toContain("<strong>");
@@ -869,7 +854,7 @@ describe("TodoListMultistateEditing", () => {
         });
 
         it("text-escapes the raw state name in the unknown-state suffix (no HTML injection)", () => {
-            const title = buildTooltipTitle(document, "<script>alert(1)</script>", new Map(), translate);
+            const title = buildTooltipTitle(document, "<script>alert(1)</script>", new Map(), t, SHORTCUT);
             expect(title).not.toContain("<script>");
             expect(title).toContain("&lt;script&gt;");
         });

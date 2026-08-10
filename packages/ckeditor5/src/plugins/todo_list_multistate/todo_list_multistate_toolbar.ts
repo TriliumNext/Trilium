@@ -85,17 +85,12 @@ export default class TodoListMultistateToolbar extends Plugin {
         return toolbar;
     }
 
-    private _translate(key: string): string {
-        const translate = this.editor.config.get("translate") as ((key: string) => string) | undefined;
-        return translate ? translate(key) : key;
-    }
-
     private _createEditButton(): ButtonView {
         const editor = this.editor;
         const button = new ButtonView(editor.locale);
 
         button.set({
-            label: this._translate("text-editor.edit-states-tooltip"),
+            label: editor.t("Edit task states"),
             withText: false,
             tooltip: true,
             class: "ck-task-state-edit bx bx-pencil"
@@ -206,7 +201,7 @@ export default class TodoListMultistateToolbar extends Plugin {
                 class: "ck tn-task-state-unknown"
             },
             children: [
-                { text: `${this._translate("text-editor.unknown-task-state")}: ` },
+                { text: `${this.editor.t("Undefined custom task state")}: ` },
                 {
                     tag: "span",
                     attributes: {

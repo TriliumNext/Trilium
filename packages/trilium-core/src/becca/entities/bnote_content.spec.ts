@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, type EraseExcessRevisionsOptions } from "@triliumnext/commons";
 
 import becca from "../becca.js";
 import { getContext } from "../../services/context.js";
@@ -501,6 +501,115 @@ describe("BNote content / misc getters", () => {
                 expect(note.getRevisions().length).toBeLessThanOrEqual(1);
             } finally {
                 getContext().init(() => optionService.setOption("revisionSnapshotNumberLimit", "-1"));
+            }
+        });
+    });
+
+    describe("eraseExcessRevisionSnapshots options", () => {
+        /**
+         * One revision per description, their creation times then spaced a day apart: snapshots are
+         * trimmed oldest first, and several saved within the same millisecond would otherwise leave
+         * the order — and with it the outcome — up to the database.
+         */
+        function createRevisions(note: BNote, descriptions: (string | undefined)[]) {
+            return descriptions.map((description, index) => {
+                const revision = getContext().init(() => note.saveRevision({ description }));
+
+                getSql().execute("UPDATE revisions SET utcDateCreated = ? WHERE revisionId = ?", [
+                    `2026-01-${String(index + 1).padStart(2, "0")} 00:00:00.000Z`,
+                    revision.revisionId
+                ]);
+
+                return revision.revisionId;
+            });
+        }
+
+        const revisionIdsOf = (note: BNote) => note.getRevisions().map((revision) => revision.revisionId);
+        const eraseExcess = (note: BNote, options: EraseExcessRevisionsOptions) =>
+            getContext().init(() => note.eraseExcessRevisionSnapshots(options));
+
+        it("keeps the newest snapshots the override asks for, in place of the global setting", () => {
+            const note = createNote();
+            const [ , , newer, newest ] = createRevisions(note, [ undefined, undefined, undefined, undefined ]);
+
+            expect(eraseExcess(note, { snapshotsToKeep: 2 })).toBe(2);
+            expect(revisionIdsOf(note)).toEqual([ newer, newest ]);
+        });
+
+        it("leaves a note carrying its own #versioningLimit to that label, override or not", () => {
+            const note = createNote();
+            const ids = createRevisions(note, [ undefined, undefined, undefined ]);
+            // Labelled only now: saving a revision trims as it goes, so a limit set up front would
+            // have left nothing here to keep.
+            getContext().init(() => note.setLabel("versioningLimit", "3"));
+
+            // The label is a policy set on this note; an override stands in for the global setting
+            // and does not overrule it, so the harsher figure asked for is simply not applied here.
+            expect(eraseExcess(note, { snapshotsToKeep: 1 })).toBe(0);
+            expect(revisionIdsOf(note)).toEqual(ids);
+
+            // And the label governs just as firmly when it is the harsher of the two.
+            getContext().init(() => note.setLabel("versioningLimit", "1"));
+            expect(eraseExcess(note, { snapshotsToKeep: 10 })).toBe(2);
+            expect(revisionIdsOf(note)).toEqual([ ids[2] ]);
+        });
+
+        it("keeps everything at a negative override and nothing at zero", () => {
+            const note = createNote();
+            const ids = createRevisions(note, [ undefined, undefined ]);
+
+            expect(eraseExcess(note, { snapshotsToKeep: -1 })).toBe(0);
+            expect(revisionIdsOf(note)).toEqual(ids);
+
+            expect(eraseExcess(note, { snapshotsToKeep: 0 })).toBe(2);
+            expect(revisionIdsOf(note)).toEqual([]);
+        });
+
+        it("still follows the configured limit when no override is given", () => {
+            const note = createNote();
+            const [ , , newest ] = createRevisions(note, [ undefined, undefined, undefined ]);
+            // Labelled only now: saving a revision trims as it goes, so a limit set up front would
+            // have left nothing for the sweep to find.
+            getContext().init(() => note.setLabel("versioningLimit", "1"));
+
+            expect(eraseExcess(note, {})).toBe(2);
+            expect(revisionIdsOf(note)).toEqual([ newest ]);
+        });
+
+        it("spares named snapshots and leaves them out of the count", () => {
+            const note = createNote();
+            const [ , firstNamed, , secondNamed, newest ] = createRevisions(note,
+                [ undefined, "release", undefined, "before the refactor", undefined ]);
+
+            // Two of the three automatic snapshots go. The named ones are not erased, and did not
+            // eat into the single automatic snapshot the limit allows either.
+            expect(eraseExcess(note, { snapshotsToKeep: 1, keepNamedSnapshots: true })).toBe(2);
+            expect(revisionIdsOf(note)).toEqual([ firstNamed, secondNamed, newest ]);
+        });
+
+        it("erases named snapshots like any other when they are not spared", () => {
+            const note = createNote();
+            const [ , , , , newest ] = createRevisions(note,
+                [ undefined, "release", undefined, "before the refactor", undefined ]);
+
+            expect(eraseExcess(note, { snapshotsToKeep: 1, keepNamedSnapshots: false })).toBe(4);
+            expect(revisionIdsOf(note)).toEqual([ newest ]);
+        });
+
+        it("follows the configured option when the caller says nothing either way", () => {
+            const note = createNote();
+            const [ , named, newest ] = createRevisions(note, [ undefined, "release", undefined ]);
+
+            // Named snapshots are spared out of the box.
+            expect(eraseExcess(note, { snapshotsToKeep: 1 })).toBe(1);
+            expect(revisionIdsOf(note)).toEqual([ named, newest ]);
+
+            getContext().init(() => optionService.setOption("revisionIgnoreNamedSnapshots", "false"));
+            try {
+                expect(eraseExcess(note, { snapshotsToKeep: 1 })).toBe(1);
+                expect(revisionIdsOf(note)).toEqual([ newest ]);
+            } finally {
+                getContext().init(() => optionService.setOption("revisionIgnoreNamedSnapshots", "true"));
             }
         });
     });

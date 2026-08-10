@@ -29,6 +29,13 @@ vi.mock("./hooks", async (importOriginal) => ({
     useTooltip: () => tooltipStub
 }));
 
+// `mobileBottomSheet` only takes effect on a mobile layout, which has to be answerable per test.
+const isMobileMock = vi.hoisted(() => vi.fn(() => false));
+vi.mock("../../services/utils", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/utils")>()),
+    isMobile: () => isMobileMock()
+}));
+
 import Dropdown from "./Dropdown";
 
 // happy-dom has no ResizeObserver; the component only needs observe/disconnect to exist.
@@ -63,6 +70,7 @@ function fire(target: EventTarget, eventName: string) {
 describe("Dropdown", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        isMobileMock.mockReturnValue(false);
         instance._menu = null;
     });
 
@@ -137,6 +145,39 @@ describe("Dropdown", () => {
         });
         expect(onHidden).toHaveBeenCalledTimes(1);
         expect(document.body.querySelector(":scope > .my-scope")).toBeNull();
+    });
+
+    it("leaves a mobileBottomSheet menu alone on a desktop layout", () => {
+        const el = renderInto(<Dropdown mobileBottomSheet forceShown>item</Dropdown>);
+
+        // Nested next to the toggle, unclassed and undimmed: the sheet is a mobile arrangement only.
+        expect(el.querySelector(".dropdown > .dropdown-menu")).toBeTruthy();
+        expect(el.querySelector(".mobile-bottom-menu")).toBeNull();
+    });
+
+    it("makes a mobileBottomSheet menu a bottom sheet on mobile: classed, portaled out and over the backdrop", () => {
+        isMobileMock.mockReturnValue(true);
+        const cover = document.createElement("div");
+        cover.id = "context-menu-cover";
+        document.body.appendChild(cover);
+
+        const el = renderInto(<Dropdown mobileBottomSheet>item</Dropdown>);
+        const dropdownEl = el.querySelector(".dropdown");
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("show.bs.dropdown");
+        });
+
+        // The one prop stands in for all three pieces the arrangement needs.
+        expect(instance._menu?.classList.contains("mobile-bottom-menu")).toBe(true);
+        expect(el.contains(instance._menu)).toBe(false);
+        expect(instance._menu?.closest("body")).toBeTruthy();
+        expect(cover.classList.contains("show")).toBe(true);
+
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("hide.bs.dropdown");
+        });
+        expect(cover.classList.contains("show")).toBe(false);
+        cover.remove();
     });
 
     it("mounts and shows a forceShown portaled dropdown immediately", () => {

@@ -18,7 +18,11 @@ import Button from "./Button";
 export default function SetupPage({ title, description, className, illustration, children, footer, error, errorId, onBack }: {
     title: string;
     description?: string;
-    error?: string | null;
+    /**
+     * A plain sentence, or a fragment for a failure that has more to say than one: what went wrong,
+     * with the technical detail underneath it rather than in place of it.
+     */
+    error?: ComponentChildren;
     errorId?: number;
     className?: string;
     illustration?: ComponentChildren;
@@ -47,7 +51,9 @@ export default function SetupPage({ title, description, className, illustration,
             {error && showError && (
                 <Admonition className="page-error" type="caution">
                     <ActionButton icon="bx bx-x" text={t("setup.dismiss-error")} onClick={() => setShowError(false)}  />
-                    {replaceHtmlEscapedSlashes(error)}
+                    {/* A message built from components renders as it was built; a bare sentence still
+                        gets the slashes a server error may have had escaped along the way. */}
+                    {typeof error === "string" ? replaceHtmlEscapedSlashes(error) : error}
                 </Admonition>
             )}
 

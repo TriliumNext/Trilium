@@ -126,6 +126,12 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                 type: "checkbox",
                 bindToLabel: "map:hideLabels",
                 reverseValue: true
+            },
+            {
+                label: t("book_properties_config.cluster-markers"),
+                icon: "bx bx-collection",
+                type: "checkbox",
+                bindToLabel: "map:cluster"
             }
         ]
     },

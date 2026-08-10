@@ -79,8 +79,8 @@ export interface AnytypeBlock {
     };
     /** A "bookmark" block — Anytype's web-link card. It carries the target site's `url`, `title` and
      * `description` inline (fetched by Anytype when the card was created); `faviconHash`/`imageHash` are the
-     * CIDs of the fetched icon/preview `FileObject`s (content-addressed, not URLs — the importer resolves them
-     * to inline base64 `data:` URIs), and `targetObjectId` is the separate `ot-bookmark` object the card
+     * CIDs of the fetched icon/preview `FileObject`s (content-addressed, not URLs — the importer saves each
+     * as an attachment of the note), and `targetObjectId` is the separate `ot-bookmark` object the card
      * mirrors (a non-page layout, so not imported). Rendered as a Trilium link-embed (open-graph preview),
      * like the Notion importer's bookmark cards. */
     bookmark?: {
@@ -217,8 +217,8 @@ export interface FileObjectInfo {
     source: string;
 }
 
-/** The Trilium label types a supported Anytype property maps to (email/phone reuse `url`). */
-export type PropertyLabelType = "text" | "number" | "url" | "date" | "datetime" | "boolean";
+/** The Trilium label types a supported Anytype property maps to. */
+export type PropertyLabelType = "text" | "number" | "url" | "email" | "phone" | "date" | "datetime" | "boolean";
 
 /** Whether a property holds a single value or several (a multi-select). */
 export type Multiplicity = "single" | "multi";

@@ -45,7 +45,11 @@
     },
     "widget-missing-parent": "自訂元件未定義強制性的 \"{{property}}\" 屬性。\n\n若此腳本需在無 UI 的情況下執行，請改用 \"#run=frontendStartup\"。",
     "open-script-note": "打開腳本筆記",
-    "scripting-error": "自訂腳本錯誤：{{title}}"
+    "scripting-error": "腳本筆記執行失敗",
+    "unhandled-error": {
+      "title": "背景任務執行失敗",
+      "details-button": "查看詳情…"
+    }
   },
   "add_link": {
     "add_link": "新增連結",
@@ -351,23 +355,18 @@
     "tooltip": "如果您勾選此選項，Trilium 將嘗試透過縮放和最佳化來縮小上傳的圖片，這可能會影響圖片的觀看品質。如果未勾選，則將不進行修改直接上傳圖片。"
   },
   "attribute_detail": {
-    "attr_detail_title": "屬性內容標題",
     "close_button_title": "取消修改並關閉",
-    "attr_is_owned_by": "屬性所有者",
-    "attr_name_title": "屬性名稱只能由字母、數字、冒號和下劃線組成",
     "name": "名稱",
     "value": "值",
     "target_note_title": "關聯是來源筆記和目標筆記之間的命名連接。",
     "target_note": "目標筆記",
     "promoted_title": "升級屬性在筆記上突出顯示。",
     "promoted": "升級",
-    "promoted_alias_title": "在升級屬性界面中顯示的名稱。",
     "promoted_alias": "別名",
     "multiplicity_title": "多重性定義了可以新增的含有相同名稱的屬性的數量 - 最多為 1 或多於 1。",
     "multiplicity": "多重性",
     "single_value": "單值",
     "multi_value": "多重值",
-    "label_type_title": "標籤類型將幫助 Trilium 選擇適合的界面來輸入標籤值。",
     "label_type": "類型",
     "text": "文字",
     "number": "數字",
@@ -383,14 +382,11 @@
     "inverse_relation": "反向關聯",
     "inheritable_title": "可繼承屬性將被繼承至此樹下的所有後代。",
     "inheritable": "可繼承",
-    "save_and_close": "儲存並關閉 <kbd>Ctrl+Enter</kbd>",
     "delete": "刪除",
     "related_notes_title": "含有此標籤的其他筆記",
     "more_notes": "更多筆記",
     "label": "標籤內容",
-    "label_definition": "標籤定義內容",
     "relation": "關聯內容",
-    "relation_definition": "關聯定義內容",
     "disable_versioning": "禁用自動版本控制。適用於例如大型但不重要的筆記 - 例如用於腳本編寫的大型JS庫",
     "calendar_root": "標記應用作為每日筆記的根。只應標記一個筆記。",
     "archived": "含有此標籤的筆記預設在搜尋結果中不可見（也適用於跳轉至、新增連結對話方塊等）。",
@@ -469,7 +465,6 @@
     "share_favicon": "在分享頁面中設定的favicon筆記。一般需要將它設定為分享和可繼承。Favicon筆記也必須位於分享子階層中。可以考慮一並使用'share_hidden_from_tree'。",
     "is_owned_by_note": "由此筆記所有",
     "other_notes_with_name": "其他含有 {{attributeType}} 名為 \"{{attributeName}}\" 的的筆記",
-    "and_more": "…以及另外 {{count}} 個。",
     "app_theme_base": "設定為 \"next\"、\"next-light \" 或 \"next-dark\"，以使用相應的 TriliumNext 主題（自動、淺色或深色）作為自訂主題的基礎，而非傳統主題。",
     "print_landscape": "匯出為 PDF 時，將頁面方向更改為橫向而非縱向。",
     "print_page_size": "在匯出 PDF 時更改頁面大小。支援的值：<code>A0</code>、<code>A1</code>、<code>A2</code>、<code>A3</code>、<code>A4</code>、<code>A5</code>、<code>A6</code>、<code>Legal</code>、<code>Letter</code>、<code>Tabloid</code>、<code>Ledger</code>。",
@@ -1279,7 +1274,6 @@
     "images_section_title": "圖片",
     "download_images_automatically": "自動下載圖片",
     "download_images_description": "從貼上的 HTML 下載引用的線上圖片以便離線使用。",
-    "enable_image_compression": "圖片壓縮",
     "max_image_dimensions": "最大圖片尺寸",
     "jpeg_quality_description": "建議範圍為 50–85。較低的數值可縮小檔案大小，較高的數值則能保留更多細節。",
     "max_image_dimensions_unit": "像素",
@@ -1413,7 +1407,6 @@
     "enable_monthly_backup": "每月備份",
     "backup_recommendation": "建議打開備份功能，但這可能會使有大型資料庫和 / 或慢速儲存設備的應用程式啟動變慢。",
     "backup_now": "立即備份",
-    "backup_database_now": "立即備份資料庫",
     "existing_backups": "現有備份",
     "date-and-time": "日期和時間",
     "path": "路徑",
@@ -1512,10 +1505,6 @@
     "close": "關閉"
   },
   "attachment_detail_2": {
-    "will_be_deleted_in": "此附件將在 {{time}} 後自動刪除",
-    "will_be_deleted_soon": "該附件即將被自動刪除",
-    "deletion_reason": "，因為該附件未連結在筆記的內容中。為防止被刪除，請將附件連結重新新增至內容中或將附件轉換為筆記。",
-    "role_and_size": "角色：{{role}}，大小：{{size}}，MIME：{{- mimeType}}",
     "link_copied": "已複製附件連結到剪貼簿。",
     "unrecognized_role": "無法識別的附件角色 '{{role}}'。"
   },
@@ -1640,7 +1629,6 @@
     "options": "選項",
     "title_with_count_one": "{{count}} 處高亮",
     "title_with_count_other": "{{count}} 處高亮",
-    "modal_title": "設定高亮列表",
     "menu_configure": "設定高亮列表…",
     "no_highlights": "未找到高亮內容。"
   },
@@ -1983,8 +1971,7 @@
   "geo-map": {
     "create-child-note-title": "建立一個新的子筆記並將其加至地圖中",
     "create-child-note-instruction": "點擊地圖以在該位置建立新筆記，或按 Escape 以取消。",
-    "unable-to-load-map": "無法載入地圖。",
-    "create-child-note-text": "新增地圖標記"
+    "unable-to-load-map": "無法載入地圖。"
   },
   "geo-map-context": {
     "open-location": "打開位置",
@@ -2438,7 +2425,6 @@
     "sources": "來源",
     "sources_summary": "來自 {{sites}} 個網站的 {{count}} 個來源",
     "extended_thinking": "延伸思考",
-    "legacy_models": "傳統模型",
     "thinking": "正在思考…",
     "thought_process": "思考過程",
     "tool_calls": "{{count}} 次工具調用",
@@ -2453,7 +2439,6 @@
     "tokens_used_with_model": "{{model}}：{{prompt}} 提示詞 + {{completion}} 補全 = {{total}} 個詞元",
     "tokens_used_with_model_and_cost": "{{model}}：{{prompt}} 提示詞 + {{completion}} 補全 = {{total}} 個詞元（約 ${{cost}}）",
     "tokens": "詞元",
-    "context_used": "已使用 {{percentage}}%",
     "note_context_enabled": "點擊以禁用筆記上下文：{{title}}",
     "note_context_disabled": "點擊將當前筆記納入上下文",
     "no_provider_message": "尚未設定任何 AI 服務提供者。請新增一個以開始聊天。",
@@ -2486,8 +2471,6 @@
     "cancelFocus": "退出專注模式",
     "moveUp": "上移",
     "moveDown": "下移",
-    "link": "連結",
-    "linkBidirectional": "雙向連結",
     "clickTips": "請點擊目標節點",
     "summary": "摘要"
   },
@@ -2498,13 +2481,11 @@
     "configured_providers": "已設定的提供者",
     "no_providers_configured": "尚未設定任何提供者。",
     "provider_name": "名稱",
-    "provider_type": "提供者",
     "actions": "動作",
     "delete_provider": "刪除",
     "delete_provider_confirmation": "您確定要刪除提供者 \"{{name}}\" 嗎？",
     "api_key": "API 金鑰",
     "api_key_placeholder": "請輸入您的 API 金鑰",
-    "cancel": "取消",
     "mcp_title": "MCP（模型上下文協定）",
     "mcp_enabled": "MCP 伺服器",
     "mcp_enabled_description": "公開一個模型上下文協定 (MCP) 端點，以便人工智慧編程助手（例如 Claude Code、GitHub Copilot）能夠讀取並修改您的筆記。此端點僅限從 localhost 存取。",
@@ -2602,9 +2583,6 @@
     "back": "返回",
     "diff_identical": "此修訂內容與目前筆記內容相同。"
   },
-  "auto_link_attribute_list": {
-    "title": "系統屬性"
-  },
   "database": {
     "title": "資料庫"
   },
@@ -2699,9 +2677,7 @@
     "drop_or_browse_single": "將檔案拖曳至此處，或點擊瀏覽並選擇",
     "drop_or_browse_multiple": "將檔案拖曳至此處，或點擊瀏覽並選擇",
     "browse_single": "點擊以選擇檔案",
-    "browse_multiple": "點擊以選擇多個檔案",
-    "selected_one": "已選擇 {{count}} 個檔案",
-    "selected_other": "已選擇 {{count}} 個檔案"
+    "browse_multiple": "點擊以選擇多個檔案"
   },
   "import_provider": {
     "choose_provider": "請從上方選擇要匯入的服務。"
@@ -2758,25 +2734,6 @@
     "description_long": "在 Evernote 中，將筆記本（或一次最多 100 則筆記）匯出為 ENEX 檔案，然後在此處選擇一個或多個 .enex 檔案。每個檔案都會被匯入為獨立的筆記本。",
     "choose_file": "Evernote 匯出文件 (.enex)",
     "import": "匯入"
-  },
-  "slash_commands": {
-    "bulleted_list_description": "建立項目符號清單",
-    "numbered_list_description": "建立編號清單",
-    "todo_list_description": "建立待辦事項清單",
-    "align_left_description": "將文字向左對齊",
-    "align_center_description": "將文字居中對齊",
-    "align_right_description": "將文字向右對齊",
-    "justify_description": "將文字左右對齊",
-    "admonition_description": "插入一個新的提示框",
-    "collapsible_description": "插入一個可折疊的區塊，點擊後可隱藏或顯示內容。",
-    "footnote_description": "建立一個新的腳註，並在此處引用",
-    "datetime_description": "插入目前日期和時間",
-    "internal_link_description": "插入另一則 Trilium 筆記的連結",
-    "math_description": "插入數學方程式",
-    "include_note_description": "在此筆記中顯示另一則筆記的內容",
-    "page_break_description": "插入分頁符號（用於列印）",
-    "markdown_import_description": "將 Markdown 檔案匯入這則筆記中",
-    "anchor_description": "插入一個錨點以建立內部連結"
   },
   "save_revision": {
     "save_revision": "儲存筆記修訂",
@@ -2843,5 +2800,25 @@
   "blob_stub": {
     "not_synced": "此筆記的內容過大，無法同步至此裝置。您可以改在同步伺服器上開啟它。",
     "open_on_server": "在伺服器上開啟"
+  },
+  "text-editor": {
+    "ck": {
+      "align-text-to-the-center": "將文字居中對齊",
+      "align-text-to-the-left": "將文字向左對齊",
+      "align-text-to-the-right": "將文字向右對齊",
+      "create-a-bulleted-list": "建立項目符號清單",
+      "create-a-new-footnote-and-reference-it-here": "建立一個新的腳註，並在此處引用",
+      "create-a-numbered-list": "建立編號清單",
+      "create-a-to-do-list": "建立待辦事項清單",
+      "display-the-content-of-another-note-in-this-note": "在此筆記中顯示另一則筆記的內容",
+      "insert-a-link-to-another-trilium-note": "插入另一則 Trilium 筆記的連結",
+      "insert-a-math-equation": "插入數學方程式",
+      "insert-a-new-admonition": "插入一個新的提示框",
+      "insert-a-page-break-for-printing": "插入分頁符號（用於列印）",
+      "insert-a-toggleable-section-that-hides-shows-content-on-click": "插入一個可折疊的區塊，點擊後可隱藏或顯示內容。",
+      "insert-an-anchor-for-internal-linking": "插入一個錨點以建立內部連結",
+      "insert-the-current-date-and-time": "插入目前日期和時間",
+      "justify-text-alignment": "將文字左右對齊"
+    }
   }
 }

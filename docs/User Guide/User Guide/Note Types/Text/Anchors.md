@@ -11,7 +11,7 @@ This feature was introduced in TriliumNext v0.94.0 and augmented in v0.103.0 to 
 *   To create a anchor:
     *   Place the cursor at the desired position where to place the anchor.
     *   Look for the <img src="Anchors_plus.png" width="15" height="16"> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, and then press the <img src="1_Anchors_plus.png" width="12" height="15"> button.
-    *   Alternatively, use <a class="reference-link" href="Premium%20features/Slash%20Commands.md">Slash Commands</a> and look for _anchor_.
+    *   Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _anchor_.
 *   To place a link to a anchor:
     *   Place the cursor at the desired position of the link.
     *   From the [link](Links.md) pane, select the _Anchors_ section and select the desired anchor.

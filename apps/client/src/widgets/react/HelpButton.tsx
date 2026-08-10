@@ -23,15 +23,27 @@ export default function HelpButton({ className, helpPage, title, style }: HelpBu
         <button
             class={`${className ?? ""} icon-action bx bx-help-circle`}
             type="button"
-            onClick={() => {
-                if (isInModal) {
-                    void appContext.triggerCommand("openInPopup", { noteIdOrPath: `_help_${helpPage}` });
-                } else {
-                    void openInAppHelpFromUrl(helpPage);
-                }
-            }}
+            onClick={() => openHelpPage(helpPage, isInModal)}
             title={title ?? t("open-help-page")}
             style={style}
         />
     );
+}
+
+/**
+ * Opens an in-app help page, either as a quick-edit popup over the app or — by default — in a split
+ * beside the note being read.
+ *
+ * The popup is for hosts a split would be lost behind or would shove aside: a modal such as the
+ * options dialog, or the right sidebar, whose cards are a glance rather than a place to settle into.
+ *
+ * @param inAppHelpPage the ID of the help note (excluding the `_help_` prefix).
+ * @param inPopup whether to open it as a quick-edit popup rather than a split.
+ */
+export function openHelpPage(inAppHelpPage: string, inPopup: boolean) {
+    if (inPopup) {
+        void appContext.triggerCommand("openInPopup", { noteIdOrPath: `_help_${inAppHelpPage}` });
+    } else {
+        void openInAppHelpFromUrl(inAppHelpPage);
+    }
 }

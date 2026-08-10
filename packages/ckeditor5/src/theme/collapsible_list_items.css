@@ -81,7 +81,15 @@
     background-color: var(--text-editor-collapsible-list-arrow-hover-background, rgba(128, 128, 128, 0.25));
 }
 
-.ck-content.ck-editor__editable li[data-trilium-collapsed="true"] > ul,
-.ck-content.ck-editor__editable li[data-trilium-collapsed="true"] > ol {
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"]:not(.trilium-list-temporarily-expanded) > ul,
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"]:not(.trilium-list-temporarily-expanded) > ol {
     display: none;
+}
+
+/* A find match temporarily reveals a collapsed item's children (view-only, the persisted state
+ * stays collapsed). Point the arrow the expanded way so the visible nested list isn't contradicted
+ * by a "collapsed" arrow. The extra `.trilium-list-temporarily-expanded` class makes this rule more
+ * specific than the collapsed-arrow rule above, so it wins regardless of source order. */
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"].trilium-list-temporarily-expanded::before {
+    --_arrow-rotation: 90deg;
 }

@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getContext } from "../context.js";
@@ -61,6 +62,14 @@ class FakeResponse {
 function getTaskContext() {
     // "no-progress-reporting" suppresses the WebSocket broadcast in increaseProgressCount.
     return TaskContext.getInstance("opml-export-spec", "export", null);
+}
+
+/**
+ * A branch-like stand-in used to drive the export from a branch that becca does not (or does not
+ * yet) know about — a state the real tree can be in while a sync/import is in flight.
+ */
+function detachedBranch(note: BNote, branchId: string | undefined): BBranch {
+    return { branchId, prefix: null, getNote: () => note } as unknown as BBranch;
 }
 
 function runExport(branch: BBranch): FakeResponse {
@@ -175,5 +184,41 @@ describe("exportToOpml (real DB)", () => {
         const body = runExport(branch).body;
 
         expect(body).toContain(`<outline text="Binary note" _note="">`);
+    });
+
+    it("throws when the exported branch is not in becca", () => {
+        const { note } = createNote("root", { title: "Detached", content: "" });
+
+        expect(() => runExport(detachedBranch(note, "missingBranchId"))).toThrow("Unable to find branch.");
+    });
+
+    it("writes only the envelope when the branch has no id yet", () => {
+        const { note } = createNote("root", { title: "Unsaved", content: "" });
+
+        const res = runExport(detachedBranch(note, undefined));
+
+        expect(res.body).not.toContain("<outline");
+        expect(res.body).toContain(`<opml version="2.0">`);
+        expect(res.ended).toBe(true);
+    });
+
+    it("skips a child whose branch is missing from becca's child-parent index", () => {
+        const { note: parent, branch } = createNote("root", { title: "Index parent", content: "" });
+        const { note: child } = createNote(parent.noteId, { title: "Indexed child", content: "" });
+
+        // getChildBranches() maps note.children through that index and casts the result, so an index
+        // entry lagging behind the children (as it can during sync/import) yields a hole in the list.
+        const key = `${child.noteId}-${parent.noteId}`;
+        const indexedBranch = becca.childParentToBranch[key];
+        delete becca.childParentToBranch[key];
+
+        try {
+            const body = runExport(branch).body;
+
+            expect(body).toContain(`text="Index parent"`);
+            expect(body).not.toContain(`text="Indexed child"`);
+        } finally {
+            becca.childParentToBranch[key] = indexedBranch;
+        }
     });
 }, 60_000);

@@ -12,6 +12,7 @@ import NoteContext, { NoteContextDataMap } from "../../components/note_context";
 import FBlob from "../../entities/fblob";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
+import { expandAncestorDetails } from "../../services/collapsible";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import keyboard_actions from "../../services/keyboard_actions";
@@ -685,9 +686,18 @@ export function useNoteRelationTarget(note: FNote, relationName: RelationNames) 
  * - if the value is null then the label is removed.
  */
 export function useNoteLabel(note: FNote | undefined | null, labelName: FilterLabelsByType<string>): [string | null | undefined, (newValue: string | null | undefined) => void] {
+    return useNoteLabelByName(note, labelName);
+}
+
+/**
+ * The same as {@link useNoteLabel} for a label the app does not know by name — one the user named
+ * themselves, e.g. a label a `#calendar:startDate` renaming points at. Prefer {@link useNoteLabel}
+ * wherever the name is a builtin one, as it holds the name to the declared vocabulary.
+ */
+export function useNoteLabelByName(note: FNote | undefined | null, labelName: string): [string | null | undefined, (newValue: string | null | undefined) => void] {
     const [ , setLabelValue ] = useState<string | null | undefined>();
 
-    useEffect(() => setLabelValue(note?.getLabelValue(labelName) ?? null), [ note ]);
+    useEffect(() => setLabelValue(note?.getLabelValue(labelName) ?? null), [ note, labelName ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         for (const attr of loadResults.getAttributeRows()) {
             if (attr.type === "label" && attr.name === labelName && attributes.isAffecting(attr, note)) {
@@ -709,7 +719,7 @@ export function useNoteLabel(note: FNote | undefined | null, labelName: FilterLa
                 attributes.removeOwnedLabelByName(note, labelName);
             }
         }
-    }, [note]);
+    }, [note, labelName]);
 
     useDebugValue(labelName);
 
@@ -946,6 +956,54 @@ export function useElementSize(ref: RefObject<HTMLElement>) {
 }
 
 /**
+ * Whether an element has the screen to itself, and the way to give it or take it back.
+ *
+ * The state follows the browser rather than the button, so a screen left by pressing Escape — which
+ * nothing asks us for — is still noticed.
+ *
+ * @param element the element to put on a screen of its own, or `null` while there is none yet.
+ * @param onChange called once the screen has changed, either way, and after the state has been
+ *                 updated. Where something has to be measured across the change, take it in the
+ *                 handler passed to `toggle` and spend it here.
+ * @returns whether the element is currently fullscreen, and a toggle that resolves to whether the
+ *          screen actually changed — a request the browser refuses (no user gesture behind it, a
+ *          policy against it) leaves the view exactly as it was.
+ */
+export function useFullscreen(element: HTMLElement | null | undefined, onChange?: () => void): [ boolean, () => Promise<boolean> ] {
+    const [ isFullscreen, setFullscreen ] = useState(() => !!element && document.fullscreenElement === element);
+    // Read afresh on every change rather than closed over, so that a listener bound once follows a
+    // handler the caller hands over anew on each render.
+    const onChangeRef = useRef(onChange);
+    onChangeRef.current = onChange;
+
+    useEffect(() => {
+        if (!element) return;
+
+        const onFullscreenChange = () => {
+            setFullscreen(document.fullscreenElement === element);
+            onChangeRef.current?.();
+        };
+
+        document.addEventListener("fullscreenchange", onFullscreenChange);
+        return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+    }, [ element ]);
+
+    const toggle = useCallback(async () => {
+        if (!element) return false;
+
+        try {
+            await (document.fullscreenElement ? document.exitFullscreen() : element.requestFullscreen());
+            return true;
+        } catch (e) {
+            console.warn("Could not change the fullscreen state:", e);
+            return false;
+        }
+    }, [ element ]);
+
+    return [ isFullscreen, toggle ];
+}
+
+/**
  * Obtains the inner width and height of the window, as well as reacts to changes in size.
  *
  * @returns the width and height of the window.
@@ -971,79 +1029,6 @@ export function useWindowSize() {
     return size;
 }
 
-/** Mobile viewports at least this wide (tablets) keep a side-by-side layout; narrower ones get the
- *  master-detail flow. */
-export const MASTER_DETAIL_TABLET_MIN_WIDTH = 768;
-
-export interface MobileMasterDetail {
-    /** True on narrow mobile viewports where the list and detail collapse into a master-detail flow. */
-    isMasterDetail: boolean;
-    /** Which half of the master-detail flow is currently visible. */
-    mobileView: "list" | "page";
-    /** Switch between the two views with a slide animation. */
-    switchMobileView: (view: "list" | "page") => void;
-    /** Set the view directly without animating (e.g. when (re)opening the dialog). */
-    resetMobileView: (view: "list" | "page") => void;
-}
-
-/**
- * Drives the mobile master-detail flow shared by dialogs that pair a list with a detail pane (e.g.
- * the settings and revisions dialogs): it tracks which pane is visible, animates the slide between
- * them, and toggles the corresponding classes on the modal element (`mobile-master-detail`,
- * `mobile-view-{list,page}`, `mobile-transition-to-{list,page}`). The dialog supplies the layout and
- * slide keyframes in CSS; the keyframe names must start with `slideAnimationPrefix` so the in-flight
- * transition can be cleared once the slide finishes.
- */
-export function useMobileMasterDetail(modalRef: RefObject<HTMLElement>, slideAnimationPrefix: string): MobileMasterDetail {
-    const [ mobileView, setMobileView ] = useState<"list" | "page">("list");
-    // Direction of the in-flight slide between the two views, or null when at rest. While set, both
-    // panes stay rendered so the outgoing one can slide away as the incoming one slides in.
-    const [ mobileTransition, setMobileTransition ] = useState<"to-list" | "to-page" | null>(null);
-    const isMobile = utils.isMobile();
-    const { windowWidth } = useWindowSize();
-    const isMasterDetail = isMobile && windowWidth < MASTER_DETAIL_TABLET_MIN_WIDTH;
-
-    const switchMobileView = useCallback((view: "list" | "page") => {
-        if (view === mobileView) return;
-        setMobileView(view);
-        // With animations globally disabled there is no animationend to clear the transition, so
-        // switch directly. Outside the master-detail flow there is nothing to animate.
-        if (isMasterDetail && !document.body.classList.contains("motion-disabled")) {
-            setMobileTransition(view === "page" ? "to-page" : "to-list");
-        }
-    }, [ mobileView, isMasterDetail ]);
-
-    const resetMobileView = useCallback((view: "list" | "page") => {
-        setMobileView(view);
-        setMobileTransition(null);
-    }, []);
-
-    // Bootstrap adds its own classes (e.g. `show`) to the modal element at runtime, so the className
-    // prop must stay static; toggle the mobile view classes directly on the element instead.
-    useEffect(() => {
-        modalRef.current?.classList.toggle("mobile-master-detail", isMasterDetail);
-        modalRef.current?.classList.toggle("mobile-view-list", mobileView === "list");
-        modalRef.current?.classList.toggle("mobile-view-page", mobileView === "page");
-        modalRef.current?.classList.toggle("mobile-transition-to-list", mobileTransition === "to-list");
-        modalRef.current?.classList.toggle("mobile-transition-to-page", mobileTransition === "to-page");
-    }, [ isMasterDetail, mobileView, mobileTransition ]);
-
-    // End the view transition once the slide finishes (animationend bubbles up from the panes).
-    useEffect(() => {
-        const modalElement = modalRef.current;
-        if (!modalElement) return;
-        function onAnimationEnd(e: AnimationEvent) {
-            if (e.animationName.startsWith(slideAnimationPrefix)) {
-                setMobileTransition(null);
-            }
-        }
-        modalElement.addEventListener("animationend", onAnimationEnd);
-        return () => modalElement.removeEventListener("animationend", onAnimationEnd);
-    }, [ slideAnimationPrefix ]);
-
-    return { isMasterDetail, mobileView, switchMobileView, resetMobileView };
-}
-
 // Workaround for https://github.com/twbs/bootstrap/issues/37474
 // Bootstrap's dispose() sets ALL properties to null. But pending animation callbacks
 // (scheduled via setTimeout) can still fire and crash when accessing null properties.
@@ -1062,46 +1047,89 @@ TooltipProto.dispose = function () {
     this._element = disposedTooltipPlaceholder.element;
 };
 
-export function useTooltip(elRef: RefObject<HTMLElement>, config: Partial<Tooltip.Options>) {
+/**
+ * A Bootstrap tooltip whose lifetime follows the element it hangs off.
+ *
+ * @param enabled while false the tooltip is put away and kept away, for a host with something of its own
+ *                to put in front of the user — see {@link Dropdown}, which silences its toggle's title
+ *                for as long as the menu that title opened is on screen.
+ */
+export function useTooltip(elRef: RefObject<HTMLElement>, config: Partial<Tooltip.Options>, enabled = true) {
+    const tooltipRef = useRef<Tooltip | null>(null);
+
     useEffect(() => {
         if (!elRef?.current) return;
 
         const element = elRef.current;
-        const $el = $(element);
 
-        // Dispose any existing tooltip before creating a new one
+        // Held on to rather than looked up again through `Tooltip.getInstance`: Bootstrap keeps one
+        // component instance per element and refuses to register a second (it logs and returns), so on
+        // an element another Bootstrap component has already claimed — a dropdown's toggle, say — the
+        // lookup comes back empty. The tooltip works all the same, being a live object with its own
+        // listeners, but nothing can reach it to dispose it, and whatever it has shown is left on
+        // screen for good.
         Tooltip.getInstance(element)?.dispose();
-        $el.tooltip(config);
-
-        // Capture the tooltip instance now, since elRef.current may be null during cleanup.
-        const tooltip = Tooltip.getInstance(element);
+        const tooltip = new Tooltip(element, config);
+        tooltipRef.current = tooltip;
 
         return () => {
+            tooltipRef.current = null;
             // Dispose even when the trigger element is already detached (e.g. a keyed remount
             // replaced it before this cleanup ran) — dispose() also removes a currently-shown
             // popup from the DOM, and with the trigger gone nothing else ever would (#10567).
             // The pending-callback crash of bootstrap#37474 is handled by the dispose() patch above.
-            tooltip?.dispose();
+            tooltip.dispose();
         };
     }, [ elRef, config ]);
 
+    // Runs after the effect above, so a tooltip just recreated for a new config is caught by it too —
+    // hence the same dependencies alongside `enabled`.
+    useEffect(() => {
+        const tooltip = tooltipRef.current;
+        if (!tooltip) return;
+
+        if (enabled) {
+            tooltip.enable();
+        } else {
+            tooltip.hide();
+            tooltip.disable();
+        }
+    }, [ enabled, elRef, config ]);
+
     const showTooltip = useCallback(() => {
-        if (!elRef?.current) return;
+        const tooltip = tooltipRef.current;
+        if (!tooltip) return;
 
-        const $el = $(elRef.current);
-        $el.tooltip("show");
-    }, [ elRef, config ]);
+        clearStaleHoverState(tooltip);
+        tooltip.show();
+    }, []);
 
-    const hideTooltip = useCallback(() => {
-        if (!elRef?.current) return;
-
-        const $el = $(elRef.current);
-        $el.tooltip("hide");
-    }, [ elRef ]);
+    const hideTooltip = useCallback(() => tooltipRef.current?.hide(), []);
 
     useDebugValue(config.title);
 
     return { showTooltip, hideTooltip };
+}
+
+/**
+ * Clears the hover state Bootstrap keeps of its own accord, so that a manual `show()` isn't undone by
+ * the hover before it.
+ *
+ * Bootstrap tracks `_isHovered` even under `trigger: "manual"`, and leans on `hide()` resetting it to
+ * `null` — the value that tells a later `show()` there is no hover to act on ("a trick to support
+ * manual triggering", as it puts it). But `show()` writes `false` into the same flag from a callback
+ * deferred until the fade-in has finished, so a hover ended before then reverses the two writes:
+ * `hide()` sets `null`, and the deferred callback then sets `false` over it. The flag is left standing
+ * with nothing shown, and the next `show()` reads it, takes the tooltip to have been left already and
+ * calls `_leave()` — which hides it a moment after it appeared, with the pointer still on the trigger.
+ *
+ * A quick pass over a trigger is enough to leave it in that state, which is why the `?` of the sidebar
+ * card headers (a {@link Dropdown} title, shown from its own mouseenter) so often vanished under the
+ * pointer. Bootstrap offers no public way to reach the flag, and no public call that clears it without
+ * a tooltip already being shown.
+ */
+function clearStaleHoverState(tooltip: Tooltip) {
+    (tooltip as unknown as { _isHovered: boolean | null })._isHovered = null;
 }
 
 const tooltips = new Set<Tooltip>();
@@ -1133,7 +1161,24 @@ export function useStaticTooltip(elRef: RefObject<Element>, config?: Partial<Too
         });
         tooltips.add(tooltip);
 
+        // A tooltip triggered by hover *and focus* — Bootstrap's default — outstays the press that
+        // opened something: the press leaves the trigger focused, and while any trigger is still active
+        // Bootstrap declines to put the tooltip away, pointer gone or not. So it sits over whatever the
+        // press brought up rather than beside it, until focus moves on. The status bar's connection
+        // badges are where that shows worst: the tooltip is left standing over the sidebar the press
+        // peeked. Dismissed on press, as the legacy button widgets did (`onclick_button.ts`).
+        const dismissOnPress = (event: Event) => {
+            // A delegated (`selector:`) config spawns an instance per hovered child, so the one showing
+            // belongs to the child the press landed on rather than to the container the config sits on.
+            const delegate = config?.selector && event.target instanceof Element
+                ? event.target.closest(config.selector)
+                : null;
+            (delegate ? Tooltip.getInstance(delegate) : tooltip)?.hide();
+        };
+        element.addEventListener("click", dismissOnPress);
+
         return () => {
+            element.removeEventListener("click", dismissOnPress);
             tooltips.delete(tooltip);
             // Dispose even when the trigger element is already detached (e.g. a keyed remount
             // replaced it before this cleanup ran) — dispose() also removes a currently-shown
@@ -1185,6 +1230,45 @@ export function useLegacyImperativeHandlers(handlers: Record<string, Function>) 
         Object.assign(parentComponent as never, handlers);
     }, [ handlers ]);
 }
+
+/**
+ * Marks an element as the one the parent component is found at, which is how anything outside the
+ * component tree asks for it: `appContext.getComponentByEl` climbs the DOM to the nearest element
+ * bearing a component and reads it off there.
+ *
+ * The counterpart of {@link useLegacyImperativeHandlers} — that hook writes methods onto the parent
+ * component, and this is what lets a caller holding only a DOM node arrive at the same object. The
+ * text editor is the caller that matters: every one of its calls back into the app resolves the host
+ * that way (`glob.getComponentByEl(editor.editing.view.getDomRoot())` — reference-link titles,
+ * included notes, link embeds), so an editor mounted in a subtree whose parent component the DOM
+ * cannot name reaches whichever widget happens to enclose it and dies on the first of those calls.
+ *
+ * Only needed where a subtree provides a `ParentComponent` of its own. A component built as a widget
+ * marks its own element (see `BasicWidget.render`), and a React tree mounted under one answers to
+ * that same widget, so the two already agree everywhere else.
+ */
+export function useLegacyComponentElement(elRef: RefObject<HTMLElement>) {
+    const parentComponent = useContext(ParentComponent);
+
+    useEffect(() => {
+        const el = elRef.current;
+        if (!el || !parentComponent) return;
+
+        // The attribute is what the lookup searches by; the component itself is handed over as a
+        // property of the element, which is where jQuery's `.prop("component")` reads it from. No
+        // `component` class as a widget adds: nothing looks for it, and it carries the theme's
+        // styling with it.
+        el.dataset.componentId = parentComponent.componentId;
+        (el as ComponentElement).component = parentComponent;
+
+        return () => {
+            delete el.dataset.componentId;
+            delete (el as ComponentElement).component;
+        };
+    }, [ elRef, parentComponent ]);
+}
+
+type ComponentElement = HTMLElement & { component?: Component };
 
 /**
  * Registers this widget's contextual shortcut hints on its host component. When the user requests
@@ -1250,16 +1334,30 @@ export function useImperativeSearchHighlighlighting(highlightedTokens: string[] 
     }, [ highlightedTokens ]);
 
     return (el: HTMLElement | null | undefined) => {
-        if (!el || !highlightRegex) return;
+        if (!el) return;
+
+        // Nothing has ever been highlighted here, so there is also nothing to clear.
+        if (!mark.current && !highlightRegex) return;
 
         if (!mark.current) {
             mark.current = new Mark(el);
         }
 
+        // Clearing comes first and happens even with no tokens left: callers that keep the same
+        // element and merely drop the tokens (e.g. emptying a filter box) rely on this to remove the
+        // previous highlights, which would otherwise stay in the DOM for good.
         mark.current.unmark();
+
+        if (!highlightRegex) return;
+
         mark.current.markRegExp(highlightRegex, {
             element: "span",
-            className: "ck-find-result"
+            className: "ck-find-result",
+            // Reveal matches that landed inside collapsed <details> blocks — they
+            // are highlighted in the DOM but hidden until the block is expanded.
+            done: () => {
+                el.querySelectorAll<HTMLElement>(".ck-find-result").forEach(expandAncestorDetails);
+            }
         });
     };
 }
@@ -1642,10 +1740,17 @@ export function useNote(noteId: string | null | undefined, silentNotFoundError =
         });
     }, [ note, noteId, silentNotFoundError ]);
 
+    if (!noteId) {
+        return undefined;
+    }
     if (note?.noteId === noteId) {
         return note;
     }
-    return undefined;
+    // The state only catches up in the effect above — after the mismatched render is already
+    // painted. A note the cache holds is answered in the same render instead: an id change must
+    // not paint a note-less frame in between, which read as a width wobble everywhere the host
+    // keeps something open for exactly as long as there is a note (the calendar's detail dock).
+    return froca.getNoteFromCache(noteId) ?? undefined;
 }
 
 export function useNoteTitle(noteId: string | undefined, parentNoteId: string | undefined) {
@@ -2000,4 +2105,21 @@ export function useDelayedVisibility(active: boolean, { graceMs = 150, minVisibl
     }, [ active, phase, graceMs, minVisibleMs, stalledMs ]);
 
     return phase;
+}
+
+/**
+ * Trails `value` by `delay`, so a field being typed in does not fire a request per keystroke.
+ *
+ * For a reading that costs the server real work and is only worth taking once the user has stopped
+ * changing what it is a reading of.
+ */
+export function useDebouncedValue<T>(value: T, delay: number): T {
+    const [ settled, setSettled ] = useState(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setSettled(value), delay);
+        return () => clearTimeout(timer);
+    }, [ value, delay ]);
+
+    return settled;
 }

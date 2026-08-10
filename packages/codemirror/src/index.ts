@@ -308,6 +308,9 @@ export default class CodeMirror extends EditorView {
         instance?.searchFor(searchTerm, matchCase, wholeWord);
         this.searchPlugin = instance;
 
+        /* v8 ignore next 4 -- the plugin was just installed via the compartment above and the
+           view has re-rendered, so `this.plugin()` always resolves it; the guards only cover a
+           view destroyed mid-search. */
         return {
             totalFound: instance?.totalFound ?? 0,
             currentFound: instance?.currentFound ?? 0

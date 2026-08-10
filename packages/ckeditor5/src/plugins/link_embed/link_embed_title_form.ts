@@ -13,8 +13,8 @@ import {
     type Locale
 } from "ckeditor5";
 
-/** Resolves a translation key, falling back to the given English text. See `translate.ts`. */
-type Translate = (key: string, fallback: string) => string;
+/** The editor's translation function, taking an English message id. */
+type Translate = (message: string) => string;
 
 /**
  * The balloon form behind the widget toolbar's "Edit title" button: a single Title field and a
@@ -38,13 +38,13 @@ export default class LinkEmbedTitleFormView extends View {
     private readonly _focusables = new ViewCollection<FocusableView>();
     private readonly _focusCycler: FocusCycler;
 
-    constructor(locale: Locale, translate: Translate) {
+    constructor(locale: Locale, t: Translate) {
         super(locale);
 
         this.set("title", "");
 
-        this.titleInputView = this._createTitleInput(locale, translate);
-        this.saveButtonView = this._createSaveButton(locale, translate);
+        this.titleInputView = this._createTitleInput(locale, t);
+        this.saveButtonView = this._createSaveButton(locale, t);
 
         this.setTemplate({
             tag: "form",
@@ -56,7 +56,7 @@ export default class LinkEmbedTitleFormView extends View {
                 {
                     tag: "div",
                     attributes: { class: ["ck", "ck-link-embed-form__heading"] },
-                    children: [{ text: translate("link_embed.edit_title", "Edit title") }]
+                    children: [{ text: t("Edit title") }]
                 },
                 this.titleInputView,
                 {
@@ -113,9 +113,9 @@ export default class LinkEmbedTitleFormView extends View {
         this._focusCycler.focusFirst();
     }
 
-    private _createTitleInput(locale: Locale, translate: Translate) {
+    private _createTitleInput(locale: Locale, t: Translate) {
         const titleInput = new LabeledFieldView(locale, createLabeledInputText);
-        titleInput.label = translate("link_embed.title_label", "Title");
+        titleInput.label = t("Title");
 
         // Two-way: the field drives `title`, and reset() drives the field.
         titleInput.fieldView.bind("value").to(this, "title");
@@ -127,11 +127,11 @@ export default class LinkEmbedTitleFormView extends View {
         return titleInput;
     }
 
-    private _createSaveButton(locale: Locale, translate: Translate) {
+    private _createSaveButton(locale: Locale, t: Translate) {
         const button = new ButtonView(locale);
 
         button.set({
-            label: translate("link_embed.save", "Save"),
+            label: t("Save"),
             withText: true,
             type: "submit",
             class: "ck-button-action ck-button-bold"

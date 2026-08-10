@@ -13,9 +13,7 @@ import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
 import FloatingButtons from "../FloatingButtons";
 import { DESKTOP_FLOATING_BUTTONS, POPUP_HIDDEN_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
-import NoteBadges from "../layout/NoteBadges";
-import NoteIcon from "../note_icon";
-import NoteTitleWidget from "../note_title";
+import TitleRow from "../layout/TitleRow";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
 import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
@@ -32,7 +30,7 @@ export default function PopupEditor() {
     const [ shown, setShown ] = useState(false);
     const [ stacked, setStacked ] = useState(false);
     const parentComponent = useContext(ParentComponent);
-    const [ noteContext, setNoteContext ] = useState(new NoteContext("_popup-editor"));
+    const [ noteContext, setNoteContext ] = useState(() => new NoteContext("_popup-editor"));
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
     const items = useMemo(() => {
@@ -40,7 +38,7 @@ export default function PopupEditor() {
         return baseItems.filter(item => !POPUP_HIDDEN_FLOATING_BUTTONS.includes(item));
     }, [ isMobile ]);
 
-    useTriliumEvent("openInPopup", async ({ noteIdOrPath }) => {
+    useTriliumEvent("openInPopup", async ({ noteIdOrPath, viewScope }) => {
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
         if (!noteId.noteId) return;
         const note = await froca.getNote(noteId.noteId);
@@ -59,7 +57,9 @@ export default function PopupEditor() {
         await noteContext.setNote(noteIdOrPath, {
             viewScope: {
                 // Override auto-readonly notes to be editable, but respect user's choice to have a read-only note.
-                readOnlyTemporarilyDisabled: !hasUserSetNoteReadOnly
+                readOnlyTemporarilyDisabled: !hasUserSetNoteReadOnly,
+                // A view scope from the caller (e.g. an attachment link) decides what is actually displayed.
+                ...viewScope
             },
             keepActiveDialog: true
         });
@@ -69,6 +69,11 @@ export default function PopupEditor() {
         setNoteContext(noteContext);
         setShown(true);
     });
+
+    // Asked to stand aside by something within it that has sent the reader elsewhere — the note map,
+    // whose nodes navigate the pane behind rather than the popup, which would otherwise be left covering
+    // the note it has just gone to with a map of the note it came from.
+    useTriliumEvent("closePopupEditor", () => setShown(false));
 
     // Keep navigation that follows internal links inside the popup, rather than letting the global
     // link handler open the target in the background tab. Settings links open the options dialog.
@@ -110,8 +115,15 @@ export default function PopupEditor() {
                         title: t("popup-editor.maximize"),
                         onClick: async () => {
                             if (!noteContext.noteId) return;
-                            const { noteId, hoistedNoteId } = noteContext;
-                            await appContext.tabManager.openInNewTab(noteId, hoistedNoteId, true);
+                            const { noteId, hoistedNoteId, viewScope } = noteContext;
+                            if (viewScope?.attachmentId || (viewScope?.viewMode && viewScope.viewMode !== "default")) {
+                                // Whatever is on show that isn't the note itself — an attachment, or a view
+                                // mode such as the note map — is carried over, or the tab would open on the
+                                // note and drop what was being looked at.
+                                await appContext.tabManager.openContextWithNote(noteId, { hoistedNoteId, viewScope, activate: true });
+                            } else {
+                                await appContext.tabManager.openInNewTab(noteId, hoistedNoteId, true);
+                            }
                             setShown(false);
                         }
                     }]}
@@ -148,16 +160,6 @@ export function DialogWrapper({ children }: { children: ComponentChildren }) {
     return (
         <div ref={wrapperRef} class={`quick-edit-dialog-wrapper ${note?.getColorClass() ?? ""}`}>
             {children}
-        </div>
-    );
-}
-
-export function TitleRow() {
-    return (
-        <div className="title-row">
-            <NoteIcon />
-            <NoteTitleWidget />
-            {isNewLayout && <NoteBadges />}
         </div>
     );
 }

@@ -215,7 +215,9 @@ describe.todo("#crash", () => {});
 
 describe("#getContentDisposition", () => {
 
-    const defaultFallBackDisposition = `file; filename="file"; filename*=UTF-8''file`;
+    // "attachment" is one of the two disposition types defined by RFC 6266 — Safari renders
+    // responses with an unknown type (e.g. the former "file") inline instead of downloading them.
+    const defaultFallBackDisposition = `attachment; filename="file"; filename*=UTF-8''file`;
     const testCases: TestCase<typeof utils.getContentDisposition>[] = [
         [
             "when passed filename is empty, it should fallback to default value 'file'",
@@ -236,7 +238,7 @@ describe("#getContentDisposition", () => {
         [
             "sanitized passed filename should be returned URIEncoded",
             [ "test file.csv" ],
-            `file; filename="test%20file.csv"; filename*=UTF-8''test%20file.csv`
+            `attachment; filename="test%20file.csv"; filename*=UTF-8''test%20file.csv`
         ]
     ];
 

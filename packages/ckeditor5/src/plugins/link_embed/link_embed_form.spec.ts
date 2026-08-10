@@ -103,16 +103,17 @@ describe("LinkEmbedFormView", () => {
         expect(document.activeElement).toBe(form.urlInputView.fieldView.element);
     });
 
-    it("resolves its labels through the host's translation bridge when there is one", async () => {
+    it("resolves its labels through the editor's dictionary when there is one", async () => {
+        // Keyed by `en`, the language the editor resolves messages under when none is configured.
         editor = await createTestEditor(
             [Essentials, Paragraph, Link, Undo, LinkEmbed],
-            { translate: (key: string) => `translated:${key}` } as unknown as Parameters<typeof createTestEditor>[1]
+            { translations: [ {}, { en: { dictionary: { "URL": "Adresă", "Insert": "Inserează" } } } ] }
         );
         setModelData(editor.model, "<paragraph>[]</paragraph>");
 
         const form = openForm();
-        expect(form.urlInputView.label).toBe("translated:link_embed.url");
-        expect(form.insertButtonView.label).toBe("translated:link_embed.insert");
+        expect(form.urlInputView.label).toBe("Adresă");
+        expect(form.insertButtonView.label).toBe("Inserează");
     });
 
     // -----------------------------------------------------------------------

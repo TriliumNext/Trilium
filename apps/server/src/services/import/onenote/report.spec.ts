@@ -20,6 +20,7 @@ function reportData(overrides: Partial<ImportReportData> = {}): ImportReportData
         throttleWaitMs: 3 * 60_000,
         failedPages: [],
         failedResources: [],
+        failedSections: [],
         ...overrides
     };
 }
@@ -97,6 +98,22 @@ describe("renderImportReport", () => {
         expect(html).toContain('<a class="reference-link" href="#root/ph1">Meeting &lt;notes&gt;</a>');
         expect(html).toContain("Work &amp; Archive");
         expect(html).toContain("HTTP 504");
+    });
+
+    it("lists placeholder sections with reference links and shows the section count as imported/total", () => {
+        const html = renderImportReport(reportData({
+            sectionCount: 2,
+            failedSections: [
+                { title: "Secret <plans>", notebookTitle: "Work & Home", noteId: "ps1", error: "Microsoft Graph request failed (HTTP 403: 20185: Encrypted sections are not accessible.)" }
+            ]
+        }));
+
+        // 2 imported of 3 selected: the placeholder section is folded into the denominator.
+        expect(html).toContain('<tr><th scope="row">Sections imported</th><td>2/3</td></tr>');
+        expect(html).toContain("Sections that could not be imported");
+        expect(html).toContain('<a class="reference-link" href="#root/ps1">Secret &lt;plans&gt;</a>');
+        expect(html).toContain("<td>Work &amp; Home</td>");
+        expect(html).toContain("Encrypted sections are not accessible.");
     });
 
     it("lists pages with failed resource downloads, with per-page counts", () => {

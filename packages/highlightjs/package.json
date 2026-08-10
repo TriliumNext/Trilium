@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
+  "scripts": {
+    "test": "vitest"
+  },
   "dependencies": {
     "@catppuccin/highlightjs": "1.0.1",
     "@exercism/highlightjs-gdscript": "0.0.1",

@@ -125,16 +125,18 @@ async function disconnect(req: Request) {
 
 async function getNotebooks(req: Request) {
     const getAccessToken = buildTokenProvider(req);
-    if (!(await isConnected(getAccessToken))) {
-        return [401, "Not connected to OneNote."];
+    const failure = await connectionFailure(getAccessToken);
+    if (failure) {
+        return [401, failure];
     }
     return { notebooks: await graph.listNotebooks(getAccessToken) };
 }
 
 async function runImport(req: Request) {
     const getAccessToken = buildTokenProvider(req);
-    if (!(await isConnected(getAccessToken))) {
-        return [401, "Not connected to OneNote."];
+    const failure = await connectionFailure(getAccessToken);
+    if (failure) {
+        return [401, failure];
     }
 
     const { parentNoteId, sections, taskId, debug, shrinkImages } = req.body as { parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean; shrinkImages?: boolean };
@@ -170,13 +172,23 @@ function buildTokenProvider(req: Request): AccessTokenProvider {
     });
 }
 
-/** True when the connection can currently produce an access token; false when disconnected/unrefreshable. */
-async function isConnected(getAccessToken: AccessTokenProvider): Promise<boolean> {
+/**
+ * The reason the connection cannot currently produce an access token, or null when it can.
+ *
+ * The message is passed through to the client rather than flattened into a generic "not connected",
+ * because a stored-but-unrefreshable token is the case that matters: /status reports the connection as
+ * live (it only sees that a token is stored), so without this reason the notebook list comes back empty
+ * and the dialog can only say the account has no notebooks. The token provider's messages already tell
+ * the user to sign in again.
+ */
+async function connectionFailure(getAccessToken: AccessTokenProvider): Promise<string | null> {
     try {
         await getAccessToken();
-        return true;
-    } catch {
-        return false;
+        return null;
+    } catch (e) {
+        const reason = e instanceof Error ? e.message : String(e);
+        getLog().info(`OneNote import: the stored connection could not produce an access token: ${reason}`);
+        return reason || "Not connected to OneNote.";
     }
 }
 

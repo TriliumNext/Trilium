@@ -61,14 +61,24 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .c
     outline: 2px solid var(--input-focus-outline-color);
 }
 
-/* Button's icon */
+/* Button's icon. The text spacing is a margin rather than padding on purpose: transforms rotate the
+   padding-box, so with one-sided padding a spinning icon (`bx-spin`, e.g. a refresh button while
+   loading) orbits an off-center axis instead of rotating in place. Margin stays outside the
+   transformed box, keeping the spacing identical while the glyph spins about its own center. */
 button.btn.btn-primary span.tn-icon,
 button.btn.btn-secondary span.tn-icon,
 button.btn.btn-sm span.tn-icon,
 button.btn.btn-success span.tn-icon {
     color: var(--cmd-button-icon-color);
-    padding-inline-end: 0.35em;
+    margin-inline-end: 0.35em;
     font-size: 1.2em;
+}
+
+/* An icon with no label beside it is the whole of the button, and the spacing above would only push
+   it off centre. A label is a text node, which no selector reaches, so the button says so itself
+   (see `tn-icon-only` in Button.tsx). Written after the rule it undoes, the two weighing the same. */
+button.btn.tn-icon-only span.tn-icon {
+    margin-inline-end: 0;
 }
 
 /* Button's keyboard shortcut */
@@ -251,6 +261,15 @@ button.tn-low-profile:hover {
             color: var(--opaque-icon-button-hover-color);
         }
 
+        /* A button standing for a choice in force is shown held down — the geo map's + while the
+           map is armed for a placement. Held through a hover as well, so that pointing at the one
+           already chosen does not lower it. */
+        &.active,
+        &.active:not(:disabled):hover {
+            background-color: var(--active-item-background-color);
+            color: var(--active-item-text-color);
+        }
+
         &.tn-overlay-icon-button {
             height: var(--overlay-button-height);
             width: 32px;
@@ -280,6 +299,12 @@ button.tn-low-profile:hover {
         &:first-child,
         &:last-child {
             border-radius: var(--_start-border-radius, 0) var(--_end-border-radius, 0) var(--_end-border-radius, 0) var(--_start-border-radius, 0);
+        }
+
+        /* A button that would do nothing says as much rather than merely failing to answer. */
+        &:disabled {
+            opacity: .4;
+            pointer-events: none;
         }
 
     }
@@ -376,11 +401,15 @@ input::selection,
 /* Input groups */
 
 .input-group {
+    /* Named rather than written into the padding alone, so that a field drawing an indicator of its
+       own can place it against the group's edge — which is this much further out than the field's. */
+    --input-group-padding-inline-end: 8px;
+
     outline: 3px solid transparent;
     outline-offset: 6px;
     background: var(--input-background-color);
     border-radius: 6px;
-    padding-inline-end: 8px;
+    padding-inline-end: var(--input-group-padding-inline-end);
     color: var(--quick-search-color);
     flex-wrap: nowrap;
 }

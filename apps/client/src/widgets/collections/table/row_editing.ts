@@ -3,7 +3,7 @@ import { EventCallBackMethods, RowComponent, Tabulator } from "tabulator-tables"
 
 import { CommandListenerData } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
-import { setAttribute, setLabel } from "../../../services/attributes";
+import { setAttribute, setLabel, setLabelValues, setRelationValues } from "../../../services/attributes";
 import branches from "../../../services/branches";
 import froca from "../../../services/froca";
 import note_create, { CreateNoteOpts } from "../../../services/note_create";
@@ -49,6 +49,16 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
             if (field.includes(".")) {
                 const [ type, name ] = field.split(".", 2);
                 if (type === "labels") {
+                    // A set of values is written as the several labels it is, rather than as one
+                    // holding the array stringified.
+                    if (Array.isArray(newValue)) {
+                        const note = await froca.getNote(noteId);
+                        if (note) {
+                            await setLabelValues(note, name, newValue as string[]);
+                        }
+                        return;
+                    }
+
                     if (typeof newValue === "boolean") {
                         newValue = newValue ? "true" : "false";
                     } else if (typeof newValue === "number") {
@@ -58,7 +68,13 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                 } else if (type === "relations") {
                     const note = await froca.getNote(noteId);
                     if (note) {
-                        setAttribute(note, "relation", name, newValue);
+                        // A set of targets is written as the several relations it is, as a set of
+                        // label values is.
+                        if (Array.isArray(newValue)) {
+                            await setRelationValues(note, name, newValue as string[]);
+                        } else {
+                            setAttribute(note, "relation", name, newValue);
+                        }
                     }
                 }
             }

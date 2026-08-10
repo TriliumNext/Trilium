@@ -39,7 +39,7 @@ export function createGraphTokenProvider(deps: GraphTokenProviderDeps): () => Pr
     let inFlightRefresh: Promise<string> | null = null;
 
     async function refreshNow(refreshToken: string): Promise<string> {
-        const tokens = await deps.refresh(refreshToken);
+        const tokens = await refreshOrExplain(refreshToken);
         await deps.write({
             accessToken: tokens.access_token,
             // Reuse the current refresh token when the provider chose not to rotate it.
@@ -47,6 +47,20 @@ export function createGraphTokenProvider(deps: GraphTokenProviderDeps): () => Pr
             expiresAt: Date.now() + tokens.expires_in * 1000
         });
         return tokens.access_token;
+    }
+
+    /**
+     * Refreshes, restating a failure as something the user can act on. A refresh token that Microsoft has
+     * expired or revoked comes back as a bare OAuth error ("…AADSTS700082…"), which is shown verbatim
+     * wherever the connection is used (the import report, the import dialog), so the message has to carry
+     * the remedy alongside the provider's reason: this is unrecoverable without a fresh sign-in.
+     */
+    async function refreshOrExplain(refreshToken: string): Promise<TokenResponse> {
+        try {
+            return await deps.refresh(refreshToken);
+        } catch (e) {
+            throw new Error(`The OneNote connection could not be refreshed (${e instanceof Error ? e.message : String(e)}). Please sign in again.`);
+        }
     }
 
     return async function getAccessToken(): Promise<string> {

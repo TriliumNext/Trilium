@@ -1,4 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
+import type { OptionalContentConfig } from "pdfjs-dist/types/src/display/optional_content_config";
 
 declare global {
     /**
@@ -24,14 +25,12 @@ declare global {
             pdfDocument: PDFDocumentProxy;
             pdfViewer: {
                 currentPageNumber: number;
-                optionalContentConfigPromise: {
-                    setVisibility(groupId: string, visible: boolean);
-                    getGroup(groupId: string): {
-                        name: string;
-                        usage: {};
-                    };
-                    getOrder(): {}[]
-                };
+                /**
+                 * pdf.js' own type, rather than a local restatement of it — the previous
+                 * hand-written shape declared the config object directly and omitted the
+                 * Promise that `layers.ts` awaits.
+                 */
+                optionalContentConfigPromise: Promise<OptionalContentConfig>;
                 getPageView(pageIndex: number): {
                     div: HTMLDivElement;
                 };

@@ -9,8 +9,12 @@ export default function preprocessContent(rawContent: string | Uint8Array, type:
 
     if (type === "text" && mime === "text/html") {
         if (!raw) {
+            // surface link-preview metadata (title/url/description) as text, since it lives in
+            // data attributes that stripTags would otherwise discard along with the element
+            const previewText = [...content.matchAll(/\sdata-(?:title|url|description)="([^"]*)"/gi)].map((match) => match[1]).join(" ");
+
             // Content size already filtered at DB level, safe to process
-            content = stripTags(content);
+            content = stripTags(`${previewText} ${content}`);
         }
 
         content = content.replace(/&nbsp;/g, " ");

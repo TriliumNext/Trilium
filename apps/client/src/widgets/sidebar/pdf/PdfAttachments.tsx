@@ -7,6 +7,7 @@ import Icon from "../../react/Icon";
 import RightPanelWidget from "../RightPanelWidget";
 
 interface AttachmentInfo {
+    id: string;
     filename: string;
     size: number;
 }
@@ -30,7 +31,7 @@ export default function PdfAttachments() {
             <div className="pdf-attachments-list">
                 {attachmentsData.attachments.map((attachment) => (
                     <PdfAttachmentItem
-                        key={attachment.filename}
+                        key={attachment.id}
                         attachment={attachment}
                         onDownload={attachmentsData.downloadAttachment}
                     />
@@ -45,12 +46,12 @@ function PdfAttachmentItem({
     onDownload
 }: {
     attachment: AttachmentInfo;
-    onDownload: (filename: string) => void;
+    onDownload: (id: string) => void;
 }) {
     const sizeText = formatSize(attachment.size);
 
     return (
-        <div className="pdf-attachment-item" onClick={() => onDownload(attachment.filename)}>
+        <div className="pdf-attachment-item" onClick={() => onDownload(attachment.id)}>
             <Icon icon="bx bx-paperclip" />
             <div className="pdf-attachment-info">
                 <div className="pdf-attachment-filename">{attachment.filename}</div>

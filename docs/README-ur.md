@@ -339,6 +339,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei) Canvas پر اصل کام کرنے کے لیے۔
 * [antoniotejada](https://github.com/nriver) اصل سنٹیکس ہائی لائٹ وجٹ کے لیے۔
 * [Tabler Icons](https://tabler.io/icons) سسٹم ٹرے آئیکنز کے لیے۔
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 Trilium اس کے پیچھے موجود ٹیکنالوجیز کے بغیر ممکن نہیں تھا:
 

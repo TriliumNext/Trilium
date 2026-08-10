@@ -344,6 +344,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * لـ [antoniotejada](https://github.com/nriver): لأداة تمييز الصيغة البرمجية
   (Syntax highlight) الأصلية.
 * لـ [Tabler Icons](https://tabler.io/icons): لأيقونات شريط النظام.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 لم يكن لـ Trilium أن يرى النور لولا التقنيات التي تقف خلفه:
 

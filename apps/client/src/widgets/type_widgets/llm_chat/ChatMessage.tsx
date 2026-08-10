@@ -7,12 +7,15 @@ import { useMemo } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import utils from "../../../services/utils.js";
+import { ExtendedAdmonition } from "../../react/Admonition.js";
 import Button from "../../react/Button.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
+import { formatErrorDetails } from "./chat_error.js";
 import { renderMarkdown } from "./chat_markdown.js";
 import { renderQuoteSourceLinks } from "./chat_quote.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
 import { type ContentBlock, type FileBlock, getMessageText, type ImageBlock, type StoredMessage, type TextBlock, type TextFileBlock, type ToolCallBlock } from "./llm_chat_types.js";
+import { shortModelName } from "./model_name.js";
 import { SafeImage } from "./retry_image.js";
 import ToolCallCard from "./ToolCallCard.js";
 
@@ -157,13 +160,23 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
         );
     }
 
-    // Render error messages as a "caution" admonition, matching the callouts the
-    // model itself can emit in its responses.
+    // Render error messages as a "caution" extended admonition: the header classifies the
+    // failure (an HTTP status when the provider answered) so the message below it can be
+    // just what went wrong, with the endpoint and raw response body folded into "details".
     if (isError) {
+        const status = message.errorDetails?.statusCode;
+        const details = formatErrorDetails(textContent, message.errorDetails);
         return (
             <div className="llm-chat-message-wrapper llm-chat-message-wrapper-assistant">
-                <div className="admonition caution llm-chat-error">
-                    {textContent}
+                <ExtendedAdmonition
+                    type="caution"
+                    icon="bx bx-error-circle"
+                    title={status ? t("llm_chat.error_api", { status }) : t("llm_chat.error")}
+                    className="llm-chat-error"
+                    detailsLabel={t("llm_chat.error_show_details")}
+                    details={details && <pre className="llm-chat-error-details">{details}</pre>}
+                >
+                    <div className="llm-chat-error-text">{textContent}</div>
                     {onRetry && (
                         <div className="llm-chat-error-actions">
                             <Button
@@ -174,7 +187,7 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
                             />
                         </div>
                     )}
-                </div>
+                </ExtendedAdmonition>
             </div>
         );
     }
@@ -205,12 +218,10 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
                 {message.usage && typeof message.usage.promptTokens === "number" && (
                     <>
                         {message.usage.model && (
-                            <>
-                                <span className="llm-chat-usage-separator">·</span>
-                                <span className="llm-chat-usage-model">{message.usage.model}</span>
-                            </>
+                            <span className="llm-chat-usage-model" title={message.usage.model}>
+                                {shortModelName(message.usage.model, message.usage.provider)}
+                            </span>
                         )}
-                        <span className="llm-chat-usage-separator">·</span>
                         <span
                             className="llm-chat-usage-tokens"
                             title={t("llm_chat.tokens_detail", {
@@ -218,14 +229,10 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
                                 completion: message.usage.completionTokens.toLocaleString()
                             })}
                         >
-                            <span className="bx bx-chip" />{" "}
                             {t("llm_chat.total_tokens", { total: shortenNumber(message.usage.totalTokens) })}
                         </span>
                         {message.usage.cost != null && (
-                            <>
-                                <span className="llm-chat-usage-separator">·</span>
-                                <span className="llm-chat-usage-cost">~${message.usage.cost.toFixed(2)}</span>
-                            </>
+                            <span className="llm-chat-usage-cost">~${message.usage.cost.toFixed(2)}</span>
                         )}
                     </>
                 )}

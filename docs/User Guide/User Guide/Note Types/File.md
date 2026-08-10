@@ -12,7 +12,11 @@ Since these files come from an external source, it is not possible to create a _
 
 ### PDFs
 
-See <a class="reference-link" href="File/PDFs.md">PDFs</a>.
+PDFs can be uploaded to Trilium and they will display a live preview with full support for various features such as table of contents, annotations, as well as remembering the last page read. For more information, see the dedicated <a class="reference-link" href="File/PDFs.md">PDFs</a> page.
+
+## Office documents
+
+Trilium offers previews for Office documents such as Word (`.docx`), Excel (`.xlsx`) and PowerPoint (`.pptx`). For more information, see the dedicated <a class="reference-link" href="File/Office%20documents.md">Office documents</a>.
 
 ### Images
 
@@ -26,7 +30,7 @@ Interaction:
 
 ### Videos
 
-See <a class="reference-link" href="File/Audio%20%26%20Video.md">Videos</a>.
+See <a class="reference-link" href="File/Audio%20%26%20Video.md">Audio &amp; Video</a>.
 
 ### Audio
 
@@ -51,6 +55,14 @@ Note that generally text files will be [imported](../Basic%20Concepts%20and%20Fe
 
 Since one of the use cases for having files instead of notes is to display large files, the content preview is limited to a relatively small amount of characters. To view the full file, consider opening it in an external application.
 
+### GPS tracks
+
+Trilium displays information about GPS tracks in `.gpx` format, such as the distance, duration, elevation profile, tracks, markers.
+
+When a `.gpx` note is dropped in a <a class="reference-link" href="../Collections/Geo%20Map.md">Geo Map</a>, the track itself will also be displayed on the map.
+
+<figure class="image"><img style="aspect-ratio:1500/807;" src="4_File_image.png" width="1500" height="807"></figure>
+
 ### Unknown file types
 
 <figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:532/240;" src="3_File_image.png" width="532" height="240"></figure>
@@ -70,7 +82,7 @@ If the file could not be identified as any of the supported file types from abov
 
 *   Files are also displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> based on their type:
     
-    <img class="image_resized" style="aspect-ratio:853/315;width:50%;" src="4_File_image.png" width="853" height="315">
+    <img class="image_resized" style="aspect-ratio:853/315;width:50%;" src="5_File_image.png" width="853" height="315">
 *   Non-image files can be embedded into text notes as read-only widgets via the <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> functionality.
 *   Image files can be embedded into text notes like normal images via <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a>.
 

@@ -9,7 +9,7 @@ import copyIcon from "../icons/copy.svg?raw";
 export function createCopyUrlButton(editor: Editor, locale: Locale, getUrl: () => string | null | undefined): ButtonView {
     const button = new ButtonView(locale);
     button.set({
-        label: translate(editor, "link.copy_url"),
+        label: editor.t("Copy URL"),
         icon: copyIcon,
         tooltip: true
     });
@@ -22,11 +22,6 @@ export function createCopyUrlButton(editor: Editor, locale: Locale, getUrl: () =
     });
 
     return button;
-}
-
-function translate(editor: Editor, key: string) {
-    const translateFn = editor.config.get("translate") as ((key: string) => string) | undefined;
-    return translateFn ? translateFn(key) : key;
 }
 
 /**

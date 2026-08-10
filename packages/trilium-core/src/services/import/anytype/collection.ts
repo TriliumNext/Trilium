@@ -18,7 +18,7 @@ import { dayjs } from "@triliumnext/commons";
 import type BNote from "../../../becca/entities/bnote.js";
 import noteService from "../../notes.js";
 import { basename } from "../../utils/path.js";
-import { applyUrlScheme, attachmentReferenceLink, buildPromotedDefinition, saveFileAttachment, toAttributeName } from "../collection_utils.js";
+import { attachmentReferenceLink, buildPromotedDefinition, saveFileAttachment, stripUrlScheme, toAttributeName } from "../collection_utils.js";
 import mimeService from "../mime.js";
 import type { AnytypeBlock, AnytypeDetails, AnytypeSnapshot, CollectionViewType, FileObjectInfo, Multiplicity, ParsedCollection, ParsedColumn, ParsedObject, ParsedProperty, PropertyLabelType, RelationInfo } from "./model.js";
 
@@ -76,9 +76,9 @@ const FILE_FORMAT = 5;
 
 /**
  * Maps an Anytype relation to how its values import, or undefined for a format not yet supported (file, …).
- * Date and date-time share format 4, told apart by the relation's `includeTime` flag; email and phone reuse
- * the `url` type with a `mailto:`/`tel:` scheme. Select and multi-select are `optionBacked` (their value is
- * a list of option ids resolved to names) and follow the Notion importer's single/multi text mapping.
+ * Date and date-time share format 4, told apart by the relation's `includeTime` flag. Select and
+ * multi-select are `optionBacked` (their value is a list of option ids resolved to names) and follow the
+ * Notion importer's single/multi text mapping.
  */
 function propertyMapping(info: RelationInfo): PropertyMapping | undefined {
     switch (info.format) {
@@ -96,9 +96,9 @@ function propertyMapping(info: RelationInfo): PropertyMapping | undefined {
         case 7: // url
             return { labelType: "url", multiplicity: "single" };
         case 8: // email
-            return { labelType: "url", scheme: "mailto:", multiplicity: "single" };
+            return { labelType: "email", multiplicity: "single" };
         case 9: // phone
-            return { labelType: "url", scheme: "tel:", multiplicity: "single" };
+            return { labelType: "phone", multiplicity: "single" };
         case 11: // tag / multi-select
             return { labelType: "text", multiplicity: "multi", optionBacked: true };
         default:
@@ -114,10 +114,9 @@ function isCustomRelationKey(key: string): boolean {
 
 /**
  * Reads an object's custom property values as `{ attributeName, value }` pairs. Only the supported formats
- * (see {@link propertyMapping}) of user-defined relations are taken; unset values are dropped, and email /
- * phone values gain a `mailto:`/`tel:` scheme so they stay clickable as url labels. A select / multi-select
- * value is a list of option ids, each resolved to its display name via `options` (a multi-select yields one
- * label per option; an unresolvable option is skipped).
+ * (see {@link propertyMapping}) of user-defined relations are taken; unset values are dropped. A select /
+ * multi-select value is a list of option ids, each resolved to its display name via `options` (a
+ * multi-select yields one label per option; an unresolvable option is skipped).
  */
 export function parseProperties(details: AnytypeDetails, relations: Map<string, RelationInfo>, options: Map<string, string>): ParsedProperty[] {
     const properties: ParsedProperty[] = [];
@@ -139,7 +138,7 @@ export function parseProperties(details: AnytypeDetails, relations: Map<string, 
                 }
             }
         } else {
-            const value = formatPropertyValue(raw, mapping.labelType, mapping.scheme);
+            const value = formatPropertyValue(raw, mapping.labelType);
             if (value !== undefined) {
                 properties.push({ name, value });
             }
@@ -255,9 +254,9 @@ function columnsFromKeys(keys: (string | undefined)[], relations: Map<string, Re
  * becomes `"true"`/`"false"`; a date (Anytype stores an epoch in *seconds*) becomes a local `YYYY-MM-DD` or
  * `YYYY-MM-DDTHH:mm` string the promoted date/datetime inputs round-trip; a number is stringified (a
  * non-numeric value rejected); a text/url value is trimmed-checked for emptiness; an email/phone value is
- * given its `mailto:`/`tel:` scheme unless it already carries one.
+ * stripped of a `mailto:`/`tel:` scheme it may carry, since the typed inputs hold the bare address.
  */
-function formatPropertyValue(raw: unknown, labelType: PropertyLabelType, scheme: string | undefined): string | undefined {
+function formatPropertyValue(raw: unknown, labelType: PropertyLabelType): string | undefined {
     if (raw === null || raw === undefined) {
         return undefined;
     }
@@ -285,7 +284,13 @@ function formatPropertyValue(raw: unknown, labelType: PropertyLabelType, scheme:
     if (!value.trim()) {
         return undefined;
     }
-    return scheme ? applyUrlScheme(value, scheme) : value;
+    if (labelType === "email") {
+        return stripUrlScheme(value, "mailto:");
+    }
+    if (labelType === "phone") {
+        return stripUrlScheme(value, "tel:");
+    }
+    return value;
 }
 
 /**
@@ -350,6 +355,7 @@ export function applyFiles(note: BNote, page: ParsedObject, fileObjects: Map<str
             continue;
         }
         const attachment = saveFileAttachment(note, info.title, bytes, info.mime);
+        /* v8 ignore next -- saveAttachment always returns the id of the attachment it just created, so this guard is never false in practice */
         if (attachment.attachmentId) {
             fileLinks.push(`<p>${attachmentReferenceLink(note.noteId, attachment.attachmentId, info.title)}</p>`);
         }
@@ -361,12 +367,11 @@ export function applyFiles(note: BNote, page: ParsedObject, fileObjects: Map<str
     }
 }
 
-/** How a relation's values import: its Trilium label type, value count, an optional clickable scheme
- * (email/phone), and whether the value is option-backed (a select / multi-select, resolved via the options
- * map). Internal to {@link propertyMapping}; the shared `Parsed*` shapes live in {@link ./model.js}. */
+/** How a relation's values import: its Trilium label type, value count, and whether the value is
+ * option-backed (a select / multi-select, resolved via the options map). Internal to
+ * {@link propertyMapping}; the shared `Parsed*` shapes live in {@link ./model.js}. */
 interface PropertyMapping {
     labelType: PropertyLabelType;
     multiplicity: Multiplicity;
-    scheme?: string;
     optionBacked?: boolean;
 }

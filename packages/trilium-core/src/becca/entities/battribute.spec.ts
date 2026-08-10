@@ -407,5 +407,21 @@ describe("BAttribute", () => {
             expect(attr.isDefinition()).toBe(false);
             expect(attr.getDefinedName()).toBe("plain");
         });
+
+        it("treats a definition prefix without a name as not a definition", () => {
+            const owner = createNote();
+            const makeAttr = (name: string) => new BAttribute({
+                attributeId: `attr-${randomString(8)}`,
+                noteId: owner.noteId,
+                type: "label",
+                name,
+                value: "promoted,single,text",
+                position: 0,
+                isInheritable: false
+            });
+
+            expect(makeAttr("label:").isDefinition()).toBe(false);
+            expect(makeAttr("relation:").isDefinition()).toBe(false);
+        });
     });
 });

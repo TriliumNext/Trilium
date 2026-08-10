@@ -1,0 +1,117 @@
+/*
+ * An island in the trailing corner rather than a wall against the edge: everything else over this
+ * map is one, and the map is a widget inside a note rather than a screen of its own, so a pane flush
+ * to its edge reads as cropping it.
+ *
+ * The width must agree with `PANE_WIDTH` in DetailPane.tsx.
+ */
+.geo-map-container {
+    --geo-detail-pane-width: 380px;
+}
+
+.geo-map-container .geo-detail-pane {
+    /* Room at the foot for the bar of buttons, which stands in this same corner: its own height and
+       as much air again. Standing clear of it rather than moving it aside — the mind map's panel
+       reckons its foot the same way. */
+    --detail-pane-foot: calc(var(--geo-map-inset) + var(--geo-map-toolbar-height) + var(--geo-map-inset));
+
+    position: absolute;
+    /* A fixed height rather than one sized to its contents, which would be a different pane for
+       every marker. What it holds scrolls within it (see OverlayPanel.css). */
+    top: var(--geo-map-inset);
+    bottom: var(--detail-pane-foot);
+    inset-inline-end: var(--geo-map-inset);
+    width: var(--geo-detail-pane-width);
+    /* An embedded map may be narrower than the pane would like to be. */
+    max-width: calc(100% - 2 * var(--geo-map-inset));
+
+    /* Grown over the map (see the maximize in MarkerDetails). Only the width gives: the pane
+       already stands the height of the map. What the map places around the pane is suppressed
+       while it is grown rather than recomputed — see `maximized` in DetailPane.tsx. */
+    &.maximized {
+        width: calc(100% - 2 * var(--geo-map-inset));
+    }
+    /* Clear of MapLibre's own control corners, which sit at 2 (see MapToolbar.css). */
+    z-index: 3;
+}
+
+/*
+ * A marker of no colour of its own wears none.
+ *
+ * The pane stands inside the map's note split, which carries the map note's colour, so the icon
+ * would otherwise be dressed in a hue belonging to another note entirely — the very thing the
+ * marker's own class overrides where it has one (see the `.geo-detail-pane.with-hue` rules in
+ * theme-next-{light,dark}.css). `initial` rather than `unset`: these are inherited properties, so
+ * unsetting them would let the split's values through again; made invalid, each `var()` falls back
+ * to the plain icon colour it names.
+ */
+.geo-map-container .geo-detail-pane:not(.with-hue) {
+    --note-icon-custom-color: initial;
+    --note-icon-custom-background-color: initial;
+    --note-icon-hover-custom-background-color: initial;
+}
+
+/*
+ * The app's own title row heads the pane (see TitleRow), so a note is renamed from a marker the way
+ * it is renamed anywhere else. It brings no placing of its own, the shared panel giving that only to
+ * its own heading, so the padding and the rule under it are handed over here.
+ */
+.geo-map-container .geo-detail-pane .tn-overlay-panel-header > .title-row {
+    box-sizing: content-box;
+    padding-block: 9px;
+    padding-inline-start: 9px;
+    /* Clear of the maximize and close buttons laid over the end of the row (see OverlayPanel.css). */
+    padding-inline-end: 64px;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+/*
+ * The pane's one body: the row of actions, then the note itself — the note's own widgets laid out
+ * by the shared class (see EmbeddedNotePane.css), which also brings the column they stand in.
+ */
+.geo-map-container .geo-detail-pane .geo-detail-pane-body {
+    padding-top: 0;
+}
+
+/*
+ * Where the marker stands, reading as a subtitle to the name above it rather than as one more thing
+ * to press: it is a line of text that happens to answer to a click, so it stands on no plate of its
+ * own until it is aimed at.
+ */
+.geo-map-container .geo-detail-pane .geo-detail-pane-location,
+.modal.geo-detail-sheet .geo-detail-pane-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    /* Room to be pressed, taken back at the leading edge so the text still lines up with the button
+       row under it. */
+    margin-inline-start: -6px;
+    padding: 2px 6px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+
+    &:hover {
+        background: var(--hover-item-background-color);
+        color: var(--main-text-color);
+    }
+}
+
+.modal.geo-detail-sheet .modal-dialog {
+    max-height: var(--tn-modal-max-height);
+    height: 100%;
+}
+
+.modal.geo-detail-sheet .modal-content {
+    overflow: hidden;
+}
+
+.modal.geo-detail-sheet .modal-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: auto;
+}

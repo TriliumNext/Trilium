@@ -5,7 +5,7 @@ import options from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
 import { collectShortcutHints } from "../services/shortcut_hints.js";
 import treeService from "../services/tree.js";
-import utils, { openInReusableSplit } from "../services/utils.js";
+import utils from "../services/utils.js";
 import appContext, { type CommandListenerData } from "./app_context.js";
 import Component from "./component.js";
 
@@ -196,6 +196,18 @@ export default class RootCommandExecutor extends Component {
     }
 
     async toggleRibbonTabNoteMapCommand(data: CommandListenerData<"toggleRibbonTabNoteMap">) {
+        // A phone has neither the ribbon the map was a tab of nor the pane it is a card of, so it is
+        // shown the way the pane's card shows it expanded: as the quick-edit popup, which is the map at
+        // the size of the window wherever there is no card to expand from. The popup carries the note's
+        // title, steps aside when a note of the map is pressed, and can be taken on to a tab.
+        if (utils.isMobile()) {
+            const notePath = appContext.tabManager.getActiveContext()?.notePath;
+            if (notePath) {
+                void appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath, viewScope: { viewMode: "note-map" } });
+            }
+            return;
+        }
+
         const { isExperimentalFeatureEnabled } = await import("../services/experimental_features.js");
         const isNewLayout = isExperimentalFeatureEnabled("new-layout");
         if (!isNewLayout) {
@@ -203,9 +215,16 @@ export default class RootCommandExecutor extends Component {
             return;
         }
 
-        const activeContext = appContext.tabManager.getActiveContext();
-        if (!activeContext?.notePath) return;
-        openInReusableSplit(activeContext.notePath, "note-map");
+        // The sidebar's map is the note map of the new layout: it is the one that follows the note being
+        // read, so the menu points at it rather than opening a second copy beside it that would then go
+        // stale. Peeked rather than docked, as the connection badges of the status bar are: a press for
+        // the tab already docked would otherwise close the pane out from under the card it is meant to
+        // expand (see reduceTabSelection).
+        void appContext.triggerEvent("selectRightPaneTab", {
+            tabId: "connections",
+            peek: true,
+            expandWidgetId: "noteMap"
+        });
     }
 
     firstTabCommand() {

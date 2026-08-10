@@ -358,6 +358,12 @@ development](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20G
 * [antoniotejada](https://github.com/nriver) για το αρχικό widget επισήμανσης
   σύνταξης.
 * [Tabler Icons](https://tabler.io/icons) για τα εικονίδια συστήματος.
+*   The application icons in the import dialog are from:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+        OneNote, Google Keep, Evernote.
+    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
+*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
 
 Το Trilium δεν θα ήταν εφικτό χωρίς τις τεχνολογίες πίσω από αυτό:
 
