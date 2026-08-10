@@ -111,7 +111,8 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     },
     readOnlyText: {
         view: () => import("./type_widgets/text/ReadOnlyText"),
-        className: "note-detail-readonly-text"
+        className: "note-detail-readonly-text",
+        printable: true
     },
     editableText: {
         view: () => import("./type_widgets/text/EditableText"),
