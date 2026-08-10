@@ -305,6 +305,31 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(entries[attFileName]).toBeDefined();
         });
 
+        it("names a converted image after its mime, not after the title it was uploaded under", async () => {
+            // Uploading a PNG with compression on stores JPEG bytes under the name the upload
+            // arrived with: the mime follows the conversion, the title deliberately does not.
+            // The export is the last point at which the file name can still describe the bytes.
+            //
+            // This is the shape of the 51 mislabelled files in docs/User Guide — JPEGs written
+            // to a .png name, each one recorded as image/jpg in the meta beside it.
+            const { note } = createNote("root", { title: "ConvertedImageHost", content: "<p>host</p>" });
+            const jpegBytes = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46]);
+            getContext().init(() =>
+                note.saveAttachment({ role: "image", mime: "image/jpg", title: "image.png", content: jpegBytes })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "markdown");
+            const rootMeta = parseMeta(entries).files[0];
+
+            const attFileName = (rootMeta.attachments ?? [])[0]?.dataFileName ?? "";
+            expect(attFileName).toMatch(/\.jpe?g$/);
+            expect(attFileName).not.toMatch(/\.png$/);
+            // The renamed file is the one actually written, and its bytes are the JPEG's.
+            expect(entries[attFileName]).toBeDefined();
+            expect(Buffer.compare(entries[attFileName], jpegBytes)).toBe(0);
+        });
+
         it("round-trips binary attachment content byte-for-byte", async () => {
             const { note } = createNote("root", { title: "BinaryAttachHost", content: "<p>host</p>" });
             // Bytes that are not valid UTF-8 (0x00, 0xFF, lone 0x80 continuation byte)

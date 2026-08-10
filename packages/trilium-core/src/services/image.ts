@@ -3,7 +3,7 @@
  * Uses ImageProvider for platform-specific processing (compression, format detection).
  */
 
-import { type ImageAttachmentRole, imageMimeForExtension, isDeduplicatedAttachmentRole } from "@triliumnext/commons";
+import { type ImageAttachmentRole, isDeduplicatedAttachmentRole } from "@triliumnext/commons";
 import sanitizeFilename from "sanitize-filename";
 
 import becca from "../becca/becca.js";
@@ -109,7 +109,7 @@ function updateImage(noteId: string, uploadBuffer: Uint8Array, originalName: str
     trackWrite(getImageProvider().processImage(uploadBuffer, originalName, true).then(({ buffer, format }) => {
         getContext().init(() => {
             getSql().transactional(() => {
-                note.mime = imageMimeForExtension(format.ext);
+                note.mime = format.mime;
                 note.save();
                 note.setContent(buffer);
             });
@@ -151,7 +151,7 @@ function saveImage(
     trackWrite(getImageProvider().processImage(uploadBuffer, originalName, shrinkImageSwitch).then(({ buffer, format }) => {
         getContext().init(() => {
             getSql().transactional(() => {
-                note.mime = imageMimeForExtension(format.ext);
+                note.mime = format.mime;
 
                 if (!originalName.includes(".")) {
                     originalName += `.${format.ext}`;
@@ -251,7 +251,7 @@ function saveImageToAttachment(
                     return;
                 }
 
-                savedAttachment.mime = imageMimeForExtension(format.ext);
+                savedAttachment.mime = format.mime;
 
                 if (!originalName.includes(".")) {
                     originalName += `.${format.ext}`;
