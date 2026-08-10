@@ -33,6 +33,7 @@
                 "value": "bx bx-cog"
             }
         ],
+        "dir": "User Guide/Installation & Setup",
         "children": [
             {
                 "id": "_help_poXkQfguuA0U",
@@ -51,6 +52,7 @@
                     }
                 ],
                 "source": "User Guide/Installation & Setup/Desktop Installation.md",
+                "dir": "User Guide/Installation & Setup/Desktop Installation",
                 "children": [
                     {
                         "id": "_help_nRqcgfTb97uV",
@@ -179,6 +181,7 @@
                     }
                 ],
                 "source": "User Guide/Installation & Setup/Server Installation.md",
+                "dir": "User Guide/Installation & Setup/Server Installation",
                 "children": [
                     {
                         "id": "_help_Dgg7bR3b6K9j",
@@ -196,6 +199,7 @@
                                 "value": "bx bx-folder"
                             }
                         ],
+                        "dir": "User Guide/Installation & Setup/Server Installation/1. Installing the server",
                         "children": [
                             {
                                 "id": "_help_3tW6mORuTHnB",
@@ -324,6 +328,7 @@
                             }
                         ],
                         "source": "User Guide/Installation & Setup/Server Installation/2. Reverse proxy.md",
+                        "dir": "User Guide/Installation & Setup/Server Installation/2. Reverse proxy",
                         "children": [
                             {
                                 "id": "_help_ud6MShXL4WpO",
@@ -434,6 +439,7 @@
                             }
                         ],
                         "source": "User Guide/Installation & Setup/Server Installation/Authentication.md",
+                        "dir": "User Guide/Installation & Setup/Server Installation/Authentication",
                         "children": [
                             {
                                 "id": "_help_lwAX5SvbrK2g",
@@ -503,6 +509,7 @@
                             }
                         ],
                         "source": "User Guide/Installation & Setup/Server Installation/Signing in with OpenID Connect.md",
+                        "dir": "User Guide/Installation & Setup/Server Installation/Signing in with OpenID Connect",
                         "children": [
                             {
                                 "id": "_help_IgkTHSaFfq6A",
@@ -688,6 +695,7 @@
                 "value": "bx bx-help-circle"
             }
         ],
+        "dir": "User Guide/Basic Concepts and Features",
         "children": [
             {
                 "id": "_help_Vc8PjrjAGuOp",
@@ -705,6 +713,7 @@
                         "value": "bx bx-window-alt"
                     }
                 ],
+                "dir": "User Guide/Basic Concepts and Features/UI Elements",
                 "children": [
                     {
                         "id": "_help_x0JgW8UqGXvq",
@@ -759,6 +768,7 @@
                             }
                         ],
                         "source": "User Guide/Basic Concepts and Features/UI Elements/Note Tree.md",
+                        "dir": "User Guide/Basic Concepts and Features/UI Elements/Note Tree",
                         "children": [
                             {
                                 "id": "_help_YtSN43OrfzaA",
@@ -977,6 +987,7 @@
                             }
                         ],
                         "source": "User Guide/Basic Concepts and Features/UI Elements/Right Sidebar.md",
+                        "dir": "User Guide/Basic Concepts and Features/UI Elements/Right Sidebar",
                         "children": [
                             {
                                 "id": "_help_2dcGDhp9WFKb",
@@ -1118,6 +1129,7 @@
                             }
                         ],
                         "source": "User Guide/Basic Concepts and Features/UI Elements/New Layout.md",
+                        "dir": "User Guide/Basic Concepts and Features/UI Elements/New Layout",
                         "children": [
                             {
                                 "id": "_help_I6p2a06hdnL6",
@@ -1212,6 +1224,7 @@
                     }
                 ],
                 "source": "User Guide/Basic Concepts and Features/Notes.md",
+                "dir": "User Guide/Basic Concepts and Features/Notes",
                 "children": [
                     {
                         "id": "_help_l7pigIGu01K2",
@@ -1284,6 +1297,7 @@
                             }
                         ],
                         "source": "User Guide/Basic Concepts and Features/Notes/Cloning Notes.md",
+                        "dir": "User Guide/Basic Concepts and Features/Notes/Cloning Notes",
                         "children": [
                             {
                                 "id": "_help_TBwsyfadTA18",
@@ -1485,6 +1499,7 @@
                         "value": "bx bx-navigation"
                     }
                 ],
+                "dir": "User Guide/Basic Concepts and Features/Navigation",
                 "children": [
                     {
                         "id": "_help_kBrnXNG3Hplm",
@@ -1721,6 +1736,7 @@
                     }
                 ],
                 "source": "User Guide/Basic Concepts and Features/Themes.md",
+                "dir": "User Guide/Basic Concepts and Features/Themes",
                 "children": [
                     {
                         "id": "_help_VbjZvtUek0Ln",
@@ -1777,6 +1793,7 @@
                     }
                 ],
                 "source": "User Guide/Basic Concepts and Features/Import & Export.md",
+                "dir": "User Guide/Basic Concepts and Features/Import & Export",
                 "children": [
                     {
                         "id": "_help_Oau6X9rCuegd",
@@ -1795,6 +1812,7 @@
                             }
                         ],
                         "source": "User Guide/Basic Concepts and Features/Import & Export/Markdown.md",
+                        "dir": "User Guide/Basic Concepts and Features/Import & Export/Markdown",
                         "children": [
                             {
                                 "id": "_help_rJ9grSgoExl9",
@@ -1833,6 +1851,7 @@
                             }
                         ],
                         "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications.md",
+                        "dir": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications",
                         "children": [
                             {
                                 "id": "_help_GnhlmrATVqcH",
@@ -1905,6 +1924,7 @@
                                     }
                                 ],
                                 "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Evernote.md",
+                                "dir": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Evernote",
                                 "children": [
                                     {
                                         "id": "_help_dj3j8dG4th4l",
@@ -2058,6 +2078,7 @@
             }
         ],
         "source": "User Guide/Note Types.md",
+        "dir": "User Guide/Note Types",
         "children": [
             {
                 "id": "_help_iPIMuisry3hd",
@@ -2076,6 +2097,7 @@
                     }
                 ],
                 "source": "User Guide/Note Types/Text.md",
+                "dir": "User Guide/Note Types/Text",
                 "children": [
                     {
                         "id": "_help_oSuaNgyyKnhu",
@@ -2202,6 +2224,7 @@
                             }
                         ],
                         "source": "User Guide/Note Types/Text/Developer-specific formatting.md",
+                        "dir": "User Guide/Note Types/Text/Developer-specific formatting",
                         "children": [
                             {
                                 "id": "_help_QxEyIjRBizuC",
@@ -2330,6 +2353,7 @@
                             }
                         ],
                         "source": "User Guide/Note Types/Text/Images.md",
+                        "dir": "User Guide/Note Types/Text/Images",
                         "children": [
                             {
                                 "id": "_help_0Ofbk1aSuVRu",
@@ -2440,6 +2464,7 @@
                             }
                         ],
                         "source": "User Guide/Note Types/Text/Links.md",
+                        "dir": "User Guide/Note Types/Text/Links",
                         "children": [
                             {
                                 "id": "_help_3IDVtesTQ8ds",
@@ -2799,6 +2824,7 @@
                     }
                 ],
                 "source": "User Guide/Note Types/Mermaid Diagrams.md",
+                "dir": "User Guide/Note Types/Mermaid Diagrams",
                 "children": [
                     {
                         "id": "_help_RH6yLjjWJHof",
@@ -2913,6 +2939,7 @@
                     }
                 ],
                 "source": "User Guide/Note Types/File.md",
+                "dir": "User Guide/Note Types/File",
                 "children": [
                     {
                         "id": "_help_XJGJrpu7F9sh",
@@ -3038,6 +3065,7 @@
             }
         ],
         "source": "User Guide/Collections.md",
+        "dir": "User Guide/Collections",
         "children": [
             {
                 "id": "_help_xWbu3jpNWapp",
@@ -3220,6 +3248,7 @@
             }
         ],
         "source": "User Guide/Troubleshooting.md",
+        "dir": "User Guide/Troubleshooting",
         "children": [
             {
                 "id": "_help_wy8So3yZZlH9",
@@ -3274,6 +3303,7 @@
                     }
                 ],
                 "source": "User Guide/Troubleshooting/Error logs.md",
+                "dir": "User Guide/Troubleshooting/Error logs",
                 "children": [
                     {
                         "id": "_help_bnyigUA2UK7s",
@@ -3367,6 +3397,7 @@
                 "value": "bx bx-palette"
             }
         ],
+        "dir": "User Guide/Theme development",
         "children": [
             {
                 "id": "_help_7NfNr5pZpVKV",
@@ -3476,6 +3507,7 @@
                 "value": "bx bx-rocket"
             }
         ],
+        "dir": "User Guide/Advanced Usage",
         "children": [
             {
                 "id": "_help_zEY4DaJG4YT5",
@@ -3494,6 +3526,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/Attributes.md",
+                "dir": "User Guide/Advanced Usage/Attributes",
                 "children": [
                     {
                         "id": "_help_HI6GBBIduIgv",
@@ -3604,6 +3637,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/Snippets.md",
+                "dir": "User Guide/Advanced Usage/Snippets",
                 "children": [
                     {
                         "id": "_help_VQjhl61rlWh9",
@@ -3691,6 +3725,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/Sharing.md",
+                "dir": "User Guide/Advanced Usage/Sharing",
                 "children": [
                     {
                         "id": "_help_Qjt68inQ2bRj",
@@ -3783,6 +3818,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/Advanced Showcases.md",
+                "dir": "User Guide/Advanced Usage/Advanced Showcases",
                 "children": [
                     {
                         "id": "_help_l0tKav7yLHGF",
@@ -3911,6 +3947,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/ETAPI (REST API).md",
+                "dir": "User Guide/Advanced Usage/ETAPI (REST API)",
                 "children": [
                     {
                         "id": "_help_9qPsTWBorUhQ",
@@ -3971,6 +4008,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/Database.md",
+                "dir": "User Guide/Advanced Usage/Database",
                 "children": [
                     {
                         "id": "_help_oyIAJ9PvvwHX",
@@ -3989,6 +4027,7 @@
                             }
                         ],
                         "source": "User Guide/Advanced Usage/Database/Manually altering the database.md",
+                        "dir": "User Guide/Advanced Usage/Database/Manually altering the database",
                         "children": [
                             {
                                 "id": "_help_YKWqdJhzi2VY",
@@ -4047,6 +4086,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/Configuration (config.ini or environment variables).md",
+                "dir": "User Guide/Advanced Usage/Configuration (config.ini or environment variables)",
                 "children": [
                     {
                         "id": "_help_c5xB8m4g2IY6",
@@ -4139,6 +4179,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/Technologies used.md",
+                "dir": "User Guide/Advanced Usage/Technologies used",
                 "children": [
                     {
                         "id": "_help_MI26XDLSAlCD",
@@ -4194,6 +4235,7 @@
                         "value": "bx bxs-component"
                     }
                 ],
+                "dir": "User Guide/Advanced Usage/Internal API",
                 "children": [
                     {
                         "id": "_help_z8O2VG4ZZJD7",
@@ -4254,6 +4296,7 @@
                     }
                 ],
                 "source": "User Guide/Advanced Usage/Metrics.md",
+                "dir": "User Guide/Advanced Usage/Metrics",
                 "children": [
                     {
                         "id": "_help_bOP3TB56fL1V",
@@ -4367,6 +4410,7 @@
             }
         ],
         "source": "User Guide/AI.md",
+        "dir": "User Guide/AI",
         "children": [
             {
                 "id": "_help_bkPZAMT7d2sR",
@@ -4436,6 +4480,7 @@
             }
         ],
         "source": "User Guide/Scripting.md",
+        "dir": "User Guide/Scripting",
         "children": [
             {
                 "id": "_help_yIhgI5H7A2Sm",
@@ -4454,6 +4499,7 @@
                     }
                 ],
                 "source": "User Guide/Scripting/Frontend Basics.md",
+                "dir": "User Guide/Scripting/Frontend Basics",
                 "children": [
                     {
                         "id": "_help_MgibgPcfeuGz",
@@ -4472,6 +4518,7 @@
                             }
                         ],
                         "source": "User Guide/Scripting/Frontend Basics/Custom Widgets.md",
+                        "dir": "User Guide/Scripting/Frontend Basics/Custom Widgets",
                         "children": [
                             {
                                 "id": "_help_SynTBQiBsdYJ",
@@ -4599,6 +4646,7 @@
                                 "value": "bx bx-code-alt"
                             }
                         ],
+                        "dir": "User Guide/Scripting/Frontend Basics/Examples",
                         "children": [
                             {
                                 "id": "_help_TjLYAo3JMO8X",
@@ -4673,6 +4721,7 @@
                             }
                         ],
                         "source": "User Guide/Scripting/Frontend Basics/Launch Bar Widgets.md",
+                        "dir": "User Guide/Scripting/Frontend Basics/Launch Bar Widgets",
                         "children": [
                             {
                                 "id": "_help_IPArqVfDQ4We",
@@ -4729,6 +4778,7 @@
                             }
                         ],
                         "source": "User Guide/Scripting/Frontend Basics/Preact.md",
+                        "dir": "User Guide/Scripting/Frontend Basics/Preact",
                         "children": [
                             {
                                 "id": "_help_Bqde6BvPo05g",
@@ -4801,6 +4851,7 @@
                                     }
                                 ],
                                 "source": "User Guide/Scripting/Frontend Basics/Preact/Built-in components.md",
+                                "dir": "User Guide/Scripting/Frontend Basics/Preact/Built-in components",
                                 "children": [
                                     {
                                         "id": "_help_i9B4IW7b6V6z",
@@ -4844,6 +4895,7 @@
                     }
                 ],
                 "source": "User Guide/Scripting/Backend scripts.md",
+                "dir": "User Guide/Scripting/Backend scripts",
                 "children": [
                     {
                         "id": "_help_fZ2IGYFXjkEy",
@@ -4899,6 +4951,7 @@
                         "value": "bx bxl-nodejs"
                     }
                 ],
+                "dir": "User Guide/Scripting/Common concepts",
                 "children": [
                     {
                         "id": "_help_hA834UaHhSNn",
@@ -4937,6 +4990,7 @@
                     }
                 ],
                 "source": "User Guide/Scripting/Script API.md",
+                "dir": "User Guide/Scripting/Script API",
                 "children": [
                     {
                         "id": "_help_Q2z6av6JZVWm",
@@ -4959,6 +5013,7 @@
                                 "value": "bx bx-folder"
                             }
                         ],
+                        "dir": "User Guide/Scripting/Script API/Frontend API",
                         "children": [
                             {
                                 "id": "_help_habiZ3HU8Kw8",
@@ -5082,6 +5137,7 @@
                         "value": "bx bx-up-arrow-alt"
                     }
                 ],
+                "dir": "User Guide/Scripting/Breaking changes",
                 "children": [
                     {
                         "id": "_help_YeOa2l7Pu39I",
@@ -5193,6 +5249,7 @@
                 "value": "bx bx-info-circle"
             }
         ],
+        "dir": "User Guide/Miscellaneous",
         "children": [
             {
                 "id": "_help_WFbFXrgnDyyU",

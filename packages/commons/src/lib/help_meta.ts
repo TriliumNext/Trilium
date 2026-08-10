@@ -29,6 +29,12 @@ export interface HelpMetaItem {
      * primary occurrence's file rather than their own `.clone` copy.
      */
     source?: string;
+    /**
+     * Directory this note's children live in, relative to the markdown export root. Set for every
+     * note that has one, and the only way to address a folder note: it has no file of its own, so
+     * pages link to it by its directory.
+     */
+    dir?: string;
 }
 
 /**

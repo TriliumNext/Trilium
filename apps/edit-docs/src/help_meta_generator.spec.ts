@@ -36,10 +36,12 @@ describe("buildHelpMeta", () => {
         const folderItem = items[0];
         const pageItem = folderItem?.children?.[0];
 
-        // A note with no data file of its own is a folder, and carries no source.
+        // A note with no data file of its own is a folder: no source, but a directory, which is
+        // the only path other pages can link to it by.
         expect(folderItem?.id).toBe("_help_types");
         expect(folderItem?.type).toBe("book");
         expect(folderItem?.source).toBeUndefined();
+        expect(folderItem?.dir).toBe("User Guide/Note Types");
         expect(labelOf(folderItem, "iconClass")).toBe("bx bx-folder");
 
         // Sources are relative to the export directory, which already is the root note's folder,

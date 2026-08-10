@@ -96,6 +96,10 @@ function parseNoteMeta(
         item.source = canonical?.source ?? computeSource(sourceRoot, noteMeta.dataFileName);
     }
 
+    if (noteMeta.dirFileName) {
+        item.dir = computeSource(sourceRoot, noteMeta.dirFileName);
+    }
+
     if (noteMeta.children) {
         const childSourceRoot = noteMeta.dirFileName ? `${sourceRoot}/${noteMeta.dirFileName}` : sourceRoot;
         const children: HelpMetaItem[] = [];
