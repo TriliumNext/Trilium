@@ -208,7 +208,7 @@ async function cleanUpMeta(outputPath: string, mapping: NoteMapping) {
         return;
     }
 
-    const helpMeta = buildHelpMeta(meta, BASE_URL);
+    const { meta: helpMeta, sources } = buildHelpMeta(meta, BASE_URL);
 
     if (mapping.helpMeta) {
         await writeJson(mapping.helpMeta, helpMeta);
@@ -218,6 +218,7 @@ async function cleanUpMeta(outputPath: string, mapping: NoteMapping) {
         const { markdownImportService } = await import("@triliumnext/core");
         const bundle = buildHelpBundle(
             helpMeta,
+            sources,
             (source) => {
                 try {
                     return readFileSync(path.join(outputPath, source), "utf-8");

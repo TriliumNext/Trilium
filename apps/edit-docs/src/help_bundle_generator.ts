@@ -1,6 +1,8 @@
 import type { HelpBundle, HelpMetaItem } from "@triliumnext/commons";
 import path from "path";
 
+import type { HelpSources } from "./help_meta_generator.js";
+
 /**
  * Builds the in-app help content bundle: the rendered page of every note in the help tree,
  * keyed by note ID.
@@ -14,46 +16,51 @@ import path from "path";
  * filesystem and the same markdown conversion a user gets when importing a markdown file.
  *
  * @param meta the help tree, as produced by `buildHelpMeta`.
- * @param readPage reads a note's source file (paths as they appear in {@link HelpMetaItem.source},
- *                 i.e. relative to the markdown export root), or returns null if it is missing.
+ * @param sources the export file behind each note, as produced alongside that tree.
+ * @param readPage reads a note's source file (paths as they appear in {@link HelpSources}, i.e.
+ *                 relative to the markdown export root), or returns null if it is missing.
  * @param renderMarkdown converts markdown to the HTML a text note holds.
  */
 export function buildHelpBundle(
     meta: HelpMetaItem[],
+    sources: HelpSources,
     readPage: (source: string) => string | null,
     renderMarkdown: (markdown: string, title: string) => string
 ): HelpBundle {
     const bundle: HelpBundle = {};
-    collectPages(meta, readPage, renderMarkdown, indexSources(meta), bundle);
+    collectPages(meta, sources, readPage, renderMarkdown, indexSources(sources), bundle);
     return bundle;
 }
 
 function collectPages(
     items: HelpMetaItem[],
-    readPage: (source: string) => string | null,
+    sources: HelpSources,
+    readPage: (path: string) => string | null,
     renderMarkdown: (markdown: string, title: string) => string,
     noteIdBySource: Map<string, string>,
     bundle: HelpBundle
 ): void {
     for (const item of items) {
-        if (item.source) {
-            const source = readPage(item.source);
+        const sourcePath = sources[item.id]?.source;
+
+        if (sourcePath) {
+            const source = readPage(sourcePath);
 
             if (source === null) {
                 // One unreadable page must not cost the whole export; the note stays in the tree
                 // and renders empty, which is visible in the application and in the diff.
-                console.warn(`Help page '${item.source}' could not be read, skipping '${item.id}'.`);
+                console.warn(`Help page '${sourcePath}' could not be read, skipping '${item.id}'.`);
             } else if (item.type === "code") {
                 // Code notes are shown verbatim in their own language — running them through the
                 // markdown renderer would turn a script into a paragraph.
                 bundle[item.id] = source;
             } else {
-                bundle[item.id] = rewriteLinks(renderMarkdown(source, item.title), item.source, noteIdBySource);
+                bundle[item.id] = rewriteLinks(renderMarkdown(source, item.title), sourcePath, noteIdBySource);
             }
         }
 
         if (item.children) {
-            collectPages(item.children, readPage, renderMarkdown, noteIdBySource, bundle);
+            collectPages(item.children, sources, readPage, renderMarkdown, noteIdBySource, bundle);
         }
     }
 }
@@ -62,20 +69,20 @@ function collectPages(
  * Maps every path a note can be addressed by to that note, for resolving links between pages: its
  * content file, and its directory — which is all a folder note has, since it holds no file itself.
  */
-function indexSources(items: HelpMetaItem[], out = new Map<string, string>()): Map<string, string> {
-    for (const item of items) {
-        const noteId = item.id.replace(/^_help_/, "");
+function indexSources(sources: HelpSources): Map<string, string> {
+    const out = new Map<string, string>();
 
-        if (item.source) {
-            out.set(normalize(item.source), noteId);
+    for (const [ id, { source, dir } ] of Object.entries(sources)) {
+        const noteId = id.replace(/^_help_/, "");
+
+        if (source) {
+            out.set(normalize(source), noteId);
         }
-        if (item.dir) {
-            out.set(normalize(item.dir), noteId);
-        }
-        if (item.children) {
-            indexSources(item.children, out);
+        if (dir) {
+            out.set(normalize(dir), noteId);
         }
     }
+
     return out;
 }
 

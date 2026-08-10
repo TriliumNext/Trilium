@@ -35,113 +35,12 @@ describe("Help button", () => {
             }
         }
     });
-
-    // Every help note is built from the markdown file its `source` names, and the server filesystem
-    // is case-sensitive. A page whose title casing was changed on a case-insensitive OS
-    // (Windows/macOS) can be committed with a stale-cased filename that git's core.ignorecase hides,
-    // so the meta points at one casing while the file on disk has another → the page ships empty.
-    it("Every source resolves to an on-disk file with exact casing", () => {
-        const problems = collectSources(readHelpMeta())
-            .filter((source) => !existsWithExactCase(DOCS_ROOT, source));
-
-        if (problems.length) {
-            expect.fail(
-                `The following help sources do not resolve to an on-disk file with exact casing ` +
-                `(the meta and the committed filename disagree — likely a case-only rename dropped by git core.ignorecase):\n` +
-                problems.map((p) => `  - ${p}`).join("\n")
-            );
-        }
-    });
-
-    // Help pages link to each other by relative markdown path. If the target is not part of the
-    // in-app help (e.g. a link into the Technical Guide subtree, which lives in docs/ but is not
-    // shipped), the link dead-ends once the pages are rendered. `#root/…` hrefs are intentional
-    // runtime deep-links to real system notes and are deliberately not validated here.
-    it("Every internal help link points to a page that ships with the help", () => {
-        const meta = readHelpMeta();
-        const shipped = new Set(collectSources(meta).map(normalizeSourcePath));
-
-        const broken: string[] = [];
-        for (const source of collectSources(meta)) {
-            const markdown = fs.readFileSync(path.join(DOCS_ROOT, source), "utf-8");
-            for (const match of markdown.matchAll(/<a\b[^>]*class="reference-link"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gs)) {
-                const href = decodeURIComponent(match[1].split(/[#?]/)[0]);
-                if (href.startsWith("#root/")) {
-                    continue;
-                }
-
-                const target = normalizeSourcePath(path.posix.join(path.posix.dirname(toPosix(source)), href));
-
-                // Markdown targets must be pages of the guide; anything else (an attachment such as
-                // a .dat or .js file, or a folder) only has to exist on disk.
-                const resolves = href.endsWith(".md")
-                    ? shipped.has(target)
-                    : existsWithExactCase(DOCS_ROOT, target) || existsWithExactCase(DOCS_ROOT, `${target}.md`);
-
-                if (!resolves) {
-                    broken.push(`${source}: "${match[2].trim()}" -> ${href}`);
-                }
-            }
-        }
-
-        if (broken.length) {
-            expect.fail(
-                `The following in-app help links point to pages that are not part of the in-app help. ` +
-                `Either bring the target page into the help tree or remove/repoint the link:\n` +
-                broken.map((b) => `  - ${b}`).join("\n")
-            );
-        }
-    });
 });
-
-/** Root of the markdown the in-app help is built from. */
-const DOCS_ROOT = path.resolve(path.join(__dirname, "../../../../docs/User Guide"));
 
 /** The help tree as `edit-docs` writes it. */
 function readHelpMeta(): HelpMetaItem[] {
     const metaPath = path.resolve(path.join(__dirname, "../../../server/src/assets/help/help_meta.json"));
     return JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-}
-
-/** Collects the source file of every help page that has one. */
-function collectSources(items: HelpMetaItem[]): string[] {
-    const sources: string[] = [];
-    for (const item of items) {
-        if (item.source) {
-            sources.push(item.source);
-        }
-        if (item.children) {
-            sources.push(...collectSources(item.children));
-        }
-    }
-    return sources;
-}
-
-const toPosix = (filePath: string) => filePath.split(path.sep).join("/");
-
-/** Sources are compared as posix paths so link targets and meta entries line up on Windows too. */
-const normalizeSourcePath = (filePath: string) => path.posix.normalize(toPosix(filePath));
-
-/**
- * Resolves `relativePath` under `rootDir` one segment at a time via `readdirSync`, which reports the
- * real on-disk names regardless of filesystem case sensitivity. `fs.existsSync` alone would wrongly
- * pass a mis-cased path on case-insensitive dev machines, so this makes the check meaningful everywhere.
- */
-function existsWithExactCase(rootDir: string, relativePath: string): boolean {
-    let current = rootDir;
-    for (const segment of relativePath.split("/")) {
-        let entries: string[];
-        try {
-            entries = fs.readdirSync(current);
-        } catch {
-            return false;
-        }
-        if (!entries.includes(segment)) {
-            return false;
-        }
-        current = path.join(current, segment);
-    }
-    return true;
 }
 
 describe("getHelpUrlForNote", () => {

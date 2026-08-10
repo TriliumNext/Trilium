@@ -32,7 +32,7 @@ describe("buildHelpMeta", () => {
             attributes: [], format: "markdown", dirFileName: "Note Types", children: [page]
         };
 
-        const items = buildHelpMeta(metaFileOf([folder]));
+        const { meta: items, sources } = buildHelpMeta(metaFileOf([folder]));
         const folderItem = items[0];
         const pageItem = folderItem?.children?.[0];
 
@@ -40,15 +40,15 @@ describe("buildHelpMeta", () => {
         // the only path other pages can link to it by.
         expect(folderItem?.id).toBe("_help_types");
         expect(folderItem?.type).toBe("book");
-        expect(folderItem?.source).toBeUndefined();
-        expect(folderItem?.dir).toBe("User Guide/Note Types");
+        expect(sources._help_types?.source).toBeUndefined();
+        expect(sources._help_types?.dir).toBe("User Guide/Note Types");
         expect(labelOf(folderItem, "iconClass")).toBe("bx bx-folder");
 
         // Sources are relative to the export directory, which already is the root note's folder,
         // so the root contributes exactly one path segment.
         expect(pageItem?.id).toBe("_help_text1");
         expect(pageItem?.type).toBe("text");
-        expect(pageItem?.source).toBe("User Guide/Note Types/Text.md");
+        expect(sources._help_text1?.source).toBe("User Guide/Note Types/Text.md");
         expect(labelOf(pageItem, "iconClass")).toBe("bx bx-star");
     });
 
@@ -75,15 +75,16 @@ describe("buildHelpMeta", () => {
             attributes: [], format: "markdown", dirFileName: "Server Installation", children: [clone]
         };
 
-        const items = buildHelpMeta(metaFileOf([desktop, server]));
+        const { meta: items, sources } = buildHelpMeta(metaFileOf([desktop, server]));
         const primaryItem = items.find((i) => i.id === "_help_desktop")?.children?.[0];
         const cloneItem = items.find((i) => i.id === "_help_server")?.children?.[0];
 
         expect(primaryItem?.id).toBe("_help_nix");
         expect(cloneItem?.id).toBe("_help_nix");
         expect(labelOf(cloneItem, "iconClass")).toBe("bx bxl-tux");
-        expect(cloneItem?.source).toBe("User Guide/Desktop Installation/Nix flake.md");
-        expect(cloneItem?.source).toBe(primaryItem?.source);
+        // Both occurrences are the one note, so they leave one source between them — the primary's
+        // file rather than the ".clone" copy the export wrote beside it.
+        expect(sources._help_nix?.source).toBe("User Guide/Desktop Installation/Nix flake.md");
     });
 
     it("derives docUrl from the share alias chain, and only when a base URL is given", () => {
@@ -96,10 +97,10 @@ describe("buildHelpMeta", () => {
             { type: "label", name: "shareAlias", value: "user-guide", isInheritable: false, position: 10 }
         ];
 
-        const withBase = buildHelpMeta(metaFileOf([page], rootAlias), BASE_URL);
+        const { meta: withBase } = buildHelpMeta(metaFileOf([page], rootAlias), BASE_URL);
         expect(labelOf(withBase[0], "docUrl")).toBe("https://docs.triliumnotes.org/user-guide/feature-highlights");
 
-        const withoutBase = buildHelpMeta(metaFileOf([page], rootAlias));
+        const { meta: withoutBase } = buildHelpMeta(metaFileOf([page], rootAlias));
         expect(labelOf(withoutBase[0], "docUrl")).toBeUndefined();
     });
 
@@ -110,10 +111,10 @@ describe("buildHelpMeta", () => {
             format: "markdown", dataFileName: "Embedded.md", children: []
         };
 
-        const items = buildHelpMeta(metaFileOf([embedded]), BASE_URL);
+        const { meta: items, sources } = buildHelpMeta(metaFileOf([embedded]), BASE_URL);
 
         expect(items[0]?.type).toBe("webView");
-        expect(items[0]?.source).toBeUndefined();
+        expect(sources._help_embedded?.source).toBeUndefined();
         // Root-relative sources are stored that way in the notes; the docs origin is applied here.
         expect(labelOf(items[0], "webViewSrc")).toBe("https://docs.triliumnotes.org/user-guide/embedded");
     });
@@ -124,11 +125,11 @@ describe("buildHelpMeta", () => {
             attributes: [], format: "markdown", dataFileName: "Example.js", children: []
         };
 
-        const items = buildHelpMeta(metaFileOf([script]));
+        const { meta: items, sources } = buildHelpMeta(metaFileOf([script]));
 
         expect(items[0]?.type).toBe("code");
         expect(items[0]?.mime).toBe("application/javascript;env=backend");
-        expect(items[0]?.source).toBe("User Guide/Example.js");
+        expect(sources._help_script?.source).toBe("User Guide/Example.js");
     });
 
     it("hides notes that are hidden from the share tree", () => {
@@ -138,10 +139,11 @@ describe("buildHelpMeta", () => {
             format: "markdown", dirFileName: "Features", children: []
         };
 
-        expect(buildHelpMeta(metaFileOf([hidden]))).toHaveLength(0);
+        expect(buildHelpMeta(metaFileOf([hidden])).meta).toHaveLength(0);
     });
 
     it("returns nothing when the export has no files", () => {
-        expect(buildHelpMeta({ formatVersion: 2, appVersion: "0.103.0", files: undefined as never })).toEqual([]);
+        expect(buildHelpMeta({ formatVersion: 2, appVersion: "0.103.0", files: undefined as never }))
+            .toEqual({ meta: [], sources: {} });
     });
 });

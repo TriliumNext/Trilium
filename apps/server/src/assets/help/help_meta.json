@@ -14,8 +14,7 @@
                 "name": "iconClass",
                 "value": "bx bx-star"
             }
-        ],
-        "source": "User Guide/Feature Highlights.md"
+        ]
     },
     {
         "id": "_help_Otzi9La2YAUX",
@@ -33,7 +32,6 @@
                 "value": "bx bx-cog"
             }
         ],
-        "dir": "User Guide/Installation & Setup",
         "children": [
             {
                 "id": "_help_poXkQfguuA0U",
@@ -51,8 +49,6 @@
                         "value": "bx bx-desktop"
                     }
                 ],
-                "source": "User Guide/Installation & Setup/Desktop Installation.md",
-                "dir": "User Guide/Installation & Setup/Desktop Installation",
                 "children": [
                     {
                         "id": "_help_nRqcgfTb97uV",
@@ -69,8 +65,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Desktop Installation/Using the desktop application as a server.md"
+                        ]
                     },
                     {
                         "id": "_help_Rp0q8bSP6Ayl",
@@ -87,8 +82,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-chip"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Desktop Installation/System Requirements.md"
+                        ]
                     },
                     {
                         "id": "_help_Un4wj2Mak2Ky",
@@ -105,8 +99,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxl-tux"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Desktop Installation/Nix flake.md"
+                        ]
                     },
                     {
                         "id": "_help_swSFivWk6KkA",
@@ -123,8 +116,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-network-chart"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Desktop Installation/Network Access.md"
+                        ]
                     },
                     {
                         "id": "_help_7iwde4lsKc6O",
@@ -141,8 +133,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Desktop Installation/Tray icon & automatic startup.md"
+                        ]
                     },
                     {
                         "id": "_help_hvRfsDr591WP",
@@ -159,8 +150,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Desktop Installation/Troubleshooting.md"
+                        ]
                     }
                 ]
             },
@@ -180,8 +170,6 @@
                         "value": "bx bx-server"
                     }
                 ],
-                "source": "User Guide/Installation & Setup/Server Installation.md",
-                "dir": "User Guide/Installation & Setup/Server Installation",
                 "children": [
                     {
                         "id": "_help_Dgg7bR3b6K9j",
@@ -199,7 +187,6 @@
                                 "value": "bx bx-folder"
                             }
                         ],
-                        "dir": "User Guide/Installation & Setup/Server Installation/1. Installing the server",
                         "children": [
                             {
                                 "id": "_help_3tW6mORuTHnB",
@@ -216,8 +203,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxl-tux"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/1. Installing the server/Packaged version for Linux.md"
+                                ]
                             },
                             {
                                 "id": "_help_rWX5eY045zbE",
@@ -234,8 +220,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxl-docker"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/1. Installing the server/Using Docker.md"
+                                ]
                             },
                             {
                                 "id": "_help_moVgBcoxE3EK",
@@ -252,8 +237,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxl-tux"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/1. Installing the server/On NixOS.md"
+                                ]
                             },
                             {
                                 "id": "_help_J1Bb6lVlwU5T",
@@ -270,8 +254,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-code-alt"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/1. Installing the server/Manually.md"
+                                ]
                             },
                             {
                                 "id": "_help_DCmT6e7clMoP",
@@ -288,8 +271,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxl-kubernetes"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/1. Installing the server/Using Kubernetes.md"
+                                ]
                             },
                             {
                                 "id": "_help_klCWNks3ReaQ",
@@ -306,8 +288,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxs-user-account"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/1. Installing the server/Multiple server instances.md"
+                                ]
                             }
                         ]
                     },
@@ -327,8 +308,6 @@
                                 "value": "bx bx-file"
                             }
                         ],
-                        "source": "User Guide/Installation & Setup/Server Installation/2. Reverse proxy.md",
-                        "dir": "User Guide/Installation & Setup/Server Installation/2. Reverse proxy",
                         "children": [
                             {
                                 "id": "_help_ud6MShXL4WpO",
@@ -345,8 +324,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/2. Reverse proxy/Nginx.md"
+                                ]
                             },
                             {
                                 "id": "_help_fDLvzOx29Pfg",
@@ -363,8 +341,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/2. Reverse proxy/Apache using Docker.md"
+                                ]
                             },
                             {
                                 "id": "_help_LLzSMXACKhUs",
@@ -381,8 +358,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/2. Reverse proxy/Trusted proxy.md"
+                                ]
                             },
                             {
                                 "id": "_help_5ERVJb9s4FRD",
@@ -399,8 +375,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/2. Reverse proxy/Traefik.md"
+                                ]
                             }
                         ]
                     },
@@ -419,8 +394,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-lock-alt"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Server Installation/HTTPS (TLS).md"
+                        ]
                     },
                     {
                         "id": "_help_0hzsNCP31IAB",
@@ -438,8 +412,6 @@
                                 "value": "bx bx-user"
                             }
                         ],
-                        "source": "User Guide/Installation & Setup/Server Installation/Authentication.md",
-                        "dir": "User Guide/Installation & Setup/Server Installation/Authentication",
                         "children": [
                             {
                                 "id": "_help_lwAX5SvbrK2g",
@@ -456,8 +428,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-key"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/Authentication/Resetting your password.md"
+                                ]
                             }
                         ]
                     },
@@ -476,8 +447,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-stopwatch"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Server Installation/Multi-factor authentication with TOTP.md"
+                        ]
                     },
                     {
                         "id": "_help_Un4wj2Mak2Ky",
@@ -489,8 +459,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxl-tux"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Desktop Installation/Nix flake.md"
+                        ]
                     },
                     {
                         "id": "_help_x1lQNKQBqLcA",
@@ -508,8 +477,6 @@
                                 "value": "bx bxs-key"
                             }
                         ],
-                        "source": "User Guide/Installation & Setup/Server Installation/Signing in with OpenID Connect.md",
-                        "dir": "User Guide/Installation & Setup/Server Installation/Signing in with OpenID Connect",
                         "children": [
                             {
                                 "id": "_help_IgkTHSaFfq6A",
@@ -526,8 +493,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Installation & Setup/Server Installation/Signing in with OpenID Connect/Setting up with various providers.md"
+                                ]
                             }
                         ]
                     },
@@ -546,8 +512,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-cloud"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Server Installation/Third-party cloud hosting.md"
+                        ]
                     },
                     {
                         "id": "_help_iGTnKjubbXkA",
@@ -564,8 +529,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-chip"
                             }
-                        ],
-                        "source": "User Guide/Installation & Setup/Server Installation/System Requirements.md"
+                        ]
                     }
                 ]
             },
@@ -584,8 +548,7 @@
                         "name": "iconClass",
                         "value": "bx bx-sync"
                     }
-                ],
-                "source": "User Guide/Installation & Setup/Synchronization.md"
+                ]
             },
             {
                 "id": "_help_RDslemsQ6gCp",
@@ -602,8 +565,7 @@
                         "name": "iconClass",
                         "value": "bx bx-mobile-alt"
                     }
-                ],
-                "source": "User Guide/Installation & Setup/Mobile Frontend.md"
+                ]
             },
             {
                 "id": "_help_MtPxeAWVAzMg",
@@ -620,8 +582,7 @@
                         "name": "iconClass",
                         "value": "bx bx-paperclip"
                     }
-                ],
-                "source": "User Guide/Installation & Setup/Web Clipper.md"
+                ]
             },
             {
                 "id": "_help_n1lujUxCwipy",
@@ -638,8 +599,7 @@
                         "name": "iconClass",
                         "value": "bx bx-up-arrow-alt"
                     }
-                ],
-                "source": "User Guide/Installation & Setup/Upgrading TriliumNext.md"
+                ]
             },
             {
                 "id": "_help_ODY7qQn5m2FT",
@@ -656,8 +616,7 @@
                         "name": "iconClass",
                         "value": "bx bx-hdd"
                     }
-                ],
-                "source": "User Guide/Installation & Setup/Backup.md"
+                ]
             },
             {
                 "id": "_help_tAassRL4RSQL",
@@ -674,8 +633,7 @@
                         "name": "iconClass",
                         "value": "bx bx-folder-open"
                     }
-                ],
-                "source": "User Guide/Installation & Setup/Data directory.md"
+                ]
             }
         ]
     },
@@ -695,7 +653,6 @@
                 "value": "bx bx-help-circle"
             }
         ],
-        "dir": "User Guide/Basic Concepts and Features",
         "children": [
             {
                 "id": "_help_Vc8PjrjAGuOp",
@@ -713,7 +670,6 @@
                         "value": "bx bx-window-alt"
                     }
                 ],
-                "dir": "User Guide/Basic Concepts and Features/UI Elements",
                 "children": [
                     {
                         "id": "_help_x0JgW8UqGXvq",
@@ -730,8 +686,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-layout"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Vertical and horizontal layout.md"
+                        ]
                     },
                     {
                         "id": "_help_x3i7MxGccDuM",
@@ -748,8 +703,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-menu"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Global menu.md"
+                        ]
                     },
                     {
                         "id": "_help_oPVyFC7WL2Lp",
@@ -767,8 +721,6 @@
                                 "value": "bx bxs-tree-alt"
                             }
                         ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Note Tree.md",
-                        "dir": "User Guide/Basic Concepts and Features/UI Elements/Note Tree",
                         "children": [
                             {
                                 "id": "_help_YtSN43OrfzaA",
@@ -785,8 +737,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-menu"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/Note Tree/Note tree contextual menu.md"
+                                ]
                             },
                             {
                                 "id": "_help_yTjUdsOi4CIE",
@@ -803,8 +754,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-list-plus"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/Note Tree/Multiple selection.md"
+                                ]
                             },
                             {
                                 "id": "_help_DvdZhoQZY9Yd",
@@ -821,8 +771,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxs-keyboard"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/Note Tree/Keyboard shortcuts.md"
+                                ]
                             },
                             {
                                 "id": "_help_wyaGBBQrl4i3",
@@ -839,8 +788,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-hide"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/Note Tree/Hiding the subtree.md"
+                                ]
                             }
                         ]
                     },
@@ -859,8 +807,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-dots-horizontal"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Ribbon.md"
+                        ]
                     },
                     {
                         "id": "_help_3seOhtN8uLIY",
@@ -877,8 +824,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-dock-top"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Tabs.md"
+                        ]
                     },
                     {
                         "id": "_help_xYmIYSP6wE3F",
@@ -895,8 +841,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-sidebar"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Launch Bar.md"
+                        ]
                     },
                     {
                         "id": "_help_8YBEPzcpUgxw",
@@ -913,8 +858,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-dots-vertical-rounded"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Note buttons.md"
+                        ]
                     },
                     {
                         "id": "_help_4TIF1oA4VQRO",
@@ -931,8 +875,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-cog"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Options.md"
+                        ]
                     },
                     {
                         "id": "_help_luNhaphA37EO",
@@ -949,8 +892,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-dock-right"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Split View.md"
+                        ]
                     },
                     {
                         "id": "_help_XpOYSgsLkTJy",
@@ -967,8 +909,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-rectangle"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Floating buttons.md"
+                        ]
                     },
                     {
                         "id": "_help_RnaPdbciOfeq",
@@ -986,8 +927,6 @@
                                 "value": "bx bxs-dock-right"
                             }
                         ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Right Sidebar.md",
-                        "dir": "User Guide/Basic Concepts and Features/UI Elements/Right Sidebar",
                         "children": [
                             {
                                 "id": "_help_2dcGDhp9WFKb",
@@ -1004,8 +943,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-list-ul"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/Right Sidebar/Outline tab.md"
+                                ]
                             },
                             {
                                 "id": "_help_uNtgN0cUKEBc",
@@ -1022,8 +960,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-hash"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/Right Sidebar/Attributes tab.md"
+                                ]
                             },
                             {
                                 "id": "_help_LrKznOtw9cQD",
@@ -1035,8 +972,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-bot"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/Right Sidebar/AI chat tab.md"
+                                ]
                             },
                             {
                                 "id": "_help_KRlZFoIH0j6p",
@@ -1053,8 +989,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-network-chart"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/Right Sidebar/Connections tab.md"
+                                ]
                             }
                         ]
                     },
@@ -1073,8 +1008,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-history"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Recent Changes.md"
+                        ]
                     },
                     {
                         "id": "_help_ny318J39E5Z0",
@@ -1091,8 +1025,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-zoom-in"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Zoom.md"
+                        ]
                     },
                     {
                         "id": "_help_lgKX7r3aL30x",
@@ -1109,8 +1042,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-message-detail"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Note Tooltip.md"
+                        ]
                     },
                     {
                         "id": "_help_IjZS7iK5EXtb",
@@ -1128,8 +1060,6 @@
                                 "value": "bx bx-layout"
                             }
                         ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/New Layout.md",
-                        "dir": "User Guide/Basic Concepts and Features/UI Elements/New Layout",
                         "children": [
                             {
                                 "id": "_help_I6p2a06hdnL6",
@@ -1146,8 +1076,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-chevron-right"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/New Layout/Breadcrumb.md"
+                                ]
                             },
                             {
                                 "id": "_help_AlJ73vBCjWDw",
@@ -1164,8 +1093,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-dock-bottom"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/UI Elements/New Layout/Status bar.md"
+                                ]
                             }
                         ]
                     },
@@ -1184,8 +1112,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-card"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Note types with split view.md"
+                        ]
                     },
                     {
                         "id": "_help_t596jLvPrqkS",
@@ -1202,8 +1129,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-detail"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/UI Elements/Content width.md"
+                        ]
                     }
                 ]
             },
@@ -1223,8 +1149,6 @@
                         "value": "bx bx-notepad"
                     }
                 ],
-                "source": "User Guide/Basic Concepts and Features/Notes.md",
-                "dir": "User Guide/Basic Concepts and Features/Notes",
                 "children": [
                     {
                         "id": "_help_l7pigIGu01K2",
@@ -1241,8 +1165,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-text"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Title.md"
+                        ]
                     },
                     {
                         "id": "_help_p9kXRFAkwN4o",
@@ -1259,8 +1182,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-grid"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Note Icons & Colors.md"
+                        ]
                     },
                     {
                         "id": "_help_0vhv7lsOLy82",
@@ -1277,8 +1199,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-paperclip"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Attachments.md"
+                        ]
                     },
                     {
                         "id": "_help_IakOLONlIfGI",
@@ -1296,8 +1217,6 @@
                                 "value": "bx bx-duplicate"
                             }
                         ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Cloning Notes.md",
-                        "dir": "User Guide/Basic Concepts and Features/Notes/Cloning Notes",
                         "children": [
                             {
                                 "id": "_help_TBwsyfadTA18",
@@ -1314,8 +1233,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-rename"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/Notes/Cloning Notes/Branch prefix.md"
+                                ]
                             }
                         ]
                     },
@@ -1334,8 +1252,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-lock-alt"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Protected Notes.md"
+                        ]
                     },
                     {
                         "id": "_help_MKmLg5x6xkor",
@@ -1352,8 +1269,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-box"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Archived Notes.md"
+                        ]
                     },
                     {
                         "id": "_help_vZWERwf8U3nx",
@@ -1370,8 +1286,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-history"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Note Revisions.md"
+                        ]
                     },
                     {
                         "id": "_help_aGlEvb9hyDhS",
@@ -1388,8 +1303,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-sort-up"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Sorting Notes.md"
+                        ]
                     },
                     {
                         "id": "_help_NRnIZmSMc5sj",
@@ -1406,8 +1320,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-printer"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Printing & Exporting as PDF.md"
+                        ]
                     },
                     {
                         "id": "_help_CoFPLs3dRlXc",
@@ -1424,8 +1337,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-edit-alt"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Read-Only Notes.md"
+                        ]
                     },
                     {
                         "id": "_help_0ESUbbAxVnoK",
@@ -1442,8 +1354,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-grid"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Note List.md"
+                        ]
                     },
                     {
                         "id": "_help_S0Fos78ZfcY7",
@@ -1460,8 +1371,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-inbox"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Note Inbox.md"
+                        ]
                     },
                     {
                         "id": "_help_5Ct4MAJTS4tQ",
@@ -1478,8 +1388,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-trash-alt"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Notes/Restoring Deleted Notes.md"
+                        ]
                     }
                 ]
             },
@@ -1499,7 +1408,6 @@
                         "value": "bx bx-navigation"
                     }
                 ],
-                "dir": "User Guide/Basic Concepts and Features/Navigation",
                 "children": [
                     {
                         "id": "_help_kBrnXNG3Hplm",
@@ -1516,8 +1424,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-pyramid"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Tree Concepts.md"
+                        ]
                     },
                     {
                         "id": "_help_MMiBEQljMQh2",
@@ -1534,8 +1441,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-navigation"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Note Navigation.md"
+                        ]
                     },
                     {
                         "id": "_help_Ms1nauBra7gq",
@@ -1552,8 +1458,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-search-alt-2"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Quick search.md"
+                        ]
                     },
                     {
                         "id": "_help_F1r9QtzQLZqm",
@@ -1570,8 +1475,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-send"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Jump to & command palette.md"
+                        ]
                     },
                     {
                         "id": "_help_eIg8jdvaoNNd",
@@ -1588,8 +1492,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-search-alt-2"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Search.md"
+                        ]
                     },
                     {
                         "id": "_help_u3YFHC9tQlpm",
@@ -1606,8 +1509,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-bookmarks"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Bookmarks.md"
+                        ]
                     },
                     {
                         "id": "_help_OR8WJ7Iz9K4U",
@@ -1624,8 +1526,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-chevrons-up"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Note Hoisting.md"
+                        ]
                     },
                     {
                         "id": "_help_ZjLYv08Rp3qC",
@@ -1642,8 +1543,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-edit"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Quick edit.md"
+                        ]
                     },
                     {
                         "id": "_help_9sRHySam5fXb",
@@ -1660,8 +1560,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-door-open"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Workspaces.md"
+                        ]
                     },
                     {
                         "id": "_help_xWtq5NUHOwql",
@@ -1678,8 +1577,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-bar-chart"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Similar Notes.md"
+                        ]
                     },
                     {
                         "id": "_help_McngOG2jbUWX",
@@ -1696,8 +1594,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-search-alt-2"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Navigation/Search in note.md"
+                        ]
                     }
                 ]
             },
@@ -1716,8 +1613,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-keyboard"
                     }
-                ],
-                "source": "User Guide/Basic Concepts and Features/Keyboard Shortcuts.md"
+                ]
             },
             {
                 "id": "_help_Wy267RK4M69c",
@@ -1735,8 +1631,6 @@
                         "value": "bx bx-palette"
                     }
                 ],
-                "source": "User Guide/Basic Concepts and Features/Themes.md",
-                "dir": "User Guide/Basic Concepts and Features/Themes",
                 "children": [
                     {
                         "id": "_help_VbjZvtUek0Ln",
@@ -1753,8 +1647,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-book-reader"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Themes/Theme Gallery.md"
+                        ]
                     },
                     {
                         "id": "_help_gOKqSJgXLcIj",
@@ -1771,8 +1664,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-package"
                             }
-                        ],
-                        "source": "User Guide/Basic Concepts and Features/Themes/Icon Packs.md"
+                        ]
                     }
                 ]
             },
@@ -1792,8 +1684,6 @@
                         "value": "bx bx-import"
                     }
                 ],
-                "source": "User Guide/Basic Concepts and Features/Import & Export.md",
-                "dir": "User Guide/Basic Concepts and Features/Import & Export",
                 "children": [
                     {
                         "id": "_help_Oau6X9rCuegd",
@@ -1811,8 +1701,6 @@
                                 "value": "bx bxl-markdown"
                             }
                         ],
-                        "source": "User Guide/Basic Concepts and Features/Import & Export/Markdown.md",
-                        "dir": "User Guide/Basic Concepts and Features/Import & Export/Markdown",
                         "children": [
                             {
                                 "id": "_help_rJ9grSgoExl9",
@@ -1829,8 +1717,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-code-alt"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/Import & Export/Markdown/Supported syntax.md"
+                                ]
                             }
                         ]
                     },
@@ -1850,8 +1737,6 @@
                                 "value": "bx bx-import"
                             }
                         ],
-                        "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications.md",
-                        "dir": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications",
                         "children": [
                             {
                                 "id": "_help_GnhlmrATVqcH",
@@ -1868,8 +1753,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-window-open"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Microsoft OneNote.md"
+                                ]
                             },
                             {
                                 "id": "_help_Y5mKeJ6dsCld",
@@ -1886,8 +1770,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-window-open"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Notion.md"
+                                ]
                             },
                             {
                                 "id": "_help_nhQVuO4zvIxi",
@@ -1904,8 +1787,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-window-open"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Google Keep.md"
+                                ]
                             },
                             {
                                 "id": "_help_syuSEKf2rUGr",
@@ -1923,8 +1805,6 @@
                                         "value": "bx bx-window-open"
                                     }
                                 ],
-                                "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Evernote.md",
-                                "dir": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Evernote",
                                 "children": [
                                     {
                                         "id": "_help_dj3j8dG4th4l",
@@ -1942,8 +1822,7 @@
                                                 "value": "bx bx-file"
                                             }
                                         ],
-                                        "mime": "application/javascript;env=frontend",
-                                        "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Evernote/Process internal links by title.js"
+                                        "mime": "application/javascript;env=frontend"
                                     }
                                 ]
                             },
@@ -1962,8 +1841,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-window-open"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Anytype.md"
+                                ]
                             },
                             {
                                 "id": "_help_iWD7wiIuMtgV",
@@ -1980,8 +1858,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-window-open"
                                     }
-                                ],
-                                "source": "User Guide/Basic Concepts and Features/Import & Export/Importing data from other applications/Obsidian.md"
+                                ]
                             }
                         ]
                     }
@@ -2002,8 +1879,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-yin-yang"
                     }
-                ],
-                "source": "User Guide/Basic Concepts and Features/Zen mode.md"
+                ]
             },
             {
                 "id": "_help_YzMcWlCVeW09",
@@ -2020,8 +1896,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-widget"
                     }
-                ],
-                "source": "User Guide/Basic Concepts and Features/Active content.md"
+                ]
             }
         ]
     },
@@ -2040,8 +1915,7 @@
                 "name": "iconClass",
                 "value": "bx bx-run"
             }
-        ],
-        "source": "User Guide/Quick Start.md"
+        ]
     },
     {
         "id": "_help_i6dbnitykE5D",
@@ -2058,8 +1932,7 @@
                 "name": "iconClass",
                 "value": "bx bx-question-mark"
             }
-        ],
-        "source": "User Guide/FAQ.md"
+        ]
     },
     {
         "id": "_help_KSZ04uQ2D1St",
@@ -2077,8 +1950,6 @@
                 "value": "bx bx-edit"
             }
         ],
-        "source": "User Guide/Note Types.md",
-        "dir": "User Guide/Note Types",
         "children": [
             {
                 "id": "_help_iPIMuisry3hd",
@@ -2096,8 +1967,6 @@
                         "value": "bx bx-note"
                     }
                 ],
-                "source": "User Guide/Note Types/Text.md",
-                "dir": "User Guide/Note Types/Text",
                 "children": [
                     {
                         "id": "_help_oSuaNgyyKnhu",
@@ -2114,8 +1983,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-bookmark"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Anchors.md"
+                        ]
                     },
                     {
                         "id": "_help_oI7GoyilXXAr",
@@ -2132,8 +2000,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-reply"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Automatic replacements.md"
+                        ]
                     },
                     {
                         "id": "_help_NwBbFdNZ9h7O",
@@ -2150,8 +2017,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-info-circle"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Block quotes & admonitions.md"
+                        ]
                     },
                     {
                         "id": "_help_4n4oQUVbnOxa",
@@ -2168,8 +2034,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-chevron-down-circle"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Collapsible blocks.md"
+                        ]
                     },
                     {
                         "id": "_help_veGu4faJErEM",
@@ -2186,8 +2051,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-align-right"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Content language & Right-to-left support.md"
+                        ]
                     },
                     {
                         "id": "_help_2x0ZAX9ePtzV",
@@ -2204,8 +2068,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-cut"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Cut to subnote.md"
+                        ]
                     },
                     {
                         "id": "_help_UYuUB1ZekNQU",
@@ -2223,8 +2086,6 @@
                                 "value": "bx bx-code-alt"
                             }
                         ],
-                        "source": "User Guide/Note Types/Text/Developer-specific formatting.md",
-                        "dir": "User Guide/Note Types/Text/Developer-specific formatting",
                         "children": [
                             {
                                 "id": "_help_QxEyIjRBizuC",
@@ -2241,8 +2102,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-code"
                                     }
-                                ],
-                                "source": "User Guide/Note Types/Text/Developer-specific formatting/Code blocks.md"
+                                ]
                             }
                         ]
                     },
@@ -2261,8 +2121,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-bracket"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Footnotes.md"
+                        ]
                     },
                     {
                         "id": "_help_5wZallV2Qo1t",
@@ -2279,8 +2138,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-paint-roll"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Format Painter.md"
+                        ]
                     },
                     {
                         "id": "_help_nRhnJkTT8cPs",
@@ -2297,8 +2155,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-text"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Formatting toolbar.md"
+                        ]
                     },
                     {
                         "id": "_help_Gr6xFaF6ioJ5",
@@ -2315,8 +2172,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-bold"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/General formatting.md"
+                        ]
                     },
                     {
                         "id": "_help_AxshuNRegLAv",
@@ -2333,8 +2189,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-highlight"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Highlights list.md"
+                        ]
                     },
                     {
                         "id": "_help_mT0HEkOsz6i1",
@@ -2352,8 +2207,6 @@
                                 "value": "bx bx-image-alt"
                             }
                         ],
-                        "source": "User Guide/Note Types/Text/Images.md",
-                        "dir": "User Guide/Note Types/Text/Images",
                         "children": [
                             {
                                 "id": "_help_0Ofbk1aSuVRu",
@@ -2370,8 +2223,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxs-file-image"
                                     }
-                                ],
-                                "source": "User Guide/Note Types/Text/Images/Image references.md"
+                                ]
                             }
                         ]
                     },
@@ -2390,8 +2242,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Include Note.md"
+                        ]
                     },
                     {
                         "id": "_help_CohkqWQC1iBv",
@@ -2408,8 +2259,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-plus"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Insert buttons.md"
+                        ]
                     },
                     {
                         "id": "_help_oiVPnW8QfnvS",
@@ -2426,8 +2276,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-keyboard"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Keyboard shortcuts.md"
+                        ]
                     },
                     {
                         "id": "_help_UmgZAfcltxkS",
@@ -2444,8 +2293,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-link-external"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Link Previews.md"
+                        ]
                     },
                     {
                         "id": "_help_QEAPj01N5f7w",
@@ -2463,8 +2311,6 @@
                                 "value": "bx bx-link-alt"
                             }
                         ],
-                        "source": "User Guide/Note Types/Text/Links.md",
-                        "dir": "User Guide/Note Types/Text/Links",
                         "children": [
                             {
                                 "id": "_help_3IDVtesTQ8ds",
@@ -2481,8 +2327,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-link-external"
                                     }
-                                ],
-                                "source": "User Guide/Note Types/Text/Links/External links.md"
+                                ]
                             },
                             {
                                 "id": "_help_hrZ1D00cLbal",
@@ -2499,8 +2344,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-link"
                                     }
-                                ],
-                                "source": "User Guide/Note Types/Text/Links/Internal (reference) links.md"
+                                ]
                             },
                             {
                                 "id": "_help_wfGXLmm7x27z",
@@ -2517,8 +2361,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-link-alt"
                                     }
-                                ],
-                                "source": "User Guide/Note Types/Text/Links/Backlinks.md"
+                                ]
                             }
                         ]
                     },
@@ -2537,8 +2380,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-list-ul"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Lists.md"
+                        ]
                     },
                     {
                         "id": "_help_QrtTYPmdd1qq",
@@ -2555,8 +2397,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxl-markdown"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Markdown-like formatting.md"
+                        ]
                     },
                     {
                         "id": "_help_YfYAtQBcfo5V",
@@ -2573,8 +2414,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-math"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Math Equations.md"
+                        ]
                     },
                     {
                         "id": "_help_dEHYtoWWi8ct",
@@ -2591,8 +2431,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-grid"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Other features.md"
+                        ]
                     },
                     {
                         "id": "_help_gLt3vA97tMcp",
@@ -2609,8 +2448,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-star"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Premium features.md"
+                        ]
                     },
                     {
                         "id": "_help_ZlN4nump6EbW",
@@ -2627,8 +2465,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-menu"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Slash Commands.md"
+                        ]
                     },
                     {
                         "id": "_help_oBo3iHIZnbG2",
@@ -2645,8 +2482,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-check-double"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Spell Check.md"
+                        ]
                     },
                     {
                         "id": "_help_BFvAtE74rbP6",
@@ -2663,8 +2499,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-heading"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Table of contents.md"
+                        ]
                     },
                     {
                         "id": "_help_NdowYOC1GFKS",
@@ -2681,8 +2516,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-table"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Tables.md"
+                        ]
                     },
                     {
                         "id": "_help_pwc194wlRzcH",
@@ -2694,8 +2528,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Text Snippets.md"
+                        ]
                     },
                     {
                         "id": "_help_fASfBrYnquKU",
@@ -2712,8 +2545,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-checkbox-checked"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/To-do Lists.md"
+                        ]
                     }
                 ]
             },
@@ -2732,8 +2564,7 @@
                         "name": "iconClass",
                         "value": "bx bx-code"
                     }
-                ],
-                "source": "User Guide/Note Types/Code.md"
+                ]
             },
             {
                 "id": "_help_m523cpzocqaD",
@@ -2750,8 +2581,7 @@
                         "name": "iconClass",
                         "value": "bx bx-file-find"
                     }
-                ],
-                "source": "User Guide/Note Types/Saved Search.md"
+                ]
             },
             {
                 "id": "_help_iRwzGnHPzonm",
@@ -2768,8 +2598,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-network-chart"
                     }
-                ],
-                "source": "User Guide/Note Types/Relation Map.md"
+                ]
             },
             {
                 "id": "_help_bdUJEHsAPYQR",
@@ -2786,8 +2615,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-network-chart"
                     }
-                ],
-                "source": "User Guide/Note Types/Note Map.md"
+                ]
             },
             {
                 "id": "_help_HcABDtFCkbFN",
@@ -2804,8 +2632,7 @@
                         "name": "iconClass",
                         "value": "bx bx-extension"
                     }
-                ],
-                "source": "User Guide/Note Types/Render Note.md"
+                ]
             },
             {
                 "id": "_help_s1aBHPd79XYj",
@@ -2823,8 +2650,6 @@
                         "value": "bx bx-selection"
                     }
                 ],
-                "source": "User Guide/Note Types/Mermaid Diagrams.md",
-                "dir": "User Guide/Note Types/Mermaid Diagrams",
                 "children": [
                     {
                         "id": "_help_RH6yLjjWJHof",
@@ -2841,8 +2666,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-network-chart"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Mermaid Diagrams/ELK layout.md"
+                        ]
                     },
                     {
                         "id": "_help_WWgeUaBb7UfC",
@@ -2883,8 +2707,7 @@
                         "name": "iconClass",
                         "value": "bx bx-pen"
                     }
-                ],
-                "source": "User Guide/Note Types/Canvas.md"
+                ]
             },
             {
                 "id": "_help_1vHRoWCEjj0L",
@@ -2901,8 +2724,7 @@
                         "name": "iconClass",
                         "value": "bx bx-globe-alt"
                     }
-                ],
-                "source": "User Guide/Note Types/Web View.md"
+                ]
             },
             {
                 "id": "_help_gBbsAeiuUxI5",
@@ -2919,8 +2741,7 @@
                         "name": "iconClass",
                         "value": "bx bx-sitemap"
                     }
-                ],
-                "source": "User Guide/Note Types/Mind Map.md"
+                ]
             },
             {
                 "id": "_help_W8vYD3Q1zjCR",
@@ -2938,8 +2759,6 @@
                         "value": "bx bx-file-blank"
                     }
                 ],
-                "source": "User Guide/Note Types/File.md",
-                "dir": "User Guide/Note Types/File",
                 "children": [
                     {
                         "id": "_help_XJGJrpu7F9sh",
@@ -2956,8 +2775,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-file-pdf"
                             }
-                        ],
-                        "source": "User Guide/Note Types/File/PDFs.md"
+                        ]
                     },
                     {
                         "id": "_help_AjqEeiDUOzj4",
@@ -2974,8 +2792,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-video"
                             }
-                        ],
-                        "source": "User Guide/Note Types/File/Audio & Video.md"
+                        ]
                     },
                     {
                         "id": "_help_KG48zgNY31NW",
@@ -2987,8 +2804,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-file-doc"
                             }
-                        ],
-                        "source": "User Guide/Note Types/File/Office documents.md"
+                        ]
                     }
                 ]
             },
@@ -3007,8 +2823,7 @@
                         "name": "iconClass",
                         "value": "bx bx-table"
                     }
-                ],
-                "source": "User Guide/Note Types/Spreadsheets.md"
+                ]
             },
             {
                 "id": "_help_6RM1Q7ppFVoj",
@@ -3025,8 +2840,7 @@
                         "name": "iconClass",
                         "value": "bx bxl-markdown"
                     }
-                ],
-                "source": "User Guide/Note Types/Markdown.md"
+                ]
             },
             {
                 "id": "_help_jludwdW7N4hg",
@@ -3043,8 +2857,7 @@
                         "name": "iconClass",
                         "value": "bx bx-repost"
                     }
-                ],
-                "source": "User Guide/Note Types/Converting between note types.md"
+                ]
             }
         ]
     },
@@ -3064,8 +2877,6 @@
                 "value": "bx bx-book"
             }
         ],
-        "source": "User Guide/Collections.md",
-        "dir": "User Guide/Collections",
         "children": [
             {
                 "id": "_help_xWbu3jpNWapp",
@@ -3082,8 +2893,7 @@
                         "name": "iconClass",
                         "value": "bx bx-calendar"
                     }
-                ],
-                "source": "User Guide/Collections/Calendar.md"
+                ]
             },
             {
                 "id": "_help_2FvYrpmOXm29",
@@ -3100,8 +2910,7 @@
                         "name": "iconClass",
                         "value": "bx bx-table"
                     }
-                ],
-                "source": "User Guide/Collections/Table.md"
+                ]
             },
             {
                 "id": "_help_CtBQqbwXDx1w",
@@ -3118,8 +2927,7 @@
                         "name": "iconClass",
                         "value": "bx bx-columns"
                     }
-                ],
-                "source": "User Guide/Collections/Kanban Board.md"
+                ]
             },
             {
                 "id": "_help_81SGnPGMk7Xc",
@@ -3136,8 +2944,7 @@
                         "name": "iconClass",
                         "value": "bx bx-map-alt"
                     }
-                ],
-                "source": "User Guide/Collections/Geo Map.md"
+                ]
             },
             {
                 "id": "_help_zP3PMqaG71Ct",
@@ -3154,8 +2961,7 @@
                         "name": "iconClass",
                         "value": "bx bx-slideshow"
                     }
-                ],
-                "source": "User Guide/Collections/Presentation.md"
+                ]
             },
             {
                 "id": "_help_8QqnMzx393bx",
@@ -3172,8 +2978,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-grid"
                     }
-                ],
-                "source": "User Guide/Collections/Grid View.md"
+                ]
             },
             {
                 "id": "_help_mULW0Q3VojwY",
@@ -3190,8 +2995,7 @@
                         "name": "iconClass",
                         "value": "bx bx-list-ul"
                     }
-                ],
-                "source": "User Guide/Collections/List View.md"
+                ]
             },
             {
                 "id": "_help_CssoWBu8I7jF",
@@ -3208,8 +3012,7 @@
                         "name": "iconClass",
                         "value": "bx bx-cog"
                     }
-                ],
-                "source": "User Guide/Collections/Collection Properties.md"
+                ]
             },
             {
                 "id": "_help_IF7Q6I9x7zuw",
@@ -3226,8 +3029,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-dashboard"
                     }
-                ],
-                "source": "User Guide/Collections/Dashboard.md"
+                ]
             }
         ]
     },
@@ -3247,8 +3049,6 @@
                 "value": "bx bx-bug"
             }
         ],
-        "source": "User Guide/Troubleshooting.md",
-        "dir": "User Guide/Troubleshooting",
         "children": [
             {
                 "id": "_help_wy8So3yZZlH9",
@@ -3265,8 +3065,7 @@
                         "name": "iconClass",
                         "value": "bx bx-bug-alt"
                     }
-                ],
-                "source": "User Guide/Troubleshooting/Reporting issues.md"
+                ]
             },
             {
                 "id": "_help_x59R8J8KV5Bp",
@@ -3283,8 +3082,7 @@
                         "name": "iconClass",
                         "value": "bx bx-low-vision"
                     }
-                ],
-                "source": "User Guide/Troubleshooting/Anonymized Database.md"
+                ]
             },
             {
                 "id": "_help_qzNzp9LYQyPT",
@@ -3302,8 +3100,6 @@
                         "value": "bx bx-comment-error"
                     }
                 ],
-                "source": "User Guide/Troubleshooting/Error logs.md",
-                "dir": "User Guide/Troubleshooting/Error logs",
                 "children": [
                     {
                         "id": "_help_bnyigUA2UK7s",
@@ -3320,8 +3116,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-server"
                             }
-                        ],
-                        "source": "User Guide/Troubleshooting/Error logs/Backend (server) logs.md"
+                        ]
                     },
                     {
                         "id": "_help_9yEHzMyFirZR",
@@ -3338,8 +3133,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-window-alt"
                             }
-                        ],
-                        "source": "User Guide/Troubleshooting/Error logs/Frontend logs.md"
+                        ]
                     }
                 ]
             },
@@ -3358,8 +3152,7 @@
                         "name": "iconClass",
                         "value": "bx bx-error"
                     }
-                ],
-                "source": "User Guide/Troubleshooting/Synchronization fails with 504 Gateway Timeout.md"
+                ]
             },
             {
                 "id": "_help_s8alTXmpFR61",
@@ -3376,8 +3169,7 @@
                         "name": "iconClass",
                         "value": "bx bx-refresh"
                     }
-                ],
-                "source": "User Guide/Troubleshooting/Refreshing the application.md"
+                ]
             }
         ]
     },
@@ -3397,7 +3189,6 @@
                 "value": "bx bx-palette"
             }
         ],
-        "dir": "User Guide/Theme development",
         "children": [
             {
                 "id": "_help_7NfNr5pZpVKV",
@@ -3414,8 +3205,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-color"
                     }
-                ],
-                "source": "User Guide/Theme development/Creating a custom theme.md"
+                ]
             },
             {
                 "id": "_help_WFGzWeUK6arS",
@@ -3432,8 +3222,7 @@
                         "name": "iconClass",
                         "value": "bx bx-news"
                     }
-                ],
-                "source": "User Guide/Theme development/Customize the Next theme.md"
+                ]
             },
             {
                 "id": "_help_WN5z4M8ASACJ",
@@ -3450,8 +3239,7 @@
                         "name": "iconClass",
                         "value": "bx bx-book-open"
                     }
-                ],
-                "source": "User Guide/Theme development/Reference.md"
+                ]
             },
             {
                 "id": "_help_AlhDUqhENtH7",
@@ -3468,8 +3256,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-file-css"
                     }
-                ],
-                "source": "User Guide/Theme development/Custom app-wide CSS.md"
+                ]
             },
             {
                 "id": "_help_g1mlRoU8CsqC",
@@ -3486,8 +3273,7 @@
                         "name": "iconClass",
                         "value": "bx bx-package"
                     }
-                ],
-                "source": "User Guide/Theme development/Creating an icon pack.md"
+                ]
             }
         ]
     },
@@ -3507,7 +3293,6 @@
                 "value": "bx bx-rocket"
             }
         ],
-        "dir": "User Guide/Advanced Usage",
         "children": [
             {
                 "id": "_help_zEY4DaJG4YT5",
@@ -3525,8 +3310,6 @@
                         "value": "bx bx-list-check"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/Attributes.md",
-                "dir": "User Guide/Advanced Usage/Attributes",
                 "children": [
                     {
                         "id": "_help_HI6GBBIduIgv",
@@ -3543,8 +3326,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-hash"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Attributes/Labels.md"
+                        ]
                     },
                     {
                         "id": "_help_Cq5X6iKQop6R",
@@ -3561,8 +3343,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-transfer"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Attributes/Relations.md"
+                        ]
                     },
                     {
                         "id": "_help_bwZpz2ajCEwO",
@@ -3579,8 +3360,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-list-plus"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Attributes/Attribute Inheritance.md"
+                        ]
                     },
                     {
                         "id": "_help_OFXdgB2nNk1F",
@@ -3597,8 +3377,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-table"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Attributes/Promoted Attributes.md"
+                        ]
                     }
                 ]
             },
@@ -3617,8 +3396,7 @@
                         "name": "iconClass",
                         "value": "bx bx-copy"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Templates.md"
+                ]
             },
             {
                 "id": "_help_B2ORr7OVEZtc",
@@ -3636,8 +3414,6 @@
                         "value": "bx bx-news"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/Snippets.md",
-                "dir": "User Guide/Advanced Usage/Snippets",
                 "children": [
                     {
                         "id": "_help_VQjhl61rlWh9",
@@ -3654,8 +3430,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxl-markdown"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Snippets/Markdown Snippets.md"
+                        ]
                     },
                     {
                         "id": "_help_IEgsWp5hHH35",
@@ -3672,8 +3447,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-code-alt"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Snippets/Code Snippets.md"
+                        ]
                     },
                     {
                         "id": "_help_pwc194wlRzcH",
@@ -3685,8 +3459,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Note Types/Text/Text Snippets.md"
+                        ]
                     }
                 ]
             },
@@ -3705,8 +3478,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-network-chart"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Note Map (Link map, Tree map).md"
+                ]
             },
             {
                 "id": "_help_R9pX4DGra2Vt",
@@ -3724,8 +3496,6 @@
                         "value": "bx bx-share-alt"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/Sharing.md",
-                "dir": "User Guide/Advanced Usage/Sharing",
                 "children": [
                     {
                         "id": "_help_Qjt68inQ2bRj",
@@ -3742,8 +3512,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-code"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Sharing/Serving directly the content of a note.md"
+                        ]
                     },
                     {
                         "id": "_help_ycBFjKrrwE9p",
@@ -3760,8 +3529,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxs-file-html"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Sharing/Exporting static HTML for web publishing.md"
+                        ]
                     },
                     {
                         "id": "_help_sLIJ6f1dkJYW",
@@ -3778,8 +3546,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-world"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Sharing/Reverse proxy configuration.md"
+                        ]
                     },
                     {
                         "id": "_help_Ad7Ku5gOHrDU",
@@ -3796,8 +3563,7 @@
                                 "name": "iconClass",
                                 "value": "bx bxl-nodejs"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Sharing/Custom share template.md"
+                        ]
                     }
                 ]
             },
@@ -3817,8 +3583,6 @@
                         "value": "bx bxs-component"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/Advanced Showcases.md",
-                "dir": "User Guide/Advanced Usage/Advanced Showcases",
                 "children": [
                     {
                         "id": "_help_l0tKav7yLHGF",
@@ -3835,8 +3599,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-calendar"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Advanced Showcases/Day Notes.md"
+                        ]
                     },
                     {
                         "id": "_help_R7abl2fc6Mxi",
@@ -3853,8 +3616,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-line-chart"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Advanced Showcases/Weight Tracker.md"
+                        ]
                     },
                     {
                         "id": "_help_xYjQUYhpbUEW",
@@ -3871,8 +3633,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-calendar-check"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Advanced Showcases/Task Manager.md"
+                        ]
                     }
                 ]
             },
@@ -3891,8 +3652,7 @@
                         "name": "iconClass",
                         "value": "bx bx-list-check"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Customizing to-do task states.md"
+                ]
             },
             {
                 "id": "_help_J5Ex1ZrMbyJ6",
@@ -3909,8 +3669,7 @@
                         "name": "iconClass",
                         "value": "bx bx-globe"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Custom Request Handler.md"
+                ]
             },
             {
                 "id": "_help_d3fAXQ2diepH",
@@ -3927,8 +3686,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-file-plus"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Custom Resource Providers.md"
+                ]
             },
             {
                 "id": "_help_pgxEVkzLl1OP",
@@ -3946,8 +3704,6 @@
                         "value": "bx bx-extension"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/ETAPI (REST API).md",
-                "dir": "User Guide/Advanced Usage/ETAPI (REST API)",
                 "children": [
                     {
                         "id": "_help_9qPsTWBorUhQ",
@@ -3988,8 +3744,7 @@
                         "name": "iconClass",
                         "value": "bx bx-edit-alt"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Default Note Title.md"
+                ]
             },
             {
                 "id": "_help_wX4HbRucYSDD",
@@ -4007,8 +3762,6 @@
                         "value": "bx bx-data"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/Database.md",
-                "dir": "User Guide/Advanced Usage/Database",
                 "children": [
                     {
                         "id": "_help_oyIAJ9PvvwHX",
@@ -4026,8 +3779,6 @@
                                 "value": "bx bxs-edit"
                             }
                         ],
-                        "source": "User Guide/Advanced Usage/Database/Manually altering the database.md",
-                        "dir": "User Guide/Advanced Usage/Database/Manually altering the database",
                         "children": [
                             {
                                 "id": "_help_YKWqdJhzi2VY",
@@ -4044,8 +3795,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-data"
                                     }
-                                ],
-                                "source": "User Guide/Advanced Usage/Database/Manually altering the database/SQL Console.md"
+                                ]
                             }
                         ]
                     },
@@ -4064,8 +3814,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-package"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Database/Demo Notes.md"
+                        ]
                     }
                 ]
             },
@@ -4085,8 +3834,6 @@
                         "value": "bx bx-cog"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/Configuration (config.ini or environment variables).md",
-                "dir": "User Guide/Advanced Usage/Configuration (config.ini or environment variables)",
                 "children": [
                     {
                         "id": "_help_c5xB8m4g2IY6",
@@ -4103,8 +3850,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-windows"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Configuration (config.ini or environment variables)/Trilium instance.md"
+                        ]
                     },
                     {
                         "id": "_help_LWtBjFej3wX3",
@@ -4121,8 +3867,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-lock"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Configuration (config.ini or environment variables)/Cross-Origin Resource Sharing (CORS).md"
+                        ]
                     }
                 ]
             },
@@ -4141,8 +3886,7 @@
                         "name": "iconClass",
                         "value": "bx bx-list-plus"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Bulk Actions.md"
+                ]
             },
             {
                 "id": "_help_4FahAwuGTAwC",
@@ -4159,8 +3903,7 @@
                         "name": "iconClass",
                         "value": "bx bx-code"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Note source.md"
+                ]
             },
             {
                 "id": "_help_1YeN2MzFUluU",
@@ -4178,8 +3921,6 @@
                         "value": "bx bx-pyramid"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/Technologies used.md",
-                "dir": "User Guide/Advanced Usage/Technologies used",
                 "children": [
                     {
                         "id": "_help_MI26XDLSAlCD",
@@ -4196,8 +3937,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Advanced Usage/Technologies used/CKEditor.md"
+                        ]
                     }
                 ]
             },
@@ -4216,8 +3956,7 @@
                         "name": "iconClass",
                         "value": "bx bx-hash"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Note ID.md"
+                ]
             },
             {
                 "id": "_help_0vTSyvhPTAOz",
@@ -4235,7 +3974,6 @@
                         "value": "bx bxs-component"
                     }
                 ],
-                "dir": "User Guide/Advanced Usage/Internal API",
                 "children": [
                     {
                         "id": "_help_z8O2VG4ZZJD7",
@@ -4276,8 +4014,7 @@
                         "name": "iconClass",
                         "value": "bx bx-hide"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Hidden Notes.md"
+                ]
             },
             {
                 "id": "_help_uYF7pmepw27K",
@@ -4295,8 +4032,6 @@
                         "value": "bx bxs-data"
                     }
                 ],
-                "source": "User Guide/Advanced Usage/Metrics.md",
-                "dir": "User Guide/Advanced Usage/Metrics",
                 "children": [
                     {
                         "id": "_help_bOP3TB56fL1V",
@@ -4314,8 +4049,7 @@
                                 "value": "bx bx-file"
                             }
                         ],
-                        "mime": "application/json",
-                        "source": "User Guide/Advanced Usage/Metrics/grafana-dashboard.json"
+                        "mime": "application/json"
                     }
                 ]
             },
@@ -4334,8 +4068,7 @@
                         "name": "iconClass",
                         "value": "bx bxs-virus-block"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Safe mode.md"
+                ]
             },
             {
                 "id": "_help_HAIOFBoYIIdO",
@@ -4352,8 +4085,7 @@
                         "name": "iconClass",
                         "value": "bx bx-moon"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Nightly release.md"
+                ]
             },
             {
                 "id": "_help_ZmT9ln8XJX2o",
@@ -4370,8 +4102,7 @@
                         "name": "iconClass",
                         "value": "bx bx-book-reader"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Read-only database.md"
+                ]
             },
             {
                 "id": "_help_TiQbQDgP8L5t",
@@ -4388,8 +4119,7 @@
                         "name": "iconClass",
                         "value": "bx bx-file"
                     }
-                ],
-                "source": "User Guide/Advanced Usage/Text Extraction (OCR).md"
+                ]
             }
         ]
     },
@@ -4409,8 +4139,6 @@
                 "value": "bx bx-bot"
             }
         ],
-        "source": "User Guide/AI.md",
-        "dir": "User Guide/AI",
         "children": [
             {
                 "id": "_help_bkPZAMT7d2sR",
@@ -4427,8 +4155,7 @@
                         "name": "iconClass",
                         "value": "bx bx-cog"
                     }
-                ],
-                "source": "User Guide/AI/Providers.md"
+                ]
             },
             {
                 "id": "_help_cRRrdZjgyhNc",
@@ -4440,8 +4167,7 @@
                         "name": "iconClass",
                         "value": "bx bx-lock-alt"
                     }
-                ],
-                "source": "User Guide/AI/Privacy.md"
+                ]
             },
             {
                 "id": "_help_KOWBFgsZXJAD",
@@ -4458,8 +4184,7 @@
                         "name": "iconClass",
                         "value": "bx bx-network-chart"
                     }
-                ],
-                "source": "User Guide/AI/MCP.md"
+                ]
             }
         ]
     },
@@ -4479,8 +4204,6 @@
                 "value": "bx bxs-file-js"
             }
         ],
-        "source": "User Guide/Scripting.md",
-        "dir": "User Guide/Scripting",
         "children": [
             {
                 "id": "_help_yIhgI5H7A2Sm",
@@ -4498,8 +4221,6 @@
                         "value": "bx bx-window"
                     }
                 ],
-                "source": "User Guide/Scripting/Frontend Basics.md",
-                "dir": "User Guide/Scripting/Frontend Basics",
                 "children": [
                     {
                         "id": "_help_MgibgPcfeuGz",
@@ -4517,8 +4238,6 @@
                                 "value": "bx bxs-widget"
                             }
                         ],
-                        "source": "User Guide/Scripting/Frontend Basics/Custom Widgets.md",
-                        "dir": "User Guide/Scripting/Frontend Basics/Custom Widgets",
                         "children": [
                             {
                                 "id": "_help_SynTBQiBsdYJ",
@@ -4535,8 +4254,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Custom Widgets/Widget Basics.md"
+                                ]
                             },
                             {
                                 "id": "_help_GhurYZjh8e1V",
@@ -4553,8 +4271,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Custom Widgets/Note context aware widget.md"
+                                ]
                             },
                             {
                                 "id": "_help_M8IppdwVHSjG",
@@ -4571,8 +4288,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Custom Widgets/Right pane widget.md"
+                                ]
                             },
                             {
                                 "id": "_help_YNxAqkI5Kg1M",
@@ -4589,8 +4305,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Custom Widgets/Word count widget.md"
+                                ]
                             },
                             {
                                 "id": "_help_VqGQnnPGnqAU",
@@ -4607,8 +4322,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Custom Widgets/CSS.md"
+                                ]
                             },
                             {
                                 "id": "_help_gMkgcLJ6jBkg",
@@ -4625,8 +4339,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Custom Widgets/Troubleshooting.md"
+                                ]
                             }
                         ]
                     },
@@ -4646,7 +4359,6 @@
                                 "value": "bx bx-code-alt"
                             }
                         ],
-                        "dir": "User Guide/Scripting/Frontend Basics/Examples",
                         "children": [
                             {
                                 "id": "_help_TjLYAo3JMO8X",
@@ -4663,8 +4375,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-task"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Examples/New Task launcher button.md"
+                                ]
                             },
                             {
                                 "id": "_help_7kZPMD0uFwkH",
@@ -4681,8 +4392,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Examples/Downloading responses from Google Forms.md"
+                                ]
                             },
                             {
                                 "id": "_help_DL92EjAaXT26",
@@ -4699,8 +4409,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Examples/Using promoted attributes to configure scripts.md"
+                                ]
                             }
                         ]
                     },
@@ -4720,8 +4429,6 @@
                                 "value": "bx bx-dock-left"
                             }
                         ],
-                        "source": "User Guide/Scripting/Frontend Basics/Launch Bar Widgets.md",
-                        "dir": "User Guide/Scripting/Frontend Basics/Launch Bar Widgets",
                         "children": [
                             {
                                 "id": "_help_IPArqVfDQ4We",
@@ -4738,8 +4445,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Launch Bar Widgets/Note Title Widget.md"
+                                ]
                             },
                             {
                                 "id": "_help_gcI7RPbaNSh3",
@@ -4756,8 +4462,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-file"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Launch Bar Widgets/Analog Watch.md"
+                                ]
                             }
                         ]
                     },
@@ -4777,8 +4482,6 @@
                                 "value": "bx bxl-react"
                             }
                         ],
-                        "source": "User Guide/Scripting/Frontend Basics/Preact.md",
-                        "dir": "User Guide/Scripting/Frontend Basics/Preact",
                         "children": [
                             {
                                 "id": "_help_Bqde6BvPo05g",
@@ -4795,8 +4498,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxs-component"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Preact/Component libraries.md"
+                                ]
                             },
                             {
                                 "id": "_help_ykYtbM9k3a7B",
@@ -4813,8 +4515,7 @@
                                         "name": "iconClass",
                                         "value": "bx bx-question-mark"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Preact/Hooks.md"
+                                ]
                             },
                             {
                                 "id": "_help_Sg9GrCtyftZf",
@@ -4831,8 +4532,7 @@
                                         "name": "iconClass",
                                         "value": "bx bxs-file-css"
                                     }
-                                ],
-                                "source": "User Guide/Scripting/Frontend Basics/Preact/CSS.md"
+                                ]
                             },
                             {
                                 "id": "_help_RSssb9S3xgSr",
@@ -4850,8 +4550,6 @@
                                         "value": "bx bxs-component"
                                     }
                                 ],
-                                "source": "User Guide/Scripting/Frontend Basics/Preact/Built-in components.md",
-                                "dir": "User Guide/Scripting/Frontend Basics/Preact/Built-in components",
                                 "children": [
                                     {
                                         "id": "_help_i9B4IW7b6V6z",
@@ -4869,8 +4567,7 @@
                                                 "value": "bx bx-file"
                                             }
                                         ],
-                                        "mime": "text/jsx",
-                                        "source": "User Guide/Scripting/Frontend Basics/Preact/Built-in components/Widget showcase.jsx"
+                                        "mime": "text/jsx"
                                     }
                                 ]
                             }
@@ -4894,8 +4591,6 @@
                         "value": "bx bx-server"
                     }
                 ],
-                "source": "User Guide/Scripting/Backend scripts.md",
-                "dir": "User Guide/Scripting/Backend scripts",
                 "children": [
                     {
                         "id": "_help_fZ2IGYFXjkEy",
@@ -4912,8 +4607,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Scripting/Backend scripts/Server-side imports.md"
+                        ]
                     },
                     {
                         "id": "_help_GPERMystNGTB",
@@ -4930,8 +4624,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-rss"
                             }
-                        ],
-                        "source": "User Guide/Scripting/Backend scripts/Events.md"
+                        ]
                     }
                 ]
             },
@@ -4951,7 +4644,6 @@
                         "value": "bx bxl-nodejs"
                     }
                 ],
-                "dir": "User Guide/Scripting/Common concepts",
                 "children": [
                     {
                         "id": "_help_hA834UaHhSNn",
@@ -4968,8 +4660,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-package"
                             }
-                        ],
-                        "source": "User Guide/Scripting/Common concepts/Script bundles.md"
+                        ]
                     }
                 ]
             },
@@ -4989,8 +4680,6 @@
                         "value": "bx bx-code-curly"
                     }
                 ],
-                "source": "User Guide/Scripting/Script API.md",
-                "dir": "User Guide/Scripting/Script API",
                 "children": [
                     {
                         "id": "_help_Q2z6av6JZVWm",
@@ -5013,7 +4702,6 @@
                                 "value": "bx bx-folder"
                             }
                         ],
-                        "dir": "User Guide/Scripting/Script API/Frontend API",
                         "children": [
                             {
                                 "id": "_help_habiZ3HU8Kw8",
@@ -5098,8 +4786,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-calendar"
                             }
-                        ],
-                        "source": "User Guide/Scripting/Script API/Day.js.md"
+                        ]
                     }
                 ]
             },
@@ -5118,8 +4805,7 @@
                         "name": "iconClass",
                         "value": "bx bx-terminal"
                     }
-                ],
-                "source": "User Guide/Scripting/Logging.md"
+                ]
             },
             {
                 "id": "_help_cNpC0ITcfX0N",
@@ -5137,7 +4823,6 @@
                         "value": "bx bx-up-arrow-alt"
                     }
                 ],
-                "dir": "User Guide/Scripting/Breaking changes",
                 "children": [
                     {
                         "id": "_help_YeOa2l7Pu39I",
@@ -5154,8 +4839,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Scripting/Breaking changes/v0.104.0 Disabling the Node integration in Electron.md"
+                        ]
                     },
                     {
                         "id": "_help_fqAK6opjUagR",
@@ -5172,8 +4856,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Scripting/Breaking changes/v0.103.0 Removal of axios.md"
+                        ]
                     },
                     {
                         "id": "_help_pAJ0jWz16xFm",
@@ -5190,8 +4873,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Scripting/Breaking changes/v0.103.0 `cheerio` is now deprecated.md"
+                        ]
                     },
                     {
                         "id": "_help_72dxvnbnkDFY",
@@ -5208,8 +4890,7 @@
                                 "name": "iconClass",
                                 "value": "bx bx-file"
                             }
-                        ],
-                        "source": "User Guide/Scripting/Breaking changes/v0.102.0 Upgrade to jQuery 4.0.0.md"
+                        ]
                     }
                 ]
             },
@@ -5228,8 +4909,7 @@
                         "name": "iconClass",
                         "value": "bx bx-shield"
                     }
-                ],
-                "source": "User Guide/Scripting/Security.md"
+                ]
             }
         ]
     },
@@ -5249,7 +4929,6 @@
                 "value": "bx bx-info-circle"
             }
         ],
-        "dir": "User Guide/Miscellaneous",
         "children": [
             {
                 "id": "_help_WFbFXrgnDyyU",
@@ -5266,8 +4945,7 @@
                         "name": "iconClass",
                         "value": "bx bx-file"
                     }
-                ],
-                "source": "User Guide/Miscellaneous/Privacy Policy.md"
+                ]
             },
             {
                 "id": "_help_NcsmUYZRWEW4",
@@ -5284,8 +4962,7 @@
                         "name": "iconClass",
                         "value": "bx bx-file"
                     }
-                ],
-                "source": "User Guide/Miscellaneous/Patterns of personal knowledge.md"
+                ]
             },
             {
                 "id": "_help_d1Ap6Pg6IjaJ",
@@ -5302,8 +4979,7 @@
                         "name": "iconClass",
                         "value": "bx bx-file"
                     }
-                ],
-                "source": "User Guide/Miscellaneous/License.md"
+                ]
             }
         ]
     }

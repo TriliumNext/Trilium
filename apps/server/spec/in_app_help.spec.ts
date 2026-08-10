@@ -38,7 +38,8 @@ describe("in-app help (shipped artifacts)", () => {
     });
 
     it("serves the content of every page that ships one, through becca and the blob route", () => {
-        const pages = flatten(meta).filter((item) => item.source);
+        // Text and code notes carry a page of their own; folders and web views do not.
+        const pages = flatten(meta).filter((item) => item.type === "text" || item.type === "code");
         expect(pages.length).toBeGreaterThan(0);
 
         for (const page of pages) {
