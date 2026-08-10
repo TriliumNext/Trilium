@@ -6,7 +6,7 @@ The SQL Console is Trilium's built-in database editor.
 
 It can be accessed by going to the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> → Advanced → Open SQL Console.
 
-![](SQL%20Console_image.png)
+![](SQL%20Console_image.jpg)
 
 ### Interaction
 

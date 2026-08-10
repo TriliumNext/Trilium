@@ -13,7 +13,7 @@ The selected notes will be indicated via a different background color and an ico
 
 ### Selecting notes in a sequence
 
-<figure class="image image-style-align-right image_resized" style="width:29.24%;"><img style="aspect-ratio:233/205;" src="1_Multiple selection_image.png" width="233" height="205"></figure>
+<figure class="image image-style-align-right image_resized" style="width:29.24%;"><img style="aspect-ratio:233/205;" src="1_Multiple selection_image.jpg" width="233" height="205"></figure>
 
 When notes are in a sequence (e.g. one underneath the other), the entire selection can be made just by selecting the first and the last item instead of individually clicking all the notes.
 

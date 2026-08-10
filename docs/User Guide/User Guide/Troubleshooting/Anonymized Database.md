@@ -1,5 +1,5 @@
 # Anonymized Database
-![](Anonymized%20Database_image.png)
+![](Anonymized%20Database_image.jpg)
 
 In certain scenarios, understanding the structure of a database is crucial for troubleshooting issues. However, sharing your actual [database](../Advanced%20Usage/Database.md) file with personal notes is not advisable. To address this, Trilium offers a feature to anonymize the database. This feature can be accessed via Menu -> Options -> Advanced tab.
 

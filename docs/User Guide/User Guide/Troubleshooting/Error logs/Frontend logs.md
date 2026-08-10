@@ -10,6 +10,6 @@ If that doesn't work, then:
 
 Once you have Dev Tools open, click on "Console" tab:
 
-![](Frontend%20logs_image.png)
+![](Frontend%20logs_image.jpg)
 
 Copy-paste (or screenshot) the logs. It's better to provide not just errors, but the whole log, which might provide context while analyzing the bug.

@@ -1,7 +1,7 @@
 # Note Tree
 This page explains how to manipulate the note tree in TriliumNext, focusing on moving notes.
 
-![](Note%20Tree_image.png)
+![](Note%20Tree_image.jpg)
 
 ## Drag and Drop
 

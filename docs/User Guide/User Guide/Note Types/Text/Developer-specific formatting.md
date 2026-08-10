@@ -16,7 +16,7 @@ To insert an inline code:
 
 Code blocks display a snippet of code as a dedicated block:
 
-![](4_Developer-specific%20formatting_image.png)
+![](4_Developer-specific%20formatting_image.jpg)
 
 A code block with JavaScript syntax highlight enabled.
 
@@ -28,7 +28,7 @@ See the dedicated documentation for more information: [Code blocks](Developer-s
 
 This allows marking a portion of text as a shortcut key.
 
-![](Developer-specific%20formatting_image.png)
+![](Developer-specific%20formatting_image.jpg)
 
 To apply this style, press the ![](6_Developer-specific%20formatting_image.png) button in ![](1_Developer-specific%20formatting_image.png) group from the [Formatting toolbar](Formatting%20toolbar.md). On the floating toolbar, the buttons appear when selecting a text.
 

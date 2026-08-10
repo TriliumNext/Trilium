@@ -10,7 +10,7 @@ Data directory contains:
 
 Easy way how to find out which data directory Trilium uses is to look at the "About Trilium Notes" dialog (from "Menu" in upper left corner):
 
-![](Data%20directory_image.png)
+![](Data%20directory_image.jpg)
 
 Here's how the location is decided:
 

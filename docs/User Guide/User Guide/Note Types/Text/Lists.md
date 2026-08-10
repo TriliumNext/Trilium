@@ -25,12 +25,12 @@ It possible to add content-level blocks such as headings, code blocks, tables wi
 
 |  |  |  |
 | --- | --- | --- |
-| 1 | ![](6_Lists_image.png) | First, create a list. |
-| 2 | ![](9_Lists_image.png) | Press Enter to create a new list item. |
-| 3 | ![](5_Lists_image.png) | Press Backspace to get rid of the bullet point. Notice the cursor position. |
-| 4 | <img class="image_resized" style="aspect-ratio:676/112;width:98.29%;" src="10_Lists_image.png" width="676" height="112"> | At this point, insert any desired block-level item such as a code block. |
-| 5 | <img class="image_resized" style="aspect-ratio:675/129;width:94.22%;" src="8_Lists_image.png" width="675" height="129"> | To continue with a new bullet point, press Enter until the cursor moves to a new blank position. |
-| 6 | <img class="image_resized" style="aspect-ratio:675/129;width:100%;" src="3_Lists_image.png" width="675" height="129"> | Press Enter once more to create the new bullet. |
+| 1 | ![](6_Lists_image.jpg) | First, create a list. |
+| 2 | ![](9_Lists_image.jpg) | Press Enter to create a new list item. |
+| 3 | ![](5_Lists_image.jpg) | Press Backspace to get rid of the bullet point. Notice the cursor position. |
+| 4 | <img class="image_resized" style="aspect-ratio:676/112;width:98.29%;" src="10_Lists_image.jpg" width="676" height="112"> | At this point, insert any desired block-level item such as a code block. |
+| 5 | <img class="image_resized" style="aspect-ratio:675/129;width:94.22%;" src="8_Lists_image.jpg" width="675" height="129"> | To continue with a new bullet point, press Enter until the cursor moves to a new blank position. |
+| 6 | <img class="image_resized" style="aspect-ratio:675/129;width:100%;" src="3_Lists_image.jpg" width="675" height="129"> | Press Enter once more to create the new bullet. |
 
 The same principle applies to all three list types (bullet, numbered and to-do).
 

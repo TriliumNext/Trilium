@@ -1,5 +1,5 @@
 # Code blocks
-![](1_Code%20blocks_image.png)
+![](1_Code%20blocks_image.jpg)
 
 The code blocks feature allows entering pieces of code in text notes.
 
