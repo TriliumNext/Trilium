@@ -70,6 +70,8 @@ export interface ViewScope {
     tocCollapsedHeadings?:  Set<string>;
     /** When set, scrolls to a bookmark anchor within the note after navigation. */
     bookmark?: string;
+    /** When set, scrolls to the block carrying this `data-block-id` after navigation. */
+    blockId?: string;
 }
 
 /**
@@ -92,7 +94,32 @@ const NOTE_PATH_PATTERN = /^[_a-z0-9]{4,}(\/[_a-z0-9]{4,})*$/i;
 const MAX_SPLIT_PANES_IN_HASH = 8;
 
 /** Hash parameters that belong to a pane's view scope rather than to the window as a whole. */
-const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark"];
+const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark", "blockId"];
+
+/**
+ * The CSS selector for the in-note element a view scope wants scrolled into view — a named anchor
+ * (`?bookmark=`) or a block (`?blockId=`) — or `null` when it asks for neither.
+ *
+ * Consuming: the target is cleared as it is read, so a later re-render of the same note does not
+ * yank the reader back to it. Callers should therefore only call this once they are ready to
+ * scroll. Shared by the read-only and editable text views, which locate the element differently
+ * (rendered content vs. the editor's DOM root) but agree on what to look for.
+ */
+export function takeScrollTargetSelector(viewScope: ViewScope | undefined): string | null {
+    if (viewScope?.bookmark) {
+        const selector = `[id="${CSS.escape(viewScope.bookmark)}"]`;
+        viewScope.bookmark = undefined;
+        return selector;
+    }
+
+    if (viewScope?.blockId) {
+        const selector = `[data-block-id="${CSS.escape(viewScope.blockId)}"]`;
+        viewScope.blockId = undefined;
+        return selector;
+    }
+
+    return null;
+}
 
 interface CreateLinkOptions {
     title?: string;

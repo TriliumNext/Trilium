@@ -104,6 +104,7 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
                 "insertTemplate",
                 "markdownImport",
                 "cuttonote",
+                "copyBlockLink",
                 "|",
                 "undo",
                 "redo"
@@ -166,7 +167,9 @@ export function buildFloatingToolbar() {
             "insertTemplate",
             "markdownImport",
             "specialCharacters",
-            "emoji"
+            "emoji",
+            "|",
+            "copyBlockLink"
         ]
     };
 }

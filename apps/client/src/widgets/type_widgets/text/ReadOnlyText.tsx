@@ -11,6 +11,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "pre
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
+import { takeScrollTargetSelector } from "../../../services/link";
 import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
@@ -36,14 +37,14 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
     const { isRtl } = useNoteLanguage(note);
     const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
 
-    // Scroll to bookmark anchor if navigated with ?bookmark=...
+    // Scroll to the anchor or block if navigated with ?bookmark=... / ?blockId=...
     useEffect(() => {
-        const viewScope = noteContext?.viewScope;
-        if (!viewScope?.bookmark || !readOnlyContentRef.current) return;
+        if (!readOnlyContentRef.current) return;
 
-        const el = readOnlyContentRef.current.querySelector(`[id="${CSS.escape(viewScope.bookmark)}"]`);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        viewScope.bookmark = undefined;
+        const selector = takeScrollTargetSelector(noteContext?.viewScope);
+        if (!selector) return;
+
+        readOnlyContentRef.current.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, [blob]);
 
     return (

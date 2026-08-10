@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import appContext from "../../../components/app_context";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
-import link, { parseNavigationStateFromUrl } from "../../../services/link";
+import link, { parseNavigationStateFromUrl, takeScrollTargetSelector } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
 import toast from "../../../services/toast";
@@ -65,14 +65,13 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             contentRef.current = newContent;
             watchdogRef.current?.editor?.setData(newContent);
 
-            // Scroll to bookmark anchor if navigated with ?bookmark=...
-            const viewScope = noteContext?.viewScope;
-            if (viewScope?.bookmark) {
+            // Scroll to the anchor or block if navigated with ?bookmark=... / ?blockId=...
+            const selector = takeScrollTargetSelector(noteContext?.viewScope);
+            if (selector) {
                 requestAnimationFrame(() => {
-                    const el = watchdogRef.current?.editor?.editing.view.getDomRoot()
-                        ?.querySelector(`[id="${CSS.escape(viewScope.bookmark!)}"]`);
-                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    viewScope.bookmark = undefined;
+                    watchdogRef.current?.editor?.editing.view.getDomRoot()
+                        ?.querySelector(selector)
+                        ?.scrollIntoView({ behavior: "smooth", block: "center" });
                 });
             }
         },
