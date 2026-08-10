@@ -4,16 +4,17 @@
  * "how do I…?" questions about Trilium itself, grounded in the documentation
  * that ships with the running version instead of possibly stale training data.
  *
- * Help pages are virtual notes, so the regular search reaches their bodies too.
- * search_help stays separate for the ranking it does: it is scoped to the guide
- * and weighs a title match above a body one, over a lazily built in-memory index
- * of the page texts (~1 MB for the whole guide, built once per process).
+ * The searching itself is the application's own, scoped to the guide. What these add is that they
+ * are here to be reached for at all: a tool the assistant can see is what points it at the
+ * documentation of the version in front of it.
  */
 
 import { z } from "zod";
 
 import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
+import SearchContext from "../../search/search_context.js";
+import searchService from "../../search/services/search.js";
 import { getContentPreview } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
@@ -21,15 +22,13 @@ const HELP_ROOT_NOTE_ID = "_help";
 const DEFAULT_SEARCH_LIMIT = 10;
 /** The User Guide is only a few levels deep; bound traversal defensively. */
 const MAX_HELP_DEPTH = 10;
-/** A word occurrence in the title outweighs one in the body. */
-const TITLE_MATCH_WEIGHT = 10;
 
 export const helpTools = defineTools({
     search_help: {
         description: [
             "Search Trilium's built-in User Guide — the documentation for Trilium itself.",
             "Use this to answer questions about how to use Trilium: features, settings, keyboard shortcuts, sync, scripting, themes, etc.",
-            "Full-text keyword search over the help pages; keep queries to a few keywords (e.g. 'keyboard shortcuts', 'protected notes').",
+            "Takes the same query as search_notes, over the help pages alone; keep it to a few keywords (e.g. 'keyboard shortcuts', 'protected notes').",
             "If a query finds nothing, retry with synonyms or browse get_help_toc — the guide may name the concept differently (e.g. placing a note in two locations is 'cloning').",
             "Read a found page with get_note_content."
         ].join(" "),
@@ -42,27 +41,19 @@ export const helpTools = defineTools({
                 return { error: "The built-in User Guide is not available in this installation." };
             }
 
-            // Strip punctuation (models happily send "cloning?" despite the
-            // schema hint) and deduplicate so repeated words don't skew scoring.
-            const words = query.toLowerCase()
-                .replace(/[^\p{L}\p{N}\s]/gu, " ")
-                .split(/\s+/)
-                .filter(Boolean)
-                .filter((word, index, all) => all.indexOf(word) === index);
-            if (words.length === 0) {
-                return { error: "Empty search query." };
-            }
+            // Naming an ancestor is also what lets the guide be found at all: it takes the place
+            // of the filter that keeps the hidden subtree out of ordinary results (see
+            // `getAncestorExp`), so the pages are in scope without opening up everything else.
+            const matches = searchService.findResultsWithQuery(
+                query,
+                new SearchContext({ ancestorNoteId: HELP_ROOT_NOTE_ID })
+            );
 
-            const matches = getHelpIndex()
-                .map((page) => ({ page, score: scorePage(page, words) }))
-                .filter((m) => m.score > 0)
-                .sort((a, b) => b.score - a.score);
-
-            const results = matches.slice(0, limit).map(({ page }) => {
-                const note = becca.notes[page.noteId];
+            const results = matches.slice(0, limit).map(({ noteId }) => {
+                const note = becca.notes[noteId];
                 if (!note) return null;
                 return {
-                    noteId: page.noteId,
+                    noteId,
                     title: note.getTitleOrProtected(),
                     path: getHelpPath(note),
                     contentPreview: getContentPreview(note)
@@ -99,99 +90,6 @@ export const helpTools = defineTools({
         }
     }
 });
-
-/** One help page in the search index; title and text are lowercased for matching. */
-interface HelpPageIndexEntry {
-    noteId: string;
-    titleLower: string;
-    textLower: string;
-}
-
-/**
- * Lazily built index of all help pages. The guide only changes on upgrade
- * (which restarts the server), so it is cached for the process lifetime.
- */
-let helpIndex: HelpPageIndexEntry[] | null = null;
-
-/** Drop the cached search index (for tests). */
-export function resetHelpIndex(): void {
-    helpIndex = null;
-}
-
-function getHelpIndex(): HelpPageIndexEntry[] {
-    if (helpIndex === null) {
-        helpIndex = [];
-        collectIndexEntries(becca.getNoteOrThrow(HELP_ROOT_NOTE_ID), 0, helpIndex);
-    }
-    return helpIndex;
-}
-
-function collectIndexEntries(note: BNote, depth: number, entries: HelpPageIndexEntry[]): void {
-    if (depth >= MAX_HELP_DEPTH) {
-        return;
-    }
-    for (const child of note.getChildNotes()) {
-        entries.push({
-            noteId: child.noteId,
-            titleLower: child.getTitleOrProtected().toLowerCase(),
-            textLower: getPageText(child).toLowerCase()
-        });
-        collectIndexEntries(child, depth + 1, entries);
-    }
-}
-
-/** The text of a help page, which carries its content like any other note. */
-function getPageText(note: BNote): string {
-    const content = note.getContent();
-
-    if (typeof content !== "string") {
-        return "";
-    }
-
-    // Code pages are shown verbatim in their own language; stripping tags would eat parts of them.
-    return note.type === "code" ? content : htmlToPlainText(content);
-}
-
-/**
- * Score a page against the query words: every word must occur in the title or
- * body (AND semantics), title occurrences weigh more than body occurrences.
- * Returns 0 when any word is missing.
- */
-function scorePage(page: HelpPageIndexEntry, words: string[]): number {
-    let score = 0;
-    for (const word of words) {
-        const titleHits = countOccurrences(page.titleLower, word);
-        const bodyHits = countOccurrences(page.textLower, word);
-        if (titleHits + bodyHits === 0) {
-            return 0;
-        }
-        score += titleHits * TITLE_MATCH_WEIGHT + bodyHits;
-    }
-    return score;
-}
-
-function countOccurrences(haystack: string, needle: string): number {
-    let count = 0;
-    let index = haystack.indexOf(needle);
-    while (index !== -1) {
-        count++;
-        index = haystack.indexOf(needle, index + needle.length);
-    }
-    return count;
-}
-
-/** Crude tag stripping — good enough for keyword matching, not for display. */
-function htmlToPlainText(html: string): string {
-    return html
-        .replace(/<[^>]+>/g, " ")
-        .replace(/&nbsp;/g, " ")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, "\"")
-        .replace(/&#39;/g, "'")
-        .replace(/&amp;/g, "&")
-        .replace(/\s+/g, " ");
-}
 
 /** The help subtree exists only once the in-app help has been imported. */
 function isHelpAvailable(): boolean {

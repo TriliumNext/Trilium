@@ -1,9 +1,22 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../../../becca/becca.js";
 import { buildNote } from "../../../test/becca_easy_mocking.js";
-import { helpTools, resetHelpIndex } from "./help_tools.js";
+import type SearchContext from "../../search/search_context.js";
+
+// The searching itself is the application's, and it wants a database; what belongs to these tools
+// is which notes they put in scope and what they make of the results. Those are asserted here, and
+// the matching end to end against the shipped guide in `apps/server/spec/in_app_help.spec.ts`.
+vi.mock("../../search/services/search.js", () => ({
+    default: {
+        findResultsWithQuery: (query: string, context: SearchContext) => search(query, context)
+    }
+}));
+
+import { helpTools } from "./help_tools.js";
 import type { ToolDefinition } from "./tool_registry.js";
+
+let search = vi.fn((_query: string, _context: SearchContext) => [] as { noteId: string }[]);
 
 function getTool(name: string): ToolDefinition {
     for (const [n, def] of helpTools) {
@@ -52,12 +65,27 @@ interface SearchHelpResult {
 describe("help_tools", () => {
     beforeEach(() => {
         becca.reset();
-        resetHelpIndex();
+        search = vi.fn(() => []);
     });
 
     describe("search_help", () => {
-        it("matches page bodies and returns breadcrumb paths", () => {
+        it("searches the guide and nothing else, passing the query through as written", () => {
             buildHelpTree();
+
+            getTool("search_help").execute({ query: "multiple locations?" });
+
+            expect(search).toHaveBeenCalledOnce();
+            const [ query, context ] = search.mock.calls[0];
+            expect(query).toBe("multiple locations?");
+            // Naming an ancestor is also what puts the hidden subtree in scope, so the guide is
+            // reachable without the search opening up to everything else hidden.
+            expect(context.ancestorNoteId).toBe("_help");
+            expect(context.includeHiddenNotes).toBe(false);
+        });
+
+        it("describes each hit by its title, its place in the guide and a preview of its text", () => {
+            buildHelpTree();
+            search = vi.fn(() => [ { noteId: "_help_cloning" } ]);
 
             const result = getTool("search_help").execute({ query: "multiple locations" }) as SearchHelpResult;
 
@@ -70,55 +98,34 @@ describe("help_tools", () => {
             expect(result.results[0].contentPreview).toContain("multiple locations");
         });
 
-        it("requires every query word (AND semantics)", () => {
+        it("reports how many pages matched even when only some are returned", () => {
             buildHelpTree();
-
-            const result = getTool("search_help").execute({ query: "cloning fnordhotzenplotz" }) as SearchHelpResult;
-
-            expect(result.totalResults).toBe(0);
-            expect(result.results).toEqual([]);
-        });
-
-        it("ranks title matches above body matches and respects the limit", () => {
-            buildHelpTree();
-            // "installation" occurs in the Installation page title AND in the Cloning page body.
-
-            const all = getTool("search_help").execute({ query: "installation" }) as SearchHelpResult;
-            expect(all.totalResults).toBe(2);
-            expect(all.results.map(r => r.noteId)).toEqual(["_help_install", "_help_cloning"]);
+            search = vi.fn(() => [ { noteId: "_help_install" }, { noteId: "_help_cloning" } ]);
 
             const limited = getTool("search_help").execute({ query: "installation", limit: 1 }) as SearchHelpResult;
+
             expect(limited.totalResults).toBe(2);
-            expect(limited.results).toHaveLength(1);
+            expect(limited.results.map((r) => r.noteId)).toEqual([ "_help_install" ]);
         });
 
-        it("strips punctuation and deduplicates query words", () => {
+        it("drops a hit whose note has since gone from becca", () => {
             buildHelpTree();
+            search = vi.fn(() => [ { noteId: "_help_cloning" }, { noteId: "_help_vanished" } ]);
 
-            // "locations?" would never match as-is; repeated words must not double-count.
-            const punctuated = getTool("search_help").execute({ query: "multiple locations?" }) as SearchHelpResult;
-            expect(punctuated.results.map(r => r.noteId)).toEqual(["_help_cloning"]);
+            const result = getTool("search_help").execute({ query: "anything" }) as SearchHelpResult;
 
-            const deduped = getTool("search_help").execute({ query: "installation installation" }) as SearchHelpResult;
-            // Title match still outranks body match — the duplicate word doesn't skew scoring.
-            expect(deduped.results.map(r => r.noteId)).toEqual(["_help_install", "_help_cloning"]);
+            expect(result.results.map((r) => r.noteId)).toEqual([ "_help_cloning" ]);
         });
 
-        it("rejects an empty query", () => {
-            buildHelpTree();
-            expect(getTool("search_help").execute({ query: "   " }))
-                .toEqual({ error: "Empty search query." });
-            expect(getTool("search_help").execute({ query: "?!" }))
-                .toEqual({ error: "Empty search query." });
-        });
-
-        it("returns an error when the help subtree is absent or empty", () => {
+        it("returns an error when the help subtree is absent or empty, without searching", () => {
             expect(getTool("search_help").execute({ query: "anything" }))
                 .toEqual({ error: "The built-in User Guide is not available in this installation." });
 
             buildNote({ id: "_help", title: "User Guide", content: "" }); // present but not yet populated
             expect(getTool("search_help").execute({ query: "anything" }))
                 .toEqual({ error: "The built-in User Guide is not available in this installation." });
+
+            expect(search).not.toHaveBeenCalled();
         });
     });
 
