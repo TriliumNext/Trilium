@@ -10,10 +10,12 @@
  * (~1 MB for the whole guide, loaded once per process).
  */
 
-import { becca, type BNote } from "@triliumnext/core";
-import { getContentPreview, getDocNoteHtml } from "@triliumnext/core/src/services/llm/tools/helpers.js";
-import { defineTools } from "@triliumnext/core/src/services/llm/tools/tool_registry.js";
 import { z } from "zod";
+
+import becca from "../../../becca/becca.js";
+import type BNote from "../../../becca/entities/bnote.js";
+import { getContentPreview, getDocNoteHtml } from "./helpers.js";
+import { defineTools } from "./tool_registry.js";
 
 const HELP_ROOT_NOTE_ID = "_help";
 const DEFAULT_SEARCH_LIMIT = 10;
@@ -132,10 +134,29 @@ function collectIndexEntries(note: BNote, depth: number, entries: HelpPageIndexE
         entries.push({
             noteId: child.noteId,
             titleLower: child.getTitleOrProtected().toLowerCase(),
-            textLower: htmlToPlainText(getDocNoteHtml(child) ?? "").toLowerCase()
+            textLower: getPageText(child).toLowerCase()
         });
         collectIndexEntries(child, depth + 1, entries);
     }
+}
+
+/**
+ * The text of a help page. Pages carry their content like any other note; `doc` notes elsewhere in
+ * the hidden subtree still keep theirs on disk, so those fall back to the host's reader.
+ */
+function getPageText(note: BNote): string {
+    if (note.type === "doc") {
+        return htmlToPlainText(getDocNoteHtml(note) ?? "");
+    }
+
+    const content = note.getContent();
+
+    if (typeof content !== "string") {
+        return "";
+    }
+
+    // Code pages are shown verbatim in their own language; stripping tags would eat parts of them.
+    return note.type === "code" ? content : htmlToPlainText(content);
 }
 
 /**

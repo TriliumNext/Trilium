@@ -1,38 +1,9 @@
-import { becca, becca_easy_mocking } from "@triliumnext/core";
-import { registerDocNoteHtmlReader } from "@triliumnext/core/src/services/llm/tools/helpers.js";
-import type { ToolDefinition } from "@triliumnext/core/src/services/llm/tools/tool_registry.js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { getDocNoteHtml } from "./doc_notes.js";
+import becca from "../../../becca/becca.js";
+import { buildNote } from "../../../test/becca_easy_mocking.js";
 import { helpTools, resetHelpIndex } from "./help_tools.js";
-
-// Doc-note HTML reaches core through a host-registered reader — the server's is
-// filesystem-backed. Registering it here mirrors what services/llm/index.ts
-// does in production.
-registerDocNoteHtmlReader(getDocNoteHtml);
-
-const { buildNote } = becca_easy_mocking;
-
-/** Fake on-disk help pages: path suffix → HTML content. */
-const docFiles = vi.hoisted(() => new Map<string, string>());
-
-// Help pages are doc notes whose HTML lives on disk — serve them from the
-// docFiles fixture map and pass every other path through to the real fs.
-vi.mock("fs", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("fs")>();
-    const readFileSync = ((filePath: unknown, ...rest: unknown[]) => {
-        const pathStr = String(filePath);
-        for (const [suffix, content] of docFiles) {
-            if (pathStr.endsWith(suffix)) return content;
-        }
-        if (pathStr.includes("doc_notes")) {
-            throw new Error(`ENOENT: ${pathStr}`);
-        }
-        return (actual.readFileSync as (...args: unknown[]) => unknown)(filePath, ...rest);
-    }) as typeof actual.readFileSync;
-    const mocked = { ...actual, readFileSync };
-    return { ...mocked, default: mocked };
-});
+import type { ToolDefinition } from "./tool_registry.js";
 
 function getTool(name: string): ToolDefinition {
     for (const [n, def] of helpTools) {
@@ -46,25 +17,31 @@ function buildHelpTree() {
     buildNote({
         id: "_help",
         title: "User Guide",
+        content: "",
         children: [
             {
                 id: "_help_basics",
                 title: "Basic Concepts",
+                content: "",
                 children: [
                     {
                         id: "_help_notes",
                         title: "Notes",
+                        content: "",
                         children: [
-                            { id: "_help_cloning", title: "Cloning Notes", type: "doc", "#docName": "User Guide/User Guide/Cloning Notes" }
+                            {
+                                id: "_help_cloning",
+                                title: "Cloning Notes",
+                                type: "text",
+                                content: "<p>A note can be placed in multiple locations. Prefix &amp; installation hints.</p>"
+                            }
                         ]
                     }
                 ]
             },
-            { id: "_help_install", title: "Installation & Setup", type: "doc", "#docName": "User Guide/User Guide/Installation" }
+            { id: "_help_install", title: "Installation & Setup", type: "text", content: "<p>Download the desktop app.</p>" }
         ]
     });
-    docFiles.set("Cloning Notes.html", "<p>A note can be placed in multiple locations. Prefix &amp; installation hints.</p>");
-    docFiles.set("Installation.html", "<p>Download the desktop app.</p>");
 }
 
 interface SearchHelpResult {
@@ -76,12 +53,10 @@ describe("help_tools", () => {
     beforeEach(() => {
         becca.reset();
         resetHelpIndex();
-        docFiles.clear();
-        vi.clearAllMocks();
     });
 
     describe("search_help", () => {
-        it("matches page bodies (which live on disk, invisible to regular search) and returns breadcrumb paths", () => {
+        it("matches page bodies and returns breadcrumb paths", () => {
             buildHelpTree();
 
             const result = getTool("search_help").execute({ query: "multiple locations" }) as SearchHelpResult;
@@ -141,7 +116,7 @@ describe("help_tools", () => {
             expect(getTool("search_help").execute({ query: "anything" }))
                 .toEqual({ error: "The built-in User Guide is not available in this installation." });
 
-            buildNote({ id: "_help", title: "User Guide" }); // present but not yet populated
+            buildNote({ id: "_help", title: "User Guide", content: "" }); // present but not yet populated
             expect(getTool("search_help").execute({ query: "anything" }))
                 .toEqual({ error: "The built-in User Guide is not available in this installation." });
         });

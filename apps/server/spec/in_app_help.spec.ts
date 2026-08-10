@@ -4,6 +4,7 @@ import { load } from "@triliumnext/core/src/becca/becca_loader.js";
 import blobService from "@triliumnext/core/src/services/blob.js";
 import { getContext } from "@triliumnext/core/src/services/context.js";
 import { HELP_ASSET_TOKEN, initInAppHelp } from "@triliumnext/core/src/services/in_app_help.js";
+import { helpTools } from "@triliumnext/core/src/services/llm/tools/help_tools.js";
 import searchService from "@triliumnext/core/src/services/search/services/search.js";
 import fs from "fs";
 import path from "path";
@@ -82,6 +83,20 @@ describe("in-app help (shipped artifacts)", () => {
         // virtual pass makes the content matchable, not suddenly present in every result list.
         const ordinary = searchService.searchNotes(query, {});
         expect(ordinary.filter((note) => note.noteId.startsWith("_help"))).toEqual([]);
+    });
+
+    it("is searchable by the assistant, by body text and not only by title", () => {
+        const searchHelp = Object.fromEntries([ ...helpTools ]).search_help;
+        const result = searchHelp.execute({ query: "docker compose" }) as {
+            totalResults: number;
+            results: { noteId: string; contentPreview: string | null }[];
+        };
+
+        // The phrase is in the body of the Docker page and in no title, so a title-only index —
+        // which is what an unresolvable content source leaves behind — scores nothing.
+        expect(result.totalResults).toBeGreaterThan(0);
+        expect(result.results[0].noteId).toBe("_help_rWX5eY045zbE");
+        expect(result.results[0].contentPreview).toBeTruthy();
     });
 
     it("makes every page read-only", () => {

@@ -14,6 +14,7 @@ export { ToolRegistry } from "./tool_registry.js";
 
 import { attachmentTools } from "./attachment_tools.js";
 import { attributeTools } from "./attribute_tools.js";
+import { helpTools } from "./help_tools.js";
 import { hierarchyTools } from "./hierarchy_tools.js";
 import { iconTools } from "./icon_tools.js";
 import { noteTools } from "./note_tools.js";
@@ -32,6 +33,7 @@ import type { ToolRegistry } from "./tool_registry.js";
  */
 export const allToolRegistries: ToolRegistry[] = [
     noteTools,
+    helpTools,
     attributeTools,
     attachmentTools,
     hierarchyTools,

@@ -16,12 +16,10 @@
 import { registerHostProvider } from "@triliumnext/core/src/services/llm/index.js";
 import { registerSkillReader } from "@triliumnext/core/src/services/llm/skills.js";
 import { registerDocNoteHtmlReader } from "@triliumnext/core/src/services/llm/tools/helpers.js";
-import { registerToolRegistry } from "@triliumnext/core/src/services/llm/tools/index.js";
 
 import { loadSkillSheet } from "../../core_assets.js";
 import { ClaudeAgentProvider } from "./providers/claude_agent.js";
 import { getDocNoteHtml } from "./tools/doc_notes.js";
-import { helpTools } from "./tools/help_tools.js";
 
 /**
  * Contribute those pieces to core. Called once from startup, beside the other
@@ -33,5 +31,4 @@ export function registerServerLlmExtensions() {
     registerHostProvider("claude-agent", () => new ClaudeAgentProvider());
     registerDocNoteHtmlReader(getDocNoteHtml);
     registerSkillReader(loadSkillSheet);
-    registerToolRegistry(helpTools);
 }
