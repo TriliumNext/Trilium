@@ -17,30 +17,6 @@ const CONTENT_PREVIEW_SIZE_THRESHOLD = 10_000;
 /** Note IDs that must not be deleted, moved, or cloned by the LLM. */
 export const PROTECTED_SYSTEM_NOTES = new Set(["root", "_hidden", "_share", "_lbRoot", "_globalNoteMap"]);
 
-/** Host-provided reader for doc-note HTML. See {@link registerDocNoteHtmlReader}. */
-let docNoteHtmlReader: ((note: BNote) => string | null) | null = null;
-
-/**
- * Register the host's reader for doc-note HTML.
- *
- * `doc` notes — the explanatory pages of the hidden subtree, such as the launcher
- * bar's — keep no content in the database: their HTML ships as static files, which
- * the server reads off disk. The browser-hosted build has no synchronous way to do
- * that, so hosts that can supply it register a reader here and the rest simply
- * report the content as unavailable.
- */
-export function registerDocNoteHtmlReader(reader: (note: BNote) => string | null) {
-    docNoteHtmlReader = reader;
-}
-
-/**
- * Resolve the HTML of a `doc` note via the registered reader, or null when no
- * reader is registered or it cannot resolve the page.
- */
-export function getDocNoteHtml(note: BNote): string | null {
-    return docNoteHtmlReader?.(note) ?? null;
-}
-
 /**
  * Return `true` if the value is truthy, otherwise `undefined`.
  * Since `undefined` values are omitted from JSON serialization,
@@ -57,10 +33,9 @@ export function flag(value: boolean | undefined): true | undefined {
  */
 export function getNoteContentForLlm(note: BNote) {
     if (note.type === "doc") {
-        // Doc notes store no content in the database — their HTML lives on disk
-        // and is fetched by the client.
-        const html = getDocNoteHtml(note);
-        return html ? markdownExport.toMarkdown(html) : "[doc content not available]";
+        // Doc notes hold no content of their own: the client renders an explanatory page picked
+        // by their `docName` label, out of its own translation catalog.
+        return "[doc content not available]";
     }
 
     const content = note.getContent();

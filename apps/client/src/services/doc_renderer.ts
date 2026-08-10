@@ -1,78 +1,92 @@
 import type FNote from "../entities/fnote.js";
 import { applyReferenceLinks } from "../widgets/type_widgets/text/read_only_helper.js";
-import { getCurrentLanguage } from "./i18n.js";
+import { t } from "./i18n.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 
 /**
- * Validates a docName to prevent path traversal attacks.
- *
- * A docName names one file directly under `doc_notes/<language>/`, so it is a plain slug with no
- * separators of any kind. The label is note data rather than trusted input, so anything else is
- * turned away instead of being reached for on disk.
+ * The pages that ship with the application, named by the `docName` label that selects one. Their
+ * text lives in the translation catalog under `doc_notes`, so a name is only ever a key into this
+ * closed set — a label carrying anything else resolves to nothing at all.
  */
-export function isValidDocName(docName: string): boolean {
-    return /^[a-zA-Z0-9_-]+$/.test(docName);
+const DOC_NAMES = [
+    "hidden",
+    "launchbar_command_launcher",
+    "launchbar_history_navigation",
+    "launchbar_intro",
+    "launchbar_note_launcher",
+    "launchbar_quick_search",
+    "launchbar_script_launcher",
+    "launchbar_spacer",
+    "launchbar_widget_launcher",
+    "share",
+    "system_state",
+    "task_state",
+    "task_states",
+    "user_hidden"
+] as const;
+
+export type DocName = (typeof DOC_NAMES)[number];
+
+export function isDocName(value: string): value is DocName {
+    return (DOC_NAMES as readonly string[]).includes(value);
 }
 
-export default function renderDoc(note: FNote) {
-    return new Promise<JQuery<HTMLElement>>((resolve) => {
-        const docName = note.getLabelValue("docName");
-        const $content = $("<div>");
+export default async function renderDoc(note: FNote) {
+    const $content = $("<div>");
+    const docName = note.getLabelValue("docName");
 
-        // find doc based on language
-        const url = getUrl(docName, getCurrentLanguage());
+    if (!docName) {
+        return $content;
+    }
 
-        if (url) {
-            $content.load(url, async (response, status) => {
-                // fallback to english doc if no translation available
-                if (status === "error") {
-                    const fallbackUrl = getUrl(docName, "en");
+    if (!isDocName(docName)) {
+        console.error(`Unknown docName: ${docName}`);
+        return $content;
+    }
 
-                    /* v8 ignore next 8 -- the else branch is unreachable: fallbackUrl only differs from the primary url by language, so if the primary url was valid (we got here from a successful .load call) the "en" fallback url is valid too and never null */
-                    if (fallbackUrl) {
-                        $content.load(fallbackUrl, async () => {
-                            await processContent($content);
-                            resolve($content);
-                        });
-                    } else {
-                        resolve($content);
-                    }
-                    return;
-                }
+    $content.html(t(`doc_notes.${docName}`, { sample: SAMPLES[docName] }));
 
-                await processContent($content);
-                resolve($content);
-            });
-        } else {
-            resolve($content);
-        }
-    });
-}
-
-async function processContent($content: JQuery<HTMLElement>) {
     formatCodeBlocks($content);
 
     // Apply reference links.
     await applyReferenceLinks($content[0]);
+
+    return $content;
 }
 
-function getUrl(docNameValue: string | null, language: string) {
-    if (!docNameValue) return;
+/**
+ * Code examples are not prose and have no business in the catalog, so the pages that carry one
+ * leave a `sample` placeholder for it. i18next escapes what it interpolates, which is what keeps
+ * the markup in the examples from being parsed as markup.
+ */
+const SAMPLES: Partial<Record<DocName, string>> = {
+    launchbar_script_launcher: `api.showMessage("Current note is " + api.getActiveContextNote().title);`,
+    launchbar_widget_launcher: `const TPL = \`<div style="height: 53px; width: 53px;"></div>\`;
 
-    if (!isValidDocName(docNameValue)) {
-        console.error(`Invalid docName: ${docNameValue}`);
-        return null;
+class ExampleLaunchbarWidget extends api.NoteContextAwareWidget {
+    doRender() {
+        this.$widget = $(TPL);
     }
 
-    return `${getBasePath()}/doc_notes/${language}/${docNameValue}.html`;
+    async refreshWithNote(note) {
+        this.$widget.css("background-color", this.stringToColor(note.title));
+    }
+
+    stringToColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        let color = '#';
+        for (let i = 0; i < 3; i++) {
+            const value = (hash >> (i * 8)) & 0xFF;
+            color += ('00' + value.toString(16)).substr(-2);
+        }
+
+        return color;
+    }
 }
 
-function getBasePath() {
-    if (window.glob.isStandalone) {
-        return `server-assets`;
-    }
-    if (window.glob.isDev) {
-        return `${window.glob.assetPath}/..`;
-    }
-    return window.glob.assetPath;
-}
+module.exports = new ExampleLaunchbarWidget();`
+};

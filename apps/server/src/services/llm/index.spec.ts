@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 
 const registrations = vi.hoisted(() => ({
     hostProviders: [] as { type: string; factory: () => unknown }[],
-    docNoteReader: undefined as ((note: unknown) => string | null) | undefined,
     skillReader: undefined as ((file: string) => string | null) | undefined,
     toolRegistries: [] as unknown[]
 }));
@@ -16,9 +15,6 @@ vi.mock("@triliumnext/core/src/services/llm/skills.js", async (importOriginal) =
     ...await importOriginal<typeof import("@triliumnext/core/src/services/llm/skills.js")>(),
     registerSkillReader: (reader: (file: string) => string | null) => { registrations.skillReader = reader; }
 }));
-vi.mock("@triliumnext/core/src/services/llm/tools/helpers.js", () => ({
-    registerDocNoteHtmlReader: (reader: (note: unknown) => string | null) => { registrations.docNoteReader = reader; }
-}));
 import { registerServerLlmExtensions } from "./index.js";
 import { ClaudeAgentProvider } from "./providers/claude_agent.js";
 
@@ -31,8 +27,6 @@ describe("registerServerLlmExtensions", () => {
         // constructed until a chat asks for it.
         expect(registrations.hostProviders.map(p => p.type)).toEqual(["claude-agent"]);
         expect(registrations.hostProviders[0].factory()).toBeInstanceOf(ClaudeAgentProvider);
-        // The User Guide reader, which core's note-content helper calls for doc notes.
-        expect(registrations.docNoteReader).toBeTypeOf("function");
         // The skill sheets: core owns the catalog and the tool, the server only
         // knows how to get a sheet off disk.
         expect(registrations.skillReader?.("search_syntax.md")).toContain("#");

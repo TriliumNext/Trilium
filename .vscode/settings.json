@@ -34,7 +34,6 @@
         "**/node_modules": true,
         "docs/**/*.html": true,
         "docs/**/*.png": true,
-        "apps/server/src/assets/doc_notes/**": true,
         "apps/edit-docs/demo/**": true
     },
     "editor.codeActionsOnSave": {

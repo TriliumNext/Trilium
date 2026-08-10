@@ -3,7 +3,6 @@ package-lock.json linguist-generated=true
 **/package-lock.json linguist-generated=true
 
 # Ignore from GitHub language stats.
-apps/server/src/assets/doc_notes/** linguist-vendored=true
 apps/edit-docs/demo/** linguist-vendored=true
 docs/** linguist-vendored=true
 
