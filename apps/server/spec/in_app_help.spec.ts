@@ -4,6 +4,7 @@ import { load } from "@triliumnext/core/src/becca/becca_loader.js";
 import blobService from "@triliumnext/core/src/services/blob.js";
 import { getContext } from "@triliumnext/core/src/services/context.js";
 import { HELP_ASSET_TOKEN, initInAppHelp } from "@triliumnext/core/src/services/in_app_help.js";
+import searchService from "@triliumnext/core/src/services/search/services/search.js";
 import fs from "fs";
 import path from "path";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -68,6 +69,19 @@ describe("in-app help (shipped artifacts)", () => {
         }
 
         expect(missing).toEqual([]);
+    });
+
+    it("is searchable by its content, but only when the search asks for hidden notes", () => {
+        // A phrase from the body of a page, not from any title.
+        const query = "docker compose";
+
+        const scoped = searchService.searchNotes(query, { includeHiddenNotes: true });
+        expect(scoped.map((note) => note.noteId)).toContain("_help_rWX5eY045zbE");
+
+        // The guide lives under _hidden, so an ordinary search still does not surface it — the
+        // virtual pass makes the content matchable, not suddenly present in every result list.
+        const ordinary = searchService.searchNotes(query, {});
+        expect(ordinary.filter((note) => note.noteId.startsWith("_help"))).toEqual([]);
     });
 
     it("makes every page read-only", () => {
