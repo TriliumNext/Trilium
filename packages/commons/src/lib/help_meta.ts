@@ -30,3 +30,9 @@ export interface HelpMetaItem {
      */
     source?: string;
 }
+
+/**
+ * The rendered content of every help note that has one, keyed by note ID — the counterpart of
+ * the help tree. Notes without an entry (folders, web views) have no content of their own.
+ */
+export type HelpBundle = Record<string, string>;

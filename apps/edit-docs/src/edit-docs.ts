@@ -2,7 +2,9 @@ import debounce from "@triliumnext/client/src/services/debounce.js";
 import type { NoteMeta, NoteMetaFile } from "@triliumnext/core";
 import { cls } from "@triliumnext/core";
 
+import { buildHelpBundle } from "./help_bundle_generator.js";
 import { buildHelpMeta } from "./help_meta_generator.js";
+import { readFileSync } from "fs";
 import fs from "fs/promises";
 import { load } from "js-yaml";
 import path from "path";
@@ -21,6 +23,8 @@ interface NoteMapping {
      * backing the User Guide. Relative to the configuration file.
      */
     helpMeta?: string;
+    /** Where to write the rendered content of that tree. Relative to the configuration file. */
+    helpContent?: string;
 }
 
 interface Config {
@@ -111,7 +115,8 @@ async function loadConfig() {
     NOTE_MAPPINGS = config.noteMappings.map((mapping) => ({
         ...mapping,
         path: path.resolve(CONFIG_DIR, mapping.path),
-        helpMeta: mapping.helpMeta ? path.resolve(CONFIG_DIR, mapping.helpMeta) : undefined
+        helpMeta: mapping.helpMeta ? path.resolve(CONFIG_DIR, mapping.helpMeta) : undefined,
+        helpContent: mapping.helpContent ? path.resolve(CONFIG_DIR, mapping.helpContent) : undefined
     }));
 }
 
@@ -174,14 +179,14 @@ async function exportData(mapping: NoteMapping) {
         await fs.rm(zipFilePath, { force: true });
     }
 
-    await cleanUpMeta(outputPath, mapping.helpMeta);
+    await cleanUpMeta(outputPath, mapping);
 }
 
 /**
  * Normalizes the freshly exported `!!!meta.json` so it doesn't churn between runs, and — for the
- * mapping that declares a `helpMeta` output — derives the in-app help tree from it.
+ * mapping backing the User Guide — derives the in-app help tree and its rendered content.
  */
-async function cleanUpMeta(outputPath: string, helpMetaPath?: string) {
+async function cleanUpMeta(outputPath: string, mapping: NoteMapping) {
     const metaPath = path.join(outputPath, "!!!meta.json");
     const meta = JSON.parse(await fs.readFile(metaPath, "utf-8")) as NoteMetaFile;
     for (const file of meta.files) {
@@ -199,10 +204,38 @@ async function cleanUpMeta(outputPath: string, helpMetaPath?: string) {
 
     await fs.writeFile(metaPath, JSON.stringify(meta, null, 4));
 
-    if (helpMetaPath) {
-        await fs.mkdir(path.dirname(helpMetaPath), { recursive: true });
-        await fs.writeFile(helpMetaPath, JSON.stringify(buildHelpMeta(meta, BASE_URL), null, 4));
+    if (!mapping.helpMeta && !mapping.helpContent) {
+        return;
     }
+
+    const helpMeta = buildHelpMeta(meta, BASE_URL);
+
+    if (mapping.helpMeta) {
+        await writeJson(mapping.helpMeta, helpMeta);
+    }
+
+    if (mapping.helpContent) {
+        const { markdownImportService } = await import("@triliumnext/core");
+        const bundle = buildHelpBundle(
+            helpMeta,
+            (source) => {
+                try {
+                    return readFileSync(path.join(outputPath, source), "utf-8");
+                } catch {
+                    return null;
+                }
+            },
+            (markdown, title) => markdownImportService.renderToHtml(markdown, title)
+        );
+
+        await writeJson(mapping.helpContent, bundle);
+    }
+}
+
+/** Writes JSON with one entry per line, so a docs change shows up as the pages it touched. */
+async function writeJson(filePath: string, value: unknown) {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(value, null, 4));
 }
 
 async function registerHandlers() {
