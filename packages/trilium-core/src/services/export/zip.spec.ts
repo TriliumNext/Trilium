@@ -322,12 +322,26 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const { entries } = await exportSubtree(branch, "markdown");
             const rootMeta = parseMeta(entries).files[0];
 
+            // Named exactly, not merely ending in the right thing: the extension replaces the one
+            // the title carried rather than being appended to it, and "image.png.jpg" would pass
+            // any check that only looked at how the name ends.
             const attFileName = (rootMeta.attachments ?? [])[0]?.dataFileName ?? "";
-            expect(attFileName).toMatch(/\.jpe?g$/);
-            expect(attFileName).not.toMatch(/\.png$/);
+            expect(attFileName).toBe("ConvertedImageHost_image.jpg");
             // The renamed file is the one actually written, and its bytes are the JPEG's.
             expect(entries[attFileName]).toBeDefined();
             expect(Buffer.compare(entries[attFileName], jpegBytes)).toBe(0);
+        });
+
+        it("keeps a dotted title whole when the extension is added rather than substituted", async () => {
+            // `extname` reads "v0.48" as ending in ".48", and a release note is called exactly that.
+            // Only a picture's extension is replaced; anywhere else the name is left alone and the
+            // new extension is appended, so this must not export as "v0.md".
+            const { note } = createNote("root", { title: "v0.48", content: "<p>changelog</p>" });
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "markdown");
+
+            expect(parseMeta(entries).files[0].dataFileName).toBe("v0.48.md");
         });
 
         it("round-trips binary attachment content byte-for-byte", async () => {
