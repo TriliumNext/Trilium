@@ -13,10 +13,20 @@ import { RESOURCE_DIR } from "./services/resource_dir.js";
 export default class NodejsInAppHelpProvider extends InAppHelpProvider {
 
     /** The guide only changes with the application, so both files are read once per process. */
+    private helpMeta: HiddenSubtreeItem[] | null = null;
     private helpContent: HelpBundle | null = null;
 
+    /**
+     * The tree is asked for on every becca load, of which there are several in a session — a
+     * restore, an import, a consistency check — so it is worth not re-reading a fifth of a
+     * megabyte each time. Callers only read it: the injection builds notes from the items rather
+     * than writing to them.
+     */
     getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
-        return readHelpFile<HiddenSubtreeItem[]>("help_meta.json") ?? [];
+        if (!this.helpMeta) {
+            this.helpMeta = readHelpFile<HiddenSubtreeItem[]>("help_meta.json") ?? [];
+        }
+        return this.helpMeta;
     }
 
     getHelpContent(): HelpBundle {

@@ -16,6 +16,23 @@ describe("NodejsInAppHelpProvider", () => {
         expect(provider.getHelpHiddenSubtreeData()).toEqual(data);
     });
 
+    // Every becca load asks for the tree, and there are several in a session.
+    it("reads each file once, however often it is asked", () => {
+        const readFileSync = vi.spyOn(fs, "readFileSync")
+            .mockReturnValue(Buffer.from(JSON.stringify([])) as never);
+
+        const provider = new NodejsInAppHelpProvider();
+        for (let i = 0; i < 3; i++) {
+            provider.getHelpHiddenSubtreeData();
+            provider.getHelpContent();
+        }
+
+        expect(readFileSync.mock.calls.map(([ file ]) => String(file).replace(/^.*[\\/]/, "")))
+            .toEqual([ "help_meta.json", "help_content.json" ]);
+    });
+
+    // A failed read is remembered too, rather than retried on every load: the files ship with the
+    // application, so one that is missing now will be missing for the life of the process.
     it("returns an empty list and warns when the meta file cannot be read", () => {
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
         vi.spyOn(fs, "readFileSync").mockImplementation(() => {
