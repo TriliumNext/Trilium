@@ -115,6 +115,22 @@ describe("BlockId", () => {
             expect(root?.getChild(1)?.getAttribute(BLOCK_ID_ATTRIBUTE)).toBe("two");
         });
 
+        it("leaves a lone ID alone across later edits", () => {
+            // Regression: the post-fixer walked with `elementEnd` included, so a block was visited
+            // twice and its ID collided with itself. Every pass reissued it and returned `true`,
+            // re-running the post-fixer forever — the editor hung the moment any block had an ID.
+            setModelData(editor.model, `<paragraph ${BLOCK_ID_ATTRIBUTE}="keep-me">Text[]</paragraph>`);
+
+            expect(editor.model.document.getRoot()?.getChild(0)?.getAttribute(BLOCK_ID_ATTRIBUTE)).toBe("keep-me");
+
+            // An unrelated insert is what re-arms the post-fixer; the ID must still survive it.
+            editor.model.change((writer) => {
+                writer.insertElement("paragraph", editor.model.document.getRoot(), "end");
+            });
+
+            expect(editor.model.document.getRoot()?.getChild(0)?.getAttribute(BLOCK_ID_ATTRIBUTE)).toBe("keep-me");
+        });
+
         it("ignores blocks that carry no ID", () => {
             setModelData(editor.model, "<paragraph>[]First</paragraph><paragraph>Second</paragraph>");
 

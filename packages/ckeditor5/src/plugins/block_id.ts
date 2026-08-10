@@ -166,10 +166,15 @@ function dedupeBlockIds(editor: Editor, writer: ModelWriter): boolean {
     }
 
     const seen = new Set<string>();
-    let changed = false;
+    const duplicates: ModelElement[] = [];
 
     for (const root of document.getRoots()) {
-        for (const { item } of writer.createRangeIn(root).getWalker()) {
+        // `ignoreElementEnd` is load-bearing, not tidiness: the default walker visits an element
+        // twice, as `elementStart` and again as `elementEnd`, handing back the same element both
+        // times. Without it every ID collides with itself, gets reissued, and returning `true`
+        // re-runs the post-fixer over a document that still looks equally broken — an endless loop
+        // that hangs the editor as soon as any block carries an ID.
+        for (const { item } of writer.createRangeIn(root).getWalker({ ignoreElementEnd: true })) {
             if (!item.is("element")) {
                 continue;
             }
@@ -180,13 +185,17 @@ function dedupeBlockIds(editor: Editor, writer: ModelWriter): boolean {
             }
 
             if (seen.has(blockId)) {
-                writer.setAttribute(BLOCK_ID_ATTRIBUTE, uid(), item);
-                changed = true;
+                duplicates.push(item);
             } else {
                 seen.add(blockId);
             }
         }
     }
 
-    return changed;
+    // Applied after the walk rather than during it, so the tree is never mutated mid-iteration.
+    for (const element of duplicates) {
+        writer.setAttribute(BLOCK_ID_ATTRIBUTE, uid(), element);
+    }
+
+    return duplicates.length > 0;
 }
