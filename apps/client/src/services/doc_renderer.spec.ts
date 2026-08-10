@@ -37,25 +37,22 @@ function stubLoad(handler: (url: string, $el: JQuery<HTMLElement>) => { status?:
 }
 
 describe("isValidDocName", () => {
-    it("accepts valid docNames", () => {
+    // Every docName in use comes from the hidden subtree definition and names one file directly
+    // under doc_notes/<language>/.
+    it("accepts the slugs the hidden subtree uses", () => {
         expect(isValidDocName("launchbar_intro")).toBe(true);
-        expect(isValidDocName("User Guide/Quick Start")).toBe(true);
-        expect(isValidDocName("User Guide/User Guide/Quick Start")).toBe(true);
-        expect(isValidDocName("Quick Start Guide")).toBe(true);
-        expect(isValidDocName("quick_start_guide")).toBe(true);
+        expect(isValidDocName("task_states")).toBe(true);
+        expect(isValidDocName("share")).toBe(true);
         expect(isValidDocName("quick-start-guide")).toBe(true);
-        expect(isValidDocName("User Guide/User Guide/Advanced Usage/Text Extraction (OCR)")).toBe(true);
-        expect(isValidDocName("User Guide/Basic Concepts and Features/Import & Export/Microsoft OneNote")).toBe(true);
+        expect(isValidDocName("v2")).toBe(true);
     });
 
-    // A docName is a path built out of page titles, so it carries whatever punctuation the titles do.
-    // These are all real pages of the user guide.
-    it("accepts the punctuation real page titles carry", () => {
-        expect(isValidDocName("User Guide/User Guide/Advanced Usage/Note Map (Link map, Tree map)")).toBe(true);
-        expect(isValidDocName("User Guide/User Guide/Advanced Usage/Configuration (config.ini or environment variables)")).toBe(true);
-        expect(isValidDocName("User Guide/User Guide/Installation & Setup/Server Installation/1. Installing the server/Using Docker")).toBe(true);
-        expect(isValidDocName("User Guide/User Guide/Scripting/Script API/Day.js")).toBe(true);
-        expect(isValidDocName("User Guide/User Guide/Scripting/Breaking changes/v0.103.0 `cheerio` is now deprecated")).toBe(true);
+    it("rejects anything carrying a separator, so no path can be spelled at all", () => {
+        expect(isValidDocName("User Guide/Quick Start")).toBe(false);
+        expect(isValidDocName("Quick Start Guide")).toBe(false);
+        expect(isValidDocName("Day.js")).toBe(false);
+        expect(isValidDocName("Import & Export")).toBe(false);
+        expect(isValidDocName("")).toBe(false);
     });
 
     it("rejects path traversal attacks", () => {
@@ -65,12 +62,9 @@ describe("isValidDocName", () => {
         expect(isValidDocName("../../../../api/notes/_malicious/open")).toBe(false);
         expect(isValidDocName("..\\etc\\passwd")).toBe(false);
         expect(isValidDocName("foo\\bar")).toBe(false);
-        // Dots are allowed within a segment (see above), so a segment made of nothing else — which is
-        // what climbs out of the doc directory — has to be turned away in its own right.
         expect(isValidDocName("...")).toBe(false);
         expect(isValidDocName("foo/..")).toBe(false);
         expect(isValidDocName("foo/./bar")).toBe(false);
-        expect(isValidDocName("Day.js/../../etc/passwd")).toBe(false);
     });
 
     it("rejects URL manipulation attacks", () => {
@@ -109,39 +103,19 @@ describe("renderDoc", () => {
         expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Invalid docName"));
     });
 
-    it("loads the localized doc, rewrites relative image src, and runs post-processing", async () => {
+    it("loads the localized doc and runs post-processing", async () => {
         mockedLanguage = "de";
         const loadSpy = stubLoad((_url, $el) => {
-            $el.html(`<img src="pic.png"><a class="reference-link">x</a>`);
+            $el.html(`<a class="reference-link">x</a>`);
         });
 
-        const $content = await renderDoc(fakeNote("Quick Start"));
+        const $content = await renderDoc(fakeNote("launchbar_intro"));
 
-        // URL is base/doc_notes/<lang>/<docName with %20>.html
-        expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/de/Quick%20Start.html");
-        // The relative image src is rewritten to be prefixed with the doc directory.
-        expect($content.find("img").attr("src")).toBe("assets/doc_notes/de/pic.png");
+        // URL is base/doc_notes/<lang>/<docName>.html
+        expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/de/launchbar_intro.html");
+        expect($content.find(".reference-link").length).toBe(1);
         expect(formatCodeBlocksMock).toHaveBeenCalledTimes(1);
         expect(applyReferenceLinksMock).toHaveBeenCalledTimes(1);
-    });
-
-    it("forces English for User Guide docs regardless of the current language", async () => {
-        mockedLanguage = "fr";
-        const loadSpy = stubLoad(() => {});
-        await renderDoc(fakeNote("User Guide/Quick Start"));
-        expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/en/User%20Guide/Quick%20Start.html");
-    });
-
-    it("percent-encodes ampersands in the docName (e.g. \"Import & Export\")", async () => {
-        const loadSpy = stubLoad(() => {});
-        await renderDoc(fakeNote("User Guide/Basic Concepts and Features/Import & Export/Microsoft OneNote"));
-        expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/en/User%20Guide/Basic%20Concepts%20and%20Features/Import%20%26%20Export/Microsoft%20OneNote.html");
-    });
-
-    it("leaves the rest of a title's punctuation to the browser's own URL encoding", async () => {
-        const loadSpy = stubLoad(() => {});
-        await renderDoc(fakeNote("User Guide/User Guide/Advanced Usage/Note Map (Link map, Tree map)"));
-        expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/en/User%20Guide/User%20Guide/Advanced%20Usage/Note%20Map%20(Link%20map,%20Tree%20map).html");
     });
 
     it("falls back to the English doc when the localized load errors", async () => {
@@ -153,11 +127,11 @@ describe("renderDoc", () => {
             return url.includes("/de/") ? { status: "error" } : {};
         });
 
-        const $content = await renderDoc(fakeNote("Quick Start"));
+        const $content = await renderDoc(fakeNote("launchbar_intro"));
 
         expect(requested).toEqual([
-            "assets/doc_notes/de/Quick%20Start.html",
-            "assets/doc_notes/en/Quick%20Start.html"
+            "assets/doc_notes/de/launchbar_intro.html",
+            "assets/doc_notes/en/launchbar_intro.html"
         ]);
         expect($content.length).toBe(1);
         expect(loadSpy).toHaveBeenCalledTimes(2);
@@ -169,14 +143,15 @@ describe("renderDoc", () => {
     it("uses the server-assets base path in standalone mode", async () => {
         (window as any).glob = { isStandalone: true, isDev: false, assetPath: "assets" };
         const loadSpy = stubLoad(() => {});
-        await renderDoc(fakeNote("Quick Start"));
-        expect(loadSpy.mock.calls[0][0]).toBe("server-assets/doc_notes/en/Quick%20Start.html");
+        await renderDoc(fakeNote("launchbar_intro"));
+        expect(loadSpy.mock.calls[0][0]).toBe("server-assets/doc_notes/en/launchbar_intro.html");
     });
 
+    // In dev the asset path carries a `/src` suffix that the doc notes are not served under.
     it("uses the parent of assetPath in dev mode", async () => {
-        (window as any).glob = { isStandalone: false, isDev: true, assetPath: "assets" };
+        (window as any).glob = { isStandalone: false, isDev: true, assetPath: "assets/src" };
         const loadSpy = stubLoad(() => {});
-        await renderDoc(fakeNote("Quick Start"));
-        expect(loadSpy.mock.calls[0][0]).toBe("assets/../doc_notes/en/Quick%20Start.html");
+        await renderDoc(fakeNote("launchbar_intro"));
+        expect(loadSpy.mock.calls[0][0]).toBe("assets/src/../doc_notes/en/launchbar_intro.html");
     });
 });

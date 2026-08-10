@@ -5,21 +5,13 @@ import { formatCodeBlocks } from "./syntax_highlight.js";
 
 /**
  * Validates a docName to prevent path traversal attacks.
- * Allows forward slashes for subdirectories (e.g., "User Guide/Quick Start")
- * but blocks traversal sequences and URL manipulation characters.
+ *
+ * A docName names one file directly under `doc_notes/<language>/`, so it is a plain slug with no
+ * separators of any kind. The label is note data rather than trusted input, so anything else is
+ * turned away instead of being reached for on disk.
  */
 export function isValidDocName(docName: string): boolean {
-    // A docName is a path built out of page titles, so it has to carry the punctuation titles do:
-    // dots ("Day.js", "1. Installing the server", "v0.103.0 ..."), commas ("Note Map (Link map, Tree
-    // map)") and backticks ("`cheerio` is now deprecated"), on top of spaces, underscores, hyphens,
-    // ampersands, brackets and the slashes that separate the segments.
-    const validDocNameRegex = /^[a-zA-Z0-9_/\- ()&.,`]+$/;
-    if (!validDocNameRegex.test(docName)) return false;
-
-    // Dots being allowed above, the traversal they would spell has to be turned away in its own
-    // right: a segment of nothing but dots is the one that climbs out of the doc directory, and no
-    // page title is ever that.
-    return !docName.split("/").some((segment) => /^\.+$/.test(segment));
+    return /^[a-zA-Z0-9_-]+$/.test(docName);
 }
 
 export default function renderDoc(note: FNote) {
@@ -39,7 +31,7 @@ export default function renderDoc(note: FNote) {
                     /* v8 ignore next 8 -- the else branch is unreachable: fallbackUrl only differs from the primary url by language, so if the primary url was valid (we got here from a successful .load call) the "en" fallback url is valid too and never null */
                     if (fallbackUrl) {
                         $content.load(fallbackUrl, async () => {
-                            await processContent(fallbackUrl, $content);
+                            await processContent($content);
                             resolve($content);
                         });
                     } else {
@@ -48,7 +40,7 @@ export default function renderDoc(note: FNote) {
                     return;
                 }
 
-                await processContent(url, $content);
+                await processContent($content);
                 resolve($content);
             });
         } else {
@@ -57,15 +49,7 @@ export default function renderDoc(note: FNote) {
     });
 }
 
-async function processContent(url: string, $content: JQuery<HTMLElement>) {
-    const dir = url.substring(0, url.lastIndexOf("/"));
-
-    // Images are relative to the docnote but that will not work when rendered in the application since the path breaks.
-    $content.find("img").each((_i, el) => {
-        const $img = $(el);
-        $img.attr("src", `${dir}/${$img.attr("src")}`);
-    });
-
+async function processContent($content: JQuery<HTMLElement>) {
     formatCodeBlocks($content);
 
     // Apply reference links.
@@ -80,12 +64,6 @@ function getUrl(docNameValue: string | null, language: string) {
         return null;
     }
 
-    // Cannot have spaces in the URL due to how JQuery.load works.
-    docNameValue = docNameValue.replaceAll(" ", "%20");
-    // Percent-encode ampersands (e.g. in "Import & Export") so they aren't misread when fetching the doc.
-    docNameValue = docNameValue.replaceAll("&", "%26");
-    // The user guide is available only in English, so make sure we are requesting correctly since 404s in standalone client are treated differently.
-    if (docNameValue.includes("User%20Guide")) language = "en";
     return `${getBasePath()}/doc_notes/${language}/${docNameValue}.html`;
 }
 

@@ -36,16 +36,3 @@
     margin: 0;
     padding-bottom: 0.25em;
 }
-
-img {
-    max-width: 100%;
-    height: auto;
-}
-
-td img {
-    max-width: 40vw;
-}
-
-figure.table {
-    overflow: auto !important;
-}

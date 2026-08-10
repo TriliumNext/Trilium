@@ -1,9 +1,9 @@
 /**
- * Filesystem-backed resolution of in-app help pages, for the help tools.
+ * Filesystem-backed resolution of `doc` notes, for the LLM tools.
  *
  * Kept out of `@triliumnext/core`'s LLM code because it is the one tool helper
- * that reads from `RESOURCE_DIR`: the User Guide ships as static HTML on disk,
- * which the browser-hosted (standalone) build has no way to read synchronously.
+ * that reads from `RESOURCE_DIR`: these pages ship as static HTML on disk, which
+ * the browser-hosted (standalone) build has no way to read synchronously.
  */
 
 import type { BNote } from "@triliumnext/core";
@@ -13,10 +13,10 @@ import path from "path";
 import resourceDir from "../../resource_dir.js";
 
 /**
- * Resolve the on-disk HTML of a `doc` note (in-app help / User Guide pages,
- * identified by their `#docName` label), or null if it cannot be resolved.
- * The User Guide ships in English only, so the `en` tree is always used
- * (mirroring the client's doc_renderer behaviour).
+ * Resolve the on-disk HTML of a `doc` note (identified by its `#docName` label),
+ * or null if it cannot be resolved. The `en` tree is always used: the assistant
+ * reads these pages to answer in its own words, so a translation would only
+ * narrow what it can match against.
  */
 export function getDocNoteHtml(note: BNote): string | null {
     const docName = note.getLabelValue("docName");

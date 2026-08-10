@@ -14,7 +14,7 @@ All documentation is stored in the [Trilium](https://github.com/TriliumNext/Tril
 *   `docs/Release Notes` is also stored in Markdown format and can be freely edited.
 *   The _Script API_ is auto-generated and is **not** committed to the repository. It is built into the gitignored `site/` directory and published to [docs.triliumnotes.org](https://docs.triliumnotes.org/); see [Updating the Script API](#updating-the-script-api) below.
 *   `docs/User Guide` contains also Markdown-only documentation but must generally not be edited externally.
-    *   The reason is that the `pnpm edit-docs:edit-docs` feature will not only import/export this documentation, but also generate the corresponding HTML documentation and meta structure in `src/public/app/doc_notes/en/User Guide`.
+    *   The reason is that the `pnpm edit-docs:edit-docs` feature will not only import/export this documentation, but also generate the note tree and the rendered page content that the in-app help is built from, in `apps/server/src/assets/help`.
     *   It's theoretically possible to edit the Markdown files externally and then run `docs:edit` and trigger a change in order to build the documentation, but that would not be a very productive workflow.
 
 ## Editing the documentation

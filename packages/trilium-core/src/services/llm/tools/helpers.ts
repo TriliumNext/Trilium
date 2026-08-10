@@ -21,12 +21,13 @@ export const PROTECTED_SYSTEM_NOTES = new Set(["root", "_hidden", "_share", "_lb
 let docNoteHtmlReader: ((note: BNote) => string | null) | null = null;
 
 /**
- * Register the host's reader for in-app help pages.
+ * Register the host's reader for doc-note HTML.
  *
- * `doc` notes (the User Guide) keep no content in the database — their HTML
- * ships as static files, which the server reads off disk. The browser-hosted
- * build has no synchronous way to do that, so hosts that can supply it register
- * a reader here and the rest simply report the content as unavailable.
+ * `doc` notes — the explanatory pages of the hidden subtree, such as the launcher
+ * bar's — keep no content in the database: their HTML ships as static files, which
+ * the server reads off disk. The browser-hosted build has no synchronous way to do
+ * that, so hosts that can supply it register a reader here and the rest simply
+ * report the content as unavailable.
  */
 export function registerDocNoteHtmlReader(reader: (note: BNote) => string | null) {
     docNoteHtmlReader = reader;
@@ -56,8 +57,8 @@ export function flag(value: boolean | undefined): true | undefined {
  */
 export function getNoteContentForLlm(note: BNote) {
     if (note.type === "doc") {
-        // Doc notes (in-app help / User Guide pages) store no content in the
-        // database — their HTML lives on disk and is fetched by the client.
+        // Doc notes store no content in the database — their HTML lives on disk
+        // and is fetched by the client.
         const html = getDocNoteHtml(note);
         return html ? markdownExport.toMarkdown(html) : "[doc content not available]";
     }

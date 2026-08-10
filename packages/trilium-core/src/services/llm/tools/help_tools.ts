@@ -4,17 +4,17 @@
  * "how do I…?" questions about Trilium itself, grounded in the documentation
  * that ships with the running version instead of possibly stale training data.
  *
- * Help pages are `doc` notes: their HTML lives on disk rather than in the
- * database, so Trilium's regular search cannot see their bodies. search_help
- * therefore matches against a lazily built in-memory index of the page texts
- * (~1 MB for the whole guide, loaded once per process).
+ * Help pages are virtual notes, so the regular search reaches their bodies too.
+ * search_help stays separate for the ranking it does: it is scoped to the guide
+ * and weighs a title match above a body one, over a lazily built in-memory index
+ * of the page texts (~1 MB for the whole guide, built once per process).
  */
 
 import { z } from "zod";
 
 import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
-import { getContentPreview, getDocNoteHtml } from "./helpers.js";
+import { getContentPreview } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
 const HELP_ROOT_NOTE_ID = "_help";
@@ -140,15 +140,8 @@ function collectIndexEntries(note: BNote, depth: number, entries: HelpPageIndexE
     }
 }
 
-/**
- * The text of a help page. Pages carry their content like any other note; `doc` notes elsewhere in
- * the hidden subtree still keep theirs on disk, so those fall back to the host's reader.
- */
+/** The text of a help page, which carries its content like any other note. */
 function getPageText(note: BNote): string {
-    if (note.type === "doc") {
-        return htmlToPlainText(getDocNoteHtml(note) ?? "");
-    }
-
     const content = note.getContent();
 
     if (typeof content !== "string") {
