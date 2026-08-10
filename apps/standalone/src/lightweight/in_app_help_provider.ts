@@ -19,4 +19,10 @@ export default class StandaloneInAppHelpProvider extends InAppHelpProvider {
         // same artifacts the server does.
         return {};
     }
+
+    getHelpAssetBase(): string {
+        // Unused while the pages are web views: with no content of its own, nothing carries an
+        // asset placeholder to substitute.
+        return "";
+    }
 }

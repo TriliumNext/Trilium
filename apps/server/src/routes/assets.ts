@@ -55,8 +55,10 @@ async function register(app: express.Application) {
             base: `/${assetUrlFragment}/`
         });
         app.use(`/${assetUrlFragment}/`, (req, res, next) => {
-            if (req.url.startsWith("/images/") || req.url.startsWith("/doc_notes/")) {
-                // Images and doc notes are served as static assets from the server.
+            if (req.url.startsWith("/images/") || req.url.startsWith("/doc_notes/") || req.url.startsWith("/help/")) {
+                // Images, doc notes and the in-app help's assets are served as static assets from
+                // the server. Anything not listed here is handed to Vite, which answers unknown
+                // paths with index.html — a 200 that looks fine until you read the body.
                 next();
                 return;
             }
@@ -98,9 +100,24 @@ async function register(app: express.Application) {
     app.use(`/pdfjs/`, persistentCacheStatic(getPdfjsAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));
     app.use(`/${assetUrlFragment}/doc_notes`, persistentCacheStatic(path.join(resourceDir, "assets", "doc_notes")));
+    // Images and attachments of the in-app help. They are not committed under the server's assets
+    // — the User Guide owns them — so in a source checkout they are served straight out of docs/,
+    // while a packaged build copies them in (see scripts/build.ts).
+    app.use(`/${assetUrlFragment}/help`, persistentCacheStatic(getHelpAssetDir(srcRoot, resourceDir)));
     app.use(`/assets/vX/fonts`, express.static(path.join(srcRoot, "public/fonts"), STATIC_OPTIONS));
     app.use(`/assets/vX/images`, express.static(path.join(srcRoot, "..", "images"), STATIC_OPTIONS));
     app.use(`/assets/vX/stylesheets`, express.static(path.join(srcRoot, "public/stylesheets"), STATIC_OPTIONS));
+}
+
+/**
+ * Where the in-app help's assets live: the markdown export in a source checkout, the copy the
+ * build makes in a packaged one.
+ */
+function getHelpAssetDir(srcRoot: string, resourceDir: string) {
+    if (isDev) {
+        return path.join(srcRoot, "..", "..", "docs", "User Guide");
+    }
+    return path.join(resourceDir, "assets", "help");
 }
 
 export function getShareThemeAssetDir() {

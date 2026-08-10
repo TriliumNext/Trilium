@@ -5,12 +5,12 @@ import becca from "../becca/becca.js";
 import { load } from "../becca/becca_loader.js";
 import blobService from "./blob.js";
 import { getContext } from "./context.js";
-import { getHelpHiddenSubtreeData, InAppHelpProvider, initInAppHelp } from "./in_app_help.js";
+import { getHelpHiddenSubtreeData, HELP_ASSET_TOKEN, InAppHelpProvider, initInAppHelp } from "./in_app_help.js";
 import { getVirtualNoteProvider } from "./virtual_notes.js";
 
 /** Minimal concrete provider standing in for the platform-specific implementations. */
 class TestHelpProvider extends InAppHelpProvider {
-    constructor(private data: HiddenSubtreeItem[], private content: HelpBundle = {}) {
+    constructor(private data: HiddenSubtreeItem[], private content: HelpBundle = {}, private assetBase = "assets/help") {
         super();
     }
 
@@ -20,6 +20,10 @@ class TestHelpProvider extends InAppHelpProvider {
 
     getHelpContent(): HelpBundle {
         return this.content;
+    }
+
+    getHelpAssetBase(): string {
+        return this.assetBase;
     }
 }
 
@@ -86,6 +90,20 @@ describe("in_app_help", () => {
         expect(blank.blobId).toBe(EMPTY_BLOB_ID);
         expect(blank.isStubbed).toBe(false);
         expect(page.blobId).not.toBe(blank.blobId);
+    });
+
+    it("substitutes the platform's asset location into the pages", () => {
+        const page = `<img src="${HELP_ASSET_TOKEN}/User%20Guide/pic.png">`;
+        initInAppHelp(new TestHelpProvider(
+            [{ id: "_helpPage", title: "Page", type: "text" }],
+            { _helpPage: page },
+            "assets/v1.2.3/help"
+        ));
+        reloadBecca();
+
+        // One bundle ships to every platform; where its images live is decided on read.
+        expect(becca.getNoteOrThrow("_helpPage").getContent())
+            .toBe(`<img src="assets/v1.2.3/help/User%20Guide/pic.png">`);
     });
 
     it("makes every help page read-only through an inheritable label on the root", () => {

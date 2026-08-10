@@ -3,6 +3,7 @@ import { InAppHelpProvider } from "@triliumnext/core";
 import fs from "fs";
 import path from "path";
 
+import { assetUrlFragment } from "./services/asset_path.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 
 /**
@@ -23,6 +24,10 @@ export default class NodejsInAppHelpProvider extends InAppHelpProvider {
             this.helpContent = readHelpFile<HelpBundle>("help_content.json") ?? {};
         }
         return this.helpContent;
+    }
+
+    getHelpAssetBase(): string {
+        return `${assetUrlFragment}/help`;
     }
 }
 

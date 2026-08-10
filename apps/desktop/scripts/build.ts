@@ -21,6 +21,12 @@ async function main() {
     // Copy assets.
     build.copy("src/assets", "assets/");
     build.copy("/apps/server/src/assets", "assets/");
+    // The in-app help's images and attachments. They live with the User Guide rather than under
+    // the server's assets, so a packaged build has to bring them in explicitly — the pages
+    // themselves travel as the content bundle copied just above.
+    build.copy("/docs/User Guide", "assets/help/", {
+        filter: (sourcePath) => !sourcePath.endsWith(".md") && !sourcePath.endsWith("!!!meta.json")
+    });
     build.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
     // The LLM skill sheets moved to core with the rest of the stack, but the
     // Node hosts still read them from RESOURCE_DIR. See server core_assets.ts.

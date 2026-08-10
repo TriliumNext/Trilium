@@ -80,21 +80,54 @@ function indexSources(items: HelpMetaItem[], out = new Map<string, string>()): M
 }
 
 /**
- * Turns the links between pages into note links. Pages are authored as files and link to each
- * other by relative path, but they are displayed as notes, where the only thing that resolves is
- * the note's ID.
+ * Rewrites the two kinds of path a page is authored with.
  *
- * Anything that does not name another page of the guide is left exactly as authored: external
- * URLs, in-page anchors (footnotes), the deliberate `#root/…` deep links into system notes, and
- * the attachments a few pages point at.
+ * Links between pages become note links: pages are authored as files and link to each other by
+ * relative path, but they are displayed as notes, where the only thing that resolves is the note's
+ * ID. Anything that does not name another page — external URLs, in-page anchors (footnotes), the
+ * deliberate `#root/…` deep links into system notes — is left exactly as authored.
+ *
+ * Everything else relative is an asset shipped alongside the guide (images, and the handful of
+ * `.dat` files some pages link to). Those become {@link HELP_ASSET_TOKEN} paths from the export
+ * root; each platform substitutes the token for wherever it serves them from, so one bundle works
+ * everywhere.
  */
 function rewriteLinks(html: string, source: string, noteIdBySource: Map<string, string>): string {
     const pageDir = path.posix.dirname(normalize(source));
 
-    return html.replace(/href="([^"]*)"/g, (match, href: string) => {
-        const noteId = resolveHelpTarget(href, pageDir, noteIdBySource);
-        return noteId ? `href="#root/_help_${noteId}"` : match;
+    return html.replace(/(href|src)="([^"]*)"/g, (match, attribute: string, url: string) => {
+        const noteId = resolveHelpTarget(url, pageDir, noteIdBySource);
+        if (noteId) {
+            return `${attribute}="#root/_help_${noteId}"`;
+        }
+
+        const asset = resolveHelpAsset(url, pageDir);
+        return asset ? `${attribute}="${asset}"` : match;
     });
+}
+
+/**
+ * Placeholder standing in for wherever a platform serves the guide's assets from — substituted
+ * when a page is read (see `services/in_app_help.ts` in the core).
+ */
+export const HELP_ASSET_TOKEN = "{{helpAssets}}";
+
+/** Resolves a page-relative asset reference to its path from the export root, or null. */
+function resolveHelpAsset(url: string, pageDir: string): string | null {
+    if (!url || url.startsWith("#") || /^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith(HELP_ASSET_TOKEN)) {
+        return null;
+    }
+
+    // A markdown file is a page, not an asset. Having got this far it names one the guide does not
+    // ship, so it is a broken link — left as authored rather than disguised as an asset URL.
+    if (url.split("#")[0].endsWith(".md")) {
+        return null;
+    }
+
+    const target = path.posix.normalize(path.posix.join(pageDir, toFilePath(url)));
+    // Re-encoded per segment: the guide's file names carry spaces and ampersands, and pages write
+    // them both ways — raw in `<img src>`, percent-encoded in markdown image syntax.
+    return `${HELP_ASSET_TOKEN}/${target.split("/").map(encodeURIComponent).join("/")}`;
 }
 
 /** Resolves a page-relative href to the note it names, or null if it names something else. */
@@ -108,18 +141,25 @@ function resolveHelpTarget(href: string, pageDir: string, noteIdBySource: Map<st
     // A note is addressed as a whole, so a fragment on the path has nothing to point at — the
     // HTML export dropped these too.
     const [ filePath ] = href.split("#");
-    const target = path.posix.normalize(path.posix.join(pageDir, decodePath(filePath)));
+    const target = path.posix.normalize(path.posix.join(pageDir, toFilePath(filePath)));
 
     // Folder notes are linked without their extension.
     return noteIdBySource.get(target) ?? noteIdBySource.get(`${target}.md`) ?? null;
 }
 
-function decodePath(filePath: string): string {
+/**
+ * Turns a URL as written in a page into the file path it names, so it can be matched against the
+ * export. Pages carry both forms — a raw `<img src>` keeps the file name as-is while markdown
+ * syntax percent-encodes it — and the renderer escapes the ampersands of either as HTML.
+ */
+function toFilePath(url: string): string {
+    const unescaped = url.replaceAll("&amp;", "&");
+
     try {
-        return decodeURIComponent(filePath);
+        return decodeURIComponent(unescaped);
     } catch {
-        // A stray `%` in a filename is not an escape sequence; take the path as written.
-        return filePath;
+        // A stray `%` in a file name is not an escape sequence; take the path as written.
+        return unescaped;
     }
 }
 

@@ -21,7 +21,22 @@ export abstract class InAppHelpProvider {
      * implementations that load it from disk should cache it.
      */
     abstract getHelpContent(): HelpBundle;
+
+    /**
+     * Where this platform serves the guide's images and attachments from, substituted into the
+     * pages for {@link HELP_ASSET_TOKEN}. Relative URLs are resolved by the browser against the
+     * application root, which keeps them working behind a reverse proxy and under Electron's
+     * custom protocol.
+     */
+    abstract getHelpAssetBase(): string;
 }
+
+/**
+ * Placeholder the content bundle carries in place of an asset location, so that one bundle can be
+ * shipped to platforms that serve those assets from different places. Kept in sync with the
+ * bundler in `apps/edit-docs`.
+ */
+export const HELP_ASSET_TOKEN = "{{helpAssets}}";
 
 let provider: InAppHelpProvider | null = null;
 
@@ -60,7 +75,8 @@ export function initInAppHelp(p: InAppHelpProvider) {
             ];
         },
         getContent(noteId: string) {
-            return provider?.getHelpContent()[noteId];
+            const page = provider?.getHelpContent()[noteId];
+            return page?.replaceAll(HELP_ASSET_TOKEN, provider?.getHelpAssetBase() ?? "");
         }
     });
 }

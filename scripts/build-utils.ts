@@ -18,7 +18,11 @@ export default class BuildHelper {
         mkdirSync(this.outDir, { recursive: true });
     }
 
-    copy(projectDirPath: string, outDirPath: string) {
+    /**
+     * @param opts.filter receives each source path and returns whether to copy it; directories are
+     *   consulted too, so returning false for one skips its whole subtree.
+     */
+    copy(projectDirPath: string, outDirPath: string, opts?: { filter?: (sourcePath: string) => boolean }) {
         let sourcePath: string;
         if (projectDirPath.startsWith("/") || projectDirPath.startsWith("\\")) {
             sourcePath = join(this.rootDir, projectDirPath.substring(1));
@@ -29,7 +33,7 @@ export default class BuildHelper {
         if (outDirPath.endsWith("/")) {
             mkdirSync(join(this.outDir, outDirPath), { recursive: true });
         }
-        cpSync(sourcePath, join(this.outDir, outDirPath), { recursive: true, dereference: true });
+        cpSync(sourcePath, join(this.outDir, outDirPath), { recursive: true, dereference: true, filter: opts?.filter });
     }
 
     deleteFromOutput(path: string) {

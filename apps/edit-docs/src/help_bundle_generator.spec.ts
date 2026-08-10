@@ -61,15 +61,18 @@ describe("buildHelpBundle", () => {
             { id: "_help_intro", title: "Intro", type: "text", source: "User Guide/Intro.md" }
         ];
 
-        /** Renders the given body as the "Text" page and returns the hrefs it ends up with. */
-        function hrefsOf(body: string): string[] {
+        /** Renders the given body as the "Text" page and returns the values of one attribute. */
+        function urlsOf(body: string, attribute: "href" | "src"): string[] {
             const bundle = buildHelpBundle(
                 meta,
                 readFrom({ "User Guide/Note Types/Text.md": body }),
                 (markdown) => markdown
             );
-            return [ ...bundle._help_text.matchAll(/href="([^"]*)"/g) ].map((m) => m[1]);
+            return [ ...bundle._help_text.matchAll(new RegExp(`${attribute}="([^"]*)"`, "g")) ].map((m) => m[1]);
         }
+
+        const hrefsOf = (body: string) => urlsOf(body, "href");
+        const srcsOf = (body: string) => urlsOf(body, "src");
 
         it("resolves relative paths against the linking page and rewrites them to note links", () => {
             expect(hrefsOf('<a href="Code.md">sibling</a>')).toEqual([ "#root/_help_code" ]);
@@ -95,20 +98,37 @@ describe("buildHelpBundle", () => {
             expect(bundle._help_text).toBe('<a href="#root/_help_code">Code</a>');
         });
 
-        it("leaves alone everything that does not name another page", () => {
+        it("leaves alone everything that addresses something other than a file of the guide", () => {
             // External link, in-page footnote anchor, an existing deep link into a system note,
-            // an attachment the guide ships, and a page that is not part of the help.
+            // and a markdown page the guide does not ship — a broken link, kept visible as
+            // authored rather than disguised as an asset URL.
             const untouched = [
                 "https://example.com/Code.md",
                 "#fn1saoftmefpp",
                 "#root/_hidden/_options",
-                "Text/Backend API.dat",
                 "../../Technical Guide/Internals.md"
             ];
 
             for (const href of untouched) {
                 expect(hrefsOf(`<a href="${href}">link</a>`)).toEqual([ href ]);
             }
+        });
+
+        it("turns asset references into placeholder paths from the export root", () => {
+            // Pages write these both ways: raw in an <img src>, percent-encoded in markdown image
+            // syntax — and the renderer escapes the ampersands of either as HTML. All three come
+            // out as one consistently encoded URL.
+            expect(hrefsOf('<img src="Text_image.png">'))
+                .toEqual([]);
+            expect(srcsOf('<img src="Text_image.png">'))
+                .toEqual([ "{{helpAssets}}/User%20Guide/Note%20Types/Text_image.png" ]);
+            expect(srcsOf('<img src="../Import%20%26%20Export/pic.png">'))
+                .toEqual([ "{{helpAssets}}/User%20Guide/Import%20%26%20Export/pic.png" ]);
+            expect(srcsOf('<img src="../Import &amp; Export/pic.png">'))
+                .toEqual([ "{{helpAssets}}/User%20Guide/Import%20%26%20Export/pic.png" ]);
+            // The attachments a few pages link to are assets as well, not notes.
+            expect(hrefsOf('<a href="Backend%20API.dat">API</a>'))
+                .toEqual([ "{{helpAssets}}/User%20Guide/Note%20Types/Backend%20API.dat" ]);
         });
 
         it("does not touch the contents of code notes", () => {

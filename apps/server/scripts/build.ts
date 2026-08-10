@@ -19,6 +19,12 @@ async function main() {
     // Same story for the LLM skill sheets: core owns them, the server reads them
     // from RESOURCE_DIR at runtime. See core_assets.ts.
     build.copy("/packages/trilium-core/src/assets/llm/skills", "assets/llm/skills/");
+    // The in-app help's images and attachments, which the User Guide owns and the server serves
+    // (see routes/assets.ts). Its pages travel as the content bundle in src/assets/help, so the
+    // markdown they were built from — and its meta — stay out of the package.
+    build.copy("/docs/User Guide", "assets/help/", {
+        filter: (sourcePath) => !sourcePath.endsWith(".md") && !sourcePath.endsWith("!!!meta.json")
+    });
     build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 

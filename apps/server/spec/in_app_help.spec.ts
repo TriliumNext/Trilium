@@ -3,7 +3,9 @@ import becca from "@triliumnext/core/src/becca/becca.js";
 import { load } from "@triliumnext/core/src/becca/becca_loader.js";
 import blobService from "@triliumnext/core/src/services/blob.js";
 import { getContext } from "@triliumnext/core/src/services/context.js";
-import { initInAppHelp } from "@triliumnext/core/src/services/in_app_help.js";
+import { HELP_ASSET_TOKEN, initInAppHelp } from "@triliumnext/core/src/services/in_app_help.js";
+import fs from "fs";
+import path from "path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import NodejsInAppHelpProvider from "../src/in_app_help_provider.js";
@@ -45,6 +47,27 @@ describe("in-app help (shipped artifacts)", () => {
             expect(pojo.content).toBe(content);
             expect(pojo.isStubbed).toBe(false);
         }
+    });
+
+    it("points every image and attachment at a file the server serves", () => {
+        // `getHelpAssetDir` serves these out of the markdown export in a source checkout, and the
+        // build copies the same tree into the package.
+        const assetRoot = path.resolve(__dirname, "../../../docs/User Guide");
+        const missing: string[] = [];
+
+        for (const page of flatten(meta).filter((item) => item.source)) {
+            const html = String(becca.getNoteOrThrow(page.id).getContent());
+            expect(html, `page ${page.id} still carries an unsubstituted asset placeholder`).not.toContain(HELP_ASSET_TOKEN);
+
+            for (const match of html.matchAll(/(?:src|href)="([^"]*\/help\/[^"]*)"/g)) {
+                const relative = decodeURIComponent(match[1].split("/help/")[1]);
+                if (!fs.existsSync(path.join(assetRoot, relative))) {
+                    missing.push(`${page.source} -> ${relative}`);
+                }
+            }
+        }
+
+        expect(missing).toEqual([]);
     });
 
     it("makes every page read-only", () => {
