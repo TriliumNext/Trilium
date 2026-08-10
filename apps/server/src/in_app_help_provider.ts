@@ -8,8 +8,8 @@ import { RESOURCE_DIR } from "./services/resource_dir.js";
 export default class NodejsInAppHelpProvider extends InAppHelpProvider {
 
     getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
-        const helpDir = path.join(RESOURCE_DIR, "doc_notes", "en", "User Guide");
-        const metaFilePath = path.join(helpDir, "!!!meta.json");
+        // Written by edit-docs from the User Guide's markdown export; see apps/edit-docs.
+        const metaFilePath = path.join(RESOURCE_DIR, "help", "help_meta.json");
 
         try {
             return JSON.parse(fs.readFileSync(metaFilePath).toString("utf-8"));

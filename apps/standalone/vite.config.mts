@@ -130,9 +130,7 @@ let plugins: any = [
         targets: [
             {
                 src: [
-                    "../../server/src/assets/**/*",
-                    // Exclude the User Guide (~20 MB) since it's not needed in standalone mode.
-                    "!../../server/src/assets/doc_notes/en/User Guide/**"
+                    "../../server/src/assets/**/*"
                 ],
                 dest: "server-assets",
                 rename: { stripBase: 3 }
