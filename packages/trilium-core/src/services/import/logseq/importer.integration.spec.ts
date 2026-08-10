@@ -127,12 +127,11 @@ describe("Logseq importer — integration", () => {
         expect(importRoot.getChildNotes()[0]?.getChildNotes().map((n) => n.title)).toEqual(["A", "B"]);
     });
 
-    it("imports assets and drawings as standalone image/file notes at their graph location", async () => {
+    it("imports assets as standalone image notes at their graph location", async () => {
         const png = Buffer.from("89504e470d0a1a0a0000000d49484452", "hex");
         const importRoot = await importLogseq({
             "logseq/config.edn": "{}",
             "assets/image_1786381781820_0.png": png,
-            "draws/2026-08-10-19-22-24.excalidraw": "{\"elements\":[]}",
             "pages/Note.md": "body"
         });
 
@@ -142,14 +141,48 @@ describe("Logseq importer — integration", () => {
         expect(image?.mime).toBe("image/png");
         expect(image?.title).toBe("image_1786381781820_0.png");
         expect(image?.getOwnedLabelValue("originalFileName")).toBe("image_1786381781820_0.png");
+    });
 
-        // A drawing is a plain file for now (no canvas conversion); its extension is dropped from the title
-        // by the shared convention, and preserved in the label.
-        const draws = importRoot.getChildNotes().find((n) => n.title === "draws");
-        const drawing = draws?.getChildNotes()[0];
-        expect(drawing?.type).toBe("file");
+    it("imports a drawing as a canvas note, its inline images lifted into attachments", async () => {
+        const scene = {
+            type: "excalidraw",
+            version: 2,
+            source: "https://logseq.com",
+            elements: [{ id: "el1", type: "image", fileId: "img1" }],
+            appState: { viewBackgroundColor: "#FFF" },
+            files: { img1: { id: "img1", mimeType: "image/png", dataURL: "data:image/png;base64,iVBORw==" } }
+        };
+        const importRoot = await importLogseq({
+            "logseq/config.edn": "{}",
+            "draws/2026-08-10-19-22-24.excalidraw": JSON.stringify(scene)
+        });
+
+        const drawing = importRoot.getChildNotes().find((n) => n.title === "draws")?.getChildNotes()[0];
+        expect(drawing?.type).toBe("canvas");
+        expect(drawing?.mime).toBe("application/json");
+        // The extension is dropped, so the note is titled the way Logseq shows the drawing.
         expect(drawing?.title).toBe("2026-08-10-19-22-24");
-        expect(drawing?.getOwnedLabelValue("originalFileName")).toBe("2026-08-10-19-22-24.excalidraw");
+
+        const content = JSON.parse(decodeUtf8(drawing?.getContent() ?? "{}"));
+        expect(content.elements).toEqual(scene.elements);
+        expect(content.appState).toEqual(scene.appState);
+        // The picture moved out of the scene into an `image`-role attachment titled with its fileId, which is
+        // how the canvas editor stores images.
+        expect(content.files).toEqual({});
+        const attachments = drawing?.getAttachments() ?? [];
+        expect(attachments.map((a) => [a.role, a.title, a.mime])).toEqual([["image", "img1", "image/png"]]);
+    });
+
+    it("falls back to a file note for a .excalidraw that isn't a usable scene", async () => {
+        const importRoot = await importLogseq({
+            "logseq/config.edn": "{}",
+            "draws/broken.excalidraw": "{ not json"
+        });
+
+        const drawing = importRoot.getChildNotes().find((n) => n.title === "draws")?.getChildNotes()[0];
+        expect(drawing?.type).toBe("file");
+        expect(drawing?.title).toBe("broken");
+        expect(drawing?.getOwnedLabelValue("originalFileName")).toBe("broken.excalidraw");
     });
 
     it("leaves Logseq's own syntax as literal Markdown for now", async () => {

@@ -6,10 +6,13 @@
  * as the note tree, a folder becoming an empty container note holding its notes. Every other file becomes a
  * standalone `file`/`image` note at its graph folder location, so nothing in the archive is silently dropped.
  *
+ * A `draws/*.excalidraw` drawing is the exception to that last rule: it's decoded into a Trilium `canvas` note
+ * instead of a file note, with its inline images saved as attachments (see {@link ./excalidraw.js}).
+ *
  * None of Logseq's own syntax is interpreted yet — the outline of `-` blocks, `key:: value` properties,
- * `[[page]]` references, `{{query}}` macros, `TODO`/`SCHEDULED`/`:LOGBOOK:` markers, the `A___B___C` namespace
- * encoding of page filenames, journal dates and `.excalidraw` drawings all import as the literal Markdown
- * around them. Those are follow-ups; this pass only establishes the importer and its wiring.
+ * `[[page]]` references (including those pointing at a drawing), `{{query}}` macros,
+ * `TODO`/`SCHEDULED`/`:LOGBOOK:` markers, the `A___B___C` namespace encoding of page filenames and journal
+ * dates all import as the literal Markdown around them. Those are follow-ups.
  *
  * A graph can be zipped two ways — its *contents* (so `logseq/` sits at the zip root) or its *outer folder*
  * (so everything is nested under `Graph name/`). The location of the `logseq/` config folder pins the true
@@ -35,6 +38,7 @@ import { basename } from "../../utils/path.js";
 import { getZipProvider, type ZipSource } from "../../zip_provider.js";
 import markdownService from "../markdown.js";
 import mimeService from "../mime.js";
+import { isDrawingPath, type LogseqDrawing, parseDrawing } from "./excalidraw.js";
 
 interface GraphNote {
     /** The note's graph-root-relative POSIX path, e.g. `pages/contents.md` (the wrapper folder stripped). */
@@ -101,8 +105,8 @@ async function parseGraph(source: ZipSource): Promise<{ notes: GraphNote[]; file
 /**
  * Builds the note tree under a fresh import root named after the graph. Each note is parented under the
  * container note for its folder (created on demand by {@link ensureFolder}, so a folder note exists before its
- * children), with its Markdown rendered to HTML. Non-Markdown files follow as `file`/`image` notes at their
- * own folder location. Returns the import root.
+ * children), with its Markdown rendered to HTML. Non-Markdown files follow as `canvas`/`file`/`image` notes at
+ * their own folder location. Returns the import root.
  */
 function createNotes(importRootNote: BNote, notes: GraphNote[], files: Map<string, Uint8Array>, rootTitle: string, taskContext: TaskContext<"importNotes">): BNote {
     /* v8 ignore next -- the protected branch needs a protected import root with an active protected session, which the in-memory test DB has no way to set up */
@@ -135,9 +139,10 @@ function createNotes(importRootNote: BNote, notes: GraphNote[], files: Map<strin
 }
 
 /**
- * Creates a standalone note for a non-Markdown graph file: an `image` note for a picture, a `file` note
- * otherwise. The bytes become the note content, the title drops the extension (Trilium convention) which is
- * preserved in an `originalFileName` label — matching how the generic ZIP importer treats arbitrary files.
+ * Creates a standalone note for a non-Markdown graph file: a `canvas` note for a drawing, an `image` note for
+ * a picture, a `file` note otherwise. For the latter two the bytes become the note content, the title drops
+ * the extension (Trilium convention) which is preserved in an `originalFileName` label — matching how the
+ * generic ZIP importer treats arbitrary files.
  */
 function createFileNote(parent: BNote, path: string, bytes: Uint8Array | undefined, isProtected: boolean): void {
     /* v8 ignore next 3 -- defensive: `path` comes from the files map, so its bytes are always present */
@@ -145,10 +150,36 @@ function createFileNote(parent: BNote, path: string, bytes: Uint8Array | undefin
         return;
     }
     const fileName = basename(path);
+    // A drawing that can't be parsed as a scene falls through to a plain file note, so nothing is lost.
+    if (isDrawingPath(fileName) && createDrawingNote(parent, fileName, bytes, isProtected)) {
+        return;
+    }
     const mime = mimeService.getMime(fileName) || "application/octet-stream";
     const type = mime.startsWith("image/") ? "image" : "file";
     const { note } = noteService.createNewNote({ parentNoteId: parent.noteId, title: removeFileExtension(fileName, mime), content: bytes, type, mime, isProtected });
     note.addLabel("originalFileName", fileName);
+}
+
+/**
+ * Creates a `canvas` note from a Logseq drawing, reporting whether it could be parsed (so the caller can fall
+ * back to a file note). Each image the scene inlines is saved as an `image`-role attachment titled with its
+ * Excalidraw `fileId`, exactly how the canvas editor stores images, so the scene's `fileId` references
+ * resolve on load.
+ */
+function createDrawingNote(parent: BNote, fileName: string, bytes: Uint8Array, isProtected: boolean): boolean {
+    const drawing: LogseqDrawing | null = parseDrawing(decodeUtf8(bytes));
+    if (!drawing) {
+        return false;
+    }
+
+    const title = fileName.replace(/\.excalidraw$/i, "");
+    const { note } = noteService.createNewNote({ parentNoteId: parent.noteId, title, content: drawing.content, type: "canvas", mime: "application/json", isProtected });
+
+    for (const [fileId, { mime, bytes: imageBytes }] of drawing.embeddedFiles) {
+        note.saveAttachment({ role: "image", mime, title: fileId, content: imageBytes });
+    }
+
+    return true;
 }
 
 /**
