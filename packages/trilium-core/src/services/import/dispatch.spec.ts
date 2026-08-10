@@ -7,6 +7,7 @@ import type { File } from "./common.js";
 import importFile, { type ImportOptions } from "./dispatch.js";
 import enexImportService from "./enex.js";
 import keepImportService from "./keep/importer.js";
+import logseqImportService from "./logseq/importer.js";
 import notionImportService from "./notion/importer.js";
 import obsidianImportService from "./obsidian/importer.js";
 import opmlImportService from "./opml.js";
@@ -22,6 +23,7 @@ const stubbed = {
     importKeep: vi.spyOn(keepImportService, "importKeep").mockResolvedValue({} as BNote),
     importAnytype: vi.spyOn(anytypeImportService, "importAnytype").mockResolvedValue({} as BNote),
     importObsidian: vi.spyOn(obsidianImportService, "importObsidian").mockResolvedValue({} as BNote),
+    importLogseq: vi.spyOn(logseqImportService, "importLogseq").mockResolvedValue({} as BNote),
     importZip: vi.spyOn(zipImportService, "importZip").mockResolvedValue({} as BNote),
     importOpml: vi.spyOn(opmlImportService, "importOpml").mockResolvedValue({} as BNote),
     importEnex: vi.spyOn(enexImportService, "importEnex").mockResolvedValue({} as BNote),
@@ -88,6 +90,12 @@ describe("importFile (dispatch)", () => {
             expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, { path: "/tmp/obs.zip" }, parentNote, "MyVault.zip");
         });
 
+        it("routes a logseq-tagged upload to the Logseq importer, passing the original name", async () => {
+            const file = makeFile({ originalname: "MyGraph.zip", path: "/tmp/logseq.zip" });
+            await importFile(taskContext, file, parentNote, makeOptions(), "logseq");
+            expect(stubbed.importLogseq).toHaveBeenCalledWith(taskContext, { path: "/tmp/logseq.zip" }, parentNote, "MyGraph.zip");
+        });
+
         it("falls back to the raw bytes for the other tagged providers too", async () => {
             const buffer = new Uint8Array([5, 5, 5]);
 
@@ -99,6 +107,9 @@ describe("importFile (dispatch)", () => {
 
             await importFile(taskContext, makeFile({ originalname: "obs.zip", buffer, path: undefined }), parentNote, makeOptions(), "obsidian");
             expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, buffer, parentNote, "obs.zip");
+
+            await importFile(taskContext, makeFile({ originalname: "graph.zip", buffer, path: undefined }), parentNote, makeOptions(), "logseq");
+            expect(stubbed.importLogseq).toHaveBeenCalledWith(taskContext, buffer, parentNote, "graph.zip");
         });
 
         it("ignores the format tag and falls through to single import when the upload is a bare string body", async () => {

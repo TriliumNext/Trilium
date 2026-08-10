@@ -323,6 +323,13 @@
     "choose_file": "Obsidian vault (.zip)",
     "import": "Import"
   },
+  "logseq_import": {
+    "name": "Logseq",
+    "description": "From a graph",
+    "description_long": "Zip your Logseq graph folder, then choose the resulting .zip file here.",
+    "choose_file": "Logseq graph (.zip)",
+    "import": "Import"
+  },
   "evernote_import": {
     "name": "Evernote",
     "description": "From .enex files",

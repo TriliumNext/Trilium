@@ -377,6 +377,9 @@
   "obsidian_import": {
     "root-title": "Obsidian import"
   },
+  "logseq_import": {
+    "root-title": "Logseq import"
+  },
   "export": {
     "zip_filter": "ZIP archive (*.zip)"
   },

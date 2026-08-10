@@ -7,6 +7,7 @@ import anytypeImportService from "./anytype/importer.js";
 import type { File } from "./common.js";
 import enexImportService from "./enex.js";
 import keepImportService from "./keep/importer.js";
+import logseqImportService from "./logseq/importer.js";
 import notionImportService from "./notion/importer.js";
 import obsidianImportService from "./obsidian/importer.js";
 import opmlImportService from "./opml.js";
@@ -79,6 +80,10 @@ async function routeToImporter(taskContext: TaskContext<"importNotes">, file: Fi
         // An Obsidian vault is exported as a plain `.zip` of Markdown files, indistinguishable from a
         // Trilium export by extension alone; the Obsidian import dialog tags the upload to route it here.
         return await obsidianImportService.importObsidian(taskContext, zipSource, parentNote, file.originalname);
+    } else if (format === "logseq" && (file.path || typeof file.buffer !== "string")) {
+        // A Logseq graph is likewise exported as a plain `.zip` of Markdown files, indistinguishable from a
+        // Trilium export by extension alone; the Logseq import dialog tags the upload to route it here.
+        return await logseqImportService.importLogseq(taskContext, zipSource, parentNote, file.originalname);
     } else if (extension === ".zip" && options.explodeArchives && (file.path || typeof file.buffer !== "string")) {
         return await zipImportService.importZip(taskContext, zipSource, parentNote);
     } else if (extension === ".opml" && options.explodeArchives) {
