@@ -11,11 +11,17 @@
     background-color: var(--background-secondary);
     border: 1px solid var(--background-active);
     border-radius: 6px;
+}
+
+/* Only a code block preserves the source's own line breaks. Inline code used to inherit this from
+ * the rule above, which kept a long snippet on one line and pushed the page sideways on mobile. */
+.ck-content pre {
     white-space: pre;
 }
 
-.ck-content code {
+.ck-content code:not(pre code) {
     padding: 2px 5px;
+    overflow-wrap: break-word;
 }
 
 .ck-content pre code {

@@ -782,15 +782,6 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     opacity: 1;
 }
 
-@media (screen) {
-    .ck-content p code {
-        border: 1px solid var(--card-border-color);
-        box-shadow: var(--card-box-shadow);
-        border-radius: 6px;
-        background-color: var(--card-background-color);
-    }
-}
-
 .ck-content:not(.word-wrap) pre code {
     white-space: pre;
 }

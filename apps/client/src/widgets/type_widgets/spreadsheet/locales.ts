@@ -180,6 +180,7 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
             import('@univerjs/preset-sheets-hyper-link/locales/zh-TW')
         ])
     },
+    tr: null,
     uk: null
 };
 

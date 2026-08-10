@@ -292,6 +292,10 @@
     --card-shadow-color: rgba(0, 0, 0, 0.1);
     --card-box-shadow: none;
 
+    --inline-code-background-color: rgba(0, 0, 0, 0.05);
+    --inline-code-border-color: rgba(0, 0, 0, 0.11);
+    --inline-code-hover-background-color: rgba(0, 0, 0, 0.1);
+
     --calendar-color: var(--menu-text-color);
     --calendar-weekday-labels-color: var(--muted-text-color);
     --calendar-day-hover-color: var(--hover-item-text-color);
@@ -311,7 +315,9 @@
     --tooltip-kbd-background: #ffffff32;
     --tooltip-kbd-border: #00000060;
 
-    --note-tooltip-background-color: white;
+    /* Translucent, as the app's other tooltips are: the theme frosts every tooltip
+       (`--tooltip-backdrop-filter`), and an opaque colour here is a blur with nothing behind it. */
+    --note-tooltip-background-color: #ffffffd9;
 
 
     --help-background-color: #fffc;
@@ -369,7 +375,11 @@
     --custom-bg-color: hsl(var(--custom-color-hue), 37%, 89%, 1);
 }
 
+/* A calendar event and a map marker shown as a sheet are the same thing the quick editor is — a
+   whole note over whatever raised it — so they are tinted by the same colours. */
 .quick-edit-dialog-wrapper.with-hue,
+.calendar-event-sheet.with-hue,
+.geo-detail-sheet.with-hue,
 .note-tooltip.with-hue {
     --modal-background-color: hsl(var(--custom-color-hue), 56%, 96%);
     --modal-border-color: hsl(var(--custom-color-hue), 33%, 41%);
@@ -389,6 +399,9 @@
 .note-split.with-hue,
 .quick-edit-dialog-wrapper.with-hue,
 .geo-detail-pane.with-hue,
+.calendar-event-popover.with-hue,
+.calendar-event-sheet.with-hue,
+.geo-detail-sheet.with-hue,
 .nested-note-list-item.with-hue,
 .note-book-card.with-hue .note-book-header,
 .ck-template-icon.with-hue {
@@ -408,7 +421,32 @@
 }
 
 .note-tooltip.with-hue {
-    --tooltip-background-color: hsl(var(--custom-color-hue), 56%, 96%);
+    --tooltip-background-color: hsl(var(--custom-color-hue), 56%, 96%, 0.85);
+}
+
+/*
+ * The surfaces that show a note over something else and frost what they stand on: the calendar's
+ * event card beside its chip, the geo map's marker pane over the map. Unlike the sheets and the
+ * tooltip, their tint is stated with the alpha the plain surface already carries — an opaque tint
+ * would leave the blur nothing to show through, which is the whole of what they are dressed as.
+ *
+ * Grown to cover what they stand on, both give the frosting up and take the same tint opaque; so
+ * does one whose blur cannot be had at all (background effects, or a reader who turned them off),
+ * all of them reading the no-backdrop colour.
+ */
+.calendar-event-popover.with-hue,
+.geo-detail-pane.with-hue {
+    --menu-background-color: hsl(var(--custom-color-hue), 56%, 96%, 0.85);
+    --menu-background-color-no-backdrop: hsl(var(--custom-color-hue), 56%, 97%);
+    --dropdown-border-color: hsl(var(--custom-color-hue), 30%, 78%);
+    --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 40%, 88%);
+}
+
+/* A reader who turned backdrop effects off, which these must answer here rather than by the swap
+   made on the body above: that swap is resolved where it is stated, so what reaches the surface is
+   the plain opaque colour and not the tinted one the surface states on itself. */
+body.backdrop-effects-disabled :is(.calendar-event-popover, .geo-detail-pane).with-hue {
+    --menu-background-color: var(--menu-background-color-no-backdrop);
 }
 
 [data-trilium-task-state] {

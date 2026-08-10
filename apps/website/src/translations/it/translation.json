@@ -15,24 +15,24 @@
         "get_started": "Inizia ora"
     },
     "organization_benefits": {
-        "title": "Organizzazione",
+        "title": "Organizza i tuoi appunti come preferisci",
         "note_structure_title": "Struttura della nota",
         "note_structure_description": "Le note possono essere organizzate gerarchicamente. Non sono necessarie cartelle, poiché ogni nota può contenere sottonote. Una singola nota può essere aggiunta in più punti della gerarchia.",
-        "attributes_title": "Nota etichette e relazioni",
-        "attributes_description": "Utilizza le relazioni tra le note o aggiungi etichette per una facile categorizzazione. Utilizza gli attributi promossi per inserire informazioni strutturate che possono essere utilizzate in tabelle e bacheche.",
+        "attributes_title": "Etichette delle note e relazioni",
+        "attributes_description": "Utilizza le relazioni tra le note oppure aggiungi etichette per facilitare la classificazione. Utilizza gli attributi promossi per inserire informazioni strutturate che possono essere utilizzate nelle tabelle e nelle bacheche.",
         "hoisting_title": "Aree di lavoro e ancoraggi",
         "hoisting_description": "Separa facilmente le tue note personali da quelle di lavoro raggruppandole in un'area di lavoro, che concentra la struttura delle note in modo da mostrare solo un insieme specifico di note."
     },
     "productivity_benefits": {
-        "title": "Produttività e sicurezza",
+        "title": "Funzionalità per l'uso quotidiano",
         "revisions_title": "Nota sulle revisioni",
         "revisions_content": "Le note vengono salvate periodicamente in background e le revisioni possono essere utilizzate per la revisione o per annullare modifiche accidentali. Le revisioni possono anche essere create su richiesta.",
         "sync_title": "Sincronizzazione",
         "sync_content": "Utilizza un'istanza self-hosted o cloud per sincronizzare facilmente le tue note su più dispositivi e accedervi dal tuo cellulare utilizzando una PWA.",
         "protected_notes_title": "Note protette",
         "protected_notes_content": "Proteggi le informazioni personali sensibili crittografando le note e bloccandole dietro una sessione protetta da password.",
-        "search_title": "Ricerca avanzata",
-        "search_content": "Oppure cerca del testo all'interno delle note e restringi la ricerca filtrando per nota principale o per profondità.",
+        "search_title": "Ricerca e navigazione rapida",
+        "search_content": "Passa a qualsiasi nota o comando in base al titolo grazie alla ricerca approssimativa, oppure esegui una ricerca full-text tra le tue note, compreso il testo contenuto nelle immagini e nei PDF tramite OCR.",
         "web_clipper_title": "Web clipper",
         "web_clipper_content": "Cattura pagine web (o screenshot) e inseriscile direttamente in Trilium utilizzando l'estensione del browser Web Clipper."
     },
@@ -48,8 +48,8 @@
         "mermaid_title": "Diagrammi a sirena",
         "mermaid_description": "Crea diagrammi come diagrammi di flusso, diagrammi di classe e sequenza, diagrammi di Gantt e molti altri, utilizzando la sintassi Mermaid.",
         "mindmap_title": "Mappe mentali",
-        "mindmap_description": "Organizza i tuoi pensieri visivamente o fai una sessione di brainstorming.",
-        "title": "Diversi modi per rappresentare le tue informazioni"
+        "mindmap_description": "Organizza visivamente i tuoi pensieri o fai un brainstorming di idee.",
+        "title": "Un tipo di nota per ogni tipo di contenuto"
     },
     "collections": {
         "calendar_title": "Calendario",
@@ -60,7 +60,7 @@
         "board_description": "Organizza le tue attività o lo stato dei tuoi progetti in una lavagna Kanban con un modo semplice per creare nuovi elementi e colonne e modificare facilmente il loro stato trascinandoli sulla lavagna.",
         "geomap_title": "Geomappa",
         "geomap_description": "Pianifica le tue vacanze o segna i tuoi punti di interesse direttamente su una mappa geografica utilizzando indicatori personalizzabili. Visualizza le tracce GPX registrate per seguire gli itinerari.",
-        "title": "Collezioni",
+        "title": "Guarda i tuoi appunti da ogni angolazione",
         "presentation_title": "Presentazione",
         "presentation_description": "Organizza le informazioni in diapositive e presentale a schermo intero con transizioni fluide. Le diapositive possono anche essere esportate in formato PDF per una facile condivisione."
     },
@@ -69,7 +69,7 @@
         "mobile_question": "Esiste un'applicazione mobile?",
         "mobile_answer": "Al momento non esiste un'applicazione mobile ufficiale. Tuttavia, se disponi di un'istanza server, puoi accedervi utilizzando un browser web e persino installarla come PWA. Per Android, esiste un'applicazione non ufficiale chiamata TriliumDroid che funziona anche offline (come un client desktop).",
         "database_question": "Dove vengono archiviati i dati?",
-        "database_answer": "Tutte le tue note saranno archiviate in un database SQLite nella cartella dell'applicazione. Il motivo per cui Trilium utilizza un database anziché file di testo semplice è sia una questione di prestazioni sia perché alcune funzionalità sarebbero molto più difficili da implementare, come i cloni (stessa nota in più punti dell'albero). Per trovare la cartella dell'applicazione, basta andare alla finestra Informazioni.",
+        "database_answer": "Tutte le tue note saranno archiviate in un database SQLite all'interno della cartella dell'applicazione. Trilium utilizza un database anziché file di testo semplice per due motivi: le prestazioni e alcune funzionalità, come la possibilità di inserire la stessa nota in più punti dell'albero, che altrimenti sarebbero molto più difficili da implementare. Per individuare la cartella dell'applicazione, basta accedere alla finestra \"Informazioni\".",
         "server_question": "Ho bisogno di un server per usare Trilium?",
         "server_answer": "No, il server consente l'accesso tramite un browser web e gestisce la sincronizzazione se si dispone di più dispositivi. Per iniziare, è sufficiente scaricare l'applicazione desktop e iniziare a utilizzarla.",
         "scaling_question": "Quanto è scalabile l'applicazione con una grande quantità di note?",
@@ -80,8 +80,8 @@
         "security_answer": "Per impostazione predefinita, le note non sono crittografate e possono essere lette direttamente dal database. Una volta contrassegnata come crittografata, la nota viene crittografata utilizzando AES-128-CBC."
     },
     "final_cta": {
-        "title": "Pronti per iniziare con Trilium Notes?",
-        "description": "Costruisci la tua conoscenza personale con potenti funzionalità e privacy totale.",
+        "title": "Inizia a costruire la tua base di conoscenze",
+        "description": "Organizza tutto in un'unica app open source: note gerarchiche, ricerca avanzata e sincronizzazione con un server di tua proprietà.",
         "get_started": "Inizia ora"
     },
     "components": {

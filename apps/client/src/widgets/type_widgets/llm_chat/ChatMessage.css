@@ -263,12 +263,16 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     margin: 0.25em 0;
 }
 
-.llm-chat-markdown code {
-    background: var(--accented-background-color);
-    padding: 0.15em 0.4em;
-    border-radius: 4px;
+/* Same treatment as inline code in a note (style.css) — a chat answer and the note it ends up in
+ * should not render the same snippet differently. Translucent, so it composites over the bubble. */
+.llm-chat-markdown code:not(pre code) {
+    background: var(--inline-code-background-color);
+    border: 1px solid var(--inline-code-border-color);
+    padding: 0.1em 0.35em;
+    border-radius: 5px;
     font-family: var(--monospace-font-family, monospace);
     font-size: 0.9em;
+    overflow-wrap: break-word;
 }
 
 .llm-chat-markdown pre {

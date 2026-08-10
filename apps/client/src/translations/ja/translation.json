@@ -221,7 +221,9 @@
       "times": "回",
       "custom_rule": "ルール",
       "custom_hint": "上記のフィールドでは指定できない追加条件を含む iCalendar の繰り返しルール（RRULE）です。これをクリアすると、繰り返し設定が解除されます。"
-    }
+    },
+    "expand_details": "イベントを最大化してウィンドウ全体に表示",
+    "restore_details": "イベントをカレンダー上の元の位置の横に戻す"
   },
   "note_icon": {
     "change_note_icon": "ノートアイコンの変更",
@@ -2300,7 +2302,9 @@
     "exit-3d": "地図を水平に戻す",
     "close-details": "閉じる",
     "marker-color": "マーカーの色",
-    "copy-coordinates": "座標をコピー"
+    "copy-coordinates": "座標をコピー",
+    "expand-details": "ノートをマップ全体に表示",
+    "restore-details": "ノートをマップの横に戻す"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -3024,7 +3028,9 @@
     "mcp_config_description": "オプション → ETAPI でトークンを作成し、次に、プレースホルダーをトークンに置き換えて、アシスタントの MCP 設定に以下を追加します:",
     "mcp_config_token_placeholder": "あなたの etapi トークン",
     "mcp_config_cli_description": "Claude Code はコマンドラインから設定することもできます:",
-    "mcp_config_warning": "トークンは、すべてのノートへの完全な読み取りおよび書き込みアクセス権を付与するため、パスワードと同様に扱ってください。別のデバイスから接続する場合は、HTTPS 接続を推奨します — プレーンな HTTP 経由で送信されるトークンは傍受される可能性があります。"
+    "mcp_config_warning": "トークンは、すべてのノートへの完全な読み取りおよび書き込みアクセス権を付与するため、パスワードと同様に扱ってください。別のデバイスから接続する場合は、HTTPS 接続を推奨します — プレーンな HTTP 経由で送信されるトークンは傍受される可能性があります。",
+    "provider_unavailable_standalone": "ブラウザ版では利用できません。このプロバイダーは Claude Code を別個のプログラムとして実行する仕組みですが、それを実行するためのマシン環境がここにはないためです。",
+    "mcp_unavailable_standalone": "ブラウザ版では利用できません。アシスタントはネットワーク経由で Trilium に接続しますが、このビルドはページ内で完結して動作しているため、アシスタントに指定すべきアドレスが存在しないからです。"
   },
   "ocr": {
     "extracted_text": "抽出されたテキスト（OCR）",

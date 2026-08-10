@@ -96,7 +96,10 @@
     "toggle-ribbon-tab-note-paths": "Mostra/Nascondi i percorsi della nota",
     "toggle-ribbon-tab-similar-notes": "Mostra/Nascondi le note simili",
     "save-named-revision": "Salva Revisione con Nome",
-    "toggle-archived-notes": "Attiva/disattiva la visualizzazione delle note archiviate"
+    "toggle-archived-notes": "Attiva/disattiva la visualizzazione delle note archiviate",
+    "show-deleted-notes": "Mostra le note eliminate",
+    "show-shortcut-hints": "Mostra suggerimenti sui collegamenti",
+    "peek-right-pane": "Anteprima del riquadro destro"
   },
   "hidden-subtree": {
     "options-title": "Opzioni",
@@ -106,7 +109,7 @@
     "code-notes-title": "Note di codice",
     "images-title": "Media",
     "spellcheck-title": "Controllo ortografico",
-    "password-title": "Password",
+    "password-title": "Password e autenticazione",
     "multi-factor-authentication-title": "Autenticazione a più fattori",
     "etapi-title": "ETAPI",
     "backup-title": "Backup",
@@ -166,7 +169,9 @@
     "task-state-attr-is-completed": "Si considera completato",
     "task-state-attr-color": "Colore",
     "task-state-attr-is-hidden": "Nascosto dall'elenco",
-    "security-title": "Sicurezza"
+    "security-title": "Sicurezza",
+    "deleted-notes-title": "Note eliminate",
+    "color-scheme-switcher-title": "Selettore della combinazione di colori"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -286,22 +291,27 @@
     "toggle-classic-editor-toolbar": "Mostra/Nascondi il pannello della formattazione per l'editor con la barra degli strumenti fissa",
     "unhoist": "Rimuovi qualsiasi ancoraggio",
     "save-named-revision": "Salva una revisione con nome della nota attiva",
-    "toggle-archived-notes": "Mostra/nascondi le note archiviate nell'albero delle note"
+    "toggle-archived-notes": "Mostra/nascondi le note archiviate nell'albero delle note",
+    "show-deleted-notes": "Visualizza la finestra di dialogo \"Note eliminate\"",
+    "show-shortcut-hints": "Mostra le scorciatoie da tastiera per il widget attivo",
+    "peek-right-pane": "Visualizza il riquadro destro come un pannello temporaneo che si sovrappone al contenuto e si chiude quando perde il focus"
   },
   "login": {
     "title": "Accedi",
     "heading": "Trilium",
     "incorrect-totp": "Il codice TOTP è errato. Riprovare.",
-    "incorrect-password": "Le credenziali sono errate. Riprovare.",
+    "incorrect-password": "La password non è corretta. Riprova.",
     "password": "Password",
     "remember-me": "Ricordami",
     "button": "Accedi",
-    "sign_in_with_sso": "Accedi con {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Accedi con {{ ssoIssuerName }}",
+    "sso-wrong-account": "Questo account non è quello collegato a questa istanza di Trilium. Accedi con l'account collegato.",
+    "sso-not-enrolled": "L'accesso singolo (single sign-on) non è ancora attivo. Accedi prima con la tua password, poi collega il tuo account dalle impostazioni."
   },
   "set_password": {
     "title": "Imposta password",
     "heading": "Imposta password",
-    "description": "Prima di poter usare Trilium dal web, occorre impostare una password. Questa password sarà necessaria per accedere.",
+    "description": "Prima di poter iniziare a utilizzare Trilium via web, è necessario impostare una password. Questa password servirà poi per accedere.",
     "password": "Password",
     "password-confirmation": "Conferma della password",
     "button": "Imposta password"

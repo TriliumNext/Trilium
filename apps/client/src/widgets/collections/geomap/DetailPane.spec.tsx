@@ -1197,6 +1197,15 @@ describe("DetailPane", () => {
             expect(document.querySelector(".tn-embedded-note-maximize")).toBeNull();
         });
 
+        /* Tinted by the marker's own colour as the pane is, the dialog being the same note shown
+           another way (see the `.geo-detail-sheet.with-hue` rules in theme-next-{light,dark}.css). */
+        it("carries the marker's own colour", async () => {
+            const note = buildNote({ title: "Somewhere", "#geolocation": "1,2", "#color": "#ff0000" });
+            await openSheetFor(note, fakeMap());
+
+            expect(sheet()?.className).toContain(note.getColorClass());
+        });
+
         it("leaves the camera alone, there being no pane to hold the marker clear of", async () => {
             const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
             const map = fakeMap();

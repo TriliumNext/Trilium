@@ -1054,7 +1054,9 @@
       "times": "회",
       "custom_rule": "규칙",
       "custom_hint": "위 필드보다 더 세부적으로 설정할 수 있는 iCalendar 반복 규칙(RRULE)입니다. 비우면 반복이 중지됩니다."
-    }
+    },
+    "expand_details": "일정을 창에 맞게 확장",
+    "restore_details": "일정을 캘린더의 원래 위치로 되돌리기"
   },
   "close_pane_button": {
     "close_this_pane": "이 창 닫기"
@@ -2780,7 +2782,9 @@
     "exit-3d": "지도를 다시 평면으로 보기",
     "close-details": "닫기",
     "marker-color": "마커 색상",
-    "copy-coordinates": "좌표 복사"
+    "copy-coordinates": "좌표 복사",
+    "expand-details": "노트를 맵에 맞게 확장",
+    "restore-details": "노트를 맵 옆으로 되돌리기"
   },
   "geo-map-context": {
     "open-location": "위치 열기",
@@ -3753,7 +3757,9 @@
       "search_icons": "아이콘 검색",
       "search_help": "사용자 가이드 검색",
       "get_help_toc": "사용자 가이드 콘텐츠 보기"
-    }
+    },
+    "provider_unavailable_standalone": "브라우저 버전에서는 사용할 수 없습니다. 이 제공자는 Claude Code를 별도의 프로그램으로 실행하는 방식으로 작동하지만, 브라우저에서는 이를 실행할 로컬 환경이 없습니다.",
+    "mcp_unavailable_standalone": "브라우저 버전에서는 사용할 수 없습니다. 어시스턴트는 네트워크를 통해 Trilium에 연결해야 하지만, 이 빌드는 이 페이지 안에서만 실행되므로 어시스턴트에 제공할 연결 주소가 없습니다."
   },
   "common": {
     "save": "저장",

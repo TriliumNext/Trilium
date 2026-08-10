@@ -1075,6 +1075,33 @@ code {
     color: inherit !important;
 }
 
+/*
+ * Inline code — a `code` that is not the body of a code block.
+ *
+ * CKEditor ships its own `.ck-content code` rule with a hardcoded grey, which ignores the theme
+ * entirely. The rule below overrides it (one class more specific) for every surface that renders
+ * note content: the editable and read-only text notes, doc notes and the print sheet.
+ *
+ * The values are theme-tunable; the defaults here are a translucent neutral grey so they hold up
+ * on a light and a dark background alike, which is what the legacy themes fall back to.
+ */
+:where(:root) {
+    --inline-code-background-color: rgba(128, 128, 128, 0.18);
+    --inline-code-border-color: rgba(128, 128, 128, 0.28);
+    --inline-code-hover-background-color: rgba(128, 128, 128, 0.3);
+}
+
+.ck-content code:not(pre code) {
+    padding: 0.1em 0.35em;
+    border: 1px solid var(--inline-code-border-color);
+    border-radius: 5px;
+    background-color: var(--inline-code-background-color);
+    /* Monospace runs visually larger than the surrounding prose at the same nominal size. */
+    font-size: 0.9em;
+    /* A long path or identifier must wrap rather than push the paragraph past the note width. */
+    overflow-wrap: break-word;
+}
+
 .animated {
     animation-duration: 1s;
     animation-fill-mode: both;

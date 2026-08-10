@@ -494,9 +494,14 @@ function MarkerSheet({ note, parentNote, isReadOnly, onClose, onRelocate, onFoll
     useLegacyComponentElement(modalRef);
     useFollowLinksWithin(modalRef, onFollowLink);
 
+    // Tinted by the marker's own colour as the pane over the map is, and by the same means the
+    // quick editor is (see the `.with-hue` rules in theme-next-{light,dark}.css) — a sheet being
+    // opaque, it takes the dialog's colours rather than the pane's.
+    const colorClass = useNoteColorClass(note);
+
     return (
         <Modal
-            className="geo-detail-sheet"
+            className={clsx("geo-detail-sheet", colorClass)}
             size="lg"
             title={<TitleRow />}
             modalRef={modalRef}

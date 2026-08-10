@@ -111,5 +111,5 @@ body.mobile .note-detail-readonly-text {
 }
 
 .note-detail-readonly-text-content code.copyable-inline-code:hover {
-    background-color: var(--accented-background-color);
+    background-color: var(--inline-code-hover-background-color);
 }

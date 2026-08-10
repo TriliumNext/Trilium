@@ -42,7 +42,7 @@ if (isDev) {
 }
 
 export default defineConfig(() => ({
-    root: __dirname,
+    root: import.meta.dirname,
     cacheDir: '../../.cache/vite',
     base: "",
     plugins,
@@ -95,9 +95,9 @@ export default defineConfig(() => ({
         sourcemap: false,
         rollupOptions: {
             input: {
-                index: join(__dirname, "index.html"),
-                runtime: join(__dirname, "src", "runtime.ts"),
-                print: join(__dirname, "src", "print.tsx")
+                index: join(import.meta.dirname, "index.html"),
+                runtime: join(import.meta.dirname, "src", "runtime.ts"),
+                print: join(import.meta.dirname, "src", "print.tsx")
             },
             output: {
                 entryFileNames: (chunk) => {
@@ -138,7 +138,7 @@ export default defineConfig(() => ({
             // emit app-relative paths (`src/…`); the shallow ones are ambiguous in this monorepo
             // and get attributed to whichever project wins the match. Anchor to the repo root so
             // every path is unambiguous.
-            reporter: ["text", "html", ["lcov", { projectRoot: join(__dirname, "../..") }]],
+            reporter: ["text", "html", ["lcov", { projectRoot: join(import.meta.dirname, "../..") }]],
             include: ["src/**/*.{ts,tsx}"],
             exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"]
         },

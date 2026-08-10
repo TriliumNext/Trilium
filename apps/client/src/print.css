@@ -171,6 +171,21 @@ body[data-note-type="text"] .ck-content {
     }
 }
 
+/* #region Inline code */
+/* The print window loads neither style.css nor a theme (see loadStylesheets() in index.ts), so this
+ * repeats the on-screen rule with print-safe values instead of reading --inline-code-*. Printers
+ * drop backgrounds by default, which leaves the border as the only thing setting an inline snippet
+ * apart from the prose around it — so it has to survive greyscale on its own. */
+.ck-content code:not(pre code) {
+    padding: 0.1em 0.35em;
+    border: 1px solid #999;
+    border-radius: 3pt;
+    background-color: transparent;
+    font-size: 0.9em;
+    overflow-wrap: break-word;
+}
+/* #endregion */
+
 /* #region Footnotes */
 .footnote-reference a,
 .footnote-back-link a {

@@ -9,7 +9,7 @@ import "@univerjs/preset-sheets-filter/lib/index.css";
 import "@univerjs/preset-sheets-hyper-link/lib/index.css";
 import "@univerjs/preset-sheets-data-validation/lib/index.css";
 
-import { DEFAULT_STYLES, type Plugin, type PluginCtor } from '@univerjs/core';
+import { DEFAULT_STYLES, type Injector, type Plugin, type PluginCtor } from '@univerjs/core';
 import { UniverSheetsConditionalFormattingMobileUIPlugin, UniverSheetsConditionalFormattingPreset, UniverSheetsConditionalFormattingUIPlugin } from '@univerjs/preset-sheets-conditional-formatting';
 import { UniverMobileUIPlugin, UniverSheetsCorePreset, UniverSheetsMobileUIPlugin, UniverSheetsUIPlugin, UniverUIPlugin } from '@univerjs/preset-sheets-core';
 import { UniverSheetsDataValidationMobileUIPlugin, UniverSheetsDataValidationPreset, UniverSheetsDataValidationUIPlugin } from '@univerjs/preset-sheets-data-validation';
@@ -21,6 +21,7 @@ import { UniverSheetsNotePreset } from '@univerjs/preset-sheets-note';
 import { UniverSheetsSortPreset } from '@univerjs/preset-sheets-sort';
 import { createUniver, FUniver, mergeLocales } from '@univerjs/presets';
 import { CalculationMode } from '@univerjs/sheets-formula';
+import { IEditorBridgeService, SheetCellEditorResizeService } from '@univerjs/sheets-ui';
 import { IDialogService, IShortcutService, ISidebarService } from '@univerjs/ui';
 import { MutableRef, useEffect, useRef, useState } from "preact/hooks";
 
@@ -94,6 +95,7 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
     useInitializeSpreadsheet(containerRef, apiRef, readOnly, locale);
     useReleaseFillShortcuts(apiRef);
     useClampEdgeNavigation(apiRef);
+    useAnchorCellEditorOnScroll(apiRef);
     useDarkMode(apiRef);
     usePersistence(note, noteContext, apiRef, containerRef);
     useSpreadsheetExport(apiRef, note, noteContext);
@@ -202,6 +204,37 @@ function useReleaseFillShortcuts(apiRef: MutableRef<FUniver | undefined>) {
             if (stage === univerAPI.Enum.LifecycleStages.Rendered) {
                 releaseShortcuts();
             }
+        });
+        return () => disposable.dispose();
+    }, [ apiRef ]);
+}
+
+/**
+ * Keeps the cell editor glued to the cell being edited while the grid scrolls.
+ *
+ * Univer positions the editor overlay (a DOM element floating above the canvas) only when
+ * editing starts and when the text inside it changes — nothing recomputes it when the viewport
+ * scrolls underneath. Scrolling with the wheel mid-edit therefore leaves the box parked at its
+ * original screen position, overlapping whichever cell has scrolled into that spot, which reads
+ * as editing the wrong cell. Excel and Google Sheets both let the editor travel with its cell.
+ *
+ * `refreshEditCellPosition(false)` recomputes the cell's position from the skeleton and the
+ * current viewport scroll (`resetSizeOnly: false` — the `true` variant deliberately keeps the
+ * stale origin and only resizes), and `fitTextSize()` pushes that layout to the overlay's DOM
+ * state, which is the same pair Univer runs when the editor first opens.
+ */
+function useAnchorCellEditorOnScroll(apiRef: MutableRef<FUniver | undefined>) {
+    useEffect(() => {
+        const univerAPI = apiRef.current;
+        if (!univerAPI) return;
+
+        const injector = (univerAPI as unknown as { _injector: Injector })._injector;
+        const disposable = univerAPI.addEvent(univerAPI.Event.Scroll, () => {
+            const editorBridgeService = injector.get(IEditorBridgeService);
+            if (!editorBridgeService.isVisible().visible) return;
+
+            editorBridgeService.refreshEditCellPosition(false);
+            injector.get(SheetCellEditorResizeService).fitTextSize();
         });
         return () => disposable.dispose();
     }, [ apiRef ]);

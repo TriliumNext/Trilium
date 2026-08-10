@@ -835,7 +835,9 @@
       "times": "次后",
       "custom_rule": "规则",
       "custom_hint": "一条 iCalendar 重复规则（RRULE），可表达比上述字段更复杂的规则。清除它将停止重复。"
-    }
+    },
+    "expand_details": "展开事件以填满窗口",
+    "restore_details": "将事件放回日历中的原位置"
   },
   "close_pane_button": {
     "close_this_pane": "关闭此面板"
@@ -2262,7 +2264,9 @@
     "exit-3d": "将地图恢复平视",
     "close-details": "关闭",
     "marker-color": "标记颜色",
-    "copy-coordinates": "复制坐标"
+    "copy-coordinates": "复制坐标",
+    "expand-details": "展开笔记以填满地图",
+    "restore-details": "将笔记放回地图旁"
   },
   "geo-map-context": {
     "open-location": "打开位置",
@@ -3041,7 +3045,9 @@
     "mcp_config_description": "在「选项 → ETAPI」下创建一个令牌，然后将以下内容添加到助手的 MCP 配置中，将占位符替换为你的令牌：",
     "mcp_config_token_placeholder": "你的-etapi-令牌",
     "mcp_config_cli_description": "Claude Code 也可以通过命令行配置：",
-    "mcp_config_warning": "令牌拥有对你所有笔记的完全读写权限，请像对待密码一样对待它。如果从其他设备连接，请优先使用 HTTPS — 通过明文 HTTP 发送的令牌可能被截获。"
+    "mcp_config_warning": "令牌拥有对你所有笔记的完全读写权限，请像对待密码一样对待它。如果从其他设备连接，请优先使用 HTTPS — 通过明文 HTTP 发送的令牌可能被截获。",
+    "provider_unavailable_standalone": "浏览器版不可用：此提供商通过将 Claude Code 作为独立程序运行来工作，但此处没有可供其运行的机器。",
+    "mcp_unavailable_standalone": "浏览器版不可用：助手需通过网络连接 Trilium，但此版本没有可提供给它们的地址，因为它完全在页面内运行。"
   },
   "revisions": {
     "note_revisions": "笔记修订",

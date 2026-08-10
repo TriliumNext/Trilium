@@ -11,7 +11,7 @@ import TitleRow from "../../layout/TitleRow";
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
-import { useLegacyComponentElement, useNote } from "../../react/hooks";
+import { useLegacyComponentElement, useNote, useNoteColorClass } from "../../react/hooks";
 import Modal from "../../react/Modal";
 import Popover from "../../react/Popover";
 import { removeFromCalendar } from "./api";
@@ -118,6 +118,11 @@ function EventPopoverShell({ note, anchorRect, updateKey, parentNote, isEditable
     onClose(): void;
     onFollowLink(noteId: string): boolean;
 }) {
+    // The event's own colour — the one its chip is drawn in — which the card is tinted by (see the
+    // `.calendar-event-popover.with-hue` rules in theme-next-{light,dark}.css). Only the hue is
+    // taken and only where the note states one, so an uncoloured event keeps the plain card.
+    const colorClass = useNoteColorClass(note);
+
     // Escape closes the card whether it stands beside its chip or fills the window, as a press
     // outside it does and as every dialog in the app answers the key. Being grown is a way the card
     // is drawn rather than a mode to be let out of, and the maximize is its own way back down.
@@ -131,7 +136,7 @@ function EventPopoverShell({ note, anchorRect, updateKey, parentNote, isEditable
 
     return (
         <Popover
-            className="calendar-event-popover"
+            className={clsx("calendar-event-popover", colorClass)}
             placement={glob.isRtl ? "left-start" : "right-start"}
             getAnchorRect={anchorRect}
             updateKey={updateKey}
@@ -177,6 +182,11 @@ function EventSheet({ note, parentNote, isEditable, onClose, onFollowLink }: {
     const modalRef = useRef<HTMLDivElement>(null);
     useLegacyComponentElement(modalRef);
 
+    // Tinted by the event's own colour as the card beside a chip is, and by the same means the
+    // quick editor is (see the `.with-hue` rules in theme-next-{light,dark}.css) — a sheet being
+    // opaque, it takes the dialog's colours rather than the card's.
+    const colorClass = useNoteColorClass(note);
+
     // A link to another event switches the sheet, the calendar behind it turning to the event's
     // date for when the sheet comes down (see the shared hook).
     useFollowLinksWithin(modalRef, onFollowLink);
@@ -192,7 +202,7 @@ function EventSheet({ note, parentNote, isEditable, onClose, onFollowLink }: {
 
     return (
         <Modal
-            className="calendar-event-sheet"
+            className={clsx("calendar-event-sheet", colorClass)}
             size="lg"
             title={<TitleRow />}
             modalRef={modalRef}
