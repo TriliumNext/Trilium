@@ -47,8 +47,10 @@ body.desktop .modal.options-dialog > .modal-dialog > .modal-content > .modal-mai
 /* The window buttons floated above occupy the top-right corner of the content (~72px with the
    close and "switch to full editor" buttons). When the dialog is narrow enough for the sticky
    page header to reach that corner, keep its actions — e.g. the AI/LLM and spell check master
-   toggles (#10938) — out from under the buttons. */
-body.desktop .modal.options-dialog .options-page-header {
+   toggles (#10938) — out from under the buttons. The shortcuts page brings its own clearance
+   (margin-inline-end: 3em on .shortcut-header-buttons, shortcuts.css), so leave it out rather
+   than reserve the corner twice. */
+body.desktop .modal.options-dialog .options-page-header:not(:has(.shortcut-header-buttons)) {
     padding-inline-end: 80px;
 }
 
