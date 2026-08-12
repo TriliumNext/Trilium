@@ -27,6 +27,7 @@ import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
 import ocrRoute from "./api/ocr.js";
 import onenoteImportRoute from "./api/onenote_import.js";
+import packageOperationLockRoute from "./api/package_operation_lock.js";
 import recoveryCodes from './api/recovery_codes.js';
 import senderRoute from "./api/sender.js";
 import setupRestoreRoute from "./api/setup_restore.js";
@@ -175,6 +176,8 @@ function register(app: express.Application) {
     asyncApiRoute(PST, "/api/onenote-import/disconnect", onenoteImportRoute.disconnect);
     asyncApiRoute(GET, "/api/onenote-import/notebooks", onenoteImportRoute.getNotebooks);
     asyncApiRoute(PST, "/api/onenote-import/import", onenoteImportRoute.runImport);
+
+    apiRoute(PST, "/api/package-operation-lock", packageOperationLockRoute.handle);
 
     shareRoutes.register(router);
 
