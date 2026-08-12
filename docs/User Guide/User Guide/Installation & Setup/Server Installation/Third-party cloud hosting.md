@@ -17,6 +17,14 @@ As an alternative to [hosting your own Trilium instance](1.%20Installing%20the%2
 
 PikaPods generally updates their Trilium instances to the latest version within a two-week interval after a new version is released.
 
+### Hostim
+
+1.  Go to [hostim.dev](https://hostim.dev) and sign up.
+2.  Open the [dashboard](https://console.hostim.dev/dashboard), create a project and pick the “Trilium Notes” template.
+3.  Follow the on-screen instructions to set up your own cloud hosted instance.
+
+Hostim runs the official `triliumnext/trilium` Docker image with the data directory on a persistent volume, and terminates HTTPS in front of it. Instances are updated when you redeploy the app, which pulls the current `latest` image.
+
 ## Matching your version with the cloud instance
 
 Please note that once you set up <a class="reference-link" href="../Synchronization.md">Synchronization</a> between a cloud instance and [desktop](../Desktop%20Installation.md) clients, it's important that the version of the desktop application and the server match up.
