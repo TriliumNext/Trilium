@@ -1,4 +1,4 @@
-import type { NoteRow } from "@triliumnext/commons";
+import type { NoteRow, NoteType } from "@triliumnext/commons";
 
 import becca from "../../../becca/becca.js";
 import { getLog } from "../../log.js";
@@ -19,6 +19,9 @@ const ALLOWED_OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", "%=", "~=", "~*
 
 // Maximum content size for search processing (2MB)
 const MAX_SEARCH_CONTENT_SIZE = 2 * 1024 * 1024;
+
+/** Note types whose content is text worth searching. Shared by the persisted and virtual passes. */
+const SEARCHABLE_TYPES: NoteType[] = [ "text", "code", "mermaid", "canvas", "mindMap", "spreadsheet", "llmChat" ];
 
 const cachedRegexes: Record<string, RegExp> = {};
 
@@ -83,11 +86,13 @@ class NoteContentFulltextExp extends Expression {
         for (const row of getSql().iterateRows<SearchRow>(`
                 SELECT noteId, type, mime, content, isProtected
                 FROM notes JOIN blobs USING (blobId)
-                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet', 'llmChat')
+                WHERE type IN (${SEARCHABLE_TYPES.map((type) => `'${type}'`).join(", ")})
                   AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
             this.findInText(row, inputNoteSet, resultNoteSet);
         }
+
+        this.findInVirtualNotes(inputNoteSet, resultNoteSet);
 
         // For exact match with flatText, also search notes WITHOUT content (they may have matching attributes)
         if (this.flatText && (this.operator === "=" || this.operator === "!=")) {
@@ -189,6 +194,34 @@ class NoteContentFulltextExp extends Expression {
         }
 
         return false;
+    }
+
+    /**
+     * Virtual notes (the in-app help, and anything else a virtual note provider injects) hold
+     * their content in becca rather than in `blobs`, so the query above cannot see them. They are
+     * matched from the cache instead, under the same type and size rules.
+     *
+     * Whether they can be *returned* is decided elsewhere: they live under `_hidden`, so a search
+     * only reaches them when it opts into hidden notes or scopes itself to the subtree — which is
+     * why this pass does not change what an ordinary search finds.
+     */
+    findInVirtualNotes(inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
+        for (const noteId in becca.notes) {
+            const note = becca.notes[noteId];
+
+            if (!note.isVirtual || !inputNoteSet.hasNoteId(noteId) || !SEARCHABLE_TYPES.includes(note.type)) {
+                continue;
+            }
+
+            const content = note.getContent();
+
+            if (typeof content !== "string" || content.length >= MAX_SEARCH_CONTENT_SIZE) {
+                continue;
+            }
+
+            // Virtual notes are never protected — nothing about them is user data.
+            this.findInText({ noteId, type: note.type, mime: note.mime, content, isProtected: false }, inputNoteSet, resultNoteSet);
+        }
     }
 
     findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {

@@ -184,6 +184,13 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     }
 
     override beforeSaving(opts: SavingOpts = {}) {
+        // Virtual notes (e.g. the in-app help) are not user-customizable, so no persisted
+        // attribute may be attached to them. (Relations *pointing to* virtual notes from
+        // regular notes are fine — this guards the owning note only.)
+        if (this.becca.notes[this.noteId]?.isVirtual) {
+            throw new Error(`Cannot save attribute '${this.name}' for note '${this.noteId}': attributes of virtual notes cannot be modified.`);
+        }
+
         if (!opts.skipValidation) {
             this.validate();
         }

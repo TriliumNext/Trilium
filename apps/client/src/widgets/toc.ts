@@ -184,11 +184,7 @@ export default class TocWidget extends RightPanelWidget {
             return false;
         }
 
-        const isHelpNote = this.note.type === "doc" && this.note.noteId.startsWith("_help");
-        const isTextNote = this.note.type === "text";
-        const isNoteSupported = isTextNote || isHelpNote;
-
-        return isNoteSupported
+        return this.note.type === "text"
             && !this.noteContext?.viewScope?.tocTemporarilyHidden
             && this.noteContext?.viewScope?.viewMode === "default";
     }
@@ -214,33 +210,10 @@ export default class TocWidget extends RightPanelWidget {
             return;
         }
 
-        // Check for type text unconditionally in case alwaysShowWidget is set
-        if (this.note.type === "text") {
-            const blob = await note.getBlob();
-            if (blob) {
-                const toc = await this.getToc(blob.content);
-                this.#updateToc(toc);
-            }
-            return;
-        }
-
-        if (this.note.type === "doc") {
-            /**
-             * For document note types, we obtain the content directly from the DOM since it allows us to obtain processed data without
-             * requesting data twice. However, when immediately navigating to a new note the new document is not yet attached to the hierarchy,
-             * resulting in an empty TOC. The fix is to simply wait for it to pop up.
-             * TODO: Use a better method that is not prone to unnecessary delays and race conditions.
-             */
-            setTimeout(async () => {
-                const $contentEl = await this.noteContext?.getContentElement();
-                if ($contentEl) {
-                    const content = $contentEl.html();
-                    const toc = await this.getToc(content);
-                    this.#updateToc(toc);
-                } else {
-                    console.warn("Unable to get content element for doctype");
-                }
-            }, 250);
+        const blob = await note.getBlob();
+        if (blob) {
+            const toc = await this.getToc(blob.content);
+            this.#updateToc(toc);
         }
     }
 
@@ -412,11 +385,10 @@ export default class TocWidget extends RightPanelWidget {
         // intervening events, do the readonly calculation at navigation
         // time and not at outline creation time
         // See https://github.com/zadam/trilium/issues/2828
-        const isDocNote = this.note.type === "doc";
         const isReadOnly = await this.noteContext.isReadOnly();
 
         let $container: JQuery<HTMLElement> | null = null;
-        if (isReadOnly || isDocNote) {
+        if (isReadOnly) {
             $container = await this.noteContext.getContentElement();
         } else {
             const textEditor = await this.noteContext.getTextEditor();

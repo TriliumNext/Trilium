@@ -5,7 +5,7 @@ For this, Trilium provides a concept of "day note". Trilium semi-automatically g
 
 Select an existing day note, and the menubar contains a calendar widget. Select any day to create a note for that day. 
 
-![](1_Day%20Notes_image.png)
+![](Day%20Notes_image.jpg)
 
 This pattern works well also because of [Cloning Notes](../../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) functionality - note can appear in multiple places in the note tree, so besides appearing under day note, it can also be categorized into other notes.
 

@@ -210,6 +210,16 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             throw new Error(`noteId and parentNoteId are mandatory properties for Branch`);
         }
 
+        // Virtual notes (e.g. the in-app help) cannot be cloned or moved: a persisted branch
+        // referencing a virtual note would dangle on other sync instances and after upgrades.
+        if (this.becca.notes[this.noteId]?.isVirtual) {
+            throw new Error(`Cannot save branch for note '${this.noteId}': virtual notes cannot be cloned or moved.`);
+        }
+
+        if (this.becca.notes[this.parentNoteId]?.isVirtual) {
+            throw new Error(`Cannot place note '${this.noteId}' under '${this.parentNoteId}': virtual notes cannot receive children.`);
+        }
+
         this.branchId = `${this.parentNoteId}_${this.noteId}`;
 
         if (this.notePosition === undefined || this.notePosition === null) {

@@ -1,4 +1,4 @@
-import { NoteType } from "@triliumnext/commons";
+import { imageExtensionForMime, imageMimeForExtension, isAcceptedImageMime, NoteType } from "@triliumnext/commons";
 import mimeTypes from "mime-types";
 
 import type BBranch from "../../../becca/entities/bbranch.js";
@@ -74,13 +74,33 @@ export abstract class ZipExportProvider {
             return "js";
         } else if (type === "canvas" || mime === "application/json") {
             return "json";
-        } else if (existingExtension.length > 0) {
-            // if the page already has an extension, then we'll just keep it
+        }
+
+        const pictureExtension = pictureExtensionFor(mime);
+
+        if (pictureExtension) {
+            // A picture is named after its media type rather than after its title, that being the
+            // only way round which survives the upload having converted it. An image compressed
+            // from PNG to JPEG keeps the title it arrived under — an attachment is never renamed,
+            // a canvas addressing its images by title being the reason — while its mime follows
+            // the new bytes. Take the title's word for it and a JPEG is written to a `.png` name,
+            // which every reader downstream then believes.
+            //
+            // Only a real disagreement is worth renaming over: `.jpg` and `.jpeg` are one format
+            // under either spelling of the media type, and the case of an extension means nothing.
+            const titleExtension = existingExtension && pictureExtensionFor(imageMimeForExtension(existingExtension));
+
+            return titleExtension === pictureExtension ? null : pictureExtension;
+        }
+
+        if (existingExtension.length > 0) {
+            // Outside pictures the title tends to be the better informed of the two, so it keeps
+            // the last word: a mermaid source is named `.mmd` far more usefully than the `.txt`
+            // its media type maps to.
             return null;
         }
-        if (mime?.toLowerCase()?.trim() === "image/jpg") {
-            return "jpg";
-        } else if (mime?.toLowerCase()?.trim() === "text/mermaid") {
+
+        if (mime?.toLowerCase()?.trim() === "text/mermaid") {
             return "txt";
         }
         return mapCodeMimeToExtension(mime) || mimeTypes.extension(mime) || "dat";
@@ -88,4 +108,16 @@ export abstract class ZipExportProvider {
 
     }
 
+}
+
+/**
+ * The extension a picture of this media type is written with, or null where it is not a picture.
+ *
+ * Trims and lowercases first, so the reading survives a media type stored untidily, and answers
+ * for one spelling of a format exactly as it does for the other.
+ */
+function pictureExtensionFor(mime: string): string | null {
+    const normalized = mime?.trim().toLowerCase() ?? "";
+
+    return isAcceptedImageMime(normalized) ? imageExtensionForMime(normalized) : null;
 }

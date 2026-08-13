@@ -23,6 +23,16 @@ function validateParentChild(parentNoteId: string, childNoteId: string, branchId
         return { branch: null, success: false, message: `Cannot move anything into 'none' parent.` };
     }
 
+    // Virtual notes (e.g. the in-app help) exist only in becca — a persisted branch
+    // referencing them would dangle after upgrades and on other sync instances.
+    if (becca.getNote(childNoteId)?.isVirtual) {
+        return { branch: null, success: false, message: `Note '${childNoteId}' is a virtual note and cannot be cloned or moved.` };
+    }
+
+    if (becca.getNote(parentNoteId)?.isVirtual) {
+        return { branch: null, success: false, message: `Note '${parentNoteId}' is a virtual note and cannot receive children.` };
+    }
+
     const existingBranch = becca.getBranchFromChildAndParent(childNoteId, parentNoteId);
 
     if (existingBranch && existingBranch.branchId !== branchId) {

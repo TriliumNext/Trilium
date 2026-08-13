@@ -1,157 +1,181 @@
-import type { HiddenSubtreeItem } from "@triliumnext/commons";
+import type { HelpMetaItem, HiddenSubtreeAttribute } from "@triliumnext/commons";
 import type { NoteMeta, NoteMetaFile } from "@triliumnext/core";
-import path from "path";
 
 /**
- * Callback that defines how a text note is represented in the help meta.
- * @param item the HiddenSubtreeItem being built (mutate in place)
- * @param docPath the documentation path (e.g. "User Guide/Quick Start")
- * @param currentUrl the online URL for this note (if available)
- * @returns true to include the item, false to exclude it
+ * Builds the in-app help tree from the User Guide's markdown export meta.
+ *
+ * The tree describes the `_help` subtree the application injects into becca; the files backing it
+ * come back beside it rather than within it, since which markdown produced a page is of no use to
+ * anything past the build. Rendering that markdown into the page content the app displays is the
+ * build's job too, not this module's — here we only resolve structure, identity and the labels
+ * the notes carry.
+ *
+ * @param noteMetaFile the `!!!meta.json` written next to the markdown export.
+ * @param baseUrl root of the online documentation, used to resolve the canonical page URLs
+ *                (`docUrl`) and to absolutise root-relative web view sources.
  */
-type TextNoteHandler = (item: HiddenSubtreeItem, docPath: string, currentUrl: string | undefined) => boolean;
-
-/**
- * Server handler: text notes become `doc` type with `docName` and optional `docUrl` attributes.
- */
-export const serverTextNoteHandler: TextNoteHandler = (item, docPath, currentUrl) => {
-    item.attributes?.push({ type: "label", name: "docName", value: docPath });
-    if (currentUrl) {
-        item.attributes?.push({ type: "label", name: "docUrl", value: currentUrl });
-    }
-    return true;
-};
-
-/**
- * Standalone handler: text notes become `webView` type pointing to the online docs.
- * Excludes notes without an online URL.
- */
-export const standaloneTextNoteHandler: TextNoteHandler = (item, _docPath, currentUrl) => {
-    if (!currentUrl) {
-        return false;
-    }
-    item.type = "webView";
-    item.enforceAttributes = true;
-    item.attributes?.push({ type: "label", name: "webViewSrc", value: currentUrl });
-    return true;
-};
-
-/**
- * Parses a NoteMetaFile into HiddenSubtreeItem[] using the given text note handler.
- */
-export function parseNoteMetaFile(noteMetaFile: NoteMetaFile, handleTextNote: TextNoteHandler, baseUrl?: string): HiddenSubtreeItem[] {
+export function buildHelpMeta(noteMetaFile: NoteMetaFile, baseUrl?: string): HelpMetaResult {
     if (!noteMetaFile.files) {
         console.warn("No meta files found to parse.");
-        return [];
+        return { meta: [], sources: {} };
     }
 
     const metaRoot = noteMetaFile.files[0];
-    const docNameRoot = "/" + (metaRoot.dirFileName ?? "");
 
-    // A note cloned into several help locations appears once per location, but the runtime
-    // hidden-subtree check enforces a single set of attributes per noteId. The per-occurrence
-    // `iconClass`/`docName` would therefore conflict and flip-flop on every check. Index the
-    // primary (non-clone) occurrence's values up front so every clone can reuse them.
+    // A note cloned into several help locations appears once per location, but only one of the
+    // occurrences is the real thing: the others carry no attributes and a ".clone" data file.
+    // Index the primary occurrence's values up front so every clone can reuse them.
     const canonicalByNoteId = new Map<string, CanonicalOccurrence>();
-    indexPrimaryOccurrences(metaRoot, docNameRoot, canonicalByNoteId);
+    indexPrimaryOccurrences(metaRoot, "", canonicalByNoteId);
 
-    const parsedMetaRoot = parseNoteMeta(metaRoot, handleTextNote, docNameRoot, canonicalByNoteId, baseUrl);
-    return parsedMetaRoot?.children ?? [];
+    // Sources are relative to the export directory, which is the root note's own directory, so
+    // the walk starts empty and picks up that directory on its first step down. The documentation
+    // root doubles as the parent URL every page's share alias is appended to.
+    const sources: HelpSources = {};
+    const parsedMetaRoot = parseNoteMeta(metaRoot, "", canonicalByNoteId, sources, baseUrl, baseUrl);
+    return { meta: parsedMetaRoot?.children ?? [], sources };
+}
+
+/** The help tree, and the export files each of its notes was built from. */
+export interface HelpMetaResult {
+    meta: HelpMetaItem[];
+    sources: HelpSources;
+}
+
+/**
+ * Where each note's content came from, by note ID. Only the build has any use for it: the bundler
+ * reads the pages through it and resolves the links between them, and then it is thrown away
+ * rather than shipped.
+ */
+export type HelpSources = Record<string, HelpPageSource>;
+
+export interface HelpPageSource {
+    /**
+     * Content file, relative to the markdown export root (e.g. `User Guide/Note Types/Text.md`).
+     * Absent for folders and web views, which have no file of their own. Clones point at the
+     * primary occurrence's file rather than their own `.clone` copy.
+     */
+    source?: string;
+    /**
+     * Directory this note's children live in, relative to the markdown export root. Set for every
+     * note that has one, and the only way to address a folder note: it has no file of its own, so
+     * pages link to it by its directory.
+     */
+    dir?: string;
 }
 
 interface CanonicalOccurrence {
     iconClass: string;
-    docPath?: string;
+    source?: string;
 }
 
-function parseNoteMeta(noteMeta: NoteMeta, handleTextNote: TextNoteHandler, docNameRoot: string, canonicalByNoteId: Map<string, CanonicalOccurrence>, parentUrl?: string): HiddenSubtreeItem | null {
-    const item: HiddenSubtreeItem = {
-        id: `_help_${noteMeta.noteId}`,
-        title: noteMeta.title ?? "",
-        type: "doc",
-        attributes: []
-    };
+function parseNoteMeta(
+    noteMeta: NoteMeta,
+    sourceRoot: string,
+    canonicalByNoteId: Map<string, CanonicalOccurrence>,
+    sources: HelpSources,
+    baseUrl?: string,
+    parentUrl?: string
+): HelpMetaItem | null {
+    const attributes: HiddenSubtreeAttribute[] = [];
 
-    // Handle folder notes
-    if (!noteMeta.dataFileName) {
-        item.type = "book";
-    }
-
-    // Build the URL for this note
+    // Build the online URL for this note; only notes with a share alias of their own are
+    // published, the rest just pass their parent's URL down to their children.
     const shareAlias = noteMeta.attributes?.find((a) => a.type === "label" && a.name === "shareAlias")?.value;
     const currentUrl = parentUrl && shareAlias ? `${parentUrl}/${shareAlias}` : parentUrl;
-    const noteUrl = shareAlias ? currentUrl : undefined;
 
-    // Handle attributes
     for (const attribute of noteMeta.attributes ?? []) {
-        if (attribute.name === "webViewSrc") {
-            item.attributes?.push({
-                type: "label",
-                name: attribute.name,
-                value: attribute.value
-            });
-        }
-
         if (attribute.name === "shareHiddenFromTree") {
             return null;
         }
-    }
 
-    // Clones share the underlying note, so resolve their per-occurrence icon/docName to the
-    // primary occurrence's values; otherwise the two occurrences would enforce conflicting ones.
-    const canonical = noteMeta.isClone ? canonicalByNoteId.get(noteMeta.noteId ?? "") : undefined;
-    const iconClass = canonical?.iconClass ?? computeIconClass(noteMeta);
-
-    // Handle text notes
-    if (noteMeta.type === "text" && noteMeta.dataFileName) {
-        const docPath = canonical?.docPath ?? computeDocPath(docNameRoot, noteMeta.dataFileName);
-        if (!handleTextNote(item, docPath, noteUrl)) {
-            return null;
+        if (attribute.name === "webViewSrc") {
+            attributes.push({
+                type: "label",
+                name: "webViewSrc",
+                // Web views pointing inside the documentation are stored root-relative.
+                value: absolutiseUrl(attribute.value, baseUrl)
+            });
         }
     }
 
-    // Handle web views
-    if (noteMeta.type === "webView") {
-        item.type = "webView";
-        item.enforceAttributes = true;
+    if (shareAlias && currentUrl) {
+        attributes.push({ type: "label", name: "docUrl", value: currentUrl });
     }
 
-    // Handle children
+    // Clones share the underlying note, so resolve their icon and content file to the primary
+    // occurrence's; otherwise the two occurrences would describe the same note differently.
+    const canonical = noteMeta.isClone ? canonicalByNoteId.get(noteMeta.noteId ?? "") : undefined;
+    attributes.push({
+        type: "label",
+        name: "iconClass",
+        value: canonical?.iconClass ?? computeIconClass(noteMeta)
+    });
+
+    const item: HelpMetaItem = {
+        id: `_help_${noteMeta.noteId}`,
+        title: noteMeta.title ?? "",
+        type: resolveType(noteMeta),
+        attributes
+    };
+
+    if (item.type === "code") {
+        item.mime = noteMeta.mime;
+    }
+
+    const source = item.type === "text" || item.type === "code"
+        ? canonical?.source ?? computeSource(sourceRoot, noteMeta.dataFileName)
+        : undefined;
+    const dir = noteMeta.dirFileName ? computeSource(sourceRoot, noteMeta.dirFileName) : undefined;
+
+    if (source || dir) {
+        sources[item.id] = { source, dir };
+    }
+
     if (noteMeta.children) {
-        const children: HiddenSubtreeItem[] = [];
+        const childSourceRoot = noteMeta.dirFileName ? `${sourceRoot}/${noteMeta.dirFileName}` : sourceRoot;
+        const children: HelpMetaItem[] = [];
+
         for (const childMeta of noteMeta.children) {
-            const newDocNameRoot = noteMeta.dirFileName ? `${docNameRoot}/${noteMeta.dirFileName}` : docNameRoot;
-            const child = parseNoteMeta(childMeta, handleTextNote, newDocNameRoot, canonicalByNoteId, currentUrl);
+            const child = parseNoteMeta(childMeta, childSourceRoot, canonicalByNoteId, sources, baseUrl, currentUrl);
             if (child) {
                 children.push(child);
             }
         }
+
         item.children = children;
     }
-
-    // Handle note icon
-    item.attributes?.push({
-        name: "iconClass",
-        value: iconClass,
-        type: "label"
-    });
 
     return item;
 }
 
-/** Records the `iconClass`/`docName` of every primary (non-clone) occurrence so clones can reuse them. */
-function indexPrimaryOccurrences(noteMeta: NoteMeta, docNameRoot: string, out: Map<string, CanonicalOccurrence>): void {
+/**
+ * A note with no data file of its own is a pure folder. Web views render a remote page, so their
+ * data file (if any) is irrelevant. Everything else carries content built from its source file.
+ */
+function resolveType(noteMeta: NoteMeta): HelpMetaItem["type"] {
+    if (noteMeta.type === "webView") {
+        return "webView";
+    }
+    if (!noteMeta.dataFileName) {
+        return "book";
+    }
+    return noteMeta.type === "code" ? "code" : "text";
+}
+
+/** Records the icon and content file of every primary (non-clone) occurrence, for its clones. */
+function indexPrimaryOccurrences(noteMeta: NoteMeta, sourceRoot: string, out: Map<string, CanonicalOccurrence>): void {
     if (!noteMeta.isClone && noteMeta.noteId) {
         out.set(noteMeta.noteId, {
             iconClass: computeIconClass(noteMeta),
-            docPath: noteMeta.type === "text" && noteMeta.dataFileName ? computeDocPath(docNameRoot, noteMeta.dataFileName) : undefined
+            source: computeSource(sourceRoot, noteMeta.dataFileName)
         });
     }
 
     if (noteMeta.children) {
-        const childDocNameRoot = noteMeta.dirFileName ? `${docNameRoot}/${noteMeta.dirFileName}` : docNameRoot;
+        const childSourceRoot = noteMeta.dirFileName ? `${sourceRoot}/${noteMeta.dirFileName}` : sourceRoot;
         for (const childMeta of noteMeta.children) {
-            indexPrimaryOccurrences(childMeta, childDocNameRoot, out);
+            indexPrimaryOccurrences(childMeta, childSourceRoot, out);
         }
     }
 }
@@ -165,6 +189,18 @@ function computeIconClass(noteMeta: NoteMeta): string {
     return noteMeta.dataFileName ? "bx bx-file" : "bx bx-folder";
 }
 
-function computeDocPath(docNameRoot: string, dataFileName: string): string {
-    return `${docNameRoot}/${path.basename(dataFileName, ".html")}`.substring(1);
+function computeSource(sourceRoot: string, dataFileName?: string): string | undefined {
+    if (!dataFileName) {
+        return undefined;
+    }
+    // The walk seeds the root as an empty string, so every path picked up along the way carries a
+    // leading separator that has to come back off.
+    return `${sourceRoot}/${dataFileName}`.substring(1);
+}
+
+function absolutiseUrl(url: string | undefined, baseUrl?: string): string | undefined {
+    if (url?.startsWith("/") && baseUrl) {
+        return `${baseUrl}${url}`;
+    }
+    return url;
 }

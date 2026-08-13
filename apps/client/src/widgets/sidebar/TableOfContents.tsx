@@ -36,7 +36,7 @@ export default function TableOfContents() {
 
     return (
         <RightPanelWidget id="toc" title={t("toc.table_of_contents")} grow>
-            {((noteType === "text" && isReadOnly) || (noteType === "doc")) && <ReadOnlyTextTableOfContents />}
+            {noteType === "text" && isReadOnly && <ReadOnlyTextTableOfContents />}
             {noteType === "text" && !isReadOnly && <EditableTextTableOfContents />}
             {noteType === "file" && noteMime === "application/pdf" && <ContextDataTableOfContents />}
             {noteType === "llmChat" && <ContextDataTableOfContents />}

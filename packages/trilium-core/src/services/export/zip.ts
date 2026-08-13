@@ -1,4 +1,4 @@
-import { getImageAttachmentTitle, NoteType } from "@triliumnext/commons";
+import { getImageAttachmentTitle, imageMimeForExtension, isAcceptedImageMime, NoteType } from "@triliumnext/commons";
 import sanitize from "sanitize-filename";
 
 import packageInfo from "../../../package.json" with { type: "json" };
@@ -81,7 +81,8 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         // name so the whole entry (extension included) stays within the 255-byte
         // filesystem limit without ever chopping the extension off long / multi-byte
         // titles and attachment names. This replaces the old arbitrary 30-char cap.
-        const base = truncateUtf8Bytes(sanitize(fileName), MAX_FILENAME_BYTES - extension.length);
+        const named = dropReplacedPictureExtension(fileName, existingExtension, newExtension);
+        const base = truncateUtf8Bytes(sanitize(named), MAX_FILENAME_BYTES - extension.length);
 
         return getUniqueFilename(existingFileNames, `${base}${extension}`);
     }
@@ -596,6 +597,33 @@ export function shouldStoreUncompressed(mime: string | undefined | null): boolea
     }
 
     return ALREADY_COMPRESSED.has(m) || isZipBasedContainer(m);
+}
+
+/**
+ * The name with the extension the new one is about to replace taken off it, where that is what is
+ * happening — otherwise the name unchanged.
+ *
+ * A picture is the one thing whose extension gets *substituted* rather than added to: an image
+ * converted to JPEG on upload keeps a `.png` title, and the export renames it. Appending there
+ * produces `image.png.jpg`.
+ *
+ * Everywhere else the extension is only ever added to a name that had none of its own, and taking
+ * a trailing dot-suffix off would do real damage: `extname` reads "v0.48" as ending in ".48", so a
+ * release note by that name would export as "v0.md". Restricting this to a picture replacing a
+ * picture is what keeps a suffix that merely looks like an extension out of reach — the check is
+ * against the media types those extensions name, not against the text.
+ */
+function dropReplacedPictureExtension(fileName: string, existingExtension: string, newExtension: string | null): string {
+    if (!existingExtension || !newExtension || !namesPicture(existingExtension) || !namesPicture(newExtension)) {
+        return fileName;
+    }
+
+    return fileName.slice(0, -existingExtension.length);
+}
+
+/** Whether an extension is one a picture is written with, dotted or not. */
+function namesPicture(extension: string): boolean {
+    return !!extension && isAcceptedImageMime(imageMimeForExtension(extension));
 }
 
 // Office / e-book / package formats that are ZIP containers under the hood.

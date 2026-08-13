@@ -1,21 +1,30 @@
 import debounce from "@triliumnext/client/src/services/debounce.js";
-import type { AdvancedExportOptions, ExportFormat, NoteMeta, NoteMetaFile } from "@triliumnext/core";
+import type { NoteMeta, NoteMetaFile } from "@triliumnext/core";
 import { cls } from "@triliumnext/core";
 
-import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler } from "./help_meta_generator.js";
+import { buildHelpBundle } from "./help_bundle_generator.js";
+import { buildHelpMeta } from "./help_meta_generator.js";
+import { readFileSync } from "fs";
 import fs from "fs/promises";
 import { load } from "js-yaml";
 import path from "path";
 
 import packageJson from "../package.json" with { type: "json" };
-import { extractZip, importData, initializeEditDocsCore, rewriteHelpLinks, startElectron } from "./utils.js";
+import { extractZip, importData, initializeEditDocsCore, startElectron } from "./utils.js";
 
 interface NoteMapping {
     rootNoteId: string;
     path: string;
-    format: "markdown" | "html";
+    format: "markdown";
     ignoredFiles?: string[];
     exportOnly?: boolean;
+    /**
+     * Where to write the in-app help tree derived from this mapping's export, if it is the one
+     * backing the User Guide. Relative to the configuration file.
+     */
+    helpMeta?: string;
+    /** Where to write the rendered content of that tree. Relative to the configuration file. */
+    helpContent?: string;
 }
 
 interface Config {
@@ -105,7 +114,9 @@ async function loadConfig() {
     const CONFIG_DIR = path.dirname(CONFIG_PATH);
     NOTE_MAPPINGS = config.noteMappings.map((mapping) => ({
         ...mapping,
-        path: path.resolve(CONFIG_DIR, mapping.path)
+        path: path.resolve(CONFIG_DIR, mapping.path),
+        helpMeta: mapping.helpMeta ? path.resolve(CONFIG_DIR, mapping.helpMeta) : undefined,
+        helpContent: mapping.helpContent ? path.resolve(CONFIG_DIR, mapping.helpContent) : undefined
     }));
 }
 
@@ -150,7 +161,9 @@ async function setOptions() {
     optionsService.setOption("openNoteContexts", JSON.stringify([{ notePath: startNoteId, active: true }]));
 }
 
-async function exportData(noteId: string, format: ExportFormat, outputPath: string, ignoredFiles?: Set<string>) {
+async function exportData(mapping: NoteMapping) {
+    const { path: outputPath, ignoredFiles: ignoredFileNames } = mapping;
+    const ignoredFiles = ignoredFileNames ? new Set(ignoredFileNames) : undefined;
     const zipFilePath = "output.zip";
 
     try {
@@ -160,60 +173,20 @@ async function exportData(noteId: string, format: ExportFormat, outputPath: stri
         // First export as zip.
         const { zipExportService } = (await import("@triliumnext/core"));
 
-        const exportOpts: AdvancedExportOptions = {};
-        if (format === "html") {
-            exportOpts.skipHtmlTemplate = true;
-            exportOpts.customRewriteLinks = (originalRewriteLinks, getNoteTargetUrl) => {
-                return (content: string, noteMeta: NoteMeta) => {
-                    content = content.replace(/src="[^"]*api\/images\/([a-zA-Z0-9_]+)\/[^"]*"/g, (match, targetNoteId) => {
-                        const url = getNoteTargetUrl(targetNoteId, noteMeta);
-
-                        return url ? `src="${url}"` : match;
-                    });
-
-                    content = content.replace(/src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/[^"]*"/g, (match, targetAttachmentId) => {
-                        const url = findAttachment(targetAttachmentId);
-
-                        return url ? `src="${url}"` : match;
-                    });
-
-                    content = content.replace(/href="[^"]*#root[^"]*attachmentId=([a-zA-Z0-9_]+)\/?"/g, (match, targetAttachmentId) => {
-                        const url = findAttachment(targetAttachmentId);
-
-                        return url ? `href="${url}"` : match;
-                    });
-
-                    content = rewriteHelpLinks(content);
-
-                    return content;
-
-                    function findAttachment(targetAttachmentId: string) {
-                        let url;
-
-                        const attachmentMeta = (noteMeta.attachments || []).find((attMeta) => attMeta.attachmentId === targetAttachmentId);
-                        if (attachmentMeta) {
-                            // easy job here, because attachment will be in the same directory as the note's data file.
-                            url = attachmentMeta.dataFileName;
-                        } else {
-                            console.info(`Could not find attachment meta object for attachmentId '${targetAttachmentId}'`);
-                        }
-                        return url;
-                    }
-                };
-            };
-        }
-
-        await zipExportService.exportToZipFile(noteId, format, zipFilePath, exportOpts);
+        await zipExportService.exportToZipFile(mapping.rootNoteId, mapping.format, zipFilePath, {});
         await extractZip(zipFilePath, outputPath, ignoredFiles);
     } finally {
         await fs.rm(zipFilePath, { force: true });
     }
 
-    const minifyMeta = (format === "html" || format === "share");
-    await cleanUpMeta(outputPath, minifyMeta);
+    await cleanUpMeta(outputPath, mapping);
 }
 
-async function cleanUpMeta(outputPath: string, minify: boolean) {
+/**
+ * Normalizes the freshly exported `!!!meta.json` so it doesn't churn between runs, and — for the
+ * mapping backing the User Guide — derives the in-app help tree and its rendered content.
+ */
+async function cleanUpMeta(outputPath: string, mapping: NoteMapping) {
     const metaPath = path.join(outputPath, "!!!meta.json");
     const meta = JSON.parse(await fs.readFile(metaPath, "utf-8")) as NoteMetaFile;
     for (const file of meta.files) {
@@ -227,28 +200,43 @@ async function cleanUpMeta(outputPath: string, minify: boolean) {
         }
 
         el.isExpanded = false;
-
-        // Rewrite web view URLs that point to root.
-        if (el.type === "webView" && minify) {
-            const srcAttr = el.attributes.find(attr => attr.name === "webViewSrc");
-            if (srcAttr.value.startsWith("/")) {
-                srcAttr.value = BASE_URL + srcAttr.value;
-            }
-        }
     }
 
-    if (minify) {
-        const subtree = parseNoteMetaFile(meta, serverTextNoteHandler, BASE_URL);
-        await fs.writeFile(metaPath, JSON.stringify(subtree));
+    await fs.writeFile(metaPath, JSON.stringify(meta, null, 4));
 
-        // Generate standalone meta: webView-based, pointing to online docs.
-        const standaloneSubtree = parseNoteMetaFile(meta, standaloneTextNoteHandler, BASE_URL);
-        const standaloneMetaPath = path.resolve(__dirname, "../../standalone/src/assets/help_meta.json");
-        await fs.writeFile(standaloneMetaPath, JSON.stringify(standaloneSubtree));
-    } else {
-        await fs.writeFile(metaPath, JSON.stringify(meta, null, 4));
+    if (!mapping.helpMeta && !mapping.helpContent) {
+        return;
     }
 
+    const { meta: helpMeta, sources } = buildHelpMeta(meta, BASE_URL);
+
+    if (mapping.helpMeta) {
+        await writeJson(mapping.helpMeta, helpMeta);
+    }
+
+    if (mapping.helpContent) {
+        const { markdownImportService } = await import("@triliumnext/core");
+        const bundle = buildHelpBundle(
+            helpMeta,
+            sources,
+            (source) => {
+                try {
+                    return readFileSync(path.join(outputPath, source), "utf-8");
+                } catch {
+                    return null;
+                }
+            },
+            (markdown, title) => markdownImportService.renderToHtml(markdown, title)
+        );
+
+        await writeJson(mapping.helpContent, bundle);
+    }
+}
+
+/** Writes JSON with one entry per line, so a docs change shows up as the pages it touched. */
+async function writeJson(filePath: string, value: unknown) {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(value, null, 4));
 }
 
 async function registerHandlers() {
@@ -258,8 +246,7 @@ async function registerHandlers() {
         eraseService.eraseUnusedAttachmentsNow();
 
         for (const mapping of NOTE_MAPPINGS) {
-            const ignoredFiles = mapping.ignoredFiles ? new Set(mapping.ignoredFiles) : undefined;
-            await exportData(mapping.rootNoteId, mapping.format, mapping.path, ignoredFiles);
+            await exportData(mapping);
         }
     }, 10_000);
     events.subscribe(events.ENTITY_CHANGED, async (e) => {

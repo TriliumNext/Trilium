@@ -1,5 +1,5 @@
 # Content language & Right-to-left support
-![](Content%20language%20&%20Right-to-left%20support_image.png)
+![](Content%20language%20&%20Right-to-left%20support_image.jpg)
 
 The content language determines:
 

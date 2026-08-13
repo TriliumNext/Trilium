@@ -1,5 +1,5 @@
 # Ribbon
-![](Ribbon_image.png)
+![](Ribbon_image.jpg)
 
 The ribbon allows changing options, attributes and viewing information about the current note.
 

@@ -64,8 +64,16 @@ export const IMAGE_UPLOAD_SUBTYPES: readonly string[] = IMAGE_MIMES.map((mime) =
  * `image/png` is `.png`. These are the ones where deriving it that way produces something nobody
  * has ever seen — an icon written `.xicon`, an SVG written `.svgxml` — because the subtype carries
  * a prefix or a suffix that is not part of the name anyone uses for the format.
+ *
+ * JPEG is here for a second reason: the format has two spellings on each side, and picking one of
+ * each is what lets the two directions agree. `.jpg` is the name overwhelmingly written, and
+ * `image/jpeg` is the only registered media type of the two — `image/jpg` is a thing clients send,
+ * not a thing to store. Without this entry the reverse lookup builds `image/jpg` out of a `.jpg`
+ * file and puts an unregistered media type in the database, which every reader downstream then
+ * needs its own special case for.
  */
 const IMAGE_EXTENSION_OVERRIDES: Record<string, string> = {
+    "image/jpeg": "jpg",
     "image/svg+xml": "svg",
     "image/x-icon": "ico",
     "image/vnd.microsoft.icon": "ico"

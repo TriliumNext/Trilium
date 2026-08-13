@@ -42,9 +42,9 @@ The position on the map and the zoom are saved inside the map note and restored 
 ### Adding a new note using the plus button
 
 1.  To create a marker, first navigate to the desired point on the map. Then press the _Add marker_ button at the center-bottom of the map.
-2.  Once pressed, the map will enter in the insert mode, as illustrated by the notification. Additionally, a preview of the marker will be shown at the cursor position.  
-      
-    Simply click the point on the map where to place the marker. To cancel, press either the  <kbd spellcheck="false">Escape</kbd> key or press again the _Add marker_ button.
+2.  Once pressed, the map will enter in the insert mode, as illustrated by the notification. Additionally, a preview of the marker will be shown at the cursor position.
+    
+    Simply click the point on the map where to place the marker. To cancel, press either the  <kbd>Escape</kbd> key or press again the _Add marker_ button.
 3.  Once clicked, the marker will show up on the map and a popup will show to the right with the title already selected to be changed.
 
 ### Adding a new note using the contextual menu
@@ -81,7 +81,7 @@ Once a marker is set, it can be repositioned using one of the two ways:
 *   By right clicking the marker and selecting _Move to another location_.
 *   By clicking the marker to open the popup and selecting the _Move to another location_ button underneath the title bar.
 
-After clicking the button to move the marker, click at the desired position on the map to replace it. To cancel the operation, press <kbd spellcheck="false">Escape</kbd>.
+After clicking the button to move the marker, click at the desired position on the map to replace it. To cancel the operation, press <kbd>Escape</kbd>.
 
 > [!NOTE]
 > If the map is locked for editing (see below), the map needs to be unlocked before moving the marker.
@@ -112,7 +112,7 @@ To dismiss the popup:
 
 *   Press the X button at the top-right of the popup.
 *   In the map, press anywhere outside the popup.
-*   Or simply press the <kbd spellcheck="false">Escape</kbd> key.
+*   Or simply press the <kbd>Escape</kbd> key.
 
 When a marker is clicked, the map will automatically adjust the viewport so that the marker is still visible with the popup open. The currently selected marker is shown slightly bigger.
 
@@ -223,7 +223,7 @@ The default theme is Versatiles Colorful (vector).
 
 <figure class="image"><img style="aspect-ratio:2727/1642;" src="2_Geo Map_image.png" width="2727" height="1642"></figure>
 
-Trilium v0.105.0 introduces a 3D view, courtesy of MapLibre GL. To enter 3D mode, simply press the corresponding button at the bottom-right of the map or press <kbd spellcheck="false">Ctrl</kbd> and drag across the map.
+Trilium v0.105.0 introduces a 3D view, courtesy of MapLibre GL. To enter 3D mode, simply press the corresponding button at the bottom-right of the map or press <kbd>Ctrl</kbd> and drag across the map.
 
 The buildings will only appear from zoom 14 onwards to avoid lag.
 

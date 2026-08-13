@@ -110,6 +110,77 @@ const sqliteWasmPlugin = viteStaticCopy({
     ]
 });
 
+/** Source of the in-app help's images and attachments, and the URL the app requests them under. */
+const HELP_ASSETS_SOURCE = join(__dirname, "../../docs/User Guide");
+const HELP_ASSETS_DEST = join(__dirname, "dist/server-assets/help");
+const HELP_ASSETS_URL = "/server-assets/help/";
+
+const HELP_ASSET_MIME_TYPES: Record<string, string> = {
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    svg: "image/svg+xml",
+    json: "application/json"
+};
+
+/** The guide's own files, as opposed to the content bundle that arrives with the server's assets. */
+function isHelpAsset(sourcePath: string) {
+    return !sourcePath.endsWith(".md") && !sourcePath.endsWith("!!!meta.json");
+}
+
+/**
+ * Serves the guide's images and attachments beside the content bundle that comes with the
+ * server's assets. They belong to the User Guide rather than to the server, so no other copy step
+ * brings them in, and the markdown they were built from is not needed at runtime.
+ *
+ * Both halves are needed: a build copies them into the output, and the dev server reads them
+ * straight from the guide — without that, requests fall through to the SPA fallback and every
+ * image on a help page comes back as index.html with a 200.
+ */
+function copyHelpAssetsPlugin(): Plugin {
+    return {
+        name: "trilium-copy-help-assets",
+        configureServer(server) {
+            server.middlewares.use((req, res, next) => {
+                if (!req.url?.startsWith(HELP_ASSETS_URL)) {
+                    return next();
+                }
+
+                const relativePath = decodeURIComponent(req.url.slice(HELP_ASSETS_URL.length).split("?")[0]);
+                const filePath = join(HELP_ASSETS_SOURCE, relativePath);
+
+                // Same prefix-collision guard as the PDF.js middleware above.
+                if (!resolve(filePath).startsWith(resolve(HELP_ASSETS_SOURCE) + sep) || !isHelpAsset(filePath)) {
+                    return next();
+                }
+
+                // Anything not found here — the content bundle and the tree — is copied in from
+                // the server's assets, so it belongs to the next middleware.
+                if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+                    return next();
+                }
+
+                const extension = filePath.split(".").pop()?.toLowerCase() ?? "";
+                res.setHeader("Content-Type", HELP_ASSET_MIME_TYPES[extension] ?? "application/octet-stream");
+                fs.createReadStream(filePath).pipe(res);
+            });
+        },
+        closeBundle() {
+            if (isDev) {
+                return;
+            }
+
+            fs.cpSync(HELP_ASSETS_SOURCE, HELP_ASSETS_DEST, {
+                recursive: true,
+                dereference: true,
+                filter: isHelpAsset
+            });
+        }
+    };
+}
+
 let plugins: any = [
     sqliteWasmDedupePlugin(),
     sqliteWasmPlugin,
@@ -130,15 +201,14 @@ let plugins: any = [
         targets: [
             {
                 src: [
-                    "../../server/src/assets/**/*",
-                    // Exclude the User Guide (~20 MB) since it's not needed in standalone mode.
-                    "!../../server/src/assets/doc_notes/en/User Guide/**"
+                    "../../server/src/assets/**/*"
                 ],
                 dest: "server-assets",
                 rename: { stripBase: 3 }
             }
         ]
     }),
+    copyHelpAssetsPlugin(),
     // PDF.js viewer for PDF preview support
     // stripBase: 4 removes packages/pdfjs-viewer/dist/web (or /build)
     viteStaticCopy({

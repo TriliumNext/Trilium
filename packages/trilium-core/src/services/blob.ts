@@ -5,13 +5,19 @@ import { getLog } from "./log.js";
 import protectedSessionService from "./protected_session.js";
 import { getSql } from "./sql/index.js";
 import { decodeUtf8 } from "./utils/binary.js";
-import { hash, isStringNote } from "./utils/index.js";
+import dateUtils from "./utils/date.js";
+import { hash, hashedBlobId, isStringNote } from "./utils/index.js";
+import { getVirtualNoteContent } from "./virtual_notes.js";
 
 function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boolean }) {
     // TODO: Unused opts.
     const entity = becca.getEntity(entityName, entityId);
     if (!entity) {
         throw new NotFoundError(`Entity ${entityName} '${entityId}' was not found.`);
+    }
+
+    if (entity.isVirtual) {
+        return virtualBlobPojo(entityId);
     }
 
     const blob = becca.getBlob(entity);
@@ -38,6 +44,30 @@ function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boo
     pojo.textRepresentation = decryptTextRepresentation(pojo.textRepresentation, !!entity.isProtected) || null;
 
     return { ...pojo, isStubbed };
+}
+
+/**
+ * Produces a blob POJO for a virtual note. Virtual notes have no `blobs` row — their content comes
+ * from the provider that injected them (see `services/virtual_notes.ts`) — so the POJO is derived
+ * on the fly. The blobId is hashed from the content exactly as the persisted path does, so the
+ * client caches and change-detects it the same way, and an empty page still yields
+ * {@link EMPTY_BLOB_ID} rather than looking like a withheld sync stub.
+ */
+function virtualBlobPojo(noteId: string) {
+    const content = getVirtualNoteContent(noteId);
+    const isString = typeof content === "string";
+
+    return {
+        blobId: hashedBlobId(content),
+        // Binary content follows the persisted path, which hands the caller null and lets it fetch
+        // the bytes through the dedicated route instead.
+        content: isString ? content : null,
+        contentLength: content.length,
+        textRepresentation: null,
+        dateModified: dateUtils.localNowDateTime(),
+        utcDateModified: dateUtils.utcNowDateTime(),
+        isStubbed: false
+    };
 }
 
 /**

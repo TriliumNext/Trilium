@@ -1,5 +1,5 @@
 # Code blocks
-![](1_Code%20blocks_image.png)
+![](Code%20blocks_image.jpg)
 
 The code blocks feature allows entering pieces of code in text notes.
 
@@ -54,7 +54,7 @@ Should you encounter any issues after the migration, try running Trilium in safe
 ## Changing the language of a code block
 
 Simply click anywhere inside the code block and press again the code block button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:  
-![](2_Code%20blocks_image.png)
+![](1_Code%20blocks_image.png)
 
 ## Adjusting the list of languages
 

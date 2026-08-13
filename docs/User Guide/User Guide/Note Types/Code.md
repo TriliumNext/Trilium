@@ -10,13 +10,13 @@ This can be useful for a few things:
 
 For shorter snippets of code that can be embedded in [Text](Text.md) notes, see [Code blocks](Text/Developer-specific%20formatting/Code%20blocks.md).
 
-![](Code_image.png)
+![](Code_image.jpg)
 
 ## Adjusting the language of a code note
 
 In the [Ribbon](../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md), look for the _Note type_ selector and click it to reveal the possible note types. Inside of it there will be a section called _Code_, select any one of the languages.
 
-![](1_Code_image.png)
+![](1_Code_image.jpg)
 
 ## Adjusting the list of languages
 

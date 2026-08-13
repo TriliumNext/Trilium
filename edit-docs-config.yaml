@@ -4,17 +4,11 @@ noteMappings:
   - rootNoteId: "pOsGYCXsbNQG"
     path: "docs/User Guide"
     format: "markdown"
-  
-  - rootNoteId: "pOsGYCXsbNQG"
-    path: "apps/server/src/assets/doc_notes/en/User Guide"
-    format: "html"
-    ignoredFiles:
-      - "index.html"
-      - "navigation.html"
-      - "style.css"
-      - "User Guide.html"
-    exportOnly: true
-  
+    # The markdown export is the single source of the in-app help: this derives the note tree
+    # the application injects, and the build renders the page content from the same files.
+    helpMeta: "apps/server/src/assets/help/help_meta.json"
+    helpContent: "apps/server/src/assets/help/help_content.json"
+
   - rootNoteId: "jdjRLhLV3TtI"
     path: "docs/Developer Guide"
     format: "markdown"

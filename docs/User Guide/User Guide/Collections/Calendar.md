@@ -62,7 +62,7 @@ To dismiss the popup:
 
 *   Press the X button at the top-right of the popup.
 *   In the calendar, press anywhere outside the popup.
-*   Or simply press the <kbd spellcheck="false">Escape</kbd> key.
+*   Or simply press the <kbd>Escape</kbd> key.
 
 It is possible to switch between events by clicking on them even when the popup view is already open.
 

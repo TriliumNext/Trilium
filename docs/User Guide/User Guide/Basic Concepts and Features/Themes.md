@@ -112,7 +112,7 @@ When Trilium's frontend starts, all notes labeled with `appCss` are automaticall
 
 After making changes, press <kbd>Ctrl</kbd> + <kbd>R</kbd> to reload the frontend and apply your new styles.
 
-![](Themes_image.png)
+![](Themes_image.jpg)
 
 ### Styling Specific Notes in the Tree
 

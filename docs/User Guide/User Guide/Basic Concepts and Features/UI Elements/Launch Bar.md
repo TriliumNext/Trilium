@@ -22,7 +22,7 @@ There are two ways to configure the launch bar:
 
 This will open a new tab with the <a class="reference-link" href="Note%20Tree.md">Note Tree</a> listing the launchers.
 
-![](Launch%20Bar_image.png)
+![](Launch%20Bar_image.jpg)
 
 Expanding _Available Launchers_ section will show the list of launchers that are not displayed on the launch bar. The _Visible Launchers_ will show the ones that are currently displayed.
 

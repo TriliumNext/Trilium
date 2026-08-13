@@ -26,7 +26,7 @@ The automatic download of images is enabled by default and can be toggled from 
 ## Configuring the images
 
 Clicking on an image will reveal a popup with multiple options:  
-![](7_Images_image.png)
+![](3_Images_image.png)
 
 ### Alignment
 
@@ -34,10 +34,10 @@ The first set of options configure the alignment are, in order:
 
 | Icon | Option | Preview | Description |
 | --- | --- | --- | --- |
-| ![](5_Images_image.png) | Inline | ![](1_Images_image.png) | As the name suggests, the name can be put inside a paragraph and moved around similarly as if it was a block of text. Use drag & drop or cut-paste to move it around. |
-| ![](8_Images_image.png) | Centered image | ![](2_Images_image.png) | The image will be displayed as a block and centered, not allowing text in either the left or right of it. |
-| ![](4_Images_image.png) | Wrap text | ![](6_Images_image.png) | The image will be displayed to the left or the right of the text. |
-| ![](Images_image.png) | Block align | ![](3_Images_image.png) | Similarly to _Centered image_, the image will be displayed as a block and aligned either to the left or to the right, but not allowing text to flow on either of its sides. |
+| ![](2_Images_image.png) | Inline | ![](Images_image.jpg) | As the name suggests, the name can be put inside a paragraph and moved around similarly as if it was a block of text. Use drag & drop or cut-paste to move it around. |
+| ![](4_Images_image.png) | Centered image | ![](1_Images_image.jpg) | The image will be displayed as a block and centered, not allowing text in either the left or right of it. |
+| ![](1_Images_image.png) | Wrap text | ![](3_Images_image.jpg) | The image will be displayed to the left or the right of the text. |
+| ![](Images_image.png) | Block align | ![](2_Images_image.jpg) | Similarly to _Centered image_, the image will be displayed as a block and aligned either to the left or to the right, but not allowing text to flow on either of its sides. |
 
 ## Compression
 

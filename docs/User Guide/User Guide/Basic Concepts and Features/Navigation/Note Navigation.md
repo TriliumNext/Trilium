@@ -7,7 +7,7 @@ You can use alt-left and alt-right to move back and forward in history of viewed
 
 This works identically to browser backwards / forwards, it's actually using built-in browser support for this.
 
-![](Note%20Navigation_image.png)
+![](Note%20Navigation_image.jpg)
 
 ## Jump to note
 

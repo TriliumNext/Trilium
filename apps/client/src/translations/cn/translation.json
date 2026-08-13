@@ -164,6 +164,18 @@
     "format": "格式",
     "format_html_name": "HTML"
   },
+  "doc_notes": {
+    "hidden": "<p>隐藏树用于记录各种应用程序级数据，这些数据大部分时间可以对用户视图隐藏。</p><p>请确保您知道自己在做什么。此子树中的错误更改可能会导致应用程序崩溃。</p>",
+    "launchbar_command_launcher": "<p>此启动器操作的键盘快捷键可以在选项 -&gt; 快捷键中配置。</p>",
+    "launchbar_history_navigation": "<p>后退和前进按钮允许您在导航历史记录中移动。</p><p>这些启动器仅在桌面版本中有效，在服务器版本中将被忽略，您可以使用浏览器原生的导航按钮代替。</p>",
+    "launchbar_intro": "<p>欢迎使用启动栏配置。</p><p>您可以在这里执行以下操作：</p><ul><li>通过拖动将可用的启动器移动到可见列表（从而将它们放入启动栏）</li><li>通过拖动将可见的启动器移动到可用列表（从而将它们从启动栏中隐藏）</li><li>您可以通过拖动重新排序列表中的项目</li><li>您可以通过右键单击“可见启动器”文件夹来创建新的启动器</li><li>如果您想恢复默认设置，可以在上下文菜单中找到“重置”。</li></ul>",
+    "launchbar_note_launcher": "<p>您可以定义以下属性：</p><ol><li><code>target</code> - 激活启动器时应打开的笔记</li><li><code>hoistedNote</code> - 可选，将在打开目标笔记之前更改提升的笔记</li><li><code>keyboardShortcut</code> - 可选，按下键盘快捷键将打开笔记</li></ol><p>启动栏显示启动器的标题/图标，这不一定与目标笔记的标题/图标相同。</p>",
+    "launchbar_script_launcher": "<p>脚本启动器可以执行通过 <code>~script</code> 关系连接的脚本（代码笔记）。</p><ol><li><code>script</code> - 与激活启动器时应执行的脚本笔记的关系</li><li><code>keyboardShortcut</code> - 可选，按下键盘快捷键将激活启动器</li></ol><h4>示例脚本</h4><pre>{{sample}}</pre>",
+    "launchbar_spacer": "<p>间隔器允许您在视觉上将启动器分组。您可以在提升的属性中进行配置：</p><ul><li><code>baseSize</code> - 定义以像素为单位的大小（如果有足够的空间）</li><li><code>growthFactor</code> - 如果您希望间隔器保持恒定的 <code>baseSize</code>，则设置为 0；如果设置为正值，它将增长。</li></ul>",
+    "launchbar_widget_launcher": "<p>请在提升的属性中定义目标小部件笔记。该小部件将用于渲染启动栏图标。</p><h4>示例启动栏小部件</h4><pre>{{sample}}</pre>",
+    "share": "<p>在这里您可以找到所有分享的笔记。</p>",
+    "user_hidden": "<p>此笔记作为保留子树，用于存放用户脚本产生的数据，这些数据不应在隐藏子树中自由创建。</p>"
+  },
   "help": {
     "noteNavigation": "笔记导航",
     "goUpDown": "在笔记列表中向上/向下移动",

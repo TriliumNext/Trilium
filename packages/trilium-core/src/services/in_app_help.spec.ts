@@ -1,117 +1,127 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import type { HiddenSubtreeItem } from "@triliumnext/commons";
+import { EMPTY_BLOB_ID, type HelpBundle, type HiddenSubtreeItem } from "@triliumnext/commons";
 import becca from "../becca/becca.js";
+import { load } from "../becca/becca_loader.js";
+import blobService from "./blob.js";
 import { getContext } from "./context.js";
-import {
-    cleanUpHelp,
-    getHelpHiddenSubtreeData,
-    InAppHelpProvider,
-    initInAppHelp
-} from "./in_app_help.js";
+import { getHelpHiddenSubtreeData, HELP_ASSET_TOKEN, InAppHelpProvider, initInAppHelp } from "./in_app_help.js";
+import { getVirtualNoteProvider } from "./virtual_notes.js";
 
-/** Minimal concrete provider so the abstract `cleanUpHelp` logic can be exercised. */
+/** Minimal concrete provider standing in for the platform-specific implementations. */
 class TestHelpProvider extends InAppHelpProvider {
-
-    constructor(private data: HiddenSubtreeItem[]) {
+    constructor(private data: HiddenSubtreeItem[], private content: HelpBundle = {}, private assetBase = "assets/help") {
         super();
     }
+
     getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
         return this.data;
     }
 
+    getHelpContent(): HelpBundle {
+        return this.content;
+    }
+
+    getHelpAssetBase(): string {
+        return this.assetBase;
+    }
 }
 
-const noteService = (await import("./notes.js")).default;
-
-/** Creates a note with a forced id under the given parent within the help subtree. */
-function createHelpNote(noteId: string, parentNoteId: string) {
-    return getContext().init(
-        () =>
-            noteService.createNewNote({
-                noteId,
-                parentNoteId,
-                title: noteId,
-                content: "help content",
-                type: "text",
-                // The help subtree (`_help*`) is a forbidden parent by default.
-                ignoreForbiddenParents: true
-            }).note
-    );
+function reloadBecca() {
+    getContext().init(() => load());
 }
 
-describe("in_app_help - module accessors", () => {
+describe("in_app_help", () => {
     it("delegates getHelpHiddenSubtreeData to the registered provider", () => {
         // The server suite registers a real provider during initializeCore;
         // override it with a deterministic stub for this isolated fork.
-        const data: HiddenSubtreeItem[] = [
-            { id: "_helpFoo", title: "Foo", type: "text" }
-        ];
+        const data: HiddenSubtreeItem[] = [{ id: "_helpFoo", title: "Foo", type: "text" }];
         initInAppHelp(new TestHelpProvider(data));
         expect(getHelpHiddenSubtreeData()).toBe(data);
     });
-});
 
-describe("in_app_help - cleanUpHelp", () => {
-    beforeAll(() => {
-        // `_help` already exists in the fixture (empty). Build a subtree under it:
-        //   _help
-        //     ├── _helpKeep
-        //     │     └── _helpKeepChild
-        //     └── _helpStale
-        createHelpNote("_helpKeep", "_help");
-        createHelpNote("_helpKeepChild", "_helpKeep");
-        createHelpNote("_helpStale", "_help");
-    });
-
-    it("deletes notes absent from the definition and preserves the rest", () => {
-        // Definition keeps _helpKeep (and its child) but omits _helpStale.
-        const definition: HiddenSubtreeItem[] = [
+    it("injects the help subtree as virtual notes under _hidden", () => {
+        const data: HiddenSubtreeItem[] = [
             {
-                id: "_help",
-                title: "Help",
-                type: "text",
-                children: [
-                    {
-                        id: "_helpKeep",
-                        title: "Keep",
-                        type: "text",
-                        children: [
-                            {
-                                id: "_helpKeepChild",
-                                title: "Keep child",
-                                type: "text"
-                            }
-                        ]
-                    }
-                ]
+                id: "_helpStub",
+                title: "Stub page",
+                type: "doc",
+                icon: "bx-file",
+                attributes: [{ type: "label", name: "docName", value: "stub" }]
             }
         ];
+        initInAppHelp(new TestHelpProvider(data));
+        reloadBecca();
 
-        getContext().init(() => cleanUpHelp(definition));
+        const helpRoot = becca.getNoteOrThrow("_help");
+        expect(helpRoot.isVirtual).toBe(true);
+        expect(helpRoot.type).toBe("book");
+        expect(helpRoot.getParentNotes().map((note) => note.noteId)).toEqual(["_hidden"]);
 
-        // The stale note is gone; the kept notes (incl. nested child and root) survive.
-        expect(becca.getNote("_helpStale")?.isDeleted ?? true).toBe(true);
-        expect(becca.getNote("_helpKeep")?.isDeleted).toBe(false);
-        expect(becca.getNote("_helpKeepChild")?.isDeleted).toBe(false);
-        expect(becca.getNote("_help")?.isDeleted).toBe(false);
+        const stub = becca.getNoteOrThrow("_helpStub");
+        expect(stub.isVirtual).toBe(true);
+        expect(stub.getParentNotes().map((note) => note.noteId)).toEqual(["_help"]);
+        expect(stub.getLabelValue("docName")).toBe("stub");
+        expect(stub.getLabelValue("iconClass")).toBe("bx bx-file");
     });
 
-    it("is a no-op when the _help subtree does not exist", () => {
-        // Remove the whole _help subtree, so becca.getNote("_help") is null and
-        // the recursive flattener hits its empty-note short-circuit.
-        getContext().init(() => becca.getNote("_help")?.deleteNote());
-        expect(becca.getNote("_help")).toBeNull();
+    it("serves page content from the provider, through becca and the blob route", () => {
+        const data: HiddenSubtreeItem[] = [
+            { id: "_helpPage", title: "Page", type: "text" },
+            { id: "_helpBlank", title: "Blank", type: "text" }
+        ];
+        initInAppHelp(new TestHelpProvider(data, { _helpPage: "<p>Rendered</p>" }));
+        reloadBecca();
 
-        expect(() => getContext().init(() => cleanUpHelp([]))).not.toThrow();
+        expect(becca.getNoteOrThrow("_helpPage").getContent()).toBe("<p>Rendered</p>");
+        // A page the provider has no entry for reads as empty rather than failing.
+        expect(becca.getNoteOrThrow("_helpBlank").getContent()).toBe("");
+
+        // Virtual notes have no blobs row, so the route derives the POJO from the provider. The
+        // blobId is content-derived, as for persisted notes, so the client change-detects it the
+        // same way — and empty content yields the shared empty-blob id rather than looking like a
+        // blob the sync server withheld.
+        const page = blobService.getBlobPojo("notes", "_helpPage");
+        expect(page.content).toBe("<p>Rendered</p>");
+        expect(page.contentLength).toBe("<p>Rendered</p>".length);
+        expect(page.isStubbed).toBe(false);
+
+        const blank = blobService.getBlobPojo("notes", "_helpBlank");
+        expect(blank.blobId).toBe(EMPTY_BLOB_ID);
+        expect(blank.isStubbed).toBe(false);
+        expect(page.blobId).not.toBe(blank.blobId);
     });
-});
 
-describe("in_app_help - no provider registered", () => {
-    // Runs last: it clears the provider for the rest of this isolated fork.
-    it("falls back to defaults when no provider is registered", () => {
+    it("substitutes the platform's asset location into the pages", () => {
+        const page = `<img src="${HELP_ASSET_TOKEN}/User%20Guide/pic.png">`;
+        initInAppHelp(new TestHelpProvider(
+            [{ id: "_helpPage", title: "Page", type: "text" }],
+            { _helpPage: page },
+            "assets/v1.2.3/help"
+        ));
+        reloadBecca();
+
+        // One bundle ships to every platform; where its images live is decided on read.
+        expect(becca.getNoteOrThrow("_helpPage").getContent())
+            .toBe(`<img src="assets/v1.2.3/help/User%20Guide/pic.png">`);
+    });
+
+    it("makes every help page read-only through an inheritable label on the root", () => {
+        initInAppHelp(new TestHelpProvider([{ id: "_helpPage", title: "Page", type: "text" }]));
+        reloadBecca();
+
+        // Owned by the root, inherited by the pages: the guide is never edited in place, and the
+        // application must not offer an editor for it.
+        expect(becca.getNoteOrThrow("_help").getOwnedAttribute("label", "readOnly")).toBeTruthy();
+        expect(becca.getNoteOrThrow("_helpPage").isLabelTruthy("readOnly")).toBe(true);
+    });
+
+    it("unregisters the help provider when none is supplied", () => {
         initInAppHelp(undefined as unknown as InAppHelpProvider);
         expect(getHelpHiddenSubtreeData()).toEqual([]);
-        expect(() => cleanUpHelp([])).not.toThrow();
+        expect(getVirtualNoteProvider("_help")).toBeNull();
+
+        reloadBecca();
+        expect(becca.getNote("_help")).toBeNull();
     });
 });

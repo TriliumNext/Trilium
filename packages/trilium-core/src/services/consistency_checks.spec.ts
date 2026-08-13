@@ -1,10 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getContext } from "./context.js";
 import { getSql } from "./sql/index.js";
 import consistency_checks from "./consistency_checks.js";
 import syncOptions from "./sync_options.js";
 import optionsService from "./options.js";
+import noteService from "./notes.js";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "./virtual_notes.js";
+import becca from "../becca/becca.js";
 import becca_loader from "../becca/becca_loader.js";
+import BAttribute from "../becca/entities/battribute.js";
 
 let testCounter = 0;
 
@@ -137,6 +141,74 @@ describe("Consistency checks during partial sync", () => {
                 [testNoteId]
             );
             expect(recoveryBranch).toBeTruthy();
+        });
+    });
+});
+
+describe("Consistency checks and virtual notes", () => {
+    beforeAll(() => {
+        registerVirtualNoteProvider({
+            namespace: "_vcc",
+            parentNoteId: "_hidden",
+            getSubtree: () => [{ id: "_vccPage", title: "Virtual page", type: "text" }]
+        });
+        getContext().init(() => becca_loader.load());
+    });
+
+    afterAll(() => {
+        unregisterVirtualNoteProvider("_vcc");
+        getContext().init(() => becca_loader.load());
+    });
+
+    function createNote(title: string) {
+        return noteService.createNewNote({ parentNoteId: "root", title, content: "", type: "text" }).note.noteId;
+    }
+
+    /** Persisted relation to `targetNoteId`, as `scanForLinks` creates for a reference link. */
+    function linkTo(sourceNoteId: string, targetNoteId: string) {
+        return new BAttribute({
+            noteId: sourceNoteId,
+            type: "relation",
+            name: "internalLink",
+            value: targetNoteId
+        }).save().attributeId;
+    }
+
+    function isRelationAlive(attributeId: string) {
+        return !!getSql().getValue("SELECT attributeId FROM attributes WHERE attributeId = ? AND isDeleted = 0", [attributeId]);
+    }
+
+    it("keeps relations targeting virtual notes, while still deleting genuinely broken ones", async () => {
+        await getContext().init(async () => {
+            setOption("syncServerHost", "");
+            setOption("syncIncomplete", "false");
+
+            // A virtual note exists in becca but deliberately never in the `notes` table, so a
+            // relation pointing at one looks broken to every SQL-level existence check.
+            expect(becca.getNote("_vccPage")?.isVirtual).toBe(true);
+            expect(getSql().getValue("SELECT noteId FROM notes WHERE noteId = '_vccPage'")).toBeFalsy();
+
+            const sourceNoteId = createNote("note linking into the virtual subtree");
+            const virtualLinkId = linkTo(sourceNoteId, "_vccPage");
+
+            // A relation to a note that is simply gone — `BAttribute.validate()` refuses to create
+            // one, so it has to be planted the way sync does: straight into the table.
+            const brokenLinkId = "brokenLink___";
+            getSql().execute(
+                `INSERT INTO attributes (attributeId, noteId, type, name, value, position, utcDateModified, isDeleted, isInheritable)
+                 VALUES (?, ?, 'relation', 'internalLink', 'MISSING_TARGET', 10, '2026-01-01 00:00:00Z', 0, 0)`,
+                [brokenLinkId, sourceNoteId]
+            );
+            becca_loader.reload("plant broken relation");
+
+            await consistency_checks.runOnDemandChecks(true);
+
+            expect(isRelationAlive(virtualLinkId)).toBe(true);
+            expect(isRelationAlive(brokenLinkId)).toBe(false);
+
+            // ...and the surviving relation keeps its becca backlink, so backlinks and link maps still resolve
+            expect(becca.getAttribute(virtualLinkId)).toBeTruthy();
+            expect(becca.getNoteOrThrow("_vccPage").targetRelations.some((rel) => rel.attributeId === virtualLinkId)).toBe(true);
         });
     });
 });
