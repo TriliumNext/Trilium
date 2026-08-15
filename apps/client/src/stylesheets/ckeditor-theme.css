@@ -192,3 +192,10 @@ div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
 div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
     overflow-x: clip;
 }
+
+/* Group heading rule */
+:root .ck :not(.ck-hidden) ~ .ck-list__group {
+    margin-inline: calc(0px - var(--ck-editor-popup-padding, 0px));
+    padding-inline: var(--ck-editor-popup-padding, 0px);
+    border-top-color: var(--menu-item-delimiter-color, var(--main-border-color));
+}
