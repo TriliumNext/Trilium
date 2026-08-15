@@ -26,6 +26,13 @@ import { debounce } from '../mermaid/utils.js';
 // Time in milliseconds between a keystroke in the math field and the model update.
 const DEBOUNCE_TIME = 300;
 
+/**
+ * The pointer dead zone at the bottom of an overflowing field, in pixels: tall enough to cover
+ * an overlay scrollbar's thumb (which takes no layout space, so it cannot be measured), and
+ * matched by the reserved bottom padding in math.css so no equation glyphs sit under it.
+ */
+const SCROLLBAR_DEAD_ZONE = 12;
+
 /** How the caret should land in the field when editing starts. */
 interface MathEntryPoint {
 	caret?: 'start' | 'end';
@@ -307,13 +314,31 @@ export default class MathLiveEdit extends Plugin {
 			mathfield.inlineShortcuts = { ...mathfield.inlineShortcuts, dx: 'dx', dy: 'dy', dt: 'dt' };
 		}
 
-		this._session = { element, mathfield, preview };
+		// Between the host and [part=container] sits a wrapper with no part attribute — CSS
+		// cannot reach it, and it otherwise sizes itself to the equation's full single-line
+		// width, spilling out of the capped host instead of letting the content scroll.
+		const contentPart = mathfield.shadowRoot?.querySelector( '[part=content]' );
+		const shadowWrapper = mathfield.shadowRoot?.querySelector<HTMLElement>( '[part=container]' )?.parentElement;
+		if ( shadowWrapper ) {
+			shadowWrapper.style.maxWidth = '100%';
+		}
+
+		// The host is shrink-to-fit, so any content growth (first render, font swaps, the
+		// editable resizing) changes the box — typing growth once capped is handled by the
+		// field's own input events.
+		const overflowObserver = new ResizeObserver( () => updateOverflowState( mathfield ) );
+		if ( contentPart ) {
+			overflowObserver.observe( contentPart );
+		}
+
+		this._session = { element, mathfield, preview, overflowObserver };
 		this._wireFieldEvents( mathfield, element );
 		this.fire<MathLiveSessionStartEvent>( 'sessionStart', { mathfield } );
 
 		requestAnimationFrame( () => {
 			safeFocus( mathfield );
 			this._placeCaret( mathfield, entry );
+			updateOverflowState( mathfield );
 		} );
 	}
 
@@ -340,6 +365,34 @@ export default class MathLiveEdit extends Plugin {
 		}, DEBOUNCE_TIME );
 
 		mathfield.addEventListener( 'input', syncToModel );
+		mathfield.addEventListener( 'input', () => {
+			// After MathLive has re-rendered the content for this edit.
+			requestAnimationFrame( () => updateOverflowState( mathfield ) );
+		} );
+
+		// Grabbing the scrollbar of an overflowing field must not also drag out a selection:
+		// MathLive's pointer tracking starts on any pointerdown in the field, the scrollbar
+		// included. Classic scrollbars occupy a measurable strip below clientHeight; overlay
+		// scrollbars (Firefox on GTK) take no layout space at all and are painted over the
+		// bottom pixels of the content — with the drag dispatching the full pointer stream —
+		// so the guard dead-zones the bottom strip whenever the field is overflowing. The CSS
+		// reserves matching bottom padding, keeping the zone free of glyphs. Stopping the
+		// event leaves the native scrollbar interaction itself untouched.
+		mathfield.addEventListener( 'pointerdown', evt => {
+			if ( !mathfield.hasAttribute( 'data-overflowing' ) ) {
+				return;
+			}
+			const content = mathfield.shadowRoot?.querySelector( '[part=content]' );
+			if ( !content ) {
+				return;
+			}
+			const rect = content.getBoundingClientRect();
+			const classicStrip = rect.height - content.clientTop - content.clientHeight;
+			const strip = Math.max( classicStrip, SCROLLBAR_DEAD_ZONE );
+			if ( evt.clientY >= rect.bottom - strip ) {
+				evt.stopPropagation();
+			}
+		}, { capture: true } );
 
 		// Arrow navigation past the field boundary walks out into the surrounding text.
 		mathfield.addEventListener( 'move-out', evt => {
@@ -432,6 +485,7 @@ export default class MathLiveEdit extends Plugin {
 		this.fire<MathLiveSessionEndEvent>( 'sessionEnd' );
 
 		const { element, mathfield, preview } = session;
+		session.overflowObserver.disconnect();
 		const equation = mathfield.value.trim();
 
 		// Blur while the internals are still alive. Firefox delivers no blur event when a
@@ -465,6 +519,7 @@ export default class MathLiveEdit extends Plugin {
 		this.fire<MathLiveSessionEndEvent>( 'sessionEnd' );
 		// Same as in _commitSession: blur while alive, or Firefox leaves MathLive's focus
 		// bookkeeping pointing at the disposed field.
+		session.overflowObserver.disconnect();
 		session.mathfield.blur();
 		session.mathfield.remove();
 		session.preview?.classList.remove( 'ck-hidden' );
@@ -497,6 +552,9 @@ interface EditSession {
 	element: ModelElement;
 	mathfield: MathFieldElement;
 	preview: HTMLElement | null;
+
+	/** Keeps the overflow marker current while the field's box settles (first render, fonts). */
+	overflowObserver: ResizeObserver;
 }
 
 interface MathFieldElement extends HTMLElement {
@@ -524,6 +582,20 @@ function safeFocus( mathfield: MathFieldElement ): void {
 		mathfield.focus();
 	} catch {
 		mathfield.focus();
+	}
+}
+
+/**
+ * Marks a field whose single-line content is wider than its capped box, so the theme can put a
+ * real scrollbar on it — MathLive only ever scrolls programmatically, hiding the overflow. The
+ * attribute (rather than an unconditional `overflow-x: auto`) exists because sub-pixel host
+ * widths round `scrollWidth` one pixel past `clientWidth`, which would summon a scrollbar under
+ * every equation.
+ */
+function updateOverflowState( mathfield: MathFieldElement ): void {
+	const content = mathfield.shadowRoot?.querySelector( '[part=content]' );
+	if ( content ) {
+		mathfield.toggleAttribute( 'data-overflowing', content.scrollWidth > content.clientWidth + 2 );
 	}
 }
 

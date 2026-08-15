@@ -61,6 +61,31 @@
 .ck-content .ck-math-tex math-field::part(container),
 .ck-content .ck-math-tex math-field::part(content) {
     padding: 0;
+    /* Shrink with the capped host: both are flex-laid, and a flex item's min-width: auto floor
+       otherwise holds them at the equation's full single-line width, spilling out of the box
+       instead of scrolling inside it. */
+    max-width: 100%;
+    min-width: 0;
+}
+/* The field cannot wrap (MathLive is single-line), so an equation longer than the editable
+   scrolls inside the capped box. MathLive ships overflow: hidden and only scrolls
+   programmatically to follow the caret — without the scrollbar nothing shows that more
+   equation exists past the edge. Gated on the plugin's overflow marker: unconditional `auto`
+   would reserve a scrollbar under every equation whose sub-pixel width rounds scrollWidth one
+   pixel past clientWidth. overflow-y stays hidden as MathLive had it. */
+.ck-content .ck-math-tex math-field[data-overflowing]::part(content) {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    /* Room for overlay scrollbars (Firefox on GTK), which take no layout space and would
+       otherwise paint the thumb over the equation's bottom pixels; the plugin dead-zones
+       pointer-downs in this strip so grabbing the thumb cannot start a selection drag. */
+    padding-bottom: 8px;
+}
+/* The widget itself must not grow past the editable: it is an inline-block, and shrink-to-fit
+   otherwise sizes it to the unwrappable field content's full width. */
+.ck-content .ck-math-tex {
+    max-width: 100%;
 }
 /* The hint inherits the field's 1.21em math scale; renormalize it to surrounding-text size,
    and color it exactly like CKEditor's own editable placeholder. */

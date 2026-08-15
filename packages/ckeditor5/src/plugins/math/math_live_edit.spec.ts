@@ -95,6 +95,9 @@ describe( 'MathLiveEdit', () => {
 		await new Promise( resolve => setTimeout( resolve, 200 ) );
 		const after = mathfield.getBoundingClientRect();
 
+		// A short equation must not be marked overflowing by the sub-pixel rounding of its box.
+		expect( mathfield.hasAttribute( 'data-overflowing' ) ).toBe( false );
+
 		// Height only: the widths still differ by a few pixels through an unresolved interplay
 		// of MathLive's `.ML__latex { width: min-content }` with the wrappers' shrink-to-fit
 		// sizing. (`Math` is the plugin import here; the global needs its full name.)
@@ -119,6 +122,49 @@ describe( 'MathLiveEdit', () => {
 		expect( height ).toBeGreaterThan( lineHeight * 2 );
 		// And it stays within the editable instead of overflowing horizontally.
 		expect( preview.getBoundingClientRect().width ).toBeLessThanOrEqual( 301 );
+	} );
+
+	it( 'a long equation scrolls inside the capped field instead of growing the item', async () => {
+		// The field cannot wrap; it must stay within the editable and expose its overflow
+		// through a real scrollbar (MathLive ships overflow: hidden with programmatic
+		// caret-following only).
+		const long = Array.from( { length: 30 }, ( _unused, i ) => `a_{${ i }}x^{${ i }}` ).join( '+' );
+		setData( editor.model, `<paragraph>foo[<mathtex-inline display="false" equation="${ long }" type="span"></mathtex-inline>]bar</paragraph>` );
+		// On the editable's parent: the view renderer owns the editable element's attributes
+		// and reverts direct style mutations on the next render.
+		const chrome = domRoot().parentElement;
+		if ( !chrome ) {
+			throw new Error( 'missing editable parent' );
+		}
+		chrome.style.width = '300px';
+
+		const mathfield = await startEditingSelected();
+		await new Promise( resolve => setTimeout( resolve, 200 ) );
+
+		const content = mathfield.shadowRoot?.querySelector( '[part=content]' );
+		if ( !content ) {
+			throw new Error( 'missing field content part' );
+		}
+		expect( mathfield.getBoundingClientRect().width ).toBeLessThanOrEqual( 301 );
+		expect( mathfield.hasAttribute( 'data-overflowing' ) ).toBe( true );
+		expect( getComputedStyle( content ).overflowX ).toBe( 'auto' );
+		expect( content.scrollWidth ).toBeGreaterThan( content.clientWidth );
+
+		// Grabbing the scrollbar must not reach MathLive's selection tracking, while a
+		// pointer-down on the equation itself still must. The guard runs in the capture
+		// phase on the host, so a stopped event never reaches listeners on the content.
+		const rect = content.getBoundingClientRect();
+		let reached = 0;
+		content.addEventListener( 'pointerdown', () => {
+			reached++;
+		} );
+		const press = ( clientY: number ) => content.dispatchEvent( new MouseEvent( 'pointerdown', {
+			clientX: rect.left + 10, clientY, bubbles: true, composed: true, cancelable: true
+		} ) );
+		press( rect.top + 4 );
+		expect( reached ).toBe( 1 );
+		press( rect.bottom - 2 );
+		expect( reached ).toBe( 1 );
 	} );
 
 	it( 'startEditing mounts a math-field inside the selected widget and hides the preview', async () => {
