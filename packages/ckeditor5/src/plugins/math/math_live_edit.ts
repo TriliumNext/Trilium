@@ -127,15 +127,19 @@ export default class MathLiveEdit extends Plugin {
 	 * that leaves the caret *inside* the new structure, whatever the balloon offers for it is
 	 * reachable straight away. LaTeX with no placeholder puts the caret after the insert instead.
 	 *
+	 * `selectionMode` is MathLive's: `'placeholder'` for LaTeX that opens somewhere to type, and
+	 * `'item'` for LaTeX built around `#@` — the selection itself — where leaving the result
+	 * selected is what lets a second accent stack on top of the first.
+	 *
 	 * @returns `false` when no field is mounted, so there was nothing to write into.
 	 */
-	public insertIntoField( latex: string ): boolean {
+	public insertIntoField( latex: string, selectionMode: 'placeholder' | 'item' = 'placeholder' ): boolean {
 		const mathfield = this._session?.mathfield;
 		if ( !mathfield?.insert ) {
 			return false;
 		}
 
-		mathfield.insert( latex, { selectionMode: 'placeholder' } );
+		mathfield.insert( latex, { selectionMode } );
 		mathfield.focus();
 		return true;
 	}

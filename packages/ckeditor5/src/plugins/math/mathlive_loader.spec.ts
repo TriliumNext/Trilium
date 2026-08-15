@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getMathLive, loadMathLive, renderStaticMath } from './mathlive_loader.js';
+import { getMathLive, loadMathLive, renderMathMarkup, renderStaticMath } from './mathlive_loader.js';
 
 async function waitFor<T>( check: () => T | null | undefined, timeout = 4000 ): Promise<T> {
 	const start = performance.now();
@@ -74,5 +74,14 @@ describe( 'mathlive_loader', () => {
 		// The stamps drive race-safe re-rendering after a late load.
 		expect( display.dataset.equation ).toBe( '\\sum_{i=0}^n i' );
 		expect( display.dataset.display ).toBe( 'true' );
+	} );
+
+	it( 'hands back markup for a preview, and the source itself where it cannot', async () => {
+		await loadMathLive();
+
+		expect( renderMathMarkup( '\\nabla' ) ).toContain( 'ML__latex' );
+
+		// A malformed entry shows its source rather than taking the balloon down with it.
+		expect( renderMathMarkup( '\\begin{matrix}' ) ).toBeTruthy();
 	} );
 } );

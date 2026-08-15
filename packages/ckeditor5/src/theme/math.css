@@ -139,7 +139,8 @@
    are, at the start, and lines up with the entries above and below it. */
 .ck.ck-list.ck-math-live-row .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
 .ck.ck-list.ck-math-live-grid .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
-.ck.ck-list.ck-math-live-swatches .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
+.ck.ck-list.ck-math-live-swatches .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
+.ck.ck-list.ck-math-live-symbols .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
     justify-content: center;
 }
 .ck.ck-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
@@ -195,6 +196,35 @@
    heading dropdown holds its own label to a width for the same reason. */
 .ck.ck-dropdown.ck-math-live-current .ck-dropdown__button .ck-button__label {
     min-width: 4em;
+}
+
+/* The symbol gallery: sections stacked, each one a dense grid of glyphs. The grid goes on the
+   nested list a `ListItemGroupView` puts its entries in, not on the outer one — that holds the
+   sections themselves, which stay a column with their captions above them. */
+.ck.ck-list.ck-math-live-symbols {
+    max-height: 22em;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+.ck.ck-list.ck-math-live-symbols .ck-list__group > .ck-list {
+    display: grid;
+    grid-template-columns: repeat(8, 2.2em);
+    gap: var(--ck-spacing-tiny);
+    padding: var(--ck-spacing-small);
+}
+.ck.ck-list.ck-math-live-symbols .ck-list__item > .ck-button {
+    justify-content: center;
+    border-radius: var(--ck-border-radius);
+    padding: var(--ck-spacing-tiny);
+    width: 100%;
+}
+/* Nine sections of glyphs is a long way to scroll past; the captions stay put so it is always
+   clear which one is on screen. */
+.ck.ck-list.ck-math-live-symbols .ck-list__group > .ck-label {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--ck-color-dropdown-panel-background);
 }
 
 /* A swatch's whole label is `<span style="background: …">`, sized by MathLive against its own

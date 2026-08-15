@@ -36,6 +36,20 @@ export function getMathLive(): MathLiveModule | null {
 }
 
 /**
+ * MathLive's rendering of `latex` as a fragment of markup, for the places that need the drawing
+ * rather than an element to draw into — the balloon's symbol and structure previews, which are
+ * button labels. Falls back to the source itself, which is what a preview shows before the
+ * library has loaded and what a malformed entry shows instead of throwing.
+ */
+export function renderMathMarkup( latex: string ): string {
+	try {
+		return mathLiveModule?.convertLatexToMarkup( latex ) ?? latex;
+	} catch {
+		return latex;
+	}
+}
+
+/**
  * Renders an equation into `element` as static MathLive markup. Until the library is loaded the
  * raw LaTeX shows as plain text; rendering an equation is also what triggers the load, so
  * MathLive is fetched exactly when a note first displays one. Re-renders race-safely: each call

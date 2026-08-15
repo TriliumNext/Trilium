@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Math from './math.js';
 import MathLiveBalloon, { buildMatrixLatex } from './math_live_balloon.js';
 import MathLiveEdit from './math_live_edit.js';
+import { MATH_SYMBOL_SECTIONS } from './symbols.js';
 import { createTestEditor } from '../../../test/editor-kit.js';
 
 const INLINE_WIDGET = '<mathtex-inline display="false" equation="x^2" type="span"></mathtex-inline>';
@@ -64,7 +65,7 @@ describe( 'MathLiveBalloon', () => {
 	}
 
 	function matrixDropdown(): DropdownView {
-		return items()[ 9 ] as DropdownView;
+		return items()[ 10 ] as DropdownView;
 	}
 
 	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
@@ -74,37 +75,41 @@ describe( 'MathLiveBalloon', () => {
 		return { dropdown, grid: dropdown.panelView.children.get( 0 ) as unknown as GridLike };
 	}
 
-	function insertGroup(): DropdownView {
+	function symbolsGroup(): DropdownView {
 		return items()[ 2 ] as DropdownView;
 	}
 
-	function accentGroup(): DropdownView {
+	function insertGroup(): DropdownView {
 		return items()[ 3 ] as DropdownView;
 	}
 
-	function decorationGroup(): DropdownView {
+	function accentGroup(): DropdownView {
 		return items()[ 4 ] as DropdownView;
 	}
 
-	function colorGroup(): DropdownView {
-		return items()[ 6 ] as DropdownView;
-	}
-
-	function backgroundColorGroup(): DropdownView {
-		return items()[ 7 ] as DropdownView;
-	}
-
-	function modeGroup(): DropdownView {
+	function decorationGroup(): DropdownView {
 		return items()[ 5 ] as DropdownView;
 	}
 
-	function fontStyleGroup(): DropdownView {
+	function colorGroup(): DropdownView {
+		return items()[ 7 ] as DropdownView;
+	}
+
+	function backgroundColorGroup(): DropdownView {
 		return items()[ 8 ] as DropdownView;
+	}
+
+	function modeGroup(): DropdownView {
+		return items()[ 6 ] as DropdownView;
+	}
+
+	function fontStyleGroup(): DropdownView {
+		return items()[ 9 ] as DropdownView;
 	}
 
 	/** The column, row and borders groups, in toolbar order. */
 	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 10 ) as [ DropdownView, DropdownView, DropdownView ];
+		return items().slice( 11 ) as [ DropdownView, DropdownView, DropdownView ];
 	}
 
 	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
@@ -193,9 +198,9 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles; the insert, accent, decoration, colour, background, mode and font-style
-		// groups; the matrix picker; and the column, row and borders groups.
-		expect( items() ).toHaveLength( 13 );
+		// Two toggles; the symbols, insert, accent, decoration, colour, background, mode and
+		// font-style groups; the matrix picker; and the column, row and borders groups.
+		expect( items() ).toHaveLength( 14 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -366,11 +371,13 @@ describe( 'MathLiveBalloon', () => {
 		const insert = insertGroup();
 		expect( insert.buttonView.label ).toBe( 'Insert' );
 
+		// Thirteen of MathLive's own, and eight of ours slotted in among them.
 		const entries = groupEntries( insert );
-		expect( entries ).toHaveLength( 13 );
+		expect( entries ).toHaveLength( 21 );
 
 		// The sections and their captions are MathLive's own, read off the submenu rather than
-		// restated here — which is what keeps them localized.
+		// restated here — which is what keeps them localized. Ours join those sections rather
+		// than adding one of their own.
 		expect( groupSections( insert ) ).toEqual( [ 'Calculus', 'Complex Numbers' ] );
 
 		// MathLive's label is markup: a rendering of the structure, then its name. Both have to
@@ -412,12 +419,121 @@ describe( 'MathLiveBalloon', () => {
 
 		await startEditingSelected();
 		const entries = groupEntries( insertGroup() );
-		const integral = entries[ 5 ];
+		const integral = entries[ 7 ];
 
 		integral.fire( 'execute' );
 
 		expect( liveField().value ).toContain( '\\int' );
 		await waitFor( () => getData( editor.model ).includes( 'int' ) || null );
+	} );
+
+	it( 'offers a symbol gallery of ours, grouped the way one is looked up', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const symbols = symbolsGroup();
+		expect( symbols.buttonView.label ).toBe( 'Symbols' );
+
+		// This group is ours rather than MathLive's, so unlike the ones around it there is
+		// nothing in the field it has to wait for before it applies.
+		expect( symbols.class ).toBeUndefined();
+		expect( groupSections( symbols ) ).toEqual( [
+			'Basic math', 'Greek letters', 'Letter-like symbols', 'Operators', 'Relations',
+			'Negated relations', 'Arrows', 'Sets and logic', 'Geometry'
+		] );
+
+		const entries = groupEntries( symbols );
+		expect( entries ).toHaveLength(
+			MATH_SYMBOL_SECTIONS.reduce( ( total, section ) => total + section.symbols.length, 0 )
+		);
+
+		// Each entry draws its symbol, and is named by the LaTeX behind it — which is what the
+		// symbol is called wherever maths is written, and what to type for it next time.
+		const [ plusMinus ] = entries;
+		expect( plusMinus.tooltip ).toBe( '\\pm' );
+		expect( plusMinus.label ).toContain( 'ML__latex' );
+		expect( plusMinus.element?.textContent ).not.toContain( '<span' );
+
+		plusMinus.fire( 'execute' );
+		expect( liveField().value ).toContain( '\\pm' );
+		await waitFor( () => getData( editor.model ).includes( 'pm' ) || null );
+	} );
+
+	it( 'adds the structures MathLive stops short of, each in the section it belongs to', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const entries = groupEntries( insertGroup() );
+
+		// Slotted in behind the MathLive entry each belongs with: the piecewise and the binomial
+		// close the opening section, the extra integrals sit with the one already in Calculus.
+		const piecewise = entries[ 3 ];
+		expect( piecewise.tooltip ).toBe( 'Piecewise' );
+		expect( entries[ 4 ].tooltip ).toBe( 'Binomial coefficient' );
+		expect( entries[ 8 ].tooltip ).toBe( 'Double integral' );
+		expect( entries[ 15 ].tooltip ).toBe( 'Limit' );
+
+		// Drawn and then named, the two-column shape MathLive gives this group's own entries.
+		expect( piecewise.element?.querySelector( '.ML__insert-template .ML__latex' ) ).not.toBeNull();
+		expect( piecewise.element?.querySelector( '.ML__insert-label' )?.textContent )
+			.toBe( 'Piecewise' );
+
+		// Every one of them renders: a preview MathLive cannot parse falls back to its own source,
+		// which would put raw LaTeX in the menu rather than a drawing of it.
+		for ( const entry of entries ) {
+			expect( entry.element?.querySelector( '.ML__insert-template .ML__latex' ), entry.tooltip as string )
+				.not.toBeNull();
+		}
+
+		piecewise.fire( 'execute' );
+		expect( liveField().value ).toContain( '\\begin{cases}' );
+		await waitFor( () => getData( editor.model ).includes( 'cases' ) || null );
+	} );
+
+	it( 'adds the accents MathLive leaves out, and applies them to the selection', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => accentGroup().class === undefined || null );
+
+		// Beside the MathLive accent each belongs with, not appended after all of them.
+		const entries = groupEntries( accentGroup() );
+		const hat = entries[ 1 ];
+		expect( hat.tooltip ).toBe( 'Hat' );
+		expect( entries[ 2 ].tooltip ).toBe( 'Tilde' );
+		expect( entries[ 7 ].tooltip ).toBe( 'Triple dot' );
+
+		// Each is drawn around the very letter it would mark, as MathLive's own accents are — and
+		// a mark MathLive could not parse would show its source here instead of a drawing.
+		for ( const entry of entries ) {
+			expect( entry.element?.querySelector( '.ML__latex' ), entry.tooltip as string ).not.toBeNull();
+		}
+
+		hat.fire( 'execute' );
+		expect( liveField().value ).toBe( '\\hat{a}' );
+		await waitFor( () => getData( editor.model ).includes( 'hat' ) || null );
+	} );
+
+	it( 'holds a narrow accent to one atom where a stretchy one takes any selection', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a+b';
+		selectWholeField();
+		await waitFor( () => accentGroup().class === undefined || null );
+
+		const accent = ( name: string ) =>
+			groupEntries( accentGroup() ).find( entry => entry.tooltip === name );
+
+		// A hat drawn over three atoms is a hat over the first of them, so MathLive hides its own
+		// single-atom accents here and ours go with them; the wide pair is what stretches.
+		expect( accent( 'Hat' )?.isVisible ).toBe( false );
+		expect( accent( 'Wide hat' )?.isVisible ).toBe( true );
+
+		accent( 'Wide tilde' )?.fire( 'execute' );
+		expect( liveField().value ).toBe( '\\widetilde{a+b}' );
 	} );
 
 	it( 'keeps the accents away until there is something to accent', async () => {
@@ -433,8 +549,8 @@ describe( 'MathLiveBalloon', () => {
 		selectWholeField();
 		await waitFor( () => accents.class === undefined || null );
 
-		// All twelve apply to a single selected atom; five of them want exactly one.
-		expect( groupEntries( accents ).filter( entry => entry.isVisible ) ).toHaveLength( 12 );
+		// MathLive's twelve and our seven all apply to a single selected atom.
+		expect( groupEntries( accents ).filter( entry => entry.isVisible ) ).toHaveLength( 19 );
 	} );
 
 	it( 'draws each accent around the selection, and redraws it when that changes', async () => {
