@@ -16,6 +16,9 @@ and opt-in — it turns `$$` or `\[` at the start of a block into an equation pr
 | `math_editing.ts` | Schema, conversion, the `math` command, and the data-processor hook that preserves newlines |
 | `math_command.ts` | The `math` command — inserts or updates an equation |
 | `math_ui.ts` | Toolbar button, `Ctrl+M`, and the balloon that hosts the form |
+| `math_live_edit.ts` | In-place editing: mounts a `<math-field>` in the widget and announces the session |
+| `math_live_balloon.ts` | The balloon shown for as long as that field is mounted |
+| `mathlive_loader.ts` | One lazy load of MathLive, plus static markup rendering for previews |
 | `main_form_view.ts` | The dialog: input, display toggle, preview, save/cancel |
 | `math_input_view.ts` | The MathLive `<math-field>` and LaTeX textarea, kept in sync |
 | `math_view.ts` | The rendered preview |

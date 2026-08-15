@@ -270,6 +270,7 @@ export default class MathLiveEdit extends Plugin {
 
 		this._session = { element, mathfield, preview };
 		this._wireFieldEvents( mathfield, element );
+		this.fire<MathLiveSessionStartEvent>( 'sessionStart', { mathfield } );
 
 		requestAnimationFrame( () => {
 			mathfield.focus();
@@ -338,8 +339,9 @@ export default class MathLiveEdit extends Plugin {
 
 		mathfield.addEventListener( 'focusout', evt => {
 			const related = evt.relatedTarget;
-			// Interacting with MathLive's own floating UI (virtual keyboard, menu) is not leaving.
-			if ( related instanceof Node && ( mathfield.contains( related ) || isMathLiveOverlay( related ) ) ) {
+			// Reaching for floating UI that belongs to the session — MathLive's own virtual
+			// keyboard or menu, or the editor's balloon — is not leaving the field.
+			if ( related instanceof Node && ( mathfield.contains( related ) || isSessionOverlay( related ) ) ) {
 				return;
 			}
 			this._commitSession();
@@ -364,6 +366,7 @@ export default class MathLiveEdit extends Plugin {
 			return;
 		}
 		this._session = null;
+		this.fire<MathLiveSessionEndEvent>( 'sessionEnd' );
 
 		const { element, mathfield, preview } = session;
 		const equation = mathfield.value.trim();
@@ -392,6 +395,7 @@ export default class MathLiveEdit extends Plugin {
 			return;
 		}
 		this._session = null;
+		this.fire<MathLiveSessionEndEvent>( 'sessionEnd' );
 		session.mathfield.remove();
 		session.preview?.classList.remove( 'ck-hidden' );
 		window.mathVirtualKeyboard?.hide();
@@ -406,6 +410,18 @@ export default class MathLiveEdit extends Plugin {
 		return dom instanceof HTMLElement ? dom : null;
 	}
 }
+
+/** Fired once a `<math-field>` is mounted and wired, i.e. whenever an equation goes live. */
+export type MathLiveSessionStartEvent = {
+	name: 'sessionStart';
+	args: [ { mathfield: HTMLElement } ];
+};
+
+/** Fired when that field is torn down, whether the result was committed or discarded. */
+export type MathLiveSessionEndEvent = {
+	name: 'sessionEnd';
+	args: [];
+};
 
 interface EditSession {
 	element: ModelElement;
@@ -433,8 +449,9 @@ function isAttached( element: ModelElement ): boolean {
 	return root.is( 'rootElement' ) && root.rootName !== '$graveyard';
 }
 
-function isMathLiveOverlay( node: Node ): boolean {
-	return node instanceof Element && node.closest( '.ML__keyboard, .ML__popover, .ML__menu' ) !== null;
+function isSessionOverlay( node: Node ): boolean {
+	return node instanceof Element &&
+		node.closest( '.ML__keyboard, .ML__popover, .ML__menu, .ck-balloon-panel' ) !== null;
 }
 
 /**

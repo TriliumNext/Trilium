@@ -4,6 +4,7 @@ import '../../theme/math.css';
 
 import type MathCommand from './math_command.js';
 import MathEditing from './math_editing.js';
+import MathLiveBalloon from './math_live_balloon.js';
 import type MathLiveEdit from './math_live_edit.js';
 import MathUI from './math_ui.js';
 import type { KatexOptions } from './typings_external.js';
@@ -18,7 +19,7 @@ import type { KatexOptions } from './typings_external.js';
  */
 export default class Math extends Plugin {
 	public static get requires() {
-		return [ MathEditing, MathUI, Widget ] as const;
+		return [ MathEditing, MathUI, MathLiveBalloon, Widget ] as const;
 	}
 
 	public static get pluginName() {
@@ -31,6 +32,7 @@ declare module 'ckeditor5' {
 		[ Math.pluginName ]: Math;
 		[ MathEditing.pluginName ]: MathEditing;
 		[ MathUI.pluginName ]: MathUI;
+		[ MathLiveBalloon.pluginName ]: MathLiveBalloon;
 		MathLiveEdit: MathLiveEdit;
 	}
 

@@ -43,3 +43,8 @@
     display: block;
     text-align: center;
 }
+
+.ck.ck-math-live-balloon {
+    padding: var(--ck-spacing-medium);
+    white-space: nowrap;
+}
