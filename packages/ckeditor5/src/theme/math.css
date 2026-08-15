@@ -120,6 +120,64 @@
     text-align: center;
 }
 
+/* === LATEX MODE: SUGGESTION POPOVER === */
+body #mathlive-suggestion-popover {
+    background: var(--menu-background-color, var(--ck-color-panel-background, #fff));
+    color: var(--menu-text-color, var(--ck-color-text, #333));
+    border: 1px solid var(--ck-color-panel-border, rgba(0, 0, 0, 0.15));
+    border-radius: var(--dropdown-border-radius, var(--ck-border-radius, 4px));
+    box-shadow: 0 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity, 0.2));
+    text-align: start;
+}
+body #mathlive-suggestion-popover.top-tip::after,
+body #mathlive-suggestion-popover.bottom-tip::after {
+    display: none;
+}
+body #mathlive-suggestion-popover.top-tip {
+    translate: 0 -11px;
+}
+body #mathlive-suggestion-popover.bottom-tip {
+    translate: 0 11px;
+}
+body #mathlive-suggestion-popover ul {
+    align-items: stretch;
+    max-height: 20em;
+    padding: var(--ck-spacing-tiny, 2px);
+    scrollbar-width: thin;
+}
+body #mathlive-suggestion-popover li {
+    align-items: center;
+    width: 100%;
+    margin: 0;
+    padding: 0.25em 0.7em;
+    column-gap: 1.5em;
+    border-radius: var(--ck-border-radius, 4px);
+}
+body #mathlive-suggestion-popover li:hover,
+body #mathlive-suggestion-popover li.is-pressed,
+body #mathlive-suggestion-popover li.is-active {
+    background: var(--hover-item-background-color, var(--ck-color-list-button-hover-background, rgba(0, 0, 0, 0.08)));
+    color: var(--hover-item-text-color, inherit);
+}
+body #mathlive-suggestion-popover li.ML__popover__current {
+    background: var(--active-item-background-color, var(--ck-color-list-button-on-background, rgba(0, 0, 0, 0.12)));
+    color: var(--active-item-text-color, inherit);
+}
+body #mathlive-suggestion-popover .ML__popover__latex {
+    flex: 1 1 auto;
+    align-self: center;
+    font-family: var(--monospace-font-family, monospace);
+}
+body #mathlive-suggestion-popover .ML__popover__command {
+    flex: 0 0 auto;
+    font-size: 1.2em;
+}
+body #mathlive-suggestion-popover .ML__popover__keybinding {
+    flex: 0 0 auto;
+    align-self: center;
+    opacity: 0.6;
+}
+
 /* === EQUATION BALLOON: MATHLIVE MENU LABELS === */
 .ck.ck-list .ck-button > .ck-math-live-label {
     display: flex;

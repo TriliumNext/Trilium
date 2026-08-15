@@ -247,6 +247,35 @@ describe( 'MathLiveEdit', () => {
 		await waitFor( () => ( findMathField() === null ? true : null ) );
 	} );
 
+	it( 'dresses the LaTeX suggestion list as one of the app\'s own menus', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		const mathfield = await startEditingSelected();
+		await waitFor( () => ( document.activeElement === mathfield ? true : null ) );
+
+		// What `\alp` typed into the field comes to: MathLive inserts printable characters
+		// through its input pipeline rather than from the keydown, and `typedText` is that
+		// pipeline's own entry point.
+		mathfield.executeCommand( [ 'switchMode', 'latex', '', '\\' ] );
+		mathfield.executeCommand( [ 'typedText', 'alp' ] );
+
+		// MathLive injects the popover's own stylesheet at runtime, through
+		// `document.adoptedStyleSheets` — which the cascade puts after the bundled ones. Our rules
+		// have to outrank it on specificity alone, or the panel keeps its stock roomy rows.
+		const panel = await waitFor( () =>
+			document.querySelector( '#mathlive-suggestion-popover.is-visible' ) );
+		const row = panel.querySelector( 'li' );
+		expect( row ).not.toBeNull();
+
+		// MathLive's stock panel is a grey bubble with an arrow, holding rows 8px of margin and
+		// 8px of padding apart.
+		expect( getComputedStyle( panel ).backgroundColor ).not.toBe( 'rgb(97, 97, 97)' );
+		expect( getComputedStyle( panel, '::after' ).display ).toBe( 'none' );
+		const rowStyle = getComputedStyle( row as HTMLElement );
+		expect( rowStyle.margin ).toBe( '0px' );
+		expect( rowStyle.paddingLeft ).not.toBe( '8px' );
+	} );
+
 	it( 'committing an emptied equation removes the widget', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
@@ -524,6 +553,7 @@ interface MathFieldLike extends HTMLElement {
 	position: number;
 	lastOffset: number;
 	readonly mode: 'math' | 'text' | 'latex';
+	executeCommand: ( command: Array<string> ) => boolean;
 }
 
 /** A keydown for MathLive's own keystroke pipeline, which reads it off the shadow keyboard sink. */
