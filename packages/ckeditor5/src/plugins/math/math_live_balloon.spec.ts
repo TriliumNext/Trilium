@@ -78,43 +78,39 @@ describe( 'MathLiveBalloon', () => {
 		return { dropdown, grid: dropdown.panelView.children.get( 0 ) as unknown as GridLike };
 	}
 
-	function insertGroup(): DropdownView {
+	function decorationGroup(): DropdownView {
 		return items()[ 2 ] as DropdownView;
 	}
 
-	function decorationGroup(): DropdownView {
+	function modeGroup(): DropdownView {
 		return items()[ 3 ] as DropdownView;
 	}
 
-	function modeGroup(): DropdownView {
+	function colorGroup(): DropdownView {
 		return items()[ 4 ] as DropdownView;
 	}
 
-	function colorGroup(): DropdownView {
+	function backgroundColorGroup(): DropdownView {
 		return items()[ 5 ] as DropdownView;
 	}
 
-	function backgroundColorGroup(): DropdownView {
-		return items()[ 6 ] as DropdownView;
-	}
-
 	function fontStyleGroup(): DropdownView {
-		return items()[ 7 ] as DropdownView;
+		return items()[ 6 ] as DropdownView;
 	}
 
 	/** The column, row and borders groups, in toolbar order. */
 	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 8, 11 ) as [ DropdownView, DropdownView, DropdownView ];
+		return items().slice( 7, 10 ) as [ DropdownView, DropdownView, DropdownView ];
 	}
 
 	/** The second row: one per symbol category, in the order the table declares them. */
 	function symbolGroups(): Array<DropdownView> {
-		return items().slice( 12, 12 + MATH_SYMBOL_SECTIONS.length ) as Array<DropdownView>;
+		return items().slice( 11, 11 + MATH_SYMBOL_SECTIONS.length ) as Array<DropdownView>;
 	}
 
 	/** The third row: OneNote's eleven structure galleries, Accent and Matrix among them. */
 	function structureRow(): Array<DropdownView> {
-		return items().slice( 12 + MATH_SYMBOL_SECTIONS.length + 1 ) as Array<DropdownView>;
+		return items().slice( 11 + MATH_SYMBOL_SECTIONS.length + 1 ) as Array<DropdownView>;
 	}
 
 	/** Accent sits eighth of the eleven, as it does in OneNote's own ribbon. */
@@ -222,10 +218,10 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Row one: two toggles, the insert, decoration, mode, colour, background and font-style
+		// Row one: two toggles, the decoration, mode, colour, background and font-style
 		// groups, and the column, row and borders groups. Row two: a button per symbol category.
 		// Row three: OneNote's eleven structure galleries. Two line breaks between them.
-		expect( items() ).toHaveLength( 11 + 1 + MATH_SYMBOL_SECTIONS.length + 1 + 11 );
+		expect( items() ).toHaveLength( 10 + 1 + MATH_SYMBOL_SECTIONS.length + 1 + 11 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -389,69 +385,6 @@ describe( 'MathLiveBalloon', () => {
 		expect( deleteColumn?.isEnabled ).toBe( true );
 	} );
 
-	it( 'draws each insert entry as the structure it would insert', async () => {
-		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
-
-		await startEditingSelected();
-		const insert = insertGroup();
-		expect( insert.buttonView.label ).toBe( 'Insert' );
-
-		// Thirteen of MathLive's own, and eight of ours slotted in among them.
-		const entries = groupEntries( insert );
-		expect( entries ).toHaveLength( 21 );
-
-		// The sections and their captions are MathLive's own, read off the submenu rather than
-		// restated here — which is what keeps them localized. Ours join those sections rather
-		// than adding one of their own.
-		expect( groupSections( insert ) ).toEqual( [ 'Calculus', 'Complex Numbers' ] );
-
-		// MathLive's label is markup: a rendering of the structure, then its name. Both have to
-		// survive into the DOM as elements rather than as the text of the markup itself.
-		const [ abs ] = entries;
-		expect( abs.label ).toContain( 'ML__insert-template' );
-		expect( abs.element?.querySelector( '.ML__insert-template' ) ).not.toBeNull();
-		expect( abs.element?.querySelector( '.ML__insert-label' )?.textContent ).toBeTruthy();
-		expect( abs.element?.textContent ).not.toContain( '<span' );
-	} );
-
-	it( 'gives every insert entry room for what it draws', async () => {
-		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
-
-		await startEditingSelected();
-		const entries = groupEntries( insertGroup() );
-
-		// A display fraction or an integral's limits paint outside the line box MathLive's struts
-		// reserve, so the row has to be roomy enough to hold them; otherwise they land on the
-		// entry above. Struts themselves are excluded — they position things and draw nothing.
-		const spilling = entries
-			.map( entry => {
-				const element = entry.element as HTMLElement;
-				const ink = inkExtent( element );
-				const box = element.getBoundingClientRect();
-				return {
-					label: element.textContent?.trim(),
-					above: ink.top - box.top,
-					below: box.bottom - ink.bottom
-				};
-			} )
-			.filter( entry => entry.above < 0 || entry.below < 0 );
-
-		expect( spilling ).toEqual( [] );
-	} );
-
-	it( 'inserts the picked structure at the caret, and the model follows', async () => {
-		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
-
-		await startEditingSelected();
-		const entries = groupEntries( insertGroup() );
-		const integral = entries[ 7 ];
-
-		integral.fire( 'execute' );
-
-		expect( liveField().value ).toContain( '\\int' );
-		await waitFor( () => getData( editor.model ).includes( 'int' ) || null );
-	} );
-
 	it( 'offers a symbol gallery of ours, a button to a category', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
@@ -507,7 +440,7 @@ describe( 'MathLiveBalloon', () => {
 			.map( ( item, index ) => ( { index, element: item.element } ) )
 			.filter( item => item.element?.classList.contains( 'ck-toolbar__line-break' ) );
 		expect( breaks.map( item => item.index ) )
-			.toEqual( [ 11, 12 + MATH_SYMBOL_SECTIONS.length ] );
+			.toEqual( [ 10, 11 + MATH_SYMBOL_SECTIONS.length ] );
 
 		// Wrapping is `.ck-toolbar__items`' default, but only ever within a width: without a cap
 		// the balloon is shrink-to-fit and grows to hold all of it on one line.
@@ -588,37 +521,6 @@ describe( 'MathLiveBalloon', () => {
 		// Sized by what they hold rather than by the panel, as the accent grid is: tie a cell to
 		// a fraction of the balloon and the glyphs collide as soon as it is narrow.
 		expect( greek.width ).toBeLessThan( greek.panelWidth );
-	} );
-
-	it( 'adds the structures MathLive stops short of, each in the section it belongs to', async () => {
-		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
-
-		await startEditingSelected();
-		const entries = groupEntries( insertGroup() );
-
-		// Slotted in behind the MathLive entry each belongs with: the piecewise and the binomial
-		// close the opening section, the extra integrals sit with the one already in Calculus.
-		const piecewise = entries[ 3 ];
-		expect( piecewise.tooltip ).toBe( 'Piecewise' );
-		expect( entries[ 4 ].tooltip ).toBe( 'Binomial coefficient' );
-		expect( entries[ 8 ].tooltip ).toBe( 'Double integral' );
-		expect( entries[ 15 ].tooltip ).toBe( 'Limit' );
-
-		// Drawn and then named, the two-column shape MathLive gives this group's own entries.
-		expect( piecewise.element?.querySelector( '.ML__insert-template .ML__latex' ) ).not.toBeNull();
-		expect( piecewise.element?.querySelector( '.ML__insert-label' )?.textContent )
-			.toBe( 'Piecewise' );
-
-		// Every one of them renders: a preview MathLive cannot parse falls back to its own source,
-		// which would put raw LaTeX in the menu rather than a drawing of it.
-		for ( const entry of entries ) {
-			expect( entry.element?.querySelector( '.ML__insert-template .ML__latex' ), entry.tooltip as string )
-				.not.toBeNull();
-		}
-
-		piecewise.fire( 'execute' );
-		expect( liveField().value ).toContain( '\\begin{cases}' );
-		await waitFor( () => getData( editor.model ).includes( 'cases' ) || null );
 	} );
 
 	it( 'adds the accents MathLive leaves out, and applies them to the selection', async () => {
@@ -959,9 +861,6 @@ describe( 'MathLiveBalloon', () => {
 		expect( tooltips ).toContain( 'Bold' );
 		expect( tooltips ).toContain( 'Italic' );
 		expect( tooltips.every( tooltip => typeof tooltip === 'string' && tooltip.length > 0 ) ).toBe( true );
-
-		// The insert entries name themselves in the label, so they carry no tooltip.
-		expect( groupEntries( insertGroup() )[ 0 ].tooltip ).toBe( false );
 	} );
 
 	it( 'offers the brackets as MathLive draws them, and switches the array to the one picked', async () => {

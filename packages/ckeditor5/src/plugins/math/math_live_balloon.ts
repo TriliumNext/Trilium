@@ -15,7 +15,6 @@ import {
 	IconMarker,
 	IconObjectCenter,
 	IconObjectInline,
-	IconPlus,
 	IconSpecialCharacters,
 	IconTableCellProperties,
 	IconTableColumn,
@@ -110,7 +109,7 @@ interface LocalMenuEntry {
 	label: string;
 
 	/** How much of a selection it needs to apply: a single atom to sit on, or any selection. */
-	selection?: 'one' | 'any';
+	selection: 'one' | 'any';
 }
 
 /** A local entry once built, paired with the button standing in for it. */
@@ -351,10 +350,7 @@ export default class MathLiveBalloon extends Plugin {
 					// for markup that would come out identical.
 					const stale = local.entry.preview.includes( '#@' ) || !local.button.label;
 					if ( visible && stale ) {
-						local.button.set(
-							'label',
-							renderLocalLabel( local.entry, selection, group.submenu?.layout )
-						);
+						local.button.set( 'label', renderLocalLabel( local.entry, selection ) );
 					}
 				}
 			}
@@ -397,47 +393,11 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.ariaLabel = t( 'Equation toolbar' );
 		toolbar.items.add( this._createTypeButton( 'mathTypeInline', IconObjectInline, t( 'Inline equation' ) ) );
 		toolbar.items.add( this._createTypeButton( 'mathTypeDisplay', IconObjectCenter, t( 'Display equation' ) ) );
-		// The structures MathLive inserts, plus the ones it stops short of. Each of ours is slotted
-		// in behind the MathLive entry it belongs with, so the sections stay the sections upstream
-		// captioned rather than gaining a bin of leftovers at the end.
-		toolbar.items.add( this._createSubmenuGroup( 'insert', t( 'Insert' ), IconPlus, {
-			extras: {
-				'insert-log-base': [
-					{
-						insert: '\\begin{cases}#? & #?\\\\#? & #?\\end{cases}',
-						preview: '\\begin{cases}\\blacksquare\\\\\\blacksquare\\end{cases}',
-						label: t( 'Piecewise' )
-					},
-					{
-						insert: '\\binom{#?}{#?}',
-						preview: '\\binom{n}{k}',
-						label: t( 'Binomial coefficient' )
-					}
-				],
-				'insert-integral': [
-					{
-						insert: '\\iint_#?^#?#?\\,\\mathrm{d}#?',
-						preview: '\\iint',
-						label: t( 'Double integral' )
-					},
-					{
-						insert: '\\iiint_#?^#?#?\\,\\mathrm{d}#?',
-						preview: '\\iiint',
-						label: t( 'Triple integral' )
-					},
-					{
-						insert: '\\oint_#?^#?#?\\,\\mathrm{d}#?',
-						preview: '\\oint',
-						label: t( 'Contour integral' )
-					}
-				],
-				'insert-product': [
-					{ insert: '\\bigcup_#?^#?#?', preview: '\\bigcup', label: t( 'Union' ) },
-					{ insert: '\\bigcap_#?^#?#?', preview: '\\bigcap', label: t( 'Intersection' ) },
-					{ insert: '\\lim_{#?\\to#?}#?', preview: '\\lim', label: t( 'Limit' ) }
-				]
-			}
-		} ) );
+		// No `Insert` group: sixteen of the twenty-one entries MathLive's own gave us are in the
+		// structure galleries now, and the five that were not — the two derivatives and the
+		// complex-number trio — were rehomed to Fraction and Function rather than kept behind a
+		// button that would otherwise be three-quarters duplicate.
+		//
 		// The accents draw themselves around whatever is selected, so their previews are re-read
 		// as the selection moves; with nothing selected there is nothing to accent, and MathLive
 		// hides every one of them — taking the group with them. Ours follow the same rules: the
@@ -1087,8 +1047,6 @@ function readSelection( field: LiveMathField ): string {
 /** Whether an entry has something to act on, by the same rule MathLive applies to its own. */
 function appliesToSelection( entry: LocalMenuEntry, selection: string ): boolean {
 	switch ( entry.selection ) {
-		// A structure needs nothing under it: it brings its own placeholders.
-		case undefined: return true;
 		case 'any': return selection.length > 0;
 		case 'one': return selection.length === 1;
 	}
@@ -1099,19 +1057,8 @@ function appliesToSelection( entry: LocalMenuEntry, selection: string ): boolean
  * its name in a group that names what it inserts — the two-span shape MathLive gives the entries
  * of its insert menu, so ours line up in the same two columns.
  */
-function renderLocalLabel( entry: LocalMenuEntry, selection: string, layout?: MenuGroupLayout ): string {
-	const preview = renderMathMarkup( entry.preview.replace( '#@', () => selection ) );
-
-	if ( layout ) {
-		return preview;
-	}
-
-	return `<span class="ML__insert-template">${ preview }</span>` +
-		`<span class="ML__insert-label">${ escapeHtml( entry.label ) }</span>`;
-}
-
-function escapeHtml( text: string ): string {
-	return text.replace( /&/g, '&amp;' ).replace( /</g, '&lt;' ).replace( />/g, '&gt;' );
+function renderLocalLabel( entry: LocalMenuEntry, selection: string ): string {
+	return renderMathMarkup( entry.preview.replace( '#@', () => selection ) );
 }
 
 /**

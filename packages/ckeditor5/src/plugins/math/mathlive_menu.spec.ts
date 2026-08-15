@@ -114,18 +114,18 @@ describe( 'getMenuItemLabel', () => {
 describe( 'runMenuItem', () => {
 	it( 'calls the entry\'s own handler, nested or not, with no modifier held', () => {
 		const onMenuSelect = vi.fn();
-		const field = fieldWith( { submenu: [ { id: 'insert-abs', onMenuSelect } ] } );
+		const field = fieldWith( { submenu: [ { id: 'accent-vec', onMenuSelect } ] } );
 
-		expect( runMenuItem( field, 'insert-abs' ) ).toBe( true );
+		expect( runMenuItem( field, 'accent-vec' ) ).toBe( true );
 		expect( onMenuSelect ).toHaveBeenCalledWith( {
 			target: undefined,
 			modifiers: { alt: false, control: false, shift: false, meta: false },
-			id: 'insert-abs'
+			id: 'accent-vec'
 		} );
 	} );
 
 	it( 'reports back when there is no such entry, or it has no handler', () => {
-		expect( runMenuItem( fieldWith( { id: 'insert-abs' } ), 'insert-abs' ) ).toBe( false );
-		expect( runMenuItem( fieldWith(), 'insert-abs' ) ).toBe( false );
+		expect( runMenuItem( fieldWith( { id: 'accent-vec' } ), 'accent-vec' ) ).toBe( false );
+		expect( runMenuItem( fieldWith(), 'accent-vec' ) ).toBe( false );
 	} );
 } );

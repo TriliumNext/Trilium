@@ -205,13 +205,13 @@ body #mathlive-suggestion-popover .ML__popover__keybinding {
 }
 /* A preview alone in a cell centres in it; one in a row of a list stays where a list's labels
    are, at the start, and lines up with the entries above and below it. */
-.ck.ck-list.ck-math-live-row .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
-.ck.ck-list.ck-math-live-grid .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
-.ck.ck-list.ck-math-live-swatches .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
-.ck.ck-list.ck-math-live-gallery-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
+.ck.ck-list.ck-math-live-row .ck-button > .ck-math-live-label,
+.ck.ck-list.ck-math-live-grid .ck-button > .ck-math-live-label,
+.ck.ck-list.ck-math-live-swatches .ck-button > .ck-math-live-label,
+.ck.ck-list.ck-math-live-gallery-list .ck-button > .ck-math-live-label {
     justify-content: center;
 }
-.ck.ck-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
+.ck.ck-list .ck-button > .ck-math-live-label {
     justify-content: start;
 }
 /* A group whose entries are previews and nothing else reads as a set, not as a column of

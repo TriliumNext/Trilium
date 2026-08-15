@@ -54,6 +54,14 @@ export const MATH_STRUCTURE_SECTIONS: readonly MathStructureSection[] = [
 			{ insert: '\\frac{\\mathrm{d}#?}{\\mathrm{d}#?}', preview: '\\frac{\\mathrm{d}y}{\\mathrm{d}x}' },
 			{ insert: '\\frac{\\partial #?}{\\partial #?}', preview: '\\frac{\\partial y}{\\partial x}' },
 			{ insert: '\\frac{\\Delta #?}{\\Delta #?}', preview: '\\frac{\\Delta y}{\\Delta x}' },
+			{
+				insert: '\\dfrac{\\mathrm{d}}{\\mathrm{d}x}#?\\bigm|_{x=#?}',
+				preview: '\\dfrac{\\mathrm{d}}{\\mathrm{d}x}f(x)\\bigm|_{x=a}'
+			},
+			{
+				insert: '\\dfrac{\\mathrm{d}^#?}{\\mathrm{d}x^#?}#?\\bigm|_{x=#?}',
+				preview: '\\dfrac{\\mathrm{d}^n}{\\mathrm{d}x^n}f(x)\\bigm|_{x=a}'
+			},
 			{ insert: '\\frac{1}{2}', preview: '\\frac{1}{2}' },
 			{ insert: '\\frac{1}{3}', preview: '\\frac{1}{3}' },
 			{ insert: '\\frac{1}{4}', preview: '\\frac{1}{4}' },
@@ -149,7 +157,13 @@ export const MATH_STRUCTURE_SECTIONS: readonly MathStructureSection[] = [
 			{ insert: '\\tan^{-1}(#?)', preview: '\\tan^{-1}(x)' },
 			{ insert: '\\sinh(#?)', preview: '\\sinh(x)' },
 			{ insert: '\\cosh(#?)', preview: '\\cosh(x)' },
-			{ insert: '\\tanh(#?)', preview: '\\tanh(x)' }
+			{ insert: '\\tanh(#?)', preview: '\\tanh(x)' },
+			// Of a complex variable. MathLive's insert menu gave these a section of their own,
+			// which OneNote has no gallery for; they are functions, and this is the gallery of
+			// functions MathLive does not type for you.
+			{ insert: '\\arg(#?)', preview: '\\arg(z)' },
+			{ insert: '\\Re(#?)', preview: '\\Re(z)' },
+			{ insert: '\\Im(#?)', preview: '\\Im(z)' }
 		]
 	},
 	{
