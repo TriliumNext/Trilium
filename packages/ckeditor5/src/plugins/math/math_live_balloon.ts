@@ -5,8 +5,12 @@
 import {
 	ButtonView,
 	ContextualBalloon,
+	createDropdown,
+	type DropdownView,
 	IconObjectCenter,
 	IconObjectInline,
+	IconTable,
+	_InsertTableView,
 	Plugin,
 	ToolbarView
 } from 'ckeditor5';
@@ -92,6 +96,7 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.ariaLabel = t( 'Equation toolbar' );
 		toolbar.items.add( this._createTypeButton( 'mathTypeInline', IconObjectInline, t( 'Inline equation' ) ) );
 		toolbar.items.add( this._createTypeButton( 'mathTypeDisplay', IconObjectCenter, t( 'Display equation' ) ) );
+		toolbar.items.add( this._createInsertMatrixDropdown( t( 'Insert matrix' ) ) );
 
 		// A click landing on the toolbar's own padding rather than on a button would otherwise
 		// blur the field, committing the equation and taking the balloon down with it. The
@@ -104,6 +109,48 @@ export default class MathLiveBalloon extends Plugin {
 
 		this._view = toolbar;
 		return toolbar;
+	}
+
+	/**
+	 * The matrix picker: CKEditor's own insert-table grid, hosted in a dropdown exactly as the
+	 * table feature hosts it. Picking a size types a `pmatrix` of MathLive placeholders into the
+	 * field, which is what MathLive's built-in matrix menu does too.
+	 */
+	private _createInsertMatrixDropdown( label: string ): DropdownView {
+		const editor = this.editor;
+		const dropdown = createDropdown( editor.locale );
+
+		dropdown.buttonView.set( { label, icon: IconTable, tooltip: true } );
+
+		// Built on first open, like the table feature's — the grid is 100 buttons.
+		let gridView: _InsertTableView | null = null;
+
+		dropdown.on( 'change:isOpen', () => {
+			if ( !gridView ) {
+				gridView = new _InsertTableView( editor.locale );
+				dropdown.panelView.children.add( gridView );
+				gridView.delegate( 'execute' ).to( dropdown );
+
+				dropdown.on( 'execute', () => {
+					/* v8 ignore next 3 -- the handler is only registered once the grid exists */
+					if ( !gridView ) {
+						return;
+					}
+					editor.plugins.get( MathLiveEdit )
+						.insertIntoField( buildMatrixLatex( gridView.rows, gridView.columns ) );
+				} );
+			}
+
+			// Cleared on the way in, never on the way out: picking a size fires `execute`, which
+			// `createDropdown`'s own `closeDropdownOnExecute` turns into `isOpen = false` before
+			// our `execute` handler gets to read the grid. Resetting here would hand it 1 × 1
+			// every time.
+			if ( dropdown.isOpen ) {
+				gridView.reset();
+			}
+		} );
+
+		return dropdown;
 	}
 
 	/**
@@ -135,4 +182,14 @@ export default class MathLiveBalloon extends Plugin {
 
 		return button;
 	}
+}
+
+/**
+ * A parenthesised matrix of that size, every cell a MathLive placeholder so the caret lands in
+ * the first one and `Tab` walks the rest. The same LaTeX MathLive's own "Insert matrix" menu
+ * produces.
+ */
+export function buildMatrixLatex( rows: number, columns: number ): string {
+	const row = Array( columns ).fill( '#?' ).join( ' & ' );
+	return `\\begin{pmatrix}${ Array( rows ).fill( row ).join( '\\\\' ) }\\end{pmatrix}`;
 }

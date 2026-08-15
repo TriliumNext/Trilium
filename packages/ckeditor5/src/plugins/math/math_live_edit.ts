@@ -111,6 +111,24 @@ export default class MathLiveEdit extends Plugin {
 		}
 	}
 
+	/**
+	 * Types LaTeX into the live field at its caret, MathLive's own `#?` placeholders included,
+	 * and hands focus back to it. The model catches up through the usual debounced sync, since
+	 * MathLive reports a programmatic insert as an `input` event like any other edit.
+	 *
+	 * @returns `false` when no field is mounted, so there was nothing to write into.
+	 */
+	public insertIntoField( latex: string ): boolean {
+		const mathfield = this._session?.mathfield;
+		if ( !mathfield?.insert ) {
+			return false;
+		}
+
+		mathfield.insert( latex, { selectionMode: 'item' } );
+		mathfield.focus();
+		return true;
+	}
+
 	/** The seamless entry points: click, horizontal arrows, Backspace/Delete, Enter. */
 	private _enableSeamlessEntry(): void {
 		const editor = this.editor;
@@ -456,6 +474,7 @@ interface MathFieldElement extends HTMLElement {
 	position: number;
 	lastOffset: number;
 	inlineShortcuts?: Record<string, string>;
+	insert?: ( latex: string, options?: { selectionMode?: 'placeholder' | 'after' | 'before' | 'item' } ) => void;
 	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }
 

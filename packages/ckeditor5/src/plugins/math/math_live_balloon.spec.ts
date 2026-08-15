@@ -5,16 +5,17 @@ import {
 	type ButtonView,
 	type ClassicEditor,
 	ContextualBalloon,
+	type DropdownView,
 	Paragraph,
 	type ToolbarView,
 	Typing,
 	_getModelData as getData,
 	_setModelData as setData
 } from 'ckeditor5';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Math from './math.js';
-import MathLiveBalloon from './math_live_balloon.js';
+import MathLiveBalloon, { buildMatrixLatex } from './math_live_balloon.js';
 import MathLiveEdit from './math_live_edit.js';
 import { createTestEditor } from '../../../test/editor-kit.js';
 
@@ -46,12 +47,28 @@ describe( 'MathLiveBalloon', () => {
 		return view.element.classList.contains( 'ck-math-live-balloon' ) ? view as ToolbarView : null;
 	}
 
-	function buttons(): Array<ButtonView> {
+	function items(): Array<unknown> {
 		const toolbar = visibleToolbar();
 		if ( !toolbar ) {
 			throw new Error( 'the balloon is not showing' );
 		}
-		return Array.from( toolbar.items ) as Array<ButtonView>;
+		return Array.from( toolbar.items );
+	}
+
+	/** The two leading type toggles; the matrix picker is a dropdown and comes after them. */
+	function buttons(): Array<ButtonView> {
+		return items().slice( 0, 2 ) as Array<ButtonView>;
+	}
+
+	function matrixDropdown(): DropdownView {
+		return items()[ 2 ] as DropdownView;
+	}
+
+	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
+	function openMatrixGrid(): { dropdown: DropdownView; grid: GridLike } {
+		const dropdown = matrixDropdown();
+		dropdown.isOpen = true;
+		return { dropdown, grid: dropdown.panelView.children.get( 0 ) as unknown as GridLike };
 	}
 
 	async function startEditingSelected(): Promise<void> {
@@ -83,7 +100,7 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		expect( buttons() ).toHaveLength( 2 );
+		expect( items() ).toHaveLength( 3 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -132,6 +149,61 @@ describe( 'MathLiveBalloon', () => {
 		expect( getData( editor.model ) ).toBe( before );
 		// No conversion means no re-entry: the original field is still the live one.
 		expect( domRoot().querySelector( 'math-field' ) ).not.toBeNull();
+	} );
+
+	it( 'offers a matrix picker built on CKEditor\'s insert-table grid', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const dropdown = matrixDropdown();
+		expect( dropdown.buttonView.label ).toBe( 'Insert matrix' );
+		// The grid is 100 buttons, so it is only built once the picker is first opened.
+		expect( dropdown.panelView.children.length ).toBe( 0 );
+
+		// Opening focuses the first box, which is what puts the grid at 1 × 1.
+		const { grid } = openMatrixGrid();
+		expect( grid.rows ).toBe( 1 );
+		expect( grid.columns ).toBe( 1 );
+	} );
+
+	it( 'types the matrix of the picked size into the field, and the model follows', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const insertIntoField = vi.spyOn( editor.plugins.get( MathLiveEdit ), 'insertIntoField' );
+
+		const { grid } = openMatrixGrid();
+		grid.rows = 2;
+		grid.columns = 3;
+		grid.fire( 'execute' );
+
+		// The size picked, not the size the grid happens to hold once the picker has closed.
+		expect( insertIntoField ).toHaveBeenCalledWith( buildMatrixLatex( 2, 3 ) );
+
+		const mathfield = domRoot().querySelector( 'math-field' ) as ( HTMLElement & { value: string } ) | null;
+		expect( mathfield?.value ).toContain( '\\begin{pmatrix}' );
+		// Two rows of three: two column separators per row, one row break between them.
+		expect( mathfield?.value.match( /&/g ) ).toHaveLength( 4 );
+
+		// MathLive reports the programmatic insert as an `input` event, which the session's
+		// debounced sync then writes to the model.
+		await waitFor( () => getData( editor.model ).includes( 'begin{pmatrix}' ) || null );
+	} );
+
+	it( 'starts from a clean 1 × 1 every time the picker opens', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const { dropdown, grid } = openMatrixGrid();
+		grid.rows = 4;
+		grid.columns = 4;
+		dropdown.isOpen = false;
+
+		// Closing leaves the pick alone — reading it is what `execute` does next — so the clean
+		// slate has to come from re-opening.
+		dropdown.isOpen = true;
+		expect( grid.rows ).toBe( 1 );
+		expect( grid.columns ).toBe( 1 );
 	} );
 
 	it( 'comes back for a second edit, reusing the same view', async () => {
@@ -188,6 +260,20 @@ describe( 'MathLiveBalloon', () => {
 		await editor.destroy();
 	} );
 } );
+
+describe( 'buildMatrixLatex', () => {
+	it( 'builds a pmatrix of placeholders, rows separated by \\\\', () => {
+		expect( buildMatrixLatex( 2, 3 ) ).toBe( '\\begin{pmatrix}#? & #? & #?\\\\#? & #? & #?\\end{pmatrix}' );
+		expect( buildMatrixLatex( 1, 1 ) ).toBe( '\\begin{pmatrix}#?\\end{pmatrix}' );
+	} );
+} );
+
+/** The bits of CKEditor's insert-table grid the picker drives. */
+interface GridLike {
+	rows: number;
+	columns: number;
+	fire( event: string ): void;
+}
 
 async function waitFor<T>( check: () => T | null | undefined, timeout = 4000 ): Promise<T> {
 	const start = performance.now();
