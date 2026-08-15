@@ -111,12 +111,28 @@ describe( 'MathLiveEdit', () => {
 		expect( preview?.classList.contains( 'ck-hidden' ) ).toBe( true );
 	} );
 
-	it( 'startEditing without a selected equation inserts an empty one', async () => {
+	it( 'startEditing without a selected equation inserts an empty one, showing a placeholder', async () => {
 		setData( editor.model, '<paragraph>foo[]bar</paragraph>' );
 
 		const mathfield = await startEditingSelected();
 		expect( mathfield.value ).toBe( '' );
 		expect( getData( editor.model ) ).toContain( '<mathtex-inline' );
+
+		// MathLive renders the hint while the field is empty.
+		expect( ( mathfield as unknown as { placeholder: string } ).placeholder )
+			.toBe( '\\text{Type an equation}' );
+		const hint = await waitFor( () => mathfield.shadowRoot?.querySelector( '[part=placeholder]' ) );
+		expect( hint.textContent ).toContain( 'Type an equation' );
+
+		// The hint renders in the note's content font at surrounding-text size — not in
+		// MathLive's system-ui default at the field's 1.21em math scale.
+		domRoot().style.setProperty( '--ck-content-font-family', 'Georgia' );
+		const hintText = await waitFor( () => hint.querySelector( '.ML__text' ) );
+		expect( getComputedStyle( hintText ).fontFamily ).toContain( 'Georgia' );
+		// No text-mode highlight on the hint (MathLive's translucent blue behind \text runs).
+		expect( getComputedStyle( hintText ).backgroundColor ).toBe( 'rgba(0, 0, 0, 0)' );
+		const baseSize = parseFloat( getComputedStyle( domRoot() ).fontSize );
+		expect( parseFloat( getComputedStyle( hint ).fontSize ) ).toBeCloseTo( baseSize, 0 );
 	} );
 
 	it( 'edits in the field sync to the model after the debounce', async () => {

@@ -22,10 +22,13 @@
 
 /* === IN-PLACE WIDGET EDITING === */
 /* 1.21em on both the preview and the field: KaTeX's own scale (.katex { font-size: 1.21em }),
-   which is what reading mode and the pre-MathLive editor rendered equations at. */
+   which is what reading mode and the pre-MathLive editor rendered equations at. MathLive's
+   \text{} (the placeholder hint included) uses its own font variable, defaulting to system-ui;
+   point it at the note's content font instead. */
 .ck-content .ck-math-tex .ck-math-widget-preview,
 .ck-content .ck-math-tex math-field {
     font-size: 1.21em;
+    --text-font-family: var(--ck-content-font-family, var(--detail-font-family, system-ui, sans-serif));
 }
 .ck-content .ck-math-tex math-field {
     display: inline-block;
@@ -36,6 +39,14 @@
     color: inherit;
     min-width: 1em;
     max-width: 100%;
+    /* MathLive tints the box holding the caret light blue by default — in an empty field,
+       the entire placeholder area — and \text{} runs (the placeholder hint included) with
+       another translucent blue to mark text mode. */
+    --contains-highlight-background-color: transparent;
+    /* Both names: MathLive's light-mode rule reads --highlight-text, its dark-mode rule
+       --text-highlight-background-color. */
+    --highlight-text: transparent;
+    --text-highlight-background-color: transparent;
 }
 /* MathLive's shadow :host(:focus-within) draws the platform-native focus ring (outline: auto),
    whatever accent color the OS has. The caret and the balloon already mark the editing state. */
@@ -50,6 +61,13 @@
 .ck-content .ck-math-tex math-field::part(container),
 .ck-content .ck-math-tex math-field::part(content) {
     padding: 0;
+}
+/* The hint inherits the field's 1.21em math scale; renormalize it to surrounding-text size,
+   and color it exactly like CKEditor's own editable placeholder. */
+.ck-content .ck-math-tex math-field::part(placeholder) {
+    color: var(--ck-color-engine-placeholder-text);
+    font-size: calc(1em / 1.21);
+    padding-inline: 0.4em;
 }
 .ck-content .ck-math-tex-inline .ck-math-widget-preview {
     display: inline-block;

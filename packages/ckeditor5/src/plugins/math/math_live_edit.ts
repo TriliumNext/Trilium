@@ -297,6 +297,8 @@ export default class MathLiveEdit extends Plugin {
 		mathfield.setAttribute( 'tabindex', '0' );
 		mathfield.defaultMode = display ? 'math' : 'inline-math';
 		mathfield.mathVirtualKeyboardPolicy = 'auto';
+		// Shown by MathLive while the field is empty, i.e. in a freshly inserted equation.
+		mathfield.placeholder = `\\text{${ escapeLatexText( editor.t( 'Type an equation' ) ) }}`;
 		mathfield.value = String( element.getAttribute( 'equation' ) ?? '' );
 		body.appendChild( mathfield );
 
@@ -502,6 +504,7 @@ interface MathFieldElement extends HTMLElement {
 	readOnly: boolean;
 	defaultMode: 'inline-math' | 'math' | 'text';
 	mathVirtualKeyboardPolicy: string;
+	placeholder: string;
 	position: number;
 	lastOffset: number;
 	inlineShortcuts?: Record<string, string>;
@@ -522,6 +525,14 @@ function safeFocus( mathfield: MathFieldElement ): void {
 	} catch {
 		mathfield.focus();
 	}
+}
+
+/**
+ * Makes a translated string safe to embed in a LaTeX `\text{…}`: characters with an escape get
+ * one, the few without (group braces, backslash, superscript/tie markers) are dropped.
+ */
+function escapeLatexText( text: string ): string {
+	return text.replace( /[\\{}^~]/g, '' ).replace( /([%$#&_])/g, '\\$1' );
 }
 
 function isMathtex( node: ModelNode | null ): node is ModelElement {
