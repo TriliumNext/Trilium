@@ -11,27 +11,34 @@ import {
 	type DropdownView,
 	IconObjectCenter,
 	IconObjectInline,
+	IconPlus,
 	IconTable,
 	IconTableCellProperties,
 	IconTableColumn,
 	IconTableRow,
 	_InsertTableView,
 	type ListDropdownButtonDefinition,
+	ListItemView,
+	ListItemGroupView,
+	ListView,
 	Plugin,
 	ToolbarView,
 	ViewModel
 } from 'ckeditor5';
+import MathLiveLabelView from './mathlive_label_view.js';
 import MathLiveEdit, {
 	type MathLiveSessionEndEvent,
 	type MathLiveSessionStartEvent
 } from './math_live_edit.js';
 import {
-	getMatrixActionLabel,
-	getMatrixActionState,
-	MATRIX_ACTION_UNAVAILABLE,
-	type MatrixActionId,
-	type MatrixMenuField
-} from './mathlive_matrix.js';
+	getMenuItemLabel,
+	getMenuItemState,
+	MENU_ITEM_UNAVAILABLE,
+	type MathLiveMenuItemId,
+	type MathLiveMenuField,
+	getSubmenuEntries,
+	runMenuItem
+} from './mathlive_menu.js';
 
 /** The commands the balloon's type toggles run; both are registered by `MathEditing`. */
 type MathTypeCommandName = 'mathTypeInline' | 'mathTypeDisplay';
@@ -50,8 +57,8 @@ type MatrixCommand =
 	| [ 'setEnvironment', MatrixEnvironment ];
 
 /** One entry of a matrix dropdown, and the MathLive menu item whose state it follows. */
-interface MatrixAction {
-	id: MatrixActionId;
+interface MenuAction {
+	id: MathLiveMenuItemId;
 	command: MatrixCommand;
 
 	/**
@@ -61,14 +68,33 @@ interface MatrixAction {
 	label?: string;
 }
 
-/** A dropdown and the models of its entries, so both can follow the caret. */
-interface MatrixGroup {
+/** A dropdown and the entries of its list, so both can follow the caret. */
+interface MenuGroup {
 	dropdown: DropdownView;
-	items: Array<{ model: ViewModel; id: MatrixActionId; ownLabel: boolean }>;
+	items: Array<MenuGroupEntry>;
+
+	/** Set on a group laid out from a MathLive submenu, which needs a field before it can be. */
+	submenu?: { id: MathLiveMenuItemId; list: ListView };
+}
+
+interface MenuGroupEntry {
+	/** The list's own model where CKEditor builds it, the button itself where we do. */
+	target: MenuBoundTarget;
+	id: MathLiveMenuItemId;
+
+	/** Whether the entry was given wording of ours, rather than taking MathLive's. */
+	ownLabel: boolean;
+}
+
+/** The little of `ViewModel`/`ButtonView` a group entry is driven through. */
+interface MenuBoundTarget {
+	label?: string | undefined;
+	set( values: object ): void;
+	set( name: string, value: unknown ): void;
 }
 
 /** The live field, seen as the two things the balloon asks of it. */
-type LiveMathField = HTMLElement & MatrixMenuField & {
+type LiveMathField = HTMLElement & MathLiveMenuField & {
 	executeCommand?: ( command: MatrixCommand ) => boolean;
 };
 
@@ -88,7 +114,7 @@ export default class MathLiveBalloon extends Plugin {
 	private _fieldListeners: AbortController | null = null;
 	private _resizeObserver: ResizeObserver | null = null;
 
-	private readonly _matrixGroups: Array<MatrixGroup> = [];
+	private readonly _menuGroups: Array<MenuGroup> = [];
 
 	public init(): void {
 		const mathLiveEdit = this.editor.plugins.get( MathLiveEdit );
@@ -155,7 +181,7 @@ export default class MathLiveBalloon extends Plugin {
 		this._mathfield = mathfield;
 		this._fieldListeners = new AbortController();
 
-		const refresh = () => this._refreshMatrixGroups();
+		const refresh = () => this._refreshMenuGroups();
 		const options = { signal: this._fieldListeners.signal };
 		mathfield.addEventListener( 'selection-change', refresh, options );
 		mathfield.addEventListener( 'input', refresh, options );
@@ -170,7 +196,7 @@ export default class MathLiveBalloon extends Plugin {
 		} );
 		this._resizeObserver.observe( mathfield );
 
-		this._refreshMatrixGroups();
+		this._refreshMenuGroups();
 	}
 
 	private _releaseField(): void {
@@ -179,7 +205,7 @@ export default class MathLiveBalloon extends Plugin {
 		this._fieldListeners?.abort();
 		this._fieldListeners = null;
 		this._mathfield = null;
-		this._refreshMatrixGroups();
+		this._refreshMenuGroups();
 	}
 
 	private _updateBalloonPosition(): void {
@@ -192,24 +218,30 @@ export default class MathLiveBalloon extends Plugin {
 	}
 
 	/** Hides each entry MathLive would hide, and each group whose entries all went. */
-	private _refreshMatrixGroups(): void {
-		for ( const group of this._matrixGroups ) {
+	private _refreshMenuGroups(): void {
+		for ( const group of this._menuGroups ) {
 			let anyVisible = false;
+
+			// A group read from a submenu has nothing in it until a field turns up to read.
+			this._buildSubmenuGroup( group );
 
 			for ( const item of group.items ) {
 				const state = this._mathfield ?
-					getMatrixActionState( this._mathfield, item.id ) :
-					MATRIX_ACTION_UNAVAILABLE;
+					getMenuItemState( this._mathfield, item.id ) :
+					MENU_ITEM_UNAVAILABLE;
 
-				item.model.set( { isVisible: state.visible, isEnabled: state.enabled } );
+				item.target.set( { isVisible: state.visible, isEnabled: state.enabled } );
 				anyVisible ||= state.visible;
 
 				// An entry with no wording of ours takes MathLive's, which is only there to be
-				// read once a field is mounted — and, for the previews, changes with the caret.
-				if ( !item.ownLabel && this._mathfield ) {
-					const label = getMatrixActionLabel( this._mathfield, item.id );
+				// read once a field is mounted. Read once and kept: resolving an insert label
+				// runs `convertLatexToMarkup()`, too much to repeat for thirteen entries on
+				// every keystroke. The labels that redraw themselves around the current
+				// selection — the accents — will need this to become conditional.
+				if ( !item.ownLabel && !item.target.label && this._mathfield ) {
+					const label = getMenuItemLabel( this._mathfield, item.id );
 					if ( label !== null ) {
-						item.model.set( 'label', label );
+						item.target.set( 'label', label );
 					}
 				}
 			}
@@ -220,7 +252,7 @@ export default class MathLiveBalloon extends Plugin {
 		}
 	}
 
-	private _runMatrixCommand( command: MatrixCommand ): void {
+	private _runFieldCommand( command: MatrixCommand ): void {
 		const mathfield = this._mathfield;
 		/* v8 ignore next 3 -- the entry is only reachable while a field is being tracked */
 		if ( !mathfield?.executeCommand ) {
@@ -230,7 +262,7 @@ export default class MathLiveBalloon extends Plugin {
 		mathfield.executeCommand( command );
 		// The command moved the caret into the new row or column; keep typing going there.
 		mathfield.focus();
-		this._refreshMatrixGroups();
+		this._refreshMenuGroups();
 	}
 
 	private _getView(): ToolbarView {
@@ -246,12 +278,13 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.ariaLabel = t( 'Equation toolbar' );
 		toolbar.items.add( this._createTypeButton( 'mathTypeInline', IconObjectInline, t( 'Inline equation' ) ) );
 		toolbar.items.add( this._createTypeButton( 'mathTypeDisplay', IconObjectCenter, t( 'Display equation' ) ) );
+		toolbar.items.add( this._createInsertGroup( t( 'Insert' ) ) );
 		toolbar.items.add( this._createInsertMatrixDropdown( t( 'Insert matrix' ) ) );
 
 		// Column before row, and the same wording, as the table feature's own pair of dropdowns.
 		// Both stay out of the way until the caret is inside a matrix.
 		const isContentLtr = editor.locale.contentLanguageDirection === 'ltr';
-		toolbar.items.add( this._createMatrixGroup( t( 'Column' ), IconTableColumn, [
+		toolbar.items.add( this._createMenuGroup( t( 'Column' ), IconTableColumn, [
 			{
 				id: 'add-column-before',
 				command: 'addColumnBefore',
@@ -264,7 +297,7 @@ export default class MathLiveBalloon extends Plugin {
 			},
 			{ id: 'delete-column', command: 'removeColumn', label: t( 'Delete column' ) }
 		] ) );
-		toolbar.items.add( this._createMatrixGroup( t( 'Row' ), IconTableRow, [
+		toolbar.items.add( this._createMenuGroup( t( 'Row' ), IconTableRow, [
 			{ id: 'add-row-above', command: 'addRowBefore', label: t( 'Insert row above' ) },
 			{ id: 'add-row-below', command: 'addRowAfter', label: t( 'Insert row below' ) },
 			{ id: 'delete-row', command: 'removeRow', label: t( 'Delete row' ) }
@@ -272,7 +305,7 @@ export default class MathLiveBalloon extends Plugin {
 
 		// The brackets around the array. No labels of ours: MathLive draws each option as the
 		// bracket it stands for, wrapped around a `⋱`, which says it better than words would.
-		toolbar.items.add( this._createMatrixGroup( t( 'Borders' ), IconTableCellProperties, [
+		toolbar.items.add( this._createMenuGroup( t( 'Borders' ), IconTableCellProperties, [
 			{ id: 'environment-no-border', command: [ 'setEnvironment', 'matrix' ] },
 			{ id: 'environment-parentheses', command: [ 'setEnvironment', 'pmatrix' ] },
 			{ id: 'environment-brackets', command: [ 'setEnvironment', 'bmatrix' ] },
@@ -336,16 +369,99 @@ export default class MathLiveBalloon extends Plugin {
 	}
 
 	/**
+	 * The structures MathLive knows how to insert — an absolute value, an integral, a conjugate —
+	 * each drawn as itself. The entries are built by hand rather than through
+	 * `addListToDropdown()`: their labels are MathLive's rendered markup, and the list views
+	 * CKEditor builds from definitions show a label as text.
+	 *
+	 * The LaTeX behind each lives only inside the declaration's own handler, so unlike the other
+	 * groups these run through it rather than through a documented command.
+	 */
+	private _createInsertGroup( label: string ): DropdownView {
+		const locale = this.editor.locale;
+		const dropdown = createDropdown( locale );
+		const list = new ListView( locale );
+
+		dropdown.buttonView.set( { label, icon: IconPlus, tooltip: true } );
+		dropdown.panelView.children.add( list );
+
+		// Filled in from the field's own menu, once there is a field to read it from.
+		this._menuGroups.push( { dropdown, items: [], submenu: { id: 'insert', list } } );
+		return dropdown;
+	}
+
+	/**
+	 * Lays the entries of a MathLive submenu out as a list: its sections become labelled groups,
+	 * its captions their labels, and each entry a button drawing MathLive's own markup. Read once
+	 * — the shape and the previews are the same for as long as the locale is.
+	 */
+	private _buildSubmenuGroup( group: MenuGroup ): void {
+		const mathfield = this._mathfield;
+		const submenu = group.submenu;
+
+		if ( !mathfield || !submenu || group.items.length ) {
+			return;
+		}
+
+		const locale = this.editor.locale;
+		let section: ListView | ListItemGroupView = submenu.list;
+
+		for ( const entry of getSubmenuEntries( mathfield, submenu.id ) ) {
+			if ( entry.isHeading ) {
+				section = new ListItemGroupView( locale );
+				section.label = entry.label ?? '';
+				submenu.list.items.add( section );
+				continue;
+			}
+
+			/* v8 ignore next 3 -- every non-heading entry of these submenus carries an id */
+			if ( !entry.id ) {
+				continue;
+			}
+
+			const id = entry.id as MathLiveMenuItemId;
+			const button = new ButtonView( locale, new MathLiveLabelView( locale ) );
+
+			button.set( { withText: true, label: entry.label ?? '', isVisible: false, isEnabled: false } );
+			button.on( 'execute', () => this._runMenuItem( id ) );
+			// Closing the dropdown is the default behaviour of an `execute` it can hear, and a
+			// button nested in a group would not reach it on its own.
+			button.delegate( 'execute' ).to( group.dropdown );
+
+			const listItem = new ListItemView( locale );
+			listItem.children.add( button );
+			listItem.bind( 'isVisible' ).to( button, 'isVisible' );
+			section.items.add( listItem );
+
+			// The label came with the entry, so the refresh has only its state left to follow.
+			group.items.push( { target: button, id, ownLabel: true } );
+		}
+	}
+
+	private _runMenuItem( id: MathLiveMenuItemId ): void {
+		const mathfield = this._mathfield;
+		/* v8 ignore next 3 -- the entry is only reachable while a field is being tracked */
+		if ( !mathfield ) {
+			return;
+		}
+
+		runMenuItem( mathfield, id );
+		// The insert leaves the caret in the structure's first placeholder; keep typing there.
+		mathfield.focus();
+		this._refreshMenuGroups();
+	}
+
+	/**
 	 * One of the matrix groups — a dropdown listing what can be done to a column, to a row, or to
 	 * the brackets around the whole thing, in the shape the table feature gives its own
 	 * `tableColumn`/`tableRow` dropdowns. Every entry follows the MathLive menu item of the same
 	 * name, so an action that does not apply where the caret is disappears rather than sitting
 	 * there dead.
 	 */
-	private _createMatrixGroup( label: string, icon: string, actions: Array<MatrixAction> ): DropdownView {
+	private _createMenuGroup( label: string, icon: string, actions: Array<MenuAction> ): DropdownView {
 		const dropdown = createDropdown( this.editor.locale );
 		const definitions = new Collection<ListDropdownButtonDefinition>();
-		const items: MatrixGroup['items'] = [];
+		const items: MenuGroup['items'] = [];
 
 		dropdown.buttonView.set( { label, icon, tooltip: true } );
 
@@ -359,7 +475,7 @@ export default class MathLiveBalloon extends Plugin {
 			} );
 
 			definitions.add( { type: 'button', model } );
-			items.push( { model, id: action.id, ownLabel: action.label !== undefined } );
+			items.push( { target: model, id: action.id, ownLabel: action.label !== undefined } );
 		}
 
 		addListToDropdown( dropdown, definitions );
@@ -370,10 +486,10 @@ export default class MathLiveBalloon extends Plugin {
 			if ( !command ) {
 				return;
 			}
-			this._runMatrixCommand( command );
+			this._runFieldCommand( command );
 		} );
 
-		this._matrixGroups.push( { dropdown, items } );
+		this._menuGroups.push( { dropdown, items } );
 		return dropdown;
 	}
 

@@ -6,7 +6,8 @@ import {
 	type ClassicEditor,
 	ContextualBalloon,
 	type DropdownView,
-	type ListItemView,
+	ListItemGroupView,
+	ListItemView,
 	type ListView,
 	Paragraph,
 	type ToolbarView,
@@ -63,7 +64,7 @@ describe( 'MathLiveBalloon', () => {
 	}
 
 	function matrixDropdown(): DropdownView {
-		return items()[ 2 ] as DropdownView;
+		return items()[ 3 ] as DropdownView;
 	}
 
 	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
@@ -73,16 +74,29 @@ describe( 'MathLiveBalloon', () => {
 		return { dropdown, grid: dropdown.panelView.children.get( 0 ) as unknown as GridLike };
 	}
 
-	/** The column, row and borders groups, in toolbar order. */
-	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 3 ) as [ DropdownView, DropdownView, DropdownView ];
+	function insertGroup(): DropdownView {
+		return items()[ 2 ] as DropdownView;
 	}
 
-	/** A group's entries. `addListToDropdown` builds the list on first open, so open it. */
+	/** The column, row and borders groups, in toolbar order. */
+	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
+		return items().slice( 4 ) as [ DropdownView, DropdownView, DropdownView ];
+	}
+
+	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
 	function groupEntries( dropdown: DropdownView ): Array<ButtonView> {
 		dropdown.isOpen = true;
 		const list = dropdown.panelView.children.get( 0 ) as ListView;
-		return Array.from( list.items ).map( item => ( item as ListItemView ).children.get( 0 ) as ButtonView );
+		return collectButtons( list.items );
+	}
+
+	/** The captions of a group's sections, in order. */
+	function groupSections( dropdown: DropdownView ): Array<string> {
+		dropdown.isOpen = true;
+		const list = dropdown.panelView.children.get( 0 ) as ListView;
+		return Array.from( list.items )
+			.filter( item => item instanceof ListItemGroupView )
+			.map( item => ( item as ListItemGroupView ).label );
 	}
 
 	function liveField(): HTMLElement & { value: string } {
@@ -128,8 +142,8 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles, the matrix picker, and the column, row and borders groups.
-		expect( items() ).toHaveLength( 6 );
+		// Two toggles, the insert group, the matrix picker, and the column, row and borders groups.
+		expect( items() ).toHaveLength( 7 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -293,6 +307,67 @@ describe( 'MathLiveBalloon', () => {
 		expect( deleteColumn?.isEnabled ).toBe( true );
 	} );
 
+	it( 'draws each insert entry as the structure it would insert', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const insert = insertGroup();
+		expect( insert.buttonView.label ).toBe( 'Insert' );
+
+		const entries = groupEntries( insert );
+		expect( entries ).toHaveLength( 13 );
+
+		// The sections and their captions are MathLive's own, read off the submenu rather than
+		// restated here — which is what keeps them localized.
+		expect( groupSections( insert ) ).toEqual( [ 'Calculus', 'Complex Numbers' ] );
+
+		// MathLive's label is markup: a rendering of the structure, then its name. Both have to
+		// survive into the DOM as elements rather than as the text of the markup itself.
+		const [ abs ] = entries;
+		expect( abs.label ).toContain( 'ML__insert-template' );
+		expect( abs.element?.querySelector( '.ML__insert-template' ) ).not.toBeNull();
+		expect( abs.element?.querySelector( '.ML__insert-label' )?.textContent ).toBeTruthy();
+		expect( abs.element?.textContent ).not.toContain( '<span' );
+	} );
+
+	it( 'gives every insert entry room for what it draws', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const entries = groupEntries( insertGroup() );
+
+		// A display fraction or an integral's limits paint outside the line box MathLive's struts
+		// reserve, so the row has to be roomy enough to hold them; otherwise they land on the
+		// entry above. Struts themselves are excluded — they position things and draw nothing.
+		const spilling = entries
+			.map( entry => {
+				const element = entry.element as HTMLElement;
+				const ink = inkExtent( element );
+				const box = element.getBoundingClientRect();
+				return {
+					label: element.textContent?.trim(),
+					above: ink.top - box.top,
+					below: box.bottom - ink.bottom
+				};
+			} )
+			.filter( entry => entry.above < 0 || entry.below < 0 );
+
+		expect( spilling ).toEqual( [] );
+	} );
+
+	it( 'inserts the picked structure at the caret, and the model follows', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const entries = groupEntries( insertGroup() );
+		const integral = entries[ 5 ];
+
+		integral.fire( 'execute' );
+
+		expect( liveField().value ).toContain( '\\int' );
+		await waitFor( () => getData( editor.model ).includes( 'int' ) || null );
+	} );
+
 	it( 'offers the brackets as MathLive draws them, and switches the array to the one picked', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
@@ -402,6 +477,47 @@ describe( 'buildMatrixLatex', () => {
 		expect( buildMatrixLatex( 1, 1 ) ).toBe( '\\begin{pmatrix}#?\\end{pmatrix}' );
 	} );
 } );
+
+/**
+ * How far the rendered equation inside an entry actually paints. Only leaves carrying glyphs
+ * count, plus the rules a fraction and a radical draw: MathLive's struts (`ML__pstrut` and
+ * friends) are invisible boxes that position the rest, and they reach far outside on purpose.
+ */
+function inkExtent( element: HTMLElement ): { top: number; bottom: number } {
+	let top = Infinity;
+	let bottom = -Infinity;
+
+	for ( const node of element.querySelectorAll( '*' ) ) {
+		const paints = ( node.children.length === 0 && ( node.textContent ?? '' ).trim() !== '' ) ||
+			node.classList.contains( 'ML__frac-line' ) ||
+			node.classList.contains( 'ML__sqrt-line' );
+
+		if ( !paints ) {
+			continue;
+		}
+
+		const box = node.getBoundingClientRect();
+		top = globalThis.Math.min( top, box.top );
+		bottom = globalThis.Math.max( bottom, box.bottom );
+	}
+
+	return { top, bottom };
+}
+
+/** Every button of a list, descending into the sections a grouped list nests them in. */
+function collectButtons( items: Iterable<unknown> ): Array<ButtonView> {
+	const buttons: Array<ButtonView> = [];
+
+	for ( const item of items ) {
+		if ( item instanceof ListItemGroupView ) {
+			buttons.push( ...collectButtons( item.items ) );
+		} else if ( item instanceof ListItemView ) {
+			buttons.push( item.children.get( 0 ) as ButtonView );
+		}
+	}
+
+	return buttons;
+}
 
 /** The bits of CKEditor's insert-table grid the picker drives. */
 interface GridLike {

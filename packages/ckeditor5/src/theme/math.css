@@ -68,9 +68,11 @@
     width: 100%;
     line-height: normal;
 }
+/* A display fraction or an integral's limits paint outside the line box MathLive's struts
+   reserve — by a few pixels at the top and bottom, the way they would in running text. The row
+   has to leave them somewhere to go, or they land on the entry above. */
 .ck.ck-list .ck-button:has(> .ck-math-live-label) {
-    padding-top: 0.4em;
-    padding-bottom: 0.4em;
+    padding-block: 0.4em;
 }
 .ck.ck-list .ck-math-live-label .ML__insert-template {
     flex: 0 0 auto;
