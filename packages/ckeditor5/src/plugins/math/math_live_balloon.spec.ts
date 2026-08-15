@@ -507,6 +507,13 @@ describe( 'MathLiveBalloon', () => {
 		// tell apart, and the one already set is easier to spot down a column.
 		expect( groupLayout( fontStyleGroup() ).display ).toBe( 'block' );
 
+		// Stacked, the previews line up where a list's labels go rather than each centring in
+		// its own row; a preview alone in a grid cell still centres.
+		const stacked = groupEntries( fontStyleGroup() )[ 0 ].element?.querySelector( '.ck-math-live-label' );
+		const celled = groupEntries( accentGroup() )[ 0 ].element?.querySelector( '.ck-math-live-label' );
+		expect( getComputedStyle( stacked as HTMLElement ).justifyContent ).toBe( 'start' );
+		expect( getComputedStyle( celled as HTMLElement ).justifyContent ).toBe( 'center' );
+
 		// The entries themselves have to give up the 15em CKEditor holds a list item to, or the
 		// four columns would be as wide as four sentences.
 		const item = groupEntries( accentGroup() )[ 0 ].element?.closest( '.ck-list__item' );
@@ -562,8 +569,28 @@ describe( 'MathLiveBalloon', () => {
 		// `\bm` is what the preview is drawn with; applying the style writes `\mathbf`.
 		expect( liveField().value ).toContain( '\\mathbf' );
 
-		// And having set it, the entry says so.
+		// And having set it, the entry says so — with a tick of its own rather than by lighting
+		// up, which is what a checkable row does.
 		await waitFor( () => bold?.isOn || null );
+		expect( bold?.element?.getAttribute( 'role' ) ).toBe( 'menuitemcheckbox' );
+		expect( bold?.element?.querySelector( '.ck-list-item-button__check-icon' ) ).not.toBeNull();
+	} );
+
+	it( 'keeps the font-style labels in a line, ticked or not', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => fontStyleGroup().class === undefined || null );
+
+		// One checkable entry indents the whole group, or the ticked ones would sit a column to
+		// the right of the rest. The groups with nothing to tick keep their space.
+		const styles = groupEntries( fontStyleGroup() ) as Array<ButtonView & { hasCheckSpace: boolean }>;
+		expect( styles.every( entry => entry.hasCheckSpace ) ).toBe( true );
+
+		const accents = groupEntries( accentGroup() ) as Array<ButtonView & { hasCheckSpace: boolean }>;
+		expect( accents.some( entry => entry.hasCheckSpace ) ).toBe( false );
 	} );
 
 	it( 'names each font style, since the drawing alone does not', async () => {

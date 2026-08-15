@@ -21,6 +21,7 @@ import {
 	IconTableRow,
 	_InsertTableView,
 	type ListDropdownButtonDefinition,
+	ListItemButtonView,
 	ListItemView,
 	ListItemGroupView,
 	ListView,
@@ -470,7 +471,7 @@ export default class MathLiveBalloon extends Plugin {
 			}
 
 			const id = entry.id as MathLiveMenuItemId;
-			const button = new ButtonView( locale, new MathLiveLabelView( locale ) );
+			const button = new ListItemButtonView( locale, new MathLiveLabelView( locale ) );
 
 			button.set( {
 				withText: true,
@@ -479,7 +480,11 @@ export default class MathLiveBalloon extends Plugin {
 				// wording does, and only these entries carry any.
 				tooltip: entry.tooltip ?? false,
 				// The style entries report whether the selection already carries what they set.
+				// A checkable row says so with a tick of its own rather than by lighting up,
+				// which is what `ListItemButtonView` is for — and how the AI assistant's picker
+				// marks its current choice.
 				isToggleable: entry.isToggleable,
+				role: entry.isToggleable ? 'menuitemcheckbox' : undefined,
 				isVisible: false,
 				isEnabled: false
 			} );
@@ -496,6 +501,16 @@ export default class MathLiveBalloon extends Plugin {
 			// The label came with the entry: the refresh has only its state left to follow,
 			// unless the group redraws itself around the selection.
 			group.items.push( { target: button, id, ownLabel: false } );
+		}
+
+		// One checkable entry and the whole group indents, so the labels stay in a line rather
+		// than the ticked ones sitting a column to the right. CKEditor does this for the lists
+		// it builds from definitions; this one is built by hand, for the sake of the labels.
+		const buttons = group.items.map( item => item.target ).filter( isListItemButton );
+		if ( buttons.some( button => button.isToggleable ) ) {
+			for ( const button of buttons ) {
+				button.hasCheckSpace = true;
+			}
 		}
 	}
 
@@ -583,6 +598,10 @@ export default class MathLiveBalloon extends Plugin {
 
 		return button;
 	}
+}
+
+function isListItemButton( target: MenuBoundTarget ): target is ListItemButtonView {
+	return target instanceof ListItemButtonView;
 }
 
 /**

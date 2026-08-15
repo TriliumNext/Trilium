@@ -110,9 +110,14 @@
 .ck.ck-list .ck-button:has(> .ck-math-live-label) {
     padding-block: 0.4em;
 }
-/* An accent is its own label — there is no name beside it to push it left of. */
-.ck.ck-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
+/* A preview alone in a cell centres in it; one in a row of a list stays where a list's labels
+   are, at the start, and lines up with the entries above and below it. */
+.ck.ck-list.ck-math-live-row .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
+.ck.ck-list.ck-math-live-grid .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
     justify-content: center;
+}
+.ck.ck-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
+    justify-content: start;
 }
 .ck.ck-list .ck-math-live-label .ML__insert-template {
     flex: 0 0 auto;
