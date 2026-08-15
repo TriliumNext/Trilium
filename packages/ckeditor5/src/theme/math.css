@@ -214,15 +214,6 @@ body #mathlive-suggestion-popover .ML__popover__keybinding {
 .ck.ck-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
     justify-content: start;
 }
-.ck.ck-list .ck-math-live-label .ML__insert-template {
-    flex: 0 0 auto;
-}
-.ck.ck-list .ck-math-live-label .ML__insert-label {
-    flex: 1 1 auto;
-    text-align: right;
-    white-space: nowrap;
-}
-
 /* A group whose entries are previews and nothing else reads as a set, not as a column of
    sentences. CKEditor lists are built for the latter: they stack their items and hold each to
    15em, both of which have to go before the entries can sit side by side. */
@@ -307,9 +298,8 @@ body #mathlive-suggestion-popover .ML__popover__keybinding {
     text-align: center;
     width: auto;
     padding: 0;
-    --ck-font-size-base: 1.3rem;
-    --ck-line-height-base: var(--ck-font-size-base);
-    font-size: var(--ck-font-size-base);
+    font-size: 1.2rem;
+    line-height: 1.2;
 }
 
 /* A swatch's whole label is `<span style="background: …">`, sized by MathLive against its own
