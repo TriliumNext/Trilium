@@ -27,8 +27,10 @@ import {
 	ListItemView,
 	ListItemGroupView,
 	ListView,
+	type Locale,
 	Plugin,
 	ToolbarView,
+	View,
 	ViewModel
 } from 'ckeditor5';
 import MathLiveLabelView from './mathlive_label_view.js';
@@ -533,7 +535,8 @@ export default class MathLiveBalloon extends Plugin {
 		// button: the category is what someone browsing already has in mind, so it is worth a
 		// press of its own rather than a scroll past eight others. Last in the toolbar, after
 		// everything that acts on the equation already in the field — these only ever add to it,
-		// and there are nine of them.
+		// and there are nine of them, which is a row of their own.
+		toolbar.items.add( new ToolbarLineBreakView( editor.locale ) );
 		for ( const section of MATH_SYMBOL_SECTIONS ) {
 			toolbar.items.add( this._createSymbolGroup( section ) );
 		}
@@ -939,6 +942,24 @@ export default class MathLiveBalloon extends Plugin {
 		} );
 
 		return button;
+	}
+}
+
+/**
+ * A break between two rows of a toolbar: a `flex-basis: 100%` item that fills the line it lands
+ * on, pushing everything after it onto the next one. This is what CKEditor's own `'-'` toolbar
+ * separator produces, and `.ck-toolbar__line-break` is styled by its stylesheet — but the class
+ * behind it, `ToolbarLineBreakView`, is missing from the `ckeditor5` package's typings, and it is
+ * three lines. Reproduced rather than imported through a cast.
+ */
+class ToolbarLineBreakView extends View {
+	constructor( locale?: Locale ) {
+		super( locale );
+
+		this.setTemplate( {
+			tag: 'span',
+			attributes: { class: [ 'ck', 'ck-toolbar__line-break' ] }
+		} );
 	}
 }
 

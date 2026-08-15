@@ -198,6 +198,10 @@
     min-width: 4em;
 }
 
+.ck.ck-toolbar.ck-math-live-balloon {
+    max-width: var(--ck-math-balloon-max-width, 44em);
+}
+
 .ck.ck-list.ck-math-live-symbols {
     display: grid;
     width: max-content;
@@ -224,8 +228,10 @@
     min-width: 1em;
     text-align: center;
     width: auto;
-    font-size: 1rem;
     padding: 0;
+    --ck-font-size-base: 1.3rem;
+    --ck-line-height-base: var(--ck-font-size-base);
+    font-size: var(--ck-font-size-base);
 }
 
 /* A swatch's whole label is `<span style="background: …">`, sized by MathLive against its own

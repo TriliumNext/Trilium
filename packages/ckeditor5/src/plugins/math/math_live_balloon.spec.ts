@@ -110,7 +110,7 @@ describe( 'MathLiveBalloon', () => {
 
 	/** One per symbol category, in the order the table declares them; last in the toolbar. */
 	function symbolGroups(): Array<DropdownView> {
-		return items().slice( 13 ) as Array<DropdownView>;
+		return items().slice( 14 ) as Array<DropdownView>;
 	}
 
 	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
@@ -200,9 +200,9 @@ describe( 'MathLiveBalloon', () => {
 		const [ inline, display ] = buttons();
 
 		// Two toggles; the insert, accent, decoration, colour, background, mode and font-style
-		// groups; the matrix picker; the column, row and borders groups; and a button per symbol
-		// category, at the end.
-		expect( items() ).toHaveLength( 13 + MATH_SYMBOL_SECTIONS.length );
+		// groups; the matrix picker; the column, row and borders groups; a line break; and a
+		// button per symbol category, on the row that break opens.
+		expect( items() ).toHaveLength( 14 + MATH_SYMBOL_SECTIONS.length );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -468,6 +468,25 @@ describe( 'MathLiveBalloon', () => {
 		plusMinus.fire( 'execute' );
 		expect( liveField().value ).toContain( '\\pm' );
 		await waitFor( () => getData( editor.model ).includes( 'pm' ) || null );
+	} );
+
+	it( 'breaks the toolbar so the categories always start a row of their own', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+
+		// A `flex-basis: 100%` item that fills whatever is left of the line it lands on, which is
+		// what CKEditor's own `'-'` toolbar separator inserts. It sits between the last matrix
+		// group and the first category, so the categories open a row rather than trailing the
+		// one before. (The rule behind the class is CKEditor's, and its stylesheet is not loaded
+		// here — only the presence and the placement are ours to check.)
+		const [ lineBreak ] = items().slice( 13, 14 ) as Array<{ element?: HTMLElement }>;
+		expect( lineBreak.element?.classList.contains( 'ck-toolbar__line-break' ) ).toBe( true );
+
+		// Wrapping is `.ck-toolbar__items`' default, but only ever within a width: without a cap
+		// the balloon is shrink-to-fit and grows to hold all of it on one line.
+		const toolbar = visibleToolbar()?.element as HTMLElement;
+		expect( getComputedStyle( toolbar ).maxWidth ).not.toBe( 'none' );
 	} );
 
 	it( 'lays a symbol category out as a grid of cells sized by their glyphs', async () => {
