@@ -202,11 +202,10 @@
     display: grid;
     width: max-content;
     grid-template-columns: repeat(8, minmax(2.2em, 1fr));
-    gap: var(--ck-spacing-tiny);
-    padding: var(--ck-spacing-small);
     max-height: 22em;
     overflow-y: auto;
     scrollbar-width: thin;
+    --ck-font-size-base: 1.4rem;
 
     span {
         cursor: auto;
@@ -222,9 +221,11 @@
     width: 100%;
 }
 .ck.ck-dropdown.ck-math-live-symbol-group .ck-dropdown__button .ck-button__label {
-    min-width: 1.6em;
+    min-width: 1em;
     text-align: center;
     width: auto;
+    font-size: 1rem;
+    padding: 0;
 }
 
 /* A swatch's whole label is `<span style="background: …">`, sized by MathLive against its own
