@@ -54,6 +54,11 @@ export type MathLiveMenuItemId =
 	| 'accent-underline'
 	| 'accent-undergroup'
 	| 'accent-underbrace'
+	// What the next thing typed becomes, and the group they sit in.
+	| 'mode'
+	| 'mode-math'
+	| 'mode-text'
+	| 'mode-latex'
 	// Ways to set the selection's letters, and the group they sit in. The first three are
 	// alphabets a letter may not have — MathLive hides those it cannot render.
 	| 'variant'

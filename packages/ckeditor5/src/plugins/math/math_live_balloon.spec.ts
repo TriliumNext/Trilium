@@ -64,7 +64,7 @@ describe( 'MathLiveBalloon', () => {
 	}
 
 	function matrixDropdown(): DropdownView {
-		return items()[ 6 ] as DropdownView;
+		return items()[ 7 ] as DropdownView;
 	}
 
 	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
@@ -86,13 +86,17 @@ describe( 'MathLiveBalloon', () => {
 		return items()[ 4 ] as DropdownView;
 	}
 
-	function fontStyleGroup(): DropdownView {
+	function modeGroup(): DropdownView {
 		return items()[ 5 ] as DropdownView;
+	}
+
+	function fontStyleGroup(): DropdownView {
+		return items()[ 6 ] as DropdownView;
 	}
 
 	/** The column, row and borders groups, in toolbar order. */
 	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 7 ) as [ DropdownView, DropdownView, DropdownView ];
+		return items().slice( 8 ) as [ DropdownView, DropdownView, DropdownView ];
 	}
 
 	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
@@ -181,9 +185,9 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles; the insert, accent, decoration and font-style groups; the matrix picker;
-		// and the column, row and borders groups.
-		expect( items() ).toHaveLength( 10 );
+		// Two toggles; the insert, accent, decoration, mode and font-style groups; the matrix
+		// picker; and the column, row and borders groups.
+		expect( items() ).toHaveLength( 11 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -547,6 +551,38 @@ describe( 'MathLiveBalloon', () => {
 			.filter( entry => entry.above < 0 || entry.below < 0 || entry.before < 0 || entry.after < 0 );
 
 		expect( spilling ).toEqual( [] );
+	} );
+
+	it( 'switches what the next thing typed becomes, one mode of three at a time', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const modes = groupEntries( modeGroup() );
+
+		expect( modeGroup().buttonView.label ).toBe( 'Mode' );
+		expect( modes.map( entry => entry.label ) ).toEqual( [ 'Math', 'Text', 'LaTeX' ] );
+
+		// Exactly one holds at a time, which is a radio rather than a checkbox.
+		expect( modes[ 0 ].element?.getAttribute( 'role' ) ).toBe( 'menuitemradio' );
+		expect( modes.map( entry => entry.isOn ) ).toEqual( [ true, false, false ] );
+
+		modes[ 1 ].fire( 'execute' );
+		await waitFor( () => modes[ 1 ].isOn || null );
+		expect( modes.map( entry => entry.isOn ) ).toEqual( [ false, true, false ] );
+	} );
+
+	it( 'offers the modes for a caret, not for a selection', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		expect( modeGroup().class ).toBeUndefined();
+
+		// It is about what comes next, so MathLive withdraws it once something is selected —
+		// the opposite of the accents, which have nothing to draw around without one.
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => modeGroup().class === 'ck-hidden' || null );
+		expect( accentGroup().class ).toBeUndefined();
 	} );
 
 	it( 'sets the selection\'s font style, and reports which one it already carries', async () => {

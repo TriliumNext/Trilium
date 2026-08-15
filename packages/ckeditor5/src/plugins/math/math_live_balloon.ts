@@ -19,6 +19,7 @@ import {
 	IconTableCellProperties,
 	IconTableColumn,
 	IconTableRow,
+	IconText,
 	_InsertTableView,
 	type ListDropdownButtonDefinition,
 	ListItemButtonView,
@@ -84,6 +85,9 @@ interface MenuGroup {
 
 		/** Whether its entries draw the current selection, and so are worth re-reading. */
 		liveLabels?: boolean;
+
+		/** What a checkable entry of this group is: one of several, or one of a set of one. */
+		checkableRole?: 'menuitemcheckbox' | 'menuitemradio';
 	};
 }
 
@@ -307,6 +311,13 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.items.add( this._createSubmenuGroup(
 			'decoration', t( 'Decoration' ), IconMarker, { liveLabels: true, layout: 'row' }
 		) );
+		// What the next thing typed becomes: maths, prose inside the equation, or LaTeX source.
+		// One of the three always holds, so they are a set of radios rather than checkboxes, and
+		// they are about the caret rather than a selection — MathLive offers them only while
+		// nothing is selected.
+		toolbar.items.add( this._createSubmenuGroup(
+			'mode', t( 'Mode' ), IconText, { checkableRole: 'menuitemradio' }
+		) );
 		// Six ways to set the selection's letters. These are toggles rather than one-shot
 		// insertions — the only entries in the balloon that report a state of their own — and
 		// they stack: side by side, six letters in six alphabets are hard to tell apart, and the
@@ -416,7 +427,13 @@ export default class MathLiveBalloon extends Plugin {
 		id: MathLiveMenuItemId,
 		label: string,
 		icon: string,
-		options: { liveLabels?: boolean; layout?: 'row' | 'grid' } = {}
+		options: {
+			liveLabels?: boolean;
+			layout?: 'row' | 'grid';
+
+			/** What a checkable entry of this group is: one of several, or one of a set of one. */
+			checkableRole?: 'menuitemcheckbox' | 'menuitemradio';
+		} = {}
 	): DropdownView {
 		const locale = this.editor.locale;
 		const dropdown = createDropdown( locale );
@@ -436,7 +453,7 @@ export default class MathLiveBalloon extends Plugin {
 		this._menuGroups.push( {
 			dropdown,
 			items: [],
-			submenu: { id, list, liveLabels: options.liveLabels }
+			submenu: { id, list, liveLabels: options.liveLabels, checkableRole: options.checkableRole }
 		} );
 		return dropdown;
 	}
@@ -484,7 +501,7 @@ export default class MathLiveBalloon extends Plugin {
 				// which is what `ListItemButtonView` is for — and how the AI assistant's picker
 				// marks its current choice.
 				isToggleable: entry.isToggleable,
-				role: entry.isToggleable ? 'menuitemcheckbox' : undefined,
+				role: entry.isToggleable ? ( submenu.checkableRole ?? 'menuitemcheckbox' ) : undefined,
 				isVisible: false,
 				isEnabled: false
 			} );
