@@ -64,7 +64,7 @@ describe( 'MathLiveBalloon', () => {
 	}
 
 	function matrixDropdown(): DropdownView {
-		return items()[ 5 ] as DropdownView;
+		return items()[ 6 ] as DropdownView;
 	}
 
 	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
@@ -86,9 +86,13 @@ describe( 'MathLiveBalloon', () => {
 		return items()[ 4 ] as DropdownView;
 	}
 
+	function fontStyleGroup(): DropdownView {
+		return items()[ 5 ] as DropdownView;
+	}
+
 	/** The column, row and borders groups, in toolbar order. */
 	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 6 ) as [ DropdownView, DropdownView, DropdownView ];
+		return items().slice( 7 ) as [ DropdownView, DropdownView, DropdownView ];
 	}
 
 	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
@@ -177,9 +181,9 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles; the insert, accent and decoration groups; the matrix picker; and the
-		// column, row and borders groups.
-		expect( items() ).toHaveLength( 9 );
+		// Two toggles; the insert, accent, decoration and font-style groups; the matrix picker;
+		// and the column, row and borders groups.
+		expect( items() ).toHaveLength( 10 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -499,6 +503,10 @@ describe( 'MathLiveBalloon', () => {
 		expect( decorations.display ).toBe( 'grid' );
 		expect( decorations.flow ).toBe( 'column' );
 
+		// The font styles stack instead: six letters in six alphabets side by side are hard to
+		// tell apart, and the one already set is easier to spot down a column.
+		expect( groupLayout( fontStyleGroup() ).display ).toBe( 'block' );
+
 		// The entries themselves have to give up the 15em CKEditor holds a list item to, or the
 		// four columns would be as wide as four sentences.
 		const item = groupEntries( accentGroup() )[ 0 ].element?.closest( '.ck-list__item' );
@@ -532,6 +540,48 @@ describe( 'MathLiveBalloon', () => {
 			.filter( entry => entry.above < 0 || entry.below < 0 || entry.before < 0 || entry.after < 0 );
 
 		expect( spilling ).toEqual( [] );
+	} );
+
+	it( 'sets the selection\'s font style, and reports which one it already carries', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => fontStyleGroup().class === undefined || null );
+
+		const entries = groupEntries( fontStyleGroup() );
+		expect( entries ).toHaveLength( 6 );
+
+		// These toggle rather than insert — the only entries in the balloon that carry a state.
+		const bold = entries.find( entry => entry.tooltip === 'Bold' );
+		expect( bold?.isToggleable ).toBe( true );
+		expect( bold?.isOn ).toBe( false );
+
+		bold?.fire( 'execute' );
+		// `\bm` is what the preview is drawn with; applying the style writes `\mathbf`.
+		expect( liveField().value ).toContain( '\\mathbf' );
+
+		// And having set it, the entry says so.
+		await waitFor( () => bold?.isOn || null );
+	} );
+
+	it( 'names each font style, since the drawing alone does not', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => fontStyleGroup().class === undefined || null );
+
+		// MathLive's own wording, which is all the naming these have.
+		const tooltips = groupEntries( fontStyleGroup() ).map( entry => entry.tooltip );
+		expect( tooltips ).toContain( 'Bold' );
+		expect( tooltips ).toContain( 'Italic' );
+		expect( tooltips.every( tooltip => typeof tooltip === 'string' && tooltip.length > 0 ) ).toBe( true );
+
+		// The insert entries name themselves in the label, so they carry no tooltip.
+		expect( groupEntries( insertGroup() )[ 0 ].tooltip ).toBe( false );
 	} );
 
 	it( 'offers the brackets as MathLive draws them, and switches the array to the one picked', async () => {

@@ -9,6 +9,7 @@ import {
 	ContextualBalloon,
 	createDropdown,
 	type DropdownView,
+	IconFontFamily,
 	IconMarker,
 	IconObjectCenter,
 	IconObjectInline,
@@ -238,7 +239,13 @@ export default class MathLiveBalloon extends Plugin {
 					getMenuItemState( this._mathfield, item.id ) :
 					MENU_ITEM_UNAVAILABLE;
 
-				item.target.set( { isVisible: state.visible, isEnabled: state.enabled } );
+				// `'mixed'`, where only part of the selection carries the style, reads as on:
+				// pressing the entry then sets it for the rest, which is what MathLive does.
+				item.target.set( {
+					isVisible: state.visible,
+					isEnabled: state.enabled,
+					isOn: state.checked !== false
+				} );
 				anyVisible ||= state.visible;
 
 				// An entry with no wording of ours takes MathLive's, which is only there to be
@@ -298,6 +305,13 @@ export default class MathLiveBalloon extends Plugin {
 		// declare no condition of their own — the group carries it, and wants any selection.
 		toolbar.items.add( this._createSubmenuGroup(
 			'decoration', t( 'Decoration' ), IconMarker, { liveLabels: true, layout: 'row' }
+		) );
+		// Six ways to set the selection's letters. These are toggles rather than one-shot
+		// insertions — the only entries in the balloon that report a state of their own — and
+		// they stack: side by side, six letters in six alphabets are hard to tell apart, and the
+		// one already set is easier to spot down a column.
+		toolbar.items.add( this._createSubmenuGroup(
+			'variant', t( 'Font style' ), IconFontFamily, { liveLabels: true }
 		) );
 		toolbar.items.add( this._createInsertMatrixDropdown( t( 'Insert matrix' ) ) );
 
@@ -458,7 +472,17 @@ export default class MathLiveBalloon extends Plugin {
 			const id = entry.id as MathLiveMenuItemId;
 			const button = new ButtonView( locale, new MathLiveLabelView( locale ) );
 
-			button.set( { withText: true, label: entry.label ?? '', isVisible: false, isEnabled: false } );
+			button.set( {
+				withText: true,
+				label: entry.label ?? '',
+				// A drawing of a blackboard `a` does not say "blackboard"; MathLive's own
+				// wording does, and only these entries carry any.
+				tooltip: entry.tooltip ?? false,
+				// The style entries report whether the selection already carries what they set.
+				isToggleable: entry.isToggleable,
+				isVisible: false,
+				isEnabled: false
+			} );
 			button.on( 'execute', () => this._runMenuItem( id ) );
 			// Closing the dropdown is the default behaviour of an `execute` it can hear, and a
 			// button nested in a group would not reach it on its own.

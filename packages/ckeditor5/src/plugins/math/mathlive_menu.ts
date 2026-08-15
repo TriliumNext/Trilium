@@ -54,6 +54,15 @@ export type MathLiveMenuItemId =
 	| 'accent-underline'
 	| 'accent-undergroup'
 	| 'accent-underbrace'
+	// Ways to set the selection's letters, and the group they sit in. The first three are
+	// alphabets a letter may not have — MathLive hides those it cannot render.
+	| 'variant'
+	| 'variant-double-struck'
+	| 'variant-fraktur'
+	| 'variant-calligraphic'
+	| 'variant-style-up'
+	| 'variant-style-bold'
+	| 'variant-style-italic'
 	// Boxes to draw around the selection, and the group they sit in.
 	| 'decoration'
 	| 'decoration-boxed'
@@ -66,10 +75,20 @@ export interface MathLiveMenuItemState {
 
 	/** Whether it can run — deleting the last row of a matrix cannot. */
 	enabled: boolean;
+
+	/**
+	 * Whether the selection already carries what the entry sets, for the ones that toggle a
+	 * style. `'mixed'` where only part of the selection does.
+	 */
+	checked: boolean | 'mixed';
 }
 
-/** Neither, for a field that has no menu to ask (not mounted yet, or already torn down). */
-export const MENU_ITEM_UNAVAILABLE: MathLiveMenuItemState = { visible: false, enabled: false };
+/** None of the above, for a field with no menu to ask (not mounted yet, or already torn down). */
+export const MENU_ITEM_UNAVAILABLE: MathLiveMenuItemState = {
+	visible: false,
+	enabled: false,
+	checked: false
+};
 
 export function getMenuItemState( field: MathLiveMenuField, id: MathLiveMenuItemId ): MathLiveMenuItemState {
 	const path = findMenuItem( readMenuItems( field ), id );
@@ -83,7 +102,13 @@ export function getMenuItemState( field: MathLiveMenuField, id: MathLiveMenuItem
 	// borders group keeps its condition — the entries themselves declare none — so the whole
 	// path has to agree. An invisible item is never reachable, so it is never enabled either.
 	const visible = path.every( item => resolveDynamic( item.visible, true ) );
-	return { visible, enabled: visible && path.every( item => resolveDynamic( item.enabled, true ) ) };
+
+	return {
+		visible,
+		enabled: visible && path.every( item => resolveDynamic( item.enabled, true ) ),
+		// Only the entry itself is ever on; a group is never a state of its own.
+		checked: resolveDynamic( lastOf( path )?.checked, false )
+	};
 }
 
 /**
@@ -103,9 +128,15 @@ export interface MathLiveSubmenuEntry {
 	/** The heading's caption, or the entry's label — markup, for the ones that draw a preview. */
 	label: string | null;
 
+	/** What the entry is called in words, where the drawing alone would not say. */
+	tooltip: string | null;
+
 	/** A heading has no id and nothing to run: it captions the entries that follow it. */
 	id: string | null;
 	isHeading: boolean;
+
+	/** Whether the entry sets something it can also report as already set. */
+	isToggleable: boolean;
 }
 
 /**
@@ -120,8 +151,10 @@ export function getSubmenuEntries( field: MathLiveMenuField, id: MathLiveMenuIte
 		.filter( item => item.type !== 'divider' )
 		.map( item => ( {
 			label: resolveDynamic( item.label, null ),
+			tooltip: resolveDynamic( item.tooltip, null ),
 			id: item.id ?? null,
-			isHeading: item.type === 'heading'
+			isHeading: item.type === 'heading',
+			isToggleable: item.checked !== undefined
 		} ) );
 }
 
@@ -157,8 +190,10 @@ interface MathLiveMenuItem {
 	/** Absent for a plain command; a submenu's own entries can also caption or separate. */
 	type?: 'command' | 'divider' | 'heading' | 'submenu';
 	label?: DynamicValue<string>;
+	tooltip?: DynamicValue<string>;
 	visible?: DynamicValue<boolean>;
 	enabled?: DynamicValue<boolean>;
+	checked?: DynamicValue<boolean | 'mixed'>;
 	submenu?: readonly MathLiveMenuItem[];
 	onMenuSelect?: ( args: {
 		target: EventTarget | undefined;

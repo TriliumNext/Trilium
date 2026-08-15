@@ -20,26 +20,26 @@ describe( 'getMenuItemState', () => {
 			{ id: 'delete-column', visible: () => true, enabled: () => true }
 		);
 
-		expect( getMenuItemState( field, 'delete-row' ) ).toEqual( { visible: true, enabled: false } );
-		expect( getMenuItemState( field, 'delete-column' ) ).toEqual( { visible: true, enabled: true } );
+		expect( getMenuItemState( field, 'delete-row' ) ).toEqual( { visible: true, enabled: false, checked: false } );
+		expect( getMenuItemState( field, 'delete-column' ) ).toEqual( { visible: true, enabled: true, checked: false } );
 	} );
 
 	it( 'takes a plain value as readily as a predicate', () => {
 		const field = fieldWith( { id: 'add-row-above', visible: true, enabled: false } );
 
-		expect( getMenuItemState( field, 'add-row-above' ) ).toEqual( { visible: true, enabled: false } );
+		expect( getMenuItemState( field, 'add-row-above' ) ).toEqual( { visible: true, enabled: false, checked: false } );
 	} );
 
 	it( 'defaults either to true when the declaration omits it, as MathLive does', () => {
 		const field = fieldWith( { id: 'add-column-after' } );
 
-		expect( getMenuItemState( field, 'add-column-after' ) ).toEqual( { visible: true, enabled: true } );
+		expect( getMenuItemState( field, 'add-column-after' ) ).toEqual( { visible: true, enabled: true, checked: false } );
 	} );
 
 	it( 'never reports an invisible action as enabled', () => {
 		const field = fieldWith( { id: 'add-row-below', visible: () => false, enabled: () => true } );
 
-		expect( getMenuItemState( field, 'add-row-below' ) ).toEqual( { visible: false, enabled: false } );
+		expect( getMenuItemState( field, 'add-row-below' ) ).toEqual( { visible: false, enabled: false, checked: false } );
 	} );
 
 	it( 'asks the predicates with no modifier held', () => {
@@ -66,9 +66,21 @@ describe( 'getMenuItemState', () => {
 
 		// The borders entries declare no condition of their own — their parent carries it.
 		expect( getMenuItemState( fieldWith( borders( true ) ), 'environment-brackets' ) )
-			.toEqual( { visible: true, enabled: true } );
+			.toEqual( { visible: true, enabled: true, checked: false } );
 		expect( getMenuItemState( fieldWith( borders( false ) ), 'environment-brackets' ) )
-			.toEqual( { visible: false, enabled: false } );
+			.toEqual( { visible: false, enabled: false, checked: false } );
+	} );
+
+	it( 'reports what the selection already carries, mixed included', () => {
+		const style = ( checked: boolean | 'mixed' ) => fieldWith( { id: 'variant-style-bold', checked } );
+
+		expect( getMenuItemState( style( true ), 'variant-style-bold' ).checked ).toBe( true );
+		expect( getMenuItemState( style( 'mixed' ), 'variant-style-bold' ).checked ).toBe( 'mixed' );
+		expect( getMenuItemState( style( false ), 'variant-style-bold' ).checked ).toBe( false );
+
+		// Only the entry is ever on: a group it sits in is not a state of its own.
+		const nested = fieldWith( { checked: true, submenu: [ { id: 'variant-style-italic' } ] } );
+		expect( getMenuItemState( nested, 'variant-style-italic' ).checked ).toBe( false );
 	} );
 
 	it( 'reports nothing for a field with no menu to read', () => {
