@@ -1,7 +1,7 @@
 import MathEditing from './math_editing.js';
 import MathLiveEdit from './math_live_edit.js';
 import mathIcon from '../../icons/math.svg?raw';
-import { Plugin, ClickObserver, ButtonView } from 'ckeditor5';
+import { Plugin, ButtonView } from 'ckeditor5';
 
 const mathKeystroke = 'Ctrl+M';
 
@@ -15,11 +15,7 @@ export default class MathUI extends Plugin {
 	}
 
 	public init(): void {
-		const editor = this.editor;
-		editor.editing.view.addObserver( ClickObserver );
-
 		this._createToolbarMathButton();
-		this._enableWidgetInteractions();
 	}
 
 	/**
@@ -73,19 +69,6 @@ export default class MathUI extends Plugin {
 			} );
 
 			return button;
-		} );
-	}
-
-	private _enableWidgetInteractions() {
-		const editor = this.editor;
-		const viewDocument = this.editor.editing.view.document;
-
-		// Clicking an existing equation starts editing it in place.
-		this.listenTo( viewDocument, 'click', () => {
-			const mathCommand = editor.commands.get( 'math' );
-			if ( mathCommand?.isEnabled && mathCommand.value ) {
-				this._showUI();
-			}
 		} );
 	}
 }

@@ -1,6 +1,6 @@
 import { Plugin, Widget } from 'ckeditor5';
 
-import '../../theme/math_form.css';
+import '../../theme/math.css';
 
 import type MathCommand from './math_command.js';
 import MathEditing from './math_editing.js';

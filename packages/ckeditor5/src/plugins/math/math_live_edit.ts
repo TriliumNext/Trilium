@@ -1,14 +1,36 @@
-// In-place equation editing: mounts a MathLive <math-field> inside the selected math widget
-// (replacing the static KaTeX/MathJax preview for the duration of the edit) instead of opening
-// a balloon popup. MathLive is lazy-loaded on the first edit, exactly like the old dialog did.
-import { Plugin, type ModelElement } from 'ckeditor5';
+// In-place equation editing: promotes a math widget's static MathLive preview to an editable
+// <math-field> and demotes it back on exit. Since both render through MathLive, the swap is
+// pixel-identical — which makes the promotion read as a caret simply entering the equation.
+// Entry points: clicking the equation (caret lands at the click point), arrow keys walking in
+// from the surrounding text, Backspace/Delete stepping in from a boundary, Enter on a selected
+// widget, and the toolbar button / Ctrl+M / `$$` autoformat via {@link startEditing}.
+import {
+	ClickObserver,
+	isForwardArrowKeyCode,
+	isWidget,
+	keyCodes,
+	MouseObserver,
+	Plugin,
+	type ModelElement,
+	type ModelNode,
+	type ViewDocumentArrowKeyEvent,
+	type ViewDocumentClickEvent,
+	type ViewDocumentDeleteEvent,
+	type ViewDocumentEnterEvent,
+	type ViewDocumentMouseDownEvent
+} from 'ckeditor5';
 import { getSelectedMathModelWidget } from './utils.js';
+import { loadMathLive } from './mathlive_loader.js';
 import { debounce } from '../mermaid/utils.js';
-import 'mathlive/fonts.css';
-import 'mathlive/static.css';
 
 // Time in milliseconds between a keystroke in the math field and the model update.
 const DEBOUNCE_TIME = 300;
+
+/** How the caret should land in the field when editing starts. */
+interface MathEntryPoint {
+	caret?: 'start' | 'end';
+	pointer?: { x: number; y: number };
+}
 
 export default class MathLiveEdit extends Plugin {
 	public static get pluginName() {
@@ -16,14 +38,25 @@ export default class MathLiveEdit extends Plugin {
 	}
 
 	private _session: EditSession | null = null;
+	private _lastPointer: { x: number; y: number; time: number } | null = null;
 
 	public init(): void {
+		const editor = this.editor;
+
 		// The widget can disappear under an active session (undo of the insertion, remote sync).
-		this.listenTo( this.editor.model.document, 'change:data', () => {
+		this.listenTo( editor.model.document, 'change:data', () => {
 			if ( this._session && !isAttached( this._session.element ) ) {
 				this._abortSession();
 			}
 		} );
+
+		this.listenTo( editor, 'change:isReadOnly', () => {
+			if ( editor.isReadOnly ) {
+				this._commitSession();
+			}
+		} );
+
+		this._enableSeamlessEntry();
 	}
 
 	public override destroy(): void {
@@ -39,15 +72,11 @@ export default class MathLiveEdit extends Plugin {
 		const editor = this.editor;
 		const model = editor.model;
 
-		let element = getSelectedMathModelWidget( model.document.selection );
-
-		if ( this._session ) {
-			if ( element && this._session.element === element ) {
-				this._session.mathfield.focus();
-				return;
-			}
-			this._commitSession();
+		if ( editor.isReadOnly ) {
+			return;
 		}
+
+		let element = getSelectedMathModelWidget( model.document.selection );
 
 		if ( !element ) {
 			const display = options.display ?? false;
@@ -69,11 +98,140 @@ export default class MathLiveEdit extends Plugin {
 		}
 
 		if ( element ) {
-			void this._mountMathField( element );
+			this._startElement( element, { caret: 'end' } );
 		}
 	}
 
-	private async _mountMathField( element: ModelElement ): Promise<void> {
+	/** The seamless entry points: click, horizontal arrows, Backspace/Delete, Enter. */
+	private _enableSeamlessEntry(): void {
+		const editor = this.editor;
+		const view = editor.editing.view;
+		const viewDocument = view.document;
+
+		view.addObserver( MouseObserver );
+		view.addObserver( ClickObserver );
+
+		// Remember where the mouse went down, to place the caret there after promoting.
+		this.listenTo<ViewDocumentMouseDownEvent>( viewDocument, 'mousedown', ( _evt, data ) => {
+			const domEvent = data.domEvent;
+			this._lastPointer = { x: domEvent.clientX, y: domEvent.clientY, time: performance.now() };
+		} );
+
+		// Clicking an equation edits it where the click landed.
+		this.listenTo<ViewDocumentClickEvent>( viewDocument, 'click', () => {
+			if ( editor.isReadOnly ) {
+				return;
+			}
+			const element = getSelectedMathModelWidget( editor.model.document.selection );
+			if ( !element ) {
+				return;
+			}
+			const pointer = this._takeFreshPointer();
+			this._startElement( element, pointer ? { pointer } : { caret: 'end' } );
+		} );
+
+		// Arrow keys walk into an adjacent equation instead of fake-selecting the widget.
+		this.listenTo<ViewDocumentArrowKeyEvent>( viewDocument, 'arrowKey', ( evt, data ) => {
+			if ( editor.isReadOnly || data.shiftKey || data.altKey || data.ctrlKey || data.metaKey ) {
+				return;
+			}
+			if ( data.keyCode !== keyCodes.arrowleft && data.keyCode !== keyCodes.arrowright ) {
+				return;
+			}
+			const forward = isForwardArrowKeyCode( data.keyCode, editor.locale.contentLanguageDirection );
+			const element = this._getAdjacentMathElement( forward );
+			if ( !element ) {
+				return;
+			}
+			data.preventDefault();
+			evt.stop();
+			this._startElement( element, { caret: forward ? 'start' : 'end' } );
+		}, { context: '$text', priority: 'highest' } );
+
+		// Backspace/Delete at an equation boundary steps into it rather than selecting it.
+		this.listenTo<ViewDocumentDeleteEvent>( viewDocument, 'delete', ( evt, data ) => {
+			if ( editor.isReadOnly ) {
+				return;
+			}
+			const forward = data.direction === 'forward';
+			const element = this._getAdjacentMathElement( forward );
+			if ( !element ) {
+				return;
+			}
+			data.preventDefault();
+			evt.stop();
+			this._startElement( element, { caret: forward ? 'start' : 'end' } );
+		}, { context: '$text', priority: 'highest' } );
+
+		// Enter on a fake-selected equation edits it instead of splitting around it.
+		this.listenTo<ViewDocumentEnterEvent>( viewDocument, 'enter', ( evt, data ) => {
+			if ( editor.isReadOnly ) {
+				return;
+			}
+			const element = getSelectedMathModelWidget( editor.model.document.selection );
+			if ( !element ) {
+				return;
+			}
+			data.preventDefault();
+			evt.stop();
+			this._startElement( element, { caret: 'end' } );
+		}, { context: isWidget, priority: 'highest' } );
+	}
+
+	/** The equation next to a collapsed selection in the given direction, if any. */
+	private _getAdjacentMathElement( forward: boolean ): ModelElement | null {
+		const selection = this.editor.model.document.selection;
+		if ( !selection.isCollapsed ) {
+			return null;
+		}
+		const position = selection.getFirstPosition();
+		if ( !position ) {
+			return null;
+		}
+
+		const inlineNode = forward ? position.nodeAfter : position.nodeBefore;
+		if ( isMathtex( inlineNode ) ) {
+			return inlineNode;
+		}
+
+		// Crossing a block boundary into a display equation.
+		const block = position.parent;
+		if ( block.is( 'element' ) ) {
+			if ( forward && position.isAtEnd && isMathtex( block.nextSibling ) ) {
+				return block.nextSibling;
+			}
+			if ( !forward && position.isAtStart && isMathtex( block.previousSibling ) ) {
+				return block.previousSibling;
+			}
+		}
+		return null;
+	}
+
+	private _takeFreshPointer(): { x: number; y: number } | null {
+		const pointer = this._lastPointer;
+		this._lastPointer = null;
+		if ( !pointer || performance.now() - pointer.time > 1000 ) {
+			return null;
+		}
+		return { x: pointer.x, y: pointer.y };
+	}
+
+	private _startElement( element: ModelElement, entry: MathEntryPoint ): void {
+		if ( this.editor.isReadOnly ) {
+			return;
+		}
+		if ( this._session ) {
+			if ( this._session.element === element ) {
+				this._session.mathfield.focus();
+				this._placeCaret( this._session.mathfield, entry );
+				return;
+			}
+			this._commitSession();
+		}
+		void this._mountMathField( element, entry );
+	}
+
+	private async _mountMathField( element: ModelElement, entry: MathEntryPoint ): Promise<void> {
 		const editor = this.editor;
 
 		if ( !await loadMathLive() ) {
@@ -113,7 +271,17 @@ export default class MathLiveEdit extends Plugin {
 		this._session = { element, mathfield, preview };
 		this._wireFieldEvents( mathfield, element );
 
-		requestAnimationFrame( () => mathfield.focus() );
+		requestAnimationFrame( () => {
+			mathfield.focus();
+			this._placeCaret( mathfield, entry );
+		} );
+	}
+
+	private _placeCaret( mathfield: MathFieldElement, entry: MathEntryPoint ): void {
+		if ( entry.pointer && forwardPointerToField( mathfield, entry.pointer ) ) {
+			return;
+		}
+		mathfield.position = entry.caret === 'start' ? 0 : mathfield.lastOffset;
 	}
 
 	private _wireFieldEvents( mathfield: MathFieldElement, element: ModelElement ): void {
@@ -238,8 +406,14 @@ interface MathFieldElement extends HTMLElement {
 	readOnly: boolean;
 	defaultMode: 'inline-math' | 'math' | 'text';
 	mathVirtualKeyboardPolicy: string;
+	position: number;
+	lastOffset: number;
 	inlineShortcuts?: Record<string, string>;
 	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
+}
+
+function isMathtex( node: ModelNode | null ): node is ModelElement {
+	return !!node && ( node.is( 'element', 'mathtex-inline' ) || node.is( 'element', 'mathtex-display' ) );
 }
 
 function isAttached( element: ModelElement ): boolean {
@@ -251,23 +425,22 @@ function isMathLiveOverlay( node: Node ): boolean {
 	return node instanceof Element && node.closest( '.ML__keyboard, .ML__popover, .ML__menu' ) !== null;
 }
 
-let mathLiveLoad: Promise<boolean> | undefined;
-
-function loadMathLive(): Promise<boolean> {
-	mathLiveLoad ??= ( async () => {
-		try {
-			await import( 'mathlive' );
-			await customElements.whenDefined( 'math-field' );
-			const mathfieldClass = customElements.get( 'math-field' ) as unknown as
-				{ soundsDirectory: string | null; plonkSound: string | null } | undefined;
-			if ( mathfieldClass ) {
-				mathfieldClass.soundsDirectory = null;
-				mathfieldClass.plonkSound = null;
-			}
-			return true;
-		} catch {
-			return false;
-		}
-	} )();
-	return mathLiveLoad;
+/**
+ * Lands the caret at the point the user clicked by replaying the click on the mounted field.
+ * MouseEvents with pointer-event names on purpose: MathLive's own listener hit-tests the caret
+ * from `clientX`/`clientY`, but a genuine synthetic `PointerEvent` would make it call
+ * `setPointerCapture()` with a pointer id the browser never activated, which throws.
+ */
+function forwardPointerToField( mathfield: MathFieldElement, point: { x: number; y: number } ): boolean {
+	const rect = mathfield.getBoundingClientRect();
+	if ( point.x < rect.left || point.x > rect.right || point.y < rect.top || point.y > rect.bottom ) {
+		return false;
+	}
+	const init: MouseEventInit = { clientX: point.x, clientY: point.y, cancelable: true };
+	mathfield.dispatchEvent( new MouseEvent( 'pointerdown', init ) );
+	// The matching "up" must land on the field content inside the shadow root — that is where
+	// MathLive's pointer tracker listens — or the next mouse move would extend the selection.
+	const content = mathfield.shadowRoot?.querySelector( '[part=content]' );
+	( content ?? mathfield ).dispatchEvent( new MouseEvent( 'pointerup', init ) );
+	return true;
 }

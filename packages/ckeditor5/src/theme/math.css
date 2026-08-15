@@ -1,0 +1,45 @@
+/**
+ * Math plugin styles: in-place MathLive equation editing inside the editor content.
+ */
+
+/* === Z-INDEX: MathLive UI above CKEditor === */
+.ML__keyboard, .ML__popover, .ML__menu, .ML__suggestions, .ML__autocomplete,
+.ML__tooltip, .ML__sr-only, [data-ml-root], #mathlive-suggestion-popover,
+.mathlive-suggestions-popover, [data-ml-tooltip], .ML__base {
+    z-index: calc(var(--ck-z-panel) + 1000) !important;
+}
+/* MathLive's own floating UI only — never a bare [role="tooltip"] or .popover, which would reach
+   every tooltip and popover in the whole app the moment the editor's CSS loads. The forced
+   `position: fixed` once collapsed the geo map's marker preview (a MapLibre popup wrapping the
+   app's note tooltip, role and all) to a zero-size box that spilled its content across the map. */
+.ML__tooltip, .ML__popover[role="tooltip"], [data-ml-tooltip] {
+    z-index: calc(var(--ck-z-panel) + 2000) !important;
+    position: fixed !important;
+}
+
+/* === IN-PLACE WIDGET EDITING === */
+.ck-content .ck-math-tex math-field {
+    display: inline-block;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+    min-width: 1em;
+    max-width: 100%;
+}
+.ck-content .ck-math-tex math-field::part(virtual-keyboard-toggle),
+.ck-content .ck-math-tex math-field::part(menu-toggle) {
+    display: none;
+}
+.ck-content .ck-math-tex-display math-field {
+    display: block;
+    margin: 0 auto;
+    width: fit-content;
+    min-width: 2em;
+}
+.ck-content .ck-math-tex-display .ck-math-widget-preview {
+    display: block;
+    text-align: center;
+}

@@ -1,6 +1,7 @@
 import MathCommand from './math_command.js';
-import { type DowncastAttributeEvent, type Editor, type GetCallback, Plugin, toWidget, Widget, viewToModelPositionOutsideModelElement, type ViewDowncastWriter, type ModelElement, CKEditorError, uid } from 'ckeditor5';
-import { renderEquation, extractDelimiters } from './utils.js';
+import { type DowncastAttributeEvent, type Editor, type GetCallback, Plugin, toWidget, Widget, viewToModelPositionOutsideModelElement, type ViewDowncastWriter, type ModelElement, CKEditorError } from 'ckeditor5';
+import { extractDelimiters } from './utils.js';
+import { renderStaticMath } from './mathlive_loader.js';
 
 export default class MathEditing extends Plugin {
 	public static get requires() {
@@ -247,17 +248,7 @@ export default class MathEditing extends Plugin {
 
 				const preview = body.querySelector<HTMLElement>( '.ck-math-widget-preview' );
 				if ( preview ) {
-					void renderEquation(
-						equation,
-						preview,
-						mathConfig.engine,
-						mathConfig.lazyLoad,
-						display,
-						false,
-						`math-editing-${ uid() }`,
-						mathConfig.previewClassName,
-						mathConfig.katexRenderOptions
-					);
+					renderStaticMath( preview, equation, display );
 				}
 
 				// An externally caused change (undo, sync) while a math field is mounted lands in
@@ -302,6 +293,7 @@ export default class MathEditing extends Plugin {
 			// The equation renders into a nested `.ck-math-widget-preview` element rather than the
 			// UI element itself, so that in-place editing (MathLiveEdit) can hide the preview
 			// and mount a <math-field> next to it inside the same renderer-opaque container.
+			// Static MathLive markup (not KaTeX) keeps the preview pixel-identical to the field.
 			const uiElement = writer.createUIElement(
 				'div',
 				{ class: 'ck-math-widget-body' },
@@ -312,17 +304,7 @@ export default class MathEditing extends Plugin {
 					preview.className = 'ck-math-widget-preview';
 					domElement.appendChild( preview );
 
-					void renderEquation(
-						equation,
-						preview,
-						mathConfig.engine,
-						mathConfig.lazyLoad,
-						display,
-						false,
-						`math-editing-${ uid() }`,
-						mathConfig.previewClassName,
-						mathConfig.katexRenderOptions
-					);
+					renderStaticMath( preview, equation, display );
 
 					return domElement;
 				}
