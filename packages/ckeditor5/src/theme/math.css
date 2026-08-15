@@ -71,6 +71,18 @@
 }
 .ck-content .ck-math-tex-inline .ck-math-widget-preview {
     display: inline-block;
+    max-width: 100%;
+}
+/* Long inline equations wrap, as they did when KaTeX rendered them: MathLive's own stylesheet
+   pins the markup to one line (nowrap, min-content, an atomic inline-block base), and the
+   loader inserts <wbr> opportunities after top-level operators for the flow to break at. */
+.ck-content .ck-math-tex-inline .ck-math-widget-preview .ML__latex {
+    white-space: normal;
+    width: auto;
+}
+.ck-content .ck-math-tex-inline .ck-math-widget-preview .ML__latex > .ML__base {
+    display: inline;
+    width: auto;
 }
 .ck-content .ck-math-tex-display math-field {
     display: block;

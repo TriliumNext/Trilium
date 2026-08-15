@@ -101,6 +101,26 @@ describe( 'MathLiveEdit', () => {
 		expect( globalThis.Math.abs( after.height - before.height ) ).toBeLessThan( 1.5 );
 	} );
 
+	it( 'wraps a long inline equation across lines, as KaTeX did', async () => {
+		// MathLive's markup is a single unbreakable run (nowrap, min-content, atomic
+		// inline-block base, no whitespace between atoms); the loader inserts <wbr> after
+		// top-level operators and the preview CSS lets the flow break there.
+		const long = Array.from( { length: 30 }, ( _unused, i ) => `a_{${ i }}x^{${ i }}` ).join( '+' );
+		setData( editor.model, `<paragraph>foo[]<mathtex-inline display="false" equation="${ long }" type="span"></mathtex-inline>bar</paragraph>` );
+
+		domRoot().style.width = '300px';
+		const preview = await waitFor( () =>
+			domRoot().querySelector( '.ck-math-widget-preview [class*="ML__latex"]' ) &&
+			domRoot().querySelector<HTMLElement>( '.ck-math-widget-preview' ) );
+
+		expect( preview.querySelectorAll( 'wbr' ).length ).toBeGreaterThan( 10 );
+		const height = preview.getBoundingClientRect().height;
+		const lineHeight = parseFloat( getComputedStyle( domRoot() ).fontSize ) * 1.21 * 1.2;
+		expect( height ).toBeGreaterThan( lineHeight * 2 );
+		// And it stays within the editable instead of overflowing horizontally.
+		expect( preview.getBoundingClientRect().width ).toBeLessThanOrEqual( 301 );
+	} );
+
 	it( 'startEditing mounts a math-field inside the selected widget and hides the preview', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 

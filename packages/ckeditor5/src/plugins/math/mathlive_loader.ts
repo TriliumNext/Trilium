@@ -69,7 +69,37 @@ export function renderStaticMath( element: HTMLElement, equation: string, displa
 		element.innerHTML = mathlive.convertLatexToMarkup( latex, {
 			defaultMode: display ? 'math' : 'inline-math'
 		} );
+		if ( !display ) {
+			insertWrapOpportunities( element );
+		}
 	} catch {
 		element.textContent = equation;
+	}
+}
+
+/**
+ * Where TeX would allow a long inline equation to break: after a top-level binary operator or
+ * relation. The markup gives no opportunities of its own — the atoms are juxtaposed
+ * inline-blocks with no whitespace between them, which is also why KaTeX-rendered equations
+ * wrapped (KaTeX separates its top-level chunks) and these did not. `<wbr>` restores the
+ * opportunities; the preview's CSS does the rest.
+ */
+const BREAK_AFTER = new Set( [
+	'+', '-', '−', '±', '∓', '×', '⋅', '÷', '∗', '∘',
+	'=', '<', '>', '≤', '≥', '≠', '≈', '∼', '≃', '≡', '→', '⇒', '⇔',
+	',', ';'
+] );
+
+function insertWrapOpportunities( element: HTMLElement ): void {
+	// Top-level atoms only — inside a fraction or a matrix there is nothing to wrap, exactly
+	// as in TeX.
+	const base = element.querySelector( ':scope > .ML__latex > .ML__base' );
+	if ( !base ) {
+		return;
+	}
+	for ( const child of Array.from( base.children ) ) {
+		if ( child.childElementCount === 0 && BREAK_AFTER.has( ( child.textContent ?? '' ).trim() ) ) {
+			child.after( document.createElement( 'wbr' ) );
+		}
 	}
 }
