@@ -387,16 +387,37 @@ export default class MathLiveEdit extends Plugin {
 
 	private _leaveField( element: ModelElement, placement: 'before' | 'after' | 'on' ): void {
 		const editor = this.editor;
+		const model = editor.model;
 		this._commitSession();
 		// Focus first: while the view is unfocused a model selection is not rendered to the DOM,
 		// and focusing afterwards would let the browser place a default caret (start of the
 		// editable) that the selection observer then writes back over the model selection.
 		editor.editing.view.focus();
-		if ( isAttached( element ) ) {
-			editor.model.change( writer => {
-				writer.setSelection( element, placement );
-			} );
+		if ( !isAttached( element ) ) {
+			return;
 		}
+		model.change( writer => {
+			if ( placement === 'on' ) {
+				writer.setSelection( element, 'on' );
+				return;
+			}
+			const forward = placement === 'after';
+			// For a display equation the position next to it sits between blocks, where no
+			// caret can live. Setting the selection there would make the post-fixer snap it
+			// back "on" the widget — and the next arrow press would walk straight back into
+			// the field, trapping the caret. Resolve to the nearest real caret position in
+			// the exit direction instead (for an inline equation this is the position itself).
+			const edge = forward ? writer.createPositionAfter( element ) : writer.createPositionBefore( element );
+			const range = model.schema.getNearestSelectionRange( edge, forward ? 'forward' : 'backward' );
+			if ( range ) {
+				writer.setSelection( range );
+				return;
+			}
+			// Nothing on that side (document edge): give the caret a paragraph to land in.
+			const paragraph = writer.createElement( 'paragraph' );
+			writer.insert( paragraph, edge );
+			writer.setSelection( paragraph, 'in' );
+		} );
 	}
 
 	/** Unmounts the field and writes the result to the model; an emptied equation is removed. */

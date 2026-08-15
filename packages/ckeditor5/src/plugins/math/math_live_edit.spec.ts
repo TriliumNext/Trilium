@@ -9,6 +9,7 @@ import MathLiveEdit from './math_live_edit.js';
 import { createTestEditor } from '../../../test/editor-kit.js';
 
 const INLINE_WIDGET = '<mathtex-inline display="false" equation="x^2" type="span"></mathtex-inline>';
+const DISPLAY_WIDGET = '<mathtex-display display="true" equation="e=mc^2" type="span"></mathtex-display>';
 
 describe( 'MathLiveEdit', () => {
 	let editor: ClassicEditor;
@@ -268,6 +269,39 @@ describe( 'MathLiveEdit', () => {
 		// The unmount is deferred past the dispatching keystroke task.
 		await waitFor( () => ( findMathField() === null ? true : null ) );
 		expect( getData( editor.model ) ).toContain( '</mathtex-inline>[]' );
+	} );
+
+	it( 'move-out forward from a display equation lands in the next block', async () => {
+		// The naive placement — selection directly "after" a block widget — sits between
+		// blocks, where the post-fixer snapped it back onto the widget; the next ArrowRight
+		// then re-entered the field at the start, trapping the caret in a loop.
+		setData( editor.model, `<paragraph>ab</paragraph>[${ DISPLAY_WIDGET }]<paragraph>cd</paragraph>` );
+
+		const mathfield = await startEditingSelected();
+		mathfield.dispatchEvent( new CustomEvent( 'move-out', { detail: { direction: 'forward' }, cancelable: true } ) );
+
+		await waitFor( () => ( findMathField() === null ? true : null ) );
+		expect( getData( editor.model ) ).toContain( '<paragraph>[]cd</paragraph>' );
+	} );
+
+	it( 'move-out backward from a display equation lands at the end of the previous block', async () => {
+		setData( editor.model, `<paragraph>ab</paragraph>[${ DISPLAY_WIDGET }]<paragraph>cd</paragraph>` );
+
+		const mathfield = await startEditingSelected();
+		mathfield.dispatchEvent( new CustomEvent( 'move-out', { detail: { direction: 'backward' }, cancelable: true } ) );
+
+		await waitFor( () => ( findMathField() === null ? true : null ) );
+		expect( getData( editor.model ) ).toContain( '<paragraph>ab[]</paragraph>' );
+	} );
+
+	it( 'move-out forward from a trailing display equation creates a paragraph to land in', async () => {
+		setData( editor.model, `<paragraph>ab</paragraph>[${ DISPLAY_WIDGET }]` );
+
+		const mathfield = await startEditingSelected();
+		mathfield.dispatchEvent( new CustomEvent( 'move-out', { detail: { direction: 'forward' }, cancelable: true } ) );
+
+		await waitFor( () => ( findMathField() === null ? true : null ) );
+		expect( getData( editor.model ) ).toMatch( /<\/mathtex-display><paragraph>\[\]<\/paragraph>$/ );
 	} );
 
 	it( 'aborts the session when the widget disappears from the model', async () => {
