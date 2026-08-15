@@ -20,6 +20,7 @@ import {
 	type ViewDocumentMouseDownEvent
 } from 'ckeditor5';
 import { getSelectedMathModelWidget } from './utils.js';
+import { keepSuggestionPopoverSteady } from './suggestion_popover.js';
 import { loadMathLive } from './mathlive_loader.js';
 import { debounce } from '../mermaid/utils.js';
 
@@ -335,7 +336,10 @@ export default class MathLiveEdit extends Plugin {
 			overflowObserver.observe( contentPart );
 		}
 
-		this._session = { element, mathfield, preview, overflowObserver };
+		this._session = {
+			element, mathfield, preview, overflowObserver,
+			popoverObserver: keepSuggestionPopoverSteady()
+		};
 		this._wireFieldEvents( mathfield, element );
 		this.fire<MathLiveSessionStartEvent>( 'sessionStart', { mathfield } );
 
@@ -500,6 +504,7 @@ export default class MathLiveEdit extends Plugin {
 
 		const { element, mathfield, preview } = session;
 		session.overflowObserver.disconnect();
+		session.popoverObserver.disconnect();
 		const equation = mathfield.value.trim();
 
 		// Blur while the internals are still alive. Firefox delivers no blur event when a
@@ -534,6 +539,7 @@ export default class MathLiveEdit extends Plugin {
 		// Same as in _commitSession: blur while alive, or Firefox leaves MathLive's focus
 		// bookkeeping pointing at the disposed field.
 		session.overflowObserver.disconnect();
+		session.popoverObserver.disconnect();
 		session.mathfield.blur();
 		session.mathfield.remove();
 		session.preview?.classList.remove( 'ck-hidden' );
@@ -569,6 +575,9 @@ interface EditSession {
 
 	/** Keeps the overflow marker current while the field's box settles (first render, fonts). */
 	overflowObserver: ResizeObserver;
+
+	/** Keeps the LaTeX suggestion popover from blinking as MathLive rebuilds it per keystroke. */
+	popoverObserver: MutationObserver;
 }
 
 interface MathFieldElement extends HTMLElement {

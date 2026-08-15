@@ -276,6 +276,36 @@ describe( 'MathLiveEdit', () => {
 		expect( rowStyle.paddingLeft ).not.toBe( '8px' );
 	} );
 
+	it( 'keeps the LaTeX suggestion list on screen as the command is typed out', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		const mathfield = await startEditingSelected();
+		await waitFor( () => ( document.activeElement === mathfield ? true : null ) );
+
+		mathfield.executeCommand( [ 'switchMode', 'latex', '', '\\' ] );
+		mathfield.executeCommand( [ 'typedText', 'al' ] );
+		const first = await waitFor( () =>
+			document.querySelector<HTMLElement>( '#mathlive-suggestion-popover.is-visible' ) );
+		const top = first.style.top;
+
+		// Every keystroke replaces the panel: MathLive releases the shared element (taking the
+		// node out of the document) and asks for it again, and the fresh one arrives unpositioned
+		// and unshown until a 32ms timer catches up. Left alone, the list blinks per letter.
+		mathfield.executeCommand( [ 'typedText', 'p' ] );
+		const replacement = document.getElementById( 'mathlive-suggestion-popover' );
+		expect( replacement ).not.toBe( first );
+
+		await Promise.resolve();
+		expect( replacement?.classList.contains( 'is-visible' ) ).toBe( true );
+		expect( replacement?.style.top ).toBe( top );
+
+		// A removal with no replacement is MathLive putting the list away, which has to stick.
+		mathfield.shadowRoot?.querySelector( '[part=keyboard-sink]' )
+			?.dispatchEvent( sinkKey( 'Enter', 'Enter' ) );
+		await waitFor( () =>
+			( document.getElementById( 'mathlive-suggestion-popover' ) === null ? true : null ) );
+	} );
+
 	it( 'committing an emptied equation removes the widget', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
