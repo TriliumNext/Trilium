@@ -207,6 +207,10 @@
     max-height: 22em;
     overflow-y: auto;
     scrollbar-width: thin;
+
+    span {
+        cursor: auto;
+    }
 }
 .ck.ck-list.ck-math-live-symbols .ck-list__item {
     min-width: 0;
@@ -253,4 +257,5 @@
     min-width: 1.4em;
     min-height: 1.4em;
     border-radius: 50%;
+    cursor: pointer;
 }
