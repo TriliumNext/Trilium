@@ -71,6 +71,16 @@ describe( 'MathLiveEdit', () => {
 		expect( parseFloat( getComputedStyle( mathfield ).fontSize ) / base ).toBeCloseTo( 1.21, 2 );
 	} );
 
+	it( 'a focused field shows no platform focus ring', async () => {
+		// MathLive's shadow :host(:focus-within) rule draws the OS-accent-colored native ring
+		// (outline: auto), which read as a stray box around the equation being edited.
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		const mathfield = await startEditingSelected();
+		await waitFor( () => ( document.activeElement === mathfield ? true : null ) );
+		expect( getComputedStyle( mathfield ).outlineStyle ).toBe( 'none' );
+	} );
+
 	it( 'promoting the preview to a field keeps the equation box height', async () => {
 		// The pixel-parity promise: MathLive's shadow container/content paddings are zeroed and
 		// the preview is inline-block like the field, so starting an edit must not grow the box.

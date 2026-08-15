@@ -37,6 +37,12 @@
     min-width: 1em;
     max-width: 100%;
 }
+/* MathLive's shadow :host(:focus-within) draws the platform-native focus ring (outline: auto),
+   whatever accent color the OS has. The caret and the balloon already mark the editing state. */
+.ck-content .ck-math-tex math-field:focus,
+.ck-content .ck-math-tex math-field:focus-within {
+    outline: none;
+}
 .ck-content .ck-math-tex math-field::part(virtual-keyboard-toggle),
 .ck-content .ck-math-tex math-field::part(menu-toggle) {
     display: none;
