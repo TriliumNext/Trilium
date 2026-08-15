@@ -54,6 +54,13 @@ export type MathLiveMenuItemId =
 	| 'accent-underline'
 	| 'accent-undergroup'
 	| 'accent-underbrace'
+	// Colours to set on the selection, and the groups they sit in. Their entries are named after
+	// the colour — `color-red`, `background-color-teal` — and are only ever read off the submenu,
+	// never written out here.
+	| 'color'
+	| `color-${ string }`
+	| 'background-color'
+	| `background-color-${ string }`
 	// What the next thing typed becomes, and the group they sit in.
 	| 'mode'
 	| 'mode-math'
@@ -136,6 +143,9 @@ export interface MathLiveSubmenuEntry {
 	/** What the entry is called in words, where the drawing alone would not say. */
 	tooltip: string | null;
 
+	/** The same, for the entries that are a colour and nothing else. */
+	ariaLabel: string | null;
+
 	/** A heading has no id and nothing to run: it captions the entries that follow it. */
 	id: string | null;
 	isHeading: boolean;
@@ -157,6 +167,7 @@ export function getSubmenuEntries( field: MathLiveMenuField, id: MathLiveMenuIte
 		.map( item => ( {
 			label: resolveDynamic( item.label, null ),
 			tooltip: resolveDynamic( item.tooltip, null ),
+			ariaLabel: resolveDynamic( item.ariaLabel, null ),
 			id: item.id ?? null,
 			isHeading: item.type === 'heading',
 			isToggleable: item.checked !== undefined
@@ -196,6 +207,7 @@ interface MathLiveMenuItem {
 	type?: 'command' | 'divider' | 'heading' | 'submenu';
 	label?: DynamicValue<string>;
 	tooltip?: DynamicValue<string>;
+	ariaLabel?: DynamicValue<string>;
 	visible?: DynamicValue<boolean>;
 	enabled?: DynamicValue<boolean>;
 	checked?: DynamicValue<boolean | 'mixed'>;

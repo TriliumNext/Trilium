@@ -138,7 +138,8 @@
 /* A preview alone in a cell centres in it; one in a row of a list stays where a list's labels
    are, at the start, and lines up with the entries above and below it. */
 .ck.ck-list.ck-math-live-row .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
-.ck.ck-list.ck-math-live-grid .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
+.ck.ck-list.ck-math-live-grid .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
+.ck.ck-list.ck-math-live-swatches .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
     justify-content: center;
 }
 .ck.ck-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
@@ -194,4 +195,36 @@
    heading dropdown holds its own label to a width for the same reason. */
 .ck.ck-dropdown.ck-math-live-current .ck-dropdown__button .ck-button__label {
     min-width: 4em;
+}
+
+/* A swatch's whole label is `<span style="background: …">`, sized by MathLive against its own
+   menu markup (`.menu-swatch > .label > span`), which never matches here. These are the same
+   circles at the same 4 across, and they mark the colour in force by lighting the cell — a tick
+   would want a column of its own in every one of them. */
+.ck.ck-list.ck-math-live-swatches {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: max-content;
+    gap: var(--ck-spacing-tiny);
+    padding: var(--ck-spacing-small);
+}
+.ck.ck-list.ck-math-live-swatches .ck-list__item {
+    min-width: 0;
+}
+.ck.ck-list.ck-math-live-swatches .ck-list__item > .ck-button {
+    justify-content: center;
+    border-radius: var(--ck-border-radius);
+    padding: var(--ck-spacing-tiny);
+    width: 100%;
+}
+/* Centred by the rule the laid-out groups share; `line-height: 0` keeps the cell to the circle
+   rather than to the line box a text label would need. */
+.ck.ck-list.ck-math-live-swatches .ck-math-live-label {
+    line-height: 0;
+}
+.ck.ck-list.ck-math-live-swatches .ck-math-live-label > span {
+    display: inline-block;
+    min-width: 1.4em;
+    min-height: 1.4em;
+    border-radius: 50%;
 }

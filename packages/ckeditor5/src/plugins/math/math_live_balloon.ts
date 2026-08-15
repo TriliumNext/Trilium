@@ -9,6 +9,8 @@ import {
 	ContextualBalloon,
 	createDropdown,
 	type DropdownView,
+	IconFontBackground,
+	IconFontColor,
 	IconFontFamily,
 	IconMarker,
 	IconObjectCenter,
@@ -43,6 +45,9 @@ import {
 	getSubmenuEntries,
 	runMenuItem
 } from './mathlive_menu.js';
+
+/** How a group arranges its entries: stacked when unset, or as a set of one of these. */
+type MenuGroupLayout = 'row' | 'grid' | 'swatches';
 
 /** The commands the balloon's type toggles run; both are registered by `MathEditing`. */
 type MathTypeCommandName = 'mathTypeInline' | 'mathTypeDisplay';
@@ -90,6 +95,9 @@ interface MenuGroup {
 
 		/** Whether the dropdown reads back the entry in force rather than naming itself. */
 		showsCurrent?: boolean;
+
+		/** How its entries are laid out, which decides how one in force is marked. */
+		layout?: MenuGroupLayout;
 	};
 }
 
@@ -330,6 +338,15 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.items.add( this._createSubmenuGroup(
 			'mode', t( 'Mode' ), null, { checkableRole: 'menuitemradio', showsCurrent: true }
 		) );
+		// Sixteen colours each, drawn as MathLive draws them and named where only a swatch shows.
+		// `queryStyle` answers `'mixed'` for a selection that is partly one colour, which reads
+		// as set — pressing the swatch then finishes the job.
+		toolbar.items.add( this._createSubmenuGroup(
+			'color', t( 'Font Color' ), IconFontColor, { layout: 'swatches' }
+		) );
+		toolbar.items.add( this._createSubmenuGroup(
+			'background-color', t( 'Font Background Color' ), IconFontBackground, { layout: 'swatches' }
+		) );
 		// Six ways to set the selection's letters. These are toggles rather than one-shot
 		// insertions — the only entries in the balloon that report a state of their own — and
 		// they stack: side by side, six letters in six alphabets are hard to tell apart, and the
@@ -441,7 +458,7 @@ export default class MathLiveBalloon extends Plugin {
 		icon: string | null,
 		options: {
 			liveLabels?: boolean;
-			layout?: 'row' | 'grid';
+			layout?: MenuGroupLayout;
 
 			/** What a checkable entry of this group is: one of several, or one of a set of one. */
 			checkableRole?: 'menuitemcheckbox' | 'menuitemradio';
@@ -489,7 +506,8 @@ export default class MathLiveBalloon extends Plugin {
 				list,
 				liveLabels: options.liveLabels,
 				checkableRole: options.checkableRole,
-				showsCurrent: options.showsCurrent
+				showsCurrent: options.showsCurrent,
+				layout: options.layout
 			}
 		} );
 		return dropdown;
@@ -537,8 +555,14 @@ export default class MathLiveBalloon extends Plugin {
 				// A checkable row says so with a tick of its own rather than by lighting up,
 				// which is what `ListItemButtonView` is for — and how the AI assistant's picker
 				// marks its current choice.
-				isToggleable: entry.isToggleable,
-				role: entry.isToggleable ? ( submenu.checkableRole ?? 'menuitemcheckbox' ) : undefined,
+				// A swatch is a colour and nothing else: it marks itself by lighting up, where a
+				// tick would need a column of its own in every cell of the grid.
+				isToggleable: entry.isToggleable && submenu.layout !== 'swatches',
+				role: entry.isToggleable && submenu.layout !== 'swatches' ?
+					( submenu.checkableRole ?? 'menuitemcheckbox' ) :
+					undefined,
+				// The colours name themselves there instead.
+				ariaLabel: entry.ariaLabel ?? undefined,
 				isVisible: false,
 				isEnabled: false
 			} );
