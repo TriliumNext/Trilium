@@ -134,10 +134,18 @@ body #mathlive-suggestion-popover.bottom-tip::after {
     display: none;
 }
 body #mathlive-suggestion-popover.top-tip {
-    translate: 0 -11px;
+    margin-top: -11px;
 }
 body #mathlive-suggestion-popover.bottom-tip {
-    translate: 0 11px;
+    margin-top: 11px;
+}
+body #mathlive-suggestion-popover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    backdrop-filter: var(--dropdown-backdrop-filter);
 }
 body #mathlive-suggestion-popover ul {
     align-items: stretch;

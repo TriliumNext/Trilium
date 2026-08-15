@@ -271,6 +271,15 @@ describe( 'MathLiveEdit', () => {
 		// 8px of padding apart.
 		expect( getComputedStyle( panel ).backgroundColor ).not.toBe( 'rgb(97, 97, 97)' );
 		expect( getComputedStyle( panel, '::after' ).display ).toBe( 'none' );
+
+		// The menu colours the panel borrows are translucent, and read as see-through without the
+		// app's frosting behind them. It goes on a background-less layer of its own rather than on
+		// the panel, which is the only one of the two paths that survives a transparent window.
+		document.documentElement.style.setProperty( '--dropdown-backdrop-filter', 'blur(20px)' );
+		const frosting = getComputedStyle( panel, '::before' );
+		expect( frosting.backdropFilter ).toBe( 'blur(20px)' );
+		expect( frosting.zIndex ).toBe( '-1' );
+		document.documentElement.style.removeProperty( '--dropdown-backdrop-filter' );
 		const rowStyle = getComputedStyle( row as HTMLElement );
 		expect( rowStyle.margin ).toBe( '0px' );
 		expect( rowStyle.paddingLeft ).not.toBe( '8px' );
