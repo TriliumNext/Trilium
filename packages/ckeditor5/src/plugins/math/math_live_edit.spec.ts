@@ -104,6 +104,22 @@ describe( 'MathLiveEdit', () => {
 		expect( mathfield.value ).toBe( 'x^2' );
 	} );
 
+	it( 'ArrowRight from the previous paragraph enters an equation at the start of the next', async () => {
+		// Crossing the block boundary fake-selects the widget (a Widget-plugin default). The
+		// next press used to skip past the equation instead of entering it: the fake-selected
+		// state bubbles through the isWidget context, which the entry handler did not cover.
+		setData( editor.model, `<paragraph>foo[]</paragraph><paragraph>${ INLINE_WIDGET }</paragraph>` );
+
+		domRoot().dispatchEvent( keyEvent( 'ArrowRight', 39 ) );
+		await new Promise( resolve => setTimeout( resolve, 100 ) );
+		expect( findMathField() ).toBeNull();
+		expect( getData( editor.model ) ).toContain( '[<mathtex-inline' );
+
+		domRoot().dispatchEvent( keyEvent( 'ArrowRight', 39 ) );
+		const mathfield = await waitFor( findMathField );
+		expect( mathfield.value ).toBe( 'x^2' );
+	} );
+
 	it( 'ArrowLeft after an equation walks into it', async () => {
 		setData( editor.model, `<paragraph>foo${ INLINE_WIDGET }[]bar</paragraph>` );
 

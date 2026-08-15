@@ -158,6 +158,9 @@ export default class MathLiveEdit extends Plugin {
 		} );
 
 		// Arrow keys walk into an adjacent equation instead of fake-selecting the widget.
+		// The `isWidget` context matters for the fake-selected state: crossing a block boundary
+		// towards an equation fake-selects it (a Widget default this handler cannot see coming
+		// from `$text`), and the NEXT press must step into the field rather than skip past it.
 		this.listenTo<ViewDocumentArrowKeyEvent>( viewDocument, 'arrowKey', ( evt, data ) => {
 			if ( editor.isReadOnly || data.shiftKey || data.altKey || data.ctrlKey || data.metaKey ) {
 				return;
@@ -166,14 +169,17 @@ export default class MathLiveEdit extends Plugin {
 				return;
 			}
 			const forward = isForwardArrowKeyCode( data.keyCode, editor.locale.contentLanguageDirection );
-			const element = this._getAdjacentMathElement( forward );
+
+			// A fake-selected equation: enter it at the end the caret is arriving from.
+			const selected = getSelectedMathModelWidget( editor.model.document.selection );
+			const element = selected ?? this._getAdjacentMathElement( forward );
 			if ( !element ) {
 				return;
 			}
 			data.preventDefault();
 			evt.stop();
 			this._startElement( element, { caret: forward ? 'start' : 'end' } );
-		}, { context: '$text', priority: 'highest' } );
+		}, { context: [ isWidget, '$text' ], priority: 'highest' } );
 
 		// Backspace/Delete at an equation boundary steps into it rather than selecting it.
 		this.listenTo<ViewDocumentDeleteEvent>( viewDocument, 'delete', ( evt, data ) => {
