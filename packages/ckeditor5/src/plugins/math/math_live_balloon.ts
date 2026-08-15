@@ -12,6 +12,7 @@ import {
 	IconObjectCenter,
 	IconObjectInline,
 	IconTable,
+	IconTableCellProperties,
 	IconTableColumn,
 	IconTableRow,
 	_InsertTableView,
@@ -25,6 +26,7 @@ import MathLiveEdit, {
 	type MathLiveSessionStartEvent
 } from './math_live_edit.js';
 import {
+	getMatrixActionLabel,
 	getMatrixActionState,
 	MATRIX_ACTION_UNAVAILABLE,
 	type MatrixActionId,
@@ -34,26 +36,35 @@ import {
 /** The commands the balloon's type toggles run; both are registered by `MathEditing`. */
 type MathTypeCommandName = 'mathTypeInline' | 'mathTypeDisplay';
 
-/** A MathLive command name, run on the live field. */
+/** The tabular environments the borders group switches an array between. */
+type MatrixEnvironment = 'matrix' | 'pmatrix' | 'bmatrix' | 'vmatrix' | 'Bmatrix';
+
+/** A MathLive command, run on the live field; the array form carries the command's arguments. */
 type MatrixCommand =
 	| 'addRowBefore'
 	| 'addRowAfter'
 	| 'addColumnBefore'
 	| 'addColumnAfter'
 	| 'removeRow'
-	| 'removeColumn';
+	| 'removeColumn'
+	| [ 'setEnvironment', MatrixEnvironment ];
 
 /** One entry of a matrix dropdown, and the MathLive menu item whose state it follows. */
 interface MatrixAction {
 	id: MatrixActionId;
 	command: MatrixCommand;
-	label: string;
+
+	/**
+	 * Left out where CKEditor has no wording of its own to reuse: the entry then shows MathLive's
+	 * own label, which for the borders is the bracket it draws around a `⋱`.
+	 */
+	label?: string;
 }
 
 /** A dropdown and the models of its entries, so both can follow the caret. */
 interface MatrixGroup {
 	dropdown: DropdownView;
-	items: Array<{ model: ViewModel; id: MatrixActionId }>;
+	items: Array<{ model: ViewModel; id: MatrixActionId; ownLabel: boolean }>;
 }
 
 /** The live field, seen as the two things the balloon asks of it. */
@@ -192,6 +203,15 @@ export default class MathLiveBalloon extends Plugin {
 
 				item.model.set( { isVisible: state.visible, isEnabled: state.enabled } );
 				anyVisible ||= state.visible;
+
+				// An entry with no wording of ours takes MathLive's, which is only there to be
+				// read once a field is mounted — and, for the previews, changes with the caret.
+				if ( !item.ownLabel && this._mathfield ) {
+					const label = getMatrixActionLabel( this._mathfield, item.id );
+					if ( label !== null ) {
+						item.model.set( 'label', label );
+					}
+				}
 			}
 
 			// `DropdownView` has no `isVisible` of its own, so the group goes out the way the
@@ -250,6 +270,16 @@ export default class MathLiveBalloon extends Plugin {
 			{ id: 'delete-row', command: 'removeRow', label: t( 'Delete row' ) }
 		] ) );
 
+		// The brackets around the array. No labels of ours: MathLive draws each option as the
+		// bracket it stands for, wrapped around a `⋱`, which says it better than words would.
+		toolbar.items.add( this._createMatrixGroup( t( 'Borders' ), IconTableCellProperties, [
+			{ id: 'environment-no-border', command: [ 'setEnvironment', 'matrix' ] },
+			{ id: 'environment-parentheses', command: [ 'setEnvironment', 'pmatrix' ] },
+			{ id: 'environment-brackets', command: [ 'setEnvironment', 'bmatrix' ] },
+			{ id: 'environment-bar', command: [ 'setEnvironment', 'vmatrix' ] },
+			{ id: 'environment-braces', command: [ 'setEnvironment', 'Bmatrix' ] }
+		] ) );
+
 		// A click landing on the toolbar's own padding rather than on a button would otherwise
 		// blur the field, committing the equation and taking the balloon down with it. The
 		// buttons cover themselves — `ButtonView` swallows `mousedown` already.
@@ -306,10 +336,11 @@ export default class MathLiveBalloon extends Plugin {
 	}
 
 	/**
-	 * One of the two matrix groups — a dropdown listing what can be done to a column, or to a
-	 * row, in the shape the table feature gives its own `tableColumn`/`tableRow` dropdowns. Every
-	 * entry follows the MathLive menu item of the same name, so an action that does not apply
-	 * where the caret is disappears rather than sitting there dead.
+	 * One of the matrix groups — a dropdown listing what can be done to a column, to a row, or to
+	 * the brackets around the whole thing, in the shape the table feature gives its own
+	 * `tableColumn`/`tableRow` dropdowns. Every entry follows the MathLive menu item of the same
+	 * name, so an action that does not apply where the caret is disappears rather than sitting
+	 * there dead.
 	 */
 	private _createMatrixGroup( label: string, icon: string, actions: Array<MatrixAction> ): DropdownView {
 		const dropdown = createDropdown( this.editor.locale );
@@ -320,7 +351,7 @@ export default class MathLiveBalloon extends Plugin {
 
 		for ( const action of actions ) {
 			const model = new ViewModel( {
-				label: action.label,
+				label: action.label ?? '',
 				withText: true,
 				isVisible: false,
 				isEnabled: false,
@@ -328,7 +359,7 @@ export default class MathLiveBalloon extends Plugin {
 			} );
 
 			definitions.add( { type: 'button', model } );
-			items.push( { model, id: action.id } );
+			items.push( { model, id: action.id, ownLabel: action.label !== undefined } );
 		}
 
 		addListToDropdown( dropdown, definitions );

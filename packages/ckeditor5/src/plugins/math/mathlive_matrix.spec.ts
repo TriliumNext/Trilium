@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getMatrixActionState, MATRIX_ACTION_UNAVAILABLE, type MatrixMenuField } from './mathlive_matrix.js';
+import {
+	getMatrixActionLabel,
+	getMatrixActionState,
+	MATRIX_ACTION_UNAVAILABLE,
+	type MatrixMenuField
+} from './mathlive_matrix.js';
 
 /** A stand-in for a `<math-field>`, carrying only the menu declarations we read. */
 function fieldWith( ...menuItems: Array<Record<string, unknown>> ): MatrixMenuField {
@@ -51,6 +56,20 @@ describe( 'getMatrixActionState', () => {
 		expect( getMatrixActionState( fieldWith(), 'delete-row' ) ).toEqual( MATRIX_ACTION_UNAVAILABLE );
 	} );
 
+	it( 'finds an entry nested in a submenu, and gates it on its parent', () => {
+		const borders = ( visible: boolean ) => ( {
+			label: () => 'Borders',
+			visible: () => visible,
+			submenu: [ { id: 'environment-brackets', label: '[⋱]' } ]
+		} );
+
+		// The borders entries declare no condition of their own — their parent carries it.
+		expect( getMatrixActionState( fieldWith( borders( true ) ), 'environment-brackets' ) )
+			.toEqual( { visible: true, enabled: true } );
+		expect( getMatrixActionState( fieldWith( borders( false ) ), 'environment-brackets' ) )
+			.toEqual( { visible: false, enabled: false } );
+	} );
+
 	it( 'reports nothing for a field with no menu to read', () => {
 		// MathLive throws "Mathfield not mounted" when asked too early or after teardown.
 		const unmounted = { get menuItems(): never {
@@ -59,5 +78,22 @@ describe( 'getMatrixActionState', () => {
 
 		expect( getMatrixActionState( unmounted, 'delete-row' ) ).toEqual( MATRIX_ACTION_UNAVAILABLE );
 		expect( getMatrixActionState( {}, 'delete-row' ) ).toEqual( MATRIX_ACTION_UNAVAILABLE );
+	} );
+} );
+
+describe( 'getMatrixActionLabel', () => {
+	it( 'reads what MathLive calls the action, nested or not, dynamic or not', () => {
+		const field = fieldWith(
+			{ id: 'delete-row', label: () => 'Delete row' },
+			{ submenu: [ { id: 'environment-braces', label: '{⋱}' } ] }
+		);
+
+		expect( getMatrixActionLabel( field, 'delete-row' ) ).toBe( 'Delete row' );
+		expect( getMatrixActionLabel( field, 'environment-braces' ) ).toBe( '{⋱}' );
+	} );
+
+	it( 'has nothing to report for an unknown id, or a label-less entry', () => {
+		expect( getMatrixActionLabel( fieldWith( { id: 'delete-row' } ), 'delete-row' ) ).toBeNull();
+		expect( getMatrixActionLabel( fieldWith(), 'delete-row' ) ).toBeNull();
 	} );
 } );

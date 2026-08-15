@@ -73,9 +73,9 @@ describe( 'MathLiveBalloon', () => {
 		return { dropdown, grid: dropdown.panelView.children.get( 0 ) as unknown as GridLike };
 	}
 
-	/** The column group and the row group, in toolbar order. */
-	function matrixGroups(): [ DropdownView, DropdownView ] {
-		return items().slice( 3 ) as [ DropdownView, DropdownView ];
+	/** The column, row and borders groups, in toolbar order. */
+	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
+		return items().slice( 3 ) as [ DropdownView, DropdownView, DropdownView ];
 	}
 
 	/** A group's entries. `addListToDropdown` builds the list on first open, so open it. */
@@ -128,8 +128,8 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles, the matrix picker, and the column and row groups.
-		expect( items() ).toHaveLength( 5 );
+		// Two toggles, the matrix picker, and the column, row and borders groups.
+		expect( items() ).toHaveLength( 6 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -291,6 +291,25 @@ describe( 'MathLiveBalloon', () => {
 
 		expect( deleteRow?.isEnabled ).toBe( false );
 		expect( deleteColumn?.isEnabled ).toBe( true );
+	} );
+
+	it( 'offers the brackets as MathLive draws them, and switches the array to the one picked', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		await insertMatrix( 2, 2 );
+		const borders = matrixGroups()[ 2 ];
+
+		expect( borders.buttonView.label ).toBe( 'Borders' );
+		expect( borders.class ).toBeUndefined();
+
+		// No wording of ours: every entry shows the bracket MathLive draws around a `⋱`.
+		const entries = groupEntries( borders );
+		expect( entries.map( entry => entry.label ) ).toEqual( [ ' ⋱ ', '(⋱)', '[⋱]', '|⋱|', '{⋱}' ] );
+
+		expect( liveField().value ).toContain( '\\begin{pmatrix}' );
+		entries[ 2 ].fire( 'execute' );
+		expect( liveField().value ).toContain( '\\begin{bmatrix}' );
 	} );
 
 	it( 'puts the groups away again when the session ends', async () => {
