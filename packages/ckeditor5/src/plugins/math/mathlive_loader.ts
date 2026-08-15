@@ -61,7 +61,12 @@ export function renderStaticMath( element: HTMLElement, equation: string, displa
 	}
 
 	try {
-		element.innerHTML = mathlive.convertLatexToMarkup( equation, {
+		// The explicit style switch, because `defaultMode: 'inline-math'` alone is silently
+		// ignored by convertLatexToMarkup — everything renders displaystyle, so an inline
+		// fraction came out larger in the preview than in the mounted field (which honors
+		// its `defaultMode` and renders textstyle), and visibly shrank when editing started.
+		const latex = display ? equation : `\\textstyle ${ equation }`;
+		element.innerHTML = mathlive.convertLatexToMarkup( latex, {
 			defaultMode: display ? 'math' : 'inline-math'
 		} );
 	} catch {

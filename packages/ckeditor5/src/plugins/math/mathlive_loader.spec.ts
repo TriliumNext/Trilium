@@ -35,6 +35,31 @@ describe( 'mathlive_loader', () => {
 		expect( customElements.get( 'math-field' ) ).toBeDefined();
 	} );
 
+	it( 'renders inline equations in textstyle, display equations in displaystyle', async () => {
+		// convertLatexToMarkup ignores `defaultMode: 'inline-math'` and renders everything
+		// displaystyle; without the explicit \textstyle switch, an inline fraction was larger
+		// in the preview than in the mounted field and visibly shrank when editing started.
+		await loadMathLive();
+
+		const numeratorFontSize = ( display: boolean ): number => {
+			const el = document.createElement( 'span' );
+			el.style.fontSize = '16px';
+			document.body.appendChild( el );
+			renderStaticMath( el, '\\frac{a}{b}', display );
+			const glyph = Array.from( el.querySelectorAll( 'span' ) )
+				.find( span => span.textContent === 'a' && span.children.length === 0 );
+			if ( !glyph ) {
+				throw new Error( 'numerator glyph not found' );
+			}
+			const size = parseFloat( getComputedStyle( glyph ).fontSize );
+			el.remove();
+			return size;
+		};
+
+		expect( numeratorFontSize( false ) ).toBeLessThan( 16 );
+		expect( numeratorFontSize( true ) ).toBe( 16 );
+	} );
+
 	it( 'renders inline and display markup once loaded', async () => {
 		await loadMathLive();
 
