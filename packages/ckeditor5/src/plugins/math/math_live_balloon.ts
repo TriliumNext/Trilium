@@ -53,6 +53,11 @@ import {
 	type MathSymbolSection,
 	type MathSymbolSectionId
 } from './symbols.js';
+import {
+	MATH_STRUCTURE_SECTIONS,
+	type MathStructureSection,
+	type MathStructureSectionId
+} from './structures.js';
 
 /** How a group arranges its entries: stacked when unset, or as a set of one of these. */
 type MenuGroupLayout = 'row' | 'grid' | 'swatches';
@@ -437,7 +442,10 @@ export default class MathLiveBalloon extends Plugin {
 		// as the selection moves; with nothing selected there is nothing to accent, and MathLive
 		// hides every one of them — taking the group with them. Ours follow the same rules: the
 		// narrow marks want a single letter under them, the stretchy ones take any selection.
-		toolbar.items.add( this._createSubmenuGroup(
+		//
+		// Built here with the rest, but added to the toolbar further down: Accent is one of
+		// OneNote's eleven structure galleries, and this is what we have for it.
+		const accentGroup = this._createSubmenuGroup(
 			'accent', t( 'Accent' ), IconSpecialCharacters, {
 				liveLabels: true,
 				layout: 'grid',
@@ -467,7 +475,7 @@ export default class MathLiveBalloon extends Plugin {
 					]
 				}
 			}
-		) );
+		);
 		// Boxes around the selection, drawn around it in the preview the same way. Its entries
 		// declare no condition of their own — the group carries it, and wants any selection.
 		toolbar.items.add( this._createSubmenuGroup(
@@ -496,7 +504,9 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.items.add( this._createSubmenuGroup(
 			'variant', t( 'Font style' ), IconFontFamily, { liveLabels: true }
 		) );
-		toolbar.items.add( this._createInsertMatrixDropdown( t( 'Insert matrix' ) ) );
+		// Also added further down: Matrix is the last of OneNote's eleven galleries, and a grid to
+		// pick a size from beats the handful of fixed ones a gallery would hold.
+		const matrixPicker = this._createInsertMatrixDropdown( t( 'Insert matrix' ) );
 
 		// Column before row, and the same wording, as the table feature's own pair of dropdowns.
 		// Both stay out of the way until the caret is inside a matrix.
@@ -531,15 +541,28 @@ export default class MathLiveBalloon extends Plugin {
 			{ id: 'environment-braces', command: [ 'setEnvironment', 'Bmatrix' ] }
 		], { layout: 'row' } ) );
 
+		// Two rows of galleries below everything that acts on the equation already in the field.
+		// These only ever add to it, they are always available, and there are twenty of them.
+
 		// Every glyph OneNote's symbol gallery has and MathLive's menu does not, a category to a
 		// button: the category is what someone browsing already has in mind, so it is worth a
-		// press of its own rather than a scroll past eight others. Last in the toolbar, after
-		// everything that acts on the equation already in the field — these only ever add to it,
-		// and there are nine of them, which is a row of their own.
+		// press of its own rather than a scroll past eight others.
 		toolbar.items.add( new ToolbarLineBreakView( editor.locale ) );
 		for ( const section of MATH_SYMBOL_SECTIONS ) {
 			toolbar.items.add( this._createSymbolGroup( section ) );
 		}
+
+		// OneNote's eleven structure galleries, in its order. Nine are ours; Accent and Matrix are
+		// the two the balloon already had something better for, moved down to sit with the rest of
+		// the set rather than be duplicated by a worse copy of themselves.
+		toolbar.items.add( new ToolbarLineBreakView( editor.locale ) );
+		for ( const section of MATH_STRUCTURE_SECTIONS ) {
+			if ( section.id === 'limitlog' ) {
+				toolbar.items.add( accentGroup );
+			}
+			toolbar.items.add( this._createStructureGroup( section ) );
+		}
+		toolbar.items.add( matrixPicker );
 
 		// A click landing on the toolbar's own padding rather than on a button would otherwise
 		// blur the field, committing the equation and taking the balloon down with it. The
@@ -790,19 +813,51 @@ export default class MathLiveBalloon extends Plugin {
 	}
 
 	/**
-	 * One category of the symbol gallery: its glyphs drawn as themselves, in a grid behind a
-	 * button wearing one of them. The button carries a symbol rather than an icon because there
-	 * is no icon for "the Greek letters" — MathLive labels the switch to its own Greek keyboard
-	 * layer `αβγ` for the same reason — with the category's name in the tooltip beside it.
-	 *
-	 * Unlike every other group in this balloon this one is ours rather than MathLive's, so it
-	 * describes itself without a field. It is still built on first open: a preview is a render,
-	 * and most sessions never open most categories.
+	 * One category of the symbol gallery: its glyphs drawn as themselves. Each is called by the
+	 * LaTeX behind it — `\nabla` is what the symbol is named wherever maths is written, and what
+	 * to type for it next time.
 	 */
 	private _createSymbolGroup( section: MathSymbolSection ): DropdownView {
+		return this._createGallery(
+			section.glyph,
+			getSymbolSectionTitle( this.editor.t, section.id ),
+			'ck-math-live-symbols',
+			section.symbols.map( latex => ( { insert: latex, preview: latex } ) )
+		);
+	}
+
+	/**
+	 * One category of the structure gallery, the eleven OneNote's equation ribbon offers. Their
+	 * entries carry placeholders, so what an entry draws is not what it types: `\sqrt[n]{x}` is
+	 * the drawing and its name, `\sqrt[#?]{#?}` is what lands in the field.
+	 */
+	private _createStructureGroup( section: MathStructureSection ): DropdownView {
+		return this._createGallery(
+			section.glyph,
+			getStructureSectionTitle( this.editor.t, section.id ),
+			'ck-math-live-structures',
+			section.structures
+		);
+	}
+
+	/**
+	 * A grid of things to drop at the caret, behind a button wearing one of them. The button
+	 * carries a glyph rather than an icon because there is no icon for "the Greek letters" or
+	 * "a radical" — MathLive labels the switch to its own Greek keyboard layer `αβγ` for the same
+	 * reason — with the category's name in the tooltip beside it.
+	 *
+	 * Unlike the groups MathLive builds, a gallery describes itself without a field, so it is
+	 * never hidden. It is still filled on first open: a preview is a render, and most sessions
+	 * never open most categories.
+	 */
+	private _createGallery(
+		glyph: string,
+		name: string,
+		listClass: string,
+		entries: ReadonlyArray<{ insert: string; preview: string }>
+	): DropdownView {
 		const editor = this.editor;
 		const locale = editor.locale;
-		const name = getSymbolSectionTitle( editor.t, section.id );
 		const dropdown = createDropdown( locale );
 		const list = new ListView( locale );
 
@@ -810,14 +865,14 @@ export default class MathLiveBalloon extends Plugin {
 		// itself is a glyph — the shape the mode dropdown uses for a label that is not a name.
 		dropdown.buttonView.set( {
 			withText: true,
-			label: section.glyph,
+			label: glyph,
 			tooltip: name,
 			ariaLabel: name,
 			ariaLabelledBy: undefined
 		} );
-		dropdown.extendTemplate( { attributes: { class: 'ck-math-live-symbol-group' } } );
+		dropdown.extendTemplate( { attributes: { class: 'ck-math-live-gallery' } } );
 
-		list.extendTemplate( { attributes: { class: 'ck-math-live-symbols' } } );
+		list.extendTemplate( { attributes: { class: [ 'ck-math-live-gallery-list', listClass ] } } );
 		dropdown.panelView.children.add( list );
 
 		dropdown.on( 'change:isOpen', () => {
@@ -825,14 +880,16 @@ export default class MathLiveBalloon extends Plugin {
 				return;
 			}
 
-			for ( const latex of section.symbols ) {
+			for ( const entry of entries ) {
 				const button = new ListItemButtonView( locale, new MathLiveLabelView( locale ) );
 
-				// The LaTeX is the tooltip: `\nabla` is what this symbol is called wherever
-				// maths is written, and it is what to type to get it here next time.
-				button.set( { withText: true, label: renderMathMarkup( latex ), tooltip: latex } );
+				button.set( {
+					withText: true,
+					label: renderMathMarkup( entry.preview ),
+					tooltip: entry.preview
+				} );
 				button.on( 'execute', () => {
-					editor.plugins.get( MathLiveEdit ).insertIntoField( latex );
+					editor.plugins.get( MathLiveEdit ).insertIntoField( entry.insert );
 				} );
 				button.delegate( 'execute' ).to( dropdown );
 
@@ -983,6 +1040,24 @@ function getSymbolSectionTitle( t: ( message: string ) => string, id: MathSymbol
 		case 'arrows': return t( 'Arrows' );
 		case 'logic': return t( 'Sets and logic' );
 		case 'geometry': return t( 'Geometry' );
+	}
+}
+
+/** The same, for the structure galleries; OneNote's own wording for each of them. */
+function getStructureSectionTitle(
+	t: ( message: string ) => string,
+	id: MathStructureSectionId
+): string {
+	switch ( id ) {
+		case 'fraction': return t( 'Fraction' );
+		case 'script': return t( 'Script' );
+		case 'radical': return t( 'Radical' );
+		case 'integral': return t( 'Integral' );
+		case 'largeop': return t( 'Large operator' );
+		case 'bracket': return t( 'Bracket' );
+		case 'function': return t( 'Function' );
+		case 'limitlog': return t( 'Limit and log' );
+		case 'operator': return t( 'Operator' );
 	}
 }
 

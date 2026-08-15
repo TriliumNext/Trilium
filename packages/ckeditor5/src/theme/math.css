@@ -198,7 +198,7 @@ body #mathlive-suggestion-popover .ML__popover__keybinding {
 .ck.ck-list.ck-math-live-row .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
 .ck.ck-list.ck-math-live-grid .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
 .ck.ck-list.ck-math-live-swatches .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)),
-.ck.ck-list.ck-math-live-symbols .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
+.ck.ck-list.ck-math-live-gallery-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
     justify-content: center;
 }
 .ck.ck-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
@@ -260,29 +260,36 @@ body #mathlive-suggestion-popover .ML__popover__keybinding {
     max-width: var(--ck-math-balloon-max-width, 44em);
 }
 
-.ck.ck-list.ck-math-live-symbols {
+.ck.ck-list.ck-math-live-gallery-list {
     display: grid;
     width: max-content;
-    grid-template-columns: repeat(8, minmax(2.2em, 1fr));
     max-height: 22em;
     overflow-y: auto;
     scrollbar-width: thin;
-    --ck-font-size-base: 1.4rem;
 
     span {
         cursor: auto;
     }
 }
-.ck.ck-list.ck-math-live-symbols .ck-list__item {
+.ck.ck-list.ck-math-live-gallery-list .ck-list__item {
     min-width: 0;
 }
-.ck.ck-list.ck-math-live-symbols .ck-list__item > .ck-button {
+.ck.ck-list.ck-math-live-gallery-list .ck-list__item > .ck-button {
     justify-content: center;
     border-radius: var(--ck-border-radius);
     padding: var(--ck-spacing-tiny);
     width: 100%;
 }
-.ck.ck-dropdown.ck-math-live-symbol-group .ck-dropdown__button .ck-button__label {
+.ck.ck-list.ck-math-live-symbols {
+    grid-template-columns: repeat(8, minmax(2.2em, 1fr));
+    --ck-font-size-base: 1.4rem;
+}
+.ck.ck-list.ck-math-live-structures {
+    grid-template-columns: repeat(3, minmax(4em, 1fr));
+    gap: var(--ck-spacing-tiny);
+    padding: var(--ck-spacing-small);
+}
+.ck.ck-dropdown.ck-math-live-gallery .ck-dropdown__button .ck-button__label {
     min-width: 1em;
     text-align: center;
     width: auto;

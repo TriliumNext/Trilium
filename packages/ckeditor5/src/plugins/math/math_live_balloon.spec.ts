@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Math from './math.js';
 import MathLiveBalloon, { buildMatrixLatex } from './math_live_balloon.js';
 import MathLiveEdit from './math_live_edit.js';
+import { MATH_STRUCTURE_SECTIONS } from './structures.js';
 import { MATH_SYMBOL_SECTIONS } from './symbols.js';
 import { createTestEditor } from '../../../test/editor-kit.js';
 
@@ -64,8 +65,9 @@ describe( 'MathLiveBalloon', () => {
 		return items().slice( 0, 2 ) as Array<ButtonView>;
 	}
 
+	/** Last of all: the Matrix gallery closes the structures row. */
 	function matrixDropdown(): DropdownView {
-		return items()[ 9 ] as DropdownView;
+		return items()[ items().length - 1 ] as DropdownView;
 	}
 
 	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
@@ -79,38 +81,58 @@ describe( 'MathLiveBalloon', () => {
 		return items()[ 2 ] as DropdownView;
 	}
 
-	function accentGroup(): DropdownView {
+	function decorationGroup(): DropdownView {
 		return items()[ 3 ] as DropdownView;
 	}
 
-	function decorationGroup(): DropdownView {
+	function modeGroup(): DropdownView {
 		return items()[ 4 ] as DropdownView;
 	}
 
 	function colorGroup(): DropdownView {
-		return items()[ 6 ] as DropdownView;
-	}
-
-	function backgroundColorGroup(): DropdownView {
-		return items()[ 7 ] as DropdownView;
-	}
-
-	function modeGroup(): DropdownView {
 		return items()[ 5 ] as DropdownView;
 	}
 
+	function backgroundColorGroup(): DropdownView {
+		return items()[ 6 ] as DropdownView;
+	}
+
 	function fontStyleGroup(): DropdownView {
-		return items()[ 8 ] as DropdownView;
+		return items()[ 7 ] as DropdownView;
 	}
 
 	/** The column, row and borders groups, in toolbar order. */
 	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 10, 13 ) as [ DropdownView, DropdownView, DropdownView ];
+		return items().slice( 8, 11 ) as [ DropdownView, DropdownView, DropdownView ];
 	}
 
-	/** One per symbol category, in the order the table declares them; last in the toolbar. */
+	/** The second row: one per symbol category, in the order the table declares them. */
 	function symbolGroups(): Array<DropdownView> {
-		return items().slice( 14 ) as Array<DropdownView>;
+		return items().slice( 12, 12 + MATH_SYMBOL_SECTIONS.length ) as Array<DropdownView>;
+	}
+
+	/** The third row: OneNote's eleven structure galleries, Accent and Matrix among them. */
+	function structureRow(): Array<DropdownView> {
+		return items().slice( 12 + MATH_SYMBOL_SECTIONS.length + 1 ) as Array<DropdownView>;
+	}
+
+	/** Accent sits eighth of the eleven, as it does in OneNote's own ribbon. */
+	function accentGroup(): DropdownView {
+		return structureRow()[ 7 ];
+	}
+
+	/** The nine of that row built from the table, in its order — Accent and Matrix left out. */
+	function structureGalleries(): Array<DropdownView> {
+		return structureRow().filter( ( _, index ) => index !== 7 && index !== 10 );
+	}
+
+	/**
+	 * What a toolbar group is called. The galleries wear a glyph and put the name in the tooltip;
+	 * the groups MathLive builds do the opposite, and tooltip themselves from their label.
+	 */
+	function groupName( dropdown: DropdownView ): string | undefined {
+		const button = dropdown.buttonView;
+		return typeof button.tooltip === 'string' ? button.tooltip : button.label;
 	}
 
 	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
@@ -199,10 +221,10 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles; the insert, accent, decoration, colour, background, mode and font-style
-		// groups; the matrix picker; the column, row and borders groups; a line break; and a
-		// button per symbol category, on the row that break opens.
-		expect( items() ).toHaveLength( 14 + MATH_SYMBOL_SECTIONS.length );
+		// Row one: two toggles, the insert, decoration, mode, colour, background and font-style
+		// groups, and the column, row and borders groups. Row two: a button per symbol category.
+		// Row three: OneNote's eleven structure galleries. Two line breaks between them.
+		expect( items() ).toHaveLength( 11 + 1 + MATH_SYMBOL_SECTIONS.length + 1 + 11 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -439,7 +461,7 @@ describe( 'MathLiveBalloon', () => {
 		// Each wears one of its own symbols, since there is no icon for "the Greek letters", and
 		// says what it is in the tooltip beside it.
 		expect( groups.map( group => group.buttonView.label ) )
-			.toEqual( [ '±', 'αβγ', 'ℝ', '∑', '≤', '≠', '→', '∪', '∠' ] );
+			.toEqual( [ '±', 'α', 'ℝ', '∑', '≤', '≠', '→', '∪', '∠' ] );
 		expect( groups.map( group => group.buttonView.tooltip ) ).toEqual( [
 			'Basic math', 'Greek letters', 'Letter-like symbols', 'Operators', 'Relations',
 			'Negated relations', 'Arrows', 'Sets and logic', 'Geometry'
@@ -480,13 +502,65 @@ describe( 'MathLiveBalloon', () => {
 		// group and the first category, so the categories open a row rather than trailing the
 		// one before. (The rule behind the class is CKEditor's, and its stylesheet is not loaded
 		// here — only the presence and the placement are ours to check.)
-		const [ lineBreak ] = items().slice( 13, 14 ) as Array<{ element?: HTMLElement }>;
-		expect( lineBreak.element?.classList.contains( 'ck-toolbar__line-break' ) ).toBe( true );
+		const breaks = ( items() as Array<{ element?: HTMLElement }> )
+			.map( ( item, index ) => ( { index, element: item.element } ) )
+			.filter( item => item.element?.classList.contains( 'ck-toolbar__line-break' ) );
+		expect( breaks.map( item => item.index ) )
+			.toEqual( [ 11, 12 + MATH_SYMBOL_SECTIONS.length ] );
 
 		// Wrapping is `.ck-toolbar__items`' default, but only ever within a width: without a cap
 		// the balloon is shrink-to-fit and grows to hold all of it on one line.
 		const toolbar = visibleToolbar()?.element as HTMLElement;
 		expect( getComputedStyle( toolbar ).maxWidth ).not.toBe( 'none' );
+	} );
+
+	it( 'offers OneNote\'s eleven structure galleries, in its order', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const row = structureRow();
+
+		expect( row.map( groupName ) ).toEqual( [
+			'Fraction', 'Script', 'Radical', 'Integral', 'Large operator', 'Bracket', 'Function',
+			// Not galleries of ours: the accents MathLive redraws around the selection, and the
+			// matrix grid, both moved down here rather than copied badly.
+			'Accent', 'Limit and log', 'Operator', 'Insert matrix'
+		] );
+
+		// Each gallery wears one of its own, as the symbol categories do.
+		expect( structureGalleries().map( group => group.buttonView.label ) )
+			.toEqual( MATH_STRUCTURE_SECTIONS.map( section => section.glyph ) );
+
+		// A structure draws itself with letters in its slots, the way MathLive draws the entries
+		// of its own insert menu — and is named by that same LaTeX.
+		const [ fractions ] = row;
+		const entries = groupEntries( fractions );
+		expect( entries ).toHaveLength( MATH_STRUCTURE_SECTIONS[ 0 ].structures.length );
+		expect( entries[ 0 ].tooltip ).toBe( '\\frac{a}{b}' );
+
+		entries[ 0 ].fire( 'execute' );
+		expect( liveField().value ).toContain( '\\frac' );
+		await waitFor( () => getData( editor.model ).includes( 'frac' ) || null );
+	} );
+
+	it( 'draws every structure it offers, rather than showing its source', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+
+		// A preview MathLive cannot parse falls back to the LaTeX itself, which would put raw
+		// source in the gallery where a drawing belongs — the one way a bad entry in the table
+		// shows up at all.
+		const unrendered: Array<string> = [];
+		for ( const [ index, section ] of MATH_STRUCTURE_SECTIONS.entries() ) {
+			for ( const entry of groupEntries( structureGalleries()[ index ] ) ) {
+				if ( !entry.element?.querySelector( '.ML__latex' ) ) {
+					unrendered.push( `${ section.id }: ${ entry.tooltip as string }` );
+				}
+			}
+		}
+
+		expect( unrendered ).toEqual( [] );
 	} );
 
 	it( 'lays a symbol category out as a grid of cells sized by their glyphs', async () => {

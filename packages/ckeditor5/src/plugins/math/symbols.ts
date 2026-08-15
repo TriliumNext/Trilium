@@ -51,7 +51,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'greek',
-		glyph: 'αβγ',
+		glyph: 'α',
 		symbols: [
 			'\\alpha', '\\beta', '\\gamma', '\\delta', '\\epsilon', '\\varepsilon', '\\zeta',
 			'\\eta', '\\theta', '\\vartheta', '\\iota', '\\kappa', '\\lambda', '\\mu', '\\nu',
