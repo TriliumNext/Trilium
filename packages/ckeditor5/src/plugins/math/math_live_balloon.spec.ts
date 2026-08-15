@@ -64,7 +64,7 @@ describe( 'MathLiveBalloon', () => {
 	}
 
 	function matrixDropdown(): DropdownView {
-		return items()[ 3 ] as DropdownView;
+		return items()[ 4 ] as DropdownView;
 	}
 
 	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
@@ -78,9 +78,13 @@ describe( 'MathLiveBalloon', () => {
 		return items()[ 2 ] as DropdownView;
 	}
 
+	function accentGroup(): DropdownView {
+		return items()[ 3 ] as DropdownView;
+	}
+
 	/** The column, row and borders groups, in toolbar order. */
 	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 4 ) as [ DropdownView, DropdownView, DropdownView ];
+		return items().slice( 5 ) as [ DropdownView, DropdownView, DropdownView ];
 	}
 
 	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
@@ -105,6 +109,12 @@ describe( 'MathLiveBalloon', () => {
 			throw new Error( 'no math field is mounted' );
 		}
 		return field as HTMLElement & { value: string };
+	}
+
+	/** Selects the field's whole content — a single atom, when it holds a single character. */
+	function selectWholeField(): void {
+		( liveField() as unknown as { executeCommand( command: string ): void } )
+			.executeCommand( 'selectAll' );
 	}
 
 	/** Puts a matrix in the field, leaving the caret inside its first cell as MathLive does. */
@@ -142,8 +152,9 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles, the insert group, the matrix picker, and the column, row and borders groups.
-		expect( items() ).toHaveLength( 7 );
+		// Two toggles, the insert and accent groups, the matrix picker, and the column, row and
+		// borders groups.
+		expect( items() ).toHaveLength( 8 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -366,6 +377,57 @@ describe( 'MathLiveBalloon', () => {
 
 		expect( liveField().value ).toContain( '\\int' );
 		await waitFor( () => getData( editor.model ).includes( 'int' ) || null );
+	} );
+
+	it( 'keeps the accents away until there is something to accent', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const accents = accentGroup();
+		expect( accents.buttonView.label ).toBe( 'Accent' );
+		// Nothing is selected yet, and MathLive hides every accent — so the group goes too.
+		expect( accents.class ).toBe( 'ck-hidden' );
+
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => accents.class === undefined || null );
+
+		// All twelve apply to a single selected atom; five of them want exactly one.
+		expect( groupEntries( accents ).filter( entry => entry.isVisible ) ).toHaveLength( 12 );
+	} );
+
+	it( 'draws each accent around the selection, and redraws it when that changes', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => accentGroup().class === undefined || null );
+
+		const vec = groupEntries( accentGroup() )[ 0 ];
+		expect( vec.label ).toContain( 'ML__latex' );
+		const drawnAroundA = vec.element?.textContent;
+
+		// The previews are not fixed pictures: they redraw around whatever is selected now.
+		liveField().value = 'b';
+		selectWholeField();
+		await waitFor( () => ( vec.element?.textContent !== drawnAroundA ? true : null ) );
+
+		expect( vec.element?.textContent ).toContain( 'b' );
+	} );
+
+	it( 'sets the picked accent on the selection', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => accentGroup().class === undefined || null );
+
+		groupEntries( accentGroup() )[ 0 ].fire( 'execute' );
+
+		expect( liveField().value ).toContain( '\\vec' );
+		await waitFor( () => getData( editor.model ).includes( 'vec' ) || null );
 	} );
 
 	it( 'offers the brackets as MathLive draws them, and switches the array to the one picked', async () => {

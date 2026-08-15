@@ -3841,6 +3841,7 @@
   },
   "text-editor": {
     "ck": {
+      "accent": "Accent",
       "admonition": "Admonition",
       "ai-0": "AI: %0",
       "ai-assistant": "AI assistant",

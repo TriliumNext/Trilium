@@ -12,6 +12,7 @@ import {
 	IconObjectCenter,
 	IconObjectInline,
 	IconPlus,
+	IconSpecialCharacters,
 	IconTable,
 	IconTableCellProperties,
 	IconTableColumn,
@@ -74,7 +75,13 @@ interface MenuGroup {
 	items: Array<MenuGroupEntry>;
 
 	/** Set on a group laid out from a MathLive submenu, which needs a field before it can be. */
-	submenu?: { id: MathLiveMenuItemId; list: ListView };
+	submenu?: {
+		id: MathLiveMenuItemId;
+		list: ListView;
+
+		/** Whether its entries draw the current selection, and so are worth re-reading. */
+		liveLabels?: boolean;
+	};
 }
 
 interface MenuGroupEntry {
@@ -234,11 +241,12 @@ export default class MathLiveBalloon extends Plugin {
 				anyVisible ||= state.visible;
 
 				// An entry with no wording of ours takes MathLive's, which is only there to be
-				// read once a field is mounted. Read once and kept: resolving an insert label
-				// runs `convertLatexToMarkup()`, too much to repeat for thirteen entries on
-				// every keystroke. The labels that redraw themselves around the current
-				// selection — the accents — will need this to become conditional.
-				if ( !item.ownLabel && !item.target.label && this._mathfield ) {
+				// read once a field is mounted. Read once and kept, unless the group draws its
+				// entries around the current selection — resolving a label runs
+				// `convertLatexToMarkup()`, too much to repeat for a whole group on every
+				// keystroke when the result would be the same markup every time.
+				const stale = group.submenu?.liveLabels || !item.target.label;
+				if ( !item.ownLabel && stale && this._mathfield ) {
 					const label = getMenuItemLabel( this._mathfield, item.id );
 					if ( label !== null ) {
 						item.target.set( 'label', label );
@@ -278,7 +286,13 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.ariaLabel = t( 'Equation toolbar' );
 		toolbar.items.add( this._createTypeButton( 'mathTypeInline', IconObjectInline, t( 'Inline equation' ) ) );
 		toolbar.items.add( this._createTypeButton( 'mathTypeDisplay', IconObjectCenter, t( 'Display equation' ) ) );
-		toolbar.items.add( this._createInsertGroup( t( 'Insert' ) ) );
+		toolbar.items.add( this._createSubmenuGroup( 'insert', t( 'Insert' ), IconPlus ) );
+		// The accents draw themselves around whatever is selected, so their previews are re-read
+		// as the selection moves; with nothing selected there is nothing to accent, and MathLive
+		// hides every one of them — taking the group with them.
+		toolbar.items.add( this._createSubmenuGroup(
+			'accent', t( 'Accent' ), IconSpecialCharacters, { liveLabels: true }
+		) );
 		toolbar.items.add( this._createInsertMatrixDropdown( t( 'Insert matrix' ) ) );
 
 		// Column before row, and the same wording, as the table feature's own pair of dropdowns.
@@ -377,16 +391,25 @@ export default class MathLiveBalloon extends Plugin {
 	 * The LaTeX behind each lives only inside the declaration's own handler, so unlike the other
 	 * groups these run through it rather than through a documented command.
 	 */
-	private _createInsertGroup( label: string ): DropdownView {
+	private _createSubmenuGroup(
+		id: MathLiveMenuItemId,
+		label: string,
+		icon: string,
+		options: { liveLabels?: boolean } = {}
+	): DropdownView {
 		const locale = this.editor.locale;
 		const dropdown = createDropdown( locale );
 		const list = new ListView( locale );
 
-		dropdown.buttonView.set( { label, icon: IconPlus, tooltip: true } );
+		dropdown.buttonView.set( { label, icon, tooltip: true } );
 		dropdown.panelView.children.add( list );
 
 		// Filled in from the field's own menu, once there is a field to read it from.
-		this._menuGroups.push( { dropdown, items: [], submenu: { id: 'insert', list } } );
+		this._menuGroups.push( {
+			dropdown,
+			items: [],
+			submenu: { id, list, liveLabels: options.liveLabels }
+		} );
 		return dropdown;
 	}
 
@@ -433,8 +456,9 @@ export default class MathLiveBalloon extends Plugin {
 			listItem.bind( 'isVisible' ).to( button, 'isVisible' );
 			section.items.add( listItem );
 
-			// The label came with the entry, so the refresh has only its state left to follow.
-			group.items.push( { target: button, id, ownLabel: true } );
+			// The label came with the entry: the refresh has only its state left to follow,
+			// unless the group redraws itself around the selection.
+			group.items.push( { target: button, id, ownLabel: false } );
 		}
 	}
 

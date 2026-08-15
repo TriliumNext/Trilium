@@ -39,7 +39,21 @@ export type MathLiveMenuItemId =
 	| 'insert-argument'
 	| 'insert-real-part'
 	| 'insert-imaginary-part'
-	| 'insert-conjugate';
+	| 'insert-conjugate'
+	// Marks to set over or under the selection, and the group they sit in.
+	| 'accent'
+	| 'accent-vec'
+	| 'accent-overrightarrow'
+	| 'accent-overleftarrow'
+	| 'accent-dot'
+	| 'accent-ddot'
+	| 'accent-bar'
+	| 'accent-overline'
+	| 'accent-overgroup'
+	| 'accent-overbrace'
+	| 'accent-underline'
+	| 'accent-undergroup'
+	| 'accent-underbrace';
 
 export interface MathLiveMenuItemState {
 	/** Whether the action applies at all; MathLive hides rather than disables these. */

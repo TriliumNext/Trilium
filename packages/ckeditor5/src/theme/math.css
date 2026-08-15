@@ -80,6 +80,10 @@
 .ck.ck-list .ck-button:has(> .ck-math-live-label) {
     padding-block: 0.4em;
 }
+/* An accent is its own label — there is no name beside it to push it left of. */
+.ck.ck-list .ck-button > .ck-math-live-label:not(:has(.ML__insert-label)) {
+    justify-content: center;
+}
 .ck.ck-list .ck-math-live-label .ML__insert-template {
     flex: 0 0 auto;
 }
