@@ -322,6 +322,38 @@ describe( 'MathLiveEdit', () => {
 			( document.getElementById( 'mathlive-suggestion-popover' ) === null ? true : null ) );
 	} );
 
+	it( 'Backspace in an empty field deletes the equation instead of plonking', async () => {
+		setData( editor.model, '<paragraph>foo[]bar</paragraph>' );
+
+		// The equation an accidental Ctrl+M leaves behind: empty, with the field up and the
+		// caret in it. Backspace at its boundary steps into it, so this is where the key lands.
+		plugin.startEditing();
+		const mathfield = await waitFor( findMathField );
+		await waitFor( () => ( document.activeElement === mathfield ? true : null ) );
+		expect( getData( editor.model ) ).toContain( '<mathtex-inline' );
+
+		mathfield.shadowRoot?.querySelector( '[part=keyboard-sink]' )
+			?.dispatchEvent( sinkKey( 'Backspace', 'Backspace' ) );
+
+		await waitFor( () => ( findMathField() === null ? true : null ) );
+		expect( getData( editor.model ) ).not.toContain( '<mathtex-inline' );
+	} );
+
+	it( 'Backspace in an empty display equation deletes it and leaves a caret behind', async () => {
+		setData( editor.model, '<paragraph>foo[]</paragraph>' );
+
+		plugin.startEditing( { display: true } );
+		const mathfield = await waitFor( findMathField );
+		await waitFor( () => ( document.activeElement === mathfield ? true : null ) );
+
+		mathfield.shadowRoot?.querySelector( '[part=keyboard-sink]' )
+			?.dispatchEvent( sinkKey( 'Backspace', 'Backspace' ) );
+
+		await waitFor( () => ( findMathField() === null ? true : null ) );
+		expect( getData( editor.model ) ).not.toContain( '<mathtex-display' );
+		expect( getData( editor.model ) ).toContain( '[]' );
+	} );
+
 	it( 'committing an emptied equation removes the widget', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 

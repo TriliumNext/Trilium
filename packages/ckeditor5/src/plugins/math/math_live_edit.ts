@@ -432,6 +432,18 @@ export default class MathLiveEdit extends Plugin {
 				return;
 			}
 
+			// Backspace or Delete in an empty field takes the equation itself. Stepping into an
+			// equation is what these keys do at its boundary, so this is where they arrive when
+			// the user means to get rid of one — and inside an empty field MathLive has nothing
+			// left to delete, so it only plonks, leaving an equation inserted by mistake with no
+			// way out. Committing an empty field is already how a widget is removed.
+			if ( ( evt.key === 'Backspace' || evt.key === 'Delete' ) && !mathfield.value.trim() ) {
+				evt.preventDefault();
+				evt.stopPropagation();
+				this._leaveField( element, evt.key === 'Backspace' ? 'before' : 'after' );
+				return;
+			}
+
 			if ( evt.key === 'Escape' ) {
 				evt.preventDefault();
 				evt.stopPropagation();
