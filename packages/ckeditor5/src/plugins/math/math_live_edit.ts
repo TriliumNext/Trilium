@@ -231,7 +231,7 @@ export default class MathLiveEdit extends Plugin {
 		}
 		if ( this._session ) {
 			if ( this._session.element === element ) {
-				this._session.mathfield.focus();
+				safeFocus( this._session.mathfield );
 				this._placeCaret( this._session.mathfield, entry );
 				return;
 			}
@@ -282,7 +282,7 @@ export default class MathLiveEdit extends Plugin {
 		this.fire<MathLiveSessionStartEvent>( 'sessionStart', { mathfield } );
 
 		requestAnimationFrame( () => {
-			mathfield.focus();
+			safeFocus( mathfield );
 			this._placeCaret( mathfield, entry );
 		} );
 	}
@@ -360,12 +360,15 @@ export default class MathLiveEdit extends Plugin {
 	private _leaveField( element: ModelElement, placement: 'before' | 'after' | 'on' ): void {
 		const editor = this.editor;
 		this._commitSession();
+		// Focus first: while the view is unfocused a model selection is not rendered to the DOM,
+		// and focusing afterwards would let the browser place a default caret (start of the
+		// editable) that the selection observer then writes back over the model selection.
+		editor.editing.view.focus();
 		if ( isAttached( element ) ) {
 			editor.model.change( writer => {
 				writer.setSelection( element, placement );
 			} );
 		}
-		editor.editing.view.focus();
 	}
 
 	/** Unmounts the field and writes the result to the model; an emptied equation is removed. */
@@ -380,6 +383,10 @@ export default class MathLiveEdit extends Plugin {
 		const { element, mathfield, preview } = session;
 		const equation = mathfield.value.trim();
 
+		// Blur while the internals are still alive. Firefox delivers no blur event when a
+		// focused element is removed, which would leave MathLive's module-global focus
+		// bookkeeping pointing at the disposed field — and crash the next field's focus.
+		mathfield.blur();
 		mathfield.remove();
 		preview?.classList.remove( 'ck-hidden' );
 		window.mathVirtualKeyboard?.hide();
@@ -405,6 +412,9 @@ export default class MathLiveEdit extends Plugin {
 		}
 		this._session = null;
 		this.fire<MathLiveSessionEndEvent>( 'sessionEnd' );
+		// Same as in _commitSession: blur while alive, or Firefox leaves MathLive's focus
+		// bookkeeping pointing at the disposed field.
+		session.mathfield.blur();
 		session.mathfield.remove();
 		session.preview?.classList.remove( 'ck-hidden' );
 		window.mathVirtualKeyboard?.hide();
@@ -447,6 +457,21 @@ interface MathFieldElement extends HTMLElement {
 	lastOffset: number;
 	inlineShortcuts?: Record<string, string>;
 	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
+}
+
+/**
+ * Focuses a math field, tolerating a poisoned MathLive focus registry. If any earlier field was
+ * disposed while it still held focus (a removal in Firefox delivers no blur event, and other code
+ * or a hard editor teardown can drop a focused field the same way), MathLive's `onFocus` blurs
+ * that stale field first and crashes on its disposed internals. The failed attempt clears the
+ * stale registry entry before throwing, so a single retry succeeds.
+ */
+function safeFocus( mathfield: MathFieldElement ): void {
+	try {
+		mathfield.focus();
+	} catch {
+		mathfield.focus();
+	}
 }
 
 function isMathtex( node: ModelNode | null ): node is ModelElement {

@@ -151,6 +151,98 @@ describe( 'MathLiveEdit', () => {
 		expect( getData( editor.model ) ).toMatch( /<\/mathtex-inline>\[\]<mathtex-inline/ );
 	} );
 
+	it( 'recovers when MathLive holds a stale focused field that was disposed without a blur', async () => {
+		// The Firefox crash, reproduced: a <math-field> that held focus was torn down without
+		// MathLive observing a blur (Firefox delivers no blur event when a focused element is
+		// removed), so MathLive's module-global focus bookkeeping keeps pointing at the disposed
+		// internals. Focusing the NEXT field then calls onBlur() on them:
+		// "TypeError: this.mathfield is undefined" in atomToString/getValue.
+		// Chrome blurs before detaching, so the dirty state cannot arise from real removal here;
+		// instead dispose the internals directly — what disconnectedCallback does — with no DOM
+		// change for Chrome to blur on. That is exactly the state Firefox leaves behind.
+		const { loadMathLive } = await import( './mathlive_loader.js' );
+		expect( await loadMathLive() ).toBe( true );
+
+		const stale = document.createElement( 'math-field' ) as MathFieldLike;
+		document.body.appendChild( stale );
+		stale.focus();
+		await waitFor( () => ( document.activeElement === stale ? true : null ) );
+		// Let MathLive's 60ms focusBlurInProgress latch clear, as at human typing speed.
+		await new Promise( resolve => setTimeout( resolve, 120 ) );
+		( stale as unknown as { _mathfield: { dispose(): void } } )._mathfield.dispose();
+
+		const errors: Array<unknown> = [];
+		const onError = ( event: ErrorEvent ) => {
+			errors.push( event.error ?? event.message );
+			event.preventDefault();
+		};
+		window.addEventListener( 'error', onError );
+
+		try {
+			// Mounting and focusing a session field must survive the stale bookkeeping.
+			setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+			const mathfield = await startEditingSelected();
+			await waitFor( () => ( document.activeElement === mathfield ? true : null ) );
+		} finally {
+			window.removeEventListener( 'error', onError );
+			// The host still references the manually disposed internals; disconnectedCallback
+			// would call getValue() on them and crash, so detach the reference first — the same
+			// null-out it performs itself after a normal disposal.
+			( stale as unknown as { _mathfield: unknown } )._mathfield = null;
+			stale.remove();
+		}
+
+		expect( errors ).toEqual( [] );
+	} );
+
+	it( 'rapid left-right-left re-entry does not crash on the previous, unmounted field', async () => {
+		// Caret to the right of an inline equation, as in the report: entering with ArrowLeft,
+		// leaving with ArrowRight (which unmounts a *focused* field) and re-entering with
+		// ArrowLeft used to crash — MathLive's deferred blur bookkeeping ran against the
+		// disposed first field when the second one took focus ("this.mathfield is undefined"
+		// in atomToString/getValue/onBlur).
+		setData( editor.model, `<paragraph>foo${ INLINE_WIDGET }[]bar</paragraph>` );
+
+		const errors: Array<unknown> = [];
+		const onError = ( event: ErrorEvent ) => {
+			errors.push( event.error ?? event.message );
+			event.preventDefault();
+		};
+		window.addEventListener( 'error', onError );
+
+		try {
+			// Left: walk into the equation and wait until the field actually holds focus.
+			domRoot().dispatchEvent( keyEvent( 'ArrowLeft', 37 ) );
+			const first = await waitFor( findMathField );
+			await waitFor( () => ( document.activeElement === first ? true : null ) );
+
+			// Dwell at human speed: MathLive's onFocus holds a focusBlurInProgress latch for
+			// 60ms during which a blur would be silently dropped.
+			await new Promise( resolve => setTimeout( resolve, 120 ) );
+
+			// Right at the end of the equation: MathLive move-out → the field unmounts while
+			// focused.
+			first.shadowRoot?.querySelector( '[part=keyboard-sink]' )?.dispatchEvent(
+				new KeyboardEvent( 'keydown', {
+					key: 'ArrowRight', code: 'ArrowRight', bubbles: true, composed: true, cancelable: true
+				} ) );
+			await waitFor( () => ( findMathField() === null ? true : null ) );
+
+			// The exit put the caret right after the widget, ready for re-entry.
+			expect( getData( editor.model ) ).toContain( '</mathtex-inline>[]bar' );
+
+			// Left again: a second field mounts and takes focus — the crash site: MathLive's
+			// onFocus blurs the previously focused field, by now disposed.
+			domRoot().dispatchEvent( keyEvent( 'ArrowLeft', 37 ) );
+			const second = await waitFor( findMathField );
+			await waitFor( () => ( document.activeElement === second ? true : null ) );
+		} finally {
+			window.removeEventListener( 'error', onError );
+		}
+
+		expect( errors ).toEqual( [] );
+	} );
+
 	it( 'move-out unmounts the field and puts the caret next to the widget', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
