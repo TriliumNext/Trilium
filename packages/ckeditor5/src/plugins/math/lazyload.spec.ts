@@ -1,7 +1,7 @@
 // Side-effect import: declares the `math` key on EditorConfig used by the editor configs below.
 import './math.js';
 
-import { ClassicEditor, type EditorConfig } from 'ckeditor5';
+import { ClassicEditor, Paragraph, type EditorConfig } from 'ckeditor5';
 import MathUI from './math_ui.js';
 import { describe, beforeEach, it, afterEach, expect } from "vitest";
 
@@ -30,7 +30,7 @@ describe( 'Lazy load', () => {
 			.create( editorElement, {
 				...config,
 				licenseKey: "GPL",
-				plugins: [ MathUI ]
+				plugins: [ MathUI, Paragraph ]
 			} )
 			.then( newEditor => {
 				editor = newEditor;
@@ -45,9 +45,6 @@ describe( 'Lazy load', () => {
 	} );
 
 	afterEach( async () => {
-		if ( mathUIFeature?.formView ) {
-			mathUIFeature._hideUI();
-		}
 		await new Promise( resolve => setTimeout( resolve, 50 ) );
 		editorElement.remove();
 		return editor.destroy();
@@ -64,12 +61,9 @@ describe( 'Lazy load', () => {
 			}
 		} );
 
-		mathUIFeature._showUI();
-
-		// Trigger render with a non-empty value to bypass empty check optimization
-		if ( mathUIFeature.formView ) {
-			mathUIFeature.formView.equation = 'x^2';
-		}
+		// Inserting an equation renders the widget preview, which goes through the lazy loader.
+		expect( mathUIFeature ).to.not.be.undefined;
+		editor.execute( 'math', 'x^2', false );
 
 		// Wait for async rendering and lazy loading
 		await new Promise( resolve => setTimeout( resolve, 100 ) );

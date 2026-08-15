@@ -1,5 +1,5 @@
 import MathCommand from './math_command.js';
-import { type Editor, Plugin, toWidget, Widget, viewToModelPositionOutsideModelElement, type ViewDowncastWriter, type ModelElement, CKEditorError, uid } from 'ckeditor5';
+import { type DowncastAttributeEvent, type Editor, type GetCallback, Plugin, toWidget, Widget, viewToModelPositionOutsideModelElement, type ViewDowncastWriter, type ModelElement, CKEditorError, uid } from 'ckeditor5';
 import { renderEquation, extractDelimiters } from './utils.js';
 
 export default class MathEditing extends Plugin {
@@ -219,6 +219,63 @@ export default class MathEditing extends Plugin {
 				view: createMathtexView
 			} );
 
+		// The elementToElement editing converters above only run on insertion; `equation` can now
+		// also change in place (in-place MathLive editing, undo/redo of it), so patch the already
+		// rendered widget DOM instead of reconverting — reconversion would destroy a mounted
+		// <math-field> mid-edit. Same approach as the mermaid widget's source downcast.
+		const editor = this.editor;
+		conversion.for( 'editingDowncast' ).add( dispatcher => {
+			const updateEquation: GetCallback<DowncastAttributeEvent> = ( evt, data, conversionApi ) => {
+				if ( !data.item.is( 'element' ) || !conversionApi.consumable.consume( data.item, evt.name ) ) {
+					return;
+				}
+
+				const viewElement = conversionApi.mapper.toViewElement( data.item );
+				/* v8 ignore next 3 -- defensive: an attribute change on a rendered widget always has a mapped view */
+				if ( !viewElement ) {
+					return;
+				}
+
+				const dom = editor.editing.view.domConverter.mapViewToDom( viewElement );
+				const body = dom instanceof HTMLElement ? dom.querySelector( '.ck-math-widget-body' ) : null;
+				if ( !body ) {
+					return;
+				}
+
+				const equation = String( data.attributeNewValue ?? '' );
+				const display = !!data.item.getAttribute( 'display' );
+
+				const preview = body.querySelector<HTMLElement>( '.ck-math-widget-preview' );
+				if ( preview ) {
+					void renderEquation(
+						equation,
+						preview,
+						mathConfig.engine,
+						mathConfig.lazyLoad,
+						display,
+						false,
+						`math-editing-${ uid() }`,
+						mathConfig.previewClassName,
+						mathConfig.katexRenderOptions
+					);
+				}
+
+				// An externally caused change (undo, sync) while a math field is mounted lands in
+				// the field too; its own edits round-trip as equal values and are skipped here.
+				const mathfield = body.querySelector( 'math-field' ) as MathFieldLike | null;
+				if ( mathfield && mathfield.value.trim() !== equation.trim() ) {
+					if ( mathfield.setValue ) {
+						mathfield.setValue( equation, { silenceNotifications: true } );
+					} else {
+						mathfield.value = equation;
+					}
+				}
+			};
+
+			dispatcher.on<DowncastAttributeEvent>( 'attribute:equation:mathtex-inline', updateEquation );
+			dispatcher.on<DowncastAttributeEvent>( 'attribute:equation:mathtex-display', updateEquation );
+		} );
+
 		// Create view for editor
 		function createMathtexEditingView(
 			modelItem: ModelElement,
@@ -242,15 +299,22 @@ export default class MathEditing extends Plugin {
 				}
 			);
 
+			// The equation renders into a nested `.ck-math-widget-preview` element rather than the
+			// UI element itself, so that in-place editing (MathLiveEdit) can hide the preview
+			// and mount a <math-field> next to it inside the same renderer-opaque container.
 			const uiElement = writer.createUIElement(
 				'div',
-				null,
+				{ class: 'ck-math-widget-body' },
 				function( domDocument ) {
 					const domElement = this.toDomElement( domDocument );
 
+					const preview = domDocument.createElement( display ? 'div' : 'span' );
+					preview.className = 'ck-math-widget-preview';
+					domElement.appendChild( preview );
+
 					void renderEquation(
 						equation,
-						domElement,
+						preview,
 						mathConfig.engine,
 						mathConfig.lazyLoad,
 						display,
@@ -318,4 +382,10 @@ export default class MathEditing extends Plugin {
 			}
 		}
 	}
+}
+
+/** The slice of MathLive's MathfieldElement the in-place downcast patch needs. */
+interface MathFieldLike extends HTMLElement {
+	value: string;
+	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }

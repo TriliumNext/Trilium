@@ -206,3 +206,17 @@
 .ck-button-save:hover { opacity: 0.9; }
 .ck-button-cancel:hover { background: var(--ck-color-base-background); }
 
+
+/* === IN-PLACE WIDGET EDITING === */
+.ck-content .ck-math-tex math-field {
+    min-width: 4em;
+    max-width: 100%;
+    vertical-align: middle;
+    font-size: 1em;
+}
+.ck-content .ck-math-tex-display math-field {
+    display: block;
+    margin: 0 auto;
+    width: fit-content;
+    min-width: 8em;
+}

@@ -4,12 +4,13 @@ import '../../theme/math_form.css';
 
 import type MathCommand from './math_command.js';
 import MathEditing from './math_editing.js';
+import type MathLiveEdit from './math_live_edit.js';
 import MathUI from './math_ui.js';
 import type { KatexOptions } from './typings_external.js';
 
 /**
  * TeX equations, rendered with KaTeX or MathJax: an inline `mathtex-inline` widget or a block
- * `mathtex-display` one, edited through a MathLive-backed dialog.
+ * `mathtex-display` one, edited in place through an embedded MathLive field.
  *
  * This is a "glue" plugin which loads {@link MathEditing} and {@link MathUI}.
  *
@@ -30,6 +31,7 @@ declare module 'ckeditor5' {
 		[ Math.pluginName ]: Math;
 		[ MathEditing.pluginName ]: MathEditing;
 		[ MathUI.pluginName ]: MathUI;
+		MathLiveEdit: MathLiveEdit;
 	}
 
 	interface CommandsMap {
