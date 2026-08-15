@@ -195,7 +195,20 @@ div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
 
 /* Group heading rule */
 :root .ck :not(.ck-hidden) ~ .ck-list__group {
+    margin-block-start: .5rem;
     margin-inline: calc(0px - var(--ck-editor-popup-padding, 0px));
     padding-inline: var(--ck-editor-popup-padding, 0px);
     border-top-color: var(--menu-item-delimiter-color, var(--main-border-color));
+}
+
+/* Group heading */
+:root .ck .ck-list__group {
+    padding-block-start: 0;
+}
+
+:root .ck .ck-list__group > .ck-label {
+    padding-block: var(--ck-spacing-medium);
+    padding-inline: var(--ck-list-item-inline-padding, calc(2 * var(--ck-spacing-standard)));
+    font-size: .875rem;
+    font-weight: 500;
 }

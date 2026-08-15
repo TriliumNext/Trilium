@@ -93,6 +93,7 @@
 :root .ck.ck-dropdown__panel,
 :root .ck.ck-balloon-panel:not(.ck-tooltip) {
     --ck-editor-popup-padding: 4px;
+    --ck-list-item-inline-padding: 16px;
 
     --ck-color-panel-background: var(--menu-background-color);
     --ck-color-panel-border: var(--ck-editor-popup-border-color);
@@ -192,7 +193,7 @@ body.background-effects .ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__pane
 /* Dropdown list item */
 :root ul.ck.ck-list button.ck-button,
 :root .ck.ck-collapsible > button.ck-button {
-    padding: 2px 16px;
+    padding: 2px var(--ck-list-item-inline-padding, 16px);
     background: transparent;
     border-radius: 6px !important;
     box-shadow: unset;
