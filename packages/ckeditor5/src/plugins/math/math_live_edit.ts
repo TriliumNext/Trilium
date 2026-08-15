@@ -116,6 +116,10 @@ export default class MathLiveEdit extends Plugin {
 	 * and hands focus back to it. The model catches up through the usual debounced sync, since
 	 * MathLive reports a programmatic insert as an `input` event like any other edit.
 	 *
+	 * The caret lands in the first placeholder, so a matrix is ready to be filled in — and, since
+	 * that leaves the caret *inside* the new structure, whatever the balloon offers for it is
+	 * reachable straight away. LaTeX with no placeholder puts the caret after the insert instead.
+	 *
 	 * @returns `false` when no field is mounted, so there was nothing to write into.
 	 */
 	public insertIntoField( latex: string ): boolean {
@@ -124,7 +128,7 @@ export default class MathLiveEdit extends Plugin {
 			return false;
 		}
 
-		mathfield.insert( latex, { selectionMode: 'item' } );
+		mathfield.insert( latex, { selectionMode: 'placeholder' } );
 		mathfield.focus();
 		return true;
 	}

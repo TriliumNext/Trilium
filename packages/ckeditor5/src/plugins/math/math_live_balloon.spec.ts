@@ -6,6 +6,8 @@ import {
 	type ClassicEditor,
 	ContextualBalloon,
 	type DropdownView,
+	type ListItemView,
+	type ListView,
 	Paragraph,
 	type ToolbarView,
 	Typing,
@@ -71,6 +73,32 @@ describe( 'MathLiveBalloon', () => {
 		return { dropdown, grid: dropdown.panelView.children.get( 0 ) as unknown as GridLike };
 	}
 
+	/** The column group and the row group, in toolbar order. */
+	function matrixGroups(): [ DropdownView, DropdownView ] {
+		return items().slice( 3 ) as [ DropdownView, DropdownView ];
+	}
+
+	/** A group's entries. `addListToDropdown` builds the list on first open, so open it. */
+	function groupEntries( dropdown: DropdownView ): Array<ButtonView> {
+		dropdown.isOpen = true;
+		const list = dropdown.panelView.children.get( 0 ) as ListView;
+		return Array.from( list.items ).map( item => ( item as ListItemView ).children.get( 0 ) as ButtonView );
+	}
+
+	function liveField(): HTMLElement & { value: string } {
+		const field = domRoot().querySelector( 'math-field' );
+		if ( !( field instanceof HTMLElement ) ) {
+			throw new Error( 'no math field is mounted' );
+		}
+		return field as HTMLElement & { value: string };
+	}
+
+	/** Puts a matrix in the field, leaving the caret inside its first cell as MathLive does. */
+	async function insertMatrix( rows: number, columns: number ): Promise<void> {
+		editor.plugins.get( MathLiveEdit ).insertIntoField( buildMatrixLatex( rows, columns ) );
+		await waitFor( () => matrixGroups()[ 0 ].class === undefined || null );
+	}
+
 	async function startEditingSelected(): Promise<void> {
 		editor.plugins.get( MathLiveEdit ).startEditing();
 		await waitFor( () => domRoot().querySelector( 'math-field' ) );
@@ -100,7 +128,8 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		expect( items() ).toHaveLength( 3 );
+		// Two toggles, the matrix picker, and the column and row groups.
+		expect( items() ).toHaveLength( 5 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -204,6 +233,79 @@ describe( 'MathLiveBalloon', () => {
 		dropdown.isOpen = true;
 		expect( grid.rows ).toBe( 1 );
 		expect( grid.columns ).toBe( 1 );
+	} );
+
+	it( 'keeps the matrix groups out of the way until the caret is in a matrix', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const [ columnGroup, rowGroup ] = matrixGroups();
+		expect( columnGroup.buttonView.label ).toBe( 'Column' );
+		expect( rowGroup.buttonView.label ).toBe( 'Row' );
+		expect( columnGroup.class ).toBe( 'ck-hidden' );
+		expect( rowGroup.class ).toBe( 'ck-hidden' );
+
+		// Inserting one leaves the caret in its first cell, which is what brings the groups out.
+		await insertMatrix( 2, 2 );
+		expect( rowGroup.class ).toBeUndefined();
+	} );
+
+	it( 'splits the six actions between the column group and the row group', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		await insertMatrix( 2, 2 );
+		const [ columnGroup, rowGroup ] = matrixGroups();
+
+		expect( groupEntries( columnGroup ).map( entry => entry.label ) )
+			.toEqual( [ 'Insert column left', 'Insert column right', 'Delete column' ] );
+		expect( groupEntries( rowGroup ).map( entry => entry.label ) )
+			.toEqual( [ 'Insert row above', 'Insert row below', 'Delete row' ] );
+	} );
+
+	it( 'adds a row through MathLive, and the model follows', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		await insertMatrix( 2, 2 );
+		// One row break for the two rows it started with.
+		expect( liveField().value.match( /\\\\/g ) ).toHaveLength( 1 );
+
+		const rowGroup = matrixGroups()[ 1 ];
+		const insertBelow = groupEntries( rowGroup ).find( entry => entry.label === 'Insert row below' );
+		insertBelow?.fire( 'execute' );
+
+		expect( liveField().value.match( /\\\\/g ) ).toHaveLength( 2 );
+		await waitFor( () => getData( editor.model ).includes( 'begin{pmatrix}' ) || null );
+	} );
+
+	it( 'lets MathLive rule on what applies: the last row cannot be deleted', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		await insertMatrix( 1, 2 );
+
+		const [ columnGroup, rowGroup ] = matrixGroups();
+		const deleteRow = groupEntries( rowGroup ).find( entry => entry.label === 'Delete row' );
+		const deleteColumn = groupEntries( columnGroup ).find( entry => entry.label === 'Delete column' );
+
+		expect( deleteRow?.isEnabled ).toBe( false );
+		expect( deleteColumn?.isEnabled ).toBe( true );
+	} );
+
+	it( 'puts the groups away again when the session ends', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		await insertMatrix( 2, 2 );
+		// Held on to across the teardown: once the balloon is gone, so is the way to reach them.
+		const [ columnGroup, rowGroup ] = matrixGroups();
+
+		domRoot().querySelector( 'math-field' )?.dispatchEvent(
+			new KeyboardEvent( 'keydown', { key: 'Escape', bubbles: true, cancelable: true } ) );
+
+		expect( columnGroup.class ).toBe( 'ck-hidden' );
+		expect( rowGroup.class ).toBe( 'ck-hidden' );
 	} );
 
 	it( 'comes back for a second edit, reusing the same view', async () => {

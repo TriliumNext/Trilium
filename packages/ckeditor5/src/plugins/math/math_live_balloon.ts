@@ -3,24 +3,63 @@
 // field it is pinned to. It hosts the actions that belong to the equation itself, which would
 // otherwise be reachable only through MathLive's built-in corner menu — hidden by our theme.
 import {
+	addListToDropdown,
 	ButtonView,
+	Collection,
 	ContextualBalloon,
 	createDropdown,
 	type DropdownView,
 	IconObjectCenter,
 	IconObjectInline,
 	IconTable,
+	IconTableColumn,
+	IconTableRow,
 	_InsertTableView,
+	type ListDropdownButtonDefinition,
 	Plugin,
-	ToolbarView
+	ToolbarView,
+	ViewModel
 } from 'ckeditor5';
 import MathLiveEdit, {
 	type MathLiveSessionEndEvent,
 	type MathLiveSessionStartEvent
 } from './math_live_edit.js';
+import {
+	getMatrixActionState,
+	MATRIX_ACTION_UNAVAILABLE,
+	type MatrixActionId,
+	type MatrixMenuField
+} from './mathlive_matrix.js';
 
 /** The commands the balloon's type toggles run; both are registered by `MathEditing`. */
 type MathTypeCommandName = 'mathTypeInline' | 'mathTypeDisplay';
+
+/** A MathLive command name, run on the live field. */
+type MatrixCommand =
+	| 'addRowBefore'
+	| 'addRowAfter'
+	| 'addColumnBefore'
+	| 'addColumnAfter'
+	| 'removeRow'
+	| 'removeColumn';
+
+/** One entry of a matrix dropdown, and the MathLive menu item whose state it follows. */
+interface MatrixAction {
+	id: MatrixActionId;
+	command: MatrixCommand;
+	label: string;
+}
+
+/** A dropdown and the models of its entries, so both can follow the caret. */
+interface MatrixGroup {
+	dropdown: DropdownView;
+	items: Array<{ model: ViewModel; id: MatrixActionId }>;
+}
+
+/** The live field, seen as the two things the balloon asks of it. */
+type LiveMathField = HTMLElement & MatrixMenuField & {
+	executeCommand?: ( command: MatrixCommand ) => boolean;
+};
 
 export default class MathLiveBalloon extends Plugin {
 	public static get requires() {
@@ -32,6 +71,12 @@ export default class MathLiveBalloon extends Plugin {
 	}
 
 	private _view: ToolbarView | null = null;
+
+	/** The field of the running session, and the listeners tying the matrix groups to it. */
+	private _mathfield: LiveMathField | null = null;
+	private _fieldListeners: AbortController | null = null;
+
+	private readonly _matrixGroups: Array<MatrixGroup> = [];
 
 	public init(): void {
 		const mathLiveEdit = this.editor.plugins.get( MathLiveEdit );
@@ -47,12 +92,15 @@ export default class MathLiveBalloon extends Plugin {
 
 	public override destroy(): void {
 		super.destroy();
+		this._releaseField();
 		this._view?.destroy();
 	}
 
 	private _show( mathfield: HTMLElement ): void {
 		const balloon = this.editor.plugins.get( ContextualBalloon );
 		const view = this._getView();
+
+		this._trackField( mathfield as LiveMathField );
 
 		/* v8 ignore next 3 -- a second `sessionStart` without an intervening `sessionEnd` cannot
 		   happen: MathLiveEdit commits the previous session before mounting a new field */
@@ -74,6 +122,8 @@ export default class MathLiveBalloon extends Plugin {
 		const balloon = this.editor.plugins.get( ContextualBalloon );
 		const view = this._view;
 
+		this._releaseField();
+
 		/* v8 ignore next 3 -- `sessionEnd` only follows a `sessionStart`, which always adds the
 		   view to the balloon */
 		if ( !view || !balloon.hasView( view ) ) {
@@ -81,6 +131,64 @@ export default class MathLiveBalloon extends Plugin {
 		}
 
 		balloon.remove( view );
+	}
+
+	/**
+	 * Follows the field for as long as the session lasts. Which matrix actions apply depends on
+	 * where the caret is, so the groups are refreshed on every move and every edit.
+	 */
+	private _trackField( mathfield: LiveMathField ): void {
+		this._releaseField();
+
+		this._mathfield = mathfield;
+		this._fieldListeners = new AbortController();
+
+		const refresh = () => this._refreshMatrixGroups();
+		const options = { signal: this._fieldListeners.signal };
+		mathfield.addEventListener( 'selection-change', refresh, options );
+		mathfield.addEventListener( 'input', refresh, options );
+
+		this._refreshMatrixGroups();
+	}
+
+	private _releaseField(): void {
+		this._fieldListeners?.abort();
+		this._fieldListeners = null;
+		this._mathfield = null;
+		this._refreshMatrixGroups();
+	}
+
+	/** Hides each entry MathLive would hide, and each group whose entries all went. */
+	private _refreshMatrixGroups(): void {
+		for ( const group of this._matrixGroups ) {
+			let anyVisible = false;
+
+			for ( const item of group.items ) {
+				const state = this._mathfield ?
+					getMatrixActionState( this._mathfield, item.id ) :
+					MATRIX_ACTION_UNAVAILABLE;
+
+				item.model.set( { isVisible: state.visible, isEnabled: state.enabled } );
+				anyVisible ||= state.visible;
+			}
+
+			// `DropdownView` has no `isVisible` of its own, so the group goes out the way the
+			// other dropdowns in this package hide themselves.
+			group.dropdown.class = anyVisible ? undefined : 'ck-hidden';
+		}
+	}
+
+	private _runMatrixCommand( command: MatrixCommand ): void {
+		const mathfield = this._mathfield;
+		/* v8 ignore next 3 -- the entry is only reachable while a field is being tracked */
+		if ( !mathfield?.executeCommand ) {
+			return;
+		}
+
+		mathfield.executeCommand( command );
+		// The command moved the caret into the new row or column; keep typing going there.
+		mathfield.focus();
+		this._refreshMatrixGroups();
 	}
 
 	private _getView(): ToolbarView {
@@ -97,6 +205,28 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.items.add( this._createTypeButton( 'mathTypeInline', IconObjectInline, t( 'Inline equation' ) ) );
 		toolbar.items.add( this._createTypeButton( 'mathTypeDisplay', IconObjectCenter, t( 'Display equation' ) ) );
 		toolbar.items.add( this._createInsertMatrixDropdown( t( 'Insert matrix' ) ) );
+
+		// Column before row, and the same wording, as the table feature's own pair of dropdowns.
+		// Both stay out of the way until the caret is inside a matrix.
+		const isContentLtr = editor.locale.contentLanguageDirection === 'ltr';
+		toolbar.items.add( this._createMatrixGroup( t( 'Column' ), IconTableColumn, [
+			{
+				id: 'add-column-before',
+				command: 'addColumnBefore',
+				label: isContentLtr ? t( 'Insert column left' ) : t( 'Insert column right' )
+			},
+			{
+				id: 'add-column-after',
+				command: 'addColumnAfter',
+				label: isContentLtr ? t( 'Insert column right' ) : t( 'Insert column left' )
+			},
+			{ id: 'delete-column', command: 'removeColumn', label: t( 'Delete column' ) }
+		] ) );
+		toolbar.items.add( this._createMatrixGroup( t( 'Row' ), IconTableRow, [
+			{ id: 'add-row-above', command: 'addRowBefore', label: t( 'Insert row above' ) },
+			{ id: 'add-row-below', command: 'addRowAfter', label: t( 'Insert row below' ) },
+			{ id: 'delete-row', command: 'removeRow', label: t( 'Delete row' ) }
+		] ) );
 
 		// A click landing on the toolbar's own padding rather than on a button would otherwise
 		// blur the field, committing the equation and taking the balloon down with it. The
@@ -150,6 +280,47 @@ export default class MathLiveBalloon extends Plugin {
 			}
 		} );
 
+		return dropdown;
+	}
+
+	/**
+	 * One of the two matrix groups — a dropdown listing what can be done to a column, or to a
+	 * row, in the shape the table feature gives its own `tableColumn`/`tableRow` dropdowns. Every
+	 * entry follows the MathLive menu item of the same name, so an action that does not apply
+	 * where the caret is disappears rather than sitting there dead.
+	 */
+	private _createMatrixGroup( label: string, icon: string, actions: Array<MatrixAction> ): DropdownView {
+		const dropdown = createDropdown( this.editor.locale );
+		const definitions = new Collection<ListDropdownButtonDefinition>();
+		const items: MatrixGroup['items'] = [];
+
+		dropdown.buttonView.set( { label, icon, tooltip: true } );
+
+		for ( const action of actions ) {
+			const model = new ViewModel( {
+				label: action.label,
+				withText: true,
+				isVisible: false,
+				isEnabled: false,
+				_matrixCommand: action.command
+			} );
+
+			definitions.add( { type: 'button', model } );
+			items.push( { model, id: action.id } );
+		}
+
+		addListToDropdown( dropdown, definitions );
+
+		dropdown.on( 'execute', evt => {
+			const command = ( evt.source as { _matrixCommand?: MatrixCommand } )._matrixCommand;
+			/* v8 ignore next 3 -- every entry of this list carries a command */
+			if ( !command ) {
+				return;
+			}
+			this._runMatrixCommand( command );
+		} );
+
+		this._matrixGroups.push( { dropdown, items } );
 		return dropdown;
 	}
 
