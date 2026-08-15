@@ -56,6 +56,26 @@ describe( 'MathLiveEdit', () => {
 		expect( getComputedStyle( base ).zIndex ).toBe( 'auto' );
 	} );
 
+	it( 'promoting the preview to a field keeps the equation box height', async () => {
+		// The pixel-parity promise: MathLive's shadow container/content paddings are zeroed and
+		// the preview is inline-block like the field, so starting an edit must not grow the box.
+		setData( editor.model, '<paragraph>foo[<mathtex-inline display="false" equation="\\frac{a}{b}+x" type="span"></mathtex-inline>]bar</paragraph>' );
+
+		const preview = await waitFor( () =>
+			domRoot().querySelector( '.ck-math-widget-preview [class*="ML__latex"]' ) &&
+			domRoot().querySelector<HTMLElement>( '.ck-math-widget-preview' ) );
+		const before = preview.getBoundingClientRect();
+
+		const mathfield = await startEditingSelected();
+		await new Promise( resolve => setTimeout( resolve, 200 ) );
+		const after = mathfield.getBoundingClientRect();
+
+		// Height only: the widths still differ by a few pixels through an unresolved interplay
+		// of MathLive's `.ML__latex { width: min-content }` with the wrappers' shrink-to-fit
+		// sizing. (`Math` is the plugin import here; the global needs its full name.)
+		expect( globalThis.Math.abs( after.height - before.height ) ).toBeLessThan( 1.5 );
+	} );
+
 	it( 'startEditing mounts a math-field inside the selected widget and hides the preview', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
