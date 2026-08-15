@@ -6,6 +6,7 @@ import type MathCommand from './math_command.js';
 import MathEditing from './math_editing.js';
 import MathLiveBalloon from './math_live_balloon.js';
 import type MathLiveEdit from './math_live_edit.js';
+import type MathTypeCommand from './math_type_command.js';
 import MathUI from './math_ui.js';
 import type { KatexOptions } from './typings_external.js';
 
@@ -38,6 +39,8 @@ declare module 'ckeditor5' {
 
 	interface CommandsMap {
 		math: MathCommand;
+		mathTypeInline: MathTypeCommand;
+		mathTypeDisplay: MathTypeCommand;
 	}
 
 	interface EditorConfig {

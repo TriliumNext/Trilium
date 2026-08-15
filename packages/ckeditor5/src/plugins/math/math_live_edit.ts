@@ -40,6 +40,15 @@ export default class MathLiveEdit extends Plugin {
 	private _session: EditSession | null = null;
 	private _lastPointer: { x: number; y: number; time: number } | null = null;
 
+	/**
+	 * The equation with a field mounted in it, if any. Not the same as the selected widget: the
+	 * arrow-key and Backspace entry points mount a field while the model selection stays in the
+	 * surrounding text.
+	 */
+	public get editedElement(): ModelElement | null {
+		return this._session?.element ?? null;
+	}
+
 	public init(): void {
 		const editor = this.editor;
 

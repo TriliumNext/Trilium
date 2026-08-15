@@ -1,4 +1,5 @@
 import MathCommand from './math_command.js';
+import MathTypeCommand from './math_type_command.js';
 import { type DowncastAttributeEvent, type Editor, type GetCallback, Plugin, toWidget, Widget, viewToModelPositionOutsideModelElement, type ViewDowncastWriter, type ModelElement, CKEditorError } from 'ckeditor5';
 import { extractDelimiters } from './utils.js';
 import { renderStaticMath } from './mathlive_loader.js';
@@ -41,6 +42,8 @@ export default class MathEditing extends Plugin {
 		};
 
 		editor.commands.add( 'math', new MathCommand( editor ) );
+		editor.commands.add( 'mathTypeInline', new MathTypeCommand( editor, 'mathtex-inline' ) );
+		editor.commands.add( 'mathTypeDisplay', new MathTypeCommand( editor, 'mathtex-display' ) );
 
 		this._defineSchema();
 		this._defineConverters();
