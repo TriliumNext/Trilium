@@ -292,12 +292,12 @@ export default class MathLiveBalloon extends Plugin {
 		// as the selection moves; with nothing selected there is nothing to accent, and MathLive
 		// hides every one of them — taking the group with them.
 		toolbar.items.add( this._createSubmenuGroup(
-			'accent', t( 'Accent' ), IconSpecialCharacters, { liveLabels: true }
+			'accent', t( 'Accent' ), IconSpecialCharacters, { liveLabels: true, layout: 'grid' }
 		) );
 		// Boxes around the selection, drawn around it in the preview the same way. Its entries
 		// declare no condition of their own — the group carries it, and wants any selection.
 		toolbar.items.add( this._createSubmenuGroup(
-			'decoration', t( 'Decoration' ), IconMarker, { liveLabels: true }
+			'decoration', t( 'Decoration' ), IconMarker, { liveLabels: true, layout: 'row' }
 		) );
 		toolbar.items.add( this._createInsertMatrixDropdown( t( 'Insert matrix' ) ) );
 
@@ -401,13 +401,20 @@ export default class MathLiveBalloon extends Plugin {
 		id: MathLiveMenuItemId,
 		label: string,
 		icon: string,
-		options: { liveLabels?: boolean } = {}
+		options: { liveLabels?: boolean; layout?: 'row' | 'grid' } = {}
 	): DropdownView {
 		const locale = this.editor.locale;
 		const dropdown = createDropdown( locale );
 		const list = new ListView( locale );
 
 		dropdown.buttonView.set( { label, icon, tooltip: true } );
+
+		// A group of previews and nothing else reads better side by side than stacked, and
+		// `ListView` has no `class` of its own to say so with.
+		if ( options.layout ) {
+			list.extendTemplate( { attributes: { class: `ck-math-live-${ options.layout }` } } );
+		}
+
 		dropdown.panelView.children.add( list );
 
 		// Filled in from the field's own menu, once there is a field to read it from.

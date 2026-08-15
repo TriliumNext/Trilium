@@ -110,3 +110,39 @@
     text-align: right;
     white-space: nowrap;
 }
+
+/* A group whose entries are previews and nothing else reads as a set, not as a column of
+   sentences. CKEditor lists are built for the latter: they stack their items and hold each to
+   15em, both of which have to go before the entries can sit side by side. */
+.ck.ck-list.ck-math-live-row,
+.ck.ck-list.ck-math-live-grid {
+    display: grid;
+    gap: var(--ck-spacing-tiny);
+    padding: var(--ck-spacing-small);
+}
+.ck.ck-list.ck-math-live-row {
+    width: max-content;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+}
+/* Sized by what they hold, never by the panel: a fraction of the panel's width is whatever the
+   balloon happens to be, and the previews collide as soon as that is narrow. Fractions of a
+   `max-content` grid are the other way round — the grid takes the width its entries need, and
+   the four columns then share it evenly rather than each ending up its own width. */
+.ck.ck-list.ck-math-live-grid {
+    width: max-content;
+    grid-template-columns: repeat(4, 1fr);
+}
+.ck.ck-list.ck-math-live-row .ck-list__item,
+.ck.ck-list.ck-math-live-grid .ck-list__item {
+    min-width: 0;
+}
+/* `width` is one of the properties the balloon's reset hands back to `auto`, and a cell you can
+   only hit dead centre is a poor target. */
+.ck.ck-list.ck-math-live-row .ck-list__item > .ck-button,
+.ck.ck-list.ck-math-live-grid .ck-list__item > .ck-button {
+    justify-content: center;
+    border-radius: var(--ck-border-radius);
+    padding-inline: var(--ck-spacing-standard);
+    width: 100%;
+}

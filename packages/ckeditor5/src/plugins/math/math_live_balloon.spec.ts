@@ -98,6 +98,27 @@ describe( 'MathLiveBalloon', () => {
 		return collectButtons( list.items );
 	}
 
+	/** How a group's list lays its entries out, as the browser resolves it. */
+	function groupLayout( dropdown: DropdownView ): {
+		display: string;
+		flow: string;
+		columns: Array<string>;
+		width: number;
+		panelWidth: number;
+	} {
+		dropdown.isOpen = true;
+		const list = ( dropdown.panelView.children.get( 0 ) as ListView ).element as HTMLElement;
+		const style = getComputedStyle( list );
+
+		return {
+			display: style.display,
+			flow: style.gridAutoFlow,
+			columns: style.gridTemplateColumns.split( ' ' ).filter( Boolean ),
+			width: list.getBoundingClientRect().width,
+			panelWidth: ( dropdown.panelView.element as HTMLElement ).getBoundingClientRect().width
+		};
+	}
+
 	/** The captions of a group's sections, in order. */
 	function groupSections( dropdown: DropdownView ): Array<string> {
 		dropdown.isOpen = true;
@@ -457,6 +478,62 @@ describe( 'MathLiveBalloon', () => {
 		await waitFor( () => getData( editor.model ).includes( 'boxed' ) || null );
 	} );
 
+	it( 'lays the previews out as a set: the accents in a grid, the decorations in a row', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => accentGroup().class === undefined || null );
+
+		const accents = groupLayout( accentGroup() );
+		expect( accents.display ).toBe( 'grid' );
+		expect( accents.columns ).toHaveLength( 4 );
+
+		// Four columns of one width, and that width comes from the previews rather than from the
+		// panel — tie it to the panel and a narrow balloon squeezes them into each other.
+		expect( new Set( accents.columns ).size ).toBe( 1 );
+		expect( accents.width ).toBeLessThan( accents.panelWidth );
+
+		const decorations = groupLayout( decorationGroup() );
+		expect( decorations.display ).toBe( 'grid' );
+		expect( decorations.flow ).toBe( 'column' );
+
+		// The entries themselves have to give up the 15em CKEditor holds a list item to, or the
+		// four columns would be as wide as four sentences.
+		const item = groupEntries( accentGroup() )[ 0 ].element?.closest( '.ck-list__item' );
+		expect( getComputedStyle( item as HTMLElement ).minWidth ).toBe( '0px' );
+
+		// A list still, for anyone reading it out.
+		expect( ( accentGroup().panelView.children.get( 0 ) as ListView ).element?.tagName ).toBe( 'UL' );
+	} );
+
+	it( 'gives every accent a cell of its own to draw in', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		liveField().value = 'a';
+		selectWholeField();
+		await waitFor( () => accentGroup().class === undefined || null );
+
+		// Side by side, an entry that paints outside its cell paints into its neighbour's.
+		const spilling = groupEntries( accentGroup() )
+			.map( entry => {
+				const element = entry.element as HTMLElement;
+				const ink = inkExtent( element );
+				const box = element.getBoundingClientRect();
+				return {
+					above: ink.top - box.top,
+					below: box.bottom - ink.bottom,
+					before: ink.left - box.left,
+					after: box.right - ink.right
+				};
+			} )
+			.filter( entry => entry.above < 0 || entry.below < 0 || entry.before < 0 || entry.after < 0 );
+
+		expect( spilling ).toEqual( [] );
+	} );
+
 	it( 'offers the brackets as MathLive draws them, and switches the array to the one picked', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
@@ -572,9 +649,11 @@ describe( 'buildMatrixLatex', () => {
  * count, plus the rules a fraction and a radical draw: MathLive's struts (`ML__pstrut` and
  * friends) are invisible boxes that position the rest, and they reach far outside on purpose.
  */
-function inkExtent( element: HTMLElement ): { top: number; bottom: number } {
+function inkExtent( element: HTMLElement ): { top: number; bottom: number; left: number; right: number } {
 	let top = Infinity;
 	let bottom = -Infinity;
+	let left = Infinity;
+	let right = -Infinity;
 
 	for ( const node of element.querySelectorAll( '*' ) ) {
 		const paints = ( node.children.length === 0 && ( node.textContent ?? '' ).trim() !== '' ) ||
@@ -588,9 +667,11 @@ function inkExtent( element: HTMLElement ): { top: number; bottom: number } {
 		const box = node.getBoundingClientRect();
 		top = globalThis.Math.min( top, box.top );
 		bottom = globalThis.Math.max( bottom, box.bottom );
+		left = globalThis.Math.min( left, box.left );
+		right = globalThis.Math.max( right, box.right );
 	}
 
-	return { top, bottom };
+	return { top, bottom, left, right };
 }
 
 /** Every button of a list, descending into the sections a grouped list nests them in. */
