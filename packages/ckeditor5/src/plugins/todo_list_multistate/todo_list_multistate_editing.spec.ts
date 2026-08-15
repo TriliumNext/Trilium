@@ -380,7 +380,7 @@ describe("TodoListMultistateEditing", () => {
             // The manager creates handles lazily and shows nothing until a handle
             // pushes onto the visibility stack — so a freshly-rendered editor
             // has no popup, and every checkbox reports `null` for
-            // `Tooltip.getInstance` until it is hovered or the caret enters it.
+            // `Tooltip.getInstance` until it is hovered.
             const domRoot = editor.editing.view.getDomRoot();
             const input = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
             expect(input).not.toBeNull();
@@ -475,11 +475,8 @@ describe("TodoListMultistateEditing", () => {
             const currentInput = editor.editing.view.getDomRoot()?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
             expect(currentInput).not.toBeNull();
             expect(currentInput).not.toBe(firstInput);
-            // Whether a popup is currently visible depends on where the caret
-            // is (`TODO_FIXTURE` places it inside the item, so the plugin's
-            // caret-driven flow can legitimately show the tooltip during the
-            // rebuild) — that's orthogonal to the "old-handle-disposed" invariant
-            // this test exists to verify.
+            // Popup visibility is orthogonal to the "old-handle-disposed"
+            // invariant this test exists to verify.
         });
 
         it("includes the state label when a configured state is set", () => {
@@ -535,9 +532,7 @@ describe("TodoListMultistateEditing", () => {
         });
     });
 
-    describe("caret-driven tooltip visibility", () => {
-        // Fixture: a plain paragraph then two todo items. The caret starts in the plain
-        // paragraph so we can move it into (and between) the todos to drive the listener.
+    describe("caret movement", () => {
         const CARET_FIXTURE = '<paragraph>plain[]</paragraph>' +
             '<paragraph listIndent="0" listItemId="t-a" listType="todo">A</paragraph>' +
             '<paragraph listIndent="0" listItemId="t-b" listType="todo">B</paragraph>';
@@ -552,155 +547,32 @@ describe("TodoListMultistateEditing", () => {
         beforeEach(async () => {
             editor = await createEditor({ taskStates: CUSTOM_STATES });
             setModelData(editor.model, CARET_FIXTURE);
-            // Real timers by default — the dwell-delay tests below opt into fake
-            // timers explicitly so they can advance past `TOOLTIP_DWELL_MS`
-            // without paying the wall-clock cost.
             vi.useFakeTimers({ shouldAdvanceTime: false });
         });
 
-        // Switch back to real timers between tests — Bootstrap's own transitions
-        // still run on real time, and leaving fake timers on can wedge cleanup.
-        function endFakeTimers(): void {
+        it("does not show a tooltip when the caret moves into, between, or within todo items", () => {
+            moveCaretTo(1);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 5);
+            expect(livePopup()).toBeNull();
+
+            moveCaretTo(2);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 5);
+            expect(livePopup()).toBeNull();
+
+            editor.model.change((writer) => {
+                writer.setSelection(writer.createPositionAt(getBlock(editor, 2), 1));
+            });
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 5);
+            expect(livePopup()).toBeNull();
+
             vi.runOnlyPendingTimers();
             vi.useRealTimers();
-        }
-
-        it("shows a tooltip on the correct source element after the dwell delay when the caret enters a todo <li>", () => {
-            expect(livePopup()).toBeNull();
-
-            moveCaretTo(1); // caret in todo A → schedules a delayed show
-            expect(livePopup()).toBeNull(); // still deferred
-
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            expect(livePopup()).not.toBeNull();
-
-            // The tooltip belongs to the caret's todo item — its aria link points
-            // back at the corresponding checkbox.
-            const source = document.querySelector<HTMLElement>(`[aria-describedby="${livePopup()?.id}"]`);
-            const targetLi = source?.closest("li");
-            expect(targetLi?.getAttribute("data-list-item-id")).toBe("t-a");
-
-            endFakeTimers();
-        });
-
-        it("hides the visible tooltip when the caret leaves any todo item", () => {
-            moveCaretTo(1);
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            expect(livePopup()).not.toBeNull();
-
-            moveCaretTo(0); // back to the plain paragraph — the caret handle disposes
-            expect(livePopup()).toBeNull();
-
-            endFakeTimers();
-        });
-
-        it("switches the visible tooltip's source element when the caret moves between two todo items", () => {
-            moveCaretTo(1);
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            const firstSourceLi = document.querySelector<HTMLElement>(
-                `[aria-describedby="${livePopup()?.id}"]`
-            )?.closest("li");
-            expect(firstSourceLi?.getAttribute("data-list-item-id")).toBe("t-a");
-
-            moveCaretTo(2); // enter B — the caret handle rebinds to the new checkbox
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            const secondSourceLi = document.querySelector<HTMLElement>(
-                `[aria-describedby="${livePopup()?.id}"]`
-            )?.closest("li");
-            expect(secondSourceLi?.getAttribute("data-list-item-id")).toBe("t-b");
-
-            endFakeTimers();
-        });
-
-        it("does not disturb the popup when the caret moves within the same todo item", () => {
-            moveCaretTo(1);
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            const before = livePopup();
-            expect(before).not.toBeNull();
-
-            // Move the caret to a different position WITHIN the same todo item.
-            editor.model.change((writer) => {
-                writer.setSelection(writer.createPositionAt(getBlock(editor, 1), 1));
-            });
-
-            // Same DOM popup element — no dispose/re-create dance.
-            expect(livePopup()).toBe(before);
-
-            endFakeTimers();
-        });
-
-        it("re-shows the tooltip immediately after a state change on the caret's item (no second dwell)", () => {
-            moveCaretTo(1); // caret in todo A
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            expect(livePopup()).not.toBeNull();
-
-            // 'doing' has isCompleted=false → the checkbox input stays the same
-            // DOM element. The plugin detects the state change on the caret's
-            // item and calls `handle.show()` (not showAfter), so the popup
-            // stays visible without any additional dwell wait.
-            editor.execute("setTaskState", { state: "doing" });
-            expect(livePopup()).not.toBeNull();
-
-            endFakeTimers();
-        });
-
-        it("recovers cleanly when the checkbox under the caret is replaced by a reconvert", () => {
-            moveCaretTo(1);
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            const domRoot = editor.editing.view.getDomRoot();
-            const oldInput = domRoot?.querySelector<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
-
-            // Toggling the native checkbox reconverts the todo item — the DOM
-            // input is replaced. The plugin reaps the old hover handle and
-            // re-attaches its caret handle to the new input.
-            editor.execute("checkTodoList");
-            editor.editing.view.forceRender();
-
-            expect(oldInput?.isConnected).toBe(false);
-            // Moving the caret out must not throw despite the stale reference.
-            expect(() => moveCaretTo(0)).not.toThrow();
-
-            endFakeTimers();
-        });
-
-        it("keeps no tooltip visible when the caret has no todo ancestor", () => {
-            moveCaretTo(1);
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            expect(livePopup()).not.toBeNull();
-
-            moveCaretTo(0); // plain paragraph → no todo ancestor → hide
-            expect(livePopup()).toBeNull();
-
-            endFakeTimers();
-        });
-
-        it("bails out safely when the position has no parent (defensive branch)", () => {
-            const selection = editor.model.document.selection;
-            const spy = vi.spyOn(selection, "getFirstPosition")
-                .mockReturnValueOnce(null as unknown as ReturnType<typeof selection.getFirstPosition>);
-            // Nudge the selection so `change:range` fires with the mocked getFirstPosition.
-            editor.model.change((writer) => {
-                writer.setSelection(writer.createPositionAt(getBlock(editor, 0), 0));
-            });
-            spy.mockRestore();
-        });
-
-        it("nulls the caret-shown reference on destroy", async () => {
-            moveCaretTo(1);
-            // No throw expected — destroy must clear internal state cleanly whether
-            // or not a caret-shown tooltip is currently tracked.
-            await editor.destroy();
-            expect(editor.state).toBe("destroyed");
-            // Recreate so the shared afterEach's destroy() does not double-destroy.
-            editor = await createEditor({ taskStates: CUSTOM_STATES });
         });
     });
 
     describe("hover-driven tooltip visibility", () => {
-        // Two todos so we can hover one while the caret sits in a plain
-        // paragraph — the caret and hover flows must be independently
-        // exercised, since the `ownedByCaret` check yields different results
-        // in each case.
+        // Two todos verify that the hover handle follows the pointer independently
+        // of the caret position.
         const HOVER_FIXTURE = '<paragraph>plain[]</paragraph>' +
             '<paragraph listIndent="0" listItemId="t-a" listType="todo">A</paragraph>' +
             '<paragraph listIndent="0" listItemId="t-b" listType="todo">B</paragraph>';
@@ -734,9 +606,7 @@ describe("TodoListMultistateEditing", () => {
             vi.useRealTimers();
         }
 
-        it("mouseenter on a checkbox not owned by the caret schedules a delayed show; mouseleave cancels it", () => {
-            // Caret in the plain paragraph — no todo owns the caret, so the
-            // hover flow is fully in charge of the hovered checkbox's tooltip.
+        it("mouseenter schedules a delayed show and mouseleave hides the tooltip", () => {
             moveCaretTo(0);
             const inputA = checkboxOfItem("t-a");
             expect(livePopup()).toBeNull();
@@ -758,46 +628,58 @@ describe("TodoListMultistateEditing", () => {
             endFakeTimers();
         });
 
-        it("mouseenter is a no-op when the caret is inside the hovered checkbox's item", () => {
-            // Caret is inside todo A → the caret handle already owns A's
-            // tooltip visibility. Hovering the same checkbox must not run the
-            // dwell-and-push cycle (the manager would flicker if it did).
+        it("mouseleave before the dwell delay cancels the pending show", () => {
+            const inputA = checkboxOfItem("t-a");
+
+            inputA.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS - 1);
+            inputA.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 2);
+
+            expect(livePopup()).toBeNull();
+            endFakeTimers();
+        });
+
+        it("shows on hover even when the caret is inside the hovered item", () => {
             moveCaretTo(1);
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            const beforeHover = livePopup();
-            expect(beforeHover).not.toBeNull(); // caret drove this popup
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 2);
+            expect(livePopup()).toBeNull();
 
             const inputA = checkboxOfItem("t-a");
             inputA.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-            // Advance well past the dwell — no NEW render, and no manager churn.
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS * 2);
-            // Same popup element — the caret handle's tooltip was never disturbed.
-            expect(livePopup()).toBe(beforeHover);
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            expect(livePopup()).not.toBeNull();
+
+            inputA.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+            expect(livePopup()).toBeNull();
 
             endFakeTimers();
         });
 
-        it("mouseleave is a no-op when the caret is inside the hovered checkbox's item", () => {
-            // The caret owns A's popup. Even if a mouseleave arrives (mouse
-            // sweeping across the checkbox during selection), the hover branch
-            // must not tear the popup down — the caret handle still wants it.
-            moveCaretTo(1);
-            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
-            const beforeLeave = livePopup();
-            expect(beforeLeave).not.toBeNull();
-
+        it("switches the visible tooltip when hovering a different checkbox", () => {
             const inputA = checkboxOfItem("t-a");
+            const inputB = checkboxOfItem("t-b");
+
+            inputA.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            expect(document.querySelector<HTMLElement>(
+                `[aria-describedby="${livePopup()?.id}"]`
+            )?.closest("li")?.getAttribute("data-list-item-id")).toBe("t-a");
+
             inputA.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
-            expect(livePopup()).toBe(beforeLeave);
+            inputB.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+            vi.advanceTimersByTime(TOOLTIP_DWELL_MS);
+            expect(document.querySelector<HTMLElement>(
+                `[aria-describedby="${livePopup()?.id}"]`
+            )?.closest("li")?.getAttribute("data-list-item-id")).toBe("t-b");
 
             endFakeTimers();
         });
     });
 
     describe("contentHintsEnabled config", () => {
-        // With hints off, neither the hover nor the caret flow should spawn
-        // a popup — the plugin's core editing behavior (state cycle, native
-        // toggle) must still work, but the on-screen hint is fully muted.
+        // With hints off, hover should not spawn a popup. The plugin's core editing
+        // behavior (state cycle, native toggle) must still work.
         beforeEach(async () => {
             editor = await createEditor({
                 taskStates: CUSTOM_STATES,
