@@ -303,9 +303,21 @@ export default class MathLiveEdit extends Plugin {
 
 		// Arrow navigation past the field boundary walks out into the surrounding text.
 		mathfield.addEventListener( 'move-out', evt => {
-			const direction = ( evt as CustomEvent<{ direction: string }> ).detail?.direction;
+			const customEvt = evt as CustomEvent<{ direction: string }>;
+			const direction = customEvt.detail?.direction;
 			const backward = direction === 'backward' || direction === 'upward';
-			this._leaveField( element, backward ? 'before' : 'after' );
+
+			// This event is dispatched from inside MathLive's keystroke pipeline, which keeps
+			// using the field's internals after our listener returns. Cancel it (so MathLive
+			// skips its "plonk" announcement on the field we are leaving) and defer the actual
+			// unmount until the keystroke task has finished — tearing the field down
+			// synchronously crashes that pipeline ("this.mathfield is undefined" in announce()).
+			customEvt.preventDefault();
+			queueMicrotask( () => {
+				if ( this._session?.mathfield === mathfield ) {
+					this._leaveField( element, backward ? 'before' : 'after' );
+				}
+			} );
 		} );
 
 		mathfield.addEventListener( 'keydown', evt => {

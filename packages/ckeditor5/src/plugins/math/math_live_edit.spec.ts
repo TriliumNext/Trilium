@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import Math from './math.js';
 import MathLiveEdit from './math_live_edit.js';
-import { createTestEditor, getEditorElement } from '../../../test/editor-kit.js';
+import { createTestEditor } from '../../../test/editor-kit.js';
 
 const INLINE_WIDGET = '<mathtex-inline display="false" equation="x^2" type="span"></mathtex-inline>';
 
@@ -112,13 +112,53 @@ describe( 'MathLiveEdit', () => {
 		await waitFor( findMathField );
 	} );
 
+	it( 'exiting with ArrowRight through MathLive\'s real keystroke pipeline does not crash', async () => {
+		// Two adjacent equations, as in the original report. The crash did not need the second
+		// one, but walking out towards another widget is the harshest ordering.
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]<mathtex-inline display="false" equation="y" type="span"></mathtex-inline>bar</paragraph>` );
+
+		const mathfield = await startEditingSelected();
+		// Let the mount's rAF place focus and the caret before dispatching.
+		await new Promise( resolve => requestAnimationFrame( resolve ) );
+
+		const errors: Array<unknown> = [];
+		const onError = ( event: ErrorEvent ) => {
+			errors.push( event.error ?? event.message );
+			event.preventDefault();
+		};
+		window.addEventListener( 'error', onError );
+
+		try {
+			// Dispatching a keydown on the shadow keyboard sink runs MathLive's own
+			// onKeystroke → moveToNextChar, which fires `move-out` mid-pipeline — the exact
+			// path that used to crash with "this.mathfield is undefined" when the listener
+			// unmounted the field synchronously.
+			mathfield.position = mathfield.lastOffset;
+			const sink = mathfield.shadowRoot?.querySelector( '[part=keyboard-sink]' );
+			expect( sink ).not.toBeNull();
+			sink?.dispatchEvent( new KeyboardEvent( 'keydown', {
+				key: 'ArrowRight', code: 'ArrowRight', bubbles: true, composed: true, cancelable: true
+			} ) );
+
+			// The teardown is deferred past the keystroke task; wait for it.
+			await waitFor( () => ( findMathField() === null ? true : null ) );
+		} finally {
+			window.removeEventListener( 'error', onError );
+		}
+
+		expect( errors ).toEqual( [] );
+		// The caret ended up between the two equations.
+		expect( getData( editor.model ) ).toMatch( /<\/mathtex-inline>\[\]<mathtex-inline/ );
+	} );
+
 	it( 'move-out unmounts the field and puts the caret next to the widget', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
 		const mathfield = await startEditingSelected();
-		mathfield.dispatchEvent( new CustomEvent( 'move-out', { detail: { direction: 'forward' } } ) );
+		mathfield.dispatchEvent( new CustomEvent( 'move-out', { detail: { direction: 'forward' }, cancelable: true } ) );
 
-		expect( findMathField() ).toBeNull();
+		// The unmount is deferred past the dispatching keystroke task.
+		await waitFor( () => ( findMathField() === null ? true : null ) );
 		expect( getData( editor.model ) ).toContain( '</mathtex-inline>[]' );
 	} );
 
@@ -159,6 +199,8 @@ describe( 'MathLiveEdit', () => {
 
 interface MathFieldLike extends HTMLElement {
 	value: string;
+	position: number;
+	lastOffset: number;
 }
 
 /** A keydown whose legacy `keyCode` is populated — CKEditor's key observers read it. */
