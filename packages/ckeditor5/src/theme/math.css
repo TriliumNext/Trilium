@@ -3,9 +3,12 @@
  */
 
 /* === Z-INDEX: MathLive UI above CKEditor === */
+/* Floating UI only — never `.ML__base` or `.ML__sr-only`, which are part of every RENDERED
+   equation (and `.ML__base` is position: relative in MathLive's own stylesheet): elevating them
+   paints each equation in the note content above the app's modals and menus. */
 .ML__keyboard, .ML__popover, .ML__menu, .ML__suggestions, .ML__autocomplete,
-.ML__tooltip, .ML__sr-only, [data-ml-root], #mathlive-suggestion-popover,
-.mathlive-suggestions-popover, [data-ml-tooltip], .ML__base {
+.ML__tooltip, [data-ml-root], #mathlive-suggestion-popover,
+.mathlive-suggestions-popover, [data-ml-tooltip] {
     z-index: calc(var(--ck-z-panel) + 1000) !important;
 }
 /* MathLive's own floating UI only — never a bare [role="tooltip"] or .popover, which would reach

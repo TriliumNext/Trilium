@@ -45,6 +45,17 @@ describe( 'MathLiveEdit', () => {
 		expect( preview ).not.toBeNull();
 	} );
 
+	it( 'rendered equations are not elevated above the rest of the UI', async () => {
+		// .ML__base is part of every rendered equation and position: relative in MathLive's own
+		// stylesheet. It once sat in math.css's floating-UI z-index list (harmless while it only
+		// existed inside the balloon), which painted every equation over the app's modals.
+		setData( editor.model, `<paragraph>foo[]${ INLINE_WIDGET }bar</paragraph>` );
+
+		const base = await waitFor( () =>
+			domRoot().querySelector( '.ck-math-widget-preview .ML__base' ) );
+		expect( getComputedStyle( base ).zIndex ).toBe( 'auto' );
+	} );
+
 	it( 'startEditing mounts a math-field inside the selected widget and hides the preview', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
