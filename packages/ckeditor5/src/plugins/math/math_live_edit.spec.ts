@@ -223,6 +223,30 @@ describe( 'MathLiveEdit', () => {
 		expect( domRoot().querySelector( '.ck-math-widget-preview' )?.classList.contains( 'ck-hidden' ) ).toBe( false );
 	} );
 
+	it( 'leaves the keys that finish a LaTeX command to MathLive, and takes them back after', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		const mathfield = await startEditingSelected();
+		await waitFor( () => ( document.activeElement === mathfield ? true : null ) );
+
+		// `\` puts the field in LaTeX mode, where the command being spelled out is not in the
+		// field's value yet. Enter accepts it there — taking it to leave the field instead
+		// committed an empty equation, which removed the widget the user was typing into.
+		const sink = mathfield.shadowRoot?.querySelector( '[part=keyboard-sink]' );
+		expect( sink ).not.toBeNull();
+		sink?.dispatchEvent( sinkKey( '\\', 'Backslash' ) );
+		await waitFor( () => ( mathfield.mode === 'latex' ? true : null ) );
+
+		sink?.dispatchEvent( sinkKey( 'Enter', 'Enter' ) );
+		await waitFor( () => ( mathfield.mode === 'math' ? true : null ) );
+		expect( findMathField() ).not.toBeNull();
+		expect( getData( editor.model ) ).toContain( '<mathtex-inline' );
+
+		// Back in math mode the same key leaves the field, as it always did.
+		sink?.dispatchEvent( sinkKey( 'Enter', 'Enter' ) );
+		await waitFor( () => ( findMathField() === null ? true : null ) );
+	} );
+
 	it( 'committing an emptied equation removes the widget', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
@@ -499,6 +523,14 @@ interface MathFieldLike extends HTMLElement {
 	value: string;
 	position: number;
 	lastOffset: number;
+	readonly mode: 'math' | 'text' | 'latex';
+}
+
+/** A keydown for MathLive's own keystroke pipeline, which reads it off the shadow keyboard sink. */
+function sinkKey( key: string, code: string ): KeyboardEvent {
+	return new KeyboardEvent( 'keydown', {
+		key, code, bubbles: true, composed: true, cancelable: true
+	} );
 }
 
 /** A keydown whose legacy `keyCode` is populated — CKEditor's key observers read it. */

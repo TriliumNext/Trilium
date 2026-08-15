@@ -418,6 +418,16 @@ export default class MathLiveEdit extends Plugin {
 		} );
 
 		mathfield.addEventListener( 'keydown', evt => {
+			// Typing `\` puts the field in LaTeX mode, where a command is being spelled out with
+			// a suggestion list open. MathLive binds all three of these keys there — Enter accepts
+			// the entry with its suggestion, Tab accepts the suggestion alone, Escape accepts what
+			// was typed without it — so leaving the field instead would tear the entry down
+			// mid-command, taking a freshly inserted equation with it (an unfinished LaTeX group
+			// is not in the field's value yet, and an empty equation is removed on commit).
+			if ( mathfield.mode === 'latex' ) {
+				return;
+			}
+
 			if ( evt.key === 'Escape' ) {
 				evt.preventDefault();
 				evt.stopPropagation();
@@ -565,6 +575,10 @@ interface MathFieldElement extends HTMLElement {
 	value: string;
 	readOnly: boolean;
 	defaultMode: 'inline-math' | 'math' | 'text';
+
+	/** What the caret is currently typing into; `'latex'` while a command is being spelled out. */
+	readonly mode: 'math' | 'text' | 'latex';
+
 	mathVirtualKeyboardPolicy: string;
 	placeholder: string;
 	position: number;
