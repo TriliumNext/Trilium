@@ -198,19 +198,18 @@
     min-width: 4em;
 }
 
-/* The symbol gallery: sections stacked, each one a dense grid of glyphs. The grid goes on the
-   nested list a `ListItemGroupView` puts its entries in, not on the outer one — that holds the
-   sections themselves, which stay a column with their captions above them. */
 .ck.ck-list.ck-math-live-symbols {
+    display: grid;
+    width: max-content;
+    grid-template-columns: repeat(8, minmax(2.2em, 1fr));
+    gap: var(--ck-spacing-tiny);
+    padding: var(--ck-spacing-small);
     max-height: 22em;
     overflow-y: auto;
     scrollbar-width: thin;
 }
-.ck.ck-list.ck-math-live-symbols .ck-list__group > .ck-list {
-    display: grid;
-    grid-template-columns: repeat(8, 2.2em);
-    gap: var(--ck-spacing-tiny);
-    padding: var(--ck-spacing-small);
+.ck.ck-list.ck-math-live-symbols .ck-list__item {
+    min-width: 0;
 }
 .ck.ck-list.ck-math-live-symbols .ck-list__item > .ck-button {
     justify-content: center;
@@ -218,13 +217,10 @@
     padding: var(--ck-spacing-tiny);
     width: 100%;
 }
-/* Nine sections of glyphs is a long way to scroll past; the captions stay put so it is always
-   clear which one is on screen. */
-.ck.ck-list.ck-math-live-symbols .ck-list__group > .ck-label {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: var(--ck-color-dropdown-panel-background);
+.ck.ck-dropdown.ck-math-live-symbol-group .ck-dropdown__button .ck-button__label {
+    min-width: 1.6em;
+    text-align: center;
+    width: auto;
 }
 
 /* A swatch's whole label is `<span style="background: …">`, sized by MathLive against its own

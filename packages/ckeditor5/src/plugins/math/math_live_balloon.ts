@@ -21,7 +21,6 @@ import {
 	IconTableCellProperties,
 	IconTableColumn,
 	IconTableRow,
-	IconText,
 	_InsertTableView,
 	type ListDropdownButtonDefinition,
 	ListItemButtonView,
@@ -47,7 +46,11 @@ import {
 	runMenuItem
 } from './mathlive_menu.js';
 import { renderMathMarkup } from './mathlive_loader.js';
-import { MATH_SYMBOL_SECTIONS, type MathSymbolSectionId } from './symbols.js';
+import {
+	MATH_SYMBOL_SECTIONS,
+	type MathSymbolSection,
+	type MathSymbolSectionId
+} from './symbols.js';
 
 /** How a group arranges its entries: stacked when unset, or as a set of one of these. */
 type MenuGroupLayout = 'row' | 'grid' | 'swatches';
@@ -387,9 +390,6 @@ export default class MathLiveBalloon extends Plugin {
 		toolbar.ariaLabel = t( 'Equation toolbar' );
 		toolbar.items.add( this._createTypeButton( 'mathTypeInline', IconObjectInline, t( 'Inline equation' ) ) );
 		toolbar.items.add( this._createTypeButton( 'mathTypeDisplay', IconObjectCenter, t( 'Display equation' ) ) );
-		// Every glyph OneNote's symbol gallery has and MathLive's menu does not: this one is ours
-		// end to end, so unlike the groups below it needs no field to describe itself.
-		toolbar.items.add( this._createSymbolsDropdown( t( 'Symbols' ), IconSpecialCharacters ) );
 		// The structures MathLive inserts, plus the ones it stops short of. Each of ours is slotted
 		// in behind the MathLive entry it belongs with, so the sections stay the sections upstream
 		// captioned rather than gaining a bin of leftovers at the end.
@@ -436,7 +436,7 @@ export default class MathLiveBalloon extends Plugin {
 		// hides every one of them — taking the group with them. Ours follow the same rules: the
 		// narrow marks want a single letter under them, the stretchy ones take any selection.
 		toolbar.items.add( this._createSubmenuGroup(
-			'accent', t( 'Accent' ), IconText, {
+			'accent', t( 'Accent' ), IconSpecialCharacters, {
 				liveLabels: true,
 				layout: 'grid',
 				extras: {
@@ -528,6 +528,15 @@ export default class MathLiveBalloon extends Plugin {
 			{ id: 'environment-bar', command: [ 'setEnvironment', 'vmatrix' ] },
 			{ id: 'environment-braces', command: [ 'setEnvironment', 'Bmatrix' ] }
 		], { layout: 'row' } ) );
+
+		// Every glyph OneNote's symbol gallery has and MathLive's menu does not, a category to a
+		// button: the category is what someone browsing already has in mind, so it is worth a
+		// press of its own rather than a scroll past eight others. Last in the toolbar, after
+		// everything that acts on the equation already in the field — these only ever add to it,
+		// and there are nine of them.
+		for ( const section of MATH_SYMBOL_SECTIONS ) {
+			toolbar.items.add( this._createSymbolGroup( section ) );
+		}
 
 		// A click landing on the toolbar's own padding rather than on a button would otherwise
 		// blur the field, committing the equation and taking the balloon down with it. The
@@ -778,20 +787,33 @@ export default class MathLiveBalloon extends Plugin {
 	}
 
 	/**
-	 * The symbol gallery: the glyphs of {@link MATH_SYMBOL_SECTIONS}, drawn as themselves and
-	 * grouped the way a person browsing for one expects to find them. Unlike every other group in
-	 * this balloon it is ours rather than MathLive's, so it describes itself without a field —
-	 * but it is still built on first open, since two hundred previews is two hundred renders and
-	 * most sessions never ask for one.
+	 * One category of the symbol gallery: its glyphs drawn as themselves, in a grid behind a
+	 * button wearing one of them. The button carries a symbol rather than an icon because there
+	 * is no icon for "the Greek letters" — MathLive labels the switch to its own Greek keyboard
+	 * layer `αβγ` for the same reason — with the category's name in the tooltip beside it.
+	 *
+	 * Unlike every other group in this balloon this one is ours rather than MathLive's, so it
+	 * describes itself without a field. It is still built on first open: a preview is a render,
+	 * and most sessions never open most categories.
 	 */
-	private _createSymbolsDropdown( label: string, icon: string ): DropdownView {
+	private _createSymbolGroup( section: MathSymbolSection ): DropdownView {
 		const editor = this.editor;
 		const locale = editor.locale;
-		const t = editor.t;
+		const name = getSymbolSectionTitle( editor.t, section.id );
 		const dropdown = createDropdown( locale );
 		const list = new ListView( locale );
 
-		dropdown.buttonView.set( { label, icon, tooltip: true } );
+		// The name goes to the tooltip and to anyone reading the toolbar out, since the label
+		// itself is a glyph — the shape the mode dropdown uses for a label that is not a name.
+		dropdown.buttonView.set( {
+			withText: true,
+			label: section.glyph,
+			tooltip: name,
+			ariaLabel: name,
+			ariaLabelledBy: undefined
+		} );
+		dropdown.extendTemplate( { attributes: { class: 'ck-math-live-symbol-group' } } );
+
 		list.extendTemplate( { attributes: { class: 'ck-math-live-symbols' } } );
 		dropdown.panelView.children.add( list );
 
@@ -800,26 +822,20 @@ export default class MathLiveBalloon extends Plugin {
 				return;
 			}
 
-			for ( const { id, symbols } of MATH_SYMBOL_SECTIONS ) {
-				const section = new ListItemGroupView( locale );
-				section.label = getSymbolSectionTitle( t, id );
-				list.items.add( section );
+			for ( const latex of section.symbols ) {
+				const button = new ListItemButtonView( locale, new MathLiveLabelView( locale ) );
 
-				for ( const latex of symbols ) {
-					const button = new ListItemButtonView( locale, new MathLiveLabelView( locale ) );
+				// The LaTeX is the tooltip: `\nabla` is what this symbol is called wherever
+				// maths is written, and it is what to type to get it here next time.
+				button.set( { withText: true, label: renderMathMarkup( latex ), tooltip: latex } );
+				button.on( 'execute', () => {
+					editor.plugins.get( MathLiveEdit ).insertIntoField( latex );
+				} );
+				button.delegate( 'execute' ).to( dropdown );
 
-					// The LaTeX is the tooltip: `\nabla` is what this symbol is called wherever
-					// maths is written, and it is what to type to get it here next time.
-					button.set( { withText: true, label: renderMathMarkup( latex ), tooltip: latex } );
-					button.on( 'execute', () => {
-						editor.plugins.get( MathLiveEdit ).insertIntoField( latex );
-					} );
-					button.delegate( 'execute' ).to( dropdown );
-
-					const listItem = new ListItemView( locale );
-					listItem.children.add( button );
-					section.items.add( listItem );
-				}
+				const listItem = new ListItemView( locale );
+				listItem.children.add( button );
+				list.items.add( listItem );
 			}
 		} );
 

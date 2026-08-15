@@ -26,6 +26,13 @@ export type MathSymbolSectionId =
 export interface MathSymbolSection {
 	id: MathSymbolSectionId;
 
+	/**
+	 * The face of the section's toolbar button: one of its own symbols, standing for the rest.
+	 * Plain text rather than LaTeX — a dropdown's toggle renders its label as a text node — and
+	 * the same way MathLive's virtual keyboard labels the switch to its Greek layer `αβγ`.
+	 */
+	glyph: string;
+
 	/** The LaTeX of each symbol, in the order the section draws them. */
 	symbols: readonly string[];
 }
@@ -33,6 +40,7 @@ export interface MathSymbolSection {
 export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	{
 		id: 'basic',
+		glyph: '±',
 		symbols: [
 			'\\pm', '\\mp', '\\times', '\\div', '\\cdot', '\\ast', '\\star', '\\circ',
 			'\\bullet', '\\oplus', '\\ominus', '\\otimes', '\\oslash', '\\odot',
@@ -43,6 +51,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'greek',
+		glyph: 'αβγ',
 		symbols: [
 			'\\alpha', '\\beta', '\\gamma', '\\delta', '\\epsilon', '\\varepsilon', '\\zeta',
 			'\\eta', '\\theta', '\\vartheta', '\\iota', '\\kappa', '\\lambda', '\\mu', '\\nu',
@@ -54,6 +63,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'letterlike',
+		glyph: 'ℝ',
 		symbols: [
 			'\\mathbb{R}', '\\mathbb{N}', '\\mathbb{Z}', '\\mathbb{Q}', '\\mathbb{C}',
 			'\\mathbb{P}', '\\aleph', '\\beth', '\\hbar', '\\ell', '\\wp', '\\Re', '\\Im',
@@ -62,6 +72,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'operators',
+		glyph: '∑',
 		symbols: [
 			'\\sum', '\\prod', '\\coprod', '\\int', '\\iint', '\\iiint', '\\oint',
 			'\\bigcup', '\\bigcap', '\\bigvee', '\\bigwedge', '\\bigoplus', '\\bigotimes',
@@ -70,6 +81,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'relations',
+		glyph: '≤',
 		symbols: [
 			'\\le', '\\ge', '\\ll', '\\gg', '\\equiv', '\\sim', '\\simeq', '\\approx',
 			'\\cong', '\\propto', '\\doteq', '\\asymp', '\\prec', '\\succ', '\\preceq',
@@ -79,6 +91,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'negated',
+		glyph: '≠',
 		symbols: [
 			'\\ne', '\\nless', '\\ngtr', '\\nleq', '\\ngeq', '\\nprec', '\\nsucc',
 			'\\nsim', '\\ncong', '\\nmid', '\\nparallel', '\\notin', '\\nsubseteq',
@@ -87,6 +100,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'arrows',
+		glyph: '→',
 		symbols: [
 			'\\leftarrow', '\\rightarrow', '\\uparrow', '\\downarrow', '\\leftrightarrow',
 			'\\updownarrow', '\\Leftarrow', '\\Rightarrow', '\\Uparrow', '\\Downarrow',
@@ -101,6 +115,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'logic',
+		glyph: '∪',
 		symbols: [
 			'\\cup', '\\cap', '\\setminus', '\\sqcup', '\\sqcap', '\\uplus', '\\complement',
 			'\\forall', '\\exists', '\\nexists', '\\land', '\\lor', '\\lnot', '\\top',
@@ -109,6 +124,7 @@ export const MATH_SYMBOL_SECTIONS: readonly MathSymbolSection[] = [
 	},
 	{
 		id: 'geometry',
+		glyph: '∠',
 		symbols: [
 			'\\angle', '\\measuredangle', '\\sphericalangle', '\\perp', '\\parallel',
 			'\\cong', '\\sim', '\\degree', '\\triangle', '\\square', '\\bigcirc',

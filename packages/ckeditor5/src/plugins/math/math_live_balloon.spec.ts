@@ -65,7 +65,7 @@ describe( 'MathLiveBalloon', () => {
 	}
 
 	function matrixDropdown(): DropdownView {
-		return items()[ 10 ] as DropdownView;
+		return items()[ 9 ] as DropdownView;
 	}
 
 	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
@@ -75,41 +75,42 @@ describe( 'MathLiveBalloon', () => {
 		return { dropdown, grid: dropdown.panelView.children.get( 0 ) as unknown as GridLike };
 	}
 
-	function symbolsGroup(): DropdownView {
+	function insertGroup(): DropdownView {
 		return items()[ 2 ] as DropdownView;
 	}
 
-	function insertGroup(): DropdownView {
+	function accentGroup(): DropdownView {
 		return items()[ 3 ] as DropdownView;
 	}
 
-	function accentGroup(): DropdownView {
+	function decorationGroup(): DropdownView {
 		return items()[ 4 ] as DropdownView;
 	}
 
-	function decorationGroup(): DropdownView {
-		return items()[ 5 ] as DropdownView;
-	}
-
 	function colorGroup(): DropdownView {
-		return items()[ 7 ] as DropdownView;
-	}
-
-	function backgroundColorGroup(): DropdownView {
-		return items()[ 8 ] as DropdownView;
-	}
-
-	function modeGroup(): DropdownView {
 		return items()[ 6 ] as DropdownView;
 	}
 
+	function backgroundColorGroup(): DropdownView {
+		return items()[ 7 ] as DropdownView;
+	}
+
+	function modeGroup(): DropdownView {
+		return items()[ 5 ] as DropdownView;
+	}
+
 	function fontStyleGroup(): DropdownView {
-		return items()[ 9 ] as DropdownView;
+		return items()[ 8 ] as DropdownView;
 	}
 
 	/** The column, row and borders groups, in toolbar order. */
 	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 11 ) as [ DropdownView, DropdownView, DropdownView ];
+		return items().slice( 10, 13 ) as [ DropdownView, DropdownView, DropdownView ];
+	}
+
+	/** One per symbol category, in the order the table declares them; last in the toolbar. */
+	function symbolGroups(): Array<DropdownView> {
+		return items().slice( 13 ) as Array<DropdownView>;
 	}
 
 	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
@@ -198,9 +199,10 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles; the symbols, insert, accent, decoration, colour, background, mode and
-		// font-style groups; the matrix picker; and the column, row and borders groups.
-		expect( items() ).toHaveLength( 14 );
+		// Two toggles; the insert, accent, decoration, colour, background, mode and font-style
+		// groups; the matrix picker; the column, row and borders groups; and a button per symbol
+		// category, at the end.
+		expect( items() ).toHaveLength( 13 + MATH_SYMBOL_SECTIONS.length );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -427,29 +429,38 @@ describe( 'MathLiveBalloon', () => {
 		await waitFor( () => getData( editor.model ).includes( 'int' ) || null );
 	} );
 
-	it( 'offers a symbol gallery of ours, grouped the way one is looked up', async () => {
+	it( 'offers a symbol gallery of ours, a button to a category', async () => {
 		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
 
 		await startEditingSelected();
-		const symbols = symbolsGroup();
-		expect( symbols.buttonView.label ).toBe( 'Symbols' );
+		const groups = symbolGroups();
+		expect( groups ).toHaveLength( 9 );
 
-		// This group is ours rather than MathLive's, so unlike the ones around it there is
-		// nothing in the field it has to wait for before it applies.
-		expect( symbols.class ).toBeUndefined();
-		expect( groupSections( symbols ) ).toEqual( [
+		// Each wears one of its own symbols, since there is no icon for "the Greek letters", and
+		// says what it is in the tooltip beside it.
+		expect( groups.map( group => group.buttonView.label ) )
+			.toEqual( [ '±', 'αβγ', 'ℝ', '∑', '≤', '≠', '→', '∪', '∠' ] );
+		expect( groups.map( group => group.buttonView.tooltip ) ).toEqual( [
 			'Basic math', 'Greek letters', 'Letter-like symbols', 'Operators', 'Relations',
 			'Negated relations', 'Arrows', 'Sets and logic', 'Geometry'
 		] );
+		// A glyph is not a name; the tooltip has to be the accessible one too.
+		expect( groups[ 1 ].buttonView.ariaLabel ).toBe( 'Greek letters' );
 
-		const entries = groupEntries( symbols );
-		expect( entries ).toHaveLength(
-			MATH_SYMBOL_SECTIONS.reduce( ( total, section ) => total + section.symbols.length, 0 )
-		);
+		// These groups are ours rather than MathLive's, so unlike the ones around them there is
+		// nothing in the field they have to wait for before they apply.
+		expect( groups.map( group => group.class ) ).toEqual( Array( 9 ).fill( undefined ) );
+
+		// A flat grid behind each: the button already said which category this is.
+		expect( groupSections( groups[ 0 ] ) ).toEqual( [] );
+		for ( const [ index, group ] of groups.entries() ) {
+			expect( groupEntries( group ), MATH_SYMBOL_SECTIONS[ index ].id )
+				.toHaveLength( MATH_SYMBOL_SECTIONS[ index ].symbols.length );
+		}
 
 		// Each entry draws its symbol, and is named by the LaTeX behind it — which is what the
 		// symbol is called wherever maths is written, and what to type for it next time.
-		const [ plusMinus ] = entries;
+		const [ plusMinus ] = groupEntries( groups[ 0 ] );
 		expect( plusMinus.tooltip ).toBe( '\\pm' );
 		expect( plusMinus.label ).toContain( 'ML__latex' );
 		expect( plusMinus.element?.textContent ).not.toContain( '<span' );
@@ -457,6 +468,20 @@ describe( 'MathLiveBalloon', () => {
 		plusMinus.fire( 'execute' );
 		expect( liveField().value ).toContain( '\\pm' );
 		await waitFor( () => getData( editor.model ).includes( 'pm' ) || null );
+	} );
+
+	it( 'lays a symbol category out as a grid of cells sized by their glyphs', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const greek = groupLayout( symbolGroups()[ 1 ] );
+
+		expect( greek.display ).toBe( 'grid' );
+		expect( greek.columns ).toHaveLength( 8 );
+
+		// Sized by what they hold rather than by the panel, as the accent grid is: tie a cell to
+		// a fraction of the balloon and the glyphs collide as soon as it is narrow.
+		expect( greek.width ).toBeLessThan( greek.panelWidth );
 	} );
 
 	it( 'adds the structures MathLive stops short of, each in the section it belongs to', async () => {
