@@ -9,6 +9,7 @@ import {
 	ContextualBalloon,
 	createDropdown,
 	type DropdownView,
+	IconMarker,
 	IconObjectCenter,
 	IconObjectInline,
 	IconPlus,
@@ -292,6 +293,11 @@ export default class MathLiveBalloon extends Plugin {
 		// hides every one of them — taking the group with them.
 		toolbar.items.add( this._createSubmenuGroup(
 			'accent', t( 'Accent' ), IconSpecialCharacters, { liveLabels: true }
+		) );
+		// Boxes around the selection, drawn around it in the preview the same way. Its entries
+		// declare no condition of their own — the group carries it, and wants any selection.
+		toolbar.items.add( this._createSubmenuGroup(
+			'decoration', t( 'Decoration' ), IconMarker, { liveLabels: true }
 		) );
 		toolbar.items.add( this._createInsertMatrixDropdown( t( 'Insert matrix' ) ) );
 

@@ -64,7 +64,7 @@ describe( 'MathLiveBalloon', () => {
 	}
 
 	function matrixDropdown(): DropdownView {
-		return items()[ 4 ] as DropdownView;
+		return items()[ 5 ] as DropdownView;
 	}
 
 	/** Opens the picker and returns its grid, which the dropdown builds on first open. */
@@ -82,9 +82,13 @@ describe( 'MathLiveBalloon', () => {
 		return items()[ 3 ] as DropdownView;
 	}
 
+	function decorationGroup(): DropdownView {
+		return items()[ 4 ] as DropdownView;
+	}
+
 	/** The column, row and borders groups, in toolbar order. */
 	function matrixGroups(): [ DropdownView, DropdownView, DropdownView ] {
-		return items().slice( 5 ) as [ DropdownView, DropdownView, DropdownView ];
+		return items().slice( 6 ) as [ DropdownView, DropdownView, DropdownView ];
 	}
 
 	/** A group's entries, from its sections too. `addListToDropdown` builds on first open. */
@@ -152,9 +156,9 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		const [ inline, display ] = buttons();
 
-		// Two toggles, the insert and accent groups, the matrix picker, and the column, row and
-		// borders groups.
-		expect( items() ).toHaveLength( 8 );
+		// Two toggles; the insert, accent and decoration groups; the matrix picker; and the
+		// column, row and borders groups.
+		expect( items() ).toHaveLength( 9 );
 		expect( inline.label ).toBe( 'Inline equation' );
 		expect( display.label ).toBe( 'Display equation' );
 		expect( inline.icon ).toBeTruthy();
@@ -428,6 +432,29 @@ describe( 'MathLiveBalloon', () => {
 
 		expect( liveField().value ).toContain( '\\vec' );
 		await waitFor( () => getData( editor.model ).includes( 'vec' ) || null );
+	} );
+
+	it( 'boxes the selection, and waits for one before offering to', async () => {
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		const decorations = decorationGroup();
+		expect( decorations.buttonView.label ).toBe( 'Decoration' );
+		expect( decorations.class ).toBe( 'ck-hidden' );
+
+		// Unlike the accents, these take any selection — the condition sits on the group, whose
+		// entries declare none of their own.
+		liveField().value = 'a+b';
+		selectWholeField();
+		await waitFor( () => decorations.class === undefined || null );
+
+		const entries = groupEntries( decorations );
+		expect( entries ).toHaveLength( 3 );
+		expect( entries[ 0 ].label ).toContain( 'ML__latex' );
+
+		entries[ 0 ].fire( 'execute' );
+		expect( liveField().value ).toContain( '\\boxed' );
+		await waitFor( () => getData( editor.model ).includes( 'boxed' ) || null );
 	} );
 
 	it( 'offers the brackets as MathLive draws them, and switches the array to the one picked', async () => {

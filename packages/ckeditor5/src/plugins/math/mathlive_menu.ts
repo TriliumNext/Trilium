@@ -53,7 +53,12 @@ export type MathLiveMenuItemId =
 	| 'accent-overbrace'
 	| 'accent-underline'
 	| 'accent-undergroup'
-	| 'accent-underbrace';
+	| 'accent-underbrace'
+	// Boxes to draw around the selection, and the group they sit in.
+	| 'decoration'
+	| 'decoration-boxed'
+	| 'decoration-red-box'
+	| 'decoration-dashed-black-box';
 
 export interface MathLiveMenuItemState {
 	/** Whether the action applies at all; MathLive hides rather than disables these. */
