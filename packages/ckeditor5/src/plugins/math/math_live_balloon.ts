@@ -379,14 +379,15 @@ export default class MathLiveBalloon extends Plugin {
 		] ) );
 
 		// The brackets around the array. No labels of ours: MathLive draws each option as the
-		// bracket it stands for, wrapped around a `⋱`, which says it better than words would.
+		// bracket it stands for, wrapped around a `⋱`, which says it better than words would —
+		// and a set of five drawings is read across, like the decorations, rather than down.
 		toolbar.items.add( this._createMenuGroup( t( 'Borders' ), IconTableCellProperties, [
 			{ id: 'environment-no-border', command: [ 'setEnvironment', 'matrix' ] },
 			{ id: 'environment-parentheses', command: [ 'setEnvironment', 'pmatrix' ] },
 			{ id: 'environment-brackets', command: [ 'setEnvironment', 'bmatrix' ] },
 			{ id: 'environment-bar', command: [ 'setEnvironment', 'vmatrix' ] },
 			{ id: 'environment-braces', command: [ 'setEnvironment', 'Bmatrix' ] }
-		] ) );
+		], { layout: 'row' } ) );
 
 		// A click landing on the toolbar's own padding rather than on a button would otherwise
 		// blur the field, committing the equation and taking the balloon down with it. The
@@ -612,7 +613,12 @@ export default class MathLiveBalloon extends Plugin {
 	 * name, so an action that does not apply where the caret is disappears rather than sitting
 	 * there dead.
 	 */
-	private _createMenuGroup( label: string, icon: string, actions: Array<MenuAction> ): DropdownView {
+	private _createMenuGroup(
+		label: string,
+		icon: string,
+		actions: Array<MenuAction>,
+		options: { layout?: MenuGroupLayout } = {}
+	): DropdownView {
 		const dropdown = createDropdown( this.editor.locale );
 		const definitions = new Collection<ListDropdownButtonDefinition>();
 		const items: MenuGroup['items'] = [];
@@ -633,6 +639,15 @@ export default class MathLiveBalloon extends Plugin {
 		}
 
 		addListToDropdown( dropdown, definitions );
+
+		// `addListToDropdown` builds its list on the first open — and, the panel being rendered by
+		// then, renders it there and then, too late to extend its template. So the layout goes on
+		// the element it produced, on that same opening and harmlessly again on every later one.
+		if ( options.layout ) {
+			dropdown.on( 'change:isOpen', () => {
+				dropdown.listView?.element?.classList.add( `ck-math-live-${ options.layout }` );
+			} );
+		}
 
 		dropdown.on( 'execute', evt => {
 			const command = ( evt.source as { _matrixCommand?: MatrixCommand } )._matrixCommand;

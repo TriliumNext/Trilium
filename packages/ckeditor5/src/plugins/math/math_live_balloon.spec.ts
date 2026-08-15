@@ -731,6 +731,21 @@ describe( 'MathLiveBalloon', () => {
 		const entries = groupEntries( borders );
 		expect( entries.map( entry => entry.label ) ).toEqual( [ ' ⋱ ', '(⋱)', '[⋱]', '|⋱|', '{⋱}' ] );
 
+		// Drawings rather than sentences, so all five are read across a row — which this group is
+		// given the way CKEditor's own list building leaves it: on the element.
+		const layout = groupLayout( borders );
+		expect( layout.display ).toBe( 'grid' );
+		expect( layout.flow ).toBe( 'column' );
+
+		// One line, however many the panel would have room for: a row that wraps is a grid.
+		const tops = entries.map( entry => entry.element?.getBoundingClientRect().top );
+		expect( new Set( tops ).size ).toBe( 1 );
+
+		// Each centred in a cell of its own, none of them held to the 15em of a list of sentences.
+		const cell = entries[ 0 ].element as HTMLElement;
+		expect( getComputedStyle( cell ).justifyContent ).toBe( 'center' );
+		expect( getComputedStyle( cell.closest( '.ck-list__item' ) as HTMLElement ).minWidth ).toBe( '0px' );
+
 		expect( liveField().value ).toContain( '\\begin{pmatrix}' );
 		entries[ 2 ].fire( 'execute' );
 		expect( liveField().value ).toContain( '\\begin{bmatrix}' );
