@@ -21,6 +21,12 @@
 }
 
 /* === IN-PLACE WIDGET EDITING === */
+/* 1.21em on both the preview and the field: KaTeX's own scale (.katex { font-size: 1.21em }),
+   which is what reading mode and the pre-MathLive editor rendered equations at. */
+.ck-content .ck-math-tex .ck-math-widget-preview,
+.ck-content .ck-math-tex math-field {
+    font-size: 1.21em;
+}
 .ck-content .ck-math-tex math-field {
     display: inline-block;
     border: none;
@@ -28,7 +34,6 @@
     margin: 0;
     background: transparent;
     color: inherit;
-    font-size: inherit;
     min-width: 1em;
     max-width: 100%;
 }

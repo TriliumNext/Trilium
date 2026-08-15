@@ -56,6 +56,21 @@ describe( 'MathLiveEdit', () => {
 		expect( getComputedStyle( base ).zIndex ).toBe( 'auto' );
 	} );
 
+	it( 'renders equations at KaTeX\'s 1.21em scale, like reading mode', async () => {
+		// KaTeX draws math at 1.21em of the surrounding text (.katex { font-size: 1.21em }), so
+		// reading mode and the pre-MathLive editor did too; without matching it, equations
+		// shrank by that factor in the editor.
+		setData( editor.model, `<paragraph>foo[]${ INLINE_WIDGET }bar</paragraph>` );
+
+		const preview = await waitFor( () =>
+			domRoot().querySelector<HTMLElement>( '.ck-math-widget-preview' ) );
+		const base = parseFloat( getComputedStyle( domRoot() ).fontSize );
+		expect( parseFloat( getComputedStyle( preview ).fontSize ) / base ).toBeCloseTo( 1.21, 2 );
+
+		const mathfield = await startEditingSelected();
+		expect( parseFloat( getComputedStyle( mathfield ).fontSize ) / base ).toBeCloseTo( 1.21, 2 );
+	} );
+
 	it( 'promoting the preview to a field keeps the equation box height', async () => {
 		// The pixel-parity promise: MathLive's shadow container/content paddings are zeroed and
 		// the preview is inline-block like the field, so starting an edit must not grow the box.
