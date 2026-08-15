@@ -60,9 +60,12 @@ body {
 
     --ck-color-list-background: var(--accented-background-color);
     --ck-color-list-button-hover-background: var(--ck-color-base-foreground);
-    --ck-color-list-button-on-background: var(--ck-color-base-active);
-    --ck-color-list-button-on-background-focus: var(--ck-color-base-active-focus);
-    --ck-color-list-button-on-text: var(--ck-color-base-background);
+    /* The selected entry of a list, the same colours the app marks a selected item with
+       elsewhere — `--ck-color-base-active` is CKEditor's own blue, which nothing else here
+       uses and which the theme has no say over. */
+    --ck-color-list-button-on-background: var(--active-item-background-color);
+    --ck-color-list-button-on-background-focus: var(--active-item-background-color);
+    --ck-color-list-button-on-text: var(--active-item-text-color);
 
     /* -- Overrides the default .ck-balloon-panel class colors. --------------------------------- */
 
