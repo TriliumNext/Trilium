@@ -19,7 +19,6 @@ import {
 	IconTableCellProperties,
 	IconTableColumn,
 	IconTableRow,
-	IconText,
 	_InsertTableView,
 	type ListDropdownButtonDefinition,
 	ListItemButtonView,
@@ -88,6 +87,9 @@ interface MenuGroup {
 
 		/** What a checkable entry of this group is: one of several, or one of a set of one. */
 		checkableRole?: 'menuitemcheckbox' | 'menuitemradio';
+
+		/** Whether the dropdown reads back the entry in force rather than naming itself. */
+		showsCurrent?: boolean;
 	};
 }
 
@@ -235,6 +237,7 @@ export default class MathLiveBalloon extends Plugin {
 	private _refreshMenuGroups(): void {
 		for ( const group of this._menuGroups ) {
 			let anyVisible = false;
+			let current: string | undefined;
 
 			// A group read from a submenu has nothing in it until a field turns up to read.
 			this._buildSubmenuGroup( group );
@@ -252,6 +255,9 @@ export default class MathLiveBalloon extends Plugin {
 					isOn: state.checked !== false
 				} );
 				anyVisible ||= state.visible;
+				if ( state.checked !== false ) {
+					current = item.target.label;
+				}
 
 				// An entry with no wording of ours takes MathLive's, which is only there to be
 				// read once a field is mounted. Read once and kept, unless the group draws its
@@ -265,6 +271,12 @@ export default class MathLiveBalloon extends Plugin {
 						item.target.set( 'label', label );
 					}
 				}
+			}
+
+			// A group that reads back its current entry says so on the button, the way the
+			// heading dropdown names the block the caret sits in.
+			if ( group.submenu?.showsCurrent && current !== undefined ) {
+				group.dropdown.buttonView.label = current;
 			}
 
 			// `DropdownView` has no `isVisible` of its own, so the group goes out the way the
@@ -316,7 +328,7 @@ export default class MathLiveBalloon extends Plugin {
 		// they are about the caret rather than a selection — MathLive offers them only while
 		// nothing is selected.
 		toolbar.items.add( this._createSubmenuGroup(
-			'mode', t( 'Mode' ), IconText, { checkableRole: 'menuitemradio' }
+			'mode', t( 'Mode' ), null, { checkableRole: 'menuitemradio', showsCurrent: true }
 		) );
 		// Six ways to set the selection's letters. These are toggles rather than one-shot
 		// insertions — the only entries in the balloon that report a state of their own — and
@@ -426,20 +438,39 @@ export default class MathLiveBalloon extends Plugin {
 	private _createSubmenuGroup(
 		id: MathLiveMenuItemId,
 		label: string,
-		icon: string,
+		icon: string | null,
 		options: {
 			liveLabels?: boolean;
 			layout?: 'row' | 'grid';
 
 			/** What a checkable entry of this group is: one of several, or one of a set of one. */
 			checkableRole?: 'menuitemcheckbox' | 'menuitemradio';
+
+			/**
+			 * Whether the dropdown reads back the entry currently in force instead of naming
+			 * itself — the shape of the editor's own heading dropdown, for a group where one of
+			 * the entries always holds and knowing which matters more than the group's name.
+			 */
+			showsCurrent?: boolean;
 		} = {}
 	): DropdownView {
 		const locale = this.editor.locale;
 		const dropdown = createDropdown( locale );
 		const list = new ListView( locale );
 
-		dropdown.buttonView.set( { label, icon, tooltip: true } );
+		if ( options.showsCurrent ) {
+			// The name moves to the tooltip, as the heading dropdown does it; the label is then
+			// free to say which entry is in force, and the refresh keeps it saying so.
+			dropdown.buttonView.set( {
+				withText: true,
+				tooltip: label,
+				ariaLabel: label,
+				ariaLabelledBy: undefined
+			} );
+			dropdown.extendTemplate( { attributes: { class: 'ck-math-live-current' } } );
+		} else {
+			dropdown.buttonView.set( { label, icon: icon ?? undefined, tooltip: true } );
+		}
 
 		// A group of previews and nothing else reads better side by side than stacked, and
 		// `ListView` has no `class` of its own to say so with.
@@ -453,7 +484,13 @@ export default class MathLiveBalloon extends Plugin {
 		this._menuGroups.push( {
 			dropdown,
 			items: [],
-			submenu: { id, list, liveLabels: options.liveLabels, checkableRole: options.checkableRole }
+			submenu: {
+				id,
+				list,
+				liveLabels: options.liveLabels,
+				checkableRole: options.checkableRole,
+				showsCurrent: options.showsCurrent
+			}
 		} );
 		return dropdown;
 	}

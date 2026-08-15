@@ -558,9 +558,13 @@ describe( 'MathLiveBalloon', () => {
 
 		await startEditingSelected();
 		const modes = groupEntries( modeGroup() );
-
-		expect( modeGroup().buttonView.label ).toBe( 'Mode' );
 		expect( modes.map( entry => entry.label ) ).toEqual( [ 'Math', 'Text', 'LaTeX' ] );
+
+		// The button reads back the mode in force rather than naming itself, as the editor's own
+		// heading dropdown does; the name moves to the tooltip.
+		expect( modeGroup().buttonView.label ).toBe( 'Math' );
+		expect( modeGroup().buttonView.tooltip ).toBe( 'Mode' );
+		expect( modeGroup().buttonView.withText ).toBe( true );
 
 		// Exactly one holds at a time, which is a radio rather than a checkbox.
 		expect( modes[ 0 ].element?.getAttribute( 'role' ) ).toBe( 'menuitemradio' );
@@ -569,6 +573,7 @@ describe( 'MathLiveBalloon', () => {
 		modes[ 1 ].fire( 'execute' );
 		await waitFor( () => modes[ 1 ].isOn || null );
 		expect( modes.map( entry => entry.isOn ) ).toEqual( [ false, true, false ] );
+		expect( modeGroup().buttonView.label ).toBe( 'Text' );
 	} );
 
 	it( 'offers the modes for a caret, not for a selection', async () => {

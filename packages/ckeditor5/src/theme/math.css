@@ -163,3 +163,10 @@
     padding-inline: var(--ck-spacing-standard);
     width: 100%;
 }
+
+/* Reading back the mode rather than naming itself, this one is as wide as the widest of the
+   three words — otherwise the balloon resizes as the caret moves between them. The editor's
+   heading dropdown holds its own label to a width for the same reason. */
+.ck.ck-dropdown.ck-math-live-current .ck-dropdown__button .ck-button__label {
+    min-width: 4em;
+}
