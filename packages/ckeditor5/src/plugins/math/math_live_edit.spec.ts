@@ -283,6 +283,13 @@ describe( 'MathLiveEdit', () => {
 		const rowStyle = getComputedStyle( row as HTMLElement );
 		expect( rowStyle.margin ).toBe( '0px' );
 		expect( rowStyle.paddingLeft ).not.toBe( '8px' );
+
+		// Sized like a menu rather than like the page: the panel hangs off `body`, so left alone
+		// it reads a good deal larger than the lists it sits beside, and the 1.6rem MathLive draws
+		// each suggestion at pushes the rows taller still.
+		const panelSize = parseFloat( getComputedStyle( panel ).fontSize );
+		expect( panelSize ).toBeLessThan( parseFloat( getComputedStyle( document.body ).fontSize ) );
+		expect( ( row as HTMLElement ).getBoundingClientRect().height ).toBeLessThan( 28 );
 	} );
 
 	it( 'keeps the LaTeX suggestion list on screen as the command is typed out', async () => {
