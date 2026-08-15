@@ -177,6 +177,7 @@ div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
     --ck-font-size-base: 0.9rem;
     --ck-line-height-base: 1.3;
     --ck-dropdown-item-height: 27px;
+    --ck-color-text: var(--menu-text-color, var(--main-text-color));
 }
 
 :root .ck.ck-dropdown__panel .ck.ck-list__item > .ck-button,
