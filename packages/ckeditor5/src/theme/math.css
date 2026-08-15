@@ -297,6 +297,9 @@ body #mathlive-suggestion-popover .ML__popover__keybinding {
     gap: var(--ck-spacing-tiny);
     padding: var(--ck-spacing-small);
 }
+.ck.ck-dropdown.ck-math-live-gallery .ck-dropdown__arrow {
+    display: none;
+}
 .ck.ck-dropdown.ck-math-live-gallery .ck-dropdown__button .ck-button__label {
     min-width: 1em;
     text-align: center;

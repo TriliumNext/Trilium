@@ -17,7 +17,6 @@ import {
 	IconObjectInline,
 	IconPlus,
 	IconSpecialCharacters,
-	IconTable,
 	IconTableCellProperties,
 	IconTableColumn,
 	IconTableRow,
@@ -58,6 +57,7 @@ import {
 	type MathStructureSection,
 	type MathStructureSectionId
 } from './structures.js';
+import matrixIcon from '../../icons/matrix.svg?raw';
 
 /** How a group arranges its entries: stacked when unset, or as a set of one of these. */
 type MenuGroupLayout = 'row' | 'grid' | 'swatches';
@@ -555,6 +555,13 @@ export default class MathLiveBalloon extends Plugin {
 		// OneNote's eleven structure galleries, in its order. Nine are ours; Accent and Matrix are
 		// the two the balloon already had something better for, moved down to sit with the rest of
 		// the set rather than be duplicated by a worse copy of themselves.
+		// The two that came from row one wear the row's chrome as well as sit in it: on a row where
+		// every button opens a picker, a caret beside each says nothing and costs the width that
+		// pushed this row's last button onto a fourth.
+		for ( const view of [ accentGroup, matrixPicker ] ) {
+			view.extendTemplate( { attributes: { class: 'ck-math-live-gallery' } } );
+		}
+
 		toolbar.items.add( new ToolbarLineBreakView( editor.locale ) );
 		for ( const section of MATH_STRUCTURE_SECTIONS ) {
 			if ( section.id === 'limitlog' ) {
@@ -586,7 +593,9 @@ export default class MathLiveBalloon extends Plugin {
 		const editor = this.editor;
 		const dropdown = createDropdown( editor.locale );
 
-		dropdown.buttonView.set( { label, icon: IconTable, tooltip: true } );
+		// Not the table feature's icon: what this inserts is a bracketed array of placeholders,
+		// which is what the icon draws — a grid of cells reads as a spreadsheet.
+		dropdown.buttonView.set( { label, icon: matrixIcon, tooltip: true } );
 
 		// Built on first open, like the table feature's — the grid is 100 buttons.
 		let gridView: _InsertTableView | null = null;

@@ -21,6 +21,7 @@ import Math from './math.js';
 import MathLiveBalloon, { buildMatrixLatex } from './math_live_balloon.js';
 import MathLiveEdit from './math_live_edit.js';
 import { MATH_STRUCTURE_SECTIONS } from './structures.js';
+import matrixIcon from '../../icons/matrix.svg?raw';
 import { MATH_SYMBOL_SECTIONS } from './symbols.js';
 import { createTestEditor } from '../../../test/editor-kit.js';
 
@@ -530,6 +531,18 @@ describe( 'MathLiveBalloon', () => {
 		// Each gallery wears one of its own, as the symbol categories do.
 		expect( structureGalleries().map( group => group.buttonView.label ) )
 			.toEqual( MATH_STRUCTURE_SECTIONS.map( section => section.glyph ) );
+
+		// A bracketed array of placeholders, not the table feature's grid of cells — that reads
+		// as a spreadsheet.
+		expect( matrixDropdown().buttonView.icon ).toBe( matrixIcon );
+
+		// On a row where every button opens a picker, a caret beside each says nothing — and its
+		// width is what pushed this row's last button onto a fourth row.
+		for ( const group of row ) {
+			const arrow = group.buttonView.element?.querySelector( '.ck-dropdown__arrow' );
+			expect( arrow, groupName( group ) ).not.toBeNull();
+			expect( getComputedStyle( arrow as Element ).display, groupName( group ) ).toBe( 'none' );
+		}
 
 		// A structure draws itself with letters in its slots, the way MathLive draws the entries
 		// of its own insert menu — and is named by that same LaTeX.
