@@ -140,6 +140,12 @@ describe( 'MathLiveEdit', () => {
 
 		const errors: Array<unknown> = [];
 		const onError = ( event: ErrorEvent ) => {
+			// Browser-generated and benign: an observer's notifications spilling into the next
+			// frame. Not a MathLive crash, which is what these listeners are here to catch.
+			if ( String( event.message ).includes( 'ResizeObserver loop' ) ) {
+				event.preventDefault();
+				return;
+			}
 			errors.push( event.error ?? event.message );
 			event.preventDefault();
 		};
@@ -190,6 +196,12 @@ describe( 'MathLiveEdit', () => {
 
 		const errors: Array<unknown> = [];
 		const onError = ( event: ErrorEvent ) => {
+			// Browser-generated and benign: an observer's notifications spilling into the next
+			// frame. Not a MathLive crash, which is what these listeners are here to catch.
+			if ( String( event.message ).includes( 'ResizeObserver loop' ) ) {
+				event.preventDefault();
+				return;
+			}
 			errors.push( event.error ?? event.message );
 			event.preventDefault();
 		};
@@ -222,6 +234,12 @@ describe( 'MathLiveEdit', () => {
 
 		const errors: Array<unknown> = [];
 		const onError = ( event: ErrorEvent ) => {
+			// Browser-generated and benign: an observer's notifications spilling into the next
+			// frame. Not a MathLive crash, which is what these listeners are here to catch.
+			if ( String( event.message ).includes( 'ResizeObserver loop' ) ) {
+				event.preventDefault();
+				return;
+			}
 			errors.push( event.error ?? event.message );
 			event.preventDefault();
 		};

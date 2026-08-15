@@ -75,6 +75,7 @@ export default class MathLiveBalloon extends Plugin {
 	/** The field of the running session, and the listeners tying the matrix groups to it. */
 	private _mathfield: LiveMathField | null = null;
 	private _fieldListeners: AbortController | null = null;
+	private _resizeObserver: ResizeObserver | null = null;
 
 	private readonly _matrixGroups: Array<MatrixGroup> = [];
 
@@ -148,14 +149,35 @@ export default class MathLiveBalloon extends Plugin {
 		mathfield.addEventListener( 'selection-change', refresh, options );
 		mathfield.addEventListener( 'input', refresh, options );
 
+		// The balloon repositions itself only on window resize, scroll and editor UI updates.
+		// A field growing while the user types fires none of them — MathLive renders inside its
+		// own shadow root, invisible to the editor — so follow the field's size directly.
+		// Deferred a frame: repositioning straight from the observer callback makes the browser
+		// report the benign "ResizeObserver loop completed with undelivered notifications".
+		this._resizeObserver = new ResizeObserver( () => {
+			requestAnimationFrame( () => this._updateBalloonPosition() );
+		} );
+		this._resizeObserver.observe( mathfield );
+
 		this._refreshMatrixGroups();
 	}
 
 	private _releaseField(): void {
+		this._resizeObserver?.disconnect();
+		this._resizeObserver = null;
 		this._fieldListeners?.abort();
 		this._fieldListeners = null;
 		this._mathfield = null;
 		this._refreshMatrixGroups();
+	}
+
+	private _updateBalloonPosition(): void {
+		const balloon = this.editor.plugins.get( ContextualBalloon );
+		// Only while ours is the visible view — updatePosition() pins using the top of the
+		// stack, so calling it under someone else's view would move their balloon around.
+		if ( this._view && balloon.visibleView === this._view ) {
+			balloon.updatePosition();
+		}
 	}
 
 	/** Hides each entry MathLive would hide, and each group whose entries all went. */

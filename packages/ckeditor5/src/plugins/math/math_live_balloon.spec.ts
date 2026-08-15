@@ -361,6 +361,20 @@ describe( 'MathLiveBalloon', () => {
 		await startEditingSelected();
 		await editor.destroy();
 	} );
+
+	it( 'repositions when the field grows', async () => {
+		// A growing field fires none of the balloon's own repositioning triggers (window
+		// resize, scroll, editor UI update) — MathLive renders inside its shadow root,
+		// invisible to the editor. The session observes the field's size instead.
+		setData( editor.model, `<paragraph>foo[${ INLINE_WIDGET }]bar</paragraph>` );
+
+		await startEditingSelected();
+		await waitFor( () => visibleToolbar() );
+
+		const updatePosition = vi.spyOn( balloon, 'updatePosition' );
+		liveField().style.height = '200px';
+		await waitFor( () => ( updatePosition.mock.calls.length > 0 ? true : null ) );
+	} );
 } );
 
 describe( 'buildMatrixLatex', () => {
