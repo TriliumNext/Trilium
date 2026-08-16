@@ -1099,6 +1099,10 @@
   "flashcards": {
     "title": "Flashcards",
     "make_flashcard": "Make flashcard",
+    "remove_flashcard": "Remove flashcard",
+    "remove_flashcard_confirm": "Remove flashcard from {{title}}? Review history stays in sync history until erased.",
+    "flashcard_removed_one": "Removed {{count}} flashcard",
+    "flashcard_removed_other": "Removed {{count}} flashcards",
     "loading": "Loading flashcards…",
     "no_due_cards": "No due flashcards",
     "progress": "Card {{current}} of {{total}}",

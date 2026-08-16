@@ -18,6 +18,10 @@ function getCard(req: Request<{ cardId: string }>) {
     return flashcardService.getCard(req.params.cardId);
 }
 
+function removeCardsForNote(req: Request<{ noteId: string }>) {
+    return flashcardService.removeCardsForNote(req.params.noteId);
+}
+
 function reviewCard(req: Request<{ cardId: string }, {}, FlashcardReviewRequest>) {
     return flashcardService.reviewCard(req.params.cardId, req.body);
 }
@@ -31,5 +35,6 @@ export default {
     getDueCards,
     getCard,
     getStats,
+    removeCardsForNote,
     reviewCard
 };

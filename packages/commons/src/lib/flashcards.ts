@@ -84,6 +84,10 @@ export interface FlashcardStatsResponse {
     suspendedCount: number;
 }
 
+export interface FlashcardRemoveResponse {
+    removedCount: number;
+}
+
 export interface FlashcardReviewRow {
     reviewId?: string;
     cardId: string;

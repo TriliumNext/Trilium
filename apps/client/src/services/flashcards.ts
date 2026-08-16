@@ -1,6 +1,7 @@
 import type {
     FlashcardCreateRequest,
     FlashcardDueResponse,
+    FlashcardRemoveResponse,
     FlashcardReviewCard,
     FlashcardReviewRequest,
     FlashcardReviewResponse,
@@ -32,6 +33,10 @@ function getCard(cardId: string) {
     return server.get<FlashcardReviewCard>(`flashcards/cards/${cardId}`);
 }
 
+function removeCardsForNote(noteId: string) {
+    return server.remove<FlashcardRemoveResponse>(`flashcards/notes/${noteId}/cards`);
+}
+
 function reviewCard(cardId: string, request: FlashcardReviewRequest) {
     return server.post<FlashcardReviewResponse>(`flashcards/cards/${cardId}/reviews`, request);
 }
@@ -45,5 +50,6 @@ export default {
     getDueCards,
     getCard,
     getStats,
+    removeCardsForNote,
     reviewCard
 };

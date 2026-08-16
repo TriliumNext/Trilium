@@ -6,12 +6,12 @@
 - [ ] Pin exact version; record upstream MIT license and copyright in dependency notices if required by project policy.
 - [ ] Do not copy Anki's AGPL scheduler implementation. Use the maintained TypeScript FSRS package or implement an independent, documented adapter.
 - [ ] Confirm package does not import Node-only modules at runtime; run standalone build and tests.
-- [ ] Wrap library API in `packages/trilium-core/src/services/flashcards/fsrs_scheduler.ts`; no route, widget, or entity should call `ts-fsrs` directly.
+- [x] Wrap library API in `packages/trilium-core/src/services/flashcards/fsrs_scheduler.ts`; no route, widget, or entity should call `ts-fsrs` directly.
 - [ ] Store algorithm name/version and serialized parameter set with user configuration/card output. Never assume future library defaults equal historical defaults.
 
 ## Adapter contract
 
-- [ ] Define pure types for `FlashcardState`, `ReviewRating`, `ReviewPreview`, `ReviewResult`, and `FSRSConfig` in commons or core as appropriate.
+- [x] Define pure types for `FlashcardState`, `ReviewRating`, `ReviewPreview`, `ReviewResult`, and `FSRSConfig` in commons or core as appropriate.
 - [ ] Convert persisted UTC timestamps to `Date` only at adapter boundary and convert results back to canonical UTC values.
 - [ ] Validate persisted state before scheduling: finite stability/difficulty, valid enum, non-negative counters, valid due/last-review, bounded parameter values.
 - [ ] Normalize rating input to `Again=1`, `Hard=2`, `Good=3`, `Easy=4`; reject `Manual` and out-of-range values from review endpoints.

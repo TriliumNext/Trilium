@@ -4,6 +4,7 @@ import type {
     FlashcardDueResponse,
     FlashcardRating,
     FlashcardReviewCard,
+    FlashcardRemoveResponse,
     FlashcardReviewRequest,
     FlashcardReviewResponse,
     FlashcardReviewRow,
@@ -18,6 +19,7 @@ import BFlashcardReview from "../../becca/entities/bflashcard_review.js";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../../errors.js";
 import { getSql } from "../sql/index.js";
 import dateUtils from "../utils/date";
+import { randomString } from "../utils/index.js";
 import {
     createEmptyFlashcardSchedule,
     DEFAULT_FLASHCARD_SCHEDULER_CONFIG,
@@ -98,6 +100,30 @@ function getDueCards({ deckNoteId, limit = DEFAULT_DUE_LIMIT }: { deckNoteId?: s
 
 function getCard(cardId: string, { includeBack = true }: { includeBack?: boolean } = {}): FlashcardReviewCard {
     return buildReviewCard(getCardRow(cardId), { includeBack });
+}
+
+function removeCardsForNote(noteId: string): FlashcardRemoveResponse {
+    const note = becca.getNoteOrThrow(noteId);
+    const deleteId = randomString(10);
+    const rows = getSql().getRows<FlashcardRow>(/*sql*/`
+        SELECT * FROM flashcards
+        WHERE noteId = ? AND isDeleted = 0`, [noteId]);
+
+    for (const row of rows) {
+        const flashcard = becca.flashcards[row.cardId || ""] ?? new BFlashcard(row);
+        flashcard.markAsDeleted(deleteId);
+
+        if (row.cardId) {
+            delete becca.flashcards[row.cardId];
+        }
+    }
+
+    const flashcardLabel = note.getOwnedLabel(FLASHCARD_LABEL);
+    if (flashcardLabel) {
+        flashcardLabel.markAsDeleted(deleteId);
+    }
+
+    return { removedCount: rows.length };
 }
 
 function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardReviewResponse {
@@ -272,5 +298,6 @@ export default {
     getDueCards,
     getCard,
     getStats,
+    removeCardsForNote,
     reviewCard
 };

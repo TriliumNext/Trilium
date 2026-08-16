@@ -2,7 +2,7 @@
 
 ## Authoring
 
-- [ ] Add explicit “Make flashcard” / “Remove flashcard” action to existing note actions, mobile detail menu, and suitable context menus.
+- [x] Add explicit “Make flashcard” / “Remove flashcard” action to existing note actions, mobile detail menu, and suitable context menus.
 - [ ] Add front/back editor using existing Preact form components and per-component CSS. Do not hand-roll repeated input/button styles.
 - [ ] Show card/deck status near note title or note info without replacing normal note editing.
 - [ ] Support protected notes with clear locked-state UI; never render stale cached answer after protection expires.
@@ -12,10 +12,10 @@
 ## Review surface
 
 - [ ] Add review command reachable from global menu, keyboard action, launcher, and note action.
-- [ ] Add responsive review page/dialog usable in desktop, mobile, and standalone.
+- [x] Add responsive review page/dialog usable in desktop, mobile, and standalone.
 - [ ] Render front first; reveal back with explicit action and keyboard shortcut.
-- [ ] Render Again/Hard/Good/Easy buttons only after reveal unless product decision says otherwise.
-- [ ] Show next intervals before submission, using API preview and server canonical time.
+- [x] Render Again/Hard/Good/Easy buttons only after reveal unless product decision says otherwise.
+- [x] Show next intervals before submission, using API preview and server canonical time.
 - [ ] Show current deck/session progress and remaining due/new counts.
 - [ ] Keep review content isolated from normal note pane so switching notes cannot submit a rating for wrong card.
 - [ ] Support keyboard shortcuts and screen-reader labels for reveal and ratings.
@@ -36,16 +36,16 @@
 
 ## Navigation and commands
 
-- [ ] Add command names/types in `apps/client/src/components/app_context.ts` or the current command registry.
+- [x] Add command names/types in `apps/client/src/components/app_context.ts` or the current command registry.
 - [ ] Add default keyboard actions through existing keyboard action definitions.
-- [ ] Add global menu item in `apps/client/src/widgets/buttons/global_menu.tsx`.
-- [ ] Add note-level action in `apps/client/src/widgets/ribbon/NoteActions*` and mobile equivalent.
+- [x] Add global menu item in `apps/client/src/widgets/buttons/global_menu.tsx`.
+- [x] Add note-level action in `apps/client/src/widgets/ribbon/NoteActions*` and mobile equivalent.
 - [ ] Add command tests for desktop and mobile layouts.
 - [ ] Ensure commands work when no note is active, when active note is protected, and when in a popup.
 
 ## Client data and events
 
-- [ ] Add a typed `flashcards_api.ts` client service wrapping `services/server.ts`.
+- [x] Add a typed flashcards client service wrapping `services/server.ts`.
 - [ ] Keep server as scheduling authority; client may cache queue/preview briefly but must invalidate after review/sync.
 - [ ] Subscribe to entity/review events or refetch on `entitiesReloadedEvent` as appropriate.
 - [ ] Handle sync changes while review is open; stale card revision must surface as conflict.
@@ -54,8 +54,8 @@
 
 ## Internationalization and accessibility
 
-- [ ] Add new client strings only to `apps/client/src/translations/en/translation.json`.
-- [ ] Reuse `common` labels where existing; create dedicated `flashcards.*` namespace for new strings.
+- [x] Add new client strings only to `apps/client/src/translations/en/translation.json`.
+- [x] Reuse `common` labels where existing; create dedicated `flashcards.*` namespace for new strings.
 - [ ] Translate rating names, states, intervals, due counts, errors, conflict messages, and protected-state text.
 - [ ] Use `Trans` if translated text embeds note/deck links or reordered components.
 - [ ] Ensure focus moves to answer/reveal/rating controls predictably.

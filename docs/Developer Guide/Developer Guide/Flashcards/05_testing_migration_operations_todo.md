@@ -12,13 +12,13 @@
 
 ## Core/server tests
 
-- [ ] Add core service specs beside flashcard service modules.
+- [x] Add core service specs beside flashcard service modules.
 - [ ] Add migration spec under `packages/trilium-core/src/migrations/`.
 - [ ] Add API specs under `packages/trilium-core/src/routes/api/flashcards.spec.ts`.
 - [ ] Test creation, editing, deck move, suspend, reset, delete, and orphan repair.
-- [ ] Test review transaction updates card and inserts exactly one log.
+- [x] Test review transaction updates card and inserts exactly one log.
 - [ ] Test duplicate `clientRequestId` returns original result.
-- [ ] Test stale revision returns `409` and performs no write.
+- [x] Test stale revision returns `409` and performs no write.
 - [ ] Test two cards in one deck, many decks, pagination, limits, overdue order, and empty queue.
 - [ ] Test protected source note and protected-session expiration.
 - [ ] Test no front/back leakage in errors/logs/metrics.
@@ -29,7 +29,7 @@
 - [ ] Test initial sync, incremental sync, sector retry, content hash, backup restore, and erased rows.
 - [ ] Test review and card changes pulled in either order.
 - [ ] Test conflicts from two devices with stale revisions.
-- [ ] Run core specs in both server and standalone suites; core has no independent runner.
+- [x] Run core specs in both server and standalone suites; core has no independent runner.
 - [ ] Test SQL.js/browser migration and standalone worker request path.
 - [ ] Test mobile request routing assumptions, including iOS `capacitor:` interceptor path.
 - [ ] Test desktop custom protocol route handling.
@@ -63,10 +63,10 @@
 
 ## Verification commands
 
-- [ ] `pnpm --filter server test <flashcard-or-migration-pattern>`
-- [ ] `pnpm --filter standalone test <flashcard-or-core-pattern>`
+- [x] `pnpm --filter server test <flashcard-or-migration-pattern>`
+- [x] `pnpm --filter standalone test <flashcard-or-core-pattern>`
 - [ ] `pnpm --filter client test <flashcard-pattern>` or the repository's client filter name
-- [ ] `pnpm typecheck`
+- [x] `pnpm typecheck`
 - [ ] `pnpm dev:format-check`
 - [ ] Never run ESLint; never run full `test:all`, `test:parallel`, `test:sequential`, or coverage during development unless explicitly requested.
 

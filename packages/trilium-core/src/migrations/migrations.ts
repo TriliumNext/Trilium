@@ -39,7 +39,8 @@ export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
             );
 
             CREATE UNIQUE INDEX IF NOT EXISTS IDX_flashcards_noteId_ordinal
-                ON flashcards (noteId, ordinal);
+                ON flashcards (noteId, ordinal)
+                WHERE isDeleted = 0;
             CREATE INDEX IF NOT EXISTS IDX_flashcards_deck_due
                 ON flashcards (deckNoteId, suspended, isDeleted, due);
             CREATE INDEX IF NOT EXISTS IDX_flashcards_due

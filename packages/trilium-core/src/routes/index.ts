@@ -114,6 +114,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(GET, "/api/flashcards/due", flashcardsRoute.getDueCards);
     apiRoute(GET, "/api/flashcards/stats", flashcardsRoute.getStats);
     apiRoute(PST, "/api/flashcards/cards", flashcardsRoute.createCard);
+    apiRoute(DEL, "/api/flashcards/notes/:noteId/cards", flashcardsRoute.removeCardsForNote);
     apiRoute(GET, "/api/flashcards/cards/:cardId", flashcardsRoute.getCard);
     apiRoute(PST, "/api/flashcards/cards/:cardId/reviews", flashcardsRoute.reviewCard);
 

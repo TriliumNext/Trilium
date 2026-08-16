@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS flashcards (
     isDeleted INTEGER NOT NULL DEFAULT 0,
     deleteId TEXT DEFAULT NULL
 );
-CREATE UNIQUE INDEX IDX_flashcards_noteId_ordinal ON flashcards (noteId, ordinal);
+CREATE UNIQUE INDEX IDX_flashcards_noteId_ordinal ON flashcards (noteId, ordinal) WHERE isDeleted = 0;
 CREATE INDEX IDX_flashcards_deck_due ON flashcards (deckNoteId, suspended, isDeleted, due);
 CREATE INDEX IDX_flashcards_due ON flashcards (suspended, isDeleted, due);
 CREATE INDEX IDX_flashcards_noteId ON flashcards (noteId);
