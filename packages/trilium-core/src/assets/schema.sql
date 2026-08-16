@@ -157,6 +157,63 @@ CREATE INDEX IDX_attributes_isDeleted_utcDateModified ON attributes (isDeleted, 
 CREATE INDEX IDX_attachments_isDeleted_utcDateModified ON attachments (isDeleted, utcDateModified);
 CREATE INDEX IDX_attachments_utcDateScheduledForErasureSince ON attachments (utcDateScheduledForErasureSince);
 
+CREATE TABLE IF NOT EXISTS flashcards (
+    cardId TEXT NOT NULL PRIMARY KEY,
+    noteId TEXT NOT NULL,
+    deckNoteId TEXT NOT NULL,
+    ordinal INTEGER NOT NULL DEFAULT 0,
+    state INTEGER NOT NULL,
+    due TEXT NOT NULL,
+    stability REAL NOT NULL DEFAULT 0,
+    difficulty REAL NOT NULL DEFAULT 0,
+    elapsedDays INTEGER NOT NULL DEFAULT 0,
+    scheduledDays INTEGER NOT NULL DEFAULT 0,
+    learningSteps INTEGER NOT NULL DEFAULT 0,
+    reps INTEGER NOT NULL DEFAULT 0,
+    lapses INTEGER NOT NULL DEFAULT 0,
+    lastReview TEXT DEFAULT NULL,
+    suspended INTEGER NOT NULL DEFAULT 0,
+    algorithm TEXT NOT NULL DEFAULT 'fsrs-6',
+    algorithmVersion TEXT NOT NULL DEFAULT 'ts-fsrs@5.4.1',
+    schedulingRevision INTEGER NOT NULL DEFAULT 0,
+    utcDateCreated TEXT NOT NULL,
+    utcDateModified TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
+    deleteId TEXT DEFAULT NULL
+);
+CREATE UNIQUE INDEX IDX_flashcards_noteId_ordinal ON flashcards (noteId, ordinal);
+CREATE INDEX IDX_flashcards_deck_due ON flashcards (deckNoteId, suspended, isDeleted, due);
+CREATE INDEX IDX_flashcards_due ON flashcards (suspended, isDeleted, due);
+CREATE INDEX IDX_flashcards_noteId ON flashcards (noteId);
+
+CREATE TABLE IF NOT EXISTS flashcard_reviews (
+    reviewId TEXT NOT NULL PRIMARY KEY,
+    cardId TEXT NOT NULL,
+    rating INTEGER NOT NULL,
+    state INTEGER NOT NULL,
+    dueBefore TEXT NOT NULL,
+    dueAfter TEXT NOT NULL,
+    stabilityBefore REAL NOT NULL,
+    stabilityAfter REAL NOT NULL,
+    difficultyBefore REAL NOT NULL,
+    difficultyAfter REAL NOT NULL,
+    elapsedDays INTEGER NOT NULL,
+    scheduledDays INTEGER NOT NULL,
+    learningSteps INTEGER NOT NULL,
+    reviewedAt TEXT NOT NULL,
+    durationMs INTEGER DEFAULT NULL,
+    algorithm TEXT NOT NULL,
+    algorithmVersion TEXT NOT NULL,
+    clientRequestId TEXT DEFAULT NULL,
+    utcDateCreated TEXT NOT NULL,
+    utcDateModified TEXT NOT NULL
+);
+CREATE INDEX IDX_flashcard_reviews_card_reviewedAt ON flashcard_reviews (cardId, reviewedAt);
+CREATE INDEX IDX_flashcard_reviews_reviewedAt ON flashcard_reviews (reviewedAt);
+CREATE UNIQUE INDEX IDX_flashcard_reviews_clientRequestId
+    ON flashcard_reviews (clientRequestId)
+    WHERE clientRequestId IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     data TEXT,

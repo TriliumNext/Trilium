@@ -1,0 +1,61 @@
+.modal.flashcards-dialog {
+    .modal-dialog {
+        --bs-modal-width: min(860px, calc(100vw - 2rem));
+    }
+
+    .flashcards-dialog-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .flashcards-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+    }
+
+    .flashcards-card-pane {
+        border: 1px solid var(--main-border-color);
+        border-radius: var(--border-radius);
+        background: var(--accented-background-color);
+        padding: 1rem;
+        min-height: 12rem;
+    }
+
+    .flashcards-front-title {
+        margin-block: 0 0.75rem;
+    }
+
+    .flashcards-answer {
+        border-top: 1px solid var(--main-border-color);
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+
+    .flashcards-answer-label {
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+        margin-bottom: 0.5rem;
+    }
+
+    .flashcards-rating-row,
+    .flashcards-action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .flashcards-rating-row .btn {
+        flex: 1 1 8rem;
+    }
+
+    .flashcards-loading {
+        min-height: 12rem;
+        display: grid;
+        place-items: center;
+        color: var(--muted-text-color);
+    }
+}

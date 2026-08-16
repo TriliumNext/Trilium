@@ -241,6 +241,8 @@ function fillAllEntityChanges() {
         fillEntityChanges("blobs", "blobId");
         fillEntityChanges("attributes", "attributeId");
         fillEntityChanges("etapi_tokens", "etapiTokenId");
+        fillEntityChanges("flashcards", "cardId");
+        fillEntityChanges("flashcard_reviews", "reviewId");
         fillEntityChanges("options", "name", "WHERE isSynced = 1");
     });
 }

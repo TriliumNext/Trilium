@@ -1,0 +1,80 @@
+# Flashcards backend, sync, and API TODO
+
+## Database and migration
+
+- [ ] Add next migration after current `240` in `packages/trilium-core/src/migrations/migrations.ts`.
+- [ ] Add `flashcards` and `flashcard_reviews` tables, indexes, constraints, and comments.
+- [ ] Decide whether review logs are soft-deleted or immutable; make erase/backup behavior explicit.
+- [ ] Add migration test from an old database fixture and fresh-database test.
+- [ ] Keep schema definitions and migration SQL aligned with repository conventions.
+- [ ] Add startup repair/validation for orphaned cards, missing source notes, invalid decks, and duplicate idempotency keys.
+
+## Core service
+
+- [ ] Create `packages/trilium-core/src/services/flashcards/` with:
+  - [ ] `flashcard_service.ts` — materialization, authoring, deck assignment, lifecycle.
+  - [ ] `flashcard_scheduler_service.ts` — due queue, limits, ordering, day boundary.
+  - [ ] `flashcard_review_service.ts` — transaction, idempotency, optimistic concurrency, audit log.
+  - [ ] `flashcard_validation.ts` — input/state/config validation.
+  - [ ] `fsrs_scheduler.ts` — isolated adapter from `02_fsrs_engine_todo.md`.
+- [ ] Keep all writes inside existing SQL transaction/CLS conventions.
+- [ ] Use Becca/cache access for notes and attributes; do not bypass cache for normal note data.
+- [ ] Never read protected content without `note.isContentAvailable()`.
+- [ ] Add events for card created/changed/reviewed/suspended if client live refresh needs them.
+- [ ] Avoid a process-local only queue. Due-card discovery must work after restart and on any synced device.
+
+## Entity and sync wiring
+
+- [ ] Add shared row interfaces and API DTOs in `packages/commons/src/lib/`.
+- [ ] Add Becca entities and registration if dedicated tables are selected.
+- [ ] Update Becca loader for initial load, entity change sync, deletion, and post-processing.
+- [ ] Update `entity_changes` fill/repair paths so old databases can reconstruct flashcard changes.
+- [ ] Update content hash and sector handling for new entity names.
+- [ ] Verify server sync endpoint accepts, serializes, applies, and hashes new entities.
+- [ ] Verify standalone SQL.js schema/migrations and sync behavior.
+- [ ] Ensure review history remains bounded per response and does not create oversized sync pages.
+- [ ] Test simultaneous reviews on two devices; choose conflict rule (recommended: reject stale mutation, then refetch/retry).
+
+## Shared API routes
+
+Add routes in `packages/trilium-core/src/routes/api/flashcards.ts`, then register in `packages/trilium-core/src/routes/index.ts` with existing auth/CSRF wrappers.
+
+- [ ] `GET /api/flashcards/decks` — list decks/counts, never expose protected content unless authorized.
+- [ ] `POST /api/flashcards/cards` — opt note into flashcards/materialize card.
+- [ ] `GET /api/flashcards/due` — paginated due queue with safe note metadata and front content.
+- [ ] `GET /api/flashcards/:cardId` — card state, source note references, and legal previews.
+- [ ] `GET /api/flashcards/:cardId/preview` — four FSRS outcomes, read-only.
+- [ ] `POST /api/flashcards/:cardId/reviews` — rating, optional duration, `clientRequestId`, expected revision.
+- [ ] `POST /api/flashcards/:cardId/undo` — undo most recent eligible review.
+- [ ] `PUT /api/flashcards/:cardId/suspend` — suspend/unsuspend.
+- [ ] `POST /api/flashcards/:cardId/reset` — reset scheduling, preserve history by policy.
+- [ ] `PUT /api/flashcards/:cardId/deck` — move card/deck.
+- [ ] `GET /api/flashcards/stats` — aggregate counts/retention without front/back text.
+- [ ] `GET/PUT /api/flashcards/settings` — validated FSRS and queue settings, with explicit sync policy.
+- [ ] Add request/response interfaces in commons; do not duplicate anonymous shapes in client/server.
+- [ ] Return `409` for stale card revision and document recovery response.
+- [ ] Return safe `404/403` for deleted/protected/unavailable source notes without leaking existence where policy forbids it.
+- [ ] Add Swagger/OpenAPI annotations if this API is externally documented.
+
+## Server jobs and maintenance
+
+- [ ] Do not schedule every user's review from `services/scheduler.ts`; due status is derived on read.
+- [ ] Add low-frequency maintenance only for cleanup/repair/statistics materialization, guarded by CLS and safe-mode rules.
+- [ ] Add optional notification hook later; no OS tray/mobile notification in MVP.
+- [ ] Add task progress for expensive migration, rebuild, export, or optimization operations.
+- [ ] Define behavior when two server instances share sync data and both run maintenance.
+
+## External API and scripts
+
+- [ ] Decide whether ETAPI exposes flashcards in first release. If yes, add versioned DTOs and compatibility tests.
+- [ ] Decide whether backend/frontend scripting APIs can create cards or submit reviews. If yes, validate permissions and prevent scripts from bypassing review concurrency.
+- [ ] Add commands/events that scripts can invoke without exposing internal FSRS objects.
+
+## Security and privacy
+
+- [ ] Authorize every card by source note visibility/protection.
+- [ ] Do not include front/back in server logs, errors, entity hashes, metrics labels, or analytics payloads.
+- [ ] Sanitize/render HTML using existing note renderer rules; avoid introducing a second unsafe HTML path.
+- [ ] Rate-limit review mutations enough to prevent accidental loops, but do not block normal rapid short-term reviews.
+- [ ] Validate all IDs as Trilium IDs and all pagination/limit values.
+- [ ] Ensure deleted source notes cannot leave review endpoints exposing cached text.

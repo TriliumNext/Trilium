@@ -36,6 +36,7 @@ import databaseInfoRoute from "./api/database_info";
 import passwordApiRoute from "./api/password";
 import loginApiRoute from "./api/login";
 import fontsRoute from "./api/fonts";
+import flashcardsRoute from "./api/flashcards";
 import ocrRoute from "./api/ocr";
 import linkEmbedRoute from "./api/link_embed";
 import llmRoute from "./api/llm";
@@ -109,6 +110,12 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PST, "/api/notes/erase-deleted-notes-now", notesApiRoute.eraseDeletedNotesNow);
     apiRoute(PST, "/api/notes/erase-unused-attachments-now", notesApiRoute.eraseUnusedAttachmentsNow);
     apiRoute(PST, "/api/delete-notes-preview", notesApiRoute.getDeleteNotesPreview);
+
+    apiRoute(GET, "/api/flashcards/due", flashcardsRoute.getDueCards);
+    apiRoute(GET, "/api/flashcards/stats", flashcardsRoute.getStats);
+    apiRoute(PST, "/api/flashcards/cards", flashcardsRoute.createCard);
+    apiRoute(GET, "/api/flashcards/cards/:cardId", flashcardsRoute.getCard);
+    apiRoute(PST, "/api/flashcards/cards/:cardId/reviews", flashcardsRoute.reviewCard);
 
     apiRoute(GET, "/api/notes/:noteId/attachments", attachmentsApiRoute.getAttachments);
     apiRoute(PST, "/api/notes/:noteId/attachments", attachmentsApiRoute.saveAttachment);

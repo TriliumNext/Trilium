@@ -192,7 +192,7 @@ function updateNoteReordering(remoteEC: EntityChange, remoteEntityRow: EntityRow
 function eraseEntity(entityChange: EntityChange) {
     const { entityName, entityId } = entityChange;
 
-    const entityNames = ["notes", "branches", "attributes", "revisions", "attachments", "blobs"];
+    const entityNames = ["notes", "branches", "attributes", "revisions", "attachments", "blobs", "flashcards", "flashcard_reviews"];
 
     if (!entityNames.includes(entityName)) {
         getLog().error(`Cannot erase ${entityName} '${entityId}'.`);
