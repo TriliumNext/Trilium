@@ -1,7 +1,7 @@
 import type { AttachmentRow } from "@triliumnext/commons";
 import type { Router } from "express";
 
-import { becca } from "@triliumnext/core";
+import { becca, binary_utils } from "@triliumnext/core";
 import utils from "../services/utils.js";
 import eu from "./etapi_utils.js";
 import type { ValidatorMap } from "./etapi-interface.js";
@@ -21,23 +21,41 @@ function register(router: Router) {
         mime: [v.notNull, v.isString],
         title: [v.notNull, v.isString],
         position: [v.notNull, v.isInteger],
-        content: [v.isString]
+        content: [v.isString],
+        encoding: [v.isString]
     };
 
     eu.route(router, "post", "/etapi/attachments", (req, res, next) => {
-        const _params: Partial<AttachmentRow> = {};
+        const _params: Partial<AttachmentRow> & { encoding?: string } = {};
         eu.validateAndPatch(_params, req.body, ALLOWED_PROPERTIES_FOR_CREATE_ATTACHMENT);
-        const params = _params as AttachmentRow;
+        const params = _params as AttachmentRow & { encoding?: string };
 
         try {
             if (!params.ownerId) {
                 throw new Error("Missing owner ID.");
             }
-            const note = becca.getNoteOrThrow(params.ownerId);
-            const attachment = note.saveAttachment(params);
+
+            const { encoding, ...attachmentParams } = params;
+
+            if (encoding !== undefined && encoding !== "base64") {
+                throw new eu.EtapiError(400, "INVALID_ENCODING", `Unsupported encoding '${encoding}'. Only 'base64' is supported.`);
+            }
+
+            // JSON cannot carry raw binary data, so binary content is transmitted base64-encoded
+            // and decoded here before storage. This mirrors the `encoding` convention already used
+            // by the ZIP importer and the web API note-update path (see AttachmentRow.encoding).
+            const content = encoding === "base64"
+                ? binary_utils.decodeBase64(typeof attachmentParams.content === "string" ? attachmentParams.content : "")
+                : attachmentParams.content;
+
+            const note = becca.getNoteOrThrow(attachmentParams.ownerId!);
+            const attachment = note.saveAttachment({ ...attachmentParams, content });
 
             res.status(201).json(mappers.mapAttachmentToPojo(attachment));
         } catch (e: any) {
+            if (e instanceof eu.EtapiError) {
+                throw e;
+            }
             throw new eu.EtapiError(500, eu.GENERIC_CODE, e.message);
         }
     });
