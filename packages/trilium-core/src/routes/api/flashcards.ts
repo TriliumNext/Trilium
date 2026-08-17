@@ -1,6 +1,7 @@
 import type {
     FlashcardBuryRequest,
     FlashcardCreateRequest,
+    FlashcardDeckMoveRequest,
     FlashcardResetRequest,
     FlashcardReviewRequest,
     FlashcardSuspensionRequest,
@@ -41,6 +42,10 @@ function buryCard(req: Request<{ cardId: string }, {}, FlashcardBuryRequest>) {
     return flashcardService.buryCard(req.params.cardId, req.body);
 }
 
+function moveCardToDeck(req: Request<{ cardId: string }, {}, FlashcardDeckMoveRequest>) {
+    return flashcardService.moveCardToDeck(req.params.cardId, req.body);
+}
+
 function undoReview(req: Request<{}, {}, FlashcardUndoRequest>) {
     return flashcardService.undoReview(req.body);
 }
@@ -66,6 +71,7 @@ export default {
     setSuspended,
     resetCard,
     buryCard,
+    moveCardToDeck,
     undoReview,
     removeCardsForNote,
     reviewCard

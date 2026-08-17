@@ -49,7 +49,7 @@ Add routes in `packages/trilium-core/src/routes/api/flashcards.ts`, then registe
 - [x] `POST /api/flashcards/reviews/undo` — undo most recent eligible review.
 - [x] `PUT /api/flashcards/:cardId/suspended` — suspend/unsuspend.
 - [x] `POST /api/flashcards/:cardId/reset` — reset scheduling, preserve history by policy.
-- [ ] `PUT /api/flashcards/:cardId/deck` — move card/deck.
+- [x] `PUT /api/flashcards/:cardId/deck` — move card/deck.
 - [x] `GET /api/flashcards/stats` — aggregate counts/retention without front/back text.
 - [ ] `GET/PUT /api/flashcards/settings` — validated FSRS and queue settings, with explicit sync policy.
 - [x] Add request/response interfaces in commons; do not duplicate anonymous shapes in client/server.

@@ -62,19 +62,37 @@ describe("Flashcards API (core)", () => {
         expect(getRes.status).toBe(200);
         expect(getRes.body.back).toBe("Back content");
 
+        const secondDeck = createTextNote("API second deck");
+        const moveDeckRes = await api.put<{ card: FlashcardReviewCard }>(
+            `/api/flashcards/cards/${createRes.body.cardId}/deck`,
+            {
+                body: {
+                    deckNoteId: secondDeck.noteId,
+                    expectedSchedulingRevision: createRes.body.schedulingRevision
+                }
+            }
+        );
+        expect(moveDeckRes.status).toBe(200);
+        expect(moveDeckRes.body.card.deckNoteId).toBe(secondDeck.noteId);
+        expect(moveDeckRes.body.card.schedulingRevision).toBe(
+            createRes.body.schedulingRevision + 1
+        );
+
         const reviewRes = await api.post<FlashcardReviewResponse>(
             `/api/flashcards/cards/${createRes.body.cardId}/reviews`,
             {
                 body: {
                     rating: 3,
-                    expectedSchedulingRevision: createRes.body.schedulingRevision,
+                    expectedSchedulingRevision: moveDeckRes.body.card.schedulingRevision,
                     clientRequestId: `${createRes.body.cardId}-api-review`
                 }
             }
         );
         expect(reviewRes.status).toBe(200);
         expect(reviewRes.body.reviewId).toBeTruthy();
-        expect(reviewRes.body.card.schedulingRevision).toBe(createRes.body.schedulingRevision + 1);
+        expect(reviewRes.body.card.schedulingRevision).toBe(
+            moveDeckRes.body.card.schedulingRevision + 1
+        );
 
         const undoRes = await api.post<{ card: FlashcardReviewCard }>(
             "/api/flashcards/reviews/undo",

@@ -18,6 +18,7 @@ import { randomString } from "../../services/utils";
 import { formatDateTime } from "../../utils/formatters";
 import { Badge } from "../react/Badge";
 import Button from "../react/Button";
+import FormSelect from "../react/FormSelect";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
@@ -297,6 +298,34 @@ export default function FlashcardsDialog() {
         }
     }
 
+    async function moveCurrentCardToDeck(deckNoteId: string) {
+        if (!currentCard || currentCard.deckNoteId === deckNoteId) {
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const response = await flashcards.moveCardToDeck(currentCard.cardId, {
+                deckNoteId,
+                expectedSchedulingRevision: currentCard.schedulingRevision
+            });
+
+            applyLifecycleUpdate(response.card);
+            setSelectedDeckNoteId(deckNoteId);
+            setUndoableReview(null);
+            toast.showMessage(t("flashcards.card_moved"));
+        } catch (e) {
+            if (e instanceof FlashcardConflictError) {
+                await handleReviewConflict(currentCard.cardId, e.message);
+                return;
+            }
+
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
     async function undoLastReview() {
         if (!undoableReview) {
             return;
@@ -415,6 +444,7 @@ export default function FlashcardsDialog() {
                     : currentCard
                         ? <ReviewCard
                             card={currentCard}
+                            decks={decks}
                             activeIndex={activeIndex}
                             total={cards.length}
                             answerShown={answerShown}
@@ -422,6 +452,7 @@ export default function FlashcardsDialog() {
                             onToggleSuspended={toggleSuspended}
                             onReset={resetCurrentCard}
                             onBury={buryCurrentCard}
+                            onMoveDeck={moveCurrentCardToDeck}
                         />
                         : <NoItems icon="bx bx-brain" text={t("flashcards.no_due_cards")} />
                 }
@@ -543,15 +574,18 @@ function ReviewStats({ stats }: { stats: FlashcardStatsResponse }) {
 
 function ReviewCard({
     card,
+    decks,
     activeIndex,
     total,
     answerShown,
     submitting,
     onToggleSuspended,
     onReset,
-    onBury
+    onBury,
+    onMoveDeck
 }: {
     card: FlashcardReviewCard;
+    decks: FlashcardDeckSummary[];
     activeIndex: number;
     total: number;
     answerShown: boolean;
@@ -559,6 +593,7 @@ function ReviewCard({
     onToggleSuspended: () => Promise<void>;
     onReset: () => Promise<void>;
     onBury: () => Promise<void>;
+    onMoveDeck: (deckNoteId: string) => Promise<void>;
 }) {
     return (
         <>
@@ -576,6 +611,8 @@ function ReviewCard({
                 onToggleSuspended={onToggleSuspended}
                 onReset={onReset}
                 onBury={onBury}
+                decks={decks}
+                onMoveDeck={onMoveDeck}
             />
             <section className="flashcards-card-pane" aria-live="polite">
                 <h3 className="flashcards-front-title">{card.front}</h3>
@@ -590,15 +627,36 @@ function ReviewCard({
     );
 }
 
-function CardLifecycleActions({ card, disabled, onToggleSuspended, onReset, onBury }: {
+function CardLifecycleActions({
+    card,
+    disabled,
+    decks,
+    onToggleSuspended,
+    onReset,
+    onBury,
+    onMoveDeck
+}: {
     card: FlashcardReviewCard;
     disabled: boolean;
+    decks: FlashcardDeckSummary[];
     onToggleSuspended: () => Promise<void>;
     onReset: () => Promise<void>;
     onBury: () => Promise<void>;
+    onMoveDeck: (deckNoteId: string) => Promise<void>;
 }) {
     return (
         <div className="flashcards-card-actions">
+            {decks.length > 0 && <label className="flashcards-deck-move">
+                <span>{t("flashcards.move_to_deck")}</span>
+                <FormSelect<FlashcardDeckSummary>
+                    values={decks}
+                    keyProperty="deckNoteId"
+                    titleProperty="deckTitle"
+                    currentValue={card.deckNoteId}
+                    disabled={disabled}
+                    onChange={(deckNoteId) => void onMoveDeck(deckNoteId)}
+                />
+            </label>}
             <Button
                 text={t(card.suspended ? "flashcards.resume_card" : "flashcards.suspend_card")}
                 icon={card.suspended ? "bx-play-circle" : "bx-pause-circle"}

@@ -29,7 +29,7 @@
 - [x] Add due/new/learning/review deck list with counts.
 - [x] Add “study now” action and empty state using shared `NoItems`.
 - [ ] Add basic stats: reviewed today, retention, reviews by rating, due forecast, lapses.
-- [ ] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable. Deck list now uses `Badge`; fuller stats/browser UI still needs component pass.
+- [ ] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable. Deck list now uses `Badge`; deck move uses `FormSelect`; fuller stats/browser UI still needs component pass.
 - [x] Avoid inline styles; add matching CSS files and scoped root classes.
 - [ ] Virtualize large due lists or fetch one card at a time; never load every answer into DOM unnecessarily.
 - [ ] Do not expose raw review-log internals in regular UI; provide a developer/export view later.

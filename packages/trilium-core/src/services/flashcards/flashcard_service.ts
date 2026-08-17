@@ -3,6 +3,7 @@ import type {
     FlashcardBuryRequest,
     FlashcardCardSummary,
     FlashcardCreateRequest,
+    FlashcardDeckMoveRequest,
     FlashcardDeckSummary,
     FlashcardDecksResponse,
     FlashcardDueResponse,
@@ -192,6 +193,29 @@ function buryCard(cardId: string, request: FlashcardBuryRequest = {}): Flashcard
     const updated = new BFlashcard({
         ...card,
         due: dateUtils.utcDateTimeStr(buriedUntil),
+        schedulingRevision: (card.schedulingRevision ?? 0) + 1
+    }).save();
+
+    return {
+        card: buildReviewCard(updated.getPojo() as FlashcardRow, { includeBack: false })
+    };
+}
+
+function moveCardToDeck(
+    cardId: string,
+    request: FlashcardDeckMoveRequest
+): FlashcardActionResponse {
+    if (!request?.deckNoteId) {
+        throw new ValidationError("Flashcard deck move request requires a deck note ID.");
+    }
+
+    const card = getCardRow(cardId);
+    assertExpectedRevision(card, request.expectedSchedulingRevision);
+    becca.getNoteOrThrow(request.deckNoteId);
+
+    const updated = new BFlashcard({
+        ...card,
+        deckNoteId: request.deckNoteId,
         schedulingRevision: (card.schedulingRevision ?? 0) + 1
     }).save();
 
@@ -480,6 +504,7 @@ export default {
     setSuspended,
     resetCard,
     buryCard,
+    moveCardToDeck,
     undoReview,
     removeCardsForNote,
     reviewCard

@@ -122,7 +122,20 @@
     }
 
     .flashcards-card-actions {
+        align-items: center;
         justify-content: flex-end;
+    }
+
+    .flashcards-deck-move {
+        align-items: center;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .flashcards-deck-move span {
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+        white-space: nowrap;
     }
 
     .flashcards-rating-row .btn {

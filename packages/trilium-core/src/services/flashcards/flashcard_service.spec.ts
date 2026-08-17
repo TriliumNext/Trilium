@@ -294,6 +294,29 @@ describe("flashcard service", () => {
         expect(reviewCount).toBe(1);
     });
 
+    it("moves a card to another deck with conflict protection", () => {
+        const oldDeck = createTextNote("Old deck");
+        const newDeck = createTextNote("New deck");
+        const note = createTextNote("Move deck source");
+        const card = runInContext(() => flashcardService.createCard({
+            noteId: note.noteId,
+            deckNoteId: oldDeck.noteId
+        }));
+
+        const moved = runInContext(() => flashcardService.moveCardToDeck(card.cardId, {
+            deckNoteId: newDeck.noteId,
+            expectedSchedulingRevision: card.schedulingRevision
+        }));
+
+        expect(moved.card.deckNoteId).toBe(newDeck.noteId);
+        expect(moved.card.deckTitle).toBe("New deck");
+        expect(moved.card.schedulingRevision).toBe(card.schedulingRevision + 1);
+        expect(() => runInContext(() => flashcardService.moveCardToDeck(card.cardId, {
+            deckNoteId: oldDeck.noteId,
+            expectedSchedulingRevision: card.schedulingRevision
+        }))).toThrow("Refresh before reviewing");
+    });
+
     it("removes a note's flashcards and marker label", () => {
         const note = createTextNote("Remove source");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));

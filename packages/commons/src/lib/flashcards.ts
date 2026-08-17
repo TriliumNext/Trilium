@@ -90,6 +90,11 @@ export interface FlashcardBuryRequest {
     expectedSchedulingRevision?: number;
 }
 
+export interface FlashcardDeckMoveRequest {
+    deckNoteId: string;
+    expectedSchedulingRevision?: number;
+}
+
 export interface FlashcardUndoRequest {
     reviewId: string;
     expectedSchedulingRevision?: number;

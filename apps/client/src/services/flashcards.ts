@@ -2,6 +2,7 @@ import type {
     FlashcardActionResponse,
     FlashcardBuryRequest,
     FlashcardCreateRequest,
+    FlashcardDeckMoveRequest,
     FlashcardDecksResponse,
     FlashcardDueResponse,
     FlashcardRemoveResponse,
@@ -60,6 +61,13 @@ function resetCard(cardId: string, request: FlashcardResetRequest) {
 function buryCard(cardId: string, request: FlashcardBuryRequest) {
     return withFlashcardConflict(() => server.postWithSilentConflict<FlashcardActionResponse>(
         `flashcards/cards/${cardId}/bury`,
+        request
+    ));
+}
+
+function moveCardToDeck(cardId: string, request: FlashcardDeckMoveRequest) {
+    return withFlashcardConflict(() => server.putWithSilentConflict<FlashcardActionResponse>(
+        `flashcards/cards/${cardId}/deck`,
         request
     ));
 }
@@ -130,6 +138,7 @@ export default {
     setSuspended,
     resetCard,
     buryCard,
+    moveCardToDeck,
     undoReview,
     removeCardsForNote,
     reviewCard

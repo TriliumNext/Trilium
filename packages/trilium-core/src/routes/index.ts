@@ -120,6 +120,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PUT, "/api/flashcards/cards/:cardId/suspended", flashcardsRoute.setSuspended);
     apiRoute(PST, "/api/flashcards/cards/:cardId/reset", flashcardsRoute.resetCard);
     apiRoute(PST, "/api/flashcards/cards/:cardId/bury", flashcardsRoute.buryCard);
+    apiRoute(PUT, "/api/flashcards/cards/:cardId/deck", flashcardsRoute.moveCardToDeck);
     apiRoute(PST, "/api/flashcards/reviews/undo", flashcardsRoute.undoReview);
     apiRoute(PST, "/api/flashcards/cards/:cardId/reviews", flashcardsRoute.reviewCard);
 
