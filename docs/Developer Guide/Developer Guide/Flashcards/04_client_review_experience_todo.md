@@ -11,7 +11,7 @@
 
 ## Review surface
 
-- [ ] Add review command reachable from global menu, keyboard action, launcher, and note action.
+- [ ] Add review command reachable from global menu, keyboard action, launcher, and note action. Global menu, keyboard action, and note action exist; launcher remains future work.
 - [x] Add responsive review page/dialog usable in desktop, mobile, and standalone.
 - [x] Render front first; reveal back with explicit action and keyboard shortcut.
 - [x] Render Again/Hard/Good/Easy buttons only after reveal unless product decision says otherwise.
@@ -26,18 +26,18 @@
 
 ## Deck browser and statistics
 
-- [ ] Add due/new/learning/review deck list with counts.
-- [ ] Add “study now” action and empty state using shared `NoItems`.
+- [x] Add due/new/learning/review deck list with counts.
+- [x] Add “study now” action and empty state using shared `NoItems`.
 - [ ] Add basic stats: reviewed today, retention, reviews by rating, due forecast, lapses.
-- [ ] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable.
-- [ ] Avoid inline styles; add matching CSS files and scoped root classes.
+- [ ] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable. Deck list now uses `Badge`; fuller stats/browser UI still needs component pass.
+- [x] Avoid inline styles; add matching CSS files and scoped root classes.
 - [ ] Virtualize large due lists or fetch one card at a time; never load every answer into DOM unnecessarily.
 - [ ] Do not expose raw review-log internals in regular UI; provide a developer/export view later.
 
 ## Navigation and commands
 
 - [x] Add command names/types in `apps/client/src/components/app_context.ts` or the current command registry.
-- [ ] Add default keyboard actions through existing keyboard action definitions.
+- [x] Add default keyboard actions through existing keyboard action definitions.
 - [x] Add global menu item in `apps/client/src/widgets/buttons/global_menu.tsx`.
 - [x] Add note-level action in `apps/client/src/widgets/ribbon/NoteActions*` and mobile equivalent.
 - [ ] Add command tests for desktop and mobile layouts.

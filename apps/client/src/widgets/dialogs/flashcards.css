@@ -24,6 +24,71 @@
         padding: 0.5rem 0.75rem;
     }
 
+    .flashcards-deck-browser {
+        border: 1px solid var(--main-border-color);
+        border-radius: var(--border-radius);
+        padding: 0.75rem;
+    }
+
+    .flashcards-deck-browser-header,
+    .flashcards-deck-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .flashcards-deck-browser-header h3,
+    .flashcards-deck-heading h4 {
+        margin: 0;
+    }
+
+    .flashcards-deck-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    .flashcards-deck-item {
+        border: 1px solid var(--main-border-color);
+        border-radius: var(--border-radius);
+        background: var(--accented-background-color);
+        padding: 0.75rem;
+    }
+
+    .flashcards-deck-item-selected {
+        border-color: var(--primary-button-background-color);
+    }
+
+    .flashcards-deck-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.75rem;
+    }
+
+    .flashcards-deck-badge-due {
+        --color: var(--primary-button-background-color);
+    }
+
+    .flashcards-deck-badge-new {
+        --color: var(--link-color);
+    }
+
+    .flashcards-deck-badge-learning {
+        --color: var(--main-text-color);
+    }
+
+    .flashcards-deck-badge-review {
+        --color: var(--button-text-color);
+    }
+
+    .flashcards-deck-badge-total,
+    .flashcards-deck-badge-suspended {
+        --color: var(--muted-text-color);
+    }
+
     .flashcards-card-pane {
         border: 1px solid var(--main-border-color);
         border-radius: var(--border-radius);

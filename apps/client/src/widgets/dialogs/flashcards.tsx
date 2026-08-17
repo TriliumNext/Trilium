@@ -1,6 +1,7 @@
 import "./flashcards.css";
 
 import type {
+    FlashcardDeckSummary,
     FlashcardReviewCard,
     FlashcardReviewPreview,
     FlashcardReviewResponse,
@@ -15,6 +16,7 @@ import { t } from "../../services/i18n";
 import toast from "../../services/toast";
 import { randomString } from "../../services/utils";
 import { formatDateTime } from "../../utils/formatters";
+import { Badge } from "../react/Badge";
 import Button from "../react/Button";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
@@ -34,37 +36,52 @@ export default function FlashcardsDialog() {
     const [ loading, setLoading ] = useState(false);
     const [ cards, setCards ] = useState<FlashcardReviewCard[]>([]);
     const [ currentCard, setCurrentCard ] = useState<FlashcardReviewCard | null>(null);
+    const [ decks, setDecks ] = useState<FlashcardDeckSummary[]>([]);
+    const [ selectedDeckNoteId, setSelectedDeckNoteId ] = useState<string | null>(null);
     const [ stats, setStats ] = useState<FlashcardStatsResponse | null>(null);
     const [ answerShown, setAnswerShown ] = useState(false);
     const [ submitting, setSubmitting ] = useState(false);
     const [ reviewRequestId, setReviewRequestId ] = useState(() => randomString());
     const [ undoableReview, setUndoableReview ] = useState<UndoableReview | null>(null);
 
-    const openDialog = useCallback(async ({ noteId }: EventData<"showFlashcards"> = {}) => {
+    const openDialog = useCallback(async ({
+        noteId,
+        deckNoteId
+    }: EventData<"showFlashcards"> = {}) => {
         setShown(true);
         setLoading(true);
+        setCards([]);
+        setCurrentCard(null);
         setStats(null);
+        setDecks([]);
+        setSelectedDeckNoteId(deckNoteId ?? null);
         setAnswerShown(false);
         setReviewRequestId(randomString());
         setUndoableReview(null);
 
         try {
             if (noteId) {
-                const card = await flashcards.createCard({ noteId });
-                const loadedStats = await flashcards.getStats();
+                const [ card, loadedStats, loadedDecks ] = await Promise.all([
+                    flashcards.createCard({ noteId, deckNoteId }),
+                    flashcards.getStats(),
+                    flashcards.getDecks()
+                ]);
                 setCards([ card ]);
                 setCurrentCard(card);
                 setStats(loadedStats);
+                setDecks(loadedDecks.decks);
                 return;
             }
 
-            const [ due, loadedStats ] = await Promise.all([
-                flashcards.getDueCards({ limit: REVIEW_LIMIT }),
-                flashcards.getStats()
+            const [ due, loadedStats, loadedDecks ] = await Promise.all([
+                flashcards.getDueCards({ deckNoteId, limit: REVIEW_LIMIT }),
+                flashcards.getStats(),
+                flashcards.getDecks()
             ]);
             setCards(due.cards);
             setCurrentCard(due.cards[0] ?? null);
             setStats(loadedStats);
+            setDecks(loadedDecks.decks);
         } finally {
             setLoading(false);
         }
@@ -118,8 +135,40 @@ export default function FlashcardsDialog() {
         return () => document.removeEventListener("keydown", handleKeyDown);
     }, [ shown, currentCard, answerShown, submitting, undoableReview ]);
 
-    async function refreshStats() {
-        setStats(await flashcards.getStats());
+    async function refreshProgress() {
+        const [ loadedStats, loadedDecks ] = await Promise.all([
+            flashcards.getStats(),
+            flashcards.getDecks()
+        ]);
+        setStats(loadedStats);
+        setDecks(loadedDecks.decks);
+    }
+
+    async function studyDeck(deckNoteId: string | null) {
+        setLoading(true);
+        setCards([]);
+        setCurrentCard(null);
+        setSelectedDeckNoteId(deckNoteId);
+        setAnswerShown(false);
+        setReviewRequestId(randomString());
+        setUndoableReview(null);
+
+        try {
+            const [ due, loadedStats, loadedDecks ] = await Promise.all([
+                flashcards.getDueCards({
+                    deckNoteId: deckNoteId ?? undefined,
+                    limit: REVIEW_LIMIT
+                }),
+                flashcards.getStats(),
+                flashcards.getDecks()
+            ]);
+            setCards(due.cards);
+            setCurrentCard(due.cards[0] ?? null);
+            setStats(loadedStats);
+            setDecks(loadedDecks.decks);
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function revealAnswer() {
@@ -234,7 +283,7 @@ export default function FlashcardsDialog() {
 
             removeCurrentCard(response.card.cardId);
             setUndoableReview(null);
-            void refreshStats();
+            void refreshProgress();
             toast.showMessage(t("flashcards.card_buried"));
         } catch (e) {
             if (e instanceof FlashcardConflictError) {
@@ -286,7 +335,7 @@ export default function FlashcardsDialog() {
         setAnswerShown(false);
         setReviewRequestId(randomString());
         setUndoableReview(null);
-        await refreshStats();
+        await refreshProgress();
         toast.showMessage(t("flashcards.card_refreshed"));
     }
 
@@ -298,13 +347,13 @@ export default function FlashcardsDialog() {
             expectedSchedulingRevision: response.card.schedulingRevision
         });
         removeCurrentCard(response.card.cardId);
-        void refreshStats();
+        void refreshProgress();
     }
 
     function applyLifecycleUpdate(card: FlashcardReviewCard) {
         if (card.suspended) {
             removeCurrentCard(card.cardId);
-            void refreshStats();
+            void refreshProgress();
             return;
         }
 
@@ -321,7 +370,7 @@ export default function FlashcardsDialog() {
         setCurrentCard(cardWithAnswer);
         setAnswerShown(false);
         setReviewRequestId(randomString());
-        void refreshStats();
+        void refreshProgress();
     }
 
     function removeCurrentCard(cardId: string) {
@@ -353,6 +402,14 @@ export default function FlashcardsDialog() {
         >
             <div className="flashcards-dialog-body">
                 {stats && <ReviewStats stats={stats} />}
+                {!loading && stats && <DeckBrowser
+                    decks={decks}
+                    stats={stats}
+                    selectedDeckNoteId={selectedDeckNoteId}
+                    submitting={submitting}
+                    onStudyAll={() => void studyDeck(null)}
+                    onStudyDeck={(deckNoteId) => void studyDeck(deckNoteId)}
+                />}
                 {loading
                     ? <div className="flashcards-loading">{t("flashcards.loading")}</div>
                     : currentCard
@@ -370,6 +427,106 @@ export default function FlashcardsDialog() {
                 }
             </div>
         </Modal>
+    );
+}
+
+function DeckBrowser({
+    decks,
+    stats,
+    selectedDeckNoteId,
+    submitting,
+    onStudyAll,
+    onStudyDeck
+}: {
+    decks: FlashcardDeckSummary[];
+    stats: FlashcardStatsResponse;
+    selectedDeckNoteId: string | null;
+    submitting: boolean;
+    onStudyAll: () => void;
+    onStudyDeck: (deckNoteId: string) => void;
+}) {
+    if (!decks.length) {
+        return null;
+    }
+
+    return (
+        <section className="flashcards-deck-browser" aria-label={t("flashcards.deck_browser")}>
+            <header className="flashcards-deck-browser-header">
+                <h3>{t("flashcards.deck_browser")}</h3>
+                <Button
+                    text={t("flashcards.study_all")}
+                    icon="bx-play-circle"
+                    disabled={submitting || stats.dueCount === 0}
+                    size="small"
+                    onClick={() => onStudyAll()}
+                />
+            </header>
+            <div className="flashcards-deck-list">
+                {decks.map((deck) => <DeckSummaryCard
+                    key={deck.deckNoteId}
+                    deck={deck}
+                    selected={deck.deckNoteId === selectedDeckNoteId}
+                    submitting={submitting}
+                    onStudyDeck={onStudyDeck}
+                />)}
+            </div>
+        </section>
+    );
+}
+
+function DeckSummaryCard({ deck, selected, submitting, onStudyDeck }: {
+    deck: FlashcardDeckSummary;
+    selected: boolean;
+    submitting: boolean;
+    onStudyDeck: (deckNoteId: string) => void;
+}) {
+    return (
+        <article
+            className={`flashcards-deck-item${selected ? " flashcards-deck-item-selected" : ""}`}
+        >
+            <div className="flashcards-deck-heading">
+                <h4>{deck.deckTitle}</h4>
+                <Button
+                    text={t("flashcards.study_deck")}
+                    icon="bx-play"
+                    disabled={submitting || deck.dueCount === 0}
+                    size="small"
+                    onClick={() => onStudyDeck(deck.deckNoteId)}
+                />
+            </div>
+            <div className="flashcards-deck-badges">
+                <Badge
+                    className="flashcards-deck-badge flashcards-deck-badge-due"
+                    text={t("flashcards.due_count", { count: deck.dueCount })}
+                    outline
+                />
+                <Badge
+                    className="flashcards-deck-badge flashcards-deck-badge-new"
+                    text={t("flashcards.new_count", { count: deck.newCount })}
+                    outline
+                />
+                <Badge
+                    className="flashcards-deck-badge flashcards-deck-badge-learning"
+                    text={t("flashcards.learning_count", { count: deck.learningCount })}
+                    outline
+                />
+                <Badge
+                    className="flashcards-deck-badge flashcards-deck-badge-review"
+                    text={t("flashcards.review_count", { count: deck.reviewCount })}
+                    outline
+                />
+                <Badge
+                    className="flashcards-deck-badge flashcards-deck-badge-total"
+                    text={t("flashcards.total_count", { count: deck.totalCount })}
+                    outline
+                />
+                <Badge
+                    className="flashcards-deck-badge flashcards-deck-badge-suspended"
+                    text={t("flashcards.suspended_count", { count: deck.suspendedCount })}
+                    outline
+                />
+            </div>
+        </article>
     );
 }
 

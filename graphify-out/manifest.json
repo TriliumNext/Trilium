@@ -135,8 +135,8 @@
     "semantic_hash": "c5b09013ece00edf7c01f1024ae37cb7"
   },
   "apps/client/src/components/app_context.ts": {
-    "mtime": 1786904673.1194975,
-    "ast_hash": "f2039d645bc3a536c063ca24f771d995",
+    "mtime": 1786960821.9790995,
+    "ast_hash": "51d4691ed26fa0f0c2618c41ea899c00",
     "semantic_hash": ""
   },
   "apps/client/src/components/component.ts": {
@@ -1525,8 +1525,8 @@
     "semantic_hash": "1c4320fd508ca048bfeec596c729caff"
   },
   "apps/client/src/translations/en/translation.json": {
-    "mtime": 1786948029.705127,
-    "ast_hash": "f25148bb8867594b23b7b31e51a26109",
+    "mtime": 1786960859.5372906,
+    "ast_hash": "3a12dbd4693a3ae42e66f07ed8df1b51",
     "semantic_hash": ""
   },
   "apps/client/src/translations/es/entry.json": {
@@ -7005,9 +7005,9 @@
     "semantic_hash": "843b146ef6f33d065da89af89991ff5d"
   },
   "apps/server/src/assets/translations/en/server.json": {
-    "mtime": 1786902991.5157382,
-    "ast_hash": "be2ca8a1fa50866e135d558de006edfd",
-    "semantic_hash": "be2ca8a1fa50866e135d558de006edfd"
+    "mtime": 1786961017.4350643,
+    "ast_hash": "f4cea98d7a3741630a1b10904cc59d09",
+    "semantic_hash": ""
   },
   "apps/server/src/assets/translations/es/server.json": {
     "mtime": 1786902991.5158434,
@@ -10940,9 +10940,9 @@
     "semantic_hash": "73cb0f2a343eb37a86835983d016f30a"
   },
   "packages/commons/src/lib/keyboard_actions_interface.ts": {
-    "mtime": 1786902991.6801236,
-    "ast_hash": "8ea659b9361df5863acd7e7b86455c4d",
-    "semantic_hash": "8ea659b9361df5863acd7e7b86455c4d"
+    "mtime": 1786961079.5971947,
+    "ast_hash": "33b952d7a20e495af57ca5e3f301ab25",
+    "semantic_hash": ""
   },
   "packages/commons/src/lib/keyboard_shortcut_display.spec.ts": {
     "mtime": 1786902991.6801708,
@@ -13375,9 +13375,9 @@
     "semantic_hash": "fde5d929ac1c52d9e4c9e21d3f486756"
   },
   "packages/trilium-core/src/services/keyboard_actions.ts": {
-    "mtime": 1786902991.7524385,
-    "ast_hash": "b69eb102478a777b89b7929da05c417a",
-    "semantic_hash": "b69eb102478a777b89b7929da05c417a"
+    "mtime": 1786961009.9865367,
+    "ast_hash": "db21f63c9315a656a542018d68863e03",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/llm/attachment_content.ts": {
     "mtime": 1786902991.7525158,
@@ -14775,8 +14775,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.tsx": {
-    "mtime": 1786948017.2088988,
-    "ast_hash": "2d195927aaa053bc091a6c262f462850",
+    "mtime": 1786960908.2389295,
+    "ast_hash": "6e702bbca4eaa53fff5a00360664f59e",
     "semantic_hash": ""
   },
   "apps/web-clipper/.wxt/eslint-auto-imports.mjs": {
@@ -17880,8 +17880,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
-    "mtime": 1786948187.6947436,
-    "ast_hash": "4be847ebffca0669da51309b6e022984",
+    "mtime": 1786961031.3793206,
+    "ast_hash": "ff78ebd8a13603ecb3d263b993656b36",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
