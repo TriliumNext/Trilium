@@ -220,6 +220,11 @@ describe("Flashcards API (core)", () => {
         const statsRes = await api.get<FlashcardStatsResponse>("/api/flashcards/stats");
         expect(statsRes.status).toBe(200);
         expect(statsRes.body.dueCount).toBeGreaterThanOrEqual(1);
+        expect(statsRes.body.reviewedTodayCount).toBeGreaterThanOrEqual(0);
+        expect(statsRes.body.ratingCounts[1]).toBeGreaterThanOrEqual(0);
+        expect(statsRes.body.ratingCounts[2]).toBeGreaterThanOrEqual(0);
+        expect(statsRes.body.ratingCounts[3]).toBeGreaterThanOrEqual(0);
+        expect(statsRes.body.ratingCounts[4]).toBeGreaterThanOrEqual(0);
 
         const removeRes = await api.delete<{ removedCount: number }>(
             `/api/flashcards/notes/${note.noteId}/cards`

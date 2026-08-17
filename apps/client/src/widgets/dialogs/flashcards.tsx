@@ -568,6 +568,14 @@ function ReviewStats({ stats }: { stats: FlashcardStatsResponse }) {
             <span>{t("flashcards.new_count", { count: stats.newCount })}</span>
             <span>{t("flashcards.learning_count", { count: stats.learningCount })}</span>
             <span>{t("flashcards.review_count", { count: stats.reviewCount })}</span>
+            <span>{t("flashcards.reviewed_today", { count: stats.reviewedTodayCount })}</span>
+            <span>{t("flashcards.retention", { value: formatRetention(stats.retentionRate) })}</span>
+            <span>{t("flashcards.rating_counts", {
+                again: stats.ratingCounts[1],
+                hard: stats.ratingCounts[2],
+                good: stats.ratingCounts[3],
+                easy: stats.ratingCounts[4]
+            })}</span>
         </div>
     );
 }
@@ -770,6 +778,14 @@ function UndoButton({ disabled, onUndo }: {
             onClick={() => void onUndo()}
         />
     );
+}
+
+function formatRetention(retentionRate: number | null) {
+    if (retentionRate === null) {
+        return t("flashcards.no_reviews");
+    }
+
+    return `${Math.round(retentionRate * 100)}%`;
 }
 
 function formatInterval(preview: FlashcardReviewPreview) {

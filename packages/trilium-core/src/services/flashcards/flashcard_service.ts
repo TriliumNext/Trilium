@@ -387,7 +387,10 @@ function undoReview(request: FlashcardUndoRequest): FlashcardActionResponse {
 
 function getStats(): FlashcardStatsResponse {
     const now = dateUtils.utcNowDateTime();
+    const todayStart = `${dateUtils.utcDateStr(new Date())} 00:00:00.000Z`;
     const sql = getSql();
+    const ratingCounts = getRatingCounts();
+    const totalReviews = ratingCounts[1] + ratingCounts[2] + ratingCounts[3] + ratingCounts[4];
 
     return {
         dueCount: sql.getValue<number>(/*sql*/`
@@ -404,8 +407,32 @@ function getStats(): FlashcardStatsResponse {
             WHERE isDeleted = 0 AND suspended = 0 AND state = 2`) ?? 0,
         suspendedCount: sql.getValue<number>(/*sql*/`
             SELECT COUNT(1) FROM flashcards
-            WHERE isDeleted = 0 AND suspended = 1`) ?? 0
+            WHERE isDeleted = 0 AND suspended = 1`) ?? 0,
+        reviewedTodayCount: sql.getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews
+            WHERE reviewedAt >= ?`, [todayStart]) ?? 0,
+        retentionRate: totalReviews === 0 ? null : (totalReviews - ratingCounts[1]) / totalReviews,
+        ratingCounts
     };
+}
+
+function getRatingCounts(): Record<FlashcardRating, number> {
+    const rows = getSql().getRows<{ rating: FlashcardRating; count: number }>(/*sql*/`
+        SELECT rating, COUNT(1) AS count
+        FROM flashcard_reviews
+        GROUP BY rating`);
+    const ratingCounts: Record<FlashcardRating, number> = {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0
+    };
+
+    for (const row of rows) {
+        ratingCounts[row.rating] = row.count;
+    }
+
+    return ratingCounts;
 }
 
 function getDefaultDeckNoteId(noteId: string) {

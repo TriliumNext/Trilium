@@ -130,6 +130,9 @@ export interface FlashcardStatsResponse {
     learningCount: number;
     reviewCount: number;
     suspendedCount: number;
+    reviewedTodayCount: number;
+    retentionRate: number | null;
+    ratingCounts: Record<FlashcardRating, number>;
 }
 
 export interface FlashcardRemoveResponse {

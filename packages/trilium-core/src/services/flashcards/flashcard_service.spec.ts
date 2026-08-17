@@ -138,6 +138,7 @@ describe("flashcard service", () => {
     it("reviews a card and rejects stale scheduling revisions", () => {
         const note = createTextNote("Review source");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const statsBefore = runInContext(() => flashcardService.getStats());
 
         const response = runInContext(() => flashcardService.reviewCard(card.cardId, {
             rating: 3,
@@ -147,6 +148,11 @@ describe("flashcard service", () => {
 
         expect(response.reviewId).toBeTruthy();
         expect(response.card.schedulingRevision).toBe(card.schedulingRevision + 1);
+
+        const statsAfter = runInContext(() => flashcardService.getStats());
+        expect(statsAfter.reviewedTodayCount).toBe(statsBefore.reviewedTodayCount + 1);
+        expect(statsAfter.ratingCounts[3]).toBe(statsBefore.ratingCounts[3] + 1);
+        expect(statsAfter.retentionRate).not.toBeNull();
 
         const reviewCount = getSql().getValue<number>(/*sql*/`
             SELECT COUNT(1) FROM flashcard_reviews
