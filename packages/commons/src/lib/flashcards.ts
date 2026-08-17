@@ -66,6 +66,19 @@ export interface FlashcardReviewRequest {
     clientRequestId?: string;
 }
 
+export interface FlashcardSuspensionRequest {
+    suspended: boolean;
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardResetRequest {
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardActionResponse {
+    card: FlashcardReviewCard;
+}
+
 export interface FlashcardReviewResponse {
     card: FlashcardCardSummary;
     reviewId: string;

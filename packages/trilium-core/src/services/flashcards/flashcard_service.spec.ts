@@ -67,6 +67,99 @@ describe("flashcard service", () => {
         expect(countAfterStaleReview).toBe(1);
     });
 
+    it("returns the original result for duplicate client request IDs", () => {
+        const note = createTextNote("Duplicate review source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const clientRequestId = `${card.cardId}-duplicate`;
+
+        const first = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId
+        }));
+        const duplicate = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 1,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId
+        }));
+
+        expect(duplicate.reviewId).toBe(first.reviewId);
+        expect(duplicate.card.schedulingRevision).toBe(first.card.schedulingRevision);
+
+        const reviewCount = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews
+            WHERE cardId = ?`, [card.cardId]);
+        expect(reviewCount).toBe(1);
+    });
+
+    it("rejects duplicate client request IDs from another card", () => {
+        const firstNote = createTextNote("First duplicate source");
+        const secondNote = createTextNote("Second duplicate source");
+        const firstCard = runInContext(() => flashcardService.createCard({
+            noteId: firstNote.noteId
+        }));
+        const secondCard = runInContext(() => flashcardService.createCard({
+            noteId: secondNote.noteId
+        }));
+        const clientRequestId = `${firstCard.cardId}-shared`;
+
+        runInContext(() => flashcardService.reviewCard(firstCard.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: firstCard.schedulingRevision,
+            clientRequestId
+        }));
+
+        expect(() => runInContext(() => flashcardService.reviewCard(secondCard.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: secondCard.schedulingRevision,
+            clientRequestId
+        }))).toThrow("belongs to another flashcard");
+
+        const secondReviewCount = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews
+            WHERE cardId = ?`, [secondCard.cardId]);
+        expect(secondReviewCount).toBe(0);
+    });
+
+    it("suspends, resumes, and resets a card", () => {
+        const note = createTextNote("Lifecycle source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        const suspended = runInContext(() => flashcardService.setSuspended(card.cardId, {
+            suspended: true,
+            expectedSchedulingRevision: card.schedulingRevision
+        }));
+        expect(suspended.card.suspended).toBe(true);
+        expect(suspended.card.schedulingRevision).toBe(card.schedulingRevision + 1);
+        const dueWhileSuspended = flashcardService.getDueCards().cards
+            .some((dueCard) => dueCard.cardId === card.cardId);
+        expect(dueWhileSuspended).toBe(false);
+
+        const resumed = runInContext(() => flashcardService.setSuspended(card.cardId, {
+            suspended: false,
+            expectedSchedulingRevision: suspended.card.schedulingRevision
+        }));
+        expect(resumed.card.suspended).toBe(false);
+
+        const reviewed = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: resumed.card.schedulingRevision,
+            clientRequestId: `${card.cardId}-before-reset`
+        }));
+        const reset = runInContext(() => flashcardService.resetCard(card.cardId, {
+            expectedSchedulingRevision: reviewed.card.schedulingRevision
+        }));
+
+        expect(reset.card.suspended).toBe(false);
+        expect(reset.card.state).toBe(0);
+        expect(reset.card.schedulingRevision).toBe(reviewed.card.schedulingRevision + 1);
+
+        const reviewCount = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews
+            WHERE cardId = ?`, [card.cardId]);
+        expect(reviewCount).toBe(1);
+    });
+
     it("removes a note's flashcards and marker label", () => {
         const note = createTextNote("Remove source");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
@@ -75,7 +168,9 @@ describe("flashcard service", () => {
 
         expect(response.removedCount).toBe(1);
         expect(note.hasLabel("flashcard")).toBe(false);
-        expect(flashcardService.getDueCards().cards.some((dueCard) => dueCard.cardId === card.cardId)).toBe(false);
+        const isCardStillDue = flashcardService.getDueCards().cards
+            .some((dueCard) => dueCard.cardId === card.cardId);
+        expect(isCardStillDue).toBe(false);
 
         const deletedCount = getSql().getValue<number>(/*sql*/`
             SELECT COUNT(1) FROM flashcards

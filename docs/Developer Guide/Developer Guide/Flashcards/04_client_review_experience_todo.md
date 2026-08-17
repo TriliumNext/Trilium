@@ -13,16 +13,16 @@
 
 - [ ] Add review command reachable from global menu, keyboard action, launcher, and note action.
 - [x] Add responsive review page/dialog usable in desktop, mobile, and standalone.
-- [ ] Render front first; reveal back with explicit action and keyboard shortcut.
+- [x] Render front first; reveal back with explicit action and keyboard shortcut.
 - [x] Render Again/Hard/Good/Easy buttons only after reveal unless product decision says otherwise.
 - [x] Show next intervals before submission, using API preview and server canonical time.
-- [ ] Show current deck/session progress and remaining due/new counts.
+- [x] Show current deck/session progress and remaining due/new counts.
 - [ ] Keep review content isolated from normal note pane so switching notes cannot submit a rating for wrong card.
-- [ ] Support keyboard shortcuts and screen-reader labels for reveal and ratings.
-- [ ] Disable buttons during mutation; handle retry without duplicate review through `clientRequestId`.
-- [ ] Handle `409` stale state by refetching card and asking user whether to continue, never silently replacing state.
+- [x] Support keyboard shortcuts and screen-reader labels for reveal and ratings.
+- [x] Disable buttons during mutation; handle retry without duplicate review through `clientRequestId`.
+- [x] Handle `409` stale state by refetching card and asking user whether to continue, never silently replacing state.
 - [ ] Add undo with clear scope and timeout.
-- [ ] Add suspend/reset only after core review flow is stable.
+- [x] Add suspend/reset only after core review flow is stable.
 
 ## Deck browser and statistics
 
@@ -58,7 +58,7 @@
 - [x] Reuse `common` labels where existing; create dedicated `flashcards.*` namespace for new strings.
 - [ ] Translate rating names, states, intervals, due counts, errors, conflict messages, and protected-state text.
 - [ ] Use `Trans` if translated text embeds note/deck links or reordered components.
-- [ ] Ensure focus moves to answer/reveal/rating controls predictably.
+- [x] Ensure focus moves to answer/reveal/rating controls predictably.
 - [ ] Use semantic headings, `aria-live` for result/progress updates, and visible focus states.
 - [ ] Verify RTL, long translations, high zoom, reduced motion, and mobile narrow widths.
 

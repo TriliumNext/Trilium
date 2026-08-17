@@ -9,12 +9,19 @@
         gap: 1rem;
     }
 
-    .flashcards-card-meta {
+    .flashcards-card-meta,
+    .flashcards-session-stats {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
         color: var(--muted-text-color);
         font-size: 0.9em;
+    }
+
+    .flashcards-session-stats {
+        border: 1px solid var(--main-border-color);
+        border-radius: var(--border-radius);
+        padding: 0.5rem 0.75rem;
     }
 
     .flashcards-card-pane {
@@ -42,10 +49,15 @@
     }
 
     .flashcards-rating-row,
-    .flashcards-action-row {
+    .flashcards-action-row,
+    .flashcards-card-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
+    }
+
+    .flashcards-card-actions {
+        justify-content: flex-end;
     }
 
     .flashcards-rating-row .btn {

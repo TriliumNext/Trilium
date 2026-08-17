@@ -1,15 +1,18 @@
 import type {
+    FlashcardActionResponse,
     FlashcardCardSummary,
     FlashcardCreateRequest,
     FlashcardDueResponse,
     FlashcardRating,
+    FlashcardResetRequest,
     FlashcardReviewCard,
     FlashcardRemoveResponse,
     FlashcardReviewRequest,
     FlashcardReviewResponse,
     FlashcardReviewRow,
     FlashcardRow,
-    FlashcardStatsResponse
+    FlashcardStatsResponse,
+    FlashcardSuspensionRequest
 } from "@triliumnext/commons";
 
 import becca from "../../becca/becca.js";
@@ -35,7 +38,10 @@ function createCard(request: FlashcardCreateRequest) {
     const note = becca.getNoteOrThrow(request.noteId);
 
     if (!note.isContentAvailable()) {
-        throw new ForbiddenError(`Cannot create flashcard for protected note '${request.noteId}' while protected session is locked.`);
+        throw new ForbiddenError(
+            `Cannot create flashcard for protected note '${request.noteId}' `
+            + "while protected session is locked."
+        );
     }
 
     const deckNoteId = request.deckNoteId || getDefaultDeckNoteId(request.noteId);
@@ -70,7 +76,10 @@ function createCard(request: FlashcardCreateRequest) {
     return buildReviewCard(card.getPojo() as FlashcardRow, { includeBack: true });
 }
 
-function getDueCards({ deckNoteId, limit = DEFAULT_DUE_LIMIT }: { deckNoteId?: string; limit?: number } = {}): FlashcardDueResponse {
+function getDueCards({
+    deckNoteId,
+    limit = DEFAULT_DUE_LIMIT
+}: { deckNoteId?: string; limit?: number } = {}): FlashcardDueResponse {
     limit = normalizeLimit(limit);
     const now = dateUtils.utcNowDateTime();
 
@@ -98,8 +107,50 @@ function getDueCards({ deckNoteId, limit = DEFAULT_DUE_LIMIT }: { deckNoteId?: s
     };
 }
 
-function getCard(cardId: string, { includeBack = true }: { includeBack?: boolean } = {}): FlashcardReviewCard {
+function getCard(
+    cardId: string,
+    { includeBack = true }: { includeBack?: boolean } = {}
+): FlashcardReviewCard {
     return buildReviewCard(getCardRow(cardId), { includeBack });
+}
+
+function setSuspended(
+    cardId: string,
+    request: FlashcardSuspensionRequest
+): FlashcardActionResponse {
+    if (!request || typeof request.suspended !== "boolean") {
+        throw new ValidationError("Flashcard suspension request requires a boolean value.");
+    }
+
+    const card = getCardRow(cardId);
+    assertExpectedRevision(card, request.expectedSchedulingRevision);
+
+    const updated = new BFlashcard({
+        ...card,
+        suspended: request.suspended,
+        schedulingRevision: (card.schedulingRevision ?? 0) + 1
+    }).save();
+
+    return {
+        card: buildReviewCard(updated.getPojo() as FlashcardRow, { includeBack: false })
+    };
+}
+
+function resetCard(cardId: string, request: FlashcardResetRequest = {}): FlashcardActionResponse {
+    const card = getCardRow(cardId);
+    assertExpectedRevision(card, request.expectedSchedulingRevision);
+
+    const resetSchedule = createEmptyFlashcardSchedule(new Date());
+    const updated = new BFlashcard({
+        ...card,
+        ...resetSchedule,
+        suspended: false,
+        schedulingRevision: (card.schedulingRevision ?? 0) + 1
+    }).save();
+
+    return {
+        card: buildReviewCard(updated.getPojo() as FlashcardRow, { includeBack: false })
+    };
 }
 
 function removeCardsForNote(noteId: string): FlashcardRemoveResponse {
@@ -130,10 +181,18 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
     validateRating(request.rating);
 
     const duplicate = request.clientRequestId
-        ? getSql().getRow<FlashcardReviewRow | null>("SELECT * FROM flashcard_reviews WHERE clientRequestId = ?", [request.clientRequestId])
+        ? getSql().getRow<FlashcardReviewRow | null>(/*sql*/`
+            SELECT * FROM flashcard_reviews
+            WHERE clientRequestId = ?`, [request.clientRequestId])
         : null;
 
     if (duplicate) {
+        if (duplicate.cardId !== cardId) {
+            throw new ConflictError(
+                `Review request '${request.clientRequestId}' belongs to another flashcard.`
+            );
+        }
+
         const card = getCardRow(cardId);
         return {
             card: buildCardSummary(card),
@@ -144,18 +203,22 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
 
     const card = getCardRow(cardId);
 
-    if (request.expectedSchedulingRevision !== undefined
-        && request.expectedSchedulingRevision !== card.schedulingRevision) {
-        throw new ConflictError(`Flashcard '${cardId}' has changed. Refresh before reviewing.`);
-    }
+    assertExpectedRevision(card, request.expectedSchedulingRevision);
 
     const note = becca.getNoteOrThrow(card.noteId);
     if (!note.isContentAvailable()) {
-        throw new ForbiddenError(`Cannot review protected note '${card.noteId}' while protected session is locked.`);
+        throw new ForbiddenError(
+            `Cannot review protected note '${card.noteId}' while protected session is locked.`
+        );
     }
 
     const now = new Date();
-    const scheduled = scheduleFlashcard(card, request.rating, now, DEFAULT_FLASHCARD_SCHEDULER_CONFIG);
+    const scheduled = scheduleFlashcard(
+        card,
+        request.rating,
+        now,
+        DEFAULT_FLASHCARD_SCHEDULER_CONFIG
+    );
     let savedReviewId = "";
 
     getSql().transactional(() => {
@@ -201,11 +264,21 @@ function getStats(): FlashcardStatsResponse {
     const sql = getSql();
 
     return {
-        dueCount: sql.getValue<number>("SELECT COUNT(1) FROM flashcards WHERE isDeleted = 0 AND suspended = 0 AND due <= ?", [now]) ?? 0,
-        newCount: sql.getValue<number>("SELECT COUNT(1) FROM flashcards WHERE isDeleted = 0 AND suspended = 0 AND state = 0") ?? 0,
-        learningCount: sql.getValue<number>("SELECT COUNT(1) FROM flashcards WHERE isDeleted = 0 AND suspended = 0 AND state IN (1, 3)") ?? 0,
-        reviewCount: sql.getValue<number>("SELECT COUNT(1) FROM flashcards WHERE isDeleted = 0 AND suspended = 0 AND state = 2") ?? 0,
-        suspendedCount: sql.getValue<number>("SELECT COUNT(1) FROM flashcards WHERE isDeleted = 0 AND suspended = 1") ?? 0
+        dueCount: sql.getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards
+            WHERE isDeleted = 0 AND suspended = 0 AND due <= ?`, [now]) ?? 0,
+        newCount: sql.getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards
+            WHERE isDeleted = 0 AND suspended = 0 AND state = 0`) ?? 0,
+        learningCount: sql.getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards
+            WHERE isDeleted = 0 AND suspended = 0 AND state IN (1, 3)`) ?? 0,
+        reviewCount: sql.getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards
+            WHERE isDeleted = 0 AND suspended = 0 AND state = 2`) ?? 0,
+        suspendedCount: sql.getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards
+            WHERE isDeleted = 0 AND suspended = 1`) ?? 0
     };
 }
 
@@ -216,7 +289,9 @@ function getDefaultDeckNoteId(noteId: string) {
 }
 
 function getCardRow(cardId: string): FlashcardRow {
-    const card = getSql().getRow<FlashcardRow | null>("SELECT * FROM flashcards WHERE cardId = ? AND isDeleted = 0", [cardId]);
+    const card = getSql().getRow<FlashcardRow | null>(/*sql*/`
+        SELECT * FROM flashcards
+        WHERE cardId = ? AND isDeleted = 0`, [cardId]);
 
     if (!card) {
         throw new NotFoundError(`Flashcard '${cardId}' was not found.`);
@@ -225,7 +300,10 @@ function getCardRow(cardId: string): FlashcardRow {
     return card;
 }
 
-function buildReviewCard(card: FlashcardRow, { includeBack }: { includeBack: boolean }): FlashcardReviewCard {
+function buildReviewCard(
+    card: FlashcardRow,
+    { includeBack }: { includeBack: boolean }
+): FlashcardReviewCard {
     const note = becca.getNoteOrThrow(card.noteId);
 
     if (!note.isContentAvailable()) {
@@ -267,6 +345,15 @@ function buildCardSummary(card: FlashcardRow): FlashcardCardSummary {
     };
 }
 
+function assertExpectedRevision(card: FlashcardRow, expectedSchedulingRevision?: number) {
+    if (expectedSchedulingRevision !== undefined
+        && expectedSchedulingRevision !== card.schedulingRevision) {
+        throw new ConflictError(
+            `Flashcard '${card.cardId}' has changed. Refresh before reviewing.`
+        );
+    }
+}
+
 function normalizeLimit(limit: number) {
     if (!Number.isInteger(limit) || limit < 1) {
         throw new ValidationError(`Invalid flashcard limit '${limit}'.`);
@@ -298,6 +385,8 @@ export default {
     getDueCards,
     getCard,
     getStats,
+    setSuspended,
+    resetCard,
     removeCardsForNote,
     reviewCard
 };
