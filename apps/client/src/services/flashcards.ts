@@ -1,6 +1,8 @@
 import type {
     FlashcardActionResponse,
+    FlashcardBuryRequest,
     FlashcardCreateRequest,
+    FlashcardDecksResponse,
     FlashcardDueResponse,
     FlashcardRemoveResponse,
     FlashcardResetRequest,
@@ -8,13 +10,18 @@ import type {
     FlashcardReviewRequest,
     FlashcardReviewResponse,
     FlashcardStatsResponse,
-    FlashcardSuspensionRequest
+    FlashcardSuspensionRequest,
+    FlashcardUndoRequest
 } from "@triliumnext/commons";
 
 import server, { type ServerErrorResponse } from "./server";
 
 function createCard(request: FlashcardCreateRequest) {
     return server.post<FlashcardReviewCard>("flashcards/cards", request);
+}
+
+function getDecks() {
+    return server.get<FlashcardDecksResponse>("flashcards/decks");
 }
 
 function getDueCards({ deckNoteId, limit }: { deckNoteId?: string; limit?: number } = {}) {
@@ -46,6 +53,20 @@ function setSuspended(cardId: string, request: FlashcardSuspensionRequest) {
 function resetCard(cardId: string, request: FlashcardResetRequest) {
     return withFlashcardConflict(() => server.postWithSilentConflict<FlashcardActionResponse>(
         `flashcards/cards/${cardId}/reset`,
+        request
+    ));
+}
+
+function buryCard(cardId: string, request: FlashcardBuryRequest) {
+    return withFlashcardConflict(() => server.postWithSilentConflict<FlashcardActionResponse>(
+        `flashcards/cards/${cardId}/bury`,
+        request
+    ));
+}
+
+function undoReview(request: FlashcardUndoRequest) {
+    return withFlashcardConflict(() => server.postWithSilentConflict<FlashcardActionResponse>(
+        "flashcards/reviews/undo",
         request
     ));
 }
@@ -102,11 +123,14 @@ function readErrorMessage(responseText: string) {
 
 export default {
     createCard,
+    getDecks,
     getDueCards,
     getCard,
     getStats,
     setSuspended,
     resetCard,
+    buryCard,
+    undoReview,
     removeCardsForNote,
     reviewCard
 };

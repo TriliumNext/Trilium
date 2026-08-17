@@ -39,16 +39,16 @@
 
 Add routes in `packages/trilium-core/src/routes/api/flashcards.ts`, then register in `packages/trilium-core/src/routes/index.ts` with existing auth/CSRF wrappers.
 
-- [ ] `GET /api/flashcards/decks` — list decks/counts, never expose protected content unless authorized.
+- [x] `GET /api/flashcards/decks` — list decks/counts, never expose protected content unless authorized.
 - [x] `POST /api/flashcards/cards` — opt note into flashcards/materialize card.
 - [x] `GET /api/flashcards/due` — paginated due queue with safe note metadata and front content.
 - [x] `GET /api/flashcards/:cardId` — card state, source note references, and legal previews.
 - [x] `DELETE /api/flashcards/notes/:noteId/cards` — remove note-owned flashcards and marker label.
 - [ ] `GET /api/flashcards/:cardId/preview` — four FSRS outcomes, read-only.
 - [x] `POST /api/flashcards/:cardId/reviews` — rating, optional duration, `clientRequestId`, expected revision.
-- [ ] `POST /api/flashcards/:cardId/undo` — undo most recent eligible review.
-- [ ] `PUT /api/flashcards/:cardId/suspend` — suspend/unsuspend.
-- [ ] `POST /api/flashcards/:cardId/reset` — reset scheduling, preserve history by policy.
+- [x] `POST /api/flashcards/reviews/undo` — undo most recent eligible review.
+- [x] `PUT /api/flashcards/:cardId/suspended` — suspend/unsuspend.
+- [x] `POST /api/flashcards/:cardId/reset` — reset scheduling, preserve history by policy.
 - [ ] `PUT /api/flashcards/:cardId/deck` — move card/deck.
 - [x] `GET /api/flashcards/stats` — aggregate counts/retention without front/back text.
 - [ ] `GET/PUT /api/flashcards/settings` — validated FSRS and queue settings, with explicit sync policy.

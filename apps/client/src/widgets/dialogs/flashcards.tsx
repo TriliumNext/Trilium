@@ -23,6 +23,12 @@ import { RawHtmlBlock } from "../react/RawHtml";
 
 const REVIEW_LIMIT = 20;
 
+interface UndoableReview {
+    reviewId: string;
+    cardId: string;
+    expectedSchedulingRevision: number;
+}
+
 export default function FlashcardsDialog() {
     const [ shown, setShown ] = useState(false);
     const [ loading, setLoading ] = useState(false);
@@ -32,6 +38,7 @@ export default function FlashcardsDialog() {
     const [ answerShown, setAnswerShown ] = useState(false);
     const [ submitting, setSubmitting ] = useState(false);
     const [ reviewRequestId, setReviewRequestId ] = useState(() => randomString());
+    const [ undoableReview, setUndoableReview ] = useState<UndoableReview | null>(null);
 
     const openDialog = useCallback(async ({ noteId }: EventData<"showFlashcards"> = {}) => {
         setShown(true);
@@ -39,6 +46,7 @@ export default function FlashcardsDialog() {
         setStats(null);
         setAnswerShown(false);
         setReviewRequestId(randomString());
+        setUndoableReview(null);
 
         try {
             if (noteId) {
@@ -73,12 +81,18 @@ export default function FlashcardsDialog() {
     }, [ cards, currentCard ]);
 
     useEffect(() => {
-        if (!shown || !currentCard || submitting) {
+        if (!shown || (!currentCard && !undoableReview) || submitting) {
             return;
         }
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.defaultPrevented || shouldIgnoreKeyboardTarget(event.target)) {
+                return;
+            }
+
+            if (undoableReview && event.key.toLowerCase() === "u") {
+                event.preventDefault();
+                void undoLastReview();
                 return;
             }
 
@@ -88,7 +102,7 @@ export default function FlashcardsDialog() {
                 return;
             }
 
-            if (!answerShown) {
+            if (!answerShown || !currentCard) {
                 return;
             }
 
@@ -102,7 +116,7 @@ export default function FlashcardsDialog() {
 
         document.addEventListener("keydown", handleKeyDown);
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [ shown, currentCard, answerShown, submitting ]);
+    }, [ shown, currentCard, answerShown, submitting, undoableReview ]);
 
     async function refreshStats() {
         setStats(await flashcards.getStats());
@@ -160,6 +174,7 @@ export default function FlashcardsDialog() {
             });
 
             applyLifecycleUpdate(response.card);
+            setUndoableReview(null);
             toast.showMessage(suspended
                 ? t("flashcards.card_suspended")
                 : t("flashcards.card_resumed"));
@@ -192,10 +207,62 @@ export default function FlashcardsDialog() {
             });
 
             applyLifecycleUpdate(response.card);
+            setUndoableReview(null);
             toast.showMessage(t("flashcards.card_reset"));
         } catch (e) {
             if (e instanceof FlashcardConflictError) {
                 await handleReviewConflict(currentCard.cardId, e.message);
+                return;
+            }
+
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    async function buryCurrentCard() {
+        if (!currentCard) {
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const response = await flashcards.buryCard(currentCard.cardId, {
+                expectedSchedulingRevision: currentCard.schedulingRevision
+            });
+
+            removeCurrentCard(response.card.cardId);
+            setUndoableReview(null);
+            void refreshStats();
+            toast.showMessage(t("flashcards.card_buried"));
+        } catch (e) {
+            if (e instanceof FlashcardConflictError) {
+                await handleReviewConflict(currentCard.cardId, e.message);
+                return;
+            }
+
+            throw e;
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    async function undoLastReview() {
+        if (!undoableReview) {
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const response = await flashcards.undoReview(undoableReview);
+            setUndoableReview(null);
+            applyLifecycleUpdate(response.card);
+            toast.showMessage(t("flashcards.review_undone"));
+        } catch (e) {
+            if (e instanceof FlashcardConflictError) {
+                await handleReviewConflict(undoableReview.cardId, e.message);
+                setUndoableReview(null);
                 return;
             }
 
@@ -218,12 +285,18 @@ export default function FlashcardsDialog() {
         setCurrentCard(refreshedCard);
         setAnswerShown(false);
         setReviewRequestId(randomString());
+        setUndoableReview(null);
         await refreshStats();
         toast.showMessage(t("flashcards.card_refreshed"));
     }
 
     function moveToNextCard(response: FlashcardReviewResponse) {
         toast.showMessage(t("flashcards.review_saved"));
+        setUndoableReview({
+            reviewId: response.reviewId,
+            cardId: response.card.cardId,
+            expectedSchedulingRevision: response.card.schedulingRevision
+        });
         removeCurrentCard(response.card.cardId);
         void refreshStats();
     }
@@ -239,7 +312,9 @@ export default function FlashcardsDialog() {
             ? { ...card, back: currentCard.back }
             : card;
         const nextCards = cards.some((existingCard) => existingCard.cardId === card.cardId)
-            ? cards.map((existingCard) => existingCard.cardId === card.cardId ? cardWithAnswer : existingCard)
+            ? cards.map((existingCard) => existingCard.cardId === card.cardId
+                ? cardWithAnswer
+                : existingCard)
             : [ cardWithAnswer, ...cards ];
 
         setCards(nextCards);
@@ -270,8 +345,10 @@ export default function FlashcardsDialog() {
                 currentCard={currentCard}
                 answerShown={answerShown}
                 submitting={submitting}
+                undoableReview={undoableReview}
                 onReveal={revealAnswer}
                 onRate={submitRating}
+                onUndo={undoLastReview}
             />}
         >
             <div className="flashcards-dialog-body">
@@ -287,6 +364,7 @@ export default function FlashcardsDialog() {
                             submitting={submitting}
                             onToggleSuspended={toggleSuspended}
                             onReset={resetCurrentCard}
+                            onBury={buryCurrentCard}
                         />
                         : <NoItems icon="bx bx-brain" text={t("flashcards.no_due_cards")} />
                 }
@@ -313,7 +391,8 @@ function ReviewCard({
     answerShown,
     submitting,
     onToggleSuspended,
-    onReset
+    onReset,
+    onBury
 }: {
     card: FlashcardReviewCard;
     activeIndex: number;
@@ -322,6 +401,7 @@ function ReviewCard({
     submitting: boolean;
     onToggleSuspended: () => Promise<void>;
     onReset: () => Promise<void>;
+    onBury: () => Promise<void>;
 }) {
     return (
         <>
@@ -338,6 +418,7 @@ function ReviewCard({
                 disabled={submitting}
                 onToggleSuspended={onToggleSuspended}
                 onReset={onReset}
+                onBury={onBury}
             />
             <section className="flashcards-card-pane" aria-live="polite">
                 <h3 className="flashcards-front-title">{card.front}</h3>
@@ -352,11 +433,12 @@ function ReviewCard({
     );
 }
 
-function CardLifecycleActions({ card, disabled, onToggleSuspended, onReset }: {
+function CardLifecycleActions({ card, disabled, onToggleSuspended, onReset, onBury }: {
     card: FlashcardReviewCard;
     disabled: boolean;
     onToggleSuspended: () => Promise<void>;
     onReset: () => Promise<void>;
+    onBury: () => Promise<void>;
 }) {
     return (
         <div className="flashcards-card-actions">
@@ -366,6 +448,13 @@ function CardLifecycleActions({ card, disabled, onToggleSuspended, onReset }: {
                 disabled={disabled}
                 size="small"
                 onClick={() => void onToggleSuspended()}
+            />
+            <Button
+                text={t("flashcards.bury_card")}
+                icon="bx-time-five"
+                disabled={disabled}
+                size="small"
+                onClick={() => void onBury()}
             />
             <Button
                 text={t("flashcards.reset_card")}
@@ -378,12 +467,22 @@ function CardLifecycleActions({ card, disabled, onToggleSuspended, onReset }: {
     );
 }
 
-function DialogFooter({ currentCard, answerShown, submitting, onReveal, onRate }: {
+function DialogFooter({
+    currentCard,
+    answerShown,
+    submitting,
+    undoableReview,
+    onReveal,
+    onRate,
+    onUndo
+}: {
     currentCard: FlashcardReviewCard | null;
     answerShown: boolean;
     submitting: boolean;
+    undoableReview: UndoableReview | null;
     onReveal: () => Promise<void>;
     onRate: (preview: FlashcardReviewPreview) => Promise<void>;
+    onUndo: () => Promise<void>;
 }) {
     const revealButtonRef = useRef<HTMLButtonElement>(null);
     const firstRatingButtonRef = useRef<HTMLButtonElement>(null);
@@ -401,14 +500,14 @@ function DialogFooter({ currentCard, answerShown, submitting, onReveal, onRate }
         }
     }, [ currentCardId, answerShown, submitting ]);
 
-    if (!currentCard) {
+    if (!currentCard && !undoableReview) {
         return null;
     }
 
-    if (!answerShown) {
+    if (!currentCard || !answerShown) {
         return (
             <div className="flashcards-action-row">
-                <Button
+                {currentCard && <Button
                     buttonRef={revealButtonRef}
                     text={t("flashcards.show_answer")}
                     icon="bx-show"
@@ -416,7 +515,8 @@ function DialogFooter({ currentCard, answerShown, submitting, onReveal, onRate }
                     keyboardShortcut="Space"
                     title={t("flashcards.show_answer_shortcut")}
                     onClick={() => void onReveal()}
-                />
+                />}
+                {undoableReview && <UndoButton disabled={submitting} onUndo={onUndo} />}
             </div>
         );
     }
@@ -436,7 +536,24 @@ function DialogFooter({ currentCard, answerShown, submitting, onReveal, onRate }
                     onClick={() => void onRate(preview)}
                 />
             ))}
+            {undoableReview && <UndoButton disabled={submitting} onUndo={onUndo} />}
         </div>
+    );
+}
+
+function UndoButton({ disabled, onUndo }: {
+    disabled: boolean;
+    onUndo: () => Promise<void>;
+}) {
+    return (
+        <Button
+            text={t("flashcards.undo_review")}
+            icon="bx-undo"
+            disabled={disabled}
+            keyboardShortcut="U"
+            title={t("flashcards.undo_review_shortcut")}
+            onClick={() => void onUndo()}
+        />
     );
 }
 

@@ -35,8 +35,16 @@ export interface FlashcardScheduleResult {
         difficultyBefore: number;
         difficultyAfter: number;
         elapsedDays: number;
+        elapsedDaysBefore: number;
         scheduledDays: number;
+        scheduledDaysBefore: number;
         learningSteps: number;
+        learningStepsBefore: number;
+        repsBefore: number;
+        lapsesBefore: number;
+        lastReviewBefore?: string | null;
+        schedulingRevisionBefore: number;
+        schedulingRevisionAfter: number;
         reviewedAt: string;
     };
 }
@@ -153,8 +161,16 @@ function toScheduleResult(sourceCard: FlashcardRow, result: RecordLogItem): Flas
             difficultyBefore: sourceCard.difficulty,
             difficultyAfter: result.card.difficulty,
             elapsedDays: result.log.elapsed_days,
+            elapsedDaysBefore: sourceCard.elapsedDays,
             scheduledDays: result.log.scheduled_days,
+            scheduledDaysBefore: sourceCard.scheduledDays,
             learningSteps: result.log.learning_steps,
+            learningStepsBefore: sourceCard.learningSteps,
+            repsBefore: sourceCard.reps,
+            lapsesBefore: sourceCard.lapses,
+            lastReviewBefore: sourceCard.lastReview,
+            schedulingRevisionBefore: sourceCard.schedulingRevision ?? 0,
+            schedulingRevisionAfter: (sourceCard.schedulingRevision ?? 0) + 1,
             reviewedAt: dateUtils.utcDateTimeStr(result.log.review)
         }
     };

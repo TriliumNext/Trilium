@@ -1,8 +1,10 @@
 import type {
+    FlashcardBuryRequest,
     FlashcardCreateRequest,
     FlashcardResetRequest,
     FlashcardReviewRequest,
-    FlashcardSuspensionRequest
+    FlashcardSuspensionRequest,
+    FlashcardUndoRequest
 } from "@triliumnext/commons";
 import type { Request } from "express";
 
@@ -10,6 +12,10 @@ import flashcardService from "../../services/flashcards/flashcard_service.js";
 
 function createCard(req: Request<{}, {}, FlashcardCreateRequest>) {
     return flashcardService.createCard(req.body);
+}
+
+function getDecks() {
+    return flashcardService.getDecks();
 }
 
 function getDueCards(req: Request<{}, {}, {}, { deckNoteId?: string; limit?: string }>) {
@@ -31,6 +37,14 @@ function resetCard(req: Request<{ cardId: string }, {}, FlashcardResetRequest>) 
     return flashcardService.resetCard(req.params.cardId, req.body);
 }
 
+function buryCard(req: Request<{ cardId: string }, {}, FlashcardBuryRequest>) {
+    return flashcardService.buryCard(req.params.cardId, req.body);
+}
+
+function undoReview(req: Request<{}, {}, FlashcardUndoRequest>) {
+    return flashcardService.undoReview(req.body);
+}
+
 function removeCardsForNote(req: Request<{ noteId: string }>) {
     return flashcardService.removeCardsForNote(req.params.noteId);
 }
@@ -45,11 +59,14 @@ function getStats() {
 
 export default {
     createCard,
+    getDecks,
     getDueCards,
     getCard,
     getStats,
     setSuspended,
     resetCard,
+    buryCard,
+    undoReview,
     removeCardsForNote,
     reviewCard
 };

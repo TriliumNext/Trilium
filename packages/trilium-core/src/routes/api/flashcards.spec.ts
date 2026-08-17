@@ -1,4 +1,5 @@
 import type {
+    FlashcardDecksResponse,
     FlashcardDueResponse,
     FlashcardReviewCard,
     FlashcardReviewResponse,
@@ -28,14 +29,26 @@ describe("Flashcards API (core)", () => {
     });
 
     it("creates, lists, fetches, and reviews cards", async () => {
+        const deck = createTextNote("API deck source");
         const note = createTextNote("API flashcard source");
 
         const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
-            body: { noteId: note.noteId }
+            body: { noteId: note.noteId, deckNoteId: deck.noteId }
         });
         expect(createRes.status).toBe(200);
         expect(createRes.body.front).toBe("API flashcard source");
         expect(createRes.body.back).toBe("Back content");
+
+        const decksRes = await api.get<FlashcardDecksResponse>("/api/flashcards/decks");
+        expect(decksRes.status).toBe(200);
+        expect(decksRes.body.decks.find((candidate) => candidate.deckNoteId === deck.noteId))
+            .toMatchObject({
+                deckTitle: "API deck source",
+                totalCount: 1,
+                dueCount: 1,
+                newCount: 1,
+                suspendedCount: 0
+            });
 
         const dueRes = await api.get<FlashcardDueResponse>("/api/flashcards/due", {
             query: { limit: 5 }
@@ -62,6 +75,21 @@ describe("Flashcards API (core)", () => {
         expect(reviewRes.status).toBe(200);
         expect(reviewRes.body.reviewId).toBeTruthy();
         expect(reviewRes.body.card.schedulingRevision).toBe(createRes.body.schedulingRevision + 1);
+
+        const undoRes = await api.post<{ card: FlashcardReviewCard }>(
+            "/api/flashcards/reviews/undo",
+            {
+                body: {
+                    reviewId: reviewRes.body.reviewId,
+                    expectedSchedulingRevision: reviewRes.body.card.schedulingRevision
+                }
+            }
+        );
+        expect(undoRes.status).toBe(200);
+        expect(undoRes.body.card.state).toBe(createRes.body.state);
+        expect(undoRes.body.card.schedulingRevision).toBe(
+            reviewRes.body.card.schedulingRevision + 1
+        );
     });
 
     it("returns conflict without writing for stale reviews", async () => {
@@ -130,11 +158,24 @@ describe("Flashcards API (core)", () => {
         expect(resumeRes.status).toBe(200);
         expect(resumeRes.body.card.suspended).toBe(false);
 
+        const buryRes = await api.post<{ card: FlashcardReviewCard }>(
+            `/api/flashcards/cards/${createRes.body.cardId}/bury`,
+            {
+                body: {
+                    expectedSchedulingRevision: resumeRes.body.card.schedulingRevision
+                }
+            }
+        );
+        expect(buryRes.status).toBe(200);
+        expect(Date.parse(buryRes.body.card.due)).toBeGreaterThan(
+            Date.now() + 23 * 60 * 60 * 1000
+        );
+
         const resetRes = await api.post<{ card: FlashcardReviewCard }>(
             `/api/flashcards/cards/${createRes.body.cardId}/reset`,
             {
                 body: {
-                    expectedSchedulingRevision: resumeRes.body.card.schedulingRevision
+                    expectedSchedulingRevision: buryRes.body.card.schedulingRevision
                 }
             }
         );

@@ -37,6 +37,81 @@ describe("flashcard service", () => {
         expect(rowCount).toBe(1);
     });
 
+    it("returns deck summaries with safe counts", () => {
+        const firstDeck = createTextNote("Deck A");
+        const secondDeck = createTextNote("Deck B");
+        const firstNote = createTextNote("Deck A card one");
+        const secondNote = createTextNote("Deck A card two");
+        const thirdNote = createTextNote("Deck B card one");
+
+        const firstCard = runInContext(() => flashcardService.createCard({
+            noteId: firstNote.noteId,
+            deckNoteId: firstDeck.noteId
+        }));
+        const secondCard = runInContext(() => flashcardService.createCard({
+            noteId: secondNote.noteId,
+            deckNoteId: firstDeck.noteId
+        }));
+        runInContext(() => flashcardService.createCard({
+            noteId: thirdNote.noteId,
+            deckNoteId: secondDeck.noteId
+        }));
+        runInContext(() => flashcardService.setSuspended(secondCard.cardId, {
+            suspended: true,
+            expectedSchedulingRevision: secondCard.schedulingRevision
+        }));
+
+        const decks = runInContext(() => flashcardService.getDecks().decks);
+        const firstSummary = decks.find((deck) => deck.deckNoteId === firstDeck.noteId);
+        const secondSummary = decks.find((deck) => deck.deckNoteId === secondDeck.noteId);
+
+        expect(firstSummary).toMatchObject({
+            deckTitle: "Deck A",
+            totalCount: 2,
+            dueCount: 1,
+            newCount: 1,
+            learningCount: 0,
+            reviewCount: 0,
+            suspendedCount: 1
+        });
+        expect(secondSummary).toMatchObject({
+            deckTitle: "Deck B",
+            totalCount: 1,
+            dueCount: 1,
+            newCount: 1,
+            learningCount: 0,
+            reviewCount: 0,
+            suspendedCount: 0
+        });
+        expect(firstSummary).toBeDefined();
+        expect(secondSummary).toBeDefined();
+        if (!firstSummary || !secondSummary) {
+            throw new Error("Expected both flashcard deck summaries.");
+        }
+        expect(decks.indexOf(firstSummary)).toBeLessThan(decks.indexOf(secondSummary));
+        expect(firstCard.deckTitle).toBe("Deck A");
+    });
+
+    it("does not expose protected note content while protected session is locked", () => {
+        const note = createTextNote("Protected source", "Secret answer");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        note.isProtected = true;
+
+        const lockedCard = runInContext(() => flashcardService.getCard(card.cardId));
+
+        expect(lockedCard.front).toBe("[protected]");
+        expect(lockedCard.back).toBeUndefined();
+        expect(lockedCard.noteTitle).toBe("[protected]");
+
+        const dueCard = runInContext(() => flashcardService.getDueCards().cards
+            .find((candidate) => candidate.cardId === card.cardId));
+        expect(dueCard).toMatchObject({
+            front: "[protected]",
+            noteTitle: "[protected]"
+        });
+        expect(dueCard?.back).toBeUndefined();
+    });
+
     it("reviews a card and rejects stale scheduling revisions", () => {
         const note = createTextNote("Review source");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
@@ -65,6 +140,53 @@ describe("flashcard service", () => {
             SELECT COUNT(1) FROM flashcard_reviews
             WHERE cardId = ?`, [card.cardId]);
         expect(countAfterStaleReview).toBe(1);
+    });
+
+    it("undoes the latest review and restores the previous schedule", () => {
+        const note = createTextNote("Undo review source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        const reviewed = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-undo`
+        }));
+        expect(reviewed.card.schedulingRevision).toBe(card.schedulingRevision + 1);
+
+        const undone = runInContext(() => flashcardService.undoReview({
+            reviewId: reviewed.reviewId,
+            expectedSchedulingRevision: reviewed.card.schedulingRevision
+        }));
+
+        expect(undone.card.state).toBe(card.state);
+        expect(undone.card.due).toBe(card.due);
+        expect(undone.card.schedulingRevision).toBe(reviewed.card.schedulingRevision + 1);
+        const isDueAgain = flashcardService.getDueCards().cards
+            .some((dueCard) => dueCard.cardId === card.cardId);
+        expect(isDueAgain).toBe(true);
+
+        const reviewCount = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews
+            WHERE cardId = ?`, [card.cardId]);
+        expect(reviewCount).toBe(1);
+    });
+
+    it("rejects undo when another scheduling action changed the card", () => {
+        const note = createTextNote("Undo conflict source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const reviewed = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-undo-conflict`
+        }));
+
+        runInContext(() => flashcardService.buryCard(card.cardId, {
+            expectedSchedulingRevision: reviewed.card.schedulingRevision
+        }));
+
+        expect(() => runInContext(() => flashcardService.undoReview({
+            reviewId: reviewed.reviewId
+        }))).toThrow("Only the latest flashcard review can be undone");
     });
 
     it("returns the original result for duplicate client request IDs", () => {
@@ -141,9 +263,21 @@ describe("flashcard service", () => {
         }));
         expect(resumed.card.suspended).toBe(false);
 
+        const buried = runInContext(() => flashcardService.buryCard(card.cardId, {
+            expectedSchedulingRevision: resumed.card.schedulingRevision
+        }));
+        expect(Date.parse(buried.card.due)).toBeGreaterThan(Date.now() + 23 * 60 * 60 * 1000);
+        const dueWhileBuried = flashcardService.getDueCards().cards
+            .some((dueCard) => dueCard.cardId === card.cardId);
+        expect(dueWhileBuried).toBe(false);
+
+        const resetAfterBury = runInContext(() => flashcardService.resetCard(card.cardId, {
+            expectedSchedulingRevision: buried.card.schedulingRevision
+        }));
+
         const reviewed = runInContext(() => flashcardService.reviewCard(card.cardId, {
             rating: 3,
-            expectedSchedulingRevision: resumed.card.schedulingRevision,
+            expectedSchedulingRevision: resetAfterBury.card.schedulingRevision,
             clientRequestId: `${card.cardId}-before-reset`
         }));
         const reset = runInContext(() => flashcardService.resetCard(card.cardId, {

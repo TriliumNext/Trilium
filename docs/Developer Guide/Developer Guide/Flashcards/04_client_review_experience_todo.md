@@ -21,8 +21,8 @@
 - [x] Support keyboard shortcuts and screen-reader labels for reveal and ratings.
 - [x] Disable buttons during mutation; handle retry without duplicate review through `clientRequestId`.
 - [x] Handle `409` stale state by refetching card and asking user whether to continue, never silently replacing state.
-- [ ] Add undo with clear scope and timeout.
-- [x] Add suspend/reset only after core review flow is stable.
+- [x] Add undo for the latest review with clear conflict handling. Timeout polish remains future work.
+- [x] Add suspend/reset/skip-today only after core review flow is stable.
 
 ## Deck browser and statistics
 

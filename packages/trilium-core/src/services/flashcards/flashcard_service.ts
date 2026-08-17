@@ -1,7 +1,10 @@
 import type {
     FlashcardActionResponse,
+    FlashcardBuryRequest,
     FlashcardCardSummary,
     FlashcardCreateRequest,
+    FlashcardDeckSummary,
+    FlashcardDecksResponse,
     FlashcardDueResponse,
     FlashcardRating,
     FlashcardResetRequest,
@@ -12,7 +15,8 @@ import type {
     FlashcardReviewRow,
     FlashcardRow,
     FlashcardStatsResponse,
-    FlashcardSuspensionRequest
+    FlashcardSuspensionRequest,
+    FlashcardUndoRequest
 } from "@triliumnext/commons";
 
 import becca from "../../becca/becca.js";
@@ -32,6 +36,7 @@ import {
 
 const DEFAULT_DUE_LIMIT = 20;
 const MAX_DUE_LIMIT = 100;
+const BURY_DURATION_MS = 24 * 60 * 60 * 1000;
 const FLASHCARD_LABEL = "flashcard";
 
 function createCard(request: FlashcardCreateRequest) {
@@ -74,6 +79,32 @@ function createCard(request: FlashcardCreateRequest) {
     }).save();
 
     return buildReviewCard(card.getPojo() as FlashcardRow, { includeBack: true });
+}
+
+function getDecks(): FlashcardDecksResponse {
+    const now = dateUtils.utcNowDateTime();
+    const rows = getSql().getRows<Omit<FlashcardDeckSummary, "deckTitle">>(/*sql*/`
+        SELECT
+            deckNoteId,
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN suspended = 0 AND due <= ? THEN 1 ELSE 0 END) AS dueCount,
+            SUM(CASE WHEN suspended = 0 AND state = 0 THEN 1 ELSE 0 END) AS newCount,
+            SUM(CASE WHEN suspended = 0 AND state IN (1, 3) THEN 1 ELSE 0 END) AS learningCount,
+            SUM(CASE WHEN suspended = 0 AND state = 2 THEN 1 ELSE 0 END) AS reviewCount,
+            SUM(CASE WHEN suspended = 1 THEN 1 ELSE 0 END) AS suspendedCount
+        FROM flashcards
+        WHERE isDeleted = 0
+        GROUP BY deckNoteId`, [now]);
+
+    const decks = rows.map((row) => ({
+        ...row,
+        deckTitle: becca.getNote(row.deckNoteId)?.getTitleOrProtected() || "[missing]"
+    }));
+
+    decks.sort((a, b) => a.deckTitle.localeCompare(b.deckTitle)
+        || a.deckNoteId.localeCompare(b.deckNoteId));
+
+    return { decks };
 }
 
 function getDueCards({
@@ -145,6 +176,22 @@ function resetCard(cardId: string, request: FlashcardResetRequest = {}): Flashca
         ...card,
         ...resetSchedule,
         suspended: false,
+        schedulingRevision: (card.schedulingRevision ?? 0) + 1
+    }).save();
+
+    return {
+        card: buildReviewCard(updated.getPojo() as FlashcardRow, { includeBack: false })
+    };
+}
+
+function buryCard(cardId: string, request: FlashcardBuryRequest = {}): FlashcardActionResponse {
+    const card = getCardRow(cardId);
+    assertExpectedRevision(card, request.expectedSchedulingRevision);
+
+    const buriedUntil = new Date(Date.now() + BURY_DURATION_MS);
+    const updated = new BFlashcard({
+        ...card,
+        due: dateUtils.utcDateTimeStr(buriedUntil),
         schedulingRevision: (card.schedulingRevision ?? 0) + 1
     }).save();
 
@@ -238,8 +285,16 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
             difficultyBefore: scheduled.log.difficultyBefore,
             difficultyAfter: scheduled.log.difficultyAfter,
             elapsedDays: scheduled.log.elapsedDays,
+            elapsedDaysBefore: scheduled.log.elapsedDaysBefore,
             scheduledDays: scheduled.log.scheduledDays,
+            scheduledDaysBefore: scheduled.log.scheduledDaysBefore,
             learningSteps: scheduled.log.learningSteps,
+            learningStepsBefore: scheduled.log.learningStepsBefore,
+            repsBefore: scheduled.log.repsBefore,
+            lapsesBefore: scheduled.log.lapsesBefore,
+            lastReviewBefore: scheduled.log.lastReviewBefore,
+            schedulingRevisionBefore: scheduled.log.schedulingRevisionBefore,
+            schedulingRevisionAfter: scheduled.log.schedulingRevisionAfter,
             reviewedAt: scheduled.log.reviewedAt,
             durationMs: normalizeDuration(request.durationMs),
             algorithm: updatedCard.algorithm,
@@ -256,6 +311,42 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
         card: buildCardSummary(updated),
         reviewId: savedReviewId,
         previews: previewFlashcard(updated)
+    };
+}
+
+function undoReview(request: FlashcardUndoRequest): FlashcardActionResponse {
+    const review = getSql().getRow<FlashcardReviewRow | null>(/*sql*/`
+        SELECT * FROM flashcard_reviews
+        WHERE reviewId = ?`, [request.reviewId]);
+
+    if (!review) {
+        throw new NotFoundError(`Flashcard review '${request.reviewId}' was not found.`);
+    }
+
+    const card = getCardRow(review.cardId);
+    assertExpectedRevision(card, request.expectedSchedulingRevision);
+
+    if ((card.schedulingRevision ?? 0) !== review.schedulingRevisionAfter) {
+        throw new ConflictError("Only the latest flashcard review can be undone.");
+    }
+
+    const updated = new BFlashcard({
+        ...card,
+        state: review.state,
+        due: review.dueBefore,
+        stability: review.stabilityBefore,
+        difficulty: review.difficultyBefore,
+        elapsedDays: review.elapsedDaysBefore,
+        scheduledDays: review.scheduledDaysBefore,
+        learningSteps: review.learningStepsBefore,
+        reps: review.repsBefore,
+        lapses: review.lapsesBefore,
+        lastReview: review.lastReviewBefore ?? null,
+        schedulingRevision: (card.schedulingRevision ?? 0) + 1
+    }).save();
+
+    return {
+        card: buildReviewCard(updated.getPojo() as FlashcardRow, { includeBack: false })
     };
 }
 
@@ -382,11 +473,14 @@ function validateRating(rating: FlashcardRating) {
 
 export default {
     createCard,
+    getDecks,
     getDueCards,
     getCard,
     getStats,
     setSuspended,
     resetCard,
+    buryCard,
+    undoReview,
     removeCardsForNote,
     reviewCard
 };

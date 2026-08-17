@@ -9,6 +9,23 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Add previous-card snapshot fields for flashcard review undo.
+    {
+        version: 242,
+        sql: /*sql*/`
+            ALTER TABLE flashcard_reviews ADD COLUMN elapsedDaysBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN scheduledDaysBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN learningStepsBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN repsBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN lapsesBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN lastReviewBefore TEXT DEFAULT NULL;
+            ALTER TABLE flashcard_reviews
+                ADD COLUMN schedulingRevisionBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews
+                ADD COLUMN schedulingRevisionAfter INTEGER NOT NULL DEFAULT 0;
+        `,
+        ignoreErrors: true
+    },
     // Add flashcards and FSRS review history.
     {
         version: 241,

@@ -29,6 +29,17 @@ export interface FlashcardRow {
     deleteId?: string | null;
 }
 
+export interface FlashcardDeckSummary {
+    deckNoteId: string;
+    deckTitle: string;
+    totalCount: number;
+    dueCount: number;
+    newCount: number;
+    learningCount: number;
+    reviewCount: number;
+    suspendedCount: number;
+}
+
 export interface FlashcardCardSummary {
     cardId: string;
     noteId: string;
@@ -75,6 +86,15 @@ export interface FlashcardResetRequest {
     expectedSchedulingRevision?: number;
 }
 
+export interface FlashcardBuryRequest {
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardUndoRequest {
+    reviewId: string;
+    expectedSchedulingRevision?: number;
+}
+
 export interface FlashcardActionResponse {
     card: FlashcardReviewCard;
 }
@@ -87,6 +107,10 @@ export interface FlashcardReviewResponse {
 
 export interface FlashcardDueResponse {
     cards: FlashcardReviewCard[];
+}
+
+export interface FlashcardDecksResponse {
+    decks: FlashcardDeckSummary[];
 }
 
 export interface FlashcardStatsResponse {
@@ -113,8 +137,16 @@ export interface FlashcardReviewRow {
     difficultyBefore: number;
     difficultyAfter: number;
     elapsedDays: number;
+    elapsedDaysBefore: number;
     scheduledDays: number;
+    scheduledDaysBefore: number;
     learningSteps: number;
+    learningStepsBefore: number;
+    repsBefore: number;
+    lapsesBefore: number;
+    lastReviewBefore?: string | null;
+    schedulingRevisionBefore: number;
+    schedulingRevisionAfter: number;
     reviewedAt: string;
     durationMs?: number | null;
     algorithm: string;

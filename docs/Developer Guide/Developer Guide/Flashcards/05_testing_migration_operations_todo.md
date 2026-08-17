@@ -15,12 +15,13 @@
 - [x] Add core service specs beside flashcard service modules.
 - [ ] Add migration spec under `packages/trilium-core/src/migrations/`.
 - [x] Add API specs under `packages/trilium-core/src/routes/api/flashcards.spec.ts`.
-- [ ] Test creation, editing, deck move, suspend, reset, delete, and orphan repair. Suspend/reset covered in service/API specs.
+- [ ] Test creation, editing, deck move, suspend, reset, delete, and orphan repair. Suspend/reset/skip-today covered in service/API specs.
 - [x] Test review transaction updates card and inserts exactly one log.
 - [x] Test duplicate `clientRequestId` returns original result.
 - [x] Test stale revision returns `409` and performs no write.
+- [x] Test latest-review undo and conflict after another scheduling action.
 - [ ] Test two cards in one deck, many decks, pagination, limits, overdue order, and empty queue.
-- [ ] Test protected source note and protected-session expiration.
+- [ ] Test protected source note and protected-session expiration. Locked protected-source behavior covered in service specs.
 - [ ] Test no front/back leakage in errors/logs/metrics.
 
 ## Sync and cross-runtime tests

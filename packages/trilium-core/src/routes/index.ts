@@ -111,6 +111,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PST, "/api/notes/erase-unused-attachments-now", notesApiRoute.eraseUnusedAttachmentsNow);
     apiRoute(PST, "/api/delete-notes-preview", notesApiRoute.getDeleteNotesPreview);
 
+    apiRoute(GET, "/api/flashcards/decks", flashcardsRoute.getDecks);
     apiRoute(GET, "/api/flashcards/due", flashcardsRoute.getDueCards);
     apiRoute(GET, "/api/flashcards/stats", flashcardsRoute.getStats);
     apiRoute(PST, "/api/flashcards/cards", flashcardsRoute.createCard);
@@ -118,6 +119,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(GET, "/api/flashcards/cards/:cardId", flashcardsRoute.getCard);
     apiRoute(PUT, "/api/flashcards/cards/:cardId/suspended", flashcardsRoute.setSuspended);
     apiRoute(PST, "/api/flashcards/cards/:cardId/reset", flashcardsRoute.resetCard);
+    apiRoute(PST, "/api/flashcards/cards/:cardId/bury", flashcardsRoute.buryCard);
+    apiRoute(PST, "/api/flashcards/reviews/undo", flashcardsRoute.undoReview);
     apiRoute(PST, "/api/flashcards/cards/:cardId/reviews", flashcardsRoute.reviewCard);
 
     apiRoute(GET, "/api/notes/:noteId/attachments", attachmentsApiRoute.getAttachments);

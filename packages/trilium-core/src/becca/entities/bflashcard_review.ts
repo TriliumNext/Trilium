@@ -25,8 +25,16 @@ class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
             "difficultyBefore",
             "difficultyAfter",
             "elapsedDays",
+            "elapsedDaysBefore",
             "scheduledDays",
+            "scheduledDaysBefore",
             "learningSteps",
+            "learningStepsBefore",
+            "repsBefore",
+            "lapsesBefore",
+            "lastReviewBefore",
+            "schedulingRevisionBefore",
+            "schedulingRevisionAfter",
             "reviewedAt",
             "durationMs",
             "algorithm",
@@ -48,8 +56,16 @@ class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
     difficultyBefore!: number;
     difficultyAfter!: number;
     elapsedDays!: number;
+    elapsedDaysBefore!: number;
     scheduledDays!: number;
+    scheduledDaysBefore!: number;
     learningSteps!: number;
+    learningStepsBefore!: number;
+    repsBefore!: number;
+    lapsesBefore!: number;
+    lastReviewBefore?: string | null;
+    schedulingRevisionBefore!: number;
+    schedulingRevisionAfter!: number;
     reviewedAt!: string;
     durationMs?: number | null;
     algorithm!: string;
@@ -78,8 +94,16 @@ class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
         this.difficultyBefore = row.difficultyBefore;
         this.difficultyAfter = row.difficultyAfter;
         this.elapsedDays = row.elapsedDays;
+        this.elapsedDaysBefore = row.elapsedDaysBefore;
         this.scheduledDays = row.scheduledDays;
+        this.scheduledDaysBefore = row.scheduledDaysBefore;
         this.learningSteps = row.learningSteps;
+        this.learningStepsBefore = row.learningStepsBefore;
+        this.repsBefore = row.repsBefore;
+        this.lapsesBefore = row.lapsesBefore;
+        this.lastReviewBefore = row.lastReviewBefore ?? null;
+        this.schedulingRevisionBefore = row.schedulingRevisionBefore;
+        this.schedulingRevisionAfter = row.schedulingRevisionAfter;
         this.reviewedAt = row.reviewedAt;
         this.durationMs = row.durationMs ?? null;
         this.algorithm = row.algorithm;
@@ -114,8 +138,16 @@ class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
             difficultyBefore: this.difficultyBefore,
             difficultyAfter: this.difficultyAfter,
             elapsedDays: this.elapsedDays,
+            elapsedDaysBefore: this.elapsedDaysBefore,
             scheduledDays: this.scheduledDays,
+            scheduledDaysBefore: this.scheduledDaysBefore,
             learningSteps: this.learningSteps,
+            learningStepsBefore: this.learningStepsBefore,
+            repsBefore: this.repsBefore,
+            lapsesBefore: this.lapsesBefore,
+            lastReviewBefore: this.lastReviewBefore,
+            schedulingRevisionBefore: this.schedulingRevisionBefore,
+            schedulingRevisionAfter: this.schedulingRevisionAfter,
             reviewedAt: this.reviewedAt,
             durationMs: this.durationMs,
             algorithm: this.algorithm,
