@@ -1,6 +1,7 @@
 import type {
     FlashcardDecksResponse,
     FlashcardDueResponse,
+    FlashcardPreviewResponse,
     FlashcardReviewCard,
     FlashcardReviewResponse,
     FlashcardStatsResponse
@@ -61,6 +62,14 @@ describe("Flashcards API (core)", () => {
         );
         expect(getRes.status).toBe(200);
         expect(getRes.body.back).toBe("Back content");
+
+        const previewRes = await api.get<FlashcardPreviewResponse>(
+            `/api/flashcards/cards/${createRes.body.cardId}/preview`
+        );
+        expect(previewRes.status).toBe(200);
+        expect(previewRes.body.cardId).toBe(createRes.body.cardId);
+        expect(previewRes.body.schedulingRevision).toBe(createRes.body.schedulingRevision);
+        expect(previewRes.body.previews.map((preview) => preview.rating)).toEqual([1, 2, 3, 4]);
 
         const secondDeck = createTextNote("API second deck");
         const moveDeckRes = await api.put<{ card: FlashcardReviewCard }>(

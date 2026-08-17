@@ -37,6 +37,29 @@ describe("flashcard service", () => {
         expect(rowCount).toBe(1);
     });
 
+    it("previews review outcomes without writing rows or entity changes", () => {
+        const note = createTextNote("Preview source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const reviewCountBefore = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews`);
+        const entityChangeCountBefore = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM entity_changes`);
+
+        const preview = runInContext(() => flashcardService.getPreview(card.cardId));
+        const storedCard = runInContext(() => flashcardService.getCard(card.cardId, {
+            includeBack: false
+        }));
+
+        expect(preview.cardId).toBe(card.cardId);
+        expect(preview.schedulingRevision).toBe(card.schedulingRevision);
+        expect(preview.previews.map((item) => item.rating)).toEqual([1, 2, 3, 4]);
+        expect(storedCard.schedulingRevision).toBe(card.schedulingRevision);
+        expect(getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews`)).toBe(reviewCountBefore);
+        expect(getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM entity_changes`)).toBe(entityChangeCountBefore);
+    });
+
     it("returns deck summaries with safe counts", () => {
         const firstDeck = createTextNote("Deck A");
         const secondDeck = createTextNote("Deck B");

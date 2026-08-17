@@ -5,6 +5,7 @@ import type {
     FlashcardDeckMoveRequest,
     FlashcardDecksResponse,
     FlashcardDueResponse,
+    FlashcardPreviewResponse,
     FlashcardRemoveResponse,
     FlashcardResetRequest,
     FlashcardReviewCard,
@@ -42,6 +43,10 @@ function getDueCards({ deckNoteId, limit }: { deckNoteId?: string; limit?: numbe
 
 function getCard(cardId: string) {
     return server.get<FlashcardReviewCard>(`flashcards/cards/${cardId}`);
+}
+
+function getPreview(cardId: string) {
+    return server.get<FlashcardPreviewResponse>(`flashcards/cards/${cardId}/preview`);
 }
 
 function setSuspended(cardId: string, request: FlashcardSuspensionRequest) {
@@ -134,6 +139,7 @@ export default {
     getDecks,
     getDueCards,
     getCard,
+    getPreview,
     getStats,
     setSuspended,
     resetCard,

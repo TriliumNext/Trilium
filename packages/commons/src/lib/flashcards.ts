@@ -110,6 +110,12 @@ export interface FlashcardReviewResponse {
     previews: FlashcardReviewPreview[];
 }
 
+export interface FlashcardPreviewResponse {
+    cardId: string;
+    schedulingRevision: number;
+    previews: FlashcardReviewPreview[];
+}
+
 export interface FlashcardDueResponse {
     cards: FlashcardReviewCard[];
 }

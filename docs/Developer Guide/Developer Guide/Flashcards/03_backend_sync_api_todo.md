@@ -44,7 +44,7 @@ Add routes in `packages/trilium-core/src/routes/api/flashcards.ts`, then registe
 - [x] `GET /api/flashcards/due` — paginated due queue with safe note metadata and front content.
 - [x] `GET /api/flashcards/:cardId` — card state, source note references, and legal previews.
 - [x] `DELETE /api/flashcards/notes/:noteId/cards` — remove note-owned flashcards and marker label.
-- [ ] `GET /api/flashcards/:cardId/preview` — four FSRS outcomes, read-only.
+- [x] `GET /api/flashcards/:cardId/preview` — four FSRS outcomes, read-only.
 - [x] `POST /api/flashcards/:cardId/reviews` — rating, optional duration, `clientRequestId`, expected revision.
 - [x] `POST /api/flashcards/reviews/undo` — undo most recent eligible review.
 - [x] `PUT /api/flashcards/:cardId/suspended` — suspend/unsuspend.

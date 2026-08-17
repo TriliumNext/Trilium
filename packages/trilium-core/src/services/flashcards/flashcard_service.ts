@@ -10,6 +10,7 @@ import type {
     FlashcardRating,
     FlashcardResetRequest,
     FlashcardReviewCard,
+    FlashcardPreviewResponse,
     FlashcardRemoveResponse,
     FlashcardReviewRequest,
     FlashcardReviewResponse,
@@ -144,6 +145,16 @@ function getCard(
     { includeBack = true }: { includeBack?: boolean } = {}
 ): FlashcardReviewCard {
     return buildReviewCard(getCardRow(cardId), { includeBack });
+}
+
+function getPreview(cardId: string): FlashcardPreviewResponse {
+    const card = getCardRow(cardId);
+
+    return {
+        cardId: card.cardId || "",
+        schedulingRevision: card.schedulingRevision ?? 0,
+        previews: previewFlashcard(card)
+    };
 }
 
 function setSuspended(
@@ -500,6 +511,7 @@ export default {
     getDecks,
     getDueCards,
     getCard,
+    getPreview,
     getStats,
     setSuspended,
     resetCard,

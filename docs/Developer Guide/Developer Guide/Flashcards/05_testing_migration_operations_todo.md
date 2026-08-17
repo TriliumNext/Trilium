@@ -4,7 +4,7 @@
 
 - [ ] Test note-to-card parsing and validation with empty, rich, attachment, protected, malformed, and oversized content.
 - [ ] Test FSRS adapter golden vectors for all four ratings and all card states.
-- [ ] Test preview purity: no DB writes, no entity changes, no review rows.
+- [x] Test preview purity: no DB writes, no entity changes, no review rows.
 - [ ] Test canonical UTC conversion, local day boundary, DST, leap day, and short-term minute/hour intervals.
 - [ ] Test desired-retention/max-interval/steps validation and invalid serialized parameters.
 - [ ] Test algorithm version dispatch and unsupported-version failure.

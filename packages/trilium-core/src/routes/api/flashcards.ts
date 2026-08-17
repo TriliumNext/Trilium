@@ -30,6 +30,10 @@ function getCard(req: Request<{ cardId: string }>) {
     return flashcardService.getCard(req.params.cardId);
 }
 
+function getPreview(req: Request<{ cardId: string }>) {
+    return flashcardService.getPreview(req.params.cardId);
+}
+
 function setSuspended(req: Request<{ cardId: string }, {}, FlashcardSuspensionRequest>) {
     return flashcardService.setSuspended(req.params.cardId, req.body);
 }
@@ -67,6 +71,7 @@ export default {
     getDecks,
     getDueCards,
     getCard,
+    getPreview,
     getStats,
     setSuspended,
     resetCard,
