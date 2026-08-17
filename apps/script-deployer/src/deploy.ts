@@ -149,7 +149,7 @@ export interface DeployResult {
 }
 
 /** Labels that map directly from front-matter keys to note attributes. */
-const PASSTHROUGH_LABELS = ["run", "executeButton", "executeDescription", "executeTitle"] as const;
+const PASSTHROUGH_LABELS = ["run", "executeButton", "executeDescription", "executeTitle", "customRequestHandler"] as const;
 
 function applyLabels(note: BeccaLike["notes"][string], meta: ScriptMeta) {
     note.setLabel("readOnly");
