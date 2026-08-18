@@ -34,6 +34,35 @@ export default class InlineCodeToolbar extends Plugin {
                 return null;
             }
         });
+
+        // Suppress the generic BalloonToolbar while the cursor is inside
+        // inline code (#11077) — the same suppression code_block_toolbar
+        // applies for code blocks. Clicking the boundary of inline code that
+        // carries a link makes both toolbars claim the selection at once:
+        // the BalloonToolbar fires `show`, WidgetToolbarRepository reacts by
+        // removing the inline-code balloon, and that removal runs the
+        // balloon's position computation against an already-torn-down view
+        // stack ("TypeError: can't access property 'values',
+        // this._visibleStack is undefined"). Stopping the generic toolbar's
+        // show while the view selection sits inside inline code keeps exactly
+        // one balloon alive around the selection.
+        if (editor.plugins.has("BalloonToolbar")) {
+            editor.listenTo(editor.plugins.get("BalloonToolbar"), "show", (evt) => {
+                const viewSelection = editor.editing.view.document.selection;
+                const viewPosition = viewSelection.getFirstPosition();
+                if (!viewPosition) {
+                    return;
+                }
+                let parent: ViewNode | ViewDocumentFragment | null = viewPosition.parent;
+                while (parent) {
+                    if (parent.is("attributeElement", "code")) {
+                        evt.stop();
+                        return;
+                    }
+                    parent = parent.parent;
+                }
+            }, { priority: "high" });
+        }
     }
 
 }

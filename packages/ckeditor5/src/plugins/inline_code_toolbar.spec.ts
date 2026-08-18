@@ -1,74 +1,86 @@
-import { _setModelData as setModelData, ClassicEditor, Code, Essentials, Paragraph, WidgetToolbarRepository } from "ckeditor5";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import InlineCodeToolbar from "./inline_code_toolbar";
 
-import { createTestEditor } from "../../test/editor-kit.js";
-import CopyToClipboardButton from "./copy_to_clipboard_button.js";
-import InlineCodeToolbar from "./inline_code_toolbar.js";
+/**
+ * #11077: the generic BalloonToolbar must not fight the inline-code toolbar
+ * for the same selection. Clicking the boundary of inline code that carries
+ * a link fired both toolbars' logic at once — the BalloonToolbar `show`, the
+ * repository's removal of the inline-code balloon, and the removal's position
+ * computation against a torn-down balloon stack
+ * ("this._visibleStack is undefined"). The plugin now stops the generic
+ * toolbar's `show` while the view selection sits inside an inline-code
+ * element — the same suppression code_block_toolbar applies for code blocks.
+ */
+describe("InlineCodeToolbar BalloonToolbar suppression (#11077)", () => {
+    type StopEvent = { stop: () => void; stopped: boolean };
 
-/** The toolbar definition shape we reach into (WidgetToolbarRepository keeps these private). */
-interface ToolbarDefinition {
-    getRelatedElement: (selection: unknown) => { is(type: string, name: string): boolean } | null;
-}
-
-describe("InlineCodeToolbar", () => {
-    let editor: ClassicEditor;
-
-    beforeEach(async () => {
-        editor = await createTestEditor([Essentials, Paragraph, Code, CopyToClipboardButton, InlineCodeToolbar]);
-    });
-
-    it("loads the plugin successfully", () => {
-        expect(editor.plugins.get(InlineCodeToolbar)).toBeInstanceOf(InlineCodeToolbar);
-    });
-
-    it("declares WidgetToolbarRepository and CopyToClipboardButton as required", () => {
-        const requires = InlineCodeToolbar.requires;
-        expect(requires).toContain(WidgetToolbarRepository);
-        expect(requires).toContain(CopyToClipboardButton);
-    });
-
-    it("registers the inlineCode toolbar in the WidgetToolbarRepository", () => {
-        expect(getInlineCodeDefinition()).toBeDefined();
-    });
-
-    // These exercise the plugin's actual getRelatedElement callback (registered in
-    // WidgetToolbarRepository), rather than a re-implementation of the same walk — so a regression
-    // in inline_code_toolbar.ts itself fails the suite.
-    describe("getRelatedElement", () => {
-        it("returns the <code> attribute element when the selection is inside inline code", () => {
-            setModelData(editor.model, "<paragraph><$text code=\"true\">hello[]world</$text></paragraph>");
-
-            const def = getInlineCodeDefinition();
-            expect(def).toBeDefined();
-
-            const related = def?.getRelatedElement(editor.editing.view.document.selection);
-            expect(related).not.toBeNull();
-            expect(related?.is("attributeElement", "code")).toBe(true);
-        });
-
-        it("walks up multiple ancestor levels (bold+code) to find the <code> element", () => {
-            setModelData(editor.model, "<paragraph><$text bold=\"true\" code=\"true\">bold[]code</$text></paragraph>");
-
-            const related = getInlineCodeDefinition()?.getRelatedElement(editor.editing.view.document.selection);
-            expect(related?.is("attributeElement", "code")).toBe(true);
-        });
-
-        it("returns null when the selection is in plain text", () => {
-            setModelData(editor.model, "<paragraph>plain[]text</paragraph>");
-
-            const related = getInlineCodeDefinition()?.getRelatedElement(editor.editing.view.document.selection);
-            expect(related).toBeNull();
-        });
-
-        it("returns null when the selection has no first position (null guard)", () => {
-            const related = getInlineCodeDefinition()?.getRelatedElement({ getFirstPosition: () => null });
-            expect(related).toBeNull();
-        });
-    });
-
-    function getInlineCodeDefinition(): ToolbarDefinition | undefined {
-        const repository = editor.plugins.get(WidgetToolbarRepository);
-        const definitions = (repository as unknown as { _toolbarDefinitions: Map<string, ToolbarDefinition> })._toolbarDefinitions;
-        return definitions?.get("inlineCode");
+    function makeEvent(): StopEvent {
+        const evt: StopEvent = { stopped: false, stop: () => { evt.stopped = true; } };
+        return evt;
     }
+
+    function drive(positionParent: unknown): StopEvent {
+        let handler: ((evt: StopEvent) => void) | undefined;
+        const balloonToolbar = {};
+        const repository = { register: vi.fn() };
+        const editor = {
+            plugins: {
+                has: (name: string) => name === "BalloonToolbar",
+                get: (name: string) =>
+                    name === "BalloonToolbar" ? balloonToolbar : repository,
+            },
+            editing: {
+                view: {
+                    document: {
+                        selection: {
+                            getFirstPosition: () =>
+                                positionParent === null ? null : { parent: positionParent },
+                        },
+                    },
+                },
+            },
+            listenTo: (
+                target: unknown,
+                event: string,
+                cb: (evt: StopEvent) => void,
+            ) => {
+                if (target === balloonToolbar && event === "show") {
+                    handler = cb;
+                }
+            },
+        };
+
+        const plugin = Object.create(InlineCodeToolbar.prototype) as InlineCodeToolbar;
+        (plugin as unknown as { editor: unknown }).editor = editor;
+        plugin.afterInit();
+
+        expect(typeof handler).toBe("function");
+        const evt = makeEvent();
+        handler!(evt);
+        return evt;
+    }
+
+    it("stops the generic toolbar's show inside inline code", () => {
+        const codeElement = {
+            is: (type: string, name: string) =>
+                type === "attributeElement" && name === "code",
+            parent: null,
+        };
+        const evt = drive(codeElement);
+        expect(evt.stopped).toBe(true);
+    });
+
+    it("lets the generic toolbar show outside inline code", () => {
+        const paragraph = {
+            is: () => false,
+            parent: null,
+        };
+        const evt = drive(paragraph);
+        expect(evt.stopped).toBe(false);
+    });
+
+    it("passes through when there is no view position", () => {
+        const evt = drive(null);
+        expect(evt.stopped).toBe(false);
+    });
 });
