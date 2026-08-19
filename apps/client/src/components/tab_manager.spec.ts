@@ -218,6 +218,12 @@ describe("moving the focus between splits", () => {
         // and nothing sits to the left of the first pane
         await tm.focusNoteSplitLeftCommand();
         expect(tm.activeNtxId).toBe(main.ntxId);
+
+        // a pane closed between the keypress and the handler leaves the id behind; resolving it is
+        // what getActiveMainContext() would throw over
+        tm.activeNtxId = "already-gone";
+        await tm.focusNoteSplitRightCommand();
+        expect(tm.activeNtxId).toBe("already-gone");
     });
 });
 

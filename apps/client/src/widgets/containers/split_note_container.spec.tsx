@@ -1,5 +1,5 @@
 import { useLayoutEffect } from "preact/hooks";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
@@ -21,6 +21,10 @@ vi.mock("../../services/resizer", () => ({
 describe("SplitNoteContainer", () => {
     let noteContexts: NoteContext[];
     let removeNoteContext: ReturnType<typeof vi.fn>;
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
 
     beforeEach(() => {
         noteContexts = [];
@@ -129,6 +133,21 @@ describe("SplitNoteContainer", () => {
             await container.moveActiveNoteSplitRightEvent({ ntxId: "split-b" });
             // and split-a is the first pane of the window
             await container.moveActiveNoteSplitLeftEvent({ ntxId: "split-a" });
+            // other-tab is the last pane of all, so there is no neighbour to read, let alone swap
+            await container.moveActiveNoteSplitRightEvent({ ntxId: "other-tab" });
+            expect(triggerCommand).not.toHaveBeenCalled();
+        });
+
+        it("reports a move aimed at a pane that is not open", async () => {
+            const container = await openSplits([ "split-a", "split-b" ]);
+            const logError = vi.fn();
+            vi.stubGlobal("logError", logError);
+            const triggerCommand = vi.spyOn(container, "triggerCommand");
+
+            // the pane can close between the keypress and the handler
+            await container.moveActiveNoteSplitLeftEvent({ ntxId: "already-gone" });
+
+            expect(logError).toHaveBeenCalled();
             expect(triggerCommand).not.toHaveBeenCalled();
         });
     });
