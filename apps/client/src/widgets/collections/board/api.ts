@@ -92,7 +92,17 @@ export default class BoardApi {
         await executeBulkActions(noteIds, [ action ]);
         // Marked so the mirror filter knows this value is gone by intent, not by a race (#11100).
         noteColumnRemoved(this.parentNote.noteId, column);
-        this.storeColumns((this.viewConfig?.columns ?? []).filter(col => col.value !== column));
+        // Once the definition write settles, the marker has done its job: on
+        // success any later appearance of the value is a genuine recreation;
+        // on failure the marker stays (the delete did not stick) until its TTL
+        // expires, after which the column honestly reads back.
+        this.storeColumns((this.viewConfig?.columns ?? []).filter(col => col.value !== column)).then(
+            (definitionWriteLanded) => {
+                if (definitionWriteLanded) {
+                    unnoteColumnRemoved(this.parentNote.noteId, column);
+                }
+            }
+        );
     }
 
     async renameColumn(oldValue: string, newValue: string) {
@@ -144,17 +154,22 @@ export default class BoardApi {
      * re-renders off the identity of the config it was handed, so an in-place edit would be written
      * to disk but stay invisible until the view is re-entered.
      */
-    private storeColumns(columns: BoardColumnData[]) {
+    private storeColumns(columns: BoardColumnData[]): Promise<boolean> {
         this.viewConfig = { ...this.viewConfig, columns };
         this.saveConfig(this.viewConfig);
         // Not awaited — every caller is the tail of a user gesture the board has already rendered —
         // so the failure is caught here rather than left to reject unhandled. The columns are still
         // in the view config, so the board is not wrong, only out of step with the definition.
-        this.syncColumnsToDefinition(columns.map(({ value }) => value))
-            .catch((e) => {
+        // The promise resolves to whether the definition write landed, so a
+        // caller can react to the outcome without re-handling the rejection.
+        return this.syncColumnsToDefinition(columns.map(({ value }) => value)).then(
+            () => true,
+            (e) => {
                 console.error("Failed to store the board columns in the attribute definition:", e);
                 toast.showError(t("board_view.column-definition-save-error"));
-            });
+                return false;
+            }
+        );
     }
 
     /**

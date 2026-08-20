@@ -8,7 +8,12 @@ import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { BoardViewData } from ".";
 import BoardApi from "./api";
-import { BOARD_TEMPLATE_ID, getStatusDefinition } from "./columns";
+import {
+    BOARD_TEMPLATE_ID,
+    getStatusDefinition,
+    isRecentlyRemovedColumn,
+    unnoteColumnRemoved
+} from "./columns";
 
 vi.mock("../../../services/bulk_action", () => ({
     executeBulkActions: vi.fn(async () => {})
@@ -38,7 +43,7 @@ function createApi(
         () => {},
         getStatusDefinition(board, statusAttribute)
     );
-    return { api, saved };
+    return { api, saved, board };
 }
 
 describe("BoardApi column mutations", () => {
@@ -65,6 +70,35 @@ describe("BoardApi column mutations", () => {
             [ "To Do", "Shipped", "In Progress" ],
             [ "Shipped", "In Progress" ]
         ]);
+    });
+
+    it("clears the removal mark once the definition write settles, keeps it on failure", async () => {
+        const viewConfig: BoardViewData = { columns: [ { value: "Kept" }, { value: "Gone" } ] };
+        const { api, board } = createApi(viewConfig, [ "Kept", "Gone" ]);
+        let settle: ((ok: boolean) => void) | null = null;
+        vi.spyOn(api as never as { syncColumnsToDefinition: () => Promise<void> }, "syncColumnsToDefinition")
+            .mockImplementation(() => new Promise<void>((resolve, reject) => {
+                settle = (ok: boolean) => (ok ? resolve() : reject(new Error("write failed")));
+            }));
+
+        await api.removeColumn("Gone");
+        expect(isRecentlyRemovedColumn(board.noteId, "Gone")).toBe(true);
+
+        // The definition write failing keeps the marker: the delete has not
+        // stuck, and the marker still wins the mirror ambiguity until its TTL.
+        settle?.(false);
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(isRecentlyRemovedColumn(board.noteId, "Gone")).toBe(true);
+
+        await api.removeColumn("Gone");
+        settle?.(true);
+        await Promise.resolve();
+        await Promise.resolve();
+        // Settled successfully: any later appearance of the value is a
+        // recreation, so the marker must not veto it.
+        expect(isRecentlyRemovedColumn(board.noteId, "Gone")).toBe(false);
+        unnoteColumnRemoved(board.noteId, "Gone");
     });
 
     it("does not save anything for a duplicate column", async () => {
