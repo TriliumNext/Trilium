@@ -1,6 +1,6 @@
 import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
-import { resolveBoardColumns } from "./columns";
+import { isRecentlyRemovedColumn, resolveBoardColumns } from "./columns";
 import { BoardViewData } from "./index";
 
 export type ColumnMap = Map<string, {
@@ -27,8 +27,18 @@ export async function getBoardData(
     // First, scan all notes to find what columns actually exist
     await recursiveGroupBy(parentNote.getChildBranches(), byColumn, groupByColumn, includeArchived, new Set<string>());
 
-    const persistedColumns = (persistedData.columns ?? []).map(c => c.value);
-    const columns = resolveBoardColumns(definitionOptions, persistedColumns, [ ...byColumn.keys() ], persistedColumnsAreMirror);
+    // For a board that owns its definition the persisted list is only a mirror of the
+    // resolved columns, so a value the board's column UI removed must not linger in it
+    // while the definition write is still in flight (#11100). Values nothing removed are
+    // never dropped: a column added a moment ago is equally absent from the other two
+    // sources, and dropping it would lose the user's work.
+    const persistedValues = (persistedData.columns ?? []).map(c => c.value);
+    const persistedColumns = persistedColumnsAreMirror
+        ? persistedValues.filter(value => !isRecentlyRemovedColumn(parentNote.noteId, value))
+        : persistedValues;
+    const columns = resolveBoardColumns(
+        definitionOptions, persistedColumns, [ ...byColumn.keys() ]
+    );
 
     // A column the notes have nothing in is still a column, so every resolved one gets an entry.
     for (const column of columns) {

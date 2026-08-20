@@ -11,7 +11,13 @@ import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { BoardColumnData, BoardViewData } from ".";
-import { type BoardStatusDefinition, canStoreColumnsInDefinition, DEFAULT_GROUP_BY } from "./columns";
+import {
+    type BoardStatusDefinition,
+    canStoreColumnsInDefinition,
+    DEFAULT_GROUP_BY,
+    noteColumnRemoved,
+    unnoteColumnRemoved
+} from "./columns";
 import { ColumnMap } from "./data";
 
 export default class BoardApi {
@@ -71,6 +77,7 @@ export default class BoardApi {
 
         // Add the new column to persisted data if it doesn't exist
         if (columns.some(col => col.value === columnName)) return false;
+        unnoteColumnRemoved(this.parentNote.noteId, columnName);
         this.storeColumns([ ...columns, { value: columnName } ]);
         return true;
     }
@@ -83,6 +90,8 @@ export default class BoardApi {
             ? { name: "deleteRelation", relationName: this.statusAttribute }
             : { name: "deleteLabel", labelName: this.statusAttribute };
         await executeBulkActions(noteIds, [ action ]);
+        // Marked so the mirror filter knows this value is gone by intent, not by a race (#11100).
+        noteColumnRemoved(this.parentNote.noteId, column);
         this.storeColumns((this.viewConfig?.columns ?? []).filter(col => col.value !== column));
     }
 
@@ -95,6 +104,9 @@ export default class BoardApi {
             : { name: "updateLabelValue", labelName: this.statusAttribute, labelValue: newValue };
         await executeBulkActions(noteIds, [ action ]);
 
+        // The old value is gone by intent; the new one may be re-added later under this name.
+        noteColumnRemoved(this.parentNote.noteId, oldValue);
+        unnoteColumnRemoved(this.parentNote.noteId, newValue);
         // Rename the column in the persisted data.
         this.storeColumns((this.viewConfig?.columns ?? [])
             .map(col => col.value === oldValue ? { ...col, value: newValue } : col));

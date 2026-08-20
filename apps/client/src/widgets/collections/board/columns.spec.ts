@@ -9,7 +9,10 @@ import {
     BOARD_TEMPLATE_ID,
     canStoreColumnsInDefinition,
     getStatusDefinition,
-    resolveBoardColumns
+    isRecentlyRemovedColumn,
+    noteColumnRemoved,
+    resolveBoardColumns,
+    unnoteColumnRemoved
 } from "./columns";
 
 describe("resolveBoardColumns", () => {
@@ -30,21 +33,6 @@ describe("resolveBoardColumns", () => {
         expect(resolveBoardColumns([], [ "Todo" ], [ "Done" ])).toEqual([ "Todo", "Done" ]);
     });
 
-    it("does not let a mirror keep a column the definition and the notes have both dropped (#11100)", () => {
-        expect(resolveBoardColumns([ "Todo" ], [ "Todo", "Deleted" ], [], true))
-            .toEqual([ "Todo" ]);
-        expect(resolveBoardColumns([], [ "Todo", "Deleted" ], [], true)).toEqual([]);
-    });
-
-    it("keeps a mirrored column while the definition or the notes still name it", () => {
-        expect(resolveBoardColumns([ "Kept" ], [ "Kept" ], [], true)).toEqual([ "Kept" ]);
-        expect(resolveBoardColumns([], [ "Kept" ], [ "Kept" ], true)).toEqual([ "Kept" ]);
-    });
-
-    it("keeps an unmirrored persisted column even when nothing else names it", () => {
-        expect(resolveBoardColumns([ "Todo" ], [ "Todo", "Arranged" ], [], false))
-            .toEqual([ "Todo", "Arranged" ]);
-    });
 
     it("drops blanks and treats columns differing only in case as distinct", () => {
         expect(resolveBoardColumns([ "", "  " ], [ " Todo " ], [ "todo" ]))
@@ -141,3 +129,21 @@ function buildBoard(
 
     return board;
 }
+
+describe("removed-column marking", () => {
+    const BOARD = "board-note-id";
+
+    it("marks a removed column until it is unmarked under the same name", () => {
+        noteColumnRemoved(BOARD, "TCD");
+        expect(isRecentlyRemovedColumn(BOARD, "TCD")).toBe(true);
+
+        unnoteColumnRemoved(BOARD, "TCD");
+        expect(isRecentlyRemovedColumn(BOARD, "TCD")).toBe(false);
+    });
+
+    it("scopes the mark to one board", () => {
+        noteColumnRemoved(BOARD, "TCD");
+        expect(isRecentlyRemovedColumn("another-board", "TCD")).toBe(false);
+        unnoteColumnRemoved(BOARD, "TCD");
+    });
+});
