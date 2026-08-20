@@ -452,9 +452,12 @@ export default class TabRowWidget extends BasicWidget {
             event.preventDefault();
             event.stopImmediatePropagation();
             // One physical gesture emits several wheel events (trackpad flicks
-            // especially); switch once per gesture, not once per event.
+            // especially); switch once per gesture, not once per event. Every
+            // qualifying event refreshes the window, so a sustained gesture
+            // stays one switch and the window only re-arms after a real pause.
             const now = Date.now();
             if (now - this.lastWheelSwitchAt < WHEEL_SWITCH_COALESCE_MS) {
+                this.lastWheelSwitchAt = now;
                 return;
             }
             this.lastWheelSwitchAt = now;
