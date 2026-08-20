@@ -146,4 +146,16 @@ describe("removed-column marking", () => {
         expect(isRecentlyRemovedColumn("another-board", "TCD")).toBe(false);
         unnoteColumnRemoved(BOARD, "TCD");
     });
+
+    it("expires the mark so a later recreation cannot be vetoed forever", () => {
+        const markedAt = 1_000_000;
+        noteColumnRemoved(BOARD, "TCD", markedAt);
+
+        // Inside the window the delete still wins the ambiguity.
+        expect(isRecentlyRemovedColumn(BOARD, "TCD", markedAt + 30_000)).toBe(true);
+        // Past it, a persisted-only value is read back as recreation.
+        expect(isRecentlyRemovedColumn(BOARD, "TCD", markedAt + 61_000)).toBe(false);
+        // And the expired entry is dropped, not just ignored.
+        expect(isRecentlyRemovedColumn(BOARD, "TCD", markedAt + 120_000)).toBe(false);
+    });
 });

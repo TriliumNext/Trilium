@@ -119,28 +119,48 @@ export function resolveBoardColumns(
 }
 
 /**
- * Values this board's own column UI removed, so a refresh that races the
- * definition write (#11100) can tell a resurrected deleted column from a
- * brand-new one. In-memory per session: a removed value that is added again
- * under the same name is unmarked, so the marker never outlives its intent.
+ * How long a removal mark can veto a persisted column. The delete race it
+ * exists for (#11100) resolves in seconds — the definition write's entity
+ * change arrives, or its failure has surfaced — so anything still vetoed
+ * after this window is far more likely a deliberate recreation from another
+ * surface (a synced client, the attribute panel) than the tail of a race.
  */
-const removedColumnsByNote = new Map<string, Set<string>>();
+const REMOVED_COLUMN_MARK_TTL_MS = 60_000;
 
-export function noteColumnRemoved(noteId: string, value: string): void {
+const removedColumnsByNote = new Map<string, Map<string, number>>();
+
+export function noteColumnRemoved(
+    noteId: string,
+    value: string,
+    now: number = Date.now()
+): void {
     let values = removedColumnsByNote.get(noteId);
     if (!values) {
-        values = new Set();
+        values = new Map();
         removedColumnsByNote.set(noteId, values);
     }
-    values.add(value);
+    values.set(value, now);
 }
 
 export function unnoteColumnRemoved(noteId: string, value: string): void {
     removedColumnsByNote.get(noteId)?.delete(value);
 }
 
-export function isRecentlyRemovedColumn(noteId: string, value: string): boolean {
-    return removedColumnsByNote.get(noteId)?.has(value) === true;
+export function isRecentlyRemovedColumn(
+    noteId: string,
+    value: string,
+    now: number = Date.now()
+): boolean {
+    const markedAt = removedColumnsByNote.get(noteId)?.get(value);
+    if (markedAt === undefined) {
+        return false;
+    }
+    if (now - markedAt > REMOVED_COLUMN_MARK_TTL_MS) {
+        // Expired: drop it so the map cannot grow unbounded across a session.
+        unnoteColumnRemoved(noteId, value);
+        return false;
+    }
+    return true;
 }
 
 
