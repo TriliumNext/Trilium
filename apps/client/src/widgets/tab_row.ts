@@ -12,7 +12,7 @@ import { clampDragDestination } from "../services/tab_pinning.js";
 import { buildTabTitle, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
 import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
-import { setupHorizontalScrollViaWheel, tabWheelAction } from "./widget_utils.js";
+import { setupHorizontalScrollViaWheel, shouldCoalesceWheelSwitch, tabWheelAction } from "./widget_utils.js";
 
 /** One wheel gesture may switch at most one tab inside this window. */
 const WHEEL_SWITCH_COALESCE_MS = 250;
@@ -357,6 +357,8 @@ export default class TabRowWidget extends BasicWidget {
 
     /** Timestamp of the last wheel-driven tab switch, for gesture coalescing. */
     private lastWheelSwitchAt = 0;
+    /** Direction of that switch: a reversed wheel is a new gesture, not a continuation. */
+    private lastWheelSwitchAction: "next" | "previous" | null = null;
 
     doRender() {
         this.$widget = $(TAB_ROW_TPL);
@@ -452,15 +454,24 @@ export default class TabRowWidget extends BasicWidget {
             event.preventDefault();
             event.stopImmediatePropagation();
             // One physical gesture emits several wheel events (trackpad flicks
-            // especially); switch once per gesture, not once per event. Every
-            // qualifying event refreshes the window, so a sustained gesture
-            // stays one switch and the window only re-arms after a real pause.
+            // especially); switch once per gesture, not once per event. A
+            // same-direction event inside the window extends it (a sustained
+            // gesture stays one switch); a reversed direction switches at once.
             const now = Date.now();
-            if (now - this.lastWheelSwitchAt < WHEEL_SWITCH_COALESCE_MS) {
+            if (
+                shouldCoalesceWheelSwitch({
+                    lastSwitchAt: this.lastWheelSwitchAt,
+                    lastAction: this.lastWheelSwitchAction,
+                    action,
+                    now,
+                    coalesceMs: WHEEL_SWITCH_COALESCE_MS
+                })
+            ) {
                 this.lastWheelSwitchAt = now;
                 return;
             }
             this.lastWheelSwitchAt = now;
+            this.lastWheelSwitchAction = action;
             this.triggerCommand(action === "next" ? "activateNextTab" : "activatePreviousTab");
         });
 

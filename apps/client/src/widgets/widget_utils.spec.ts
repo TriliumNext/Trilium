@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { tabWheelAction } from "./widget_utils.js";
+import { shouldCoalesceWheelSwitch, tabWheelAction } from "./widget_utils.js";
 
 function wheelEvent(
     delta: { deltaY?: number; deltaX?: number },
@@ -53,5 +53,26 @@ describe("tabWheelAction", () => {
         const row = container(500, 500);
 
         expect(tabWheelAction(wheelEvent({ deltaY: 0.4 }), row)).toBeNull();
+    });
+});
+
+describe("shouldCoalesceWheelSwitch", () => {
+    const base = { coalesceMs: 250 };
+
+    it("coalesces same-direction events inside the window and extends it", () => {
+        expect(shouldCoalesceWheelSwitch({ ...base, lastSwitchAt: 1000, lastAction: "next", action: "next", now: 1100 })).toBe(true);
+        expect(shouldCoalesceWheelSwitch({ ...base, lastSwitchAt: 1100, lastAction: "next", action: "next", now: 1330 })).toBe(true);
+    });
+
+    it("lets a reversed direction switch immediately", () => {
+        expect(shouldCoalesceWheelSwitch({ ...base, lastSwitchAt: 1000, lastAction: "next", action: "previous", now: 1100 })).toBe(false);
+    });
+
+    it("re-arms after the window passes with no qualifying events", () => {
+        expect(shouldCoalesceWheelSwitch({ ...base, lastSwitchAt: 1000, lastAction: "next", action: "next", now: 1300 })).toBe(false);
+    });
+
+    it("never coalesces the first switch", () => {
+        expect(shouldCoalesceWheelSwitch({ ...base, lastSwitchAt: 0, lastAction: null, action: "previous", now: 10 })).toBe(false);
     });
 });
