@@ -11,13 +11,16 @@ export type ColumnMap = Map<string, {
 /**
  * @param definitionOptions the choices the board's group-by definition offers, empty when it has no
  *                          select definition of its own to lead the column order.
+ * @param persistedColumnsAreMirror whether the persisted columns are a mirror of this resolution
+ *                                  because the board owns the definition (see resolveBoardColumns).
  */
 export async function getBoardData(
     parentNote: FNote,
     groupByColumn: string,
     persistedData: BoardViewData,
     includeArchived: boolean,
-    definitionOptions: string[] = []
+    definitionOptions: string[] = [],
+    persistedColumnsAreMirror = false
 ) {
     const byColumn: ColumnMap = new Map();
 
@@ -25,7 +28,7 @@ export async function getBoardData(
     await recursiveGroupBy(parentNote.getChildBranches(), byColumn, groupByColumn, includeArchived, new Set<string>());
 
     const persistedColumns = (persistedData.columns ?? []).map(c => c.value);
-    const columns = resolveBoardColumns(definitionOptions, persistedColumns, [ ...byColumn.keys() ]);
+    const columns = resolveBoardColumns(definitionOptions, persistedColumns, [ ...byColumn.keys() ], persistedColumnsAreMirror);
 
     // A column the notes have nothing in is still a column, so every resolved one gets an entry.
     for (const column of columns) {

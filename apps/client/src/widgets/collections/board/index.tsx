@@ -139,7 +139,9 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     }), [ branchIdToEdit, columnNameToEdit, draggedCard, draggedColumn, dropPosition, dropTarget ]);
 
     function refresh() {
-        getBoardData(parentNote, statusAttributeWithPrefix, viewConfig ?? {}, includeArchived, statusDefinition?.options ?? [])
+        // A definition the board owns is written only by the board's own column sync, so the
+        // persisted list mirrors it; one it merely inherits still leads the attachment alone.
+        getBoardData(parentNote, statusAttributeWithPrefix, viewConfig ?? {}, includeArchived, statusDefinition?.options ?? [], statusDefinition?.isOwned === true)
             .then(({ byColumn, columns, newPersistedData, isInRelationMode }) => {
                 setByColumn(byColumn);
                 setIsRelationMode(isInRelationMode);

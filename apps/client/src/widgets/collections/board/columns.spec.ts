@@ -30,6 +30,22 @@ describe("resolveBoardColumns", () => {
         expect(resolveBoardColumns([], [ "Todo" ], [ "Done" ])).toEqual([ "Todo", "Done" ]);
     });
 
+    it("does not let a mirror keep a column the definition and the notes have both dropped (#11100)", () => {
+        expect(resolveBoardColumns([ "Todo" ], [ "Todo", "Deleted" ], [], true))
+            .toEqual([ "Todo" ]);
+        expect(resolveBoardColumns([], [ "Todo", "Deleted" ], [], true)).toEqual([]);
+    });
+
+    it("keeps a mirrored column while the definition or the notes still name it", () => {
+        expect(resolveBoardColumns([ "Kept" ], [ "Kept" ], [], true)).toEqual([ "Kept" ]);
+        expect(resolveBoardColumns([], [ "Kept" ], [ "Kept" ], true)).toEqual([ "Kept" ]);
+    });
+
+    it("keeps an unmirrored persisted column even when nothing else names it", () => {
+        expect(resolveBoardColumns([ "Todo" ], [ "Todo", "Arranged" ], [], false))
+            .toEqual([ "Todo", "Arranged" ]);
+    });
+
     it("drops blanks and treats columns differing only in case as distinct", () => {
         expect(resolveBoardColumns([ "", "  " ], [ " Todo " ], [ "todo" ]))
             .toEqual([ "Todo", "todo" ]);

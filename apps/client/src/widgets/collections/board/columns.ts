@@ -103,12 +103,36 @@ export function canStoreColumnsInDefinition(statusDefinition: BoardStatusDefinit
 export function resolveBoardColumns(
     definitionOptions: string[],
     persistedColumns: string[],
-    discoveredValues: string[]
+    discoveredValues: string[],
+    /**
+     * Whether the persisted list is only a mirror of this resolution, written by the board that
+     * owns the definition. A mirror must not keep a column alive that the definition and the
+     * notes have both dropped: `removeColumn` writes the definition without the column, but the
+     * refresh that the config save triggers can read the definition before that write's entity
+     * change has arrived and write the column back into the mirror, from where it would never
+     * leave (#11100). Filtering the mirror against the other two sources makes the delete stick
+     * as soon as either settles, instead of never.
+     *
+     * Boards without a definition of their own keep the old behaviour: their persisted list is
+     * the arrangement itself, not a mirror of anything.
+     */
+    persistedColumnsAreMirror = false
 ): string[] {
     const columns: string[] = [];
     const seen = new Set<string>();
 
-    for (const candidate of [ ...definitionOptions, ...persistedColumns, ...discoveredValues ]) {
+    for (const value of [ ...definitionOptions, ...discoveredValues ]) {
+        const trimmed = value.trim();
+        if (trimmed) seen.add(trimmed);
+    }
+
+    const mirroredColumns = persistedColumnsAreMirror
+        ? persistedColumns.filter(column => seen.has(column.trim()))
+        : persistedColumns;
+
+    // Reset: the loop below seeds `seen` again so the definition's order leads the result.
+    seen.clear();
+    for (const candidate of [ ...definitionOptions, ...mirroredColumns, ...discoveredValues ]) {
         const value = candidate.trim();
         if (!value || seen.has(value)) continue;
         seen.add(value);
