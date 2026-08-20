@@ -118,6 +118,15 @@ export interface ContentHintManagerOptions {
      * `null` / `undefined` disables auto-hide.
      */
     autoHideAfterMs?: number;
+    /**
+     * Set when the hint popup is CSS-pinned (fixed position, same corner for
+     * every hint), so the Bootstrap anchor element is visually irrelevant.
+     * A top-of-stack transition between elements then reuses the live popup
+     * instead of disposing and recreating it whenever the content is
+     * unchanged — the dispose/create/fade cycle renders the exact same
+     * pixels, so it is pure flicker (the desktop caret hop in #11030).
+     */
+    popupPositionIsFixed?: boolean;
 }
 
 interface StackEntry {
@@ -173,7 +182,10 @@ export class ContentHintManager {
      */
     private _destroyed = false;
 
+    private readonly _popupPositionIsFixed: boolean;
+
     constructor(options: ContentHintManagerOptions = {}) {
+        this._popupPositionIsFixed = options.popupPositionIsFixed === true;
         this._baseOptions = options.tooltipOptions ?? {};
         this._autoHideAfterMs = options.autoHideAfterMs ?? null;
     }
@@ -333,8 +345,28 @@ export class ContentHintManager {
             return;
         }
 
-        // Element changed (or nothing on top). Dispose the outgoing popup;
-        // create + show a fresh one for the new element.
+        // Element changed (or nothing on top). With a CSS-pinned popup and
+        // identical content, the rebuild below would render the exact same
+        // pixels through a dispose/create/fade cycle — pure flicker. Reuse the
+        // live popup and just retarget the bookkeeping (#11030). The outgoing
+        // element must still be connected, or Bootstrap teardown of a detached
+        // anchor could leave a stray popup we no longer control.
+        if (
+            this._popupPositionIsFixed &&
+            this._currentTooltip &&
+            top &&
+            top.content === this._currentContent &&
+            this._currentElement?.isConnected
+        ) {
+            this._currentElement = targetElement;
+            if (wasFading) {
+                this._currentTooltip.show();
+            }
+            this._resetAutoHide();
+            return;
+        }
+
+        // Dispose the outgoing popup; create + show a fresh one for the new element.
         if (this._currentTooltip) {
             this._currentTooltip.dispose();
             this._currentTooltip = null;

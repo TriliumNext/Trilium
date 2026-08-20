@@ -98,7 +98,8 @@ export default class TodoListMultistateEditing extends Plugin {
                 // keep the hint alive — hover crossing, caret movement, state
                 // change — pushes to the manager, so the timer resets and the
                 // popup stays. When events stop, it fades on its own.
-                autoHideAfterMs: 2000
+                autoHideAfterMs: 2000,
+                popupPositionIsFixed: true
             });
         }
 
