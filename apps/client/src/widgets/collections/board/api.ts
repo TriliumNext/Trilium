@@ -90,19 +90,13 @@ export default class BoardApi {
             ? { name: "deleteRelation", relationName: this.statusAttribute }
             : { name: "deleteLabel", labelName: this.statusAttribute };
         await executeBulkActions(noteIds, [ action ]);
-        // Marked so the mirror filter knows this value is gone by intent, not by a race (#11100).
+        // Marked so the mirror filter knows this value is gone by intent, not
+        // by a race (#11100). The marker clears only when a refresh observes
+        // the value in no source at all — see getBoardData — because a racy
+        // refresh can mirror the value back into board.json right up until
+        // the definition write's entity change lands.
         noteColumnRemoved(this.parentNote.noteId, column);
-        // Once the definition write settles, the marker has done its job: on
-        // success any later appearance of the value is a genuine recreation;
-        // on failure the marker stays (the delete did not stick) until its TTL
-        // expires, after which the column honestly reads back.
-        this.storeColumns((this.viewConfig?.columns ?? []).filter(col => col.value !== column)).then(
-            (definitionWriteLanded) => {
-                if (definitionWriteLanded) {
-                    unnoteColumnRemoved(this.parentNote.noteId, column);
-                }
-            }
-        );
+        this.storeColumns((this.viewConfig?.columns ?? []).filter(col => col.value !== column));
     }
 
     async renameColumn(oldValue: string, newValue: string) {
@@ -154,22 +148,21 @@ export default class BoardApi {
      * re-renders off the identity of the config it was handed, so an in-place edit would be written
      * to disk but stay invisible until the view is re-entered.
      */
-    private storeColumns(columns: BoardColumnData[]): Promise<boolean> {
+    private storeColumns(columns: BoardColumnData[]) {
         this.viewConfig = { ...this.viewConfig, columns };
         this.saveConfig(this.viewConfig);
         // Not awaited — every caller is the tail of a user gesture the board has already rendered —
         // so the failure is caught here rather than left to reject unhandled. The columns are still
         // in the view config, so the board is not wrong, only out of step with the definition.
-        // The promise resolves to whether the definition write landed, so a
-        // caller can react to the outcome without re-handling the rejection.
-        return this.syncColumnsToDefinition(columns.map(({ value }) => value)).then(
-            () => true,
-            (e) => {
+        // The removal marker outlives this write on purpose: a refresh that raced
+        // the write can still have mirrored the removed value back into
+        // board.json, and only the refresh that observes every source clean
+        // (see getBoardData) may clear the marker.
+        this.syncColumnsToDefinition(columns.map(({ value }) => value))
+            .catch((e) => {
                 console.error("Failed to store the board columns in the attribute definition:", e);
                 toast.showError(t("board_view.column-definition-save-error"));
-                return false;
-            }
-        );
+            });
     }
 
     /**

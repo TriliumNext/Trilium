@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import FBranch from "../../../entities/fbranch";
 import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
-import { noteColumnRemoved } from "./columns";
+import { isRecentlyRemovedColumn, noteColumnRemoved } from "./columns";
 import { getBoardData } from "./data";
 
 describe("Board data", () => {
@@ -96,6 +96,45 @@ describe("Board data", () => {
             false, [], true
         );
         expect(afterRecreation.columns).toEqual([ "Kept" ]);
+    });
+
+    it("clears the removal mark only once every source has converged away", async () => {
+        const parentNote = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                { id: "mirror-board-note-4", title: "Kept", "#status": "Kept" }
+            ]
+        });
+        noteColumnRemoved(parentNote.noteId, "Gone");
+
+        // A refresh still reading the STALE definition (it names the value) keeps
+        // the marker even though the raw mirror is clean, or a write-back via the
+        // definition leg could resurrect the column.
+        await getBoardData(
+            parentNote, "status",
+            { columns: [ { value: "Kept" } ] },
+            false, [ "Kept", "Gone" ], true
+        );
+        expect(isRecentlyRemovedColumn(parentNote.noteId, "Gone")).toBe(true);
+
+        // The mirror was polluted by a racy write-back during the stale window:
+        // the marker survives that too (the definition still names the value).
+        await getBoardData(
+            parentNote, "status",
+            { columns: [ { value: "Kept" }, { value: "Gone" } ] },
+            false, [ "Kept", "Gone" ], true
+        );
+        expect(isRecentlyRemovedColumn(parentNote.noteId, "Gone")).toBe(true);
+
+        // Converged: fresh definition without the value, raw mirror clean, no note.
+        await getBoardData(
+            parentNote, "status",
+            { columns: [ { value: "Kept" } ] },
+            false, [ "Kept" ], true
+        );
+        expect(isRecentlyRemovedColumn(parentNote.noteId, "Gone")).toBe(false);
     });
 
     it("keeps a brand-new empty column that is in no source yet (#11100 review)", async () => {

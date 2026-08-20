@@ -2,6 +2,7 @@ import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
 import {
     isRecentlyRemovedColumn,
+    recentlyRemovedColumnsFor,
     resolveBoardColumns,
     unnoteColumnRemoved
 } from "./columns";
@@ -48,6 +49,23 @@ export async function getBoardData(
     }
 
     const persistedValues = (persistedData.columns ?? []).map(c => c.value);
+    // A marked value the RAW persisted list (pre-filter) no longer names, that
+    // the definition this refresh read does not name either, and that no note
+    // carries, has fully converged away — the delete's definition write landed
+    // and the mirror is clean — so the marker's job is done; any future
+    // appearance of the value is a genuine recreation. Requiring all three
+    // legs keeps the original delete race (#11100) covered: while the stale
+    // definition still names the value the marker survives, so a racy
+    // write-back into board.json keeps being filtered instead of resurrected.
+    for (const value of recentlyRemovedColumnsFor(parentNote.noteId)) {
+        if (
+            !definitionOptions.includes(value) &&
+            !persistedValues.includes(value) &&
+            !byColumn.has(value)
+        ) {
+            unnoteColumnRemoved(parentNote.noteId, value);
+        }
+    }
     const persistedColumns = persistedColumnsAreMirror
         ? persistedValues.filter(value => !isRecentlyRemovedColumn(parentNote.noteId, value))
         : persistedValues;

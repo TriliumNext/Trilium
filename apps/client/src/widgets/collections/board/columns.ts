@@ -146,6 +146,11 @@ export function unnoteColumnRemoved(noteId: string, value: string): void {
     removedColumnsByNote.get(noteId)?.delete(value);
 }
 
+/** The board's currently-marked removed values, for convergence checks. */
+export function recentlyRemovedColumnsFor(noteId: string): string[] {
+    return [ ...(removedColumnsByNote.get(noteId)?.keys() ?? []) ];
+}
+
 export function isRecentlyRemovedColumn(
     noteId: string,
     value: string,
