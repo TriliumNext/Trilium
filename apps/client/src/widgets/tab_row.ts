@@ -14,6 +14,9 @@ import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
 import { setupHorizontalScrollViaWheel, tabWheelAction } from "./widget_utils.js";
 
+/** One wheel gesture may switch at most one tab inside this window. */
+const WHEEL_SWITCH_COALESCE_MS = 250;
+
 const isDesktop = utils.isDesktop();
 
 const TAB_CONTAINER_MIN_WIDTH = 100;
@@ -352,6 +355,9 @@ export default class TabRowWidget extends BasicWidget {
     /** Monotonic id stamped on a tab per `updateTab` call, so an out-of-order async update can detect it's stale. */
     private tabUpdateId = 0;
 
+    /** Timestamp of the last wheel-driven tab switch, for gesture coalescing. */
+    private lastWheelSwitchAt = 0;
+
     doRender() {
         this.$widget = $(TAB_ROW_TPL);
         this.$tabScrollingContainer = this.$widget.children(".tab-row-widget-scrolling-container");
@@ -445,6 +451,13 @@ export default class TabRowWidget extends BasicWidget {
 
             event.preventDefault();
             event.stopImmediatePropagation();
+            // One physical gesture emits several wheel events (trackpad flicks
+            // especially); switch once per gesture, not once per event.
+            const now = Date.now();
+            if (now - this.lastWheelSwitchAt < WHEEL_SWITCH_COALESCE_MS) {
+                return;
+            }
+            this.lastWheelSwitchAt = now;
             this.triggerCommand(action === "next" ? "activateNextTab" : "activatePreviousTab");
         });
 

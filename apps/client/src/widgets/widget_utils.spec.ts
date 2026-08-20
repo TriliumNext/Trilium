@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { tabWheelAction } from "./widget_utils.js";
 
-function wheelEvent(delta: { deltaY?: number; deltaX?: number }, modifiers: { ctrl?: boolean; alt?: boolean; shift?: boolean } = {}) {
+function wheelEvent(
+    delta: { deltaY?: number; deltaX?: number },
+    modifiers: { ctrl?: boolean; alt?: boolean; shift?: boolean } = {}
+) {
     return {
         deltaY: delta.deltaY ?? 0,
         deltaX: delta.deltaX ?? 0,
@@ -29,7 +32,7 @@ describe("tabWheelAction", () => {
 
         expect(tabWheelAction(wheelEvent({ deltaX: -3 }), row)).toBe("previous");
         expect(tabWheelAction(wheelEvent({ deltaX: 3 }), row)).toBe("next");
-    })
+    });
 
     it("keeps the wheel for horizontal scrolling while the row overflows", () => {
         const row = container(1200, 500);
