@@ -1,6 +1,10 @@
 import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
-import { isRecentlyRemovedColumn, resolveBoardColumns } from "./columns";
+import {
+    isRecentlyRemovedColumn,
+    resolveBoardColumns,
+    unnoteColumnRemoved
+} from "./columns";
 import { BoardViewData } from "./index";
 
 export type ColumnMap = Map<string, {
@@ -32,6 +36,17 @@ export async function getBoardData(
     // while the definition write is still in flight (#11100). Values nothing removed are
     // never dropped: a column added a moment ago is equally absent from the other two
     // sources, and dropping it would lose the user's work.
+    // A removed value a note carries again was recreated by intent (another
+    // split, a synced client, a script) — clear its mark so the mirror filter
+    // stops applying from this refresh on. The stale-definition leg of the
+    // original delete race must NOT clear the mark, so only discovered note
+    // values do.
+    for (const value of byColumn.keys()) {
+        if (isRecentlyRemovedColumn(parentNote.noteId, value)) {
+            unnoteColumnRemoved(parentNote.noteId, value);
+        }
+    }
+
     const persistedValues = (persistedData.columns ?? []).map(c => c.value);
     const persistedColumns = persistedColumnsAreMirror
         ? persistedValues.filter(value => !isRecentlyRemovedColumn(parentNote.noteId, value))

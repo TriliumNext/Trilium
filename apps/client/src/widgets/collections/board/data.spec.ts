@@ -77,6 +77,27 @@ describe("Board data", () => {
         expect(unmirrored.columns).toEqual([ "Kept", "Arranged" ]);
     });
 
+    it("clears the removal mark once a note carries the value again", async () => {
+        const parentNote = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                { id: "mirror-board-note-3", title: "Back again", "#status": "Kept" }
+            ]
+        });
+        // The column was deleted in this session; another surface has since put
+        // a note back into that status, and the persisted mirror still names it.
+        noteColumnRemoved(parentNote.noteId, "Kept");
+
+        const afterRecreation = await getBoardData(
+            parentNote, "status",
+            { columns: [ { value: "Kept" } ] },
+            false, [], true
+        );
+        expect(afterRecreation.columns).toEqual([ "Kept" ]);
+    });
+
     it("keeps a brand-new empty column that is in no source yet (#11100 review)", async () => {
         const parentNote = buildNote({
             title: "Board",
