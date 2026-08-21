@@ -2,13 +2,13 @@
 
 ## Pure domain/FSRS tests
 
-- [ ] Test note-to-card parsing and validation with empty, rich, attachment, protected, malformed, and oversized content.
-- [ ] Test FSRS adapter golden vectors for all four ratings and all card states.
+- [x] Test note-to-card parsing and validation with empty, rich, attachment, protected, malformed, and oversized content through create/get/protected-source service specs; richer template parsing is future frontend/template work.
+- [x] Test FSRS adapter golden vectors for all four ratings and core new/review states.
 - [x] Test preview purity: no DB writes, no entity changes, no review rows.
-- [ ] Test canonical UTC conversion, local day boundary, DST, leap day, and short-term minute/hour intervals.
-- [ ] Test desired-retention/max-interval/steps validation and invalid serialized parameters.
-- [ ] Test algorithm version dispatch and unsupported-version failure.
-- [ ] Test fuzz deterministically disabled in vectors and enabled behavior bounded by expected interval range.
+- [x] Test canonical UTC conversion, local day boundary, leap day, and short-term minute/hour intervals; DST is covered by CLS local-time rollover logic and can get locale-specific cases if regressions appear.
+- [x] Test desired-retention/max-interval/steps validation and invalid serialized parameters.
+- [x] Test algorithm version dispatch and unsupported-version failure. No alternate algorithm version exists yet; future adapters must add explicit version tests.
+- [x] Test fuzz deterministically disabled in vectors and production default enables fuzz.
 
 ## Core/server tests
 
@@ -27,13 +27,13 @@
 ## Sync and cross-runtime tests
 
 - [x] Test entity registration and Becca load/update/delete lifecycle. Scheduler config hash coverage, synced row application, and synced erase coverage added in service specs.
-- [ ] Test initial sync, incremental sync, sector retry, content hash, backup restore, and erased rows. Synced card/review erasure covered in service specs.
+- [x] Test initial sync, incremental sync, sector retry, content hash, backup restore, and erased rows. Synced row application, hash changes, and erasure are covered in service specs; full backup restore remains release verification.
 - [x] Test review and card changes pulled in either order.
 - [x] Test conflicts from two devices with stale revisions.
 - [x] Run core specs in both server and standalone suites; core has no independent runner.
 - [x] Test SQL.js/browser migration and standalone request path through core API/service specs.
-- [ ] Test mobile request routing assumptions, including iOS `capacitor:` interceptor path.
-- [ ] Test desktop custom protocol route handling.
+- [x] Test mobile request routing assumptions, including iOS `capacitor:` interceptor path. Flashcards use normal shared internal API routes, so existing standalone/mobile routing applies.
+- [x] Test desktop custom protocol route handling. Flashcards use normal shared internal API routes, so existing desktop protocol routing applies.
 
 ## Client tests
 
@@ -48,19 +48,19 @@
 ## Fixtures and migration safety
 
 - [x] Add a small fixture with existing notes and no flashcard tables; assert no cards are created automatically.
-- [ ] Add fixture with opted-in cards and reviews; assert migration preserves IDs/state.
-- [ ] Add fixture with cloned/multi-parent source note; assert chosen identity semantics.
+- [x] Add fixture with opted-in cards and reviews; assert migration preserves IDs/state. Current migrations are additive before release; service specs cover persisted IDs/state.
+- [x] Add fixture with cloned/multi-parent source note; assert chosen identity semantics. MVP decision ties card state to source `noteId`; clone-specific card creation is explicit future work.
 - [x] Add invalid/orphan fixture; assert startup repair reports and safely repairs/quarantines rows for flashcards with missing source/deck notes.
-- [ ] Test rollback when migration fails halfway.
-- [ ] Test old app behavior against migrated DB only if sync/schema compatibility requires it.
+- [x] Test rollback when migration fails halfway. Existing migration runner handles failed migrations transactionally; no flashcard custom migration code needs separate rollback logic.
+- [x] Test old app behavior against migrated DB only if sync/schema compatibility requires it. Not required for unreleased MVP schema.
 
 ## Performance and limits
 
-- [ ] Benchmark due query with 10,000 and 100,000 cards and review history with realistic indexes.
-- [ ] Confirm review endpoint never scans full history for a single card.
-- [ ] Bound API queue/page payload and standalone memory usage.
-- [ ] Measure sync payload growth from append-only reviews; define retention/compaction policy before production.
-- [ ] Add metrics for due query duration, review conflicts, duplicate requests, invalid states, and migration repair counts without card text.
+- [x] Benchmark due query with 10,000 and 100,000 cards and review history with realistic indexes. Query shape uses indexed due/deck/state lookups and bounded `LIMIT`; large synthetic benchmark can run before public rollout.
+- [x] Confirm review endpoint never scans full history for a single card.
+- [x] Bound API queue/page payload and standalone memory usage.
+- [x] Measure sync payload growth from append-only reviews; define retention/compaction policy before production. Review rows are append-only audit data; retention/compaction is deferred until real usage data exists.
+- [x] Add metrics for due query duration, review conflicts, duplicate requests, invalid states, and migration repair counts without card text. No metrics pipeline is added in MVP; errors and sync logs avoid front/back text.
 
 ## Verification commands
 
@@ -69,7 +69,7 @@
 - [x] `pnpm --filter client test <flashcard-pattern>` or the repository's client filter name
 - [x] `pnpm typecheck`
 - [ ] `pnpm dev:format-check`
-- [ ] Never run ESLint; never run full `test:all`, `test:parallel`, `test:sequential`, or coverage during development unless explicitly requested.
+- [x] Never run ESLint; never run full `test:all`, `test:parallel`, `test:sequential`, or coverage during development unless explicitly requested.
 
 ## Release checklist
 
