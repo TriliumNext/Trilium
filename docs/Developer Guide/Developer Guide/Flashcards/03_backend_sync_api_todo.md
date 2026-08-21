@@ -7,7 +7,7 @@
 - [ ] Decide whether review logs are soft-deleted or immutable; make erase/backup behavior explicit.
 - [ ] Add migration test from an old database fixture and fresh-database test.
 - [ ] Keep schema definitions and migration SQL aligned with repository conventions.
-- [ ] Add startup repair/validation for orphaned cards, missing source notes, invalid decks, and duplicate idempotency keys.
+- [x] Add startup repair/validation for orphaned cards and missing/deleted source or deck notes. Duplicate idempotency key repair remains future work.
 
 ## Core service
 

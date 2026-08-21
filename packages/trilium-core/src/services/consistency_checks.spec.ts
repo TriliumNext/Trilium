@@ -8,6 +8,16 @@ import becca_loader from "../becca/becca_loader.js";
 
 let testCounter = 0;
 
+const DEFAULT_FLASHCARD_SCHEDULER_CONFIG = JSON.stringify({
+    requestRetention: 0.9,
+    maximumInterval: 36500,
+    enableFuzz: true,
+    enableShortTerm: true,
+    learningSteps: ["1m", "10m"],
+    relearningSteps: ["10m"],
+    weights: null
+});
+
 /**
  * Simulates a partially-synced database by creating a note whose parent
  * note does not exist. This is exactly what happens when a sync client
@@ -51,6 +61,18 @@ function insertBranch(branchId: string, noteId: string, parentNoteId: string, is
             isDeleted, utcDateModified)
         VALUES (?, ?, ?, 999, NULL, 0, ?, '2026-01-01 00:00:00Z')
     `, [branchId, noteId, parentNoteId, isDeleted]);
+}
+
+function insertFlashcard(cardId: string, noteId: string, deckNoteId: string) {
+    getSql().execute(`
+        INSERT INTO flashcards (cardId, noteId, deckNoteId, ordinal, state, due, stability,
+            difficulty, elapsedDays, scheduledDays, learningSteps, reps, lapses, lastReview,
+            suspended, algorithm, algorithmVersion, schedulingRevision, utcDateCreated,
+            utcDateModified, isDeleted, deleteId, schedulerConfig)
+        VALUES (?, ?, ?, 0, 0, '2026-01-01 00:00:00.000Z', 0, 0, 0, 0, 0, 0, 0,
+            NULL, 0, 'fsrs-6', 'ts-fsrs@5.4.1', 0, '2026-01-01 00:00:00.000Z',
+            '2026-01-01 00:00:00.000Z', 0, NULL, ?)
+    `, [cardId, noteId, deckNoteId, DEFAULT_FLASHCARD_SCHEDULER_CONFIG]);
 }
 
 function setOption(name: string, value: string) {
@@ -126,8 +148,9 @@ describe("Consistency checks during partial sync", () => {
 
     it("should fix broken references when sync is not configured", async () => {
         await getContext().init(async () => {
-            // Ensure sync is not configured
+            // Ensure sync is not configured. A stale syncIncomplete flag must not skip repairs.
             setOption("syncServerHost", "");
+            setOption("syncIncomplete", "true");
             expect(syncOptions.isSyncSetup()).toBe(false);
 
             const { testNoteId, branchId } = simulatePartialSync();
@@ -187,6 +210,61 @@ describe("Notes without a usable branch", () => {
                 "SELECT branchId FROM branches WHERE branchId = 'live_br' AND isDeleted = 0"
             );
             expect(liveBranch).toBe("live_br");
+        });
+    });
+});
+
+describe("Flashcard consistency checks", () => {
+
+    it("deletes cards with missing sources and moves cards with missing decks to root", async () => {
+        await getContext().init(async () => {
+            setOption("syncServerHost", "");
+
+            testCounter++;
+            const missingDeckSourceNoteId = insertNote(`FC_SRC_DECK_MISSING_${testCounter}`);
+            const deletedDeckSourceNoteId = insertNote(`FC_SRC_DECK_DELETED_${testCounter}`);
+            const deletedSourceNoteId = insertNote(`FC_SRC_DEL_${testCounter}`);
+            const missingSourceCardId = `fc_missing_src_${testCounter}`;
+            const deletedSourceCardId = `fc_deleted_src_${testCounter}`;
+            const missingDeckCardId = `fc_missing_deck_${testCounter}`;
+            const deletedDeckCardId = `fc_deleted_deck_${testCounter}`;
+            const deletedDeckNoteId = insertNote(`FC_DECK_DEL_${testCounter}`);
+
+            getSql().execute("UPDATE notes SET isDeleted = 1 WHERE noteId IN (?, ?)", [
+                deletedSourceNoteId,
+                deletedDeckNoteId
+            ]);
+            insertFlashcard(missingSourceCardId, `FC_SRC_MISSING_${testCounter}`, "root");
+            insertFlashcard(deletedSourceCardId, deletedSourceNoteId, "root");
+            insertFlashcard(missingDeckCardId, missingDeckSourceNoteId, `FC_DECK_MISSING_${testCounter}`);
+            insertFlashcard(deletedDeckCardId, deletedDeckSourceNoteId, deletedDeckNoteId);
+
+            becca_loader.reload("flashcard consistency test");
+
+            await consistency_checks.runOnDemandChecks(true);
+
+            const sql = getSql();
+            const isDeleted = (cardId: string) => sql.getValue<number>(
+                "SELECT isDeleted FROM flashcards WHERE cardId = ?",
+                [cardId]
+            );
+            const deckNoteId = (cardId: string) => sql.getValue<string>(
+                "SELECT deckNoteId FROM flashcards WHERE cardId = ?",
+                [cardId]
+            );
+            const changeCount = (cardId: string) => sql.getValue<number>(`
+                SELECT COUNT(1) FROM entity_changes
+                WHERE entityName = 'flashcards' AND entityId = ?
+            `, [cardId]) ?? 0;
+
+            expect(isDeleted(missingSourceCardId)).toBe(1);
+            expect(isDeleted(deletedSourceCardId)).toBe(1);
+            expect(isDeleted(missingDeckCardId)).toBe(0);
+            expect(isDeleted(deletedDeckCardId)).toBe(0);
+            expect(deckNoteId(missingDeckCardId)).toBe("root");
+            expect(deckNoteId(deletedDeckCardId)).toBe("root");
+            expect(changeCount(missingSourceCardId)).toBeGreaterThan(0);
+            expect(changeCount(missingDeckCardId)).toBeGreaterThan(0);
         });
     });
 });

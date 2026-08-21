@@ -12655,14 +12655,14 @@
     "semantic_hash": "3994e6d501dd3cc836b20c07a02bf3c8"
   },
   "packages/trilium-core/src/services/consistency_checks.spec.ts": {
-    "mtime": 1786902991.7350326,
-    "ast_hash": "ccbb1cdcd4e0b6bf1ee832b0ca9d22bc",
-    "semantic_hash": "ccbb1cdcd4e0b6bf1ee832b0ca9d22bc"
+    "mtime": 1787327216.0245602,
+    "ast_hash": "ea2ec0e5e4e0c7509de65579d35d7b72",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/consistency_checks.ts": {
-    "mtime": 1786902991.735114,
-    "ast_hash": "02ad192bb1faad2d871aaebd89276f5e",
-    "semantic_hash": "02ad192bb1faad2d871aaebd89276f5e"
+    "mtime": 1787327210.975668,
+    "ast_hash": "73fed19c32c7c5acf06ed5a751e71ef9",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/content_hash.spec.ts": {
     "mtime": 1786902991.7351773,
@@ -17875,8 +17875,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/03_backend_sync_api_todo.md": {
-    "mtime": 1787324607.1633496,
-    "ast_hash": "ff5fa9834b014095df0ed7d840cd08c7",
+    "mtime": 1787327048.842375,
+    "ast_hash": "922e67f312978c5f02aee966348e963d",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787326093.4865758,
-    "ast_hash": "8e0ab83eba9e0d501899b85688c6ce6b",
+    "mtime": 1787327054.8691597,
+    "ast_hash": "62ee4cbafa2cae93dd5d53e68a79e3fc",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
