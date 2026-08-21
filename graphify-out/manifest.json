@@ -925,9 +925,9 @@
     "semantic_hash": "61c1d58fac13d1db6c50eccac00dfeeb"
   },
   "apps/client/src/services/load_results.ts": {
-    "mtime": 1786902991.2441702,
-    "ast_hash": "137eb477cb02bb0b61db1fb4da4da595",
-    "semantic_hash": "137eb477cb02bb0b61db1fb4da4da595"
+    "mtime": 1787317782.232834,
+    "ast_hash": "c2a50c119b9c75d60ed447d07333e238",
+    "semantic_hash": ""
   },
   "apps/client/src/services/math.ts": {
     "mtime": 1786902991.244226,
@@ -1525,8 +1525,8 @@
     "semantic_hash": "1c4320fd508ca048bfeec596c729caff"
   },
   "apps/client/src/translations/en/translation.json": {
-    "mtime": 1787317596.7888553,
-    "ast_hash": "6855337b508ee9b0b61dfade8ce6b0d3",
+    "mtime": 1787317811.3562763,
+    "ast_hash": "447c3be2e387ed14d77f77e6091ee81d",
     "semantic_hash": ""
   },
   "apps/client/src/translations/es/entry.json": {
@@ -14775,8 +14775,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.tsx": {
-    "mtime": 1787317590.6981146,
-    "ast_hash": "a70cc69f6b8eb520b5814cdfd34c8803",
+    "mtime": 1787317804.5699003,
+    "ast_hash": "033f5f18ae2b8f085287acea4bc29732",
     "semantic_hash": ""
   },
   "apps/web-clipper/.wxt/eslint-auto-imports.mjs": {
@@ -17880,8 +17880,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
-    "mtime": 1787317614.2362707,
-    "ast_hash": "4f351ca2e535fa4d837ebdbcb5a697b2",
+    "mtime": 1787317818.641859,
+    "ast_hash": "56dd99ca28c30587440b1b593f39450b",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {

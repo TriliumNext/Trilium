@@ -1,4 +1,11 @@
-import type { AttachmentRow, EtapiTokenRow, NoteType, OptionNames } from "@triliumnext/commons";
+import type {
+    AttachmentRow,
+    EtapiTokenRow,
+    FlashcardReviewRow,
+    FlashcardRow,
+    NoteType,
+    OptionNames
+} from "@triliumnext/commons";
 
 import type { AttributeType } from "../entities/fattribute.js";
 import type { EntityChange } from "../server_types.js";
@@ -65,6 +72,8 @@ type EntityRowMappings = {
     revisions: RevisionRow;
     note_reordering: NoteReorderingRow;
     etapi_tokens: EtapiTokenRow;
+    flashcards: FlashcardRow;
+    flashcard_reviews: FlashcardReviewRow;
 };
 
 export type EntityRowNames = keyof EntityRowMappings;

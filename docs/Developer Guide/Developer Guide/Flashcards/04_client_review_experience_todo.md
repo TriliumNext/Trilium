@@ -47,8 +47,8 @@
 
 - [x] Add a typed flashcards client service wrapping `services/server.ts`.
 - [ ] Keep server as scheduling authority; client may cache queue/preview briefly but must invalidate after review/sync.
-- [ ] Subscribe to entity/review events or refetch on `entitiesReloadedEvent` as appropriate.
-- [ ] Handle sync changes while review is open; stale card revision must surface as conflict.
+- [x] Subscribe to entity/review events or refetch on `entitiesReloadedEvent` as appropriate.
+- [x] Handle sync changes while review is open; stale card revision must surface as conflict.
 - [ ] Support standalone request bridge and mobile iOS interceptor path without adding Node/browser-only APIs.
 - [ ] Do not use `localStorage` for deck settings, scheduling state, or review progress.
 

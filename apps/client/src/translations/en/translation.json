@@ -1157,6 +1157,7 @@
     "card_resumed": "Flashcard resumed",
     "card_buried": "Flashcard skipped until tomorrow",
     "card_moved": "Flashcard moved",
+    "queue_refreshed": "Flashcard queue refreshed after sync.",
     "card_reset": "Flashcard reset",
     "review_undone": "Review undone",
     "days_one": "{{count}} day",

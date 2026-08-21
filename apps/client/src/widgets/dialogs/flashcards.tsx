@@ -90,6 +90,21 @@ export default function FlashcardsDialog() {
 
     useTriliumEvent("showFlashcards", openDialog);
 
+    useTriliumEvent("entitiesReloaded", useCallback(({ loadResults }) => {
+        if (!shown || cards.length === 0) {
+            return;
+        }
+
+        const flashcardChanged = cards.some((card) =>
+            loadResults.getEntityRow("flashcards", card.cardId)
+        );
+        if (!flashcardChanged) {
+            return;
+        }
+
+        void refreshDueQueueAfterSync();
+    }, [ shown, cards, selectedDeckNoteId ]));
+
     const activeIndex = useMemo(() => {
         if (!currentCard) {
             return -1;
@@ -155,21 +170,39 @@ export default function FlashcardsDialog() {
         setUndoableReview(null);
 
         try {
-            const [ due, loadedStats, loadedDecks ] = await Promise.all([
-                flashcards.getDueCards({
-                    deckNoteId: deckNoteId ?? undefined,
-                    limit: REVIEW_LIMIT
-                }),
-                flashcards.getStats(),
-                flashcards.getDecks()
-            ]);
-            setCards(due.cards);
-            setCurrentCard(due.cards[0] ?? null);
-            setStats(loadedStats);
-            setDecks(loadedDecks.decks);
+            await loadDueQueue(deckNoteId);
         } finally {
             setLoading(false);
         }
+    }
+
+    async function refreshDueQueueAfterSync() {
+        setLoading(true);
+        setAnswerShown(false);
+        setReviewRequestId(randomString());
+        setUndoableReview(null);
+
+        try {
+            await loadDueQueue(selectedDeckNoteId);
+            toast.showMessage(t("flashcards.queue_refreshed"));
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function loadDueQueue(deckNoteId: string | null) {
+        const [ due, loadedStats, loadedDecks ] = await Promise.all([
+            flashcards.getDueCards({
+                deckNoteId: deckNoteId ?? undefined,
+                limit: REVIEW_LIMIT
+            }),
+            flashcards.getStats(),
+            flashcards.getDecks()
+        ]);
+        setCards(due.cards);
+        setCurrentCard(due.cards[0] ?? null);
+        setStats(loadedStats);
+        setDecks(loadedDecks.decks);
     }
 
     async function revealAnswer() {
