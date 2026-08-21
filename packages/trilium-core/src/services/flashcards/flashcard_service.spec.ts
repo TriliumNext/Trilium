@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import becca from "../../becca/becca.js";
+import BFlashcard from "../../becca/entities/bflashcard.js";
+import BFlashcardReview from "../../becca/entities/bflashcard_review.js";
 import { init as clsInit } from "../context.js";
 import noteService from "../notes.js";
 import { getSql } from "../sql/index.js";
+import syncUpdateService from "../sync_update.js";
 import flashcardService from "./flashcard_service.js";
 
 function createTextNote(title: string, content = "Back content") {
@@ -102,6 +106,95 @@ describe("flashcard service", () => {
         }))).toThrow("Flashcard request retention must be between 0 and 1.");
 
         runInContext(() => flashcardService.setSettings(originalSettings));
+    });
+
+    it("includes scheduler config snapshots in flashcard sync hashes", () => {
+        const note = createTextNote("Sync hash source");
+        const originalSettings = runInContext(() => flashcardService.getSettings());
+
+        runInContext(() => flashcardService.setSettings({
+            schedulerConfig: {
+                ...originalSettings.schedulerConfig,
+                maximumInterval: 42
+            }
+        }));
+
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const reviewed = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-sync-hash`
+        }));
+        const flashcard = becca.getFlashcard(card.cardId);
+        const flashcardReview = becca.getFlashcardReview(reviewed.reviewId);
+
+        if (!flashcard || !flashcardReview) {
+            throw new Error("Expected synced flashcard entities.");
+        }
+
+        const changedConfig = JSON.stringify({
+            ...originalSettings.schedulerConfig,
+            maximumInterval: 43
+        });
+        const changedCard = new BFlashcard({
+            ...flashcard.getPojo(),
+            schedulerConfig: changedConfig
+        });
+        const changedReview = new BFlashcardReview({
+            ...flashcardReview.getPojo(),
+            schedulerConfig: changedConfig
+        });
+
+        expect(flashcard.schedulerConfig).toContain("maximumInterval");
+        expect(flashcardReview.schedulerConfig).toContain("maximumInterval");
+        expect(changedCard.generateHash()).not.toBe(flashcard.generateHash());
+        expect(changedReview.generateHash()).not.toBe(flashcardReview.generateHash());
+
+        runInContext(() => flashcardService.setSettings(originalSettings));
+    });
+
+    it("applies synced erasures for flashcards and review logs", () => {
+        const note = createTextNote("Sync erase source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const reviewed = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-sync-erase`
+        }));
+
+        runInContext(() => syncUpdateService.updateEntities([
+            {
+                entityChange: {
+                    entityName: "flashcard_reviews",
+                    entityId: reviewed.reviewId,
+                    hash: "deleted",
+                    isErased: true,
+                    utcDateChanged: "2999-01-01 00:00:00.000Z",
+                    isSynced: true,
+                    changeId: `${reviewed.reviewId}-erased`
+                },
+                entity: undefined
+            },
+            {
+                entityChange: {
+                    entityName: "flashcards",
+                    entityId: card.cardId,
+                    hash: "deleted",
+                    isErased: true,
+                    utcDateChanged: "2999-01-01 00:00:00.000Z",
+                    isSynced: true,
+                    changeId: `${card.cardId}-erased`
+                },
+                entity: undefined
+            }
+        ], "remote-instance"));
+
+        expect(getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews
+            WHERE reviewId = ?`, [reviewed.reviewId])).toBe(0);
+        expect(getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards
+            WHERE cardId = ?`, [card.cardId])).toBe(0);
     });
 
     it("returns deck summaries with safe counts", () => {

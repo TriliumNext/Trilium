@@ -26,8 +26,8 @@
 
 ## Sync and cross-runtime tests
 
-- [ ] Test entity registration and Becca load/update/delete lifecycle.
-- [ ] Test initial sync, incremental sync, sector retry, content hash, backup restore, and erased rows.
+- [ ] Test entity registration and Becca load/update/delete lifecycle. Scheduler config hash coverage and synced erase coverage added in service specs.
+- [ ] Test initial sync, incremental sync, sector retry, content hash, backup restore, and erased rows. Synced card/review erasure covered in service specs.
 - [ ] Test review and card changes pulled in either order.
 - [ ] Test conflicts from two devices with stale revisions.
 - [x] Run core specs in both server and standalone suites; core has no independent runner.
@@ -66,7 +66,7 @@
 
 - [x] `pnpm --filter server test <flashcard-or-migration-pattern>`
 - [x] `pnpm --filter standalone test <flashcard-or-core-pattern>`
-- [ ] `pnpm --filter client test <flashcard-pattern>` or the repository's client filter name
+- [x] `pnpm --filter client test <flashcard-pattern>` or the repository's client filter name
 - [x] `pnpm typecheck`
 - [ ] `pnpm dev:format-check`
 - [ ] Never run ESLint; never run full `test:all`, `test:parallel`, `test:sequential`, or coverage during development unless explicitly requested.
