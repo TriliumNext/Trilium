@@ -118,6 +118,7 @@ export interface FlashcardPreviewResponse {
 
 export interface FlashcardDueResponse {
     cards: FlashcardReviewCard[];
+    totalDueCount: number;
 }
 
 export interface FlashcardDecksResponse {

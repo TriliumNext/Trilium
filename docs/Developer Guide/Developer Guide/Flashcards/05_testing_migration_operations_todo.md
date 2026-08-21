@@ -20,7 +20,7 @@
 - [x] Test duplicate `clientRequestId` returns original result.
 - [x] Test stale revision returns `409` and performs no write.
 - [x] Test latest-review undo and conflict after another scheduling action.
-- [ ] Test two cards in one deck, many decks, pagination, limits, overdue order, and empty queue.
+- [x] Test two cards in one deck, many decks, pagination, limits, overdue order, and empty queue.
 - [ ] Test protected source note and protected-session expiration. Locked protected-source behavior covered in service specs.
 - [ ] Test no front/back leakage in errors/logs/metrics.
 

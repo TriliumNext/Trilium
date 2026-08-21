@@ -116,15 +116,20 @@ function getDueCards({
     limit = normalizeLimit(limit);
     const now = dateUtils.utcNowDateTime();
 
-    const params: (string | number)[] = [now];
+    const filterParams: (string | number)[] = [now];
     let deckCondition = "";
 
     if (deckNoteId) {
         deckCondition = "AND deckNoteId = ?";
-        params.push(deckNoteId);
+        filterParams.push(deckNoteId);
     }
 
-    params.push(limit);
+    const totalDueCount = getSql().getValue<number>(/*sql*/`
+        SELECT COUNT(1) FROM flashcards
+        WHERE isDeleted = 0
+          AND suspended = 0
+          AND due <= ?
+          ${deckCondition}`, filterParams) ?? 0;
 
     const rows = getSql().getRows<FlashcardRow>(/*sql*/`
         SELECT * FROM flashcards
@@ -133,10 +138,11 @@ function getDueCards({
           AND due <= ?
           ${deckCondition}
         ORDER BY due, state, cardId
-        LIMIT ?`, params);
+        LIMIT ?`, [ ...filterParams, limit ]);
 
     return {
-        cards: rows.map((row) => buildReviewCard(row, { includeBack: false }))
+        cards: rows.map((row) => buildReviewCard(row, { includeBack: false })),
+        totalDueCount
     };
 }
 

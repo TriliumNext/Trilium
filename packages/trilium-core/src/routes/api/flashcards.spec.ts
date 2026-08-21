@@ -56,6 +56,7 @@ describe("Flashcards API (core)", () => {
         });
         expect(dueRes.status).toBe(200);
         expect(dueRes.body.cards.some((card) => card.cardId === createRes.body.cardId)).toBe(true);
+        expect(dueRes.body.totalDueCount).toBeGreaterThanOrEqual(dueRes.body.cards.length);
 
         const getRes = await api.get<FlashcardReviewCard>(
             `/api/flashcards/cards/${createRes.body.cardId}`

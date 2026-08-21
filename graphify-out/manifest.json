@@ -14775,8 +14775,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.tsx": {
-    "mtime": 1787317804.5699003,
-    "ast_hash": "033f5f18ae2b8f085287acea4bc29732",
+    "mtime": 1787322564.9518092,
+    "ast_hash": "743634420f089afef4d45c08c0aa2d45",
     "semantic_hash": ""
   },
   "apps/web-clipper/.wxt/eslint-auto-imports.mjs": {
@@ -14930,8 +14930,8 @@
     "semantic_hash": ""
   },
   "packages/commons/src/lib/flashcards.ts": {
-    "mtime": 1787317553.0411437,
-    "ast_hash": "c1d2f94e7f5856ee1a9466996c1b8f9a",
+    "mtime": 1787322407.6174695,
+    "ast_hash": "7c853cbd988edcd9ee13c840ec3385e9",
     "semantic_hash": ""
   },
   "packages/share-theme/meta.json": {
@@ -14955,8 +14955,8 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/flashcard_service.ts": {
-    "mtime": 1787317576.1943376,
-    "ast_hash": "d0bfe9ba6080f592dd96fb653a9d6387",
+    "mtime": 1787322418.3078353,
+    "ast_hash": "7044270439ef4e4947c95f7527139f3e",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/fsrs_scheduler.spec.ts": {
@@ -17880,13 +17880,13 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
-    "mtime": 1787317818.641859,
-    "ast_hash": "56dd99ca28c30587440b1b593f39450b",
+    "mtime": 1787322513.436264,
+    "ast_hash": "acafecf41298e889f461023e8b0e263c",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787317516.0057864,
-    "ast_hash": "ad9cb2eeac50fc64cea0c595ddb1ee74",
+    "mtime": 1787322517.3864698,
+    "ast_hash": "9d69a237feac02ede0ce32ed8be1066b",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -24965,13 +24965,13 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/flashcard_service.spec.ts": {
-    "mtime": 1787317603.3090403,
-    "ast_hash": "815ee33d325855df55e395bbc8cf3048",
+    "mtime": 1787322500.0059378,
+    "ast_hash": "1102a3d54c8fb307e84b8ef5437a26a4",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/routes/api/flashcards.spec.ts": {
-    "mtime": 1787317610.405315,
-    "ast_hash": "343b75fb98a8198267e7251710688197",
+    "mtime": 1787322505.462336,
+    "ast_hash": "b10938e837003ebe6ab27c214b068159",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/migrations/0241__flashcards.spec.ts": {

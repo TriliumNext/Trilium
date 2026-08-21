@@ -31,7 +31,7 @@
 - [x] Add basic stats: reviewed today, retention, reviews by rating, due forecast, lapses.
 - [ ] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable. Deck list now uses `Badge`; deck move uses `FormSelect`; fuller stats/browser UI still needs component pass.
 - [x] Avoid inline styles; add matching CSS files and scoped root classes.
-- [ ] Virtualize large due lists or fetch one card at a time; never load every answer into DOM unnecessarily.
+- [x] Virtualize large due lists or fetch one card at a time; never load every answer into DOM unnecessarily. Due queue is capped to review batches, omits answers until reveal, and refills after the batch drains.
 - [ ] Do not expose raw review-log internals in regular UI; provide a developer/export view later.
 
 ## Navigation and commands

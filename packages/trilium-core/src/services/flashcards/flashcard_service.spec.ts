@@ -115,6 +115,70 @@ describe("flashcard service", () => {
         expect(firstCard.deckTitle).toBe("Deck A");
     });
 
+    it("returns due cards in stable order with limit and total count", () => {
+        const deck = createTextNote("Due queue deck");
+        const emptyDeck = createTextNote("Empty due queue deck");
+        const firstNote = createTextNote("Due queue first");
+        const secondNote = createTextNote("Due queue second");
+        const thirdNote = createTextNote("Due queue third");
+        const futureNote = createTextNote("Due queue future");
+        const firstCard = runInContext(() => flashcardService.createCard({
+            noteId: firstNote.noteId,
+            deckNoteId: deck.noteId
+        }));
+        const secondCard = runInContext(() => flashcardService.createCard({
+            noteId: secondNote.noteId,
+            deckNoteId: deck.noteId
+        }));
+        const thirdCard = runInContext(() => flashcardService.createCard({
+            noteId: thirdNote.noteId,
+            deckNoteId: deck.noteId
+        }));
+        const futureCard = runInContext(() => flashcardService.createCard({
+            noteId: futureNote.noteId,
+            deckNoteId: deck.noteId
+        }));
+
+        getSql().execute("UPDATE flashcards SET due = ? WHERE cardId = ?", [
+            "2020-01-03 00:00:00.000Z",
+            firstCard.cardId
+        ]);
+        getSql().execute("UPDATE flashcards SET due = ? WHERE cardId = ?", [
+            "2020-01-01 00:00:00.000Z",
+            secondCard.cardId
+        ]);
+        getSql().execute("UPDATE flashcards SET due = ? WHERE cardId = ?", [
+            "2020-01-02 00:00:00.000Z",
+            thirdCard.cardId
+        ]);
+        getSql().execute("UPDATE flashcards SET due = ? WHERE cardId = ?", [
+            "2999-01-01 00:00:00.000Z",
+            futureCard.cardId
+        ]);
+
+        const limited = runInContext(() => flashcardService.getDueCards({
+            deckNoteId: deck.noteId,
+            limit: 2
+        }));
+        expect(limited.totalDueCount).toBe(3);
+        expect(limited.cards.map((card) => card.cardId)).toEqual([
+            secondCard.cardId,
+            thirdCard.cardId
+        ]);
+        expect(limited.cards.every((card) => card.back === undefined)).toBe(true);
+
+        const empty = runInContext(() => flashcardService.getDueCards({
+            deckNoteId: emptyDeck.noteId
+        }));
+        expect(empty.totalDueCount).toBe(0);
+        expect(empty.cards).toEqual([]);
+
+        expect(() => runInContext(() => flashcardService.getDueCards({
+            deckNoteId: deck.noteId,
+            limit: 0
+        }))).toThrow("Invalid flashcard limit");
+    });
+
     it("does not expose protected note content while protected session is locked", () => {
         const note = createTextNote("Protected source", "Secret answer");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));

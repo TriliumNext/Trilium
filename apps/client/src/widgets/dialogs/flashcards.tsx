@@ -40,6 +40,7 @@ export default function FlashcardsDialog() {
     const [ decks, setDecks ] = useState<FlashcardDeckSummary[]>([]);
     const [ selectedDeckNoteId, setSelectedDeckNoteId ] = useState<string | null>(null);
     const [ stats, setStats ] = useState<FlashcardStatsResponse | null>(null);
+    const [ dueQueueTotal, setDueQueueTotal ] = useState(0);
     const [ answerShown, setAnswerShown ] = useState(false);
     const [ submitting, setSubmitting ] = useState(false);
     const [ reviewRequestId, setReviewRequestId ] = useState(() => randomString());
@@ -54,6 +55,7 @@ export default function FlashcardsDialog() {
         setCards([]);
         setCurrentCard(null);
         setStats(null);
+        setDueQueueTotal(0);
         setDecks([]);
         setSelectedDeckNoteId(deckNoteId ?? null);
         setAnswerShown(false);
@@ -69,6 +71,7 @@ export default function FlashcardsDialog() {
                 ]);
                 setCards([ card ]);
                 setCurrentCard(card);
+                setDueQueueTotal(1);
                 setStats(loadedStats);
                 setDecks(loadedDecks.decks);
                 return;
@@ -81,6 +84,7 @@ export default function FlashcardsDialog() {
             ]);
             setCards(due.cards);
             setCurrentCard(due.cards[0] ?? null);
+            setDueQueueTotal(due.totalDueCount);
             setStats(loadedStats);
             setDecks(loadedDecks.decks);
         } finally {
@@ -201,6 +205,7 @@ export default function FlashcardsDialog() {
         ]);
         setCards(due.cards);
         setCurrentCard(due.cards[0] ?? null);
+        setDueQueueTotal(due.totalDueCount);
         setStats(loadedStats);
         setDecks(loadedDecks.decks);
     }
@@ -230,7 +235,7 @@ export default function FlashcardsDialog() {
                 clientRequestId: reviewRequestId
             });
 
-            moveToNextCard(response);
+            await moveToNextCard(response);
         } catch (e) {
             if (e instanceof FlashcardConflictError) {
                 await handleReviewConflict(currentCard.cardId, e.message);
@@ -256,7 +261,7 @@ export default function FlashcardsDialog() {
                 expectedSchedulingRevision: currentCard.schedulingRevision
             });
 
-            applyLifecycleUpdate(response.card);
+            await applyLifecycleUpdate(response.card);
             setUndoableReview(null);
             toast.showMessage(suspended
                 ? t("flashcards.card_suspended")
@@ -289,7 +294,7 @@ export default function FlashcardsDialog() {
                 expectedSchedulingRevision: currentCard.schedulingRevision
             });
 
-            applyLifecycleUpdate(response.card);
+            await applyLifecycleUpdate(response.card);
             setUndoableReview(null);
             toast.showMessage(t("flashcards.card_reset"));
         } catch (e) {
@@ -315,9 +320,8 @@ export default function FlashcardsDialog() {
                 expectedSchedulingRevision: currentCard.schedulingRevision
             });
 
-            removeCurrentCard(response.card.cardId);
+            await removeCurrentCard(response.card.cardId, { refillIfEmpty: true });
             setUndoableReview(null);
-            void refreshProgress();
             toast.showMessage(t("flashcards.card_buried"));
         } catch (e) {
             if (e instanceof FlashcardConflictError) {
@@ -343,7 +347,7 @@ export default function FlashcardsDialog() {
                 expectedSchedulingRevision: currentCard.schedulingRevision
             });
 
-            applyLifecycleUpdate(response.card);
+            await applyLifecycleUpdate(response.card);
             setSelectedDeckNoteId(deckNoteId);
             setUndoableReview(null);
             toast.showMessage(t("flashcards.card_moved"));
@@ -368,7 +372,7 @@ export default function FlashcardsDialog() {
         try {
             const response = await flashcards.undoReview(undoableReview);
             setUndoableReview(null);
-            applyLifecycleUpdate(response.card);
+            await applyLifecycleUpdate(response.card);
             toast.showMessage(t("flashcards.review_undone"));
         } catch (e) {
             if (e instanceof FlashcardConflictError) {
@@ -401,21 +405,19 @@ export default function FlashcardsDialog() {
         toast.showMessage(t("flashcards.card_refreshed"));
     }
 
-    function moveToNextCard(response: FlashcardReviewResponse) {
+    async function moveToNextCard(response: FlashcardReviewResponse) {
         toast.showMessage(t("flashcards.review_saved"));
         setUndoableReview({
             reviewId: response.reviewId,
             cardId: response.card.cardId,
             expectedSchedulingRevision: response.card.schedulingRevision
         });
-        removeCurrentCard(response.card.cardId);
-        void refreshProgress();
+        await removeCurrentCard(response.card.cardId, { refillIfEmpty: true });
     }
 
-    function applyLifecycleUpdate(card: FlashcardReviewCard) {
+    async function applyLifecycleUpdate(card: FlashcardReviewCard) {
         if (card.suspended) {
-            removeCurrentCard(card.cardId);
-            void refreshProgress();
+            await removeCurrentCard(card.cardId, { refillIfEmpty: true });
             return;
         }
 
@@ -432,15 +434,27 @@ export default function FlashcardsDialog() {
         setCurrentCard(cardWithAnswer);
         setAnswerShown(false);
         setReviewRequestId(randomString());
-        void refreshProgress();
+        await refreshProgress();
     }
 
-    function removeCurrentCard(cardId: string) {
+    async function removeCurrentCard(
+        cardId: string,
+        { refillIfEmpty = false }: { refillIfEmpty?: boolean } = {}
+    ) {
         const nextCards = cards.filter((card) => card.cardId !== cardId);
+        const hasMoreQueuedCards = dueQueueTotal > cards.length;
         setCards(nextCards);
         setCurrentCard(nextCards[0] ?? null);
+        setDueQueueTotal(Math.max(0, dueQueueTotal - 1));
         setAnswerShown(false);
         setReviewRequestId(randomString());
+
+        if (nextCards.length === 0 && refillIfEmpty && hasMoreQueuedCards) {
+            await loadDueQueue(selectedDeckNoteId);
+            return;
+        }
+
+        await refreshProgress();
     }
 
     return (
@@ -479,7 +493,7 @@ export default function FlashcardsDialog() {
                             card={currentCard}
                             decks={decks}
                             activeIndex={activeIndex}
-                            total={cards.length}
+                            total={Math.max(cards.length, dueQueueTotal)}
                             answerShown={answerShown}
                             submitting={submitting}
                             onToggleSuspended={toggleSuspended}
