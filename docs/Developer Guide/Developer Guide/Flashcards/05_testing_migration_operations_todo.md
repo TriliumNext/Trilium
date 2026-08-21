@@ -39,7 +39,7 @@
 
 - [ ] Add component specs for authoring, reveal, rating controls, previews, conflict, protected state, and empty queue.
 - [ ] Add command/global-menu/mobile-menu specs.
-- [ ] Add API service specs for all endpoints, CSRF retry, timeout, `409`, `403`, and `404`.
+- [x] Add API service specs for flashcard endpoint wrappers and `409` conflict mapping. CSRF retry, timeout, `403`, and `404` remain covered by shared server-service behavior or future endpoint-specific tests.
 - [ ] Test sync refresh while review dialog is open.
 - [ ] Test accessibility roles, keyboard flow, focus, disabled mutation state, and live progress announcements.
 - [ ] Test responsive rendering at desktop/mobile widths and long translations.

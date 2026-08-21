@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787327054.8691597,
-    "ast_hash": "62ee4cbafa2cae93dd5d53e68a79e3fc",
+    "mtime": 1787327501.9141128,
+    "ast_hash": "43d6b8ecad3d6ffe544cd20a833ccf27",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -24992,6 +24992,11 @@
   "context.md": {
     "mtime": 1787326293.2013743,
     "ast_hash": "25fff5bf844310f7e48e298cd0e758f2",
+    "semantic_hash": ""
+  },
+  "apps/client/src/services/flashcards.spec.ts": {
+    "mtime": 1787327487.850725,
+    "ast_hash": "647337c8e1242a7ff0b599e55234921d",
     "semantic_hash": ""
   }
 }
