@@ -570,6 +570,8 @@ function ReviewStats({ stats }: { stats: FlashcardStatsResponse }) {
             <span>{t("flashcards.review_count", { count: stats.reviewCount })}</span>
             <span>{t("flashcards.reviewed_today", { count: stats.reviewedTodayCount })}</span>
             <span>{t("flashcards.retention", { value: formatRetention(stats.retentionRate) })}</span>
+            <span>{t("flashcards.lapses", { count: stats.lapseCount })}</span>
+            <span>{t("flashcards.due_forecast", { value: formatDueForecast(stats.dueForecast) })}</span>
             <span>{t("flashcards.rating_counts", {
                 again: stats.ratingCounts[1],
                 hard: stats.ratingCounts[2],
@@ -778,6 +780,10 @@ function UndoButton({ disabled, onUndo }: {
             onClick={() => void onUndo()}
         />
     );
+}
+
+function formatDueForecast(dueForecast: FlashcardStatsResponse["dueForecast"]) {
+    return dueForecast.map(({ date, count }) => `${date.slice(5)}:${count}`).join(" ");
 }
 
 function formatRetention(retentionRate: number | null) {

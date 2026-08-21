@@ -225,6 +225,8 @@ describe("Flashcards API (core)", () => {
         expect(statsRes.body.ratingCounts[2]).toBeGreaterThanOrEqual(0);
         expect(statsRes.body.ratingCounts[3]).toBeGreaterThanOrEqual(0);
         expect(statsRes.body.ratingCounts[4]).toBeGreaterThanOrEqual(0);
+        expect(statsRes.body.lapseCount).toBeGreaterThanOrEqual(0);
+        expect(statsRes.body.dueForecast).toHaveLength(7);
 
         const removeRes = await api.delete<{ removedCount: number }>(
             `/api/flashcards/notes/${note.noteId}/cards`

@@ -124,6 +124,11 @@ export interface FlashcardDecksResponse {
     decks: FlashcardDeckSummary[];
 }
 
+export interface FlashcardDueForecastDay {
+    date: string;
+    count: number;
+}
+
 export interface FlashcardStatsResponse {
     dueCount: number;
     newCount: number;
@@ -132,6 +137,8 @@ export interface FlashcardStatsResponse {
     suspendedCount: number;
     reviewedTodayCount: number;
     retentionRate: number | null;
+    lapseCount: number;
+    dueForecast: FlashcardDueForecastDay[];
     ratingCounts: Record<FlashcardRating, number>;
 }
 

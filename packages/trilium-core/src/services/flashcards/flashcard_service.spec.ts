@@ -153,6 +153,8 @@ describe("flashcard service", () => {
         expect(statsAfter.reviewedTodayCount).toBe(statsBefore.reviewedTodayCount + 1);
         expect(statsAfter.ratingCounts[3]).toBe(statsBefore.ratingCounts[3] + 1);
         expect(statsAfter.retentionRate).not.toBeNull();
+        expect(statsAfter.lapseCount).toBeGreaterThanOrEqual(0);
+        expect(statsAfter.dueForecast).toHaveLength(7);
 
         const reviewCount = getSql().getValue<number>(/*sql*/`
             SELECT COUNT(1) FROM flashcard_reviews

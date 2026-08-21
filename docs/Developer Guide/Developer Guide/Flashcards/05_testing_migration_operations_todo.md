@@ -13,7 +13,7 @@
 ## Core/server tests
 
 - [x] Add core service specs beside flashcard service modules.
-- [ ] Add migration spec under `packages/trilium-core/src/migrations/`.
+- [x] Add migration spec under `packages/trilium-core/src/migrations/`.
 - [x] Add API specs under `packages/trilium-core/src/routes/api/flashcards.spec.ts`.
 - [ ] Test creation, editing, deck move, suspend, reset, delete, and orphan repair. Suspend/reset/skip-today covered in service/API specs.
 - [x] Test review transaction updates card and inserts exactly one log.
@@ -47,7 +47,7 @@
 
 ## Fixtures and migration safety
 
-- [ ] Add a small fixture with existing notes and no flashcard tables; assert no cards are created automatically.
+- [x] Add a small fixture with existing notes and no flashcard tables; assert no cards are created automatically.
 - [ ] Add fixture with opted-in cards and reviews; assert migration preserves IDs/state.
 - [ ] Add fixture with cloned/multi-parent source note; assert chosen identity semantics.
 - [ ] Add invalid/orphan fixture; assert startup repair reports and safely repairs/quarantines rows.

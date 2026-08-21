@@ -387,7 +387,8 @@ function undoReview(request: FlashcardUndoRequest): FlashcardActionResponse {
 
 function getStats(): FlashcardStatsResponse {
     const now = dateUtils.utcNowDateTime();
-    const todayStart = `${dateUtils.utcDateStr(new Date())} 00:00:00.000Z`;
+    const today = new Date();
+    const todayStart = `${dateUtils.utcDateStr(today)} 00:00:00.000Z`;
     const sql = getSql();
     const ratingCounts = getRatingCounts();
     const totalReviews = ratingCounts[1] + ratingCounts[2] + ratingCounts[3] + ratingCounts[4];
@@ -412,8 +413,47 @@ function getStats(): FlashcardStatsResponse {
             SELECT COUNT(1) FROM flashcard_reviews
             WHERE reviewedAt >= ?`, [todayStart]) ?? 0,
         retentionRate: totalReviews === 0 ? null : (totalReviews - ratingCounts[1]) / totalReviews,
+        lapseCount: sql.getValue<number>(/*sql*/`
+            SELECT COALESCE(SUM(lapses), 0) FROM flashcards
+            WHERE isDeleted = 0`) ?? 0,
+        dueForecast: getDueForecast(today),
         ratingCounts
     };
+}
+
+function getDueForecast(startDate: Date) {
+    const dates = Array.from({ length: 7 }, (_item, index) => {
+        const date = new Date(startDate);
+        date.setUTCDate(date.getUTCDate() + index);
+        return dateUtils.utcDateStr(date);
+    });
+    const rows = getSql().getRows<{ date: string; count: number }>(/*sql*/`
+        SELECT substr(due, 1, 10) AS date, COUNT(1) AS count
+        FROM flashcards
+        WHERE isDeleted = 0
+          AND suspended = 0
+          AND due >= ?
+          AND due < ?
+        GROUP BY substr(due, 1, 10)`, [
+        `${dates[0]} 00:00:00.000Z`,
+        `${dateAfter(daysFromDate(startDate, 7))} 00:00:00.000Z`
+    ]);
+    const counts = new Map(rows.map((row) => [row.date, row.count]));
+
+    return dates.map((date) => ({
+        date,
+        count: counts.get(date) ?? 0
+    }));
+}
+
+function dateAfter(date: Date) {
+    return dateUtils.utcDateStr(date);
+}
+
+function daysFromDate(date: Date, days: number) {
+    const result = new Date(date);
+    result.setUTCDate(result.getUTCDate() + days);
+    return result;
 }
 
 function getRatingCounts(): Record<FlashcardRating, number> {
