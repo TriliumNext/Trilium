@@ -1142,6 +1142,8 @@
     "retention": "Retention: {{value}}",
     "lapses_one": "{{count}} lapse",
     "lapses_other": "{{count}} lapses",
+    "leeches_one": "{{count}} leech",
+    "leeches_other": "{{count}} leeches",
     "due_forecast": "Due next 7 days: {{value}}",
     "no_reviews": "no reviews",
     "rating_counts": "Ratings: {{again}}/{{hard}}/{{good}}/{{easy}}",
@@ -1182,7 +1184,8 @@
     "review_undone": "Review undone",
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
-    "review_saved": "Review saved"
+    "review_saved": "Review saved",
+    "leech_suspended": "Review saved. This leech card was suspended."
   },
   "zen_mode": {
     "button_exit": "Exit Zen Mode"

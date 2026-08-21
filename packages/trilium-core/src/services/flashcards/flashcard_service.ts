@@ -47,6 +47,8 @@ const DEFAULT_DUE_LIMIT = 20;
 const MAX_DUE_LIMIT = 100;
 const BURY_DURATION_MS = 24 * 60 * 60 * 1000;
 const FLASHCARD_LABEL = "flashcard";
+const FLASHCARD_LEECH_LABEL = "flashcardLeech";
+const FLASHCARD_LEECH_THRESHOLD = 8;
 const FLASHCARD_SCHEDULER_CONFIG_OPTION = "flashcardSchedulerConfig";
 
 function createCard(request: FlashcardCreateRequest) {
@@ -231,6 +233,7 @@ function resetCard(cardId: string, request: FlashcardResetRequest = {}): Flashca
         suspended: false,
         schedulingRevision: (card.schedulingRevision ?? 0) + 1
     }).save();
+    removeLeechLabel(card.noteId);
 
     return {
         card: buildReviewCard(updated.getPojo() as FlashcardRow, { includeBack: false })
@@ -297,6 +300,11 @@ function removeCardsForNote(noteId: string): FlashcardRemoveResponse {
         flashcardLabel.markAsDeleted(deleteId);
     }
 
+    const leechLabel = note.getOwnedLabel(FLASHCARD_LEECH_LABEL);
+    if (leechLabel) {
+        leechLabel.markAsDeleted(deleteId);
+    }
+
     return { removedCount: rows.length };
 }
 
@@ -328,6 +336,10 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
 
     assertExpectedRevision(card, request.expectedSchedulingRevision);
 
+    if (card.suspended) {
+        throw new ConflictError(`Flashcard '${cardId}' is suspended and cannot be reviewed.`);
+    }
+
     const note = becca.getNoteOrThrow(card.noteId);
     if (!note.isContentAvailable()) {
         throw new ForbiddenError(
@@ -345,10 +357,16 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
     let savedReviewId = "";
 
     getSql().transactional(() => {
+        const leech = isLeech(scheduled.card);
         const updatedCard = new BFlashcard({
             ...card,
-            ...scheduled.card
+            ...scheduled.card,
+            suspended: scheduled.card.suspended || leech
         }).save();
+
+        if (leech) {
+            addLeechLabel(card.noteId);
+        }
 
         const review = new BFlashcardReview({
             cardId,
@@ -407,6 +425,7 @@ function undoReview(request: FlashcardUndoRequest): FlashcardActionResponse {
         throw new ConflictError("Only the latest flashcard review can be undone.");
     }
 
+    const leechBeforeReview = review.lapsesBefore >= FLASHCARD_LEECH_THRESHOLD;
     const updated = new BFlashcard({
         ...card,
         state: review.state,
@@ -419,8 +438,13 @@ function undoReview(request: FlashcardUndoRequest): FlashcardActionResponse {
         reps: review.repsBefore,
         lapses: review.lapsesBefore,
         lastReview: review.lastReviewBefore ?? null,
+        suspended: leechBeforeReview ? card.suspended : false,
         schedulingRevision: (card.schedulingRevision ?? 0) + 1
     }).save();
+
+    if (!leechBeforeReview) {
+        removeLeechLabel(card.noteId);
+    }
 
     return {
         card: buildReviewCard(updated.getPojo() as FlashcardRow, { includeBack: false })
@@ -451,6 +475,9 @@ function getStats(): FlashcardStatsResponse {
         suspendedCount: sql.getValue<number>(/*sql*/`
             SELECT COUNT(1) FROM flashcards
             WHERE isDeleted = 0 AND suspended = 1`) ?? 0,
+        leechCount: sql.getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards
+            WHERE isDeleted = 0 AND lapses >= ?`, [FLASHCARD_LEECH_THRESHOLD]) ?? 0,
         reviewedTodayCount: sql.getValue<number>(/*sql*/`
             SELECT COUNT(1) FROM flashcard_reviews
             WHERE reviewedAt >= ?`, [todayStart]) ?? 0,
@@ -576,9 +603,38 @@ function buildCardSummary(card: FlashcardRow): FlashcardCardSummary {
         state: card.state,
         due: card.due,
         suspended: !!card.suspended,
+        leech: isLeech(card),
         schedulingRevision: card.schedulingRevision ?? 0,
         retrievability: getFlashcardRetrievability(card)
     };
+}
+
+function isLeech(card: Pick<FlashcardRow, "lapses">) {
+    return card.lapses >= FLASHCARD_LEECH_THRESHOLD;
+}
+
+function addLeechLabel(noteId: string) {
+    const note = becca.getNoteOrThrow(noteId);
+
+    if (note.hasOwnedLabel(FLASHCARD_LEECH_LABEL)) {
+        return;
+    }
+
+    new BAttribute({
+        noteId,
+        type: "label",
+        name: FLASHCARD_LEECH_LABEL,
+        value: FLASHCARD_LEECH_THRESHOLD.toString(),
+        isInheritable: false
+    }).save();
+}
+
+function removeLeechLabel(noteId: string, deleteId = randomString(10)) {
+    const leechLabel = becca.getNoteOrThrow(noteId).getOwnedLabel(FLASHCARD_LEECH_LABEL);
+
+    if (leechLabel) {
+        leechLabel.markAsDeleted(deleteId);
+    }
 }
 
 function getCurrentSchedulerConfig() {

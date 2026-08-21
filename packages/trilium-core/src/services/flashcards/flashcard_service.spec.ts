@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import becca from "../../becca/becca.js";
+import BAttribute from "../../becca/entities/battribute.js";
 import BFlashcard from "../../becca/entities/bflashcard.js";
 import BFlashcardReview from "../../becca/entities/bflashcard_review.js";
 import { init as clsInit } from "../context.js";
@@ -384,6 +385,38 @@ describe("flashcard service", () => {
         expect(countAfterStaleReview).toBe(1);
     });
 
+    it("suspends leech cards after repeated lapses", () => {
+        const note = createTextNote("Leech source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        getSql().execute(/*sql*/`
+            UPDATE flashcards
+            SET state = 2, due = '2020-01-01 00:00:00.000Z', stability = 5,
+                difficulty = 5, lastReview = '2019-12-31 00:00:00.000Z', reps = 7,
+                scheduledDays = 3, lapses = 7
+            WHERE cardId = ?`, [card.cardId]);
+
+        const reviewed = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 1,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-leech`
+        }));
+        const stats = runInContext(() => flashcardService.getStats());
+
+        expect(reviewed.card.leech).toBe(true);
+        expect(reviewed.card.suspended).toBe(true);
+        expect(note.hasLabel("flashcardLeech")).toBe(true);
+        expect(stats.leechCount).toBeGreaterThanOrEqual(1);
+
+        const undone = runInContext(() => flashcardService.undoReview({
+            reviewId: reviewed.reviewId,
+            expectedSchedulingRevision: reviewed.card.schedulingRevision
+        }));
+        expect(undone.card.leech).toBe(false);
+        expect(undone.card.suspended).toBe(false);
+        expect(note.hasLabel("flashcardLeech")).toBe(false);
+    });
+
     it("undoes the latest review and restores the previous schedule", () => {
         const note = createTextNote("Undo review source");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
@@ -562,11 +595,19 @@ describe("flashcard service", () => {
     it("removes a note's flashcards and marker label", () => {
         const note = createTextNote("Remove source");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        runInContext(() => new BAttribute({
+            noteId: note.noteId,
+            type: "label",
+            name: "flashcardLeech",
+            value: "8",
+            isInheritable: false
+        }).save());
 
         const response = runInContext(() => flashcardService.removeCardsForNote(note.noteId));
 
         expect(response.removedCount).toBe(1);
         expect(note.hasLabel("flashcard")).toBe(false);
+        expect(note.hasLabel("flashcardLeech")).toBe(false);
         const isCardStillDue = flashcardService.getDueCards().cards
             .some((dueCard) => dueCard.cardId === card.cardId);
         expect(isCardStillDue).toBe(false);

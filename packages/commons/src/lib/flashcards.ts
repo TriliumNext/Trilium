@@ -50,6 +50,7 @@ export interface FlashcardCardSummary {
     state: FlashcardState;
     due: string;
     suspended: boolean;
+    leech: boolean;
     schedulingRevision: number;
     retrievability: number;
 }
@@ -156,6 +157,7 @@ export interface FlashcardStatsResponse {
     learningCount: number;
     reviewCount: number;
     suspendedCount: number;
+    leechCount: number;
     reviewedTodayCount: number;
     retentionRate: number | null;
     lapseCount: number;

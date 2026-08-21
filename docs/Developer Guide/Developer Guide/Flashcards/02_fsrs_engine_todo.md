@@ -44,7 +44,7 @@
 - [ ] Define maximum response size and pagination for large decks.
 - [ ] Define suspended cards and cards whose source note is unavailable.
 - [ ] Define overdue behavior and whether API returns exact overdue days.
-- [ ] Define leech detection threshold and action. Defer automatic suspension unless product decision is clear.
+- [x] Define leech detection threshold and action: cards with 8+ lapses are marked `#flashcardLeech` and auto-suspended after review.
 - [ ] Keep scheduling policy separate from FSRS math so future algorithms can coexist.
 
 ## Optional optimization phase

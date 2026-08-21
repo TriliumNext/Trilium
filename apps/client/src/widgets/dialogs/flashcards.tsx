@@ -406,7 +406,9 @@ export default function FlashcardsDialog() {
     }
 
     async function moveToNextCard(response: FlashcardReviewResponse) {
-        toast.showMessage(t("flashcards.review_saved"));
+        toast.showMessage(response.card.leech
+            ? t("flashcards.leech_suspended")
+            : t("flashcards.review_saved"));
         setUndoableReview({
             reviewId: response.reviewId,
             cardId: response.card.cardId,
@@ -618,6 +620,7 @@ function ReviewStats({ stats }: { stats: FlashcardStatsResponse }) {
             <span>{t("flashcards.reviewed_today", { count: stats.reviewedTodayCount })}</span>
             <span>{t("flashcards.retention", { value: formatRetention(stats.retentionRate) })}</span>
             <span>{t("flashcards.lapses", { count: stats.lapseCount })}</span>
+            <span>{t("flashcards.leeches", { count: stats.leechCount })}</span>
             <span>{t("flashcards.due_forecast", { value: formatDueForecast(stats.dueForecast) })}</span>
             <span>{t("flashcards.rating_counts", {
                 again: stats.ratingCounts[1],
