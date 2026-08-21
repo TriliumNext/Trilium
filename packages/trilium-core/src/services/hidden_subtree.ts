@@ -316,6 +316,7 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                     { id: "_optionsDatabase", title: t("hidden-subtree.database-title"), type: "contentWidget", icon: "bx-hdd" },
                     { id: "_optionsSync", title: t("hidden-subtree.sync-title"), type: "contentWidget", icon: "bx-wifi" },
                     { id: "_optionsLlm", title: t("hidden-subtree.llm-title"), type: "contentWidget", icon: "bx-bot" },
+                    { id: "_optionsFlashcards", title: t("hidden-subtree.flashcards-title"), type: "contentWidget", icon: "bx-brain" },
                     { id: "_optionsAi", title: "AI Chat", type: "contentWidget", enforceDeleted: true },
                     { id: "_optionsOther", title: t("hidden-subtree.other"), type: "contentWidget", icon: "bx-dots-horizontal" },
                     { id: "_optionsLocalization", title: t("hidden-subtree.localization"), type: "contentWidget", icon: "bx-world" },

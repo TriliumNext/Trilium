@@ -50,6 +50,7 @@
 - [x] Subscribe to entity/review events or refetch on `entitiesReloadedEvent` as appropriate.
 - [x] Handle sync changes while review is open; stale card revision must surface as conflict.
 - [ ] Support standalone request bridge and mobile iOS interceptor path without adding Node/browser-only APIs.
+- [x] Add flashcard settings page for account-wide FSRS scheduling options.
 - [ ] Do not use `localStorage` for deck settings, scheduling state, or review progress.
 
 ## Internationalization and accessibility
