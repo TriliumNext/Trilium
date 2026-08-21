@@ -7,17 +7,17 @@
 - [ ] Do not copy Anki's AGPL scheduler implementation. Use the maintained TypeScript FSRS package or implement an independent, documented adapter.
 - [ ] Confirm package does not import Node-only modules at runtime; run standalone build and tests.
 - [x] Wrap library API in `packages/trilium-core/src/services/flashcards/fsrs_scheduler.ts`; no route, widget, or entity should call `ts-fsrs` directly.
-- [ ] Store algorithm name/version and serialized parameter set with user configuration/card output. Never assume future library defaults equal historical defaults.
+- [x] Store algorithm name/version and serialized parameter set with user configuration/card output. Never assume future library defaults equal historical defaults.
 
 ## Adapter contract
 
 - [x] Define pure types for `FlashcardState`, `ReviewRating`, `ReviewPreview`, `ReviewResult`, and `FSRSConfig` in commons or core as appropriate.
-- [ ] Convert persisted UTC timestamps to `Date` only at adapter boundary and convert results back to canonical UTC values.
-- [ ] Validate persisted state before scheduling: finite stability/difficulty, valid enum, non-negative counters, valid due/last-review, bounded parameter values.
-- [ ] Normalize rating input to `Again=1`, `Hard=2`, `Good=3`, `Easy=4`; reject `Manual` and out-of-range values from review endpoints.
-- [ ] Implement `preview(card, now)` using `repeat()` and return all four outcomes with interval, due time, state, and human-readable label data.
-- [ ] Implement `applyRating(card, now, rating)` using `next()` and return new card plus exact review log.
-- [ ] Implement retrievability display through `get_retrievability()` without changing stored state.
+- [x] Convert persisted UTC timestamps to `Date` only at adapter boundary and convert results back to canonical UTC values.
+- [x] Validate persisted state before scheduling: finite stability/difficulty, valid enum, non-negative counters, valid due/last-review, bounded parameter values.
+- [x] Normalize rating input to `Again=1`, `Hard=2`, `Good=3`, `Easy=4`; reject `Manual` and out-of-range values from review endpoints.
+- [x] Implement `preview(card, now)` using `repeat()` and return all four outcomes with interval, due time, state, and human-readable label data.
+- [x] Implement `applyRating(card, now, rating)` using `next()` and return new card plus exact review log.
+- [x] Implement retrievability display through `get_retrievability()` without changing stored state.
 - [ ] Implement `undo` through a transaction that restores prior card state and marks/removes the associated review according to the chosen audit policy.
 - [ ] Implement reset/forget with explicit user confirmation and preserve audit history unless policy says otherwise.
 - [ ] Add deterministic test clock and disable fuzz in algorithm unit tests; separately test fuzz-enabled production configuration.
@@ -30,8 +30,8 @@
   - [ ] fuzz enabled
   - [ ] short-term scheduling enabled
   - [ ] explicit learning/relearning step defaults
-- [ ] Define validation ranges and error messages for retention, max interval, steps, and parameters.
-- [ ] Persist serialized parameters in a synced option or dedicated settings entity; include a schema/version field.
+- [x] Define validation ranges and error messages for retention, max interval, steps, and parameters.
+- [ ] Persist user-editable serialized parameters in a synced option or dedicated settings entity; include a schema/version field.
 - [ ] Expose algorithm settings through server validation, not arbitrary client JSON.
 - [ ] Decide whether per-deck overrides are supported. MVP recommendation: one account-wide configuration, with deck overrides deferred.
 - [ ] Add “ignore reviews before” only when migration/import needs it.
@@ -39,7 +39,7 @@
 ## Scheduling policy outside FSRS
 
 - [ ] Define local-day calculation and rollover hour using existing Trilium locale/time utilities; do not use browser-only local state as authority.
-- [ ] Define queue ordering: overdue reviews, due reviews, learning/relearning short-term cards, then new cards, with deterministic tie-breaker.
+- [x] Define queue ordering: review cards, learning/relearning short-term cards, then new cards, each with due/card ID tie-breakers.
 - [ ] Define daily limits and counters. Prevent duplicate cards in one session.
 - [ ] Define maximum response size and pagination for large decks.
 - [ ] Define suspended cards and cards whose source note is unavailable.
@@ -62,7 +62,7 @@
 - [ ] Build golden vectors from `ts-fsrs` for new, learning, review, relearning, lapse, overdue, and each rating.
 - [ ] Test exact dates around midnight, DST changes, leap days, and short-term minute/hour steps.
 - [ ] Test old persisted algorithm versions through explicit migration/adapters.
-- [ ] Test malformed persisted state and corrupted parameter JSON.
+- [x] Test malformed persisted state and corrupted parameter JSON.
 - [ ] Test no-op preview does not write DB rows or entity changes.
 - [ ] Test applying same `clientRequestId` twice returns same result without a second review.
 - [ ] Test stale revision returns conflict and leaves card unchanged.

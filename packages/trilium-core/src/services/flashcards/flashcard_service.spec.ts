@@ -139,7 +139,11 @@ describe("flashcard service", () => {
             deckNoteId: deck.noteId
         }));
 
-        getSql().execute("UPDATE flashcards SET due = ? WHERE cardId = ?", [
+        getSql().execute(/*sql*/`
+            UPDATE flashcards
+            SET due = ?, state = 2, stability = 5, difficulty = 5,
+                lastReview = '2019-12-31 00:00:00.000Z', reps = 1, scheduledDays = 3
+            WHERE cardId = ?`, [
             "2020-01-03 00:00:00.000Z",
             firstCard.cardId
         ]);
@@ -162,8 +166,8 @@ describe("flashcard service", () => {
         }));
         expect(limited.totalDueCount).toBe(3);
         expect(limited.cards.map((card) => card.cardId)).toEqual([
-            secondCard.cardId,
-            thirdCard.cardId
+            firstCard.cardId,
+            secondCard.cardId
         ]);
         expect(limited.cards.every((card) => card.back === undefined)).toBe(true);
 
@@ -224,6 +228,12 @@ describe("flashcard service", () => {
             SELECT COUNT(1) FROM flashcard_reviews
             WHERE cardId = ?`, [card.cardId]);
         expect(reviewCount).toBe(1);
+        expect(getSql().getValue<string>(/*sql*/`
+            SELECT schedulerConfig FROM flashcard_reviews
+            WHERE cardId = ?`, [card.cardId])).toContain("requestRetention");
+        expect(getSql().getValue<string>(/*sql*/`
+            SELECT schedulerConfig FROM flashcards
+            WHERE cardId = ?`, [card.cardId])).toContain("requestRetention");
 
         expect(() => runInContext(() => flashcardService.reviewCard(card.cardId, {
             rating: 3,

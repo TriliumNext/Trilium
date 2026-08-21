@@ -32,6 +32,7 @@ import { randomString } from "../utils/index.js";
 import {
     createEmptyFlashcardSchedule,
     DEFAULT_FLASHCARD_SCHEDULER_CONFIG,
+    getFlashcardRetrievability,
     previewFlashcard,
     scheduleFlashcard
 } from "./fsrs_scheduler.js";
@@ -137,7 +138,14 @@ function getDueCards({
           AND suspended = 0
           AND due <= ?
           ${deckCondition}
-        ORDER BY due, state, cardId
+        ORDER BY
+            CASE
+                WHEN state = 2 THEN 0
+                WHEN state IN (1, 3) THEN 1
+                ELSE 2
+            END,
+            due,
+            cardId
         LIMIT ?`, [ ...filterParams, limit ]);
 
     return {
@@ -340,6 +348,7 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
             durationMs: normalizeDuration(request.durationMs),
             algorithm: updatedCard.algorithm,
             algorithmVersion: updatedCard.algorithmVersion,
+            schedulerConfig: scheduled.log.schedulerConfig,
             clientRequestId: request.clientRequestId || null
         }).save();
 
@@ -540,7 +549,8 @@ function buildCardSummary(card: FlashcardRow): FlashcardCardSummary {
         state: card.state,
         due: card.due,
         suspended: !!card.suspended,
-        schedulingRevision: card.schedulingRevision ?? 0
+        schedulingRevision: card.schedulingRevision ?? 0,
+        retrievability: getFlashcardRetrievability(card)
     };
 }
 

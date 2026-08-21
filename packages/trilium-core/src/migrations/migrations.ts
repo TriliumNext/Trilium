@@ -9,6 +9,17 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Store the exact FSRS scheduler config used for cards and review logs.
+    {
+        version: 243,
+        sql: /*sql*/`
+            ALTER TABLE flashcards
+                ADD COLUMN schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"weights":null}';
+            ALTER TABLE flashcard_reviews
+                ADD COLUMN schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"weights":null}';
+        `,
+        ignoreErrors: true
+    },
     // Add previous-card snapshot fields for flashcard review undo.
     {
         version: 242,

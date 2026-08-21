@@ -11,9 +11,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 /**
  * Flashcards were added as plain SQL migrations in migrations.ts because the schema is additive.
  * These specs execute the exact shipped SQL against the preloaded document fixture so table shape,
- * indexes, and undo snapshot columns cannot drift from service expectations.
+ * indexes, undo snapshot columns, and scheduler config snapshots cannot drift from service expectations.
  */
-describe("Migration 0241/0242: flashcards", () => {
+describe("Migration 0241/0242/0243: flashcards", () => {
     let sql: ReturnType<typeof getSql>;
 
     beforeEach(() => {
@@ -67,6 +67,15 @@ describe("Migration 0241/0242: flashcards", () => {
             "schedulingRevisionBefore",
             "schedulingRevisionAfter"
         ]));
+    });
+
+    it("adds scheduler config snapshots to cards and reviews", () => {
+        runSqlMigration(241);
+        runSqlMigration(242);
+        runSqlMigration(243);
+
+        expect(columnNames("flashcards")).toContain("schedulerConfig");
+        expect(columnNames("flashcard_reviews")).toContain("schedulerConfig");
     });
 
     function runSqlMigration(version: number) {

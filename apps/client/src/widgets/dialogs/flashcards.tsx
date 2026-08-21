@@ -661,6 +661,9 @@ function ReviewCard({
                 })}</span>
                 <span>{t("flashcards.deck", { title: card.deckTitle })}</span>
                 <span>{t("flashcards.due", { date: formatDateTime(card.due) })}</span>
+                <span>{t("flashcards.retrievability", {
+                    value: formatRetrievability(card.retrievability)
+                })}</span>
             </div>
             <CardLifecycleActions
                 card={card}
@@ -839,6 +842,10 @@ function formatRetention(retentionRate: number | null) {
     }
 
     return `${Math.round(retentionRate * 100)}%`;
+}
+
+function formatRetrievability(retrievability: number) {
+    return `${Math.round(retrievability * 100)}%`;
 }
 
 function formatInterval(preview: FlashcardReviewPreview) {

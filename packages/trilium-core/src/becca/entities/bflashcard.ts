@@ -3,6 +3,16 @@ import type { FlashcardRow, FlashcardState } from "@triliumnext/commons";
 import dateUtils from "../../services/utils/date";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 
+const DEFAULT_SCHEDULER_CONFIG_JSON = JSON.stringify({
+    requestRetention: 0.9,
+    maximumInterval: 36500,
+    enableFuzz: true,
+    enableShortTerm: true,
+    learningSteps: ["1m", "10m"],
+    relearningSteps: ["10m"],
+    weights: null
+});
+
 class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
     static get entityName() {
         return "flashcards";
@@ -31,6 +41,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
             "suspended",
             "algorithm",
             "algorithmVersion",
+            "schedulerConfig",
             "schedulingRevision",
             "utcDateCreated",
             "utcDateModified",
@@ -55,6 +66,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
     suspended!: boolean;
     algorithm!: string;
     algorithmVersion!: string;
+    schedulerConfig!: string;
     schedulingRevision!: number;
     private _isDeleted?: boolean;
     deleteId?: string | null;
@@ -88,6 +100,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
         this.suspended = !!row.suspended;
         this.algorithm = row.algorithm ?? "fsrs-6";
         this.algorithmVersion = row.algorithmVersion ?? "ts-fsrs@5.4.1";
+        this.schedulerConfig = row.schedulerConfig ?? DEFAULT_SCHEDULER_CONFIG_JSON;
         this.schedulingRevision = row.schedulingRevision ?? 0;
         this.utcDateCreated = row.utcDateCreated || dateUtils.utcNowDateTime();
         this.utcDateModified = row.utcDateModified || this.utcDateCreated;
@@ -117,7 +130,8 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
         utcDateCreated,
         utcDateModified,
         isDeleted,
-        deleteId
+        deleteId,
+        schedulerConfig
     ]: any) {
         this.updateFromRow({
             cardId,
@@ -137,6 +151,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
             suspended,
             algorithm,
             algorithmVersion,
+            schedulerConfig,
             schedulingRevision,
             utcDateCreated,
             utcDateModified,
@@ -169,6 +184,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
         this.suspended = !!this.suspended;
         this.algorithm = this.algorithm || "fsrs-6";
         this.algorithmVersion = this.algorithmVersion || "ts-fsrs@5.4.1";
+        this.schedulerConfig = this.schedulerConfig || DEFAULT_SCHEDULER_CONFIG_JSON;
         this.schedulingRevision = this.schedulingRevision ?? 0;
         this._isDeleted = !!this._isDeleted;
 
@@ -198,6 +214,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
             suspended: this.suspended,
             algorithm: this.algorithm,
             algorithmVersion: this.algorithmVersion,
+            schedulerConfig: this.schedulerConfig,
             schedulingRevision: this.schedulingRevision,
             utcDateCreated: this.utcDateCreated,
             utcDateModified: this.utcDateModified,

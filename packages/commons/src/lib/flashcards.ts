@@ -22,6 +22,7 @@ export interface FlashcardRow {
     suspended?: boolean;
     algorithm?: string;
     algorithmVersion?: string;
+    schedulerConfig?: string;
     schedulingRevision?: number;
     utcDateCreated?: string;
     utcDateModified?: string;
@@ -50,6 +51,7 @@ export interface FlashcardCardSummary {
     due: string;
     suspended: boolean;
     schedulingRevision: number;
+    retrievability: number;
 }
 
 export interface FlashcardReviewCard extends FlashcardCardSummary {
@@ -173,6 +175,7 @@ export interface FlashcardReviewRow {
     durationMs?: number | null;
     algorithm: string;
     algorithmVersion: string;
+    schedulerConfig?: string;
     clientRequestId?: string | null;
     utcDateCreated?: string;
     utcDateModified?: string;

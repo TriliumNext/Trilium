@@ -1109,6 +1109,7 @@
     "deck": "Deck: {{title}}",
     "move_to_deck": "Move to deck",
     "due": "Due: {{date}}",
+    "retrievability": "Recall: {{value}}",
     "due_count_one": "{{count}} due",
     "due_count_other": "{{count}} due",
     "new_count_one": "{{count}} new",

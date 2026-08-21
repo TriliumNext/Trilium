@@ -1,6 +1,15 @@
 import type { FlashcardRating, FlashcardRow, FlashcardState } from "@triliumnext/commons";
-import { fsrs, Rating, type Card, type FSRSParameters, type Grade, type RecordLogItem, type StepUnit } from "ts-fsrs";
+import {
+    fsrs,
+    Rating,
+    type Card,
+    type FSRSParameters,
+    type Grade,
+    type RecordLogItem,
+    type StepUnit
+} from "ts-fsrs";
 
+import { ValidationError } from "../../errors.js";
 import dateUtils from "../utils/date";
 
 export const FSRS_ALGORITHM = "fsrs-6";
@@ -23,8 +32,18 @@ export interface FlashcardReviewPreview {
     state: FlashcardState;
 }
 
+type FlashcardScheduleCard = Omit<FlashcardRow,
+    | "cardId"
+    | "noteId"
+    | "deckNoteId"
+    | "ordinal"
+    | "utcDateCreated"
+    | "utcDateModified"
+    | "isDeleted"
+    | "deleteId">;
+
 export interface FlashcardScheduleResult {
-    card: Omit<FlashcardRow, "cardId" | "noteId" | "deckNoteId" | "ordinal" | "utcDateCreated" | "utcDateModified" | "isDeleted" | "deleteId">;
+    card: FlashcardScheduleCard;
     log: {
         rating: FlashcardRating;
         state: FlashcardState;
@@ -46,6 +65,7 @@ export interface FlashcardScheduleResult {
         schedulingRevisionBefore: number;
         schedulingRevisionAfter: number;
         reviewedAt: string;
+        schedulerConfig: string;
     };
 }
 
@@ -57,6 +77,10 @@ export const DEFAULT_FLASHCARD_SCHEDULER_CONFIG: FlashcardSchedulerConfig = {
     learningSteps: ["1m", "10m"],
     relearningSteps: ["10m"]
 };
+
+export const DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON = serializeFlashcardSchedulerConfig(
+    DEFAULT_FLASHCARD_SCHEDULER_CONFIG
+);
 
 export function createEmptyFlashcardSchedule(now = new Date()) {
     return {
@@ -73,12 +97,21 @@ export function createEmptyFlashcardSchedule(now = new Date()) {
         suspended: false,
         algorithm: FSRS_ALGORITHM,
         algorithmVersion: FSRS_ALGORITHM_VERSION,
+        schedulerConfig: DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON,
         schedulingRevision: 0
     };
 }
 
-export function previewFlashcard(card: FlashcardRow, now = new Date(), config = DEFAULT_FLASHCARD_SCHEDULER_CONFIG): FlashcardReviewPreview[] {
-    const scheduler = fsrs(toFsrsParameters(config));
+export function previewFlashcard(
+    card: FlashcardRow,
+    now = new Date(),
+    config?: FlashcardSchedulerConfig
+): FlashcardReviewPreview[] {
+    validateFlashcardState(card);
+    const schedulerConfig = config ?? getSchedulerConfigForCard(card);
+    validateSchedulerConfig(schedulerConfig);
+
+    const scheduler = fsrs(toFsrsParameters(schedulerConfig));
     const preview = scheduler.repeat(toFsrsCard(card), now);
 
     return toRatings().map((rating) => {
@@ -93,13 +126,181 @@ export function previewFlashcard(card: FlashcardRow, now = new Date(), config = 
     });
 }
 
-export function scheduleFlashcard(card: FlashcardRow, rating: FlashcardRating, now = new Date(), config = DEFAULT_FLASHCARD_SCHEDULER_CONFIG): FlashcardScheduleResult {
+export function scheduleFlashcard(
+    card: FlashcardRow,
+    rating: FlashcardRating,
+    now = new Date(),
+    config?: FlashcardSchedulerConfig
+): FlashcardScheduleResult {
     validateRating(rating);
+    validateFlashcardState(card);
+    const schedulerConfig = config ?? getSchedulerConfigForCard(card);
+    validateSchedulerConfig(schedulerConfig);
 
-    const scheduler = fsrs(toFsrsParameters(config));
+    const scheduler = fsrs(toFsrsParameters(schedulerConfig));
     const result = scheduler.next(toFsrsCard(card), now, rating as Grade);
 
-    return toScheduleResult(card, result);
+    return toScheduleResult(card, result, schedulerConfig);
+}
+
+export function getFlashcardRetrievability(
+    card: FlashcardRow,
+    now = new Date(),
+    config?: FlashcardSchedulerConfig
+) {
+    validateFlashcardState(card);
+    const schedulerConfig = config ?? getSchedulerConfigForCard(card);
+    validateSchedulerConfig(schedulerConfig);
+
+    const scheduler = fsrs(toFsrsParameters(schedulerConfig));
+    return scheduler.get_retrievability(toFsrsCard(card), now, false);
+}
+
+export function serializeFlashcardSchedulerConfig(config: FlashcardSchedulerConfig) {
+    validateSchedulerConfig(config);
+
+    return JSON.stringify({
+        requestRetention: config.requestRetention,
+        maximumInterval: config.maximumInterval,
+        enableFuzz: config.enableFuzz,
+        enableShortTerm: config.enableShortTerm,
+        learningSteps: config.learningSteps,
+        relearningSteps: config.relearningSteps,
+        weights: config.weights ?? null
+    });
+}
+
+function getSchedulerConfigForCard(card: FlashcardRow) {
+    if (!card.schedulerConfig) {
+        return DEFAULT_FLASHCARD_SCHEDULER_CONFIG;
+    }
+
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(card.schedulerConfig);
+    } catch (e) {
+        throw new ValidationError(`Invalid flashcard scheduler config JSON: ${String(e)}`);
+    }
+
+    return normalizeSchedulerConfig(parsed);
+}
+
+function validateFlashcardState(card: FlashcardRow) {
+    validateStoredDate(card.due, "due");
+
+    if (card.lastReview) {
+        validateStoredDate(card.lastReview, "lastReview");
+    }
+
+    if (![0, 1, 2, 3].includes(card.state)) {
+        throw new ValidationError(`Invalid flashcard state '${card.state}'.`);
+    }
+
+    validateNonNegativeNumber(card.stability, "stability");
+    validateNonNegativeNumber(card.difficulty, "difficulty");
+    validateNonNegativeInteger(card.elapsedDays, "elapsedDays");
+    validateNonNegativeInteger(card.scheduledDays, "scheduledDays");
+    validateNonNegativeInteger(card.learningSteps, "learningSteps");
+    validateNonNegativeInteger(card.reps, "reps");
+    validateNonNegativeInteger(card.lapses, "lapses");
+
+    if (card.schedulingRevision !== undefined) {
+        validateNonNegativeInteger(card.schedulingRevision, "schedulingRevision");
+    }
+}
+
+function normalizeSchedulerConfig(value: unknown): FlashcardSchedulerConfig {
+    if (!value || typeof value !== "object") {
+        throw new ValidationError("Flashcard scheduler config must be an object.");
+    }
+
+    const config = value as Partial<FlashcardSchedulerConfig> & { weights?: number[] | null };
+    const normalized = {
+        requestRetention: config.requestRetention,
+        maximumInterval: config.maximumInterval,
+        enableFuzz: config.enableFuzz,
+        enableShortTerm: config.enableShortTerm,
+        learningSteps: config.learningSteps,
+        relearningSteps: config.relearningSteps,
+        weights: config.weights ?? undefined
+    } as FlashcardSchedulerConfig;
+
+    validateSchedulerConfig(normalized);
+    return normalized;
+}
+
+function validateSchedulerConfig(config: FlashcardSchedulerConfig) {
+    if (!Number.isFinite(config.requestRetention)
+        || config.requestRetention <= 0
+        || config.requestRetention >= 1) {
+        throw new ValidationError("Flashcard request retention must be between 0 and 1.");
+    }
+
+    validatePositiveInteger(config.maximumInterval, "maximumInterval");
+    validateBoolean(config.enableFuzz, "enableFuzz");
+    validateBoolean(config.enableShortTerm, "enableShortTerm");
+    validateStepList(config.learningSteps, "learningSteps");
+    validateStepList(config.relearningSteps, "relearningSteps");
+
+    if (config.weights !== undefined) {
+        if (!Array.isArray(config.weights)) {
+            throw new ValidationError("Flashcard weights must be an array.");
+        }
+
+        for (const [index, weight] of config.weights.entries()) {
+            validatePositiveNumber(weight, `weights[${index}]`);
+        }
+    }
+}
+
+function validateStoredDate(value: string, field: string) {
+    const error = dateUtils.validateUtcDateTime(value);
+
+    if (error) {
+        throw new ValidationError(`Invalid flashcard ${field}: ${error}`);
+    }
+}
+
+function validateNonNegativeNumber(value: number, field: string) {
+    if (!Number.isFinite(value) || value < 0) {
+        throw new ValidationError(`Flashcard ${field} must be a non-negative number.`);
+    }
+}
+
+function validatePositiveNumber(value: number, field: string) {
+    if (!Number.isFinite(value) || value <= 0) {
+        throw new ValidationError(`Flashcard ${field} must be a positive number.`);
+    }
+}
+
+function validateBoolean(value: boolean, field: string) {
+    if (typeof value !== "boolean") {
+        throw new ValidationError(`Flashcard ${field} must be a boolean.`);
+    }
+}
+
+function validateNonNegativeInteger(value: number, field: string) {
+    if (!Number.isInteger(value) || value < 0) {
+        throw new ValidationError(`Flashcard ${field} must be a non-negative integer.`);
+    }
+}
+
+function validatePositiveInteger(value: number, field: string) {
+    if (!Number.isInteger(value) || value < 1) {
+        throw new ValidationError(`Flashcard ${field} must be a positive integer.`);
+    }
+}
+
+function validateStepList(steps: StepUnit[], field: string) {
+    if (!Array.isArray(steps)) {
+        throw new ValidationError(`Flashcard ${field} must be an array.`);
+    }
+
+    for (const [index, step] of steps.entries()) {
+        if (typeof step !== "string" || !/^\d+(?:\.\d+)?[mhd]$/.test(step)) {
+            throw new ValidationError(`Invalid flashcard ${field}[${index}] '${step}'.`);
+        }
+    }
 }
 
 function toFsrsParameters(config: FlashcardSchedulerConfig): Partial<FSRSParameters> {
@@ -133,7 +334,13 @@ function parseStoredDate(value: string) {
     return dateUtils.parseDateTime(value);
 }
 
-function toScheduleResult(sourceCard: FlashcardRow, result: RecordLogItem): FlashcardScheduleResult {
+function toScheduleResult(
+    sourceCard: FlashcardRow,
+    result: RecordLogItem,
+    schedulerConfig: FlashcardSchedulerConfig
+): FlashcardScheduleResult {
+    const schedulerConfigJson = serializeFlashcardSchedulerConfig(schedulerConfig);
+
     return {
         card: {
             state: result.card.state as FlashcardState,
@@ -145,10 +352,13 @@ function toScheduleResult(sourceCard: FlashcardRow, result: RecordLogItem): Flas
             learningSteps: result.card.learning_steps,
             reps: result.card.reps,
             lapses: result.card.lapses,
-            lastReview: result.card.last_review ? dateUtils.utcDateTimeStr(result.card.last_review) : null,
+            lastReview: result.card.last_review
+                ? dateUtils.utcDateTimeStr(result.card.last_review)
+                : null,
             suspended: !!sourceCard.suspended,
             algorithm: FSRS_ALGORITHM,
             algorithmVersion: FSRS_ALGORITHM_VERSION,
+            schedulerConfig: schedulerConfigJson,
             schedulingRevision: (sourceCard.schedulingRevision ?? 0) + 1
         },
         log: {
@@ -171,7 +381,8 @@ function toScheduleResult(sourceCard: FlashcardRow, result: RecordLogItem): Flas
             lastReviewBefore: sourceCard.lastReview,
             schedulingRevisionBefore: sourceCard.schedulingRevision ?? 0,
             schedulingRevisionAfter: (sourceCard.schedulingRevision ?? 0) + 1,
-            reviewedAt: dateUtils.utcDateTimeStr(result.log.review)
+            reviewedAt: dateUtils.utcDateTimeStr(result.log.review),
+            schedulerConfig: schedulerConfigJson
         }
     };
 }
@@ -182,6 +393,6 @@ function toRatings(): FlashcardRating[] {
 
 function validateRating(rating: FlashcardRating) {
     if (!toRatings().includes(rating)) {
-        throw new Error(`Invalid flashcard rating '${rating}'.`);
+        throw new ValidationError(`Invalid flashcard rating '${rating}'.`);
     }
 }

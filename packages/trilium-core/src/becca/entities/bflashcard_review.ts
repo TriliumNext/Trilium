@@ -3,6 +3,16 @@ import type { FlashcardRating, FlashcardReviewRow, FlashcardState } from "@trili
 import dateUtils from "../../services/utils/date";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 
+const DEFAULT_SCHEDULER_CONFIG_JSON = JSON.stringify({
+    requestRetention: 0.9,
+    maximumInterval: 36500,
+    enableFuzz: true,
+    enableShortTerm: true,
+    learningSteps: ["1m", "10m"],
+    relearningSteps: ["10m"],
+    weights: null
+});
+
 class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
     static get entityName() {
         return "flashcard_reviews";
@@ -39,6 +49,7 @@ class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
             "durationMs",
             "algorithm",
             "algorithmVersion",
+            "schedulerConfig",
             "clientRequestId",
             "utcDateCreated",
             "utcDateModified"
@@ -70,6 +81,7 @@ class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
     durationMs?: number | null;
     algorithm!: string;
     algorithmVersion!: string;
+    schedulerConfig!: string;
     clientRequestId?: string | null;
 
     constructor(row?: FlashcardReviewRow) {
@@ -108,6 +120,7 @@ class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
         this.durationMs = row.durationMs ?? null;
         this.algorithm = row.algorithm;
         this.algorithmVersion = row.algorithmVersion;
+        this.schedulerConfig = row.schedulerConfig ?? DEFAULT_SCHEDULER_CONFIG_JSON;
         this.clientRequestId = row.clientRequestId ?? null;
         this.utcDateCreated = row.utcDateCreated || dateUtils.utcNowDateTime();
         this.utcDateModified = row.utcDateModified || this.utcDateCreated;
@@ -152,6 +165,7 @@ class BFlashcardReview extends AbstractBeccaEntity<BFlashcardReview> {
             durationMs: this.durationMs,
             algorithm: this.algorithm,
             algorithmVersion: this.algorithmVersion,
+            schedulerConfig: this.schedulerConfig,
             clientRequestId: this.clientRequestId,
             utcDateCreated: this.utcDateCreated,
             utcDateModified: this.utcDateModified
