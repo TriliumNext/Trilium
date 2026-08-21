@@ -1,4 +1,9 @@
-import type { FlashcardReviewRow, FlashcardRow } from "@triliumnext/commons";
+import type {
+    EntityChangeRecord,
+    EntityRow,
+    FlashcardReviewRow,
+    FlashcardRow
+} from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
 import becca from "../../becca/becca.js";
@@ -47,7 +52,11 @@ function countReviewsTodayByState(state: number) {
           AND reviewedAt >= ?`, [state, `${dateUtils.utcDateStr(new Date())} 00:00:00.000Z`]) ?? 0;
 }
 
-function syncedEntity(entityName: string, entityId: string, entity: FlashcardRow | FlashcardReviewRow) {
+function syncedEntity(
+    entityName: string,
+    entityId: string,
+    entity: FlashcardRow | FlashcardReviewRow
+): EntityChangeRecord {
     return {
         entityChange: {
             entityName,
@@ -58,7 +67,7 @@ function syncedEntity(entityName: string, entityId: string, entity: FlashcardRow
             isErased: false,
             changeId: `${entityId}-change-${entity.utcDateModified}`
         },
-        entity
+        entity: entity as unknown as EntityRow
     };
 }
 

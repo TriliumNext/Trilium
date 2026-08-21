@@ -136,10 +136,7 @@ function preProcessContent(remoteEC: EntityChange, remoteEntityRow: EntityRow) {
 }
 
 function normalizeFlashcardBooleans(remoteEntityRow: EntityRow) {
-    const row = remoteEntityRow as EntityRow & {
-        suspended?: boolean | number;
-        isDeleted?: boolean | number;
-    };
+    const row = remoteEntityRow as Record<string, unknown>;
 
     if (typeof row.suspended === "boolean") {
         row.suspended = row.suspended ? 1 : 0;

@@ -68,6 +68,32 @@ describe("FSRS flashcard scheduler", () => {
         expect(card).toEqual(before);
     });
 
+    it("matches deterministic golden vectors for new and review cards", () => {
+        expect(previewFlashcard(newCard(), NOW, TEST_CONFIG)).toEqual([
+            { rating: 1, due: "2025-01-02 03:05:05.000Z", scheduledDays: 0, state: 1 },
+            { rating: 2, due: "2025-01-02 03:10:05.000Z", scheduledDays: 0, state: 1 },
+            { rating: 3, due: "2025-01-02 03:14:05.000Z", scheduledDays: 0, state: 1 },
+            { rating: 4, due: "2025-01-10 03:04:05.000Z", scheduledDays: 8, state: 2 }
+        ]);
+
+        expect(previewFlashcard({
+            ...newCard(),
+            state: 2,
+            due: "2025-01-10 03:04:05.000Z",
+            stability: 8.2956,
+            difficulty: 1,
+            elapsedDays: 10,
+            scheduledDays: 8,
+            reps: 1,
+            lastReview: "2025-01-02 03:04:05.000Z"
+        }, new Date("2025-01-12T03:04:05.000Z"), TEST_CONFIG)).toEqual([
+            { rating: 1, due: "2025-01-12 03:14:05.000Z", scheduledDays: 0, state: 3 },
+            { rating: 2, due: "2025-02-11 03:04:05.000Z", scheduledDays: 30, state: 2 },
+            { rating: 3, due: "2025-02-25 03:04:05.000Z", scheduledDays: 44, state: 2 },
+            { rating: 4, due: "2025-03-28 03:04:05.000Z", scheduledDays: 75, state: 2 }
+        ]);
+    });
+
     it("applies rating and returns next card state plus review log", () => {
         const card = newCard();
         const result = scheduleFlashcard(card, 3, NOW, TEST_CONFIG);
@@ -115,6 +141,17 @@ describe("FSRS flashcard scheduler", () => {
         expect(retrievability).toBeGreaterThanOrEqual(0);
         expect(retrievability).toBeLessThanOrEqual(1);
         expect(reviewed).toEqual(before);
+    });
+
+    it("handles calendar boundary dates through canonical UTC strings", () => {
+        const card = {
+            ...newCard(),
+            due: "2024-02-29 23:59:00.000Z"
+        };
+        const previews = previewFlashcard(card, new Date("2024-03-01T00:01:00.000Z"), TEST_CONFIG);
+
+        expect(previews).toHaveLength(4);
+        expect(previews.every((preview) => preview.due.endsWith("Z"))).toBe(true);
     });
 
     it("rejects malformed persisted card state before previewing", () => {

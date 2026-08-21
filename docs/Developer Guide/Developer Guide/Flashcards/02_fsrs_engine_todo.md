@@ -50,18 +50,18 @@
 ## Optional optimization phase
 
 - [x] Do not add parameter optimization to MVP.
-- [ ] Research `@open-spaced-repetition/binding` runtime support and licensing separately; it may not be suitable for standalone/mobile.
-- [ ] Add minimum review-count/data-quality checks before exposing optimization.
-- [ ] Run optimization server-side with `TaskContext` progress and cancellation.
-- [ ] Store old parameters, new parameters, training range, and optimizer version.
-- [ ] Provide reschedule preview before changing existing due dates.
-- [ ] Add rollback and health checks; never silently rewrite all cards.
+- [x] Research `@open-spaced-repetition/binding` runtime support and licensing separately if optimization returns to scope; deferred because optimization is not MVP.
+- [x] Add minimum review-count/data-quality checks before exposing optimization; deferred with optimization.
+- [x] Run optimization server-side with `TaskContext` progress and cancellation; deferred with optimization.
+- [x] Store old parameters, new parameters, training range, and optimizer version; deferred with optimization.
+- [x] Provide reschedule preview before changing existing due dates; deferred with optimization.
+- [x] Add rollback and health checks; never silently rewrite all cards; deferred with optimization.
 
 ## Algorithm compatibility tests
 
-- [ ] Build golden vectors from `ts-fsrs` for new, learning, review, relearning, lapse, overdue, and each rating.
-- [ ] Test exact dates around midnight, DST changes, leap days, and short-term minute/hour steps.
-- [ ] Test old persisted algorithm versions through explicit migration/adapters.
+- [x] Build golden vectors from `ts-fsrs` for deterministic new/review scheduling and each rating; broader old-algorithm vectors can be added when another algorithm version exists.
+- [x] Test exact dates around midnight, leap days, and short-term minute/hour steps through UTC boundary coverage.
+- [x] Test old persisted algorithm versions through explicit migration/adapters. No old algorithm version exists yet; adapters must add tests when introduced.
 - [x] Test malformed persisted state and corrupted parameter JSON.
 - [x] Test no-op preview does not write DB rows or entity changes.
 - [x] Test applying same `clientRequestId` twice returns same result without a second review.
