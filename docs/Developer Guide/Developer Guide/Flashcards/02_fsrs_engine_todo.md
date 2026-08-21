@@ -2,10 +2,10 @@
 
 ## Dependency and boundary
 
-- [ ] Add `ts-fsrs` to the package that owns scheduling (`packages/trilium-core` recommended) only after browser/standalone compatibility is verified.
-- [ ] Pin exact version; record upstream MIT license and copyright in dependency notices if required by project policy.
-- [ ] Do not copy Anki's AGPL scheduler implementation. Use the maintained TypeScript FSRS package or implement an independent, documented adapter.
-- [ ] Confirm package does not import Node-only modules at runtime; run standalone build and tests.
+- [x] Add `ts-fsrs` to the package that owns scheduling (`packages/trilium-core`) after browser/standalone compatibility was verified by standalone core specs.
+- [x] Pin exact version (`ts-fsrs@5.4.1`); upstream package is MIT licensed.
+- [x] Do not copy Anki's AGPL scheduler implementation. Use the maintained TypeScript FSRS package behind Trilium's adapter.
+- [x] Confirm package does not import Node-only modules at runtime; standalone tests exercise the adapter under SQL.js/browser runtime.
 - [x] Wrap library API in `packages/trilium-core/src/services/flashcards/fsrs_scheduler.ts`; no route, widget, or entity should call `ts-fsrs` directly.
 - [x] Store algorithm name/version and serialized parameter set with user configuration/card output. Never assume future library defaults equal historical defaults.
 
@@ -18,23 +18,23 @@
 - [x] Implement `preview(card, now)` using `repeat()` and return all four outcomes with interval, due time, state, and human-readable label data.
 - [x] Implement `applyRating(card, now, rating)` using `next()` and return new card plus exact review log.
 - [x] Implement retrievability display through `get_retrievability()` without changing stored state.
-- [ ] Implement `undo` through a transaction that restores prior card state and marks/removes the associated review according to the chosen audit policy.
-- [ ] Implement reset/forget with explicit user confirmation and preserve audit history unless policy says otherwise.
-- [ ] Add deterministic test clock and disable fuzz in algorithm unit tests; separately test fuzz-enabled production configuration.
+- [x] Implement `undo` through a transaction that restores prior card state and preserves the associated review as audit history.
+- [x] Implement reset/forget with explicit user confirmation and preserve audit history unless policy says otherwise.
+- [x] Add deterministic test clock and disable fuzz in algorithm unit tests; production default keeps fuzz enabled.
 
 ## Configuration
 
-- [ ] Start with FSRS 6 defaults and document them:
-  - [ ] desired retention default `0.90`
-  - [ ] maximum interval default `36500` days
-  - [ ] fuzz enabled
-  - [ ] short-term scheduling enabled
+- [x] Start with FSRS 6 defaults and document them:
+  - [x] desired retention default `0.90`
+  - [x] maximum interval default `36500` days
+  - [x] fuzz enabled
+  - [x] short-term scheduling enabled
   - [x] explicit learning/relearning step defaults
 - [x] Define validation ranges and error messages for retention, max interval, steps, and parameters.
 - [x] Persist user-editable serialized parameters in synced `flashcardSchedulerConfig` option.
 - [x] Expose algorithm settings through server validation, not arbitrary client JSON.
-- [ ] Decide whether per-deck overrides are supported. MVP recommendation: one account-wide configuration, with deck overrides deferred.
-- [ ] Add “ignore reviews before” only when migration/import needs it.
+- [x] Decide whether per-deck overrides are supported. Decision: one account-wide configuration for MVP; deck overrides deferred.
+- [x] Add “ignore reviews before” only when migration/import needs it. Decision: not needed until import/optimizer work starts.
 
 ## Scheduling policy outside FSRS
 
@@ -42,14 +42,14 @@
 - [x] Define queue ordering: review cards, learning/relearning short-term cards, then new cards, each with due/card ID tie-breakers.
 - [x] Define daily limits and counters. Due queue enforces account-wide new/review daily limits with learning/relearning still prioritized separately; SQL card IDs keep queue entries unique.
 - [x] Define maximum response size and pagination for large decks.
-- [ ] Define suspended cards and cards whose source note is unavailable.
-- [ ] Define overdue behavior and whether API returns exact overdue days.
+- [x] Define suspended cards and cards whose source note is unavailable.
+- [x] Define overdue behavior and whether API returns exact overdue days. Overdue cards are ordered by due timestamp; exact overdue-day display can be derived client-side from UTC due.
 - [x] Define leech detection threshold and action: cards with 8+ lapses are marked `#flashcardLeech` and auto-suspended after review.
-- [ ] Keep scheduling policy separate from FSRS math so future algorithms can coexist.
+- [x] Keep scheduling policy separate from FSRS math so future algorithms can coexist.
 
 ## Optional optimization phase
 
-- [ ] Do not add parameter optimization to MVP.
+- [x] Do not add parameter optimization to MVP.
 - [ ] Research `@open-spaced-repetition/binding` runtime support and licensing separately; it may not be suitable for standalone/mobile.
 - [ ] Add minimum review-count/data-quality checks before exposing optimization.
 - [ ] Run optimization server-side with `TaskContext` progress and cancellation.
@@ -63,6 +63,6 @@
 - [ ] Test exact dates around midnight, DST changes, leap days, and short-term minute/hour steps.
 - [ ] Test old persisted algorithm versions through explicit migration/adapters.
 - [x] Test malformed persisted state and corrupted parameter JSON.
-- [ ] Test no-op preview does not write DB rows or entity changes.
-- [ ] Test applying same `clientRequestId` twice returns same result without a second review.
-- [ ] Test stale revision returns conflict and leaves card unchanged.
+- [x] Test no-op preview does not write DB rows or entity changes.
+- [x] Test applying same `clientRequestId` twice returns same result without a second review.
+- [x] Test stale revision returns conflict and leaves card unchanged.
