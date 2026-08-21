@@ -1,4 +1,9 @@
-import type { FlashcardRating, FlashcardRow, FlashcardState } from "@triliumnext/commons";
+import type {
+    FlashcardRating,
+    FlashcardRow,
+    FlashcardSchedulerSettings,
+    FlashcardState
+} from "@triliumnext/commons";
 import {
     fsrs,
     Rating,
@@ -15,11 +20,8 @@ import dateUtils from "../utils/date";
 export const FSRS_ALGORITHM = "fsrs-6";
 export const FSRS_ALGORITHM_VERSION = "ts-fsrs@5.4.1";
 
-export interface FlashcardSchedulerConfig {
-    requestRetention: number;
-    maximumInterval: number;
-    enableFuzz: boolean;
-    enableShortTerm: boolean;
+export interface FlashcardSchedulerConfig extends Omit<FlashcardSchedulerSettings,
+    "learningSteps" | "relearningSteps" | "weights"> {
     learningSteps: StepUnit[];
     relearningSteps: StepUnit[];
     weights?: number[];
@@ -82,7 +84,10 @@ export const DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON = serializeFlashcardSchedul
     DEFAULT_FLASHCARD_SCHEDULER_CONFIG
 );
 
-export function createEmptyFlashcardSchedule(now = new Date()) {
+export function createEmptyFlashcardSchedule(
+    now = new Date(),
+    config = DEFAULT_FLASHCARD_SCHEDULER_CONFIG
+) {
     return {
         state: 0 as FlashcardState,
         due: dateUtils.utcDateTimeStr(now),
@@ -97,7 +102,7 @@ export function createEmptyFlashcardSchedule(now = new Date()) {
         suspended: false,
         algorithm: FSRS_ALGORITHM,
         algorithmVersion: FSRS_ALGORITHM_VERSION,
-        schedulerConfig: DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON,
+        schedulerConfig: serializeFlashcardSchedulerConfig(config),
         schedulingRevision: 0
     };
 }
@@ -170,19 +175,27 @@ export function serializeFlashcardSchedulerConfig(config: FlashcardSchedulerConf
     });
 }
 
-function getSchedulerConfigForCard(card: FlashcardRow) {
-    if (!card.schedulerConfig) {
-        return DEFAULT_FLASHCARD_SCHEDULER_CONFIG;
-    }
-
+export function parseFlashcardSchedulerConfig(configJson: string) {
     let parsed: unknown;
     try {
-        parsed = JSON.parse(card.schedulerConfig);
+        parsed = JSON.parse(configJson);
     } catch (e) {
         throw new ValidationError(`Invalid flashcard scheduler config JSON: ${String(e)}`);
     }
 
     return normalizeSchedulerConfig(parsed);
+}
+
+export function normalizeFlashcardSchedulerConfig(value: unknown) {
+    return normalizeSchedulerConfig(value);
+}
+
+function getSchedulerConfigForCard(card: FlashcardRow) {
+    if (!card.schedulerConfig) {
+        return DEFAULT_FLASHCARD_SCHEDULER_CONFIG;
+    }
+
+    return parseFlashcardSchedulerConfig(card.schedulerConfig);
 }
 
 function validateFlashcardState(card: FlashcardRow) {

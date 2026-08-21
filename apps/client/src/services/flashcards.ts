@@ -11,6 +11,8 @@ import type {
     FlashcardReviewCard,
     FlashcardReviewRequest,
     FlashcardReviewResponse,
+    FlashcardSettingsResponse,
+    FlashcardSettingsUpdateRequest,
     FlashcardStatsResponse,
     FlashcardSuspensionRequest,
     FlashcardUndoRequest
@@ -47,6 +49,14 @@ function getCard(cardId: string) {
 
 function getPreview(cardId: string) {
     return server.get<FlashcardPreviewResponse>(`flashcards/cards/${cardId}/preview`);
+}
+
+function getSettings() {
+    return server.get<FlashcardSettingsResponse>("flashcards/settings");
+}
+
+function setSettings(request: FlashcardSettingsUpdateRequest) {
+    return server.put<FlashcardSettingsResponse>("flashcards/settings", request);
 }
 
 function setSuspended(cardId: string, request: FlashcardSuspensionRequest) {
@@ -140,6 +150,8 @@ export default {
     getDueCards,
     getCard,
     getPreview,
+    getSettings,
+    setSettings,
     getStats,
     setSuspended,
     resetCard,

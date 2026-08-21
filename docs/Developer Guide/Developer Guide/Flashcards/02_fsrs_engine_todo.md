@@ -31,8 +31,8 @@
   - [ ] short-term scheduling enabled
   - [ ] explicit learning/relearning step defaults
 - [x] Define validation ranges and error messages for retention, max interval, steps, and parameters.
-- [ ] Persist user-editable serialized parameters in a synced option or dedicated settings entity; include a schema/version field.
-- [ ] Expose algorithm settings through server validation, not arbitrary client JSON.
+- [x] Persist user-editable serialized parameters in synced `flashcardSchedulerConfig` option.
+- [x] Expose algorithm settings through server validation, not arbitrary client JSON.
 - [ ] Decide whether per-deck overrides are supported. MVP recommendation: one account-wide configuration, with deck overrides deferred.
 - [ ] Add “ignore reviews before” only when migration/import needs it.
 

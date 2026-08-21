@@ -16,6 +16,8 @@ import type {
     FlashcardReviewResponse,
     FlashcardReviewRow,
     FlashcardRow,
+    FlashcardSettingsResponse,
+    FlashcardSettingsUpdateRequest,
     FlashcardStatsResponse,
     FlashcardSuspensionRequest,
     FlashcardUndoRequest
@@ -26,21 +28,26 @@ import BAttribute from "../../becca/entities/battribute.js";
 import BFlashcard from "../../becca/entities/bflashcard.js";
 import BFlashcardReview from "../../becca/entities/bflashcard_review.js";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../../errors.js";
+import optionService from "../options.js";
 import { getSql } from "../sql/index.js";
 import dateUtils from "../utils/date";
 import { randomString } from "../utils/index.js";
 import {
     createEmptyFlashcardSchedule,
-    DEFAULT_FLASHCARD_SCHEDULER_CONFIG,
+    DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON,
     getFlashcardRetrievability,
+    normalizeFlashcardSchedulerConfig,
+    parseFlashcardSchedulerConfig,
     previewFlashcard,
-    scheduleFlashcard
+    scheduleFlashcard,
+    serializeFlashcardSchedulerConfig
 } from "./fsrs_scheduler.js";
 
 const DEFAULT_DUE_LIMIT = 20;
 const MAX_DUE_LIMIT = 100;
 const BURY_DURATION_MS = 24 * 60 * 60 * 1000;
 const FLASHCARD_LABEL = "flashcard";
+const FLASHCARD_SCHEDULER_CONFIG_OPTION = "flashcardSchedulerConfig";
 
 function createCard(request: FlashcardCreateRequest) {
     const note = becca.getNoteOrThrow(request.noteId);
@@ -75,7 +82,7 @@ function createCard(request: FlashcardCreateRequest) {
 
     const now = new Date();
     const card = new BFlashcard({
-        ...createEmptyFlashcardSchedule(now),
+        ...createEmptyFlashcardSchedule(now, getCurrentSchedulerConfig()),
         noteId: note.noteId,
         deckNoteId,
         ordinal: 0
@@ -167,8 +174,28 @@ function getPreview(cardId: string): FlashcardPreviewResponse {
     return {
         cardId: card.cardId || "",
         schedulingRevision: card.schedulingRevision ?? 0,
-        previews: previewFlashcard(card)
+        previews: previewFlashcard(card, new Date(), getCurrentSchedulerConfig())
     };
+}
+
+function getSettings(): FlashcardSettingsResponse {
+    return {
+        schedulerConfig: getCurrentSchedulerConfig()
+    };
+}
+
+function setSettings(request: FlashcardSettingsUpdateRequest): FlashcardSettingsResponse {
+    if (!request?.schedulerConfig) {
+        throw new ValidationError("Flashcard settings request requires schedulerConfig.");
+    }
+
+    const schedulerConfig = normalizeFlashcardSchedulerConfig(request.schedulerConfig);
+    optionService.setOption(
+        FLASHCARD_SCHEDULER_CONFIG_OPTION,
+        serializeFlashcardSchedulerConfig(schedulerConfig)
+    );
+
+    return { schedulerConfig };
 }
 
 function setSuspended(
@@ -197,7 +224,7 @@ function resetCard(cardId: string, request: FlashcardResetRequest = {}): Flashca
     const card = getCardRow(cardId);
     assertExpectedRevision(card, request.expectedSchedulingRevision);
 
-    const resetSchedule = createEmptyFlashcardSchedule(new Date());
+    const resetSchedule = createEmptyFlashcardSchedule(new Date(), getCurrentSchedulerConfig());
     const updated = new BFlashcard({
         ...card,
         ...resetSchedule,
@@ -293,7 +320,7 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
         return {
             card: buildCardSummary(card),
             reviewId: duplicate.reviewId || "",
-            previews: previewFlashcard(card)
+            previews: previewFlashcard(card, new Date(), getCurrentSchedulerConfig())
         };
     }
 
@@ -313,7 +340,7 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
         card,
         request.rating,
         now,
-        DEFAULT_FLASHCARD_SCHEDULER_CONFIG
+        getCurrentSchedulerConfig()
     );
     let savedReviewId = "";
 
@@ -360,7 +387,7 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
     return {
         card: buildCardSummary(updated),
         reviewId: savedReviewId,
-        previews: previewFlashcard(updated)
+        previews: previewFlashcard(updated, new Date(), getCurrentSchedulerConfig())
     };
 }
 
@@ -518,7 +545,7 @@ function buildReviewCard(
         return {
             ...buildCardSummary(card),
             front: note.getTitleOrProtected(),
-            previews: previewFlashcard(card)
+            previews: previewFlashcard(card, new Date(), getCurrentSchedulerConfig())
         };
     }
 
@@ -526,7 +553,7 @@ function buildReviewCard(
     const reviewCard: FlashcardReviewCard = {
         ...buildCardSummary(card),
         front: note.title,
-        previews: previewFlashcard(card)
+        previews: previewFlashcard(card, new Date(), getCurrentSchedulerConfig())
     };
 
     if (includeBack) {
@@ -552,6 +579,12 @@ function buildCardSummary(card: FlashcardRow): FlashcardCardSummary {
         schedulingRevision: card.schedulingRevision ?? 0,
         retrievability: getFlashcardRetrievability(card)
     };
+}
+
+function getCurrentSchedulerConfig() {
+    const optionValue = optionService.getOptionOrNull(FLASHCARD_SCHEDULER_CONFIG_OPTION)
+        ?? DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON;
+    return parseFlashcardSchedulerConfig(optionValue);
 }
 
 function assertExpectedRevision(card: FlashcardRow, expectedSchedulingRevision?: number) {
@@ -595,6 +628,8 @@ export default {
     getDueCards,
     getCard,
     getPreview,
+    getSettings,
+    setSettings,
     getStats,
     setSuspended,
     resetCard,

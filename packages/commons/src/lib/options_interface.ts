@@ -304,6 +304,10 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     seenCallToActions: string;
     experimentalFeatures: string;
 
+    // Flashcard settings
+    /** JSON: account-wide FSRS scheduler config for future flashcard reviews. */
+    flashcardSchedulerConfig: string;
+
     // Include note settings
     includeNoteDefaultBoxSize: "small" | "medium" | "full" | "expandable";
 

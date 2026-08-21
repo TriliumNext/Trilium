@@ -4,6 +4,7 @@ import type {
     FlashcardPreviewResponse,
     FlashcardReviewCard,
     FlashcardReviewResponse,
+    FlashcardSettingsResponse,
     FlashcardStatsResponse
 } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -27,6 +28,44 @@ function createTextNote(title: string, content = "Back content") {
 describe("Flashcards API (core)", () => {
     beforeAll(() => {
         api = CoreApiTester.build();
+    });
+
+    it("reads and updates validated scheduler settings", async () => {
+        const getRes = await api.get<FlashcardSettingsResponse>("/api/flashcards/settings");
+        expect(getRes.status).toBe(200);
+        expect(getRes.body.schedulerConfig.requestRetention).toBe(0.9);
+
+        const updateRes = await api.put<FlashcardSettingsResponse>("/api/flashcards/settings", {
+            body: {
+                schedulerConfig: {
+                    ...getRes.body.schedulerConfig,
+                    requestRetention: 0.85,
+                    maximumInterval: 90,
+                    enableFuzz: false
+                }
+            }
+        });
+        expect(updateRes.status).toBe(200);
+        expect(updateRes.body.schedulerConfig).toMatchObject({
+            requestRetention: 0.85,
+            maximumInterval: 90,
+            enableFuzz: false
+        });
+
+        const invalidRes = await api.put<{ message: string }>("/api/flashcards/settings", {
+            body: {
+                schedulerConfig: {
+                    ...updateRes.body.schedulerConfig,
+                    learningSteps: ["tomorrow"]
+                }
+            }
+        });
+        expect(invalidRes.status).toBe(400);
+        expect(invalidRes.body.message).toContain("Invalid flashcard learningSteps");
+
+        await api.put<FlashcardSettingsResponse>("/api/flashcards/settings", {
+            body: { schedulerConfig: getRes.body.schedulerConfig }
+        });
     });
 
     it("creates, lists, fetches, and reviews cards", async () => {

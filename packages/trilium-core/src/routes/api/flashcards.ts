@@ -4,6 +4,7 @@ import type {
     FlashcardDeckMoveRequest,
     FlashcardResetRequest,
     FlashcardReviewRequest,
+    FlashcardSettingsUpdateRequest,
     FlashcardSuspensionRequest,
     FlashcardUndoRequest
 } from "@triliumnext/commons";
@@ -32,6 +33,14 @@ function getCard(req: Request<{ cardId: string }>) {
 
 function getPreview(req: Request<{ cardId: string }>) {
     return flashcardService.getPreview(req.params.cardId);
+}
+
+function getSettings() {
+    return flashcardService.getSettings();
+}
+
+function setSettings(req: Request<{}, {}, FlashcardSettingsUpdateRequest>) {
+    return flashcardService.setSettings(req.body);
 }
 
 function setSuspended(req: Request<{ cardId: string }, {}, FlashcardSuspensionRequest>) {
@@ -72,6 +81,8 @@ export default {
     getDueCards,
     getCard,
     getPreview,
+    getSettings,
+    setSettings,
     getStats,
     setSuspended,
     resetCard,

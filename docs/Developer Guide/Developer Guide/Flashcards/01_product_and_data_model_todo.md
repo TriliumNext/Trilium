@@ -14,8 +14,9 @@
   - [ ] Define one-card-per-note MVP and future `ordinal`/template support.
   - [ ] Define clone semantics: shared card state, independent card, or explicit conversion.
 - [ ] Decide user settings:
-  - [ ] desired retention, maximum interval, fuzz, learning steps, relearning steps, daily new-card/review limits, day rollover, and review order.
-  - [ ] Define synced-vs-device-local settings. Learning policy should normally sync; display/session preferences may be local.
+  - [x] desired retention, maximum interval, fuzz, learning steps, relearning steps, and review order.
+  - [ ] daily new-card/review limits and day rollover.
+  - [x] Define synced-vs-device-local settings for FSRS scheduling: learning policy syncs via `flashcardSchedulerConfig`; display/session preferences remain future/local.
 - [ ] Decide review behavior:
   - [ ] Four ratings: Again, Hard, Good, Easy.
   - [ ] Preview all four outcomes before answer, matching Anki/FSRS terminology.

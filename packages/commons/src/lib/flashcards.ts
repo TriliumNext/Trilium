@@ -102,6 +102,24 @@ export interface FlashcardUndoRequest {
     expectedSchedulingRevision?: number;
 }
 
+export interface FlashcardSchedulerSettings {
+    requestRetention: number;
+    maximumInterval: number;
+    enableFuzz: boolean;
+    enableShortTerm: boolean;
+    learningSteps: string[];
+    relearningSteps: string[];
+    weights?: number[] | null;
+}
+
+export interface FlashcardSettingsResponse {
+    schedulerConfig: FlashcardSchedulerSettings;
+}
+
+export interface FlashcardSettingsUpdateRequest {
+    schedulerConfig: FlashcardSchedulerSettings;
+}
+
 export interface FlashcardActionResponse {
     card: FlashcardReviewCard;
 }

@@ -51,7 +51,7 @@ Add routes in `packages/trilium-core/src/routes/api/flashcards.ts`, then registe
 - [x] `POST /api/flashcards/:cardId/reset` — reset scheduling, preserve history by policy.
 - [x] `PUT /api/flashcards/:cardId/deck` — move card/deck.
 - [x] `GET /api/flashcards/stats` — aggregate counts/retention without front/back text.
-- [ ] `GET/PUT /api/flashcards/settings` — validated FSRS and queue settings, with explicit sync policy.
+- [x] `GET/PUT /api/flashcards/settings` — validated account-wide FSRS settings stored in synced option.
 - [x] Add request/response interfaces in commons; do not duplicate anonymous shapes in client/server.
 - [x] Return `409` for stale card revision and document recovery response.
 - [ ] Return safe `404/403` for deleted/protected/unavailable source notes without leaking existence where policy forbids it.

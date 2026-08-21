@@ -60,6 +60,50 @@ describe("flashcard service", () => {
             SELECT COUNT(1) FROM entity_changes`)).toBe(entityChangeCountBefore);
     });
 
+    it("applies validated scheduler settings to new cards and reviews", () => {
+        const originalSettings = runInContext(() => flashcardService.getSettings());
+        const note = createTextNote("Settings source");
+
+        runInContext(() => flashcardService.setSettings({
+            schedulerConfig: {
+                ...originalSettings.schedulerConfig,
+                maximumInterval: 42,
+                enableFuzz: false
+            }
+        }));
+
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const cardConfig = getSql().getValue<string>(/*sql*/`
+            SELECT schedulerConfig FROM flashcards
+            WHERE cardId = ?`, [card.cardId]);
+        expect(JSON.parse(cardConfig || "{}")).toMatchObject({
+            maximumInterval: 42,
+            enableFuzz: false
+        });
+
+        const review = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-settings`
+        }));
+        const reviewConfig = getSql().getValue<string>(/*sql*/`
+            SELECT schedulerConfig FROM flashcard_reviews
+            WHERE reviewId = ?`, [review.reviewId]);
+        expect(JSON.parse(reviewConfig || "{}")).toMatchObject({
+            maximumInterval: 42,
+            enableFuzz: false
+        });
+
+        expect(() => runInContext(() => flashcardService.setSettings({
+            schedulerConfig: {
+                ...originalSettings.schedulerConfig,
+                requestRetention: 1
+            }
+        }))).toThrow("Flashcard request retention must be between 0 and 1.");
+
+        runInContext(() => flashcardService.setSettings(originalSettings));
+    });
+
     it("returns deck summaries with safe counts", () => {
         const firstDeck = createTextNote("Deck A");
         const secondDeck = createTextNote("Deck B");
