@@ -77,7 +77,7 @@ export interface FlashcardReviewRequest {
     rating: FlashcardRating;
     durationMs?: number;
     expectedSchedulingRevision?: number;
-    clientRequestId?: string;
+    clientRequestId: string;
 }
 
 export interface FlashcardSuspensionRequest {

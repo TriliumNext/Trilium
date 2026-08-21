@@ -181,6 +181,37 @@ describe("Flashcards API (core)", () => {
         const badCardRes = await api.get<{ message: string }>("/api/flashcards/cards/not%20valid");
         expect(badCardRes.status).toBe(400);
         expect(badCardRes.body.message).toContain("Invalid flashcard cardId");
+
+        const note = createTextNote("API validation source");
+        const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
+            body: { noteId: note.noteId }
+        });
+        const badReviewRequestRes = await api.post<{ message: string }>(
+            `/api/flashcards/cards/${createRes.body.cardId}/reviews`,
+            {
+                body: {
+                    rating: 3,
+                    expectedSchedulingRevision: createRes.body.schedulingRevision,
+                    clientRequestId: "not valid"
+                }
+            }
+        );
+        expect(badReviewRequestRes.status).toBe(400);
+        expect(badReviewRequestRes.body.message).toContain("Invalid flashcard clientRequestId");
+
+        const badDurationRes = await api.post<{ message: string }>(
+            `/api/flashcards/cards/${createRes.body.cardId}/reviews`,
+            {
+                body: {
+                    rating: 3,
+                    durationMs: 24 * 60 * 60 * 1000 + 1,
+                    expectedSchedulingRevision: createRes.body.schedulingRevision,
+                    clientRequestId: `${createRes.body.cardId}-duration`
+                }
+            }
+        );
+        expect(badDurationRes.status).toBe(400);
+        expect(badDurationRes.body.message).toContain("Invalid review duration");
     });
 
     it("returns conflict without writing for stale reviews", async () => {

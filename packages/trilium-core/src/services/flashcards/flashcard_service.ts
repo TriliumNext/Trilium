@@ -52,6 +52,7 @@ const FLASHCARD_LEECH_LABEL = "flashcardLeech";
 const FLASHCARD_LEECH_THRESHOLD = 8;
 const FLASHCARD_SCHEDULER_CONFIG_OPTION = "flashcardSchedulerConfig";
 const FLASHCARD_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+const MAX_REVIEW_DURATION_MS = 24 * 60 * 60 * 1000;
 
 function createCard(request: FlashcardCreateRequest) {
     assertValidId(request?.noteId, "noteId");
@@ -440,12 +441,11 @@ function removeCardsForNote(noteId: string): FlashcardRemoveResponse {
 
 function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardReviewResponse {
     validateRating(request.rating);
+    assertValidId(request?.clientRequestId, "clientRequestId");
 
-    const duplicate = request.clientRequestId
-        ? getSql().getRow<FlashcardReviewRow | null>(/*sql*/`
-            SELECT * FROM flashcard_reviews
-            WHERE clientRequestId = ?`, [request.clientRequestId])
-        : null;
+    const duplicate = getSql().getRow<FlashcardReviewRow | null>(/*sql*/`
+        SELECT * FROM flashcard_reviews
+        WHERE clientRequestId = ?`, [request.clientRequestId]);
 
     if (duplicate) {
         if (duplicate.cardId !== cardId) {
@@ -528,7 +528,7 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
             algorithm: updatedCard.algorithm,
             algorithmVersion: updatedCard.algorithmVersion,
             schedulerConfig: scheduled.log.schedulerConfig,
-            clientRequestId: request.clientRequestId || null
+            clientRequestId: request.clientRequestId
         }).save();
 
         savedReviewId = review.reviewId || "";
@@ -812,7 +812,7 @@ function normalizeDuration(durationMs: number | undefined) {
         return null;
     }
 
-    if (!Number.isInteger(durationMs) || durationMs < 0) {
+    if (!Number.isInteger(durationMs) || durationMs < 0 || durationMs > MAX_REVIEW_DURATION_MS) {
         throw new ValidationError(`Invalid review duration '${durationMs}'.`);
     }
 
