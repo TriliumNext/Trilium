@@ -29,7 +29,7 @@
   - [ ] maximum interval default `36500` days
   - [ ] fuzz enabled
   - [ ] short-term scheduling enabled
-  - [ ] explicit learning/relearning step defaults
+  - [x] explicit learning/relearning step defaults
 - [x] Define validation ranges and error messages for retention, max interval, steps, and parameters.
 - [x] Persist user-editable serialized parameters in synced `flashcardSchedulerConfig` option.
 - [x] Expose algorithm settings through server validation, not arbitrary client JSON.
@@ -38,10 +38,10 @@
 
 ## Scheduling policy outside FSRS
 
-- [ ] Define local-day calculation and rollover hour using existing Trilium locale/time utilities; do not use browser-only local state as authority.
+- [x] Define local-day calculation and rollover hour using existing Trilium locale/time utilities; do not use browser-only local state as authority.
 - [x] Define queue ordering: review cards, learning/relearning short-term cards, then new cards, each with due/card ID tie-breakers.
-- [ ] Define daily limits and counters. Prevent duplicate cards in one session.
-- [ ] Define maximum response size and pagination for large decks.
+- [x] Define daily limits and counters. Due queue enforces account-wide new/review daily limits with learning/relearning still prioritized separately; SQL card IDs keep queue entries unique.
+- [x] Define maximum response size and pagination for large decks.
 - [ ] Define suspended cards and cards whose source note is unavailable.
 - [ ] Define overdue behavior and whether API returns exact overdue days.
 - [x] Define leech detection threshold and action: cards with 8+ lapses are marked `#flashcardLeech` and auto-suspended after review.

@@ -110,6 +110,9 @@ export interface FlashcardSchedulerSettings {
     enableShortTerm: boolean;
     learningSteps: string[];
     relearningSteps: string[];
+    dailyNewCardLimit: number;
+    dailyReviewLimit: number;
+    dayRolloverHour: number;
     weights?: number[] | null;
 }
 

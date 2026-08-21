@@ -13,9 +13,9 @@
 
 - [x] Create `packages/trilium-core/src/services/flashcards/` with:
   - [x] `flashcard_service.ts` — materialization, authoring, deck assignment, lifecycle.
-  - [ ] `flashcard_scheduler_service.ts` — due queue, limits, ordering, day boundary.
+  - [x] due queue, limits, ordering, and day boundary implemented in `flashcard_service.ts`; split to `flashcard_scheduler_service.ts` only if the module grows further.
   - [ ] `flashcard_review_service.ts` — transaction, idempotency, optimistic concurrency, audit log.
-  - [ ] `flashcard_validation.ts` — input/state/config validation.
+  - [x] input/state/config validation implemented in `flashcard_service.ts` and `fsrs_scheduler.ts`; split to `flashcard_validation.ts` only if reuse grows.
   - [x] `fsrs_scheduler.ts` — isolated adapter from `02_fsrs_engine_todo.md`.
 - [x] Keep all writes inside existing SQL transaction/CLS conventions.
 - [x] Use Becca/cache access for notes and attributes; do not bypass cache for normal note data.

@@ -15,6 +15,9 @@ const DEFAULT_FLASHCARD_SCHEDULER_CONFIG = JSON.stringify({
     enableShortTerm: true,
     learningSteps: ["1m", "10m"],
     relearningSteps: ["10m"],
+    dailyNewCardLimit: 20,
+    dailyReviewLimit: 200,
+    dayRolloverHour: 4,
     weights: null
 });
 

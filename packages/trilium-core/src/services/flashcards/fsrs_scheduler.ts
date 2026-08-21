@@ -77,7 +77,10 @@ export const DEFAULT_FLASHCARD_SCHEDULER_CONFIG: FlashcardSchedulerConfig = {
     enableFuzz: true,
     enableShortTerm: true,
     learningSteps: ["1m", "10m"],
-    relearningSteps: ["10m"]
+    relearningSteps: ["10m"],
+    dailyNewCardLimit: 20,
+    dailyReviewLimit: 200,
+    dayRolloverHour: 4
 };
 
 export const DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON = serializeFlashcardSchedulerConfig(
@@ -171,6 +174,9 @@ export function serializeFlashcardSchedulerConfig(config: FlashcardSchedulerConf
         enableShortTerm: config.enableShortTerm,
         learningSteps: config.learningSteps,
         relearningSteps: config.relearningSteps,
+        dailyNewCardLimit: config.dailyNewCardLimit,
+        dailyReviewLimit: config.dailyReviewLimit,
+        dayRolloverHour: config.dayRolloverHour,
         weights: config.weights ?? null
     });
 }
@@ -235,6 +241,12 @@ function normalizeSchedulerConfig(value: unknown): FlashcardSchedulerConfig {
         enableShortTerm: config.enableShortTerm,
         learningSteps: config.learningSteps,
         relearningSteps: config.relearningSteps,
+        dailyNewCardLimit: config.dailyNewCardLimit
+            ?? DEFAULT_FLASHCARD_SCHEDULER_CONFIG.dailyNewCardLimit,
+        dailyReviewLimit: config.dailyReviewLimit
+            ?? DEFAULT_FLASHCARD_SCHEDULER_CONFIG.dailyReviewLimit,
+        dayRolloverHour: config.dayRolloverHour
+            ?? DEFAULT_FLASHCARD_SCHEDULER_CONFIG.dayRolloverHour,
         weights: config.weights ?? undefined
     } as FlashcardSchedulerConfig;
 
@@ -254,6 +266,14 @@ function validateSchedulerConfig(config: FlashcardSchedulerConfig) {
     validateBoolean(config.enableShortTerm, "enableShortTerm");
     validateStepList(config.learningSteps, "learningSteps");
     validateStepList(config.relearningSteps, "relearningSteps");
+    validateNonNegativeInteger(config.dailyNewCardLimit, "dailyNewCardLimit");
+    validateNonNegativeInteger(config.dailyReviewLimit, "dailyReviewLimit");
+
+    if (!Number.isInteger(config.dayRolloverHour)
+        || config.dayRolloverHour < 0
+        || config.dayRolloverHour > 23) {
+        throw new ValidationError("Flashcard dayRolloverHour must be an integer from 0 to 23.");
+    }
 
     if (config.weights !== undefined) {
         if (!Array.isArray(config.weights)) {

@@ -15,7 +15,7 @@
   - [ ] Define clone semantics: shared card state, independent card, or explicit conversion.
 - [ ] Decide user settings:
   - [x] desired retention, maximum interval, fuzz, learning steps, relearning steps, and review order.
-  - [ ] daily new-card/review limits and day rollover.
+  - [x] daily new-card/review limits and day rollover.
   - [x] Define synced-vs-device-local settings for FSRS scheduling: learning policy syncs via `flashcardSchedulerConfig`; display/session preferences remain future/local.
 - [ ] Decide review behavior:
   - [ ] Four ratings: Again, Hard, Good, Easy.

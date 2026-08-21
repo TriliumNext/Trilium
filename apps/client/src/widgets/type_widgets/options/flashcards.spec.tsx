@@ -111,6 +111,9 @@ function defaultSettings() {
             enableShortTerm: true,
             learningSteps: [ "1m", "10m" ],
             relearningSteps: [ "10m" ],
+            dailyNewCardLimit: 20,
+            dailyReviewLimit: 200,
+            dayRolloverHour: 4,
             weights: null
         }
     };

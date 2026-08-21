@@ -1,3 +1,4 @@
+import { dayjs } from "@triliumnext/commons";
 import type {
     FlashcardActionResponse,
     FlashcardBuryRequest,
@@ -130,43 +131,151 @@ function getDueCards({
     limit = DEFAULT_DUE_LIMIT
 }: { deckNoteId?: string; limit?: number } = {}): FlashcardDueResponse {
     limit = normalizeLimit(limit);
-    const now = dateUtils.utcNowDateTime();
-
-    const filterParams: (string | number)[] = [now];
-    let deckCondition = "";
 
     if (deckNoteId) {
         assertValidId(deckNoteId, "deckNoteId");
-        deckCondition = "AND deckNoteId = ?";
-        filterParams.push(deckNoteId);
     }
 
-    const totalDueCount = getSql().getValue<number>(/*sql*/`
+    const due = getLimitedDueRows({
+        deckNoteId,
+        limit,
+        config: getCurrentSchedulerConfig()
+    });
+
+    return {
+        cards: due.rows.map((row) => buildReviewCard(row, { includeBack: false })),
+        totalDueCount: due.totalDueCount
+    };
+}
+
+function getLimitedDueRows({
+    deckNoteId,
+    limit,
+    config
+}: {
+    deckNoteId?: string;
+    limit: number;
+    config: ReturnType<typeof getCurrentSchedulerConfig>;
+}) {
+    const now = dateUtils.utcNowDateTime();
+    const dayRange = getStudyDayRange(config.dayRolloverHour);
+    const dailyNewUsed = countReviewsInStudyDay({ stateCondition: "state = 0", dayRange });
+    const dailyReviewUsed = countReviewsInStudyDay({ stateCondition: "state = 2", dayRange });
+    const dailyNewRemaining = Math.max(0, config.dailyNewCardLimit - dailyNewUsed);
+    const dailyReviewRemaining = Math.max(0, config.dailyReviewLimit - dailyReviewUsed);
+    const rows: FlashcardRow[] = [];
+    const reviewDueCount = countDueRows({ deckNoteId, now, stateCondition: "state = 2" });
+    const learningDueCount = countDueRows({ deckNoteId, now, stateCondition: "state IN (1, 3)" });
+    const newDueCount = countDueRows({ deckNoteId, now, stateCondition: "state = 0" });
+    const addRows = (stateCondition: string, rowLimit: number) => {
+        if (rowLimit <= 0 || rows.length >= limit) {
+            return;
+        }
+
+        rows.push(...getDueRows({
+            deckNoteId,
+            now,
+            stateCondition,
+            limit: Math.min(rowLimit, limit - rows.length)
+        }));
+    };
+
+    addRows("state = 2", dailyReviewRemaining);
+    addRows("state IN (1, 3)", limit);
+    addRows("state = 0", dailyNewRemaining);
+
+    return {
+        rows,
+        totalDueCount: Math.min(reviewDueCount, dailyReviewRemaining)
+            + learningDueCount
+            + Math.min(newDueCount, dailyNewRemaining)
+    };
+}
+
+function countReviewsInStudyDay({
+    stateCondition,
+    dayRange
+}: {
+    stateCondition: string;
+    dayRange: { start: string; end: string };
+}) {
+    return getSql().getValue<number>(/*sql*/`
+        SELECT COUNT(1) FROM flashcard_reviews
+        WHERE ${stateCondition}
+          AND reviewedAt >= ?
+          AND reviewedAt < ?`, [dayRange.start, dayRange.end]) ?? 0;
+}
+
+function countDueRows({
+    deckNoteId,
+    now,
+    stateCondition
+}: {
+    deckNoteId?: string;
+    now: string;
+    stateCondition: string;
+}) {
+    const params: string[] = [now];
+    const deckCondition = getDeckCondition(deckNoteId, params);
+
+    return getSql().getValue<number>(/*sql*/`
         SELECT COUNT(1) FROM flashcards
         WHERE isDeleted = 0
           AND suspended = 0
           AND due <= ?
-          ${deckCondition}`, filterParams) ?? 0;
+          AND ${stateCondition}
+          ${deckCondition}`, params) ?? 0;
+}
 
-    const rows = getSql().getRows<FlashcardRow>(/*sql*/`
+function getDueRows({
+    deckNoteId,
+    now,
+    stateCondition,
+    limit
+}: {
+    deckNoteId?: string;
+    now: string;
+    stateCondition: string;
+    limit: number;
+}) {
+    const params: (string | number)[] = [now];
+    const deckCondition = getDeckCondition(deckNoteId, params);
+
+    return getSql().getRows<FlashcardRow>(/*sql*/`
         SELECT * FROM flashcards
         WHERE isDeleted = 0
           AND suspended = 0
           AND due <= ?
+          AND ${stateCondition}
           ${deckCondition}
-        ORDER BY
-            CASE
-                WHEN state = 2 THEN 0
-                WHEN state IN (1, 3) THEN 1
-                ELSE 2
-            END,
-            due,
-            cardId
-        LIMIT ?`, [ ...filterParams, limit ]);
+        ORDER BY due, cardId
+        LIMIT ?`, [ ...params, limit ]);
+}
+
+function getDeckCondition(deckNoteId: string | undefined, params: (string | number)[]) {
+    if (!deckNoteId) {
+        return "";
+    }
+
+    params.push(deckNoteId);
+    return "AND deckNoteId = ?";
+}
+
+function getStudyDayRange(dayRolloverHour: number) {
+    const localNow = dayjs(dateUtils.localNowDateTime(), dateUtils.LOCAL_DATETIME_FORMAT);
+    let start = localNow
+        .hour(dayRolloverHour)
+        .minute(0)
+        .second(0)
+        .millisecond(0);
+
+    if (localNow.isBefore(start)) {
+        start = start.subtract(1, "day");
+    }
 
     return {
-        cards: rows.map((row) => buildReviewCard(row, { includeBack: false })),
-        totalDueCount
+        start: dateUtils.utcDateTimeStr(start.toDate()),
+        end: dateUtils.utcDateTimeStr(start.add(1, "day").toDate())
     };
 }
 
@@ -462,17 +571,18 @@ function undoReview(request: FlashcardUndoRequest): FlashcardActionResponse {
 }
 
 function getStats(): FlashcardStatsResponse {
-    const now = dateUtils.utcNowDateTime();
     const today = new Date();
     const todayStart = `${dateUtils.utcDateStr(today)} 00:00:00.000Z`;
     const sql = getSql();
     const ratingCounts = getRatingCounts();
     const totalReviews = ratingCounts[1] + ratingCounts[2] + ratingCounts[3] + ratingCounts[4];
+    const dueCount = getLimitedDueRows({
+        limit: 1,
+        config: getCurrentSchedulerConfig()
+    }).totalDueCount;
 
     return {
-        dueCount: sql.getValue<number>(/*sql*/`
-            SELECT COUNT(1) FROM flashcards
-            WHERE isDeleted = 0 AND suspended = 0 AND due <= ?`, [now]) ?? 0,
+        dueCount,
         newCount: sql.getValue<number>(/*sql*/`
             SELECT COUNT(1) FROM flashcards
             WHERE isDeleted = 0 AND suspended = 0 AND state = 0`) ?? 0,

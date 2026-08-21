@@ -23,6 +23,27 @@ function runInContext<T>(fn: () => T) {
     return clsInit(fn);
 }
 
+function makeReviewCardDue(cardId: string, due = "2020-01-01 00:00:00.000Z") {
+    getSql().execute(/*sql*/`
+        UPDATE flashcards
+        SET state = 2, due = ?, stability = 5, difficulty = 5,
+            lastReview = '2019-12-31 00:00:00.000Z', reps = 1, scheduledDays = 3
+        WHERE cardId = ?`, [due, cardId]);
+}
+
+function moveDueDate(cardId: string, due: string) {
+    getSql().execute(/*sql*/`
+        UPDATE flashcards
+        SET due = ?
+        WHERE cardId = ?`, [due, cardId]);
+}
+
+function countReviewsByState(state: number) {
+    return getSql().getValue<number>(/*sql*/`
+        SELECT COUNT(1) FROM flashcard_reviews
+        WHERE state = ?`, [state]) ?? 0;
+}
+
 describe("flashcard service", () => {
     it("creates one flashcard per note and adds the marker label", () => {
         const note = createTextNote("Flashcard source");
@@ -319,6 +340,82 @@ describe("flashcard service", () => {
             deckNoteId: deck.noteId,
             limit: 0
         }))).toThrow("Invalid flashcard limit");
+    });
+
+    it("applies daily new and review limits to the due queue", () => {
+        const originalSettings = runInContext(() => flashcardService.getSettings());
+        const deck = createTextNote("Limited deck");
+        const firstNewNote = createTextNote("Limited new one");
+        const secondNewNote = createTextNote("Limited new two");
+        const firstReviewNote = createTextNote("Limited review one");
+        const secondReviewNote = createTextNote("Limited review two");
+        const firstNewCard = runInContext(() => flashcardService.createCard({
+            noteId: firstNewNote.noteId,
+            deckNoteId: deck.noteId
+        }));
+        const secondNewCard = runInContext(() => flashcardService.createCard({
+            noteId: secondNewNote.noteId,
+            deckNoteId: deck.noteId
+        }));
+        const firstReviewCard = runInContext(() => flashcardService.createCard({
+            noteId: firstReviewNote.noteId,
+            deckNoteId: deck.noteId
+        }));
+        const secondReviewCard = runInContext(() => flashcardService.createCard({
+            noteId: secondReviewNote.noteId,
+            deckNoteId: deck.noteId
+        }));
+
+        try {
+            const existingNewReviews = countReviewsByState(0);
+            const existingReviewReviews = countReviewsByState(2);
+
+            runInContext(() => flashcardService.setSettings({
+                schedulerConfig: {
+                    ...originalSettings.schedulerConfig,
+                    dailyNewCardLimit: existingNewReviews + 1,
+                    dailyReviewLimit: existingReviewReviews + 1,
+                    dayRolloverHour: 0,
+                    enableFuzz: false
+                }
+            }));
+            makeReviewCardDue(firstReviewCard.cardId);
+            makeReviewCardDue(secondReviewCard.cardId, "2020-01-02 00:00:00.000Z");
+            moveDueDate(firstNewCard.cardId, "2020-01-01 00:00:00.000Z");
+            moveDueDate(secondNewCard.cardId, "2020-01-02 00:00:00.000Z");
+
+            const initial = runInContext(() => flashcardService.getDueCards({
+                deckNoteId: deck.noteId,
+                limit: 10
+            }));
+            expect(initial.totalDueCount).toBe(2);
+            expect(initial.cards.map((card) => card.cardId)).toEqual([
+                firstReviewCard.cardId,
+                firstNewCard.cardId
+            ]);
+
+            runInContext(() => flashcardService.reviewCard(firstReviewCard.cardId, {
+                rating: 3,
+                expectedSchedulingRevision: firstReviewCard.schedulingRevision,
+                clientRequestId: `${firstReviewCard.cardId}-daily-review-limit`
+            }));
+            runInContext(() => flashcardService.reviewCard(firstNewCard.cardId, {
+                rating: 3,
+                expectedSchedulingRevision: firstNewCard.schedulingRevision,
+                clientRequestId: `${firstNewCard.cardId}-daily-new-limit`
+            }));
+
+            const afterLimitsReached = runInContext(() => flashcardService.getDueCards({
+                deckNoteId: deck.noteId,
+                limit: 10
+            }));
+            expect(afterLimitsReached.totalDueCount).toBe(0);
+            expect(afterLimitsReached.cards).toEqual([]);
+            expect(secondNewCard.cardId).toBeTruthy();
+            expect(secondReviewCard.cardId).toBeTruthy();
+        } finally {
+            runInContext(() => flashcardService.setSettings(originalSettings));
+        }
     });
 
     it("does not expose protected note content while protected session is locked", () => {

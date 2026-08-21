@@ -14,9 +14,9 @@ export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
         version: 243,
         sql: /*sql*/`
             ALTER TABLE flashcards
-                ADD COLUMN schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"weights":null}';
+                ADD COLUMN schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"dailyNewCardLimit":20,"dailyReviewLimit":200,"dayRolloverHour":4,"weights":null}';
             ALTER TABLE flashcard_reviews
-                ADD COLUMN schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"weights":null}';
+                ADD COLUMN schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"dailyNewCardLimit":20,"dailyReviewLimit":200,"dayRolloverHour":4,"weights":null}';
         `,
         ignoreErrors: true
     },

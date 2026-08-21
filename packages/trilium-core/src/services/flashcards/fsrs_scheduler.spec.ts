@@ -18,7 +18,10 @@ const TEST_CONFIG: FlashcardSchedulerConfig = {
     enableFuzz: false,
     enableShortTerm: true,
     learningSteps: ["1m", "10m"],
-    relearningSteps: ["10m"]
+    relearningSteps: ["10m"],
+    dailyNewCardLimit: 20,
+    dailyReviewLimit: 200,
+    dayRolloverHour: 4
 };
 
 const NOW = new Date("2025-01-02T03:04:05.000Z");
@@ -161,5 +164,15 @@ describe("FSRS flashcard scheduler", () => {
             ...TEST_CONFIG,
             learningSteps: ["tomorrow"] as unknown as FlashcardSchedulerConfig["learningSteps"]
         })).toThrow("Invalid flashcard learningSteps[0] 'tomorrow'.");
+
+        expect(() => scheduleFlashcard(newCard(), 3, NOW, {
+            ...TEST_CONFIG,
+            dailyNewCardLimit: -1
+        })).toThrow("Flashcard dailyNewCardLimit must be a non-negative integer.");
+
+        expect(() => scheduleFlashcard(newCard(), 3, NOW, {
+            ...TEST_CONFIG,
+            dayRolloverHour: 24
+        })).toThrow("Flashcard dayRolloverHour must be an integer from 0 to 23.");
     });
 });
