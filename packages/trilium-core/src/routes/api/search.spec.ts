@@ -44,6 +44,28 @@ describe("Search API (core)", () => {
         expect(Array.isArray(res.body.newTemplateNoteIds)).toBe(true);
     });
 
+
+    it("400s with the parser error instead of silently returning every note (#11116)", async () => {
+        // `note.ancestor` is an unrecognized property: the parse layer records
+        // the error and degrades to a match-everything scan. The API must fail
+        // the query rather than answer HTTP 200 with the whole tree.
+        const res = await api.get(
+            `/api/search/${encodeURIComponent("#tcprop8 AND not(note.ancestor.title = tcbox)")}`
+        );
+        expect(res.status).toBe(400);
+        expect(res.body).toMatchObject({
+            message: expect.stringContaining("Unrecognized note property")
+        });
+    });
+
+    it("still returns results for a valid property expression", async () => {
+        const res = await api.get<string[]>(
+            `/api/search/${encodeURIComponent("#template")}`
+        );
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+    });
+
     it("400s when searching from a note that is not a search note", async () => {
         const res = await api.get("/api/search-note/root");
         expect(res.status).toBe(400);
