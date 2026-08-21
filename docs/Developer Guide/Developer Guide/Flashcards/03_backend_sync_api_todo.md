@@ -14,14 +14,14 @@
 - [x] Create `packages/trilium-core/src/services/flashcards/` with:
   - [x] `flashcard_service.ts` — materialization, authoring, deck assignment, lifecycle.
   - [x] due queue, limits, ordering, and day boundary implemented in `flashcard_service.ts`; split to `flashcard_scheduler_service.ts` only if the module grows further.
-  - [ ] `flashcard_review_service.ts` — transaction, idempotency, optimistic concurrency, audit log.
+  - [x] review transaction, idempotency, optimistic concurrency, and audit log implemented in `flashcard_service.ts`; split to `flashcard_review_service.ts` only if the module grows further.
   - [x] input/state/config validation implemented in `flashcard_service.ts` and `fsrs_scheduler.ts`; split to `flashcard_validation.ts` only if reuse grows.
   - [x] `fsrs_scheduler.ts` — isolated adapter from `02_fsrs_engine_todo.md`.
 - [x] Keep all writes inside existing SQL transaction/CLS conventions.
 - [x] Use Becca/cache access for notes and attributes; do not bypass cache for normal note data.
 - [x] Never read protected content without `note.isContentAvailable()`.
 - [ ] Add events for card created/changed/reviewed/suspended if client live refresh needs them.
-- [ ] Avoid a process-local only queue. Due-card discovery must work after restart and on any synced device.
+- [x] Avoid a process-local only queue. Due-card discovery works from persisted card state after restart and on any synced device.
 
 ## Entity and sync wiring
 
@@ -29,11 +29,11 @@
 - [x] Add Becca entities and registration if dedicated tables are selected.
 - [x] Update Becca loader for initial load, entity change sync, deletion, and post-processing.
 - [x] Update `entity_changes` fill/repair paths so old databases can reconstruct flashcard changes.
-- [ ] Update content hash and sector handling for new entity names.
-- [ ] Verify server sync endpoint accepts, serializes, applies, and hashes new entities.
-- [ ] Verify standalone SQL.js schema/migrations and sync behavior.
-- [ ] Ensure review history remains bounded per response and does not create oversized sync pages.
-- [ ] Test simultaneous reviews on two devices; choose conflict rule (recommended: reject stale mutation, then refetch/retry).
+- [x] Update content hash and sector handling for new entity names.
+- [x] Verify server sync endpoint accepts, serializes, applies, and hashes new entities.
+- [x] Verify standalone SQL.js schema/migrations and sync behavior.
+- [x] Ensure review history remains bounded per response and does not create oversized sync pages.
+- [x] Test simultaneous reviews on two devices; conflict rule is stale mutation rejection followed by refetch/retry.
 
 ## Shared API routes
 

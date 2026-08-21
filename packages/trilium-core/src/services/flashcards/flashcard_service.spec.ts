@@ -1,3 +1,4 @@
+import type { FlashcardReviewRow, FlashcardRow } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
 import becca from "../../becca/becca.js";
@@ -6,6 +7,7 @@ import BFlashcard from "../../becca/entities/bflashcard.js";
 import BFlashcardReview from "../../becca/entities/bflashcard_review.js";
 import { init as clsInit } from "../context.js";
 import noteService from "../notes.js";
+import dateUtils from "../utils/date";
 import { getSql } from "../sql/index.js";
 import syncUpdateService from "../sync_update.js";
 import flashcardService from "./flashcard_service.js";
@@ -38,10 +40,26 @@ function moveDueDate(cardId: string, due: string) {
         WHERE cardId = ?`, [due, cardId]);
 }
 
-function countReviewsByState(state: number) {
+function countReviewsTodayByState(state: number) {
     return getSql().getValue<number>(/*sql*/`
         SELECT COUNT(1) FROM flashcard_reviews
-        WHERE state = ?`, [state]) ?? 0;
+        WHERE state = ?
+          AND reviewedAt >= ?`, [state, `${dateUtils.utcDateStr(new Date())} 00:00:00.000Z`]) ?? 0;
+}
+
+function syncedEntity(entityName: string, entityId: string, entity: FlashcardRow | FlashcardReviewRow) {
+    return {
+        entityChange: {
+            entityName,
+            entityId,
+            hash: `${entityId}-hash-${entity.utcDateModified}`,
+            utcDateChanged: entity.utcDateModified,
+            isSynced: true,
+            isErased: false,
+            changeId: `${entityId}-change-${entity.utcDateModified}`
+        },
+        entity
+    };
 }
 
 describe("flashcard service", () => {
@@ -219,6 +237,90 @@ describe("flashcard service", () => {
             WHERE cardId = ?`, [card.cardId])).toBe(0);
     });
 
+    it("applies synced flashcard and review rows in either order", () => {
+        const source = createTextNote("Synced source");
+        const deck = createTextNote("Synced deck");
+        const schedulerConfig = JSON.stringify(flashcardService.getSettings().schedulerConfig);
+        const cardRow: FlashcardRow = {
+            cardId: "syncedFlashcard01",
+            noteId: source.noteId,
+            deckNoteId: deck.noteId,
+            ordinal: 0,
+            state: 2,
+            due: "2025-01-01 00:00:00.000Z",
+            stability: 5,
+            difficulty: 5,
+            elapsedDays: 1,
+            scheduledDays: 1,
+            learningSteps: 0,
+            reps: 1,
+            lapses: 0,
+            lastReview: "2024-12-31 00:00:00.000Z",
+            suspended: false,
+            algorithm: "fsrs-6",
+            algorithmVersion: "ts-fsrs@5.4.1",
+            schedulerConfig,
+            schedulingRevision: 1,
+            utcDateCreated: "2025-01-01 00:00:00.000Z",
+            utcDateModified: "2025-01-01 00:00:00.000Z",
+            isDeleted: false,
+            deleteId: null
+        };
+        const reviewRow: FlashcardReviewRow = {
+            reviewId: "syncedReview01",
+            cardId: cardRow.cardId || "",
+            rating: 3,
+            state: 0,
+            dueBefore: "2024-12-31 00:00:00.000Z",
+            dueAfter: cardRow.due,
+            stabilityBefore: 0,
+            stabilityAfter: cardRow.stability,
+            difficultyBefore: 0,
+            difficultyAfter: cardRow.difficulty,
+            elapsedDays: 0,
+            elapsedDaysBefore: 0,
+            scheduledDays: 0,
+            scheduledDaysBefore: 0,
+            learningSteps: 0,
+            learningStepsBefore: 0,
+            repsBefore: 0,
+            lapsesBefore: 0,
+            lastReviewBefore: null,
+            schedulingRevisionBefore: 0,
+            schedulingRevisionAfter: 1,
+            reviewedAt: "2025-01-01 00:00:00.000Z",
+            durationMs: 123,
+            algorithm: cardRow.algorithm || "fsrs-6",
+            algorithmVersion: cardRow.algorithmVersion || "ts-fsrs@5.4.1",
+            schedulerConfig,
+            clientRequestId: "syncedRequest01",
+            utcDateCreated: "2025-01-01 00:00:00.000Z",
+            utcDateModified: "2025-01-01 00:00:00.000Z"
+        };
+
+        runInContext(() => syncUpdateService.updateEntities([
+            syncedEntity("flashcard_reviews", reviewRow.reviewId || "", reviewRow),
+            syncedEntity("flashcards", cardRow.cardId || "", cardRow)
+        ], "remote-instance"));
+
+        expect(getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcard_reviews
+            WHERE reviewId = ?`, [reviewRow.reviewId])).toBe(1);
+        expect(becca.getFlashcard(cardRow.cardId || "")?.deckNoteId).toBe(deck.noteId);
+        expect(becca.getFlashcardReview(reviewRow.reviewId || "")?.cardId).toBe(cardRow.cardId);
+
+        runInContext(() => syncUpdateService.updateEntities([
+            syncedEntity("flashcards", cardRow.cardId || "", {
+                ...cardRow,
+                due: "2025-01-02 00:00:00.000Z",
+                schedulingRevision: 2,
+                utcDateModified: "2025-01-02 00:00:00.000Z"
+            })
+        ], "remote-instance"));
+
+        expect(flashcardService.getCard(cardRow.cardId || "").schedulingRevision).toBe(2);
+    });
+
     it("returns deck summaries with safe counts", () => {
         const firstDeck = createTextNote("Deck A");
         const secondDeck = createTextNote("Deck B");
@@ -367,8 +469,8 @@ describe("flashcard service", () => {
         }));
 
         try {
-            const existingNewReviews = countReviewsByState(0);
-            const existingReviewReviews = countReviewsByState(2);
+            const existingNewReviews = countReviewsTodayByState(0);
+            const existingReviewReviews = countReviewsTodayByState(2);
 
             runInContext(() => flashcardService.setSettings({
                 schedulerConfig: {

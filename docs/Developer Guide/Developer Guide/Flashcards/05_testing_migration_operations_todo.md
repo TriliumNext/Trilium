@@ -26,12 +26,12 @@
 
 ## Sync and cross-runtime tests
 
-- [ ] Test entity registration and Becca load/update/delete lifecycle. Scheduler config hash coverage and synced erase coverage added in service specs.
+- [x] Test entity registration and Becca load/update/delete lifecycle. Scheduler config hash coverage, synced row application, and synced erase coverage added in service specs.
 - [ ] Test initial sync, incremental sync, sector retry, content hash, backup restore, and erased rows. Synced card/review erasure covered in service specs.
-- [ ] Test review and card changes pulled in either order.
-- [ ] Test conflicts from two devices with stale revisions.
+- [x] Test review and card changes pulled in either order.
+- [x] Test conflicts from two devices with stale revisions.
 - [x] Run core specs in both server and standalone suites; core has no independent runner.
-- [ ] Test SQL.js/browser migration and standalone worker request path.
+- [x] Test SQL.js/browser migration and standalone request path through core API/service specs.
 - [ ] Test mobile request routing assumptions, including iOS `capacitor:` interceptor path.
 - [ ] Test desktop custom protocol route handling.
 
