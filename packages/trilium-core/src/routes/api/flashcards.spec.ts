@@ -159,6 +159,30 @@ describe("Flashcards API (core)", () => {
         );
     });
 
+    it("validates IDs and due queue limits", async () => {
+        const createInvalidRes = await api.post<{ message: string }>("/api/flashcards/cards", {
+            body: { noteId: "not valid" }
+        });
+        expect(createInvalidRes.status).toBe(400);
+        expect(createInvalidRes.body.message).toContain("Invalid flashcard noteId");
+
+        const badDeckFilterRes = await api.get<{ message: string }>("/api/flashcards/due", {
+            query: { deckNoteId: "not valid" }
+        });
+        expect(badDeckFilterRes.status).toBe(400);
+        expect(badDeckFilterRes.body.message).toContain("Invalid flashcard deckNoteId");
+
+        const badLimitRes = await api.get<{ message: string }>("/api/flashcards/due", {
+            query: { limit: "0" }
+        });
+        expect(badLimitRes.status).toBe(400);
+        expect(badLimitRes.body.message).toContain("Invalid flashcard limit");
+
+        const badCardRes = await api.get<{ message: string }>("/api/flashcards/cards/not%20valid");
+        expect(badCardRes.status).toBe(400);
+        expect(badCardRes.body.message).toContain("Invalid flashcard cardId");
+    });
+
     it("returns conflict without writing for stale reviews", async () => {
         const note = createTextNote("API stale source");
         const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {

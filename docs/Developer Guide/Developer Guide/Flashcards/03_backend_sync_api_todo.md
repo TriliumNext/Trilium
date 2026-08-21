@@ -77,5 +77,5 @@ Add routes in `packages/trilium-core/src/routes/api/flashcards.ts`, then registe
 - [ ] Do not include front/back in server logs, errors, entity hashes, metrics labels, or analytics payloads.
 - [ ] Sanitize/render HTML using existing note renderer rules; avoid introducing a second unsafe HTML path.
 - [ ] Rate-limit review mutations enough to prevent accidental loops, but do not block normal rapid short-term reviews.
-- [ ] Validate all IDs as Trilium IDs and all pagination/limit values.
+- [x] Validate all IDs as Trilium IDs and all pagination/limit values.
 - [ ] Ensure deleted source notes cannot leave review endpoints exposing cached text.

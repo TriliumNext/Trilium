@@ -50,8 +50,10 @@ const FLASHCARD_LABEL = "flashcard";
 const FLASHCARD_LEECH_LABEL = "flashcardLeech";
 const FLASHCARD_LEECH_THRESHOLD = 8;
 const FLASHCARD_SCHEDULER_CONFIG_OPTION = "flashcardSchedulerConfig";
+const FLASHCARD_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 function createCard(request: FlashcardCreateRequest) {
+    assertValidId(request?.noteId, "noteId");
     const note = becca.getNoteOrThrow(request.noteId);
 
     if (!note.isContentAvailable()) {
@@ -59,6 +61,10 @@ function createCard(request: FlashcardCreateRequest) {
             `Cannot create flashcard for protected note '${request.noteId}' `
             + "while protected session is locked."
         );
+    }
+
+    if (request.deckNoteId) {
+        assertValidId(request.deckNoteId, "deckNoteId");
     }
 
     const deckNoteId = request.deckNoteId || getDefaultDeckNoteId(request.noteId);
@@ -130,6 +136,7 @@ function getDueCards({
     let deckCondition = "";
 
     if (deckNoteId) {
+        assertValidId(deckNoteId, "deckNoteId");
         deckCondition = "AND deckNoteId = ?";
         filterParams.push(deckNoteId);
     }
@@ -264,6 +271,7 @@ function moveCardToDeck(
         throw new ValidationError("Flashcard deck move request requires a deck note ID.");
     }
 
+    assertValidId(request.deckNoteId, "deckNoteId");
     const card = getCardRow(cardId);
     assertExpectedRevision(card, request.expectedSchedulingRevision);
     becca.getNoteOrThrow(request.deckNoteId);
@@ -280,6 +288,7 @@ function moveCardToDeck(
 }
 
 function removeCardsForNote(noteId: string): FlashcardRemoveResponse {
+    assertValidId(noteId, "noteId");
     const note = becca.getNoteOrThrow(noteId);
     const deleteId = randomString(10);
     const rows = getSql().getRows<FlashcardRow>(/*sql*/`
@@ -410,6 +419,7 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
 }
 
 function undoReview(request: FlashcardUndoRequest): FlashcardActionResponse {
+    assertValidId(request?.reviewId, "reviewId");
     const review = getSql().getRow<FlashcardReviewRow | null>(/*sql*/`
         SELECT * FROM flashcard_reviews
         WHERE reviewId = ?`, [request.reviewId]);
@@ -551,6 +561,7 @@ function getDefaultDeckNoteId(noteId: string) {
 }
 
 function getCardRow(cardId: string): FlashcardRow {
+    assertValidId(cardId, "cardId");
     const card = getSql().getRow<FlashcardRow | null>(/*sql*/`
         SELECT * FROM flashcards
         WHERE cardId = ? AND isDeleted = 0`, [cardId]);
@@ -641,6 +652,12 @@ function getCurrentSchedulerConfig() {
     const optionValue = optionService.getOptionOrNull(FLASHCARD_SCHEDULER_CONFIG_OPTION)
         ?? DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON;
     return parseFlashcardSchedulerConfig(optionValue);
+}
+
+function assertValidId(id: string | undefined, fieldName: string) {
+    if (!id || !FLASHCARD_ID_PATTERN.test(id)) {
+        throw new ValidationError(`Invalid flashcard ${fieldName}.`);
+    }
 }
 
 function assertExpectedRevision(card: FlashcardRow, expectedSchedulingRevision?: number) {
