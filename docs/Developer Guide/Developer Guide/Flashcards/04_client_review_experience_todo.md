@@ -11,7 +11,7 @@
 
 ## Review surface
 
-- [ ] Add review command reachable from global menu, keyboard action, launcher, and note action. Global menu, keyboard action, and note action exist; launcher remains future work.
+- [x] Add review command reachable from global menu, keyboard action, launcher, and note action.
 - [x] Add responsive review page/dialog usable in desktop, mobile, and standalone.
 - [x] Render front first; reveal back with explicit action and keyboard shortcut.
 - [x] Render Again/Hard/Good/Easy buttons only after reveal unless product decision says otherwise.

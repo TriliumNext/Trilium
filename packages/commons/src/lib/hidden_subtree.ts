@@ -8,7 +8,8 @@ enum Command {
     showDeletedNotes,
     showOptions,
     commandPalette,
-    toggleZenMode
+    toggleZenMode,
+    showFlashcards
 }
 
 export interface HiddenSubtreeAttribute {

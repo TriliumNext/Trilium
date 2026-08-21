@@ -7005,8 +7005,8 @@
     "semantic_hash": "843b146ef6f33d065da89af89991ff5d"
   },
   "apps/server/src/assets/translations/en/server.json": {
-    "mtime": 1786961017.4350643,
-    "ast_hash": "f4cea98d7a3741630a1b10904cc59d09",
+    "mtime": 1787322714.103742,
+    "ast_hash": "c3d5f7fd6951e4cff64584acf3dde3b9",
     "semantic_hash": ""
   },
   "apps/server/src/assets/translations/es/server.json": {
@@ -10905,9 +10905,9 @@
     "semantic_hash": "b1871888578f517ffc1921d320436df7"
   },
   "packages/commons/src/lib/hidden_subtree.ts": {
-    "mtime": 1786902991.6796594,
-    "ast_hash": "cf5fb3999e74b1692e04a3fc85845ad9",
-    "semantic_hash": "cf5fb3999e74b1692e04a3fc85845ad9"
+    "mtime": 1787322741.4176018,
+    "ast_hash": "5107ffa759fd0eef183c09bf6cab36b9",
+    "semantic_hash": ""
   },
   "packages/commons/src/lib/i18n.spec.ts": {
     "mtime": 1786902991.6797101,
@@ -12930,14 +12930,14 @@
     "semantic_hash": "18ed32313bbe62b5280d3b64cc57ec35"
   },
   "packages/trilium-core/src/services/hidden_subtree_launcherbar.spec.ts": {
-    "mtime": 1786902991.7396002,
-    "ast_hash": "27c93b7683bc6b813f69312582a275ff",
-    "semantic_hash": "27c93b7683bc6b813f69312582a275ff"
+    "mtime": 1787322722.2030265,
+    "ast_hash": "ce7c98c84459c7c00cf090f3e0e45680",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/hidden_subtree_launcherbar.ts": {
-    "mtime": 1786902991.7396693,
-    "ast_hash": "4c5dca16f09b7946d7b70c2ee89507ff",
-    "semantic_hash": "4c5dca16f09b7946d7b70c2ee89507ff"
+    "mtime": 1787322710.4075544,
+    "ast_hash": "0921a66815ae6b14c844db3e02350ef9",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/hidden_subtree_templates.spec.ts": {
     "mtime": 1786902991.739734,
@@ -17880,8 +17880,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
-    "mtime": 1787322513.436264,
-    "ast_hash": "acafecf41298e889f461023e8b0e263c",
+    "mtime": 1787322726.2987704,
+    "ast_hash": "224b8d459b371c66510851272b33cfa9",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
