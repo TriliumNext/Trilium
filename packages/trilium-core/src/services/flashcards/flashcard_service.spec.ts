@@ -436,6 +436,32 @@ describe("flashcard service", () => {
             noteTitle: "[protected]"
         });
         expect(dueCard?.back).toBeUndefined();
+        expect(() => runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-protected-review`
+        }))).toThrow("Cannot review protected flashcard while protected session is locked.");
+    });
+
+    it("hides active cards whose source note is missing", () => {
+        const note = createTextNote("Missing source", "Hidden answer");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        getSql().execute(/*sql*/`
+            UPDATE notes
+            SET isDeleted = 1
+            WHERE noteId = ?`, [note.noteId]);
+        delete becca.notes[note.noteId];
+
+        const due = runInContext(() => flashcardService.getDueCards({ limit: 100 }));
+        expect(due.cards.some((dueCard) => dueCard.cardId === card.cardId)).toBe(false);
+        expect(() => runInContext(() => flashcardService.getCard(card.cardId)))
+            .toThrow("Flashcard source note was not found.");
+        expect(() => runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-missing-source-review`
+        }))).toThrow("Flashcard source note was not found.");
     });
 
     it("reviews a card and rejects stale scheduling revisions", () => {

@@ -59,8 +59,7 @@ function createCard(request: FlashcardCreateRequest) {
 
     if (!note.isContentAvailable()) {
         throw new ForbiddenError(
-            `Cannot create flashcard for protected note '${request.noteId}' `
-            + "while protected session is locked."
+            "Cannot create flashcard for protected note while protected session is locked."
         );
     }
 
@@ -112,7 +111,10 @@ function getDecks(): FlashcardDecksResponse {
             SUM(CASE WHEN suspended = 0 AND state = 2 THEN 1 ELSE 0 END) AS reviewCount,
             SUM(CASE WHEN suspended = 1 THEN 1 ELSE 0 END) AS suspendedCount
         FROM flashcards
-        WHERE isDeleted = 0
+        JOIN notes source_notes
+          ON source_notes.noteId = flashcards.noteId
+         AND source_notes.isDeleted = 0
+        WHERE flashcards.isDeleted = 0
         GROUP BY deckNoteId`, [now]);
 
     const decks = rows.map((row) => ({
@@ -164,9 +166,13 @@ function getLimitedDueRows({
     const dailyNewRemaining = Math.max(0, config.dailyNewCardLimit - dailyNewUsed);
     const dailyReviewRemaining = Math.max(0, config.dailyReviewLimit - dailyReviewUsed);
     const rows: FlashcardRow[] = [];
-    const reviewDueCount = countDueRows({ deckNoteId, now, stateCondition: "state = 2" });
-    const learningDueCount = countDueRows({ deckNoteId, now, stateCondition: "state IN (1, 3)" });
-    const newDueCount = countDueRows({ deckNoteId, now, stateCondition: "state = 0" });
+    const reviewDueCount = countDueRows({ deckNoteId, now, stateCondition: "flashcards.state = 2" });
+    const learningDueCount = countDueRows({
+        deckNoteId,
+        now,
+        stateCondition: "flashcards.state IN (1, 3)"
+    });
+    const newDueCount = countDueRows({ deckNoteId, now, stateCondition: "flashcards.state = 0" });
     const addRows = (stateCondition: string, rowLimit: number) => {
         if (rowLimit <= 0 || rows.length >= limit) {
             return;
@@ -180,9 +186,9 @@ function getLimitedDueRows({
         }));
     };
 
-    addRows("state = 2", dailyReviewRemaining);
-    addRows("state IN (1, 3)", limit);
-    addRows("state = 0", dailyNewRemaining);
+    addRows("flashcards.state = 2", dailyReviewRemaining);
+    addRows("flashcards.state IN (1, 3)", limit);
+    addRows("flashcards.state = 0", dailyNewRemaining);
 
     return {
         rows,
@@ -220,9 +226,12 @@ function countDueRows({
 
     return getSql().getValue<number>(/*sql*/`
         SELECT COUNT(1) FROM flashcards
-        WHERE isDeleted = 0
-          AND suspended = 0
-          AND due <= ?
+        JOIN notes source_notes
+          ON source_notes.noteId = flashcards.noteId
+         AND source_notes.isDeleted = 0
+        WHERE flashcards.isDeleted = 0
+          AND flashcards.suspended = 0
+          AND flashcards.due <= ?
           AND ${stateCondition}
           ${deckCondition}`, params) ?? 0;
 }
@@ -242,13 +251,16 @@ function getDueRows({
     const deckCondition = getDeckCondition(deckNoteId, params);
 
     return getSql().getRows<FlashcardRow>(/*sql*/`
-        SELECT * FROM flashcards
-        WHERE isDeleted = 0
-          AND suspended = 0
-          AND due <= ?
+        SELECT flashcards.* FROM flashcards
+        JOIN notes source_notes
+          ON source_notes.noteId = flashcards.noteId
+         AND source_notes.isDeleted = 0
+        WHERE flashcards.isDeleted = 0
+          AND flashcards.suspended = 0
+          AND flashcards.due <= ?
           AND ${stateCondition}
           ${deckCondition}
-        ORDER BY due, cardId
+        ORDER BY flashcards.due, flashcards.cardId
         LIMIT ?`, [ ...params, limit ]);
 }
 
@@ -258,7 +270,7 @@ function getDeckCondition(deckNoteId: string | undefined, params: (string | numb
     }
 
     params.push(deckNoteId);
-    return "AND deckNoteId = ?";
+    return "AND flashcards.deckNoteId = ?";
 }
 
 function getStudyDayRange(dayRolloverHour: number) {
@@ -458,10 +470,14 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
         throw new ConflictError(`Flashcard '${cardId}' is suspended and cannot be reviewed.`);
     }
 
-    const note = becca.getNoteOrThrow(card.noteId);
+    const note = becca.getNote(card.noteId);
+    if (!note || note.isDeleted) {
+        throw new NotFoundError("Flashcard source note was not found.");
+    }
+
     if (!note.isContentAvailable()) {
         throw new ForbiddenError(
-            `Cannot review protected note '${card.noteId}' while protected session is locked.`
+            "Cannot review protected flashcard while protected session is locked."
         );
     }
 
@@ -687,7 +703,11 @@ function buildReviewCard(
     card: FlashcardRow,
     { includeBack }: { includeBack: boolean }
 ): FlashcardReviewCard {
-    const note = becca.getNoteOrThrow(card.noteId);
+    const note = becca.getNote(card.noteId);
+
+    if (!note || note.isDeleted) {
+        throw new NotFoundError("Flashcard source note was not found.");
+    }
 
     if (!note.isContentAvailable()) {
         return {

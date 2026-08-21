@@ -21,8 +21,8 @@
 - [x] Test stale revision returns `409` and performs no write.
 - [x] Test latest-review undo and conflict after another scheduling action.
 - [x] Test two cards in one deck, many decks, pagination, limits, overdue order, and empty queue.
-- [ ] Test protected source note and protected-session expiration. Locked protected-source behavior covered in service specs.
-- [ ] Test no front/back leakage in errors/logs/metrics.
+- [x] Test protected source note and protected-session expiration. Locked protected-source behavior covered in service specs.
+- [x] Test no front/back leakage in flashcard missing-source/protected-source errors. Metrics/log audit remains part of release privacy review.
 
 ## Sync and cross-runtime tests
 

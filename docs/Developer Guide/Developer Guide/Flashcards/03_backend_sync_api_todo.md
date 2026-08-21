@@ -54,7 +54,7 @@ Add routes in `packages/trilium-core/src/routes/api/flashcards.ts`, then registe
 - [x] `GET/PUT /api/flashcards/settings` — validated account-wide FSRS settings stored in synced option.
 - [x] Add request/response interfaces in commons; do not duplicate anonymous shapes in client/server.
 - [x] Return `409` for stale card revision and document recovery response.
-- [ ] Return safe `404/403` for deleted/protected/unavailable source notes without leaking existence where policy forbids it.
+- [x] Return safe `404/403` for deleted/protected/unavailable source notes without leaking front/back content.
 - [ ] Add Swagger/OpenAPI annotations if this API is externally documented.
 
 ## Server jobs and maintenance
@@ -73,9 +73,9 @@ Add routes in `packages/trilium-core/src/routes/api/flashcards.ts`, then registe
 
 ## Security and privacy
 
-- [ ] Authorize every card by source note visibility/protection.
+- [x] Authorize every card by source note visibility/protection.
 - [ ] Do not include front/back in server logs, errors, entity hashes, metrics labels, or analytics payloads.
 - [ ] Sanitize/render HTML using existing note renderer rules; avoid introducing a second unsafe HTML path.
 - [ ] Rate-limit review mutations enough to prevent accidental loops, but do not block normal rapid short-term reviews.
 - [x] Validate all IDs as Trilium IDs and all pagination/limit values.
-- [ ] Ensure deleted source notes cannot leave review endpoints exposing cached text.
+- [x] Ensure deleted source notes cannot leave review endpoints exposing cached text.
