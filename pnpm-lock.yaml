@@ -319,8 +319,8 @@ importers:
         specifier: 8.11.1
         version: 8.11.1
       marked:
-        specifier: 18.0.9
-        version: 18.0.9
+        specifier: 18.0.10
+        version: 18.0.10
       mermaid:
         specifier: 11.16.1
         version: 11.16.1
@@ -761,8 +761,8 @@ importers:
         specifier: 1.6.1
         version: 1.6.1(supports-color@10.2.2)
       marked:
-        specifier: 18.0.9
-        version: 18.0.9
+        specifier: 18.0.10
+        version: 18.0.10
       mime-types:
         specifier: 3.0.2
         version: 3.0.2
@@ -920,8 +920,8 @@ importers:
         specifier: 8.11.1
         version: 8.11.1
       marked:
-        specifier: 18.0.9
-        version: 18.0.9
+        specifier: 18.0.10
+        version: 18.0.10
       mermaid:
         specifier: 11.16.1
         version: 11.16.1
@@ -1273,11 +1273,11 @@ importers:
         specifier: 3.10.1
         version: 3.10.1
       marked:
-        specifier: 18.0.9
-        version: 18.0.9
+        specifier: 18.0.10
+        version: 18.0.10
       marked-footnote:
         specifier: 1.4.0
-        version: 1.4.0(marked@18.0.9)
+        version: 1.4.0(marked@18.0.10)
       numfmt:
         specifier: 3.2.6
         version: 3.2.6
@@ -9425,8 +9425,8 @@ packages:
     engines: {node: '>= 20'}
     hasBin: true
 
-  marked@18.0.9:
-    resolution: {integrity: sha512-/Sa4qiiHZxf0/FQdBBowr9q4r10krCwMvpK48FUBdXdUXScDxiQGR9zCPrFgRVR5LU3iySOiIjy09ZQvADir1w==}
+  marked@18.0.10:
+    resolution: {integrity: sha512-FJeH4bRpYoXiggcgriCGItKCSv3xkngJc4QCZ/rkQCogU3VYaLxYJoZl8Nw/b4+x7iij/pd+09mZ6A1dXzpL0A==}
     engines: {node: '>= 20'}
     hasBin: true
 
@@ -22701,13 +22701,13 @@ snapshots:
 
   markdown-table@3.0.4: {}
 
-  marked-footnote@1.4.0(marked@18.0.9):
+  marked-footnote@1.4.0(marked@18.0.10):
     dependencies:
-      marked: 18.0.9
+      marked: 18.0.10
 
   marked@16.4.2: {}
 
-  marked@18.0.9: {}
+  marked@18.0.10: {}
 
   matcher@3.0.0:
     dependencies:
