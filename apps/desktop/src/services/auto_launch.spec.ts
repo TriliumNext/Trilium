@@ -14,6 +14,8 @@ const state = vi.hoisted(() => ({
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn(),
     rmSync: vi.fn(),
+    readdirSync: vi.fn(),
+    readFileSync: vi.fn(),
     log: { info: vi.fn(), error: vi.fn() }
 }));
 
@@ -37,7 +39,11 @@ vi.mock("fs", () => ({
     default: {
         mkdirSync: (...a: unknown[]) => state.mkdirSync(...a),
         writeFileSync: (...a: unknown[]) => state.writeFileSync(...a),
-        rmSync: (...a: unknown[]) => state.rmSync(...a)
+        rmSync: (...a: unknown[]) => state.rmSync(...a),
+        // Detection must survive these being unimplemented (undefined return):
+        // a missing applications directory is the normal case, not an error.
+        readdirSync: (...a: unknown[]) => state.readdirSync(...a),
+        readFileSync: (...a: unknown[]) => state.readFileSync(...a)
     }
 }));
 
@@ -73,7 +79,9 @@ function setExecPath(p: string) {
 }
 
 beforeEach(() => {
-    vi.clearAllMocks();
+    // reset (not clear): the detection tests install per-test fs implementations
+    // that must not leak into the execPath-fallback tests after them.
+    vi.resetAllMocks();
     state.launchOnStartup = false;
     state.hideOnAutoStart = false;
     state.setLoginItemThrows = false;
@@ -81,6 +89,9 @@ beforeEach(() => {
     state.ipcOn.clear();
     delete process.env.APPIMAGE;
     delete process.env.XDG_CONFIG_HOME;
+    delete process.env.TRILIUM_LAUNCH_EXEC;
+    delete process.env.XDG_DATA_HOME;
+    delete process.env.XDG_DATA_DIRS;
 });
 
 afterEach(() => {
@@ -88,6 +99,9 @@ afterEach(() => {
     setExecPath(ORIGINAL_EXECPATH);
     delete process.env.APPIMAGE;
     delete process.env.XDG_CONFIG_HOME;
+    delete process.env.TRILIUM_LAUNCH_EXEC;
+    delete process.env.XDG_DATA_HOME;
+    delete process.env.XDG_DATA_DIRS;
 });
 
 describe("auto_launch", () => {
@@ -164,6 +178,72 @@ describe("auto_launch", () => {
 
         const [, content] = state.writeFileSync.mock.calls[0] as [string, string];
         expect(content).toContain('Exec="/home/user/Apps/Trilium.AppImage"');
+    });
+
+    it("honours $TRILIUM_LAUNCH_EXEC as an unbundled-Electron packager override", () => {
+        setPlatform("linux");
+        // A system-Electron install: execPath is the bare electron binary that
+        // cannot relaunch the app on its own (#10918).
+        setExecPath("/usr/lib/electron42/electron");
+        process.env.TRILIUM_LAUNCH_EXEC = "/usr/bin/triliumnext";
+        state.launchOnStartup = true;
+
+        applyLaunchOnStartup();
+
+        const [, content] = state.writeFileSync.mock.calls[0] as [string, string];
+        expect(content).toContain('Exec="/usr/bin/triliumnext"');
+    });
+
+    it("reuses the installed launcher's Exec when execPath is a bare system Electron", () => {
+        setPlatform("linux");
+        setExecPath("/usr/lib/electron42/electron");
+        process.env.XDG_DATA_DIRS = "/usr/share";
+        // path.join keeps these comparable on every host OS.
+        const sysApps = path.join("/usr/share", "applications");
+        state.readdirSync.mockImplementation((dir: string) =>
+            dir === sysApps ? ["gimp.desktop", "triliumnext.desktop", "vim.desktop"] : undefined
+        );
+        state.readFileSync.mockImplementation((file: string) =>
+            file === path.join(sysApps, "triliumnext.desktop")
+                ? [
+                      "[Desktop Entry]",
+                      "Type=Application",
+                      "Name=Trilium Next Notes",
+                      "Exec=/usr/bin/triliumnext %U",
+                      "Icon=triliumnext"
+                  ].join("\n")
+                : undefined
+        );
+        state.launchOnStartup = true;
+
+        applyLaunchOnStartup();
+
+        const [, content] = state.writeFileSync.mock.calls[0] as [string, string];
+        // The wrapper is reused verbatim (its env setup must not be bypassed)
+        // and the %U field code — a file-manager launch placeholder — is gone.
+        expect(content).toContain("Exec=/usr/bin/triliumnext\n");
+    });
+
+    it("prefers a user-local launcher over the system package's", () => {
+        setPlatform("linux");
+        setExecPath("/usr/lib/electron42/electron");
+        process.env.XDG_DATA_DIRS = "/usr/share";
+        const userApps = path.join("/home/user/.local", "share", "applications");
+        const sysApps = path.join("/usr/share", "applications");
+        state.readdirSync.mockImplementation((dir: string) =>
+            dir === userApps || dir === sysApps ? ["triliumnext.desktop"] : undefined
+        );
+        state.readFileSync.mockImplementation((file: string) =>
+            file === path.join(userApps, "triliumnext.desktop")
+                ? "[Desktop Entry]\nExec=/home/user/bin/trilium-custom\n"
+                : "[Desktop Entry]\nExec=/usr/bin/triliumnext\n"
+        );
+        state.launchOnStartup = true;
+
+        applyLaunchOnStartup();
+
+        const [, content] = state.writeFileSync.mock.calls[0] as [string, string];
+        expect(content).toContain("Exec=/home/user/bin/trilium-custom\n");
     });
 
     it("honours $XDG_CONFIG_HOME for the Linux autostart directory", () => {
