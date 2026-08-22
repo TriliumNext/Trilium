@@ -88,6 +88,51 @@ describe("ContentHintManager", () => {
             expect(livePopupText()).toBe("A tip");
         });
 
+        it("reuses the live popup across an element switch with unchanged content when the popup is CSS-pinned", () => {
+            const pinned = new ContentHintManager({popupPositionIsFixed: true});
+            const handleA = pinned.createHandle(a, "same tip");
+            const handleB = pinned.createHandle(b, "same tip");
+            handleA.show();
+            const popup = livePopup();
+            expect(popup).not.toBeNull();
+
+            handleB.show();
+            // The same DOM node survives the switch — no dispose/create/fade.
+            expect(livePopup()).toBe(popup);
+            expect(livePopupText()).toBe("same tip");
+
+            handleB.hide();
+            expect(livePopup()).toBe(popup);
+            expect(livePopupText()).toBe("same tip");
+            pinned.destroy();
+        });
+
+        it("still rebuilds the popup across an element switch when content differs", () => {
+            const pinned = new ContentHintManager({popupPositionIsFixed: true});
+            const handleA = pinned.createHandle(a, "tip one");
+            const handleB = pinned.createHandle(b, "tip two");
+            handleA.show();
+            const popup = livePopup();
+
+            handleB.show();
+            expect(livePopup()).not.toBe(popup);
+            expect(livePopupText()).toBe("tip two");
+            pinned.destroy();
+        });
+
+        it("still rebuilds across an element switch when the popup is anchored", () => {
+            const handleA = manager.createHandle(a, "same tip");
+            const handleB = manager.createHandle(b, "same tip");
+            handleA.show();
+            const popup = livePopup();
+
+            handleB.show();
+            // Unpinned managers keep Bootstrap's own placement, so the popup
+            // must follow the new anchor even when the text is unchanged.
+            expect(livePopup()).not.toBe(popup);
+            manager.destroy();
+        });
+
         it("show() on a handle already in the stack moves it to the top", () => {
             const first = manager.createHandle(a, "A");
             const second = manager.createHandle(b, "B");
