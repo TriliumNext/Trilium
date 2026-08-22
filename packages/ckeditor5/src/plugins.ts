@@ -30,6 +30,7 @@ import Collapsible from "./plugins/collapsible/collapsible.js";
 import Footnotes from "./plugins/footnotes/footnotes.js";
 import Math from "./plugins/math/math.js";
 import AutoformatMath from "./plugins/math/autoformat_math.js";
+import BlockId from "./plugins/block_id.js";
 import CopyAnchorLinkButton from "./plugins/copy_anchor_link.js";
 import CopyLinkUrlButton from "./plugins/copy_link_url.js";
 import ImageActions from "./plugins/image_actions.js";
@@ -89,6 +90,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TodoListMultistate,
     CollapsibleListItems,
     TableIndent,
+    BlockId,
     CopyAnchorLinkButton,
     CopyLinkUrlButton,
     ImageActions,
