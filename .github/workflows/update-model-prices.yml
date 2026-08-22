@@ -15,6 +15,9 @@ permissions:
 jobs:
   update-model-prices:
     name: Refresh model_prices.json
+    # Forks inherit the schedule, and the PR this opens is only useful in the repository
+    # model_prices.json ships from.
+    if: ${{ github.repository == vars.REPO_MAIN }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

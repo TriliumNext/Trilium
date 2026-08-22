@@ -32,6 +32,9 @@ permissions:
 jobs:
   sync-readme:
     name: Regenerate the translation base README
+    # Only the repository Weblate translates from needs the regenerated base, and a fork
+    # replays the README push when it syncs main.
+    if: ${{ github.repository == vars.REPO_MAIN }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

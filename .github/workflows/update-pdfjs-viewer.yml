@@ -30,6 +30,9 @@ permissions:
 
 jobs:
   vendor-viewer:
+    # Forks inherit the schedule, and the bump PR is only useful in the repository
+    # pdfjs-dist is pinned from.
+    if: ${{ github.repository == vars.REPO_MAIN }}
     # Matched to the e2e-pdfjs-viewer job in playwright.yml, which runs the same suite.
     runs-on: ubuntu-22.04
     name: Bump pdf.js and re-vendor the viewer

@@ -109,6 +109,9 @@ jobs:
 
   build:
     name: Build Docker images
+    # Only the main repository publishes. merge declares needs: build, so it skips with
+    # this job; test_docker stays unguarded because it uses no secrets.
+    if: ${{ github.repository == vars.REPO_MAIN }}
     strategy:
       fail-fast: false
       matrix:

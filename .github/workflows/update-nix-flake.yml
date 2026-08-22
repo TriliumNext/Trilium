@@ -33,6 +33,9 @@ permissions:
 jobs:
   electron-pin:
     name: Sync the pinned Electron binary
+    # A fork replays the package.json bump when it syncs main, so without the guard it
+    # opens the flake PR against a pin it does not own.
+    if: ${{ github.repository == vars.REPO_MAIN }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
