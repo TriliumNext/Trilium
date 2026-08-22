@@ -7,6 +7,7 @@ import BAttribute from "../becca/entities/battribute.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getIconPacks } from "./icon_packs.js";
 import noteService from "./notes.js";
+import { escapeCssString } from "./utils/index.js";
 
 /**
  * Returns the task states from the `_taskStates` hidden subtree, in note order.
@@ -114,9 +115,14 @@ export function seedDefaultTaskStates() {
     });
 }
 
-function escapeCssString(value: string): string {
-    return value.replace(/[\\"]/g, "\\$&");
-}
+/**
+ * Characters that stop a task state's `color` from being emitted as a raw CSS value. These
+ * are the only ones that can end the declaration, the rule, or the inline `<style>` element
+ * the stylesheet is served in — an escape resolves within a token rather than terminating
+ * anything, and an unbalanced paren cannot reach past the element either. Everything else
+ * is inert inside a value, so `color-mix()`, `var()` and `calc()` arithmetic pass through.
+ */
+const UNSAFE_CSS_VALUE_PATTERN = /["'<>;{}\\]|[\u0000-\u001F\u007F]/;
 
 /**
  * Resolves an icon class (e.g. `bx bx-cancel`) to its font glyph and family
@@ -176,12 +182,13 @@ export function generateTaskStateCss(): string {
             continue;
         }
         const name = escapeCssString(state.name);
-        const hue = (state.color) ? computeHue(state.color) : undefined;
-        
+        const color = (state.color && !UNSAFE_CSS_VALUE_PATTERN.test(state.color)) ? state.color : "";
+        const hue = color ? computeHue(color) : undefined;
+
         rules.push(`[data-trilium-task-state="${name}"], .tn-task-checkbox[data-trilium-task-state="${name}"] {
-            --task-state-glyph: "${resolved.glyph}";
-            --task-state-glyph-font-family: "${resolved.fontFamily}";
-            --task-state-color: ${state.color || "inherit"};
+            --task-state-glyph: "${escapeCssString(resolved.glyph)}";
+            --task-state-glyph-font-family: "${escapeCssString(resolved.fontFamily)}";
+            --task-state-color: ${color || "inherit"};
             --task-state-hue: ${hue ?? "unset"};
         }`);
     }

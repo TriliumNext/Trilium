@@ -218,6 +218,46 @@ describe("task_states (real DB)", () => {
             expect(colorNote.noteId).toBeTruthy();
         });
 
+        it("falls back to inherit for a color that could break out of the declaration", () => {
+            const note = getContext().init(() =>
+                createTaskStateNote(
+                    customState({
+                        name: "evilcolor",
+                        markdownSymbol: "e",
+                        color: `red; } </style><script>alert(1)</script><style> .x {`
+                    })
+                )
+            );
+            expect(note.noteId).toBeTruthy();
+
+            const css = generateTaskStateCss();
+            expect(css).not.toMatch(/<\/style/i);
+            expect(css).toContain("--task-state-color: inherit");
+        });
+
+        it("passes through the CSS color syntaxes a picker or a hand-written label can produce", () => {
+            const colors = [
+                "#ff0000",
+                "rgb(255 0 0 / 50%)",
+                "oklch(0.7 0.1 200)",
+                "color-mix(in srgb, red 40%, blue)",
+                "var(--my-color, #fff)",
+                "hsl(calc(120 + 30) 50% 50%)",
+                "hsl(from var(--c) h s calc(l * 0.8))"
+            ];
+
+            for (const [ index, color ] of colors.entries()) {
+                const name = `okcolor${index}`;
+                getContext().init(() => createTaskStateNote(
+                    customState({ name, markdownSymbol: String.fromCharCode(65 + index), color })
+                ));
+
+                const css = generateTaskStateCss();
+                const parts = css.split(`[data-trilium-task-state="${name}"]`);
+                expect(parts[parts.length - 1]).toContain(`--task-state-color: ${color}`);
+            }
+        });
+
         it("skips states whose icon cannot be resolved to a glyph", () => {
             const note = getContext().init(() =>
                 createTaskStateNote(

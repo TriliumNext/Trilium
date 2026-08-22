@@ -166,6 +166,51 @@ describe("CSS generation", () => {
     });
 });
 
+describe("Generating CSS for untrusted manifests", () => {
+    function generateCssFor(icons: IconPackManifest["icons"]) {
+        const processedResult = processIconPack(buildNote({
+            type: "text",
+            title: "Untrusted pack",
+            content: JSON.stringify({ icons }),
+            attachments: [ defaultAttachment ],
+            "#iconPack": "un"
+        }));
+        expect(processedResult).toBeTruthy();
+        return generateCss(processedResult!, "/api/attachments/x/download");
+    }
+
+    it("drops icon keys outside the CSS class charset and keeps the valid ones", () => {
+        const css = generateCssFor({
+            "un-ok": { glyph: "\ue9c2", terms: [ "ok" ] },
+            "un-evil</style><script>alert(1)</script>": { glyph: "\uec92", terms: [ "evil" ] },
+            "un evil": { glyph: "\uec92", terms: [ "evil" ] }
+        });
+
+        expect(css).toContain(`.un.un-ok::before { content: "\ue9c2"; }`);
+        expect(css).not.toContain("<script>");
+        expect(css).not.toContain(".un.un evil");
+    });
+
+    it("escapes a glyph so it cannot end the style element it is served in", () => {
+        const css = generateCssFor({
+            "un-evil": { glyph: `</style><script>alert(1)</script>`, terms: [ "evil" ] }
+        });
+
+        expect(css).not.toMatch(/<\/style/i);
+        expect(css).toContain(`.un.un-evil::before { content: "\\3c /style\\3e \\3c script\\3e alert(1)\\3c /script\\3e "; }`);
+    });
+
+    it("escapes a glyph so it cannot break out of the content declaration", () => {
+        const css = generateCssFor({
+            "un-evil": { glyph: `"; } body { display: none; } .x::before { content: "`, terms: [ "evil" ] }
+        });
+
+        // Both quotes are escaped, so the payload stays a CSS string value: it renders as
+        // text rather than closing `content` and opening a rule of the attacker's choosing.
+        expect(css).toContain(`.un.un-evil::before { content: "\\22 ; } body { display: none; } .x::before { content: \\22 "; }`);
+    });
+});
+
 describe("Icon registry", () => {
     it("generates the registry", () => {
         const iconPack = processIconPack(buildNote({

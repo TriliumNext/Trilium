@@ -1,4 +1,4 @@
-import { cls, options } from "@triliumnext/core";
+import { cls, options, task_states } from "@triliumnext/core";
 import type { Application, NextFunction,Request, Response } from "express";
 import supertest from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -147,6 +147,28 @@ describe("Share API test", () => {
         } finally {
             config.Security.backendScriptingEnabled = originalEnabled;
         }
+    });
+
+    it("keeps the generated icon-pack stylesheet inside its style element", async () => {
+        // The share page embeds the icon-pack and task-state CSS inline, so a value carried
+        // into it from a note must not be able to close `<style>` and have the rest of the
+        // response parsed as markup. A task state's color is one such value.
+        cls.init(() => task_states.createTaskStateNote({
+            name: "sharecssbreakout",
+            title: "Share CSS breakout",
+            markdownSymbol: "%",
+            isCompleted: false,
+            color: `red; } </style><script>window.xss=1</script><style> .x {`,
+            icon: "bx bx-loader"
+        }));
+
+        const response = await supertest(app).get("/share/").expect(200);
+        const styleEl = response.text.match(/<style id="trilium-icon-packs">([\s\S]*?)<\/style>/);
+
+        expect(styleEl).toBeTruthy();
+        expect(styleEl?.[1]).not.toContain("<script>");
+        expect(response.text).not.toContain("window.xss=1");
+        expect(cannotSetHeadersCount).toBe(0);
     });
 
 });

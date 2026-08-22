@@ -1062,3 +1062,33 @@ describe("#compareVersions", () => {
         });
     });
 });
+
+describe("#escapeCssString", () => {
+    it("hex-escapes the characters that could escape a double-quoted CSS string", () => {
+        expect(utils.escapeCssString(`a"b\\c'd`)).toBe("a\\22 b\\5c c\\27 d");
+        expect(utils.escapeCssString("a\nb")).toBe("a\\a b");
+    });
+
+    it("hex-escapes the markup characters that could end the surrounding <style> element", () => {
+        expect(utils.escapeCssString("</style><script>x</script>")).toBe(
+            "\\3c /style\\3e \\3c script\\3e x\\3c /script\\3e "
+        );
+    });
+
+    it("leaves the private-use glyphs an icon pack actually carries untouched", () => {
+        expect(utils.escapeCssString("")).toBe("");
+    });
+});
+
+describe("#escapeInlineStylesheet", () => {
+    it("escapes every closing style tag, whatever its casing", () => {
+        const escaped = utils.escapeInlineStylesheet(`.a::before { content: "</style><SCRIPT>x</STYLE>"; }`);
+        expect(escaped).not.toMatch(/<\/style/i);
+        expect(escaped).toBe(`.a::before { content: "\\3c /style><SCRIPT>x\\3c /STYLE>"; }`);
+    });
+
+    it("leaves a stylesheet without a closing style tag byte-identical", () => {
+        const css = `.bx.bx-ball::before { content: ""; }\n@media (width > 40em) { .a { color: red; } }`;
+        expect(utils.escapeInlineStylesheet(css)).toBe(css);
+    });
+});
