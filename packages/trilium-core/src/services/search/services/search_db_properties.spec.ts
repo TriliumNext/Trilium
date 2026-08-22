@@ -3,7 +3,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { getContext } from "../../context.js";
 import noteService from "../../notes.js";
 import sql_init from "../../sql_init.js";
-import { getSql } from "../../sql/index.js";
 import searchService from "./search.js";
 
 /**
@@ -63,18 +62,7 @@ describe("search on database-backed note properties", () => {
 
     it("counts revisions instead of always reporting zero", () => {
         const probe = searchService.searchNotes("note.title *=* DbPropsProbe")[0];
-        const utcNow = "2026-01-01T00:00:00.000Z";
-        const dateNow = "2026-01-01 00:00:00";
-
-        getSql().execute(
-            `INSERT INTO blobs (blobId, content, dateModified, utcDateModified) VALUES (?, ?, ?, ?)`,
-            ["tcRevBlob1", "y".repeat(200), dateNow, utcNow]
-        );
-        getSql().execute(
-            `INSERT INTO revisions (revisionId, noteId, title, blobId, utcDateLastEdited, utcDateCreated, utcDateModified, dateLastEdited, dateCreated)
-             VALUES (?, ?, 'DbPropsProbe', ?, ?, ?, ?, ?, ?)`,
-            ["tcRev1", probe.noteId, "tcRevBlob1", utcNow, utcNow, utcNow, dateNow, dateNow]
-        );
+        getContext().init(() => probe.saveRevision());
 
         resetMemoizedNoteProperties();
 
