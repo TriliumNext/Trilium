@@ -11,7 +11,13 @@ import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { BoardColumnData, BoardViewData } from ".";
-import { type BoardStatusDefinition, canStoreColumnsInDefinition, DEFAULT_GROUP_BY } from "./columns";
+import {
+    type BoardStatusDefinition,
+    canStoreColumnsInDefinition,
+    DEFAULT_GROUP_BY,
+    noteColumnRemoved,
+    unnoteColumnRemoved
+} from "./columns";
 import { ColumnMap } from "./data";
 
 export default class BoardApi {
@@ -71,6 +77,7 @@ export default class BoardApi {
 
         // Add the new column to persisted data if it doesn't exist
         if (columns.some(col => col.value === columnName)) return false;
+        unnoteColumnRemoved(this.parentNote.noteId, columnName);
         this.storeColumns([ ...columns, { value: columnName } ]);
         return true;
     }
@@ -83,6 +90,12 @@ export default class BoardApi {
             ? { name: "deleteRelation", relationName: this.statusAttribute }
             : { name: "deleteLabel", labelName: this.statusAttribute };
         await executeBulkActions(noteIds, [ action ]);
+        // Marked so the mirror filter knows this value is gone by intent, not
+        // by a race (#11100). The marker clears only when a refresh observes
+        // the value in no source at all — see getBoardData — because a racy
+        // refresh can mirror the value back into board.json right up until
+        // the definition write's entity change lands.
+        noteColumnRemoved(this.parentNote.noteId, column);
         this.storeColumns((this.viewConfig?.columns ?? []).filter(col => col.value !== column));
     }
 
@@ -95,6 +108,9 @@ export default class BoardApi {
             : { name: "updateLabelValue", labelName: this.statusAttribute, labelValue: newValue };
         await executeBulkActions(noteIds, [ action ]);
 
+        // The old value is gone by intent; the new one may be re-added later under this name.
+        noteColumnRemoved(this.parentNote.noteId, oldValue);
+        unnoteColumnRemoved(this.parentNote.noteId, newValue);
         // Rename the column in the persisted data.
         this.storeColumns((this.viewConfig?.columns ?? [])
             .map(col => col.value === oldValue ? { ...col, value: newValue } : col));
@@ -138,6 +154,10 @@ export default class BoardApi {
         // Not awaited — every caller is the tail of a user gesture the board has already rendered —
         // so the failure is caught here rather than left to reject unhandled. The columns are still
         // in the view config, so the board is not wrong, only out of step with the definition.
+        // The removal marker outlives this write on purpose: a refresh that raced
+        // the write can still have mirrored the removed value back into
+        // board.json, and only the refresh that observes every source clean
+        // (see getBoardData) may clear the marker.
         this.syncColumnsToDefinition(columns.map(({ value }) => value))
             .catch((e) => {
                 console.error("Failed to store the board columns in the attribute definition:", e);

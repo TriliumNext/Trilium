@@ -117,3 +117,55 @@ export function resolveBoardColumns(
 
     return columns;
 }
+
+/**
+ * How long a removal mark can veto a persisted column. The delete race it
+ * exists for (#11100) resolves in seconds — the definition write's entity
+ * change arrives, or its failure has surfaced — so anything still vetoed
+ * after this window is far more likely a deliberate recreation from another
+ * surface (a synced client, the attribute panel) than the tail of a race.
+ */
+const REMOVED_COLUMN_MARK_TTL_MS = 60_000;
+
+const removedColumnsByNote = new Map<string, Map<string, number>>();
+
+export function noteColumnRemoved(
+    noteId: string,
+    value: string,
+    now: number = Date.now()
+): void {
+    let values = removedColumnsByNote.get(noteId);
+    if (!values) {
+        values = new Map();
+        removedColumnsByNote.set(noteId, values);
+    }
+    values.set(value, now);
+}
+
+export function unnoteColumnRemoved(noteId: string, value: string): void {
+    removedColumnsByNote.get(noteId)?.delete(value);
+}
+
+/** The board's currently-marked removed values, for convergence checks. */
+export function recentlyRemovedColumnsFor(noteId: string): string[] {
+    return [ ...(removedColumnsByNote.get(noteId)?.keys() ?? []) ];
+}
+
+export function isRecentlyRemovedColumn(
+    noteId: string,
+    value: string,
+    now: number = Date.now()
+): boolean {
+    const markedAt = removedColumnsByNote.get(noteId)?.get(value);
+    if (markedAt === undefined) {
+        return false;
+    }
+    if (now - markedAt > REMOVED_COLUMN_MARK_TTL_MS) {
+        // Expired: drop it so the map cannot grow unbounded across a session.
+        unnoteColumnRemoved(noteId, value);
+        return false;
+    }
+    return true;
+}
+
+

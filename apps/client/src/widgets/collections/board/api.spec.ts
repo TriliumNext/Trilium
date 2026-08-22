@@ -38,7 +38,7 @@ function createApi(
         () => {},
         getStatusDefinition(board, statusAttribute)
     );
-    return { api, saved };
+    return { api, saved, board };
 }
 
 describe("BoardApi column mutations", () => {

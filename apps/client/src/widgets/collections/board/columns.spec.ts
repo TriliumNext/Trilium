@@ -9,7 +9,10 @@ import {
     BOARD_TEMPLATE_ID,
     canStoreColumnsInDefinition,
     getStatusDefinition,
-    resolveBoardColumns
+    isRecentlyRemovedColumn,
+    noteColumnRemoved,
+    resolveBoardColumns,
+    unnoteColumnRemoved
 } from "./columns";
 
 describe("resolveBoardColumns", () => {
@@ -29,6 +32,7 @@ describe("resolveBoardColumns", () => {
     it("falls back to the board's own two sources when nothing is defined", () => {
         expect(resolveBoardColumns([], [ "Todo" ], [ "Done" ])).toEqual([ "Todo", "Done" ]);
     });
+
 
     it("drops blanks and treats columns differing only in case as distinct", () => {
         expect(resolveBoardColumns([ "", "  " ], [ " Todo " ], [ "todo" ]))
@@ -125,3 +129,33 @@ function buildBoard(
 
     return board;
 }
+
+describe("removed-column marking", () => {
+    const BOARD = "board-note-id";
+
+    it("marks a removed column until it is unmarked under the same name", () => {
+        noteColumnRemoved(BOARD, "TCD");
+        expect(isRecentlyRemovedColumn(BOARD, "TCD")).toBe(true);
+
+        unnoteColumnRemoved(BOARD, "TCD");
+        expect(isRecentlyRemovedColumn(BOARD, "TCD")).toBe(false);
+    });
+
+    it("scopes the mark to one board", () => {
+        noteColumnRemoved(BOARD, "TCD");
+        expect(isRecentlyRemovedColumn("another-board", "TCD")).toBe(false);
+        unnoteColumnRemoved(BOARD, "TCD");
+    });
+
+    it("expires the mark so a later recreation cannot be vetoed forever", () => {
+        const markedAt = 1_000_000;
+        noteColumnRemoved(BOARD, "TCD", markedAt);
+
+        // Inside the window the delete still wins the ambiguity.
+        expect(isRecentlyRemovedColumn(BOARD, "TCD", markedAt + 30_000)).toBe(true);
+        // Past it, a persisted-only value is read back as recreation.
+        expect(isRecentlyRemovedColumn(BOARD, "TCD", markedAt + 61_000)).toBe(false);
+        // And the expired entry is dropped, not just ignored.
+        expect(isRecentlyRemovedColumn(BOARD, "TCD", markedAt + 120_000)).toBe(false);
+    });
+});

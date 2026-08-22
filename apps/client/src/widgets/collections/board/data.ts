@@ -1,6 +1,11 @@
 import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
-import { resolveBoardColumns } from "./columns";
+import {
+    isRecentlyRemovedColumn,
+    recentlyRemovedColumnsFor,
+    resolveBoardColumns,
+    unnoteColumnRemoved
+} from "./columns";
 import { BoardViewData } from "./index";
 
 export type ColumnMap = Map<string, {
@@ -11,21 +16,62 @@ export type ColumnMap = Map<string, {
 /**
  * @param definitionOptions the choices the board's group-by definition offers, empty when it has no
  *                          select definition of its own to lead the column order.
+ * @param persistedColumnsAreMirror whether the persisted columns are a mirror of this resolution
+ *                                  because the board owns the definition (see resolveBoardColumns).
  */
 export async function getBoardData(
     parentNote: FNote,
     groupByColumn: string,
     persistedData: BoardViewData,
     includeArchived: boolean,
-    definitionOptions: string[] = []
+    definitionOptions: string[] = [],
+    persistedColumnsAreMirror = false
 ) {
     const byColumn: ColumnMap = new Map();
 
     // First, scan all notes to find what columns actually exist
     await recursiveGroupBy(parentNote.getChildBranches(), byColumn, groupByColumn, includeArchived, new Set<string>());
 
-    const persistedColumns = (persistedData.columns ?? []).map(c => c.value);
-    const columns = resolveBoardColumns(definitionOptions, persistedColumns, [ ...byColumn.keys() ]);
+    // For a board that owns its definition the persisted list is only a mirror of the
+    // resolved columns, so a value the board's column UI removed must not linger in it
+    // while the definition write is still in flight (#11100). Values nothing removed are
+    // never dropped: a column added a moment ago is equally absent from the other two
+    // sources, and dropping it would lose the user's work.
+    // A removed value a note carries again was recreated by intent (another
+    // split, a synced client, a script) — clear its mark so the mirror filter
+    // stops applying from this refresh on. The stale-definition leg of the
+    // original delete race must NOT clear the mark, so only discovered note
+    // values do.
+    for (const value of byColumn.keys()) {
+        if (isRecentlyRemovedColumn(parentNote.noteId, value)) {
+            unnoteColumnRemoved(parentNote.noteId, value);
+        }
+    }
+
+    const persistedValues = (persistedData.columns ?? []).map(c => c.value);
+    // A marked value the RAW persisted list (pre-filter) no longer names, that
+    // the definition this refresh read does not name either, and that no note
+    // carries, has fully converged away — the delete's definition write landed
+    // and the mirror is clean — so the marker's job is done; any future
+    // appearance of the value is a genuine recreation. Requiring all three
+    // legs keeps the original delete race (#11100) covered: while the stale
+    // definition still names the value the marker survives, so a racy
+    // write-back into board.json keeps being filtered instead of resurrected.
+    for (const value of recentlyRemovedColumnsFor(parentNote.noteId)) {
+        if (
+            !definitionOptions.includes(value) &&
+            !persistedValues.includes(value) &&
+            !byColumn.has(value)
+        ) {
+            unnoteColumnRemoved(parentNote.noteId, value);
+        }
+    }
+    const persistedColumns = persistedColumnsAreMirror
+        ? persistedValues.filter(value => !isRecentlyRemovedColumn(parentNote.noteId, value))
+        : persistedValues;
+    const columns = resolveBoardColumns(
+        definitionOptions, persistedColumns, [ ...byColumn.keys() ]
+    );
 
     // A column the notes have nothing in is still a column, so every resolved one gets an entry.
     for (const column of columns) {
