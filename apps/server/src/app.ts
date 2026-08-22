@@ -92,7 +92,11 @@ export default async function buildApp() {
         })
     );
 
-    app.use(express.text({ limit: "500mb" }));
+    // Also accept text/* and XML besides the text/plain default: custom request handlers
+    // (script notes with #customRequestHandler) receive external protocol payloads such as
+    // text/vcard and application/xml, and backend scripts are synchronous, so a body that no
+    // parser consumed is unreadable by the time the script runs (req.body stays undefined).
+    app.use(express.text({ limit: "500mb", type: ["text/*", "application/xml", "application/*+xml"] }));
     app.use(express.json({ limit: "500mb" }));
     app.use(express.raw({ limit: "500mb" }));
     app.use(express.urlencoded({ extended: false }));

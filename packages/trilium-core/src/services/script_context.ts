@@ -25,6 +25,9 @@ const ALLOWED_MODULES = new Set([
     "escape-html",
     "sanitize-html",
     "lodash",
+    // Pure-computation Node built-in with no OS access; existing scripts use it
+    // to decompress note payloads (e.g. Xournal++ .xopp imports).
+    "zlib",
 ]);
 
 /**
