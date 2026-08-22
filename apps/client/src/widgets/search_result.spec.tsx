@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // The widget follows the note the tab shows; the tests hand it one directly.
 const shownNote = vi.hoisted(() => ({ current: null as import("../entities/fnote").default | null }));
@@ -51,6 +51,8 @@ describe("SearchResult", () => {
         froca.loadSearchNote = loadSearchNote as unknown as typeof froca.loadSearchNote;
     });
 
+    let mounted: HTMLDivElement | null = null;
+
     function mount() {
         const host = document.createElement("div");
         document.body.appendChild(host);
@@ -60,8 +62,17 @@ describe("SearchResult", () => {
             </ParentComponent.Provider>,
             host
         ));
+        mounted = host;
         return host;
     }
+
+    afterEach(() => {
+        if (mounted) {
+            render(null, mounted);
+            mounted.remove();
+            mounted = null;
+        }
+    });
 
     it("runs the saved search itself instead of navigating to a new empty one", async () => {
         // Regression (#11130): the "Search now" button used to trigger the global `searchNotes`
@@ -73,10 +84,10 @@ describe("SearchResult", () => {
 
         const button = container.querySelector("button");
         expect(button).toBeTruthy();
-        expect(button!.dataset.triggerCommand).toBeUndefined();
+        expect(button?.dataset.triggerCommand).toBeUndefined();
 
         await act(async () => {
-            button!.click();
+            button?.click();
         });
 
         expect(loadSearchNote).toHaveBeenCalledWith(savedSearch.noteId);
