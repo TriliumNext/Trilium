@@ -3,6 +3,12 @@
     min-height: 50px;
     position: relative;
 }
+
+/* Fills the wrapper in the full-height layout so the editor's own scroller can scroll; resolves
+   to auto in the flowing layout, where the wrapper has no set height. */
+.note-detail-readonly-code .note-detail-readonly-code-content {
+    height: 100%;
+}
 /* #endregion */
 
 /* #region Editable code */
