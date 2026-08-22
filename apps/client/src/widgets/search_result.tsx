@@ -1,13 +1,17 @@
 import "./search_result.css";
 
 import clsx from "clsx";
-import { useEffect, useState } from "preact/hooks";
+import { useContext, useEffect, useState } from "preact/hooks";
 
+import froca from "../services/froca";
 import { t } from "../services/i18n";
+import toast from "../services/toast";
+import { getErrorMessage } from "../services/utils";
 import { SearchNoteList } from "./collections/NoteList";
 import Button from "./react/Button";
-import { useNoteContext,  useTriliumEvent } from "./react/hooks";
+import { useNoteContext, useTriliumEvent } from "./react/hooks";
 import NoItems from "./react/NoItems";
+import { ParentComponent } from "./react/react_utils";
 
 enum SearchResultState {
     NO_RESULTS,
@@ -19,6 +23,7 @@ export default function SearchResult() {
     const { note, notePath, ntxId } = useNoteContext();
     const [ state, setState ] = useState<SearchResultState>();
     const [ highlightedTokens, setHighlightedTokens ] = useState<string[]>();
+    const parentComponent = useContext(ParentComponent);
 
     function refresh() {
         if (note?.type !== "search") {
@@ -31,6 +36,25 @@ export default function SearchResult() {
             setState(SearchResultState.GOT_RESULTS);
             setHighlightedTokens(note.highlightedTokens);
         }
+    }
+
+    // Why a dedicated handler instead of the global `searchNotes` command: that command creates
+    // a brand-new (empty) search note and navigates to it, so the one affordance on the
+    // "not executed" screen abandoned the saved search it was supposed to run (#11130).
+    async function executeThisSearch() {
+        const noteId = note?.noteId;
+        if (!noteId) {
+            return;
+        }
+
+        try {
+            await froca.loadSearchNote(noteId);
+        } catch (e: unknown) {
+            toast.showError(getErrorMessage(e));
+            return;
+        }
+
+        parentComponent?.triggerEvent("searchRefreshed", { ntxId });
     }
 
     useEffect(() => refresh(), [ note ]);
@@ -49,7 +73,7 @@ export default function SearchResult() {
         <div className={clsx("search-result-widget", state === undefined && "hidden-ext")}>
             {state === SearchResultState.NOT_EXECUTED && (
                 <NoItems icon="bx bx-file-find" text={t("search_result.search_not_executed")}>
-                    <Button text={t("search_result.search_now")} triggerCommand="searchNotes" />
+                    <Button text={t("search_result.search_now")} onClick={() => executeThisSearch()} />
                 </NoItems>
             )}
 
