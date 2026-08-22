@@ -40,6 +40,8 @@ export interface Suggestion {
     commandShortcut?: string;
     attributeSnippet?: string;
     highlightedAttributeSnippet?: string;
+    contentSnippet?: string;
+    highlightedContentSnippet?: string;
 }
 
 export interface Options {
@@ -54,6 +56,12 @@ export interface Options {
     hideAllButtons?: boolean;
     /** If set, enables command palette mode */
     isCommandPalette?: boolean;
+    /**
+     * If set, note suggestions also render their content snippet (below the attribute
+     * snippet), matching the quick-search dropdown / search results view. Off by default
+     * so compact consumers (link dialogs, relation editors, `@`-mentions) stay unchanged.
+     */
+    showContentSnippets?: boolean;
 }
 
 async function autocompleteSourceForCKEditor(queryText: string) {
@@ -163,21 +171,33 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
     cb(results);
 }
 
+// autocomplete.js's own "val" setter is silent by default (it goes through Typeahead.setVal,
+// which skips _checkInputValue when the widget isn't activated) — it never dispatches a native
+// "input" event. Consumers that track the live query text (e.g. NoteAutocomplete.tsx's
+// onTextChange, bound to "input") would otherwise go stale whenever the text is changed
+// programmatically rather than typed. Every function below that sets the value on the user's
+// behalf re-triggers "input" itself so that channel stays generically accurate for any caller,
+// not just one dialog.
+
 function clearText($el: JQuery<HTMLElement>) {
     searchDelay = 0;
     $el.setSelectedNotePath("");
     $el.autocomplete("val", "").trigger("change");
+    $el.trigger("input");
 }
 
 function setText($el: JQuery<HTMLElement>, text: string) {
     $el.setSelectedNotePath("");
-    $el.autocomplete("val", text.trim()).autocomplete("open");
+    $el.autocomplete("val", text.trim());
+    $el.trigger("input");
+    $el.autocomplete("open");
 }
 
 function showRecentNotes($el: JQuery<HTMLElement>) {
     searchDelay = 0;
     $el.setSelectedNotePath("");
     $el.autocomplete("val", "");
+    $el.trigger("input");
     $el.autocomplete("open");
     $el.trigger("focus");
 }
@@ -185,7 +205,9 @@ function showRecentNotes($el: JQuery<HTMLElement>) {
 function showAllCommands($el: JQuery<HTMLElement>) {
     searchDelay = 0;
     $el.setSelectedNotePath("");
-    $el.autocomplete("val", ">").autocomplete("open");
+    $el.autocomplete("val", ">");
+    $el.trigger("input");
+    $el.autocomplete("open");
 }
 
 function fullTextSearch($el: JQuery<HTMLElement>, options: Options) {
@@ -362,6 +384,12 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         // Add attribute snippet inline if available
                         if (suggestion.highlightedAttributeSnippet) {
                             html += `<span class="search-result-attributes">${suggestion.highlightedAttributeSnippet}</span>`;
+                        }
+
+                        // Add content snippet below, only for consumers that opted in (e.g. the
+                        // jump-to-note dialog) — link dialogs/relation editors/`@`-mentions stay compact.
+                        if (options.showContentSnippets && suggestion.highlightedContentSnippet) {
+                            html += `<span class="search-result-content">${suggestion.highlightedContentSnippet}</span>`;
                         }
 
                         html += `</span>`;

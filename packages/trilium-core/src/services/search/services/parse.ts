@@ -44,7 +44,10 @@ function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leading
             // For multi-word, join tokens with space to form exact phrase
             const titleSearchValue = tokens.join(" ");
             const exactMatchExpressions: Expression[] = [
-                new PropertyComparisonExp(searchContext, "title", "=", titleSearchValue),
+                // "word=" (not the strict "=") keeps the leading-"=" fulltext title
+                // match at word/phrase granularity, matching the content expressions
+                // below and preserving historical user-visible behavior.
+                new PropertyComparisonExp(searchContext, "title", "word=", titleSearchValue),
                 new NoteContentFulltextExp("=", { tokens, flatText: false }),
                 new NoteContentFulltextExp("=", { tokens, flatText: true })
             ];
@@ -56,7 +59,9 @@ function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leading
 
         const searchExpressions: Expression[] = [
             new NoteFlatTextExp(tokens),
-            new NoteContentFulltextExp(operator, { tokens, flatText: true }),
+            // fuzzyFallback lets progressive phase 2 fuzzy-match body content (e.g.
+            // "combinef" finding "combined"); only this default plain-query path sets it.
+            new NoteContentFulltextExp(operator, { tokens, flatText: true, fuzzyFallback: true }),
             new OCRContentExpression(tokens)
         ];
 
@@ -280,6 +285,12 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
             }
 
             searchContext.highlightedTokens.push(comparedValue);
+
+            if (operator === "%=") {
+                // Regex operator: the compared value is a pattern, tag it so snippet
+                // highlighting matches it as a RegExp rather than literal text.
+                searchContext.regexTokens.add(comparedValue);
+            }
 
             if (searchContext.fuzzyAttributeSearch && operator === "=") {
                 operator = "*=*";

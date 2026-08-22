@@ -1,6 +1,6 @@
 import "./NoteList.css";
 
-import { WebSocketMessage } from "@triliumnext/commons";
+import { HighlightedTokenInfo, WebSocketMessage } from "@triliumnext/commons";
 import { Component, VNode } from "preact";
 import { lazy, Suspense } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -16,7 +16,7 @@ import ViewModeStorage, { type ViewModeStorageType } from "./view_mode_storage";
 interface NoteListProps {
     note: FNote | null | undefined;
     notePath: string | null | undefined;
-    highlightedTokens?: string[] | null;
+    highlightedTokens?: (string | HighlightedTokenInfo)[] | null;
     /** if set to `true` then only collection-type views are displayed such as geo-map and the calendar. The original book types grid and list will be ignored. */
     displayOnlyCollections?: boolean;
     isEnabled: boolean;

@@ -180,6 +180,29 @@ describe("Lexer expression", () => {
     });
 });
 
+describe("Lexer fuzzy operators ~= and ~*", () => {
+    it("tokenizes ~= as a single operator (with and without surrounding spaces)", () => {
+        expect(lex("#title ~= books").expressionTokens.map((t) => t.token)).toEqual(["#title", "~=", "books"]);
+        expect(lex("#title~=books").expressionTokens.map((t) => t.token)).toEqual(["#title", "~=", "books"]);
+        expect(lex("#book ~= tolkien").expressionTokens.map((t) => t.token)).toEqual(["#book", "~=", "tolkien"]);
+    });
+
+    it("tokenizes ~* as a single operator", () => {
+        expect(lex("#title ~* books").expressionTokens.map((t) => t.token)).toEqual(["#title", "~*", "books"]);
+    });
+
+    it("supports ~= on note properties and on relation properties", () => {
+        expect(lex("note.title ~= books").expressionTokens.map((t) => t.token)).toEqual(["note", ".", "title", "~=", "books"]);
+        expect(lex("~author.title ~= tolkien").expressionTokens.map((t) => t.token)).toEqual(["~author", ".", "title", "~=", "tolkien"]);
+    });
+
+    it("still treats a leading ~ as the start of a relation (regression)", () => {
+        // The first "~" of the query starts a relation and ends fulltext, so
+        // "~author.title = x" must remain a relation comparison, not a fuzzy op.
+        expect(lex("~author.title = x").expressionTokens.map((t) => t.token)).toEqual(["~author", ".", "title", "=", "x"]);
+    });
+});
+
 describe("Lexer invalid queries and edge cases", () => {
     it("concatenated attributes", () => {
         expect(lex("#label~relation").expressionTokens.map((t) => t.token)).toEqual(["#label", "~relation"]);

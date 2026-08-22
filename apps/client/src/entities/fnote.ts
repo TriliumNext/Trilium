@@ -1,4 +1,4 @@
-import { getNoteIcon } from "@triliumnext/commons";
+import { getNoteIcon, HighlightedTokenInfo } from "@triliumnext/commons";
 
 import bundleService from "../services/bundle.js";
 import cssClassManager from "../services/css_class_manager.js";
@@ -74,6 +74,9 @@ export default class FNote {
     // Managed by Froca.
     searchResultsLoaded?: boolean;
     highlightedTokens?: string[];
+    /** Structured, diacritic/regex-aware counterpart of {@link highlightedTokens}; prefer this
+     *  when present. */
+    highlightedTokenInfos?: HighlightedTokenInfo[];
 
     constructor(froca: Froca, row: FNoteRow) {
         this.froca = froca;

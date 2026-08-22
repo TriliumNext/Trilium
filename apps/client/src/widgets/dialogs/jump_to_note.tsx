@@ -5,6 +5,7 @@ import { useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import commandRegistry from "../../services/command_registry";
 import { t } from "../../services/i18n";
+import type { ViewScope } from "../../services/link";
 import note_autocomplete, { Suggestion } from "../../services/note_autocomplete";
 import shortcutService from "../../services/shortcuts";
 import Button from "../react/Button";
@@ -49,6 +50,12 @@ export default function JumpToNoteDialogComponent() {
             setMode(newMode);
         }
 
+        // Keep the ref that gates viewScope.searchTerms (see onItemSelected) in sync with what's
+        // about to be displayed. The "recent-notes" branch above resets the *displayed* text to ""
+        // without going through the native "input" event that normally updates this ref, so without
+        // this the ref would still hold the previous session's typed query (#task-7 review).
+        actualText.current = initialText;
+
         setInitialText(initialText);
         setShown(true);
         setLastOpenedTs(Date.now());
@@ -64,7 +71,8 @@ export default function JumpToNoteDialogComponent() {
 
         setShown(false);
         if (suggestion.notePath) {
-            appContext.tabManager.getActiveContext()?.setNote(suggestion.notePath);
+            const viewScope = deriveSearchViewScope(isCommandMode, actualText.current);
+            appContext.tabManager.getActiveContext()?.setNote(suggestion.notePath, { viewScope });
         } else if (suggestion.commandId) {
             await commandRegistry.executeCommand(suggestion.commandId);
         }
@@ -132,7 +140,8 @@ export default function JumpToNoteDialogComponent() {
                     allowCreatingNotes: true,
                     hideGoToSelectedNoteButton: true,
                     allowJumpToSearchNotes: true,
-                    isCommandPalette: true
+                    isCommandPalette: true,
+                    showContentSnippets: true
                 }}
                 onTextChange={(text) => {
                     actualText.current = text;
@@ -153,4 +162,21 @@ export default function JumpToNoteDialogComponent() {
             <div className="algolia-autocomplete-container jump-to-note-results" ref={containerRef} />
         </Modal>
     );
+}
+
+/**
+ * Only carry search terms into the opened note when the dialog was actually used as a text
+ * search — not the command palette, and not an untyped "recent notes" pick — since jumping
+ * from a command or a blank query shouldn't highlight anything. Exported (and kept pure) so
+ * the gating itself is unit-testable without rendering the dialog; the caller is responsible
+ * for keeping `typedText` accurate (see the `actualText` ref sync in `openDialog`/`onTextChange`
+ * and the "input"-triggering functions in note_autocomplete.ts).
+ *
+ * The autocomplete response has no per-suggestion token list, so we pass the trimmed raw query
+ * as a single term rather than re-deriving a token list client-side — simple, and good enough
+ * for jump-to-match highlighting.
+ */
+export function deriveSearchViewScope(isCommandMode: boolean, typedText: string | undefined): ViewScope {
+    const searchString = !isCommandMode ? typedText?.trim() : "";
+    return searchString ? { searchTerms: [searchString] } : {};
 }

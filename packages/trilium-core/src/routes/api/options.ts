@@ -145,6 +145,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "imageCompressionToolOptions",
     "searchEnableFuzzyMatching",
     "searchAutocompleteFuzzy",
+    "searchResultsPageSize",
     "redirectBareDomain",
     "showLoginInShareTheme",
     "splitEditorOrientation",

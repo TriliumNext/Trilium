@@ -1,5 +1,5 @@
+import type { HighlightedTokenInfo, SearchResultDetails } from "@triliumnext/commons";
 import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_chat_text.js";
-import normalizeString from "normalize-strings";
 import striptags from "striptags";
 
 import becca from "../../../becca/becca.js";
@@ -10,7 +10,7 @@ import hoistedNoteService from "../../hoisted_note.js";
 import { getLog } from "../../log.js";
 import scriptService from "../../script.js";
 import { isScriptingEnabled } from "../../scripting_guard.js";
-import { escapeHtml, escapeRegExp, unescapeHtml } from "../../utils/index.js";
+import { escapeHtml, escapeRegExp, normalizePreservingLength, unescapeHtml } from "../../utils/index.js";
 import type Expression from "../expressions/expression.js";
 import SearchContext from "../search_context.js";
 import SearchResult from "../search_result.js";
@@ -20,55 +20,81 @@ import parse from "./parse.js";
 import type { SearchParams, TokenStructure } from "./types.js";
 import { getSql } from "../../sql/index.js";
 
+/** Cap on marker wraps per snippet field per token, bounding pathological regex patterns. */
+const MAX_HIGHLIGHT_WRAPS = 50;
+
 export interface SearchNoteResult {
     searchResultNoteIds: string[];
     highlightedTokens: string[];
+    /**
+     * Structured highlight tokens (additive). Empty for script-based searches, which
+     * have no lexed tokens. {@link highlightedTokens} is left untouched — it is part
+     * of the public scripting API.
+     */
+    highlightedTokenInfos: HighlightedTokenInfo[];
     error: string | null;
 }
 
 export const EMPTY_RESULT: SearchNoteResult = {
     searchResultNoteIds: [],
     highlightedTokens: [],
+    highlightedTokenInfos: [],
     error: null
 };
 
 function searchFromNote(note: BNote): SearchNoteResult {
-    let searchResultNoteIds;
-    let highlightedTokens: string[];
-
-    const searchScript = note.getRelationValue("searchScript");
-    const searchString = note.getLabelValue("searchString") || "";
-    let error: string | null = null;
-
-    if (searchScript) {
-        searchResultNoteIds = searchFromRelation(note, "searchScript");
-        highlightedTokens = [];
-    } else {
-        const searchContext = new SearchContext({
-            fastSearch: note.hasLabel("fastSearch"),
-            ancestorNoteId: note.getRelationValue("ancestor") || undefined,
-            ancestorDepth: note.getLabelValue("ancestorDepth") || undefined,
-            includeArchivedNotes: note.hasLabel("includeArchivedNotes"),
-            orderBy: note.getLabelValue("orderBy") || undefined,
-            orderDirection: note.getLabelValue("orderDirection") || undefined,
-            limit: parseInt(note.getLabelValue("limit") || "0", 10),
-            debug: note.hasLabel("debug"),
-            fuzzyAttributeSearch: false
-        });
-
-        searchResultNoteIds = findResultsWithQuery(searchString, searchContext).map((sr) => sr.noteId);
-
-        highlightedTokens = searchContext.highlightedTokens;
-        error = searchContext.getError();
-    }
+    const { searchResults, searchContext, error } = searchFromNoteWithContext(note);
 
     // we won't return search note's own noteId
     // also don't allow root since that would force infinite cycle
     return {
-        searchResultNoteIds: searchResultNoteIds.filter((resultNoteId) => !["root", note.noteId].includes(resultNoteId)),
-        highlightedTokens,
+        searchResultNoteIds: searchResults
+            .map((sr) => sr.noteId)
+            .filter((resultNoteId) => !["root", note.noteId].includes(resultNoteId)),
+        highlightedTokens: searchContext ? searchContext.highlightedTokens : [],
+        highlightedTokenInfos: searchContext ? searchContext.getHighlightedTokenInfos() : [],
         error
     };
+}
+
+/**
+ * Runs a saved search note, returning the raw {@link SearchResult}s together with
+ * the {@link SearchContext} that produced them so callers can build snippets and
+ * highlight token infos. Script-based searches (`~searchScript`) have no lexed
+ * query, so `searchContext` is `null` for them (and there are no snippets/tokens).
+ */
+function searchFromNoteWithContext(note: BNote): {
+    searchResults: SearchResult[];
+    searchContext: SearchContext | null;
+    error: string | null;
+} {
+    const searchScript = note.getRelationValue("searchScript");
+    const searchString = note.getLabelValue("searchString") || "";
+
+    if (searchScript) {
+        const searchResults = searchFromRelation(note, "searchScript").map((noteId) => {
+            const notePath = becca.notes[noteId]?.getBestNotePath() ?? [noteId];
+            return new SearchResult(notePath);
+        });
+
+        return { searchResults, searchContext: null, error: null };
+    }
+
+    const searchContext = new SearchContext({
+        fastSearch: note.hasLabel("fastSearch"),
+        ancestorNoteId: note.getRelationValue("ancestor") || undefined,
+        ancestorDepth: note.getLabelValue("ancestorDepth") || undefined,
+        includeArchivedNotes: note.hasLabel("includeArchivedNotes"),
+        orderBy: note.getLabelValue("orderBy") || undefined,
+        orderDirection: note.getLabelValue("orderDirection") || undefined,
+        limit: parseInt(note.getLabelValue("limit") || "0", 10),
+        debug: note.hasLabel("debug"),
+        fuzzyAttributeSearch: false
+    });
+
+    const searchResults = findResultsWithQuery(searchString, searchContext);
+
+    return { searchResults, searchContext, error: searchContext.getError() };
 }
 
 function searchFromRelation(note: BNote, relationName: string) {
@@ -290,6 +316,10 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
     const originalFuzzyMatching = searchContext.enableFuzzyMatching;
     searchContext.enableFuzzyMatching = enableFuzzyMatching;
 
+    // Each progressive phase re-executes the expression tree, so clear content-match
+    // records first — otherwise phase-2 (fuzzy) records would mix with phase-1 ones.
+    searchContext.contentMatches.clear();
+
     const noteSet = expression.execute(allNoteSet, executionContext, searchContext);
 
     const searchResults = noteSet.notes.map((note) => {
@@ -303,7 +333,7 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
     });
 
     for (const res of searchResults) {
-        res.computeScore(searchContext.fulltextQuery, searchContext.highlightedTokens, enableFuzzyMatching);
+        res.computeScore(searchContext.fulltextQuery, searchContext.highlightedTokens, enableFuzzyMatching, searchContext.contentMatches.get(res.noteId));
     }
 
     // Restore original fuzzy setting
@@ -462,11 +492,13 @@ function getTextRepresentationForNote(note: BNote): string | null {
     return row?.textRepresentation ?? null;
 }
 
-function extractContentSnippet(noteId: string, searchTokens: string[], maxLength: number = 200): string {
+function extractContentSnippet(noteId: string, searchTokens: HighlightedTokenInfo[] | string[], maxLength: number = 200): string {
     const note = becca.notes[noteId];
     if (!note) {
         return "";
     }
+
+    const tokenInfos = toTokenInfos(searchTokens);
 
     try {
         let content: string | undefined;
@@ -528,14 +560,14 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
             return "";
         }
 
-        // Try to find a snippet around the first matching token
-        const normalizedContent = normalizeString(content.toLowerCase());
+        // Try to find a snippet around the first matching token. Positions are found
+        // on a length-preserving normalization so they slice the original 1:1.
+        const normalizedContent = normalizePreservingLength(content);
         let snippetStart = 0;
         let matchFound = false;
 
-        for (const token of searchTokens) {
-            const normalizedToken = normalizeString(token.toLowerCase());
-            const matchIndex = normalizedContent.indexOf(normalizedToken);
+        for (const info of tokenInfos) {
+            const matchIndex = tokenInfoFirstIndex(info, normalizedContent);
 
             if (matchIndex !== -1) {
                 // Center the snippet around the match
@@ -552,13 +584,12 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
         const lines = snippet.split('\n');
         if (lines.length > 4) {
             // Find which lines contain the search tokens to ensure they're included
-            const normalizedLines = lines.map(line => normalizeString(line.toLowerCase()));
-            const normalizedTokens = searchTokens.map(token => normalizeString(token.toLowerCase()));
+            const normalizedLines = lines.map((line) => normalizePreservingLength(line));
 
             // Find the first line that contains a search token
             let firstMatchLine = -1;
             for (let i = 0; i < normalizedLines.length; i++) {
-                if (normalizedTokens.some(token => normalizedLines[i].includes(token))) {
+                if (tokenInfos.some((info) => tokenInfoMatches(info, normalizedLines[i]))) {
                     firstMatchLine = i;
                     break;
                 }
@@ -606,11 +637,13 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
     }
 }
 
-function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLength: number = 200): string {
+function extractAttributeSnippet(noteId: string, searchTokens: HighlightedTokenInfo[] | string[], maxLength: number = 200): string {
     const note = becca.notes[noteId];
     if (!note) {
         return "";
     }
+
+    const tokenInfos = toTokenInfos(searchTokens);
 
     try {
         // Get all attributes for this note
@@ -628,10 +661,10 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
             const attrType = attr.type || "";
 
             // Check if any search token matches the attribute name or value
-            const hasMatch = searchTokens.some(token => {
-                const normalizedToken = normalizeString(token.toLowerCase());
-                return attrName.includes(normalizedToken) || attrValue.includes(normalizedToken);
-            });
+            const normalizedName = normalizePreservingLength(attrName);
+            const normalizedValue = normalizePreservingLength(attrValue);
+            const hasMatch = tokenInfos.some((info) =>
+                tokenInfoMatches(info, normalizedName) || tokenInfoMatches(info, normalizedValue));
 
             if (hasMatch) {
                 matchingAttributes.push({
@@ -700,21 +733,32 @@ function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
         ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
     });
 
-    const allSearchResults = findResultsWithQuery(query, searchContext);
+    const trimmed = findResultsWithQuery(query, searchContext).slice(0, 200);
 
-    const trimmed = allSearchResults.slice(0, 200);
+    return buildSearchResultDetails(trimmed, searchContext);
+}
 
-    // Extract content and attribute snippets
-    for (const result of trimmed) {
-        result.contentSnippet = extractContentSnippet(result.noteId, searchContext.highlightedTokens);
-        result.attributeSnippet = extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
+/**
+ * Shared builder for the snippet + highlight details of a page of search results.
+ * Extracts content/attribute snippets using the context's structured (regex-aware)
+ * highlight tokens, applies highlighting, and maps each result to the wire shape
+ * (including `noteId`). Mutates the passed {@link SearchResult}s (setting their
+ * snippet fields) as a side effect of extraction/highlighting.
+ */
+function buildSearchResultDetails(results: SearchResult[], searchContext: SearchContext): SearchResultDetails[] {
+    const tokenInfos = searchContext.getHighlightedTokenInfos();
+
+    for (const result of results) {
+        result.contentSnippet = extractContentSnippet(result.noteId, tokenInfos);
+        result.attributeSnippet = extractAttributeSnippet(result.noteId, tokenInfos);
     }
 
-    highlightSearchResults(trimmed, searchContext.highlightedTokens, searchContext.ignoreInternalAttributes);
+    highlightSearchResults(results, tokenInfos, searchContext.ignoreInternalAttributes);
 
-    return trimmed.map((result) => {
+    return results.map((result) => {
         const { title, icon } = becca_service.getNoteTitleAndIcon(result.noteId);
         return {
+            noteId: result.noteId,
             notePath: result.notePath,
             noteTitle: title,
             notePathTitle: result.notePathTitle,
@@ -729,17 +773,12 @@ function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
 }
 
 /**
+ * @param tokens the tokens to highlight, either legacy plain strings or structured
+ *   {@link HighlightedTokenInfo}s (regex-aware). Legacy strings are treated as plain.
  * @param ignoreInternalAttributes whether to ignore certain attributes from the search such as ~internalLink.
  */
-function highlightSearchResults(searchResults: SearchResult[], highlightedTokens: string[], ignoreInternalAttributes = false) {
-    highlightedTokens = Array.from(new Set(highlightedTokens));
-
-    // { and } are used for marking <b> and </b> tags (to avoid matches on a single 'b' character),
-    // so a token containing either would overwrite the markers already placed in the text.
-    highlightedTokens = highlightedTokens.map((token) => token.replace(/[{}]/g, "")).filter((token) => !!token?.trim());
-
-    // sort by the longest, so we first highlight the longest matches
-    highlightedTokens.sort((a, b) => (a.length > b.length ? -1 : 1));
+function highlightSearchResults(searchResults: SearchResult[], tokens: HighlightedTokenInfo[] | string[], ignoreInternalAttributes = false) {
+    const tokenInfos = normalizeHighlightTokens(tokens);
 
     // Highlighting runs on the text as written, and the result is escaped afterwards. Escaping
     // first would let a token match inside an entity (searching for "lt" would cut &lt; in half),
@@ -760,55 +799,11 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
         }
     }
 
-    function wrapText(text: string, start: number, length: number, prefix: string, suffix: string) {
-        return text.substring(0, start) + prefix + text.substr(start, length) + suffix + text.substring(start + length);
-    }
-
-    /** Escapes the text for display, then turns the { } markers into the <b> tags they stand for. */
-    function renderHighlights(text: string) {
-        return escapeHtml(text).replace(/{/g, "<b>").replace(/}/g, "</b>");
-    }
-
-    for (const token of highlightedTokens) {
-        if (!token) {
-            // Avoid empty tokens, which might cause an infinite loop.
-            continue;
-        }
-
+    for (const tokenInfo of tokenInfos) {
         for (const result of searchResults) {
-            // Reset token
-            const tokenRegex = new RegExp(escapeRegExp(token), "gi");
-            let match;
-
-            // Highlight in note path title
-            if (result.highlightedNotePathTitle) {
-                const titleRegex = new RegExp(escapeRegExp(token), "gi");
-                while ((match = titleRegex.exec(normalizeString(result.highlightedNotePathTitle))) !== null) {
-                    result.highlightedNotePathTitle = wrapText(result.highlightedNotePathTitle, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
-                    titleRegex.lastIndex += 2;
-                }
-            }
-
-            // Highlight in content snippet
-            if (result.highlightedContentSnippet) {
-                const contentRegex = new RegExp(escapeRegExp(token), "gi");
-                while ((match = contentRegex.exec(normalizeString(result.highlightedContentSnippet))) !== null) {
-                    result.highlightedContentSnippet = wrapText(result.highlightedContentSnippet, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
-                    contentRegex.lastIndex += 2;
-                }
-            }
-
-            // Highlight in attribute snippet
-            if (result.highlightedAttributeSnippet) {
-                const attributeRegex = new RegExp(escapeRegExp(token), "gi");
-                while ((match = attributeRegex.exec(normalizeString(result.highlightedAttributeSnippet))) !== null) {
-                    result.highlightedAttributeSnippet = wrapText(result.highlightedAttributeSnippet, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
-                    attributeRegex.lastIndex += 2;
-                }
-            }
+            result.highlightedNotePathTitle = highlightField(result.highlightedNotePathTitle, tokenInfo);
+            result.highlightedContentSnippet = highlightField(result.highlightedContentSnippet, tokenInfo);
+            result.highlightedAttributeSnippet = highlightField(result.highlightedAttributeSnippet, tokenInfo);
         }
     }
 
@@ -833,7 +828,9 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
 
 export default {
     searchFromNote,
+    searchFromNoteWithContext,
     searchNotesForAutocomplete,
+    buildSearchResultDetails,
     findResultsWithQuery,
     findFirstNoteWithQuery,
     searchNotes,
@@ -841,3 +838,114 @@ export default {
     extractAttributeSnippet,
     highlightSearchResults
 };
+
+/** Widens a legacy `string[]` (all plain) or a structured token-info list to token infos. */
+function toTokenInfos(tokens: HighlightedTokenInfo[] | string[]): HighlightedTokenInfo[] {
+    return tokens.map((token) => (typeof token === "string" ? { token, type: "plain" } : token));
+}
+
+/** Index of the first match of a token within already-normalized text, or -1 if none. */
+function tokenInfoFirstIndex(info: HighlightedTokenInfo, normalizedText: string): number {
+    if (info.type === "regex") {
+        try {
+            const match = new RegExp(info.token, "gi").exec(normalizedText);
+            return match ? match.index : -1;
+        } catch {
+            return -1; // Skip invalid regex patterns.
+        }
+    }
+
+    return normalizedText.indexOf(normalizePreservingLength(info.token));
+}
+
+/** Whether a token matches anywhere within already-normalized text. */
+function tokenInfoMatches(info: HighlightedTokenInfo, normalizedText: string): boolean {
+    return tokenInfoFirstIndex(info, normalizedText) !== -1;
+}
+
+/**
+ * Normalizes the highlight token input for {@link highlightSearchResults}: widens
+ * legacy strings to plain token infos, strips marker/angle characters from plain
+ * tokens (regex patterns are kept verbatim), drops blanks, dedupes, and sorts
+ * longest-first so longer matches win before shorter ones.
+ */
+function normalizeHighlightTokens(tokens: HighlightedTokenInfo[] | string[]): HighlightedTokenInfo[] {
+    const seen = new Set<string>();
+    const result: HighlightedTokenInfo[] = [];
+
+    for (const info of toTokenInfos(tokens)) {
+        // { } are used as <b>/</b> markers and < can break the surrounding HTML, so we
+        // strip them from plain tokens; regex patterns keep them (e.g. `a{2}` quantifiers).
+        const token = info.type === "regex" ? info.token : info.token.replace(/[<>{}]/g, "");
+
+        if (!token.trim() || seen.has(token)) {
+            continue;
+        }
+
+        seen.add(token);
+        result.push({ token, type: info.type });
+    }
+
+    result.sort((a, b) => (a.token.length > b.token.length ? -1 : 1));
+
+    return result;
+}
+
+/** Builds the case-insensitive matching regex for a token, or null for an invalid regex pattern. */
+function buildHighlightRegex(info: HighlightedTokenInfo): RegExp | null {
+    if (info.type === "regex") {
+        try {
+            return new RegExp(info.token, "gi");
+        } catch {
+            return null; // Skip invalid regex patterns.
+        }
+    }
+
+    return new RegExp(escapeRegExp(info.token), "gi");
+}
+
+/**
+ * Wraps every match of one token in a single field with `{`/`}` markers (later
+ * turned into `<b>`/`</b>`). Match positions are found on a length-preserving
+ * normalization so they align 1:1 with the original field. The wrap count is
+ * capped to bound pathological regex patterns, and zero-width matches break the
+ * loop rather than spin forever.
+ */
+function highlightField(field: string | undefined, info: HighlightedTokenInfo): string | undefined {
+    if (!field) {
+        return field;
+    }
+
+    const regex = buildHighlightRegex(info);
+    if (!regex) {
+        return field;
+    }
+
+    let match: RegExpExecArray | null;
+    let wraps = 0;
+    while ((match = regex.exec(normalizePreservingLength(field))) !== null) {
+        const matchLength = match[0].length;
+        if (matchLength === 0) {
+            break; // Zero-width match can't be highlighted; avoid an infinite loop.
+        }
+
+        field = wrapText(field, match.index, matchLength, "{", "}");
+        // Two marker characters were inserted, so advance past them as well.
+        regex.lastIndex += 2;
+
+        if (++wraps >= MAX_HIGHLIGHT_WRAPS) {
+            break;
+        }
+    }
+
+    return field;
+}
+
+function wrapText(text: string, start: number, length: number, prefix: string, suffix: string) {
+    return text.substring(0, start) + prefix + text.substr(start, length) + suffix + text.substring(start + length);
+}
+
+/** Escapes the text for display, then turns the { } markers into the <b> tags they stand for. */
+function renderHighlights(text: string) {
+    return escapeHtml(text).replace(/{/g, "<b>").replace(/}/g, "</b>");
+}

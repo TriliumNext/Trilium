@@ -337,6 +337,34 @@ describe("autocompleteSource (via dataset)", () => {
         expect(html).toContain("#color=red");
     });
 
+    it("does not render a content snippet by default, even when the suggestion has one", () => {
+        // showContentSnippets defaults to false so compact consumers (link dialogs, relation
+        // editors, @-mentions) don't grow an extra line.
+        const { dataset } = initAndGetSource();
+        const html = dataset.templates.suggestion({
+            highlightedNotePathTitle: "T",
+            highlightedContentSnippet: "some <b>matched</b> content"
+        });
+        expect(html).not.toContain("search-result-content");
+        expect(html).not.toContain("matched");
+    });
+
+    it("does not render a content snippet when showContentSnippets is set but the suggestion has none", () => {
+        const { dataset } = initAndGetSource({ showContentSnippets: true });
+        const html = dataset.templates.suggestion({ highlightedNotePathTitle: "T" });
+        expect(html).not.toContain("search-result-content");
+    });
+
+    it("renders the content snippet when showContentSnippets is enabled (jump-to-note dialog)", () => {
+        const { dataset } = initAndGetSource({ showContentSnippets: true });
+        const html = dataset.templates.suggestion({
+            highlightedNotePathTitle: "T",
+            highlightedContentSnippet: "some <b>matched</b> content"
+        });
+        expect(html).toContain("search-result-content");
+        expect(html).toContain("some <b>matched</b> content");
+    });
+
     it("renders search-notes, create-note and external-link suggestion icons/classes", () => {
         const { dataset } = initAndGetSource();
         expect(dataset.templates.suggestion({ action: "search-notes", highlightedNotePathTitle: "S" }))
@@ -519,12 +547,22 @@ describe("initNoteAutocomplete wiring", () => {
         expect($group.find(".full-text-search-button").length).toBe(1);
         expect($group.find(".go-to-selected-note-button").length).toBe(1);
 
-        // clear button -> autocomplete("val", "") + change trigger
+        const onInput = vi.fn();
+        $el.on("input", onInput);
+
+        // clear button -> autocomplete("val", "") + change trigger. Also re-triggers "input" so
+        // consumers tracking the live query (e.g. jump_to_note.tsx's actualText ref) don't go
+        // stale when the value is cleared programmatically instead of by typing (#task-7 review).
         $group.find(".input-clearer-button").trigger("click");
         expect(autocompleteCalls.some((c) => c[0] === "val" && c[1] === "")).toBe(true);
+        expect(onInput).toHaveBeenCalled();
 
-        // show-recent-notes button click returns false (prevent focus steal)
+        onInput.mockClear();
+        // show-recent-notes button click returns false (prevent focus steal), and likewise
+        // re-triggers "input" for the same reason.
         $group.find(".show-recent-notes-button").trigger("click");
+        expect(onInput).toHaveBeenCalled();
+
         // full text search button click
         $el.autocomplete("val", "search me");
         $group.find(".full-text-search-button").trigger("click");
@@ -799,24 +837,34 @@ describe("public helpers", () => {
 
     it("setText sets the trimmed value and opens the dropdown", () => {
         const $el = makeEl();
+        const onInput = vi.fn();
+        $el.on("input", onInput);
         noteAutocomplete.setText($el, "  hello  ");
         expect(lastCommandWith("open")).toBe(true);
         expect($el.attr("data-note-path")).toBe("");
+        // re-triggers "input" so consumers tracking the live query stay in sync (#task-7 review)
+        expect(onInput).toHaveBeenCalled();
     });
 
     it("showRecentNotes clears path, blanks val, opens and focuses", () => {
         const $el = makeEl();
+        const onInput = vi.fn();
+        $el.on("input", onInput);
         noteAutocomplete.showRecentNotes($el);
         expect(lastCommandWith("open")).toBe(true);
         expect($el.attr("data-note-path")).toBe("");
+        expect(onInput).toHaveBeenCalled();
     });
 
     it("showAllCommands sets the '>' prefix and opens", () => {
         const $el = makeEl();
+        const onInput = vi.fn();
+        $el.on("input", onInput);
         noteAutocomplete.showAllCommands($el);
         // val was set to ">"
         expect($el.autocomplete("val")).toBe(">");
         expect(lastCommandWith("open")).toBe(true);
+        expect(onInput).toHaveBeenCalled();
     });
 
     it("triggerRecentNotes is a no-op for a missing element", () => {

@@ -4,6 +4,7 @@ import becca from "../../becca/becca.js";
 import BBranch from "../../becca/entities/bbranch.js";
 import BNote from "../../becca/entities/bnote.js";
 import { note, NoteBuilder } from "../../test/becca_mocking.js";
+import type { ContentMatchQuality, ContentMatchTier } from "./match_quality.js";
 import SearchResult from "./search_result.js";
 
 let rootNote: NoteBuilder;
@@ -151,6 +152,26 @@ describe("SearchResult", () => {
             expect(doubled.score).toBeCloseTo(single.score * 2);
         });
 
+        it("scores a punctuation-wrapped chunk as an exact token match (#10616)", () => {
+            const target = note("alpha");
+            rootNote.child(target);
+
+            // "(sync)" tokenizes to the word "sync", so it must score as an exact
+            // token match — identical to an unwrapped "sync" chunk — rather than a
+            // weaker contains match.
+            const wrapped = new SearchResult(["root", target.note.noteId]);
+            wrapped.addScoreForStrings(["sync"], "(sync) notes", 1, false);
+
+            const bare = new SearchResult(["root", target.note.noteId]);
+            bare.addScoreForStrings(["sync"], "sync notes", 1, false);
+
+            const contains = new SearchResult(["root", target.note.noteId]);
+            contains.addScoreForStrings(["sync"], "asynchronous", 1, false);
+
+            expect(wrapped.score).toBe(bare.score);
+            expect(wrapped.score).toBeGreaterThan(contains.score);
+        });
+
         it("does not award token score when no chunk matches", () => {
             const target = note("alpha");
             rootNote.child(target);
@@ -183,6 +204,121 @@ describe("SearchResult", () => {
             expect(hidden.note.isInHiddenSubtree()).toBe(true);
             // Hidden note score is exactly one third (penalty = 3) of the visible equivalent.
             expect(result.score).toBeCloseTo(visibleResult.score / 3);
+        });
+    });
+
+    describe("computeScore - content-aware scoring", () => {
+        /** A content-only note whose title/path never matches the query, so the
+         * score reflects only the supplied content match. */
+        function contentOnlyScore(contentMatch: ContentMatchQuality | undefined): number {
+            const target = note("Zzz Unrelated Title");
+            rootNote.child(target);
+            const result = resultFor(target);
+            // Query tokens deliberately absent from the title; fuzzy disabled.
+            result.computeScore("qqzzxx", ["qqzzxx"], false, contentMatch);
+            return result.score;
+        }
+
+        it("adds the tier weight for a single matched token", () => {
+            const expectations: [ContentMatchTier, boolean, number][] = [
+                ["substring", false, 15],
+                ["word_prefix", false, 30],
+                ["exact_word", false, 60],
+                ["proximity", false, 80],
+                ["proximity", true, 100],
+                ["exact_phrase", false, 150],
+                ["fuzzy", false, 5]
+            ];
+
+            for (const [tier, inOrder, expected] of expectations) {
+                expect(contentOnlyScore({ tier, matchedTokenCount: 1, inOrder })).toBe(expected);
+            }
+        });
+
+        it("awards a per-token bonus beyond the first token, capped at five tokens", () => {
+            expect(contentOnlyScore({ tier: "substring", matchedTokenCount: 1, inOrder: false })).toBe(15);
+            expect(contentOnlyScore({ tier: "substring", matchedTokenCount: 2, inOrder: false })).toBe(20);
+            expect(contentOnlyScore({ tier: "substring", matchedTokenCount: 5, inOrder: false })).toBe(35);
+            // Sixth+ token contributes nothing beyond the five-token cap.
+            expect(contentOnlyScore({ tier: "substring", matchedTokenCount: 6, inOrder: false })).toBe(35);
+        });
+
+        it("leaves legacy scores unchanged when no content match is supplied", () => {
+            const target = note("Vienna");
+            rootNote.child(target);
+
+            const withUndefined = resultFor(target);
+            withUndefined.computeScore("vienna", ["vienna"], false, undefined);
+
+            const withoutArg = resultFor(target);
+            withoutArg.computeScore("vienna", ["vienna"], false);
+
+            expect(withUndefined.score).toBe(withoutArg.score);
+            // Exact title match dominates; no content contribution applied.
+            expect(withUndefined.score).toBeGreaterThanOrEqual(2000);
+        });
+
+        it("keeps the maximum content contribution below the title-word-match weight (300)", () => {
+            const tiers: ContentMatchTier[] = [
+                "fuzzy",
+                "substring",
+                "word_prefix",
+                "exact_word",
+                "proximity",
+                "exact_phrase"
+            ];
+
+            let maxContent = 0;
+            for (const tier of tiers) {
+                // matchedTokenCount 5 and inOrder maximise the contribution.
+                maxContent = Math.max(maxContent, contentOnlyScore({ tier, matchedTokenCount: 5, inOrder: true }));
+            }
+
+            // exact_phrase (150) + 4-token bonus (20) = 170 is the ceiling; the
+            // in-order bonus never applies to exact_phrase, so it stays under 190.
+            expect(maxContent).toBe(170);
+            expect(maxContent).toBeLessThan(300); // TITLE_WORD_MATCH
+        });
+
+        it("ranks an exact-title note above any content-only match for the same query", () => {
+            const titled = note("sync");
+            const bodyOnly = note("Unrelated");
+            rootNote.child(titled).child(bodyOnly);
+
+            const titleResult = resultFor(titled);
+            titleResult.computeScore("sync", ["sync"], false);
+
+            const contentResult = resultFor(bodyOnly);
+            contentResult.computeScore("sync", ["sync"], false, { tier: "exact_phrase", matchedTokenCount: 5, inOrder: true });
+
+            expect(titleResult.score).toBeGreaterThan(contentResult.score);
+        });
+
+        it("feeds a fuzzy content contribution into the fuzzy-score cap", () => {
+            // Build a query whose many tokens each fuzzy-match a distinct title word,
+            // driving the fuzzy budget to MAX_TOTAL_FUZZY_SCORE. Once the budget is
+            // exhausted, an additional fuzzy content match must contribute nothing.
+            const titleWords = Array.from({ length: 300 }, (_, i) => `wordaaa${i}`);
+            const tokens = Array.from({ length: 300 }, (_, i) => `wordaab${i}`); // edit distance 1 each
+            const target = note(titleWords.join(" "));
+            rootNote.child(target);
+
+            const withFuzzyContent = resultFor(target);
+            withFuzzyContent.computeScore("nomatchquery", tokens, true, { tier: "fuzzy", matchedTokenCount: 5, inOrder: false });
+
+            const withoutContent = resultFor(target);
+            withoutContent.computeScore("nomatchquery", tokens, true, undefined);
+
+            // The fuzzy budget was already capped, so the fuzzy content match added 0.
+            expect(withFuzzyContent.score).toBe(withoutContent.score);
+
+            // Sanity: on a fresh budget the very same fuzzy content match does contribute,
+            // proving the equality above is the cap gating it rather than a no-op.
+            const fresh = note("Totally Different Title");
+            rootNote.child(fresh);
+            const freshResult = resultFor(fresh);
+            freshResult.computeScore("zzznomatch", ["zzznomatch"], true, { tier: "fuzzy", matchedTokenCount: 5, inOrder: false });
+            expect(freshResult.score).toBeGreaterThan(0);
         });
     });
 

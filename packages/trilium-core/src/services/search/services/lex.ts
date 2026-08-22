@@ -93,6 +93,18 @@ function lex(str: string) {
                 fulltextEnded = true;
             }
 
+            // Fuzzy operators ~= and ~*. The `fulltextEnded` guard keeps the first
+            // `~` of a query starting a relation (e.g. `~author.title=x`); only a
+            // `~` that appears once we're in the expression section and is followed
+            // by `=`/`*` is treated as a two-character fuzzy operator.
+            if (chr === "~" && fulltextEnded && (str[i + 1] === "=" || str[i + 1] === "*")) {
+                finishWord(i - 1);
+                currentWord = "~" + str[i + 1];
+                finishWord(i + 1);
+                i++;
+                continue;
+            }
+
             if (chr === "#" || chr === "~") {
                 if (!fulltextEnded) {
                     fulltextEnded = true;

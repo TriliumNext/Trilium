@@ -4,6 +4,8 @@ import BNote from "../../../becca/entities/bnote.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import SearchContext from "../search_context.js";
 import becca from "../../../becca/becca.js";
+import { getContext } from "../../context.js";
+import noteService from "../../notes.js";
 import { findNoteByTitle, note, NoteBuilder } from "../../../test/becca_mocking.js";
 
 describe("Progressive Search Strategy", () => {
@@ -117,19 +119,19 @@ describe("Progressive Search Strategy", () => {
 
         it("should not duplicate results between phases", () => {
             rootNote
-                .child(note("Test Document")) // Would match in both phases
-                .child(note("Tset Report")); // Only fuzzy match
+                .child(note("Test Document")) // exact match on "document"
+                .child(note("Reference Documnt")); // fuzzy match on "document" (typo)
 
             const searchContext = new SearchContext();
-            const searchResults = searchService.findResultsWithQuery("test", searchContext);
+            const searchResults = searchService.findResultsWithQuery("document", searchContext);
 
             // Should only have unique results
             const noteIds = searchResults.map(r => r.noteId);
             const uniqueNoteIds = [...new Set(noteIds)];
-            
+
             expect(noteIds.length).toBe(uniqueNoteIds.length);
             expect(findNoteByTitle(searchResults, "Test Document")).toBeTruthy();
-            expect(findNoteByTitle(searchResults, "Tset Report")).toBeTruthy();
+            expect(findNoteByTitle(searchResults, "Reference Documnt")).toBeTruthy();
         });
     });
 
@@ -137,31 +139,31 @@ describe("Progressive Search Strategy", () => {
         it("should respect minimum result count threshold", () => {
             // Create exactly 4 high-quality results (below threshold of 5)
             rootNote
-                .child(note("Test One"))
-                .child(note("Test Two"))
-                .child(note("Test Three"))
-                .child(note("Test Four"))
-                .child(note("Tset Five")); // Typo that should be found via fuzzy
+                .child(note("Document One"))
+                .child(note("Document Two"))
+                .child(note("Document Three"))
+                .child(note("Document Four"))
+                .child(note("Documnt Five")); // Typo that should be found via fuzzy
 
             const searchContext = new SearchContext();
-            const searchResults = searchService.findResultsWithQuery("test", searchContext);
+            const searchResults = searchService.findResultsWithQuery("document", searchContext);
 
             // Should proceed to Phase 2 and include fuzzy match
             expect(searchResults.length).toBe(5);
-            expect(findNoteByTitle(searchResults, "Tset Five")).toBeTruthy();
+            expect(findNoteByTitle(searchResults, "Documnt Five")).toBeTruthy();
         });
 
         it("should respect minimum quality score threshold", () => {
             // Create notes that might have low exact match scores
             rootNote
                 .child(note("Testing Document")) // Should have decent score
-                .child(note("Document with test inside")) // Lower score due to position
-                .child(note("Another test case"))
-                .child(note("Test case example"))
-                .child(note("Tset with typo")); // Fuzzy match
+                .child(note("Reference to a document")) // Lower score due to position
+                .child(note("Another documentation")) // contains "document" as a substring
+                .child(note("Document example"))
+                .child(note("Reference Documnt")); // Fuzzy match
 
             const searchContext = new SearchContext();
-            const searchResults = searchService.findResultsWithQuery("test", searchContext);
+            const searchResults = searchService.findResultsWithQuery("document", searchContext);
 
             // Should include fuzzy results if exact results don't meet quality threshold
             expect(searchResults.length).toBeGreaterThan(4);
@@ -192,11 +194,12 @@ describe("Progressive Search Strategy", () => {
         });
 
         it("should enforce maximum total fuzzy score per search", () => {
-            // Create note with many potential fuzzy matches
-            rootNote.child(note("Tset Documnt Anaylsis Sumary Reportng")); // Many typos
+            // Create note with many potential fuzzy matches (all 6+ chars so they
+            // still fuzzy-match under length-scaled distance)
+            rootNote.child(note("Documnt Anaylsis Sumary Reportng")); // Many typos
 
             const searchContext = new SearchContext();
-            const searchResults = searchService.findResultsWithQuery("test document analysis summary reporting", searchContext);
+            const searchResults = searchService.findResultsWithQuery("document analysis summary reporting", searchContext);
 
             expect(searchResults.length).toBe(1);
             
@@ -209,22 +212,22 @@ describe("Progressive Search Strategy", () => {
         it("should respect enableFuzzyMatching flag", () => {
             rootNote
                 .child(note("Test Document"))
-                .child(note("Tset Report")); // Typo
+                .child(note("Reference Documnt")); // Typo
 
             // Test with fuzzy matching disabled
             const exactOnlyContext = new SearchContext();
             exactOnlyContext.enableFuzzyMatching = false;
-            
-            const exactResults = searchService.findResultsWithQuery("test", exactOnlyContext);
+
+            const exactResults = searchService.findResultsWithQuery("document", exactOnlyContext);
             expect(exactResults.length).toBe(1);
             expect(findNoteByTitle(exactResults, "Test Document")).toBeTruthy();
-            expect(findNoteByTitle(exactResults, "Tset Report")).toBeFalsy();
+            expect(findNoteByTitle(exactResults, "Reference Documnt")).toBeFalsy();
 
             // Test with fuzzy matching enabled (default)
             const fuzzyContext = new SearchContext();
-            const fuzzyResults = searchService.findResultsWithQuery("test", fuzzyContext);
+            const fuzzyResults = searchService.findResultsWithQuery("document", fuzzyContext);
             expect(fuzzyResults.length).toBe(2);
-            expect(findNoteByTitle(fuzzyResults, "Tset Report")).toBeTruthy();
+            expect(findNoteByTitle(fuzzyResults, "Reference Documnt")).toBeTruthy();
         });
     });
 
@@ -236,6 +239,44 @@ describe("Progressive Search Strategy", () => {
             const searchResults = searchService.findResultsWithQuery("nonexistent", searchContext);
 
             expect(searchResults.length).toBe(0);
+        });
+    });
+
+    describe("Content Match Quality Thresholds", () => {
+        function contentNote(title: string, content: string) {
+            return getContext().init(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title,
+                content,
+                type: "text"
+            }).note);
+        }
+
+        it("does not run phase-2 body fuzzy matching when phase 1 has enough exact content results", () => {
+            for (let i = 0; i < 5; i++) {
+                contentNote(`Note ${i}`, `this document section ${i}`);
+            }
+            // Body typo of "document" — reachable only via the phase-2 fuzzy fallback.
+            const typo = contentNote("Typo", "this documnt section");
+
+            const searchResults = searchService.findResultsWithQuery("document", new SearchContext());
+
+            expect(searchResults.length).toBe(5);
+            expect(searchResults.some((result) => result.noteId === typo.noteId)).toBe(false);
+        });
+
+        it("counts substring-only body matches as phase-1 quality results (weight 15 clears the bar)", () => {
+            // "ument" is a substring of "document" (not an exact word or prefix), so each
+            // note earns the substring tier (15), which exceeds the quality threshold (10).
+            for (let i = 0; i < 5; i++) {
+                contentNote(`Note ${i}`, `the document ${i} here`);
+            }
+            const typo = contentNote("Typo", "the docmnt here");
+
+            const searchResults = searchService.findResultsWithQuery("ument", new SearchContext());
+
+            expect(searchResults.length).toBe(5);
+            expect(searchResults.some((result) => result.noteId === typo.noteId)).toBe(false);
         });
     });
 });

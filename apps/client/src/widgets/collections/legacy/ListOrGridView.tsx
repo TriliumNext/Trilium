@@ -1,6 +1,7 @@
 import "./ListOrGridView.css";
 import { Card, CardFrame, CardSection } from "../../react/Card";
 
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -70,7 +71,7 @@ export interface ListViewOptions {
 export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens, showTextRepresentation, listOptions }: ViewModeProps<{}> & { listOptions?: ListViewOptions }) {
     const labelExpandDepth = useExpansionDepth(note);
     const noteIds = useFilteredNoteIds(note, unfilteredNoteIds);
-    const { pageNotes, ...pagination } = usePagination(note, noteIds, listOptions?.pageSize);
+    const { pageNotes, ...pagination } = usePagination(note, noteIds, { pageSizeOverride: listOptions?.pageSize });
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
     const noteType = useNoteProperty(note, "type");
     const searchResultsLayout = (noteType === "search") || !!listOptions?.searchResultsLayout;
@@ -151,7 +152,7 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
     parentNote: FNote,
     currentLevel: number,
     expandDepth: number,
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchived: boolean;
     showTextRepresentation?: boolean;
 } & Pick<ListViewOptions, "searchResultsLayout" | "hideSubNotes" | "resolveChildren" | "showPreview" | "showNotePath" | "renderItemActions" | "renderItemMenu">) {
@@ -235,7 +236,7 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
 interface GridNoteCardProps {
     note: FNote;
     parentNote: FNote;
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchived: boolean;
     showTextRepresentation?: boolean;
 }
@@ -287,7 +288,7 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
     note: FNote;
     trim?: boolean;
     noChildrenList?: boolean;
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchivedNotes: boolean;
     showTextRepresentation?: boolean;
     /** Render live interactive type widgets (e.g. web views) instead of static previews. */
@@ -371,7 +372,7 @@ function NoteChildren({ note, parentNote, highlightedTokens, currentLevel, expan
     parentNote: FNote,
     currentLevel: number,
     expandDepth: number,
-    highlightedTokens: string[] | null | undefined
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
     includeArchived: boolean;
 } & Pick<ListViewOptions, "searchResultsLayout" | "resolveChildren" | "showPreview" | "showNotePath" | "renderItemActions" | "renderItemMenu">) {
     const [ childNotes, setChildNotes ] = useState<FNote[]>();

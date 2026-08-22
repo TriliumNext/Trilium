@@ -114,6 +114,61 @@ describe("SearchContext", () => {
         expect(ctx.enableFuzzyMatching).toBe(true);
     });
 
+    describe("recordContentMatch", () => {
+        it("starts with an empty contentMatches map", () => {
+            const ctx = new SearchContext();
+
+            expect(ctx.contentMatches.size).toBe(0);
+        });
+
+        it("stores a quality for a note and upgrades it only when a better one arrives", () => {
+            const ctx = new SearchContext();
+
+            ctx.recordContentMatch("note1", { tier: "substring", matchedTokenCount: 1, inOrder: false });
+            expect(ctx.contentMatches.get("note1")?.tier).toBe("substring");
+
+            // Higher tier wins.
+            ctx.recordContentMatch("note1", { tier: "exact_phrase", matchedTokenCount: 2, inOrder: false });
+            expect(ctx.contentMatches.get("note1")?.tier).toBe("exact_phrase");
+
+            // Weaker tier does not downgrade the stored quality.
+            ctx.recordContentMatch("note1", { tier: "word_prefix", matchedTokenCount: 5, inOrder: false });
+            expect(ctx.contentMatches.get("note1")?.tier).toBe("exact_phrase");
+            expect(ctx.contentMatches.get("note1")?.matchedTokenCount).toBe(2);
+        });
+
+        it("breaks a tier tie by keeping the higher matchedTokenCount", () => {
+            const ctx = new SearchContext();
+
+            ctx.recordContentMatch("note1", { tier: "exact_word", matchedTokenCount: 1, inOrder: false });
+            ctx.recordContentMatch("note1", { tier: "exact_word", matchedTokenCount: 3, inOrder: false });
+
+            expect(ctx.contentMatches.get("note1")?.matchedTokenCount).toBe(3);
+        });
+    });
+
+    describe("getHighlightedTokenInfos", () => {
+        it("starts with an empty regexTokens set", () => {
+            const ctx = new SearchContext();
+
+            expect(ctx.regexTokens.size).toBe(0);
+            expect(ctx.getHighlightedTokenInfos()).toEqual([]);
+        });
+
+        it("tags each highlighted token as regex or plain based on regexTokens membership", () => {
+            const ctx = new SearchContext();
+
+            ctx.highlightedTokens.push("hello", "wor.d", "world");
+            ctx.regexTokens.add("wor.d");
+
+            expect(ctx.getHighlightedTokenInfos()).toEqual([
+                { token: "hello", type: "plain" },
+                { token: "wor.d", type: "regex" },
+                { token: "world", type: "plain" }
+            ]);
+        });
+    });
+
     describe("addError / hasError / getError", () => {
         it("records the first error and ignores subsequent ones", () => {
             const ctx = new SearchContext();
