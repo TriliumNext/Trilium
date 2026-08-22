@@ -24,7 +24,7 @@ vi.mock("./widgets/collections/NoteList", () => ({
     }
 }));
 
-import { App, Error404, loadCustomCss, main, SingleNoteRenderer } from "./print";
+import { App, applyPrintDocumentTitle, Error404, loadCustomCss, main, SingleNoteRenderer } from "./print";
 import froca from "./services/froca";
 import { buildNote } from "./test/easy-froca";
 
@@ -225,6 +225,7 @@ describe("main", () => {
     it("injects @page margins (browser) plus the font link and renders the app", async () => {
         buildNote({ id: "main-note", title: "Main Note", type: "text" });
         window.location.hash = "main-note";
+        document.title = "Trilium Notes";
 
         await main();
 
@@ -232,6 +233,9 @@ describe("main", () => {
         expect(document.head.querySelector('link[href="api/fonts"]')).toBeTruthy();
         const titles = [...document.body.querySelectorAll("h1")].map((el) => el.textContent);
         expect(titles).toContain("Main Note");
+        // Regression (#11140): the exported PDF's metadata title follows the note, not the
+        // app shell default the print window inherits.
+        expect(document.title).toBe("Main Note");
     });
 
     it("skips @page injection under Electron", async () => {
@@ -244,5 +248,23 @@ describe("main", () => {
 
         expect(countPageStyles()).toBe(before);
         expect(document.body.querySelectorAll("h1").length).toBeGreaterThan(0);
+    });
+});
+
+describe("applyPrintDocumentTitle", () => {
+    const originalTitle = document.title;
+
+    afterEach(() => {
+        document.title = originalTitle;
+    });
+
+    it("keeps the inherited title when no note loaded", () => {
+        document.title = "Trilium Notes";
+
+        applyPrintDocumentTitle(null);
+        applyPrintDocumentTitle(undefined);
+        applyPrintDocumentTitle({ title: "" });
+
+        expect(document.title).toBe("Trilium Notes");
     });
 });
