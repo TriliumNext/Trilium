@@ -49,9 +49,22 @@ export async function main() {
 
     const note = await froca.getNote(noteId);
 
+    applyPrintDocumentTitle(note);
+
     const bodyWrapper = document.createElement("div");
     render(<App note={note} noteId={noteId} />, bodyWrapper);
     document.body.appendChild(bodyWrapper);
+}
+
+/**
+ * Why (#11140): `printToPDF()` and the browser print dialog take the exported document's
+ * metadata title from `document.title`; the print window inherits the app shell's
+ * "Trilium Notes" default, so every export announced itself as that instead of the note.
+ */
+export function applyPrintDocumentTitle(note: { title: string } | null | undefined): void {
+    if (note?.title) {
+        document.title = note.title;
+    }
 }
 
 export function App({ note, noteId }: { note: FNote | null | undefined, noteId: string }) {
