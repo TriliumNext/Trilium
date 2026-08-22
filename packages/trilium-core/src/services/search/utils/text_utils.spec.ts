@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateOptimizedEditDistance, validateFuzzySearchTokens, fuzzyMatchWord, stripHtmlTags } from './text_utils.js';
+import { calculateOptimizedEditDistance, validateFuzzySearchTokens, fuzzyMatchWord, fuzzyMatchWordWithResult, stripHtmlTags } from './text_utils.js';
 
 describe('Fuzzy Search Core', () => {
     describe('calculateOptimizedEditDistance', () => {
@@ -60,6 +60,29 @@ describe('Fuzzy Search Core', () => {
             expect(fuzzyMatchWord('', 'test')).toBe(false);
             expect(fuzzyMatchWord('test', '')).toBe(false);
             expect(fuzzyMatchWord('a', 'b')).toBe(false); // Very short tokens
+        });
+
+        it('matches a token against a prefix of a longer word', () => {
+            // The whole-word check skips words too different in length, so without the
+            // prefix-aware path a typo in a short token never matches a long word.
+            // Use real typos here — both tokens are NOT substrings of the target, so the
+            // exact-substring fast-path at the top of fuzzyMatchWordWithResult can't satisfy
+            // them and Strategy 2 is the only path that can return true.
+            expect(fuzzyMatchWord('infa', 'cloud infrastructure overview')).toBe(true);
+            expect(fuzzyMatchWord('insall', 'installer downloaded')).toBe(true);
+
+            // Unrelated long words remain non-matches.
+            expect(fuzzyMatchWord('infa', 'cloud elsewhere unrelated')).toBe(false);
+            // First-character guard rejects long words whose leading letter doesn't match.
+            expect(fuzzyMatchWord('infa', 'zlothy overview reporting')).toBe(false);
+        });
+    });
+
+    describe('fuzzyMatchWordWithResult', () => {
+        it('returns the matched prefix substring so callers can highlight it', () => {
+            // The prefix the search budget allows is token.length + maxDistance.
+            // For "infa" (4 chars) + maxDistance 2 → 6-char prefix "infras".
+            expect(fuzzyMatchWordWithResult('infa', 'infrastructure')).toBe('infras');
         });
     });
 
