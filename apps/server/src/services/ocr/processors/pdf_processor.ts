@@ -1,5 +1,3 @@
-import { extractText, getDocumentProxy } from 'unpdf';
-
 import { getLog } from "@triliumnext/core";
 import { OCRProcessingOptions, OCRResult } from '../ocr_service.js';
 import { FileProcessor } from './file_processor.js';
@@ -20,6 +18,8 @@ export class PDFProcessor extends FileProcessor {
     async extractText(buffer: Buffer, options: OCRProcessingOptions = {}): Promise<OCRResult> {
         getLog().info('Starting PDF text extraction...');
 
+        // Dynamically imported so unpdf only loads when a PDF is actually processed.
+        const { extractText, getDocumentProxy } = await import('unpdf');
         const pdf = await getDocumentProxy(new Uint8Array(buffer));
         const { totalPages, text } = await extractText(pdf, { mergePages: true });
         const trimmed = text.trim();

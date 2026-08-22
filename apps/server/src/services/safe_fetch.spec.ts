@@ -29,8 +29,14 @@ const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
 });
 
 // safeFetch calls undici's own `fetch` (not the global one) so that it and the `Agent` it passes as
-// a dispatcher come from the same undici copy — see the comment in safe_fetch.ts.
-vi.mock("undici", () => ({ Agent: MockAgent, fetch: undiciFetch }));
+// a dispatcher come from the same undici copy — see the comment in safe_fetch.ts. undici is
+// CommonJS, so the mock carries the names under `default` as well: that is the only shape a bundled
+// ESM build can expose, and safe_fetch reads it first.
+vi.mock("undici", () => ({
+    default: { Agent: MockAgent, fetch: undiciFetch },
+    Agent: MockAgent,
+    fetch: undiciFetch
+}));
 
 import { safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
 

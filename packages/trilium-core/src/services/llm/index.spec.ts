@@ -91,21 +91,21 @@ describe("llm/index provider registry", () => {
     });
 
     describe("getProvider", () => {
-        it("returns the first provider when no id is given and caches it", () => {
+        it("returns the first provider when no id is given and caches it", async () => {
             setProviders(TWO);
-            const p1 = getProvider();
-            const p2 = getProvider();
+            const p1 = await getProvider();
+            const p2 = await getProvider();
             expect(p1).toBe(p2); // cached
             expect((p1.constructor as any).lastArgs).toEqual(["k1", "https://proxy"]);
         });
 
-        it("returns the provider matching a given id", () => {
+        it("returns the provider matching a given id", async () => {
             setProviders(TWO);
-            const p = getProvider("o1");
+            const p = await getProvider("o1");
             expect((p.constructor as any).lastArgs).toEqual(["k2", undefined]);
         });
 
-        it("instantiates each known provider type via its factory", () => {
+        it("instantiates each known provider type via its factory", async () => {
             setProviders([
                 { id: "a", name: "A", provider: "anthropic", apiKey: "ka" },
                 { id: "o", name: "O", provider: "openai", apiKey: "ko" },
@@ -116,68 +116,69 @@ describe("llm/index provider registry", () => {
                 { id: "lm", name: "LM", provider: "lmstudio", apiKey: "", baseURL: "http://box:1234/v1" },
                 { id: "oc", name: "OC", provider: "openai-compatible", apiKey: "k", baseURL: "http://box:8080/v1" }
             ]);
-            expect((getProvider("a").constructor as any).lastArgs).toEqual(["ka", undefined]);
-            expect((getProvider("o").constructor as any).lastArgs).toEqual(["ko", undefined]);
-            expect((getProvider("g").constructor as any).lastArgs).toEqual(["kg", undefined]);
+            const constructorArgs = async (id: string) => ((await getProvider(id)).constructor as any).lastArgs;
+            expect(await constructorArgs("a")).toEqual(["ka", undefined]);
+            expect(await constructorArgs("o")).toEqual(["ko", undefined]);
+            expect(await constructorArgs("g")).toEqual(["kg", undefined]);
             // Its own class rather than the shared self-hosted one, despite speaking
             // the same protocol — that is what gives its models a price.
-            expect((getProvider("d").constructor as any).lastArgs).toEqual(["kd", undefined]);
+            expect(await constructorArgs("d")).toEqual(["kd", undefined]);
             // The subscription provider takes no constructor args — auth is Claude Code's.
-            expect((getProvider("c").constructor as any).lastArgs).toEqual([]);
+            expect(await constructorArgs("c")).toEqual([]);
             // The three self-hosted cards share one class, which receives the card
             // id so it knows which endpoint to probe and prefill.
-            expect((getProvider("l").constructor as any).lastArgs).toEqual(["ollama", "", "http://ollama.lan:11434"]);
-            expect((getProvider("lm").constructor as any).lastArgs).toEqual(["lmstudio", "", "http://box:1234/v1"]);
-            expect((getProvider("oc").constructor as any).lastArgs).toEqual(["openai-compatible", "k", "http://box:8080/v1"]);
+            expect(await constructorArgs("l")).toEqual(["ollama", "", "http://ollama.lan:11434"]);
+            expect(await constructorArgs("lm")).toEqual(["lmstudio", "", "http://box:1234/v1"]);
+            expect(await constructorArgs("oc")).toEqual(["openai-compatible", "k", "http://box:8080/v1"]);
         });
 
-        it("throws when no providers are configured (null and empty array)", () => {
+        it("throws when no providers are configured (null and empty array)", async () => {
             getOptionOrNullMock.mockReturnValue(null);
-            expect(() => getProvider()).toThrow(/No LLM providers configured/);
+            await expect(getProvider()).rejects.toThrow(/No LLM providers configured/);
             setProviders([]);
-            expect(() => getProvider()).toThrow(/No LLM providers configured/);
+            await expect(getProvider()).rejects.toThrow(/No LLM providers configured/);
         });
 
-        it("throws when the requested id is not found", () => {
+        it("throws when the requested id is not found", async () => {
             setProviders(TWO);
-            expect(() => getProvider("nope")).toThrow(/not found: nope/);
+            await expect(getProvider("nope")).rejects.toThrow(/not found: nope/);
         });
 
-        it("throws for an unknown provider type", () => {
+        it("throws for an unknown provider type", async () => {
             setProviders([{ id: "x", name: "X", provider: "mystery", apiKey: "k" }]);
-            expect(() => getProvider("x")).toThrow(/Unknown LLM provider type: mystery/);
+            await expect(getProvider("x")).rejects.toThrow(/Unknown LLM provider type: mystery/);
         });
 
-        it("builds every host-provided type through the factory its host registered", () => {
+        it("builds every host-provided type through the factory its host registered", async () => {
             // The catalog and the switch have to agree: a type listed in
             // HOST_PROVIDED_TYPES with no branch of its own falls through to the
             // default and reads as a typo, in a build that can in fact serve it.
             const types = Object.keys(HOST_PROVIDED_TYPES);
             setProviders(types.map((provider, index) => ({ id: `h${index}`, name: provider, provider, apiKey: "" })));
 
-            types.forEach((type, index) => {
-                expect(getProvider(`h${index}`)).toBeInstanceOf(hostProviderMocks[type]);
-            });
+            for (const [index, type] of types.entries()) {
+                expect(await getProvider(`h${index}`)).toBeInstanceOf(hostProviderMocks[type]);
+            }
         });
 
-        it("names the provider when no host in this build can build it", () => {
+        it("names the provider when no host in this build can build it", async () => {
             // What standalone hits for Claude Code: the type is real and the branch is
             // there, but nothing registered a factory. Better than "unknown type",
             // which would send the user looking for a typo.
             clearHostProviders();
             setProviders([{ id: "c", name: "C", provider: "claude-agent", apiKey: "" }]);
-            expect(() => getProvider("c")).toThrow("The Claude Code provider is not available in this build.");
+            await expect(getProvider("c")).rejects.toThrow("The Claude Code provider is not available in this build.");
         });
 
-        it("drops cached instances when the llmProviders option changes", () => {
+        it("drops cached instances when the llmProviders option changes", async () => {
             setProviders(TWO);
-            const p1 = getProvider("a1");
+            const p1 = await getProvider("a1");
             // Same config → still cached.
             setProviders(TWO);
-            expect(getProvider("a1")).toBe(p1);
+            expect(await getProvider("a1")).toBe(p1);
             // Edited config (e.g. new API key) → cache self-invalidates.
             setProviders([{ ...TWO[0], apiKey: "new-key" }, TWO[1]]);
-            const p2 = getProvider("a1");
+            const p2 = await getProvider("a1");
             expect(p2).not.toBe(p1);
             expect((p2.constructor as any).lastArgs).toEqual(["new-key", "https://proxy"]);
         });
@@ -202,15 +203,15 @@ describe("llm/index provider registry", () => {
     });
 
     describe("getProviderByType", () => {
-        it("returns the first provider of the given type", () => {
+        it("returns the first provider of the given type", async () => {
             setProviders(TWO);
-            const p = getProviderByType("openai");
+            const p = await getProviderByType("openai");
             expect((p.constructor as any).lastArgs).toEqual(["k2", undefined]);
         });
 
-        it("throws when no provider of that type is configured", () => {
+        it("throws when no provider of that type is configured", async () => {
             setProviders(TWO);
-            expect(() => getProviderByType("google")).toThrow(/No google provider configured/);
+            await expect(getProviderByType("google")).rejects.toThrow(/No google provider configured/);
         });
     });
 

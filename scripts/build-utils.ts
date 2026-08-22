@@ -37,14 +37,20 @@ export default class BuildHelper {
     }
 
     /**
-     * @param entryPoints source entry points to bundle into CJS.
+     * @param entryPoints source entry points to bundle.
      * @param opts.importMetaUrlShim redirects `import.meta.url` to the bundle's own file so
      *   bundled ESM deps calling `createRequire(import.meta.url)` work in CJS output (defaults
      *   to `true`). Must be disabled for scripts that run in Electron's sandboxed renderer (e.g.
-     *   the desktop preload), where the injected `require("node:url")` banner throws.
+     *   the desktop preload), where the injected `require("node:url")` banner throws. Ignored
+     *   for ESM output, where `import.meta.url` needs no shim.
+     * @param opts.format output format (defaults to `"cjs"`). `"esm"` emits `.mjs` with code
+     *   splitting: dynamic `import()` boundaries become separate chunks under `chunks/`, so
+     *   V8 never parses or retains the source of a subsystem until it is first used. The
+     *   desktop preload must stay `"cjs"` — Electron's sandboxed renderer cannot load ESM.
      */
-    async buildBackend(entryPoints: string[], opts: { importMetaUrlShim?: boolean } = {}) {
-        const { importMetaUrlShim = true } = opts;
+    async buildBackend(entryPoints: string[], opts: { importMetaUrlShim?: boolean; format?: "cjs" | "esm" } = {}) {
+        const { importMetaUrlShim = true, format = "cjs" } = opts;
+        const esm = format === "esm";
         const result = await esbuild({
             entryPoints: entryPoints.map(e => join(this.projectDir, e)),
             tsconfig: join(this.projectDir, "tsconfig.app.json"),
@@ -52,9 +58,11 @@ export default class BuildHelper {
             bundle: true,
             outdir: this.outDir,
             outExtension: {
-                ".js": ".cjs"
+                ".js": esm ? ".mjs" : ".cjs"
             },
-            format: "cjs",
+            format,
+            splitting: esm,
+            chunkNames: "chunks/[name]-[hash]",
             external: [
                 "electron",
                 "better-sqlite3",
@@ -80,7 +88,6 @@ export default class BuildHelper {
                 "@triliumnext/core/src/assets/*"
             ],
             metafile: true,
-            splitting: false,
             loader: {
                 ".css": "text",
                 ".ejs": "text"
@@ -94,12 +101,34 @@ export default class BuildHelper {
                 // then throws `ERR_INVALID_ARG_VALUE`. Redirect it to the
                 // bundle's own file so createRequire()/`.resolve()` anchor at
                 // dist/ and can still locate sibling node_modules packages.
-                ...(importMetaUrlShim && { "import.meta.url": "__bundleImportMetaUrl" }),
+                ...(importMetaUrlShim && !esm && { "import.meta.url": "__bundleImportMetaUrl" }),
             },
-            // The banner defines the redirect target above. It uses
+            // The CJS banner defines the redirect target above. It uses
             // `require("node:url")`, which throws in Electron's sandboxed
             // renderer, so it must be omitted for preload-style bundles.
-            ...(importMetaUrlShim && {
+            // The ESM banner is the mirror image: bundled CJS deps reference
+            // `require`, `__filename` and `__dirname`, which do not exist in
+            // ESM, so each output file defines them from `import.meta.url`.
+            // esbuild's `__require` interop helper picks up the banner's
+            // `require` binding for external packages (better-sqlite3 etc.).
+            // `__dirname` in a chunk resolves to the bundle root, not
+            // `chunks/`: bundled code uses it to find siblings of the entry
+            // (preload.cjs, image_worker.cjs, assets/), and which chunk a
+            // module lands in must not change what the path means. The
+            // `chunks` suffix check matches `chunkNames` above.
+            ...(esm ? {
+                banner: {
+                    js: [
+                        `import { createRequire as __bundleCreateRequire } from "node:module";`,
+                        `import { fileURLToPath as __bundleFileURLToPath } from "node:url";`,
+                        `import { dirname as __bundleDirname } from "node:path";`,
+                        `const require = __bundleCreateRequire(import.meta.url);`,
+                        `const __filename = __bundleFileURLToPath(import.meta.url);`,
+                        `const __bundleFileDir = __bundleDirname(__filename);`,
+                        `const __dirname = /[\\\\/]chunks$/.test(__bundleFileDir) ? __bundleDirname(__bundleFileDir) : __bundleFileDir;`
+                    ].join("\n")
+                }
+            } : importMetaUrlShim && {
                 banner: {
                     js: `const __bundleImportMetaUrl = require("node:url").pathToFileURL(__filename).href;`
                 }

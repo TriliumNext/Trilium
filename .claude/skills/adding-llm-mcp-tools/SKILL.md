@@ -32,13 +32,16 @@ Rule: **any tool that writes** (`setContent`, `save`, `setAttribute`, `createNew
 
 ## Footgun #3: a new *module* is invisible until registered
 
-`allToolRegistries` (`packages/trilium-core/src/services/llm/tools/index.ts:33`) is the **single wiring point** iterated by both `mcp_server.ts:47` and `base_provider.ts:390` (`llm/providers/base_provider.ts`, `Object.assign(tools, registry.toToolSet())`). Adding a tool to an **existing** module (e.g. another entry in `note_tools.ts`) needs no wiring. Creating a **new** module means: `export const xTools = defineTools({...})`, add the `export`/`import` lines in `index.ts`, and append `xTools` to the `allToolRegistries` array. Miss the array and chat + MCP both never see it.
+`allToolRegistries` (`packages/trilium-core/src/services/llm/tools/index.ts:34`) is the **single wiring point** iterated by both `mcp_server.ts:51` and `base_provider.ts:389` (`llm/providers/base_provider.ts`, `Object.assign(tools, registry.toToolSet())`). Adding a tool to an **existing** module (e.g. another entry in `note_tools.ts`) needs no wiring. Creating a **new** module means: `export const xTools = defineTools({...})`, add the `export`/`import` lines in `index.ts`, and append `xTools` to the `allToolRegistries` array. Miss the array and chat + MCP both never see it.
 
 **Node-only tools take the other door.** A tool that needs something core cannot have in the browser
 (the in-app documentation reader, for instance) lives in `apps/server/src/services/llm/tools/`
-(`doc_notes.ts`, `help_tools.ts`) and registers itself at server startup by calling
-`registerToolRegistry(theRegistry)` (`index.ts:48`), which appends to the same array. Standalone
-simply runs without it. Put a tool there **only** if it genuinely cannot run under sqlite-wasm —
+(`doc_notes.ts`, `help_tools.ts`) and registers at server startup via
+`registerToolRegistryLoader(async () => (await import("./tools/x.js")).xTools)` from core's light
+`tools/registration.ts` (see `registerServerLlmExtensions`); the first chat turn or MCP request
+resolves the loader through `resolveToolRegistries()` and appends the registry to the same array.
+Register the loader, never a static import — the loader form is what keeps the tool stack (zod, the
+AI SDK) out of the server's startup path. Standalone simply runs without it. Put a tool there **only** if it genuinely cannot run under sqlite-wasm —
 core is the default home, and anything placed in the server loses the standalone and desktop
 consumers.
 
@@ -102,7 +105,7 @@ The two harness patterns are spelled out fully in the reference — don't re-der
 
 - [ ] `execute` is not `async` and returns no Promise (typecheck rejects it otherwise — run `pnpm typecheck`).
 - [ ] Every write tool has `mutates: true`.
-- [ ] A brand-new module is in `allToolRegistries` (`index.ts:33`).
+- [ ] A brand-new module is in `allToolRegistries` (`index.ts:34`).
 - [ ] All failure branches `return { error }`; the only `throw`s are service calls wrapped in try/catch.
 - [ ] Protected/system-note guards present and ordered (table above).
 - [ ] Friendly name added under `llm.tools.<name>` in `en/translation.json`, imperative tense.
