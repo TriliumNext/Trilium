@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { getContext } from "../../context.js";
 import noteService from "../../notes.js";
 import sql_init from "../../sql_init.js";
+import { getSql } from "../../sql/index.js";
 import searchService from "./search.js";
 
 /**
@@ -30,9 +31,57 @@ describe("search on database-backed note properties", () => {
                 title: "DbPropsProbe",
                 type: "text",
                 mime: "text/html",
-                content: `<p>${"x".repeat(BODY_LENGTH)}</p>`
+                content: `<p>${"x".repeat(BODY_LENGTH)}</p>`,
+                attributes: [{ type: "label", name: "tcDbProbe", isInheritable: false, position: 0 }]
             })
         );
+    });
+
+    /**
+     * The loader memoizes its results onto the becca notes, so a test that ran any other
+     * db-backed query first would mask exactly the cold-process failure these tests assert.
+     */
+    function resetMemoizedNoteProperties() {
+        const probe = searchService.searchNotes("note.title *=* DbPropsProbe")[0];
+        probe.contentSize = undefined;
+        probe.contentAndAttachmentsSize = undefined;
+        probe.contentAndAttachmentsAndRevisionsSize = undefined;
+        probe.revisionCount = undefined;
+    }
+
+    it("loads the database-backed properties for a pure '#' query", () => {
+        resetMemoizedNoteProperties();
+
+        // Regression (#11131): queries starting with '#' take the pure-expression shortcut,
+        // which used to skip loadNeededInfoFromDatabase() entirely — the comparison then ran
+        // against undefined, and the same query answered differently depending on what had
+        // been searched earlier in the process.
+        expect(searchService.searchNotes("#tcDbProbe note.contentSize >= 0")).toHaveLength(1);
+        expect(searchService.searchNotes(`#tcDbProbe note.contentSize > ${BODY_LENGTH}`)).toHaveLength(1);
+        expect(searchService.searchNotes(`#tcDbProbe note.contentSize > ${BODY_LENGTH * 10}`)).toHaveLength(0);
+    });
+
+    it("counts revisions instead of always reporting zero", () => {
+        const probe = searchService.searchNotes("note.title *=* DbPropsProbe")[0];
+        const utcNow = "2026-01-01T00:00:00.000Z";
+        const dateNow = "2026-01-01 00:00:00";
+
+        getSql().execute(
+            `INSERT INTO blobs (blobId, content, dateModified, utcDateModified) VALUES (?, ?, ?, ?)`,
+            ["tcRevBlob1", "y".repeat(200), dateNow, utcNow]
+        );
+        getSql().execute(
+            `INSERT INTO revisions (revisionId, noteId, title, blobId, utcDateLastEdited, utcDateCreated, utcDateModified, dateLastEdited, dateCreated)
+             VALUES (?, ?, 'DbPropsProbe', ?, ?, ?, ?, ?, ?)`,
+            ["tcRev1", probe.noteId, "tcRevBlob1", utcNow, utcNow, utcNow, dateNow, dateNow]
+        );
+
+        resetMemoizedNoteProperties();
+
+        // Regression (#11131): the increment was guarded by the truthiness of a counter that had
+        // just been reset to zero, so revisionCount stayed 0 on every path.
+        expect(searchService.searchNotes("note.title *=* DbPropsProbe AND note.revisionCount >= 1")).toHaveLength(1);
+        expect(searchService.searchNotes("note.title *=* DbPropsProbe AND note.revisionCount = 0")).toHaveLength(0);
     });
 
     it("filters on contentSize instead of silently matching nothing", () => {
