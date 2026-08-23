@@ -205,8 +205,8 @@ importers:
         specifier: 7.0.2
         version: 7.0.2(rrule@2.8.1)(temporal-polyfill@1.0.4)
       '@mermaid-js/layout-elk':
-        specifier: 0.2.2
-        version: 0.2.2(mermaid@11.17.0)
+        specifier: 0.2.3
+        version: 0.2.3(mermaid@11.17.0)
       '@popperjs/core':
         specifier: 2.11.8
         version: 2.11.8
@@ -815,8 +815,8 @@ importers:
         specifier: 0.18.1
         version: 0.18.1(patch_hash=859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@mermaid-js/layout-elk':
-        specifier: 0.2.2
-        version: 0.2.2(mermaid@11.17.0)
+        specifier: 0.2.3
+        version: 0.2.3(mermaid@11.17.0)
       '@popperjs/core':
         specifier: 2.11.8
         version: 2.11.8
@@ -3388,8 +3388,8 @@ packages:
   '@mdn/browser-compat-data@6.1.5':
     resolution: {integrity: sha512-PzdZZzRhcXvKB0begee28n5lvwAcinGKYuLZOVxHAZm+n7y01ddEGfdS1ZXRuVcV+ndG6mSEAE8vgudom5UjYg==}
 
-  '@mermaid-js/layout-elk@0.2.2':
-    resolution: {integrity: sha512-vnH3gtqfhyBiRVKNpT8iDENTw18q/OF0GF/SfYfHN43KZpu+6eZDEOMHTfNYAkpmUWJNgtRQFIS6BTc7vH/DYQ==}
+  '@mermaid-js/layout-elk@0.2.3':
+    resolution: {integrity: sha512-m46RVGfvKK1PSMdAFGDz2nksI4jusEkFxvf0lb48bYWmqLQxZpjtpruiw29MbOy9rlWJtuMf9EzG9fAF8CVZbg==}
     peerDependencies:
       mermaid: 11.17.0
 
@@ -15354,7 +15354,7 @@ snapshots:
 
   '@mdn/browser-compat-data@6.1.5': {}
 
-  '@mermaid-js/layout-elk@0.2.2(mermaid@11.17.0)':
+  '@mermaid-js/layout-elk@0.2.3(mermaid@11.17.0)':
     dependencies:
       d3: 7.9.0
       elkjs: 0.9.3
