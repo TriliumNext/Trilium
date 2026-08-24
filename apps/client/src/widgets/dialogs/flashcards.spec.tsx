@@ -127,6 +127,17 @@ function findButtonByText(text: string) {
         .find((button) => button.textContent?.includes(text));
 }
 
+async function pressKey(key: string, target?: HTMLElement) {
+    await act(async () => {
+        // Let pending effect re-registration settle before and after the event.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        (target ?? document.body).dispatchEvent(
+            new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })
+        );
+        await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+}
+
 async function openDialog(eventData: Record<string, unknown> = {}) {
     render(<FlashcardsDialog />, host);
     await act(async () => {
@@ -317,5 +328,77 @@ describe("flashcards review dialog", () => {
 
         expect(mocks.getDueCards).toHaveBeenCalledTimes(1);
         expect(mocks.showMessage).not.toHaveBeenCalledWith("flashcards.queue_refreshed");
+    });
+
+    it("reveals the answer with Space and rates with number keys", async () => {
+        const card = makeCard();
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+
+        await openDialog();
+
+        await pressKey(" ");
+        expect(host.textContent).toContain("flashcards.answer");
+        expect(mocks.reviewCard).not.toHaveBeenCalled();
+
+        await pressKey("3");
+        expect(mocks.reviewCard).toHaveBeenCalledTimes(1);
+        expect(mocks.reviewCard).toHaveBeenCalledWith("card1", {
+            rating: 3,
+            expectedSchedulingRevision: 5,
+            clientRequestId: expect.any(String)
+        });
+    });
+
+    it("undoes the latest review with U after rating", async () => {
+        const card = makeCard();
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+        mocks.reviewCard.mockResolvedValue({
+            reviewId: "review1",
+            card: makeCard({ cardId: "card2" })
+        });
+        mocks.undoReview.mockResolvedValue({ card: makeCard() });
+
+        await openDialog();
+
+        await pressKey(" ");
+        await pressKey("4");
+        expect(mocks.reviewCard).toHaveBeenCalledTimes(1);
+        expect(host.textContent).toContain("flashcards.undo_review");
+
+        // The undo affordance appears only while a fresh review exists.
+        await pressKey("u");
+        expect(mocks.undoReview).toHaveBeenCalledWith({
+            reviewId: "review1",
+            cardId: "card2",
+            expectedSchedulingRevision: 5
+        });
+    });
+
+    it("ignores rating keys typed into form fields", async () => {
+        const card = makeCard();
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+        mocks.getDecks.mockResolvedValue({
+            decks: [ {
+                deckNoteId: "deck1",
+                deckTitle: "Deck",
+                dueCount: 1,
+                newCount: 0,
+                learningCount: 0,
+                reviewCount: 1,
+                totalCount: 1,
+                suspendedCount: 0
+            } ]
+        });
+
+        await openDialog();
+
+        await pressKey(" ");
+
+        const input = document.createElement("input");
+        host.appendChild(input);
+        input.focus();
+
+        await pressKey("3", input);
+        expect(mocks.reviewCard).not.toHaveBeenCalled();
     });
 });
