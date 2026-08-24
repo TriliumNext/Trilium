@@ -43,7 +43,8 @@ describe("flashcards client service", () => {
             .mockResolvedValueOnce({ cardId: "card1" })
             .mockResolvedValueOnce({ cardId: "card1", previews: [] })
             .mockResolvedValueOnce({ dueCount: 0 })
-            .mockResolvedValueOnce({ schedulerConfig: { requestRetention: 0.9 } });
+            .mockResolvedValueOnce({ schedulerConfig: { requestRetention: 0.9 } })
+            .mockResolvedValueOnce(null);
         serverMock.put.mockResolvedValueOnce({ schedulerConfig: { requestRetention: 0.85 } });
         serverMock.remove.mockResolvedValueOnce({ removedCount: 1 });
 
@@ -56,6 +57,7 @@ describe("flashcards client service", () => {
         await flashcards.getSettings();
         await flashcards.setSettings({ schedulerConfig });
         await flashcards.removeCardsForNote("note1");
+        const noteCard = await flashcards.getCardForNote("note1");
 
         expect(serverMock.post).toHaveBeenCalledWith("flashcards/cards", {
             noteId: "note1",
@@ -72,6 +74,8 @@ describe("flashcards client service", () => {
         expect(serverMock.get).toHaveBeenNthCalledWith(6, "flashcards/settings");
         expect(serverMock.put).toHaveBeenCalledWith("flashcards/settings", { schedulerConfig });
         expect(serverMock.remove).toHaveBeenCalledWith("flashcards/notes/note1/cards");
+        expect(serverMock.get).toHaveBeenNthCalledWith(7, "flashcards/notes/note1/card");
+        expect(noteCard).toBeNull();
     });
 
     it("uses silent conflict calls for scheduling mutations", async () => {

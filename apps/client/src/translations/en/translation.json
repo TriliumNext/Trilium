@@ -1185,7 +1185,13 @@
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
     "review_saved": "Review saved",
-    "leech_suspended": "Review saved. This leech card was suspended."
+    "leech_suspended": "Review saved. This leech card was suspended.",
+    "state_new": "New",
+    "state_learning": "Learning",
+    "state_review": "Review",
+    "state_relearning": "Relearning",
+    "status_suspended": "Suspended",
+    "leech": "Leech"
   },
   "zen_mode": {
     "button_exit": "Exit Zen Mode"

@@ -29,3 +29,17 @@
     font-size: 0.8em;
     vertical-align: middle !important;
 }
+
+.note-info-flashcard-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.note-info-flashcard-status .flashcard-suspended-badge {
+    --color: var(--bs-warning, #b58a00);
+}
+
+.note-info-flashcard-status .flashcard-leech-badge {
+    --color: var(--bs-danger, #dc3545);
+}

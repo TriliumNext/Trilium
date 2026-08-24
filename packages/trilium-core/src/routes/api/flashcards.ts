@@ -31,6 +31,10 @@ function getCard(req: Request<{ cardId: string }>) {
     return flashcardService.getCard(req.params.cardId);
 }
 
+function getCardForNote(req: Request<{ noteId: string }>) {
+    return flashcardService.getCardForNote(req.params.noteId);
+}
+
 function getPreview(req: Request<{ cardId: string }>) {
     return flashcardService.getPreview(req.params.cardId);
 }
@@ -80,6 +84,7 @@ export default {
     getDecks,
     getDueCards,
     getCard,
+    getCardForNote,
     getPreview,
     getSettings,
     setSettings,

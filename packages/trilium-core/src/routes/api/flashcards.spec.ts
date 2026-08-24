@@ -159,6 +159,35 @@ describe("Flashcards API (core)", () => {
         );
     });
 
+    it("returns the note's card status by source note", async () => {
+        const deck = createTextNote("Status deck source");
+        const note = createTextNote("Status flashcard source");
+
+        const missingRes = await api.get<unknown>(`/api/flashcards/notes/${note.noteId}/card`);
+        expect(missingRes.status).toBe(200);
+        expect(missingRes.body).toBeNull();
+
+        const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
+            body: { noteId: note.noteId, deckNoteId: deck.noteId }
+        });
+        expect(createRes.status).toBe(200);
+
+        const statusRes = await api.get<FlashcardReviewCard | null>(
+            `/api/flashcards/notes/${note.noteId}/card`
+        );
+        expect(statusRes.status).toBe(200);
+        expect(statusRes.body).toMatchObject({
+            cardId: createRes.body.cardId,
+            noteId: note.noteId,
+            deckNoteId: deck.noteId,
+            deckTitle: "Status deck source",
+            state: 0
+        });
+
+        const invalidRes = await api.get<unknown>("/api/flashcards/notes/bad!id/card");
+        expect(invalidRes.status).toBe(400);
+    });
+
     it("validates IDs and due queue limits", async () => {
         const createInvalidRes = await api.post<{ message: string }>("/api/flashcards/cards", {
             body: { noteId: "not valid" }

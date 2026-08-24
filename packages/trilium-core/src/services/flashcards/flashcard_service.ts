@@ -299,6 +299,18 @@ function getCard(
     return buildReviewCard(getCardRow(cardId), { includeBack });
 }
 
+function getCardForNote(noteId: string): FlashcardCardSummary | null {
+    assertValidId(noteId, "noteId");
+
+    const row = getSql().getRow<FlashcardRow>(/*sql*/`
+        SELECT * FROM flashcards
+        WHERE noteId = ? AND isDeleted = 0
+        ORDER BY ordinal ASC, utcDateCreated ASC
+        LIMIT 1`, [noteId]);
+
+    return row ? buildCardSummary(row) : null;
+}
+
 function getPreview(cardId: string): FlashcardPreviewResponse {
     const card = getCardRow(cardId);
 
@@ -830,6 +842,7 @@ export default {
     getDecks,
     getDueCards,
     getCard,
+    getCardForNote,
     getPreview,
     getSettings,
     setSettings,
