@@ -14775,8 +14775,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.tsx": {
-    "mtime": 1787326211.6163208,
-    "ast_hash": "97a3ebbd1ba8a48fe0317d58f6fcfce2",
+    "mtime": 1787560237.7961252,
+    "ast_hash": "934ddfdcf5cbea285ba9ad68a964c60f",
     "semantic_hash": ""
   },
   "apps/web-clipper/.wxt/eslint-auto-imports.mjs": {
@@ -24997,6 +24997,11 @@
   "apps/client/src/services/flashcards.spec.ts": {
     "mtime": 1787328230.084835,
     "ast_hash": "3b229c5a439cf067d9842b462732d93f",
+    "semantic_hash": ""
+  },
+  "apps/client/src/widgets/dialogs/flashcards.spec.tsx": {
+    "mtime": 1787560342.6388724,
+    "ast_hash": "e84a5b415daffdd611aaaecc5ac3092b",
     "semantic_hash": ""
   }
 }

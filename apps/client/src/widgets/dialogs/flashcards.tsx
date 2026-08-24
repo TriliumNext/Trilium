@@ -45,6 +45,7 @@ export default function FlashcardsDialog() {
     const [ submitting, setSubmitting ] = useState(false);
     const [ reviewRequestId, setReviewRequestId ] = useState(() => randomString());
     const [ undoableReview, setUndoableReview ] = useState<UndoableReview | null>(null);
+    const mutationLockRef = useRef(false);
 
     const openDialog = useCallback(async ({
         noteId,
@@ -211,22 +212,28 @@ export default function FlashcardsDialog() {
     }
 
     async function revealAnswer() {
-        if (!currentCard) {
+        if (!currentCard || mutationLockRef.current) {
             return;
         }
 
-        if (currentCard.back === undefined) {
-            setCurrentCard(await flashcards.getCard(currentCard.cardId));
-        }
+        mutationLockRef.current = true;
+        try {
+            if (currentCard.back === undefined) {
+                setCurrentCard(await flashcards.getCard(currentCard.cardId));
+            }
 
-        setAnswerShown(true);
+            setAnswerShown(true);
+        } finally {
+            mutationLockRef.current = false;
+        }
     }
 
     async function submitRating(preview: FlashcardReviewPreview) {
-        if (!currentCard) {
+        if (!currentCard || mutationLockRef.current) {
             return;
         }
 
+        mutationLockRef.current = true;
         setSubmitting(true);
         try {
             const response = await flashcards.reviewCard(currentCard.cardId, {
@@ -244,16 +251,18 @@ export default function FlashcardsDialog() {
 
             throw e;
         } finally {
+            mutationLockRef.current = false;
             setSubmitting(false);
         }
     }
 
     async function toggleSuspended() {
-        if (!currentCard) {
+        if (!currentCard || mutationLockRef.current) {
             return;
         }
 
         const suspended = !currentCard.suspended;
+        mutationLockRef.current = true;
         setSubmitting(true);
         try {
             const response = await flashcards.setSuspended(currentCard.cardId, {
@@ -274,12 +283,13 @@ export default function FlashcardsDialog() {
 
             throw e;
         } finally {
+            mutationLockRef.current = false;
             setSubmitting(false);
         }
     }
 
     async function resetCurrentCard() {
-        if (!currentCard) {
+        if (!currentCard || mutationLockRef.current) {
             return;
         }
 
@@ -288,6 +298,7 @@ export default function FlashcardsDialog() {
             return;
         }
 
+        mutationLockRef.current = true;
         setSubmitting(true);
         try {
             const response = await flashcards.resetCard(currentCard.cardId, {
@@ -305,15 +316,17 @@ export default function FlashcardsDialog() {
 
             throw e;
         } finally {
+            mutationLockRef.current = false;
             setSubmitting(false);
         }
     }
 
     async function buryCurrentCard() {
-        if (!currentCard) {
+        if (!currentCard || mutationLockRef.current) {
             return;
         }
 
+        mutationLockRef.current = true;
         setSubmitting(true);
         try {
             const response = await flashcards.buryCard(currentCard.cardId, {
@@ -331,15 +344,17 @@ export default function FlashcardsDialog() {
 
             throw e;
         } finally {
+            mutationLockRef.current = false;
             setSubmitting(false);
         }
     }
 
     async function moveCurrentCardToDeck(deckNoteId: string) {
-        if (!currentCard || currentCard.deckNoteId === deckNoteId) {
+        if (!currentCard || currentCard.deckNoteId === deckNoteId || mutationLockRef.current) {
             return;
         }
 
+        mutationLockRef.current = true;
         setSubmitting(true);
         try {
             const response = await flashcards.moveCardToDeck(currentCard.cardId, {
@@ -359,15 +374,17 @@ export default function FlashcardsDialog() {
 
             throw e;
         } finally {
+            mutationLockRef.current = false;
             setSubmitting(false);
         }
     }
 
     async function undoLastReview() {
-        if (!undoableReview) {
+        if (!undoableReview || mutationLockRef.current) {
             return;
         }
 
+        mutationLockRef.current = true;
         setSubmitting(true);
         try {
             const response = await flashcards.undoReview(undoableReview);
@@ -383,6 +400,7 @@ export default function FlashcardsDialog() {
 
             throw e;
         } finally {
+            mutationLockRef.current = false;
             setSubmitting(false);
         }
     }
