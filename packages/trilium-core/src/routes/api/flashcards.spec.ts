@@ -1,6 +1,8 @@
 import type {
     FlashcardDecksResponse,
     FlashcardDueResponse,
+    FlashcardExportPayload,
+    FlashcardImportResponse,
     FlashcardPreviewResponse,
     FlashcardReviewCard,
     FlashcardReviewResponse,
@@ -362,5 +364,55 @@ describe("Flashcards API (core)", () => {
             `/api/flashcards/cards/${createRes.body.cardId}`
         );
         expect(getRemovedRes.status).toBe(404);
+    });
+
+    it("exports and imports scheduling state with merge semantics", async () => {
+        const deck = createTextNote("Export deck source");
+        const note = createTextNote("Export flashcard source", "Exported back");
+
+        const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
+            body: { noteId: note.noteId, deckNoteId: deck.noteId }
+        });
+        expect(createRes.status).toBe(200);
+
+        const exportRes = await api.get<FlashcardExportPayload>("/api/flashcards/export");
+        expect(exportRes.status).toBe(200);
+        expect(exportRes.body.format).toBe("trilium-flashcards");
+        const exportedCard = exportRes.body.cards.find((row) => row.cardId === createRes.body.cardId);
+        expect(exportedCard).toBeTruthy();
+
+        // Importing the same payload must leave our fresh card untouched.
+        const noopImportRes = await api.post<FlashcardImportResponse>("/api/flashcards/import", {
+            body: { payload: exportRes.body }
+        });
+        expect(noopImportRes.status).toBe(200);
+        expect(noopImportRes.body.createdCards).toBe(0);
+
+        const unchangedRes = await api.get<FlashcardReviewCard>(`/api/flashcards/cards/${createRes.body.cardId}`);
+        expect(unchangedRes.body.state).toBe(createRes.body.state);
+        expect(unchangedRes.body.schedulingRevision).toBe(createRes.body.schedulingRevision);
+
+        // A newer revision wins over local state.
+        const newerPayload: FlashcardExportPayload = {
+            ...exportRes.body,
+            cards: exportRes.body.cards.map((row) =>
+                row.cardId === createRes.body.cardId
+                    ? { ...exportedCard!, schedulingRevision: createRes.body.schedulingRevision + 50 }
+                    : row)
+        };
+        const updateImportRes = await api.post<FlashcardImportResponse>("/api/flashcards/import", {
+            body: { payload: newerPayload }
+        });
+        expect(updateImportRes.status).toBe(200);
+
+        const fetchedRes = await api.get<FlashcardReviewCard>(`/api/flashcards/cards/${createRes.body.cardId}`);
+        expect(fetchedRes.status, JSON.stringify({ import: updateImportRes.body, fetched: fetchedRes.body })).toBe(200);
+        expect(fetchedRes.body.schedulingRevision).toBe(createRes.body.schedulingRevision + 50);
+
+        // Malformed payloads are rejected.
+        const badImportRes = await api.post<{ message: string }>("/api/flashcards/import", {
+            body: { payload: { format: "nope", formatVersion: 99, cards: [], reviews: [] } }
+        });
+        expect(badImportRes.status).toBe(400);
     });
 });

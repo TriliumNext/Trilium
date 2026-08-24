@@ -203,3 +203,26 @@ export interface FlashcardReviewRow {
     utcDateCreated?: string;
     utcDateModified?: string;
 }
+
+export const FLASHCARD_EXPORT_FORMAT = "trilium-flashcards" as const;
+export const FLASHCARD_EXPORT_FORMAT_VERSION = 1 as const;
+
+/** Full dump of flashcard scheduling state plus the append-only review history. */
+export interface FlashcardExportPayload {
+    format: typeof FLASHCARD_EXPORT_FORMAT;
+    formatVersion: number;
+    exportedUtc: string;
+    cards: FlashcardRow[];
+    reviews: FlashcardReviewRow[];
+}
+
+export interface FlashcardImportRequest {
+    payload: FlashcardExportPayload;
+}
+
+export interface FlashcardImportResponse {
+    createdCards: number;
+    updatedCards: number;
+    skippedCards: number;
+    importedReviews: number;
+}

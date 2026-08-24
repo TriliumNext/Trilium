@@ -1,4 +1,4 @@
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, FLASHCARD_EXPORT_FORMAT, FLASHCARD_EXPORT_FORMAT_VERSION } from "@triliumnext/commons";
 import type {
     FlashcardActionResponse,
     FlashcardBuryRequest,
@@ -8,6 +8,9 @@ import type {
     FlashcardDeckSummary,
     FlashcardDecksResponse,
     FlashcardDueResponse,
+    FlashcardExportPayload,
+    FlashcardImportRequest,
+    FlashcardImportResponse,
     FlashcardRating,
     FlashcardResetRequest,
     FlashcardReviewCard,
@@ -598,6 +601,198 @@ function undoReview(request: FlashcardUndoRequest): FlashcardActionResponse {
     };
 }
 
+function exportAll(): FlashcardExportPayload {
+    return {
+        format: FLASHCARD_EXPORT_FORMAT,
+        formatVersion: FLASHCARD_EXPORT_FORMAT_VERSION,
+        exportedUtc: new Date().toISOString(),
+        cards: getSql().getRows<FlashcardRow>(/*sql*/`
+            SELECT * FROM flashcards WHERE isDeleted = 0`),
+        reviews: getSql().getRows<FlashcardReviewRow>(/*sql*/`
+            SELECT * FROM flashcard_reviews`)
+    };
+}
+
+function importData(request: FlashcardImportRequest): FlashcardImportResponse {
+    const payload = request?.payload;
+
+    if (!payload
+        || payload.format !== FLASHCARD_EXPORT_FORMAT
+        || payload.formatVersion !== FLASHCARD_EXPORT_FORMAT_VERSION
+        || !Array.isArray(payload.cards)
+        || !Array.isArray(payload.reviews)) {
+        throw new ValidationError("Unrecognized flashcard export payload.");
+    }
+
+    let createdCards = 0;
+    let updatedCards = 0;
+    let skippedCards = 0;
+
+    for (const rawCard of payload.cards) {
+        const cardId = String(rawCard?.cardId || "");
+        const noteId = String(rawCard?.noteId || "");
+
+        if (!FLASHCARD_ID_PATTERN.test(cardId) || !FLASHCARD_ID_PATTERN.test(noteId)) {
+            skippedCards++;
+            continue;
+        }
+
+        const note = becca.getNote(noteId);
+        if (!note || note.isDeleted) {
+            skippedCards++;
+            continue;
+        }
+
+        let deckNoteId = String(rawCard.deckNoteId || "");
+        const deck = becca.getNote(deckNoteId);
+        if (!deck || deck.isDeleted) {
+            deckNoteId = getDefaultDeckNoteId(noteId);
+        }
+
+        if (!deckNoteId || !becca.getNote(deckNoteId)) {
+            skippedCards++;
+            continue;
+        }
+
+        const incoming = sanitizeImportedCard(rawCard, cardId, noteId, deckNoteId);
+        if (!incoming) {
+            skippedCards++;
+            continue;
+        }
+
+        // Becca's flashcard map is populated by the loader, so freshly created rows are
+        // looked up in the database rather than the cache.
+        const existing = getSql().getRow<FlashcardRow>(/*sql*/`
+            SELECT * FROM flashcards WHERE cardId = ? AND isDeleted = 0`, [cardId]);
+        if (existing) {
+            if ((incoming.schedulingRevision ?? 0) > (existing.schedulingRevision ?? 0)) {
+                new BFlashcard(incoming).save();
+                updatedCards++;
+            } else {
+                skippedCards++;
+            }
+        } else {
+            new BFlashcard(incoming).save();
+            createdCards++;
+
+            // Restore the opt-in label so consistency checks don't drop the imported card.
+            if (!note.hasOwnedLabel(FLASHCARD_LABEL)) {
+                new BAttribute({
+                    noteId,
+                    type: "label",
+                    name: FLASHCARD_LABEL,
+                    value: "",
+                    isInheritable: false
+                }).save();
+            }
+        }
+    }
+
+    let importedReviews = 0;
+    for (const rawReview of payload.reviews) {
+        const reviewId = String(rawReview?.reviewId || "");
+        if (!FLASHCARD_ID_PATTERN.test(reviewId)) {
+            continue;
+        }
+
+        const existing = getSql().getRow<{ reviewId: string }>(/*sql*/`
+            SELECT reviewId FROM flashcard_reviews WHERE reviewId = ?`, [reviewId]);
+        if (existing) {
+            continue;
+        }
+
+        new BFlashcardReview(sanitizeImportedReview(rawReview, reviewId)).save();
+        importedReviews++;
+    }
+
+    return { createdCards, updatedCards, skippedCards, importedReviews };
+}
+
+/** Coerces imported scheduling fields to finite numbers; returns null when the row is unusable. */
+function sanitizeImportedCard(
+    raw: Partial<FlashcardRow>,
+    cardId: string,
+    noteId: string,
+    deckNoteId: string
+): FlashcardRow | null {
+    const state = Number(raw.state);
+    if (!Number.isInteger(state) || state < 0 || state > 3) {
+        return null;
+    }
+
+    // Review/relearning cards need review history for ts-fsrs; otherwise the
+    // scheduler throws when the card is next previewed.
+    if (state === 2 || state === 3) {
+        const lastReview = raw.lastReview ? String(raw.lastReview) : "";
+        if (!lastReview || dateUtils.validateUtcDateTime(lastReview)
+            || !(toFiniteNumber(raw.stability, 0) > 0)) {
+            return null;
+        }
+    }
+
+    return {
+        cardId,
+        noteId,
+        deckNoteId,
+        ordinal: Number.isFinite(Number(raw.ordinal)) ? Number(raw.ordinal) : 0,
+        state: state as FlashcardRow["state"],
+        due: String(raw.due || dateUtils.utcNowDateTime()),
+        stability: toFiniteNumber(raw.stability, 0),
+        difficulty: toFiniteNumber(raw.difficulty, 0),
+        elapsedDays: Math.max(0, Math.round(toFiniteNumber(raw.elapsedDays, 0))),
+        scheduledDays: Math.max(0, Math.round(toFiniteNumber(raw.scheduledDays, 0))),
+        learningSteps: Math.max(0, Math.round(toFiniteNumber(raw.learningSteps, 0))),
+        reps: Math.max(0, Math.round(toFiniteNumber(raw.reps, 0))),
+        lapses: Math.max(0, Math.round(toFiniteNumber(raw.lapses, 0))),
+        lastReview: raw.lastReview ?? null,
+        suspended: !!raw.suspended,
+        algorithm: String(raw.algorithm || "fsrs-6"),
+        algorithmVersion: String(raw.algorithmVersion || "ts-fsrs@5.4.1"),
+        schedulerConfig: String(raw.schedulerConfig || DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON),
+        schedulingRevision: Math.max(0, Math.round(toFiniteNumber(raw.schedulingRevision, 0))),
+        utcDateCreated: raw.utcDateCreated || dateUtils.utcNowDateTime()
+    } as FlashcardRow;
+}
+
+function sanitizeImportedReview(raw: Partial<FlashcardReviewRow>, reviewId: string): FlashcardReviewRow {
+    return {
+        reviewId,
+        cardId: String(raw.cardId || ""),
+        rating: (toFiniteNumber(raw.rating, 0) as FlashcardRating),
+        state: (Math.max(0, Math.min(3, Math.round(toFiniteNumber(raw.state, 0)))) as FlashcardReviewRow["state"]),
+        dueBefore: String(raw.dueBefore || ""),
+        dueAfter: String(raw.dueAfter || ""),
+        stabilityBefore: toFiniteNumber(raw.stabilityBefore, 0),
+        stabilityAfter: toFiniteNumber(raw.stabilityAfter, 0),
+        difficultyBefore: toFiniteNumber(raw.difficultyBefore, 0),
+        difficultyAfter: toFiniteNumber(raw.difficultyAfter, 0),
+        elapsedDays: Math.max(0, Math.round(toFiniteNumber(raw.elapsedDays, 0))),
+        elapsedDaysBefore: Math.max(0, Math.round(toFiniteNumber(raw.elapsedDaysBefore, 0))),
+        scheduledDays: Math.max(0, Math.round(toFiniteNumber(raw.scheduledDays, 0))),
+        scheduledDaysBefore: Math.max(0, Math.round(toFiniteNumber(raw.scheduledDaysBefore, 0))),
+        learningSteps: Math.max(0, Math.round(toFiniteNumber(raw.learningSteps, 0))),
+        learningStepsBefore: Math.max(0, Math.round(toFiniteNumber(raw.learningStepsBefore, 0))),
+        repsBefore: Math.max(0, Math.round(toFiniteNumber(raw.repsBefore, 0))),
+        lapsesBefore: Math.max(0, Math.round(toFiniteNumber(raw.lapsesBefore, 0))),
+        lastReviewBefore: raw.lastReviewBefore ?? null,
+        schedulingRevisionBefore: Math.round(toFiniteNumber(raw.schedulingRevisionBefore, 0)),
+        schedulingRevisionAfter: Math.round(toFiniteNumber(raw.schedulingRevisionAfter, 0)),
+        reviewedAt: String(raw.reviewedAt || dateUtils.utcNowDateTime()),
+        durationMs: raw.durationMs ?? null,
+        algorithm: String(raw.algorithm || "fsrs-6"),
+        algorithmVersion: String(raw.algorithmVersion || "ts-fsrs@5.4.1"),
+        schedulerConfig: raw.schedulerConfig ?? undefined,
+        clientRequestId: raw.clientRequestId ?? null,
+        utcDateCreated: raw.utcDateCreated,
+        utcDateModified: raw.utcDateModified
+    };
+}
+
+function toFiniteNumber(value: unknown, fallback: number) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function getStats(): FlashcardStatsResponse {
     const today = new Date();
     const todayStart = `${dateUtils.utcDateStr(today)} 00:00:00.000Z`;
@@ -853,5 +1048,7 @@ export default {
     moveCardToDeck,
     undoReview,
     removeCardsForNote,
-    reviewCard
+    reviewCard,
+    exportAll,
+    importData
 };

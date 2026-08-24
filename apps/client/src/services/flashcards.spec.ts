@@ -44,9 +44,11 @@ describe("flashcards client service", () => {
             .mockResolvedValueOnce({ cardId: "card1", previews: [] })
             .mockResolvedValueOnce({ dueCount: 0 })
             .mockResolvedValueOnce({ schedulerConfig: { requestRetention: 0.9 } })
-            .mockResolvedValueOnce(null);
+            .mockResolvedValueOnce(null)
+            .mockResolvedValueOnce({ format: "trilium-flashcards", cards: [], reviews: [] });
         serverMock.put.mockResolvedValueOnce({ schedulerConfig: { requestRetention: 0.85 } });
         serverMock.remove.mockResolvedValueOnce({ removedCount: 1 });
+        serverMock.post.mockResolvedValueOnce({ createdCards: 1, updatedCards: 0, skippedCards: 0, importedReviews: 2 });
 
         await flashcards.createCard({ noteId: "note1", deckNoteId: "deck1" });
         await flashcards.getDecks();
@@ -58,6 +60,8 @@ describe("flashcards client service", () => {
         await flashcards.setSettings({ schedulerConfig });
         await flashcards.removeCardsForNote("note1");
         const noteCard = await flashcards.getCardForNote("note1");
+        await flashcards.exportAll();
+        const importResult = await flashcards.importData({ payload: { format: "trilium-flashcards", formatVersion: 1, exportedUtc: "", cards: [], reviews: [] } });
 
         expect(serverMock.post).toHaveBeenCalledWith("flashcards/cards", {
             noteId: "note1",
@@ -76,6 +80,11 @@ describe("flashcards client service", () => {
         expect(serverMock.remove).toHaveBeenCalledWith("flashcards/notes/note1/cards");
         expect(serverMock.get).toHaveBeenNthCalledWith(7, "flashcards/notes/note1/card");
         expect(noteCard).toBeNull();
+        expect(serverMock.get).toHaveBeenNthCalledWith(8, "flashcards/export");
+        expect(serverMock.post).toHaveBeenCalledWith("flashcards/import", {
+            payload: { format: "trilium-flashcards", formatVersion: 1, exportedUtc: "", cards: [], reviews: [] }
+        });
+        expect(importResult.createdCards).toBe(1);
     });
 
     it("uses silent conflict calls for scheduling mutations", async () => {

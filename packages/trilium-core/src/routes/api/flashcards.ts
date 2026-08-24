@@ -2,6 +2,7 @@ import type {
     FlashcardBuryRequest,
     FlashcardCreateRequest,
     FlashcardDeckMoveRequest,
+    FlashcardImportRequest,
     FlashcardResetRequest,
     FlashcardReviewRequest,
     FlashcardSettingsUpdateRequest,
@@ -79,6 +80,14 @@ function getStats() {
     return flashcardService.getStats();
 }
 
+function exportAll() {
+    return flashcardService.exportAll();
+}
+
+function importData(req: Request<{}, {}, FlashcardImportRequest>) {
+    return flashcardService.importData(req.body);
+}
+
 export default {
     createCard,
     getDecks,
@@ -95,5 +104,7 @@ export default {
     moveCardToDeck,
     undoReview,
     removeCardsForNote,
-    reviewCard
+    reviewCard,
+    exportAll,
+    importData
 };

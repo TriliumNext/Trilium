@@ -6,6 +6,9 @@ import type {
     FlashcardDeckMoveRequest,
     FlashcardDecksResponse,
     FlashcardDueResponse,
+    FlashcardExportPayload,
+    FlashcardImportRequest,
+    FlashcardImportResponse,
     FlashcardPreviewResponse,
     FlashcardRemoveResponse,
     FlashcardResetRequest,
@@ -114,6 +117,14 @@ function getStats() {
     return server.get<FlashcardStatsResponse>("flashcards/stats");
 }
 
+function exportAll() {
+    return server.get<FlashcardExportPayload>("flashcards/export");
+}
+
+function importData(request: FlashcardImportRequest) {
+    return server.post<FlashcardImportResponse>("flashcards/import", request);
+}
+
 export class FlashcardConflictError extends Error {
     constructor(message: string) {
         super(message);
@@ -165,5 +176,7 @@ export default {
     moveCardToDeck,
     undoReview,
     removeCardsForNote,
-    reviewCard
+    reviewCard,
+    exportAll,
+    importData
 };

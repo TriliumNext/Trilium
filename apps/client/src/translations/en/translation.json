@@ -1191,7 +1191,19 @@
     "state_review": "Review",
     "state_relearning": "Relearning",
     "status_suspended": "Suspended",
-    "leech": "Leech"
+    "leech": "Leech",
+    "data_title": "Data portability",
+    "data_description": "Export your flashcard scheduling state and review history, or import it on another device. Imports merge by card: newer scheduling state wins, and nothing is overwritten by older data.",
+    "export_label": "Export flashcards",
+    "export_description": "Downloads a JSON file containing every card's scheduling state plus the full review history.",
+    "export_button": "Export",
+    "export_failed": "Failed to export flashcards.",
+    "import_label": "Import flashcards",
+    "import_description": "Imports cards from an exported JSON file. Cards are matched by id; newer scheduling revisions replace older ones.",
+    "import_button": "Import",
+    "import_failed": "Failed to import flashcards. Is the file a flashcard export?",
+    "import_success_one": "Imported {{created}} new card, updated {{updated}}, skipped {{skipped}}, imported {{reviews}} reviews.",
+    "import_success_other": "Imported {{created}} new cards, updated {{updated}}, skipped {{skipped}}, imported {{reviews}} reviews."
   },
   "zen_mode": {
     "button_exit": "Exit Zen Mode"

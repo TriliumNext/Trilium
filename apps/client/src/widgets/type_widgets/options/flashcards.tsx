@@ -1,12 +1,13 @@
 import "./flashcards.css";
 
 import type { FlashcardSchedulerSettings } from "@triliumnext/commons";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import flashcards from "../../../services/flashcards";
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
 import { Card, OptionCardSection } from "../../react/Card";
+import ActionButton from "../../react/ActionButton";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import OptionsPageHeader from "./components/OptionsPageHeader";
@@ -63,7 +64,91 @@ export default function FlashcardSettings() {
         <>
             <OptionsPageHeader />
             {renderSettingsCard({ loadingError, schedulerConfig, saving, patchSchedulerConfig })}
+            <ImportExportCard />
         </>
+    );
+}
+
+function ImportExportCard() {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [ importing, setImporting ] = useState(false);
+
+    async function handleExport() {
+        try {
+            const payload = await flashcards.exportAll();
+            const blob = new Blob([ JSON.stringify(payload, null, 2) ], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `trilium-flashcards-${new Date().toISOString().slice(0, 10)}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch {
+            toast.showError(t("flashcards.export_failed"));
+        }
+    }
+
+    async function handleImportFile(file: File) {
+        setImporting(true);
+        try {
+            const payload = JSON.parse(await file.text());
+            const result = await flashcards.importData({ payload });
+            toast.showMessage(t("flashcards.import_success", {
+                created: result.createdCards,
+                updated: result.updatedCards,
+                skipped: result.skippedCards,
+                reviews: result.importedReviews
+            }));
+        } catch {
+            toast.showError(t("flashcards.import_failed"));
+        } finally {
+            setImporting(false);
+        }
+    }
+
+    return (
+        <Card
+            className="flashcards-data"
+            heading={t("flashcards.data_title")}
+            description={t("flashcards.data_description")}
+        >
+            <OptionCardSection
+                name="flashcard-export"
+                label={t("flashcards.export_label")}
+                description={t("flashcards.export_description")}
+            >
+                <ActionButton
+                    text={t("flashcards.export_button")}
+                    icon="bx bx-download"
+                    onClick={() => void handleExport()}
+                />
+            </OptionCardSection>
+            <OptionCardSection
+                name="flashcard-import"
+                label={t("flashcards.import_label")}
+                description={t("flashcards.import_description")}
+            >
+                <ActionButton
+                    text={t("flashcards.import_button")}
+                    icon="bx bx-upload"
+                    disabled={importing}
+                    onClick={() => fileInputRef.current?.click()}
+                />
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="flashcards-import-input"
+                    onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        if (file) {
+                            void handleImportFile(file);
+                            e.currentTarget.value = "";
+                        }
+                    }}
+                />
+            </OptionCardSection>
+        </Card>
     );
 }
 
