@@ -65,10 +65,12 @@ function quickSearch(req: Request<{ searchString: string }>) {
     const clientHoistedNoteId =
         typeof req.query.hoistedNoteId === "string" ? req.query.hoistedNoteId : null;
     if (clientHoistedNoteId) {
-        // If the client says it is hoisted inside a hidden subtree, or the hoisted note no longer
-        // exists (stale client state), widen to root so searches still return results.
+        // If the client says it is hoisted inside the hidden subtree (including _hidden itself),
+        // or the hoisted note no longer exists (stale client state), widen to root.
+        // isInHiddenSubtree() covers _hidden and its descendants; isHiddenCompletely() does not
+        // cover _hidden itself because _hidden's parent is root.
         const hoistedNote = becca.getNote(clientHoistedNoteId);
-        ancestorNoteId = !hoistedNote || hoistedNote.isHiddenCompletely() ? "root" : clientHoistedNoteId;
+        ancestorNoteId = !hoistedNote || hoistedNote.isInHiddenSubtree() ? "root" : clientHoistedNoteId;
     } else {
         ancestorNoteId = hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId();
     }
