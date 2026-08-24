@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.1",
-    "@mermaid-js/layout-elk": "0.2.2",
+    "@mermaid-js/layout-elk": "0.2.3",
     "@popperjs/core": "2.11.8",
     "@preact/signals": "2.11.1",
     "@sqlite.org/sqlite-wasm": "3.51.1-build2",

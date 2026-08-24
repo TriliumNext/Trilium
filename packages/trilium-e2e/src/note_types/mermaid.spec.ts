@@ -2,15 +2,12 @@ import { test, expect, Page, BrowserContext, Locator } from "@playwright/test";
 import App from "../support/app";
 
 test("renders ELK flowchart", async ({ page, context }) => {
-    await testAriaSnapshot({
+    const svg = await openDiagram({
         page,
         context,
         noteTitle: "Flowchart ELK on",
         snapshot: `
             - document:
-                - paragraph: A
-                - paragraph: B
-                - paragraph: C
                 - paragraph: Guarantee
                 - paragraph: User attributes
                 - paragraph: Master data
@@ -21,13 +18,21 @@ test("renders ELK flowchart", async ({ page, context }) => {
                 - paragraph: Customer
                 - paragraph: Profit Centers
                 - paragraph: Guarantee
+                - paragraph: A
+                - paragraph: B
+                - paragraph: C
                 - text: Interfaces for B
         `
     });
+
+    // ELK stacks A and C into a column and pushes B out to the right.
+    const { a, b, c } = await nodeCentres(svg);
+    expect(Math.abs(a.x - c.x)).toBeLessThan(Math.abs(a.y - c.y));
+    expect(b.x).toBeGreaterThan(Math.max(a.x, c.x));
 });
 
 test("renders standard flowchart", async ({ page, context }) => {
-    await testAriaSnapshot({
+    const svg = await openDiagram({
         page,
         context,
         noteTitle: "Flowchart ELK off",
@@ -49,16 +54,25 @@ test("renders standard flowchart", async ({ page, context }) => {
                 - text: Interfaces for B
         `
     });
+
+    // The default layout runs A, B and C left to right along a single row.
+    const { a, b, c } = await nodeCentres(svg);
+    const xSpread = Math.max(a.x, b.x, c.x) - Math.min(a.x, b.x, c.x);
+    const ySpread = Math.max(a.y, b.y, c.y) - Math.min(a.y, b.y, c.y);
+    expect(ySpread).toBeLessThan(xSpread / 2);
+    expect(a.x).toBeLessThan(b.x);
+    expect(b.x).toBeLessThan(c.x);
 });
 
-interface AriaTestOpts {
+interface DiagramTestOpts {
     page: Page;
     context: BrowserContext;
     noteTitle: string;
     snapshot: string;
 }
 
-async function testAriaSnapshot({ page, context, noteTitle, snapshot }: AriaTestOpts) {
+/** Opens a mermaid note, asserts the rendered labels, and returns the diagram's `<svg>`. */
+async function openDiagram({ page, context, noteTitle, snapshot }: DiagramTestOpts) {
     const app = new App(page, context);
     await app.goto();
     await app.goToNoteInNewTab(noteTitle);
@@ -66,6 +80,28 @@ async function testAriaSnapshot({ page, context, noteTitle, snapshot }: AriaTest
     const svgData = app.currentNoteSplit.locator(".render-container svg");
     await expect(svgData).toBeVisible();
     await expect(svgData).toMatchAriaSnapshot(snapshot);
+    return svgData;
+}
+
+/**
+ * Centres of the `A`, `B` and `C` nodes, in page coordinates. The ELK and the default layout
+ * emit the same labels in the same order, so the snapshot above matches either one and the
+ * positions are what tell them apart. Only the relative order and spread are compared, which
+ * holds whatever scale `svg-pan-zoom` fits the diagram to.
+ */
+async function nodeCentres(svg: Locator) {
+    return {
+        a: await nodeCentre(svg, "A"),
+        b: await nodeCentre(svg, "B"),
+        c: await nodeCentre(svg, "C")
+    };
+}
+
+async function nodeCentre(svg: Locator, label: string): Promise<{ x: number; y: number }> {
+    const node = svg.locator(".node").filter({ hasText: new RegExp(`^${label}$`) });
+    await expect(node).toBeVisible();
+    const box = requireBoundingBox(await node.boundingBox(), `flowchart node "${label}"`);
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
 test("gantt diagram survives split divider drag (issue 9749)", async ({ page, context }) => {
