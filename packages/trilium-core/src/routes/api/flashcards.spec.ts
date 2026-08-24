@@ -415,4 +415,39 @@ describe("Flashcards API (core)", () => {
         });
         expect(badImportRes.status).toBe(400);
     });
+
+    it("lists leech cards ordered by lapses", async () => {
+        const deck = createTextNote("Leech deck source");
+        const note = createTextNote("Leech flashcard source");
+
+        const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
+            body: { noteId: note.noteId, deckNoteId: deck.noteId }
+        });
+        expect(createRes.status).toBe(200);
+
+        // Push the card over the leech threshold through an imported newer revision.
+        const beforeRes = await api.get<FlashcardExportPayload>("/api/flashcards/export");
+        const leechPayload: FlashcardExportPayload = {
+            ...beforeRes.body,
+            cards: beforeRes.body.cards.map((row) =>
+                row.cardId === createRes.body.cardId
+                    ? { ...row, lapses: 8, schedulingRevision: (row.schedulingRevision ?? 0) + 1 }
+                    : row)
+        };
+        const importRes = await api.post<FlashcardImportResponse>("/api/flashcards/import", {
+            body: { payload: leechPayload }
+        });
+        expect(importRes.body.updatedCards).toBe(1);
+
+        const leechesRes = await api.get<{ leeches: Array<{ cardId: string; noteTitle: string; lapses: number }> }>("/api/flashcards/leeches");
+        expect(leechesRes.status).toBe(200);
+        const entry = leechesRes.body.leeches.find((leech) => leech.cardId === createRes.body.cardId);
+        expect(entry).toBeTruthy();
+        expect(entry!.noteTitle).toBe("Leech flashcard source");
+        expect(entry!.lapses).toBe(8);
+
+        // The list is ordered by lapses, descending.
+        const lapses = leechesRes.body.leeches.map((leech) => leech.lapses);
+        expect([ ...lapses ].sort((a, b) => b - a)).toEqual(lapses);
+    });
 });

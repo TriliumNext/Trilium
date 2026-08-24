@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
         getDecks: vi.fn(),
         getCard: vi.fn(),
         createCard: vi.fn(),
+        getLeeches: vi.fn(),
         reviewCard: vi.fn(),
         setSuspended: vi.fn(),
         resetCard: vi.fn(),
@@ -42,6 +43,7 @@ vi.mock("../../services/flashcards", () => ({
         getDecks: mocks.getDecks,
         getCard: mocks.getCard,
         createCard: mocks.createCard,
+        getLeeches: mocks.getLeeches,
         reviewCard: mocks.reviewCard,
         setSuspended: mocks.setSuspended,
         resetCard: mocks.resetCard,
@@ -52,7 +54,8 @@ vi.mock("../../services/flashcards", () => ({
     FlashcardConflictError: mocks.FlashcardConflictError
 }));
 
-vi.mock("../react/hooks", () => ({
+vi.mock("../react/hooks", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks")>()),
     useTriliumEvent: (eventName: string, handler: (data?: unknown) => unknown) => {
         mocks.handlers[eventName] = handler;
     }
@@ -173,6 +176,49 @@ describe("flashcards review dialog", () => {
         await openDialog({ deckNoteId: "deck7" });
 
         expect(mocks.getDueCards).toHaveBeenCalledWith(expect.objectContaining({ deckNoteId: "deck7" }));
+    });
+
+    it("lists leeches on demand and reviews them by note", async () => {
+        mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
+        mocks.getStats.mockResolvedValue({ ...statsResponse(), leechCount: 2 });
+        mocks.getLeeches.mockResolvedValue({
+            leeches: [
+                { cardId: "card1", noteId: "note1", noteTitle: "Leechy note", lapses: 8, suspended: true },
+                { cardId: "card2", noteId: "note2", noteTitle: "Another leech", lapses: 12, suspended: false }
+            ]
+        });
+
+        await openDialog();
+
+        expect(mocks.getLeeches).not.toHaveBeenCalled();
+
+        const details = host.querySelector("details.flashcards-leech-section") as HTMLDetailsElement;
+        expect(details).toBeTruthy();
+        await act(async () => {
+            details.open = true;
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(mocks.getLeeches).toHaveBeenCalledTimes(1);
+        expect(host.innerHTML, host.innerHTML).toContain("Leechy note");
+        expect(host.textContent).toContain("flashcards.leech_lapses");
+        // Suspended leech offers unsuspend; the action refreshes the list.
+        const unsuspend = findButtonByText("flashcards.leech_unsuspend");
+        expect(unsuspend).toBeTruthy();
+        mocks.setSuspended.mockResolvedValue({});
+        await act(async () => {
+            unsuspend!.click();
+        });
+        expect(mocks.setSuspended).toHaveBeenCalledWith("card1", { suspended: false });
+
+        // Reviewing a leech reopens the dialog scoped to that note.
+        mocks.getDueCards.mockClear();
+        const reviewButtons = [ ...host.querySelectorAll("button") ].filter((b) => b.textContent?.includes("flashcards.leech_review"));
+        expect(reviewButtons.length).toBe(2);
+        await act(async () => {
+            reviewButtons[0].click();
+        });
+        expect(mocks.createCard).toHaveBeenCalledWith(expect.objectContaining({ noteId: "note1" }));
     });
 
     it("reveals the answer through the show-answer button", async () => {

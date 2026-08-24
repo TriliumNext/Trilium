@@ -149,3 +149,37 @@
         color: var(--muted-text-color);
     }
 }
+
+.flashcards-leech-section {
+    margin-top: 0.5rem;
+}
+
+.flashcards-leech-toggle {
+    cursor: pointer;
+}
+
+.flashcards-leech-list {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+}
+
+.flashcards-leech-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-top: 1px solid var(--border-color, #ccc);
+}
+
+.flashcards-leech-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.flashcards-leech-actions {
+    display: flex;
+    gap: 0.35rem;
+}

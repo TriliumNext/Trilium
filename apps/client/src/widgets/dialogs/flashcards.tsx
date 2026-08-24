@@ -2,6 +2,7 @@ import "./flashcards.css";
 
 import type {
     FlashcardDeckSummary,
+    FlashcardLeechSummary,
     FlashcardReviewCard,
     FlashcardReviewPreview,
     FlashcardReviewResponse,
@@ -498,6 +499,7 @@ export default function FlashcardsDialog() {
         >
             <div className="flashcards-dialog-body">
                 {stats && <ReviewStats stats={stats} />}
+                {stats && stats.leechCount > 0 && <LeechSection onOpenNote={(noteId) => void openDialog({ noteId })} />}
                 {!loading && stats && <DeckBrowser
                     decks={decks}
                     stats={stats}
@@ -625,6 +627,67 @@ function DeckSummaryCard({ deck, selected, submitting, onStudyDeck }: {
                 />
             </div>
         </article>
+    );
+}
+
+function LeechSection({ onOpenNote }: { onOpenNote: (noteId: string) => void }) {
+    const [ leeches, setLeeches ] = useState<FlashcardLeechSummary[] | null>(null);
+
+    async function refresh() {
+        try {
+            const response = await flashcards.getLeeches();
+            setLeeches(response.leeches);
+        } catch {
+            setLeeches([]);
+        }
+    }
+
+    async function unsuspend(cardId: string) {
+        await flashcards.setSuspended(cardId, { suspended: false });
+        await refresh();
+    }
+
+    return (
+        <details
+            className="flashcards-leech-section"
+            onToggle={(e) => {
+                if ((e.currentTarget as HTMLDetailsElement).open && leeches === null) {
+                    void refresh();
+                }
+            }}
+        >
+            <summary className="flashcards-leech-toggle">{t("flashcards.leeches")}</summary>
+            {leeches === null
+                ? <div className="flashcards-loading">{t("flashcards.loading")}</div>
+                : leeches.length === 0
+                    ? <div className="flashcards-leech-empty">{t("flashcards.leeches_empty")}</div>
+                    : <ul className="flashcards-leech-list">
+                            {leeches.map((leech) => (
+                                <li key={leech.cardId} className="flashcards-leech-row">
+                                    <span className="flashcards-leech-title">{leech.noteTitle}</span>
+                                    <Badge
+                                        className="flashcards-deck-badge flashcards-deck-badge-suspended"
+                                        text={t("flashcards.leech_lapses", { count: leech.lapses })}
+                                        outline
+                                    />
+                                    {leech.suspended && <Badge text={t("flashcards.status_suspended")} outline />}
+                                    <div className="flashcards-leech-actions">
+                                        {leech.suspended && (
+                                            <Button
+                                                text={t("flashcards.leech_unsuspend")}
+                                                onClick={() => void unsuspend(leech.cardId)}
+                                            />
+                                        )}
+                                        <Button
+                                            text={t("flashcards.leech_review")}
+                                            onClick={() => onOpenNote(leech.noteId)}
+                                        />
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+        }
+        </details>
     );
 }
 

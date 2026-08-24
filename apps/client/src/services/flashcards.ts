@@ -9,6 +9,7 @@ import type {
     FlashcardExportPayload,
     FlashcardImportRequest,
     FlashcardImportResponse,
+    FlashcardLeechesResponse,
     FlashcardPreviewResponse,
     FlashcardRemoveResponse,
     FlashcardResetRequest,
@@ -117,6 +118,10 @@ function getStats() {
     return server.get<FlashcardStatsResponse>("flashcards/stats");
 }
 
+function getLeeches() {
+    return server.get<FlashcardLeechesResponse>("flashcards/leeches");
+}
+
 function exportAll() {
     return server.get<FlashcardExportPayload>("flashcards/export");
 }
@@ -170,6 +175,7 @@ export default {
     getSettings,
     setSettings,
     getStats,
+    getLeeches,
     setSuspended,
     resetCard,
     buryCard,

@@ -84,6 +84,10 @@ function exportAll() {
     return flashcardService.exportAll();
 }
 
+function getLeeches() {
+    return flashcardService.getLeeches();
+}
+
 function importData(req: Request<{}, {}, FlashcardImportRequest>) {
     return flashcardService.importData(req.body);
 }
@@ -106,5 +110,6 @@ export default {
     removeCardsForNote,
     reviewCard,
     exportAll,
+    getLeeches,
     importData
 };

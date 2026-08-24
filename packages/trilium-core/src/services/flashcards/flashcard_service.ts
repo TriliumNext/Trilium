@@ -11,6 +11,8 @@ import type {
     FlashcardExportPayload,
     FlashcardImportRequest,
     FlashcardImportResponse,
+    FlashcardLeechesResponse,
+    FlashcardLeechSummary,
     FlashcardRating,
     FlashcardResetRequest,
     FlashcardReviewCard,
@@ -312,6 +314,29 @@ function getCardForNote(noteId: string): FlashcardCardSummary | null {
         LIMIT 1`, [noteId]);
 
     return row ? buildCardSummary(row) : null;
+}
+
+function getLeeches(): FlashcardLeechesResponse {
+    const rows = getSql().getRows<FlashcardRow & { title: string }>(/*sql*/`
+        SELECT f.cardId, f.noteId, f.lapses, f.suspended, n.title
+        FROM flashcards f
+        JOIN notes n ON n.noteId = f.noteId AND n.isDeleted = 0
+        WHERE f.isDeleted = 0 AND f.lapses >= ?
+        ORDER BY f.lapses DESC, n.title ASC
+        LIMIT 50`, [FLASHCARD_LEECH_THRESHOLD]);
+
+    return {
+        leeches: rows.map((row): FlashcardLeechSummary => {
+            const note = becca.getNote(row.noteId);
+            return {
+                cardId: row.cardId || "",
+                noteId: row.noteId,
+                noteTitle: note?.getTitleOrProtected() || row.title || "[missing]",
+                lapses: row.lapses,
+                suspended: !!row.suspended
+            };
+        })
+    };
 }
 
 function getPreview(cardId: string): FlashcardPreviewResponse {
@@ -1050,5 +1075,6 @@ export default {
     removeCardsForNote,
     reviewCard,
     exportAll,
+    getLeeches,
     importData
 };

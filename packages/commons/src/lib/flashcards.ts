@@ -207,6 +207,18 @@ export interface FlashcardReviewRow {
 export const FLASHCARD_EXPORT_FORMAT = "trilium-flashcards" as const;
 export const FLASHCARD_EXPORT_FORMAT_VERSION = 1 as const;
 
+export interface FlashcardLeechSummary {
+    cardId: string;
+    noteId: string;
+    noteTitle: string;
+    lapses: number;
+    suspended: boolean;
+}
+
+export interface FlashcardLeechesResponse {
+    leeches: FlashcardLeechSummary[];
+}
+
 /** Full dump of flashcard scheduling state plus the append-only review history. */
 export interface FlashcardExportPayload {
     format: typeof FLASHCARD_EXPORT_FORMAT;
