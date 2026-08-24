@@ -72,6 +72,10 @@ function removeCardsForNote(req: Request<{ noteId: string }>) {
     return flashcardService.removeCardsForNote(req.params.noteId);
 }
 
+function syncCardsForNote(req: Request<{ noteId: string }>) {
+    return flashcardService.syncNoteCards(req.params.noteId);
+}
+
 function reviewCard(req: Request<{ cardId: string }, {}, FlashcardReviewRequest>) {
     return flashcardService.reviewCard(req.params.cardId, req.body);
 }
@@ -108,6 +112,7 @@ export default {
     moveCardToDeck,
     undoReview,
     removeCardsForNote,
+    syncCardsForNote,
     reviewCard,
     exportAll,
     getLeeches,

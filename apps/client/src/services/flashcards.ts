@@ -122,6 +122,10 @@ function getLeeches() {
     return server.get<FlashcardLeechesResponse>("flashcards/leeches");
 }
 
+function syncNoteCards(noteId: string) {
+    return server.post<{ createdCount: number; removedCount: number }>(`flashcards/notes/${noteId}/cards/sync`);
+}
+
 function exportAll() {
     return server.get<FlashcardExportPayload>("flashcards/export");
 }
@@ -182,6 +186,7 @@ export default {
     moveCardToDeck,
     undoReview,
     removeCardsForNote,
+    syncNoteCards,
     reviewCard,
     exportAll,
     importData

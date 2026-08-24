@@ -855,4 +855,88 @@ describe("flashcard service", () => {
         expect(recreated.cardId).not.toBe(card.cardId);
         expect(note.hasLabel("flashcard")).toBe(true);
     });
+
+    it("creates one card per cloze index and renders elisions", () => {
+        const note = createTextNote(
+            "Cloze source",
+            "{{c1::Berlin}} is the capital of {{c2::Germany}}"
+        );
+
+        const first = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        expect(note.hasLabel("flashcard")).toBe(true);
+        expect(first.cardType).toBe("cloze");
+        expect(first.front).toContain('class="flashcard-cloze"');
+        expect(first.front).toContain("Germany");
+        expect(first.back).toContain('class="flashcard-cloze-revealed">Berlin</span>');
+
+        const rows = getSql().getRows<{ cardId: string; ordinal: number; cardType: string }>(/*sql*/`
+            SELECT cardId, ordinal, cardType FROM flashcards
+            WHERE noteId = ? AND isDeleted = 0 ORDER BY ordinal`, [note.noteId]);
+        expect(rows.map((row) => [ row.ordinal, row.cardType ])).toEqual([
+            [ 0, "cloze" ],
+            [ 1, "cloze" ]
+        ]);
+
+        const second = runInContext(() => flashcardService.getCard(rows[1].cardId));
+        expect(second.front).toContain("Berlin");
+        expect(second.front).not.toContain("Germany");
+        expect(second.back).toContain('class="flashcard-cloze-revealed">Germany</span>');
+
+        // Creating again is idempotent — no extra rows.
+        runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const rowCount = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards WHERE noteId = ? AND isDeleted = 0`, [note.noteId]);
+        expect(rowCount).toBe(2);
+    });
+
+    it("keeps schedules keyed to cloze indices when the note content changes", () => {
+        const note = createTextNote(
+            "Cloze sync source",
+            "{{c1::alpha}} {{c2::beta}} {{c4::delta}}"
+        );
+        runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        let rows = getSql().getRows<{ cardId: string; ordinal: number }>(/*sql*/`
+            SELECT cardId, ordinal FROM flashcards
+            WHERE noteId = ? AND isDeleted = 0 ORDER BY ordinal`, [note.noteId]);
+        expect(rows.map((row) => row.ordinal)).toEqual([ 0, 1, 3 ]);
+
+        // Review the beta card so it has a schedule worth protecting.
+        const betaCard = rows.find((row) => row.ordinal === 1);
+        makeReviewCardDue(betaCard?.cardId || "");
+
+        runInContext(() => note.setContent("{{c1::alpha}} {{c4::delta}}"));
+        const sync = runInContext(() => flashcardService.syncNoteCards(note.noteId));
+
+        expect(sync).toEqual({ createdCount: 0, removedCount: 1 });
+        rows = getSql().getRows<{ cardId: string; ordinal: number }>(/*sql*/`
+            SELECT cardId, ordinal FROM flashcards
+            WHERE noteId = ? AND isDeleted = 0 ORDER BY ordinal`, [note.noteId]);
+        expect(rows.map((row) => row.ordinal)).toEqual([ 0, 3 ]);
+
+        const deletedCount = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards WHERE cardId = ? AND isDeleted = 1`, [betaCard?.cardId]);
+        expect(deletedCount).toBe(1);
+
+        // Adding a new deletion creates only its missing card.
+        runInContext(() => note.setContent("{{c1::alpha}} {{c3::gamma}} {{c4::delta}}"));
+        const secondSync = runInContext(() => flashcardService.syncNoteCards(note.noteId));
+        expect(secondSync.createdCount).toBe(1);
+    });
+
+    it("leaves basic cards and non-cloze notes alone during sync", () => {
+        const note = createTextNote("Basic source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        const sync = runInContext(() => flashcardService.syncNoteCards(note.noteId));
+        expect(sync).toEqual({ createdCount: 0, removedCount: 0 });
+
+        const rowCount = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards WHERE noteId = ? AND isDeleted = 0`, [note.noteId]);
+        expect(rowCount).toBe(1);
+
+        const summary = runInContext(() => flashcardService.getCardForNote(note.noteId));
+        expect(summary?.cardType).toBe("basic");
+        expect(card.cardType).toBe("basic");
+    });
 });

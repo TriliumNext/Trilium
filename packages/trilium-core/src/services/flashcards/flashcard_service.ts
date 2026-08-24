@@ -48,6 +48,7 @@ import {
     scheduleFlashcard,
     serializeFlashcardSchedulerConfig
 } from "./fsrs_scheduler.js";
+import { extractClozeIndices, renderClozeBack, renderClozeFront } from "./cloze.js";
 
 const DEFAULT_DUE_LIMIT = 20;
 const MAX_DUE_LIMIT = 100;
@@ -76,6 +77,13 @@ function createCard(request: FlashcardCreateRequest) {
     const deckNoteId = request.deckNoteId || getDefaultDeckNoteId(request.noteId);
     becca.getNoteOrThrow(deckNoteId);
 
+    const content = note.getContent();
+    const clozeIndices = typeof content === "string" ? extractClozeIndices(content) : [];
+
+    if (clozeIndices.length > 0) {
+        return createClozeCards(note.noteId, deckNoteId, clozeIndices);
+    }
+
     const existing = getSql().getRow<FlashcardRow | null>(/*sql*/`
         SELECT * FROM flashcards
         WHERE noteId = ? AND ordinal = 0 AND isDeleted = 0`, [request.noteId]);
@@ -99,10 +107,131 @@ function createCard(request: FlashcardCreateRequest) {
         ...createEmptyFlashcardSchedule(now, getCurrentSchedulerConfig()),
         noteId: note.noteId,
         deckNoteId,
-        ordinal: 0
+        ordinal: 0,
+        cardType: "basic"
     }).save();
 
     return buildReviewCard(card.getPojo() as FlashcardRow, { includeBack: true });
+}
+
+/**
+ * Creates one card per unique cloze index (index N → ordinal N-1). Existing
+ * rows keep their schedule; only missing ordinals are created. Returns the
+ * first card so callers can jump straight into a review session.
+ */
+function createClozeCards(
+    noteId: string,
+    deckNoteId: string,
+    clozeIndices: number[]
+): FlashcardReviewCard {
+    ensureFlashcardLabel(noteId);
+    syncClozeRows(noteId, deckNoteId, clozeIndices);
+
+    const first = getSql().getRow<FlashcardRow>(/*sql*/`
+        SELECT * FROM flashcards
+        WHERE noteId = ? AND isDeleted = 0
+        ORDER BY ordinal ASC LIMIT 1`, [noteId]);
+
+    return buildReviewCard(first, { includeBack: true });
+}
+
+/** Creates missing cloze rows for the given indices; leaves existing ones untouched. */
+function syncClozeRows(noteId: string, deckNoteId: string, clozeIndices: number[]) {
+    let created = 0;
+    const now = new Date();
+
+    // Index N maps to ordinal N - 1 so that removing a middle deletion never
+    // shifts another card's schedule onto a different deletion.
+    for (const index of clozeIndices) {
+        const ordinal = index - 1;
+        const existing = getSql().getRow<{ cardId: string } | undefined>(/*sql*/`
+            SELECT cardId FROM flashcards
+            WHERE noteId = ? AND ordinal = ? AND isDeleted = 0`, [noteId, ordinal]);
+
+        if (!existing) {
+            new BFlashcard({
+                ...createEmptyFlashcardSchedule(now, getCurrentSchedulerConfig()),
+                noteId,
+                deckNoteId,
+                ordinal,
+                cardType: "cloze"
+            }).save();
+            created++;
+        }
+    }
+
+    return created;
+}
+
+/**
+ * Reconciles the cards of a cloze note with its current content: adds cards
+ * for newly added deletion indices and removes cards whose index vanished.
+ * Notes without cloze markers are left alone — basic cards are managed
+ * explicitly via create/remove endpoints.
+ */
+function syncNoteCards(noteId: string) {
+    assertValidId(noteId, "noteId");
+    const note = becca.getNoteOrThrow(noteId);
+
+    if (!note.isContentAvailable()) {
+        throw new ForbiddenError(
+            "Cannot sync flashcards of protected note while protected session is locked."
+        );
+    }
+
+    const content = note.getContent();
+    if (typeof content !== "string") {
+        throw new ValidationError("Flashcard source note content must be text.");
+    }
+
+    const clozeIndices = extractClozeIndices(content);
+    if (clozeIndices.length === 0) {
+        return { createdCount: 0, removedCount: 0 };
+    }
+
+    const deckNoteId = getExistingDeckForNote(noteId);
+    ensureFlashcardLabel(noteId);
+    const createdCount = syncClozeRows(noteId, deckNoteId, clozeIndices);
+
+    // Soft-delete rows whose ordinal no longer maps to an existing cloze index.
+    const liveIndices = new Set(clozeIndices);
+    const stale = getSql().getRows<FlashcardRow>(/*sql*/`
+        SELECT * FROM flashcards
+        WHERE noteId = ? AND isDeleted = 0`, [noteId])
+        .filter((row) => !liveIndices.has((row.ordinal ?? 0) + 1));
+
+    const deleteId = randomString(10);
+    for (const row of stale) {
+        const flashcard = becca.flashcards[row.cardId || ""] ?? new BFlashcard(row);
+        flashcard.markAsDeleted(deleteId);
+        if (row.cardId) {
+            delete becca.flashcards[row.cardId];
+        }
+    }
+
+    return { createdCount, removedCount: stale.length };
+}
+
+function getExistingDeckForNote(noteId: string) {
+    const row = getSql().getRow<{ deckNoteId: string } | undefined>(/*sql*/`
+        SELECT deckNoteId FROM flashcards
+        WHERE noteId = ? AND isDeleted = 0 LIMIT 1`, [noteId]);
+
+    return row?.deckNoteId || getDefaultDeckNoteId(noteId);
+}
+
+function ensureFlashcardLabel(noteId: string) {
+    const note = becca.getNoteOrThrow(noteId);
+
+    if (!note.hasLabel(FLASHCARD_LABEL)) {
+        new BAttribute({
+            noteId,
+            type: "label",
+            name: FLASHCARD_LABEL,
+            value: "",
+            isInheritable: false
+        }).save();
+    }
 }
 
 function getDecks(): FlashcardDecksResponse {
@@ -760,6 +889,7 @@ function sanitizeImportedCard(
         noteId,
         deckNoteId,
         ordinal: Number.isFinite(Number(raw.ordinal)) ? Number(raw.ordinal) : 0,
+        cardType: raw.cardType === "cloze" ? "cloze" : "basic",
         state: state as FlashcardRow["state"],
         due: String(raw.due || dateUtils.utcNowDateTime()),
         stability: toFiniteNumber(raw.stability, 0),
@@ -950,14 +1080,19 @@ function buildReviewCard(
     }
 
     const content = note.getContent();
+    const isCloze = card.cardType === "cloze";
     const reviewCard: FlashcardReviewCard = {
         ...buildCardSummary(card),
-        front: note.title,
+        front: isCloze && typeof content === "string"
+            ? renderClozeFront(content, card.ordinal ?? 0)
+            : note.title,
         previews: previewFlashcard(card, new Date(), getCurrentSchedulerConfig())
     };
 
     if (includeBack) {
-        reviewCard.back = typeof content === "string" ? content : "";
+        reviewCard.back = typeof content === "string"
+            ? (isCloze ? renderClozeBack(content, card.ordinal ?? 0) : content)
+            : "";
     }
 
     return reviewCard;
@@ -973,6 +1108,8 @@ function buildCardSummary(card: FlashcardRow): FlashcardCardSummary {
         deckNoteId: card.deckNoteId,
         noteTitle: note?.getTitleOrProtected() || "[missing]",
         deckTitle: deck?.getTitleOrProtected() || "[missing]",
+        cardType: card.cardType === "cloze" ? "cloze" : "basic",
+        ordinal: card.ordinal ?? 0,
         state: card.state,
         due: card.due,
         suspended: !!card.suspended,
@@ -1073,6 +1210,7 @@ export default {
     moveCardToDeck,
     undoReview,
     removeCardsForNote,
+    syncNoteCards,
     reviewCard,
     exportAll,
     getLeeches,

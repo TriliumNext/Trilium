@@ -4,11 +4,15 @@ export type FlashcardState = (typeof FLASHCARD_STATES)[number];
 export const FLASHCARD_RATINGS = [1, 2, 3, 4] as const;
 export type FlashcardRating = (typeof FLASHCARD_RATINGS)[number];
 
+export const FLASHCARD_CARD_TYPES = ["basic", "cloze"] as const;
+export type FlashcardCardType = (typeof FLASHCARD_CARD_TYPES)[number];
+
 export interface FlashcardRow {
     cardId?: string;
     noteId: string;
     deckNoteId: string;
     ordinal?: number;
+    cardType?: FlashcardCardType;
     state: FlashcardState;
     due: string;
     stability: number;
@@ -47,6 +51,8 @@ export interface FlashcardCardSummary {
     deckNoteId: string;
     noteTitle: string;
     deckTitle: string;
+    cardType: FlashcardCardType;
+    ordinal: number;
     state: FlashcardState;
     due: string;
     suspended: boolean;

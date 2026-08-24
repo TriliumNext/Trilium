@@ -450,4 +450,29 @@ describe("Flashcards API (core)", () => {
         const lapses = leechesRes.body.leeches.map((leech) => leech.lapses);
         expect([ ...lapses ].sort((a, b) => b - a)).toEqual(lapses);
     });
+
+    it("syncs cloze cards for a note through the API", async () => {
+        const note = createTextNote(
+            "API cloze source",
+            "{{c1::alpha}} {{c2::beta}}"
+        );
+
+        const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
+            body: { noteId: note.noteId }
+        });
+        expect(createRes.status).toBe(200);
+        expect(createRes.body.cardType).toBe("cloze");
+
+        // Remove c2 and add c3; sync reconciles the card set.
+        clsInit(() => note.setContent("{{c1::alpha}} {{c3::gamma}}"));
+        const syncRes = await api.post<{ createdCount: number; removedCount: number }>(
+            `/api/flashcards/notes/${note.noteId}/cards/sync`
+        );
+        expect(syncRes.status).toBe(200);
+        expect(syncRes.body).toEqual({ createdCount: 1, removedCount: 1 });
+
+        const dueRes = await api.get<FlashcardDueResponse>("/api/flashcards/due");
+        const noteCards = dueRes.body.cards.filter((card) => card.noteId === note.noteId);
+        expect(noteCards.map((card) => card.ordinal)).toEqual([ 0, 2 ]);
+    });
 });

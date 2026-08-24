@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS flashcards (
     utcDateModified TEXT NOT NULL,
     isDeleted INTEGER NOT NULL DEFAULT 0,
     deleteId TEXT DEFAULT NULL,
+    cardType TEXT NOT NULL DEFAULT 'basic',
     schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"dailyNewCardLimit":20,"dailyReviewLimit":200,"dayRolloverHour":4,"weights":null}'
 );
 CREATE UNIQUE INDEX IDX_flashcards_noteId_ordinal ON flashcards (noteId, ordinal) WHERE isDeleted = 0;

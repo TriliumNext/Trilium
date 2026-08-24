@@ -241,6 +241,21 @@ describe("flashcards review dialog", () => {
         expect(mocks.getCard).not.toHaveBeenCalled();
     });
 
+    it("renders cloze cards as elided HTML with a card number", async () => {
+        const card = makeCard({
+            cardType: "cloze",
+            ordinal: 1,
+            front: 'Berlin is the capital of <span class="flashcard-cloze">[...]</span>'
+        });
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+
+        await openDialog();
+
+        const elision = host.querySelector(".flashcards-front-title .flashcard-cloze");
+        expect(elision?.textContent).toBe("[...]");
+        expect(host.textContent).toContain("flashcards.cloze_number");
+    });
+
     it("lazily fetches the answer when the queue omits the back side", async () => {
         const card = makeCard({ back: undefined });
         mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });

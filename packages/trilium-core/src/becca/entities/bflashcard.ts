@@ -1,4 +1,4 @@
-import type { FlashcardRow, FlashcardState } from "@triliumnext/commons";
+import type { FlashcardCardType, FlashcardRow, FlashcardState } from "@triliumnext/commons";
 
 import dateUtils from "../../services/utils/date";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
@@ -56,6 +56,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
     noteId!: string;
     deckNoteId!: string;
     ordinal!: number;
+    cardType!: FlashcardCardType;
     state!: FlashcardState;
     due!: string;
     stability!: number;
@@ -90,6 +91,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
         this.noteId = row.noteId;
         this.deckNoteId = row.deckNoteId;
         this.ordinal = row.ordinal ?? 0;
+        this.cardType = row.cardType === "cloze" ? "cloze" : "basic";
         this.state = row.state;
         this.due = row.due;
         this.stability = row.stability;
@@ -116,6 +118,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
         noteId,
         deckNoteId,
         ordinal,
+        cardType,
         state,
         due,
         stability,
@@ -141,6 +144,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
             noteId,
             deckNoteId,
             ordinal,
+            cardType,
             state,
             due,
             stability,
@@ -184,6 +188,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
 
         this.utcDateModified = now;
         this.ordinal = this.ordinal ?? 0;
+        this.cardType = this.cardType === "cloze" ? "cloze" : "basic";
         this.suspended = !!this.suspended;
         this.algorithm = this.algorithm || "fsrs-6";
         this.algorithmVersion = this.algorithmVersion || "ts-fsrs@5.4.1";
@@ -204,6 +209,7 @@ class BFlashcard extends AbstractBeccaEntity<BFlashcard> {
             noteId: this.noteId,
             deckNoteId: this.deckNoteId,
             ordinal: this.ordinal,
+            cardType: this.cardType,
             state: this.state,
             due: this.due,
             stability: this.stability,

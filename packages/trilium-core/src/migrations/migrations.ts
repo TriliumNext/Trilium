@@ -9,6 +9,14 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Distinguish basic question/answer cards from cloze deletion cards.
+    {
+        version: 244,
+        sql: /*sql*/`
+            ALTER TABLE flashcards ADD COLUMN cardType TEXT NOT NULL DEFAULT 'basic';
+        `,
+        ignoreErrors: true
+    },
     // Store the exact FSRS scheduler config used for cards and review logs.
     {
         version: 243,

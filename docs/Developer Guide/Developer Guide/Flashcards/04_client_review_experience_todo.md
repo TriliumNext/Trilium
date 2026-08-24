@@ -66,7 +66,7 @@
 ## Optional future UI
 
 - [ ] Card template editor and multiple cards per note.
-- [ ] Cloze editor.
+- [x] Cloze review rendering (server-rendered elisions, cloze number in card meta, background sync on note-scoped open). Cloze *editor* toolbar integration still open — users type `{{c1::...}}` manually.
 - [ ] Filtered/custom study decks.
 - [ ] Manual due-date picker and drag scheduling.
 - [ ] Leech dashboard.

@@ -23,6 +23,7 @@ import FormSelect from "../react/FormSelect";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
+import RawHtml from "../react/RawHtml";
 import { RawHtmlBlock } from "../react/RawHtml";
 
 const REVIEW_LIMIT = 20;
@@ -76,6 +77,12 @@ export default function FlashcardsDialog() {
                 setDueQueueTotal(1);
                 setStats(loadedStats);
                 setDecks(loadedDecks.decks);
+
+                // Reconcile the cloze card set in the background; stale cards
+                // disappear from future queues without blocking this session.
+                if (card.cardType === "cloze") {
+                    void flashcards.syncNoteCards(noteId).catch(() => undefined);
+                }
                 return;
             }
 
@@ -744,6 +751,7 @@ function ReviewCard({
                     total
                 })}</span>
                 <span>{t("flashcards.deck", { title: card.deckTitle })}</span>
+                {card.cardType === "cloze" && <span>{t("flashcards.cloze_number", { number: card.ordinal + 1 })}</span>}
                 <span>{t("flashcards.due", { date: formatDateTime(card.due) })}</span>
                 <span>{t("flashcards.retrievability", {
                     value: formatRetrievability(card.retrievability)
@@ -759,7 +767,11 @@ function ReviewCard({
                 onMoveDeck={onMoveDeck}
             />
             <section className="flashcards-card-pane" aria-live="polite">
-                <h3 className="flashcards-front-title">{card.front}</h3>
+                {card.cardType === "cloze"
+                    ? <h3 className="flashcards-front-title">
+                        <RawHtml html={card.front} />
+                    </h3>
+                    : <h3 className="flashcards-front-title">{card.front}</h3>}
                 {answerShown && (
                     <div className="flashcards-answer">
                         <div className="flashcards-answer-label">{t("flashcards.answer")}</div>

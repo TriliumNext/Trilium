@@ -78,6 +78,19 @@ describe("Migration 0241/0242/0243: flashcards", () => {
         expect(columnNames("flashcard_reviews")).toContain("schedulerConfig");
     });
 
+    it("adds the card type column defaulting to basic", () => {
+        runSqlMigration(241);
+        runSqlMigration(242);
+        runSqlMigration(243);
+        sql.execute("INSERT INTO flashcards (cardId, noteId, deckNoteId, state, due, utcDateCreated, utcDateModified) VALUES ('c1', 'n1', 'root', 0, '2020-01-01 00:00:00.000Z', '2020-01-01 00:00:00.000Z', '2020-01-01 00:00:00.000Z')");
+
+        runSqlMigration(244);
+
+        expect(columnNames("flashcards")).toContain("cardType");
+        expect(sql.getValue<string>(/*sql*/`SELECT cardType FROM flashcards WHERE cardId = 'c1'`))
+            .toBe("basic");
+    });
+
     function runSqlMigration(version: number) {
         const migration = MIGRATIONS.find((candidate) => candidate.version === version);
         if (!migration || !("sql" in migration)) {

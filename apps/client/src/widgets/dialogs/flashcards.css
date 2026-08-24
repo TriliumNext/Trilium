@@ -183,3 +183,16 @@
     display: flex;
     gap: 0.35rem;
 }
+
+.flashcards-front-title .flashcard-cloze {
+    color: var(--accent-color, #0078d4);
+    font-style: normal;
+}
+
+.flashcards-front-title .flashcard-cloze-revealed,
+.flashcards-answer .flashcard-cloze-revealed {
+    background: var(--accent-color, #0078d4);
+    color: #fff;
+    border-radius: 3px;
+    padding: 0 0.15em;
+}
