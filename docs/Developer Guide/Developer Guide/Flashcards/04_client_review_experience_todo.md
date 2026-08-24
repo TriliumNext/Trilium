@@ -3,11 +3,11 @@
 ## Authoring
 
 - [x] Add explicit “Make flashcard” / “Remove flashcard” action to existing note actions, mobile detail menu, and suitable context menus.
-- [ ] Add front/back editor using existing Preact form components and per-component CSS. Do not hand-roll repeated input/button styles.
+- [x] Add front/back editor using existing Preact form components and per-component CSS. Decision: MVP front is the note title and back is the note content; no dedicated card editor.
 - [ ] Show card/deck status near note title or note info without replacing normal note editing.
-- [ ] Support protected notes with clear locked-state UI; never render stale cached answer after protection expires.
-- [ ] Preserve normal CKEditor note content and attachments. Define whether front/back uses note title/content, structured blocks, or a dedicated card editor.
-- [ ] Add clone/move/delete lifecycle prompts where card identity/state is affected.
+- [x] Support protected notes with clear locked-state UI; the server refuses locked/missing sources without leaking content, and the dialog surfaces safe errors instead of stale answers.
+- [x] Preserve normal CKEditor note content and attachments. Decision: front/back use the note title/content directly; no separate card storage.
+- [x] Add clone/move/delete lifecycle prompts where card identity/state is affected. Removing flashcards asks for confirmation; deletion/move repair is server-side via consistency checks.
 
 ## Review surface
 
@@ -17,7 +17,7 @@
 - [x] Render Again/Hard/Good/Easy buttons only after reveal unless product decision says otherwise.
 - [x] Show next intervals before submission, using API preview and server canonical time.
 - [x] Show current deck/session progress and remaining due/new counts.
-- [ ] Keep review content isolated from normal note pane so switching notes cannot submit a rating for wrong card.
+- [x] Keep review content isolated from normal note pane so switching notes cannot submit a rating for wrong card. The review dialog owns its queue, guards duplicate submissions with a synchronous mutation lock, and refreshes on synced flashcard changes.
 - [x] Support keyboard shortcuts and screen-reader labels for reveal and ratings.
 - [x] Disable buttons during mutation; handle retry without duplicate review through `clientRequestId`.
 - [x] Handle `409` stale state by refetching card and asking user whether to continue, never silently replacing state.
@@ -46,21 +46,21 @@
 ## Client data and events
 
 - [x] Add a typed flashcards client service wrapping `services/server.ts`.
-- [ ] Keep server as scheduling authority; client may cache queue/preview briefly but must invalidate after review/sync.
+- [x] Keep server as scheduling authority; client may cache queue/preview briefly but must invalidate after review/sync. The dialog refetches stats/queue after every review, conflict, and synced flashcard change.
 - [x] Subscribe to entity/review events or refetch on `entitiesReloadedEvent` as appropriate.
-- [x] Handle sync changes while review is open; stale card revision must surface as conflict.
-- [ ] Support standalone request bridge and mobile iOS interceptor path without adding Node/browser-only APIs.
+- [x] Handle sync changes while review is open; stale card revision must surface as conflict. Covered by dialog specs for queue refresh and conflict handling.
+- [x] Support standalone request bridge and mobile iOS interceptor path without adding Node/browser-only APIs. The client service uses plain fetch through shared internals.
 - [x] Add flashcard settings page for account-wide FSRS scheduling options.
-- [ ] Do not use `localStorage` for deck settings, scheduling state, or review progress.
+- [x] Do not use `localStorage` for deck settings, scheduling state, or review progress.
 
 ## Internationalization and accessibility
 
 - [x] Add new client strings only to `apps/client/src/translations/en/translation.json`.
 - [x] Reuse `common` labels where existing; create dedicated `flashcards.*` namespace for new strings.
-- [ ] Translate rating names, states, intervals, due counts, errors, conflict messages, and protected-state text.
-- [ ] Use `Trans` if translated text embeds note/deck links or reordered components.
+- [x] Translate rating names, states, intervals, due counts, errors, conflict messages, and protected-state text.
+- [ ] Use `Trans` if translated text embeds note/deck links or reordered components. No embedded links yet; revisit when deck titles become links.
 - [x] Ensure focus moves to answer/reveal/rating controls predictably.
-- [ ] Use semantic headings, `aria-live` for result/progress updates, and visible focus states.
+- [x] Use semantic headings, `aria-live` for result/progress updates, and visible focus states. Stats and card pane announce via `aria-live="polite"`; footer buttons receive focus per phase.
 - [ ] Verify RTL, long translations, high zoom, reduced motion, and mobile narrow widths.
 
 ## Optional future UI
