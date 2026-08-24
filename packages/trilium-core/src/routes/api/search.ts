@@ -62,13 +62,13 @@ function quickSearch(req: Request<{ searchString: string }>) {
     // query param is absent we fall back to the CLS-based logic so that
     // existing API consumers and the standalone client keep working unchanged.
     let ancestorNoteId: string;
-    const clientHoistedNoteId = typeof req.query.hoistedNoteId === "string" ? req.query.hoistedNoteId : null;
+    const clientHoistedNoteId =
+        typeof req.query.hoistedNoteId === "string" ? req.query.hoistedNoteId : null;
     if (clientHoistedNoteId) {
-        // If the client says it is hoisted inside a hidden subtree, widen to
-        // root (same behaviour as the CLS path below) so hidden-subtree notes
-        // remain reachable.
+        // If the client says it is hoisted inside a hidden subtree, or the hoisted note no longer
+        // exists (stale client state), widen to root so searches still return results.
         const hoistedNote = becca.getNote(clientHoistedNoteId);
-        ancestorNoteId = hoistedNote?.isHiddenCompletely() ? "root" : clientHoistedNoteId;
+        ancestorNoteId = !hoistedNote || hoistedNote.isHiddenCompletely() ? "root" : clientHoistedNoteId;
     } else {
         ancestorNoteId = hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId();
     }

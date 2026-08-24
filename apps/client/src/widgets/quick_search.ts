@@ -245,7 +245,8 @@ export default class QuickSearchWidget extends BasicWidget {
             </span>`);
 
         const hoistedNoteId = hoistedNoteService.getHoistedNoteId();
-        const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}?hoistedNoteId=${encodeURIComponent(hoistedNoteId)}`);
+        const url = `quick-search/${encodeURIComponent(searchString)}?hoistedNoteId=${encodeURIComponent(hoistedNoteId)}`;
+        const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(url);
 
         if (error) {
             const tooltip = new Tooltip(this.$searchString[0], {
