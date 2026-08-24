@@ -55,13 +55,31 @@ function searchAndExecute(req: Request<{ noteId: string }>) {
 function quickSearch(req: Request<{ searchString: string }>) {
     const { searchString } = req.params;
 
+    // The client sends its currently hoisted note ID so the server can scope
+    // results to that subtree.  The server-side CLS context only carries the
+    // hoisted note for the desktop (Electron) client where both sides share a
+    // process; for all web clients the CLS value is always "root".  When the
+    // query param is absent we fall back to the CLS-based logic so that
+    // existing API consumers and the standalone client keep working unchanged.
+    let ancestorNoteId: string;
+    const clientHoistedNoteId = typeof req.query.hoistedNoteId === "string" ? req.query.hoistedNoteId : null;
+    if (clientHoistedNoteId) {
+        // If the client says it is hoisted inside a hidden subtree, widen to
+        // root (same behaviour as the CLS path below) so hidden-subtree notes
+        // remain reachable.
+        const hoistedNote = becca.getNote(clientHoistedNoteId);
+        ancestorNoteId = hoistedNote?.isHiddenCompletely() ? "root" : clientHoistedNoteId;
+    } else {
+        ancestorNoteId = hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId();
+    }
+
     const searchContext = new SearchContext({
         fastSearch: false,
         includeArchivedNotes: false,
         includeHiddenNotes: true,
         fuzzyAttributeSearch: true,
         ignoreInternalAttributes: true,
-        ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
+        ancestorNoteId
     });
 
     // Execute search with our context

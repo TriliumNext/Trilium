@@ -2,6 +2,7 @@ import { Dropdown, Tooltip } from "bootstrap";
 
 import appContext from "../components/app_context.js";
 import froca from "../services/froca.js";
+import hoistedNoteService from "../services/hoisted_note.js";
 import { t } from "../services/i18n.js";
 import linkService from "../services/link.js";
 import server from "../services/server.js";
@@ -243,7 +244,8 @@ export default class QuickSearchWidget extends BasicWidget {
                 ${t("quick-search.searching")}
             </span>`);
 
-        const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
+        const hoistedNoteId = hoistedNoteService.getHoistedNoteId();
+        const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}?hoistedNoteId=${encodeURIComponent(hoistedNoteId)}`);
 
         if (error) {
             const tooltip = new Tooltip(this.$searchString[0], {
