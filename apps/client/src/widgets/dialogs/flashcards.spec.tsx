@@ -265,4 +265,57 @@ describe("flashcards review dialog", () => {
             expect(button, `rating ${rating}`).toBeTruthy();
         }
     });
+
+    it("refreshes the queue when a queued flashcard changes over sync", async () => {
+        const card = makeCard();
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+
+        render(<FlashcardsDialog />, host);
+        await act(async () => {
+            await mocks.handlers["showFlashcards"]({});
+        });
+
+        expect(mocks.getDueCards).toHaveBeenCalledTimes(1);
+
+        const refreshedCard = makeCard({ schedulingRevision: 7 });
+        mocks.getDueCards.mockResolvedValue({
+            cards: [ refreshedCard ],
+            totalDueCount: 1
+        });
+
+        await act(async () => {
+            await mocks.handlers["entitiesReloaded"]({
+                loadResults: {
+                    getEntityRow: (entityName: string, entityId: string) =>
+                        entityName === "flashcards" && entityId === "card1"
+                            ? { entityId }
+                            : null
+                }
+            });
+        });
+
+        expect(mocks.getDueCards).toHaveBeenCalledTimes(2);
+        expect(mocks.showMessage).toHaveBeenCalledWith("flashcards.queue_refreshed");
+    });
+
+    it("keeps the queue untouched for unrelated sync changes", async () => {
+        const card = makeCard();
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+
+        render(<FlashcardsDialog />, host);
+        await act(async () => {
+            await mocks.handlers["showFlashcards"]({});
+        });
+
+        await act(async () => {
+            await mocks.handlers["entitiesReloaded"]({
+                loadResults: {
+                    getEntityRow: () => null
+                }
+            });
+        });
+
+        expect(mocks.getDueCards).toHaveBeenCalledTimes(1);
+        expect(mocks.showMessage).not.toHaveBeenCalledWith("flashcards.queue_refreshed");
+    });
 });
