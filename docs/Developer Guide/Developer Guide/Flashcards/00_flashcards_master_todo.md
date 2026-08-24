@@ -36,7 +36,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 
 - Cloze editor and multiple cards/templates per note.
 - Filtered/custom study decks, manual due-date picker, drag scheduling.
-- Anki `.apkg` import/export wizard (Trilium JSON export for scheduling state decided as direction).
+- Anki `.apkg` import/export wizard. Trilium JSON export/import of scheduling state plus review history is implemented (`GET /api/flashcards/export`, `POST /api/flashcards/import`, settings-page controls); `.apkg` conversion remains open.
 - Leech dashboard beyond auto-suspend plus `#flashcardLeech` marker.
 - FSRS parameter optimization with optimizer runtime review.
 - Note-info flashcard status indicator near the note title.

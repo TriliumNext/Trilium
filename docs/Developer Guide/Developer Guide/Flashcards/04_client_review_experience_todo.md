@@ -71,4 +71,5 @@
 - [ ] Manual due-date picker and drag scheduling.
 - [ ] Leech dashboard.
 - [ ] FSRS optimizer progress/results UI.
-- [ ] Anki import/export wizard.
+- [x] Trilium JSON export/import of scheduling state and review history (settings page). Anki `.apkg` wizard remains future work.
+- [ ] Anki `.apkg` import/export wizard.
