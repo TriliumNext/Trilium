@@ -104,6 +104,11 @@ export interface FlashcardDeckMoveRequest {
     expectedSchedulingRevision?: number;
 }
 
+export interface FlashcardSetDueDateRequest {
+    due: string;
+    expectedSchedulingRevision?: number;
+}
+
 export interface FlashcardUndoRequest {
     reviewId: string;
     expectedSchedulingRevision?: number;

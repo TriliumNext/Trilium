@@ -26,7 +26,8 @@ import type {
     FlashcardSettingsUpdateRequest,
     FlashcardStatsResponse,
     FlashcardSuspensionRequest,
-    FlashcardUndoRequest
+    FlashcardUndoRequest,
+    FlashcardSetDueDateRequest
 } from "@triliumnext/commons";
 
 import becca from "../../becca/becca.js";
@@ -512,6 +513,29 @@ function setSuspended(
     const updated = new BFlashcard({
         ...card,
         suspended: request.suspended,
+        schedulingRevision: (card.schedulingRevision ?? 0) + 1
+    }).save();
+
+    return {
+        card: buildReviewCard(updated.getPojo() as FlashcardRow, { includeBack: false })
+    };
+}
+
+function setCardDueDate(
+    cardId: string,
+    request: FlashcardSetDueDateRequest
+): FlashcardActionResponse {
+    const parsed = new Date(request?.due);
+    if (!request || !request.due || Number.isNaN(parsed.getTime())) {
+        throw new ValidationError("Flashcard due date request requires a parseable due value.");
+    }
+
+    const card = getCardRow(cardId);
+    assertExpectedRevision(card, request.expectedSchedulingRevision);
+
+    const updated = new BFlashcard({
+        ...card,
+        due: dateUtils.utcDateTimeStr(parsed),
         schedulingRevision: (card.schedulingRevision ?? 0) + 1
     }).save();
 
@@ -1208,6 +1232,7 @@ export default {
     resetCard,
     buryCard,
     moveCardToDeck,
+    setCardDueDate,
     undoReview,
     removeCardsForNote,
     syncNoteCards,

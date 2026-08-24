@@ -18,6 +18,7 @@ import type {
     FlashcardReviewResponse,
     FlashcardSettingsResponse,
     FlashcardSettingsUpdateRequest,
+    FlashcardSetDueDateRequest,
     FlashcardStatsResponse,
     FlashcardSuspensionRequest,
     FlashcardUndoRequest
@@ -92,6 +93,13 @@ function buryCard(cardId: string, request: FlashcardBuryRequest) {
 function moveCardToDeck(cardId: string, request: FlashcardDeckMoveRequest) {
     return withFlashcardConflict(() => server.putWithSilentConflict<FlashcardActionResponse>(
         `flashcards/cards/${cardId}/deck`,
+        request
+    ));
+}
+
+function setCardDueDate(cardId: string, request: FlashcardSetDueDateRequest) {
+    return withFlashcardConflict(() => server.putWithSilentConflict<FlashcardActionResponse>(
+        `flashcards/cards/${cardId}/due`,
         request
     ));
 }
@@ -184,6 +192,7 @@ export default {
     resetCard,
     buryCard,
     moveCardToDeck,
+    setCardDueDate,
     undoReview,
     removeCardsForNote,
     syncNoteCards,

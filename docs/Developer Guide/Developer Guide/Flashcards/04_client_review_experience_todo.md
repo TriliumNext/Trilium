@@ -68,7 +68,7 @@
 - [ ] Card template editor and multiple cards per note.
 - [x] Cloze review rendering (server-rendered elisions, cloze number in card meta, background sync on note-scoped open). Cloze *editor* toolbar integration still open — users type `{{c1::...}}` manually.
 - [ ] Filtered/custom study decks.
-- [ ] Manual due-date picker and drag scheduling.
+- [x] Manual due-date picker: a Reschedule action in the review dialog opens a date field; submitting sets the card's due date through a new `PUT /api/flashcards/cards/:cardId/due` endpoint with optimistic revision conflict protection. Drag scheduling on the due forecast chart remains open.
 - [ ] Leech dashboard.
 - [ ] FSRS optimizer progress/results UI.
 - [x] Trilium JSON export/import of scheduling state and review history (settings page). Anki `.apkg` wizard remains future work.

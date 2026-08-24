@@ -803,6 +803,43 @@ describe("flashcard service", () => {
         expect(reviewCount).toBe(1);
     });
 
+    it("sets a manual due date with conflict protection", () => {
+        const note = createTextNote("Due date source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        const future = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+        const rescheduled = runInContext(() => flashcardService.setCardDueDate(card.cardId, {
+            due: future.toISOString(),
+            expectedSchedulingRevision: card.schedulingRevision
+        }));
+        expect(rescheduled.card.schedulingRevision).toBe(card.schedulingRevision + 1);
+        expect(Date.parse(rescheduled.card.due)).toBeCloseTo(future.getTime(), -1);
+
+        // Not due within the queue until the manual date passes.
+        let isDue = flashcardService.getDueCards().cards
+            .some((dueCard) => dueCard.cardId === card.cardId);
+        expect(isDue).toBe(false);
+
+        const backdated = runInContext(() => flashcardService.setCardDueDate(card.cardId, {
+            due: new Date(Date.now() - 1000).toISOString(),
+            expectedSchedulingRevision: rescheduled.card.schedulingRevision
+        }));
+        expect(Date.parse(backdated.card.due)).toBeLessThan(Date.now());
+        isDue = flashcardService.getDueCards().cards
+            .some((dueCard) => dueCard.cardId === card.cardId);
+        expect(isDue).toBe(true);
+
+        expect(() => runInContext(() => flashcardService.setCardDueDate(card.cardId, {
+            due: "not-a-date",
+            expectedSchedulingRevision: backdated.card.schedulingRevision
+        }))).toThrow("parseable due");
+
+        expect(() => runInContext(() => flashcardService.setCardDueDate(card.cardId, {
+            due: new Date().toISOString(),
+            expectedSchedulingRevision: card.schedulingRevision
+        }))).toThrow("Refresh before reviewing");
+    });
+
     it("moves a card to another deck with conflict protection", () => {
         const oldDeck = createTextNote("Old deck");
         const newDeck = createTextNote("New deck");

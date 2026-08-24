@@ -196,3 +196,23 @@
     border-radius: 3px;
     padding: 0 0.15em;
 }
+
+.flashcards-reschedule-editor {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-left: 0.5em;
+}
+
+.flashcards-reschedule-editor input[type="date"] {
+    padding: 0.3em 0.4em;
+    border: 1px solid var(--border-color, #ced4da);
+    border-radius: 4px;
+    background: var(--input-background-color, var(--background-color, #fff));
+    color: var(--text-color, inherit);
+}
+
+.flashcards-reschedule-error {
+    color: var(--accent-color-danger, #dc3545);
+    font-size: 0.85em;
+}

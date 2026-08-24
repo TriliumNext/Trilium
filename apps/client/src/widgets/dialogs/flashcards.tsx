@@ -357,6 +357,35 @@ export default function FlashcardsDialog() {
         }
     }
 
+    async function rescheduleCurrentCard(due: string) {
+        if (!currentCard || mutationLockRef.current) {
+            throw new FlashcardConflictError("Flashcard has changed.");
+        }
+
+        mutationLockRef.current = true;
+        setSubmitting(true);
+        try {
+            const response = await flashcards.setCardDueDate(currentCard.cardId, {
+                due,
+                expectedSchedulingRevision: currentCard.schedulingRevision
+            });
+
+            await applyLifecycleUpdate(response.card);
+            setUndoableReview(null);
+            toast.showMessage(t("flashcards.card_rescheduled"));
+        } catch (e) {
+            if (e instanceof FlashcardConflictError) {
+                await handleReviewConflict(currentCard.cardId, e.message);
+                return;
+            }
+
+            throw e;
+        } finally {
+            mutationLockRef.current = false;
+            setSubmitting(false);
+        }
+    }
+
     async function moveCurrentCardToDeck(deckNoteId: string) {
         if (!currentCard || currentCard.deckNoteId === deckNoteId || mutationLockRef.current) {
             return;
@@ -529,6 +558,7 @@ export default function FlashcardsDialog() {
                             onReset={resetCurrentCard}
                             onBury={buryCurrentCard}
                             onMoveDeck={moveCurrentCardToDeck}
+                            onReschedule={rescheduleCurrentCard}
                         />
                         : <NoItems icon="bx bx-brain" text={t("flashcards.no_due_cards")} />
                 }
@@ -730,7 +760,8 @@ function ReviewCard({
     onToggleSuspended,
     onReset,
     onBury,
-    onMoveDeck
+    onMoveDeck,
+    onReschedule
 }: {
     card: FlashcardReviewCard;
     decks: FlashcardDeckSummary[];
@@ -742,6 +773,7 @@ function ReviewCard({
     onReset: () => Promise<void>;
     onBury: () => Promise<void>;
     onMoveDeck: (deckNoteId: string) => Promise<void>;
+    onReschedule: (due: string) => Promise<void>;
 }) {
     return (
         <>
@@ -765,6 +797,7 @@ function ReviewCard({
                 onBury={onBury}
                 decks={decks}
                 onMoveDeck={onMoveDeck}
+                onReschedule={onReschedule}
             />
             <section className="flashcards-card-pane" aria-live="polite">
                 {card.cardType === "cloze"
@@ -790,7 +823,8 @@ function CardLifecycleActions({
     onToggleSuspended,
     onReset,
     onBury,
-    onMoveDeck
+    onMoveDeck,
+    onReschedule
 }: {
     card: FlashcardReviewCard;
     disabled: boolean;
@@ -799,7 +833,23 @@ function CardLifecycleActions({
     onReset: () => Promise<void>;
     onBury: () => Promise<void>;
     onMoveDeck: (deckNoteId: string) => Promise<void>;
+    onReschedule: (due: string) => Promise<void>;
 }) {
+    const [ rescheduling, setRescheduling ] = useState(false);
+    const [ rescheduleDate, setRescheduleDate ] = useState(() => card.due.slice(0, 10));
+    const [ reschedulingError, setReschedulingError ] = useState<string | null>(null);
+
+    const submitReschedule = async () => {
+        setReschedulingError(null);
+        const due = `${rescheduleDate}T12:00:00.000Z`;
+        try {
+            await onReschedule(due);
+            setRescheduling(false);
+        } catch {
+            setReschedulingError(t("flashcards.reschedule_conflict"));
+        }
+    };
+
     return (
         <div className="flashcards-card-actions">
             {decks.length > 0 && <label className="flashcards-deck-move">
@@ -834,6 +884,30 @@ function CardLifecycleActions({
                 size="small"
                 onClick={() => void onReset()}
             />
+            <Button
+                text={t("flashcards.reschedule_card")}
+                icon="bx-calendar"
+                disabled={disabled}
+                size="small"
+                onClick={() => setRescheduling((value) => !value)}
+            />
+            {rescheduling && <div className="flashcards-reschedule-editor">
+                <input
+                    type="date"
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.currentTarget.value)}
+                    title={t("flashcards.reschedule_hint")}
+                />
+                <Button
+                    text={t("flashcards.apply")}
+                    icon="bx-check"
+                    kind="primary"
+                    disabled={disabled}
+                    size="small"
+                    onClick={() => void submitReschedule()}
+                />
+                {reschedulingError && <span className="flashcards-reschedule-error">{reschedulingError}</span>}
+            </div>}
         </div>
     );
 }

@@ -129,12 +129,31 @@ describe("Flashcards API (core)", () => {
             createRes.body.schedulingRevision + 1
         );
 
+        const targetDue = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+        const setDueRes = await api.put<{ card: FlashcardReviewCard }>(
+            `/api/flashcards/cards/${createRes.body.cardId}/due`,
+            {
+                body: {
+                    due: targetDue,
+                    expectedSchedulingRevision: moveDeckRes.body.card.schedulingRevision
+                }
+            }
+        );
+        expect(setDueRes.status).toBe(200);
+        expect(Date.parse(setDueRes.body.card.due)).toBeCloseTo(Date.parse(targetDue), -1);
+
+        const badDueRes = await api.put<{ message: string }>(
+            `/api/flashcards/cards/${createRes.body.cardId}/due`,
+            { body: { due: "nope" } }
+        );
+        expect(badDueRes.status).toBe(400);
+
         const reviewRes = await api.post<FlashcardReviewResponse>(
             `/api/flashcards/cards/${createRes.body.cardId}/reviews`,
             {
                 body: {
                     rating: 3,
-                    expectedSchedulingRevision: moveDeckRes.body.card.schedulingRevision,
+                    expectedSchedulingRevision: setDueRes.body.card.schedulingRevision,
                     clientRequestId: `${createRes.body.cardId}-api-review`
                 }
             }
@@ -142,7 +161,7 @@ describe("Flashcards API (core)", () => {
         expect(reviewRes.status).toBe(200);
         expect(reviewRes.body.reviewId).toBeTruthy();
         expect(reviewRes.body.card.schedulingRevision).toBe(
-            moveDeckRes.body.card.schedulingRevision + 1
+            setDueRes.body.card.schedulingRevision + 1
         );
 
         const undoRes = await api.post<{ card: FlashcardReviewCard }>(

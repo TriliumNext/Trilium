@@ -6,6 +6,7 @@ import type {
     FlashcardResetRequest,
     FlashcardReviewRequest,
     FlashcardSettingsUpdateRequest,
+    FlashcardSetDueDateRequest,
     FlashcardSuspensionRequest,
     FlashcardUndoRequest
 } from "@triliumnext/commons";
@@ -64,6 +65,10 @@ function moveCardToDeck(req: Request<{ cardId: string }, {}, FlashcardDeckMoveRe
     return flashcardService.moveCardToDeck(req.params.cardId, req.body);
 }
 
+function setCardDueDate(req: Request<{ cardId: string }, {}, FlashcardSetDueDateRequest>) {
+    return flashcardService.setCardDueDate(req.params.cardId, req.body);
+}
+
 function undoReview(req: Request<{}, {}, FlashcardUndoRequest>) {
     return flashcardService.undoReview(req.body);
 }
@@ -110,6 +115,7 @@ export default {
     resetCard,
     buryCard,
     moveCardToDeck,
+    setCardDueDate,
     undoReview,
     removeCardsForNote,
     syncCardsForNote,

@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
         resetCard: vi.fn(),
         buryCard: vi.fn(),
         moveCardToDeck: vi.fn(),
+        setCardDueDate: vi.fn(),
         undoReview: vi.fn()
     };
 });
@@ -49,6 +50,7 @@ vi.mock("../../services/flashcards", () => ({
         resetCard: mocks.resetCard,
         buryCard: mocks.buryCard,
         moveCardToDeck: mocks.moveCardToDeck,
+        setCardDueDate: mocks.setCardDueDate,
         undoReview: mocks.undoReview
     },
     FlashcardConflictError: mocks.FlashcardConflictError
@@ -254,6 +256,36 @@ describe("flashcards review dialog", () => {
         const elision = host.querySelector(".flashcards-front-title .flashcard-cloze");
         expect(elision?.textContent).toBe("[...]");
         expect(host.textContent).toContain("flashcards.cloze_number");
+    });
+
+    it("reschedules a card to a manual due date", async () => {
+        const card = makeCard();
+        const rescheduled = makeCard({ due: "2025-01-20 12:00:00.000Z" });
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+        mocks.setCardDueDate.mockResolvedValue({ card: rescheduled });
+
+        await openDialog();
+
+        const rescheduleButton = findButtonByText("flashcards.reschedule_card");
+        expect(rescheduleButton).toBeTruthy();
+
+        await act(async () => {
+            rescheduleButton!.click();
+        });
+
+        const applyButton = findButtonByText("flashcards.apply");
+        expect(applyButton).toBeTruthy();
+
+        await act(async () => {
+            applyButton!.click();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(mocks.setCardDueDate).toHaveBeenCalledWith("card1", {
+            due: "2025-01-10T12:00:00.000Z",
+            expectedSchedulingRevision: 5
+        });
+        expect(mocks.showMessage).toHaveBeenCalledWith("flashcards.card_rescheduled");
     });
 
     it("lazily fetches the answer when the queue omits the back side", async () => {
