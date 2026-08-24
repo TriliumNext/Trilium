@@ -2160,9 +2160,9 @@
     "semantic_hash": "28cd094e0406a2a089bb43f6408bca4f"
   },
   "apps/client/src/widgets/buttons/global_menu.spec.tsx": {
-    "mtime": 1786902991.2720287,
-    "ast_hash": "403b081ed038cc4b681cb095ff6e0777",
-    "semantic_hash": "403b081ed038cc4b681cb095ff6e0777"
+    "mtime": 1787566068.4855027,
+    "ast_hash": "5a4035085143ad8081955eb4b73507a0",
+    "semantic_hash": ""
   },
   "apps/client/src/widgets/buttons/global_menu.tsx": {
     "mtime": 1786904696.4662807,
@@ -13370,9 +13370,9 @@
     "semantic_hash": "91a8c3b95f14997cf5e23a22c8f380c1"
   },
   "packages/trilium-core/src/services/keyboard_actions.spec.ts": {
-    "mtime": 1786902991.7523515,
-    "ast_hash": "fde5d929ac1c52d9e4c9e21d3f486756",
-    "semantic_hash": "fde5d929ac1c52d9e4c9e21d3f486756"
+    "mtime": 1787566108.4299939,
+    "ast_hash": "2c7ff1113e0ededbb466b6d53b40c297",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/keyboard_actions.ts": {
     "mtime": 1786961009.9865367,
@@ -25000,8 +25000,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.spec.tsx": {
-    "mtime": 1787560964.5259678,
-    "ast_hash": "c5ef1376637b7838dd09f69abf10ea09",
+    "mtime": 1787565850.2897787,
+    "ast_hash": "760873c211d39e668e353f3a49a95993",
     "semantic_hash": ""
   }
 }

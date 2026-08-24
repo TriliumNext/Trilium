@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => {
         getStats: vi.fn(),
         getDecks: vi.fn(),
         getCard: vi.fn(),
+        createCard: vi.fn(),
         reviewCard: vi.fn(),
         setSuspended: vi.fn(),
         resetCard: vi.fn(),
@@ -40,6 +41,7 @@ vi.mock("../../services/flashcards", () => ({
         getStats: mocks.getStats,
         getDecks: mocks.getDecks,
         getCard: mocks.getCard,
+        createCard: mocks.createCard,
         reviewCard: mocks.reviewCard,
         setSuspended: mocks.setSuspended,
         resetCard: mocks.resetCard,
@@ -152,6 +154,25 @@ describe("flashcards review dialog", () => {
         await openDialog();
 
         expect(host.textContent).toContain("flashcards.no_due_cards");
+    });
+
+    it("opens scoped to a note when given a noteId", async () => {
+        const card = makeCard();
+        mocks.createCard.mockResolvedValue(card);
+
+        await openDialog({ noteId: "note1" });
+
+        expect(mocks.createCard).toHaveBeenCalledWith({ noteId: "note1", deckNoteId: undefined });
+        expect(mocks.getDueCards).not.toHaveBeenCalled();
+        expect(host.textContent).toContain("Front title");
+    });
+
+    it("scopes the due queue to the requested deck", async () => {
+        mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
+
+        await openDialog({ deckNoteId: "deck7" });
+
+        expect(mocks.getDueCards).toHaveBeenCalledWith(expect.objectContaining({ deckNoteId: "deck7" }));
     });
 
     it("reveals the answer through the show-answer button", async () => {
