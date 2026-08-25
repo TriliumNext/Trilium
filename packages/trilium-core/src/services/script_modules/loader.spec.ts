@@ -73,6 +73,21 @@ describe("script module loader (real DB)", () => {
         expect(exportsOf("pkg-syntax").built).toBe(1);
     });
 
+    it("lets a file assign __esModule itself", () => {
+        // A bundle carrying CommonJS assigns the flag the compiled prologue has already defined.
+        // Defining it with a value alone leaves it read-only, and the assignment then throws under
+        // the "use strict" the prologue also emits — cheerio's jsDelivr build does exactly this.
+        store("pkg-interop@1.0.0", [{
+            name: "entry.mjs",
+            source: [
+                "exports.__esModule = true;",
+                "export const ok = true;"
+            ].join("\n")
+        }]);
+
+        expect(exportsOf("pkg-interop").ok).toBe(true);
+    });
+
     it("reads only the files the entry reaches", () => {
         // The file the entry never imports is not JavaScript, so a load that read it would fail.
         store("pkg-lazy@1.0.0", [
