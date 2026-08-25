@@ -60,13 +60,20 @@ export const DEFAULT_LIMITS: ScriptModuleLimits = {
 };
 
 export const ESM_SH_ORIGIN = "https://esm.sh";
+export const JSDELIVR_ORIGIN = "https://cdn.jsdelivr.net";
 
-export interface EsmShOptions {
-    /** Where to fetch builds from. Point it at a self-hosted esm.sh to depend on no third party. */
+export interface ProviderOptions {
+    /**
+     * Where to fetch builds from. Point it at a self-hosted build service to depend on no third
+     * party.
+     */
     origin?: string;
+    limits?: ScriptModuleLimits;
+}
+
+export interface EsmShOptions extends ProviderOptions {
     /** ECMAScript target esm.sh compiles down to. */
     target?: string;
-    limits?: ScriptModuleLimits;
 }
 
 /**
@@ -78,19 +85,76 @@ export interface EsmShOptions {
  * its Node polyfills in separately. So the resolve crawls what it is given.
  */
 export function createEsmShProvider(options: EsmShOptions = {}): ScriptModuleProvider {
-    const origin = (options.origin ?? ESM_SH_ORIGIN).replace(/\/+$/, "");
     const target = options.target ?? "es2022";
+
+    return createGraphProvider("esm.sh", options, ESM_SH_ORIGIN, (origin, path) =>
+        `${origin}/${path}?bundle&target=${encodeURIComponent(target)}`);
+}
+
+/**
+ * Builds packages through jsDelivr, whose `/+esm` compiles one package and points at its
+ * dependencies as sibling `/+esm` URLs rather than folding them in. So its graph is a module per
+ * package — more files and roughly twice the bytes of the same package from esm.sh.
+ *
+ * Worth that as a second answer: the two are independent operators building independently, and
+ * esm.sh ships versions it cannot build (cheerio's have failed repeatedly), where a package that
+ * resolves nowhere is a package nobody can install.
+ */
+export function createJsDelivrProvider(options: ProviderOptions = {}): ScriptModuleProvider {
+    return createGraphProvider("jsdelivr", options, JSDELIVR_ORIGIN, (origin, path) =>
+        `${origin}/npm/${path}/+esm`);
+}
+
+/** The providers an install tries, in the order it tries them. */
+export function defaultScriptModuleProviders(): ScriptModuleProvider[] {
+    return [ createEsmShProvider(), createJsDelivrProvider() ];
+}
+
+/**
+ * Resolves a package through the first provider that can build it.
+ *
+ * A build service failing on one version of one package is ordinary rather than exceptional, so a
+ * refusal from the first is not the answer — it is a reason to ask the next. Only a package no
+ * provider can build fails the install, and the error then says what each of them answered.
+ */
+export async function resolveScriptModule(
+    spec: PackageSpec,
+    providers: ScriptModuleProvider[] = defaultScriptModuleProviders()
+): Promise<ScriptModuleArtifact> {
+    const refusals: string[] = [];
+
+    for (const provider of providers) {
+        try {
+            return await provider.resolve(spec);
+        } catch (e) {
+            refusals.push(`${provider.id}: ${e instanceof Error ? e.message : String(e)}`);
+        }
+    }
+
+    throw new ValidationError(`No provider could build this package. ${refusals.join(" ")}`);
+}
+
+/**
+ * A provider that fetches one entry URL and crawls what it links to. Both build services answer
+ * that shape; all that differs is how a package's name and version become that URL.
+ */
+function createGraphProvider(
+    id: string,
+    options: ProviderOptions,
+    defaultOrigin: string,
+    buildEntryUrl: (origin: string, path: string) => string
+): ScriptModuleProvider {
+    const origin = (options.origin ?? defaultOrigin).replace(/\/+$/, "");
     const limits = options.limits ?? DEFAULT_LIMITS;
 
     return {
-        id: "esm.sh",
+        id,
         async resolve(spec: PackageSpec): Promise<ScriptModuleArtifact> {
             const version = spec.version ? `@${encodeURIComponent(spec.version)}` : "";
             const path = `${spec.name}${version}${spec.subpath ?? ""}`;
-            const entryUrl = `${origin}/${path}?bundle&target=${encodeURIComponent(target)}`;
 
-            const { files, entry } = await fetchModuleGraph(entryUrl, limits);
-            return { providerId: "esm.sh", spec, files, entry };
+            const { files, entry } = await fetchModuleGraph(buildEntryUrl(origin, path), limits);
+            return { providerId: id, spec, files, entry };
         }
     };
 }

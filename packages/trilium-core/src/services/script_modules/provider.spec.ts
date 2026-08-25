@@ -3,7 +3,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { fakeRequestProvider } from "../../test/request_provider.js";
 import { initRequest } from "../request.js";
 import { encodeUtf8 } from "../utils/binary.js";
-import { createEsmShProvider, parsePackageSpec, type ScriptModuleArtifact } from "./provider.js";
+import {
+    createEsmShProvider,
+    createJsDelivrProvider,
+    parsePackageSpec,
+    resolveScriptModule,
+    type ScriptModuleArtifact,
+    type ScriptModuleProvider
+} from "./provider.js";
 
 /** URLs the fake provider answers, and the URLs it was asked for in order. */
 let served: Map<string, { source: string; status?: number; contentType?: string }>;
@@ -64,6 +71,68 @@ describe("parsePackageSpec", () => {
         for (const bad of ["", "   ", "pkg name", "pkg?query", "pkg#frag", "../etc/passwd", "pkg@1.0.0/../..", "pkg@>=1 <2", "@scope"]) {
             expect(() => parsePackageSpec(bad), bad).toThrow();
         }
+    });
+});
+
+describe("jsDelivr provider", () => {
+    it("asks for the /+esm build of the requested package", async () => {
+        serve("https://cdn.jsdelivr.net/npm/cheerio@1.2.0/+esm", `export * from "/npm/dep@1/+esm";`);
+        serve("https://cdn.jsdelivr.net/npm/dep@1/+esm", "export const dep = 1;");
+
+        const artifact = await createJsDelivrProvider().resolve(parsePackageSpec("cheerio@1.2.0"));
+
+        expect(requested).toEqual([
+            "https://cdn.jsdelivr.net/npm/cheerio@1.2.0/+esm",
+            "https://cdn.jsdelivr.net/npm/dep@1/+esm"
+        ]);
+        expect(artifact.providerId).toBe("jsdelivr");
+        expect(artifact.files).toHaveLength(2);
+        // jsDelivr points a package at its dependencies rather than folding them in, so the links
+        // between them are what the rewrite has to catch.
+        expect(fileNamed(artifact, artifact.entry).source).toBe(`export * from "./npm_dep@1_esm.mjs";`);
+    });
+
+    it("keeps a scope and a subpath in the path, and honours a mirror origin", async () => {
+        serve("https://mirror.example/npm/@scope/pkg@2.0.0/sub/+esm", "export default 1;");
+
+        const provider = createJsDelivrProvider({ origin: "https://mirror.example/" });
+        await provider.resolve(parsePackageSpec("@scope/pkg@2.0.0/sub"));
+
+        expect(requested).toEqual(["https://mirror.example/npm/@scope/pkg@2.0.0/sub/+esm"]);
+    });
+});
+
+describe("resolveScriptModule", () => {
+    /** A provider that refuses, standing in for a build service that cannot build a version. */
+    function refusing(id: string): ScriptModuleProvider {
+        return { id, resolve: async () => { throw new Error(`${id} has no build`); } };
+    }
+
+    it("falls back to the next provider and records which one answered", async () => {
+        serve("https://cdn.jsdelivr.net/npm/cheerio@1.2.0/+esm", "export const load = 1;");
+
+        const artifact = await resolveScriptModule(parsePackageSpec("cheerio@1.2.0"), [
+            createEsmShProvider(),
+            createJsDelivrProvider()
+        ]);
+
+        // esm.sh was asked first and had nothing; the artifact says who built what was stored.
+        expect(requested[0]).toBe("https://esm.sh/cheerio@1.2.0?bundle&target=es2022");
+        expect(artifact.providerId).toBe("jsdelivr");
+    });
+
+    it("stops at the first provider that can build it", async () => {
+        serve("https://esm.sh/dayjs@1.0.0?bundle&target=es2022", "export const d = 1;");
+
+        const artifact = await resolveScriptModule(parsePackageSpec("dayjs@1.0.0"));
+
+        expect(artifact.providerId).toBe("esm.sh");
+        expect(requested).toHaveLength(1);
+    });
+
+    it("fails only when no provider can build it, saying what each answered", async () => {
+        await expect(resolveScriptModule(parsePackageSpec("nope@1.0.0"), [refusing("first"), refusing("second")]))
+            .rejects.toThrow(/first: first has no build second: second has no build/);
     });
 });
 
