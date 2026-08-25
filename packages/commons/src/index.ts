@@ -9,6 +9,7 @@ export * from "./lib/attachment_roles.js";
 export * from "./lib/custom_fonts.js";
 export * from "./lib/font_mimes.js";
 export * from "./lib/icon_font_metrics.js";
+export * from "./lib/script_modules.js";
 export * from "./lib/image_mimes.js";
 export * from "./lib/mime_type.js";
 export * from "./lib/office.js";
