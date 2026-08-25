@@ -117,7 +117,7 @@ function evaluate(module: StoredScriptModule): unknown {
             throw new Error(`File '${fileName}' of script module '${name}' is missing.`);
         }
 
-        const record: { exports: unknown } = { exports: {} };
+        const record: { exports: unknown } = { exports: newModuleExports() };
         started.set(fileName, record);
 
         const run = compile(source, file, name);
@@ -186,6 +186,23 @@ function compile(source: string, file: ScriptModuleFileInfo, moduleName: string)
 }
 
 const IMPORT_META = "__triliumImportMeta";
+
+/**
+ * A fresh exports object that a file can still assign `__esModule` on.
+ *
+ * The compiled prologue defines that property with a value alone, which leaves it read-only, and a
+ * bundle carrying CommonJS that assigns it itself then throws in strict mode — cheerio's jsDelivr
+ * build does. Seeding it writable survives the prologue, since redefining a property with a partial
+ * descriptor changes only the fields that descriptor names.
+ */
+function newModuleExports(): object {
+    return Object.defineProperty({}, "__esModule", {
+        value: false,
+        writable: true,
+        enumerable: false,
+        configurable: true
+    });
+}
 
 /**
  * The file a specifier names, or `undefined` where it names something outside the package.
