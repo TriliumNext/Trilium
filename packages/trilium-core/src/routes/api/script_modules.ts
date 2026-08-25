@@ -73,6 +73,7 @@ function summarize(module: StoredScriptModule): ScriptModuleSummary {
     return {
         noteId: module.noteId,
         spec: formatPackageSpec(module.spec),
+        name: `${module.spec.name}${module.spec.subpath ?? ""}`,
         providerId: module.providerId,
         fileCount: module.files.length,
         size: module.size,
