@@ -1,6 +1,6 @@
 import "./code.css";
 
-import { default as VanillaCodeMirror, getThemeById, SCRIPT_MIME_BACKEND } from "@triliumnext/codemirror";
+import { default as VanillaCodeMirror, getThemeById } from "@triliumnext/codemirror";
 import { NoteType } from "@triliumnext/commons";
 import { Ref } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
@@ -14,7 +14,7 @@ import { refToJQuerySelector } from "../../react/react_utils";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
 import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
-import { useScriptModuleCompletions, useScriptModuleTypes } from "./script_modules";
+import { scriptRuntimeFor, useScriptModuleCompletions, useScriptModuleTypes } from "./script_modules";
 import { useSnippetSlashCommands } from "./snippets";
 
 interface CodeEditorProps {
@@ -146,11 +146,11 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
         note.noteId
     );
 
-    // The installed packages: their names offered inside `require("…")`, and their declarations
-    // handed to the language service so what a require() returns is typed. Backend scripts only.
-    const isBackendScript = mime === SCRIPT_MIME_BACKEND;
-    useScriptModuleCompletions(editorView, isBackendScript);
-    const scriptModules = useScriptModuleTypes(isBackendScript);
+    // The installed packages: their names offered on the specifier being typed, and their
+    // declarations handed to the language service so what the script imports of one is typed.
+    const scriptRuntime = scriptRuntimeFor(mime);
+    useScriptModuleCompletions(editorView, scriptRuntime);
+    const scriptModules = useScriptModuleTypes(scriptRuntime);
 
     return (
         <CodeEditor

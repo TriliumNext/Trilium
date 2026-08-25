@@ -370,6 +370,7 @@ describe("installed script modules", () => {
     const DAYJS = {
         name: "dayjs",
         spec: "dayjs@1.11.10",
+        portable: true,
         entry: "esm_dayjs_1.11.10_index.d.ts",
         files: [ {
             name: "esm_dayjs_1.11.10_index.d.ts",
@@ -407,6 +408,7 @@ describe("installed script modules", () => {
         const utc = {
             name: "dayjs/plugin/utc",
             spec: "dayjs@1.11.10/plugin/utc",
+            portable: true,
             entry: "esm_dayjs_1.11.10_plugin_utc.d.ts",
             files: [ {
                 name: "esm_dayjs_1.11.10_plugin_utc.d.ts",
@@ -422,10 +424,18 @@ describe("installed script modules", () => {
         }
     }, TIMEOUT);
 
-    it("keeps the packages away from frontend scripts, whose require() resolves note titles", async () => {
-        const completions = await completionsAtMarker(
+    it("types a frontend script's require, and a JSX note's import, of the same package", async () => {
+        const frontend = await completionsAtMarker(
             SCRIPT_MIME_FRONTEND, `const d = require("dayjs")();\nd.|`, { scriptModules: [ DAYJS ] });
-        expect(completions).not.toContain("addDays");
+        expect(frontend).toContain("addDays");
+
+        // A render note writes an import, which becomes a require when the note is built.
+        const jsx = await completionsAtMarker(
+            SCRIPT_MIME_JSX, `import dayjs from "dayjs";\nconst d = dayjs();\nd.|`, { scriptModules: [ DAYJS ] });
+        expect(jsx).toContain("addDays");
+        expect(await getScriptDiagnosticCodes(
+            SCRIPT_MIME_JSX, `import dayjs from "dayjs";\nconst d = dayjs().format();`, { scriptModules: [ DAYJS ] }))
+            .toEqual([]);
     }, TIMEOUT);
 });
 

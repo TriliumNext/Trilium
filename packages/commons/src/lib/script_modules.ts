@@ -35,6 +35,11 @@ export interface ScriptModuleTypes {
     name: string;
     /** `name@version`, which a script can name instead where two versions are installed. */
     spec: string;
+    /**
+     * Whether a build of it runs in a browser, and so whether a frontend script can reach it at
+     * all. False for a package installed only for Node.js, which the page has no way to run.
+     */
+    portable: boolean;
     /** Name of the file in {@link files} the package is typed by. */
     entry: string;
     files: { name: string; content: string }[];

@@ -22,6 +22,11 @@ function serveEsmSh(name: string, version: string) {
     served.set(`https://esm.sh/${name}@${version}/es2022/${name}.mjs`, `export const ${name} = 1;`);
 }
 
+/** Serves the Node.js build of a package, which esm.sh answers at a target of its own. */
+function serveEsmShNode(name: string, version: string) {
+    served.set(`https://esm.sh/${name}@${version}?target=node`, `export const ${name} = 1;`);
+}
+
 /** Serves the package's declarations, and points its build at them the way esm.sh does. */
 function serveDeclarations(name: string, version: string, source: string) {
     const types = `https://esm.sh/${name}@${version}/index.d.ts`;
@@ -136,6 +141,29 @@ describe("Script modules API (core)", () => {
         expect(typed.files).toEqual([
             { name: "typed@1.0.0_index.d.ts", content: "export declare function typed(): string;\n" }
         ]);
+    });
+
+    it("says whether a browser can reach each package, so a frontend note is not offered a Node build", async () => {
+        // Installed only for Node.js: nothing on a page can run it.
+        serveEsmShNode("nodeonly", "1.0.0");
+        servedHeaders.set("https://esm.sh/nodeonly@1.0.0?target=node",
+            { "x-typescript-types": "https://esm.sh/nodeonly@1.0.0/index.d.ts" });
+        served.set("https://esm.sh/nodeonly@1.0.0/index.d.ts", "export declare const x: number;\n");
+
+        // Installed both ways: the portable build is what the page runs.
+        serveEsmSh("both", "1.0.0");
+        serveDeclarations("both", "1.0.0", "export declare const y: number;\n");
+        serveEsmShNode("both", "1.0.0");
+
+        await api.post("/api/script-modules", { body: { spec: "nodeonly@1.0.0", target: "node" } });
+        await api.post("/api/script-modules", { body: { spec: "both@1.0.0" } });
+        await api.post("/api/script-modules", { body: { spec: "both@1.0.0", target: "node" } });
+
+        const types = await api.get<ScriptModuleTypes[]>("/api/script-modules/types");
+        const byName = new Map(types.body.map((module) => [ module.name, module ]));
+
+        expect(byName.get("nodeonly")?.portable).toBe(false);
+        expect(byName.get("both")?.portable).toBe(true);
     });
 
     it("404s when removing something that is not installed", async () => {
