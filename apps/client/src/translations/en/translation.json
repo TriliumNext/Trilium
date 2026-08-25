@@ -2398,7 +2398,8 @@
     "coverImage": "Cover image",
     "viewConfig": "View settings",
     "canvasLibraryItem": "Canvas library",
-    "importSource": "Import source"
+    "importSource": "Import source",
+    "scriptModule": "Script module"
   },
   "bookmark_switch": {
     "bookmark": "Bookmark",

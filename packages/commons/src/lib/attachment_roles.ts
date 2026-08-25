@@ -96,7 +96,13 @@ export const ATTACHMENT_ROLES = {
     /** Shapes saved into an Excalidraw canvas's library. */
     canvasLibraryItem: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-shape-square" },
     /** The file an import was read from, kept so an import that went wrong can be looked at again. */
-    importSource: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-import" }
+    importSource: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-import" },
+    /**
+     * One ES module of an npm package installed for backend scripts. Managed by the install that
+     * wrote it and named in its note's manifest, never referred to from note content, so it is not
+     * embedded — the cleanup that erases what content no longer mentions would take every one.
+     */
+    scriptModule: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-cube" }
 } as const satisfies Record<string, AttachmentRoleTraits>;
 
 /** A role the app itself creates. Arbitrary strings reach the same fields — see {@link ATTACHMENT_ROLES}. */

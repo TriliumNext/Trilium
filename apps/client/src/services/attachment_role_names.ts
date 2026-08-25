@@ -24,7 +24,8 @@ const ATTACHMENT_ROLE_NAMES: Record<NamedAttachmentRole, () => string> = {
     coverImage: () => t("attachment_roles.coverImage"),
     viewConfig: () => t("attachment_roles.viewConfig"),
     canvasLibraryItem: () => t("attachment_roles.canvasLibraryItem"),
-    importSource: () => t("attachment_roles.importSource")
+    importSource: () => t("attachment_roles.importSource"),
+    scriptModule: () => t("attachment_roles.scriptModule")
 };
 
 /**
