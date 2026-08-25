@@ -73,6 +73,7 @@ export default function NoteActionsCustom(props: NoteActionsCustomProps) {
             className="note-actions-custom"
         >
             <RunActiveNoteButton {...innerProps } />
+            <ScriptModulesButton {...innerProps} />
             <SwitchSplitOrientationButton {...innerProps} />
             <DisplayModeSwitcher {...innerProps} />
             <SaveToNoteButton {...innerProps} />
@@ -278,6 +279,20 @@ function RunActiveNoteButton({ noteMime }: NoteActionsCustomInnerProps) {
         icon="bx bx-play"
         text={t("code_buttons.execute_button_title")}
         triggerCommand="runActiveNote"
+    />;
+}
+
+/**
+ * Opens the packages installed for backend scripts. Only backend scripts can require them, so only
+ * they carry the button.
+ */
+function ScriptModulesButton({ noteMime, parentComponent }: NoteActionsCustomInnerProps) {
+    const isEnabled = noteMime.startsWith("application/javascript") && noteMime.includes("env=backend");
+
+    return isEnabled && <NoteAction
+        icon="bx bx-cube"
+        text={t("script_modules.title")}
+        onClick={() => parentComponent.triggerCommand("showScriptModules")}
     />;
 }
 

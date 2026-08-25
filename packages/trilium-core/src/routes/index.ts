@@ -30,6 +30,7 @@ import filesRoute from "./api/files";
 import importRoute from "./api/import";
 import exportRoute from "./api/export";
 import scriptRoute from "./api/script";
+import scriptModulesRoute from "./api/script_modules";
 import backendLogRoute from "./api/backend_log";
 import backupRoute from "./api/backup";
 import databaseInfoRoute from "./api/database_info";
@@ -348,6 +349,10 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncRoute(PST, "/api/script/exec", [checkApiAuth, csrfMiddleware], scriptRoute.exec, apiResultHandler);
 
     apiRoute(PST, "/api/script/run/:noteId", scriptRoute.run);
+    apiRoute(GET, "/api/script-modules", scriptModulesRoute.list);
+    asyncApiRoute(PST, "/api/script-modules", scriptModulesRoute.install);
+    apiRoute(DEL, "/api/script-modules/:noteId", scriptModulesRoute.remove);
+
     apiRoute(GET, "/api/script/startup", scriptRoute.getStartupBundles);
     apiRoute(GET, "/api/script/widgets", scriptRoute.getWidgetBundles);
     apiRoute(PST, "/api/script/bundle/:noteId", scriptRoute.getBundle);

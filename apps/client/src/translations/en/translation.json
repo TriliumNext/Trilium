@@ -4053,5 +4053,15 @@
       "invalid-symbol": "the markdown symbol should be one character, excepting \"[\", \" \", \"X\", and \"]\"",
       "duplicate-symbol": "duplicate markdown symbol"
     }
+  },
+  "script_modules": {
+    "title": "Script modules",
+    "install": "Install",
+    "installing": "Installing…",
+    "remove": "Remove",
+    "spec_placeholder": "cheerio@1.1.2",
+    "spec_description": "An npm package and an exact version. Backend scripts can then require it by name.",
+    "none_installed": "No packages installed yet.",
+    "module_detail": "{{provider}} · {{fileCount}} files · {{size}}"
   }
 }

@@ -119,6 +119,7 @@ export type CommandMappings = {
     showLaunchBarSubtree: CommandData;
     showHiddenSubtree: CommandData;
     showSQLConsoleHistory: CommandData;
+    showScriptModules: CommandData;
     logout: CommandData;
     switchToMobileVersion: CommandData;
     switchToDesktopVersion: CommandData;
