@@ -2,7 +2,7 @@ import type { ScriptModuleSummary } from "@triliumnext/commons";
 import type { Request } from "express";
 
 import { NotFoundError, ValidationError } from "../../errors.js";
-import { createEsmShProvider, parsePackageSpec } from "../../services/script_modules/provider.js";
+import { parsePackageSpec, resolveScriptModule } from "../../services/script_modules/provider.js";
 import {
     deleteScriptModule,
     formatPackageSpec,
@@ -18,7 +18,8 @@ function list(): ScriptModuleSummary[] {
 }
 
 /**
- * Fetches a package and stores it, replacing any build of the same version already there.
+ * Fetches a package through the first provider that can build it and stores it, replacing any
+ * build of the same version already there.
  *
  * The fetch is the slow part and must not hold a transaction open, so only the write is wrapped in
  * one — a package that arrives whole is stored whole, or not at all.
@@ -31,7 +32,7 @@ async function install(req: Request) {
         throw new ValidationError("A package to install must be given.");
     }
 
-    const artifact = await createEsmShProvider().resolve(parsePackageSpec(spec));
+    const artifact = await resolveScriptModule(parsePackageSpec(spec));
     return summarize(getSql().transactional(() => storeScriptModule(artifact)));
 }
 
