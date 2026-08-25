@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { fakeRequestProvider } from "../test/request_provider.js";
-import { initRequest } from "./request.js";
-import { createEsmShProvider, parsePackageSpec, type ScriptModuleArtifact } from "./script_module_provider.js";
-import { encodeUtf8 } from "./utils/binary.js";
+import { fakeRequestProvider } from "../../test/request_provider.js";
+import { initRequest } from "../request.js";
+import { encodeUtf8 } from "../utils/binary.js";
+import { createEsmShProvider, parsePackageSpec, type ScriptModuleArtifact } from "./provider.js";
 
 /** URLs the fake provider answers, and the URLs it was asked for in order. */
 let served: Map<string, { source: string; status?: number; contentType?: string }>;

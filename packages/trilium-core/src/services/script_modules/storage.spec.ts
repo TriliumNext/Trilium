@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
-import { getContext } from "./context.js";
-import hiddenSubtreeService, { SCRIPT_MODULES_ROOT } from "./hidden_subtree.js";
-import noteService from "./notes.js";
-import type { ScriptModuleArtifact } from "./script_module_provider.js";
+import becca from "../../becca/becca.js";
+import { getContext } from "../context.js";
+import hiddenSubtreeService, { SCRIPT_MODULES_ROOT } from "../hidden_subtree.js";
+import noteService from "../notes.js";
+import type { ScriptModuleArtifact } from "./provider.js";
 import {
     deleteScriptModule,
     findScriptModule,
@@ -14,7 +14,7 @@ import {
     parseManifest,
     scriptModuleNoteId,
     storeScriptModule
-} from "./script_module_storage.js";
+} from "./storage.js";
 
 const ENTRY_SOURCE = `export * from "./dep.mjs";`;
 const DEP_SOURCE = "export const dep = 1;";

@@ -1,13 +1,11 @@
-import becca from "../becca/becca.js";
-import type BAttachment from "../becca/entities/battachment.js";
-import type BNote from "../becca/entities/bnote.js";
-import { SCRIPT_MODULES_ROOT } from "./hidden_subtree.js";
-import noteService from "./notes.js";
-import type {
-    PackageSpec, ScriptModuleArtifact, ScriptModuleFile
-} from "./script_module_provider.js";
-import { decodeUtf8 } from "./utils/binary.js";
-import { hashedBlobId } from "./utils/index.js";
+import becca from "../../becca/becca.js";
+import type BAttachment from "../../becca/entities/battachment.js";
+import type BNote from "../../becca/entities/bnote.js";
+import { SCRIPT_MODULES_ROOT } from "../hidden_subtree.js";
+import noteService from "../notes.js";
+import { decodeUtf8 } from "../utils/binary.js";
+import { hashedBlobId } from "../utils/index.js";
+import type { PackageSpec, ScriptModuleArtifact, ScriptModuleFile } from "./provider.js";
 
 /** Role of the attachments holding a module's files, so they read as source rather than media. */
 export const MODULE_FILE_ROLE = "scriptModule";
