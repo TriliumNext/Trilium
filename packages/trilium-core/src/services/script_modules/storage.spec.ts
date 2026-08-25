@@ -8,9 +8,11 @@ import type { ScriptModuleArtifact } from "./provider.js";
 import {
     deleteScriptModule,
     findScriptModule,
+    findScriptModuleByNoteId,
     formatPackageSpec,
     listScriptModules,
     MODULE_FILE_ROLE,
+    openScriptModuleSources,
     parseManifest,
     scriptModuleNoteId,
     storeScriptModule
@@ -87,8 +89,18 @@ describe("script module storage (real DB)", () => {
 
         const read = findScriptModule({ name: "alpha", version: "1.0.0" });
         expect(read?.files).toEqual([
-            { name: "entry.mjs", url: "https://esm.sh/entry.mjs", source: ENTRY_SOURCE },
-            { name: "dep.mjs", url: "https://esm.sh/dep.mjs", source: DEP_SOURCE }
+            {
+                name: "entry.mjs",
+                url: "https://esm.sh/entry.mjs",
+                size: ENTRY_SOURCE.length,
+                blobId: expect.any(String)
+            },
+            {
+                name: "dep.mjs",
+                url: "https://esm.sh/dep.mjs",
+                size: DEP_SOURCE.length,
+                blobId: expect.any(String)
+            }
         ]);
     });
 
@@ -110,7 +122,12 @@ describe("script module storage (real DB)", () => {
         expect(becca.notes[noteId].getAttachmentsByRole(MODULE_FILE_ROLE).map((a) => a.title))
             .toEqual(["entry.mjs"]);
         expect(findScriptModule({ name: "beta", version: "1.0.0" })?.files).toEqual([
-            { name: "entry.mjs", url: "https://esm.sh/entry.mjs", source: "export const v=2;" }
+            {
+                name: "entry.mjs",
+                url: "https://esm.sh/entry.mjs",
+                size: "export const v=2;".length,
+                blobId: expect.any(String)
+            }
         ]);
     });
 
@@ -143,6 +160,43 @@ describe("script module storage (real DB)", () => {
         getContext().init(() => attachment?.markAsDeleted());
 
         expect(findScriptModule({ name: "epsilon", version: "1.0.0" })).toBeUndefined();
+    });
+
+    it("reads a file's source only when it is asked for", () => {
+        const stored = store("theta@1.0.0", [
+            { name: "entry.mjs", source: ENTRY_SOURCE },
+            { name: "dep.mjs", source: DEP_SOURCE }
+        ]);
+
+        // The record describes the files; it never carries what is in them.
+        expect(Object.keys(stored.files[0]).sort()).toEqual(["blobId", "name", "size", "url"]);
+
+        const readSource = openScriptModuleSources(becca.notes[stored.noteId]);
+        expect(readSource("entry.mjs")).toBe(ENTRY_SOURCE);
+        expect(readSource("dep.mjs")).toBe(DEP_SOURCE);
+        expect(readSource("never-stored.mjs")).toBeUndefined();
+    });
+
+    it("finds an install by note id, and refuses a note that is not one", () => {
+        const stored = store("iota@1.0.0", [{ name: "entry.mjs", source: "export const i = 1;" }]);
+
+        expect(findScriptModuleByNoteId(stored.noteId)?.spec.name).toBe("iota");
+        expect(findScriptModuleByNoteId("no-such-note")).toBeUndefined();
+
+        // A manifest outside the container is not an install, whatever its content says.
+        const { note } = getContext().init(() => noteService.createNewNote({
+            title: "impostor",
+            parentNoteId: "root",
+            type: "code",
+            mime: "application/json",
+            content: JSON.stringify({
+                spec: { name: "impostor" },
+                providerId: "esm.sh",
+                entry: "entry.mjs",
+                files: [{ name: "entry.mjs", url: "https://esm.sh/entry.mjs" }]
+            })
+        }));
+        expect(findScriptModuleByNoteId(note.noteId)).toBeUndefined();
     });
 
     it("removes an installed package, and says when there was none", () => {

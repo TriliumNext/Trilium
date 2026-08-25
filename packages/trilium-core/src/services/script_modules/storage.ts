@@ -7,10 +7,26 @@ import { SCRIPT_MODULES_ROOT } from "../hidden_subtree.js";
 import noteService from "../notes.js";
 import { decodeUtf8 } from "../utils/binary.js";
 import { hashedBlobId } from "../utils/index.js";
-import type { PackageSpec, ScriptModuleArtifact, ScriptModuleFile } from "./provider.js";
+import type { PackageSpec, ScriptModuleArtifact } from "./provider.js";
 
 /** Role of the attachments holding a module's files, so they read as source rather than media. */
 export const MODULE_FILE_ROLE: AttachmentRole = "scriptModule";
+
+/**
+ * One file of an installed package, described without its source.
+ *
+ * Everything here comes from the note and attachment rows, so describing an install reads no
+ * content. The source is read a file at a time through {@link openScriptModuleSources}.
+ */
+export interface ScriptModuleFileInfo {
+    name: string;
+    /** URL it came from, kept so an install can be checked against its source later. */
+    url: string;
+    /** Length of the stored source, measured by SQL rather than by reading it. */
+    size: number;
+    /** Identity of the stored source, so a loader can tell a rebuild from what it already holds. */
+    blobId: string;
+}
 
 /** An installed package, as it is kept in the database. */
 export interface StoredScriptModule {
@@ -20,8 +36,8 @@ export interface StoredScriptModule {
     providerId: string;
     /** Name of the file in {@link files} to import. */
     entry: string;
-    files: ScriptModuleFile[];
-    /** Bytes of source across every file. */
+    files: ScriptModuleFileInfo[];
+    /** Stored length across every file. */
     size: number;
     /** When the install last wrote this, as a UTC datetime string. */
     dateModified: string;
@@ -91,6 +107,20 @@ export function findScriptModule(spec: PackageSpec): StoredScriptModule | undefi
     return note ? readScriptModule(note) : undefined;
 }
 
+/**
+ * The installed package a note holds, or `undefined` where the note is not one.
+ *
+ * Answers by note id alone, so acting on one install — removing it, loading it — does not have to
+ * read every other install to find it.
+ */
+export function findScriptModuleByNoteId(noteId: string): StoredScriptModule | undefined {
+    const note = becca.notes[noteId];
+    const installed = note?.getParentBranches()
+        .some((branch) => branch.parentNoteId === SCRIPT_MODULES_ROOT);
+
+    return note && installed ? readScriptModule(note) : undefined;
+}
+
 /** Every installed package, in title order. */
 export function listScriptModules(): StoredScriptModule[] {
     const root = becca.notes[SCRIPT_MODULES_ROOT];
@@ -108,6 +138,21 @@ export function listScriptModules(): StoredScriptModule[] {
 
     return modules.sort((a, b) =>
         formatPackageSpec(a.spec).localeCompare(formatPackageSpec(b.spec)));
+}
+
+/**
+ * Opens a module's sources for reading a file at a time.
+ *
+ * The attachment rows are listed once and their content is read per call, so a script that imports
+ * one file of a package never puts the rest of it in memory.
+ */
+export function openScriptModuleSources(note: BNote): (fileName: string) => string | undefined {
+    const attachments = new Map(moduleAttachments(note).map((a) => [a.title, a]));
+
+    return (fileName: string) => {
+        const attachment = attachments.get(fileName);
+        return attachment ? decodeUtf8(attachment.getContent()) : undefined;
+    };
 }
 
 /** Removes an installed package. Answers whether there was one to remove. Needs a CLS context. */
@@ -148,6 +193,9 @@ interface ScriptModuleManifest {
 /**
  * Reads a module note back, or answers `undefined` where it is not one — a note whose content is
  * not a manifest, or one whose files did not all survive.
+ *
+ * Reads the manifest and the attachment rows, never the sources: what an install is stays
+ * answerable however large the package it holds.
  */
 function readScriptModule(note: BNote): StoredScriptModule | undefined {
     const manifest = parseManifest(decodeUtf8(note.getContent()));
@@ -155,21 +203,23 @@ function readScriptModule(note: BNote): StoredScriptModule | undefined {
         return undefined;
     }
 
-    const sources = new Map<string, BAttachment>();
-    for (const attachment of moduleAttachments(note)) {
-        sources.set(attachment.title, attachment);
-    }
+    const attachments = new Map(moduleAttachments(note).map((a) => [a.title, a]));
 
-    const files: ScriptModuleFile[] = [];
+    const files: ScriptModuleFileInfo[] = [];
     let size = 0;
     for (const file of manifest.files) {
-        const attachment = sources.get(file.name);
+        const attachment = attachments.get(file.name);
         if (!attachment) {
             return undefined;
         }
-        const source = decodeUtf8(attachment.getContent());
-        size += source.length;
-        files.push({ name: file.name, url: file.url, source });
+        const fileSize = attachment.contentLength ?? 0;
+        size += fileSize;
+        files.push({
+            name: file.name,
+            url: file.url,
+            size: fileSize,
+            blobId: attachment.blobId ?? ""
+        });
     }
 
     return {
@@ -229,6 +279,7 @@ export function parseManifest(content: string): ScriptModuleManifest | undefined
     return { spec: spec as PackageSpec, providerId, entry, files: named };
 }
 
+/** Lists a module's file attachments with their stored length, but without their content. */
 function moduleAttachments(note: BNote): BAttachment[] {
-    return note.getAttachmentsByRole(MODULE_FILE_ROLE);
+    return note.getAttachments().filter((attachment) => attachment.role === MODULE_FILE_ROLE);
 }

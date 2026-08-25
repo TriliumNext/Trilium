@@ -2,10 +2,12 @@ import type { ScriptModuleSearchResult, ScriptModuleSummary } from "@triliumnext
 import type { Request } from "express";
 
 import { NotFoundError, ValidationError } from "../../errors.js";
+import { forgetScriptModule } from "../../services/script_modules/loader.js";
 import { searchPackages } from "../../services/script_modules/npm_registry.js";
 import { parsePackageSpec, resolveScriptModule } from "../../services/script_modules/provider.js";
 import {
     deleteScriptModule,
+    findScriptModuleByNoteId,
     formatPackageSpec,
     listScriptModules,
     type StoredScriptModule,
@@ -58,12 +60,13 @@ async function install(req: Request) {
 function remove(req: Request<{ noteId: string }>) {
     assertScriptingEnabled();
 
-    const installed = listScriptModules().find((module) => module.noteId === req.params.noteId);
+    const installed = findScriptModuleByNoteId(req.params.noteId);
     if (!installed) {
         throw new NotFoundError(`No script module '${req.params.noteId}' is installed.`);
     }
 
     deleteScriptModule(installed.spec);
+    forgetScriptModule(installed.noteId);
 }
 
 function summarize(module: StoredScriptModule): ScriptModuleSummary {
