@@ -1,7 +1,6 @@
 import "./script_modules.css";
 
 import type { ScriptModuleSearchResult, ScriptModuleSummary } from "@triliumnext/commons";
-import type { TargetedKeyboardEvent } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
@@ -10,10 +9,9 @@ import { formatSize } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
 import Alert from "../react/Alert";
 import Button from "../react/Button";
-import FormAutocomplete from "../react/FormAutocomplete";
+import FormEntryAutocomplete, { type AutocompleteEntry } from "../react/FormEntryAutocomplete";
 import FormGroup from "../react/FormGroup";
 import { useTriliumEvent } from "../react/hooks";
-import Icon from "../react/Icon";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
 
@@ -23,23 +21,12 @@ const MIN_QUERY_LENGTH = 2;
 /** The key of the row reporting on a search, which only ever appears once. */
 const STATUS_KEY = "search-status";
 
-/**
- * One row of the dropdown. `key` identifies it, since `FormAutocomplete` items are strings and two
- * rows can read the same.
- */
-type SearchEntry = {
-    key: string;
-    label: string;
-    /** A boxicons class. */
-    icon: string;
-    /** A second line under the first: what a package says about itself, or what a search hit. */
-    detail?: string;
-} & (
+type SearchEntry = AutocompleteEntry & (
     /** Searches the registry for `query`. */
     | { kind: "search"; query: string }
     /** A package the registry answered with; picking it puts its exact version in the field. */
     | { kind: "package"; result: ScriptModuleSearchResult }
-    /** Reports on a search; picking it does nothing. */
+    /** Reports on a search. */
     | { kind: "info" }
 );
 
@@ -58,7 +45,8 @@ export interface SearchRun {
  * The registry is not searched as the user types: a search leaves the instance and tells npmjs.com
  * what someone is looking for. It sits in the dropdown as a row that runs it when picked, the way
  * the geo map offers its geocoder. Picking a result puts `name@version` in the field, which is what
- * `Install` then fetches.
+ * `Install` then fetches — so the field is left to Enter and the rows are taken by pointer or arrow
+ * key.
  */
 export default function ScriptModulesDialog() {
     const [ shown, setShown ] = useState(false);
@@ -67,10 +55,6 @@ export default function ScriptModulesDialog() {
     const [ installing, setInstalling ] = useState(false);
     const [ error, setError ] = useState<string>();
     const [ run, setRun ] = useState<SearchRun>();
-    // Empties the dropdown once a package has been taken, which is what closes it under
-    // `keepOpenOnPick`. Typing again clears it.
-    const [ dismissed, setDismissed ] = useState(false);
-    const entriesByKey = useRef(new Map<string, SearchEntry>());
     // Discards a search superseded by a later one, since each reports through the same state.
     const latestRun = useRef(0);
 
@@ -82,7 +66,6 @@ export default function ScriptModulesDialog() {
         setError(undefined);
         setSpec("");
         setRun(undefined);
-        setDismissed(false);
         setShown(true);
     });
 
@@ -105,66 +88,15 @@ export default function ScriptModulesDialog() {
         }
     }, []);
 
-    const source = useCallback(async (currentQuery: string) => {
-        const trimmed = currentQuery.trim();
-        if (dismissed || trimmed.length < MIN_QUERY_LENGTH) {
-            entriesByKey.current = new Map();
-            return [];
-        }
+    const entries = useCallback(async (query: string) => searchEntries(run, query), [ run ]);
 
-        const entries = searchEntries(run, trimmed);
-        entriesByKey.current = new Map(entries.map((entry) => [ entry.key, entry ]));
-        return entries.map((entry) => entry.key);
-    }, [ run, dismissed ]);
-
-    const changeSpec = useCallback((newSpec: string) => {
-        setDismissed(false);
-        setSpec(newSpec);
-    }, []);
-
-    const pickEntry = useCallback((key: string) => {
-        const entry = entriesByKey.current.get(key);
-        if (!entry) return;
-
+    const pickEntry = useCallback((entry: SearchEntry) => {
         if (entry.kind === "search") {
             void runSearch(entry.query);
         } else if (entry.kind === "package") {
             setSpec(`${entry.result.name}@${entry.result.version}`);
-            setDismissed(true);
         }
     }, [ runSearch ]);
-
-    /**
-     * Puts the rows back on offer, so a query that was right can be looked at again without being
-     * retyped. Only where there is nothing on offer, since the Enter that takes a row arrives here
-     * too and would otherwise undo the dismissal it has just caused.
-     */
-    const offerRowsAgain = useCallback(() => {
-        if (!entriesByKey.current.size) {
-            setDismissed(false);
-        }
-    }, []);
-
-    const offerRowsOnEnter = useCallback((e: TargetedKeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            offerRowsAgain();
-        }
-    }, [ offerRowsAgain ]);
-
-    const renderEntry = useCallback((key: string) => {
-        const entry = entriesByKey.current.get(key);
-        if (!entry) return key;
-
-        return (
-            <span className={`script-module-entry script-module-entry-${entry.kind}`}>
-                <Icon icon={entry.icon} />
-                <span className="script-module-entry-lines">
-                    <span className="script-module-entry-name">{entry.label}</span>
-                    {entry.detail && <span className="script-module-entry-detail">{entry.detail}</span>}
-                </span>
-            </span>
-        );
-    }, []);
 
     async function install() {
         const wanted = spec.trim();
@@ -176,7 +108,6 @@ export default function ScriptModulesDialog() {
             await server.post<ScriptModuleSummary>("script-modules", { spec: wanted });
             setSpec("");
             setRun(undefined);
-            setDismissed(false);
             await refresh();
         } catch (e) {
             setError(errorMessage(e));
@@ -210,17 +141,14 @@ export default function ScriptModulesDialog() {
                     name="script-module-spec"
                     description={t("script_modules.spec_description")}
                 >
-                    <FormAutocomplete
+                    <FormEntryAutocomplete
                         className="script-module-spec-input"
                         currentValue={spec}
-                        onChange={changeSpec}
+                        onChange={setSpec}
+                        entries={entries}
                         onPick={pickEntry}
-                        source={source}
-                        renderItem={renderEntry}
+                        minQueryLength={MIN_QUERY_LENGTH}
                         openOnFocus
-                        keepOpenOnPick
-                        onFocus={offerRowsAgain}
-                        onKeyDown={offerRowsOnEnter}
                         placeholder={t("script_modules.spec_placeholder")}
                         autoFocus
                     />
@@ -277,7 +205,9 @@ export function searchEntries(run: SearchRun | undefined, query: string): Search
             key: "search",
             query,
             label: t("script_modules.search_online", { query }),
-            icon: "bx bx-search-alt"
+            icon: "bx bx-search-alt",
+            className: "script-module-entry-search",
+            keepsListOpen: true
         } ];
     }
 
@@ -297,13 +227,14 @@ export function searchEntries(run: SearchRun | undefined, query: string): Search
         label: `${result.name}@${result.version}`,
         icon: "bx bx-cube",
         detail: result.description,
+        className: "script-module-entry-package",
         result
     }));
 }
 
 /** A row that reports on a search rather than offering a package. */
 function infoEntry(label: string, icon: string, detail?: string): SearchEntry {
-    return { kind: "info", key: STATUS_KEY, label, icon, detail };
+    return { kind: "info", key: STATUS_KEY, label, icon, detail, inert: true };
 }
 
 /** Pulls the server's message out of a rejected request, which arrives as the raw response body. */
