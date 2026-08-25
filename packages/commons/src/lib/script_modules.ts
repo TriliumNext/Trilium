@@ -18,3 +18,11 @@ export interface ScriptModuleSummary {
     /** When the install last wrote it, as a UTC datetime string. */
     dateModified: string;
 }
+
+/** One package the npm registry offered for a search. */
+export interface ScriptModuleSearchResult {
+    name: string;
+    /** Latest published version, which is what installing this result pins. */
+    version: string;
+    description?: string;
+}

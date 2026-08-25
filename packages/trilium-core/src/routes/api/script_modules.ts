@@ -1,7 +1,8 @@
-import type { ScriptModuleSummary } from "@triliumnext/commons";
+import type { ScriptModuleSearchResult, ScriptModuleSummary } from "@triliumnext/commons";
 import type { Request } from "express";
 
 import { NotFoundError, ValidationError } from "../../errors.js";
+import { searchPackages } from "../../services/script_modules/npm_registry.js";
 import { parsePackageSpec, resolveScriptModule } from "../../services/script_modules/provider.js";
 import {
     deleteScriptModule,
@@ -15,6 +16,24 @@ import { getSql } from "../../services/sql/index.js";
 
 function list(): ScriptModuleSummary[] {
     return listScriptModules().map(summarize);
+}
+
+/**
+ * Asks the package registry what matches a query.
+ *
+ * A route of its own rather than part of the install, because it is a separate decision: it tells a
+ * third party what someone is looking for, and the dialog reaches it only when the search button is
+ * pressed.
+ */
+async function search(req: Request): Promise<ScriptModuleSearchResult[]> {
+    assertScriptingEnabled();
+
+    const query = req.query.q;
+    if (typeof query !== "string") {
+        throw new ValidationError("A search needs something to search for.");
+    }
+
+    return searchPackages(query);
 }
 
 /**
@@ -60,6 +79,7 @@ function summarize(module: StoredScriptModule): ScriptModuleSummary {
 
 export default {
     list,
+    search,
     install,
     remove
 };

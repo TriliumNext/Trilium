@@ -1,6 +1,6 @@
 import "./script_modules.css";
 
-import type { ScriptModuleSummary } from "@triliumnext/commons";
+import type { ScriptModuleSearchResult, ScriptModuleSummary } from "@triliumnext/commons";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
@@ -11,6 +11,7 @@ import Alert from "../react/Alert";
 import Button from "../react/Button";
 import FormGroup from "../react/FormGroup";
 import FormTextBox from "../react/FormTextBox";
+import LinkButton from "../react/LinkButton";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
@@ -21,6 +22,8 @@ export default function ScriptModulesDialog() {
     const [ spec, setSpec ] = useState("");
     const [ installing, setInstalling ] = useState(false);
     const [ error, setError ] = useState<string>();
+    const [ searching, setSearching ] = useState(false);
+    const [ results, setResults ] = useState<ScriptModuleSearchResult[]>();
 
     const refresh = useCallback(async () => {
         setModules(await server.get<ScriptModuleSummary[]>("script-modules"));
@@ -29,8 +32,30 @@ export default function ScriptModulesDialog() {
     useTriliumEvent("showScriptModules", () => {
         setError(undefined);
         setSpec("");
+        setResults(undefined);
         setShown(true);
     });
+
+    /**
+     * Asks the registry what matches what is in the box. Only ever from this button: a search
+     * leaves the instance and tells npmjs.com what someone is looking for, which is not something
+     * typing should start.
+     */
+    async function search() {
+        const query = spec.trim();
+        if (!query || searching) return;
+
+        setSearching(true);
+        setError(undefined);
+        try {
+            const url = `script-modules/search?q=${encodeURIComponent(query)}`;
+            setResults(await server.get<ScriptModuleSearchResult[]>(url));
+        } catch (e) {
+            setError(errorMessage(e));
+        } finally {
+            setSearching(false);
+        }
+    }
 
     useEffect(() => {
         if (shown) void refresh();
@@ -45,6 +70,7 @@ export default function ScriptModulesDialog() {
         try {
             await server.post<ScriptModuleSummary>("script-modules", { spec: wanted });
             setSpec("");
+            setResults(undefined);
             await refresh();
         } catch (e) {
             setError(errorMessage(e));
@@ -74,7 +100,10 @@ export default function ScriptModulesDialog() {
             footer={<Button text={t("modal.close")} onClick={() => setShown(false)} />}
         >
             <div className="script-modules-install">
-                <FormGroup name="script-module-spec" description={t("script_modules.spec_description")}>
+                <FormGroup
+                    name="script-module-spec"
+                    description={t("script_modules.spec_description")}
+                >
                     <FormTextBox
                         currentValue={spec}
                         onChange={setSpec}
@@ -83,6 +112,11 @@ export default function ScriptModulesDialog() {
                     />
                 </FormGroup>
                 <Button
+                    text={searching ? t("script_modules.searching") : t("script_modules.search")}
+                    disabled={searching || !spec.trim()}
+                    onClick={() => void search()}
+                />
+                <Button
                     text={installing ? t("script_modules.installing") : t("script_modules.install")}
                     disabled={installing || !spec.trim()}
                     kind="primary"
@@ -90,6 +124,22 @@ export default function ScriptModulesDialog() {
             </div>
 
             {error && <Alert type="danger">{error}</Alert>}
+
+            {results && (results.length > 0
+                ? <ul className="script-modules-results">
+                    {results.map((result) => (
+                        <li key={result.name}>
+                            <LinkButton
+                                text={`${result.name}@${result.version}`}
+                                onClick={() => setSpec(`${result.name}@${result.version}`)}
+                            />
+                            {result.description &&
+                                <span className="script-module-detail">{result.description}</span>}
+                        </li>
+                    ))}
+                </ul>
+                : <NoItems icon="bx bx-search" text={t("script_modules.no_results")} size="small" />
+            )}
 
             {modules.length > 0
                 ? <ul className="script-modules-list">
@@ -111,7 +161,11 @@ export default function ScriptModulesDialog() {
                         </li>
                     ))}
                 </ul>
-                : <NoItems icon="bx bx-cube" text={t("script_modules.none_installed")} size="small" />}
+                : <NoItems
+                    icon="bx bx-cube" size="small"
+                    text={t("script_modules.none_installed")}
+                />
+            }
         </Modal>
     );
 }
