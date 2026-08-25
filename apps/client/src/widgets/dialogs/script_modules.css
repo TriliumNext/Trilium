@@ -45,58 +45,12 @@
 }
 
 /* The dropdown is portalled to the body, so these are not scoped under .script-modules-dialog. */
-.form-autocomplete-dropdown .script-module-entry {
-    display: flex;
-    /* The icon sits on the first line of a row that runs to two. */
-    align-items: flex-start;
-    gap: 6px;
-    overflow: hidden;
-}
-
-.form-autocomplete-dropdown .script-module-entry .tn-icon {
-    flex-shrink: 0;
-    opacity: 0.7;
-    line-height: 1.4;
-}
-
-/* Overrides the single-line ellipsis in FormAutocomplete.css, so a description can wrap. */
-.form-autocomplete-dropdown .form-autocomplete-item:has(.script-module-entry) {
-    white-space: normal;
-    padding-block: 6px;
-}
-
-.form-autocomplete-dropdown .script-module-entry-lines {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    flex: 1;
-}
-
-.form-autocomplete-dropdown .script-module-entry-package .script-module-entry-name {
+.form-autocomplete-dropdown .script-module-entry-package .form-autocomplete-entry-name {
     font-family: var(--monospace-font-family);
 }
 
-.form-autocomplete-dropdown .script-module-entry-detail {
-    font-size: 0.85em;
-    opacity: 0.7;
-    /* Two lines at most: an npm description can run to a paragraph. */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-/* The rows that are the registry's to answer for are set apart from the packages they produce. */
-.form-autocomplete-dropdown .script-module-entry-search,
-.form-autocomplete-dropdown .script-module-entry-info {
+/* The row that goes and asks the registry is set apart from the packages it produces. */
+.form-autocomplete-dropdown .script-module-entry-search {
     font-style: italic;
     opacity: 0.85;
-}
-
-/* A report is not a choice, so it neither highlights nor takes a pointer. */
-.form-autocomplete-dropdown .form-autocomplete-item:has(.script-module-entry-info) {
-    cursor: default;
-    background: none;
-    color: inherit;
 }

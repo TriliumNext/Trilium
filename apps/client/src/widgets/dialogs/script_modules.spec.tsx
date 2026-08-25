@@ -83,7 +83,7 @@ function rows() {
 }
 
 function labels() {
-    return rows().map((row) => row.querySelector(".script-module-entry-name")?.textContent ?? row.textContent);
+    return rows().map((row) => row.querySelector(".form-autocomplete-entry-name")?.textContent ?? row.textContent);
 }
 
 async function pick(index: number) {
