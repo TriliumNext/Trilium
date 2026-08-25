@@ -2,7 +2,7 @@ import { transform } from "sucrase";
 
 import becca from "../../becca/becca.js";
 import { getLog } from "../log.js";
-import { requireHostModule } from "./host_require.js";
+import { canRequireHostModules, requireHostModule } from "./host_require.js";
 import {
     formatPackageSpec,
     listScriptModules,
@@ -31,29 +31,58 @@ export function requireScriptModule(moduleName: string): { exports: unknown } | 
 /**
  * The installed package a specifier names.
  *
- * `cheerio@1.1.2` names one install; `cheerio` names whichever version is installed, which is an
- * answer only while one is. Asking for a package installed twice is an error rather than a guess,
- * since the two versions are what the caller was distinguishing between.
+ * `cheerio@1.1.2` names one version; `cheerio` names whichever version is installed, which is an
+ * answer only while one is. Asking for a package installed at two versions is an error rather than
+ * a guess, since the two versions are what the caller was distinguishing between.
+ *
+ * Two *builds* of one version are not that: they are the same package compiled for different
+ * runtimes, so the one that runs here is chosen without asking, and the Node build wins where Node
+ * can run it. A `require()` names a package, not a build.
  */
 function resolveScriptModule(moduleName: string): StoredScriptModule | undefined {
-    const installed = listScriptModules();
+    return selectInstalledModule(listScriptModules(), moduleName, canRequireHostModules());
+}
 
-    const exact = installed.find((module) => formatPackageSpec(module.spec) === moduleName);
-    if (exact) {
-        return exact;
+/**
+ * Picks the install a specifier names out of everything installed.
+ *
+ * Separate from reading the database so the rule can be checked on its own, `canRunNode` included —
+ * whether this runtime has a module loader is not something a test can arrange by hand.
+ */
+export function selectInstalledModule(
+    all: StoredScriptModule[],
+    moduleName: string,
+    canRunNode: boolean
+): StoredScriptModule | undefined {
+    const installed = all.filter((module) => names(module, moduleName));
+    if (installed.length === 0) {
+        return undefined;
     }
 
-    const byName = installed.filter((module) =>
-        `${module.spec.name}${module.spec.subpath ?? ""}` === moduleName);
-    if (byName.length > 1) {
-        const versions = byName.map((module) => formatPackageSpec(module.spec)).join(", ");
+    const runnable = installed.filter((module) => module.spec.target !== "node" || canRunNode);
+    if (runnable.length === 0) {
         throw new Error(
-            `'${moduleName}' is installed more than once (${versions}). ` +
+            `'${moduleName}' is installed only as a Node.js build, which this runtime ` +
+            `cannot run. ` +
+            `Install the portable build of it as well.`
+        );
+    }
+
+    const versions = new Set(runnable.map((module) => formatPackageSpec(module.spec)));
+    if (versions.size > 1) {
+        throw new Error(
+            `'${moduleName}' is installed more than once (${[ ...versions ].sort().join(", ")}). ` +
             `Ask for one of them by name and version.`
         );
     }
 
-    return byName[0];
+    return runnable.find((module) => module.spec.target === "node") ?? runnable[0];
+}
+
+/** Whether a specifier names this install, by name and version or by name alone. */
+function names(module: StoredScriptModule, moduleName: string): boolean {
+    return formatPackageSpec(module.spec) === moduleName
+        || `${module.spec.name}${module.spec.subpath ?? ""}` === moduleName;
 }
 
 /** Drops what a package loaded, for a package that is being removed. */
@@ -126,11 +155,13 @@ function evaluate(module: StoredScriptModule): unknown {
         return record.exports;
     }
 
+    const allowBlocked = module.spec.target === "node";
+
     function requireFrom(fromFile: string) {
         return (specifier: string): unknown => {
             const sibling = siblingName(specifier);
             if (sibling === undefined) {
-                return requireHostModule(specifier);
+                return requireHostModule(specifier, { allowBlocked });
             }
             if (!held.has(sibling)) {
                 throw new Error(

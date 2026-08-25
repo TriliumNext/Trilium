@@ -7,7 +7,7 @@ import { SCRIPT_MODULES_ROOT } from "../hidden_subtree.js";
 import noteService from "../notes.js";
 import { decodeUtf8 } from "../utils/binary.js";
 import { hashedBlobId } from "../utils/index.js";
-import type { PackageSpec, ScriptModuleArtifact } from "./provider.js";
+import type { ModuleTarget, PackageSpec, ScriptModuleArtifact } from "./provider.js";
 
 /** Role of the attachments holding a module's files, so they read as source rather than media. */
 export const MODULE_FILE_ROLE: AttachmentRole = "scriptModule";
@@ -68,7 +68,7 @@ export function storeScriptModule(artifact: ScriptModuleArtifact): StoredScriptM
         ({ note } = noteService.createNewNote({
             noteId,
             parentNoteId: SCRIPT_MODULES_ROOT,
-            title: formatPackageSpec(artifact.spec),
+            title: scriptModuleTitle(artifact.spec),
             type: "code",
             mime: "application/json",
             content,
@@ -173,13 +173,29 @@ export function deleteScriptModule(spec: PackageSpec): boolean {
  * that a note id belonging to a module is recognizable as one.
  */
 export function scriptModuleNoteId(spec: PackageSpec): string {
-    return `sm${hashedBlobId(formatPackageSpec(spec)).slice(0, 10)}`;
+    const identity = spec.target === "portable"
+        ? formatPackageSpec(spec)
+        : `${formatPackageSpec(spec)}#${spec.target}`;
+
+    return `sm${hashedBlobId(identity).slice(0, 10)}`;
 }
 
-/** Writes a spec back in the form it was parsed from: `@scope/name@version/subpath`. */
+/**
+ * Writes a spec back in the form it was parsed from: `@scope/name@version/subpath`.
+ *
+ * The build is not part of it. This is what a script names in `require()`, and which build answers
+ * that is the runtime's business rather than something a script should have to spell.
+ */
 export function formatPackageSpec(spec: PackageSpec): string {
     const version = spec.version ? `@${spec.version}` : "";
     return `${spec.name}${version}${spec.subpath ?? ""}`;
+}
+
+/** How an installed package is titled, where the build has to be told apart at a glance. */
+export function scriptModuleTitle(spec: PackageSpec): string {
+    return spec.target === "node"
+        ? `${formatPackageSpec(spec)} (Node.js)`
+        : formatPackageSpec(spec);
 }
 
 /** What a module note's content holds. The sources live in attachments, not here. */
@@ -255,10 +271,13 @@ export function parseManifest(content: string): ScriptModuleManifest | undefined
     if (typeof providerId !== "string" || typeof entry !== "string" || !Array.isArray(files)) {
         return undefined;
     }
+
     const asSpec = spec as PackageSpec | null;
     if (typeof spec !== "object" || asSpec === null || typeof asSpec.name !== "string") {
         return undefined;
     }
+    // A note written before builds were told apart holds the portable one.
+    const target: ModuleTarget = asSpec.target === "node" ? "node" : "portable";
 
     const named: { name: string; url: string }[] = [];
     for (const file of files) {
@@ -276,7 +295,7 @@ export function parseManifest(content: string): ScriptModuleManifest | undefined
         return undefined;
     }
 
-    return { spec: spec as PackageSpec, providerId, entry, files: named };
+    return { spec: { ...asSpec, target }, providerId, entry, files: named };
 }
 
 /** Lists a module's file attachments with their stored length, but without their content. */

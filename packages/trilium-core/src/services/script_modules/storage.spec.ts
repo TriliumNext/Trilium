@@ -27,7 +27,7 @@ function artifact(spec: string, files: SourceFile[], entry?: string): ScriptModu
     const [name, version] = spec.split("@");
     return {
         providerId: "esm.sh",
-        spec: { name, version },
+        spec: { name, version, target: "portable" },
         entry: entry ?? files[0].name,
         files: files.map((file) => ({ ...file, url: `https://esm.sh/${file.name}` }))
     };
@@ -51,18 +51,18 @@ describe("script module storage (real DB)", () => {
     });
 
     it("derives a stable note id from the package alone", () => {
-        const cheerio = { name: "cheerio", version: "1.1.2" };
+        const cheerio = { name: "cheerio", version: "1.1.2", target: "portable" as const };
 
         expect(scriptModuleNoteId(cheerio)).toBe(scriptModuleNoteId({ ...cheerio }));
         expect(scriptModuleNoteId(cheerio)).toMatch(/^sm[a-zA-Z0-9]{10}$/);
-        const other = { name: "cheerio", version: "1.1.3" };
+        const other = { name: "cheerio", version: "1.1.3", target: "portable" as const };
         expect(scriptModuleNoteId(cheerio)).not.toBe(scriptModuleNoteId(other));
-        expect(scriptModuleNoteId(cheerio)).not.toBe(scriptModuleNoteId({ name: "cheerio" }));
+        expect(scriptModuleNoteId(cheerio)).not.toBe(scriptModuleNoteId({ name: "cheerio", target: "portable" as const }));
 
         expect(formatPackageSpec(cheerio)).toBe("cheerio@1.1.2");
-        const scoped = { name: "@scope/pkg", version: "2.0.0", subpath: "/sub" };
+        const scoped = { name: "@scope/pkg", version: "2.0.0", subpath: "/sub", target: "portable" as const };
         expect(formatPackageSpec(scoped)).toBe("@scope/pkg@2.0.0/sub");
-        expect(formatPackageSpec({ name: "cheerio" })).toBe("cheerio");
+        expect(formatPackageSpec({ name: "cheerio", target: "portable" as const })).toBe("cheerio");
     });
 
     it("stores an artifact and reads it back whole", () => {
@@ -71,7 +71,7 @@ describe("script module storage (real DB)", () => {
             { name: "dep.mjs", source: DEP_SOURCE }
         ]);
 
-        expect(stored.noteId).toBe(scriptModuleNoteId({ name: "alpha", version: "1.0.0" }));
+        expect(stored.noteId).toBe(scriptModuleNoteId({ name: "alpha", version: "1.0.0", target: "portable" as const }));
         expect(stored.providerId).toBe("esm.sh");
         expect(stored.entry).toBe("entry.mjs");
         expect(stored.size).toBe(ENTRY_SOURCE.length + DEP_SOURCE.length);
@@ -87,7 +87,7 @@ describe("script module storage (real DB)", () => {
         expect(note.getAttachmentsByRole(MODULE_FILE_ROLE).map((a) => a.title).sort())
             .toEqual(["dep.mjs", "entry.mjs"]);
 
-        const read = findScriptModule({ name: "alpha", version: "1.0.0" });
+        const read = findScriptModule({ name: "alpha", version: "1.0.0", target: "portable" as const });
         expect(read?.files).toEqual([
             {
                 name: "entry.mjs",
@@ -105,7 +105,7 @@ describe("script module storage (real DB)", () => {
     });
 
     it("answers undefined for a package that was never installed", () => {
-        expect(findScriptModule({ name: "never-installed", version: "9.9.9" })).toBeUndefined();
+        expect(findScriptModule({ name: "never-installed", version: "9.9.9", target: "portable" as const })).toBeUndefined();
     });
 
     it("replaces a package in place, dropping files the rebuild no longer names", () => {
@@ -113,7 +113,7 @@ describe("script module storage (real DB)", () => {
             { name: "entry.mjs", source: "export const v = 1;" },
             { name: "old.mjs", source: "export const old = 1;" }
         ]);
-        const noteId = scriptModuleNoteId({ name: "beta", version: "1.0.0" });
+        const noteId = scriptModuleNoteId({ name: "beta", version: "1.0.0", target: "portable" as const });
 
         const restored = store("beta@1.0.0", [{ name: "entry.mjs", source: "export const v=2;" }]);
 
@@ -121,7 +121,7 @@ describe("script module storage (real DB)", () => {
         expect(restored.noteId).toBe(noteId);
         expect(becca.notes[noteId].getAttachmentsByRole(MODULE_FILE_ROLE).map((a) => a.title))
             .toEqual(["entry.mjs"]);
-        expect(findScriptModule({ name: "beta", version: "1.0.0" })?.files).toEqual([
+        expect(findScriptModule({ name: "beta", version: "1.0.0", target: "portable" as const })?.files).toEqual([
             {
                 name: "entry.mjs",
                 url: "https://esm.sh/entry.mjs",
@@ -159,7 +159,7 @@ describe("script module storage (real DB)", () => {
         const attachment = becca.notes[stored.noteId].getAttachmentByTitle("dep.mjs");
         getContext().init(() => attachment?.markAsDeleted());
 
-        expect(findScriptModule({ name: "epsilon", version: "1.0.0" })).toBeUndefined();
+        expect(findScriptModule({ name: "epsilon", version: "1.0.0", target: "portable" as const })).toBeUndefined();
     });
 
     it("reads a file's source only when it is asked for", () => {
@@ -202,7 +202,7 @@ describe("script module storage (real DB)", () => {
     it("removes an installed package, and says when there was none", () => {
         store("zeta@1.0.0", [{ name: "entry.mjs", source: "export const z = 1;" }]);
 
-        const zeta = { name: "zeta", version: "1.0.0" };
+        const zeta = { name: "zeta", version: "1.0.0", target: "portable" as const };
         expect(getContext().init(() => deleteScriptModule(zeta))).toBe(true);
         expect(findScriptModule(zeta)).toBeUndefined();
         expect(getContext().init(() => deleteScriptModule(zeta))).toBe(false);
@@ -211,7 +211,7 @@ describe("script module storage (real DB)", () => {
 
 describe("parseManifest", () => {
     const valid = {
-        spec: { name: "cheerio", version: "1.1.2" },
+        spec: { name: "cheerio", version: "1.1.2", target: "portable" as const },
         providerId: "esm.sh",
         entry: "entry.mjs",
         files: [{ name: "entry.mjs", url: "https://esm.sh/entry.mjs" }]

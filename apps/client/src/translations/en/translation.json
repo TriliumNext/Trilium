@@ -4066,6 +4066,10 @@
     "search_online": "Search npmjs.com for \"{{- query}}\"",
     "searching_online": "Searching npmjs.com…",
     "search_failed": "Couldn't search for packages",
-    "no_results": "No packages found."
+    "no_results": "No packages found.",
+    "node_build": "Node.js build",
+    "node_build_hint": "Installs the real package instead of a browser build, so it can use Node.js APIs. It runs on the server and desktop app only, not in the browser or on mobile.",
+    "node_badge": "Node.js",
+    "node_badge_hint": "Runs on the server and desktop app only."
   }
 }

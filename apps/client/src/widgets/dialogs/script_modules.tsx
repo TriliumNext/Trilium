@@ -8,7 +8,9 @@ import server from "../../services/server";
 import { formatSize } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
 import Alert from "../react/Alert";
+import { Badge } from "../react/Badge";
 import Button from "../react/Button";
+import FormCheckbox from "../react/FormCheckbox";
 import FormEntryAutocomplete, { type AutocompleteEntry } from "../react/FormEntryAutocomplete";
 import FormGroup from "../react/FormGroup";
 import { useTriliumEvent } from "../react/hooks";
@@ -52,6 +54,7 @@ export default function ScriptModulesDialog() {
     const [ shown, setShown ] = useState(false);
     const [ modules, setModules ] = useState<ScriptModuleSummary[]>([]);
     const [ spec, setSpec ] = useState("");
+    const [ nodeBuild, setNodeBuild ] = useState(false);
     const [ installing, setInstalling ] = useState(false);
     const [ error, setError ] = useState<string>();
     const [ run, setRun ] = useState<SearchRun>();
@@ -65,6 +68,7 @@ export default function ScriptModulesDialog() {
     useTriliumEvent("showScriptModules", () => {
         setError(undefined);
         setSpec("");
+        setNodeBuild(false);
         setRun(undefined);
         setShown(true);
     });
@@ -105,7 +109,10 @@ export default function ScriptModulesDialog() {
         setInstalling(true);
         setError(undefined);
         try {
-            await server.post<ScriptModuleSummary>("script-modules", { spec: wanted });
+            await server.post<ScriptModuleSummary>("script-modules", {
+                spec: wanted,
+                target: nodeBuild ? "node" : "portable"
+            });
             setSpec("");
             setRun(undefined);
             await refresh();
@@ -160,6 +167,14 @@ export default function ScriptModulesDialog() {
                 />
             </div>
 
+            <FormCheckbox
+                name="script-module-node-build"
+                label={t("script_modules.node_build")}
+                hint={t("script_modules.node_build_hint")}
+                currentValue={nodeBuild}
+                onChange={setNodeBuild}
+            />
+
             {error && <Alert type="danger">{error}</Alert>}
 
             {modules.length > 0
@@ -167,6 +182,13 @@ export default function ScriptModulesDialog() {
                     {modules.map((module) => (
                         <li key={module.noteId}>
                             <span className="script-module-spec">{module.spec}</span>
+                            {module.target === "node" &&
+                                <Badge
+                                    className="script-module-node-badge"
+                                    text={t("script_modules.node_badge")}
+                                    tooltip={t("script_modules.node_badge_hint")}
+                                    outline
+                                />}
                             <span className="script-module-detail">
                                 {t("script_modules.module_detail", {
                                     provider: module.providerId,

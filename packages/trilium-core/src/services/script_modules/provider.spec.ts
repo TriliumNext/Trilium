@@ -52,19 +52,19 @@ function fileNamed(artifact: ScriptModuleArtifact, name: string) {
 
 describe("parsePackageSpec", () => {
     it("splits name, version and subpath", () => {
-        expect(parsePackageSpec("cheerio")).toEqual({ name: "cheerio" });
-        expect(parsePackageSpec("  cheerio@1.1.2  ")).toEqual({ name: "cheerio", version: "1.1.2" });
-        expect(parsePackageSpec("cheerio@latest")).toEqual({ name: "cheerio", version: "latest" });
-        expect(parsePackageSpec("cheerio@^1.0.0")).toEqual({ name: "cheerio", version: "^1.0.0" });
-        expect(parsePackageSpec("cheerio@1.1.2/lib/static")).toEqual({ name: "cheerio", version: "1.1.2", subpath: "/lib/static" });
-        expect(parsePackageSpec("cheerio/lib/static")).toEqual({ name: "cheerio", subpath: "/lib/static" });
+        expect(parsePackageSpec("cheerio")).toEqual({ name: "cheerio", target: "portable" });
+        expect(parsePackageSpec("  cheerio@1.1.2  ")).toEqual({ name: "cheerio", version: "1.1.2", target: "portable" });
+        expect(parsePackageSpec("cheerio@latest")).toEqual({ name: "cheerio", version: "latest", target: "portable" });
+        expect(parsePackageSpec("cheerio@^1.0.0")).toEqual({ name: "cheerio", version: "^1.0.0", target: "portable" });
+        expect(parsePackageSpec("cheerio@1.1.2/lib/static")).toEqual({ name: "cheerio", version: "1.1.2", subpath: "/lib/static", target: "portable" });
+        expect(parsePackageSpec("cheerio/lib/static")).toEqual({ name: "cheerio", subpath: "/lib/static", target: "portable" });
     });
 
     it("keeps the scope with the name", () => {
-        expect(parsePackageSpec("@scope/pkg")).toEqual({ name: "@scope/pkg" });
-        expect(parsePackageSpec("@scope/pkg@2.0.0")).toEqual({ name: "@scope/pkg", version: "2.0.0" });
-        expect(parsePackageSpec("@scope/pkg@2.0.0/sub")).toEqual({ name: "@scope/pkg", version: "2.0.0", subpath: "/sub" });
-        expect(parsePackageSpec("@scope/pkg/sub")).toEqual({ name: "@scope/pkg", subpath: "/sub" });
+        expect(parsePackageSpec("@scope/pkg")).toEqual({ name: "@scope/pkg", target: "portable" });
+        expect(parsePackageSpec("@scope/pkg@2.0.0")).toEqual({ name: "@scope/pkg", version: "2.0.0", target: "portable" });
+        expect(parsePackageSpec("@scope/pkg@2.0.0/sub")).toEqual({ name: "@scope/pkg", version: "2.0.0", subpath: "/sub", target: "portable" });
+        expect(parsePackageSpec("@scope/pkg/sub")).toEqual({ name: "@scope/pkg", subpath: "/sub", target: "portable" });
     });
 
     it("refuses anything that would not survive being put into a URL", () => {
@@ -105,7 +105,11 @@ describe("jsDelivr provider", () => {
 describe("resolveScriptModule", () => {
     /** A provider that refuses, standing in for a build service that cannot build a version. */
     function refusing(id: string): ScriptModuleProvider {
-        return { id, resolve: async () => { throw new Error(`${id} has no build`); } };
+        return {
+            id,
+            targets: [ "portable" ] as const,
+            resolve: async () => { throw new Error(`${id} has no build`); }
+        };
     }
 
     it("falls back to the next provider and records which one answered", async () => {
@@ -144,7 +148,7 @@ describe("esm.sh provider", () => {
 
         expect(requested).toEqual(["https://esm.sh/cheerio@1.1.2?bundle&target=es2022"]);
         expect(artifact.providerId).toBe("esm.sh");
-        expect(artifact.spec).toEqual({ name: "cheerio", version: "1.1.2" });
+        expect(artifact.spec).toEqual({ name: "cheerio", version: "1.1.2", target: "portable" });
         expect(artifact.files).toHaveLength(1);
         expect(fileNamed(artifact, artifact.entry).source).toBe("export const load = 1;");
     });
