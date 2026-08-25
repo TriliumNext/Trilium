@@ -39,9 +39,11 @@ describe("Script modules API (core)", () => {
         initRequest(fakeRequestProvider({
             fetchResource: async (url) => {
                 const source = served.get(url);
-                return source === undefined
-                    ? { status: 404, ok: false, contentType: "text/plain", bytes: encodeUtf8("no") }
-                    : { status: 200, ok: true, contentType: "application/javascript", bytes: encodeUtf8(source) };
+                if (source === undefined) {
+                    return { status: 404, ok: false, contentType: "text/plain", bytes: encodeUtf8("no") };
+                }
+                const contentType = url.includes("registry.npmjs.org") ? "application/json" : "application/javascript";
+                return { status: 200, ok: true, contentType, bytes: encodeUtf8(source) };
             }
         }));
     });
@@ -82,6 +84,19 @@ describe("Script modules API (core)", () => {
         expect((await api.post("/api/script-modules", { body: {} })).status).toBe(400);
         expect((await api.post("/api/script-modules", { body: { spec: "pkg name" } })).status).toBe(400);
         expect((await api.post("/api/script-modules", { body: { spec: "gone@1.0.0" } })).status).toBe(400);
+    });
+
+    it("searches the registry only when asked, and refuses a query it cannot use", async () => {
+        served.set("https://registry.npmjs.org/-/v1/search?text=cheerio&size=10", JSON.stringify({
+            objects: [{ package: { name: "cheerio", version: "1.2.0", description: "Parses HTML" } }]
+        }));
+
+        const found = await api.get<{ name: string; version: string }[]>("/api/script-modules/search?q=cheerio");
+        expect(found.status).toBe(200);
+        expect(found.body).toEqual([{ name: "cheerio", version: "1.2.0", description: "Parses HTML" }]);
+
+        expect((await api.get("/api/script-modules/search")).status).toBe(400);
+        expect((await api.get("/api/script-modules/search?q=%20")).status).toBe(400);
     });
 
     it("404s when removing something that is not installed", async () => {

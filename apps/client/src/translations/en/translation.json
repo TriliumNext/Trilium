@@ -4060,8 +4060,11 @@
     "installing": "Installing…",
     "remove": "Remove",
     "spec_placeholder": "cheerio@1.1.2",
-    "spec_description": "An npm package and an exact version. Backend scripts can then require it by name.",
+    "spec_description": "An npm package and an exact version. Search asks npmjs.com; nothing leaves this instance until you press it.",
     "none_installed": "No packages installed yet.",
-    "module_detail": "{{provider}} · {{fileCount}} files · {{size}}"
+    "module_detail": "{{provider}} · {{fileCount}} files · {{size}}",
+    "search": "Search",
+    "searching": "Searching…",
+    "no_results": "No packages found."
   }
 }

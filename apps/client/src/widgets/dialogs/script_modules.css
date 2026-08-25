@@ -10,6 +10,30 @@
         margin-bottom: 0;
     }
 
+    .script-modules-results {
+        list-style: none;
+        margin: 0.75em 0 0;
+        padding: 0;
+    }
+
+    .script-modules-results li {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6em;
+        padding: 0.3em 0;
+    }
+
+    .script-modules-results li > a {
+        font-family: var(--monospace-font-family);
+        white-space: nowrap;
+    }
+
+    .script-modules-results .script-module-detail {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .script-modules-list {
         list-style: none;
         margin: 1em 0 0;
