@@ -1,5 +1,5 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
+import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, tooltips, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
 import { Compartment, EditorSelection, EditorState, StateEffect, type Extension } from "@codemirror/state";
 import { highlightSelectionMatches } from "@codemirror/search";
@@ -108,6 +108,7 @@ export default class CodeMirror extends EditorView {
             lineWrappingCompartment.of(config.lineWrapping ? EditorView.lineWrapping : []),
             searchMatchHighlightTheme,
             lintTooltipTheme,
+            tooltips({ parent: getTooltipHost() }),
             searchHighlightCompartment.of([]),
             typeCompletionCompartment.of([]),
             completionSourceCompartment.of([]),
@@ -432,4 +433,24 @@ export default class CodeMirror extends EditorView {
             )
         });
     }
+}
+
+/**
+ * The body-level element CodeMirror renders its tooltips into, created on first use.
+ *
+ * Tooltips otherwise live inside `.cm-editor`, which is `overflow: hidden`, and CodeMirror falls
+ * back to absolute positioning on Safari and iOS — clipping the completion popup to the editor's
+ * box, which for a one- or two-line note leaves only a sliver of it. The host also gives the app one
+ * class to size the tooltips by and to lift them over the dialogs an editor can sit in.
+ */
+function getTooltipHost() {
+    const existing = document.body.querySelector(".cm-tooltip-host");
+    if (existing instanceof HTMLElement) {
+        return existing;
+    }
+
+    const host = document.createElement("div");
+    host.className = "cm-tooltip-host";
+    document.body.appendChild(host);
+    return host;
 }

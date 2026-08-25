@@ -67,6 +67,21 @@ describe("CodeMirror", () => {
             editor = build({ tabIndex: 7 });
             expect(editor.dom.tabIndex).toBe(7);
         });
+
+        it("hosts tooltips in one body-level element, outside the editor that would clip them", () => {
+            editor = build();
+            const host = document.body.querySelector(".cm-tooltip-host");
+            expect(host).not.toBeNull();
+            expect(editor.dom.contains(host)).toBe(false);
+
+            // A second editor shares the host rather than adding one of its own.
+            const second = build();
+            try {
+                expect(document.body.querySelectorAll(".cm-tooltip-host")).toHaveLength(1);
+            } finally {
+                second.destroy();
+            }
+        });
     });
 
     describe("text access", () => {

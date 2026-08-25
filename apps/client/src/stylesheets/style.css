@@ -612,6 +612,17 @@ body.mobile .dropdown .dropdown-submenu {
     font-family: var(--monospace-font-family) !important;
 }
 
+/* CodeMirror renders its tooltips into this element rather than into `.cm-editor`, which clips them
+   (see `getTooltipHost()` in `packages/codemirror`). The stacking context has to clear the dialogs an
+   editor can sit in, up to 1101, and stay under the context menu at 2500. */
+.cm-tooltip-host {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2000;
+    font-size: var(--monospace-font-size);
+}
+
 body .cm-editor .cm-placeholder {
     color: #999 !important;
 }
