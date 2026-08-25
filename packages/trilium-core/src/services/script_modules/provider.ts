@@ -1,6 +1,6 @@
-import { ValidationError } from "../errors.js";
-import request from "./request.js";
-import { decodeUtf8 } from "./utils/binary.js";
+import { ValidationError } from "../../errors.js";
+import request from "../request.js";
+import { decodeUtf8 } from "../utils/binary.js";
 
 /** One ES module of a resolved package. */
 export interface ScriptModuleFile {
