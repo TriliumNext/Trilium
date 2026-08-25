@@ -1,3 +1,4 @@
+import { SCRIPT_MODULE_IMPORT_META } from "@triliumnext/commons";
 import { transform } from "sucrase";
 
 import becca from "../../becca/becca.js";
@@ -186,7 +187,13 @@ function evaluate(module: StoredScriptModule): unknown {
  * rewrite is textual, so text that merely reads as `import.meta` is rewritten too — it then names
  * a parameter holding what the real one would have.
  */
-function compile(source: string, file: ScriptModuleFileInfo, moduleName: string) {
+/**
+ * Turns one stored ES module into a runnable CommonJS body, as source.
+ *
+ * Split from {@link compile} for the frontend, which is handed the text rather than a function: the
+ * page that evaluates it is not the runtime that reads the database.
+ */
+export function compileModuleSource(source: string, fileName: string, moduleName: string): string {
     let code: string;
     try {
         code = transform(source, {
@@ -195,19 +202,23 @@ function compile(source: string, file: ScriptModuleFileInfo, moduleName: string)
             // invalid output where a field initializer meets `super()` inside a comma expression,
             // which esm.sh's Node polyfills do — its `buffer` shim compiles to `;,new Error(…)`.
             disableESTransforms: true,
-            filePath: file.name
+            filePath: fileName
         }).code;
     } catch (e) {
         throw new Error(
-            `File '${file.name}' of script module '${moduleName}' could not be compiled.`,
+            `File '${fileName}' of script module '${moduleName}' could not be compiled.`,
             { cause: e }
         );
     }
 
+    return code.replace(/\bimport\.meta\b/g, IMPORT_META);
+}
+
+function compile(source: string, file: ScriptModuleFileInfo, moduleName: string) {
+    const code = compileModuleSource(source, file.name, moduleName);
+
     try {
-        return new Function(
-            "exports", "module", "require", IMPORT_META,
-            code.replace(/\bimport\.meta\b/g, IMPORT_META));
+        return new Function("exports", "module", "require", IMPORT_META, code);
     } catch (e) {
         throw new Error(
             `File '${file.name}' of script module '${moduleName}' is not valid JavaScript.`,
@@ -216,7 +227,7 @@ function compile(source: string, file: ScriptModuleFileInfo, moduleName: string)
     }
 }
 
-const IMPORT_META = "__triliumImportMeta";
+const IMPORT_META = SCRIPT_MODULE_IMPORT_META;
 
 /**
  * A fresh exports object that a file can still assign `__esModule` on.

@@ -283,11 +283,11 @@ function RunActiveNoteButton({ noteMime }: NoteActionsCustomInnerProps) {
 }
 
 /**
- * Opens the packages installed for backend scripts. Only backend scripts can require them, so only
- * they carry the button.
+ * Opens the packages installed into Trilium. Carried by every note that can require one: a backend
+ * script, a frontend one, and a JSX note, whose imports become requires when it is built.
  */
 function ScriptModulesButton({ noteMime, parentComponent }: NoteActionsCustomInnerProps) {
-    const isEnabled = noteMime.startsWith("application/javascript") && noteMime.includes("env=backend");
+    const isEnabled = noteMime.startsWith("application/javascript") || noteMime === "text/jsx";
 
     return isEnabled && <NoteAction
         icon="bx bx-cube"

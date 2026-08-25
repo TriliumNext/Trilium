@@ -30,3 +30,43 @@ export interface ScriptModuleSearchResult {
     version: string;
     description?: string;
 }
+
+/**
+ * The name a compiled module file receives `import.meta` under.
+ *
+ * A function body is not a module, so the compile rewrites `import.meta` to a parameter. Both the
+ * side that compiles and the side that evaluates have to agree on what to call it.
+ */
+export const SCRIPT_MODULE_IMPORT_META = "__triliumImportMeta";
+
+/** One file of a package, compiled to CommonJS for a runtime with no loader for ES modules. */
+export interface CompiledModuleFile {
+    name: string;
+    code: string;
+    /** URL the file was built from, which is what its `import.meta.url` reports. */
+    url: string;
+}
+
+/**
+ * A package compiled and handed to the browser so a frontend script can require it.
+ *
+ * Compiled where the sources are rather than in the browser: the page would otherwise need a
+ * compiler of its own, and on the browser-hosted builds that compiler is already in the worker
+ * holding the database.
+ */
+export interface FrontendScriptModule {
+    noteId: string;
+    /** The specifiers in the bundle that name this package. */
+    specifiers: string[];
+    /** Name of the file in {@link files} to evaluate first. */
+    entry: string;
+    /** Identity of the stored files, so a package already evaluated can be reused. */
+    fingerprint: string;
+    files: CompiledModuleFile[];
+}
+
+/** A package a frontend script asks for that cannot be handed to it, and why. */
+export interface UnavailableScriptModule {
+    specifier: string;
+    reason: string;
+}

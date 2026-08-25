@@ -38,9 +38,9 @@ describe("ScriptContext", () => {
 
         // moduleNoteIds only allows moduleA, so requesting "Other2" (filtered out) throws.
         const requireFn = ctx.require(moduleA.noteId);
-        expect(() => requireFn("Other2")).toThrow(/Could not find module note Other2/);
+        expect(() => requireFn("Other2")).toThrow(/Could not find module 'Other2'/);
         // Requesting a title that exists nowhere also throws.
-        expect(() => requireFn("Nonexistent")).toThrow(/Could not find module note Nonexistent/);
+        expect(() => requireFn("Nonexistent")).toThrow(/Could not find module 'Nonexistent'/);
     });
 
     it("throws when the start note cannot be found", async () => {
