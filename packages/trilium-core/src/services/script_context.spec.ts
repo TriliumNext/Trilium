@@ -78,26 +78,41 @@ describe("ScriptContext", () => {
         const moduleNote = buildNote({ title: "myModule" });
         const ctx = new ScriptContext([moduleNote], { startNote: moduleNote });
 
-        // "lodash" is not a Trilium module note but is whitelisted, so it resolves via Node's require.
+        // Nothing is on a list any more: a module that is not a note resolves through Node.
         const lodash = ctx.require([moduleNote.noteId])("lodash");
         expect(typeof (lodash as { join?: unknown }).join).toBe("function");
     });
 
-    it("require() refuses blocked OS-level modules before consulting the whitelist", () => {
+    it("require() refuses the modules that hand a script the machine", () => {
         const moduleNote = buildNote({ title: "myModule" });
         const ctx = new ScriptContext([moduleNote], { startNote: moduleNote });
         const require = ctx.require([moduleNote.noteId]);
 
-        for (const blocked of ["child_process", "fs", "net", "os"]) {
-            expect(() => require(blocked)).toThrow(/blocked/);
+        const blockedNames = ["child_process", "fs", "net", "os", "module", "inspector", "repl"];
+        for (const blocked of blockedNames) {
+            expect(() => require(blocked), blocked).toThrow(/blocked/);
         }
     });
 
-    it("require() throws when falling back to a non-existent native module", () => {
+    it("require() answers the same for every way of naming a blocked built-in", () => {
+        const moduleNote = buildNote({ title: "myModule" });
+        const ctx = new ScriptContext([moduleNote], { startNote: moduleNote });
+        const require = ctx.require([moduleNote.noteId]);
+
+        const spellings = ["node:fs", "fs/promises", "node:fs/promises", "node:child_process"];
+        for (const spelling of spellings) {
+            expect(() => require(spelling), spelling).toThrow(/blocked/);
+        }
+
+        // A package that merely starts with a blocked name is not that built-in.
+        expect(() => require("fs-extra-does-not-exist")).toThrow(/could not be loaded/);
+    });
+
+    it("require() says where to get a module it cannot resolve", () => {
         const moduleNote = buildNote({ title: "myModule" });
         const ctx = new ScriptContext([moduleNote], { startNote: moduleNote });
 
         expect(() => ctx.require([moduleNote.noteId])("this-module-does-not-exist-xyz"))
-            .toThrow();
+            .toThrow(/could not be loaded. Install it from Script modules/);
     });
 });
