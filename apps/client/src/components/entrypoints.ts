@@ -1,6 +1,6 @@
 import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
 
-import { showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
+import { runBackendScript, showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
 import dialog from "../services/dialog.js";
 import dateNoteService from "../services/date_notes.js";
@@ -189,9 +189,9 @@ export default class Entrypoints extends Component {
                 return;
             }
             try {
-                await server.post(`script/run/${note.noteId}`);
+                await runBackendScript(note.noteId);
             } catch {
-                // server.js already reported the error; don't fall through to "Note executed".
+                // Already reported as a scripting error; don't fall through to "Note executed".
                 return;
             }
         } else if (note.mime === "text/x-sqlite;schema=trilium") {

@@ -1152,7 +1152,10 @@ describe("FNote executeScript", () => {
     });
 
     it("posts to the server for a backend script", async () => {
-        const postSpy = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        // Runs through backend_scripting, so a failure is reported against the note rather than as
+        // a request that went wrong — which is why the silent variant is the one called.
+        const postSpy = vi.spyOn(server, "postWithSilentInternalServerError")
+            .mockResolvedValue(undefined);
         const note = makeNote({ type: "code", mime: "application/javascript;env=backend" });
 
         await note.executeScript();

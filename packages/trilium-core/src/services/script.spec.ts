@@ -5,7 +5,7 @@ import becca from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import config from "./config.js";
 import { getContext } from "./context.js";
-import scriptService, { buildJsx, executeBundle, getScriptBundle } from "./script.js";
+import scriptService, { buildJsx, describeScriptFailure, executeBundle, getScriptBundle } from "./script.js";
 import ws from "./ws.js";
 
 describe("Script", () => {
@@ -432,5 +432,45 @@ describe("executeNoteNoException", () => {
         getContext().init(() => {
             expect(() => scriptService.executeNoteNoException(note, {})).not.toThrow();
         });
+    });
+});
+
+describe("describeScriptFailure", () => {
+    /** A failure as the bundle wraps one: the note it stands for, and what it wrapped. */
+    const wrapped = (noteId: string, message: string, cause: unknown) =>
+        Object.assign(new Error(message, { cause }), { scriptNoteId: noteId });
+
+    it("answers the failure itself and the note nearest it", () => {
+        const failure = new Error("Module 'axioss' could not be loaded.", { cause: new Error("Cannot find module") });
+        const outer = wrapped("parent", "Load of script note \"Parent\" (parent) failed with: ...",
+            wrapped("child", "Load of script note \"Child\" (child) failed with: ...", failure));
+
+        expect(describeScriptFailure(outer)).toEqual({
+            message: "Module 'axioss' could not be loaded.",
+            noteId: "child"
+        });
+    });
+
+    it("stops at the failure rather than at what the failure wrapped", () => {
+        // Node answers a missing module with a require stack of Trilium's own files; the message
+        // above it was written to keep that out of the way, so the walk must not go past it.
+        const nodeError = new Error("Cannot find module 'x'\nRequire stack:\n- becca.ts");
+        const failure = new Error("Module 'x' could not be loaded.", { cause: nodeError });
+
+        expect(describeScriptFailure(wrapped("n1", "wrapped", failure)).message)
+            .toBe("Module 'x' could not be loaded.");
+    });
+
+    it("answers a failure that was never wrapped, without a note", () => {
+        expect(describeScriptFailure(new Error("scripting is disabled")))
+            .toEqual({ message: "scripting is disabled" });
+        expect(describeScriptFailure("just a string")).toEqual({ message: "just a string" });
+    });
+
+    it("survives a cycle in the chain", () => {
+        const looped = wrapped("n1", "outer", undefined);
+        looped.cause = looped;
+
+        expect(describeScriptFailure(looped)).toEqual({ message: "outer", noteId: "n1" });
     });
 });

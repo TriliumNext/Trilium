@@ -1,4 +1,4 @@
-import type { FrontendScriptModule, UnavailableScriptModule } from "@triliumnext/commons";
+import type { FrontendScriptModule, ScriptFailure, UnavailableScriptModule } from "@triliumnext/commons";
 import { ScriptParams } from "@triliumnext/commons";
 import { t } from "i18next";
 import { transform } from "sucrase";
@@ -261,7 +261,7 @@ apiContext.modules['${note.noteId}'] = { exports: {} };
 ${root ? "return " : ""}${isFrontend ? "await" : ""} ((${isFrontend ? "async" : ""} function(exports, module, require, api${modules.length > 0 ? ", " : ""}${modules.map((child) => sanitizeVariableName(child.title)).join(", ")}) {
 try {
 ${overrideContent || scriptContent};
-} catch (e) { throw new Error("Load of script note \\"${note.title}\\" (${note.noteId}) failed with: " + e.message, { cause: e }); }
+} catch (e) { throw Object.assign(new Error("Load of script note \\"${note.title}\\" (${note.noteId}) failed with: " + e.message, { cause: e }), { scriptNoteId: "${note.noteId}" }); }
 for (const exportKey in exports) module.exports[exportKey] = exports[exportKey];
 return module.exports;
 }).call({}, {}, apiContext.modules['${note.noteId}'], apiContext.require(${JSON.stringify(moduleNoteIds)}), apiContext.apis['${note.noteId}']${modules.length > 0 ? ", " : ""}${modules.map((mod) => `apiContext.modules['${mod.noteId}'].exports`).join(", ")}));
@@ -271,6 +271,40 @@ return module.exports;
     }
 
     return bundle;
+}
+
+/**
+ * Reads a script failure into its parts.
+ *
+ * The bundle wraps a failure once per note it passed through, and each wrapper carries the note it
+ * stands for — so the note that actually failed and the error underneath it are both here, and
+ * neither has to be read back out of the sentence afterwards. The wrappers stay in the message for
+ * the log, which is the one place the whole path is worth having.
+ */
+export function describeScriptFailure(e: unknown): ScriptFailure {
+    let message = typeof e === "string" ? e : "Unknown error";
+    let noteId: string | undefined;
+
+    const seen = new Set<unknown>();
+    let error: unknown = e;
+    while (error instanceof Error && !seen.has(error)) {
+        seen.add(error);
+        message = error.message;
+
+        // Only the wrappers are walked past. Going further would reach whatever the failure itself
+        // wrapped — for a missing module, Node's answer, which is the require stack of Trilium's
+        // own files that the failure's own message was written to keep out of the way.
+        const wrapped = (error as { scriptNoteId?: string }).scriptNoteId;
+        if (!wrapped) {
+            break;
+        }
+
+        // The deepest wrapper is the note nearest the failure, so a later one wins.
+        noteId = wrapped;
+        error = error.cause;
+    }
+
+    return { message, ...(noteId ? { noteId } : {}) };
 }
 
 export function buildJsx(contentRaw: string | Uint8Array) {
