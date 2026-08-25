@@ -14,6 +14,9 @@ import { getLog } from "./log.js";
 import { getSql } from "./sql/index.js";
 import { seedDefaultTaskStates } from "./task_states.js";
 
+/** Parent every installed script module note hangs under. */
+export const SCRIPT_MODULES_ROOT = "_scriptModules";
+
 export const LBTPL_ROOT = "_lbTplRoot";
 export const LBTPL_BASE = "_lbTplBase";
 export const LBTPL_HEADER = "_lbTplHeader";
@@ -162,6 +165,14 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                 title: t("hidden-subtree.user-hidden-title"),
                 type: "doc",
                 attributes: [{ type: "label", name: "docName", value: "user_hidden" }]
+            },
+            {
+                // Parent of the npm packages installed for backend scripts. Its children are created
+                // per install rather than declared here, and carry the module files as attachments.
+                id: SCRIPT_MODULES_ROOT,
+                title: t("hidden-subtree.script-modules-title"),
+                type: "doc",
+                icon: "bx-cube"
             },
             {
                 id: LBTPL_ROOT,
