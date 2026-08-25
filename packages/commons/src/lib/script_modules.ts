@@ -23,6 +23,23 @@ export interface ScriptModuleSummary {
     dateModified: string;
 }
 
+/**
+ * The TypeScript declarations one installed package is typed by, as the script editor is given them.
+ *
+ * Handed over whole rather than as a listing: the editor needs the text, and this is the only thing
+ * that reads it. Laying them out where TypeScript looks for a package is the editor's business — see
+ * `script_module_types.ts` in the codemirror package.
+ */
+export interface ScriptModuleTypes {
+    /** The bare specifier these type, matching {@link ScriptModuleSummary.name}. */
+    name: string;
+    /** `name@version`, which a script can name instead where two versions are installed. */
+    spec: string;
+    /** Name of the file in {@link files} the package is typed by. */
+    entry: string;
+    files: { name: string; content: string }[];
+}
+
 /** One package the npm registry offered for a search. */
 export interface ScriptModuleSearchResult {
     name: string;

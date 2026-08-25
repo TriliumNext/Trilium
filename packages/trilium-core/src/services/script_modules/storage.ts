@@ -7,10 +7,18 @@ import { SCRIPT_MODULES_ROOT } from "../hidden_subtree.js";
 import noteService from "../notes.js";
 import { decodeUtf8 } from "../utils/binary.js";
 import { hashedBlobId } from "../utils/index.js";
-import type { ModuleTarget, PackageSpec, ScriptModuleArtifact } from "./provider.js";
+import type { ModuleTarget, PackageSpec, ScriptModuleArtifact, ScriptModuleFile } from "./provider.js";
 
 /** Role of the attachments holding a module's files, so they read as source rather than media. */
 export const MODULE_FILE_ROLE: AttachmentRole = "scriptModule";
+
+/**
+ * Role of the attachments holding a module's TypeScript declarations.
+ *
+ * Kept apart from the sources so the two are read by the halves that want them and nothing else: the
+ * loader lists only {@link MODULE_FILE_ROLE}, and the editor only these.
+ */
+export const MODULE_TYPES_ROLE: AttachmentRole = "scriptModuleTypes";
 
 /**
  * One file of an installed package, described without its source.
@@ -28,6 +36,13 @@ export interface ScriptModuleFileInfo {
     blobId: string;
 }
 
+/** The declarations an installed package is typed by, as they are kept in the database. */
+export interface StoredScriptModuleTypes {
+    /** Name of the file in {@link files} the package is typed by. */
+    entry: string;
+    files: ScriptModuleFileInfo[];
+}
+
 /** An installed package, as it is kept in the database. */
 export interface StoredScriptModule {
     noteId: string;
@@ -37,6 +52,8 @@ export interface StoredScriptModule {
     /** Name of the file in {@link files} to import. */
     entry: string;
     files: ScriptModuleFileInfo[];
+    /** What the package is typed by, where it was installed with declarations. */
+    types?: StoredScriptModuleTypes;
     /** Stored length across every file. */
     size: number;
     /** When the install last wrote this, as a UTC datetime string. */
@@ -57,7 +74,10 @@ export function storeScriptModule(artifact: ScriptModuleArtifact): StoredScriptM
         spec: artifact.spec,
         providerId: artifact.providerId,
         entry: artifact.entry,
-        files: artifact.files.map((file) => ({ name: file.name, url: file.url }))
+        files: artifact.files.map(described),
+        ...(artifact.types
+            ? { types: { entry: artifact.types.entry, files: artifact.types.files.map(described) } }
+            : {})
     };
     const content = JSON.stringify(manifest, null, 4);
 
@@ -76,22 +96,8 @@ export function storeScriptModule(artifact: ScriptModuleArtifact): StoredScriptM
         }));
     }
 
-    for (const file of artifact.files) {
-        note.saveAttachment({
-            title: file.name,
-            role: MODULE_FILE_ROLE,
-            mime: "application/javascript",
-            content: file.source
-        }, "title");
-    }
-
-    // A rebuild of the same package can name fewer files than the install it replaces.
-    const stored = new Set(artifact.files.map((file) => file.name));
-    for (const attachment of moduleAttachments(note)) {
-        if (!stored.has(attachment.title)) {
-            attachment.markAsDeleted();
-        }
-    }
+    writeFiles(note, artifact.files, MODULE_FILE_ROLE, "application/javascript");
+    writeFiles(note, artifact.types?.files ?? [], MODULE_TYPES_ROLE, "application/typescript");
 
     const read = readScriptModule(note);
     if (!read) {
@@ -155,6 +161,32 @@ export function openScriptModuleSources(note: BNote): (fileName: string) => stri
     };
 }
 
+/**
+ * Reads an installed package's declarations whole, or answers nothing where it has none.
+ *
+ * Whole rather than a file at a time, unlike {@link openScriptModuleSources}: the one reader of
+ * these is the script editor, which needs every one of them at once to type-check against.
+ */
+export function readScriptModuleTypes(module: StoredScriptModule): { name: string; content: string }[] | undefined {
+    const note = becca.notes[module.noteId];
+    if (!note || !module.types) {
+        return undefined;
+    }
+
+    const attachments = new Map(moduleAttachments(note, MODULE_TYPES_ROLE).map((a) => [a.title, a]));
+
+    const files: { name: string; content: string }[] = [];
+    for (const file of module.types.files) {
+        const attachment = attachments.get(file.name);
+        if (!attachment) {
+            return undefined;
+        }
+        files.push({ name: file.name, content: decodeUtf8(attachment.getContent()) });
+    }
+
+    return files;
+}
+
 /** Removes an installed package. Answers whether there was one to remove. Needs a CLS context. */
 export function deleteScriptModule(spec: PackageSpec): boolean {
     const note = becca.notes[scriptModuleNoteId(spec)];
@@ -204,6 +236,7 @@ interface ScriptModuleManifest {
     providerId: string;
     entry: string;
     files: { name: string; url: string }[];
+    types?: { entry: string; files: { name: string; url: string }[] };
 }
 
 /**
@@ -219,24 +252,15 @@ function readScriptModule(note: BNote): StoredScriptModule | undefined {
         return undefined;
     }
 
-    const attachments = new Map(moduleAttachments(note).map((a) => [a.title, a]));
-
-    const files: ScriptModuleFileInfo[] = [];
-    let size = 0;
-    for (const file of manifest.files) {
-        const attachment = attachments.get(file.name);
-        if (!attachment) {
-            return undefined;
-        }
-        const fileSize = attachment.contentLength ?? 0;
-        size += fileSize;
-        files.push({
-            name: file.name,
-            url: file.url,
-            size: fileSize,
-            blobId: attachment.blobId ?? ""
-        });
+    const files = describeStored(note, MODULE_FILE_ROLE, manifest.files);
+    if (!files) {
+        return undefined;
     }
+
+    // Declarations that did not survive cost the completions rather than the install, so a package
+    // whose types are gone is read back as one that never had any.
+    const typeFiles = manifest.types
+        && describeStored(note, MODULE_TYPES_ROLE, manifest.types.files);
 
     return {
         noteId: note.noteId,
@@ -244,9 +268,40 @@ function readScriptModule(note: BNote): StoredScriptModule | undefined {
         providerId: manifest.providerId,
         entry: manifest.entry,
         files,
-        size,
+        ...(manifest.types && typeFiles ? { types: { entry: manifest.types.entry, files: typeFiles } } : {}),
+        size: files.reduce((total, file) => total + file.size, 0),
         dateModified: note.utcDateModified ?? ""
     };
+}
+
+/**
+ * Describes one role's stored files, or `undefined` where the manifest names one that is not there.
+ *
+ * Reads the attachment rows and never their content, so describing an install stays free of the
+ * megabytes it holds.
+ */
+function describeStored(
+    note: BNote,
+    role: AttachmentRole,
+    named: { name: string; url: string }[]
+): ScriptModuleFileInfo[] | undefined {
+    const attachments = new Map(moduleAttachments(note, role).map((a) => [a.title, a]));
+
+    const files: ScriptModuleFileInfo[] = [];
+    for (const file of named) {
+        const attachment = attachments.get(file.name);
+        if (!attachment) {
+            return undefined;
+        }
+        files.push({
+            name: file.name,
+            url: file.url,
+            size: attachment.contentLength ?? 0,
+            blobId: attachment.blobId ?? ""
+        });
+    }
+
+    return files;
 }
 
 /**
@@ -267,7 +322,7 @@ export function parseManifest(content: string): ScriptModuleManifest | undefined
         return undefined;
     }
 
-    const { spec, providerId, entry, files } = parsed as Record<string, unknown>;
+    const { spec, providerId, entry, files, types } = parsed as Record<string, unknown>;
     if (typeof providerId !== "string" || typeof entry !== "string" || !Array.isArray(files)) {
         return undefined;
     }
@@ -279,6 +334,41 @@ export function parseManifest(content: string): ScriptModuleManifest | undefined
     // A note written before builds were told apart holds the portable one.
     const target: ModuleTarget = asSpec.target === "node" ? "node" : "portable";
 
+    const named = parseFileNames(files);
+    if (!named || !named.some((file) => file.name === entry)) {
+        return undefined;
+    }
+
+    return {
+        spec: { ...asSpec, target },
+        providerId,
+        entry,
+        files: named,
+        ...(parseTypes(types) ?? {})
+    };
+}
+
+/** The `types` section of a manifest, or nothing where there is none to read or it is not one. */
+function parseTypes(types: unknown): { types: ScriptModuleManifest["types"] } | undefined {
+    if (typeof types !== "object" || types === null) {
+        return undefined;
+    }
+
+    const { entry, files } = types as Record<string, unknown>;
+    if (typeof entry !== "string" || !Array.isArray(files)) {
+        return undefined;
+    }
+
+    const named = parseFileNames(files);
+    if (!named || !named.some((file) => file.name === entry)) {
+        return undefined;
+    }
+
+    return { types: { entry, files: named } };
+}
+
+/** Reads a manifest's file list, answering `undefined` for anything that is not one. */
+function parseFileNames(files: unknown[]): { name: string; url: string }[] | undefined {
     const named: { name: string; url: string }[] = [];
     for (const file of files) {
         if (typeof file !== "object" || file === null) {
@@ -291,14 +381,35 @@ export function parseManifest(content: string): ScriptModuleManifest | undefined
         named.push({ name, url });
     }
 
-    if (!named.some((file) => file.name === entry)) {
-        return undefined;
-    }
-
-    return { spec: { ...asSpec, target }, providerId, entry, files: named };
+    return named;
 }
 
 /** Lists a module's file attachments with their stored length, but without their content. */
-function moduleAttachments(note: BNote): BAttachment[] {
-    return note.getAttachments().filter((attachment) => attachment.role === MODULE_FILE_ROLE);
+function moduleAttachments(note: BNote, role: AttachmentRole = MODULE_FILE_ROLE): BAttachment[] {
+    return note.getAttachments().filter((attachment) => attachment.role === role);
+}
+
+/** How a file is named in the manifest: enough to find it again and to check it against its source. */
+function described(file: ScriptModuleFile): { name: string; url: string } {
+    return { name: file.name, url: file.url };
+}
+
+/**
+ * Writes one role's files, dropping the ones a rebuild no longer names.
+ *
+ * A rebuild of the same package can name fewer files than the install it replaces — and a package
+ * that published declarations at one version may publish none at the next, which is that same case
+ * with nothing left to write.
+ */
+function writeFiles(note: BNote, files: ScriptModuleFile[], role: AttachmentRole, mime: string) {
+    for (const file of files) {
+        note.saveAttachment({ title: file.name, role, mime, content: file.source }, "title");
+    }
+
+    const stored = new Set(files.map((file) => file.name));
+    for (const attachment of moduleAttachments(note, role)) {
+        if (!stored.has(attachment.title)) {
+            attachment.markAsDeleted();
+        }
+    }
 }

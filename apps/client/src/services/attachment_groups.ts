@@ -37,7 +37,9 @@ export const ATTACHMENT_ROLE_GROUPS: Record<AttachmentRole, AttachmentGroup> = {
     // The file an import was read from, kept so an import that went wrong can be looked at again.
     importSource: "system",
     // One ES module of an installed npm package, written by the install rather than by a reader.
-    scriptModule: "system"
+    scriptModule: "system",
+    // One TypeScript declaration file of such a package, written by the same install.
+    scriptModuleTypes: "system"
 };
 
 /**

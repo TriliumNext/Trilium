@@ -1,7 +1,7 @@
 import { type Completion, type CompletionContext, type CompletionSource } from "@codemirror/autocomplete";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import type { ScriptModuleSummary } from "@triliumnext/commons";
-import { useCallback, useEffect, useRef } from "preact/hooks";
+import type { ScriptModuleSummary, ScriptModuleTypes } from "@triliumnext/commons";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import type LoadResults from "../../../services/load_results.js";
 import server from "../../../services/server.js";
@@ -105,4 +105,53 @@ export function useScriptModuleCompletions(editorView: VanillaCodeMirror | null,
         editorView.setCompletionSource("scriptModules", source as unknown as CmCompletionSource);
         return () => editorView.setCompletionSource("scriptModules", null);
     }, [ editorView, enabled ]);
+}
+
+/**
+ * The declarations of the installed packages, for the editor to type a `require()` of one by.
+ *
+ * Held against one shared request rather than one per editor: the declarations are megabytes where
+ * the sources are, and two split panes on two backend notes want the same answer. An install or a
+ * removal drops it, and every editor asks again.
+ */
+export function useScriptModuleTypes(enabled: boolean): ScriptModuleTypes[] {
+    const [ types, setTypes ] = useState<ScriptModuleTypes[]>([]);
+
+    const reload = useCallback(() => {
+        if (!enabled) {
+            setTypes([]);
+            return;
+        }
+
+        let current = true;
+        void loadScriptModuleTypes().then((loaded) => {
+            if (current) setTypes(loaded);
+        });
+        return () => { current = false; };
+    }, [ enabled ]);
+
+    useEffect(() => reload(), [ reload ]);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (isScriptModuleChange(loadResults)) {
+            cachedTypes = null;
+            reload();
+        }
+    });
+
+    return types;
+}
+
+/** The one in-flight or settled request for the declarations, dropped when an install changes. */
+let cachedTypes: Promise<ScriptModuleTypes[]> | null = null;
+
+function loadScriptModuleTypes(): Promise<ScriptModuleTypes[]> {
+    cachedTypes ??= server.get<ScriptModuleTypes[]>("script-modules/types")
+        .catch((e: unknown) => {
+            logError("Error while loading script module types: ", e);
+            cachedTypes = null;
+            return [];
+        });
+
+    return cachedTypes;
 }

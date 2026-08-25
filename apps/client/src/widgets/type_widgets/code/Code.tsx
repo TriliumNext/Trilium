@@ -14,7 +14,7 @@ import { refToJQuerySelector } from "../../react/react_utils";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
 import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
-import { useScriptModuleCompletions } from "./script_modules";
+import { useScriptModuleCompletions, useScriptModuleTypes } from "./script_modules";
 import { useSnippetSlashCommands } from "./snippets";
 
 interface CodeEditorProps {
@@ -146,8 +146,11 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
         note.noteId
     );
 
-    // The installed packages, offered inside `require("…")`. Backend scripts only — see the hook.
-    useScriptModuleCompletions(editorView, mime === SCRIPT_MIME_BACKEND);
+    // The installed packages: their names offered inside `require("…")`, and their declarations
+    // handed to the language service so what a require() returns is typed. Backend scripts only.
+    const isBackendScript = mime === SCRIPT_MIME_BACKEND;
+    useScriptModuleCompletions(editorView, isBackendScript);
+    const scriptModules = useScriptModuleTypes(isBackendScript);
 
     return (
         <CodeEditor
@@ -155,6 +158,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
             editorRef={combinedEditorRef} containerRef={containerRef}
             mime={mime ?? "text/plain"}
             customRequestHandler={customRequestHandler != null}
+            scriptModules={scriptModules}
             className="note-detail-code-editor"
             placeholder={placeholder ?? t("editable_code.placeholder")}
             vimKeybindings={vimKeymapEnabled}

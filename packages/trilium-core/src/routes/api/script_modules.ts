@@ -1,4 +1,4 @@
-import type { ScriptModuleSearchResult, ScriptModuleSummary } from "@triliumnext/commons";
+import type { ScriptModuleSearchResult, ScriptModuleSummary, ScriptModuleTypes } from "@triliumnext/commons";
 import type { Request } from "express";
 
 import { NotFoundError, ValidationError } from "../../errors.js";
@@ -14,6 +14,7 @@ import {
     findScriptModuleByNoteId,
     formatPackageSpec,
     listScriptModules,
+    readScriptModuleTypes,
     type StoredScriptModule,
     storeScriptModule
 } from "../../services/script_modules/storage.js";
@@ -22,6 +23,35 @@ import { getSql } from "../../services/sql/index.js";
 
 function list(): ScriptModuleSummary[] {
     return listScriptModules().map(summarize);
+}
+
+/**
+ * The declarations every installed package is typed by, for the script editor to complete from.
+ *
+ * One call for all of them, since the editor puts the whole set in front of TypeScript at once. A
+ * package installed for both builds is one answer: the two carry the same declarations, and the
+ * editor is typing a `require()`, which names a package rather than a build.
+ */
+function types(): ScriptModuleTypes[] {
+    const answered = new Set<string>();
+    const modules: ScriptModuleTypes[] = [];
+
+    for (const module of listScriptModules()) {
+        const name = bareSpecifier(module);
+        if (answered.has(name)) {
+            continue;
+        }
+
+        const files = readScriptModuleTypes(module);
+        if (!module.types || !files) {
+            continue;
+        }
+
+        answered.add(name);
+        modules.push({ name, spec: formatPackageSpec(module.spec), entry: module.types.entry, files });
+    }
+
+    return modules;
 }
 
 /**
@@ -80,7 +110,7 @@ function summarize(module: StoredScriptModule): ScriptModuleSummary {
     return {
         noteId: module.noteId,
         spec: formatPackageSpec(module.spec),
-        name: `${module.spec.name}${module.spec.subpath ?? ""}`,
+        name: bareSpecifier(module),
         target: module.spec.target,
         providerId: module.providerId,
         fileCount: module.files.length,
@@ -89,8 +119,14 @@ function summarize(module: StoredScriptModule): ScriptModuleSummary {
     };
 }
 
+/** What a script names in `require()`: the package and the path inside it, without the version. */
+function bareSpecifier(module: StoredScriptModule): string {
+    return `${module.spec.name}${module.spec.subpath ?? ""}`;
+}
+
 export default {
     list,
+    types,
     search,
     install,
     remove

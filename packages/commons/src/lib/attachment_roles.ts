@@ -102,7 +102,13 @@ export const ATTACHMENT_ROLES = {
      * wrote it and named in its note's manifest, never referred to from note content, so it is not
      * embedded — the cleanup that erases what content no longer mentions would take every one.
      */
-    scriptModule: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-cube" }
+    scriptModule: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-cube" },
+    /**
+     * One TypeScript declaration file of such a package, kept apart from the modules so that the
+     * runtime that imports a package never reads them and the editor that completes from them never
+     * reads its source. Managed by the same install, and not embedded for the same reason.
+     */
+    scriptModuleTypes: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-code-alt" }
 } as const satisfies Record<string, AttachmentRoleTraits>;
 
 /** A role the app itself creates. Arbitrary strings reach the same fields — see {@link ATTACHMENT_ROLES}. */

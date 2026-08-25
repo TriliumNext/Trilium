@@ -204,10 +204,13 @@ export default class BridgedRequestProvider implements RequestProvider {
 
         const binary = atob(encoded);
 
+        const headers = lowerCasedNames(msg.headers ?? {});
+
         return {
             status: msg.status,
             ok: msg.status >= 200 && msg.status < 300,
-            contentType: (msg.headers?.["content-type"] ?? "").split(";")[0].trim().toLowerCase(),
+            contentType: (headers["content-type"] ?? "").split(";")[0].trim().toLowerCase(),
+            headers,
             bytes: Uint8Array.from(binary, (c) => c.charCodeAt(0))
         };
     }
@@ -245,6 +248,15 @@ function decodedLengthOf(base64: string): number {
     const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
 
     return Math.floor(base64.length / 4) * 3 - padding;
+}
+
+/**
+ * Lower-cases the header names, which the native transports do not agree on and every reader
+ * expects in one case.
+ */
+function lowerCasedNames(headers: Record<string, string>): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(headers).map(([ name, value ]) => [ name.toLowerCase(), value ]));
 }
 
 /** What the main thread answers an HTTP_REQUEST with, for the binary shape of the exchange. */

@@ -1,4 +1,4 @@
-import type { ScriptModuleSummary } from "@triliumnext/commons";
+import type { ScriptModuleSummary, ScriptModuleTypes } from "@triliumnext/commons";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import config from "../../services/config";
@@ -13,11 +13,21 @@ let api: CoreApiTester;
 
 /** What the fake esm.sh answers with, keyed by URL. */
 let served: Map<string, string>;
+/** Response headers the fake esm.sh adds, keyed by URL. */
+let servedHeaders: Map<string, Record<string, string>>;
 
 function serveEsmSh(name: string, version: string) {
     const entry = `https://esm.sh/${name}@${version}?bundle&target=es2022`;
     served.set(entry, `export * from "/${name}@${version}/es2022/${name}.mjs";`);
     served.set(`https://esm.sh/${name}@${version}/es2022/${name}.mjs`, `export const ${name} = 1;`);
+}
+
+/** Serves the package's declarations, and points its build at them the way esm.sh does. */
+function serveDeclarations(name: string, version: string, source: string) {
+    const types = `https://esm.sh/${name}@${version}/index.d.ts`;
+    servedHeaders.set(`https://esm.sh/${name}@${version}?bundle&target=es2022`,
+        { "x-typescript-types": types });
+    served.set(types, source);
 }
 
 describe("Script modules API (core)", () => {
@@ -36,14 +46,23 @@ describe("Script modules API (core)", () => {
 
     beforeEach(() => {
         served = new Map();
+        servedHeaders = new Map();
         initRequest(fakeRequestProvider({
             fetchResource: async (url) => {
                 const source = served.get(url);
                 if (source === undefined) {
                     return { status: 404, ok: false, contentType: "text/plain", bytes: encodeUtf8("no") };
                 }
-                const contentType = url.includes("registry.npmjs.org") ? "application/json" : "application/javascript";
-                return { status: 200, ok: true, contentType, bytes: encodeUtf8(source) };
+                const contentType = url.includes("registry.npmjs.org")
+                    ? "application/json"
+                    : url.endsWith(".d.ts") ? "application/typescript" : "application/javascript";
+                return {
+                    status: 200,
+                    ok: true,
+                    contentType,
+                    headers: servedHeaders.get(url) ?? {},
+                    bytes: encodeUtf8(source)
+                };
             }
         }));
     });
@@ -97,6 +116,26 @@ describe("Script modules API (core)", () => {
 
         expect((await api.get("/api/script-modules/search")).status).toBe(400);
         expect((await api.get("/api/script-modules/search?q=%20")).status).toBe(400);
+    });
+
+    it("hands the editor the declarations of what is installed, and nothing for what is untyped", async () => {
+        serveEsmSh("typed", "1.0.0");
+        serveDeclarations("typed", "1.0.0", "export declare function typed(): string;\n");
+        serveEsmSh("untyped", "1.0.0");
+
+        await api.post("/api/script-modules", { body: { spec: "typed@1.0.0" } });
+        await api.post("/api/script-modules", { body: { spec: "untyped@1.0.0" } });
+
+        const types = await api.get<ScriptModuleTypes[]>("/api/script-modules/types");
+        expect(types.status).toBe(200);
+        expect(types.body.map((module) => module.name)).toEqual([ "typed" ]);
+
+        const [ typed ] = types.body;
+        expect(typed.spec).toBe("typed@1.0.0");
+        expect(typed.entry).toBe("typed@1.0.0_index.d.ts");
+        expect(typed.files).toEqual([
+            { name: "typed@1.0.0_index.d.ts", content: "export declare function typed(): string;\n" }
+        ]);
     });
 
     it("404s when removing something that is not installed", async () => {

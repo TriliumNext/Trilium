@@ -7,11 +7,12 @@ import {
     renderHoverTooltip,
     SCRIPT_MIME_BACKEND,
     SCRIPT_MIME_FRONTEND,
-    SCRIPT_MIME_JSX
+    SCRIPT_MIME_JSX,
+    type ScriptApiContext
 } from "./index.js";
 
 /** Returns completions at the `|` marker in `source` (the marker is stripped). */
-function completionsAtMarker(mime: string, source: string, context?: { customRequestHandler?: boolean }) {
+function completionsAtMarker(mime: string, source: string, context?: ScriptApiContext) {
     const offset = source.indexOf("|");
     // Strip exactly the marker at `offset` (not the first `|` in the string, which
     // may differ if the snippet legitimately contains a `|` operator earlier).
@@ -31,6 +32,8 @@ const TS_TOP_LEVEL_AWAIT = 1375;
 const TS_JQUERY_NOT_FOUND = 2592;
 /** "Cannot find name 'x'." */
 const TS_NAME_NOT_FOUND = 2304;
+/** "Cannot find module 'x' or its corresponding type declarations." */
+const TS_MODULE_NOT_FOUND = 2307;
 /** "Unreachable code detected." — the one diagnostic rendered as a warning marker. */
 const TS_UNREACHABLE_CODE = 7027;
 
@@ -360,6 +363,69 @@ describe("backend custom request handler api (req/res/pathParams)", () => {
         expect(names).not.toContain("req");
         expect(names).not.toContain("res");
         expect(names).not.toContain("pathParams");
+    }, TIMEOUT);
+});
+
+describe("installed script modules", () => {
+    const DAYJS = {
+        name: "dayjs",
+        spec: "dayjs@1.11.10",
+        entry: "esm_dayjs_1.11.10_index.d.ts",
+        files: [ {
+            name: "esm_dayjs_1.11.10_index.d.ts",
+            content: "declare function dayjs(): dayjs.Dayjs;\n"
+                + "declare namespace dayjs { interface Dayjs { addDays(n: number): Dayjs; format(): string } }\n"
+                + "export = dayjs;\n"
+        } ]
+    };
+
+    it("types a require() of an installed package, by name and by name and version", async () => {
+        for (const specifier of [ "dayjs", "dayjs@1.11.10" ]) {
+            const completions = await completionsAtMarker(
+                SCRIPT_MIME_BACKEND,
+                `const d = require("${specifier}")();\nd.|`,
+                { scriptModules: [ DAYJS ] }
+            );
+            expect(completions).toContain("addDays");
+            expect(completions).toContain("format");
+        }
+    }, TIMEOUT);
+
+    it("types each package only from its own declarations", async () => {
+        const completions = await completionsAtMarker(
+            SCRIPT_MIME_BACKEND, `const c = require("cheerio")();\nc.|`, { scriptModules: [ DAYJS ] });
+        expect(completions).not.toContain("addDays");
+
+        // TS2307, "cannot find module", is what a package that is not installed has always drawn
+        // here — and now says the useful thing, since installing it is what makes it resolve.
+        const codes = await getScriptDiagnosticCodes(
+            SCRIPT_MIME_BACKEND, `const c = require("cheerio");\nc.anything();`, { scriptModules: [ DAYJS ] });
+        expect(codes).toEqual([ TS_MODULE_NOT_FOUND ]);
+    }, TIMEOUT);
+
+    it("types a package installed at a path inside it, by that path and with its version", async () => {
+        const utc = {
+            name: "dayjs/plugin/utc",
+            spec: "dayjs@1.11.10/plugin/utc",
+            entry: "esm_dayjs_1.11.10_plugin_utc.d.ts",
+            files: [ {
+                name: "esm_dayjs_1.11.10_plugin_utc.d.ts",
+                content: "declare const plugin: { name: string; install(): void };\nexport = plugin;\n"
+            } ]
+        };
+
+        for (const specifier of [ "dayjs/plugin/utc", "dayjs@1.11.10/plugin/utc" ]) {
+            const completions = await completionsAtMarker(
+                SCRIPT_MIME_BACKEND, `const p = require("${specifier}");\np.|`, { scriptModules: [ utc ] });
+            expect(completions).toContain("install");
+            expect(completions).toContain("name");
+        }
+    }, TIMEOUT);
+
+    it("keeps the packages away from frontend scripts, whose require() resolves note titles", async () => {
+        const completions = await completionsAtMarker(
+            SCRIPT_MIME_FRONTEND, `const d = require("dayjs")();\nd.|`, { scriptModules: [ DAYJS ] });
+        expect(completions).not.toContain("addDays");
     }, TIMEOUT);
 });
 

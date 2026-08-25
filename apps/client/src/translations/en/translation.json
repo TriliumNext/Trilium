@@ -2399,7 +2399,8 @@
     "viewConfig": "View settings",
     "canvasLibraryItem": "Canvas library",
     "importSource": "Import source",
-    "scriptModule": "Script module"
+    "scriptModule": "Script module",
+    "scriptModuleTypes": "Script module types"
   },
   "bookmark_switch": {
     "bookmark": "Bookmark",

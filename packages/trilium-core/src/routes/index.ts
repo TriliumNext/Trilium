@@ -350,6 +350,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
 
     apiRoute(PST, "/api/script/run/:noteId", scriptRoute.run);
     apiRoute(GET, "/api/script-modules", scriptModulesRoute.list);
+    apiRoute(GET, "/api/script-modules/types", scriptModulesRoute.types);
     asyncApiRoute(GET, "/api/script-modules/search", scriptModulesRoute.search);
     asyncApiRoute(PST, "/api/script-modules", scriptModulesRoute.install);
     apiRoute(DEL, "/api/script-modules/:noteId", scriptModulesRoute.remove);
