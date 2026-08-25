@@ -11,6 +11,8 @@ export interface ScriptModuleSummary {
     spec: string;
     /** The bare specifier `require()` takes: the package name and subpath, without the version. */
     name: string;
+    /** Which build: `portable` runs wherever Trilium does, `node` only where Node.js does. */
+    target: "portable" | "node";
     /** Which provider built it. */
     providerId: string;
     /** How many ES modules the package resolved to. */

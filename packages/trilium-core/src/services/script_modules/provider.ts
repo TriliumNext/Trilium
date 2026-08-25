@@ -27,7 +27,17 @@ export interface ScriptModuleArtifact {
     entry: string;
 }
 
-/** An npm package name, an optional version, and an optional path inside the package. */
+/**
+ * Which runtime a build is made for.
+ *
+ * `portable` is compiled for a browser, with the Node built-ins it reaches for polyfilled, so it
+ * runs wherever core runs — the server, the desktop app, and the browser-hosted builds that have no
+ * Node at all. `node` leaves those built-ins to the host, so it is the real package but only runs
+ * where Node does.
+ */
+export type ModuleTarget = "portable" | "node";
+
+/** An npm package name, an optional version, a path inside it, and the build wanted. */
 export interface PackageSpec {
     /** Package name, `@scope/name` included. */
     name: string;
@@ -35,11 +45,15 @@ export interface PackageSpec {
     version?: string;
     /** Path inside the package, leading slash included. */
     subpath?: string;
+    /** Which build. The same package and version can be installed once for each. */
+    target: ModuleTarget;
 }
 
 /** Turns a package into ES modules. One implementation per source of builds. */
 export interface ScriptModuleProvider {
     readonly id: string;
+    /** The builds this provider can make. */
+    readonly targets: readonly ModuleTarget[];
     resolve(spec: PackageSpec): Promise<ScriptModuleArtifact>;
 }
 
@@ -85,10 +99,14 @@ export interface EsmShOptions extends ProviderOptions {
  * its Node polyfills in separately. So the resolve crawls what it is given.
  */
 export function createEsmShProvider(options: EsmShOptions = {}): ScriptModuleProvider {
-    const target = options.target ?? "es2022";
+    const browserTarget = options.target ?? "es2022";
 
-    return createGraphProvider("esm.sh", options, ESM_SH_ORIGIN, (origin, path) =>
-        `${origin}/${path}?bundle&target=${encodeURIComponent(target)}`);
+    // The portable build folds a package's dependencies in; the Node one does not. Bundling a Node
+    // build inlines source in which text reads as an import, which the crawl then chases.
+    return createGraphProvider("esm.sh", [ "portable", "node" ], options, ESM_SH_ORIGIN,
+        (origin, path, target) => target === "node"
+            ? `${origin}/${path}?target=node`
+            : `${origin}/${path}?bundle&target=${encodeURIComponent(browserTarget)}`);
 }
 
 /**
@@ -101,8 +119,10 @@ export function createEsmShProvider(options: EsmShOptions = {}): ScriptModulePro
  * resolves nowhere is a package nobody can install.
  */
 export function createJsDelivrProvider(options: ProviderOptions = {}): ScriptModuleProvider {
-    return createGraphProvider("jsdelivr", options, JSDELIVR_ORIGIN, (origin, path) =>
-        `${origin}/npm/${path}/+esm`);
+    // `/+esm` is compiled for a browser and jsDelivr offers nothing else, so it answers for the
+    // portable build alone.
+    return createGraphProvider("jsdelivr", [ "portable" ], options, JSDELIVR_ORIGIN,
+        (origin, path) => `${origin}/npm/${path}/+esm`);
 }
 
 /** The providers an install tries, in the order it tries them. */
@@ -124,6 +144,9 @@ export async function resolveScriptModule(
     const refusals: string[] = [];
 
     for (const provider of providers) {
+        if (!provider.targets.includes(spec.target)) {
+            continue;
+        }
         try {
             return await provider.resolve(spec);
         } catch (e) {
@@ -140,20 +163,27 @@ export async function resolveScriptModule(
  */
 function createGraphProvider(
     id: string,
+    targets: readonly ModuleTarget[],
     options: ProviderOptions,
     defaultOrigin: string,
-    buildEntryUrl: (origin: string, path: string) => string
+    buildEntryUrl: (origin: string, path: string, target: ModuleTarget) => string
 ): ScriptModuleProvider {
     const origin = (options.origin ?? defaultOrigin).replace(/\/+$/, "");
     const limits = options.limits ?? DEFAULT_LIMITS;
 
     return {
         id,
+        targets,
         async resolve(spec: PackageSpec): Promise<ScriptModuleArtifact> {
+            if (!targets.includes(spec.target)) {
+                throw new ValidationError(`${id} does not build for '${spec.target}'.`);
+            }
+
             const version = spec.version ? `@${encodeURIComponent(spec.version)}` : "";
             const path = `${spec.name}${version}${spec.subpath ?? ""}`;
+            const entryUrl = buildEntryUrl(origin, path, spec.target);
 
-            const { files, entry } = await fetchModuleGraph(buildEntryUrl(origin, path), limits);
+            const { files, entry } = await fetchModuleGraph(entryUrl, limits);
             return { providerId: id, spec, files, entry };
         }
     };
@@ -163,7 +193,7 @@ function createGraphProvider(
  * Parses `cheerio`, `cheerio@1.1.2`, `@scope/pkg@1.1.2` or `cheerio@1.1.2/lib/static` into its
  * parts, refusing anything that would not survive being put back into a URL.
  */
-export function parsePackageSpec(raw: string): PackageSpec {
+export function parsePackageSpec(raw: string, target: ModuleTarget = "portable"): PackageSpec {
     const trimmed = raw.trim();
     if (!trimmed) {
         throw new ValidationError("Package specifier is empty.");
@@ -201,7 +231,7 @@ export function parsePackageSpec(raw: string): PackageSpec {
         throw new ValidationError(`'${rest}' is not a valid path inside a package.`);
     }
 
-    return { name, ...(version ? { version } : {}), ...(rest ? { subpath: rest } : {}) };
+    return { name, ...(version ? { version } : {}), ...(rest ? { subpath: rest } : {}), target };
 }
 
 const PACKAGE_NAME = /^(@[a-z0-9~][a-z0-9._~-]*\/)?[a-z0-9~][a-z0-9._~-]*$/i;
@@ -229,6 +259,8 @@ const DYNAMIC_SPECIFIER = /(\bimport\s*\(\s*)(["'])([^"'\n]+)\2(\s*\))/g;
 async function fetchModuleGraph(entryUrl: string, limits: ScriptModuleLimits) {
     const origin = new URL(entryUrl).origin;
     const sources = new Map<string, string>();
+    /** Same-origin URLs naming a host built-in rather than a file, and what to call it instead. */
+    const builtins = new Map<string, string>();
     const queue = [entryUrl];
     let totalBytes = 0;
 
@@ -262,7 +294,14 @@ async function fetchModuleGraph(entryUrl: string, limits: ScriptModuleLimits) {
 
         for (const specifier of readSpecifiers(source)) {
             const resolved = resolveSpecifier(specifier, url);
-            if (resolved && resolved.startsWith(`${origin}/`) && !sources.has(resolved)) {
+            if (!resolved || !resolved.startsWith(`${origin}/`) || sources.has(resolved)) {
+                continue;
+            }
+
+            const builtin = builtinNamedByUrl(resolved);
+            if (builtin) {
+                builtins.set(resolved, builtin);
+            } else {
                 queue.push(resolved);
             }
         }
@@ -275,7 +314,7 @@ async function fetchModuleGraph(entryUrl: string, limits: ScriptModuleLimits) {
 
     const files: ScriptModuleFile[] = [];
     for (const [url, source] of sources) {
-        const rewritten = stripSourceMapLinks(rewriteSpecifiers(source, url, names));
+        const rewritten = stripSourceMapLinks(rewriteSpecifiers(source, url, names, builtins));
         files.push({ name: names.get(url) ?? "", url, source: rewritten });
     }
 
@@ -302,21 +341,43 @@ function* readSpecifiers(source: string): Generator<string> {
  * Only a specifier naming a module that was fetched is rewritten, so bare specifiers and other
  * origins are left as they stand.
  */
-function rewriteSpecifiers(source: string, baseUrl: string, names: Map<string, string>): string {
-    const localName = (specifier: string) => {
+function rewriteSpecifiers(
+    source: string,
+    baseUrl: string,
+    names: Map<string, string>,
+    builtins: Map<string, string>
+): string {
+    const replacement = (specifier: string) => {
         const resolved = resolveSpecifier(specifier, baseUrl);
-        return resolved ? names.get(resolved) : undefined;
+        if (!resolved) {
+            return undefined;
+        }
+
+        const name = names.get(resolved);
+        return name ? `./${name}` : builtins.get(resolved);
     };
 
     return source
         .replace(STATIC_SPECIFIER, (whole, keyword, quote, specifier) => {
-            const name = localName(specifier);
-            return name ? `${keyword}${quote}./${name}${quote}` : whole;
+            const target = replacement(specifier);
+            return target ? `${keyword}${quote}${target}${quote}` : whole;
         })
         .replace(DYNAMIC_SPECIFIER, (whole, opening, quote, specifier, closing) => {
-            const name = localName(specifier);
-            return name ? `${opening}${quote}./${name}${quote}${closing}` : whole;
+            const target = replacement(specifier);
+            return target ? `${opening}${quote}${target}${quote}${closing}` : whole;
         });
+}
+
+/**
+ * The Node built-in a same-origin URL stands for, or `undefined` where it names a file.
+ *
+ * A Node build leaves the built-ins to the host, and esm.sh writes them as paths of its own —
+ * `/node:sqlite?target=node` — which it then refuses to serve. They are the host's to answer, so
+ * the crawl does not follow them and the specifier becomes the built-in's own name.
+ */
+function builtinNamedByUrl(url: string): string | undefined {
+    const path = new URL(url).pathname.replace(/^\/+/, "");
+    return path.startsWith("node:") ? path : undefined;
 }
 
 /**

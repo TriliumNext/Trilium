@@ -4,7 +4,11 @@ import type { Request } from "express";
 import { NotFoundError, ValidationError } from "../../errors.js";
 import { forgetScriptModule } from "../../services/script_modules/loader.js";
 import { searchPackages } from "../../services/script_modules/npm_registry.js";
-import { parsePackageSpec, resolveScriptModule } from "../../services/script_modules/provider.js";
+import {
+    type ModuleTarget,
+    parsePackageSpec,
+    resolveScriptModule
+} from "../../services/script_modules/provider.js";
 import {
     deleteScriptModule,
     findScriptModuleByNoteId,
@@ -48,12 +52,15 @@ async function search(req: Request): Promise<ScriptModuleSearchResult[]> {
 async function install(req: Request) {
     assertScriptingEnabled();
 
-    const spec = (req.body ?? {}).spec;
+    const { spec, target } = req.body ?? {};
     if (typeof spec !== "string") {
         throw new ValidationError("A package to install must be given.");
     }
+    if (target !== undefined && target !== "portable" && target !== "node") {
+        throw new ValidationError(`'${target}' is not a build that can be installed.`);
+    }
 
-    const artifact = await resolveScriptModule(parsePackageSpec(spec));
+    const artifact = await resolveScriptModule(parsePackageSpec(spec, target as ModuleTarget));
     return summarize(getSql().transactional(() => storeScriptModule(artifact)));
 }
 
@@ -74,6 +81,7 @@ function summarize(module: StoredScriptModule): ScriptModuleSummary {
         noteId: module.noteId,
         spec: formatPackageSpec(module.spec),
         name: `${module.spec.name}${module.spec.subpath ?? ""}`,
+        target: module.spec.target,
         providerId: module.providerId,
         fileCount: module.files.length,
         size: module.size,

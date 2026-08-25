@@ -149,7 +149,26 @@ describe("ScriptModulesDialog", () => {
         await act(async () => { install?.click(); });
         await settle();
 
-        expect(mocks.post).toHaveBeenCalledWith("script-modules", { spec: "cheerio@1.1.2" });
+        expect(mocks.post).toHaveBeenCalledWith("script-modules",
+            { spec: "cheerio@1.1.2", target: "portable" });
+    });
+
+    it("installs the Node.js build when that box is ticked", async () => {
+        mockServer([ CHEERIO ]);
+        await open();
+        await type("cheerio@1.1.2");
+
+        const nodeBuild = document.querySelector<HTMLInputElement>(
+            ".script-modules-dialog input[type=checkbox]");
+        await act(async () => { nodeBuild?.click(); });
+
+        const install = [ ...document.querySelectorAll<HTMLButtonElement>(".script-modules-dialog button") ]
+            .find((button) => button.textContent?.includes("script_modules.install"));
+        await act(async () => { install?.click(); });
+        await settle();
+
+        expect(mocks.post).toHaveBeenCalledWith("script-modules",
+            { spec: "cheerio@1.1.2", target: "node" });
     });
 
     it("reports a search that found nothing or failed in the list itself", async () => {

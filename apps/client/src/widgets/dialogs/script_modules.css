@@ -33,11 +33,17 @@
     }
 
     .script-module-spec {
-        flex-grow: 1;
         font-family: var(--monospace-font-family);
     }
 
+    .script-module-node-badge {
+        --color: var(--muted-text-color);
+        flex-shrink: 0;
+    }
+
     .script-module-detail {
+        flex-grow: 1;
+        text-align: right;
         color: var(--muted-text-color);
         font-size: 0.85em;
         white-space: nowrap;

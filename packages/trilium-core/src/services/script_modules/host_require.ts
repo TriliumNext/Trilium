@@ -28,21 +28,38 @@ const BLOCKED_MODULES = new Set([
     "vm"
 ]);
 
+/** Whether this runtime has a module loader at all, which is what a Node build needs. */
+export function canRequireHostModules(): boolean {
+    return typeof require === "function";
+}
+
+export interface HostRequireOptions {
+    /**
+     * Whether the blocklist is waived.
+     *
+     * True only for a package installed as a Node build, which is the whole point of that build and
+     * which someone asked for on purpose. It does not widen what a script can reach in any sense
+     * that holds: a script can wrap such a package and re-export anything it can see. The boundary
+     * stays the backendScriptingEnabled toggle.
+     */
+    allowBlocked?: boolean;
+}
+
 /**
  * Requires a module from the host runtime.
  *
  * Shared by the script context and by the loader that evaluates installed packages, so a built-in
- * a script cannot ask for directly is one an installed package cannot reach on its behalf either.
+ * a script cannot ask for directly is one a portable package cannot reach on its behalf either.
  */
-export function requireHostModule(moduleName: string): unknown {
-    if (BLOCKED_MODULES.has(builtinRoot(moduleName))) {
+export function requireHostModule(moduleName: string, options: HostRequireOptions = {}): unknown {
+    if (!options.allowBlocked && BLOCKED_MODULES.has(builtinRoot(moduleName))) {
         throw new Error(
             `Module '${moduleName}' is blocked for security. ` +
             `Scripts cannot access OS-level modules like child_process, fs, net, os.`
         );
     }
 
-    if (typeof require !== "function") {
+    if (!canRequireHostModules()) {
         throw new Error(
             `Module '${moduleName}' cannot be loaded: this build has no module loader.`
         );

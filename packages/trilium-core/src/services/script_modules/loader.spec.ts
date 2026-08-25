@@ -4,17 +4,21 @@ import { getContext } from "../context.js";
 import hiddenSubtreeService from "../hidden_subtree.js";
 import noteService from "../notes.js";
 import ScriptContext from "../script_context.js";
-import { clearScriptModuleCache, requireScriptModule } from "./loader.js";
+import { clearScriptModuleCache, requireScriptModule, selectInstalledModule } from "./loader.js";
 import type { ScriptModuleArtifact } from "./provider.js";
 import { deleteScriptModule, storeScriptModule } from "./storage.js";
 
 type SourceFile = { name: string; source: string };
 
 function store(spec: string, files: SourceFile[]) {
+    return storeFor("portable", spec, files);
+}
+
+function storeFor(target: "portable" | "node", spec: string, files: SourceFile[]) {
     const [name, version] = spec.split("@");
     const artifact: ScriptModuleArtifact = {
         providerId: "esm.sh",
-        spec: { name, version },
+        spec: { name, version, target },
         entry: files[0].name,
         files: files.map((file) => ({ ...file, url: `https://esm.sh/${file.name}` }))
     };
@@ -86,6 +90,18 @@ describe("script module loader (real DB)", () => {
         }]);
 
         expect(exportsOf("pkg-interop").ok).toBe(true);
+    });
+
+    it("keeps the two builds of one version apart and prefers the one for this runtime", () => {
+        const portable = store("pkg-both@1.0.0", [{ name: "entry.mjs", source: "export const from = 'portable';" }]);
+        const node = storeFor("node", "pkg-both@1.0.0", [{ name: "entry.mjs", source: "export const from = 'node';" }]);
+
+        // Two notes, so installing one does not replace the other.
+        expect(node.noteId).not.toBe(portable.noteId);
+
+        // Under Node both run and the Node build wins; a bare name is not ambiguous between builds.
+        expect(exportsOf("pkg-both").from).toBe("node");
+        expect(exportsOf("pkg-both@1.0.0").from).toBe("node");
     });
 
     it("reads only the files the entry reaches", () => {
@@ -160,7 +176,7 @@ describe("script module loader (real DB)", () => {
         expect(exportsOf("pkg-multi@2.0.0").v).toBe(2);
         expect(() => requireScriptModule("pkg-multi")).toThrow(/installed more than once/);
 
-        getContext().init(() => deleteScriptModule({ name: "pkg-multi", version: "1.0.0" }));
+        getContext().init(() => deleteScriptModule({ name: "pkg-multi", version: "1.0.0", target: "portable" as const }));
         expect(exportsOf("pkg-multi").v).toBe(2);
     });
 });
@@ -197,5 +213,39 @@ describe("ScriptContext.require of an installed package", () => {
         ctx.modules[note.noteId] = { exports: ["from the note"] };
 
         expect(ctx.require([note.noteId])("pkg-required")).toEqual(["from the note"]);
+    });
+});
+
+describe("selectInstalledModule", () => {
+    const at = (spec: string, target: "portable" | "node") => {
+        const [name, version] = spec.split("@");
+        return { noteId: `${name}-${version}-${target}`, spec: { name, version, target } } as never;
+    };
+
+    it("prefers the Node build where Node can run it, and the portable one where it cannot", () => {
+        const installs = [ at("pkg@1.0.0", "portable"), at("pkg@1.0.0", "node") ];
+
+        expect(selectInstalledModule(installs, "pkg", true)?.noteId).toBe("pkg-1.0.0-node");
+        expect(selectInstalledModule(installs, "pkg", false)?.noteId).toBe("pkg-1.0.0-portable");
+        expect(selectInstalledModule(installs, "pkg@1.0.0", true)?.noteId).toBe("pkg-1.0.0-node");
+    });
+
+    it("says so when the only build installed cannot run here", () => {
+        const installs = [ at("pkg@1.0.0", "node") ];
+
+        expect(selectInstalledModule(installs, "pkg", true)?.noteId).toBe("pkg-1.0.0-node");
+        expect(() => selectInstalledModule(installs, "pkg", false)).toThrow(/only as a Node.js build/);
+    });
+
+    it("still refuses to choose between two versions", () => {
+        const installs = [ at("pkg@1.0.0", "portable"), at("pkg@2.0.0", "node") ];
+
+        expect(() => selectInstalledModule(installs, "pkg", true)).toThrow(/installed more than once/);
+        // Only one of them runs here, so there is nothing to choose between.
+        expect(selectInstalledModule(installs, "pkg", false)?.noteId).toBe("pkg-1.0.0-portable");
+    });
+
+    it("answers nothing for a package that is not installed", () => {
+        expect(selectInstalledModule([], "pkg", true)).toBeUndefined();
     });
 });
