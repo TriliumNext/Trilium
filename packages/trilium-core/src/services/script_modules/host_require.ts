@@ -68,13 +68,30 @@ export function requireHostModule(moduleName: string, options: HostRequireOption
     try {
         return require(moduleName);
     } catch (e) {
-        const reason = e instanceof Error ? e.message : String(e);
         throw new Error(
             `Module '${moduleName}' could not be loaded. Install it from Script modules ` +
-            `on a backend script note, or name a child note after it. (${reason})`,
+            `on a script note, or name a child note after it.${describeRefusal(e)}`,
             { cause: e }
         );
     }
+}
+
+/**
+ * What to add about why the host refused, or nothing where it has nothing to add.
+ *
+ * A module the host does not have is what the sentence above already covers, and Node answers that
+ * with a require stack of Trilium's own modules — a page of internals about a name a script wrote,
+ * which reads as though the failure were somewhere in Trilium. Anything else is the host saying
+ * something the sentence does not, so its first line is kept and the stack still dropped.
+ */
+function describeRefusal(e: unknown): string {
+    const code = (e as { code?: string } | null)?.code;
+    if (!(e instanceof Error) || code === "MODULE_NOT_FOUND" || code === "ERR_MODULE_NOT_FOUND") {
+        return "";
+    }
+
+    const [ firstLine ] = e.message.split(/\r?\n|\s*Require stack:/);
+    return firstLine?.trim() ? ` (${firstLine.trim()})` : "";
 }
 
 /**
