@@ -1,3 +1,4 @@
+import type { FrontendScriptModule, UnavailableScriptModule } from "@triliumnext/commons";
 import { ScriptParams } from "@triliumnext/commons";
 import { t } from "i18next";
 import { transform } from "sucrase";
@@ -7,6 +8,7 @@ import type BNote from "../becca/entities/bnote.js";
 import type { ApiParams } from "./backend_script_api_interface.js";
 import { getLog } from "./log.js";
 import ScriptContext from "./script_context.js";
+import { collectFrontendModules } from "./script_modules/frontend.js";
 import { assertScriptingEnabled } from "./scripting_guard.js";
 import { getContext } from "./context.js";
 import { unwrapStringOrBuffer } from "./utils/binary.js";
@@ -19,6 +21,10 @@ export interface Bundle {
     html: string;
     allNotes?: BNote[];
     allNoteIds?: string[];
+    /** Packages the script requires, compiled for a runtime that cannot read the database. */
+    scriptModules?: FrontendScriptModule[];
+    /** Packages it asked for that could not be sent, so the failure can name a reason. */
+    unavailableModules?: UnavailableScriptModule[];
 }
 
 function executeNote(note: BNote, apiParams: ApiParams) {
@@ -179,6 +185,14 @@ function getScriptBundleForFrontend(note: BNote, script?: string, params?: Scrip
 
     bundle.allNoteIds = bundle.allNotes?.map((note) => note.noteId);
     delete bundle.allNotes;
+
+    const { modules, unavailable } = collectFrontendModules(bundle.script);
+    if (modules.length > 0) {
+        bundle.scriptModules = modules;
+    }
+    if (unavailable.length > 0) {
+        bundle.unavailableModules = unavailable;
+    }
 
     return bundle;
 }

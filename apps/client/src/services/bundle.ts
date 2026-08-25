@@ -1,3 +1,4 @@
+import type { FrontendScriptModule, UnavailableScriptModule } from "@triliumnext/commons";
 import { ScriptParams } from "@triliumnext/commons";
 import { h, VNode } from "preact";
 
@@ -19,6 +20,10 @@ export interface Bundle {
     html: string;
     noteId: string;
     allNoteIds: string[];
+    /** Packages the script requires, compiled by the side that holds them. */
+    scriptModules?: FrontendScriptModule[];
+    /** Packages it asked for that could not be sent, so the failure can name a reason. */
+    unavailableModules?: UnavailableScriptModule[];
 }
 
 type LegacyWidget = (BasicWidget | RightPanelWidget) & {
@@ -41,7 +46,10 @@ async function getAndExecuteBundle(noteId: string, originEntity: FNote | null = 
 export type ParentName = WidgetDefinitionWithType["parent"];
 
 export async function executeBundleWithoutErrorHandling(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
-    const apiContext = await ScriptContext(bundle.noteId, bundle.allNoteIds, originEntity, $container);
+    const apiContext = await ScriptContext(bundle.noteId, bundle.allNoteIds, originEntity, $container, {
+        scriptModules: bundle.scriptModules,
+        unavailableModules: bundle.unavailableModules
+    });
     return await function () {
         return eval(`const apiContext = this; (async function() { ${bundle.script}\r\n})()`);
     }.call(apiContext);
