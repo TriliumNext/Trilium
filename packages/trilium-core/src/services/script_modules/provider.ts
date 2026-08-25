@@ -1,4 +1,5 @@
 import { ValidationError } from "../../errors.js";
+import { getLog } from "../log.js";
 import request from "../request.js";
 import { decodeUtf8 } from "../utils/binary.js";
 
@@ -9,6 +10,19 @@ export interface ScriptModuleFile {
     /** URL it came from, kept so an install can be checked against its source later. */
     url: string;
     source: string;
+}
+
+/**
+ * The TypeScript declarations a package is typed by, resolved the same way its modules are.
+ *
+ * Nothing runs them: they exist so the script editor can say what a `require()` of this package
+ * returns. A package that publishes none is installed without them and completes as `any`, which is
+ * what every package did before this.
+ */
+export interface ScriptModuleDeclarations {
+    files: ScriptModuleFile[];
+    /** Name of the file in {@link files} the package is typed by. */
+    entry: string;
 }
 
 /**
@@ -25,6 +39,8 @@ export interface ScriptModuleArtifact {
     files: ScriptModuleFile[];
     /** Name of the file in {@link files} to import. */
     entry: string;
+    /** What the package is typed by, where it publishes declarations. */
+    types?: ScriptModuleDeclarations;
 }
 
 /**
@@ -73,6 +89,18 @@ export const DEFAULT_LIMITS: ScriptModuleLimits = {
     maxTotalBytes: 12 * 1024 * 1024
 };
 
+/**
+ * What a declaration crawl is allowed to cost.
+ *
+ * More files than a build and fewer bytes: a build service bundles a package's modules into a
+ * handful, while its declarations stay one per source module and carry no implementation.
+ */
+export const DEFAULT_DECLARATION_LIMITS: ScriptModuleLimits = {
+    maxFiles: 256,
+    maxFileBytes: 2 * 1024 * 1024,
+    maxTotalBytes: 8 * 1024 * 1024
+};
+
 export const ESM_SH_ORIGIN = "https://esm.sh";
 export const JSDELIVR_ORIGIN = "https://cdn.jsdelivr.net";
 
@@ -83,6 +111,8 @@ export interface ProviderOptions {
      */
     origin?: string;
     limits?: ScriptModuleLimits;
+    /** What the package's declarations are allowed to cost, which is a separate budget. */
+    declarationLimits?: ScriptModuleLimits;
 }
 
 export interface EsmShOptions extends ProviderOptions {
@@ -170,6 +200,7 @@ function createGraphProvider(
 ): ScriptModuleProvider {
     const origin = (options.origin ?? defaultOrigin).replace(/\/+$/, "");
     const limits = options.limits ?? DEFAULT_LIMITS;
+    const declarationLimits = options.declarationLimits ?? DEFAULT_DECLARATION_LIMITS;
 
     return {
         id,
@@ -183,10 +214,43 @@ function createGraphProvider(
             const path = `${spec.name}${version}${spec.subpath ?? ""}`;
             const entryUrl = buildEntryUrl(origin, path, spec.target);
 
-            const { files, entry } = await fetchModuleGraph(entryUrl, limits);
-            return { providerId: id, spec, files, entry };
+            const { files, entry, entryHeaders } = await fetchModuleGraph(entryUrl, limits);
+            const types = await fetchDeclarations(entryHeaders[TYPES_HEADER], declarationLimits);
+
+            return { providerId: id, spec, files, entry, ...(types ? { types } : {}) };
         }
     };
+}
+
+/**
+ * Header a build service answers with to say where a package's declarations are. esm.sh sets it;
+ * jsDelivr does not, so a package built there is installed untyped.
+ */
+const TYPES_HEADER = "x-typescript-types";
+
+/**
+ * Crawls the declarations at `typesUrl`, or answers nothing where there are none to crawl.
+ *
+ * A failure here is not a failed install. Declarations are what the editor completes from, and a
+ * package that arrives without them still runs — so a service that 404s them, or a graph past its
+ * budget, costs the completions rather than the package.
+ */
+async function fetchDeclarations(
+    typesUrl: string | undefined,
+    limits: ScriptModuleLimits
+): Promise<ScriptModuleDeclarations | undefined> {
+    if (!typesUrl) {
+        return undefined;
+    }
+
+    try {
+        const { files, entry } = await fetchModuleGraph(typesUrl, limits, DECLARATION_GRAPH);
+        return { files, entry };
+    } catch (e) {
+        getLog().info(`Script module declarations at '${typesUrl}' could not be read: `
+            + `${e instanceof Error ? e.message : String(e)}`);
+        return undefined;
+    }
 }
 
 /**
@@ -243,6 +307,19 @@ const SUBPATH = /^(\/[a-z0-9._~-]+)+$/i;
 const STATIC_SPECIFIER = /(\b(?:from|import)\s*)(["'])([^"'\n]+)\2/g;
 /** `import("x")`, which the static form skips because of the parenthesis. */
 const DYNAMIC_SPECIFIER = /(\bimport\s*\(\s*)(["'])([^"'\n]+)\2(\s*\))/g;
+/** `/// <reference path="x" />`, which is how declarations name the ones beside them. */
+const REFERENCE_SPECIFIER = /(\/\/\/\s*<reference\s+(?:path|types)\s*=\s*)(["'])([^"'\n]+)\2/g;
+
+/** What a crawl is fetching: the modules a package runs as, or the declarations it is typed by. */
+interface GraphKind {
+    /** Media type the service must answer with, so an error page is never stored as source. */
+    mediaType: string;
+    /** Extension the stored files are named with, which is what tells TypeScript what they are. */
+    extension: string;
+}
+
+const MODULE_GRAPH: GraphKind = { mediaType: "javascript", extension: ".mjs" };
+const DECLARATION_GRAPH: GraphKind = { mediaType: "typescript", extension: ".d.ts" };
 
 /**
  * Fetches everything reachable from `entryUrl` and rewrites the links between them to local names.
@@ -256,12 +333,17 @@ const DYNAMIC_SPECIFIER = /(\bimport\s*\(\s*)(["'])([^"'\n]+)\2(\s*\))/g;
  * the URL it names does not exist. Failing loudly is the point: a build whose real imports 404 is
  * exactly what an install must not accept, and esm.sh does ship such builds.
  */
-async function fetchModuleGraph(entryUrl: string, limits: ScriptModuleLimits) {
+async function fetchModuleGraph(
+    entryUrl: string,
+    limits: ScriptModuleLimits,
+    kind: GraphKind = MODULE_GRAPH
+) {
     const origin = new URL(entryUrl).origin;
     const sources = new Map<string, string>();
     /** Same-origin URLs naming a host built-in rather than a file, and what to call it instead. */
     const builtins = new Map<string, string>();
     const queue = [entryUrl];
+    let entryHeaders: Readonly<Record<string, string>> = {};
     let totalBytes = 0;
 
     while (queue.length > 0) {
@@ -278,9 +360,12 @@ async function fetchModuleGraph(entryUrl: string, limits: ScriptModuleLimits) {
         if (!response.ok) {
             throw new ValidationError(`Fetching '${url}' answered HTTP ${response.status}.`);
         }
-        if (!response.contentType.includes("javascript")) {
+        if (!response.contentType.includes(kind.mediaType)) {
             throw new ValidationError(
-                `'${url}' was served as '${response.contentType}' rather than JavaScript.`);
+                `'${url}' was served as '${response.contentType}' rather than ${kind.mediaType}.`);
+        }
+        if (url === entryUrl) {
+            entryHeaders = response.headers ?? {};
         }
 
         totalBytes += response.bytes.length;
@@ -309,7 +394,7 @@ async function fetchModuleGraph(entryUrl: string, limits: ScriptModuleLimits) {
 
     const names = new Map<string, string>();
     for (const url of sources.keys()) {
-        names.set(url, fileNameFor(url, new Set(names.values())));
+        names.set(url, fileNameFor(url, new Set(names.values()), kind.extension));
     }
 
     const files: ScriptModuleFile[] = [];
@@ -318,7 +403,7 @@ async function fetchModuleGraph(entryUrl: string, limits: ScriptModuleLimits) {
         files.push({ name: names.get(url) ?? "", url, source: rewritten });
     }
 
-    return { files, entry: names.get(entryUrl) ?? "" };
+    return { files, entry: names.get(entryUrl) ?? "", entryHeaders };
 }
 
 /** Drops the link to a source map, which is not fetched and so names a file that is never there. */
@@ -331,6 +416,9 @@ function* readSpecifiers(source: string): Generator<string> {
         yield match[3];
     }
     for (const match of source.matchAll(DYNAMIC_SPECIFIER)) {
+        yield match[3];
+    }
+    for (const match of source.matchAll(REFERENCE_SPECIFIER)) {
         yield match[3];
     }
 }
@@ -357,11 +445,14 @@ function rewriteSpecifiers(
         return name ? `./${name}` : builtins.get(resolved);
     };
 
+    const replaceQuoted = (whole: string, prefix: string, quote: string, specifier: string) => {
+        const target = replacement(specifier);
+        return target ? `${prefix}${quote}${target}${quote}` : whole;
+    };
+
     return source
-        .replace(STATIC_SPECIFIER, (whole, keyword, quote, specifier) => {
-            const target = replacement(specifier);
-            return target ? `${keyword}${quote}${target}${quote}` : whole;
-        })
+        .replace(STATIC_SPECIFIER, replaceQuoted)
+        .replace(REFERENCE_SPECIFIER, replaceQuoted)
         .replace(DYNAMIC_SPECIFIER, (whole, opening, quote, specifier, closing) => {
             const target = replacement(specifier);
             return target ? `${opening}${quote}${target}${quote}${closing}` : whole;
@@ -404,7 +495,7 @@ const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
  * Names a module after the URL it came from, so a stored artifact can be read back against its
  * source. The query is part of the name because a build service varies its answer by query.
  */
-function fileNameFor(url: string, taken: Set<string>): string {
+function fileNameFor(url: string, taken: Set<string>, extension: string): string {
     const parsed = new URL(url);
     const slug = `${parsed.pathname}${parsed.search}`
         .replace(/^\/+/, "")
@@ -412,13 +503,14 @@ function fileNameFor(url: string, taken: Set<string>): string {
         .replace(/^_+|_+$/g, "")
         .slice(0, 100) || "module";
 
-    const base = slug.endsWith(".mjs") ? slug : `${slug}.mjs`;
+    const base = slug.endsWith(extension) ? slug : `${slug}${extension}`;
     if (!taken.has(base)) {
         return base;
     }
 
+    const stem = base.slice(0, base.length - extension.length);
     for (let suffix = 2; ; suffix++) {
-        const candidate = base.replace(/\.mjs$/, `-${suffix}.mjs`);
+        const candidate = `${stem}-${suffix}${extension}`;
         if (!taken.has(candidate)) {
             return candidate;
         }

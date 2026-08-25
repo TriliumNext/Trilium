@@ -13,7 +13,7 @@ import {
 } from "./provider.js";
 
 /** URLs the fake provider answers, and the URLs it was asked for in order. */
-let served: Map<string, { source: string; status?: number; contentType?: string }>;
+let served: Map<string, { source: string; status?: number; contentType?: string; headers?: Record<string, string> }>;
 let requested: string[];
 
 beforeEach(() => {
@@ -32,13 +32,18 @@ beforeEach(() => {
                 status,
                 ok: status >= 200 && status < 300,
                 contentType: entry.contentType ?? "application/javascript; charset=utf-8",
+                headers: entry.headers ?? {},
                 bytes: encodeUtf8(entry.source)
             };
         }
     }));
 });
 
-function serve(url: string, source: string, extra: { status?: number; contentType?: string } = {}) {
+function serve(
+    url: string,
+    source: string,
+    extra: { status?: number; contentType?: string; headers?: Record<string, string> } = {}
+) {
     served.set(url, { source, ...extra });
 }
 
@@ -292,5 +297,61 @@ describe("esm.sh provider", () => {
         const byBytes = { maxFiles: 64, maxFileBytes: 1024, maxTotalBytes: 30 };
         await expect(createEsmShProvider({ limits: byBytes }).resolve(parsePackageSpec("many@1")))
             .rejects.toThrow(/larger than the 30 bytes/);
+    });
+});
+
+describe("declarations", () => {
+    const ENTRY = "https://esm.sh/dayjs@1.11.10?bundle&target=es2022";
+    const TYPES = "https://esm.sh/dayjs@1.11.10/index.d.ts";
+    const declaration = { contentType: "application/typescript; charset=utf-8" };
+
+    function serveBuild(headers: Record<string, string> = { "x-typescript-types": TYPES }) {
+        serve(ENTRY, "export default 1;", { headers });
+    }
+
+    it("crawls what the build says it is typed by, following the references between them", async () => {
+        serveBuild();
+        serve(TYPES, '/// <reference path="./locale/index.d.ts" />\nexport = dayjs;\n', declaration);
+        serve("https://esm.sh/dayjs@1.11.10/locale/index.d.ts", "export interface Locale {}\n", declaration);
+
+        const artifact = await createEsmShProvider().resolve(parsePackageSpec("dayjs@1.11.10"));
+
+        expect(artifact.types?.files.map((f) => f.name)).toEqual([
+            "dayjs@1.11.10_index.d.ts",
+            "dayjs@1.11.10_locale_index.d.ts"
+        ]);
+        expect(artifact.types?.entry).toBe("dayjs@1.11.10_index.d.ts");
+        // The reference points at the stored file rather than back at the service.
+        expect(artifact.types?.files[0].source)
+            .toContain('<reference path="./dayjs@1.11.10_locale_index.d.ts" />');
+    });
+
+    it("installs a package the build names no declarations for", async () => {
+        serveBuild({});
+        const artifact = await createEsmShProvider().resolve(parsePackageSpec("dayjs@1.11.10"));
+
+        expect(artifact.types).toBeUndefined();
+        expect(artifact.files).toHaveLength(1);
+    });
+
+    it("installs the package all the same when its declarations cannot be had", async () => {
+        serveBuild();
+        // Nothing serves the declaration URL, and a build that runs is worth having untyped.
+        const artifact = await createEsmShProvider().resolve(parsePackageSpec("dayjs@1.11.10"));
+
+        expect(artifact.types).toBeUndefined();
+        expect(artifact.files).toHaveLength(1);
+    });
+
+    it("keeps the declarations to a budget of their own", async () => {
+        serveBuild();
+        serve(TYPES, `export type Wide = "${"x".repeat(200)}";\n`, declaration);
+
+        const limits = { maxFiles: 8, maxFileBytes: 64, maxTotalBytes: 64 };
+        const artifact = await createEsmShProvider({ declarationLimits: limits })
+            .resolve(parsePackageSpec("dayjs@1.11.10"));
+
+        expect(artifact.types).toBeUndefined();
+        expect(artifact.files).toHaveLength(1);
     });
 });

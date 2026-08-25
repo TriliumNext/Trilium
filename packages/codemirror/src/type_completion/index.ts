@@ -1,6 +1,7 @@
 import type { CompletionSource } from "@codemirror/autocomplete";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
+import type { ScriptModuleTypes } from "@triliumnext/commons";
 
 /**
  * Full IntelliSense for backend/frontend script notes.
@@ -41,6 +42,12 @@ export interface ScriptApiContext {
      * when this is true.
      */
     customRequestHandler?: boolean;
+    /**
+     * The declarations of the npm packages installed for backend scripts, so a
+     * `require()` of one is typed rather than `any`. Backend only: the frontend's
+     * `require()` resolves child notes, which these are not.
+     */
+    scriptModules?: ScriptModuleTypes[];
 }
 
 /**
@@ -158,6 +165,14 @@ async function createEnv(mime: string, context: ScriptApiContext = {}) {
             : `Omit<BackendApi, ${CUSTOM_REQUEST_HANDLER_MEMBERS.map((m) => `"${m}"`).join(" | ")}>`;
         fsMap.set(API_GLOBALS_PATH, `import type { BackendApi } from "./trilium-script-api";\ndeclare global {\n    // eslint-disable-next-line no-var\n    var api: ${apiType};\n}\n`);
         rootFiles.push(API_TYPES_PATH);
+
+        // Installed npm packages, laid out under /node_modules so `require("pkg")` resolves to
+        // them. Not root files: a package is typed only where the script asks for it, and rooting
+        // hundreds of declaration files would type-check every one of them on every keystroke.
+        const { scriptModuleVfsFiles } = await import("./script_module_types.js");
+        for (const [filePath, content] of Object.entries(scriptModuleVfsFiles(context.scriptModules ?? []))) {
+            fsMap.set(filePath, content);
+        }
     }
 
     if (mime === SCRIPT_MIME_JSX) {

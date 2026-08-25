@@ -12,8 +12,10 @@ import {
     formatPackageSpec,
     listScriptModules,
     MODULE_FILE_ROLE,
+    MODULE_TYPES_ROLE,
     openScriptModuleSources,
     parseManifest,
+    readScriptModuleTypes,
     scriptModuleNoteId,
     storeScriptModule
 } from "./storage.js";
@@ -236,5 +238,76 @@ describe("parseManifest", () => {
         for (const [label, value] of Object.entries(cases)) {
             expect(parseManifest(JSON.stringify(value)), label).toBeUndefined();
         }
+    });
+});
+
+describe("stored declarations", () => {
+    const TYPES: SourceFile[] = [
+        { name: "pkg_index.d.ts", source: 'export * from "./pkg_other.d.ts";' },
+        { name: "pkg_other.d.ts", source: "export interface Thing {}" }
+    ];
+
+    function storeTyped(spec: string, types: SourceFile[] | undefined) {
+        const base = artifact(spec, [ { name: "entry.mjs", source: ENTRY_SOURCE } ]);
+        const withTypes: ScriptModuleArtifact = types
+            ? { ...base, types: { entry: types[0].name, files: types.map((f) => ({ ...f, url: `https://esm.sh/${f.name}` })) } }
+            : base;
+
+        return getContext().init(() => storeScriptModule(withTypes));
+    }
+
+    it("stores the declarations apart from the sources and reads them back", () => {
+        const stored = storeTyped("typed@1.0.0", TYPES);
+
+        expect(stored.types?.entry).toBe("pkg_index.d.ts");
+        expect(stored.types?.files.map((f) => f.name)).toEqual([ "pkg_index.d.ts", "pkg_other.d.ts" ]);
+        expect(readScriptModuleTypes(stored)?.map((f) => f.content))
+            .toEqual(TYPES.map((f) => f.source));
+
+        // The loader lists the sources alone, so a declaration is never evaluated as a module.
+        const note = becca.getNoteOrThrow(stored.noteId);
+        const roles = note.getAttachments().map((a) => a.role);
+        expect(roles.filter((role) => role === MODULE_TYPES_ROLE)).toHaveLength(2);
+        expect(openScriptModuleSources(note)("pkg_index.d.ts")).toBeUndefined();
+        expect(openScriptModuleSources(note)("entry.mjs")).toBe(ENTRY_SOURCE);
+
+        // A package's size is what it runs as; its declarations are the editor's business.
+        expect(stored.size).toBe(ENTRY_SOURCE.length);
+    });
+
+    it("drops the declarations a reinstall no longer names", () => {
+        storeTyped("shrinking@1.0.0", TYPES);
+        const stored = storeTyped("shrinking@1.0.0", [ TYPES[0] ]);
+
+        expect(stored.types?.files.map((f) => f.name)).toEqual([ "pkg_index.d.ts" ]);
+        const kept = becca.getNoteOrThrow(stored.noteId).getAttachments()
+            .filter((a) => a.role === MODULE_TYPES_ROLE);
+        expect(kept.map((a) => a.title)).toEqual([ "pkg_index.d.ts" ]);
+    });
+
+    it("reads back a package that was installed without declarations", () => {
+        const stored = storeTyped("untyped@1.0.0", undefined);
+
+        expect(stored.types).toBeUndefined();
+        expect(readScriptModuleTypes(stored)).toBeUndefined();
+    });
+
+    it("refuses a manifest whose declarations name an entry that is not among them", () => {
+        const manifest = {
+            spec: { name: "pkg", target: "portable" },
+            providerId: "esm.sh",
+            entry: "entry.mjs",
+            files: [ { name: "entry.mjs", url: "https://esm.sh/entry.mjs" } ]
+        };
+
+        expect(parseManifest(JSON.stringify(manifest))?.types).toBeUndefined();
+        expect(parseManifest(JSON.stringify({
+            ...manifest,
+            types: { entry: "missing.d.ts", files: [ { name: "index.d.ts", url: "https://esm.sh/index.d.ts" } ] }
+        }))?.types).toBeUndefined();
+        expect(parseManifest(JSON.stringify({
+            ...manifest,
+            types: { entry: "index.d.ts", files: [ { name: "index.d.ts", url: "https://esm.sh/index.d.ts" } ] }
+        }))?.types?.entry).toBe("index.d.ts");
     });
 });
