@@ -30,25 +30,32 @@ function list(): ScriptModuleSummary[] {
  *
  * One call for all of them, since the editor puts the whole set in front of TypeScript at once. A
  * package installed for both builds is one answer: the two carry the same declarations, and the
- * editor is typing a `require()`, which names a package rather than a build.
+ * editor is typing a `require()`, which names a package rather than a build. Which builds are
+ * behind it still matters to the caller, so `portable` travels with the answer — a frontend script
+ * cannot reach a package installed only for Node.js.
  */
 function types(): ScriptModuleTypes[] {
-    const answered = new Set<string>();
-    const modules: ScriptModuleTypes[] = [];
-
+    const installsByName = new Map<string, StoredScriptModule[]>();
     for (const module of listScriptModules()) {
         const name = bareSpecifier(module);
-        if (answered.has(name)) {
+        installsByName.set(name, [ ...installsByName.get(name) ?? [], module ]);
+    }
+
+    const modules: ScriptModuleTypes[] = [];
+    for (const [ name, installs ] of installsByName) {
+        const typed = installs.find((module) => module.types);
+        const files = typed && readScriptModuleTypes(typed);
+        if (!typed?.types || !files) {
             continue;
         }
 
-        const files = readScriptModuleTypes(module);
-        if (!module.types || !files) {
-            continue;
-        }
-
-        answered.add(name);
-        modules.push({ name, spec: formatPackageSpec(module.spec), entry: module.types.entry, files });
+        modules.push({
+            name,
+            spec: formatPackageSpec(typed.spec),
+            portable: installs.some((module) => module.spec.target !== "node"),
+            entry: typed.types.entry,
+            files
+        });
     }
 
     return modules;
