@@ -9,6 +9,8 @@ export interface ScriptModuleSummary {
     noteId: string;
     /** `name@version`, as installed. */
     spec: string;
+    /** The bare specifier `require()` takes: the package name and subpath, without the version. */
+    name: string;
     /** Which provider built it. */
     providerId: string;
     /** How many ES modules the package resolved to. */
