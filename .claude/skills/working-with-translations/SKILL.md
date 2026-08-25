@@ -99,7 +99,10 @@ There is no base key — `find --key space_usage.my_notes` shows only the suffix
 
 ### Interpolation
 
-`{{var}}` normally, `{{- var}}` to skip HTML-escaping when the value contains quotes. When a string embeds **components** whose order varies by language (links, note references), use `<Trans>` from `react-i18next` rather than `t()`, so translators can reorder them.
+`{{var}}` everywhere. The client turns i18next's HTML-escaping off in `initLocale()`, so `{{var}}` and
+`{{- var}}` behave the same there; the server catalogue still escapes, which is why `server.json` keeps
+`{{- var}}` on values carrying quotes or markup. Injection is stopped where the markup is rendered — the
+confirm/info dialogs sanitize with DOMPurify — not at the `t()` call. When a string embeds **components** whose order varies by language (links, note references), use `<Trans>` from `react-i18next` rather than `t()`, so translators can reorder them.
 
 ## Auditing
 

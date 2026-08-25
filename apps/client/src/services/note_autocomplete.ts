@@ -135,7 +135,7 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
                 action: "create-note",
                 noteTitle: term,
                 parentNoteId: activeNoteId || "root",
-                highlightedNotePathTitle: t("note_autocomplete.create-note", { term })
+                highlightedNotePathTitle: t("note_autocomplete.create-note", { term: escapeHtml(term) })
             } as Suggestion
         ].concat(results);
     }
@@ -145,7 +145,7 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
             {
                 action: "search-notes",
                 noteTitle: term,
-                highlightedNotePathTitle: `${t("note_autocomplete.search-for", { term })} <kbd style='color: var(--muted-text-color); background-color: transparent; float: right;'>Ctrl+Enter</kbd>`
+                highlightedNotePathTitle: `${t("note_autocomplete.search-for", { term: escapeHtml(term) })} <kbd style='color: var(--muted-text-color); background-color: transparent; float: right;'>Ctrl+Enter</kbd>`
             }
         ]);
     }
@@ -155,7 +155,7 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
             {
                 action: "external-link",
                 externalLink: term,
-                highlightedNotePathTitle: t("note_autocomplete.insert-external-link", { term })
+                highlightedNotePathTitle: t("note_autocomplete.insert-external-link", { term: escapeHtml(term) })
             } as Suggestion
         ].concat(results);
     }

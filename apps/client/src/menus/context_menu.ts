@@ -300,7 +300,9 @@ class ContextMenu {
         const $link = $("<span>")
             .append($icon)
             .append(" &nbsp; ") // some space between icon and text
-            .append(item.title);
+            // A text node rather than `append(item.title)`: jQuery parses a string as markup, and
+            // titles carry note titles and search terms.
+            .append(document.createTextNode(item.title));
 
         if ("badges" in item && item.badges) {
             for (const badge of item.badges) {

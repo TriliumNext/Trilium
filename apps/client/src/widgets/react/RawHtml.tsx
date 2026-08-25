@@ -29,17 +29,9 @@ function getProps({ className, html, style, onClick, dir, tabindex }: RawHtmlPro
     };
 }
 
-export function getHtml(html: string | HTMLElement | JQuery<HTMLElement>) {
-    if (typeof html === "object" && "length" in html) {
-        html = html[0];
-    }
-
-    if (typeof html === "object" && "outerHTML" in html) {
-        html = html.outerHTML;
-    }
-
+export function getHtml(html: HTMLElementLike) {
     return {
-        __html: html as string
+        __html: toHtmlString(html)
     };
 }
 
@@ -48,13 +40,26 @@ export function getHtml(html: string | HTMLElement | JQuery<HTMLElement>) {
  * Use this instead of {@link RawHtml} when the HTML originates from
  * untrusted sources (e.g. LLM responses, user-generated markdown).
  */
-export function SanitizedHtml({ className, html, style }: { className?: string; html: string; style?: CSSProperties }) {
+export function SanitizedHtml({ className, html, style }: { className?: string; html?: HTMLElementLike; style?: CSSProperties }) {
     return (
         <div
             className={className}
             style={style}
             // eslint-disable-next-line react/no-danger
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(toHtmlString(html ?? "")) }}
         />
     );
+}
+
+/** The markup an element-like value stands for, so both renderers take the same inputs. */
+function toHtmlString(html: HTMLElementLike): string {
+    if (typeof html === "object" && "length" in html) {
+        html = html[0];
+    }
+
+    if (typeof html === "object" && "outerHTML" in html) {
+        html = html.outerHTML;
+    }
+
+    return html as string;
 }
