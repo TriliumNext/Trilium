@@ -14930,8 +14930,8 @@
     "semantic_hash": ""
   },
   "packages/commons/src/lib/flashcards.ts": {
-    "mtime": 1787584913.8075771,
-    "ast_hash": "fda858d3f1e4025ff13c15e624e19ef7",
+    "mtime": 1787725732.2348228,
+    "ast_hash": "34d9376cb36ca489a72db21c6bcfb94a",
     "semantic_hash": ""
   },
   "packages/share-theme/meta.json": {
@@ -14955,8 +14955,8 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/flashcard_service.ts": {
-    "mtime": 1787584966.1900408,
-    "ast_hash": "747a99d31b66cbc3fe3e30d21998bdfe",
+    "mtime": 1787725836.5141513,
+    "ast_hash": "38e7935d696f0127569be977f05caac9",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/fsrs_scheduler.spec.ts": {
@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1787586111.7112048,
-    "ast_hash": "a96d2af8f373ccb7b7da5a3643dbe931",
+    "mtime": 1787726203.199829,
+    "ast_hash": "c89d205c8a09b16164b494c341c5ea11",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -24970,8 +24970,8 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/routes/api/flashcards.spec.ts": {
-    "mtime": 1787585221.8102891,
-    "ast_hash": "8855303dd25017d9e90dc34f401cb314",
+    "mtime": 1787726111.0927465,
+    "ast_hash": "cc7b9e97e4fe63ae92aeab4911e234ee",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/migrations/0241__flashcards.spec.ts": {
@@ -25012,6 +25012,16 @@
   "packages/trilium-core/src/services/flashcards/cloze.ts": {
     "mtime": 1787569318.5597503,
     "ast_hash": "1aa6b5ab087ad4dc91c8e8bf73ce5090",
+    "semantic_hash": ""
+  },
+  "packages/trilium-core/src/services/flashcards/filtered_decks.spec.ts": {
+    "mtime": 1787725961.1533074,
+    "ast_hash": "a88b6acb0c00551ad01f44f798867670",
+    "semantic_hash": ""
+  },
+  "packages/trilium-core/src/services/flashcards/filtered_decks.ts": {
+    "mtime": 1787725747.4326828,
+    "ast_hash": "6281b0eafceb7638d9e6142c5a7ded88",
     "semantic_hash": ""
   }
 }

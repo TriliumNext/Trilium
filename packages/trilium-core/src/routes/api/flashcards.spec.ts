@@ -13,6 +13,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { init as clsInit } from "../../services/context.js";
 import noteService from "../../services/notes.js";
+import BAttribute from "../../becca/entities/battribute.js";
 import { getSql } from "../../services/sql/index.js";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -25,6 +26,32 @@ function createTextNote(title: string, content = "Back content") {
         content,
         type: "text"
     }).note);
+}
+
+function createFilteredDeck(title: string, query: string) {
+    return clsInit(() => {
+        const note = noteService.createNewNote({
+            parentNoteId: "root",
+            title,
+            content: "",
+            type: "search"
+        }).note;
+
+        new BAttribute({
+            noteId: note.noteId,
+            type: "label",
+            name: "flashcardFilteredDeck",
+            value: ""
+        }).save();
+        new BAttribute({
+            noteId: note.noteId,
+            type: "label",
+            name: "searchString",
+            value: query
+        }).save();
+
+        return note;
+    });
 }
 
 describe("Flashcards API (core)", () => {
@@ -207,6 +234,30 @@ describe("Flashcards API (core)", () => {
 
         const invalidRes = await api.get<unknown>("/api/flashcards/notes/bad!id/card");
         expect(invalidRes.status).toBe(400);
+    });
+
+    it("scopes the due queue and deck list to a filtered deck", async () => {
+        const source = createTextNote("Filtered deck source");
+        const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
+            body: { noteId: source.noteId }
+        });
+        expect(createRes.status).toBe(200);
+
+        const deck = createFilteredDeck("API filtered deck", `note.noteId = "${source.noteId}"`);
+
+        const dueRes = await api.get<FlashcardDueResponse>("/api/flashcards/due", {
+            query: { deckNoteId: deck.noteId }
+        });
+        expect(dueRes.status).toBe(200);
+        expect(dueRes.body.cards.map((card) => card.cardId)).toContain(createRes.body.cardId);
+
+        const decksRes = await api.get<FlashcardDecksResponse>("/api/flashcards/decks");
+        expect(decksRes.body.decks.find((candidate) => candidate.deckNoteId === deck.noteId))
+            .toMatchObject({
+                deckTitle: "API filtered deck",
+                isFiltered: true,
+                totalCount: 1
+            });
     });
 
     it("validates IDs and due queue limits", async () => {

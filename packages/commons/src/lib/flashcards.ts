@@ -43,6 +43,8 @@ export interface FlashcardDeckSummary {
     learningCount: number;
     reviewCount: number;
     suspendedCount: number;
+    /** True when this deck is a filtered deck (computed from a saved-search query). */
+    isFiltered?: boolean;
 }
 
 export interface FlashcardCardSummary {

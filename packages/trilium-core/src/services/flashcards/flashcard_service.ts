@@ -50,6 +50,7 @@ import {
     serializeFlashcardSchedulerConfig
 } from "./fsrs_scheduler.js";
 import { extractClozeIndices, renderClozeBack, renderClozeFront } from "./cloze.js";
+import { isFilteredDeckId, resolveFilteredDeckNoteIds, FLASHCARD_FILTERED_DECK_LABEL } from "./filtered_decks.js";
 
 const DEFAULT_DUE_LIMIT = 20;
 const MAX_DUE_LIMIT = 100;
@@ -77,6 +78,10 @@ function createCard(request: FlashcardCreateRequest) {
 
     const deckNoteId = request.deckNoteId || getDefaultDeckNoteId(request.noteId);
     becca.getNoteOrThrow(deckNoteId);
+
+    if (isFilteredDeckId(deckNoteId)) {
+        throw new ValidationError("Cannot assign cards to a filtered deck.");
+    }
 
     const content = note.getContent();
     const clozeIndices = typeof content === "string" ? extractClozeIndices(content) : [];
@@ -253,15 +258,91 @@ function getDecks(): FlashcardDecksResponse {
         WHERE flashcards.isDeleted = 0
         GROUP BY deckNoteId`, [now]);
 
-    const decks = rows.map((row) => ({
-        ...row,
-        deckTitle: becca.getNote(row.deckNoteId)?.getTitleOrProtected() || "[missing]"
-    }));
+    const decksByNoteId = new Map<string, FlashcardDeckSummary>();
 
+    for (const row of rows) {
+        decksByNoteId.set(row.deckNoteId, {
+            ...row,
+            deckTitle: becca.getNote(row.deckNoteId)?.getTitleOrProtected() || "[missing]",
+            isFiltered: false
+        });
+    }
+
+    for (const filteredDeck of getFilteredDeckNotes()) {
+        const noteIds = resolveFilteredDeckNoteIds(filteredDeck);
+        const filteredCounts = getFilteredDeckCounts(noteIds, now);
+        const existing = decksByNoteId.get(filteredDeck.noteId);
+
+        decksByNoteId.set(filteredDeck.noteId, {
+            deckNoteId: filteredDeck.noteId,
+            deckTitle: filteredDeck.getTitleOrProtected(),
+            totalCount: (existing?.totalCount ?? 0) + filteredCounts.totalCount,
+            dueCount: (existing?.dueCount ?? 0) + filteredCounts.dueCount,
+            newCount: (existing?.newCount ?? 0) + filteredCounts.newCount,
+            learningCount: (existing?.learningCount ?? 0) + filteredCounts.learningCount,
+            reviewCount: (existing?.reviewCount ?? 0) + filteredCounts.reviewCount,
+            suspendedCount: (existing?.suspendedCount ?? 0) + filteredCounts.suspendedCount,
+            isFiltered: true
+        });
+    }
+
+    const decks = [ ...decksByNoteId.values() ];
     decks.sort((a, b) => a.deckTitle.localeCompare(b.deckTitle)
         || a.deckNoteId.localeCompare(b.deckNoteId));
 
     return { decks };
+}
+
+function getFilteredDeckNotes() {
+    return becca
+        .findAttributes("label", FLASHCARD_FILTERED_DECK_LABEL)
+        .map((attribute) => attribute.getNote())
+        .filter((note): note is NonNullable<typeof note> => !!note);
+}
+
+function getFilteredDeckCounts(noteIds: string[], now: string): FlashcardDeckSummary {
+    if (noteIds.length === 0) {
+        return {
+            deckNoteId: "",
+            deckTitle: "",
+            totalCount: 0,
+            dueCount: 0,
+            newCount: 0,
+            learningCount: 0,
+            reviewCount: 0,
+            suspendedCount: 0
+        };
+    }
+
+    const placeholders = noteIds.map(() => "?").join(", ");
+    const row = getSql().getRow<Omit<FlashcardDeckSummary, "deckNoteId" | "deckTitle">>(/*sql*/`
+        SELECT
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN suspended = 0 AND due <= ? THEN 1 ELSE 0 END) AS dueCount,
+            SUM(CASE WHEN suspended = 0 AND state = 0 THEN 1 ELSE 0 END) AS newCount,
+            SUM(CASE WHEN suspended = 0 AND state IN (1, 3) THEN 1 ELSE 0 END) AS learningCount,
+            SUM(CASE WHEN suspended = 0 AND state = 2 THEN 1 ELSE 0 END) AS reviewCount,
+            SUM(CASE WHEN suspended = 1 THEN 1 ELSE 0 END) AS suspendedCount
+        FROM flashcards
+        JOIN notes source_notes
+          ON source_notes.noteId = flashcards.noteId
+         AND source_notes.isDeleted = 0
+        WHERE flashcards.isDeleted = 0
+          AND flashcards.noteId IN (${placeholders})`, [now, ...noteIds])
+        ?? {
+            totalCount: 0,
+            dueCount: 0,
+            newCount: 0,
+            learningCount: 0,
+            reviewCount: 0,
+            suspendedCount: 0
+        };
+
+    return {
+        deckNoteId: "",
+        deckTitle: "",
+        ...row
+    };
 }
 
 function getDueCards({
@@ -403,6 +484,17 @@ function getDueRows({
 function getDeckCondition(deckNoteId: string | undefined, params: (string | number)[]) {
     if (!deckNoteId) {
         return "";
+    }
+
+    if (isFilteredDeckId(deckNoteId)) {
+        const noteIds = resolveFilteredDeckNoteIds(becca.getNoteOrThrow(deckNoteId));
+
+        if (noteIds.length === 0) {
+            return "AND 1 = 0";
+        }
+
+        params.push(...noteIds);
+        return `AND flashcards.noteId IN (${noteIds.map(() => "?").join(", ")})`;
     }
 
     params.push(deckNoteId);
@@ -590,6 +682,10 @@ function moveCardToDeck(
     const card = getCardRow(cardId);
     assertExpectedRevision(card, request.expectedSchedulingRevision);
     becca.getNoteOrThrow(request.deckNoteId);
+
+    if (isFilteredDeckId(request.deckNoteId)) {
+        throw new ValidationError("Cannot move a card into a filtered deck.");
+    }
 
     const updated = new BFlashcard({
         ...card,
