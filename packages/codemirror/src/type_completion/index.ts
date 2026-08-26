@@ -95,7 +95,11 @@ const COMPILER_OPTIONS = {
     allowUnreachableCode: false,
     // `@typescript/vfs` defaults moduleResolution to the legacy `node10`, which
     // TypeScript 6 rejects unless deprecations are explicitly silenced.
-    ignoreDeprecations: "6.0"
+    ignoreDeprecations: "6.0",
+    // An installed package's declarations are a third party's, and a script note is not the place
+    // to report their problems: what a package failed to say about itself belongs to whoever
+    // published it, and the reader can only see it underlining code they did not write.
+    skipLibCheck: true
 };
 
 /** Cached lib.*.d.ts map; built once (see `createEnv`) and cloned per editor. */
