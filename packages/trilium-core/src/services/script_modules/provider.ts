@@ -92,8 +92,15 @@ export const DEFAULT_LIMITS: ScriptModuleLimits = {
 /**
  * What a declaration crawl is allowed to cost.
  *
- * More files than a build and fewer bytes: a build service bundles a package's modules into a
- * handful, while its declarations stay one per source module and carry no implementation.
+ * More files than a build and fewer bytes, because the two have opposite shapes: a build service
+ * bundles a package's modules into a handful, while declarations stay one per source module and
+ * carry no implementation.
+ *
+ * The ceiling is what the crawl can fetch in reasonable time rather than what an install can hold.
+ * Files are fetched one after another, so a package publishing one declaration per exported function
+ * — date-fns at 257 and lodash-es at 318 — spends minutes on the round trips before it has them, and
+ * refusing such a graph quickly is better than making someone wait for it. Fetching them
+ * concurrently is what would raise this.
  */
 export const DEFAULT_DECLARATION_LIMITS: ScriptModuleLimits = {
     maxFiles: 256,
@@ -316,10 +323,35 @@ interface GraphKind {
     mediaType: string;
     /** Extension the stored files are named with, which is what tells TypeScript what they are. */
     extension: string;
+    /** The file a specifier names here, which is not always the file it spells. */
+    names(specifier: string): string;
+    /**
+     * Whether a file that cannot be read is skipped rather than failing the crawl.
+     *
+     * True for declarations: one of them missing costs the types that named it and leaves the rest
+     * of the package typed, where a module missing means the package cannot run at all.
+     */
+    skipsUnreadable: boolean;
 }
 
-const MODULE_GRAPH: GraphKind = { mediaType: "javascript", extension: ".mjs" };
-const DECLARATION_GRAPH: GraphKind = { mediaType: "typescript", extension: ".d.ts" };
+const MODULE_GRAPH: GraphKind = {
+    mediaType: "javascript",
+    extension: ".mjs",
+    names: (specifier) => specifier,
+    skipsUnreadable: false
+};
+
+const DECLARATION_GRAPH: GraphKind = {
+    mediaType: "typescript",
+    extension: ".d.ts",
+    // A declaration importing "./x.js" names the declaration beside it — how TypeScript resolves it,
+    // and not what a build service serves at that path, which is the module itself.
+    names: (specifier) => specifier
+        .replace(/\.js$/, ".d.ts")
+        .replace(/\.mjs$/, ".d.mts")
+        .replace(/\.cjs$/, ".d.cts"),
+    skipsUnreadable: true
+};
 
 /**
  * Fetches everything reachable from `entryUrl` and rewrites the links between them to local names.
@@ -342,13 +374,15 @@ async function fetchModuleGraph(
     const sources = new Map<string, string>();
     /** Same-origin URLs naming a host built-in rather than a file, and what to call it instead. */
     const builtins = new Map<string, string>();
+    /** URLs the crawl could not read and moved past, so a second mention does not fetch them again. */
+    const skipped = new Set<string>();
     const queue = [entryUrl];
     let entryHeaders: Readonly<Record<string, string>> = {};
     let totalBytes = 0;
 
     while (queue.length > 0) {
         const url = queue.shift();
-        if (url === undefined || sources.has(url)) {
+        if (url === undefined || sources.has(url) || skipped.has(url)) {
             continue;
         }
         if (sources.size >= limits.maxFiles) {
@@ -357,13 +391,21 @@ async function fetchModuleGraph(
         }
 
         const response = await request.fetchResource(url, { maxBytes: limits.maxFileBytes });
-        if (!response.ok) {
-            throw new ValidationError(`Fetching '${url}' answered HTTP ${response.status}.`);
+        const unreadable = !response.ok
+            ? `Fetching '${url}' answered HTTP ${response.status}.`
+            : !response.contentType.includes(kind.mediaType)
+                ? `'${url}' was served as '${response.contentType}' rather than ${kind.mediaType}.`
+                : undefined;
+
+        if (unreadable) {
+            // The entry is the graph: without it there is nothing to store, whatever the kind.
+            if (!kind.skipsUnreadable || url === entryUrl) {
+                throw new ValidationError(unreadable);
+            }
+            skipped.add(url);
+            continue;
         }
-        if (!response.contentType.includes(kind.mediaType)) {
-            throw new ValidationError(
-                `'${url}' was served as '${response.contentType}' rather than ${kind.mediaType}.`);
-        }
+
         if (url === entryUrl) {
             entryHeaders = response.headers ?? {};
         }
@@ -378,7 +420,7 @@ async function fetchModuleGraph(
         sources.set(url, source);
 
         for (const specifier of readSpecifiers(source)) {
-            const resolved = resolveSpecifier(specifier, url);
+            const resolved = resolveSpecifier(kind.names(specifier), url);
             if (!resolved || !resolved.startsWith(`${origin}/`) || sources.has(resolved)) {
                 continue;
             }
@@ -399,7 +441,7 @@ async function fetchModuleGraph(
 
     const files: ScriptModuleFile[] = [];
     for (const [url, source] of sources) {
-        const rewritten = stripSourceMapLinks(rewriteSpecifiers(source, url, names, builtins));
+        const rewritten = stripSourceMapLinks(rewriteSpecifiers(source, url, names, builtins, kind));
         files.push({ name: names.get(url) ?? "", url, source: rewritten });
     }
 
@@ -433,10 +475,11 @@ function rewriteSpecifiers(
     source: string,
     baseUrl: string,
     names: Map<string, string>,
-    builtins: Map<string, string>
+    builtins: Map<string, string>,
+    kind: GraphKind
 ): string {
     const replacement = (specifier: string) => {
-        const resolved = resolveSpecifier(specifier, baseUrl);
+        const resolved = resolveSpecifier(kind.names(specifier), baseUrl);
         if (!resolved) {
             return undefined;
         }

@@ -343,6 +343,54 @@ describe("declarations", () => {
         expect(artifact.files).toHaveLength(1);
     });
 
+    it("follows a declaration's .js import to the declaration beside it", async () => {
+        serveBuild();
+        // How a modern package's declarations name each other: the specifier spells the module,
+        // and the file it means is the declaration next to it. The service serves both.
+        serve(TYPES, `export * from "./core/core.animation.js";\n`, declaration);
+        serve("https://esm.sh/dayjs@1.11.10/core/core.animation.js", "export const runtime = 1;");
+        serve("https://esm.sh/dayjs@1.11.10/core/core.animation.d.ts",
+            "export declare const animated: boolean;\n", declaration);
+
+        const artifact = await createEsmShProvider().resolve(parsePackageSpec("dayjs@1.11.10"));
+
+        expect(artifact.types?.files.map((f) => f.name)).toEqual([
+            "dayjs@1.11.10_index.d.ts",
+            "dayjs@1.11.10_core_core.animation.d.ts"
+        ]);
+        // The stored declaration points at the stored declaration, not back at the module.
+        expect(artifact.types?.files[0].source)
+            .toContain('from "./dayjs@1.11.10_core_core.animation.d.ts"');
+    });
+
+    it("loses only the declarations it cannot read, rather than the package's types", async () => {
+        serveBuild();
+        serve(TYPES,
+            `export * from "./present.d.ts";\nexport * from "./missing.d.ts";\nexport * from "./notatype.d.ts";\n`,
+            declaration);
+        serve("https://esm.sh/dayjs@1.11.10/present.d.ts", "export declare const here: boolean;\n", declaration);
+        // Nothing serves ./missing.d.ts, and ./notatype.d.ts comes back as a module.
+        serve("https://esm.sh/dayjs@1.11.10/notatype.d.ts", "export const runtime = 1;");
+
+        const artifact = await createEsmShProvider().resolve(parsePackageSpec("dayjs@1.11.10"));
+
+        expect(artifact.types?.files.map((f) => f.name)).toEqual([
+            "dayjs@1.11.10_index.d.ts",
+            "dayjs@1.11.10_present.d.ts"
+        ]);
+        // What could not be read is left naming the service, which TypeScript simply cannot resolve.
+        expect(artifact.types?.files[0].source).toContain('from "./missing.d.ts"');
+    });
+
+    it("still refuses declarations whose entry is not one", async () => {
+        serveBuild();
+        // The entry is the graph: an error page in its place leaves nothing to store.
+        serve(TYPES, "<html>not found</html>", { contentType: "text/html" });
+
+        const artifact = await createEsmShProvider().resolve(parsePackageSpec("dayjs@1.11.10"));
+        expect(artifact.types).toBeUndefined();
+    });
+
     it("keeps the declarations to a budget of their own", async () => {
         serveBuild();
         serve(TYPES, `export type Wide = "${"x".repeat(200)}";\n`, declaration);
