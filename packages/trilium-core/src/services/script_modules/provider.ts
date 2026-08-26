@@ -1,6 +1,6 @@
 import { ValidationError } from "../../errors.js";
 import { getLog } from "../log.js";
-import request from "../request.js";
+import request, { type FetchedResource } from "../request.js";
 import { decodeUtf8 } from "../utils/binary.js";
 
 /** One ES module of a resolved package. */
@@ -390,17 +390,27 @@ async function fetchModuleGraph(
                 `Package needs more than the ${limits.maxFiles} modules an install may hold.`);
         }
 
-        const response = await request.fetchResource(url, { maxBytes: limits.maxFileBytes });
-        const unreadable = !response.ok
-            ? `Fetching '${url}' answered HTTP ${response.status}.`
+        // A fetch that fails outright — a timed-out request being the ordinary one, at five seconds
+        // each — is as unreadable as one that answers with the wrong thing, and is treated the same
+        // rather than ending the crawl from inside it.
+        let response: FetchedResource | undefined;
+        let unreadable: string | undefined;
+        try {
+            response = await request.fetchResource(url, { maxBytes: limits.maxFileBytes });
+        } catch (e) {
+            unreadable = `Fetching '${url}' failed: ${e instanceof Error ? e.message : String(e)}`;
+        }
+
+        unreadable ??= !response?.ok
+            ? `Fetching '${url}' answered HTTP ${response?.status}.`
             : !response.contentType.includes(kind.mediaType)
                 ? `'${url}' was served as '${response.contentType}' rather than ${kind.mediaType}.`
                 : undefined;
 
-        if (unreadable) {
+        if (unreadable || !response) {
             // The entry is the graph: without it there is nothing to store, whatever the kind.
             if (!kind.skipsUnreadable || url === entryUrl) {
-                throw new ValidationError(unreadable);
+                throw new ValidationError(unreadable ?? `Fetching '${url}' answered nothing.`);
             }
             skipped.add(url);
             continue;

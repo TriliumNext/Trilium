@@ -15,14 +15,20 @@ import {
 /** URLs the fake provider answers, and the URLs it was asked for in order. */
 let served: Map<string, { source: string; status?: number; contentType?: string; headers?: Record<string, string> }>;
 let requested: string[];
+/** URLs the fake refuses to answer at all, standing in for a request that times out. */
+let timeouts: Set<string>;
 
 beforeEach(() => {
     served = new Map();
     requested = [];
+    timeouts = new Set();
 
     initRequest(fakeRequestProvider({
         fetchResource: async (url) => {
             requested.push(url);
+            if (timeouts.has(url)) {
+                throw new Error("The operation was aborted due to timeout");
+            }
             const entry = served.get(url);
             if (!entry) {
                 return { status: 404, ok: false, contentType: "text/plain", bytes: encodeUtf8("not found") };
@@ -380,6 +386,20 @@ describe("declarations", () => {
         ]);
         // What could not be read is left naming the service, which TypeScript simply cannot resolve.
         expect(artifact.types?.files[0].source).toContain('from "./missing.d.ts"');
+    });
+
+    it("moves past a declaration whose fetch fails, which at five seconds each is the ordinary loss", async () => {
+        serveBuild();
+        serve(TYPES, `export * from "./present.d.ts";\nexport * from "./slow.d.ts";\n`, declaration);
+        serve("https://esm.sh/dayjs@1.11.10/present.d.ts", "export declare const here: boolean;\n", declaration);
+        timeouts.add("https://esm.sh/dayjs@1.11.10/slow.d.ts");
+
+        const artifact = await createEsmShProvider().resolve(parsePackageSpec("dayjs@1.11.10"));
+
+        expect(artifact.types?.files.map((f) => f.name)).toEqual([
+            "dayjs@1.11.10_index.d.ts",
+            "dayjs@1.11.10_present.d.ts"
+        ]);
     });
 
     it("still refuses declarations whose entry is not one", async () => {
