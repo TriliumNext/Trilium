@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
         buryCard: vi.fn(),
         moveCardToDeck: vi.fn(),
         setCardDueDate: vi.fn(),
+        createFilteredDeck: vi.fn(),
         undoReview: vi.fn()
     };
 });
@@ -51,6 +52,7 @@ vi.mock("../../services/flashcards", () => ({
         buryCard: mocks.buryCard,
         moveCardToDeck: mocks.moveCardToDeck,
         setCardDueDate: mocks.setCardDueDate,
+        createFilteredDeck: mocks.createFilteredDeck,
         undoReview: mocks.undoReview
     },
     FlashcardConflictError: mocks.FlashcardConflictError
@@ -159,6 +161,63 @@ describe("flashcards review dialog", () => {
         await openDialog();
 
         expect(host.textContent).toContain("flashcards.no_due_cards");
+    });
+
+    it("marks filtered decks in the deck browser", async () => {
+        mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
+        mocks.getDecks.mockResolvedValue({
+            decks: [ {
+                deckNoteId: "fd1",
+                deckTitle: "Filtered",
+                isFiltered: true,
+                dueCount: 0,
+                newCount: 0,
+                learningCount: 0,
+                reviewCount: 0,
+                totalCount: 0,
+                suspendedCount: 0
+            } ]
+        });
+
+        await openDialog();
+
+        expect(host.textContent).toContain("flashcards.filtered_deck");
+    });
+
+    it("creates a filtered deck from the browser", async () => {
+        mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
+        mocks.createFilteredDeck.mockResolvedValue({ note: { noteId: "fd1" } });
+
+        await openDialog();
+
+        const newButton = findButtonByText("flashcards.new_filtered_deck");
+        expect(newButton).toBeTruthy();
+
+        await act(async () => {
+            newButton!.click();
+        });
+
+        const inputs = host.querySelectorAll(".flashcards-filtered-deck-editor input");
+        expect(inputs.length).toBe(2);
+
+        await act(async () => {
+            const title = inputs[0] as HTMLInputElement;
+            const query = inputs[1] as HTMLInputElement;
+            title.value = "French verbs";
+            title.dispatchEvent(new Event("input", { bubbles: true }));
+            query.value = "#book";
+            query.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
+        const applyButton = findButtonByText("flashcards.apply");
+        expect(applyButton).toBeTruthy();
+
+        await act(async () => {
+            applyButton!.click();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(mocks.createFilteredDeck).toHaveBeenCalledWith("French verbs", "#book");
     });
 
     it("opens scoped to a note when given a noteId", async () => {

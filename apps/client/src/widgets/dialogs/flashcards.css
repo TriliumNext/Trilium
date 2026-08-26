@@ -216,3 +216,32 @@
     color: var(--accent-color-danger, #dc3545);
     font-size: 0.85em;
 }
+
+.flashcards-deck-browser-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.flashcards-filtered-deck-editor {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    margin-bottom: 0.75em;
+}
+
+.flashcards-filtered-deck-editor input[type="text"] {
+    flex: 1 1 12em;
+    min-width: 0;
+    padding: 0.35em 0.45em;
+    border: 1px solid var(--border-color, #ced4da);
+    border-radius: 4px;
+    background: var(--input-background-color, var(--background-color, #fff));
+    color: var(--text-color, inherit);
+}
+
+.flashcards-deck-badge-filtered {
+    --color: var(--accent-color-primary, #4d8fcc);
+    margin-left: 0.35em;
+}

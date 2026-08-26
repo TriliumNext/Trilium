@@ -34,6 +34,22 @@ function getDecks() {
     return server.get<FlashcardDecksResponse>("flashcards/decks");
 }
 
+function createFilteredDeck(title: string, query: string) {
+    return server.post<{ note: { noteId: string } }>(
+        "notes/root/children?target=into&targetBranchId=",
+        {
+            title,
+            content: "",
+            isProtected: false,
+            type: "search",
+            attributes: [
+                { type: "label", name: "flashcardFilteredDeck", value: "" },
+                { type: "label", name: "searchString", value: query }
+            ]
+        }
+    );
+}
+
 function getDueCards({ deckNoteId, limit }: { deckNoteId?: string; limit?: number } = {}) {
     const params = new URLSearchParams();
 
@@ -180,6 +196,7 @@ function readErrorMessage(responseText: string) {
 export default {
     createCard,
     getDecks,
+    createFilteredDeck,
     getDueCards,
     getCard,
     getCardForNote,

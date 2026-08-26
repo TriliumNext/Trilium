@@ -87,6 +87,27 @@ describe("flashcards client service", () => {
         expect(importResult.createdCards).toBe(1);
     });
 
+    it("creates a filtered deck note with the filtered-deck and query labels", async () => {
+        serverMock.post.mockResolvedValueOnce({ note: { noteId: "filtered1" } });
+
+        const result = await flashcards.createFilteredDeck("French verbs", "#book");
+
+        expect(serverMock.post).toHaveBeenCalledWith(
+            "notes/root/children?target=into&targetBranchId=",
+            {
+                title: "French verbs",
+                content: "",
+                isProtected: false,
+                type: "search",
+                attributes: [
+                    { type: "label", name: "flashcardFilteredDeck", value: "" },
+                    { type: "label", name: "searchString", value: "#book" }
+                ]
+            }
+        );
+        expect(result).toEqual({ note: { noteId: "filtered1" } });
+    });
+
     it("uses silent conflict calls for scheduling mutations", async () => {
         serverMock.putWithSilentConflict
             .mockResolvedValueOnce({ card: { cardId: "card1" } })

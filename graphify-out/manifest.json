@@ -1525,8 +1525,8 @@
     "semantic_hash": "1c4320fd508ca048bfeec596c729caff"
   },
   "apps/client/src/translations/en/translation.json": {
-    "mtime": 1787585598.4250937,
-    "ast_hash": "f5d8dd9495d17c61b692394fd4bb5a64",
+    "mtime": 1787726676.3642185,
+    "ast_hash": "fcb1465ea1a5fc8327828d7fb092e634",
     "semantic_hash": ""
   },
   "apps/client/src/translations/es/entry.json": {
@@ -14770,13 +14770,13 @@
     "semantic_hash": "84ebe8573b44f6fdde6b846110b181a1"
   },
   "apps/client/src/services/flashcards.ts": {
-    "mtime": 1787585407.7751677,
-    "ast_hash": "dfcb0d5d4352319a397d3aa5aa1cf0e1",
+    "mtime": 1787726598.5129483,
+    "ast_hash": "aebafccb53dec5cdffc934b49c1cbfe4",
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.tsx": {
-    "mtime": 1787586070.9768949,
-    "ast_hash": "5c11f3070affda9fa220d26cf4432aff",
+    "mtime": 1787726907.9857192,
+    "ast_hash": "c27cfb5eb90859e863c0956409a84d18",
     "semantic_hash": ""
   },
   "apps/web-clipper/.wxt/eslint-auto-imports.mjs": {
@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1787726203.199829,
-    "ast_hash": "c89d205c8a09b16164b494c341c5ea11",
+    "mtime": 1787727005.1172864,
+    "ast_hash": "4df2383e699f15b706ac46be539b599a",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -24995,13 +24995,13 @@
     "semantic_hash": ""
   },
   "apps/client/src/services/flashcards.spec.ts": {
-    "mtime": 1787564688.0707085,
-    "ast_hash": "4d399bdf1660f355f67eee5a5922e1f1",
+    "mtime": 1787726770.8573263,
+    "ast_hash": "9a54e3d622cc87843bdf996413ba235b",
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.spec.tsx": {
-    "mtime": 1787586063.6888964,
-    "ast_hash": "5b5918259510e9f73183d7f11662942c",
+    "mtime": 1787726947.9226413,
+    "ast_hash": "b0f9f67d2e42bcd1e0e598654f2a8ff2",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/cloze.spec.ts": {

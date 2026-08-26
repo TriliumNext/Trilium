@@ -543,6 +543,7 @@ export default function FlashcardsDialog() {
                     submitting={submitting}
                     onStudyAll={() => void studyDeck(null)}
                     onStudyDeck={(deckNoteId) => void studyDeck(deckNoteId)}
+                    onCreated={refreshProgress}
                 />}
                 {loading
                     ? <div className="flashcards-loading">{t("flashcards.loading")}</div>
@@ -573,7 +574,8 @@ function DeckBrowser({
     selectedDeckNoteId,
     submitting,
     onStudyAll,
-    onStudyDeck
+    onStudyDeck,
+    onCreated
 }: {
     decks: FlashcardDeckSummary[];
     stats: FlashcardStatsResponse;
@@ -581,23 +583,81 @@ function DeckBrowser({
     submitting: boolean;
     onStudyAll: () => void;
     onStudyDeck: (deckNoteId: string) => void;
+    onCreated: () => Promise<void>;
 }) {
-    if (!decks.length) {
-        return null;
+    const [ creating, setCreating ] = useState(false);
+    const [ newTitle, setNewTitle ] = useState("");
+    const [ newQuery, setNewQuery ] = useState("");
+    const [ creatingDeck, setCreatingDeck ] = useState(false);
+    const [ createError, setCreateError ] = useState<string | null>(null);
+
+    async function submitCreate() {
+        const title = newTitle.trim();
+        const query = newQuery.trim();
+
+        if (!title || !query) {
+            setCreateError(t("flashcards.filtered_deck_missing"));
+            return;
+        }
+
+        setCreatingDeck(true);
+        setCreateError(null);
+        try {
+            await flashcards.createFilteredDeck(title, query);
+            setCreating(false);
+            setNewTitle("");
+            setNewQuery("");
+            await onCreated();
+        } catch {
+            setCreateError(t("flashcards.filtered_deck_create_failed"));
+        } finally {
+            setCreatingDeck(false);
+        }
     }
 
     return (
         <section className="flashcards-deck-browser" aria-label={t("flashcards.deck_browser")}>
             <header className="flashcards-deck-browser-header">
                 <h3>{t("flashcards.deck_browser")}</h3>
-                <Button
-                    text={t("flashcards.study_all")}
-                    icon="bx-play-circle"
-                    disabled={submitting || stats.dueCount === 0}
-                    size="small"
-                    onClick={() => onStudyAll()}
-                />
+                <div className="flashcards-deck-browser-actions">
+                    <Button
+                        text={t("flashcards.new_filtered_deck")}
+                        icon="bx-filter-alt"
+                        disabled={submitting || creatingDeck}
+                        size="small"
+                        onClick={() => setCreating(!creating)}
+                    />
+                    {decks.length > 0 && <Button
+                        text={t("flashcards.study_all")}
+                        icon="bx-play-circle"
+                        disabled={submitting || stats.dueCount === 0}
+                        size="small"
+                        onClick={() => onStudyAll()}
+                    />}
+                </div>
             </header>
+            {creating && <div className="flashcards-filtered-deck-editor">
+                <input
+                    type="text"
+                    placeholder={t("flashcards.filtered_deck_title")}
+                    value={newTitle}
+                    onInput={(e) => setNewTitle(e.currentTarget.value)}
+                />
+                <input
+                    type="text"
+                    placeholder={t("flashcards.filtered_deck_query")}
+                    value={newQuery}
+                    onInput={(e) => setNewQuery(e.currentTarget.value)}
+                />
+                <Button
+                    text={t("flashcards.apply")}
+                    icon="bx-check"
+                    disabled={creatingDeck}
+                    size="small"
+                    onClick={() => void submitCreate()}
+                />
+                {createError && <span className="flashcards-reschedule-error">{createError}</span>}
+            </div>}
             <div className="flashcards-deck-list">
                 {decks.map((deck) => <DeckSummaryCard
                     key={deck.deckNoteId}
@@ -623,6 +683,12 @@ function DeckSummaryCard({ deck, selected, submitting, onStudyDeck }: {
         >
             <div className="flashcards-deck-heading">
                 <h4>{deck.deckTitle}</h4>
+                {deck.isFiltered && <Badge
+                    className="flashcards-deck-badge flashcards-deck-badge-filtered"
+                    text={t("flashcards.filtered_deck")}
+                    icon="bx-filter-alt"
+                    outline
+                />}
                 <Button
                     text={t("flashcards.study_deck")}
                     icon="bx-play"
