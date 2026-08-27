@@ -331,13 +331,14 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             const point = parseLocation(pinned.getLabelValue(LOCATION_ATTRIBUTE));
             return point ? [ { noteId: pinned.noteId, title: pinned.title, point } ] : [];
         });
-        return describeGeoView({
+        const text = describeGeoView({
             bounds: map.getBounds().toArray().flat() as [number, number, number, number],
             center: [ lng, lat ],
             zoom: map.getZoom(),
             pins,
             selectedNoteId: selection?.noteId
         });
+        return { label: t("geo-map.llm-view-label"), text };
     });
     useCollectionTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,

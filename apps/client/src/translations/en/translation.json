@@ -2539,6 +2539,10 @@
     "context_nearly_full": "Context nearly full. Consider starting a new chat.",
     "note_context_enabled": "Click to disable note context: {{title}}",
     "note_context_disabled": "Click to include the current note in context: {{title}}",
+    "view_context_tooltip": "{{label}} is sent with your messages. Click to see what the AI is told.",
+    "view_context_tooltip_off": "{{label}} is not sent with your messages. Click to see what the AI would be told.",
+    "view_context_title": "What the AI is told about the view",
+    "view_context_include": "Send this with my messages",
     "no_provider_message": "No AI provider configured. Add one to start chatting.",
     "add_provider": "Add AI Provider",
     "free": "Free",
@@ -2967,7 +2971,8 @@
     "next-result": "Next result",
     "result-position": "Result {{index}} of {{total}}, click to return to it",
     "results-on-map": "On this map",
-    "go-to-coordinates": "Go to {{- coordinates}}"
+    "go-to-coordinates": "Go to {{- coordinates}}",
+    "llm-view-label": "Map view"
   },
   "embedded_note": {
     "open-note": "Open note",

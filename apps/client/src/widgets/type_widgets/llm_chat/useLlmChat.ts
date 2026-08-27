@@ -110,6 +110,8 @@ export interface UseLlmChatReturn {
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
     contextNoteId: string | undefined;
+    /** Whether what the widget showing {@link contextNoteId} reports about its view goes along with each message. */
+    includeViewContext: boolean;
     /** The chat note's ID — used as the upload target for attachments. */
     chatNoteId: string | undefined;
     lastPromptTokens: number;
@@ -146,6 +148,7 @@ export interface UseLlmChatReturn {
     setEnableNoteTools: (value: boolean) => void;
     setEnableExtendedThinking: (value: boolean) => void;
     setContextNoteId: (noteId: string | undefined) => void;
+    setIncludeViewContext: (value: boolean) => void;
     setChatNoteId: (noteId: string | undefined) => void;
     /** Append a freshly uploaded image or file to the pending-attachments list. */
     addPendingAttachment: (attachment: AttachmentBlock) => void;
@@ -209,6 +212,7 @@ export function useLlmChat(
     const [enableNoteTools, setEnableNoteTools] = useState(defaultEnableNoteTools);
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
+    const [includeViewContext, setIncludeViewContext] = useState(true);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
     // The reply to the last prompt is part of the *next* prompt, so the context indicator
@@ -585,7 +589,7 @@ export function useLlmChat(
             enableWebSearch,
             enableNoteTools,
             contextNoteId,
-            viewContext: contextNoteId ? getLlmViewContext(contextNoteId) : undefined,
+            viewContext: contextNoteId && includeViewContext ? getLlmViewContext(contextNoteId)?.text : undefined,
             chatNoteId: chatNoteIdRef.current
         };
         if (supportsExtendedThinking) {
@@ -807,7 +811,7 @@ export function useLlmChat(
             setIsStreaming(false);
             abortControllerRef.current = null;
         });
-    }, [selectedModel, selectedProvider, selectedProviderId, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
+    }, [selectedModel, selectedProvider, selectedProviderId, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, includeViewContext, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
 
     const handleSubmit = useCallback(async (e: Event) => {
         e.preventDefault();
@@ -920,6 +924,7 @@ export function useLlmChat(
         enableNoteTools,
         enableExtendedThinking,
         contextNoteId,
+        includeViewContext,
         chatNoteId,
         lastPromptTokens,
         lastCompletionTokens,
@@ -944,6 +949,7 @@ export function useLlmChat(
         setEnableNoteTools,
         setEnableExtendedThinking,
         setContextNoteId,
+        setIncludeViewContext,
         setChatNoteId,
         addPendingAttachment,
         removePendingAttachment,

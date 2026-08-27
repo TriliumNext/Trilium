@@ -1,0 +1,47 @@
+.llm-chat-view-context-anchor {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+.llm-chat-input-form .llm-chat-view-context.icon-action {
+    --icon-button-size: 30px;
+    --icon-button-icon-ratio: 0.6;
+    --icon-button-color: var(--muted-text-color);
+    --icon-button-hover-color: var(--main-text-color);
+}
+
+.llm-chat-input-form .llm-chat-view-context.icon-action.active {
+    --icon-button-color: var(--link-color);
+    --icon-button-hover-color: var(--link-color);
+}
+
+.tn-popover.llm-chat-view-context-popover {
+    width: min(32rem, 90vw);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .llm-chat-view-context-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .llm-chat-view-context-label {
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+    }
+
+    .llm-chat-view-context-text {
+        margin: 0;
+        max-height: 40vh;
+        overflow: auto;
+        white-space: pre-wrap;
+        font-size: 0.8em;
+        padding: 0.5rem;
+        border-radius: var(--bs-border-radius, 6px);
+        background: var(--accented-background-color);
+    }
+}

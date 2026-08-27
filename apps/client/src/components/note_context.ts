@@ -87,9 +87,17 @@ export interface NoteContextDataMap {
      * moment a message is sent.
      */
     llmViewContext: {
-        /** Describes the widget's current state as Markdown; `undefined` when there is nothing to report. */
-        describe: () => string | undefined;
+        /** Describes the widget's current state; `undefined` when there is nothing to report. */
+        describe: () => LlmViewContext | undefined;
     };
+}
+
+/** What a widget tells the LLM chat about its view, and the name the chat shows it under. */
+export interface LlmViewContext {
+    /** A short name for the chip in the chat's input bar, e.g. "Map view". */
+    label: string;
+    /** The report itself, as Markdown. */
+    text: string;
 }
 
 type ContextDataKey = keyof NoteContextDataMap;

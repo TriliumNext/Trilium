@@ -24,6 +24,7 @@ import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { shortModelName } from "./model_name.js";
 import { SafeImage } from "./retry_image.js";
 import { useChatAttachments } from "./useChatAttachments.js";
+import ViewContextPreview from "./ViewContextPreview.js";
 import { type ModelOption, resolveSelectedModel } from "../../../services/llm_providers.js";
 import { type UseLlmChatReturn } from "./useLlmChat.js";
 
@@ -525,6 +526,14 @@ export default function ChatInputBar({
                                 onClick={handleNoteContextToggle}
                                 disabled={chat.isStreaming}
                                 className="llm-chat-note-context"
+                            />
+                        )}
+                        {isNoteContextEnabled && chat.contextNoteId && (
+                            <ViewContextPreview
+                                noteId={chat.contextNoteId}
+                                included={chat.includeViewContext}
+                                onIncludedChange={chat.setIncludeViewContext}
+                                disabled={chat.isStreaming}
                             />
                         )}
                         <ActionButton

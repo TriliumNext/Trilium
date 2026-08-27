@@ -478,7 +478,7 @@ describe("useImperativeSearchHighlighlighting", () => {
 
 describe("LLM view context", () => {
     /** A note context showing `noteId` whose widget reports `describe`, or nothing when omitted. */
-    function context(noteId: string, describe?: () => string | undefined) {
+    function context(noteId: string, describe?: () => { label: string; text: string } | undefined) {
         return { noteId, getContextData: (key: string) => key === "llmViewContext" && describe ? { describe } : undefined };
     }
 
@@ -488,14 +488,15 @@ describe("LLM view context", () => {
     });
 
     it("asks the active pane first, then any other pane on the note", () => {
-        const other = context("n1", () => "from the other pane");
-        const active = context("n1", () => "from the active pane");
-        tabManagerStub.contexts = [ other, active, context("n2", () => "wrong note") ];
+        const report = (text: string) => ({ label: "View", text });
+        const other = context("n1", () => report("from the other pane"));
+        const active = context("n1", () => report("from the active pane"));
+        tabManagerStub.contexts = [ other, active, context("n2", () => report("wrong note")) ];
         tabManagerStub.active = active;
-        expect(getLlmViewContext("n1")).toBe("from the active pane");
+        expect(getLlmViewContext("n1")).toEqual(report("from the active pane"));
 
-        tabManagerStub.active = context("n2", () => "wrong note");
-        expect(getLlmViewContext("n1")).toBe("from the other pane");
+        tabManagerStub.active = context("n2", () => report("wrong note"));
+        expect(getLlmViewContext("n1")).toEqual(report("from the other pane"));
     });
 
     it("skips panes that report nothing or fail, and is silent when none reports", () => {
@@ -504,9 +505,9 @@ describe("LLM view context", () => {
             context("n1"),
             context("n1", () => undefined),
             context("n1", () => { throw new Error("boom"); }),
-            context("n1", () => "finally")
+            context("n1", () => ({ label: "View", text: "finally" }))
         ];
-        expect(getLlmViewContext("n1")).toBe("finally");
+        expect(getLlmViewContext("n1")?.text).toBe("finally");
         expect(warn).toHaveBeenCalledTimes(1);
 
         tabManagerStub.contexts = [ context("n1") ];
@@ -521,18 +522,18 @@ describe("LLM view context", () => {
             clearContextData: (key: string) => data.delete(key)
         } as any;
         function Widget({ page }: { page: number }) {
-            useLlmViewContext(noteContext, () => `page ${page}`);
+            useLlmViewContext(noteContext, () => ({ label: "PDF", text: `page ${page}` }));
             return null;
         }
         const host = document.createElement("div");
         act(() => { render(<Widget page={1} />, host); });
-        const published = data.get("llmViewContext") as { describe: () => string | undefined };
-        expect(published.describe()).toBe("page 1");
+        const published = data.get("llmViewContext") as { describe: () => { text: string } | undefined };
+        expect(published.describe()?.text).toBe("page 1");
 
         act(() => { render(<Widget page={2} />, host); });
         // The same object stays published; only what it reads changes.
         expect(data.get("llmViewContext")).toBe(published);
-        expect(published.describe()).toBe("page 2");
+        expect(published.describe()?.text).toBe("page 2");
 
         act(() => { render(null, host); });
         expect(data.has("llmViewContext")).toBe(false);

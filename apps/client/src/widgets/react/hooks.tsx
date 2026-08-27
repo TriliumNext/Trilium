@@ -8,7 +8,7 @@ import { MutableRef, useCallback, useContext, useDebugValue, useEffect, useLayou
 
 import appContext, { EventData, EventNames } from "../../components/app_context";
 import Component from "../../components/component";
-import NoteContext, { NoteContextDataMap } from "../../components/note_context";
+import NoteContext, { type LlmViewContext, NoteContextDataMap } from "../../components/note_context";
 import FBlob from "../../entities/fblob";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
@@ -1953,9 +1953,9 @@ export function useSetContextData<K extends keyof NoteContextDataMap>(
  * live state and change on every render without republishing.
  *
  * @example
- * useLlmViewContext(noteContext, () => `Showing page ${page} of ${totalPages}.`);
+ * useLlmViewContext(noteContext, () => ({ label: t("pdf.view"), text: `Showing page ${page} of ${totalPages}.` }));
  */
-export function useLlmViewContext(noteContext: NoteContext | null | undefined, describe: () => string | undefined) {
+export function useLlmViewContext(noteContext: NoteContext | null | undefined, describe: () => LlmViewContext | undefined) {
     const describeRef = useRef(describe);
     describeRef.current = describe;
     const [ value ] = useState<NoteContextDataMap["llmViewContext"]>(() => ({ describe: () => describeRef.current() }));
@@ -1968,7 +1968,7 @@ export function useLlmViewContext(noteContext: NoteContext | null | undefined, d
  * describes the pane next to it. A widget that throws while describing itself is treated as
  * silent: a broken report must not block the message.
  */
-export function getLlmViewContext(noteId: string): string | undefined {
+export function getLlmViewContext(noteId: string): LlmViewContext | undefined {
     const contexts = appContext.tabManager.getNoteContexts().filter(ctx => ctx.noteId === noteId);
     const active = appContext.tabManager.getActiveContext();
     const ordered = active && contexts.includes(active) ? [ active, ...contexts.filter(ctx => ctx !== active) ] : contexts;
