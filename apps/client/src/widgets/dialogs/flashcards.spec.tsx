@@ -163,6 +163,17 @@ describe("flashcards review dialog", () => {
         expect(host.textContent).toContain("flashcards.no_due_cards");
     });
 
+    it("shows a safe error when a scoped protected note cannot be loaded", async () => {
+        mocks.createCard.mockRejectedValue(new Error("protected note details"));
+
+        await openDialog({ noteId: "protected-note" });
+
+        const alert = host.querySelector("[role='alert']");
+        expect(alert?.textContent).toContain("flashcards.load_failed");
+        expect(alert?.textContent).not.toContain("protected note details");
+        expect(host.textContent).not.toContain("flashcards.no_due_cards");
+    });
+
     it("renders the due forecast as an accessible proportional chart", async () => {
         mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
         mocks.getStats.mockResolvedValue({

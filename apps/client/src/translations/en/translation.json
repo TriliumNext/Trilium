@@ -1123,6 +1123,7 @@
     "flashcard_removed_one": "Removed {{count}} flashcard",
     "flashcard_removed_other": "Removed {{count}} flashcards",
     "loading": "Loading flashcards…",
+    "load_failed": "Unable to load flashcards. Unlock protected notes or try again.",
     "no_due_cards": "No due flashcards",
     "progress": "Card {{current}} of {{total}}",
     "deck": "Deck: {{title}}",

@@ -142,6 +142,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                         if (isFlashcard) {
                             void removeFlashcardsFromNote(note);
                         } else {
+                            // App-global command keeps this action valid inside quick-edit popups too.
                             appContext.triggerCommand("showFlashcards", { noteId: note.noteId });
                         }
                     }}

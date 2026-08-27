@@ -41,6 +41,7 @@ interface UndoableReview {
 export default function FlashcardsDialog() {
     const [ shown, setShown ] = useState(false);
     const [ loading, setLoading ] = useState(false);
+    const [ loadError, setLoadError ] = useState<string | null>(null);
     const [ cards, setCards ] = useState<FlashcardReviewCard[]>([]);
     const [ currentCard, setCurrentCard ] = useState<FlashcardReviewCard | null>(null);
     const [ decks, setDecks ] = useState<FlashcardDeckSummary[]>([]);
@@ -59,6 +60,7 @@ export default function FlashcardsDialog() {
     }: EventData<"showFlashcards"> = {}) => {
         setShown(true);
         setLoading(true);
+        setLoadError(null);
         setCards([]);
         setCurrentCard(null);
         setStats(null);
@@ -100,6 +102,12 @@ export default function FlashcardsDialog() {
             setDueQueueTotal(due.totalDueCount);
             setStats(loadedStats);
             setDecks(loadedDecks.decks);
+        } catch {
+            setCards([]);
+            setCurrentCard(null);
+            setStats(null);
+            setDueQueueTotal(0);
+            setLoadError(t("flashcards.load_failed"));
         } finally {
             setLoading(false);
         }
@@ -179,6 +187,7 @@ export default function FlashcardsDialog() {
 
     async function studyDeck(deckNoteId: string | null) {
         setLoading(true);
+        setLoadError(null);
         setCards([]);
         setCurrentCard(null);
         setSelectedDeckNoteId(deckNoteId);
@@ -188,6 +197,8 @@ export default function FlashcardsDialog() {
 
         try {
             await loadDueQueue(deckNoteId);
+        } catch {
+            setLoadError(t("flashcards.load_failed"));
         } finally {
             setLoading(false);
         }
@@ -195,6 +206,7 @@ export default function FlashcardsDialog() {
 
     async function refreshDueQueueAfterSync() {
         setLoading(true);
+        setLoadError(null);
         setAnswerShown(false);
         setReviewRequestId(randomString());
         setUndoableReview(null);
@@ -202,6 +214,8 @@ export default function FlashcardsDialog() {
         try {
             await loadDueQueue(selectedDeckNoteId);
             toast.showMessage(t("flashcards.queue_refreshed"));
+        } catch {
+            setLoadError(t("flashcards.load_failed"));
         } finally {
             setLoading(false);
         }
@@ -560,21 +574,25 @@ export default function FlashcardsDialog() {
                     ? <div className="flashcards-loading" role="status">
                         {t("flashcards.loading")}
                     </div>
-                    : currentCard
-                        ? <ReviewCard
-                            card={currentCard}
-                            decks={decks}
-                            activeIndex={activeIndex}
-                            total={Math.max(cards.length, dueQueueTotal)}
-                            answerShown={answerShown}
-                            submitting={submitting}
-                            onToggleSuspended={toggleSuspended}
-                            onReset={resetCurrentCard}
-                            onBury={buryCurrentCard}
-                            onMoveDeck={moveCurrentCardToDeck}
-                            onReschedule={rescheduleCurrentCard}
-                        />
-                        : <NoItems icon="bx bx-brain" text={t("flashcards.no_due_cards")} />
+                    : loadError
+                        ? <div role="alert">
+                            <NoItems icon="bx bx-error-circle" text={loadError} />
+                        </div>
+                        : currentCard
+                            ? <ReviewCard
+                                card={currentCard}
+                                decks={decks}
+                                activeIndex={activeIndex}
+                                total={Math.max(cards.length, dueQueueTotal)}
+                                answerShown={answerShown}
+                                submitting={submitting}
+                                onToggleSuspended={toggleSuspended}
+                                onReset={resetCurrentCard}
+                                onBury={buryCurrentCard}
+                                onMoveDeck={moveCurrentCardToDeck}
+                                onReschedule={rescheduleCurrentCard}
+                            />
+                            : <NoItems icon="bx bx-brain" text={t("flashcards.no_due_cards")} />
                 }
             </div>
         </Modal>

@@ -41,7 +41,7 @@
 - [x] Add global menu item in `apps/client/src/widgets/buttons/global_menu.tsx`.
 - [x] Add note-level action in `apps/client/src/widgets/ribbon/NoteActions*` and mobile equivalent.
 - [x] Add command/global-menu/mobile-menu tests for shared and layout-specific entry points.
-- [ ] Ensure commands work when no note is active, when active note is protected, and when in a popup.
+- [x] Ensure commands work when no note is active, when active note is protected, and when in a popup. The global command opens the due queue without note context; locked note actions are disabled; scoped load failures render a safe alert; and note actions dispatch the app-global command from quick-edit popups.
 
 ## Client data and events
 
