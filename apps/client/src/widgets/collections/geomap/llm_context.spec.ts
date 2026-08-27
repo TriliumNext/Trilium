@@ -27,7 +27,9 @@ describe("describeGeoView", () => {
             + "- Central Park (noteId: park) at 46.77000, 23.61000, 1.0 km from the center\n"
             + "- Cathedral (noteId: sel) at 46.76990, 23.59010, 2.6 km from the center (selected)\n"
             + "1 more pinned note is off screen.");
-        expect(text).not.toContain("The selected note is off screen");
+        expect(text).toContain("Selected note (open in the detail pane): Cathedral (noteId: sel) at 46.76990, 23.59010, 2.6 km from the center, on screen.");
+        // Named before the listing, where the model looks first for what "it" means.
+        expect(text.indexOf("Selected note")).toBeLessThan(text.indexOf("pinned notes on screen"));
     });
 
     it("names the nearest pin when none is on screen, and the selected one when it is off screen", () => {
@@ -37,7 +39,7 @@ describe("describeGeoView", () => {
             selectedNoteId: "far"
         });
         expect(text).toContain("None of the 1 pinned notes are on screen; the nearest is Bucharest (noteId: far) at 44.42680, 26.10250, 324 km from the center.");
-        expect(text).toContain("The selected note is off screen: Bucharest (noteId: far)");
+        expect(text).toContain("Selected note (open in the detail pane): Bucharest (noteId: far) at 44.42680, 26.10250, 324 km from the center, off screen.");
         expect(describeGeoView({ ...VIEW, pins: [] })).toContain("No notes on this map are pinned yet.");
     });
 

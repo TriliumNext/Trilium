@@ -46,6 +46,13 @@ export function describeGeoView({ bounds, center, zoom, pins, selectedNoteId }: 
     const visible = measured.filter(isVisible);
     const hidden = measured.length - visible.length;
 
+    // The note the detail pane is open on is what "this note" or "it" most likely means, so it is
+    // named before the listing whether or not it is on screen.
+    const selected = selectedNoteId ? measured.find((pin) => pin.noteId === selectedNoteId) : undefined;
+    if (selected) {
+        lines.push("", `Selected note (open in the detail pane): ${describePin(selected)}, ${isVisible(selected) ? "on screen" : "off screen"}.`);
+    }
+
     if (measured.length === 0) {
         lines.push("", "No notes on this map are pinned yet.");
     } else if (visible.length === 0) {
@@ -63,10 +70,6 @@ export function describeGeoView({ bounds, center, zoom, pins, selectedNoteId }: 
         }
     }
 
-    const selected = selectedNoteId && measured.find((pin) => pin.noteId === selectedNoteId);
-    if (selected && !isVisible(selected)) {
-        lines.push("", `The selected note is off screen: ${describePin(selected)}.`);
-    }
     return lines.join("\n");
 }
 
