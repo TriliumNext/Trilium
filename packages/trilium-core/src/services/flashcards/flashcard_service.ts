@@ -781,10 +781,11 @@ function reviewCard(cardId: string, request: FlashcardReviewRequest): FlashcardR
 
     getSql().transactional(() => {
         const leech = isLeech(scheduled.card);
+        const becameLeech = !isLeech(card) && leech;
         const updatedCard = new BFlashcard({
             ...card,
             ...scheduled.card,
-            suspended: scheduled.card.suspended || leech
+            suspended: scheduled.card.suspended || becameLeech
         }).save();
 
         if (leech) {

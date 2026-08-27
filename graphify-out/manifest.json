@@ -14955,8 +14955,8 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/flashcard_service.ts": {
-    "mtime": 1787725836.5141513,
-    "ast_hash": "38e7935d696f0127569be977f05caac9",
+    "mtime": 1787855240.478228,
+    "ast_hash": "ccf7cfadcb5faa4d8bf739d8b6232b89",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/fsrs_scheduler.spec.ts": {
@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1787854711.510358,
-    "ast_hash": "6257a91bed1d55ced580e45db4bb5513",
+    "mtime": 1787855272.006697,
+    "ast_hash": "d0f29947eb27ac61342d45fbb7743856",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -17870,8 +17870,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/02_fsrs_engine_todo.md": {
-    "mtime": 1787854703.0317662,
-    "ast_hash": "ea07c0c7541da754f1be96a516b714f6",
+    "mtime": 1787855264.1972578,
+    "ast_hash": "df73a14156ec25ef4f46e0e7ac52404a",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/03_backend_sync_api_todo.md": {
@@ -24965,8 +24965,8 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/flashcard_service.spec.ts": {
-    "mtime": 1787585111.5234034,
-    "ast_hash": "d67ebfa79057295e7b837b08dd46904e",
+    "mtime": 1787855257.2433302,
+    "ast_hash": "d4b7d51be95753d191a26e6644b0e477",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/routes/api/flashcards.spec.ts": {

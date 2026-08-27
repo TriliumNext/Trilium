@@ -651,6 +651,37 @@ describe("flashcard service", () => {
         expect(note.hasLabel("flashcardLeech")).toBe(false);
     });
 
+    it("keeps a manually resumed leech active after a later review", () => {
+        const note = createTextNote("Resumed leech source");
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        getSql().execute(/*sql*/`
+            UPDATE flashcards
+            SET state = 2, due = '2020-01-01 00:00:00.000Z', stability = 5,
+                difficulty = 5, lastReview = '2019-12-31 00:00:00.000Z', reps = 7,
+                scheduledDays = 3, lapses = 7
+            WHERE cardId = ?`, [card.cardId]);
+
+        const leechReview = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 1,
+            expectedSchedulingRevision: card.schedulingRevision,
+            clientRequestId: `${card.cardId}-initial-leech`
+        }));
+        const resumed = runInContext(() => flashcardService.setSuspended(card.cardId, {
+            suspended: false,
+            expectedSchedulingRevision: leechReview.card.schedulingRevision
+        }));
+        const laterReview = runInContext(() => flashcardService.reviewCard(card.cardId, {
+            rating: 3,
+            expectedSchedulingRevision: resumed.card.schedulingRevision,
+            clientRequestId: `${card.cardId}-after-resume`
+        }));
+
+        expect(laterReview.card.leech).toBe(true);
+        expect(laterReview.card.suspended).toBe(false);
+        expect(note.hasLabel("flashcardLeech")).toBe(true);
+    });
+
     it("undoes the latest review and restores the previous schedule", () => {
         const note = createTextNote("Undo review source");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
