@@ -43,6 +43,19 @@ describe("describeGeoView", () => {
         expect(describeGeoView({ ...VIEW, pins: [] })).toContain("No notes on this map are pinned yet.");
     });
 
+    it("names the place picked from the search, which is not a note", () => {
+        const text = describeGeoView({
+            ...VIEW,
+            pins: [],
+            place: { name: "St. Michael's Church", where: "Cluj-Napoca, Romania", point: [ 23.5891, 46.7702 ] }
+        });
+        expect(text).toContain("A place from the map's search is marked with a temporary pin (it is not a note yet): St. Michael's Church (Cluj-Napoca, Romania) at 46.77020, 23.58910, 2.6 km from the center. The user can keep it as a note.");
+
+        const bare = describeGeoView({ ...VIEW, pins: [], place: { name: "46.7702, 23.5891", where: "", point: [ 23.5891, 46.7702 ] } });
+        expect(bare).toContain("pin (it is not a note yet): 46.7702, 23.5891 at 46.77020, 23.58910");
+        expect(bare).not.toContain("()");
+    });
+
     it("lists only the nearest pins on a crowded screen", () => {
         const pins = Array.from({ length: MAX_LISTED_PINS + 3 }, (_, i) => ({
             noteId: `n${i}`, title: `Pin ${i}`, point: [ 23.6236 + i * 0.001, 46.7712 ] as [number, number]

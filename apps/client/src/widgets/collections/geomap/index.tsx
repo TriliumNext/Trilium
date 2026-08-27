@@ -23,6 +23,7 @@ import { GPX_MIME, GpxTrack } from "./GpxTrack";
 import { describeGeoView } from "./llm_context";
 import Map, { DEFAULT_ZOOM, GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
+import { describePlace } from "./place_address";
 import MapToolbar from "./MapToolbar";
 import type { GeoSearchResult } from "./geocoding";
 import Markers, { DEFAULT_MARKER_COLOR, LOCATION_ATTRIBUTE, parseLocation } from "./Markers";
@@ -336,7 +337,12 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             center: [ lng, lat ],
             zoom: map.getZoom(),
             pins,
-            selectedNoteId: selection?.noteId
+            selectedNoteId: selection?.noteId,
+            place: pickedPlace && {
+                name: pickedPlace.name,
+                where: pickedPlace.unnamed ? "" : describePlace(pickedPlace),
+                point: [ pickedPlace.lng, pickedPlace.lat ]
+            }
         });
         return { label: t("geo-map.llm-view-label"), text };
     });

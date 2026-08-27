@@ -23,12 +23,22 @@ export interface GeoViewSnapshot {
     pins: GeoViewPin[];
     /** The note the detail pane is open on, if any. */
     selectedNoteId?: string | null;
+    /** The place picked from the search, standing on the map under its own pin until kept or dismissed. */
+    place?: GeoViewPlace;
+}
+
+/** A place from the search as the map shows it: not a note, but a spot the user has asked about. */
+export interface GeoViewPlace {
+    name: string;
+    /** Where it stands, as `describePlace` says it; empty for a point named only by its coordinates. */
+    where: string;
+    point: [number, number];
 }
 
 /** How many on-screen pins are listed; the rest are counted. */
 export const MAX_LISTED_PINS = 30;
 
-export function describeGeoView({ bounds, center, zoom, pins, selectedNoteId }: GeoViewSnapshot): string {
+export function describeGeoView({ bounds, center, zoom, pins, selectedNoteId, place }: GeoViewSnapshot): string {
     const [ west, south, east, north ] = bounds;
     const lines = [
         "This note is a geo map. The user is looking at:",
@@ -51,6 +61,10 @@ export function describeGeoView({ bounds, center, zoom, pins, selectedNoteId }: 
     const selected = selectedNoteId ? measured.find((pin) => pin.noteId === selectedNoteId) : undefined;
     if (selected) {
         lines.push("", `Selected note (open in the detail pane): ${describePin(selected)}, ${isVisible(selected) ? "on screen" : "off screen"}.`);
+    }
+    if (place) {
+        const where = place.where ? ` (${place.where})` : "";
+        lines.push("", `A place from the map's search is marked with a temporary pin (it is not a note yet): ${place.name}${where} at ${formatLocation(place.point, 5)}, ${formatMetres(metresBetween(center, place.point))} from the center. The user can keep it as a note.`);
     }
 
     if (measured.length === 0) {
