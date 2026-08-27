@@ -1525,8 +1525,8 @@
     "semantic_hash": "1c4320fd508ca048bfeec596c729caff"
   },
   "apps/client/src/translations/en/translation.json": {
-    "mtime": 1787726676.3642185,
-    "ast_hash": "fcb1465ea1a5fc8327828d7fb092e634",
+    "mtime": 1787854652.6101677,
+    "ast_hash": "4cb430c9cf709da6bb3cd8ff3ffb3ee8",
     "semantic_hash": ""
   },
   "apps/client/src/translations/es/entry.json": {
@@ -5795,14 +5795,14 @@
     "semantic_hash": "983e377adee2d1fa9e4972b468dc27f2"
   },
   "apps/client/src/widgets/type_widgets/text/toolbar.spec.ts": {
-    "mtime": 1786902991.3456852,
-    "ast_hash": "d7d480f512396fb22cd9bdea088db341",
-    "semantic_hash": "d7d480f512396fb22cd9bdea088db341"
+    "mtime": 1787837626.1767178,
+    "ast_hash": "8de379b09038e90d84c56402fcf905bc",
+    "semantic_hash": ""
   },
   "apps/client/src/widgets/type_widgets/text/toolbar.ts": {
-    "mtime": 1786902991.3457463,
-    "ast_hash": "dcf9f890df48f5490c12b346cb448274",
-    "semantic_hash": "dcf9f890df48f5490c12b346cb448274"
+    "mtime": 1787837571.8107095,
+    "ast_hash": "c02f56dd326f86f9e5c78c0851c40838",
+    "semantic_hash": ""
   },
   "apps/client/src/widgets/type_widgets/text/utils.spec.ts": {
     "mtime": 1786902991.345793,
@@ -9415,9 +9415,9 @@
     "semantic_hash": "02a660053d6a669101631a20c1a0ed83"
   },
   "packages/ckeditor5/src/plugins.ts": {
-    "mtime": 1786902991.65798,
-    "ast_hash": "3a33b27ec569cb9e086c7670a0e5d65b",
-    "semantic_hash": "3a33b27ec569cb9e086c7670a0e5d65b"
+    "mtime": 1787837562.569279,
+    "ast_hash": "7c3f6a4f3ede1d40c51f4b6ecef74c01",
+    "semantic_hash": ""
   },
   "packages/ckeditor5/src/plugins/admonition/admonition.ts": {
     "mtime": 1786902991.658155,
@@ -14775,8 +14775,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.tsx": {
-    "mtime": 1787726907.9857192,
-    "ast_hash": "c27cfb5eb90859e863c0956409a84d18",
+    "mtime": 1787854751.3029304,
+    "ast_hash": "b8d9e5d12ea250814963322be4cb3b1f",
     "semantic_hash": ""
   },
   "apps/web-clipper/.wxt/eslint-auto-imports.mjs": {
@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1787727005.1172864,
-    "ast_hash": "4df2383e699f15b706ac46be539b599a",
+    "mtime": 1787854711.510358,
+    "ast_hash": "6257a91bed1d55ced580e45db4bb5513",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -17870,8 +17870,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/02_fsrs_engine_todo.md": {
-    "mtime": 1787329218.19111,
-    "ast_hash": "8104e461c9b262fc56a744f5aa38d36a",
+    "mtime": 1787854703.0317662,
+    "ast_hash": "ea07c0c7541da754f1be96a516b714f6",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/03_backend_sync_api_todo.md": {
@@ -17880,13 +17880,13 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
-    "mtime": 1787586111.7109036,
-    "ast_hash": "5af4162766cf8bb1bb3c428e162c9c99",
+    "mtime": 1787854696.7277951,
+    "ast_hash": "ce95c2f4dd5ffa57d9800425be1893e4",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787564942.770574,
-    "ast_hash": "c44502935104c522d18cc29ddee8cbe0",
+    "mtime": 1787839354.7278974,
+    "ast_hash": "ea303ca10b37d02c93cac3dbb212fe05",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -25000,8 +25000,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.spec.tsx": {
-    "mtime": 1787726947.9226413,
-    "ast_hash": "b0f9f67d2e42bcd1e0e598654f2a8ff2",
+    "mtime": 1787854767.119827,
+    "ast_hash": "bae969f6672a759dd15fdcd2cff13b40",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/cloze.spec.ts": {
@@ -25022,6 +25022,21 @@
   "packages/trilium-core/src/services/flashcards/filtered_decks.ts": {
     "mtime": 1787725747.4326828,
     "ast_hash": "6281b0eafceb7638d9e6142c5a7ded88",
+    "semantic_hash": ""
+  },
+  "packages/ckeditor5/src/plugins/cloze.spec.ts": {
+    "mtime": 1787837840.713602,
+    "ast_hash": "cfe9d3c638a9585f0e0da49ecda21400",
+    "semantic_hash": ""
+  },
+  "packages/ckeditor5/src/plugins/cloze.ts": {
+    "mtime": 1787837864.1708167,
+    "ast_hash": "d05c6a26685eb34ad70a4833ff6211cb",
+    "semantic_hash": ""
+  },
+  "packages/ckeditor5/src/icons/cloze.svg": {
+    "mtime": 1787837550.455867,
+    "ast_hash": "caf75e34d43616d480c5d2a60261df61",
     "semantic_hash": ""
   }
 }
