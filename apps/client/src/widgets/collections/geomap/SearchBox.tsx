@@ -14,7 +14,7 @@ import { filterTokens, matchesFilter } from "../../react/filter";
 import FormAutocomplete from "../../react/FormAutocomplete";
 import Icon from "../../react/Icon";
 import OverlayToolbar, { OverlayToolbarButton } from "../../react/OverlayToolbar";
-import { formatCoordinates, parseCoordinates } from "./coordinates";
+import { formatCoordinates, metresBetween, parseCoordinates } from "./coordinates";
 import { DEFAULT_GEOCODING_PROVIDER_NAME, DEFAULT_PLACE_ICON, type GeoBounds, GEOCODING_PROVIDERS, type GeoSearchResult, SEARCH_RADIUS_M } from "./geocoding";
 import { GPX_MIME } from "./GpxTrack";
 import { ParentMap } from "./map";
@@ -39,9 +39,6 @@ const PLACE_PADDING = 60;
 
 /** The zoom level a marker is shown at, closer in since a note marks a spot rather than an area. */
 const MARKER_ZOOM = 15;
-
-/** The mean radius of the Earth, which is what a great-circle distance is measured on. */
-const EARTH_RADIUS_M = 6_371_008.8;
 
 /**
  * How wide the result list is drawn. The field is a corner of the map, while what it offers is whole
@@ -345,17 +342,6 @@ function withDistance(entry: SearchEntry, origin: [number, number] | null): Sear
     }
 
     return { ...entry, distance: metresBetween(origin, center) };
-}
-
-/** The great-circle metres between two `[lng, lat]` points. */
-function metresBetween([ lngA, latA ]: [number, number], [ lngB, latB ]: [number, number]) {
-    const toRadians = Math.PI / 180;
-    const deltaLat = (latB - latA) * toRadians;
-    const deltaLng = (lngB - lngA) * toRadians;
-    const h = Math.sin(deltaLat / 2) ** 2
-        + Math.cos(latA * toRadians) * Math.cos(latB * toRadians) * Math.sin(deltaLng / 2) ** 2;
-
-    return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
 }
 
 /** What the map is showing, as a geocoder reads a preferred area. */

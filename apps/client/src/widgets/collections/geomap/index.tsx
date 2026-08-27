@@ -11,7 +11,7 @@ import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { logError } from "../../../services/ws";
 import CollectionProperties from "../../note_bars/CollectionProperties";
-import { useCollectionTreeDrag, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate } from "../../react/hooks";
+import { useCollectionTreeDrag, useEffectiveReadOnly, useLlmViewContext, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate } from "../../react/hooks";
 import { ViewModeProps } from "../interface";
 import { createNewNote, createNoteForPlace, importGpxTrack, moveMarker } from "./api";
 import Buildings from "./Buildings";
@@ -20,11 +20,12 @@ import DetailPane, { PaneSelection } from "./DetailPane";
 import EditToolbar from "./EditToolbar";
 import GhostPin from "./GhostPin";
 import { GPX_MIME, GpxTrack } from "./GpxTrack";
+import { describeGeoView } from "./llm_context";
 import Map, { DEFAULT_ZOOM, GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import MapToolbar from "./MapToolbar";
 import type { GeoSearchResult } from "./geocoding";
-import Markers, { DEFAULT_MARKER_COLOR, LOCATION_ATTRIBUTE } from "./Markers";
+import Markers, { DEFAULT_MARKER_COLOR, LOCATION_ATTRIBUTE, parseLocation } from "./Markers";
 import PlaceMarker from "./PlaceMarker";
 import PlacePanel from "./PlacePanel";
 import Pois from "./Pois";
@@ -319,6 +320,25 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<MapLibreGLMap>(null);
+
+    // What the LLM chat is told about the map when a message is sent (see describeGeoView): read off
+    // the live map rather than the saved view, which lags the last move by the update's spacing.
+    useLlmViewContext(noteContext, () => {
+        const map = apiRef.current;
+        if (!map) return undefined;
+        const { lng, lat } = map.getCenter();
+        const pins = notes.flatMap((pinned) => {
+            const point = parseLocation(pinned.getLabelValue(LOCATION_ATTRIBUTE));
+            return point ? [ { noteId: pinned.noteId, title: pinned.title, point } ] : [];
+        });
+        return describeGeoView({
+            bounds: map.getBounds().toArray().flat() as [number, number, number, number],
+            center: [ lng, lat ],
+            zoom: map.getZoom(),
+            pins,
+            selectedNoteId: selection?.noteId
+        });
+    });
     useCollectionTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
         includeArchived,

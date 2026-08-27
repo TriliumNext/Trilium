@@ -69,3 +69,17 @@ export function parseCoordinates(query: string): [number, number] | null {
 export function formatCoordinates([ lng, lat ]: [number, number]) {
     return `${lat}, ${lng}`;
 }
+
+/** The mean radius of the Earth, which is what a great-circle distance is measured on. */
+const EARTH_RADIUS_M = 6_371_008.8;
+
+/** The great-circle metres between two `[lng, lat]` points. */
+export function metresBetween([ lngA, latA ]: [number, number], [ lngB, latB ]: [number, number]) {
+    const toRadians = Math.PI / 180;
+    const deltaLat = (latB - latA) * toRadians;
+    const deltaLng = (lngB - lngA) * toRadians;
+    const h = Math.sin(deltaLat / 2) ** 2
+        + Math.cos(latA * toRadians) * Math.cos(latB * toRadians) * Math.sin(deltaLng / 2) ** 2;
+
+    return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
+}
