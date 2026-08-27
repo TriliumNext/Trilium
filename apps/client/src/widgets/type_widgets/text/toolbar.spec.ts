@@ -113,6 +113,7 @@ describe("buildMobileToolbar", () => {
         // Items nested inside group objects (text-formatting, alignment, ...) are hoisted up.
         expect(mobile.toolbar.items).toContain("underline");
         expect(mobile.toolbar.items).toContain("alignment:left");
+        expect(mobile.toolbar.items).toContain("clozeDeletion");
         // No nested group objects survive the flattening.
         expect(mobile.toolbar.items.some((item) => typeof item === "object")).toBe(false);
     });

@@ -99,6 +99,7 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 "insertTable",
                 "|",
                 "code",
+                "clozeDeletion",
                 "codeBlock",
                 "|",
                 "footnote",
@@ -147,6 +148,7 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
                 // quick action widens to the block it sits in.
                 ...(aiAssistant ? ["aiAssistant"] : []),
                 "code",
+                "clozeDeletion",
                 "link",
                 "bookmark",
                 "internallink",
@@ -172,6 +174,7 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             "codeBlock",
             "insertTable",
             "footnote",
+            "clozeDeletion",
             {
                 ...buildInsertGroup(),
                 items: ["link", "linkEmbed", "bookmark", "internallink", "includeNote", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]

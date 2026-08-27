@@ -66,7 +66,8 @@
 ## Optional future UI
 
 - [ ] Card template editor and multiple cards per note.
-- [x] Cloze review rendering (server-rendered elisions, cloze number in card meta, background sync on note-scoped open). Cloze *editor* toolbar integration still open — users type `{{c1::...}}` manually.
+- [x] Cloze review rendering (server-rendered elisions, cloze number in card meta, background sync on note-scoped open).
+- [x] Cloze editor toolbar integration: wraps selected rich text, inserts a selected `text` placeholder at a collapsed caret, and increments the highest canonical `cN` index.
 - [ ] Filtered/custom study decks.
 - [x] Manual due-date picker: a Reschedule action in the review dialog opens a date field; submitting sets the card's due date through a new `PUT /api/flashcards/cards/:cardId/due` endpoint with optimistic revision conflict protection. Drag scheduling on the due forecast chart remains open.
 - [ ] Leech dashboard.

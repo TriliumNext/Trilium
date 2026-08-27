@@ -34,7 +34,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 
 ## Deferred until after MVP
 
-- Multiple cards per note via cloze deletions implemented (`{{cN::text}}` syntax, index N → ordinal N-1, sync endpoint reconciles card set, dialog renders elided HTML with cloze number). Rich-text cloze toolbar button and sibling templates remain open.
+- Multiple cards per note via cloze deletions implemented (`{{cN::text}}` syntax, index N → ordinal N-1, sync endpoint reconciles card set, dialog renders elided HTML with cloze number). Rich-text cloze toolbar button now wraps selected content, inserts a selected placeholder at a collapsed caret, and chooses the next canonical cloze index. Sibling templates remain open.
 - Filtered decks: backend implemented — a note carrying `#flashcardFilteredDeck` whose `searchString` label is a Trilium search query becomes a dynamic deck; the due queue, deck browser counts, and guards resolve it from matching source notes (`packages/trilium-core/src/services/flashcards/filtered_decks.ts`). Client work implemented: the deck browser marks filtered decks with a badge and a "New filtered deck" button creates a saved-search note with the `#flashcardFilteredDeck` + `searchString` labels. Drag scheduling remains open. Manual per-card due-date picker implemented.
 - Anki `.apkg` import/export wizard. Trilium JSON export/import of scheduling state plus review history is implemented (`GET /api/flashcards/export`, `POST /api/flashcards/import`, settings-page controls); `.apkg` conversion remains open.
 - Leech dashboard beyond auto-suspend plus `#flashcardLeech` marker: implemented (`GET /api/flashcards/leeches`, review-dialog leech section with unsuspend + per-note review).
