@@ -1163,6 +1163,7 @@
     "leech_unsuspend": "Unsuspend",
     "due_forecast": "Due next 7 days: {{value}}",
     "due_forecast_heading": "Due next 7 days",
+    "due_forecast_drag_hint": "Drag the current card onto a day to reschedule it.",
     "due_forecast_day_one": "{{date}}: {{count}} card due",
     "due_forecast_day_other": "{{date}}: {{count}} cards due",
     "no_reviews": "no reviews",

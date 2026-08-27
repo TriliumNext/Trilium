@@ -41,6 +41,12 @@
         }
     }
 
+    .flashcards-due-forecast-hint {
+        margin-bottom: 0.5rem;
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+    }
+
     .flashcards-due-forecast-days {
         display: grid;
         grid-template-columns: repeat(7, minmax(2.5rem, 1fr));
@@ -60,6 +66,18 @@
             font-size: 0.75rem;
             white-space: nowrap;
         }
+    }
+
+    .flashcards-due-forecast-day-droppable {
+        border-radius: var(--border-radius);
+        cursor: move;
+        transition: background-color 120ms ease, outline-color 120ms ease;
+    }
+
+    .flashcards-due-forecast-day-drop-target {
+        background: var(--accented-background-color);
+        outline: 2px solid var(--primary-button-background-color);
+        outline-offset: -2px;
     }
 
     .flashcards-due-forecast-count {
@@ -207,6 +225,10 @@
         color: var(--muted-text-color);
         font-size: 0.9em;
         margin-bottom: 0.5rem;
+    }
+
+    .flashcards-card-pane[draggable="true"] {
+        cursor: grab;
     }
 
     .flashcards-front-title .flashcard-cloze-revealed,
@@ -368,7 +390,8 @@
 
     @media (prefers-reduced-motion: reduce) {
         .modal-dialog,
-        .modal-content {
+        .modal-content,
+        .flashcards-due-forecast-day-droppable {
             scroll-behavior: auto;
             transition: none;
         }

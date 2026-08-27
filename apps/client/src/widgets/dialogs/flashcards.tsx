@@ -29,6 +29,8 @@ import { RawHtmlBlock } from "../react/RawHtml";
 
 const REVIEW_LIMIT = 20;
 const FORECAST_BAR_SEGMENTS = 8;
+const FLASHCARD_DRAG_MIME = "application/x-trilium-flashcard-id";
+const FORECAST_DRAG_HINT_ID = "flashcards-due-forecast-drag-hint";
 
 interface UndoableReview {
     reviewId: string;
@@ -536,7 +538,12 @@ export default function FlashcardsDialog() {
             />}
         >
             <div className="flashcards-dialog-body" aria-busy={loading}>
-                {stats && <ReviewStats stats={stats} />}
+                {stats && <ReviewStats
+                    stats={stats}
+                    activeCardId={currentCard?.cardId}
+                    disabled={submitting}
+                    onReschedule={rescheduleCurrentCard}
+                />}
                 {stats && stats.leechCount > 0 && (
                     <LeechSection onOpenNote={(noteId) => void openDialog({ noteId })} />
                 )}
@@ -805,7 +812,17 @@ function LeechSection({ onOpenNote }: { onOpenNote: (noteId: string) => void }) 
     );
 }
 
-function ReviewStats({ stats }: { stats: FlashcardStatsResponse }) {
+function ReviewStats({
+    stats,
+    activeCardId,
+    disabled,
+    onReschedule
+}: {
+    stats: FlashcardStatsResponse;
+    activeCardId?: string;
+    disabled: boolean;
+    onReschedule: (due: string) => Promise<void>;
+}) {
     return (
         <div className="flashcards-session-stats" aria-live="polite">
             <span>{t("flashcards.due_count", { count: stats.dueCount })}</span>
@@ -822,13 +839,30 @@ function ReviewStats({ stats }: { stats: FlashcardStatsResponse }) {
                 good: stats.ratingCounts[3],
                 easy: stats.ratingCounts[4]
             })}</span>
-            <DueForecast dueForecast={stats.dueForecast} />
+            <DueForecast
+                dueForecast={stats.dueForecast}
+                activeCardId={activeCardId}
+                disabled={disabled}
+                onReschedule={onReschedule}
+            />
         </div>
     );
 }
 
-function DueForecast({ dueForecast }: { dueForecast: FlashcardStatsResponse["dueForecast"] }) {
+function DueForecast({
+    dueForecast,
+    activeCardId,
+    disabled,
+    onReschedule
+}: {
+    dueForecast: FlashcardStatsResponse["dueForecast"];
+    activeCardId?: string;
+    disabled: boolean;
+    onReschedule: (due: string) => Promise<void>;
+}) {
+    const [ dragOverDate, setDragOverDate ] = useState<string | null>(null);
     const maximumCount = Math.max(1, ...dueForecast.map(({ count }) => count));
+    const canReschedule = !!activeCardId && !disabled;
 
     return (
         <figure
@@ -836,18 +870,54 @@ function DueForecast({ dueForecast }: { dueForecast: FlashcardStatsResponse["due
             aria-label={t("flashcards.due_forecast", { value: formatDueForecast(dueForecast) })}
         >
             <figcaption>{t("flashcards.due_forecast_heading")}</figcaption>
+            {canReschedule && (
+                <div id={FORECAST_DRAG_HINT_ID} className="flashcards-due-forecast-hint">
+                    {t("flashcards.due_forecast_drag_hint")}
+                </div>
+            )}
             <div className="flashcards-due-forecast-days" role="list">
                 {dueForecast.map(({ date, count }) => {
                     const filledSegments = count === 0
                         ? 0
                         : Math.max(1, Math.round(count / maximumCount * FORECAST_BAR_SEGMENTS));
+                    const className = [
+                        "flashcards-due-forecast-day",
+                        canReschedule ? "flashcards-due-forecast-day-droppable" : "",
+                        dragOverDate === date ? "flashcards-due-forecast-day-drop-target" : ""
+                    ].filter(Boolean).join(" ");
 
                     return (
                         <div
-                            className="flashcards-due-forecast-day"
+                            className={className}
                             key={date}
                             role="listitem"
                             aria-label={t("flashcards.due_forecast_day", { date, count })}
+                            onDragOver={canReschedule ? (event) => {
+                                if (!event.dataTransfer) {
+                                    return;
+                                }
+
+                                event.preventDefault();
+                                event.dataTransfer.dropEffect = "move";
+                                setDragOverDate(date);
+                            } : undefined}
+                            onDragLeave={canReschedule ? () => setDragOverDate(null) : undefined}
+                            onDrop={canReschedule ? (event) => {
+                                if (!event.dataTransfer) {
+                                    return;
+                                }
+
+                                event.preventDefault();
+                                setDragOverDate(null);
+                                const due = getFlashcardDropDue(
+                                    event.dataTransfer,
+                                    activeCardId,
+                                    date
+                                );
+                                if (due) {
+                                    void onReschedule(due);
+                                }
+                            } : undefined}
                         >
                             <span className="flashcards-due-forecast-count" aria-hidden="true">
                                 {count}
@@ -920,7 +990,20 @@ function ReviewCard({
                 onMoveDeck={onMoveDeck}
                 onReschedule={onReschedule}
             />
-            <section className="flashcards-card-pane" aria-live="polite">
+            <section
+                className="flashcards-card-pane"
+                aria-live="polite"
+                aria-describedby={!submitting ? FORECAST_DRAG_HINT_ID : undefined}
+                draggable={!submitting}
+                onDragStart={(event) => {
+                    if (!event.dataTransfer) {
+                        return;
+                    }
+
+                    event.dataTransfer.effectAllowed = "move";
+                    setFlashcardDragData(event.dataTransfer, card.cardId);
+                }}
+            >
                 {card.cardType === "cloze"
                     ? <h3 className="flashcards-front-title">
                         <RawHtml html={card.front} />
@@ -1127,6 +1210,22 @@ function UndoButton({ disabled, onUndo }: {
             onClick={() => void onUndo()}
         />
     );
+}
+
+type FlashcardDragTransfer = Pick<DataTransfer, "getData" | "setData">;
+
+export function setFlashcardDragData(dataTransfer: FlashcardDragTransfer, cardId: string) {
+    dataTransfer.setData(FLASHCARD_DRAG_MIME, cardId);
+}
+
+export function getFlashcardDropDue(
+    dataTransfer: FlashcardDragTransfer,
+    activeCardId: string,
+    date: string
+) {
+    return dataTransfer.getData(FLASHCARD_DRAG_MIME) === activeCardId
+        ? `${date}T12:00:00.000Z`
+        : null;
 }
 
 function formatDueForecast(dueForecast: FlashcardStatsResponse["dueForecast"]) {

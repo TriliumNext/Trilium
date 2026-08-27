@@ -75,7 +75,7 @@ vi.mock("../react/Modal", () => ({
         : null)
 }));
 
-import FlashcardsDialog from "./flashcards";
+import FlashcardsDialog, { getFlashcardDropDue, setFlashcardDragData } from "./flashcards";
 
 function makeCard(overrides: Partial<FlashcardReviewCard> = {}): FlashcardReviewCard {
     return {
@@ -189,6 +189,43 @@ describe("flashcards review dialog", () => {
         expect(days?.[0]?.querySelectorAll(activeSegmentSelector).length).toBe(0);
         expect(days?.[1]?.querySelectorAll(activeSegmentSelector).length).toBe(4);
         expect(days?.[2]?.querySelectorAll(activeSegmentSelector).length).toBe(8);
+    });
+
+    it("exposes the current card and forecast days as drag scheduling targets", async () => {
+        const card = makeCard();
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+        mocks.getStats.mockResolvedValue({
+            ...statsResponse(),
+            dueForecast: [
+                { date: "2025-01-11", count: 2 },
+                { date: "2025-01-12", count: 4 }
+            ]
+        });
+
+        await openDialog();
+
+        const cardPane = host.querySelector<HTMLElement>(".flashcards-card-pane");
+        const forecastDays = host.querySelectorAll(".flashcards-due-forecast-day-droppable");
+        expect(cardPane).toBeTruthy();
+        expect(cardPane?.getAttribute("draggable")).toBe("true");
+        expect(cardPane?.getAttribute("aria-describedby"))
+            .toBe("flashcards-due-forecast-drag-hint");
+        expect(forecastDays.length).toBe(2);
+        expect(host.textContent).toContain("flashcards.due_forecast_drag_hint");
+
+        // happy-dom does not dispatch drag/drop events to Preact listeners, so exercise
+        // the payload validation used by those listeners directly.
+        const data = new Map<string, string>();
+        const dataTransfer = {
+            setData: (type: string, value: string) => data.set(type, value),
+            getData: (type: string) => data.get(type) ?? ""
+        };
+        setFlashcardDragData(dataTransfer, card.cardId);
+
+        expect(getFlashcardDropDue(dataTransfer, card.cardId, "2025-01-12"))
+            .toBe("2025-01-12T12:00:00.000Z");
+        expect(getFlashcardDropDue(dataTransfer, "another-card", "2025-01-12"))
+            .toBeNull();
     });
 
     it("marks filtered decks in the deck browser", async () => {
