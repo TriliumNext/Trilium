@@ -54,7 +54,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 
 - FSRS implementation: maintained `ts-fsrs@5.4.1` (MIT) behind a Trilium adapter in core; no Anki AGPL code copied.
 - Initial FSRS defaults: FSRS 6 defaults, desired retention 0.90, max interval 36,500 days, fuzz enabled, short-term scheduling enabled, configurable learning/relearning steps.
-- Parameter optimization is post-MVP; requires review logs (present), export format, minimum-data rules, progress reporting, and a server-safe optimizer path.
+- Parameter optimization is post-MVP; review logs and export data are present, but official optimizer runtimes currently split between Node-only and cross-origin-isolated browser/WASI paths that do not cover Capacitor iOS. Wait for a supported cross-runtime path rather than shipping server-only behavior or a homegrown trainer.
 - Account-wide scheduler settings sync via the `flashcardSchedulerConfig` option; display/session preferences remain device-local/future.
 
 ## Definition of done
@@ -63,7 +63,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 - [x] Review presents front first, reveals back, and offers Again/Hard/Good/Easy with preview intervals.
 - [x] Rating atomically updates card state and appends review log.
 - [x] Refresh, second-device sync, standalone, protected note, clone identity, and concurrent-review cases are covered by specs; mobile/desktop routing reuses existing shared paths.
-- [x] User can inspect due/new/learning/review counts, reviewed-today count, retention, rating counts, lapses, leeches, and 7-day due forecast.
+- [x] User can inspect due/new/learning/review counts, reviewed-today count, retention, rating counts, lapses, leeches, and an accessible proportional 7-day due forecast chart.
 - [x] Existing databases migrate without changing existing notes or options (additive migrations 241–243+).
 - [ ] Documentation explains authoring, deck selection, FSRS settings, data portability, and privacy. Developer TODO docs cover decisions; user-facing guide entry still to write before release.
 

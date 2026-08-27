@@ -50,7 +50,7 @@
 ## Optional optimization phase
 
 - [x] Do not add parameter optimization to MVP.
-- [x] Research `@open-spaced-repetition/binding` runtime support and licensing separately if optimization returns to scope; deferred because optimization is not MVP.
+- [x] Research optimizer runtime support and licensing. `@open-spaced-repetition/binding@0.5.0` is MIT/public beta and Node 20+, while its browser WASI path and `fsrs-browser` require workers, `SharedArrayBuffer`, COOP/COEP, and cross-origin isolation unavailable to Capacitor iOS. Do not ship a server-only optimizer or a homegrown trainer; revisit when a supported cross-runtime path exists.
 - [x] Add minimum review-count/data-quality checks before exposing optimization; deferred with optimization.
 - [x] Run optimization server-side with `TaskContext` progress and cancellation; deferred with optimization.
 - [x] Store old parameters, new parameters, training range, and optimizer version; deferred with optimization.

@@ -163,6 +163,34 @@ describe("flashcards review dialog", () => {
         expect(host.textContent).toContain("flashcards.no_due_cards");
     });
 
+    it("renders the due forecast as an accessible proportional chart", async () => {
+        mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
+        mocks.getStats.mockResolvedValue({
+            ...statsResponse(),
+            dueForecast: [
+                { date: "2025-01-10", count: 0 },
+                { date: "2025-01-11", count: 5 },
+                { date: "2025-01-12", count: 10 }
+            ]
+        });
+
+        await openDialog();
+
+        const chart = host.querySelector(".flashcards-due-forecast");
+        expect(chart?.getAttribute("aria-label")).toContain("flashcards.due_forecast");
+        expect(chart?.querySelector("figcaption")?.textContent)
+            .toBe("flashcards.due_forecast_heading");
+
+        const days = chart?.querySelectorAll("[role='listitem']");
+        const activeSegmentSelector = ".flashcards-due-forecast-segment-active";
+        expect(days?.length).toBe(3);
+        expect(days?.[1]?.getAttribute("aria-label"))
+            .toContain("flashcards.due_forecast_day");
+        expect(days?.[0]?.querySelectorAll(activeSegmentSelector).length).toBe(0);
+        expect(days?.[1]?.querySelectorAll(activeSegmentSelector).length).toBe(4);
+        expect(days?.[2]?.querySelectorAll(activeSegmentSelector).length).toBe(8);
+    });
+
     it("marks filtered decks in the deck browser", async () => {
         mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
         mocks.getDecks.mockResolvedValue({
@@ -199,7 +227,9 @@ describe("flashcards review dialog", () => {
             newButton.click();
         });
 
-        const inputs = host.querySelectorAll<HTMLInputElement>(".flashcards-filtered-deck-editor input");
+        const inputs = host.querySelectorAll<HTMLInputElement>(
+            ".flashcards-filtered-deck-editor input"
+        );
         expect(inputs.length).toBe(2);
         expect(inputs[0]?.classList.contains("form-control")).toBe(true);
         expect(inputs[0]?.getAttribute("aria-label")).toBe("flashcards.filtered_deck_title");
@@ -214,7 +244,8 @@ describe("flashcards review dialog", () => {
         await act(async () => {
             applyButton.click();
         });
-        expect(host.querySelector("[role='alert']")?.textContent).toBe("flashcards.filtered_deck_missing");
+        expect(host.querySelector("[role='alert']")?.textContent)
+            .toBe("flashcards.filtered_deck_missing");
         expect(mocks.createFilteredDeck).not.toHaveBeenCalled();
 
         await act(async () => {
@@ -351,7 +382,9 @@ describe("flashcards review dialog", () => {
             rescheduleButton.click();
         });
 
-        const dateInput = host.querySelector<HTMLInputElement>(".flashcards-reschedule-editor input");
+        const dateInput = host.querySelector<HTMLInputElement>(
+            ".flashcards-reschedule-editor input"
+        );
         expect(dateInput?.classList.contains("form-control")).toBe(true);
         expect(dateInput?.getAttribute("aria-label")).toBe("flashcards.reschedule_hint");
 

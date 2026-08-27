@@ -29,6 +29,62 @@
         }
     }
 
+    .flashcards-due-forecast {
+        flex: 1 0 100%;
+        margin: 0.25rem 0 0;
+        min-width: 0;
+
+        figcaption {
+            color: var(--main-text-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    .flashcards-due-forecast-days {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(2.5rem, 1fr));
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+    }
+
+    .flashcards-due-forecast-day {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 0.25rem;
+        min-width: 0;
+        text-align: center;
+
+        time {
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+    }
+
+    .flashcards-due-forecast-count {
+        color: var(--main-text-color);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .flashcards-due-forecast-bar {
+        align-self: end;
+        display: grid;
+        gap: 0.15rem;
+        grid-template-rows: repeat(8, 0.3rem);
+        margin-inline: auto;
+        width: min(1.5rem, 100%);
+
+        > span {
+            background: var(--main-border-color);
+            border-radius: 2px;
+        }
+
+        > .flashcards-due-forecast-segment-active {
+            background: var(--primary-button-background-color);
+        }
+    }
+
     .flashcards-deck-browser {
         border: 1px solid var(--main-border-color);
         border-radius: var(--border-radius);

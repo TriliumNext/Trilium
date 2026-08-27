@@ -28,6 +28,7 @@ import RawHtml from "../react/RawHtml";
 import { RawHtmlBlock } from "../react/RawHtml";
 
 const REVIEW_LIMIT = 20;
+const FORECAST_BAR_SEGMENTS = 8;
 
 interface UndoableReview {
     reviewId: string;
@@ -536,7 +537,9 @@ export default function FlashcardsDialog() {
         >
             <div className="flashcards-dialog-body" aria-busy={loading}>
                 {stats && <ReviewStats stats={stats} />}
-                {stats && stats.leechCount > 0 && <LeechSection onOpenNote={(noteId) => void openDialog({ noteId })} />}
+                {stats && stats.leechCount > 0 && (
+                    <LeechSection onOpenNote={(noteId) => void openDialog({ noteId })} />
+                )}
                 {!loading && stats && <DeckBrowser
                     decks={decks}
                     stats={stats}
@@ -547,7 +550,9 @@ export default function FlashcardsDialog() {
                     onCreated={refreshProgress}
                 />}
                 {loading
-                    ? <div className="flashcards-loading" role="status">{t("flashcards.loading")}</div>
+                    ? <div className="flashcards-loading" role="status">
+                        {t("flashcards.loading")}
+                    </div>
                     : currentCard
                         ? <ReviewCard
                             card={currentCard}
@@ -660,7 +665,9 @@ function DeckBrowser({
                     size="small"
                     onClick={() => void submitCreate()}
                 />
-                {createError && <span className="flashcards-reschedule-error" role="alert">{createError}</span>}
+                {createError && (
+                    <span className="flashcards-reschedule-error" role="alert">{createError}</span>
+                )}
             </div>}
             <div className="flashcards-deck-list">
                 {decks.map((deck) => <DeckSummaryCard
@@ -809,14 +816,58 @@ function ReviewStats({ stats }: { stats: FlashcardStatsResponse }) {
             <span>{t("flashcards.retention", { value: formatRetention(stats.retentionRate) })}</span>
             <span>{t("flashcards.lapses", { count: stats.lapseCount })}</span>
             <span>{t("flashcards.leeches", { count: stats.leechCount })}</span>
-            <span>{t("flashcards.due_forecast", { value: formatDueForecast(stats.dueForecast) })}</span>
             <span>{t("flashcards.rating_counts", {
                 again: stats.ratingCounts[1],
                 hard: stats.ratingCounts[2],
                 good: stats.ratingCounts[3],
                 easy: stats.ratingCounts[4]
             })}</span>
+            <DueForecast dueForecast={stats.dueForecast} />
         </div>
+    );
+}
+
+function DueForecast({ dueForecast }: { dueForecast: FlashcardStatsResponse["dueForecast"] }) {
+    const maximumCount = Math.max(1, ...dueForecast.map(({ count }) => count));
+
+    return (
+        <figure
+            className="flashcards-due-forecast"
+            aria-label={t("flashcards.due_forecast", { value: formatDueForecast(dueForecast) })}
+        >
+            <figcaption>{t("flashcards.due_forecast_heading")}</figcaption>
+            <div className="flashcards-due-forecast-days" role="list">
+                {dueForecast.map(({ date, count }) => {
+                    const filledSegments = count === 0
+                        ? 0
+                        : Math.max(1, Math.round(count / maximumCount * FORECAST_BAR_SEGMENTS));
+
+                    return (
+                        <div
+                            className="flashcards-due-forecast-day"
+                            key={date}
+                            role="listitem"
+                            aria-label={t("flashcards.due_forecast_day", { date, count })}
+                        >
+                            <span className="flashcards-due-forecast-count" aria-hidden="true">
+                                {count}
+                            </span>
+                            <span className="flashcards-due-forecast-bar" aria-hidden="true">
+                                {Array.from({ length: FORECAST_BAR_SEGMENTS }, (_, index) => (
+                                    <span
+                                        key={index}
+                                        className={index >= FORECAST_BAR_SEGMENTS - filledSegments
+                                            ? "flashcards-due-forecast-segment-active"
+                                            : undefined}
+                                    />
+                                ))}
+                            </span>
+                            <time dateTime={date} aria-hidden="true">{date.slice(5)}</time>
+                        </div>
+                    );
+                })}
+            </div>
+        </figure>
     );
 }
 
@@ -978,7 +1029,11 @@ function CardLifecycleActions({
                     size="small"
                     onClick={() => void submitReschedule()}
                 />
-                {reschedulingError && <span className="flashcards-reschedule-error" role="alert">{reschedulingError}</span>}
+                {reschedulingError && (
+                    <span className="flashcards-reschedule-error" role="alert">
+                        {reschedulingError}
+                    </span>
+                )}
             </div>}
         </div>
     );
