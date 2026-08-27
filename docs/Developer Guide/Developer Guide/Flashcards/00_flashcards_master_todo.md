@@ -6,7 +6,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 
 ## Implemented product shape
 
-- [x] MVP scope: one question/answer card per source note (`#flashcard` label); filtered decks, .apkg import, and FSRS parameter optimization are deferred.
+- [x] MVP scope: one question/answer card per source note (`#flashcard` label); filtered decks and cloze cards were added after MVP, while `.apkg` import and FSRS parameter optimization remain deferred.
 - [x] Ordinary Trilium notes carry card content; dedicated synchronized entities (`flashcards`, `flashcard_reviews`) hold scheduling state. No review state in labels or `localStorage`.
 - [x] Explicit `deckNoteId` per card selects decks; card identity is separate from branch identity. Missing/deleted decks repair to `root`; missing/deleted sources are deleted by consistency checks.
 - [x] Explicit opt-in via `#flashcard` so existing notes never become review items accidentally.
@@ -39,8 +39,8 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 - Anki `.apkg` import/export wizard. Trilium JSON export/import of scheduling state plus review history is implemented (`GET /api/flashcards/export`, `POST /api/flashcards/import`, settings-page controls); `.apkg` conversion remains open.
 - Leech dashboard beyond auto-suspend plus `#flashcardLeech` marker: implemented (`GET /api/flashcards/leeches`, review-dialog leech section with unsuspend + per-note review).
 - FSRS parameter optimization with optimizer runtime review.
-- Note-info flashcard status indicator near the note title.
-- Command/global-menu automated specs done (menu wiring, showFlashcards payloads, keyboard action registration). RTL/responsive verification passes remain.
+- Note-info flashcard status indicator implemented in the note info tab.
+- Command/global-menu automated specs done (menu wiring, `showFlashcards` payloads, keyboard action registration). Review UI now uses logical spacing, overflow-safe layouts, narrow-screen stacking, and reduced-motion overrides; final device/browser visual verification remains.
 
 ## Architecture findings
 

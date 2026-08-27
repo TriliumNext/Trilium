@@ -38,11 +38,11 @@
 ## Client tests
 
 - [x] Add component specs for authoring, reveal, rating controls, previews, conflict, protected state, and empty queue. Dialog specs cover reveal, lazy answer fetch, rating submission, conflict refresh, empty queue, and shortcut hints; protected/missing sources surface as safe errors from the server.
-- [ ] Add command/global-menu/mobile-menu specs.
+- [x] Add command/global-menu/mobile-menu specs.
 - [x] Add API service specs for flashcard endpoint wrappers and `409` conflict mapping. CSRF retry, timeout, `403`, and `404` remain covered by shared server-service behavior or future endpoint-specific tests.
 - [x] Test sync refresh while review dialog is open. Queued flashcard changes reload the queue; unrelated entity changes do not.
-- [ ] Test accessibility roles, keyboard flow, focus, disabled mutation state, and live progress announcements. Keyboard flow and disabled states are exercised indirectly through dialog specs; dedicated a11y assertions remain.
-- [ ] Test responsive rendering at desktop/mobile widths and long translations.
+- [ ] Test accessibility roles, keyboard flow, focus, disabled mutation state, and live progress announcements. Dialog specs now cover keyboard flow, disabled states, shared form controls, field labels, initial form focus, and validation alerts; broader automated a11y assertions remain.
+- [ ] Test responsive rendering at desktop/mobile widths and long translations. Overflow-safe and narrow-screen CSS is implemented; automated viewport/visual coverage remains.
 - [x] Test no duplicate submission after double-click, Enter key, or network retry. The dialog uses a synchronous mutation lock; the spec clicks a rating button twice before the request resolves and asserts one review call.
 
 ## Fixtures and migration safety

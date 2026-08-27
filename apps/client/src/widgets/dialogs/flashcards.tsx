@@ -20,6 +20,7 @@ import { formatDateTime } from "../../utils/formatters";
 import { Badge } from "../react/Badge";
 import Button from "../react/Button";
 import FormSelect from "../react/FormSelect";
+import FormTextBox from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
@@ -533,7 +534,7 @@ export default function FlashcardsDialog() {
                 onUndo={undoLastReview}
             />}
         >
-            <div className="flashcards-dialog-body">
+            <div className="flashcards-dialog-body" aria-busy={loading}>
                 {stats && <ReviewStats stats={stats} />}
                 {stats && stats.leechCount > 0 && <LeechSection onOpenNote={(noteId) => void openDialog({ noteId })} />}
                 {!loading && stats && <DeckBrowser
@@ -546,7 +547,7 @@ export default function FlashcardsDialog() {
                     onCreated={refreshProgress}
                 />}
                 {loading
-                    ? <div className="flashcards-loading">{t("flashcards.loading")}</div>
+                    ? <div className="flashcards-loading" role="status">{t("flashcards.loading")}</div>
                     : currentCard
                         ? <ReviewCard
                             card={currentCard}
@@ -637,17 +638,20 @@ function DeckBrowser({
                 </div>
             </header>
             {creating && <div className="flashcards-filtered-deck-editor">
-                <input
-                    type="text"
+                <FormTextBox
+                    aria-label={t("flashcards.filtered_deck_title")}
                     placeholder={t("flashcards.filtered_deck_title")}
-                    value={newTitle}
-                    onInput={(e) => setNewTitle(e.currentTarget.value)}
+                    currentValue={newTitle}
+                    disabled={creatingDeck}
+                    autoFocus
+                    onChange={setNewTitle}
                 />
-                <input
-                    type="text"
+                <FormTextBox
+                    aria-label={t("flashcards.filtered_deck_query")}
                     placeholder={t("flashcards.filtered_deck_query")}
-                    value={newQuery}
-                    onInput={(e) => setNewQuery(e.currentTarget.value)}
+                    currentValue={newQuery}
+                    disabled={creatingDeck}
+                    onChange={setNewQuery}
                 />
                 <Button
                     text={t("flashcards.apply")}
@@ -656,7 +660,7 @@ function DeckBrowser({
                     size="small"
                     onClick={() => void submitCreate()}
                 />
-                {createError && <span className="flashcards-reschedule-error">{createError}</span>}
+                {createError && <span className="flashcards-reschedule-error" role="alert">{createError}</span>}
             </div>}
             <div className="flashcards-deck-list">
                 {decks.map((deck) => <DeckSummaryCard
@@ -761,7 +765,7 @@ function LeechSection({ onOpenNote }: { onOpenNote: (noteId: string) => void }) 
         >
             <summary className="flashcards-leech-toggle">{t("flashcards.leeches")}</summary>
             {leeches === null
-                ? <div className="flashcards-loading">{t("flashcards.loading")}</div>
+                ? <div className="flashcards-loading" role="status">{t("flashcards.loading")}</div>
                 : leeches.length === 0
                     ? <div className="flashcards-leech-empty">{t("flashcards.leeches_empty")}</div>
                     : <ul className="flashcards-leech-list">
@@ -958,11 +962,13 @@ function CardLifecycleActions({
                 onClick={() => setRescheduling((value) => !value)}
             />
             {rescheduling && <div className="flashcards-reschedule-editor">
-                <input
+                <FormTextBox
                     type="date"
-                    value={rescheduleDate}
-                    onChange={(e) => setRescheduleDate(e.currentTarget.value)}
+                    currentValue={rescheduleDate}
+                    aria-label={t("flashcards.reschedule_hint")}
                     title={t("flashcards.reschedule_hint")}
+                    disabled={disabled}
+                    onChange={setRescheduleDate}
                 />
                 <Button
                     text={t("flashcards.apply")}
@@ -972,7 +978,7 @@ function CardLifecycleActions({
                     size="small"
                     onClick={() => void submitReschedule()}
                 />
-                {reschedulingError && <span className="flashcards-reschedule-error">{reschedulingError}</span>}
+                {reschedulingError && <span className="flashcards-reschedule-error" role="alert">{reschedulingError}</span>}
             </div>}
         </div>
     );

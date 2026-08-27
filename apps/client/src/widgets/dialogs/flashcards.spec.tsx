@@ -184,36 +184,53 @@ describe("flashcards review dialog", () => {
         expect(host.textContent).toContain("flashcards.filtered_deck");
     });
 
-    it("creates a filtered deck from the browser", async () => {
+    it("creates a filtered deck with accessible shared form controls", async () => {
         mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
         mocks.createFilteredDeck.mockResolvedValue({ note: { noteId: "fd1" } });
 
         await openDialog();
 
         const newButton = findButtonByText("flashcards.new_filtered_deck");
-        expect(newButton).toBeTruthy();
+        if (!newButton) {
+            throw new Error("Expected filtered-deck button");
+        }
 
         await act(async () => {
-            newButton!.click();
+            newButton.click();
         });
 
-        const inputs = host.querySelectorAll(".flashcards-filtered-deck-editor input");
+        const inputs = host.querySelectorAll<HTMLInputElement>(".flashcards-filtered-deck-editor input");
         expect(inputs.length).toBe(2);
+        expect(inputs[0]?.classList.contains("form-control")).toBe(true);
+        expect(inputs[0]?.getAttribute("aria-label")).toBe("flashcards.filtered_deck_title");
+        expect(inputs[1]?.getAttribute("aria-label")).toBe("flashcards.filtered_deck_query");
+        expect(document.activeElement).toBe(inputs[0]);
+
+        const applyButton = findButtonByText("flashcards.apply");
+        if (!applyButton) {
+            throw new Error("Expected apply button");
+        }
 
         await act(async () => {
-            const title = inputs[0] as HTMLInputElement;
-            const query = inputs[1] as HTMLInputElement;
+            applyButton.click();
+        });
+        expect(host.querySelector("[role='alert']")?.textContent).toBe("flashcards.filtered_deck_missing");
+        expect(mocks.createFilteredDeck).not.toHaveBeenCalled();
+
+        await act(async () => {
+            const title = inputs[0];
+            const query = inputs[1];
+            if (!title || !query) {
+                throw new Error("Expected filtered-deck inputs");
+            }
             title.value = "French verbs";
             title.dispatchEvent(new Event("input", { bubbles: true }));
             query.value = "#book";
             query.dispatchEvent(new Event("input", { bubbles: true }));
         });
 
-        const applyButton = findButtonByText("flashcards.apply");
-        expect(applyButton).toBeTruthy();
-
         await act(async () => {
-            applyButton!.click();
+            applyButton.click();
             await new Promise((resolve) => setTimeout(resolve, 0));
         });
 
@@ -326,17 +343,25 @@ describe("flashcards review dialog", () => {
         await openDialog();
 
         const rescheduleButton = findButtonByText("flashcards.reschedule_card");
-        expect(rescheduleButton).toBeTruthy();
+        if (!rescheduleButton) {
+            throw new Error("Expected reschedule button");
+        }
 
         await act(async () => {
-            rescheduleButton!.click();
+            rescheduleButton.click();
         });
 
+        const dateInput = host.querySelector<HTMLInputElement>(".flashcards-reschedule-editor input");
+        expect(dateInput?.classList.contains("form-control")).toBe(true);
+        expect(dateInput?.getAttribute("aria-label")).toBe("flashcards.reschedule_hint");
+
         const applyButton = findButtonByText("flashcards.apply");
-        expect(applyButton).toBeTruthy();
+        if (!applyButton) {
+            throw new Error("Expected apply button");
+        }
 
         await act(async () => {
-            applyButton!.click();
+            applyButton.click();
             await new Promise((resolve) => setTimeout(resolve, 0));
         });
 

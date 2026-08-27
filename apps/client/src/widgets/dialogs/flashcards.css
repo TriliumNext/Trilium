@@ -7,6 +7,7 @@
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        min-width: 0;
     }
 
     .flashcards-card-meta,
@@ -22,6 +23,10 @@
         border: 1px solid var(--main-border-color);
         border-radius: var(--border-radius);
         padding: 0.5rem 0.75rem;
+
+        span {
+            overflow-wrap: anywhere;
+        }
     }
 
     .flashcards-deck-browser {
@@ -41,11 +46,33 @@
     .flashcards-deck-browser-header h3,
     .flashcards-deck-heading h4 {
         margin: 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .flashcards-deck-browser-actions {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5em;
+    }
+
+    .flashcards-filtered-deck-editor {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        flex-wrap: wrap;
+        margin-bottom: 0.75em;
+
+        .form-control {
+            flex: 1 1 12em;
+            min-width: 0;
+        }
     }
 
     .flashcards-deck-list {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
         gap: 0.75rem;
         margin-top: 0.75rem;
     }
@@ -55,6 +82,7 @@
         border-radius: var(--border-radius);
         background: var(--accented-background-color);
         padding: 0.75rem;
+        min-width: 0;
     }
 
     .flashcards-deck-item-selected {
@@ -89,16 +117,28 @@
         --color: var(--muted-text-color);
     }
 
+    .flashcards-deck-badge-filtered {
+        --color: var(--accent-color-primary, #4d8fcc);
+        margin-inline-start: 0.35em;
+    }
+
     .flashcards-card-pane {
         border: 1px solid var(--main-border-color);
         border-radius: var(--border-radius);
         background: var(--accented-background-color);
         padding: 1rem;
+        min-width: 0;
         min-height: 12rem;
+        overflow-wrap: anywhere;
     }
 
     .flashcards-front-title {
         margin-block: 0 0.75rem;
+
+        .flashcard-cloze {
+            color: var(--accent-color, #0078d4);
+            font-style: normal;
+        }
     }
 
     .flashcards-answer {
@@ -111,6 +151,14 @@
         color: var(--muted-text-color);
         font-size: 0.9em;
         margin-bottom: 0.5rem;
+    }
+
+    .flashcards-front-title .flashcard-cloze-revealed,
+    .flashcards-answer .flashcard-cloze-revealed {
+        background: var(--accent-color, #0078d4);
+        color: #fff;
+        border-radius: 3px;
+        padding: 0 0.15em;
     }
 
     .flashcards-rating-row,
@@ -130,12 +178,30 @@
         align-items: center;
         display: flex;
         gap: 0.5rem;
+
+        span {
+            color: var(--muted-text-color);
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
     }
 
-    .flashcards-deck-move span {
-        color: var(--muted-text-color);
-        font-size: 0.9em;
-        white-space: nowrap;
+    .flashcards-reschedule-editor {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+        margin-inline-start: 0.5em;
+
+        .form-control {
+            min-width: 9rem;
+            width: auto;
+        }
+    }
+
+    .flashcards-reschedule-error {
+        color: var(--accent-color-danger, #dc3545);
+        font-size: 0.85em;
+        overflow-wrap: anywhere;
     }
 
     .flashcards-rating-row .btn {
@@ -148,100 +214,107 @@
         place-items: center;
         color: var(--muted-text-color);
     }
-}
 
-.flashcards-leech-section {
-    margin-top: 0.5rem;
-}
+    .flashcards-leech-section {
+        margin-top: 0.5rem;
+    }
 
-.flashcards-leech-toggle {
-    cursor: pointer;
-}
+    .flashcards-leech-toggle {
+        cursor: pointer;
+    }
 
-.flashcards-leech-list {
-    list-style: none;
-    margin: 0.5rem 0 0;
-    padding: 0;
-}
+    .flashcards-leech-list {
+        list-style: none;
+        margin: 0.5rem 0 0;
+        padding: 0;
+    }
 
-.flashcards-leech-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0;
-    border-top: 1px solid var(--border-color, #ccc);
-}
+    .flashcards-leech-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0;
+        border-top: 1px solid var(--border-color, #ccc);
+        min-width: 0;
+    }
 
-.flashcards-leech-title {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+    .flashcards-leech-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 
-.flashcards-leech-actions {
-    display: flex;
-    gap: 0.35rem;
-}
+    .flashcards-leech-actions {
+        display: flex;
+        gap: 0.35rem;
+    }
 
-.flashcards-front-title .flashcard-cloze {
-    color: var(--accent-color, #0078d4);
-    font-style: normal;
-}
+    @media (max-width: 575.98px) {
+        .modal-dialog {
+            --bs-modal-width: 100vw;
+        }
 
-.flashcards-front-title .flashcard-cloze-revealed,
-.flashcards-answer .flashcard-cloze-revealed {
-    background: var(--accent-color, #0078d4);
-    color: #fff;
-    border-radius: 3px;
-    padding: 0 0.15em;
-}
+        .flashcards-deck-browser-header,
+        .flashcards-deck-heading,
+        .flashcards-filtered-deck-editor,
+        .flashcards-card-actions,
+        .flashcards-deck-move,
+        .flashcards-reschedule-editor {
+            align-items: stretch;
+            flex-direction: column;
+        }
 
-.flashcards-reschedule-editor {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5em;
-    margin-left: 0.5em;
-}
+        .flashcards-deck-browser-actions,
+        .flashcards-leech-actions {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            width: 100%;
+        }
 
-.flashcards-reschedule-editor input[type="date"] {
-    padding: 0.3em 0.4em;
-    border: 1px solid var(--border-color, #ced4da);
-    border-radius: 4px;
-    background: var(--input-background-color, var(--background-color, #fff));
-    color: var(--text-color, inherit);
-}
+        .flashcards-deck-list {
+            grid-template-columns: minmax(0, 1fr);
+        }
 
-.flashcards-reschedule-error {
-    color: var(--accent-color-danger, #dc3545);
-    font-size: 0.85em;
-}
+        .flashcards-filtered-deck-editor .form-control {
+            flex-basis: auto;
+            width: 100%;
+        }
 
-.flashcards-deck-browser-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5em;
-}
+        .flashcards-card-actions > .btn,
+        .flashcards-deck-heading > .btn,
+        .flashcards-rating-row .btn {
+            flex-basis: 100%;
+            width: 100%;
+        }
 
-.flashcards-filtered-deck-editor {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    flex-wrap: wrap;
-    margin-bottom: 0.75em;
-}
+        .flashcards-reschedule-editor {
+            margin-inline-start: 0;
+            width: 100%;
 
-.flashcards-filtered-deck-editor input[type="text"] {
-    flex: 1 1 12em;
-    min-width: 0;
-    padding: 0.35em 0.45em;
-    border: 1px solid var(--border-color, #ced4da);
-    border-radius: 4px;
-    background: var(--input-background-color, var(--background-color, #fff));
-    color: var(--text-color, inherit);
-}
+            .form-control {
+                width: 100%;
+            }
+        }
 
-.flashcards-deck-badge-filtered {
-    --color: var(--accent-color-primary, #4d8fcc);
-    margin-left: 0.35em;
+        .flashcards-leech-row {
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+
+        .flashcards-leech-title {
+            flex-basis: 100%;
+            overflow-wrap: anywhere;
+            white-space: normal;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .modal-dialog,
+        .modal-content {
+            scroll-behavior: auto;
+            transition: none;
+        }
+    }
 }

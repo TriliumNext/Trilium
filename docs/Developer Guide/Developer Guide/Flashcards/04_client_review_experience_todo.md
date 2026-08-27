@@ -4,7 +4,7 @@
 
 - [x] Add explicit “Make flashcard” / “Remove flashcard” action to existing note actions, mobile detail menu, and suitable context menus.
 - [x] Add front/back editor using existing Preact form components and per-component CSS. Decision: MVP front is the note title and back is the note content; no dedicated card editor.
-- [ ] Show card/deck status near note title or note info without replacing normal note editing.
+- [x] Show card/deck status in the note info tab without replacing normal note editing.
 - [x] Support protected notes with clear locked-state UI; the server refuses locked/missing sources without leaking content, and the dialog surfaces safe errors instead of stale answers.
 - [x] Preserve normal CKEditor note content and attachments. Decision: front/back use the note title/content directly; no separate card storage.
 - [x] Add clone/move/delete lifecycle prompts where card identity/state is affected. Removing flashcards asks for confirmation; deletion/move repair is server-side via consistency checks.
@@ -29,7 +29,7 @@
 - [x] Add due/new/learning/review deck list with counts.
 - [x] Add “study now” action and empty state using shared `NoItems`.
 - [x] Add basic stats: reviewed today, retention, reviews by rating, due forecast, lapses, leeches.
-- [ ] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable. Deck list now uses `Badge`; deck move uses `FormSelect`; fuller stats/browser UI still needs component pass.
+- [ ] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable. Deck cards use `Badge`, deck move uses `FormSelect`, and filtered-deck/manual-date fields use `FormTextBox`; fuller stats/browser UI still needs component pass.
 - [x] Avoid inline styles; add matching CSS files and scoped root classes.
 - [x] Virtualize large due lists or fetch one card at a time; never load every answer into DOM unnecessarily. Due queue is capped to review batches, omits answers until reveal, and refills after the batch drains.
 - [ ] Do not expose raw review-log internals in regular UI; provide a developer/export view later.
@@ -40,7 +40,7 @@
 - [x] Add default keyboard actions through existing keyboard action definitions.
 - [x] Add global menu item in `apps/client/src/widgets/buttons/global_menu.tsx`.
 - [x] Add note-level action in `apps/client/src/widgets/ribbon/NoteActions*` and mobile equivalent.
-- [ ] Add command tests for desktop and mobile layouts.
+- [x] Add command/global-menu/mobile-menu tests for shared and layout-specific entry points.
 - [ ] Ensure commands work when no note is active, when active note is protected, and when in a popup.
 
 ## Client data and events
@@ -61,16 +61,16 @@
 - [ ] Use `Trans` if translated text embeds note/deck links or reordered components. No embedded links yet; revisit when deck titles become links.
 - [x] Ensure focus moves to answer/reveal/rating controls predictably.
 - [x] Use semantic headings, `aria-live` for result/progress updates, and visible focus states. Stats and card pane announce via `aria-live="polite"`; footer buttons receive focus per phase.
-- [ ] Verify RTL, long translations, high zoom, reduced motion, and mobile narrow widths.
+- [x] Harden RTL, long translations, high zoom, reduced motion, and mobile narrow widths: use logical spacing, overflow-safe grids/text, stacked narrow-screen controls, scoped CSS, and reduced-motion overrides. Final visual smoke testing remains in the release checklist.
 
 ## Optional future UI
 
 - [ ] Card template editor and multiple cards per note.
 - [x] Cloze review rendering (server-rendered elisions, cloze number in card meta, background sync on note-scoped open).
 - [x] Cloze editor toolbar integration: wraps selected rich text, inserts a selected `text` placeholder at a collapsed caret, and increments the highest canonical `cN` index.
-- [ ] Filtered/custom study decks.
+- [x] Filtered/custom study decks backed by saved-search notes and current query membership.
 - [x] Manual due-date picker: a Reschedule action in the review dialog opens a date field; submitting sets the card's due date through a new `PUT /api/flashcards/cards/:cardId/due` endpoint with optimistic revision conflict protection. Drag scheduling on the due forecast chart remains open.
-- [ ] Leech dashboard.
+- [x] Leech dashboard with on-demand loading, unsuspend, and note-scoped review actions.
 - [ ] FSRS optimizer progress/results UI.
 - [x] Trilium JSON export/import of scheduling state and review history (settings page). Anki `.apkg` wizard remains future work.
 - [ ] Anki `.apkg` import/export wizard.
