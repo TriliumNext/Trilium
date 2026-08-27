@@ -484,7 +484,7 @@ describe("CopilotAgentProvider.chatChunks", () => {
             ]
         }], { contextNoteId: "note123" }));
 
-        expect(buildNoteHintMock).toHaveBeenCalledWith("note123", true);
+        expect(buildNoteHintMock).toHaveBeenCalledWith("note123", true, undefined);
         const prompt = FakeAcpClient.current?.requests.find(r => r.method === "session/prompt");
         const blocks = (prompt?.params as { prompt: { type: string; text: string }[] }).prompt;
         expect(blocks[0].text).toContain("NOTE_META(note123)");

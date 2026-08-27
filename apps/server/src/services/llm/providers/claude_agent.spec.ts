@@ -262,10 +262,10 @@ describe("ClaudeAgentProvider.chatChunks", () => {
         const provider = new ClaudeAgentProvider();
         await collect(provider.chatChunks(
             [{ role: "user", content: "what is this note about?" }],
-            { contextNoteId: "note-abc" }
+            { contextNoteId: "note-abc", viewContext: "Showing page 3 of 10." }
         ));
 
-        expect(buildNoteHintMock).toHaveBeenCalledWith("note-abc", false);
+        expect(buildNoteHintMock).toHaveBeenCalledWith("note-abc", false, "Showing page 3 of 10.");
         const prompt = queryMock.mock.calls[0][0].prompt;
         expect(prompt).toBe("NOTE_META(note-abc)\n\nwhat is this note about?");
     });

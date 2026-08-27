@@ -348,7 +348,7 @@ export class ClaudeAgentProvider implements LlmProvider {
         // applyNoteHint and is kept out of the session hash so a later turn's
         // unhinted transcript still matches and can resume.
         const hasAttachments = Array.isArray(lastMessage.content) && lastMessage.content.some(p => p.type !== "text");
-        const noteHint = config.contextNoteId ? buildNoteHint(config.contextNoteId, hasAttachments) : null;
+        const noteHint = config.contextNoteId ? buildNoteHint(config.contextNoteId, hasAttachments, config.viewContext) : null;
         const prefix = [
             (!resume && history.length > 0) ? buildHistoryReplay(history) : null,
             noteHint

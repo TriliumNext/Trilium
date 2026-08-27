@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { streamChatCompletion } from "../../../services/llm_chat.js";
 import { type ModelOption, type ModelProviderGroup, readSelectedModels, resolveSelectedModel } from "../../../services/llm_providers.js";
 import { randomString } from "../../../services/utils.js";
-import { useTriliumEvent } from "../../react/hooks.js";
+import { getLlmViewContext, useTriliumEvent } from "../../react/hooks.js";
 import { estimateTokens, quantizeDraftTokens } from "./chat_context_usage.js";
 import { stripQuoteSources } from "./chat_quote.js";
 import { conversationForRegenerate } from "./chat_regenerate.js";
@@ -585,6 +585,7 @@ export function useLlmChat(
             enableWebSearch,
             enableNoteTools,
             contextNoteId,
+            viewContext: contextNoteId ? getLlmViewContext(contextNoteId) : undefined,
             chatNoteId: chatNoteIdRef.current
         };
         if (supportsExtendedThinking) {

@@ -4,7 +4,15 @@ import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type DelayedVisibilityPhase, useDelayedVisibility, useImperativeSearchHighlighlighting, useStaticTooltip, useTooltip } from "./hooks";
+const tabManagerStub = vi.hoisted(() => ({
+    contexts: [] as { noteId: string; getContextData: (key: string) => unknown }[],
+    active: undefined as unknown,
+    getNoteContexts() { return this.contexts; },
+    getActiveContext() { return this.active ?? null; }
+}));
+vi.mock("../../components/app_context.js", () => ({ default: { tabManager: tabManagerStub } }));
+
+import { type DelayedVisibilityPhase, getLlmViewContext, useDelayedVisibility, useImperativeSearchHighlighlighting, useLlmViewContext, useStaticTooltip, useTooltip } from "./hooks";
 
 /**
  * mark.js delegating to the real implementation, so marking still works, while recording the calls
@@ -465,5 +473,68 @@ describe("useImperativeSearchHighlighlighting", () => {
         expect(target.querySelectorAll(".ck-find-result").length).toBe(0);
         expect(target.querySelector("details")?.open).toBe(false);
         target.remove();
+    });
+});
+
+describe("LLM view context", () => {
+    /** A note context showing `noteId` whose widget reports `describe`, or nothing when omitted. */
+    function context(noteId: string, describe?: () => string | undefined) {
+        return { noteId, getContextData: (key: string) => key === "llmViewContext" && describe ? { describe } : undefined };
+    }
+
+    afterEach(() => {
+        tabManagerStub.contexts = [];
+        tabManagerStub.active = undefined;
+    });
+
+    it("asks the active pane first, then any other pane on the note", () => {
+        const other = context("n1", () => "from the other pane");
+        const active = context("n1", () => "from the active pane");
+        tabManagerStub.contexts = [ other, active, context("n2", () => "wrong note") ];
+        tabManagerStub.active = active;
+        expect(getLlmViewContext("n1")).toBe("from the active pane");
+
+        tabManagerStub.active = context("n2", () => "wrong note");
+        expect(getLlmViewContext("n1")).toBe("from the other pane");
+    });
+
+    it("skips panes that report nothing or fail, and is silent when none reports", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        tabManagerStub.contexts = [
+            context("n1"),
+            context("n1", () => undefined),
+            context("n1", () => { throw new Error("boom"); }),
+            context("n1", () => "finally")
+        ];
+        expect(getLlmViewContext("n1")).toBe("finally");
+        expect(warn).toHaveBeenCalledTimes(1);
+
+        tabManagerStub.contexts = [ context("n1") ];
+        expect(getLlmViewContext("n1")).toBeUndefined();
+        warn.mockRestore();
+    });
+
+    it("publishes a describer that reads the latest render and clears it on unmount", () => {
+        const data = new Map<string, unknown>();
+        const noteContext = {
+            setContextData: (key: string, value: unknown) => data.set(key, value),
+            clearContextData: (key: string) => data.delete(key)
+        } as any;
+        function Widget({ page }: { page: number }) {
+            useLlmViewContext(noteContext, () => `page ${page}`);
+            return null;
+        }
+        const host = document.createElement("div");
+        act(() => { render(<Widget page={1} />, host); });
+        const published = data.get("llmViewContext") as { describe: () => string | undefined };
+        expect(published.describe()).toBe("page 1");
+
+        act(() => { render(<Widget page={2} />, host); });
+        // The same object stays published; only what it reads changes.
+        expect(data.get("llmViewContext")).toBe(published);
+        expect(published.describe()).toBe("page 2");
+
+        act(() => { render(null, host); });
+        expect(data.has("llmViewContext")).toBe(false);
     });
 });

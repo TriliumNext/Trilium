@@ -81,6 +81,15 @@ export interface NoteContextDataMap {
         /** Re-attempts the content fetch (e.g. from a "Retry" button after an error). */
         retry: () => void;
     };
+    /**
+     * Published by the widget showing the note (via `useLlmViewContext`) so the LLM chat can tell
+     * the model what is on screen: the visible part of a map, a selection, a page. Read at the
+     * moment a message is sent.
+     */
+    llmViewContext: {
+        /** Describes the widget's current state as Markdown; `undefined` when there is nothing to report. */
+        describe: () => string | undefined;
+    };
 }
 
 type ContextDataKey = keyof NoteContextDataMap;

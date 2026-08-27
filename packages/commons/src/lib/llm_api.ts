@@ -97,6 +97,12 @@ export interface LlmChatConfig {
     thinkingBudget?: number;
     /** Current note context (note ID the user is viewing) */
     contextNoteId?: string;
+    /**
+     * What the widget showing {@link contextNoteId} reports about its current state (the visible
+     * part of a map, a selection, a page), as Markdown the widget writes itself. Sent with the turn
+     * and never stored.
+     */
+    viewContext?: string;
     /** The note ID of the chat note (used for auto-renaming on first message) */
     chatNoteId?: string;
 }

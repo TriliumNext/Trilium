@@ -1948,6 +1948,48 @@ export function useSetContextData<K extends keyof NoteContextDataMap>(
 }
 
 /**
+ * Publishes what this widget would tell the LLM about its current state (see
+ * `NoteContextDataMap.llmViewContext`). `describe` is read at send time, so it can close over
+ * live state and change on every render without republishing.
+ *
+ * @example
+ * useLlmViewContext(noteContext, () => `Showing page ${page} of ${totalPages}.`);
+ */
+export function useLlmViewContext(noteContext: NoteContext | null | undefined, describe: () => string | undefined) {
+    const describeRef = useRef(describe);
+    describeRef.current = describe;
+    const [ value ] = useState<NoteContextDataMap["llmViewContext"]>(() => ({ describe: () => describeRef.current() }));
+    useSetContextData(noteContext, "llmViewContext", value);
+}
+
+/**
+ * What the widget showing `noteId` reports about its state right now, for `LlmChatConfig.viewContext`.
+ * The active pane is asked first, then any other pane on the same note, so the chat in a sidebar
+ * describes the pane next to it. A widget that throws while describing itself is treated as
+ * silent: a broken report must not block the message.
+ */
+export function getLlmViewContext(noteId: string): string | undefined {
+    const contexts = appContext.tabManager.getNoteContexts().filter(ctx => ctx.noteId === noteId);
+    const active = appContext.tabManager.getActiveContext();
+    const ordered = active && contexts.includes(active) ? [ active, ...contexts.filter(ctx => ctx !== active) ] : contexts;
+    for (const context of ordered) {
+        const describe = context.getContextData("llmViewContext")?.describe;
+        if (!describe) {
+            continue;
+        }
+        try {
+            const description = describe();
+            if (description) {
+                return description;
+            }
+        } catch (error) {
+            console.warn("View context for the LLM chat failed to describe itself", error);
+        }
+    }
+    return undefined;
+}
+
+/**
  * Get context data from the active note context.
  * This is typically used in sidebar/toolbar components that need to display
  * data published by type widgets.

@@ -2,7 +2,10 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const streamChatCompletionMock = vi.hoisted(() => vi.fn());
+const { streamChatCompletionMock, getLlmViewContextMock } = vi.hoisted(() => ({
+    streamChatCompletionMock: vi.fn(),
+    getLlmViewContextMock: vi.fn((_noteId: string): string | undefined => undefined)
+}));
 vi.mock("../../../services/llm_chat.js", () => ({
     streamChatCompletion: streamChatCompletionMock
 }));
@@ -18,7 +21,8 @@ vi.mock("../../../services/options.js", () => ({
 // renders without the full app context.
 vi.mock("../../react/hooks.js", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../react/hooks.js")>()),
-    useTriliumEvent: vi.fn()
+    useTriliumEvent: vi.fn(),
+    getLlmViewContext: getLlmViewContextMock
 }));
 
 // Uninitialized i18n returns undefined; echo the key so labels are assertable.
@@ -145,6 +149,30 @@ describe("useLlmChat", () => {
         expect(options.model).toBe("sonnet");
         expect(options.provider).toBe("claude-agent");
         expect(options.providerId).toBe("ca_1");
+    });
+
+    it("sends what the context note's widget reports as the view context", async () => {
+        getLlmViewContextMock.mockReturnValue("Showing page 3 of 10.");
+        await mountChat({ contextNoteId: "note1" });
+        await act(async () => {
+            api().setSelectedModel("sonnet", "claude-agent", "ca_1");
+            api().setInput("hi");
+            await api().handleSubmit(new Event("submit"));
+        });
+        expect(getLlmViewContextMock).toHaveBeenCalledWith("note1");
+        expect(streamChatCompletionMock.mock.calls[0][1]).toMatchObject({ contextNoteId: "note1", viewContext: "Showing page 3 of 10." });
+
+        // Without a context note nothing is asked and nothing is sent.
+        getLlmViewContextMock.mockClear();
+        await act(async () => {
+            api().setContextNoteId(undefined);
+        });
+        await act(async () => {
+            api().setInput("again");
+            await api().handleSubmit(new Event("submit"));
+        });
+        expect(getLlmViewContextMock).not.toHaveBeenCalled();
+        expect(streamChatCompletionMock.mock.calls[1][1].viewContext).toBeUndefined();
     });
 
     it("resolves the provider by model ID for chats saved before selectedProvider existed", async () => {

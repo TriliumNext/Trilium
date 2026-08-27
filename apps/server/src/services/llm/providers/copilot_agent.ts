@@ -373,7 +373,7 @@ export class CopilotAgentProvider implements LlmProvider {
             // transcript hash so a later turn can still resume).
             const isFreshSession = sessionId !== resume;
             const hasAttachments = Array.isArray(lastMessage.content) && lastMessage.content.some(p => p.type !== "text");
-            const noteHint = config.contextNoteId ? buildNoteHint(config.contextNoteId, hasAttachments) : null;
+            const noteHint = config.contextNoteId ? buildNoteHint(config.contextNoteId, hasAttachments, config.viewContext) : null;
             const prefix = [
                 isFreshSession ? wrapSystemInstructions(this.composeSystemPrompt(messages, { ...config, enableNoteTools: noteToolsEnabled })) : null,
                 (isFreshSession && history.length > 0) ? buildHistoryReplay(history) : null,

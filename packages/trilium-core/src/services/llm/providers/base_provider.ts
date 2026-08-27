@@ -343,7 +343,7 @@ export abstract class BaseProvider implements LlmProvider {
         const hasAttachments = Array.isArray(lastUserContent)
             && lastUserContent.some(p => p.type !== "text");
 
-        const noteHint = buildNoteHint(config.contextNoteId, hasAttachments);
+        const noteHint = buildNoteHint(config.contextNoteId, hasAttachments, config.viewContext);
         if (!noteHint) {
             return chatMessages;
         }
