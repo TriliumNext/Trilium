@@ -56,6 +56,19 @@ describe("describeGeoView", () => {
         expect(bare).not.toContain("()");
     });
 
+    it("lists the tracks by name, marking the selected one", () => {
+        const text = describeGeoView({
+            ...VIEW,
+            pins: [],
+            selectedNoteId: "t2",
+            tracks: [ { noteId: "t1", title: "Morning ride" }, { noteId: "t2", title: "Alpine hike" } ]
+        });
+        expect(text).toContain("2 GPX tracks drawn on this map (file notes, not pinned):\n"
+            + "- Morning ride (noteId: t1)\n"
+            + "- Alpine hike (noteId: t2) (selected)");
+        expect(describeGeoView({ ...VIEW, pins: [] })).not.toContain("GPX track");
+    });
+
     it("lists only the nearest pins on a crowded screen", () => {
         const pins = Array.from({ length: MAX_LISTED_PINS + 3 }, (_, i) => ({
             noteId: `n${i}`, title: `Pin ${i}`, point: [ 23.6236 + i * 0.001, 46.7712 ] as [number, number]

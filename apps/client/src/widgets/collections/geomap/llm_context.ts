@@ -25,6 +25,8 @@ export interface GeoViewSnapshot {
     selectedNoteId?: string | null;
     /** The place picked from the search, standing on the map under its own pin until kept or dismissed. */
     place?: GeoViewPlace;
+    /** The GPX notes the map draws as lines. */
+    tracks?: { noteId: string; title: string }[];
 }
 
 /** A place from the search as the map shows it: not a note, but a spot the user has asked about. */
@@ -38,7 +40,7 @@ export interface GeoViewPlace {
 /** How many on-screen pins are listed; the rest are counted. */
 export const MAX_LISTED_PINS = 30;
 
-export function describeGeoView({ bounds, center, zoom, pins, selectedNoteId, place }: GeoViewSnapshot): string {
+export function describeGeoView({ bounds, center, zoom, pins, selectedNoteId, place, tracks = [] }: GeoViewSnapshot): string {
     const [ west, south, east, north ] = bounds;
     const lines = [
         "This note is a geo map. The user is looking at:",
@@ -65,6 +67,15 @@ export function describeGeoView({ bounds, center, zoom, pins, selectedNoteId, pl
     if (place) {
         const where = place.where ? ` (${place.where})` : "";
         lines.push("", `A place from the map's search is marked with a temporary pin (it is not a note yet): ${place.name}${where} at ${formatLocation(place.point, 5)}, ${formatMetres(metresBetween(center, place.point))} from the center. The user can keep it as a note.`);
+    }
+
+    // A track is a GPX file note drawn as a line, so it has no single location to measure from;
+    // only its presence is reported.
+    if (tracks.length > 0) {
+        lines.push("", `${tracks.length} GPX track${tracks.length === 1 ? "" : "s"} drawn on this map (file notes, not pinned):`);
+        for (const track of tracks) {
+            lines.push(`- ${track.title} (noteId: ${track.noteId})${track.noteId === selectedNoteId ? " (selected)" : ""}`);
+        }
     }
 
     if (measured.length === 0) {

@@ -342,7 +342,9 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 name: pickedPlace.name,
                 where: pickedPlace.unnamed ? "" : describePlace(pickedPlace),
                 point: [ pickedPlace.lng, pickedPlace.lat ]
-            }
+            },
+            tracks: notes.filter((pinned) => pinned.mime === GPX_MIME)
+                .map((track) => ({ noteId: track.noteId, title: track.title }))
         });
         return { label: t("geo-map.llm-view-label"), text };
     });
