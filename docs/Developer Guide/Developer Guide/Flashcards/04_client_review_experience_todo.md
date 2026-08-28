@@ -29,10 +29,10 @@
 - [x] Add due/new/learning/review deck list with counts.
 - [x] Add “study now” action and empty state using shared `NoItems`.
 - [x] Add basic stats: reviewed today, retention, reviews by rating, lapses, leeches, and an accessible proportional seven-day due forecast chart.
-- [ ] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable. Deck cards use `Badge`, deck move uses `FormSelect`, and filtered-deck/manual-date fields use `FormTextBox`; fuller stats/browser UI still needs component pass.
+- [x] Use shared `Table`, `Badge`, `ActionButton`, `Dropdown`, `FormSelect`, and `FormTextBox` where applicable. Deck cards and session stats use `Badge`; deck move uses `FormSelect`; filtered-deck/manual-date fields use `FormTextBox`; no tabular flashcard UI currently needs `Table`.
 - [x] Avoid inline styles; add matching CSS files and scoped root classes.
 - [x] Virtualize large due lists or fetch one card at a time; never load every answer into DOM unnecessarily. Due queue is capped to review batches, omits answers until reveal, and refills after the batch drains.
-- [ ] Do not expose raw review-log internals in regular UI; provide a developer/export view later.
+- [x] Do not expose raw review-log internals in regular UI; settings expose JSON/Anki export actions, while regular review/deck UI shows aggregates only.
 
 ## Navigation and commands
 

@@ -444,6 +444,7 @@ describe("flashcards review dialog", () => {
         expect(stats?.getAttribute("role")).toBe("status");
         expect(stats?.getAttribute("aria-live")).toBe("polite");
         expect(stats?.getAttribute("aria-label")).toBe("flashcards.session_summary");
+        expect(stats?.querySelectorAll(".flashcards-stats-badge.ext-badge").length).toBe(9);
         expect(cardPane?.getAttribute("aria-live")).toBe("polite");
         expect(cardPane?.getAttribute("aria-label")).toBe("flashcards.current_card");
         expect(controls?.getAttribute("role")).toBe("group");

@@ -23,10 +23,34 @@
         border: 1px solid var(--main-border-color);
         border-radius: var(--border-radius);
         padding: 0.5rem 0.75rem;
+    }
 
-        span {
+    .flashcards-stats-badge {
+        --color: var(--muted-text-color);
+        max-width: 100%;
+
+        .text {
             overflow-wrap: anywhere;
         }
+    }
+
+    .flashcards-stats-badge-due {
+        --color: var(--primary-button-background-color);
+    }
+
+    .flashcards-stats-badge-new {
+        --color: var(--link-color);
+    }
+
+    .flashcards-stats-badge-learning,
+    .flashcards-stats-badge-review,
+    .flashcards-stats-badge-reviewed {
+        --color: var(--main-text-color);
+    }
+
+    .flashcards-stats-badge-lapses,
+    .flashcards-stats-badge-leeches {
+        --color: var(--accent-color-danger, #dc3545);
     }
 
     .flashcards-due-forecast {

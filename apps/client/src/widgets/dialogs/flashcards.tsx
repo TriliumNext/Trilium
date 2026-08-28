@@ -848,20 +848,56 @@ function ReviewStats({
             aria-live="polite"
             role="status"
         >
-            <span>{t("flashcards.due_count", { count: stats.dueCount })}</span>
-            <span>{t("flashcards.new_count", { count: stats.newCount })}</span>
-            <span>{t("flashcards.learning_count", { count: stats.learningCount })}</span>
-            <span>{t("flashcards.review_count", { count: stats.reviewCount })}</span>
-            <span>{t("flashcards.reviewed_today", { count: stats.reviewedTodayCount })}</span>
-            <span>{t("flashcards.retention", { value: formatRetention(stats.retentionRate) })}</span>
-            <span>{t("flashcards.lapses", { count: stats.lapseCount })}</span>
-            <span>{t("flashcards.leeches", { count: stats.leechCount })}</span>
-            <span>{t("flashcards.rating_counts", {
-                again: stats.ratingCounts[1],
-                hard: stats.ratingCounts[2],
-                good: stats.ratingCounts[3],
-                easy: stats.ratingCounts[4]
-            })}</span>
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-due"
+                text={t("flashcards.due_count", { count: stats.dueCount })}
+                outline
+            />
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-new"
+                text={t("flashcards.new_count", { count: stats.newCount })}
+                outline
+            />
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-learning"
+                text={t("flashcards.learning_count", { count: stats.learningCount })}
+                outline
+            />
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-review"
+                text={t("flashcards.review_count", { count: stats.reviewCount })}
+                outline
+            />
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-reviewed"
+                text={t("flashcards.reviewed_today", { count: stats.reviewedTodayCount })}
+                outline
+            />
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-retention"
+                text={t("flashcards.retention", { value: formatRetention(stats.retentionRate) })}
+                outline
+            />
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-lapses"
+                text={t("flashcards.lapses", { count: stats.lapseCount })}
+                outline
+            />
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-leeches"
+                text={t("flashcards.leeches", { count: stats.leechCount })}
+                outline
+            />
+            <Badge
+                className="flashcards-stats-badge flashcards-stats-badge-ratings"
+                text={t("flashcards.rating_counts", {
+                    again: stats.ratingCounts[1],
+                    hard: stats.ratingCounts[2],
+                    good: stats.ratingCounts[3],
+                    easy: stats.ratingCounts[4]
+                })}
+                outline
+            />
             <DueForecast
                 dueForecast={stats.dueForecast}
                 activeCardId={activeCardId}
