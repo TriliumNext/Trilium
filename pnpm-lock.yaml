@@ -487,8 +487,8 @@ importers:
         specifier: 6.0.5
         version: 6.0.5
       electron:
-        specifier: 43.4.1
-        version: 43.4.1(supports-color@10.2.2)
+        specifier: 44.0.0
+        version: 44.0.0(supports-color@10.2.2)
       gifenc:
         specifier: 1.0.3
         version: 1.0.3
@@ -549,8 +549,8 @@ importers:
         specifier: workspace:*
         version: link:../desktop
       electron:
-        specifier: 43.4.1
-        version: 43.4.1(supports-color@10.2.2)
+        specifier: 44.0.0
+        version: 44.0.0(supports-color@10.2.2)
 
   apps/icon-pack-builder:
     devDependencies:
@@ -7452,8 +7452,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@43.4.1:
-    resolution: {integrity: sha512-5b+EuiwkgG5iRcsEL34rimgRpkYp15SsfZOa0pC5kXs0Tb82TH4n95rpQzTZa7yRCbA7tm0WoEbuBL6NaAhAcA==}
+  electron@44.0.0:
+    resolution: {integrity: sha512-FkTqPrFPZYljdPI5b7KORGsJTd6FgUQDefl5MrU3Xz9R87pAj9JLreIjDqcRN8hJIkFHIou0o8kKzvcpT9qiRQ==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -20382,7 +20382,7 @@ snapshots:
       - supports-color
     optional: true
 
-  electron@43.4.1(supports-color@10.2.2):
+  electron@44.0.0(supports-color@10.2.2):
     dependencies:
       '@electron-internal/extract-zip': 1.0.3
       '@electron/get': 5.0.0(supports-color@10.2.2)
