@@ -45,7 +45,7 @@
 - [ ] Test responsive rendering at desktop/mobile widths and long translations. Overflow-safe and narrow-screen CSS is implemented; automated viewport/visual coverage remains.
 - [x] Test no duplicate submission after double-click, Enter key, or network retry. The dialog uses a synchronous mutation lock; the spec clicks a rating button twice before the request resolves and asserts one review call.
 - [x] Test the dedicated Anki provider's `.apkg` filter, tagged importer routing, image-compression option, and import action.
-- [x] Test Anki template/CSS planning, schema-15+ protobuf template metadata, per-card deck placement, front media discovery, rich imported review fronts, Anki scheduling seed conversion, and revlog conversion in server and standalone runtimes.
+- [x] Test Anki template/CSS planning, schema-15+ protobuf template metadata, per-card deck placement, front media discovery, rich imported review fronts, Anki scheduling seed conversion, revlog conversion, and `.apkg` export in server and standalone runtimes.
 
 ## Fixtures and migration safety
 
@@ -84,7 +84,7 @@ Flashcard cards and append-only review rows sync like other entities. They conta
 
 ## Release checklist
 
-- [ ] Add user/developer docs and release note.
+- [ ] Add user/developer docs and release note. Developer TODO docs now cover JSON and Anki `.apkg` portability; user-facing guide still needs final copy.
 - [x] Include dependency license attribution. Flashcard dependency notices cover pinned `ts-fsrs` and `fzstd` versions.
 - [x] Document database migration and downgrade limitation.
 - [ ] Test backup/restore before release.

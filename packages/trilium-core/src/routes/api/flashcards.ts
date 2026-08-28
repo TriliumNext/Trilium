@@ -10,8 +10,9 @@ import type {
     FlashcardSuspensionRequest,
     FlashcardUndoRequest
 } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 
+import { exportFlashcardsToAnki } from "../../services/flashcards/anki_export.js";
 import flashcardService from "../../services/flashcards/flashcard_service.js";
 
 function createCard(req: Request<{}, {}, FlashcardCreateRequest>) {
@@ -93,6 +94,10 @@ function exportAll() {
     return flashcardService.exportAll();
 }
 
+async function exportAnki(_req: Request, res: Response) {
+    await exportFlashcardsToAnki(res);
+}
+
 function getLeeches() {
     return flashcardService.getLeeches();
 }
@@ -121,6 +126,7 @@ export default {
     syncCardsForNote,
     reviewCard,
     exportAll,
+    exportAnki,
     getLeeches,
     importData
 };

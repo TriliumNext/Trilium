@@ -15,6 +15,7 @@ import { init as clsInit } from "../../services/context.js";
 import noteService from "../../services/notes.js";
 import BAttribute from "../../becca/entities/battribute.js";
 import { getSql } from "../../services/sql/index.js";
+import { getZipProvider } from "../../services/zip_provider.js";
 import { CoreApiTester } from "../../test/api_tester";
 
 let api: CoreApiTester;
@@ -484,6 +485,80 @@ describe("Flashcards API (core)", () => {
             body: { payload: { format: "nope", formatVersion: 99, cards: [], reviews: [] } }
         });
         expect(badImportRes.status).toBe(400);
+    });
+
+    it("exports an Anki package with cards, review history, and media", async () => {
+        const deck = createTextNote("APKG export deck");
+        const note = createTextNote("APKG export source", "");
+        const attachment = clsInit(() => note.saveAttachment({
+            role: "image",
+            mime: "image/png",
+            title: "pixel.png",
+            content: new Uint8Array([1, 2, 3])
+        }));
+        const attachmentUrl = `api/attachments/${attachment.attachmentId}/image/pixel.png`;
+        clsInit(() => note.setContent(`<p>Back with <img src="${attachmentUrl}"></p>`));
+
+        const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
+            body: { noteId: note.noteId, deckNoteId: deck.noteId }
+        });
+        expect(createRes.status).toBe(200);
+        const reviewRes = await api.post<FlashcardReviewResponse>(
+            `/api/flashcards/cards/${createRes.body.cardId}/reviews`,
+            {
+                body: {
+                    rating: 3,
+                    expectedSchedulingRevision: createRes.body.schedulingRevision,
+                    clientRequestId: `${createRes.body.cardId}-apkg-export`
+                }
+            }
+        );
+        expect(reviewRes.status).toBe(200);
+
+        const exportRes = await api.get<Buffer>("/api/flashcards/export/anki");
+        expect(exportRes.status).toBe(200);
+        expect(exportRes.headers["Content-Type"]).toBe("application/zip");
+
+        const entries = new Map<string, Uint8Array>();
+        await getZipProvider().readZipFile(exportRes.body, async (entry, readContent) => {
+            entries.set(entry.fileName, await readContent());
+        });
+
+        const collection = entries.get("collection.anki2");
+        const mediaMap = entries.get("media");
+        const mediaContent = entries.get("0");
+        expect(collection).toBeDefined();
+        expect(mediaMap).toBeDefined();
+        expect(Array.from(mediaContent ?? [])).toEqual([1, 2, 3]);
+        expect(JSON.parse(new TextDecoder().decode(mediaMap))).toEqual({ "0": "pixel.png" });
+
+        if (!collection) {
+            throw new Error("collection.anki2 was not exported.");
+        }
+        const ankiDb = getSql().openReadOnlyDatabase(collection);
+        try {
+            const notes = ankiDb.getRows<{ id: number; flds: string }>(
+                "SELECT id, flds FROM notes WHERE flds LIKE ?",
+                ["%APKG export source%"]
+            );
+            const noteRow = notes[0];
+            expect(noteRow?.flds).toContain("pixel.png");
+
+            const cards = ankiDb.getRows<{ id: number; reps: number }>(
+                "SELECT id, reps FROM cards WHERE nid = ?",
+                [noteRow?.id]
+            );
+            expect(cards[0]?.reps).toBeGreaterThan(0);
+
+            const revlog = ankiDb.getRows<{ ease: number }>(
+                "SELECT ease FROM revlog WHERE cid = ?",
+                [cards[0]?.id]
+            );
+            expect(revlog).toHaveLength(1);
+            expect(revlog[0]?.ease).toBe(3);
+        } finally {
+            ankiDb.close();
+        }
     });
 
     it("lists leech cards ordered by lapses", async () => {

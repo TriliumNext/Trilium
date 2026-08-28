@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     flashcardSettings: defaultSettings(),
     setFlashcardSettings: vi.fn(async (request: ReturnType<typeof defaultSettings>) => request),
+    exportAnkiPackage: vi.fn(),
     showMessage: vi.fn(),
     showError: vi.fn()
 }));
@@ -18,7 +19,8 @@ vi.mock("../../../services/toast", () => ({
 vi.mock("../../../services/flashcards", () => ({
     default: {
         getSettings: async () => mocks.flashcardSettings,
-        setSettings: mocks.setFlashcardSettings
+        setSettings: mocks.setFlashcardSettings,
+        exportAnkiPackage: mocks.exportAnkiPackage
     }
 }));
 
@@ -65,6 +67,17 @@ describe("flashcard scheduling settings", () => {
 
         expect(mocks.setFlashcardSettings).not.toHaveBeenCalled();
         expect(mocks.showError).toHaveBeenCalledWith("flashcards.settings_step_validation");
+    });
+
+    it("starts an Anki package export", async () => {
+        await open();
+
+        const button = host.querySelector<HTMLButtonElement>("button.bx-package");
+        act(() => {
+            button?.click();
+        });
+
+        expect(mocks.exportAnkiPackage).toHaveBeenCalledTimes(1);
     });
 
     it("restores previous settings when saving fails", async () => {

@@ -1,6 +1,7 @@
 import { type BindableValue, type SAHPoolUtil, default as sqlite3InitModule } from "@sqlite.org/sqlite-wasm";
 import type {
     DatabaseProvider,
+    IsolatedDatabase,
     Params,
     ReadOnlyDatabase,
     RunResult,
@@ -506,6 +507,12 @@ export default class BrowserSqlProvider implements DatabaseProvider {
     }
 
     openReadOnlyDatabase(buffer: Uint8Array): ReadOnlyDatabase {
+        const database = this.openIsolatedDatabaseFromBuffer(buffer);
+        database.exec("PRAGMA query_only = ON");
+        return database;
+    }
+
+    private openIsolatedDatabaseFromBuffer(buffer: Uint8Array): IsolatedDatabase {
         this.ensureSqlite3();
         const sqlite3 = this.sqlite3;
         if (!sqlite3) {
@@ -537,30 +544,23 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             throw new Error(`Failed to deserialize imported database: ${resultCode}`);
         }
 
-        connection.exec("PRAGMA query_only = ON");
-        let closed = false;
-        return {
-            getRows<T>(query: string, params: Params = []): T[] {
-                const statement = new WasmStatement(
-                    connection.prepare(query),
-                    connection,
-                    sqlite3,
-                    query
-                );
-                try {
-                    return statement.all(params) as T[];
-                } finally {
-                    statement.finalize();
-                }
-            },
-            close() {
-                if (!closed) {
-                    connection.close();
-                    sqlite3.wasm.dealloc(pointer);
-                    closed = true;
-                }
-            }
-        };
+        return createIsolatedWasmDatabase(connection, sqlite3, pointer);
+    }
+
+    createIsolatedDatabase(): IsolatedDatabase {
+        this.ensureSqlite3();
+        const sqlite3 = this.sqlite3;
+        if (!sqlite3) {
+            throw new Error("SQLite WASM is not initialized.");
+        }
+
+        const connection = new sqlite3.oo1.DB({ filename: ":memory:", flags: "c" });
+        if (!connection.pointer) {
+            connection.close();
+            throw new Error("Failed to open isolated database.");
+        }
+
+        return createIsolatedWasmDatabase(connection, sqlite3);
     }
 
     backup(_destinationFile: string): void {
@@ -738,4 +738,41 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             );
         }
     }
+}
+
+function createIsolatedWasmDatabase(
+    connection: Sqlite3Database,
+    sqlite3: Sqlite3Module,
+    allocatedPointer?: number
+): IsolatedDatabase {
+    let closed = false;
+
+    return {
+        exec(query: string) {
+            connection.exec(query);
+        },
+        prepare(query: string): Statement {
+            return new WasmStatement(connection.prepare(query), connection, sqlite3, query);
+        },
+        getRows<T>(query: string, params: Params = []): T[] {
+            const statement = new WasmStatement(connection.prepare(query), connection, sqlite3, query);
+            try {
+                return statement.all(params) as T[];
+            } finally {
+                statement.finalize();
+            }
+        },
+        serialize(): Uint8Array {
+            return sqlite3.capi.sqlite3_js_db_export(connection);
+        },
+        close() {
+            if (!closed) {
+                connection.close();
+                if (allocatedPointer !== undefined) {
+                    sqlite3.wasm.dealloc(allocatedPointer);
+                }
+                closed = true;
+            }
+        }
+    };
 }

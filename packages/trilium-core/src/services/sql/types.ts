@@ -27,11 +27,18 @@ export interface ReadOnlyDatabase {
     close(): void;
 }
 
+export interface IsolatedDatabase extends ReadOnlyDatabase {
+    exec(query: string): void;
+    prepare(query: string): Statement;
+    serialize(): Uint8Array;
+}
+
 export interface DatabaseProvider {
     loadFromFile(path: string, isReadOnly: boolean): void;
     loadFromMemory(): void;
     loadFromBuffer(buffer: Uint8Array): void;
     openReadOnlyDatabase(buffer: Uint8Array): ReadOnlyDatabase;
+    createIsolatedDatabase(): IsolatedDatabase;
     /** Copies the database to the given file, resolving only once the copy has fully completed. */
     backup(destinationFile: string): void | Promise<void>;
     /**

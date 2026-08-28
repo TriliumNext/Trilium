@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const openMock = vi.hoisted(() => ({
+    download: vi.fn(),
+    getUrlForDownload: vi.fn((url: string) => `download/${url}`)
+}));
+
 const serverMock = vi.hoisted(() => ({
     get: vi.fn(),
     post: vi.fn(),
@@ -11,6 +16,11 @@ const serverMock = vi.hoisted(() => ({
 
 vi.mock("./server", () => ({
     default: serverMock
+}));
+
+vi.mock("./open", () => ({
+    default: openMock,
+    getUrlForDownload: openMock.getUrlForDownload
 }));
 
 const flashcardsModule = await import("./flashcards");
@@ -85,6 +95,13 @@ describe("flashcards client service", () => {
             payload: { format: "trilium-flashcards", formatVersion: 1, exportedUtc: "", cards: [], reviews: [] }
         });
         expect(importResult.createdCards).toBe(1);
+    });
+
+    it("starts an Anki package download", async () => {
+        await flashcards.exportAnkiPackage();
+
+        expect(openMock.getUrlForDownload.mock.calls[0]?.[0]).toMatch(/^api\/flashcards\/export\/anki\?/);
+        expect(openMock.download).toHaveBeenCalledWith(expect.stringMatching(/^download\/api\/flashcards\/export\/anki\?/));
     });
 
     it("creates a filtered deck note with the filtered-deck and query labels", async () => {

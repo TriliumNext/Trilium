@@ -73,6 +73,14 @@ function ImportExportCard() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [ importing, setImporting ] = useState(false);
 
+    async function handleExportAnki() {
+        try {
+            flashcards.exportAnkiPackage();
+        } catch {
+            toast.showError(t("flashcards.anki_export_failed"));
+        }
+    }
+
     async function handleExport() {
         try {
             const payload = await flashcards.exportAll();
@@ -121,6 +129,17 @@ function ImportExportCard() {
                     text={t("flashcards.export_button")}
                     icon="bx bx-download"
                     onClick={() => void handleExport()}
+                />
+            </OptionCardSection>
+            <OptionCardSection
+                name="flashcard-export-anki"
+                label={t("flashcards.anki_export_label")}
+                description={t("flashcards.anki_export_description")}
+            >
+                <ActionButton
+                    text={t("flashcards.anki_export_button")}
+                    icon="bx bx-package"
+                    onClick={() => void handleExportAnki()}
                 />
             </OptionCardSection>
             <OptionCardSection

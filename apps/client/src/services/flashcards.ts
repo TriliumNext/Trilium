@@ -154,6 +154,11 @@ function exportAll() {
     return server.get<FlashcardExportPayload>("flashcards/export");
 }
 
+async function exportAnkiPackage() {
+    const open = await import("./open");
+    open.default.download(open.getUrlForDownload(`api/flashcards/export/anki?${Date.now()}`));
+}
+
 function importData(request: FlashcardImportRequest) {
     return server.post<FlashcardImportResponse>("flashcards/import", request);
 }
@@ -215,5 +220,6 @@ export default {
     syncNoteCards,
     reviewCard,
     exportAll,
+    exportAnkiPackage,
     importData
 };

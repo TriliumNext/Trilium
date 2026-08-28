@@ -438,6 +438,10 @@ export class SqlService {
         await this.dbConnection.backup(targetFilePath);
     }
 
+    createIsolatedDatabase() {
+        return this.dbConnection.createIsolatedDatabase();
+    }
+
     /**
      * Serialize the database to a byte array.
      * Only available with browser-based providers.
