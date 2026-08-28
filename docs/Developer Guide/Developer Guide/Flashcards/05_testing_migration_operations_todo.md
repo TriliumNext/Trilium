@@ -45,6 +45,7 @@
 - [ ] Test responsive rendering at desktop/mobile widths and long translations. Overflow-safe and narrow-screen CSS is implemented; automated viewport/visual coverage remains.
 - [x] Test no duplicate submission after double-click, Enter key, or network retry. The dialog uses a synchronous mutation lock; the spec clicks a rating button twice before the request resolves and asserts one review call.
 - [x] Test the dedicated Anki provider's `.apkg` filter, tagged importer routing, image-compression option, and import action.
+- [x] Test Anki template/CSS planning, schema-15+ protobuf template metadata, per-card deck placement, front media discovery, rich imported review fronts, and Anki scheduling seed conversion in server and standalone runtimes.
 
 ## Fixtures and migration safety
 

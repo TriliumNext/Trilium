@@ -65,6 +65,7 @@ export interface FlashcardCardSummary {
 
 export interface FlashcardReviewCard extends FlashcardCardSummary {
     front: string;
+    frontIsHtml?: boolean;
     back?: string;
     previews: FlashcardReviewPreview[];
 }

@@ -47,7 +47,18 @@ const collection: AnkiCollectionRow = {
                 { name: "Front", ord: 0 },
                 { name: "Back", ord: 1 },
                 { name: "Extra", ord: 2 }
-            ]
+            ],
+            tmpls: [
+                { name: "Forward", ord: 0, qfmt: "{{Front}}", afmt: "{{FrontSide}}<hr>{{Back}}" },
+                {
+                    name: "Reverse",
+                    ord: 1,
+                    qfmt: "{{Back}}",
+                    afmt: "{{FrontSide}}<hr>{{Front}}",
+                    did: 20
+                }
+            ],
+            css: ".card { color: red; }"
         },
         "200": {
             flds: [
@@ -250,6 +261,7 @@ describe("Anki package media", () => {
 
     it("finds local image, link, and sound references only", () => {
         const notes = [{
+            front: '<img src="question.png">',
             content: [
                 '<img src="photo%20one.png">',
                 '<a href="document.pdf">doc</a>',
@@ -264,6 +276,7 @@ describe("Anki package media", () => {
         }] satisfies AnkiImportNote[];
 
         expect(collectReferencedMedia(notes)).toEqual(new Set([
+            "question.png",
             "photo one.png",
             "document.pdf",
             "voice.mp3"
@@ -272,7 +285,7 @@ describe("Anki package media", () => {
 });
 
 describe("Anki collection metadata", () => {
-    it("reads normalized schema 15+ decks and fields", () => {
+    it("reads normalized schema 15+ decks, fields, templates, and CSS", () => {
         const database: ReadOnlyDatabase = {
             getRows<T>(query: string): T[] {
                 if (query.includes("FROM col")) {
@@ -280,6 +293,27 @@ describe("Anki collection metadata", () => {
                 }
                 if (query.includes("FROM decks")) {
                     return [{ id: 10, name: "Languages::French" }] as T[];
+                }
+                if (query.includes("FROM notetypes")) {
+                    return [{
+                        id: 200,
+                        config: protobufMessage([
+                            varintField(1, 0),
+                            stringField(3, ".card { color: blue; }")
+                        ])
+                    }] as T[];
+                }
+                if (query.includes("FROM templates")) {
+                    return [{
+                        modelId: 200,
+                        ordinal: 0,
+                        name: "Card 1",
+                        config: protobufMessage([
+                            stringField(1, "{{Text}}"),
+                            stringField(2, "{{FrontSide}}<hr>{{Extra}}"),
+                            varintField(5, 10)
+                        ])
+                    }] as T[];
                 }
                 return [
                     { modelId: 200, ordinal: 0, name: "Text" },
@@ -298,7 +332,16 @@ describe("Anki collection metadata", () => {
                 flds: [
                     { name: "Text", ord: 0 },
                     { name: "Extra", ord: 1 }
-                ]
+                ],
+                tmpls: [{
+                    name: "Card 1",
+                    ord: 0,
+                    qfmt: "{{Text}}",
+                    afmt: "{{FrontSide}}<hr>{{Extra}}",
+                    did: 10
+                }],
+                type: 0,
+                css: ".card { color: blue; }"
             }
         });
     });
@@ -316,7 +359,7 @@ describe("Anki import planning", () => {
                 tags: " language beginner language ",
                 ordinal: 0
             }),
-            card({ ordinal: 1 }),
+            card({ ordinal: 1, deckId: 20 }),
             card({
                 noteId: 2,
                 modelId: 200,
@@ -327,22 +370,75 @@ describe("Anki import planning", () => {
         ]);
 
         expect(plan.deckNames).toEqual(["Languages::French", "Science"]);
-        expect(plan.notes).toHaveLength(2);
-        expect(plan.notes[0]).toEqual({
+        expect(plan.notes).toHaveLength(3);
+        expect(plan.notes[0]).toMatchObject({
             sourceNoteId: "1",
             deckName: "Languages::French",
             title: "Bonjour & salut",
-            content: "<p>Hello</p><hr />bad()Usage",
+            front: "<b>Bonjour &amp; salut</b>",
+            content: [
+                "<b>Bonjour &amp; salut</b><hr /><p>Hello</p>",
+                "<hr />",
+                "<details><summary>Anki card CSS</summary>",
+                "<pre>.card { color: red; }</pre></details>"
+            ].join(""),
             tags: ["language", "beginner"],
-            sourceCardCount: 2
+            sourceCardCount: 1,
+            schedule: {
+                state: 0,
+                reps: 0,
+                lapses: 0,
+                suspended: false
+            }
         });
-        expect(plan.notes[1]).toEqual({
-            sourceNoteId: "2",
+        expect(plan.notes[1]).toMatchObject({
+            sourceNoteId: "1",
             deckName: "Science",
-            title: "The capital is Paris.",
-            content: "The capital is {{c1::<b>Paris</b>::city}}.<hr /><p>France</p>",
+            title: "Back",
+            front: "Back",
             tags: [],
             sourceCardCount: 1
+        });
+        expect(plan.notes[2]).toMatchObject({
+            sourceNoteId: "2",
+            deckName: "Science",
+            title: "The capital is [city].",
+            front: "The capital is <span class=\"flashcard-cloze\">[city]</span>.",
+            content: [
+                "The capital is <span class=\"flashcard-cloze-revealed\">",
+                "<b>Paris</b></span>.<hr /><p>France</p>"
+            ].join(""),
+            tags: [],
+            sourceCardCount: 1
+        });
+    });
+
+    it("preserves Anki scheduling fields as FSRS-compatible seed state", () => {
+        const plan = buildAnkiImportPlan({
+            ...collection,
+            crt: 1_700_000_000
+        }, [card({
+            type: 2,
+            queue: 2,
+            due: 3,
+            interval: 12,
+            factor: 2200,
+            reps: 7,
+            lapses: 2,
+            modifiedAt: 1_699_990_000
+        })]);
+
+        expect(plan.notes[0]?.schedule).toMatchObject({
+            state: 2,
+            due: "2023-11-17 22:13:20.000Z",
+            stability: 12,
+            difficulty: 6,
+            scheduledDays: 12,
+            learningSteps: 0,
+            reps: 7,
+            lapses: 2,
+            lastReview: "2023-11-14 19:26:40.000Z",
+            suspended: false
         });
     });
 
@@ -371,6 +467,26 @@ describe("Anki import planning", () => {
 
 function sqliteBytes(suffix: string): Uint8Array {
     return encodeUtf8(`SQLite format 3\u0000${suffix}`);
+}
+
+function protobufMessage(fields: Uint8Array[]): Uint8Array {
+    const length = fields.reduce((total, field) => total + field.byteLength, 0);
+    const message = new Uint8Array(length);
+    let offset = 0;
+    for (const field of fields) {
+        message.set(field, offset);
+        offset += field.byteLength;
+    }
+    return message;
+}
+
+function stringField(fieldNumber: number, value: string): Uint8Array {
+    const bytes = encodeUtf8(value);
+    return new Uint8Array([(fieldNumber * 8) + 2, bytes.byteLength, ...bytes]);
+}
+
+function varintField(fieldNumber: number, value: number): Uint8Array {
+    return new Uint8Array([fieldNumber * 8, value]);
 }
 
 function protobufMediaEntry(name: string, size: number, legacyIndex?: number): Uint8Array {

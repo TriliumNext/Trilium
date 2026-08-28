@@ -1022,7 +1022,7 @@ function ReviewCard({
                     setFlashcardDragData(event.dataTransfer, card.cardId);
                 }}
             >
-                {card.cardType === "cloze"
+                {card.frontIsHtml || card.cardType === "cloze"
                     ? <h3 className="flashcards-front-title">
                         <RawHtml html={card.front} />
                     </h3>

@@ -398,6 +398,20 @@ describe("flashcards review dialog", () => {
         expect(mocks.getCard).not.toHaveBeenCalled();
     });
 
+    it("renders imported rich fronts as sanitized HTML", async () => {
+        const card = makeCard({
+            front: '<img src="front.png"><b>Rich front</b>',
+            frontIsHtml: true
+        });
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+
+        await openDialog();
+
+        expect(host.querySelector(".flashcards-front-title img")?.getAttribute("src"))
+            .toBe("front.png");
+        expect(host.querySelector(".flashcards-front-title b")?.textContent).toBe("Rich front");
+    });
+
     it("renders cloze cards as elided HTML with a card number", async () => {
         const card = makeCard({
             cardType: "cloze",

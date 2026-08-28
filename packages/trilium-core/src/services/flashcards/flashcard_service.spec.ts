@@ -90,6 +90,23 @@ describe("flashcard service", () => {
         expect(rowCount).toBe(1);
     });
 
+    it("uses imported rich front HTML when present", () => {
+        const note = createTextNote("Imported plain title", "Rendered back");
+        runInContext(() => new BAttribute({
+            noteId: note.noteId,
+            type: "label",
+            name: "flashcardFrontHtml",
+            value: "<img src=\"front.png\"><b>Rich front</b>",
+            isInheritable: false
+        }).save());
+
+        const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+
+        expect(card.front).toBe("<img src=\"front.png\"><b>Rich front</b>");
+        expect(card.frontIsHtml).toBe(true);
+        expect(card.back).toBe("Rendered back");
+    });
+
     it("previews review outcomes without writing rows or entity changes", () => {
         const note = createTextNote("Preview source");
         const card = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));

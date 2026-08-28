@@ -56,6 +56,7 @@ const DEFAULT_DUE_LIMIT = 20;
 const MAX_DUE_LIMIT = 100;
 const BURY_DURATION_MS = 24 * 60 * 60 * 1000;
 const FLASHCARD_LABEL = "flashcard";
+const FLASHCARD_FRONT_HTML_LABEL = "flashcardFrontHtml";
 const FLASHCARD_LEECH_LABEL = "flashcardLeech";
 const FLASHCARD_LEECH_THRESHOLD = 8;
 const FLASHCARD_SCHEDULER_CONFIG_OPTION = "flashcardSchedulerConfig";
@@ -1201,12 +1202,14 @@ function buildReviewCard(
     }
 
     const content = note.getContent();
+    const importedFrontHtml = note.getOwnedLabelValue(FLASHCARD_FRONT_HTML_LABEL);
     const isCloze = card.cardType === "cloze";
     const reviewCard: FlashcardReviewCard = {
         ...buildCardSummary(card),
-        front: isCloze && typeof content === "string"
+        front: importedFrontHtml ?? (isCloze && typeof content === "string"
             ? renderClozeFront(content, card.ordinal ?? 0)
-            : note.title,
+            : note.title),
+        frontIsHtml: importedFrontHtml !== null,
         previews: previewFlashcard(card, new Date(), getCurrentSchedulerConfig())
     };
 
