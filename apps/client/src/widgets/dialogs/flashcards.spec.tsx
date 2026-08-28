@@ -260,6 +260,38 @@ describe("flashcards review dialog", () => {
         expect(host.textContent).toContain("flashcards.filtered_deck");
     });
 
+    it("keeps long deck and card labels in responsive structural wrappers", async () => {
+        const longText = "Very long flashcard label ".repeat(12);
+        mocks.getDueCards.mockResolvedValue({
+            cards: [ makeCard({ front: longText, deckTitle: longText }) ],
+            totalDueCount: 1
+        });
+        mocks.getDecks.mockResolvedValue({
+            decks: [ {
+                deckNoteId: "deck1",
+                deckTitle: longText,
+                isFiltered: false,
+                dueCount: 1,
+                newCount: 2,
+                learningCount: 3,
+                reviewCount: 4,
+                totalCount: 10,
+                suspendedCount: 1
+            } ]
+        });
+
+        await openDialog();
+
+        expect(host.querySelector(".flashcards-dialog-body")?.textContent)
+            .toContain(longText);
+        expect(host.querySelector(".flashcards-deck-list")?.children.length).toBe(1);
+        expect(host.querySelector(".flashcards-deck-heading h4")?.textContent).toBe(longText);
+        expect(host.querySelectorAll(".flashcards-deck-badges .flashcards-deck-badge").length)
+            .toBeGreaterThanOrEqual(6);
+        expect(host.querySelector(".flashcards-card-actions")?.textContent)
+            .toContain("flashcards.reschedule_card");
+    });
+
     it("creates a filtered deck with accessible shared form controls", async () => {
         mocks.getDueCards.mockResolvedValue({ cards: [], totalDueCount: 0 });
         mocks.createFilteredDeck.mockResolvedValue({ note: { noteId: "fd1" } });

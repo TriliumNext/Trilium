@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787943889.896158,
-    "ast_hash": "15af650fac2f75fcad6f199aaf0fa33f",
+    "mtime": 1787944003.5677235,
+    "ast_hash": "546131fcf92ecc3033c8c587b24b71ef",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -25000,8 +25000,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.spec.tsx": {
-    "mtime": 1787943874.1599538,
-    "ast_hash": "022bcade3f5f57c345ba588d8ffac1af",
+    "mtime": 1787943991.2084885,
+    "ast_hash": "5ecc9408acc17d8faf2ebdc93cde73e4",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/cloze.spec.ts": {
