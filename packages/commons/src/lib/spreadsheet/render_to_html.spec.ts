@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderSpreadsheetToHtml } from "./render_to_html.js";
+import { BorderStyle, HorizontalAlign, WrapStrategy } from "./workbook_model.js";
 
 describe("renderSpreadsheetToHtml", () => {
     it("renders a basic spreadsheet with values and styles", () => {
@@ -419,6 +420,312 @@ describe("renderSpreadsheetToHtml", () => {
         expect(html).toContain("transparent");
     });
 
+    it("renders a cell whose text lives only in its rich-text document", () => {
+        const html = renderSpreadsheetToHtml(singleCellWorkbook({ p: { body: { dataStream: "Notebook\r\n" } } }));
+        expect(html).toContain("Notebook");
+    });
+
+    it("renders a hyperlink whether or not the cell also has a plain value", () => {
+        const link = (cell: Record<string, unknown>) => renderSpreadsheetToHtml(singleCellWorkbook({
+            ...cell,
+            p: {
+                body: {
+                    dataStream: "Pen\r\n",
+                    customRanges: [{ startIndex: 0, endIndex: 2, properties: { url: "https://example.com/pen" } }]
+                }
+            }
+        }));
+
+        const expected = `<a href="https://example.com/pen" target="_blank" rel="noopener noreferrer">Pen</a>`;
+        expect(link({})).toContain(expected);
+        expect(link({ v: "Pen", t: 1 })).toContain(expected);
+    });
+
+    it("links only the run a range covers, leaving the rest as text", () => {
+        const html = renderSpreadsheetToHtml(singleCellWorkbook({
+            p: {
+                body: {
+                    dataStream: "see supplier now\r\n",
+                    customRanges: [{ startIndex: 4, endIndex: 11, properties: { url: "https://example.com" } }]
+                }
+            }
+        }));
+
+        expect(html).toContain(`see <a href="https://example.com" target="_blank" rel="noopener noreferrer">supplier</a> now`);
+    });
+
+    it("drops an unsafe or malformed link target, keeping its text", () => {
+        const withUrl = (url: unknown) => renderSpreadsheetToHtml(singleCellWorkbook({
+            p: {
+                body: {
+                    dataStream: "Pen\r\n",
+                    customRanges: [{ startIndex: 0, endIndex: 2, properties: { url } }]
+                }
+            }
+        }));
+
+        for (const url of ["javascript:alert(1)", "data:text/html,<script>", " ", 42, undefined]) {
+            const html = withUrl(url);
+            expect(html, String(url)).toContain("Pen");
+            expect(html, String(url)).not.toContain("<a ");
+        }
+    });
+
+    it("ignores link ranges that are out of order, overlapping or out of bounds", () => {
+        const html = renderSpreadsheetToHtml(singleCellWorkbook({
+            p: {
+                body: {
+                    dataStream: "abcdef\r\n",
+                    customRanges: [
+                        { startIndex: 3, endIndex: 99, properties: { url: "https://example.com/second" } },
+                        { startIndex: 0, endIndex: 1, properties: { url: "https://example.com/first" } },
+                        { startIndex: 4, endIndex: 5, properties: { url: "https://example.com/overlapping" } },
+                        { startIndex: 2, properties: { url: "https://example.com/unbounded" } }
+                    ]
+                }
+            }
+        }));
+
+        expect(html).toContain(">ab</a>c<a ");
+        expect(html).toContain(">def</a>");
+        expect(html).not.toContain("overlapping");
+        expect(html).not.toContain("unbounded");
+    });
+
+    it("keeps the number format of a linked numeric cell", () => {
+        const html = renderSpreadsheetToHtml(singleCellWorkbook({
+            v: 0.42,
+            t: 2,
+            s: { n: { pattern: "0.0%" } },
+            p: {
+                body: {
+                    dataStream: "42%\r\n",
+                    customRanges: [{ startIndex: 0, endIndex: 2, properties: { url: "https://example.com" } }]
+                }
+            }
+        }));
+
+        expect(html).toContain("42.0%");
+    });
+
+    it("rotates a cell's text", () => {
+        const rotated = (tr: unknown) => renderSpreadsheetToHtml(singleCellWorkbook({ v: "Days left", t: 1, s: { tr } }));
+
+        // A quarter turn either way becomes a vertical writing mode, so the row can grow to fit it.
+        expect(rotated({ a: 90 })).toContain(
+            `<span style="display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg)">Days left</span>`);
+        expect(rotated({ a: -90 })).toContain(
+            `<span style="display:inline-block;writing-mode:vertical-rl">Days left</span>`);
+
+        // Stacked text reads downwards with upright characters.
+        expect(rotated({ v: 1 })).toContain(
+            `<span style="display:inline-block;writing-mode:vertical-rl;text-orientation:upright">Days left</span>`);
+
+        // Any other angle turns the glyphs; CSS rotates clockwise, so the sign flips.
+        expect(rotated({ a: 45 })).toContain(
+            `<span style="display:inline-block;transform:rotate(-45deg)">Days left</span>`);
+        expect(rotated({ a: -30.5 })).toContain(`transform:rotate(30.5deg)`);
+    });
+
+    it("leaves a cell unwrapped when it has no rotation to apply", () => {
+        const plain = (s: unknown) => renderSpreadsheetToHtml(singleCellWorkbook({ v: "Days left", t: 1, s }));
+
+        expect(plain({})).toContain("<td>Days left</td>");
+        expect(plain({ tr: { a: 0, v: 0 } })).toContain("<td>Days left</td>");
+        expect(plain({ tr: { v: 0 } })).toContain("<td>Days left</td>");
+
+        // An empty cell gets no wrapper either, rotation or not.
+        expect(renderSpreadsheetToHtml(singleCellWorkbook({ s: { tr: { a: 90 } } }))).toContain("<td></td>");
+    });
+
+    it("keeps a cell's image upright when its text is rotated", () => {
+        const html = renderSpreadsheetToHtml(singleCellWorkbook({
+            v: "Days left",
+            t: 1,
+            s: { tr: { a: 90 } },
+            p: {
+                drawings: { d1: { drawingId: "d1", source: "api/attachments/abc123/image/i.png" } },
+                drawingsOrder: ["d1"]
+            }
+        }));
+
+        expect(html).toContain(`Days left</span><img class="spreadsheet-cell-image"`);
+    });
+
+    describe("overflow into neighbouring cells", () => {
+        /** A sheet from a `cellData` matrix, with optional sheet-level overrides. */
+        function grid(cellData: Record<number, unknown>, extra: Record<string, unknown> = {}): string {
+            return JSON.stringify({
+                version: 1,
+                workbook: {
+                    sheetOrder: ["s1"],
+                    styles: {},
+                    sheets: {
+                        s1: {
+                            id: "s1",
+                            name: "Sheet1",
+                            hidden: 0,
+                            mergeData: [],
+                            cellData,
+                            rowData: {},
+                            columnData: {},
+                            ...extra
+                        }
+                    }
+                }
+            });
+        }
+
+        /** One row of `cells`, keyed by column. */
+        function row(cells: Record<number, unknown>, extra: Record<string, unknown> = {}): string {
+            return grid({ "0": cells }, extra);
+        }
+
+        /** Whether the workbook's cell at `column` clips its text. The render always starts at A1. */
+        function clips(json: string, column: number): boolean {
+            const cells = renderSpreadsheetToHtml(json).match(/<td[^>]*>/g) ?? [];
+            return (cells[column] ?? "").includes("overflow:hidden");
+        }
+
+        it("clips text only when the neighbour it would spill over holds a value", () => {
+            const occupied = row({ 0: { v: "a long label", t: 1 }, 1: { v: "next", t: 1 } });
+            expect(clips(occupied, 0)).toBe(true);
+
+            // An empty neighbour, or one carrying only a style, is spilled over as in the editor.
+            expect(clips(row({ 0: { v: "a long label", t: 1 } }), 0)).toBe(false);
+            expect(clips(row({ 0: { v: "a long label", t: 1 }, 1: { s: { bl: 1 } } }), 0)).toBe(false);
+            expect(clips(row({ 0: { v: "a long label", t: 1 }, 1: { v: "", t: 1 } }), 0)).toBe(false);
+        });
+
+        it("follows the alignment to decide which side the text spills towards", () => {
+            const rightAligned = { t: 1, s: { ht: HorizontalAlign.RIGHT } };
+            expect(clips(row({ 0: { v: "before", t: 1 }, 1: { v: "x", ...rightAligned } }), 1)).toBe(true);
+            expect(clips(row({ 1: { v: "x", ...rightAligned }, 2: { v: "after", t: 1 } }), 1)).toBe(false);
+
+            const centered = { t: 1, s: { ht: HorizontalAlign.CENTER } };
+            expect(clips(row({ 0: { v: "before", t: 1 }, 1: { v: "x", ...centered } }), 1)).toBe(true);
+            expect(clips(row({ 1: { v: "x", ...centered }, 2: { v: "after", t: 1 } }), 1)).toBe(true);
+            expect(clips(row({ 1: { v: "x", ...centered } }), 1)).toBe(false);
+        });
+
+        it("never spills a number, and never clips a wrapped or empty cell", () => {
+            expect(clips(row({ 0: { v: 42, t: 2 } }), 0)).toBe(true);
+            expect(clips(row({ 0: { v: true, t: 3 } }), 0)).toBe(true);
+
+            expect(clips(row({ 0: { v: "a long label", t: 1, s: { tb: WrapStrategy.WRAP } }, 1: { v: "next", t: 1 } }), 0)).toBe(false);
+            expect(clips(row({ 0: { s: { bl: 1 } }, 1: { v: "next", t: 1 } }), 0)).toBe(false);
+        });
+
+        it("judges adjacency on the rendered row rather than the cell matrix", () => {
+            const long = { v: "a long label", t: 1 };
+
+            // A hidden column reaches nobody, so the cell steps over it in both directions.
+            expect(clips(row({ 0: long, 1: { v: "next", t: 1 } }, { columnData: { 1: { hd: 1 } } }), 0)).toBe(false);
+            expect(clips(row({ 0: long, 1: {}, 2: { v: "next", t: 1 } }, { columnData: { 1: { hd: 1 } } }), 0)).toBe(true);
+
+            // A merged cell starts looking past the last column its own range covers.
+            const merged = [{ startRow: 0, endRow: 0, startColumn: 0, endColumn: 1 }];
+            expect(clips(row({ 0: long, 1: {}, 2: { v: "next", t: 1 } }, { mergeData: merged }), 0)).toBe(true);
+            expect(clips(row({ 0: long, 1: {} }, { mergeData: merged }), 0)).toBe(false);
+        });
+
+        it("reads a column a merge spans into as holding that range's content", () => {
+            // The second row renders only the right-aligned cell; the range fills the column beside it.
+            const html = renderSpreadsheetToHtml(grid(
+                { "0": { 0: { v: "tall", t: 1 } }, "1": { 1: { v: "x", t: 1, s: { ht: HorizontalAlign.RIGHT } } } },
+                { mergeData: [{ startRow: 0, endRow: 1, startColumn: 0, endColumn: 0 }] }
+            ));
+
+            expect(html.split("</tr>")[1]).toContain(`<td style="text-align:right;overflow:hidden">x</td>`);
+        });
+
+        it("counts a cell whose text lives only in its rich-text document as occupied", () => {
+            const html = row({
+                0: { v: "a long label", t: 1 },
+                1: { p: { body: { dataStream: "linked\r\n" } } }
+            });
+            expect(clips(html, 0)).toBe(true);
+        });
+    });
+
+    describe("borders of a merged range", () => {
+        const THIN = { s: BorderStyle.THIN };
+
+        /** A sheet of `cellData` (keyed by row, then column) carrying the given merges. */
+        function mergedWorkbook(cellData: Record<number, Record<number, unknown>>, mergeData: unknown[]): string {
+            return JSON.stringify({
+                version: 1,
+                workbook: {
+                    sheetOrder: ["s1"],
+                    styles: {},
+                    sheets: {
+                        s1: {
+                            id: "s1",
+                            name: "Sheet1",
+                            hidden: 0,
+                            mergeData,
+                            cellData,
+                            rowData: {},
+                            columnData: {}
+                        }
+                    }
+                }
+            });
+        }
+
+        /** The border declarations of the first cell in the rendered row. */
+        function bordersOfFirstCell(html: string): string[] {
+            const style = (html.match(/<td[^>]*style="([^"]*)"/) ?? [])[1] ?? "";
+            return style.split(";").filter((part) => part.startsWith("border"));
+        }
+
+        it("takes the right edge from the range's last column and the bottom from its last row", () => {
+            // Excel spreads a range's outline over its member cells, so A1:B1 keeps its right
+            // border on B1 and A1:A2 keeps its bottom on A2.
+            const across = renderSpreadsheetToHtml(mergedWorkbook(
+                { 0: { 0: { v: "x", s: { bd: { l: THIN } } }, 1: { s: { bd: { r: THIN } } } } },
+                [{ startRow: 0, endRow: 0, startColumn: 0, endColumn: 1 }]
+            ));
+            expect(bordersOfFirstCell(across)).toEqual(["border-right:1px solid #000", "border-left:1px solid #000"]);
+
+            const down = renderSpreadsheetToHtml(mergedWorkbook(
+                { 0: { 0: { v: "x", s: { bd: { t: THIN } } } }, 1: { 0: { s: { bd: { b: THIN } } } } },
+                [{ startRow: 0, endRow: 1, startColumn: 0, endColumn: 0 }]
+            ));
+            expect(bordersOfFirstCell(down)).toEqual(["border-top:1px solid #000", "border-bottom:1px solid #000"]);
+        });
+
+        it("drops the anchor's own right and bottom when they fall inside the range", () => {
+            // In a 2x2 range the anchor's right and bottom are internal edges the merge hides.
+            const html = renderSpreadsheetToHtml(mergedWorkbook(
+                { 0: { 0: { v: "x", s: { bd: { t: THIN, r: THIN, b: THIN } } }, 1: {} }, 1: { 0: {}, 1: {} } },
+                [{ startRow: 0, endRow: 1, startColumn: 0, endColumn: 1 }]
+            ));
+            expect(bordersOfFirstCell(html)).toEqual(["border-top:1px solid #000"]);
+        });
+
+        it("leaves an unmerged cell's borders alone", () => {
+            const html = renderSpreadsheetToHtml(mergedWorkbook({ 0: { 0: { v: "x", s: { bd: { r: THIN, b: THIN } } } } }, []));
+            expect(bordersOfFirstCell(html)).toEqual(["border-right:1px solid #000", "border-bottom:1px solid #000"]);
+        });
+
+        it("keeps its own edges when the range is one cell wide and tall", () => {
+            const html = renderSpreadsheetToHtml(mergedWorkbook(
+                { 0: { 0: { v: "x", s: { bd: { r: THIN, b: THIN } } } } },
+                [{ startRow: 0, endRow: 0, startColumn: 0, endColumn: 0 }]
+            ));
+            expect(bordersOfFirstCell(html)).toEqual(["border-right:1px solid #000", "border-bottom:1px solid #000"]);
+        });
+
+        it("emits no border when neither the anchor nor the edge cells carry one", () => {
+            const html = renderSpreadsheetToHtml(mergedWorkbook(
+                { 0: { 0: { v: "x", s: { bl: 1 } }, 1: {} } },
+                [{ startRow: 0, endRow: 0, startColumn: 0, endColumn: 1 }]
+            ));
+            expect(bordersOfFirstCell(html)).toEqual([]);
+        });
+    });
+
     // Helper to wrap a single styled cell into a complete workbook payload.
     function singleCellWorkbook(cell: unknown, sheetExtra: Record<string, unknown> = {}): string {
         return JSON.stringify({
@@ -677,8 +984,19 @@ describe("renderSpreadsheetToHtml", () => {
 
     it("omits vertical-align for an unknown vertical alignment", () => {
         const html = renderSpreadsheetToHtml(singleCellWorkbook({ v: "x", s: { vt: 9 } }));
-        expect(html).not.toContain("vertical-align");
+        // The cell contributes none, so it falls back to the row's.
         expect(html).toContain("<td>x</td>");
+        expect(html).toContain(`<tr style="height:24px;vertical-align:bottom">`);
+    });
+
+    it("defaults a row to the bottom, which a cell's own alignment overrides", () => {
+        // Univer leaves a cell at the bottom of its row unless it sets `vt`, unlike HTML.
+        const html = renderSpreadsheetToHtml(singleCellWorkbook({ v: "x" }));
+        expect(html).toContain(`<tr style="height:24px;vertical-align:bottom">`);
+        expect(html).toContain("<td>x</td>");
+
+        const middle = renderSpreadsheetToHtml(singleCellWorkbook({ v: "x", s: { vt: 2 } }));
+        expect(middle).toContain(`<td style="vertical-align:middle">x</td>`);
     });
 
     it("renders borders on all four sides with the correct Univer widths and styles", () => {
@@ -822,8 +1140,8 @@ describe("renderSpreadsheetToHtml", () => {
         expect(html).toContain("font-weight:bold");
         expect(html).toContain("color:#ff0000");
         expect(html).toContain("byId");
-        // null style id and empty style object -> plain <td>.
-        expect(html).toContain("<td>nulled</td>");
+        // null style id and empty style object -> no styling of their own.
+        expect(html).toContain(`<td style="overflow:hidden">nulled</td>`);
         expect(html).toContain("<td>emptyStyle</td>");
     });
 
@@ -884,7 +1202,7 @@ describe("renderSpreadsheetToHtml", () => {
         });
         const html = renderSpreadsheetToHtml(input);
         expect(html).toContain('<col style="width:200px">');
-        expect(html).toContain('<tr style="height:50px">');
+        expect(html).toContain('<tr style="height:50px;vertical-align:bottom">');
     });
 
     it("falls back to default column width and row height when absent", () => {
@@ -910,7 +1228,7 @@ describe("renderSpreadsheetToHtml", () => {
         });
         const html = renderSpreadsheetToHtml(input);
         expect(html).toContain('<col style="width:88px">');
-        expect(html).toContain('<tr style="height:24px">');
+        expect(html).toContain('<tr style="height:24px;vertical-align:bottom">');
     });
 
     it("renders an empty string for a cell with null value", () => {
@@ -956,7 +1274,22 @@ describe("renderSpreadsheetToHtml", () => {
 
     it("renders numeric cell values", () => {
         const html = renderSpreadsheetToHtml(singleCellWorkbook({ v: 42, t: 2 }));
-        expect(html).toContain("<td>42</td>");
+        expect(html).toContain(">42</td>");
+    });
+
+    it("aligns a cell by its value type when it sets no alignment of its own", () => {
+        // Univer right-aligns numbers and centers booleans; text keeps the table default.
+        expect(renderSpreadsheetToHtml(singleCellWorkbook({ v: 42, t: 2 }))).toContain(`<td style="text-align:right;overflow:hidden">`);
+        expect(renderSpreadsheetToHtml(singleCellWorkbook({ v: true, t: 3 }))).toContain(`<td style="text-align:center;overflow:hidden">`);
+        expect(renderSpreadsheetToHtml(singleCellWorkbook({ v: "A", t: 1 }))).toContain("<td>A</td>");
+
+        // A number formatted and styled by the workbook still gets the fallback alignment.
+        expect(renderSpreadsheetToHtml(singleCellWorkbook({ v: 42, t: 2, s: { bl: 1 } })))
+            .toContain(`<td style="text-align:right;font-weight:bold;overflow:hidden">`);
+
+        // An explicit alignment wins over the fallback.
+        expect(renderSpreadsheetToHtml(singleCellWorkbook({ v: 42, t: 2, s: { ht: HorizontalAlign.LEFT } })))
+            .toContain(`<td style="text-align:left;overflow:hidden">`);
     });
 
     it("emits colspan only for a purely horizontal merge", () => {
@@ -1015,7 +1348,7 @@ describe("renderSpreadsheetToHtml", () => {
         const html = renderSpreadsheetToHtml(
             singleCellWorkbook({ v: 1234.5, t: 2, s: { n: { pattern: "#,##0.00" } } })
         );
-        expect(html).toContain("<td>1,234.50</td>");
+        expect(html).toContain(">1,234.50</td>");
         expect(html).not.toContain("1234.5<");
     });
 
@@ -1129,7 +1462,7 @@ describe("renderSpreadsheetToHtml", () => {
 
     it("renders an unformatted number when no pattern is set", () => {
         const html = renderSpreadsheetToHtml(singleCellWorkbook({ v: 1234.5, t: 2 }));
-        expect(html).toContain("<td>1234.5</td>");
+        expect(html).toContain(">1234.5</td>");
     });
 
     it("marks the table with show-gridlines when the sheet has gridlines enabled", () => {

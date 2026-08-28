@@ -5,43 +5,45 @@
 <p>Global events are attached to the script note via label. Simply create
   a <code spellcheck="false">run</code> label with some of these values and
   script note will be executed once the event occurs.</p>
-<table>
-  <thead>
-    <tr>
-      <th>Label</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">run</code>
-      </td>
-      <td>
-        <p>Defines on which events script should run. Possible values are:</p>
-        <ul>
-          <li><code spellcheck="false">backendStartup</code> - when Trilium backend starts
-            up</li>
-          <li><code spellcheck="false">hourly</code> - run once an hour. You can use
-            additional label <code spellcheck="false">runAtHour</code> to specify at
-            which hour, on the back-end.</li>
-          <li><code spellcheck="false">daily</code> - run once a day, on the back-end</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnInstance</code>
-      </td>
-      <td>Specifies that the script should only run on a particular&nbsp;<a class="reference-link"
-        href="#root/_help_c5xB8m4g2IY6">Trilium instance</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runAtHour</code>
-      </td>
-      <td>On which hour should this run. Should be used together with <code spellcheck="false">#run=hourly</code>.
-        Can be defined multiple times for more runs during the day.</td>
-    </tr>
-  </tbody>
-</table>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">run</code>
+        </td>
+        <td>
+          <p>Defines on which events script should run. Possible values are:</p>
+          <ul>
+            <li><code spellcheck="false">backendStartup</code> - when Trilium backend starts
+              up</li>
+            <li><code spellcheck="false">hourly</code> - run once an hour. You can use
+              additional label <code spellcheck="false">runAtHour</code> to specify at
+              which hour, on the back-end.</li>
+            <li><code spellcheck="false">daily</code> - run once a day, on the back-end</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnInstance</code>
+        </td>
+        <td>Specifies that the script should only run on a particular&nbsp;<a class="reference-link"
+          href="#root/_help_c5xB8m4g2IY6">Trilium instance</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runAtHour</code>
+        </td>
+        <td>On which hour should this run. Should be used together with <code spellcheck="false">#run=hourly</code>.
+          Can be defined multiple times for more runs during the day.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <p>Frontend scripts also have similar&nbsp;<a class="reference-link" href="#root/_help_irkwjdNtjcxR">Events</a>,
   such as when the application starts.</p>
 <aside class="admonition note">

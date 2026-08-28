@@ -47,6 +47,15 @@
      height where no theme names one. */
   --geo-map-toolbar-height: var(--overlay-button-height, 28px);
 
+  /* Where the head of the leading column stands: the search bar (see SearchBox.css) and the result
+     navigator placed from it (see ResultNavigator.css). Overridden for mobile below. */
+  --geo-map-search-top: var(--geo-map-inset-top);
+
+  /* Where the foot of the map stops anything reaching down towards it: the room kept from the
+     bottom, the height of the bars standing there (MapToolbar, EditToolbar), and as much air again.
+     Read by the detail pane and by the place panel on mobile. */
+  --geo-map-foot: calc(var(--geo-map-inset-bottom) + var(--geo-map-toolbar-height) + var(--geo-map-inset));
+
   /*
    * What everything standing over the map is dressed in — our own control groups and MapLibre's
    * scale and attribution alike, so that they read as one set rather than as ours beside theirs.
@@ -95,6 +104,12 @@
     margin-left: var(--geo-map-inset-left);
     margin-right: var(--geo-map-inset-right);
   }
+}
+
+/* On mobile the attribution takes the top leading corner (see map.tsx), so the column starts below
+   it: the room kept from the top, the attribution's own height, and as much air again. */
+body.mobile .geo-map-container {
+  --geo-map-search-top: calc(var(--geo-map-inset-top) * 2 + var(--geo-map-toolbar-height));
 }
 
 /* Read the other way round, the trailing corner is the left one. Only which side is which changes;

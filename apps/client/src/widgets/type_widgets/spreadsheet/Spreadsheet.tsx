@@ -97,8 +97,8 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
     useClampEdgeNavigation(apiRef);
     useAnchorCellEditorOnScroll(apiRef);
     useDarkMode(apiRef);
-    usePersistence(note, noteContext, apiRef, containerRef);
-    useSpreadsheetExport(apiRef, note, noteContext);
+    const spacedUpdate = usePersistence(note, noteContext, apiRef, containerRef);
+    useSpreadsheetExport(apiRef, note, noteContext, spacedUpdate);
     useSearchIntegration(apiRef, noteContext);
     useDismissDialogsOnNoteSwitch(apiRef);
     useFixRadixPortals();

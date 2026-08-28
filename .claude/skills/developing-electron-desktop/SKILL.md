@@ -134,6 +134,27 @@ Add a validator for any new channel that takes a path, a URL, or anything else t
 - Platform checks in main use `process.platform`; code shared with core uses `isElectron()`/`isMac()`/`isWindows()` from `@triliumnext/core` utils (functions, only after `initializeCore()`).
 - The preload is compiled to **CJS** (`src/preload.compiled.cjs`, gitignored) — dev by `scripts/electron-start.mts`, prod by `apps/desktop/scripts/build.ts` — because Electron's sandboxed renderer can only load CJS preloads. Don't import ESM-only things into `preload.ts`.
 
+## The main bundle is ESM with code splitting
+
+`scripts/build.ts` builds `src/main.ts` with `buildBackend(..., { format: "esm" })`: the
+production entry is **`dist/main.mjs`** plus lazy chunks under `dist/chunks/` (the generated
+`dist/package.json` points Electron's `main` at it). The preload and `image_worker.cjs` stay
+CJS — the sandboxed renderer can't load an ESM preload, and the worker is spawned by its
+`.cjs` path. Three rules follow:
+
+- **`__dirname` in bundled code means the bundle root, even inside a chunk** — the ESM banner
+  in `scripts/build-utils.ts` resolves a chunk's `__dirname` one level up on purpose, because
+  bundled code locates `preload.cjs`, `image_worker.cjs` and `assets/` as siblings of the
+  entry. Don't "simplify" the banner, and don't path-math around it in app code.
+- **Dynamically importing a CommonJS package needs the interop read**: `const mod = await
+  import("cjs-pkg"); const { x } = mod.default ?? mod;`. Destructuring the namespace directly
+  yields `undefined` in split ESM output, and unit tests mock past it. After adding a seam,
+  run `node .claude/skills/analyzing-backend-bundle/check-dynamic-imports.mjs apps/desktop/dist`.
+- A new heavy dependency belongs behind a dynamic `import()` at its (async) call site, so it
+  lands in a lazy chunk instead of the startup path — measured on identical boots, ESM +
+  seams took the desktop main process from 348 MB to 287 MB RSS. The
+  **`analyzing-backend-bundle` skill** has the measurement tools and the seam patterns.
+
 ## Running
 
 | Command | What it does |
@@ -141,7 +162,7 @@ Add a validator for any new channel that takes a path, a URL, or anything else t
 | `pnpm desktop:start` | dev app on port 37743, data in `apps/desktop/data`, Electron profile in `data-electron-37742`; HTTP cache disabled in dev so stale prod assets don't shadow fresh output |
 | `pnpm desktop:start-prod` | `build` + run `dist/` like a release (port 37841, separate data dirs) |
 | `pnpm --filter desktop electron-forge:make` / `:package` | full installers / unpacked app |
-| `pnpm --filter desktop e2e` | Playwright against `dist/main.cjs` (builds first) |
+| `pnpm --filter desktop e2e` | Playwright against `dist/main.mjs` (builds first) |
 
 Known launch-time noise and failures — do not "fix" these in app code:
 
@@ -153,7 +174,7 @@ Known launch-time noise and failures — do not "fix" these in app code:
 
 - `pnpm --filter desktop test [pattern]` — Vitest, node environment, `src/**/*.spec.ts`. Specs `vi.mock("electron", …)` and assert on the recorded `ipcMain`/`ipcRenderer` calls (see `preload.spec.ts`, `services/shell.spec.ts` for the pattern). `vitest.config.mts` sets `ELECTRON_OVERRIDE_DIST_PATH` so a dynamic `import("electron")` doesn't blow up where the binary isn't installed — don't remove it.
 - The desktop suite also boots server pieces (`TRILIUM_INTEGRATION_TEST: "memory"`), so it is slower than a client spec; keep the pattern narrow.
-- `spec/build-checks/artifacts.spec.ts` asserts the contents of a built `dist/` (client, assets, `better-sqlite3`, …). It is outside the default `include`, so run it explicitly after `pnpm desktop:build` when touching `scripts/build.ts` or the asset copies (`schema.sql`, `llm/skills`, `share-theme/templates`).
+- `spec/build-checks/artifacts.spec.ts` asserts the contents of a built `dist/` (client, assets, `better-sqlite3`, …). It is outside the default `include`, so run it explicitly (`npx vitest run --config vitest.build.config.mts`) after `pnpm desktop:build` when touching `scripts/build.ts` or the asset copies (`schema.sql`, `llm/skills`, `share-theme/templates`). Known broken as of 2026-08: it dies at *import* time — `resource_dir.ts` calls `process.exit(1)` under vitest because `TRILIUM_RESOURCE_DIR` is unset in that config — before running any assertion, with or without your changes. Fix the harness env or verify the dist by hand; don't read the failure as caused by your change.
 
 ## Debugging the protocol / WebContents boundary
 

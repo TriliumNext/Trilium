@@ -2656,8 +2656,7 @@
   },
   "server": {
     "unknown_http_error_title": "Error de comunicación con el servidor",
-    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMensaje: {{message}}",
-    "traefik_blocks_requests": "Si está usando el proxy inverso Traefik, este introdujo un cambio que afecta la comunicación con el servidor."
+    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMensaje: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Volver a la nota anterior",
@@ -3910,9 +3909,7 @@
     "note_paths_what": "Una nota puede situarse en más de un lugar del árbol de notas a la vez, y cada uno de esos lugares se enumera aquí como una ruta.",
     "note_paths_cloning": "Añadir un lugar se llama clonar: no se copia nada, de modo que una edición hecha en una ruta se refleja en todas, y al quitar una ruta la nota permanece en las demás.",
     "backlinks_what": "Las notas que apuntan a esta, ya sea mediante un enlace en su texto o mediante una relación que la nombra.",
-    "backlinks_listing": "Un enlace de texto se enumera con el pasaje que lo rodea; una relación, con el nombre por el que apunta. Este lado del enlace no es editable: desaparece cuando la nota que lo creó elimina el enlace.",
-    "similar_notes_what": "Notas que parecen relacionadas con esta aunque nada las enlace.",
-    "similar_notes_how": "La similitud se calcula a partir del contenido de las notas, de los atributos y relaciones que llevan, y de lo próximas que estuvieron al crearse."
+    "backlinks_listing": "Un enlace de texto se enumera con el pasaje que lo rodea; una relación, con el nombre por el que apunta. Este lado del enlace no es editable: desaparece cuando la nota que lo creó elimina el enlace."
   },
   "attachment_roles": {
     "favicon": "Icono del sitio",

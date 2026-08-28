@@ -21,11 +21,11 @@ const PASSWORD = "sync-e2e-password";
 
 test.describe("sync protocol", () => {
     // This spec spawns its own local server instances from the production bundle, so it only
-    // needs `dist/main.cjs` to exist — which every CI e2e job guarantees (they all build the
+    // needs `dist/main.mjs` to exist — which every CI e2e job guarantees (they all build the
     // server first), regardless of whether the *main* e2e target is local or Docker-hosted.
     test.skip(
-        !existsSync(join(__dirname, "..", "..", "dist", "main.cjs")),
-        "requires the built server bundle (dist/main.cjs)"
+        !existsSync(join(__dirname, "..", "..", "dist", "main.mjs")),
+        "requires the built server bundle (dist/main.mjs)"
     );
 
     test("initial sync reproduces the source; incremental sync works both ways", async ({}, testInfo) => {

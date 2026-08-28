@@ -12,27 +12,29 @@
  * one more line here and one more entry in core's HOST_PROVIDED_TYPES.
  */
 
-import { registerHostProvider } from "@triliumnext/core/src/services/llm/index.js";
+import { registerHostProvider } from "@triliumnext/core/src/services/llm/host_providers.js";
 import { registerSkillReader } from "@triliumnext/core/src/services/llm/skills.js";
 import { registerDocNoteHtmlReader } from "@triliumnext/core/src/services/llm/tools/helpers.js";
-import { registerToolRegistry } from "@triliumnext/core/src/services/llm/tools/index.js";
+import { registerToolRegistryLoader } from "@triliumnext/core/src/services/llm/tools/registration.js";
 
 import { loadSkillSheet } from "../../core_assets.js";
-import { ClaudeAgentProvider } from "./providers/claude_agent.js";
-import { CopilotAgentProvider } from "./providers/copilot_agent.js";
 import { getDocNoteHtml } from "./tools/doc_notes.js";
-import { helpTools } from "./tools/help_tools.js";
 
 /**
  * Contribute those pieces to core. Called once from startup, beside the other
  * registrations there, rather than run as an import side effect: core's own LLM
  * routes reach the stack directly, so what a chat can use must not depend on
  * whether some module that happens to import this one was loaded first.
+ *
+ * The providers and the help tools are registered as loaders, not values: their
+ * modules carry the agent SDKs and the tool stack, and importing them here
+ * would put all of that in the startup path of every install. The registration
+ * seams are light on purpose — core resolves each loader on first use.
  */
 export function registerServerLlmExtensions() {
-    registerHostProvider("claude-agent", () => new ClaudeAgentProvider());
-    registerHostProvider("copilot-agent", () => new CopilotAgentProvider());
+    registerHostProvider("claude-agent", async () => new (await import("./providers/claude_agent.js")).ClaudeAgentProvider());
+    registerHostProvider("copilot-agent", async () => new (await import("./providers/copilot_agent.js")).CopilotAgentProvider());
     registerDocNoteHtmlReader(getDocNoteHtml);
     registerSkillReader(loadSkillSheet);
-    registerToolRegistry(helpTools);
+    registerToolRegistryLoader(async () => (await import("./tools/help_tools.js")).helpTools);
 }

@@ -1544,7 +1544,8 @@
     "share_html": "共有ページに挿入される HTML ノート。挿入位置は、そのノート上の <code>#shareHtmlLocation</code> で指定します。共有対象のサブツリー内に配置されている必要があります。",
     "map_dark_style": "<code>map:style</code> で指定されたカスタムスタイルがダーク系であることを地図に伝えます。これにより、その上に表示されるマーカーのタイトルが明るい色で描画されるようになります。コレクションのプロパティで提供されるスタイルには、その情報が既に含まれているため、このような指定は不要です。",
     "map_cluster": "近接して描画されるマーカーをまとめ、番号付きの吹き出しとして表示します。この吹き出しはクリックすると開きます。",
-    "ai_quick_action": "このノートをテキストエディタの AI アシスタントメニューの指示として表示されます。タイトルがアクション名になり、内容がプロンプトになります。"
+    "ai_quick_action": "このノートをテキストエディタの AI アシスタントメニューの指示として表示されます。タイトルがアクション名になり、内容がプロンプトになります。",
+    "template_new_note_default_parent": "テンプレートノートに設定した場合: テンプレートから作成されたノート（例: @補完機能によるもの）は、明示的に別の場所が選択されない限り、対象のノートの配下に配置されます。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",
@@ -2317,7 +2318,21 @@
     "marker-color": "マーカーの色",
     "copy-coordinates": "座標をコピー",
     "expand-details": "ノートをマップ全体に表示",
-    "restore-details": "ノートをマップの横に戻す"
+    "restore-details": "ノートをマップの横に戻す",
+    "search": "検索",
+    "search-placeholder": "場所を検索",
+    "search-online": "\"{{- query}}\" をオンラインで検索",
+    "searching-online": "オンラインで検索中…",
+    "no-places-found": "場所が見つかりませんでした",
+    "search-failed": "場所を検索できませんでした",
+    "results-nearby": "近く",
+    "results-far": "遠く",
+    "add-place-as-marker": "マーカーとして追加",
+    "previous-result": "前の結果",
+    "next-result": "次の結果",
+    "result-position": "{{total}} 件中 {{index}} 件目の結果、クリックして戻る",
+    "results-on-map": "この地図上",
+    "go-to-coordinates": "{{- coordinates}} へ移動"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -2352,7 +2367,8 @@
     "vector_light": "Vector（ライト）",
     "vector_dark": "Vector （ダーク）",
     "show-labels": "マーカー名を表示",
-    "cluster-markers": "近くのマーカーをグループ化"
+    "cluster-markers": "近くのマーカーをグループ化",
+    "presentation-theme": "テーマ"
   },
   "call_to_action": {
     "next_theme_title": "新しいTriliumテーマをお試しください",
@@ -2564,7 +2580,8 @@
   "server": {
     "unknown_http_error_title": "サーバーとの通信エラー",
     "unknown_http_error_content": "ステータスコード: {{statusCode}}\nURL: {{method}} {{url}}\nメッセージ: {{message}}",
-    "traefik_blocks_requests": "Traefik リバース プロキシを使用している場合、サーバーとの通信に影響する重大な変更が導入されました。"
+    "reverse_proxy_blocked_title": "リバースプロキシによってブロックされたリクエスト",
+    "reverse_proxy_blocked_message": "一部のリクエストが Trilium に到達する前に拒否（HTTP 400）されました。これはおそらく、URL 内のパーセントエンコードされた文字をブロックするリバースプロキシによるものと考えられます。\n\nTraefik バージョン 3.6.4 から 3.6.6 では、これがデフォルトで実行されます: Traefik 3.6.7以降にアップグレードするか、設定でエンコードされた文字を許可してください。"
   },
   "tab_history_navigation_buttons": {
     "go-back": "前のノートに戻る",
@@ -2646,7 +2663,7 @@
     "custom_widget_go_to_source": "ソースコードへ移動",
     "peek": "右ペインをピーク表示",
     "hide": "右ペインを非表示",
-    "dock": "パネルをドッキング",
+    "dock": "パネルを固定",
     "close": "パネルを閉じる",
     "tab_outline": "アウトライン",
     "tab_attributes": "属性",
@@ -2656,7 +2673,8 @@
     "tab_connections": "コネクション"
   },
   "attributes_panel": {
-    "title": "ノート属性"
+    "title": "ノート属性",
+    "edit_in_sidebar": "サイドバーで編集"
   },
   "pdf": {
     "attachments_other": "{{count}} 添付ファイル",
@@ -3820,7 +3838,13 @@
     "compress_result_none": "圧縮する画像はありません。",
     "compress_result_stopped": "{{total}} 枚中 {{done}} 枚の処理を完了し、サイズを {{before}} から {{after}} に縮小しました。",
     "compress_result_stopped_no_gain": "{{total}} 枚中 {{done}} 枚の処理を完了しましたが、これ以上サイズを小さくできる画像はありませんでした。",
-    "compress_result_stopped_none": "画像の処理が開始される前に停止しました。"
+    "compress_result_stopped_none": "画像の処理が開始される前に停止しました。",
+    "status_notes": "ノート",
+    "status_total": "合計",
+    "status_attachments": "添付ファイル",
+    "status_deleted_items": "削除済みアイテム",
+    "selection_hint": "アイテムをタップして詳細を表示",
+    "show_selection_details": "選択項目の詳細を表示"
   },
   "contextual_help": {
     "label": "ヘルプ: {{- message}}",
@@ -3840,9 +3864,7 @@
     "note_paths_what": "1 つのノートをノートツリー内の複数の場所に同時に配置することができ、それぞれの場所はパスとしてここに一覧表示されます。",
     "note_paths_cloning": "場所を追加することをクローンと呼ばれます。データは複製されないため、あるパスでの編集はすべてに反映され、あるパスを削除しても他の場所のノートはそのまま残ります。",
     "backlinks_what": "本文中のリンクや、そのノートを指し示すリレーションによって、このノートを参照しているノート。",
-    "backlinks_listing": "テキストリンクは前後の文章とともに表示され、リレーションはそのリンクの名前とともに表示されます。この画面からリンクを直接編集することはできません。リンク元のノートからリンクが削除されると、この表示も消滅します。",
-    "similar_notes_what": "直接的なリンクがなくても、このノートと関連性が高いと見なされるノート。",
-    "similar_notes_how": "この類似性は、ノートの内容、属性、設定されているリレーション、および作成時期の近さなどに基づいて算出されます。"
+    "backlinks_listing": "テキストリンクは前後の文章とともに表示され、リレーションはそのリンクの名前とともに表示されます。この画面からリンクを直接編集することはできません。リンク元のノートからリンクが削除されると、この表示も消滅します。"
   },
   "compress-images": "画像を圧縮",
   "compress-image": "画像を圧縮",

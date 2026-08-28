@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getImageAttachmentTitle, getMimeIcon, getNoteIcon, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink } from "./notes.js";
+import { GEO_LOCATION_ATTRIBUTE, getImageAttachmentTitle, getMimeIcon, getNoteIcon, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink } from "./notes.js";
 import { NoteType } from "./rows.js";
 
 function buildArgs(overrides: {
@@ -10,6 +10,7 @@ function buildArgs(overrides: {
     iconClass?: string | undefined;
     workspaceIconClass?: string | undefined;
     isFolder?: () => boolean;
+    getLabelValue?: (name: string) => string | null;
 }) {
     return {
         noteId: "abc123",
@@ -18,6 +19,7 @@ function buildArgs(overrides: {
         iconClass: undefined,
         workspaceIconClass: undefined,
         isFolder: () => false,
+        getLabelValue: () => null,
         ...overrides
     };
 }
@@ -84,6 +86,26 @@ describe("getNoteIcon", () => {
         expect(icon).toBe("bx bx-folder");
     });
 
+    it("draws a located text note as a pin, ahead of the folder icon but behind its own", () => {
+        // The pin is what a marker wears without one being written onto it, so an icon the geo map
+        // hands down through `#child:iconClass` or a template still applies (see the map's api).
+        const located = (value = "48.85,2.36") =>
+            (name: string) => name === GEO_LOCATION_ATTRIBUTE ? value : null;
+
+        expect(getNoteIcon(buildArgs({ getLabelValue: located() }))).toBe("bx bx-pin");
+        expect(getNoteIcon(buildArgs({ getLabelValue: located(), isFolder: () => true })))
+            .toBe("bx bx-pin");
+        expect(getNoteIcon(buildArgs({ getLabelValue: located(), iconClass: "bx bx-store" })))
+            .toBe("bx bx-store");
+        // Taking a marker off the map empties the label rather than removing it (see moveMarker in
+        // the geo map's api), and a note that stands nowhere is a plain note again.
+        expect(getNoteIcon(buildArgs({ getLabelValue: located("") }))).toBe("bx bx-note");
+        // Only the generic note icon is displaced: a file put on the map still says what it holds.
+        expect(getNoteIcon(buildArgs({
+            type: "file", mime: "application/gpx+xml", getLabelValue: located()
+        }))).toBe("bx bx-trip");
+    });
+
     it("returns the note icon for a text note that is not a folder", () => {
         const icon = getNoteIcon(buildArgs({ type: "text", isFolder: () => false }));
         expect(icon).toBe("bx bx-note");
@@ -117,6 +139,11 @@ describe("getNoteIcon", () => {
     it("returns the mapped file icon for a file note with a known mime", () => {
         const icon = getNoteIcon(buildArgs({ type: "file", mime: "application/pdf" }));
         expect(icon).toBe("bx bxs-file-pdf");
+    });
+
+    it("marks a GPX track as the journey it holds rather than as a file", () => {
+        const icon = getNoteIcon(buildArgs({ type: "file", mime: "application/gpx+xml" }));
+        expect(icon).toBe("bx bx-trip");
     });
 
     it("falls back to the file icon for a file note with an unmapped mime", () => {
@@ -171,6 +198,7 @@ describe("getMimeIcon", () => {
         expect(getMimeIcon("audio/mpeg")).toBe("bx bx-music");
         expect(getMimeIcon("image/gif")).toBe("bx bxs-file-gif");
         expect(getMimeIcon("image/png")).toBe("bx bx-image");
+        expect(getMimeIcon("application/gpx+xml")).toBe("bx bx-trip");
         expect(getMimeIcon("text/plain")).toBe("bx bx-file");
     });
 

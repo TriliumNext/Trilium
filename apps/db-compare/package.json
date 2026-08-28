@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "9.6.0",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   },
   "scripts": {
     "dev": "tsx src/compare.ts",

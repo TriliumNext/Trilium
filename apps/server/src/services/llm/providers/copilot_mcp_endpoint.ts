@@ -105,7 +105,7 @@ async function handleRequest(
         }
 
         // Stateless per-request server+transport, mirroring the public /mcp route.
-        const mcpServer = createMcpServer();
+        const mcpServer = await createMcpServer();
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined,
             enableDnsRebindingProtection: true,

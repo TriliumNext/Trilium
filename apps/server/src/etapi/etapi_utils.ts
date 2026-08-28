@@ -2,7 +2,7 @@ import type { NextFunction, Request, RequestHandler, Response, Router } from "ex
 import type { ParamsDictionary } from "express-serve-static-core";
 
 import { becca } from "@triliumnext/core";
-import { namespace } from "../cls_provider.js";
+import { bindEmitter } from "../cls_provider.js";
 import type { ApiRequestHandler, SyncRouteRequestHandler } from "../routes/route_api.js";
 import { cls } from "@triliumnext/core";
 import config from "../services/config.js";
@@ -54,8 +54,8 @@ function checkEtapiAuth(req: Request, res: Response, next: NextFunction) {
 
 function processRequest<P extends ParamsDictionary>(req: Request<P>, res: Response, routeHandler: ApiRequestHandler<P>, next: NextFunction, method: string, path: string) {
     try {
-        namespace.bindEmitter(req);
-        namespace.bindEmitter(res);
+        bindEmitter(req);
+        bindEmitter(res);
 
         cls.init(() => {
             cls.set("componentId", "etapi");

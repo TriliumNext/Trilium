@@ -1,4 +1,6 @@
-import FNote from "../../../entities/fnote";
+import { AttributeRow } from "@triliumnext/commons";
+
+import FNote, { type NoteType } from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
@@ -8,8 +10,8 @@ import { GPX_MIME } from "./GpxTrack";
 import type { GeoMouseEvent } from "./map";
 import { LOCATION_ATTRIBUTE } from "./Markers";
 
-/** The icon a note created on the map is given, and so what the ghost pin previews for one. */
-export const CHILD_NOTE_ICON = "bx bx-pin";
+/** The type a note put on the map is created as, and so what a template handed to it must match. */
+export const MARKER_NOTE_TYPE: NoteType = "text";
 
 export async function moveMarker(noteId: string, latLng: { lat: number; lng: number } | null) {
     const value = latLng ? [latLng.lat, latLng.lng].join(",") : "";
@@ -57,14 +59,6 @@ export async function removeFromMap(note: FNote, mapNote: FNote) {
 }
 
 /**
- * Creates a note where the click landed, and hands it back for the pane to open on.
- *
- * No title is asked for first. A modal between the click and the note was the wrong way round: it
- * blocked the map to ask for the one thing the detail pane is made for editing. The note is created
- * under the stock name instead, and the caller opens the pane on it with that name selected — naming
- * the place is typing over it (see index.tsx).
- */
-/**
  * Brings a GPX file onto the map as a child note, and hands the note back.
  *
  * Created directly rather than sent through the import pipeline: an import's success is announced
@@ -79,7 +73,9 @@ export async function removeFromMap(note: FNote, mapNote: FNote) {
  */
 export async function importGpxTrack(parentNote: FNote, file: File) {
     const { note } = await note_create.createNote(parentNote.noteId, {
-        title: file.name,
+        // Without its extension, as an imported file is titled (see getNoteTitle in core). The whole
+        // name is kept on the label below.
+        title: file.name.replace(/\.gpx$/i, ""),
         content: await file.text(),
         type: "file",
         mime: "application/gpx+xml",
@@ -93,17 +89,79 @@ export async function importGpxTrack(parentNote: FNote, file: File) {
     return note;
 }
 
+/**
+ * Creates a note where the click landed, and hands it back for the pane to open on.
+ *
+ * No title is asked for first. A modal between the click and the note was the wrong way round: it
+ * blocked the map to ask for the one thing the detail pane is made for editing. The note is created
+ * unnamed instead, and the caller opens the pane on it with the name it was given selected —
+ * naming the place is typing over it (see index.tsx).
+ */
 export async function createNewNote(parentNote: FNote, e: GeoMouseEvent) {
+    return createNoteAt(parentNote, [ e.latlng.lat, e.latlng.lng ]);
+}
+
+/**
+ * Turns a place into a note of the map's own, named as the place is named.
+ *
+ * Unlike a note dropped by clicking the map, this one usually arrives with a name worth keeping, so
+ * the detail pane opens on it as it stands rather than with the title picked out to be typed over
+ * (see `isNew` in DetailPane).
+ *
+ * A place named only by where it stands is the exception: a point read out of the search bar is
+ * called by its own coordinates, which is no title for a note. It takes the name a placed marker
+ * takes instead, and the pane opens on it the same way (see `keepPlaceAsMarker` in index).
+ */
+export async function createNoteForPlace(parentNote: FNote, place: PlaceToKeep) {
+    const title = place.unnamed ? undefined : place.name;
+
+    return createNoteAt(parentNote, [ place.lat, place.lng ], title, place.icon);
+}
+
+/** What keeping a place as a marker needs of it: where it stands, what to call it there, and what
+ *  kind of place it is. */
+interface PlaceToKeep {
+    name: string;
+    lat: number;
+    lng: number;
+    unnamed?: boolean;
+    /**
+     * The boxicons class the place is drawn under, as `GeoSearchResult.icon` gives it. Absent where
+     * neither the geocoder nor the tile says what kind of place it is.
+     */
+    icon?: string;
+}
+
+/**
+ * Creates a located note under the map.
+ *
+ * A note with no name of its own is created without one rather than under a name of the map's
+ * choosing, which is what leaves the naming to the server: an unnamed note takes the name every
+ * new note takes — the one the tree's + button gives — and a map labelled `#titleTemplate` names
+ * its markers by that instead.
+ *
+ * `icon` is what the place is already drawn under — a cart for a supermarket, a flag for a country
+ * (see placeIcon in osm_icons) — so the marker keeps the icon the panel offered it under. A note
+ * dropped by clicking the map has no such place behind it and is given no icon at all:
+ * `getNoteIcon` draws a note carrying a location as a pin, which leaves an icon the map hands down
+ * through `#child:iconClass` or a template to apply instead.
+ */
+async function createNoteAt(
+    parentNote: FNote, [ lat, lng ]: [number, number], title?: string, icon?: string) {
+    const noteAttributes: Omit<AttributeRow, "noteId" | "attributeId">[] = [
+        { type: "label", name: LOCATION_ATTRIBUTE, value: [ lat, lng ].join(",") }
+    ];
+    if (icon) {
+        noteAttributes.push({ type: "label", name: "iconClass", value: icon });
+    }
+
     const { note } = await note_create.createNote(parentNote.noteId, {
-        title: t("relation_map.default_new_note_title"),
+        title,
         content: "",
-        type: "text",
+        type: MARKER_NOTE_TYPE,
         activate: false,
         isProtected: parentNote.isProtected,
-        attributes: [
-            { type: "label", name: LOCATION_ATTRIBUTE, value: [e.latlng.lat, e.latlng.lng].join(",") },
-            { type: "label", name: "iconClass", value: CHILD_NOTE_ICON }
-        ]
+        attributes: noteAttributes
     });
 
     return note;

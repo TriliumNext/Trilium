@@ -3,7 +3,7 @@
  * Supports path parameters (e.g., /api/notes/:noteId) and query strings.
  */
 
-import { getContext, routes } from "@triliumnext/core";
+import { routes } from "@triliumnext/core";
 
 export interface UploadedFile {
     originalname: string;
@@ -226,7 +226,10 @@ export class BrowserRouter {
             };
 
             try {
-                const result = await getContext().init(async () => await route.handler(request));
+                // No execution context is opened here: every route registered by
+                // `browser_routes.ts` opens its own inside `dbLock`, which is what keeps one
+                // asynchronous scope live at a time. One opened here would sit outside that lock.
+                const result = await route.handler(request);
                 return this.formatResult(result);
             } catch (error) {
                 return this.formatError(error, `Error handling ${method} ${path}`);

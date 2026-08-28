@@ -1986,8 +1986,7 @@
   },
   "server": {
     "unknown_http_error_title": "Błąd komunikacji z serwerem",
-    "unknown_http_error_content": "Kod statusu: {{statusCode}}\nURL: {{method}} {{url}}\nWiadomość: {{message}}",
-    "traefik_blocks_requests": "Jeśli używasz odwrotnego proxy Traefik, wprowadziło ono zmianę łamiącą kompatybilność, która wpływa na komunikację z serwerem."
+    "unknown_http_error_content": "Kod statusu: {{statusCode}}\nURL: {{method}} {{url}}\nWiadomość: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Wróć do poprzedniej notatki",

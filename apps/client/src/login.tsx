@@ -145,7 +145,6 @@ function initialSsoError(config: typeof window.glob.login): string | null {
     return null;
 }
 
-// Skip the bootstrap render under test, where the components are imported directly.
-if (import.meta.env.MODE !== "test") {
-    void main();
-}
+// index.ts holds the splash up until the page has rendered. The render under test imports
+// the components directly, so it skips this one.
+export const ready = import.meta.env.MODE !== "test" ? main() : Promise.resolve();

@@ -588,7 +588,8 @@ export default class FNote {
             mime: this.mime,
             iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
             workspaceIconClass,
-            isFolder: this.isFolder.bind(this)
+            isFolder: this.isFolder.bind(this),
+            getLabelValue: this.getLabelValue.bind(this)
         });
         return `tn-icon ${icon}`;
     }
@@ -857,6 +858,79 @@ export default class FNote {
         const relations = [...this.getRelations("template"), ...this.getRelations("inherit")];
 
         return relations.map((rel) => this.froca.notes[rel.value]);
+    }
+
+    /**
+     * The value a note created under this one would be given for the attribute without asking for
+     * it, or `null` where it would be given none: a `child:`-prefixed attribute copied onto every
+     * new child, an inheritable attribute handed down the tree, or one lent by a template the child
+     * is given. Checked in that order, which is the order `getAttributes()` lists them in on the
+     * child itself.
+     *
+     * Mirrors `copyChildAttributes()` in trilium-core, which is where the copying happens. Two
+     * uses: previewing a note that does not exist yet (see GhostPin in the geo map), and telling a
+     * default apart from a value the user chose — what a note would be given anyway is not worth
+     * writing onto it, and writing it defeats the setting that would have given it.
+     *
+     * `childType` is the type the caller is about to create. A `~child:template` of another type is
+     * skipped by core when the type was chosen explicitly (#3015) and lends such a child nothing;
+     * left out, the template is taken to apply. The title is not answered for: `#titleTemplate` is
+     * evaluated by the server against values the client does not hold.
+     */
+    getAttributeValueForNewChild(type: AttributeType, name: string, childType?: NoteType) {
+        const copied = this.getAttributeValue(type, `child:${name}`);
+        if (copied !== null) {
+            return copied;
+        }
+
+        const inherited = this.getAttributes(type, name).find((attr) => attr.isInheritable);
+        if (inherited) {
+            return inherited.value;
+        }
+
+        for (const template of this.__getTemplatesForNewChild(childType)) {
+            const value = template.getAttributeValue(type, name);
+            if (value !== null) {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param name - label name
+     * @returns the label value a note created under this one would be given, or null
+     */
+    getLabelValueForNewChild(name: string, childType?: NoteType) {
+        return this.getAttributeValueForNewChild(LABEL, name, childType);
+    }
+
+    /**
+     * The templates a note created under this one would be given: the target of a `~child:template`
+     * copied onto it, and the targets of the inheritable `~template` / `~inherit` it inherits.
+     *
+     * @private
+     */
+    __getTemplatesForNewChild(childType?: NoteType) {
+        const templates: FNote[] = [];
+
+        for (const attr of this.getAttributes(RELATION)) {
+            const isCopied = attr.name === "child:template";
+            const isHandedDown = attr.isInheritable && ["template", "inherit"].includes(attr.name);
+            if (!isCopied && !isHandedDown) {
+                continue;
+            }
+
+            const template = this.froca.notes[attr.value];
+            if (!template || (isCopied && childType && template.type !== childType)) {
+                continue;
+            }
+
+            templates.push(template);
+        }
+
+        return templates;
     }
 
     getPromotedDefinitionAttributes() {

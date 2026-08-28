@@ -8,7 +8,7 @@
 # stage. They link libstdc++, which node:*-alpine already provides at runtime.
 FROM node:24.19.0-alpine3.23
 # Install runtime dependencies
-RUN apk add --no-cache su-exec shadow
+RUN apk add --no-cache su-exec shadow curl
 
 WORKDIR /usr/src/app
 COPY ./dist /usr/src/app
@@ -17,7 +17,10 @@ COPY ./start-docker.sh /usr/src/app
 # Add application user
 RUN adduser -s /bin/false node; exit 0
 
+# The healthcheck reads the listening address the server records here.
+ENV TRILIUM_DATA_DIR=/home/node/trilium-data
+
 # Configure container
 EXPOSE 8080
 CMD [ "sh", "./start-docker.sh" ]
-HEALTHCHECK --start-period=10s CMD exec su-exec node node /usr/src/app/docker_healthcheck.cjs
+HEALTHCHECK --interval=60s --timeout=5s --start-period=30s CMD exec su-exec node sh /usr/src/app/docker_healthcheck.sh

@@ -13,7 +13,10 @@ async function main() {
     // (it never references import.meta.url). Build it first so the main bundle,
     // built after, leaves the final meta.json.
     await build.buildBackend([ "src/preload.ts" ], { importMetaUrlShim: false });
-    await build.buildBackend([ "src/main.ts" ]);
+    // ESM so dynamic-import boundaries split into chunks/ that only load on
+    // first use; the preload above must stay CJS (sandboxed renderer) and the
+    // image worker below is spawned by its .cjs path.
+    await build.buildBackend([ "src/main.ts" ], { format: "esm" });
     // The image compression worker, which lives in the server it embeds. Built here too so the
     // desktop app can compress off-thread rather than falling back to doing it in the main process.
     await build.buildBackend([ "../server/src/services/image_worker.ts" ]);
@@ -44,7 +47,7 @@ function generatePackageJson() {
     const { version, author, license, description, dependencies, devDependencies } = originalPackageJson;
     const packageJson = {
         name: "trilium",
-        main: "main.cjs",
+        main: "main.mjs",
         version, author, license, description,
         dependencies: {
             "better-sqlite3": dependencies["better-sqlite3"],

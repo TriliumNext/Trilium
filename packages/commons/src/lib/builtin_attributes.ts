@@ -303,7 +303,8 @@ const BUILTIN_ATTRIBUTES = [
     // Reveal.js' own stock themes, which is what the presentation bundles; anything else falls back
     // to `white`.
     { type: "label", name: "presentation:theme", valueType: "select", hasUserValue: true, selectOptions: [
-        "black", "white", "beige", "serif", "simple", "solarized", "moon", "dracula", "sky", "blood"
+        "black", "black-contrast", "white", "white-contrast", "beige", "serif", "simple",
+        "solarized", "moon", "dracula", "sky", "blood", "league", "night"
     ] },
     { type: "label", name: "slide:background", valueType: "text", hasUserValue: true },
 

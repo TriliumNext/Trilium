@@ -804,7 +804,8 @@
     "share_html": "해당 노트의 <code>#shareHtmlLocation</code> 설정에 따라 공유 페이지에 삽입할 HTML 노트입니다. 이 노트는 공유된 하위 트리 안에 있어야 합니다.",
     "map_dark_style": "<code>map:style</code> 에 지정된 사용자 지정 스타일이 어두운 스타일임을 지리 지도에 알려, 그 위에 표시되는 마커 제목을 밝게 그리도록 합니다. 컬렉션 속성에서 제공하는 스타일은 자체적으로 이를 나타내므로 이러한 레이블이 필요하지 않습니다.",
     "map_cluster": "서로 가까이 표시되는 마커를 하나의 숫자 원으로 묶으며, 클릭하면 펼쳐집니다.",
-    "ai_quick_action": "이 노트를 텍스트 편집기의 AI 어시스턴트 메뉴에 지시문으로 제공합니다. 제목은 작업 이름이 되고, 내용은 프롬프트가 됩니다."
+    "ai_quick_action": "이 노트를 텍스트 편집기의 AI 어시스턴트 메뉴에 지시문으로 제공합니다. 제목은 작업 이름이 되고, 내용은 프롬프트가 됩니다.",
+    "template_new_note_default_parent": "템플릿 노트에 설정합니다. 템플릿에서 생성된 노트(예: @ 자동 완성 사용)는 다른 위치를 명시적으로 선택하지 않는 한 대상 노트 아래에 배치됩니다."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
@@ -2818,7 +2819,21 @@
     "marker-color": "마커 색상",
     "copy-coordinates": "좌표 복사",
     "expand-details": "노트를 맵에 맞게 확장",
-    "restore-details": "노트를 맵 옆으로 되돌리기"
+    "restore-details": "노트를 맵 옆으로 되돌리기",
+    "search": "검색",
+    "search-placeholder": "장소 검색",
+    "search-online": "온라인에서 \"{{- query}}\" 검색",
+    "searching-online": "온라인 검색 중…",
+    "no-places-found": "장소를 찾을 수 없습니다",
+    "search-failed": "장소를 검색할 수 없습니다",
+    "results-nearby": "주변 지역",
+    "results-far": "멀리 떨어진 지역",
+    "add-place-as-marker": "마커로 추가",
+    "previous-result": "이전 결과",
+    "next-result": "다음 결과",
+    "result-position": "총 {{total}}개 중 {{index}}번째 결과, 클릭하여 해당 결과로 돌아가기",
+    "results-on-map": "이 지도에서",
+    "go-to-coordinates": "{{- coordinates}}(으)로 이동"
   },
   "geo-map-context": {
     "open-location": "위치 열기",
@@ -3030,7 +3045,13 @@
     "compress_result_none": "압축할 이미지가 없습니다.",
     "compress_result_stopped": "이미지 {{total}}개 중 {{done}}개를 처리한 후 중지했으며, 크기를 {{before}}에서 {{after}}로 줄였습니다.",
     "compress_result_stopped_no_gain": "이미지 {{total}}개 중 {{done}}개를 처리한 후 중지했으며, 어느 이미지도 크기를 더 줄일 수 없었습니다.",
-    "compress_result_stopped_none": "이미지를 처리하기 전에 중지했습니다."
+    "compress_result_stopped_none": "이미지를 처리하기 전에 중지했습니다.",
+    "status_notes": "노트",
+    "status_total": "합계",
+    "status_attachments": "첨부 파일",
+    "status_deleted_items": "삭제된 항목",
+    "selection_hint": "항목을 탭하여 세부 정보 보기",
+    "show_selection_details": "선택 항목 세부 정보 표시"
   },
   "note_language": {
     "not_set": "설정된 언어 없음",
@@ -3129,7 +3150,8 @@
     "vector_dark": "벡터(어둡게)",
     "show-scale": "축척 표시",
     "show-labels": "마커 이름 표시",
-    "cluster-markers": "가까운 마커 그룹화"
+    "cluster-markers": "가까운 마커 그룹화",
+    "presentation-theme": "테마"
   },
   "table_context_menu": {
     "delete_row": "행 삭제"
@@ -3281,7 +3303,8 @@
   "server": {
     "unknown_http_error_title": "서버와의 통신 오류",
     "unknown_http_error_content": "상태 코드: {{statusCode}}\nURL: {{method}} {{url}}\n메시지: {{message}}",
-    "traefik_blocks_requests": "Traefik 리버스 프록시를 사용 중이라면, 서버와의 통신에 영향을 주는 결정적인 변경이 발생했습니다."
+    "reverse_proxy_blocked_title": "리버스 프록시에 의해 차단된 요청",
+    "reverse_proxy_blocked_message": "일부 요청이 Trilium에 도달하기 전에 거부되었습니다(HTTP 400). URL의 퍼센트 인코딩된 문자를 차단하는 리버스 프록시가 원인일 가능성이 높습니다.\n\nTraefik 3.6.4~3.6.6 버전에서는 기본적으로 이러한 동작이 발생합니다. Traefik 3.6.7 이상으로 업그레이드하거나 설정에서 인코딩된 문자를 허용하세요."
   },
   "tab_history_navigation_buttons": {
     "go-back": "이전 노트로 돌아가기",
@@ -3349,7 +3372,8 @@
     "tab_width_style_tabs": "탭"
   },
   "attributes_panel": {
-    "title": "노트 속성"
+    "title": "노트 속성",
+    "edit_in_sidebar": "사이드바에서 편집"
   },
   "right_pane": {
     "empty_message": "이 노트에 표시할 내용이 없습니다",
@@ -3840,9 +3864,7 @@
     "note_paths_what": "하나의 노트가 노트 트리의 여러 위치에 동시에 있을 수 있으며, 각각의 위치가 여기에 경로로 표시됩니다.",
     "note_paths_cloning": "새 위치를 추가하는 것을 복제라고 합니다. 실제로 내용이 복사되는 것은 아니므로, 한 경로에서 수정한 내용은 모든 경로에 동일하게 반영됩니다. 또한 경로 하나를 제거해도 노트는 다른 경로에 그대로 남아 있습니다.",
     "backlinks_what": "본문 링크 또는 이 노트를 대상으로 하는 관계를 통해, 이 노트를 참조하는 노트들입니다.",
-    "backlinks_listing": "텍스트 링크는 주변 문맥과 함께 표시되고, 관계는 이 노트를 참조할 때 사용한 이름과 함께 표시됩니다. 이 화면에서는 편집할 수 없으며, 링크를 만든 노트에서 해당 링크를 삭제하면 여기에서도 사라집니다.",
-    "similar_notes_what": "서로 직접 연결되어 있지는 않지만, 이 노트와 관련 있어 보이는 노트들입니다.",
-    "similar_notes_how": "노트의 내용과 속성·관계, 그리고 생성된 시점의 근접성을 바탕으로 유사도를 판단합니다."
+    "backlinks_listing": "텍스트 링크는 주변 문맥과 함께 표시되고, 관계는 이 노트를 참조할 때 사용한 이름과 함께 표시됩니다. 이 화면에서는 편집할 수 없으며, 링크를 만든 노트에서 해당 링크를 삭제하면 여기에서도 사라집니다."
   },
   "compress-images": "이미지 압축",
   "compress-image": "이미지 압축",

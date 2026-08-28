@@ -1,6 +1,8 @@
 import type { RendererStartupMetric } from "@triliumnext/commons";
+import dataDir from "@triliumnext/server/src/services/data_dir.js";
 import { ipcMain } from "electron";
 import fs from "fs";
+import path from "path";
 
 /**
  * Startup timing instrumentation for the desktop app.
@@ -11,15 +13,19 @@ import fs from "fs";
  * Trilium controls. Falls back to the load time of this module in the rare
  * case the OS does not report a creation time.
  *
- * The metrics are written to {@link STARTUP_METRICS_FILE} (rewritten on every
- * mark, so the file always holds the complete picture of the current launch)
- * to keep them out of the regular log stream.
+ * The marks are always kept in memory, but they are only written to
+ * {@link STARTUP_METRICS_FILE} when {@link metricsFileEnabled} — `pnpm
+ * desktop:start` sets `TRILIUM_ENV=dev`, and `TRILIUM_STARTUP_METRICS=1` turns
+ * the file on for a packaged build. The file is rewritten on every mark, so it
+ * always holds the complete picture of the current launch.
  *
  * Only the first occurrence of each metric is recorded: window reloads, extra
  * windows, and repeated phase marks do not overwrite the startup measurement.
  */
 
-const STARTUP_METRICS_FILE = "startup-metrics.log";
+const STARTUP_METRICS_FILE = path.join(dataDir.LOG_DIR, "startup-metrics.log");
+
+const metricsFileEnabled = process.env.TRILIUM_ENV === "dev" || !!process.env.TRILIUM_STARTUP_METRICS;
 
 const baselineEpochMs: number = process.getCreationTime?.() ?? Date.now();
 
@@ -36,6 +42,10 @@ export function markStartupMetric(name: string) {
 
     recordedMetrics.set(name, Math.round(Date.now() - baselineEpochMs));
 
+    if (!metricsFileEnabled) {
+        return;
+    }
+
     // One line per metric: the duration of the phase (delta to the previous
     // metric), with the cumulative time since process creation in parentheses.
     let previousElapsedMs = 0;
@@ -45,6 +55,8 @@ export function markStartupMetric(name: string) {
         return line;
     });
     try {
+        // The first mark runs before ServerLogService has opened the log directory.
+        fs.mkdirSync(dataDir.LOG_DIR, { recursive: true, mode: 0o700 });
         fs.writeFileSync(STARTUP_METRICS_FILE, `${lines.join("\n")}\n`);
     } catch (e) {
         // Instrumentation must never break startup; the metric stays available

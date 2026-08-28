@@ -1928,8 +1928,7 @@
   },
   "server": {
     "unknown_http_error_title": "Erro na comunicação com servidor",
-    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMessagem: {{message}}",
-    "traefik_blocks_requests": "Se está a usar o Traefik, este introduz uma alteração que afecta a comunicação com o servidor."
+    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMessagem: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Ir para a nota anterior",

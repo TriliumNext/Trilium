@@ -1,0 +1,27 @@
+/* The name of a place under the pointer (see Pois). MapLibre puts its popups inside the map's own
+   container, so these are scoped as everything else over the map is; the box is MapLibre's, dressed
+   in the same tokens the app's own tooltips wear, with what the older themes can be asked for. */
+.geo-map-container .place-tooltip .maplibregl-popup-content {
+    padding: var(--tooltip-padding, 4px 9px);
+    border-radius: var(--tooltip-border-radius, 5px);
+    background: var(--tooltip-background-color);
+    backdrop-filter: var(--tooltip-backdrop-filter);
+    box-shadow: var(--tooltip-box-shadow, 2px 2px 8px rgba(0, 0, 0, 0.2));
+    color: var(--tooltip-foreground-color, var(--main-text-color));
+    font-family: var(--main-font-family);
+    font-size: var(--tooltip-font-size, 0.9rem);
+    /* A name is read, not reached: left under the pointer it would take the place's own click. */
+    pointer-events: none;
+}
+
+/* Drawn in a hard white by MapLibre, which is not the colour of the box above it on every theme. */
+.geo-map-container .place-tooltip .maplibregl-popup-tip {
+    display: none;
+}
+
+.geo-map-container .place-tooltip .place-tooltip-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}

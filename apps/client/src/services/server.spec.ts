@@ -226,25 +226,25 @@ describe("ajax error handling", () => {
         expect(toastMock.showError).toHaveBeenCalledWith("Bad input");
     });
 
-    it("shows a traefik-blocked toast for encoded-character 400s", async () => {
+    it("shows a reverse-proxy-blocked toast for encoded-character 400s", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
             // string response (not an object) -> falls through to the else branch
             opts.error({ status: 400, responseText: "plain error" });
         };
         await expect(server.get("notes/foo%23bar")).rejects.toBeDefined();
         expect(toastMock.showPersistent).toHaveBeenCalledWith(
-            expect.objectContaining({ id: "trafik-blocked" })
+            expect.objectContaining({ id: "reverse-proxy-blocked" })
         );
         expect((window as any).logError).toHaveBeenCalled();
     });
 
-    it("shows a traefik-blocked toast for %2F-encoded 400s", async () => {
+    it("shows a reverse-proxy-blocked toast for %2F-encoded 400s", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
             opts.error({ status: 400, responseText: "plain error" });
         };
         await expect(server.get("notes/foo%2Fbar")).rejects.toBeDefined();
         expect(toastMock.showPersistent).toHaveBeenCalledWith(
-            expect.objectContaining({ id: "trafik-blocked" })
+            expect.objectContaining({ id: "reverse-proxy-blocked" })
         );
     });
 

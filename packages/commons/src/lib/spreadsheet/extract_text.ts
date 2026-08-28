@@ -10,6 +10,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { normalizeDataStream } from "./workbook_model.js";
+
 /** Read a property by trying the camelCase name first, then the lowercased form. */
 function prop(obj: any, camel: string): any {
     if (obj == null) return undefined;
@@ -71,9 +73,15 @@ function extractSheetText(sheet: any, parts: string[]): void {
             if (prop(columnData[col], "hd")) continue;
 
             const cell = cols[col];
-            if (cell?.v == null) continue;
+            if (!cell) continue;
 
-            if (typeof cell.v === "boolean") {
+            if (cell.v == null || cell.v === "") {
+                // A rich-text cell (a link, mixed formatting) can carry its text only in `p`.
+                const text = cellDocumentText(cell).trim();
+                if (text) {
+                    parts.push(text);
+                }
+            } else if (typeof cell.v === "boolean") {
                 parts.push(cell.v ? "TRUE" : "FALSE");
             } else {
                 const text = String(cell.v).trim();
@@ -83,4 +91,10 @@ function extractSheetText(sheet: any, parts: string[]): void {
             }
         }
     }
+}
+
+/** Reads a rich-text cell's document text, tolerating the lowercased keys `prop` handles. */
+function cellDocumentText(cell: any): string {
+    const body = prop(prop(cell, "p"), "body");
+    return normalizeDataStream(prop(body, "dataStream"));
 }

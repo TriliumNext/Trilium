@@ -837,3 +837,75 @@ function workbookWithSheetNames(names: string[]): string {
     });
     return JSON.stringify({ version: 1, workbook: { sheetOrder, styles: {}, sheets } });
 }
+
+describe("rich-text cells", () => {
+    /** Wrap a document with one link range covering `endIndex` characters from the start. */
+    function linkedCell(url: unknown, dataStream = "Pen\r\n", endIndex = 2, extra: Record<string, unknown> = {}) {
+        return singleCellWorkbook(
+            {
+                ...extra,
+                p: { body: { dataStream, customRanges: [{ startIndex: 0, endIndex, properties: { url } }] } }
+            },
+            {},
+            { s1: { ff: "Georgia", bl: 1, cl: { rgb: "#FF0000" } } }
+        );
+    }
+
+    it("writes the text of a cell that has no plain value", async () => {
+        const wb = await roundTrip(singleCellWorkbook({ p: { body: { dataStream: "Pen\r\n" } } }));
+        expect(wb.worksheets[0].getCell("A1").value).toBe("Pen");
+    });
+
+    it("writes an Excel hyperlink, whether or not the cell also has a plain value", async () => {
+        for (const extra of [{}, { v: "Pen", t: 1 }]) {
+            const wb = await roundTrip(linkedCell("https://example.com/pen", "Pen\r\n", 2, extra));
+            const cell = wb.worksheets[0].getCell("A1");
+            expect(cell.value).toEqual({ text: "Pen", hyperlink: "https://example.com/pen" });
+            expect(cell.hyperlink).toBe("https://example.com/pen");
+        }
+    });
+
+    it("gives a linked cell the built-in Hyperlink font, keeping the rest of its own style", async () => {
+        const plain = await roundTrip(linkedCell("https://example.com"));
+        expect(plain.worksheets[0].getCell("A1").font).toEqual({ color: { argb: "FF0563C1" }, underline: true });
+
+        const styled = await roundTrip(linkedCell("https://example.com", "Pen\r\n", 2, { s: "s1" }));
+        expect(styled.worksheets[0].getCell("A1").font).toEqual({
+            name: "Georgia",
+            bold: true,
+            color: { argb: "FF0563C1" },
+            underline: true
+        });
+    });
+
+    it("links the whole cell to the first target when the document has several", async () => {
+        const wb = await roundTrip(singleCellWorkbook({
+            p: {
+                body: {
+                    dataStream: "see supplier now\r\n",
+                    customRanges: [
+                        { startIndex: 4, endIndex: 11, properties: { url: "https://example.com/first" } },
+                        { startIndex: 13, endIndex: 15, properties: { url: "https://example.com/second" } }
+                    ]
+                }
+            }
+        }));
+
+        expect(wb.worksheets[0].getCell("A1").value).toEqual({
+            text: "see supplier now",
+            hyperlink: "https://example.com/first"
+        });
+    });
+
+    it("drops an unsafe target, keeping the text", async () => {
+        const wb = await roundTrip(linkedCell("javascript:alert(1)"));
+        const cell = wb.worksheets[0].getCell("A1");
+        expect(cell.value).toBe("Pen");
+        expect(cell.hyperlink).toBeUndefined();
+    });
+
+    it("keeps a linked numeric cell as a number so its format and formulas survive", async () => {
+        const wb = await roundTrip(linkedCell("https://example.com", "1000\r\n", 3, { v: 1000, t: 2 }));
+        expect(wb.worksheets[0].getCell("A1").value).toBe(1000);
+    });
+});

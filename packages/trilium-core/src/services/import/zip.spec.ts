@@ -874,6 +874,138 @@ describe("processNoteContent", () => {
     });
 }, 60_000);
 
+describe("link scanning on import", () => {
+    it("gives an imported Markdown note the link relations its content carries", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "mdLinkHost01",
+                title: "Host",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dataFileName: "Host.html",
+                dirFileName: "Host",
+                attributes: [],
+                attachments: [],
+                children: [
+                    {
+                        noteId: "mdLinkGuide1",
+                        title: "Guide",
+                        type: "code",
+                        mime: "text/x-markdown",
+                        dataFileName: "Guide.md",
+                        attributes: [],
+                        attachments: []
+                    },
+                    {
+                        noteId: "mdLinkTarget",
+                        title: "Target",
+                        type: "text",
+                        mime: "text/html",
+                        format: "html",
+                        dataFileName: "Target.html",
+                        attributes: [],
+                        attachments: []
+                    },
+                    {
+                        noteId: "mdLinkPictur",
+                        title: "Picture.png",
+                        type: "image",
+                        mime: "image/png",
+                        dataFileName: "Picture.png",
+                        attributes: [],
+                        attachments: []
+                    }
+                ]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Host.html": "<p>host</p>",
+            "Host/Guide.md": "See [Target](Target.html) and ![pic](Picture.png).",
+            "Host/Target.html": "<p>target</p>",
+            "Host/Picture.png": Buffer.from("fake image data")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-md-links");
+        const childByTitle = (title: string) => importedNote.getChildNotes().find((child) => child.title === title);
+        const guide = childByTitle("Guide");
+        const targets = (name: string) =>
+            (guide?.getRelations() ?? []).filter((rel) => rel.name === name).map((rel) => rel.value);
+
+        // The importer rewrote both links to the ids it just handed out, so the relations point there.
+        expect(childByTitle("Target")?.noteId).not.toBe("mdLinkTarget");
+        expect(targets("internalLink")).toStrictEqual([childByTitle("Target")?.noteId]);
+        expect(targets("imageLink")).toStrictEqual([childByTitle("Picture.png")?.noteId]);
+    });
+
+    it("gives an imported chat the relations its wiki-links and tool calls name, when the ids survive the import", async () => {
+        // A chat references notes by id in its own JSON, which the importer does not remap, so the
+        // relations resolve only where the ids are kept — restoring into the instance they came from.
+        const chat = {
+            messages: [{
+                role: "assistant",
+                content: [
+                    { type: "text", content: "As covered in [[chatTarget001]]." },
+                    { type: "tool_call", toolCall: { input: { noteId: "chatTarget001" } } }
+                ]
+            }]
+        };
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "chatHost0001",
+                title: "Chat Host",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dataFileName: "Chat Host.html",
+                dirFileName: "Chat Host",
+                attributes: [],
+                attachments: [],
+                children: [
+                    {
+                        noteId: "chatNote0001",
+                        title: "Chat",
+                        type: "llmChat",
+                        mime: "application/json",
+                        dataFileName: "Chat.json",
+                        attributes: [],
+                        attachments: []
+                    },
+                    {
+                        noteId: "chatTarget001",
+                        title: "Chat Target",
+                        type: "text",
+                        mime: "text/html",
+                        format: "html",
+                        dataFileName: "Chat Target.html",
+                        attributes: [],
+                        attachments: []
+                    }
+                ]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Chat Host.html": "<p>host</p>",
+            "Chat Host/Chat.json": JSON.stringify(chat),
+            "Chat Host/Chat Target.html": "<p>target</p>"
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-chat-links", { textImportedAsText: true }, { preserveIds: true });
+        const chatNote = importedNote.getChildNotes().find((child) => child.title === "Chat");
+
+        expect((chatNote?.getRelations() ?? []).filter((rel) => rel.name === "internalLink").map((rel) => rel.value))
+            .toStrictEqual(["chatTarget001"]);
+    });
+});
+
 describe("attribute handling on import", () => {
     it("rewrites promoted-attribute definitions and drops unrecognized types", async () => {
         const metaFile = {

@@ -14,16 +14,24 @@ import { format as formatNumfmt, formatColor as formatNumfmtColor } from "numfmt
 
 import {
     BorderStyle,
+    type CellDocumentSegment,
+    type CellMatrix,
+    CellValueType,
     computeBounds,
+    getCellDocumentSegments,
+    getCellDocumentText,
     getFloatingDrawings,
     getVisibleSheets,
     HorizontalAlign,
+    type IBorderData,
     type IBorderStyleData,
     type ICellData,
+    type IColumnData,
     isFiniteNumber,
     type IRange,
     type ISheetDrawing,
     type IStyleData,
+    type ITextRotation,
     type IWorksheetData,
     parseWorkbookData,
     resolveCellStyle,
@@ -278,18 +286,26 @@ function renderSheet(sheet: IWorksheetData, styles: Record<string, IStyleData | 
         if (rowMeta?.hd) continue;
 
         const height = isFiniteNumber(rowMeta?.h) ? rowMeta.h : defaultHeight;
-        lines.push(`<tr style="height:${height}px">`);
+        // Univer leaves a cell at the bottom of its row unless it sets `vt`, while HTML centres it.
+        // The row carries that default because a `td` inherits `vertical-align`, so a cell that
+        // sets its own still wins.
+        lines.push(`<tr style="height:${height}px;vertical-align:bottom">`);
+
+        const neighbours: RowNeighbours = { row, minCol, maxCol, cellData, columnData, mergeMap };
 
         for (let col = minCol; col <= maxCol; col++) {
             if (columnData[col]?.hd) continue;
 
             const mergeInfo = mergeMap.get(cellKey(row, col));
-            if (mergeInfo === "hidden") continue;
+            if (mergeInfo?.kind === "member") continue;
 
             const cell = cellData[row]?.[col];
-            const cellStyle = resolveCellStyle(cell?.s, styles);
-            const cssText = buildCssText(cellStyle, cell);
-            const value = formatCellValue(cell, cellStyle) + (cell ? renderCellImages(cell) : "");
+            const cellStyle = mergeAwareStyle(resolveCellStyle(cell?.s, styles), mergeInfo, row, col, cellData, styles);
+            const declarations = [buildCssText(cellStyle, cell)];
+            if (clipsOverflow(cell, cellStyle, col, mergeInfo, neighbours)) declarations.push("overflow:hidden");
+            const cssText = declarations.filter(Boolean).join(";");
+            const value = rotate(formatCellValue(cell, cellStyle), cellStyle?.tr)
+                + (cell ? renderCellImages(cell) : "");
 
             const attrs: string[] = [];
             // Cells with a background fill carry `has-fill` so the stylesheet can suppress
@@ -337,12 +353,49 @@ function buildTableTag(sheet: IWorksheetData, totalWidth: number): string {
 
 // #region Merge handling
 
+/** The cell a merged range is rendered from, carrying the span it covers. */
 interface MergeOrigin {
+    kind: "origin";
     rowSpan: number;
     colSpan: number;
+    /** Last row and column of the range, clamped to the rendered bounds. */
+    endRow: number;
+    endColumn: number;
 }
 
-type MergeInfo = MergeOrigin | "hidden";
+/** A cell the range covers. It is not rendered; the anchor's content fills its place. */
+interface MergeMember {
+    kind: "member";
+    anchorRow: number;
+    anchorColumn: number;
+}
+
+/**
+ * Replaces a merged range's border with the one composed from the cells on its edges. Excel keeps
+ * a range's outline on the member cell each edge belongs to: the anchor holds the top and the
+ * left, the cell in the range's last column holds the right, and the one in its last row holds the
+ * bottom. Reading only the anchor drops the two far edges, so the range renders with no line
+ * between it and the range beside it. An unmerged cell is returned untouched.
+ */
+function mergeAwareStyle(
+    style: IStyleData | null,
+    merge: MergeOrigin | undefined,
+    row: number,
+    col: number,
+    cellData: CellMatrix,
+    styles: Record<string, IStyleData | null>
+): IStyleData | null {
+    if (!merge) return style;
+
+    const bd: IBorderData = {
+        ...style?.bd,
+        r: resolveCellStyle(cellData[row]?.[merge.endColumn]?.s, styles)?.bd?.r,
+        b: resolveCellStyle(cellData[merge.endRow]?.[col]?.s, styles)?.bd?.b
+    };
+    return { ...style, bd };
+}
+
+type MergeInfo = MergeOrigin | MergeMember;
 
 function cellKey(row: number, col: number): string {
     return `${row},${col}`;
@@ -358,14 +411,17 @@ function buildMergeMap(mergeData: IRange[], minRow: number, maxRow: number, minC
         const endCol = Math.min(range.endColumn, maxCol);
 
         map.set(cellKey(range.startRow, range.startColumn), {
+            kind: "origin",
             rowSpan: endRow - startRow + 1,
-            colSpan: endCol - startCol + 1
+            colSpan: endCol - startCol + 1,
+            endRow,
+            endColumn: endCol
         });
 
         for (let r = startRow; r <= endRow; r++) {
             for (let c = startCol; c <= endCol; c++) {
                 if (r === range.startRow && c === range.startColumn) continue;
-                map.set(cellKey(r, c), "hidden");
+                map.set(cellKey(r, c), { kind: "member", anchorRow: range.startRow, anchorColumn: range.startColumn });
             }
         }
     }
@@ -378,9 +434,15 @@ function buildMergeMap(mergeData: IRange[], minRow: number, maxRow: number, minC
 // #region Style resolution
 
 function buildCssText(style: IStyleData | null, cell?: ICellData): string {
-    if (!style) return "";
-
     const parts: string[] = [];
+
+    const ht = style?.ht ?? defaultHorizontalAlign(cell);
+    if (ht != null) {
+        const align = horizontalAlignToCss(ht);
+        if (align) parts.push(`text-align:${align}`);
+    }
+
+    if (!style) return parts.join(";");
 
     if (style.bl) parts.push("font-weight:bold");
     if (style.it) parts.push("font-style:italic");
@@ -404,10 +466,6 @@ function buildCssText(style: IStyleData | null, cell?: ICellData): string {
     const textColor = patternColor ?? style.cl?.rgb;
     if (textColor) parts.push(`color:${sanitizeCssColor(textColor)}`);
 
-    if (style.ht != null) {
-        const align = horizontalAlignToCss(style.ht);
-        if (align) parts.push(`text-align:${align}`);
-    }
     if (style.vt != null) {
         const valign = verticalAlignToCss(style.vt);
         if (valign) parts.push(`vertical-align:${valign}`);
@@ -428,6 +486,80 @@ function buildCssText(style: IStyleData | null, cell?: ICellData): string {
     }
 
     return parts.join(";");
+}
+
+/** One row's rendered layout, which is what decides whose value a cell's text would spill over. */
+interface RowNeighbours {
+    row: number;
+    minCol: number;
+    maxCol: number;
+    cellData: CellMatrix;
+    columnData: Record<number, IColumnData>;
+    mergeMap: Map<string, MergeInfo>;
+}
+
+/**
+ * Whether a cell has to clip its text at its own edge. A spreadsheet spills text into a
+ * neighbouring cell only while that neighbour is empty, and never spills a number or a boolean
+ * (the overflow check in `@univerjs/engine-render`). The stylesheets let every cell spill, so
+ * without this a long value is drawn over the value beside it. The spill direction follows the
+ * alignment, and a wrapped cell never spills to begin with.
+ */
+function clipsOverflow(
+    cell: ICellData | undefined,
+    style: IStyleData | null,
+    col: number,
+    merge: MergeOrigin | undefined,
+    neighbours: RowNeighbours
+): boolean {
+    if (!hasContent(cell) || style?.tb === WrapStrategy.WRAP) return false;
+    if (cell?.t === CellValueType.NUMBER || cell?.t === CellValueType.BOOLEAN) return true;
+
+    // Rightwards, a merged cell starts looking past the last column its own range covers.
+    const before = () => neighbourHasContent(col, -1, neighbours);
+    const after = () => neighbourHasContent(merge?.endColumn ?? col, 1, neighbours);
+    switch (style?.ht) {
+        case HorizontalAlign.RIGHT: return before();
+        case HorizontalAlign.CENTER: return before() || after();
+        default: return after();
+    }
+}
+
+/**
+ * Whether the cell rendered beside `from` shows anything. Adjacency follows the rendered row, not
+ * the cell matrix: hidden columns are stepped over because nothing of them reaches the page, and a
+ * column a merge covers reports that range's anchor, whose text is what fills the space there.
+ */
+function neighbourHasContent(from: number, step: -1 | 1, neighbours: RowNeighbours): boolean {
+    const { row, minCol, maxCol, cellData, columnData, mergeMap } = neighbours;
+
+    for (let col = from + step; col >= minCol && col <= maxCol; col += step) {
+        if (columnData[col]?.hd) continue;
+
+        const info = mergeMap.get(cellKey(row, col));
+        return hasContent(info?.kind === "member"
+            ? cellData[info.anchorRow]?.[info.anchorColumn]
+            : cellData[row]?.[col]);
+    }
+    return false;
+}
+
+/** Whether a cell shows anything. A cell carrying only a style is empty, as it is in the editor. */
+function hasContent(cell: ICellData | undefined): boolean {
+    if (!cell) return false;
+    if (cell.v != null && cell.v !== "") return true;
+    return getCellDocumentText(cell) !== "";
+}
+
+/**
+ * The alignment Univer falls back to for a cell that sets none: numbers to the right, booleans
+ * centered, everything else left (`_horizontalHandler` in `@univerjs/engine-render`). Returns
+ * `undefined` for the left case so no `text-align` is emitted and the table default stands.
+ */
+function defaultHorizontalAlign(cell: ICellData | undefined): HorizontalAlign | undefined {
+    if (cell?.t === CellValueType.NUMBER) return HorizontalAlign.RIGHT;
+    if (cell?.t === CellValueType.BOOLEAN) return HorizontalAlign.CENTER;
+    return undefined;
 }
 
 function horizontalAlignToCss(align: number): string | null {
@@ -520,7 +652,10 @@ function sanitizeCssColor(value: string): string {
 // #region Value formatting
 
 function formatCellValue(cell: ICellData | undefined, style: IStyleData | null): string {
-    if (!cell || cell.v == null) return "";
+    if (!cell) return "";
+
+    const rendered = formatCellDocument(cell);
+    if (rendered != null) return rendered;
 
     if (typeof cell.v === "boolean") {
         return cell.v ? "TRUE" : "FALSE";
@@ -539,6 +674,59 @@ function formatCellValue(cell: ICellData | undefined, style: IStyleData | null):
     }
 
     return escapeHtml(String(cell.v));
+}
+
+/**
+ * Wraps a cell's text in the element that carries its rotation. The wrapper keeps the rotation off
+ * the `td` itself, which would take the background and borders with it, and images anchored in the
+ * cell stay upright as they do in the editor.
+ */
+function rotate(html: string, rotation: ITextRotation | null | undefined): string {
+    if (!html) return html;
+
+    const css = rotationCss(rotation);
+    return css ? `<span style="${css}">${html}</span>` : html;
+}
+
+/**
+ * The CSS for Univer's text rotation. A quarter turn and stacked text become a vertical writing
+ * mode, which gives the text a real vertical box the row grows to fit; any other angle falls back
+ * to a transform, which turns the glyphs without reserving room for them. Excel measures the angle
+ * counter-clockwise and CSS turns clockwise, so the sign flips.
+ */
+function rotationCss(rotation: ITextRotation | null | undefined): string | null {
+    if (!rotation) return null;
+    // Stacked text: upright characters reading downwards.
+    if (rotation.v) return "display:inline-block;writing-mode:vertical-rl;text-orientation:upright";
+
+    const angle = isFiniteNumber(rotation.a) ? rotation.a : 0;
+    if (angle === 0) return null;
+    if (angle === 90) return "display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg)";
+    if (angle === -90) return "display:inline-block;writing-mode:vertical-rl";
+    return `display:inline-block;transform:rotate(${px(-angle)}deg)`;
+}
+
+/**
+ * Renders a cell from its rich-text document, or returns `null` when the plain value is the
+ * better source. The document wins when the cell has no plain value, which is how Univer stores
+ * some cells, and when it carries hyperlinks that the plain value cannot express. A formatted
+ * number keeps its own rendering, since the document holds a display string that can go stale.
+ */
+function formatCellDocument(cell: ICellData): string | null {
+    const segments = getCellDocumentSegments(cell);
+    const hasPlainValue = cell.v != null && cell.v !== "";
+    if (hasPlainValue && (isFiniteNumber(cell.v) || !segments.some((segment) => segment.url))) {
+        return null;
+    }
+
+    const parts: string[] = [];
+    for (const segment of segments) {
+        const text = escapeHtml(segment.text);
+        parts.push(segment.url
+            ? `<a href="${escapeHtml(segment.url)}" target="_blank" rel="noopener noreferrer">${text}</a>`
+            : text);
+    }
+    return parts.join("");
 }
 
 /**

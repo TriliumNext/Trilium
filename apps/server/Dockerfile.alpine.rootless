@@ -11,7 +11,7 @@ ENV UID=${UID}
 ENV GID=${GID}
 
 # Install runtime dependencies and create user with specific UID/GID
-RUN apk add --no-cache dumb-init && \
+RUN apk add --no-cache dumb-init curl && \
     apk add --no-cache bash && \
     # Alpine uses addgroup/adduser (from busybox) instead of groupadd/useradd
     addgroup -g ${GID} ${USER} && \
@@ -39,4 +39,4 @@ ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 # Use the entrypoint script
 CMD [ "bash", "./rootless-entrypoint.sh" ]
 
-HEALTHCHECK --start-period=10s CMD node /home/${USER}/app/docker_healthcheck.js
+HEALTHCHECK --interval=60s --timeout=5s --start-period=30s CMD sh /home/${USER}/app/docker_healthcheck.sh

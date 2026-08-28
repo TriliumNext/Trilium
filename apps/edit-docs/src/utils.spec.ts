@@ -36,6 +36,31 @@ describe("rewriteHelpLinks", () => {
         expect(result).toContain("#root/_hidden/_options/_optionsCodeNotes");
     });
 
+    it("reduces the note path the editor writes to the target ID alone", () => {
+        // What a link created in the editor looks like: a full path whose intermediate IDs exist
+        // only in the docs instance. An import rewrites the same link to `#root/<noteId>`, so
+        // without this the exported HTML alternated between the two forms.
+        const input = [
+            `<a class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/R9pX4DGra2Vt">Sharing</a>`,
+            `<a class="reference-link" href="#root/jdjRLhLV3TtI/YjerxU7Aii8X">Troubleshooting</a>`
+        ].join(" ");
+        const expected = [
+            `<a class="reference-link" href="#root/_help_R9pX4DGra2Vt">Sharing</a>`,
+            `<a class="reference-link" href="#root/_help_YjerxU7Aii8X">Troubleshooting</a>`
+        ].join(" ");
+        expect(rewriteHelpLinks(input)).toBe(expected);
+    });
+
+    it("reduces a path whose target is already prefixed, as a previously exported link is", () => {
+        const input = `<a href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_hrZ1D00cLbal">Internal links</a>`;
+        expect(rewriteHelpLinks(input)).toBe(`<a href="#root/_help_hrZ1D00cLbal">Internal links</a>`);
+    });
+
+    it("keeps a query suffix on the link it rewrites", () => {
+        const input = `<a href="#root/pOsGYCXsbNQG/R9pX4DGra2Vt?viewMode=source">Sharing</a>`;
+        expect(rewriteHelpLinks(input)).toBe(`<a href="#root/_help_R9pX4DGra2Vt?viewMode=source">Sharing</a>`);
+    });
+
     it("is idempotent for already-prefixed help links", () => {
         const input = `<a href="#root/_help_iPIMuisry3hd">Text</a>`;
         expect(rewriteHelpLinks(input)).toBe(input);

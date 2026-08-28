@@ -1,9 +1,14 @@
-import { type StyleSpecification } from "maplibre-gl";
-
 export type MapLayer = ({
     type: "vector";
-    style: string | (() => Promise<StyleSpecification>);
-    styleFallback: StyleSpecification;
+    /**
+     * Where the style is fetched from, for MapLibre to fetch itself.
+     *
+     * Named by URL rather than bundled: a style is an index of remote assets — it carries the tile,
+     * glyph and sprite URLs but none of their content — so a copy held here still needs the server
+     * that a URL would have been answered by, and only pins itself to the asset paths that server
+     * had on the day it was taken.
+     */
+    style: string;
 } | {
     type: "raster";
     url: string;
@@ -15,9 +20,6 @@ export type MapLayer = ({
     name: string;
     isDarkTheme?: boolean;
 };
-
-// Minimal empty style used as a placeholder while the real style loads asynchronously.
-const EMPTY_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] };
 
 /**
  * Where a raster server is assumed to stop when it has not said, which is where most of them do.
@@ -38,35 +40,40 @@ export const MAP_LAYERS: Record<string, MapLayer> = {
     "versatiles-colorful": {
         name: "VersaTiles Colorful",
         type: "vector",
-        style: async () => (await import("./styles/colorful/en.json")).default as unknown as StyleSpecification,
-        styleFallback: EMPTY_STYLE
+        style: versatilesStyle("colorful")
     },
     "versatiles-eclipse": {
         name: "VersaTiles Eclipse",
         type: "vector",
-        style: async () => (await import("./styles/eclipse/en.json")).default as unknown as StyleSpecification,
-        styleFallback: EMPTY_STYLE,
+        style: versatilesStyle("eclipse"),
         isDarkTheme: true
     },
     "versatiles-graybeard": {
         name: "VersaTiles Graybeard",
         type: "vector",
-        style: async () => (await import("./styles/graybeard/en.json")).default as unknown as StyleSpecification,
-        styleFallback: EMPTY_STYLE,
+        style: versatilesStyle("graybeard")
     },
     "versatiles-neutrino": {
         name: "VersaTiles Neutrino",
         type: "vector",
-        style: async () => (await import("./styles/neutrino/en.json")).default as unknown as StyleSpecification,
-        styleFallback: EMPTY_STYLE,
+        style: versatilesStyle("neutrino")
     },
     "versatiles-shadow": {
         name: "VersaTiles Shadow",
         type: "vector",
-        style: async () => (await import("./styles/shadow/en.json")).default as unknown as StyleSpecification,
-        styleFallback: EMPTY_STYLE,
+        style: versatilesStyle("shadow"),
         isDarkTheme: true
     }
 };
 
 export const DEFAULT_MAP_LAYER_NAME: keyof typeof MAP_LAYERS = "versatiles-colorful";
+
+/**
+ * One of the styles VersaTiles publishes, labelled in English.
+ *
+ * `en.json` is the variant that labels every place in English where it has an English name; the
+ * `style.json` beside it labels each in the language of the country it is drawn in.
+ */
+function versatilesStyle(name: string) {
+    return `https://tiles.versatiles.org/assets/styles/${name}/en.json`;
+}

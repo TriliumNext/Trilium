@@ -35,7 +35,10 @@ function mockWebsocket() {
         // consumers also import these as named exports (e.g. useNoteIds); leaving them out makes
         // the subscription effect throw, which silently skips every later effect of the component
         subscribeToMessages,
-        unsubscribeToMessage
+        unsubscribeToMessage,
+        // Code that reports a failure this way is usually in a catch block, so an undefined export
+        // here throws over the error being handled and loses whatever the component did about it.
+        logError(_message: string) {}
     };
 }
 

@@ -231,8 +231,8 @@ describe("renderToHtml", () => {
         it("renders a task list with checkbox inputs and labels", () => {
             const html = render("- [ ] a\n- [x] b");
             expect(html).toContain('<ul class="todo-list">');
-            expect(html).toContain('<input type="checkbox"disabled="disabled">');
-            expect(html).toContain('<input type="checkbox"checked="checked" disabled="disabled">');
+            expect(html).toContain('<input type="checkbox" disabled="disabled">');
+            expect(html).toContain('<input type="checkbox" checked="checked" disabled="disabled">');
             expect(html).toContain('<label class="todo-list__label">');
             expect(html).toContain('<span class="todo-list__label__description">a</span>');
             expect(html).toContain('<span class="todo-list__label__description">b</span>');
@@ -249,51 +249,95 @@ describe("renderToHtml", () => {
             expect(html).toBe("<ol><li>one</li><li>two</li></ol>");
         });
 
-        it("prepends the checkbox into the paragraph of a loose task item (text first token)", () => {
-            const html = render("- [ ] first\n\n- [x] second");
-            // Loose items wrap content in <p>; the checkbox is injected before the text.
-            expect(html).toContain(
-                '<span class="todo-list__label__description"><p><input type="checkbox"disabled="disabled">first</p></span>'
-            );
-            expect(html).toContain(
-                '<span class="todo-list__label__description"><p><input type="checkbox"checked="checked" disabled="disabled">second</p></span>'
-            );
-        });
-
-        it("prepends the checkbox to a loose task whose paragraph first inner token is not text", () => {
-            const html = render("- [ ] ![](http://x/y.png)\n\n- [x] b");
-            // The paragraph's first inner token is an image (not text), so only the
-            // paragraph-level text receives the checkbox prefix.
-            expect(html).toContain(
-                '<span class="todo-list__label__description"><p><input type="checkbox"disabled="disabled"><img src="http://x/y.png"></p></span>'
-            );
-        });
-
-        it("unshifts the checkbox as a text token for a loose task whose first token is a checkbox", () => {
-            // marked emits a `checkbox` token (not a paragraph) as the first token of a
-            // loose native task item — the checkbox HTML is unshifted before the body.
-            const html = render("- [ ] text\n\n  more");
-            expect(html).toBe(
+        it("starts a new todo list at a blank line between two task items", () => {
+            // A blank line makes the list loose, which wraps each item in <p> — a form
+            // CKEditor cannot upcast. It is also what the Markdown export writes for two
+            // todo lists separated by an empty paragraph, so the import rebuilds those.
+            expect(render("- [ ] Truc\n\n- [x] Machin")).toBe(
                 '<ul class="todo-list"><li><label class="todo-list__label">' +
-                '<span class="todo-list__label__description">' +
-                '<input type="checkbox"disabled="disabled"><p>text</p><p>more</p>' +
-                "</span></label></li></ul>"
+                '<input type="checkbox" disabled="disabled">' +
+                '<span class="todo-list__label__description">Truc</span></label></li></ul>' +
+                "<p>&nbsp;</p>" +
+                '<ul class="todo-list"><li><label class="todo-list__label">' +
+                '<input type="checkbox" checked="checked" disabled="disabled">' +
+                '<span class="todo-list__label__description">Machin</span></label></li></ul>'
             );
         });
 
-        it("unshifts a checked checkbox for a loose, checked native task item", () => {
-            const html = render("- [x] done\n\n  more body");
+        it("splits only where the blank line falls, keeping adjacent items in one list", () => {
+            const html = render("- [ ] A\n- [ ] B\n\n- [ ] C");
+            expect(html.match(/<ul class="todo-list">/g)).toHaveLength(2);
             expect(html).toContain(
-                '<span class="todo-list__label__description">' +
-                '<input type="checkbox"checked="checked" disabled="disabled"><p>done</p><p>more body</p></span>'
+                '<span class="todo-list__label__description">A</span></label></li>' +
+                '<li><label class="todo-list__label">'
             );
+            expect(html).toContain('</ul><p>&nbsp;</p><ul class="todo-list">');
+        });
+
+        it("keeps a loose item's inline markup in the description", () => {
+            expect(render("- [ ] **bold** and [link](http://x)\n\n- [ ] b")).toContain(
+                '<span class="todo-list__label__description">' +
+                '<strong>bold</strong> and <a href="http://x">link</a></span>'
+            );
+        });
+
+        it("unwraps a loose item whose paragraph opens with a non-text token", () => {
+            expect(render("- [ ] ![](http://x/y.png)\n\n- [x] b")).toContain(
+                '<span class="todo-list__label__description"><img src="http://x/y.png"></span>'
+            );
+        });
+
+        it("keeps a task item's later blocks after the label, not inside the description", () => {
+            // CKEditor's multi-block todo item: the first block is the label's
+            // description, every later one is a sibling of </label>.
+            expect(render("- [ ] text\n\n  more")).toBe(
+                '<ul class="todo-list"><li><label class="todo-list__label">' +
+                '<input type="checkbox" disabled="disabled">' +
+                '<span class="todo-list__label__description">text</span></label>' +
+                "<p>more</p></li></ul>"
+            );
+            expect(render("- [x] done\n\n  more body")).toContain(
+                '<input type="checkbox" checked="checked" disabled="disabled">' +
+                '<span class="todo-list__label__description">done</span></label><p>more body</p>'
+            );
+        });
+
+        it("keeps a nested task list after the label of its parent item", () => {
+            expect(render("- [ ] a\n    - [ ] b")).toBe(
+                '<ul class="todo-list"><li><label class="todo-list__label">' +
+                '<input type="checkbox" disabled="disabled">' +
+                '<span class="todo-list__label__description">a</span></label>' +
+                '<ul class="todo-list"><li><label class="todo-list__label">' +
+                '<input type="checkbox" disabled="disabled">' +
+                '<span class="todo-list__label__description">b</span></label></li></ul></li></ul>'
+            );
+        });
+
+        it("drops the todo-list class from a split group holding no task item", () => {
+            expect(render("- [ ] a\n\n- plain")).toBe(
+                '<ul class="todo-list"><li><label class="todo-list__label">' +
+                '<input type="checkbox" disabled="disabled">' +
+                '<span class="todo-list__label__description">a</span></label></li></ul>' +
+                "<p>&nbsp;</p><ul><li><p>plain</p></li></ul>"
+            );
+        });
+
+        it("leaves an ordered task list as a single <ol> so its numbering survives", () => {
+            const html = render("1. [ ] a\n\n2. [ ] b");
+            expect(html).toContain("<ol>");
+            expect(html).not.toContain("<p>&nbsp;</p>");
+        });
+
+        it("renders an empty task marker as literal text, not a task item", () => {
+            // marked's task rule needs a space after `]`, so `- [ ]` alone is not a task.
+            expect(render("- [ ]")).toBe("<ul><li>[ ]</li></ul>");
         });
 
         it("prepends the checkbox directly to a tight task item body", () => {
             const html = render("- [ ] one");
             expect(html).toBe(
                 '<ul class="todo-list"><li><label class="todo-list__label">' +
-                '<input type="checkbox"disabled="disabled">' +
+                '<input type="checkbox" disabled="disabled">' +
                 '<span class="todo-list__label__description">one</span></label></li></ul>'
             );
         });
@@ -304,7 +348,7 @@ describe("renderToHtml", () => {
             const html = render("- [/] x", "", { taskStates: DEFAULT_TASK_STATES });
             expect(html).toContain('data-trilium-task-state="doing"');
             expect(html).toContain('title="Doing"');
-            expect(html).toContain('<input type="checkbox"disabled="disabled">');
+            expect(html).toContain('<input type="checkbox" disabled="disabled">');
             expect(html).toContain('<span class="todo-list__label__description">x</span>');
             // The `[/]` marker must be stripped from the visible text.
             expect(html).not.toContain("[/]");
@@ -375,7 +419,7 @@ describe("renderToHtml", () => {
             const html = render("- [/] x\n\n  more text\n\n- [x] b", "", { taskStates: DEFAULT_TASK_STATES });
             expect(html).toContain('data-trilium-task-state="doing"');
             expect(html).toContain(
-                '<p><input type="checkbox"disabled="disabled">x</p><p>more text</p>'
+                '<span class="todo-list__label__description">x</span></label><p>more text</p>'
             );
             expect(html).not.toContain("[/]");
         });

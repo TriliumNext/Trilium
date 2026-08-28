@@ -153,7 +153,7 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
     presentation: {
         properties: [
             {
-                label: "Theme",
+                label: t("book_properties_config.presentation-theme"),
                 type: "combobox",
                 icon: "bx bx-palette",
                 bindToLabel: "presentation:theme",

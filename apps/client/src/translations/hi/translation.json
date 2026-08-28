@@ -2228,8 +2228,7 @@
   },
   "server": {
     "unknown_http_error_title": "सर्वर के साथ कनेक्शन में एरर",
-    "unknown_http_error_content": "स्टेट्स कोड: {{statusCode}}\nURL: {{method}} {{url}}\nमैसेज: {{message}}",
-    "traefik_blocks_requests": "अगर आप Traefik प्रॉक्सी यूज़ कर रहे हैं, तो इसके बदलावों की वजह से सर्वर से जुड़ने में समस्या हो सकती है।"
+    "unknown_http_error_content": "स्टेट्स कोड: {{statusCode}}\nURL: {{method}} {{url}}\nमैसेज: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "पिछले नोट पर वापस जाएं",

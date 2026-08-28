@@ -15,10 +15,10 @@
     "test": "vitest"
   },
   "dependencies": {
-    "dayjs": "1.11.22",
+    "dayjs": "1.11.23",
     "exceljs": "4.4.0",
     "jszip": "3.10.1",
-    "marked": "18.0.9",
+    "marked": "18.0.10",
     "marked-footnote": "1.4.0",
     "numfmt": "3.2.6"
   },

@@ -1,7 +1,37 @@
+import {
+    initSplashProgress, reportSplashPhase, type SplashPhase
+} from "../../client/src/services/splash.js";
 import { showErrorOverlay } from "./error-overlay.js";
 import { installIosInterceptors } from "./ios-interceptors.js";
 import { claimLeadership } from "./leader_election.js";
 import { announceLeadership, attachServiceWorkerBridge, downloadDatabase, registerNativeHttpHandler, restoreBackup, startLocalServerWorker } from "./local-bridge.js";
+
+/**
+ * What a cold standalone start passes through, drawn as the splash's progress bar. Weights are
+ * the relative cost of each step on a first visit, where the two large downloads — the SQLite
+ * WASM binary and the core bundle — dominate; a warm start runs the same sequence from cache.
+ *
+ * The worker reports the middle of this sequence over `STARTUP_PROGRESS` (see local-bridge.ts),
+ * and the client reports the last two once its entry point is loading its layout and note tree.
+ * A follower tab has no worker of its own, so it sits on the first phase until the leader answers
+ * its `/bootstrap` and the client's own phases carry the bar the rest of the way.
+ *
+ * The client's own `bootstrap` phase is deliberately absent: here `/bootstrap` is answered by the
+ * worker, so it does not follow the worker's steps but spans them. Listing it would let index.ts
+ * report it while the worker was still on `sqlite`, and the monotonic guard in reportSplashPhase()
+ * would then swallow every later worker phase.
+ */
+const STANDALONE_STARTUP_PHASES: SplashPhase[] = [
+    { id: "service-worker", weight: 1, status: "Setting up offline support…" },
+    { id: "worker-modules", weight: 1, status: "Starting up…" },
+    { id: "sqlite", weight: 3, status: "Loading the database engine…" },
+    { id: "database", weight: 2, status: "Opening the database…" },
+    { id: "core", weight: 4, status: "Loading Trilium…" },
+    { id: "becca", weight: 2, status: "Reading your notes…" },
+    { id: "application", weight: 4, status: "Loading the application…" },
+    { id: "interface", weight: 2, status: "Building the interface…" },
+    { id: "notes", weight: 1, status: "Loading the note tree…" }
+];
 
 async function waitForServiceWorkerControl(): Promise<void> {
     if (!("serviceWorker" in navigator) || !navigator.serviceWorker) {
@@ -27,6 +57,7 @@ async function waitForServiceWorkerControl(): Promise<void> {
     }
 
     console.log("[Bootstrap] Waiting for service worker to take control...");
+    reportSplashPhase("service-worker");
 
     await navigator.serviceWorker.register("./sw.js", { scope: "/" });
     await navigator.serviceWorker.ready;
@@ -45,6 +76,10 @@ async function waitForServiceWorkerControl(): Promise<void> {
 async function bootstrap() {
     /* fixes https://github.com/webpack/webpack/issues/10035 */
     window.global = globalThis;
+
+    // Claimed before the client loads, so standalone's longer sequence is the one the bar shows
+    // rather than the two client-side phases index.ts would otherwise install.
+    initSplashProgress(STANDALONE_STARTUP_PHASES);
 
     // The client's way to the worker for the few things that carry a file, which the request path
     // would serialise whole and time out on. The desktop's `window.electronApi` is the same idea.

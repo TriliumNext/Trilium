@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    getCellDocumentSegments,
+    getCellDocumentText,
     getDataValidations,
     getFloatingDrawings,
     type IWorkbookData,
+    normalizeDataStream,
     SHEET_DATA_VALIDATION_RESOURCE,
     SHEET_DRAWING_RESOURCE
 } from "./workbook_model.js";
@@ -100,5 +103,66 @@ describe("getDataValidations", () => {
             workbookWithResource(SHEET_DATA_VALIDATION_RESOURCE, JSON.stringify({ sheet1: { uid: "v1" } })),
             "sheet1"
         )).toEqual([]);
+    });
+});
+
+describe("getCellDocumentText", () => {
+    it("reads the rich-text document, dropping the terminator and structural characters", () => {
+        expect(getCellDocumentText({ p: { body: { dataStream: "Pen\r\n" } } })).toBe("Pen");
+        expect(getCellDocumentText({ p: { body: { dataStream: "first\rsecond\r\n" } } })).toBe("first\nsecond");
+        expect(getCellDocumentText({ p: { body: { dataStream: "logo\b\r\n" } } })).toBe("logo");
+    });
+
+    it("returns an empty string when the cell carries no document text", () => {
+        expect(getCellDocumentText(undefined)).toBe("");
+        expect(getCellDocumentText({ v: "plain" })).toBe("");
+        expect(getCellDocumentText({ p: { drawings: {} } })).toBe("");
+        expect(getCellDocumentText({ p: { body: { dataStream: "\r\n" } } })).toBe("");
+        expect(normalizeDataStream(42)).toBe("");
+    });
+});
+
+describe("getCellDocumentSegments", () => {
+    it("cuts the document into plain and linked runs", () => {
+        const segments = getCellDocumentSegments({
+            p: {
+                body: {
+                    dataStream: "see supplier now\r\n",
+                    customRanges: [{ startIndex: 4, endIndex: 11, properties: { url: "https://example.com" } }]
+                }
+            }
+        });
+
+        expect(segments).toEqual([
+            { text: "see " },
+            { text: "supplier", url: "https://example.com" },
+            { text: " now" }
+        ]);
+    });
+
+    it("ignores a range whose offsets describe no span", () => {
+        const segmentsFor = (startIndex: number, endIndex: number) => getCellDocumentSegments({
+            p: {
+                body: {
+                    dataStream: "Pen\r\n",
+                    customRanges: [{ startIndex, endIndex, properties: { url: "https://example.com" } }]
+                }
+            }
+        });
+
+        // Reversed offsets, then a range starting past the end of the stream.
+        expect(segmentsFor(2, 0)).toEqual([{ text: "Pen" }]);
+        expect(segmentsFor(9, 12)).toEqual([{ text: "Pen" }]);
+    });
+
+    it("keeps the trailing terminator out of a run that ends the document", () => {
+        expect(getCellDocumentSegments({
+            p: {
+                body: {
+                    dataStream: "Pen\r\n",
+                    customRanges: [{ startIndex: 0, endIndex: 4, properties: { url: "https://example.com" } }]
+                }
+            }
+        })).toEqual([{ text: "Pen", url: "https://example.com" }]);
     });
 });

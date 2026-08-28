@@ -9,7 +9,7 @@ import { t } from "i18next";
 import path from "path";
 
 import ServerBackupService from "./backup_provider.js";
-import ClsHookedExecutionContext from "./cls_provider.js";
+import AsyncLocalStorageExecutionContext from "./cls_provider.js";
 import { loadCoreSchema } from "./core_assets.js";
 import NodejsCryptoProvider from "./crypto_provider.js";
 import NodejsInAppHelpProvider from "./in_app_help_provider.js";
@@ -75,7 +75,7 @@ async function startApplication() {
         zip: new NodejsZipProvider(),
         zipExportProviderFactory: (await import("./services/export/zip/factory.js")).serverZipExportProviderFactory,
         request: new NodeRequestProvider(),
-        executionContext: new ClsHookedExecutionContext(),
+        executionContext: new AsyncLocalStorageExecutionContext(),
         messaging: new WebSocketMessagingProvider(),
         schema: loadCoreSchema(),
         platform: new ServerPlatformProvider(),

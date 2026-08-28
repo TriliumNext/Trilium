@@ -70,7 +70,14 @@
     "show-deleted-notes": "显示“已删除的笔记”对话框",
     "peek-right-pane": "将右侧面板以浮动面板的形式预览，失去焦点时自动关闭",
     "show-shortcut-hints": "显示当前聚焦组件的键盘快捷键",
-    "show-space-usage": "打开「空间占用」页面"
+    "show-space-usage": "打开「空间占用」页面",
+    "create-new-split": "在当前活动的分屏右侧打开一个新的空白分屏",
+    "close-active-split": "关闭当前拆分，保留标签的其他拆分打开",
+    "focus-split-left": "将焦点移动到当前活动分屏的左边分屏",
+    "focus-split-right": "将焦点移动到当前活动窗口右侧的分屏上",
+    "split-view": "分屏视图",
+    "move-split-left": "将活动分屏与其左侧的分屏交换，这样音符会移动，焦点会跟随它",
+    "move-split-right": "将活动分屏与右侧的分屏交换，这样笔记会移动，焦点也会跟随它"
   },
   "login": {
     "title": "登录",
@@ -221,7 +228,8 @@
     "reading-log-failed": "读取后端日志文件 '{{ fileName }}' 失败。"
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "此笔记类型无法显示。"
+    "note-cannot-be-displayed": "此笔记类型无法显示。",
+    "included-note-requires-credentials": "此包含的笔记受密码保护，无法在此显示。"
   },
   "pdf": {
     "export_filter": "PDF 文档 (*.pdf)",
@@ -351,7 +359,13 @@
     "show-deleted-notes": "显示已删除的笔记",
     "peek-right-pane": "快速查看右侧面板",
     "show-shortcut-hints": "显示快捷键提示",
-    "show-space-usage": "显示空间占用"
+    "show-space-usage": "显示空间占用",
+    "create-new-split": "创建新拆分",
+    "close-active-split": "关闭活动拆分",
+    "move-split-left": "向左拆分移动",
+    "move-split-right": "向右拆分移动",
+    "focus-split-left": "将焦点分割到左侧",
+    "focus-split-right": "将焦点分割到右侧"
   },
   "share_theme": {
     "site-theme": "网站主题",

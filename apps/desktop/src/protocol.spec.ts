@@ -522,6 +522,66 @@ describe("trilium-app protocol dispatcher", () => {
         await tail; // let the handler's post-abort writes run
     });
 
+    it("survives the renderer cancelling the body stream mid-write, and tells the handler", async () => {
+        const app = express();
+        let releaseTail: (() => void) | undefined;
+        const tail = new Promise<void>((r) => { releaseTail = r; });
+        let writeError: unknown;
+        let closed = false;
+
+        app.get("/sse", async (_req, res) => {
+            res.setHeader("Content-Type", "text/event-stream");
+            res.flushHeaders();
+            // The disconnect signal llm_chat.ts uses to abort the agent turn.
+            res.on("close", () => { closed = true; });
+            res.write("a\n");
+            await tail;
+            try {
+                res.write("b\n");
+                res.end();
+            } catch (err) {
+                writeError = err;
+            }
+        });
+
+        // No AbortController: Electron's net layer cancels the response body
+        // when the renderer aborts, and that can land before the fetch signal.
+        const response = await dispatch(app, new Request("trilium-app://app/sse"));
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("expected a streaming body");
+        expect(new TextDecoder().decode((await reader.read()).value)).toBe("a\n");
+
+        await reader.cancel();
+        expect(closed).toBe(true);
+
+        releaseTail?.();
+        await tail;
+        expect(writeError).toBeUndefined();
+    });
+
+    it("signals 'close' once when the fetch abort tears the stream down", async () => {
+        const app = express();
+        let closeCount = 0;
+        app.get("/sse", (_req, res) => {
+            res.setHeader("Content-Type", "text/event-stream");
+            res.flushHeaders();
+            res.on("close", () => { closeCount++; });
+            res.write("a\n");
+        });
+
+        const ac = new AbortController();
+        const response = await dispatch(app, new Request("trilium-app://app/sse", { signal: ac.signal }));
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("expected a streaming body");
+        await reader.read();
+
+        ac.abort();
+        await expect(reader.read()).rejects.toThrow();
+        // The reader's own cancel path must not raise a second disconnect.
+        await reader.cancel().catch(() => {});
+        expect(closeCount).toBe(1);
+    });
+
     it("serialises object and primitive response payloads to bytes", async () => {
         // Express always stringifies objects/primitives before they reach the
         // mock's buffer, so force the buffered branch to read a raw object /

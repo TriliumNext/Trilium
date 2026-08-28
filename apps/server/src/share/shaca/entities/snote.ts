@@ -540,7 +540,8 @@ class SNote extends AbstractShacaEntity {
             mime: this.mime,
             workspaceIconClass: undefined,
             iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
-            isFolder: this.isFolder.bind(this)
+            isFolder: this.isFolder.bind(this),
+            getLabelValue: this.getLabelValue.bind(this)
         });
 
         return `tn-icon ${icon}`;

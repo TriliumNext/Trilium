@@ -2596,7 +2596,6 @@
   },
   "server": {
     "unknown_http_error_title": "خطأ في الاتصال مع الخادم",
-    "traefik_blocks_requests": "إذا كنت تستخدم الخادم العكسي Traefik، فقد تم إدخال تغيير غير متوافق يؤثر على الاتصال مع الخادم.",
     "unknown_http_error_content": "رمز الحالة: {{statusCode}}\nالرابط: {{method}} {{url}}\nالرسالة: {{message}}"
   },
   "tab_history_navigation_buttons": {

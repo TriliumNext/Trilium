@@ -2340,8 +2340,7 @@
   },
   "server": {
     "unknown_http_error_title": "Erreur de communication avec le serveur",
-    "unknown_http_error_content": "Code de statut: {{statusCode}}\nURL: {{method}} {{url}}\nMessage: {{message}}",
-    "traefik_blocks_requests": "Si vous utilisez le reverse proxy Traefik, celui-ci a introduit un changement de rupture qui affecte la communication avec le serveur."
+    "unknown_http_error_content": "Code de statut: {{statusCode}}\nURL: {{method}} {{url}}\nMessage: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Revenir à la note précédente",

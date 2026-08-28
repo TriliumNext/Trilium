@@ -240,7 +240,7 @@ function register(router: Router) {
             return;
         }
 
-        res.send(renderNoteContent(note));
+        res.send(renderNoteContent(note, (includedNote) => hasCredentialAccess(includedNote, req)));
     }
 
     router.get("/share/", (req, res) => {

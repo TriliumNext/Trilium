@@ -70,8 +70,34 @@ export interface ICellData {
 }
 
 export interface ICellDocumentData {
+    /** Univer's unit id for the cell document. */
+    id?: string;
+    /** Layout Univer recomputes from the cell's own style every time it renders the cell. */
+    documentStyle?: Record<string, unknown>;
     drawings?: Record<string, ISheetDrawing>;
     drawingsOrder?: string[];
+    /** Text content, present when the cell holds rich text such as a link or mixed formatting. */
+    body?: ICellDocumentBody;
+}
+
+export interface ICellDocumentBody {
+    /** Univer's flat text buffer, with structure encoded as control characters. */
+    dataStream?: string;
+    /** Spans of `dataStream` carrying extra properties, hyperlinks among them. */
+    customRanges?: ICellCustomRange[];
+    /** Formatting runs and the paragraph/section markers Univer lays the text out from. */
+    textRuns?: { ts: Record<string, unknown>; st: number; ed: number }[];
+    paragraphs?: { startIndex: number }[];
+    sectionBreaks?: { startIndex: number }[];
+}
+
+/** A span of a cell's document text. `startIndex` and `endIndex` are both inclusive. */
+export interface ICellCustomRange {
+    rangeId?: string;
+    rangeType?: CustomRangeType;
+    startIndex?: number;
+    endIndex?: number;
+    properties?: { url?: string; refId?: string };
 }
 
 export interface ISheetDrawing {
@@ -181,6 +207,11 @@ export const enum CellValueType {
     FORCE_STRING = 4
 }
 
+/** Univer's kinds of `ICellCustomRange` (`CustomRangeType` in @univerjs/core). */
+export const enum CustomRangeType {
+    HYPERLINK = 0
+}
+
 // Alignment enums (from UniversJS).
 export const enum HorizontalAlign {
     LEFT = 1,
@@ -261,6 +292,144 @@ export function resolveCellStyle(
     if (!s) return null;
     if (typeof s === "string") return styles[s] ?? null;
     return s;
+}
+
+/** A run of a cell's document text, carrying the hyperlink it sits inside. */
+export interface CellDocumentSegment {
+    text: string;
+    url?: string;
+}
+
+/**
+ * Splits a cell's rich-text document into runs of plain and linked text. Univer stores a
+ * hyperlink as a `customRange` holding the target and the offsets it covers in `dataStream`,
+ * so the runs are cut on those offsets. A run keeps its `url` only when the target is safe to
+ * export, so an emitter can use it as-is. Returns an empty array when the cell carries no
+ * document, which is the common case: Univer writes `p` only for a rich-text cell.
+ */
+export function getCellDocumentSegments(cell: ICellData | undefined): CellDocumentSegment[] {
+    const body = cell?.p?.body;
+    const stream = typeof body?.dataStream === "string" ? body.dataStream : "";
+    if (!stream) return [];
+
+    const segments: CellDocumentSegment[] = [];
+    let cursor = 0;
+    for (const link of linkRanges(body?.customRanges, stream.length)) {
+        if (link.start > cursor) {
+            segments.push({ text: stripDataStreamControls(stream.slice(cursor, link.start)) });
+        }
+        segments.push({ text: stripDataStreamControls(stream.slice(link.start, link.end + 1)), url: link.url });
+        cursor = link.end + 1;
+    }
+    if (cursor < stream.length) {
+        segments.push({ text: stripDataStreamControls(stream.slice(cursor)) });
+    }
+
+    return trimTrailingBreaks(segments);
+}
+
+/**
+ * Returns the plain text of a cell Univer stored as a rich-text document. Univer writes `p`
+ * without a matching `v` for some cells, such as a link typed into an empty cell, so an emitter
+ * that reads only `v` renders them blank.
+ */
+export function getCellDocumentText(cell: ICellData | undefined): string {
+    return getCellDocumentSegments(cell).map((segment) => segment.text).join("");
+}
+
+/**
+ * Builds the rich-text document Univer stores for a hyperlinked cell: the text terminated by a
+ * paragraph and a section break, plus one custom range covering it. `rangeId` identifies the link
+ * inside the cell. Returns `null` when there is no text to link or the target is not safe to
+ * store, so the caller keeps the cell as plain text.
+ *
+ * `documentStyle` stays empty because Univer overwrites its margins, page size and render config
+ * from the cell's own style on every render.
+ */
+export function buildLinkedCellDocument(text: string, url: unknown, rangeId: string): ICellDocumentData | null {
+    const target = sanitizeLinkUrl(url);
+    if (!text || !target) return null;
+
+    return {
+        id: "d",
+        documentStyle: {},
+        body: {
+            dataStream: `${text}\r\n`,
+            textRuns: [{ ts: {}, st: 0, ed: text.length }],
+            paragraphs: [{ startIndex: text.length }],
+            sectionBreaks: [{ startIndex: text.length + 1 }],
+            customRanges: [{
+                rangeId,
+                rangeType: CustomRangeType.HYPERLINK,
+                startIndex: 0,
+                endIndex: text.length - 1,
+                properties: { url: target, refId: rangeId }
+            }]
+        }
+    };
+}
+
+/** Converts a whole `dataStream` to plain text, dropping the terminator it ends with. */
+export function normalizeDataStream(dataStream: unknown): string {
+    if (typeof dataStream !== "string") return "";
+    return stripDataStreamControls(dataStream).replace(/\n+$/, "");
+}
+
+/** The hyperlink ranges to cut on, in document order, clamped to the stream and non-overlapping. */
+function linkRanges(customRanges: ICellCustomRange[] | undefined, length: number) {
+    const links: { start: number; end: number; url: string }[] = [];
+    for (const range of customRanges ?? []) {
+        const url = sanitizeLinkUrl(range?.properties?.url);
+        if (!url) continue;
+        if (!isFiniteNumber(range.startIndex) || !isFiniteNumber(range.endIndex)) continue;
+
+        const start = Math.max(0, Math.trunc(range.startIndex));
+        const end = Math.min(length - 1, Math.trunc(range.endIndex));
+        if (end >= start) links.push({ start, end, url });
+    }
+    links.sort((a, b) => a.start - b.start);
+
+    const ordered: typeof links = [];
+    let cursor = 0;
+    for (const link of links) {
+        if (link.start < cursor) continue;
+        ordered.push(link);
+        cursor = link.end + 1;
+    }
+    return ordered;
+}
+
+/**
+ * Validates a hyperlink target before it reaches an export. Accepts the absolute `http`, `https`
+ * and `mailto` URLs Univer's link dialog writes; anything else, `javascript:` among them, returns
+ * `null` so the run is exported as plain text.
+ */
+function sanitizeLinkUrl(url: unknown): string | null {
+    if (typeof url !== "string") return null;
+    const trimmed = url.trim();
+    return /^(?:https?:\/\/|mailto:)[^\u0000-\u0020\u007F]+$/i.test(trimmed) ? trimmed : null;
+}
+
+/**
+ * Removes the structural placeholders Univer encodes as C0 control characters, the backspace
+ * character standing in for an embedded drawing, and turns its paragraph and section breaks
+ * into newlines.
+ */
+function stripDataStreamControls(text: string): string {
+    return text
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+        .replace(/\r\n|[\r\n]/g, "\n");
+}
+
+/** Drops the terminator every stream ends with, along with any run it leaves empty. */
+function trimTrailingBreaks(segments: CellDocumentSegment[]): CellDocumentSegment[] {
+    while (segments.length > 0) {
+        const last = segments[segments.length - 1];
+        last.text = last.text.replace(/\n+$/, "");
+        if (last.text) break;
+        segments.pop();
+    }
+    return segments;
 }
 
 export interface Bounds {

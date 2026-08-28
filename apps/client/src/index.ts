@@ -1,8 +1,14 @@
 import { createFontStylesheetLink } from "./services/font";
+import {
+    CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
+} from "./services/splash";
 import { buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, StylesheetRef } from "./services/theme";
 
 async function bootstrap() {
-    showSplash();
+    // The splash from index.html covers the page until hideSplash(). Standalone reports a longer
+    // sequence of its own before this one, so these phases only take effect on server and desktop.
+    initSplashProgress(CLIENT_STARTUP_PHASES);
+    reportSplashPhase("bootstrap");
     await setupGlob();
     await Promise.all([
         initJQuery(),
@@ -12,6 +18,7 @@ async function bootstrap() {
     initThemeChangeNotifier();
     loadIcons();
     setBodyAttributes();
+    reportSplashPhase("application");
     await loadScripts();
     hideSplash();
 }
@@ -141,42 +148,42 @@ function setBodyAttributes() {
 }
 
 async function loadScripts() {
+    const entry = await importEntry();
+
+    // Every entry point renders after its module has finished evaluating: the desktop layout, the
+    // note tree and the locale catalogue are all fetched from there. Waiting for the `ready` it
+    // exports keeps the splash up until the screen is actually populated, instead of handing the
+    // user a blank page for the seconds those fetches take on a slow connection.
+    reportSplashPhase("interface");
+    await entry.ready;
+}
+
+function importEntry(): Promise<{ ready?: Promise<unknown> }> {
     if (!glob.dbInitialized) {
-        await import("./setup.js");
-        return;
+        return import("./setup.js");
     }
 
     if (glob.passwordSet === false) {
-        await import("./set_password.js");
-        return;
+        return import("./set_password.js");
     }
 
     if (glob.loggedIn === false) {
-        await import("./login.js");
-        return;
+        return import("./login.js");
     }
 
     switch (glob.device) {
         case "mobile":
-            await import("./mobile.js");
-            break;
+            return import("./mobile.js");
         case "print":
-            await import("./print.js");
-            break;
+            return import("./print.js");
         case "desktop":
         default:
-            await import("./desktop.js");
-            break;
+            return import("./desktop.js");
     }
 }
 
-function showSplash() {
-    // hide body to reduce flickering on the startup. This is done through JS and not CSS to not hide <noscript>
-    document.body.style.display = "none";
-}
-
-function hideSplash() {
-    document.body.style.display = "block";
-}
-
-bootstrap();
+bootstrap().catch((err) => {
+    console.error("Trilium failed to start:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    showSplashError(`Trilium failed to start: ${message} — reload the page to try again.`);
+});

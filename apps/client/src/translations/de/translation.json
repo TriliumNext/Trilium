@@ -49,7 +49,8 @@
     "unhandled-error": {
       "details-button": "Weitere Details anzeigen...",
       "title": "Ein Hintergrundprozess ist fehlgeschlagen",
-      "details-title": "Technische Informationen"
+      "details-title": "Technische Informationen",
+      "details-intro": "Die Anwendung läuft weiterhin und deine Notizen sind davon nicht betroffen. Wenn dieses Problem weiterhin auftritt, solltest du es auf GitHub melden und dabei die unten stehenden Informationen einfügen."
     }
   },
   "add_link": {
@@ -113,7 +114,9 @@
     "if_you_dont_check": "Wenn Sie dies nicht aktivieren, wird die Notiz nur aus der Relationskarte entfernt.",
     "also_delete_note": "Auch die Notiz löschen",
     "delete_note_keeps_note_one": "Die Notiz hat {{count}} weiteren Klon, deswegen wird die Notiz selbst behalten.",
-    "delete_note_keeps_note_other": "Die Notiz hat {{count}} weiter Klone, deswegen wird die Notiz selbst behalten."
+    "delete_note_keeps_note_other": "Die Notiz hat {{count}} weiter Klone, deswegen wird die Notiz selbst behalten.",
+    "delete_note_deletes_note": "Dies ist die einzige Position der Notiz im Baum, daher wird die Notiz selbst gelöscht. Dies kann über die letzten Änderungen rückgängig gemacht werden.",
+    "delete_note_deletes_clones": "Die Notiz wird an allen {{places}} Positionen, an denen sie vorkommt, gelöscht. Dies kann über die letzten Änderungen rückgängig gemacht werden."
   },
   "delete_notes": {
     "close": "Schließen",
@@ -217,7 +220,8 @@
     "newTabWithActivationNoteLink": "auf einen Notiz-Link öffnet und aktiviert die Notiz in einem neuen Tab",
     "title": "Spickzettel",
     "editShortcuts": "Tastenkombinationen bearbeiten",
-    "toggleArchivedNotes": "Archivierte Notizen anzeigen/ausblenden"
+    "toggleArchivedNotes": "Archivierte Notizen anzeigen/ausblenden",
+    "openAiAssistant": "Den KI-Assistenten für die Auswahl öffnen"
   },
   "import": {
     "importIntoNote": "In Notiz importieren",
@@ -252,7 +256,9 @@
     "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, Bilder und mehr",
     "shrinkImagesProviderTooltip": "Skaliert und optimiert importierte Bilder, um Speicherplatz zu sparen, wodurch sich die Qualität leicht verringern kann.",
     "extracting": "{{progress}} von {{total}} Elementen extrahiert",
-    "processing": "{{progress}} von {{total}} Notizen verarbeitet"
+    "processing": "{{progress}} von {{total}} Notizen verarbeitet",
+    "throttled": "Der Dienst begrenzt die Anfragerate; der Import wartet, bis der Zugriff fortgesetzt werden kann …",
+    "throttled-with-total": "{{progress}} von {{total}} Notizen importiert – der Dienst drosselt die Anfragen, es wird auf die Fortsetzung des Zugriffs gewartet …"
   },
   "include_note": {
     "dialog_title": "Notiz einbinden",
@@ -414,9 +420,9 @@
     "icon_class": "Der Wert dieses Labels wird als CSS-Klasse zum Symbol im Baum hinzugefügt, was dabei helfen kann, die Notizen im Baum visuell zu unterscheiden. Beispiel könnte bx bx-home sein – Symbole werden von Boxicons übernommen. Kann in Vorlagennotizen verwendet werden.",
     "page_size": "Anzahl der Elemente pro Seite in der Notizliste",
     "custom_request_handler": "benutzerdefinierter Anfrage-Handler",
-    "custom_resource_provider": "benutzerdefinierter Ressourcenanbieter",
-    "widget": "Markiert diese Notiz als benutzerdefiniertes Widget, das dem Trilium-Komponentenbaum hinzugefügt wird",
-    "workspace": "Markiert diese Notiz als Arbeitsbereich, der ein einfaches Fokussieren ermöglicht",
+    "custom_resource_provider": "Stellt den Inhalt dieser Notiz über HTTP unter `<code>/custom/</code>`, gefolgt von diesem Wert, bereit. Dieser wird als regulärer Ausdruck mit dem Pfad abgeglichen. Es wird kein Skript ausgeführt – die Notiz wird unverändert ausgeliefert. Auf diese Weise kann einer Datei, beispielsweise einer Schriftart oder einem Bild, eine stabile URL zugewiesen werden.",
+    "widget": "Kennzeichnet diese Notiz als benutzerdefiniertes Widget, das dem Trilium-Komponentenbaum hinzugefügt wird.",
+    "workspace": "Markiert diese Notiz als Arbeitsbereich, der ein einfaches Fokussieren ermöglicht.",
     "workspace_icon_class": "Definiert die CSS-Klasse des Boxsymbols, die im Tab verwendet wird, wenn auf diese Notiz fokussiert wird",
     "workspace_tab_background_color": "CSS-Farbe, die im Notiz-Tab verwendet wird, wenn auf diese Notiz fokussiert wird",
     "workspace_calendar_root": "Definiert den Kalenderstamm pro Arbeitsbereich",
@@ -440,7 +446,7 @@
     "display_relations": "Durch Kommas getrennte Namen der Relationen, die angezeigt werden sollen. Alle anderen werden ausgeblendet.",
     "hide_relations": "Durch Kommas getrennte Namen von Relationen, die ausgeblendet werden sollen. Alle anderen werden angezeigt.",
     "title_template": "Standardtitel von Notizen, die als untergeordnete Notizen dieser Notiz erstellt werden. Der Wert wird als JavaScript-String ausgewertet \n                        und kann daher mit dynamischen Inhalten über die injizierten <code>now</code> und <code>parentNote</code>-Variablen angereichert werden. Beispiele:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literarische Werke</code></li>\n                            <li><code>Logbuch für ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Siehe <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">Wiki mit Details</a>, API-Dokumentation für <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> und <a href=\"https://day.js.org/docs/en/display/format\">now</a> für Details.",
-    "template": "Diese Notiz wird beim Erstellen einer neuen Notiz in der Auswahl der verfügbaren Vorlage angezeigt",
+    "template": "Diese Notiz wird beim Erstellen einer neuen Notiz in der Auswahl der verfügbaren Vorlagen angezeigt.",
     "toc": "<code>#toc</code> oder <code>#toc=show</code> erzwingen die Anzeige des Inhaltsverzeichnisses, <code>#toc=hide</code> erzwingt das Ausblenden. Wenn das Label nicht vorhanden ist, wird die globale Einstellung beachtet",
     "color": "Definiert die Farbe der Notiz im Notizbaum, in Links usw. Verwenden Sie einen beliebigen gültigen CSS-Farbwert wie 'red' oder #a13d5f",
     "keyboard_shortcut": "Definiert eine Tastenkombination, die sofort zu dieser Notiz springt. Beispiel: 'ctrl+alt+e'. Erfordert ein Neuladen des Frontends, damit die Änderung wirksam wird.",
@@ -460,7 +466,7 @@
     "run_on_branch_change": "wird ausgeführt, wenn ein Zweig aktualisiert wird.",
     "run_on_branch_deletion": "wird ausgeführt, wenn ein Zweig gelöscht wird. Der Zweig ist eine Verknüpfung zwischen der übergeordneten und der untergeordneten Notiz und wird z. B. beim Verschieben der Notiz gelöscht (alter Zweig/Link wird gelöscht).",
     "run_on_attribute_creation": "wird ausgeführt, wenn für die Notiz ein neues Attribut erstellt wird, das diese Relation definiert",
-    "run_on_attribute_change": " wird ausgeführt, wenn das Attribut einer Notiz geändert wird, die diese Beziehung definiert. Dies wird auch ausgelöst, wenn das Attribut gelöscht wird",
+    "run_on_attribute_change": "Wird ausgeführt, wenn das Attribut einer Notiz geändert wird, die diese Beziehung definiert. Dies wird auch ausgelöst, wenn das Attribut gelöscht wird.",
     "relation_template": "Die Attribute der Notiz werden auch ohne eine hierarchische Beziehung vererbt. Der Inhalt und der Zweig werden den Instanznotizen hinzugefügt, wenn sie leer sind. Einzelheiten finden Sie in der Dokumentation.",
     "inherit": "Die Attribute einer Notiz werden auch ohne eine hierarchische Beziehung vererbt. Ein ähnliches Konzept finden Sie unter Vorlagenrelation. Siehe Attributsvererbung in der Dokumentation.",
     "render_note": "Notizen vom Typ „HTML-Notiz rendern“ werden mit einer Code-Notiz (HTML oder Skript) gerendert, und es ist notwendig, über diese Relation anzugeben, welche Notiz gerendert werden soll",
@@ -480,7 +486,152 @@
     "email": "Email",
     "phone": "Telefon",
     "select_type": "Auswählen",
-    "select_options": "Optionen"
+    "select_options": "Optionen",
+    "select_options_title": "Verfügbare Optionen des Felds in dieser Reihenfolge.",
+    "select_options_placeholder": "Option eingeben und Eingabetaste drücken",
+    "add_option": "Diese Option hinzufügen",
+    "remove_option": "Diese Option entfernen",
+    "save_and_close_button": "Speichern & Schließen",
+    "definition": "Attributdefinition",
+    "template_new_note_default_parent": "Auf einer Vorlagen-Notiz festgelegt: Aus der Vorlage erstellte Notizen (z. B. per @-Vervollständigung) werden unter der Zielnotiz abgelegt, sofern nicht ausdrücklich ein anderer Speicherort gewählt wird.",
+    "other_notes_count_one": "{{count}} weitere Notiz",
+    "other_notes_count_other": "{{count}} weitere Notizen",
+    "no_other_notes": "Nur diese Notitz",
+    "no_other_notes_title": "Keine andere Notiz hat das {{attributeType}} „{{attributeName}}“.",
+    "show_all_in_search": "Zeige alle in der Suche an",
+    "relation_type": "Beziehung",
+    "versioning_limit": "Begrenzt die Anzahl der Versionen, die für diese Notiz gespeichert werden, und überschreibt dabei die globale Einstellung.",
+    "similar_notes_widget_disabled": "Deaktiviert für diese Notiz den Reiter „Ähnliche Notizen“ im Menüband. Nur im alten Layout verfügbar.",
+    "llm_chat_home": "Neue KI-Chats werden als untergeordnete Notizen dieser Notiz erstellt.",
+    "workspace_llm_chat_home": "Neue KI-Chats werden als untergeordnete Notizen dieser Notiz erstellt, während ein übergeordneter Knoten dieses Arbeitsbereichs als Wurzel festgelegt ist.",
+    "date_pattern": "Muster für die Titel der unter diesem Kalender-Stamm erstellten Tagesnotizen, z. B. <code>{dateNumberPadded} - {weekDay}</code>.",
+    "week_pattern": "Muster für die Titel der unter diesem Kalender-Stamm erstellten Wochennotizen. Erfordert <code>#enableWeekNote</code>.",
+    "month_pattern": "Muster für die Titel der unter diesem Kalender-Stamm erstellten Monatsnotizen, z. B. <code>{monthNumberPadded} - {month}</code>.",
+    "quarter_pattern": "Muster für die Titel der unter diesem Kalender-Stamm erstellten Quartalsnotizen. Erfordert <code>#enableQuarterNote</code>.",
+    "year_pattern": "Muster für die Titel der unter diesem Kalender-Stamm erstellten Jahresnotizen, z. B. <code>{year}</code>.",
+    "enable_week_note": "Erstellt eine Wochennotiz zwischen den Monats- und Tagesnotizen. Wird im Kalender-Stamm festgelegt und ist standardmäßig deaktiviert.",
+    "enable_quarter_note": "Erstellt eine Quartalsnotiz zwischen den Jahres- und Monatsnotizen. Wird im Kalender-Stamm festgelegt und ist standardmäßig deaktiviert.",
+    "date_note": "Wird jeder erstellten Tagesnotiz mit dem zugehörigen Datum im Format <code>YYYY-MM-DD</code> hinzugefügt, damit Skripte sie finden können.",
+    "week_note": "Wird jeder erstellten Wochennotiz mit der zugehörigen Woche hinzugefügt.",
+    "month_note": "Wird jeder erstellten Monatsnotiz mit dem zugehörigen Monat im Format <code>YYYY-MM</code> hinzugefügt.",
+    "quarter_note": "Wird jeder erstellten Quartalsnotiz mit dem zugehörigen Quartal hinzugefügt.",
+    "year_note": "Wird jeder erstellten Jahresnotiz mit dem zugehörigen Jahr hinzugefügt.",
+    "view_type": "Legt fest, wie die untergeordneten Notizen dieser Notiz angezeigt werden, z. B. als Raster, Liste, Tabelle oder Kalender.",
+    "map_root_note_id": "Die Notiz, von der aus die Notizkarte erstellt wird. Standardmäßig wird der spezielle Wert `<code>hoisted</code>` verwendet.",
+    "map_exclude_relation": "Kommagetrennte Namen von Beziehungen, die von der Notizkarte ausgeschlossen werden sollen.",
+    "map_include_relation": "Kommagetrennte Namen von Beziehungen, die in der Notizkarte dargestellt werden sollen.",
+    "sort_natural": "Sortiert Zahlen in untergeordneten Notizen natürlich statt alphabetisch, sodass 2 vor 10 steht. Erfordert `<code>#sorted</code>`.",
+    "sort_locale": "Die Sprache, nach deren Regeln die natürliche Sortierung erfolgt, z. B. `<code>de</code>` oder `<code>zh-CN</code>`. Nur in Verbindung mit `<code>#sortNatural</code>` relevant.",
+    "bottom": "Hält diese Notiz am Ende der untergeordneten Notizen der übergeordneten Notiz. Dies gilt nur, wenn die übergeordnete Notiz sortiert ist.",
+    "full_content_width": "Erweitert die Notiz auf die volle Breite des Editors und ignoriert dabei die konfigurierte Inhaltsbreite. Nützlich für breite Tabellen.",
+    "subtree_hidden": "Blendet die untergeordneten Notizen dieser Notiz im Baum aus und zeigt stattdessen ein Badge mit ihrer Anzahl an. Sie bleiben über die Suche und direkte Links erreichbar.",
+    "expanded": "Anzahl der Unterebenen, die in einer Listen- oder Rasteransicht direkt erweitert geöffnet werden.",
+    "share_external": "Ältere Schreibweise von <code>#shareExternalLink</code>, die vom Share-Theme weiterhin unterstützt wird.",
+    "share_root_link": "Zieladresse der Verlinkung für das Logo auf der freigegebenen Seite.",
+    "share_logo_width": "Breite des Logos auf der freigegebenen Seite (in Pixeln, ohne Einheit). Standard: 53.",
+    "share_logo_height": "Höhe des Logos auf der freigegebenen Seite (in Pixeln, ohne Einheit). Standard: 40.",
+    "share_open_graph_color": "Legt die Meta-Eigenschaft `<code>theme-color</code>` der freigegebenen Seite fest.",
+    "share_open_graph_url": "Legt die Meta-Eigenschaften `<code>og:url</code>` und `<code>twitter:url</code>` der freigegebenen Seite fest.",
+    "share_open_graph_domain": "Legt die Meta-Eigenschaft `<code>twitter:domain</code>` der freigegebenen Seite fest.",
+    "share_open_graph_image": "Legt die Meta-Eigenschaft `<code>og:image</code>` der freigegebenen Seite als direkt verwendete Adresse fest. Verweise stattdessen mit der gleichnamigen Beziehung auf eine Bildnotiz, um ein Bild aus Trilium bereitzustellen.",
+    "share_html_location": "Legt fest, wo das durch `<code>~shareHtml</code>` eingefügte HTML platziert wird, im Format `<code>location:position</code>` – `<code>head</code>`, `<code>body</code>` oder `<code>content</code>`, jeweils mit `<code>start</code>` oder `<code>end</code>`. Wird direkt in der Snippet-Notiz festgelegt.",
+    "snippet": "Bietet diese Code-Notiz als Snippet zum Einfügen in andere Code-Notizen an.",
+    "snippet_description": "Beschreibung, die neben diesem Code-Snippet angezeigt wird, wenn es zum Einfügen angeboten wird.",
+    "text_snippet": "Bietet diese Textnotiz als Snippet zum Einfügen in andere Textnotizen an.",
+    "text_snippet_description": "Beschreibung, die neben diesem Text-Snippet angezeigt wird, wenn es zum Einfügen angeboten wird.",
+    "ai_quick_action": "Bietet diese Notiz als Anweisung im Menü des KI-Assistenten im Texteditor an. Der Titel bezeichnet die Aktion, der Inhalt dient als Prompt.",
+    "execute_title": "Titel des Tabs, von dem aus diese Code-Notiz ausgeführt wird.",
+    "clipper_inbox": "Legt fest, wo der Web Clipper die erfassten Inhalte anstelle der Tagesnotiz speichert.",
+    "clip_type": "Zeichnet auf, wie der Web Clipper diese Notiz erstellt hat, z. B. `<code>clippings</code>`.",
+    "sent_from_sender": "Kennzeichnet eine Notiz als über den Sender eingegangen, anstatt in Trilium erstellt worden zu sein.",
+    "hide_children_overview": "Blendet die Liste der untergeordneten Notizen aus, die unter dem Inhalt dieser Notiz angezeigt wird.",
+    "media_notes_play_mode": "Legt fest, was der Mediaplayer nach dem Ende eines Titels macht, z. B. `<code>next</code>`, um mit der nächsten Notiz fortzufahren.",
+    "collection": "Kennzeichnet diese Vorlage als Sammlung, sodass sie beim Erstellen einer Notiz unter „Sammlungen“ angeboten wird.",
+    "web_view_src": "Die Adresse, die eine Webansicht-Notiz lädt.",
+    "icon_pack": "Identifiziert ein benutzerdefiniertes Symbolpaket anhand des Präfixes, mit dem seine Symbole benannt sind.",
+    "doc_name": "Identifiziert das In-App-Hilfedokument, das diese Notiz enthält. Wird intern verwendet.",
+    "doc_url": "Adresse der Online-Dokumentation, der diese Hilfenotiz entspricht. Wird intern verwendet.",
+    "language": "Legt die Sprache des Inhalts dieser Notiz fest und bestimmt damit die Rechtschreibprüfung sowie die Textrichtung.",
+    "original_file_name": "Der ursprüngliche Dateiname beim Import, der beibehalten wird, damit die Datei beim Export wieder unter diesem Namen gespeichert werden kann.",
+    "page_url": "Die Adresse der Webseite, von der der ausgeschnittene Inhalt stammt. Sie wird neben dem Titel der Notiz angezeigt.",
+    "command": "Legt fest, welcher integrierte Befehl beim Betätigen eines Launchers ausgeführt wird.",
+    "display_mode": "Legt fest, welcher Bereich in einem geteilten Editor angezeigt wird: `<code>source</code>`, `<code>preview</code>` oder `<code>split</code>` für beide. Überschreibt die Einstellung, die sonst durch `<code>#readOnly</code>` festgelegt würde.",
+    "search_string": "Die Suchabfrage, die bei einer gespeicherten Suche ausgeführt wird.",
+    "ancestor_depth": "Legt fest, wie viele Ebenen unterhalb der Notiz `<code>~ancestor</code>` ein Ergebnis liegen darf, z. B. `<code>eq5</code>` für genau fünf Ebenen darunter.",
+    "order_by": "Legt fest, wonach die Ergebnisse einer gespeicherten Suche sortiert werden, z. B. nach `<code>relevancy</code>` oder dem Namen eines Labels.",
+    "order_direction": "Legt die Sortierreihenfolge der Ergebnisse einer gespeicherten Suche fest: `<code>asc</code>` oder `<code>desc</code>`.",
+    "limit": "Legt die maximale Anzahl der Ergebnisse fest, die eine gespeicherte Suche zurückgibt.",
+    "fast_search": "Durchsucht nur Titel und Attribute und lässt den Inhalt der Notizen unberücksichtigt. Bei großen Datenbanken deutlich schneller.",
+    "include_archived_notes": "Bezieht archivierte Notizen in die Ergebnisse einer gespeicherten Suche ein. Standardmäßig werden diese nicht berücksichtigt.",
+    "debug": "Zeichnet auf, wie die Suchabfrage interpretiert wurde, um nachvollziehen zu können, warum eine gespeicherte Suche bestimmte Ergebnisse liefert.",
+    "launcher_type": "Legt fest, was ein Launcher beim Betätigen ausführt: `<code>note</code>`, `<code>script</code>`, `<code>command</code>`, `<code>customWidget</code>` oder `<code>spacer</code>`.",
+    "builtin_widget": "Legt fest, welches integrierte Widget ein Launcher anzeigt, z. B. `<code>spacer</code>` oder `<code>bookmarks</code>`.",
+    "script": "Legt fest, welches Skript beim Betätigen eines Launchers ausgeführt wird.",
+    "end_time": "Die Uhrzeit, zu der ein Ereignis endet. Sie wird, sofern vorhanden, in Verbindung mit `<code>#endDate</code>` verwendet, andernfalls mit `<code>#startDate</code>`.",
+    "presentation_theme": "Legt fest, mit welchem Design eine Präsentation angezeigt wird.",
+    "slide_background": "Der Hintergrund einer Folie, entweder als Farbe oder als CSS-Farbverlauf.",
+    "tab_width": "Legt fest, wie viele Leerzeichen einer Einrückungsebene in dieser Code-Notiz entsprechen.",
+    "indent_with_tabs": "Verwendet in dieser Code-Notiz Tabulatoren anstelle von Leerzeichen für die Einrückung.",
+    "week_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Wochennotiz angewendet.",
+    "script_in_launcher_content": "Führt den eigenen Inhalt der Launcher-Notiz als Skript aus, anstatt ihrer `<code>~script</code>`-Beziehung zu folgen.",
+    "base_size": "Legt die Breite fest, die ein Abstandhalter in der Startleiste einnimmt, bevor der verbleibende freie Platz verteilt wird, in Pixeln.",
+    "growth_factor": "Legt fest, wie viel des verfügbaren freien Platzes in der Startleiste dieser Abstandhalter im Verhältnis zu den anderen Abstandhaltern einnimmt.",
+    "desktop_only": "Zeigt diesen Launcher nur auf Bildschirmen in Desktop-Größe an.",
+    "electron_only": "Zeigt dies nur in der Desktop-Anwendung an, nicht wenn Trilium über einen Browser aufgerufen wird.",
+    "server_only": "Zeigt dies nur an, wenn Trilium über einen Browser aufgerufen wird, nicht in der Desktop-Anwendung.",
+    "beta": "Kennzeichnet diese Vorlage im Menü zum Erstellen von Notizen als Beta-Funktion.",
+    "one_note_page_id": "Die ursprüngliche Kennung der Seite in OneNote. Sie wird beim Import beibehalten, damit die Seite zurückverfolgt werden kann. Trilium selbst verwendet sie nicht.",
+    "one_note_section_id": "Die ursprüngliche Kennung des Abschnitts in OneNote. Sie wird beim Import beibehalten, damit der Abschnitt zurückverfolgt werden kann.",
+    "one_note_import_failed": "Kennzeichnet eine Notiz, die nicht aus OneNote importiert werden konnte, sodass nach fehlgeschlagenen Importen gesucht werden kann.",
+    "status": "Legt fest, in welcher Spalte eines Boards sich diese Notiz befindet. Dies ist das Label, nach dem ein Board standardmäßig gruppiert.",
+    "board_group_by": "Legt fest, nach welchem Label ein Board seine Spalten gruppiert, anstelle von `<code>#status</code>`.",
+    "state_id": "Der Wert, unter dem ein Aufgabenstatus gespeichert wird und den eine Notiz haben muss, um sich in diesem Status zu befinden.",
+    "markdown_symbol": "Das Zeichen, mit dem ein Aufgabenstatus in einer Markdown-Aufgabenliste dargestellt wird, z. B. `<code>x</code>` für eine erledigte Aufgabe.",
+    "is_completed": "Kennzeichnet einen Aufgabenstatus als abgeschlossen.",
+    "is_hidden": "Blendet einen Aufgabenstatus in den Auswahlmenüs aus, ohne ihn oder die bereits diesem Status zugeordneten Notizen zu löschen.",
+    "max_nesting_depth": "Legt fest, wie viele Ebenen untergeordneter Notizen in einer Tabelle angezeigt werden. Solange diese Einstellung aktiv ist, können Notizen nicht neu angeordnet werden.",
+    "include_archived": "Bezieht archivierte Notizen in diese Sammlung ein, die andernfalls nicht berücksichtigt werden.",
+    "calendar_view": "Legt fest, in welcher Ansicht ein Kalender geöffnet wird: `<code>timeGridDay</code>`, `<code>timeGridWeek</code>`, `<code>dayGridMonth</code>`, `<code>multiMonthYear</code>` oder `<code>listMonth</code>`.",
+    "calendar_initial_date": "Legt das Datum fest, mit dem ein Kalender geöffnet wird. Ist kein Datum festgelegt, wird der heutige Tag angezeigt.",
+    "calendar_hide_weekends": "Blendet Samstag und Sonntag im Kalender aus. Wird unabhängig vom festgelegten Wert angewendet.",
+    "calendar_week_numbers": "Zeigt die Wochennummer im Kalender an. Wird unabhängig vom festgelegten Wert angewendet.",
+    "calendar_slot_duration": "Legt die Dauer jedes Zeitintervalls eines Kalenders im Format `<code>HH:MM:SS</code>` fest. Standardmäßig beträgt sie 15 Minuten.",
+    "calendar_slot_label_interval": "Legt fest, in welchem Abstand die Zeitintervalle eines Kalenders beschriftet werden, im Format `<code>HH:MM:SS</code>`. Standardmäßig beträgt der Abstand eine Stunde.",
+    "calendar_title": "Legt das Attribut fest, aus dem der Titel eines Ereignisses übernommen wird, anstelle des Notiztitels. Entweder ein Label oder eine Beziehung, angegeben ohne `<code>#</code>` bzw. `<code>~</code>`.",
+    "calendar_displayed_attributes": "Kommagetrennte Namen von Attributen, deren Werte im Ereignis angezeigt werden. Eine Beziehung wird als Titel der Notiz angezeigt, auf die sie verweist.",
+    "calendar_start_date": "Legt das Label fest, aus dem ein Ereignis sein Startdatum bezieht, anstelle von `<code>#startDate</code>`. Wird ohne `<code>#</code>` angegeben.",
+    "calendar_end_date": "Legt das Label fest, aus dem ein Ereignis sein Enddatum bezieht, anstelle von `<code>#endDate</code>`.",
+    "calendar_start_time": "Names the label an event reads its end date from, instead of `<code>#endDate</code>`.",
+    "calendar_end_time": "Legt das Label fest, aus dem ein Ereignis seine Endzeit bezieht, anstelle von `<code>#endTime</code>`.",
+    "calendar_recurrence": "Legt das Label fest, aus dem ein Ereignis seine Wiederholungsregel bezieht, anstelle von <code>#recurrence</code>.",
+    "start_date": "Das Datum, an dem ein Ereignis beginnt, im Format <code>YYYY-MM-DD</code>. Dadurch wird es im Kalender eingeordnet.",
+    "end_date": "Das Datum, an dem ein mehrtägiges Ereignis endet. Der Endtag ist eingeschlossen.",
+    "start_time": "Die Uhrzeit, zu der ein Ereignis beginnt, im 24-Stunden-Format <code>HH:MM</code>. Ohne diese Angabe gilt das Ereignis als ganztägig.",
+    "recurrence": "Eine CalDAV-`<code>RRULE</code>`-Zeichenfolge, die das Ereignis wiederholen lässt. Der Beginn wird aus `<code>#startDate</code>` und `<code>#startTime</code>` übernommen, daher enthält die Regel kein `<code>DTSTART</code>`.",
+    "geolocation": "Der Breiten- und Längengrad, an dem die Notiz auf einer geografischen Karte platziert wird.",
+    "map_type": "Legt fest, welche Notizkarte dargestellt wird: `<code>link</code>` für die Beziehungen zwischen Notizen oder <code>tree</code> für die Hierarchie.",
+    "map_style": "Legt fest, in welchem Stil eine geografische Karte dargestellt wird. Zur Auswahl stehen die in den Sammlungseigenschaften angebotenen Raster- und Vektorstile.",
+    "map_dark_style": "Kennzeichnet den in <code>map:style</code> angegebenen benutzerdefinierten Stil einer geografischen Karte als dunkel, sodass die Titel der Markierungen darauf hell dargestellt werden. Die in den Sammlungseigenschaften angebotenen Stile enthalten diese Information bereits und benötigen dieses Label nicht.",
+    "map_scale": "Zeigt eine Maßstabsleiste auf der geografischen Karte an.",
+    "map_hide_labels": "Blendet die Notiztitel neben den Markierungen auf einer geografischen Karte aus.",
+    "map_cluster": "Fasst nahe beieinanderliegende Markierungen zu einer einzelnen nummerierten Blase zusammen, die sich beim Anklicken öffnet.",
+    "wrap_lines": "Bricht lange Zeilen in dieser Code-Notiz um, anstatt horizontal zu scrollen.",
+    "internal_bookmark": "Eine Stelle innerhalb der Notiz, auf die direkt verlinkt werden kann. Wird von Trilium automatisch aktuell gehalten.",
+    "internal_link": "Eine Verknüpfung von dieser Notiz zu einer anderen, die von Trilium automatisch aktuell gehalten wird, damit Rückverweise und die Notizkarte dargestellt werden können.",
+    "image_link": "Ein in diese Notiz eingebettetes Bild, das von Trilium automatisch aktuell gehalten wird.",
+    "relation_map_link": "Eine auf dieser Beziehungskarte platzierte Notiz, die von Trilium automatisch aktuell gehalten wird.",
+    "include_note_link": "Eine in den Inhalt dieser Notiz eingebundene Notiz, die von Trilium automatisch aktuell gehalten wird.",
+    "date_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Tagesnotiz angewendet.",
+    "month_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Monatsnotiz angewendet.",
+    "quarter_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Quartalsnotiz angewendet.",
+    "year_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Jahresnotiz angewendet.",
+    "search_script": "Führt ein Backend-Skript aus, um die Ergebnisse dieser gespeicherten Suche zu erzeugen, anstatt `<code>#searchString</code>` auszuwerten. Das Skript gibt ein Array von Notiz-IDs zurück.",
+    "ancestor": "Beschränkt eine gespeicherte Suche auf den Unterbaum der Notiz, auf die diese Beziehung verweist.",
+    "target": "Die Notiz, die beim Betätigen eines Launchers geöffnet wird.",
+    "hoisted_note": "Die Notiz, die als Wurzel festgelegt wird, wenn ein Launcher sein Ziel öffnet.",
+    "share_logo": "Eine Bildnotiz, die als Logo der freigegebenen Seite verwendet wird. Sie muss sich innerhalb des freigegebenen Unterbaums befinden.",
+    "share_open_graph_image_relation": "Eine Bildnotiz, die als `<code>og:image</code>` der freigegebenen Seite bereitgestellt wird. Lege stattdessen das gleichnamige Label fest, um auf eine Adresse zu verweisen.",
+    "share_html": "Eine HTML-Notiz, die an der durch `<code>#shareHtmlLocation</code>` dieser Notiz festgelegten Stelle in die freigegebene Seite eingefügt wird. Sie muss sich innerhalb des freigegebenen Unterbaums befinden."
   },
   "attribute_editor": {
     "help_text_body1": "Um ein Label hinzuzufügen, geben Sie einfach z. B. <code>#rock</code> ein, oder wenn Sie auch einen Wert hinzufügen möchten, dann z. B. <code>#year = 2020</code>",
@@ -666,7 +817,32 @@
       "yearly": "Jährlich",
       "unit_years": "Jahre",
       "never": "Niemals",
-      "custom_rule": "Regel"
+      "custom_rule": "Regel",
+      "none": "Keine",
+      "does_not_repeat": "Keine Wiederholung",
+      "custom": "Custom",
+      "repeat_every": "Wiederholen alle",
+      "unit_days": "Tage",
+      "unit_weeks": "Wochen",
+      "unit_months": "Monate",
+      "on_days": "An Tagen",
+      "ends": "Endet",
+      "until": "Am Datum",
+      "count": "Nach",
+      "times": "Zeiten",
+      "custom_hint": "Eine iCalendar-Wiederholungsregel (RRULE) für erweiterte Einstellungen, die über die obigen Felder hinausgehen. Das Löschen beendet die Wiederholung."
+    },
+    "close_details": "Ereignisdetails schließen",
+    "expand_details": "Ereignis auf Fenstergröße vergrößern",
+    "restore_details": "Termin wieder neben seinen Platz im Kalender setzen",
+    "dates": {
+      "all_day": "Ganztägig",
+      "date": "Datum",
+      "start_date": "Startdatum",
+      "end_date": "Enddatum",
+      "time": "Zeit",
+      "start_time": "Startzeit",
+      "end_time": "Endzeit"
     }
   },
   "close_pane_button": {
@@ -714,7 +890,8 @@
     "new-version-available": "Neues Update verfügbar",
     "download-update": "Version {{latestVersion}} herunterladen",
     "search_notes": "Notizen durchsuchen",
-    "show_deleted_notes": "Gelöschte Notizen anzeigen"
+    "show_deleted_notes": "Gelöschte Notizen anzeigen",
+    "show_space_usage": "Speicherplatzbelegung anzeigen"
   },
   "sync_status": {
     "unknown": "<p>Der Synchronisations-Status wird bekannt, sobald der nächste Synchronisierungsversuch gestartet wird.</p><p>Klicken Sie hier, um die Synchronisierung jetzt auszulösen.</p>",
@@ -770,7 +947,8 @@
     "convert_format_warning": "Bei der Konvertierung können einige Formatierungen verloren gehen und anschließend Anpassungen nötig sein. Vorher wird eine Revision der aktuellen Notiz gespeichert, damit Sie sie wiederherstellen können. Möchten Sie fortfahren?",
     "convert_format_warning_risky": "Sie konvertieren zwischen zwei Formaten mit unterschiedlichen Möglichkeiten. Dabei können Formatierungen verloren gehen und nicht unterstützte Elemente entfernt werden.<br><br>Möchten Sie dieses Risiko vollständig übernehmen und mit der Konvertierung fortfahren?<br><br>Vorher wird eine Revision der aktuellen Notiz gespeichert, damit Sie zum ursprünglichen Format zurückkehren können.",
     "convert_to_markdown_successful": "Die Notiz wurde in Markdown konvertiert.",
-    "convert_to_text_successful": "Die Notiz wurde in eine Textnotiz konvertiert."
+    "convert_to_text_successful": "Die Notiz wurde in eine Textnotiz konvertiert.",
+    "note_attributes": "Notiz-Attribute"
   },
   "onclick_button": {
     "no_click_handler": "Das Schaltflächen-Widget „{{componentId}}“ hat keinen definierten Klick-Handler"
@@ -812,12 +990,14 @@
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
     "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
     "zoom_in_title": "Hineinzoomen",
-    "zoom_out_title": "Herauszoomen"
+    "zoom_out_title": "Herauszoomen",
+    "create_child_note_text": "Notiz hinzufügen"
   },
   "zpetne_odkazy": {
     "relation": "Relation",
     "backlink_one": "{{count}} Rücklink",
-    "backlink_other": "{{count}} Rücklinks"
+    "backlink_other": "{{count}} Rücklinks",
+    "no_backlinks": "Keine Notizen verlinken auf diese Notiz."
   },
   "mobile_detail_menu": {
     "insert_child_note": "Untergeordnete Notiz einfügen",
@@ -872,7 +1052,8 @@
     "open_all_in_tabs_tooltip": "Alle Resultate in neuen Tabs öffnen",
     "open_all_confirm_one": "Dies öffnet {{count}} Notiz in neuem Tab. Fortfahren?",
     "open_all_confirm_other": "Dies öffnet {{count}} Notizen in neuen Tabs. Fortfahren?",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "open_all_limit_exceeded": "Zu viele Notizen, um sie gleichzeitig zu öffnen ({{count}}). Das Maximum beträgt {{max}} – bitte grenzen Sie die Ergebnisse zuerst weiter ein."
   },
   "edited_notes": {
     "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet...",
@@ -930,7 +1111,8 @@
     "link-distance": "Verbindungslänge",
     "too-many-notes_one": "Dieser Bereich enthält {{count}} Notiz. Die Anzeige kann die Leistung beeinträchtigen.",
     "too-many-notes_other": "Dieser Bereich enthält {{count}} Notizen. Die Anzeige aller Notizen kann die Leistung beeinträchtigen.",
-    "show-anyway": "Karte anzeigen"
+    "show-anyway": "Karte anzeigen",
+    "expand": "Karte vergrößern"
   },
   "note_paths": {
     "title": "Notizpfade",
@@ -957,7 +1139,14 @@
     "add_new_attribute": "Neues Attribut hinzufügen",
     "remove_this_attribute": "Dieses Attribut entfernen",
     "unset-field-placeholder": "nicht gesetzt",
-    "remove_color": "Farblabel entfernen"
+    "remove_color": "Farblabel entfernen",
+    "send_email": "E-Mail an diese Adresse senden",
+    "call_phone": "Diese Nummer anrufen",
+    "create_option": "\"{{- option}}“ erstellen",
+    "remove_value": "Diesen Wert entfernen",
+    "select_values_placeholder": "Option auswählen oder neu erstellen",
+    "values_placeholder": "Wert eingeben und Eingabetaste drücken",
+    "add_value": "Diesen Wert hinzufügen"
   },
   "script_executor": {
     "query": "Abfrage",
@@ -1152,10 +1341,10 @@
   "database_anonymization": {
     "title": "Datenbankanonymisierung",
     "full_anonymization": "Vollständige Anonymisierung",
-    "full_anonymization_description": "Erstellt eine Kopie der Datenbank, bei der der gesamte Notizinhalt entfernt wurde; es bleiben nur Struktur und unkritische Metadaten erhalten. Sicher zum Teilen bei der Fehlerdiagnose.",
+    "full_anonymization_description": "Erstellt eine Kopie der Datenbank, aus der alle Notizinhalte entfernt wurden, sodass nur die Struktur und nicht vertrauliche Metadaten erhalten bleiben. Kann zur Fehlersuche sicher online geteilt werden.",
     "save_fully_anonymized_database": "Kopie erstellen",
     "light_anonymization": "Leichte Anonymisierung",
-    "light_anonymization_description": "Erstellt eine Kopie, bei der der Inhalt der Notiz entfernt ist, jedoch Titel, Attribute und benutzerdefinierte Skripte/Widgets erhalten bleiben. Bietet mehr Kontext für die Fehlerdiagnose.",
+    "light_anonymization_description": "Erstellt eine Kopie ohne Notizinhalte, wobei Titel, Attribute sowie benutzerdefinierte Skripte und Widgets erhalten bleiben. Bietet mehr Kontext für die Fehlersuche.",
     "choose_anonymization": "Sie können selbst entscheiden, ob Sie eine vollständig oder leicht anonymisierte Datenbank bereitstellen möchten. Selbst eine vollständig anonymisierte Datenbank ist sehr hilfreich, in manchen Fällen kann jedoch eine leicht anonymisierte Datenbank den Prozess der Fehleridentifikation und -behebung beschleunigen.",
     "save_lightly_anonymized_database": "Kopie erstellen",
     "existing_anonymized_databases": "Vorhandene anonymisierte Datenbanken",
@@ -1166,7 +1355,7 @@
     "successfully_created_lightly_anonymized_database": "Leicht anonymisierte Datenbank in {{anonymizedFilePath}} erstellt",
     "no_anonymized_database_yet": "Noch keine anonymisierte Datenbank.",
     "description": "Erstellt eine anonymisierte Kopie Ihrer Datenbank für den Austausch mit Entwicklern zur Fehlerdiagnose, ohne persönliche Daten preiszugeben.",
-    "anonymized_databases_location": "Anonymisierte Datenbanken werden in {{- anonymizedFolder}} gespeichert.",
+    "anonymized_databases_location": "Anonymisierte Datenbanken werden in <Folder/> gespeichert.",
     "download": "Herunterladen"
   },
   "database_integrity_check": {
@@ -2308,8 +2497,7 @@
   },
   "server": {
     "unknown_http_error_title": "Kommunikationsfehler mit dem Server",
-    "unknown_http_error_content": "Statuscode: {{statusCode}}\nURL: {{method}} {{url}}\nNachricht: {{message}}",
-    "traefik_blocks_requests": "Falls Sie den Traefik-Reverse-Proxy verwenden: Dieser hat eine grundlegende Änderung eingeführt, die die Kommunikation mit dem Server beeinträchtigt."
+    "unknown_http_error_content": "Statuscode: {{statusCode}}\nURL: {{method}} {{url}}\nNachricht: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Zur vorherigen Notiz zurückkehren",
@@ -3021,7 +3209,12 @@
   },
   "options": {
     "title": "Optionen",
-    "back": "Zurück zu allen Optionen"
+    "back": "Zurück zu allen Optionen",
+    "search_placeholder": "Sucheinstellungen",
+    "search_clear": "Suche leeren",
+    "search_title": "Optionensuche",
+    "search_hint": "Suchbegriff eingeben, um alle Einstellungsseiten zu durchsuchen.",
+    "search_no_results": "Keine Einstellung entspricht Ihrer Suche."
   },
   "split_editor": {
     "render_error": "Vorschau konnte nicht gerendert werden",
@@ -3069,7 +3262,8 @@
     "import_count_one": "{{count}} Abschnitt importieren",
     "import_count_other": "{{count}} Abschnitte importieren",
     "refresh": "Aktualisieren",
-    "load_retry": "Erneut versuchen"
+    "load_retry": "Erneut versuchen",
+    "no_notebooks_hint": "Es werden nur Notizbücher aufgelistet, die im eigenen OneDrive dieses Kontos gespeichert sind. Notizbücher, die mit dir geteilt wurden oder auf einer SharePoint- oder Teams-Website liegen, können nicht importiert werden."
   },
   "full_content_width_switch": {
     "title": "Volle Breite"
@@ -3181,5 +3375,45 @@
     "back": "Zurück",
     "next": "Weiter",
     "step_progress": "Schritt {{current}} von {{total}}"
+  },
+  "attribute_list_panel": {
+    "no_attributes": "Keine Attribute",
+    "owned_one": "{{count}} eigenes Attribut",
+    "owned_other": "{{count}} eigene Attribute",
+    "inherited_one": "{{count}} geerbtes Attribut",
+    "inherited_other": "{{count}} geerbte Attribute",
+    "definitions_one": "{{count}} Definition",
+    "definitions_other": "{{count}} Definitionen",
+    "internal_one": "{{count}} internes Systemattribut",
+    "internal_other": "{{count}} interne Systemattribute",
+    "back": "Zurück zu den Attributen",
+    "inheritable": "Vererbbar: Wird auf diese Notiz und alle Unternotizen angewendet",
+    "delete": "Dieses Attribut löschen",
+    "delete_confirm": "Das Attribut \"{{name}}“ löschen?",
+    "add_definition": "Neue Definition hinzufügen",
+    "no_target": "Keine Zielnotiz",
+    "no_value": "Kein Wert",
+    "change_target": "Zielnotiz ändern",
+    "inverse_hint": "Umkehrung von \"{{name}}\": Der Zielnotiz wird automatisch eine \"{{name}}\"-Relation zugewiesen, die hierher zurückverweist",
+    "type_label": "Label",
+    "type_relation": "Beziehung",
+    "type_label_definition": "Label-Definition",
+    "type_relation_definition": "Beziehungs-Definition",
+    "system_hint": "System: Dieser Name hat eine vordefinierte Bedeutung",
+    "add_attribute": "Attribut hinzufügen",
+    "creation_kind_label": "Label: Hier klicken oder ~ eingeben, um daraus eine Beziehung zu machen",
+    "creation_kind_relation": "Beziehung: Hier klicken oder # eingeben, um daraus ein Label zu machen"
+  },
+  "attribute_names": {
+    "system": "System",
+    "system_description": "Trilium verknüpft eine feste Bedeutung mit diesem Namen: Sein Wert kann das Verhalten der Notiz verändern, anstatt sie nur zu beschreiben."
+  },
+  "sidebar_help": {
+    "attributes_what": "Die Labels und Beziehungen, die direkt für diese Notiz festgelegt sind. Ein Label versieht die Notiz mit einem Namen und optional einem Wert; eine Beziehung verweist auf eine andere Notiz.",
+    "attributes_inheritable": "Wenn eine als vererbbar markiert wird, wird sie an den gesamten Unterbaum unterhalb dieser Notiz weitergegeben, wo sie als „geerbt“ statt als „eigen“ aufgeführt wird.",
+    "attributes_inherited_what": "Beschriftungen (Labels) und Beziehungen (Relations), die von anderen Stellen auf diese Notiz verweisen: entweder vererbte Einträge, die bei einer übergeordneten Notiz gesetzt wurden, oder Einträge, die über eine Vorlage (Template) übernommen wurden.",
+    "attributes_inherited_source": "Diese sind hier schreibgeschützt. Jede Zeile zeigt die Notiz an, von der sie stammt. Dort können sie geändert oder entfernt werden.",
+    "attributes_definitions_what": "Eine Definition ist das Schema hinter einem Attributnamen: Sie legt fest, welchen Typ von Wert das Attribut annehmen kann, ob es mehrfach vergeben werden darf und ob es als promoted (hervorgehoben) gekennzeichnet ist.",
+    "attributes_definitions_promoted": "Ein hervorgehobenes Attribut (promoted attribute) wird direkt in der Notiz als Formularfeld angezeigt, anstatt nur in diesem Bereich aufgelistet zu werden. Definitionen stammen in der Regel aus einer Vorlage (Template), und jede Zeile zeigt die Notiz an, in der die jeweilige Definition gespeichert ist."
   }
 }

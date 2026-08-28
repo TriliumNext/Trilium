@@ -37,6 +37,7 @@ Trilium will identify your Claude Code binary in this order:
 
 *   By looking for a `TRILIUM_CLAUDE_CODE_PATH` environment variable pointing to the Claude binary. This allows overriding the path if needed.
 *   By looking for `claude` in your PATH, generally works in most circumstances.
+*   By asking your login shell for its `PATH` which lets a desktop install find a CLI installed through `nvm`, `fnm`, `asdf` or Homebrew, since a GUI-launched app doesn't inherit your terminal's environment.
 
 After your provider is set up, you'll benefit from the same features as an API key (note tools, web search, extended thinking, image/PDF attachments, streaming).
 

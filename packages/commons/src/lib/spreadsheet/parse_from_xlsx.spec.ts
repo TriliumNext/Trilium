@@ -10,9 +10,11 @@ import {
     parseXlsxToWorkbook,
     toArrayBuffer
 } from "./parse_from_xlsx.js";
+import { renderSpreadsheetToXlsx } from "./render_to_xlsx.js";
 import {
     BorderStyle,
     CellValueType,
+    CustomRangeType,
     type DataValidationRule,
     HorizontalAlign,
     type ICellData,
@@ -968,5 +970,73 @@ describe("parseRange", () => {
         expect(parseRange("zzz")).toBeNull();
         // A malformed end endpoint yields null too (covers the `!end` half of the guard).
         expect(parseRange("A1:zz")).toBeNull();
+    });
+});
+
+describe("hyperlinks", () => {
+    it("carries the link into the document Univer stores it in", async () => {
+        const sheet = await roundTrip((wb) => {
+            const ws = wb.addWorksheet("Sheet1");
+            ws.getCell("A1").value = { text: "Supplier", hyperlink: "https://example.com/pen" };
+        });
+
+        const cell = cellA1(sheet);
+        expect(cell?.v).toBe("Supplier");
+        expect(cell?.t).toBe(CellValueType.STRING);
+        expect(cell?.p?.body).toEqual({
+            dataStream: "Supplier\r\n",
+            textRuns: [{ ts: {}, st: 0, ed: 8 }],
+            paragraphs: [{ startIndex: 8 }],
+            sectionBreaks: [{ startIndex: 9 }],
+            customRanges: [{
+                rangeId: "link-A1",
+                rangeType: CustomRangeType.HYPERLINK,
+                startIndex: 0,
+                endIndex: 7,
+                properties: { url: "https://example.com/pen", refId: "link-A1" }
+            }]
+        });
+    });
+
+    it("keeps the display text alone when the target is unsafe", async () => {
+        const sheet = await roundTrip((wb) => {
+            const ws = wb.addWorksheet("Sheet1");
+            ws.getCell("A1").value = { text: "Supplier", hyperlink: "javascript:alert(1)" };
+        });
+
+        expect(cellA1(sheet)?.v).toBe("Supplier");
+        expect(cellA1(sheet)?.p).toBeUndefined();
+    });
+
+    it("survives an export and re-import of the same workbook", async () => {
+        const exported = await renderSpreadsheetToXlsx(JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                styles: {},
+                sheets: {
+                    s1: {
+                        id: "s1", name: "Sheet1", hidden: 0, mergeData: [], rowData: {}, columnData: {},
+                        cellData: {
+                            "0": {
+                                "0": {
+                                    p: {
+                                        body: {
+                                            dataStream: "Pen\r\n",
+                                            customRanges: [{ startIndex: 0, endIndex: 2, properties: { url: "https://example.com/pen" } }]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }));
+
+        const { workbook } = await parseXlsxToWorkbook(exported as ArrayBuffer);
+        const cell = cellA1(workbook.sheets[workbook.sheetOrder[0]]);
+        expect(cell?.v).toBe("Pen");
+        expect(cell?.p?.body?.customRanges?.[0]?.properties?.url).toBe("https://example.com/pen");
     });
 });

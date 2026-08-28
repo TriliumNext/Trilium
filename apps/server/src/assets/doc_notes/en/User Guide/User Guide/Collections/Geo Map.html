@@ -9,6 +9,9 @@
 <ul>
   <li>Add markers on the map, which can be customized with icons, colors and
     text.</li>
+  <li>Search the notes already on the map, and look up places anywhere in the
+    world.</li>
+  <li>Turn a place the map already shows into a marker by clicking it.</li>
   <li>Display tracks on the map using <code spellcheck="false">.gpx</code> files.</li>
   <li>3D view of the map, which displays buildings when using a vector map.</li>
 </ul>
@@ -20,6 +23,10 @@
   an error message will appear instead of the map (<em>This map can't be drawn because WebGL isn't available…</em>).</p>
 <h2>Interaction</h2>
 <ul>
+  <li>At the top-left there is the search bar. It searches the notes already on
+    the map, and it can also search for places online when you ask it to. While
+    you move through the results of a search, a counter with previous and next
+    buttons appears under it.</li>
   <li>At the bottom-center there is a central toolbar which provides editing
     features: adding new markers on the map and importing GPX tracks.</li>
   <li>At the bottom-right there are the viewport items:
@@ -47,6 +54,111 @@
 </ul>
 <p>The position on the map and the zoom are saved inside the map note and
   restored when visiting again the note.</p>
+<h2>Searching the map</h2>
+<p>The search bar at the top-left of the map searches in two places. It always
+  searches the notes that are already on the map. It can also search for places
+  online, but only when you ask it to.</p>
+<h3>Searching the notes already on the map</h3>
+<p>Type in the search bar, and the notes on the map are matched by their title
+  as you type. Accents are ignored, both in what you type and in the titles, so
+  <code spellcheck="false">zurich</code> finds <em>Zürich Hauptbahnhof</em>. Each word is searched
+  for on its own, so <code spellcheck="false">hotel paris</code> finds <em>Paris Hotel</em>. Notes without a
+  <code spellcheck="false">#geolocation</code> attribute are not offered, since there would be nowhere
+  to go. GPS tracks are offered, even though they carry no such attribute: selecting one brings
+  its whole route into view.</p>
+<p>If more notes match than the list can show, you are offered the ones closest
+  to the area you are viewing.</p>
+<h3>Searching for places online</h3>
+<p>Looking up a place sends what you typed to a third-party service. For this
+  reason, it never happens while you type. Instead, the last row of the result
+  list offers the search. That row reads <em>Search online for "…"</em>, with the
+  name of the service below it. The search runs only when you press that row or
+  select it with Enter.</p>
+<p>Trilium uses Nominatim, the place search run by the OpenStreetMap
+  Foundation. It needs no account and no API key. Its name is shown on every
+  row that belongs to it: the row that offers the search, the row that says a
+  search is running, and the row that reports that nothing was found or that
+  the service could not be reached.</p>
+<p>The search prefers the area you are viewing. Places inside the current view
+  are searched for first and listed above the others. If you search for a shop
+  while looking at your own town, you therefore find the branch in that town,
+  and not one with the same name on another continent. The view is always
+  treated as at least 25 km across, so a search made while zoomed into a single
+  street still covers the town around it.</p>
+<h3>Going to a point</h3>
+<p>If you type or paste coordinates into the search bar, a <em>Go to</em> row is
+  offered above all the other results. Selecting it moves the map to that exact
+  spot and marks it. You can then keep it as a marker, in the same way you keep
+  a place found by searching.</p>
+<p>A point has no name of its own. It only has the coordinates you typed. The
+  note is therefore given the same name as any other new note, which is the name
+  you also get from the <em>Add marker</em> button and from the + button in the
+  note tree. The note opens with that name selected, so you can type over it. If
+  the map has a <a class="reference-link" href="#root/_help_47ZrP6FNuoG8">titleTemplate</a> label,
+  the marker is named by that template instead.</p>
+<p>The forms understood are:</p>
+<ul>
+  <li>A plain pair, such as <code spellcheck="false">45.9432, 24.9668</code>. This is what Google
+    Maps and OpenStreetMap both give you when you ask for the coordinates of a
+    place, and it is also what the <code spellcheck="false">#geolocation</code> attribute holds.</li>
+  <li>The <code spellcheck="false">geo:</code> link that the map itself offers for a place, through
+    the <em>Open location</em> action.</li>
+  <li>The address of a place on Google Maps or OpenStreetMap, pasted whole.</li>
+</ul>
+<p>A pair that is not a place on Earth, such as <code spellcheck="false">1234, 5678</code>, is not
+  offered.</p>
+<h3>Reading the results</h3>
+<p>Results are gathered under headings, and each group is ordered by distance
+  from the middle of the map:</p>
+<ul>
+  <li><em>On this map</em>: notes that are already on the map, whatever their distance.</li>
+  <li><em>Nearby</em>: places found within about 25 km of the view.</li>
+  <li><em>Far away</em>: all the other places.</li>
+</ul>
+<p>The headings only appear when at least two of the three groups contain
+  something. Every row that has a position shows how far away it is, in
+  kilometres or miles according to your locale. A place found online shows its
+  name on the first line and its address on the second.</p>
+<h3>Selecting a result</h3>
+<p>Selecting a note already on the map moves to its marker and opens the note
+  beside the map, as clicking the marker would.</p>
+<p>Selecting a place found online moves the map to it and marks it with a
+  temporary pin. The pin has a different colour from the map's own markers. The
+  map is fitted to the area that the place covers, so a country fills the view,
+  while a house is shown at street level. Some places have a boundary, such as a
+  country, a county or a park. When the service reports one, that boundary is
+  outlined under the pin.</p>
+<p>A panel then opens with the place's full address and its coordinates: in the
+  top-right corner on desktop, and at the bottom of the map on mobile, where the
+  top is kept for the search bar and the result counter. Pressing the
+  coordinates copies them to the clipboard.</p>
+<h3>Keeping a place as a marker</h3>
+<p>Press <em>Add as marker</em> in that panel to keep the place. A child note
+  is created under the map. It takes the name of the place, and its
+  <code spellcheck="false">#geolocation</code> attribute is already set. The note opens beside the
+  map, so you can edit it straight away. The temporary pin disappears, because
+  the place is now a marker like any other.</p>
+<p>The button is not offered on a map that cannot be edited, where the panel
+  can still be read.</p>
+<p>Press the panel's close button, or the Escape key, to send the place away
+  without keeping it. The pin goes with it.</p>
+<h3>Stepping through the results</h3>
+<p>Once you select a result, a counter appears under the search bar, with a
+  previous and a next button. These buttons move through everything the search
+  offered, in the order it was listed. You can therefore compare several results
+  without opening the list again. Pressing the counter itself moves the map back
+  to the current result, which is useful after you have moved the map away from
+  it.</p>
+<h3>The keyboard</h3>
+<ul>
+  <li><strong>Enter</strong> runs the online search when its row is the one
+    selected, and otherwise moves to the highlighted result. Pressed after a
+    result has been taken, it brings the list back.</li>
+  <li><strong>Escape</strong> closes the result list, and closes the place panel.</li>
+  <li>Returning to the search bar reopens the list it was showing.</li>
+  <li>The <strong>X</strong> at the end of the bar empties it, which also takes a
+    searched place, its pin and its panel off the map.</li>
+</ul>
 <h2>Adding a marker using the map</h2>
 <h3>Adding a new note using the plus button</h3>
 <ol>
@@ -93,6 +205,40 @@
   <p>Dragging existing notes only works if the map is in editing mode. See
     the <em>Read-only</em> section for more information.</p>
 </aside>
+<h3>Adding a note from a place the map already shows</h3>
+<p>When a vector map style is used, the map itself draws the shops, cafés,
+  museums and other places around the area being viewed. Once the map is
+  zoomed in far enough for these to be drawn, they can be clicked:</p>
+<ol>
+  <li>Look for the places drawn in orange. This is the same colour used for a
+    place found by searching. These are the places you can click. They are drawn
+    almost solid, while the other places on the map stay a faint grey.</li>
+  <li>Rest the mouse on one of them. Its name appears above it, and the mouse
+    cursor changes to a pointer. The map draws these places as icons without
+    names, so you read a name by hovering over it. If all the names were shown
+    at once, they would crowd out the titles of your own markers.</li>
+  <li>Click it. The same panel used for a place found by searching appears. It
+    shows the name of the place and its coordinates, and a pin is placed on the
+    map.</li>
+  <li>Press <em>Add as marker</em> to keep it. The note is created with the name
+    of the place as its title, and with the icon that matches the kind of place
+    it is.</li>
+</ol>
+<p>Places are read from the map data that has already been downloaded, so
+  clicking one does not send anything to the internet.</p>
+<p>Some things to keep in mind:</p>
+<ul>
+  <li>Places with no name in the map data, such as benches or parking spaces,
+    show no name and cannot be clicked. Clicking them does nothing, just like
+    clicking an empty part of the map.</li>
+  <li>The map's own markers come first. If a marker covers a place, clicking it
+    opens the note and not the place.</li>
+  <li>This does not work with the raster (OpenStreetMap) style, because its
+    places are part of the map image. It also does not work with the
+    <em>Neutrino</em> style, which draws no places.</li>
+  <li>In read-only mode you can still click a place and read it, but you cannot
+    keep it as a marker.</li>
+</ul>
 <h2>How the location of the markers is stored</h2>
 <p>The location of a marker is stored in the <code spellcheck="false">#geolocation</code> attribute
   of the child notes:</p>
@@ -204,6 +350,9 @@ class="admonition note">
     <code
     spellcheck="false">#color</code>attribute such as <code spellcheck="false">#color=green</code>.</p>
   <h3>Adding the coordinates manually</h3>
+  <p>Searching for the place is usually quicker (see <em>Searching the map</em> above).
+    The steps below remain useful for a coordinate that is already to hand, or
+    for a place the search cannot find.</p>
   <p>In a nutshell, create a child note and set the <code spellcheck="false">#geolocation</code> attribute
     to the coordinates.</p>
   <p>The value of the attribute is made up of the latitude and longitude separated
@@ -276,6 +425,9 @@ class="admonition note">
     <li>The add button at the bottom of the map.</li>
     <li>Repositioning markers.</li>
     <li>Editing from the contextual menu (removing locations or adding new items).</li>
+  <li>Keeping a place as a marker, whether you found it by searching or clicked
+    it on the map. You can still search and click, and you can still look at a
+    place and copy its coordinates.</li>
   </ul>
   <p>To set a map as read-only, go to&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;→ <em>Editable</em> → <em>Read-only</em> (on
     the new layout, or in Basic Properties on the&nbsp;<a class="reference-link"

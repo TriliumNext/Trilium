@@ -43,10 +43,10 @@ export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, on
 
     return (
         <OverlayControlGroup className="geo-edit-toolbar" placement="bottom-center" overCanvas>
-            {/* The pin a note dropped on the map wears (see CHILD_NOTE_ICON in api.ts) — the button
-                shows the very thing it drops, which is also the ghost that will follow the pointer
-                once armed. The words beside it are what names the button; the tooltip says at more
-                length what it does. */}
+            {/* The pin a note dropped on the map wears (see GEO_MARKER_ICON in commons) — the
+                button shows the very thing it drops, which is also the ghost that will follow the
+                pointer once armed. The words beside it are what names the button; the tooltip says
+                at more length what it does. */}
             <OverlayControlButton
                 title={placing ? t("geo-map.create-child-note-cancel") : t("geo-map.create-child-note-title")}
                 icon="bx-pin"

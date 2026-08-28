@@ -344,7 +344,8 @@
     "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "This note type cannot be displayed."
+    "note-cannot-be-displayed": "This note type cannot be displayed.",
+    "included-note-requires-credentials": "This included note is password-protected and cannot be displayed here."
   },
   "onenote_import": {
     "root-title": "OneNote import",

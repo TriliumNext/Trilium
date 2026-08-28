@@ -11,8 +11,8 @@
  * Known fidelity gaps (Excel features Univer's cell model — and our exporter — don't carry):
  * conditional formatting, filters, charts, comments, frozen panes and defined names are dropped.
  * Data validation is carried for the common constraint types (dropdown lists, numeric/date/text
- * bounds) via the SHEET_DATA_VALIDATION_PLUGIN resource. Rich text is flattened to plain text and
- * hyperlinks keep their display text but lose the link. Theme/indexed colors are resolved
+ * bounds) via the SHEET_DATA_VALIDATION_PLUGIN resource. A hyperlink becomes the rich-text
+ * document Univer stores a link in. Rich text is flattened to plain text. Theme/indexed colors are resolved
  * against the standard Office palette (see `THEME_COLORS`), which is approximate when the
  * file ships a custom theme.
  */
@@ -23,6 +23,7 @@ import "./exceljs_augmentation.js";
 
 import {
     BorderStyle,
+    buildLinkedCellDocument,
     CellValueType,
     type DataValidationRule,
     HorizontalAlign,
@@ -506,10 +507,7 @@ function applyCellValue(data: ICellData, cell: ExcelJS.Cell): void {
             data.t = CellValueType.NUMBER;
             break;
         case ExcelJS.ValueType.Hyperlink:
-            // Keep the display text; the link itself has no inline Univer equivalent.
-            /* v8 ignore next -- defensive: a hyperlink cell always carries display text */
-            data.v = String((cell.value as ExcelJS.CellHyperlinkValue)?.text ?? "");
-            data.t = CellValueType.STRING;
+            applyHyperlink(data, cell);
             break;
         case ExcelJS.ValueType.RichText:
             data.v = flattenRichText(cell.value as ExcelJS.CellRichTextValue);
@@ -528,6 +526,23 @@ function applyCellValue(data: ICellData, cell: ExcelJS.Cell): void {
             // Null/Merge/empty — nothing to carry.
             break;
     }
+}
+
+/**
+ * Carries a hyperlink cell across as text plus the document Univer keeps its link in. The cell's
+ * address makes the range id unique within the workbook. An unsafe or missing target leaves the
+ * display text behind on its own.
+ */
+function applyHyperlink(data: ICellData, cell: ExcelJS.Cell): void {
+    const value = cell.value as ExcelJS.CellHyperlinkValue | null;
+    /* v8 ignore next -- defensive: a hyperlink cell always carries display text */
+    const text = String(value?.text ?? "");
+
+    data.v = text;
+    data.t = CellValueType.STRING;
+
+    const linkDocument = buildLinkedCellDocument(text, value?.hyperlink, `link-${cell.address}`);
+    if (linkDocument) data.p = linkDocument;
 }
 
 /** Maps a formula's cached result (number/bool/string/date) onto the cell value + type. */

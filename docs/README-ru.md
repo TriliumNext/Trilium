@@ -349,12 +349,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [antoniotejada](https://github.com/nriver) за оригинальный виджет подсветки
   синтаксиса.
 * [Tabler Icons](https://tabler.io/icons) за системные иконки.
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+*   Значки приложений в диалоговом окне импорта взяты из:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) для
         OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+    *   [Font Awesome](https://fontawesome.com/) для Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) для Anytype.
+*  Значки поставщиков LLM взяты из[Lobe Icons](https://lobehub.com/icons).
 
 Trilium не существовал бы без технологий, лежащих в его основе:
 

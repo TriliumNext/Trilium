@@ -371,6 +371,29 @@ describe("DetailPane", () => {
         } ]);
     });
 
+    /** The two frames are the same width for a track that crosses no seam, give or take what
+     *  floating point does to them, and the raw one is the one that reads west of Greenwich. */
+    it("frames a track in the western hemisphere where it stands", async () => {
+        buildNote({ id: "root", title: "root", children: [ { id: "hikewest", title: "A ride", mime: GPX_MIME } ] });
+        const note = froca.notes["hikewest"];
+        const map = fakeMap();
+        map.addSource(trackSourceId(note.noteId), {
+            type: "FeatureCollection",
+            features: [
+                { type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: [ [ [ -80.3, 25.7 ], [ -80.1, 25.9 ] ] ] } }
+            ]
+        });
+        await mount([ note ], map);
+
+        map.setUnderPointer([ trackFeature(note) ]);
+        await act(async () => map.click());
+        await settle();
+
+        expect(map.fitted).toHaveLength(1);
+        const { bounds } = map.fitted[0] as { bounds: [ [ number, number ], [ number, number ] ] };
+        expect(bounds).toEqual([ [ -80.3, 25.7 ], [ -80.1, 25.9 ] ]);
+    });
+
     /**
      * A track that crosses the antimeridian holds points on either side of the ±180° seam — 179.9°
      * and -179.9° are a stroll apart on the ground. Read as raw minimum and maximum, they stand a
@@ -498,6 +521,16 @@ describe("DetailPane", () => {
 
         // Half of what the pane reaches into the map: its width plus the gap it stands off by.
         expect(map.eased).toEqual([ { center: [ 2, 1 ], offset: [ -200, 0 ] } ]);
+    });
+
+    it("stands the marker at the zoom the selection names", async () => {
+        const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
+        const map = fakeMap();
+
+        await mount([ note ], map, false, false, { noteId: note.noteId, zoom: 15 });
+        await settle();
+
+        expect(map.eased).toEqual([ { center: [ 2, 1 ], offset: [ -200, 0 ], zoom: 15 } ]);
     });
 
     /** An embedded map may be narrower than the pane, leaving nowhere to move to. */
