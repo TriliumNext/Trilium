@@ -28,10 +28,10 @@ interface ProviderImport {
 }
 
 /**
- * Selection + import logic shared by the zip-based provider panels (Obsidian/Anytype/Notion/Keep). They all
- * take a single tagged `.zip`: on desktop, "browse" opens the native dialog so the archive is read in place
- * (streamed, memory-bounded), while drag-and-drop keeps the upload route. The two selections are mutually
- * exclusive — choosing one clears the other.
+ * Selection + import logic shared by archive provider panels (Anki, Obsidian, Anytype, Notion,
+ * and Keep). Each takes one tagged `.apkg` or `.zip`: on desktop, "browse" opens the native
+ * dialog so archive reads in place (streamed, memory-bounded), while drag-and-drop keeps the
+ * upload route. The two selections are mutually exclusive — choosing one clears the other.
  */
 export default function useProviderImport({ format, parentNoteId, shrinkImages, closeDialog }: ProviderImportArgs): ProviderImport {
     const [file, setFile] = useState<File | null>(null);

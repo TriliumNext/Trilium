@@ -296,6 +296,13 @@
     "attach_source": "Attach original HTML (debug)",
     "attach_source_hint": "Saves each page's unmodified OneNote HTML as an attachment on the imported note, for comparing against the converted result."
   },
+  "anki_import": {
+    "name": "Anki",
+    "description": "From an .apkg package",
+    "description_long": "Choose an Anki .apkg package. Trilium imports deck hierarchy, card content, tags, cloze markup, and referenced media. Imported cards start with Trilium's current scheduling; Anki templates, CSS, and review history are not imported yet.",
+    "choose_file": "Anki package (.apkg)",
+    "import": "Import package"
+  },
   "notion_import": {
     "name": "Notion",
     "description": "From an HTML export",

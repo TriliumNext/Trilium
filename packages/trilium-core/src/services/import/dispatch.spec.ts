@@ -60,6 +60,17 @@ describe("importFile (dispatch)", () => {
     afterEach(() => vi.clearAllMocks());
 
     describe("tagged providers (the upload is a plain .zip the dialog disambiguates by format)", () => {
+        it("routes an Anki-tagged upload without relying on its extension", async () => {
+            const file = makeFile({ originalname: "renamed.zip", path: "/tmp/deck.apkg" });
+            await importFile(taskContext, file, parentNote, makeOptions(), "anki");
+            expect(stubbed.importAnkiPackage).toHaveBeenCalledWith(
+                taskContext,
+                { path: "/tmp/deck.apkg" },
+                parentNote,
+                "renamed.zip"
+            );
+        });
+
         it("routes a notion-tagged upload to the Notion importer, reading from the temp path", async () => {
             const file = makeFile({ path: "/tmp/up.zip" });
             await importFile(taskContext, file, parentNote, makeOptions(), "notion");
@@ -100,8 +111,29 @@ describe("importFile (dispatch)", () => {
             await importFile(taskContext, makeFile({ originalname: "any.zip", buffer, path: undefined }), parentNote, makeOptions(), "anytype");
             expect(stubbed.importAnytype).toHaveBeenCalledWith(taskContext, buffer, parentNote, "any.zip");
 
-            await importFile(taskContext, makeFile({ originalname: "obs.zip", buffer, path: undefined }), parentNote, makeOptions(), "obsidian");
-            expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, buffer, parentNote, "obs.zip");
+            await importFile(
+                taskContext,
+                makeFile({ originalname: "deck.apkg", buffer, path: undefined }),
+                parentNote,
+                makeOptions(),
+                "anki"
+            );
+            expect(stubbed.importAnkiPackage).toHaveBeenCalledWith(
+                taskContext,
+                buffer,
+                parentNote,
+                "deck.apkg"
+            );
+
+            await importFile(taskContext, makeFile({
+                originalname: "obs.zip", buffer, path: undefined
+            }), parentNote, makeOptions(), "obsidian");
+            expect(stubbed.importObsidian).toHaveBeenCalledWith(
+                taskContext,
+                buffer,
+                parentNote,
+                "obs.zip"
+            );
         });
 
         it("ignores the format tag and falls through to single import when the upload is a bare string body", async () => {

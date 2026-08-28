@@ -1525,8 +1525,8 @@
     "semantic_hash": "1c4320fd508ca048bfeec596c729caff"
   },
   "apps/client/src/translations/en/translation.json": {
-    "mtime": 1787855955.3748515,
-    "ast_hash": "f070dcb00e2c3b6f434e6b8938b18750",
+    "mtime": 1787916656.8390641,
+    "ast_hash": "dc1c979098b4892c1415cad1f3d5bcda",
     "semantic_hash": ""
   },
   "apps/client/src/translations/es/entry.json": {
@@ -2940,9 +2940,9 @@
     "semantic_hash": "1151b1825b9bf6c125c3611d424fd173"
   },
   "apps/client/src/widgets/dialogs/import/index.ts": {
-    "mtime": 1786902991.289816,
-    "ast_hash": "a773dcc3d2166e4b4d6d7fbfae14aa71",
-    "semantic_hash": "a773dcc3d2166e4b4d6d7fbfae14aa71"
+    "mtime": 1787916637.9102032,
+    "ast_hash": "328589eabcaf29f43deb4d635c44989c",
+    "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/import/keep.tsx": {
     "mtime": 1786902991.289864,
@@ -2980,9 +2980,9 @@
     "semantic_hash": "e992d7d7d47d3a77f96b9e02eacaddfd"
   },
   "apps/client/src/widgets/dialogs/import/useProviderImport.ts": {
-    "mtime": 1786902991.2904062,
-    "ast_hash": "54d4905302384631c7ce37d76b300508",
-    "semantic_hash": "54d4905302384631c7ce37d76b300508"
+    "mtime": 1787916936.0854557,
+    "ast_hash": "615893958042b44b5ae609912efa0c1d",
+    "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/include_note.tsx": {
     "mtime": 1786902991.29047,
@@ -6105,9 +6105,9 @@
     "semantic_hash": "e41cad3ae1e7a4e649cdd65ba9a5cdda"
   },
   "apps/desktop/src/services/import.ts": {
-    "mtime": 1786902991.365051,
-    "ast_hash": "a9ed4c2121461970a79d084c1722f53a",
-    "semantic_hash": "a9ed4c2121461970a79d084c1722f53a"
+    "mtime": 1787916946.6539671,
+    "ast_hash": "e337672227e33df7ff5915f72c2570be",
+    "semantic_hash": ""
   },
   "apps/desktop/src/services/loopback_oauth.ts": {
     "mtime": 1786902991.365101,
@@ -13105,13 +13105,13 @@
     "semantic_hash": "b3ecea25107895af8928d27d7e25abe3"
   },
   "packages/trilium-core/src/services/import/dispatch.spec.ts": {
-    "mtime": 1787908295.4790473,
-    "ast_hash": "8229322271d48871c5268fbf6016a33e",
+    "mtime": 1787916704.9355888,
+    "ast_hash": "ff0a9b8193fa992aacd597f99ae119ca",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/import/dispatch.ts": {
-    "mtime": 1787908288.8677711,
-    "ast_hash": "5011adf40b975f2dea164e302805b9f3",
+    "mtime": 1787916648.380117,
+    "ast_hash": "adf67879710ac42ec21909463f5aba25",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/import/enex.spec.ts": {
@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1787916038.2831683,
-    "ast_hash": "decbf51a3dd35c1a8750043200729afc",
+    "mtime": 1787916714.4056706,
+    "ast_hash": "7b4b7adf5f9cf36f719700a71558b1a8",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -17880,13 +17880,13 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
-    "mtime": 1787909009.7765877,
-    "ast_hash": "119a4db5c5e723d528b546d8b0ce92db",
+    "mtime": 1787916722.5160983,
+    "ast_hash": "49313d4e2268de698a559242f5b0bbf4",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787916018.0800233,
-    "ast_hash": "b11e0a9bf290de15ba4a8e0ab66582c1",
+    "mtime": 1787916731.0050418,
+    "ast_hash": "4b05051093ac7a53d09abc74e17b3bb9",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -25052,6 +25052,16 @@
   "docs/Developer Guide/Developer Guide/Flashcards/06_third_party_notices.md": {
     "mtime": 1787907835.5490515,
     "ast_hash": "8e0acf0004e831da71544ce8ba89c2e5",
+    "semantic_hash": ""
+  },
+  "apps/client/src/widgets/dialogs/import/anki.spec.tsx": {
+    "mtime": 1787916755.6223285,
+    "ast_hash": "d9907406e619f7d505e995c4d4ebf91a",
+    "semantic_hash": ""
+  },
+  "apps/client/src/widgets/dialogs/import/anki.tsx": {
+    "mtime": 1787916629.9524603,
+    "ast_hash": "3432c22f36dfb5fad1a1ca5956444bd5",
     "semantic_hash": ""
   }
 }
