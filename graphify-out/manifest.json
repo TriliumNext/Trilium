@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1787928350.9968128,
-    "ast_hash": "9422c866fd811d576cc07ee6fe6de55e",
+    "mtime": 1787929280.6937182,
+    "ast_hash": "5ca0346721fbfd3885c84a49ebb9d500",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787928369.3138905,
-    "ast_hash": "ef0d93dfc56f955194ca20bcbab2045b",
+    "mtime": 1787929287.0439224,
+    "ast_hash": "367fdf30009ef97e28324e93c3c3ef35",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -25067,6 +25067,16 @@
   "packages/trilium-core/src/services/flashcards/anki_export.ts": {
     "mtime": 1787928437.0781229,
     "ast_hash": "f20f2a5578b4d07648df8972352de825",
+    "semantic_hash": ""
+  },
+  "docs/Developer Guide/Developer Guide/Flashcards/Flashcards.md": {
+    "mtime": 1787929259.6630685,
+    "ast_hash": "02ee120512acb93b6ceb88081d7079df",
+    "semantic_hash": ""
+  },
+  "docs/Release Notes/Release Notes/v0.105.0.md": {
+    "mtime": 1787929274.7233107,
+    "ast_hash": "9d3fa54fabc8e94430a2bdbb3053256c",
     "semantic_hash": ""
   }
 }
