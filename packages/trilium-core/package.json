@@ -19,6 +19,7 @@
     "chardet": "2.2.0",
     "color": "5.0.3",
     "escape-html": "1.0.3",
+    "fzstd": "0.1.1",
     "i18next": "26.3.6",
     "js-yaml": "5.2.3",
     "lz-string": "1.5.0",

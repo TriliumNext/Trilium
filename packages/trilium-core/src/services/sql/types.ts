@@ -18,10 +18,20 @@ export interface RunResult {
     lastInsertRowid: number;
 }
 
+/**
+ * Isolated query-only database used to inspect imported SQLite files without replacing Trilium's
+ * connection.
+ */
+export interface ReadOnlyDatabase {
+    getRows<T>(query: string, params?: Params): T[];
+    close(): void;
+}
+
 export interface DatabaseProvider {
     loadFromFile(path: string, isReadOnly: boolean): void;
     loadFromMemory(): void;
     loadFromBuffer(buffer: Uint8Array): void;
+    openReadOnlyDatabase(buffer: Uint8Array): ReadOnlyDatabase;
     /** Copies the database to the given file, resolving only once the copy has fully completed. */
     backup(destinationFile: string): void | Promise<void>;
     /**

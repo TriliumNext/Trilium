@@ -1,6 +1,6 @@
 import { getContext } from "../context.js";
 import type LogService from "../log.js";
-import type { DatabaseProvider, Params, RunResult, Statement } from "./types.js";
+import type { DatabaseProvider, Params, ReadOnlyDatabase, RunResult, Statement } from "./types.js";
 
 const LOG_ALL_QUERIES = false;
 
@@ -45,6 +45,11 @@ export class SqlService {
     rebuildFromBuffer(buffer: Uint8Array) {
         this.statementCache = {};
         this.dbConnection.loadFromBuffer(buffer);
+    }
+
+    /** Opens imported SQLite bytes without disturbing the live Trilium connection. */
+    openReadOnlyDatabase(buffer: Uint8Array): ReadOnlyDatabase {
+        return this.dbConnection.openReadOnlyDatabase(buffer);
     }
 
     /**

@@ -82,21 +82,44 @@ export default class BrowserZipProvider implements ZipProvider {
     readZipFile(
         source: ZipSource,
         processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
-        filenameEncoding?: string
+        filenameEncoding?: string,
+        entryFilter?: (entry: ZipEntry) => boolean
     ): Promise<void> {
         const buffer = requireBuffer(source);
         return new Promise<void>((res, rej) => {
             // Read inside the executor so a malformed archive rejects rather than throwing
             // synchronously, matching how an unzip() failure surfaces.
             const fileNames = readCentralDirectory(buffer);
+            const entrySizes = new Map<string, number>();
 
-            unzip(buffer, async (err, files) => {
+            unzip(buffer, {
+                filter: (file) => {
+                    const decodedName = decodeZipFileName(
+                        file.name,
+                        fileNames.get(file.name),
+                        filenameEncoding
+                    );
+                    const entry = { fileName: decodedName, uncompressedSize: file.originalSize };
+                    const accepted = !entryFilter || entryFilter(entry);
+                    if (accepted) {
+                        entrySizes.set(file.name, file.originalSize);
+                    }
+                    return accepted;
+                }
+            }, async (err, files) => {
                 if (err) { rej(err); return; }
 
                 try {
                     for (const [fileName, data] of Object.entries(files)) {
                         await processEntry(
-                            { fileName: decodeZipFileName(fileName, fileNames.get(fileName), filenameEncoding) },
+                            {
+                                fileName: decodeZipFileName(
+                                    fileName,
+                                    fileNames.get(fileName),
+                                    filenameEncoding
+                                ),
+                                uncompressedSize: entrySizes.get(fileName) ?? data.byteLength
+                            },
                             () => Promise.resolve(data)
                         );
                     }

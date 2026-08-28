@@ -177,6 +177,23 @@ describe("BrowserZipProvider.readZipFile", () => {
         expect(result).toEqual({ "one.txt": "first", "dir/two.txt": "second" });
     });
 
+    it("reports expanded sizes and filters entries before extraction", async () => {
+        const zip = makeZip({ "keep.txt": "hello", "skip.txt": "ignored" });
+        const seen: ZipEntry[] = [];
+        await provider.readZipFile(
+            zip,
+            async (entry, readContent) => {
+                seen.push(entry);
+                await readContent();
+            },
+            undefined,
+            (entry) => entry.fileName === "keep.txt"
+        );
+
+        expect(seen).toHaveLength(1);
+        expect(seen[0]).toMatchObject({ fileName: "keep.txt", uncompressedSize: 5 });
+    });
+
     it("rejects on a corrupt archive", async () => {
         const garbage = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
         await expect(provider.readZipFile(garbage, async () => {})).rejects.toBeDefined();

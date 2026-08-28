@@ -73,4 +73,4 @@
 - [x] Leech dashboard with on-demand loading, unsuspend, and note-scoped review actions.
 - [ ] FSRS optimizer progress/results UI.
 - [x] Trilium JSON export/import of scheduling state and review history (settings page). Anki `.apkg` wizard remains future work.
-- [ ] Anki `.apkg` import/export wizard.
+- [ ] Anki `.apkg` import/export wizard. Generic file import now accepts legacy schema-11 and current Zstandard/schema-18 packages, recreates nested deck/card content, preserves tags and cloze markup, and starts imported cards with current FSRS defaults. Import filters media before extraction, bounds collection size/note count, and cleans partial trees after failure. Media, multiple Anki templates, per-card deck placement, scheduling history, export, and a dedicated option wizard remain.

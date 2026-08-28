@@ -1,5 +1,6 @@
 import { getSql } from "@triliumnext/core";
 import type { Statement } from "@triliumnext/core";
+import { readAnkiCollectionMetadata } from "@triliumnext/core/src/services/import/anki.js";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import BrowserSqlProvider from "./sql_provider.js";
@@ -311,6 +312,34 @@ describe("BrowserSqlProvider serialize / load / lifecycle", () => {
         reloaded.loadFromBuffer(Buffer.from(bytes));
         expect(reloaded.isDbInitialized()).toBe(true);
         reloaded.close();
+    });
+
+    it("opens imported SQLite bytes without replacing the live database", () => {
+        const seed = newProviderWithModule();
+        seed.loadFromMemory();
+        seed.exec(/*sql*/`
+            CREATE TABLE imported (value TEXT);
+            INSERT INTO imported VALUES ('anki');
+            CREATE TABLE col (ver INTEGER, decks TEXT, models TEXT);
+            INSERT INTO col VALUES (18, '', '');
+            CREATE TABLE decks (id INTEGER, name TEXT);
+            INSERT INTO decks VALUES (10, 'Languages::French');
+            CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT);
+            INSERT INTO fields VALUES (20, 0, 'Text');
+        `);
+        const bytes = seed.serialize();
+        seed.close();
+
+        const imported = provider.openReadOnlyDatabase(bytes);
+        expect(imported.getRows("SELECT value FROM imported")).toEqual([{ value: "anki" }]);
+        expect(JSON.parse(readAnkiCollectionMetadata(imported).decks)).toEqual({
+            "10": { id: 10, name: "Languages::French" }
+        });
+        expect(provider.prepare("SELECT COUNT(*) AS count FROM t").pluck().get([])).toEqual(
+            expect.any(Number)
+        );
+        imported.close();
+        imported.close();
     });
 
     it("close() drops the connection and is idempotent", () => {

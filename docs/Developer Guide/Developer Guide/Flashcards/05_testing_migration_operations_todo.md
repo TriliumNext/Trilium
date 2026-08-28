@@ -53,6 +53,15 @@
 - [x] Add invalid/orphan fixture; assert startup repair reports and safely repairs/quarantines rows for flashcards with missing source/deck notes.
 - [x] Test rollback when migration fails halfway. Existing migration runner handles failed migrations transactionally; no flashcard custom migration code needs separate rollback logic.
 - [x] Test old app behavior against migrated DB only if sync/schema compatibility requires it. Not required for unreleased MVP schema.
+- [x] Test Anki package extraction, current Zstandard/schema-18 and legacy schema-11 collection handling, malformed metadata, card-template grouping, cloze preservation, filtered ZIP reads, and isolated SQLite reads in server and standalone runtimes.
+
+### Upgrade and downgrade limitation
+
+Database migrations 241–244 add flashcard tables, indexes, scheduler snapshots, and card type metadata. They do not rewrite existing notes or options. Migrations are one-way: no down migration removes flashcard entities or review history. Before opening a database with a flashcard-enabled release, keep a pre-upgrade backup. To downgrade, restore that backup instead of opening the migrated database with an older binary. Mixed-version sync remains blocked on the compatibility verification below.
+
+### Learning-history privacy review
+
+Flashcard cards and append-only review rows sync like other entities. They contain source/deck IDs, ratings, review timestamps, optional answer duration, scheduler snapshots, and request IDs. They do not duplicate note titles, fronts, backs, or attachment content. JSON portability export includes this scheduling/history metadata only after an explicit user action. Regular UI exposes aggregates rather than raw logs, and no flashcard telemetry leaves Trilium. Deleting notes eventually erases associated cards/reviews through normal erase retention; a future compaction policy must preserve that behavior. Users should treat exported scheduling JSON as personal activity data.
 
 ## Performance and limits
 
@@ -74,9 +83,9 @@
 ## Release checklist
 
 - [ ] Add user/developer docs and release note.
-- [ ] Include dependency license attribution.
-- [ ] Document database migration and downgrade limitation.
+- [x] Include dependency license attribution. Flashcard dependency notices cover pinned `ts-fsrs` and `fzstd` versions.
+- [x] Document database migration and downgrade limitation.
 - [ ] Test backup/restore before release.
 - [ ] Test sync between previous release and flashcard-enabled release according to supported compatibility policy.
 - [ ] Add feature flag only if rollout risk warrants it; do not hide core UI behind a permanent experimental flag.
-- [ ] Review privacy implications of synced learning history.
+- [x] Review privacy implications of synced learning history.

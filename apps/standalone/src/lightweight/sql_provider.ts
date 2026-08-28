@@ -1,5 +1,12 @@
 import { type BindableValue, type SAHPoolUtil, default as sqlite3InitModule } from "@sqlite.org/sqlite-wasm";
-import type { DatabaseProvider, RunResult, Statement, Transaction } from "@triliumnext/core";
+import type {
+    DatabaseProvider,
+    Params,
+    ReadOnlyDatabase,
+    RunResult,
+    Statement,
+    Transaction
+} from "@triliumnext/core";
 
 // Type definitions for SQLite WASM (the library doesn't export these directly)
 type Sqlite3Module = Awaited<ReturnType<typeof sqlite3InitModule>>;
@@ -496,6 +503,64 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             this.sqlite3!.wasm.dealloc(p);
             throw e;
         }
+    }
+
+    openReadOnlyDatabase(buffer: Uint8Array): ReadOnlyDatabase {
+        this.ensureSqlite3();
+        const sqlite3 = this.sqlite3;
+        if (!sqlite3) {
+            throw new Error("SQLite WASM is not initialized.");
+        }
+
+        const view = buffer.constructor === Uint8Array
+            ? buffer
+            : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        const pointer = sqlite3.wasm.allocFromTypedArray(view);
+        const connection = new sqlite3.oo1.DB({ filename: ":memory:", flags: "c" });
+        if (!connection.pointer) {
+            connection.close();
+            sqlite3.wasm.dealloc(pointer);
+            throw new Error("Failed to open imported database.");
+        }
+
+        const resultCode = sqlite3.capi.sqlite3_deserialize(
+            connection.pointer,
+            "main",
+            pointer,
+            view.byteLength,
+            view.byteLength,
+            0
+        );
+        if (resultCode !== 0) {
+            connection.close();
+            sqlite3.wasm.dealloc(pointer);
+            throw new Error(`Failed to deserialize imported database: ${resultCode}`);
+        }
+
+        connection.exec("PRAGMA query_only = ON");
+        let closed = false;
+        return {
+            getRows<T>(query: string, params: Params = []): T[] {
+                const statement = new WasmStatement(
+                    connection.prepare(query),
+                    connection,
+                    sqlite3,
+                    query
+                );
+                try {
+                    return statement.all(params) as T[];
+                } finally {
+                    statement.finalize();
+                }
+            },
+            close() {
+                if (!closed) {
+                    connection.close();
+                    sqlite3.wasm.dealloc(pointer);
+                    closed = true;
+                }
+            }
+        };
     }
 
     backup(_destinationFile: string): void {

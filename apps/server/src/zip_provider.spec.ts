@@ -107,6 +107,26 @@ describe("NodejsZipProvider", () => {
         expect(lastModified).toBeInstanceOf(Date);
     });
 
+    it("reports expanded sizes and filters entries before reading", async () => {
+        const buffer = await buildZip([
+            { name: "keep.txt", content: "hello" },
+            { name: "skip.txt", content: "ignored" }
+        ]);
+        const seen: ZipEntry[] = [];
+        await provider.readZipFile(
+            buffer,
+            async (entry, readContent) => {
+                seen.push(entry);
+                await readContent();
+            },
+            undefined,
+            (entry) => entry.fileName === "keep.txt"
+        );
+
+        expect(seen).toHaveLength(1);
+        expect(seen[0]).toMatchObject({ fileName: "keep.txt", uncompressedSize: 5 });
+    });
+
     it("stores an entry uncompressed when `store` is set and still round-trips", async () => {
         // Already-compressed payloads pass `store: true` to skip deflate; the bytes must survive intact.
         const archive = provider.createZipArchive();

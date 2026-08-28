@@ -157,7 +157,8 @@ export default class NodejsZipProvider implements ZipProvider {
     async readZipFile(
         source: ZipSource,
         processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
-        filenameEncoding?: string
+        filenameEncoding?: string,
+        entryFilter?: (entry: ZipEntry) => boolean
     ): Promise<void> {
         const zipfile = await openZip(source);
 
@@ -169,13 +170,21 @@ export default class NodejsZipProvider implements ZipProvider {
                 const isUtf8Flagged = !!(entry.generalPurposeBitFlag & 0x800);
                 const encoding = isUtf8Flagged ? "utf-8" : (filenameEncoding || "utf-8");
                 const fileName = decodeBuffer(entry.fileNameRaw, encoding);
+                const zipEntry = {
+                    fileName,
+                    uncompressedSize: entry.uncompressedSize,
+                    lastModified: entry.getLastModDate()
+                };
+                if (entryFilter && !entryFilter(zipEntry)) {
+                    continue;
+                }
 
                 const readContent = async () => {
                     const readStream = await zipfile.openReadStreamPromise(entry);
                     return await streamToBuffer(readStream);
                 };
 
-                await processEntry({ fileName, lastModified: entry.getLastModDate() }, readContent);
+                await processEntry(zipEntry, readContent);
             }
         } finally {
             // Release the file descriptor for a path source (no-op for an already-closed buffer reader).

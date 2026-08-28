@@ -7,6 +7,8 @@ export type ZipSource = Uint8Array | { path: string };
 
 export interface ZipEntry {
     fileName: string;
+    /** Expanded byte size declared in the ZIP central directory. */
+    uncompressedSize?: number;
     /**
      * The entry's last-modification time, when the provider can read it (the server's reader does; the
      * standalone/WASM reader currently can't, so it's left undefined). ZIP carries no reliable creation time.
@@ -64,7 +66,8 @@ export interface ZipProvider {
     readZipFile(
         source: ZipSource,
         processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
-        filenameEncoding?: string
+        filenameEncoding?: string,
+        entryFilter?: (entry: ZipEntry) => boolean
     ): Promise<void>;
 
     createZipArchive(): ZipArchive;

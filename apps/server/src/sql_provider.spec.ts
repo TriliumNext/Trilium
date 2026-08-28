@@ -1,3 +1,5 @@
+import { readAnkiCollectionMetadata } from "@triliumnext/core/src/services/import/anki.js";
+import Database from "better-sqlite3";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -40,6 +42,38 @@ describe("BetterSqlite3Provider", () => {
         tx();
         expect((provider.prepare("SELECT COUNT(*) AS c FROM t") as any).get()).toEqual({ c: 2 });
 
+        provider.close();
+    });
+
+    it("opens imported SQLite bytes without replacing the live database", () => {
+        const source = new Database(":memory:");
+        source.exec(/*sql*/`
+            CREATE TABLE imported (value TEXT);
+            INSERT INTO imported VALUES ('anki');
+            CREATE TABLE col (ver INTEGER, decks TEXT, models TEXT);
+            INSERT INTO col VALUES (18, '', '');
+            CREATE TABLE decks (id INTEGER, name TEXT);
+            INSERT INTO decks VALUES (10, 'Languages::French');
+            CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT);
+            INSERT INTO fields VALUES (20, 0, 'Text');
+        `);
+        const bytes = source.serialize();
+        source.close();
+
+        const provider = new BetterSqlite3Provider();
+        provider.loadFromMemory();
+        provider.exec("CREATE TABLE live (value TEXT); INSERT INTO live VALUES ('trilium')");
+
+        const imported = provider.openReadOnlyDatabase(bytes);
+        expect(imported.getRows("SELECT value FROM imported")).toEqual([{ value: "anki" }]);
+        expect(JSON.parse(readAnkiCollectionMetadata(imported).decks)).toEqual({
+            "10": { id: 10, name: "Languages::French" }
+        });
+        expect((provider.prepare("SELECT value FROM live") as any).all()).toEqual([
+            { value: "trilium" }
+        ]);
+
+        imported.close();
         provider.close();
     });
 

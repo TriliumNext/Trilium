@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type BNote from "../../becca/entities/bnote.js";
 import type TaskContext from "../task_context.js";
+import ankiImportService from "./anki.js";
 import anytypeImportService from "./anytype/importer.js";
 import type { File } from "./common.js";
 import importFile, { type ImportOptions } from "./dispatch.js";
@@ -18,6 +19,8 @@ import zipImportService from "./zip.js";
 // real (singleton) service objects works regardless of load order. We stub each importer so nothing touches
 // the filesystem/DB, and assert which one ran and with what source (path vs. raw bytes) and extra arguments.
 const stubbed = {
+    importAnkiPackage: vi.spyOn(ankiImportService, "importAnkiPackage")
+        .mockResolvedValue({} as BNote),
     importNotion: vi.spyOn(notionImportService, "importNotion").mockResolvedValue({} as BNote),
     importKeep: vi.spyOn(keepImportService, "importKeep").mockResolvedValue({} as BNote),
     importAnytype: vi.spyOn(anytypeImportService, "importAnytype").mockResolvedValue({} as BNote),
@@ -112,6 +115,25 @@ describe("importFile (dispatch)", () => {
     });
 
     describe("extension-based routing (no format tag)", () => {
+        it("routes an .apkg to the Anki importer with its original name", async () => {
+            const buffer = new Uint8Array([7, 8, 9]);
+            const file = makeFile({ originalname: "French.apkg", buffer });
+            await importFile(taskContext, file, parentNote, makeOptions());
+            expect(stubbed.importAnkiPackage).toHaveBeenCalledWith(
+                taskContext,
+                buffer,
+                parentNote,
+                "French.apkg"
+            );
+        });
+
+        it("keeps an .apkg opaque when archive expansion is disabled", async () => {
+            const file = makeFile({ originalname: "French.apkg" });
+            await importFile(taskContext, file, parentNote, makeOptions({ explodeArchives: false }));
+            expect(stubbed.importAnkiPackage).not.toHaveBeenCalled();
+            expect(stubbed.importSingleFile).toHaveBeenCalledWith(taskContext, file, parentNote);
+        });
+
         it("routes a .zip to the generic zip importer when archives are exploded", async () => {
             const file = makeFile({ originalname: "backup.zip", path: "/tmp/b.zip" });
             await importFile(taskContext, file, parentNote, makeOptions());

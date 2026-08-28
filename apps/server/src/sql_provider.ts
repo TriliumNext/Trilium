@@ -1,4 +1,4 @@
-import type { DatabaseProvider, Statement, Transaction } from "@triliumnext/core";
+import type { DatabaseProvider, ReadOnlyDatabase, Statement, Transaction } from "@triliumnext/core";
 import Database, { type Database as DatabaseType } from "better-sqlite3";
 import { unlinkSync } from "fs";
 
@@ -43,6 +43,21 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
         // (each call would otherwise leak the previous handle).
         this.dbConnection?.close();
         this.dbConnection = new Database(buffer, dbOpts);
+    }
+
+    openReadOnlyDatabase(buffer: Uint8Array): ReadOnlyDatabase {
+        const view = Buffer.from(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        const connection = new Database(view, dbOpts);
+        connection.pragma("query_only = ON");
+
+        return {
+            getRows<T>(query: string, params: unknown[] = []): T[] {
+                return connection.prepare(query).all(params) as T[];
+            },
+            close() {
+                connection.close();
+            }
+        };
     }
 
     detach() {
