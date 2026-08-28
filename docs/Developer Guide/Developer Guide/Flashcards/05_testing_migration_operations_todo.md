@@ -89,5 +89,5 @@ Flashcard cards and append-only review rows sync like other entities. They conta
 - [x] Document database migration and downgrade limitation.
 - [ ] Test backup/restore before release.
 - [ ] Test sync between previous release and flashcard-enabled release according to supported compatibility policy.
-- [ ] Add feature flag only if rollout risk warrants it; do not hide core UI behind a permanent experimental flag.
+- [x] Add feature flag only if rollout risk warrants it; current decision is no feature flag because the UI is explicit opt-in, migrations are additive, and permanent experimental gating would fragment review/deck behavior.
 - [x] Review privacy implications of synced learning history.
