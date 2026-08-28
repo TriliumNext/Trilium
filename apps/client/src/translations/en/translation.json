@@ -299,7 +299,7 @@
   "anki_import": {
     "name": "Anki",
     "description": "From an .apkg package",
-    "description_long": "Choose an Anki .apkg package. Trilium imports deck hierarchy, card content, tags, cloze markup, and referenced media. Imported cards start with Trilium's current scheduling; Anki templates, CSS, and review history are not imported yet.",
+    "description_long": "Choose an Anki .apkg package. Trilium imports deck hierarchy, rendered card content, tags, cloze markup, referenced media, templates, CSS, scheduling state, and review history. Future reviews use Trilium's FSRS scheduler.",
     "choose_file": "Anki package (.apkg)",
     "import": "Import package"
   },
