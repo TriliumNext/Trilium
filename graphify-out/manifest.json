@@ -8410,13 +8410,13 @@
     "semantic_hash": "3e6a60d49d4fc7529798d426806fc3bf"
   },
   "apps/server/src/zip_provider.spec.ts": {
-    "mtime": 1787908305.266728,
-    "ast_hash": "ee8af488811dc19818606fc822563893",
+    "mtime": 1787915759.963173,
+    "ast_hash": "c9ab220dc80d9ea73456f6a3e1b462d3",
     "semantic_hash": ""
   },
   "apps/server/src/zip_provider.ts": {
-    "mtime": 1787908165.1179824,
-    "ast_hash": "940723004490d16c62790c3fb1f73297",
+    "mtime": 1787915963.042508,
+    "ast_hash": "07c028438ee7c8068dae4b994de5a86a",
     "semantic_hash": ""
   },
   "apps/server/start-docker.sh": {
@@ -8705,13 +8705,13 @@
     "semantic_hash": "d7948b23a8b4f78c7c2063a6d1e4142c"
   },
   "apps/standalone/src/lightweight/zip_provider.spec.ts": {
-    "mtime": 1787908312.772101,
-    "ast_hash": "eccec16b93d77df682ee7012056c9cd3",
+    "mtime": 1787915975.1307824,
+    "ast_hash": "c66898ad8557362d5a7717dec87b9886",
     "semantic_hash": ""
   },
   "apps/standalone/src/lightweight/zip_provider.ts": {
-    "mtime": 1787908184.003002,
-    "ast_hash": "9865cb3d7f4b3ff8dd93672bfa230ff7",
+    "mtime": 1787916118.7027428,
+    "ast_hash": "6f480fb6e78086d0168636d6e7895c16",
     "semantic_hash": ""
   },
   "apps/standalone/src/local-bridge.spec.ts": {
@@ -13255,14 +13255,14 @@
     "semantic_hash": "0ffdbaa2171255fc55b8eea1a98f6784"
   },
   "packages/trilium-core/src/services/import/obsidian/attachments.spec.ts": {
-    "mtime": 1786902991.745305,
-    "ast_hash": "7024ac56607e192f9874ffff80cd2d83",
-    "semantic_hash": "7024ac56607e192f9874ffff80cd2d83"
+    "mtime": 1787916124.6603286,
+    "ast_hash": "59b66d705dc8ff0a8a9219386ec37f40",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/import/obsidian/attachments.ts": {
-    "mtime": 1786902991.7453609,
-    "ast_hash": "d9505194fe1e225070765d8cd5718ed7",
-    "semantic_hash": "d9505194fe1e225070765d8cd5718ed7"
+    "mtime": 1787916131.992255,
+    "ast_hash": "b32d800e43265ee3ffcbfa468dd6f0ab",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/import/obsidian/excalidraw.spec.ts": {
     "mtime": 1786902991.7454095,
@@ -14375,8 +14375,8 @@
     "semantic_hash": "fd7a5d731e170c9d46a5238126e9b985"
   },
   "packages/trilium-core/src/services/zip_provider.ts": {
-    "mtime": 1787908155.777813,
-    "ast_hash": "e9ccef53e460eb5167d2bf089a56bdcd",
+    "mtime": 1787916151.970412,
+    "ast_hash": "cfa0b67791d2dfa88af07cd5e1e12e97",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/test/api_fixtures.spec.ts": {
@@ -14935,7 +14935,7 @@
     "semantic_hash": ""
   },
   "packages/share-theme/meta.json": {
-    "mtime": 1787908514.5875802,
+    "mtime": 1787916170.7182918,
     "ast_hash": "4d7dd177bc1defdd3acf1a190f864d7d",
     "semantic_hash": ""
   },
@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1787855544.9275846,
-    "ast_hash": "c10c3573f38ca803ca1dfc2ad66471aa",
+    "mtime": 1787916038.2831683,
+    "ast_hash": "decbf51a3dd35c1a8750043200729afc",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -17880,13 +17880,13 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
-    "mtime": 1787908432.4745142,
-    "ast_hash": "27eb258759db36fa2d747a5155e1285f",
+    "mtime": 1787909009.7765877,
+    "ast_hash": "119a4db5c5e723d528b546d8b0ce92db",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787908570.3888774,
-    "ast_hash": "848ba86f9c4c0f6c7827a0df83155a35",
+    "mtime": 1787916018.0800233,
+    "ast_hash": "b11e0a9bf290de15ba4a8e0ab66582c1",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -25040,13 +25040,13 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/import/anki.spec.ts": {
-    "mtime": 1787908231.5176198,
-    "ast_hash": "d828d0f10cc48033bcd28e64c1d04005",
+    "mtime": 1787915993.619326,
+    "ast_hash": "9a6b05b12bf2256733f11c7147c5a981",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/import/anki.ts": {
-    "mtime": 1787908457.046934,
-    "ast_hash": "7234e45fc024976143894c24b9cc97f1",
+    "mtime": 1787915819.0335772,
+    "ast_hash": "200b7d8202330413203c22677a62fe60",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/06_third_party_notices.md": {

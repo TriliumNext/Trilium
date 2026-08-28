@@ -53,7 +53,7 @@
 - [x] Add invalid/orphan fixture; assert startup repair reports and safely repairs/quarantines rows for flashcards with missing source/deck notes.
 - [x] Test rollback when migration fails halfway. Existing migration runner handles failed migrations transactionally; no flashcard custom migration code needs separate rollback logic.
 - [x] Test old app behavior against migrated DB only if sync/schema compatibility requires it. Not required for unreleased MVP schema.
-- [x] Test Anki package extraction, current Zstandard/schema-18 and legacy schema-11 collection handling, malformed metadata, card-template grouping, cloze preservation, filtered ZIP reads, and isolated SQLite reads in server and standalone runtimes.
+- [x] Test Anki package extraction, current Zstandard/schema-18 and legacy schema-11 collection handling, malformed metadata, card-template grouping, cloze preservation, filtered ZIP reads, legacy/current media maps, bounded referenced-media extraction, forged ZIP-size protection, and isolated SQLite reads in server and standalone runtimes.
 
 ### Upgrade and downgrade limitation
 

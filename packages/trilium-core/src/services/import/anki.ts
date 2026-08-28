@@ -1,10 +1,12 @@
+import { parse } from "node-html-parser";
 import striptags from "striptags";
 
 import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
 import * as cls from "../context.js";
-import flashcardService from "../flashcards/flashcard_service.js";
+import { getCrypto } from "../encryption/crypto.js";
 import { isClozeContent, renderClozeBack } from "../flashcards/cloze.js";
+import flashcardService from "../flashcards/flashcard_service.js";
 import noteService from "../notes.js";
 import protectedSessionService from "../protected_session.js";
 import { sanitizeHtml } from "../sanitizer.js";
@@ -12,13 +14,27 @@ import { getSql } from "../sql/index.js";
 import type { ReadOnlyDatabase } from "../sql/types.js";
 import type TaskContext from "../task_context.js";
 import { decodeUtf8 } from "../utils/binary.js";
-import { removeFileExtension, unescapeHtml } from "../utils/index.js";
+import { escapeHtml, removeFileExtension, unescapeHtml } from "../utils/index.js";
 import { getZipProvider, type ZipProvider, type ZipSource } from "../zip_provider.js";
+import {
+    applyAttachments,
+    buildAttachmentIndex,
+    type AttachmentIndex,
+    resolveAttachment
+} from "./obsidian/attachments.js";
 
 const FIELD_SEPARATOR = "\u001f";
 const SQLITE_HEADER = "SQLite format 3\u0000";
 const MAX_COLLECTION_SIZE = 256 * 1024 * 1024;
+const MAX_ARCHIVED_COLLECTION_SIZE = MAX_COLLECTION_SIZE + 4 * 1024 * 1024;
 const MAX_NOTE_COUNT = 100_000;
+const MAX_MEDIA_MAP_SIZE = 16 * 1024 * 1024;
+const MAX_ARCHIVED_MEDIA_MAP_SIZE = MAX_MEDIA_MAP_SIZE + 1024 * 1024;
+const MAX_MEDIA_FILE_SIZE = 64 * 1024 * 1024;
+const MAX_ARCHIVED_MEDIA_FILE_SIZE = MAX_MEDIA_FILE_SIZE + 1024 * 1024;
+const MAX_MEDIA_TOTAL_SIZE = 256 * 1024 * 1024;
+const MAX_MEDIA_ENTRY_COUNT = 100_000;
+const SOUND_PATTERN = /\[sound:([^\]]+)]/gi;
 
 export interface AnkiCollectionRow {
     decks: string;
@@ -85,10 +101,17 @@ interface AnkiCollectionData {
     cards: AnkiCardRow[];
 }
 
+export interface AnkiMediaEntry {
+    index: number;
+    name: string;
+    size?: number;
+    sha1?: Uint8Array;
+}
+
 /**
- * Imports card content and deck hierarchy from an Anki package. Scheduling, templates, and media
- * are intentionally left for later wizard stages; imported cards start with Trilium's current FSRS
- * defaults.
+ * Imports card content, referenced media, and deck hierarchy from an Anki package. Scheduling and
+ * templates are intentionally left for later wizard stages; imported cards start with Trilium's
+ * current FSRS defaults.
  */
 async function importAnkiPackage(
     taskContext: TaskContext<"importNotes">,
@@ -103,6 +126,10 @@ async function importAnkiPackage(
     if (plan.notes.length === 0) {
         throw new ValidationError("The Anki package does not contain any cards.");
     }
+
+    const referencedMedia = collectReferencedMedia(plan.notes);
+    const media = await extractAnkiMedia(source, referencedMedia);
+    const mediaIndex = buildAttachmentIndex(media);
 
     cls.setImportOrderPreserved(true);
     taskContext.setPhase("processing");
@@ -141,6 +168,15 @@ async function importAnkiPackage(
                     : []
             });
             createdCardNotes.push(note);
+            const contentWithMedia = applyAnkiMedia(
+                note,
+                imported.content,
+                mediaIndex,
+                !!taskContext.data?.shrinkImages
+            );
+            if (contentWithMedia !== imported.content) {
+                note.setContent(contentWithMedia);
+            }
             flashcardService.createCard({ noteId: note.noteId, deckNoteId: deckNote.noteId });
             taskContext.increaseProgressCount();
         }
@@ -219,11 +255,11 @@ export async function extractCollectionDatabase(
     await zipProvider.readZipFile(source, async (entry, readContent) => {
         const fileName = entry.fileName.replace(/^\/+/, "");
         if (fileName === "collection.anki21b") {
-            modernCompressed = await readContent();
+            modernCompressed = await readContent(MAX_ARCHIVED_COLLECTION_SIZE);
         } else if (fileName === "collection.anki21") {
-            modernLegacy = await readContent();
+            modernLegacy = await readContent(MAX_COLLECTION_SIZE);
         } else if (fileName === "collection.anki2") {
-            legacy = await readContent();
+            legacy = await readContent(MAX_COLLECTION_SIZE);
         }
     }, undefined, (entry) => {
         const isCollection = [
@@ -231,7 +267,10 @@ export async function extractCollectionDatabase(
             "collection.anki21",
             "collection.anki2"
         ].includes(entry.fileName.replace(/^\/+/, ""));
-        if (isCollection && (entry.uncompressedSize ?? 0) > MAX_COLLECTION_SIZE) {
+        const maximumSize = entry.fileName.replace(/^\/+/, "") === "collection.anki21b"
+            ? MAX_ARCHIVED_COLLECTION_SIZE
+            : MAX_COLLECTION_SIZE;
+        if (isCollection && (entry.uncompressedSize ?? 0) > maximumSize) {
             oversizedCollection = true;
             return false;
         }
@@ -245,7 +284,11 @@ export async function extractCollectionDatabase(
     let bytes: Uint8Array | undefined;
     if (modernCompressed) {
         try {
-            bytes = await decompressCollection(modernCompressed);
+            bytes = await decompressZstd(
+                modernCompressed,
+                MAX_COLLECTION_SIZE,
+                "The Anki collection database is too large to import."
+            );
         } catch (error) {
             if (error instanceof ValidationError) {
                 throw error;
@@ -271,14 +314,272 @@ export async function extractCollectionDatabase(
     return bytes;
 }
 
-async function decompressCollection(compressed: Uint8Array): Promise<Uint8Array> {
+export async function extractAnkiMedia(
+    source: ZipSource,
+    requestedNames: Set<string>,
+    zipProvider: ZipProvider = getZipProvider()
+): Promise<Map<string, Uint8Array>> {
+    if (requestedNames.size === 0) {
+        return new Map();
+    }
+
+    let currentFormat = false;
+    let mediaList: Uint8Array | undefined;
+    let oversizedMap = false;
+    await zipProvider.readZipFile(source, async (entry, readContent) => {
+        const fileName = entry.fileName.replace(/^\/+/, "");
+        if (fileName === "collection.anki21b") {
+            currentFormat = true;
+        } else if (fileName === "media") {
+            mediaList = await readContent(MAX_ARCHIVED_MEDIA_MAP_SIZE);
+        }
+    }, undefined, (entry) => {
+        const fileName = entry.fileName.replace(/^\/+/, "");
+        if (fileName === "media"
+            && (entry.uncompressedSize ?? 0) > MAX_ARCHIVED_MEDIA_MAP_SIZE) {
+            oversizedMap = true;
+            return false;
+        }
+        return fileName === "media" || fileName === "collection.anki21b";
+    });
+
+    if (oversizedMap) {
+        throw new ValidationError("The Anki media map is too large to import.");
+    }
+    if (!mediaList) {
+        return new Map();
+    }
+    if (!currentFormat && mediaList.byteLength > MAX_MEDIA_MAP_SIZE) {
+        throw new ValidationError("The Anki media map is too large to import.");
+    }
+
+    const decodedMediaList = currentFormat
+        ? await decompressZstd(
+            mediaList,
+            MAX_MEDIA_MAP_SIZE,
+            "The Anki media map is too large to import."
+        )
+        : mediaList;
+    const entries = currentFormat
+        ? decodeCurrentMediaEntries(decodedMediaList)
+        : decodeLegacyMediaEntries(decodedMediaList);
+    const requestedEntries = entries.filter((entry) => requestedNames.has(entry.name));
+    if (requestedEntries.length === 0) {
+        return new Map();
+    }
+    if (requestedEntries.some((entry) => (entry.size ?? 0) > MAX_MEDIA_FILE_SIZE)) {
+        throw new ValidationError("An Anki media file is too large to import.");
+    }
+    const declaredTotal = requestedEntries.reduce((total, entry) => total + (entry.size ?? 0), 0);
+    if (declaredTotal > MAX_MEDIA_TOTAL_SIZE) {
+        throw new ValidationError("Referenced Anki media is too large to import.");
+    }
+
+    const byIndex = new Map(requestedEntries.map((entry) => [String(entry.index), entry]));
+    const result = new Map<string, Uint8Array>();
+    let totalSize = 0;
+    let oversizedFile = false;
+    await zipProvider.readZipFile(source, async (entry, readContent) => {
+        const mediaEntry = byIndex.get(entry.fileName.replace(/^\/+/, ""));
+        if (!mediaEntry) {
+            return;
+        }
+
+        const archived = await readContent(
+            currentFormat ? MAX_ARCHIVED_MEDIA_FILE_SIZE : MAX_MEDIA_FILE_SIZE
+        );
+        const bytes = currentFormat
+            ? await decompressZstd(
+                archived,
+                MAX_MEDIA_FILE_SIZE,
+                `Anki media file '${mediaEntry.name}' is too large to import.`
+            )
+            : archived;
+        validateCurrentMediaFile(mediaEntry, bytes, currentFormat);
+        totalSize += bytes.byteLength;
+        if (totalSize > MAX_MEDIA_TOTAL_SIZE) {
+            throw new ValidationError("Referenced Anki media is too large to import.");
+        }
+        result.set(mediaEntry.name, bytes);
+    }, undefined, (entry) => {
+        const mediaEntry = byIndex.get(entry.fileName.replace(/^\/+/, ""));
+        if (!mediaEntry) {
+            return false;
+        }
+        const maximumSize = currentFormat
+            ? MAX_ARCHIVED_MEDIA_FILE_SIZE
+            : MAX_MEDIA_FILE_SIZE;
+        if ((entry.uncompressedSize ?? 0) > maximumSize) {
+            oversizedFile = true;
+            return false;
+        }
+        return true;
+    });
+
+    if (oversizedFile) {
+        throw new ValidationError("An Anki media file is too large to import.");
+    }
+    const missingEntry = requestedEntries.find((entry) => !result.has(entry.name));
+    if (missingEntry) {
+        throw new ValidationError(`Anki media file '${missingEntry.name}' is missing.`);
+    }
+    return result;
+}
+
+function validateCurrentMediaFile(
+    entry: AnkiMediaEntry,
+    bytes: Uint8Array,
+    currentFormat: boolean
+) {
+    if (!currentFormat) {
+        return;
+    }
+    if (entry.size !== bytes.byteLength || entry.sha1?.byteLength !== 20) {
+        throw new ValidationError(`Anki media file '${entry.name}' is corrupt.`);
+    }
+    const hash = getCrypto().createHash("sha1", bytes);
+    if (!getCrypto().constantTimeCompare(hash, entry.sha1)) {
+        throw new ValidationError(`Anki media file '${entry.name}' is corrupt.`);
+    }
+}
+
+export function decodeCurrentMediaEntries(data: Uint8Array): AnkiMediaEntry[] {
+    const entries: AnkiMediaEntry[] = [];
+    const cursor = { offset: 0 };
+    while (cursor.offset < data.byteLength) {
+        const key = readVarint(data, cursor);
+        const fieldNumber = Math.floor(key / 8);
+        const wireType = key % 8;
+        if (fieldNumber === 1 && wireType === 2) {
+            if (entries.length >= MAX_MEDIA_ENTRY_COUNT) {
+                throw new ValidationError(
+                    `The Anki package contains more than ${MAX_MEDIA_ENTRY_COUNT} media entries.`
+                );
+            }
+            const message = readLengthDelimited(data, cursor);
+            entries.push(decodeCurrentMediaEntry(message, entries.length));
+        } else {
+            skipProtobufField(data, cursor, wireType);
+        }
+    }
+    return entries;
+}
+
+function decodeLegacyMediaEntries(data: Uint8Array): AnkiMediaEntry[] {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(decodeUtf8(data));
+    } catch (error) {
+        throw new ValidationError(`Invalid Anki media map: ${describeError(error)}`);
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new ValidationError("Invalid Anki media map: expected an object.");
+    }
+
+    const rawEntries = Object.entries(parsed);
+    if (rawEntries.length > MAX_MEDIA_ENTRY_COUNT) {
+        throw new ValidationError(
+            `The Anki package contains more than ${MAX_MEDIA_ENTRY_COUNT} media entries.`
+        );
+    }
+
+    const entries: AnkiMediaEntry[] = [];
+    for (const [rawIndex, rawName] of rawEntries) {
+        const index = Number(rawIndex);
+        if (Number.isSafeInteger(index) && index >= 0 && typeof rawName === "string") {
+            entries.push({ index, name: rawName });
+        }
+    }
+    return entries;
+}
+
+function decodeCurrentMediaEntry(data: Uint8Array, defaultIndex: number): AnkiMediaEntry {
+    const cursor = { offset: 0 };
+    let name = "";
+    let size: number | undefined;
+    let sha1: Uint8Array | undefined;
+    while (cursor.offset < data.byteLength) {
+        const key = readVarint(data, cursor);
+        const fieldNumber = Math.floor(key / 8);
+        const wireType = key % 8;
+        if (fieldNumber === 1 && wireType === 2) {
+            name = decodeUtf8(readLengthDelimited(data, cursor));
+        } else if (fieldNumber === 2 && wireType === 0) {
+            size = readVarint(data, cursor);
+        } else if (fieldNumber === 3 && wireType === 2) {
+            sha1 = readLengthDelimited(data, cursor);
+        } else {
+            skipProtobufField(data, cursor, wireType);
+        }
+    }
+    if (!name) {
+        throw new ValidationError("Invalid Anki media map: media filename is missing.");
+    }
+    return {
+        index: defaultIndex,
+        name,
+        ...(size === undefined ? {} : { size }),
+        ...(sha1 === undefined ? {} : { sha1 })
+    };
+}
+
+function readVarint(data: Uint8Array, cursor: { offset: number }): number {
+    let value = 0;
+    let shift = 0;
+    while (cursor.offset < data.byteLength && shift <= 49) {
+        const byte = data[cursor.offset++];
+        value += (byte & 0x7f) * 2 ** shift;
+        if ((byte & 0x80) === 0) {
+            if (!Number.isSafeInteger(value)) {
+                break;
+            }
+            return value;
+        }
+        shift += 7;
+    }
+    throw new ValidationError("Invalid Anki media map: malformed protobuf varint.");
+}
+
+function readLengthDelimited(data: Uint8Array, cursor: { offset: number }): Uint8Array {
+    const length = readVarint(data, cursor);
+    const end = cursor.offset + length;
+    if (end > data.byteLength) {
+        throw new ValidationError("Invalid Anki media map: truncated protobuf field.");
+    }
+    const value = data.subarray(cursor.offset, end);
+    cursor.offset = end;
+    return value;
+}
+
+function skipProtobufField(data: Uint8Array, cursor: { offset: number }, wireType: number) {
+    if (wireType === 0) {
+        readVarint(data, cursor);
+    } else if (wireType === 1) {
+        cursor.offset += 8;
+    } else if (wireType === 2) {
+        cursor.offset += readVarint(data, cursor);
+    } else if (wireType === 5) {
+        cursor.offset += 4;
+    } else {
+        throw new ValidationError(`Invalid Anki media map: unsupported wire type ${wireType}.`);
+    }
+    if (cursor.offset > data.byteLength) {
+        throw new ValidationError("Invalid Anki media map: truncated protobuf field.");
+    }
+}
+
+async function decompressZstd(
+    compressed: Uint8Array,
+    maximumSize: number,
+    tooLargeMessage: string
+): Promise<Uint8Array> {
     const { Decompress } = await import("fzstd");
     const chunks: Uint8Array[] = [];
     let totalSize = 0;
     const decompressor = new Decompress((chunk) => {
         totalSize += chunk.byteLength;
-        if (totalSize > MAX_COLLECTION_SIZE) {
-            throw new ValidationError("The Anki collection database is too large to import.");
+        if (totalSize > maximumSize) {
+            throw new ValidationError(tooLargeMessage);
         }
         chunks.push(chunk);
     });
@@ -397,6 +698,67 @@ function createDeckHierarchy(
     return new Map(deckNames.map((name) => [name, paths.get(name)]).filter(
         (entry): entry is [string, BNote] => !!entry[1]
     ));
+}
+
+export function collectReferencedMedia(notes: AnkiImportNote[]): Set<string> {
+    const references = new Set<string>();
+    for (const note of notes) {
+        const root = parse(note.content);
+        for (const image of root.querySelectorAll("img[src]")) {
+            const reference = normalizeMediaReference(image.getAttribute("src"));
+            if (reference) {
+                references.add(reference);
+            }
+        }
+        for (const anchor of root.querySelectorAll("a[href]")) {
+            const reference = normalizeMediaReference(anchor.getAttribute("href"));
+            if (reference) {
+                references.add(reference);
+            }
+        }
+        for (const match of note.content.matchAll(new RegExp(SOUND_PATTERN.source, "gi"))) {
+            const reference = normalizeMediaReference(match[1]);
+            if (reference) {
+                references.add(reference);
+            }
+        }
+    }
+    return references;
+}
+
+export function applyAnkiMedia(
+    note: BNote,
+    content: string,
+    mediaIndex: AttachmentIndex,
+    shrinkImages: boolean
+): string {
+    if (mediaIndex.byPath.size === 0) {
+        return content;
+    }
+
+    const withSoundLinks = content.replace(
+        new RegExp(SOUND_PATTERN.source, "gi"),
+        (match, rawName: string) => {
+            const name = normalizeMediaReference(rawName);
+            if (!name || !resolveAttachment(mediaIndex, name)) {
+                return match;
+            }
+            const href = name.split("/").map(encodeURIComponent).join("/");
+            return `<a href="${href}">${escapeHtml(name)}</a>`;
+        }
+    );
+    return applyAttachments(note, withSoundLinks, mediaIndex, shrinkImages);
+}
+
+function normalizeMediaReference(value: string | undefined): string | null {
+    if (!value || /^(?:https?:|data:|mailto:|tel:|#|api\/)/i.test(value)) {
+        return null;
+    }
+    try {
+        return decodeURIComponent(unescapeHtml(value).replace(/^\/+/, "")).trim() || null;
+    } catch {
+        return unescapeHtml(value).replace(/^\/+/, "").trim() || null;
+    }
 }
 
 function cleanupFailedImport(importRoot: BNote | undefined, cardNotes: BNote[]) {

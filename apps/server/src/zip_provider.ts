@@ -1,7 +1,7 @@
 import type { FileStream, ZipArchive, ZipArchiveEntryOptions, ZipEntry, ZipProvider, ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
 import { ZipArchive as ArchiverZip } from "archiver";
 import fs from "fs";
-import type { Stream } from "stream";
+import type { Readable } from "stream";
 import * as yauzl from "yauzl";
 
 import { asBuffer } from "./services/binary.js";
@@ -87,12 +87,37 @@ class NodejsZipArchive implements ZipArchive {
     }
 }
 
-function streamToBuffer(stream: Stream): Promise<Buffer> {
+function streamToBuffer(stream: Readable, maximumBytes?: number): Promise<Buffer> {
     const chunks: Uint8Array[] = [];
-    stream.on("data", (chunk: Uint8Array) => chunks.push(chunk));
-    return new Promise((res, rej) => {
-        stream.on("end", () => res(Buffer.concat(chunks)));
-        stream.on("error", rej);
+    let totalBytes = 0;
+    return new Promise((resolve, reject) => {
+        let settled = false;
+        const fail = (error: unknown) => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            reject(error);
+        };
+        stream.on("data", (chunk: Uint8Array) => {
+            if (settled) {
+                return;
+            }
+            totalBytes += chunk.byteLength;
+            if (maximumBytes !== undefined && totalBytes > maximumBytes) {
+                fail(new Error(`ZIP entry exceeds ${maximumBytes} byte read limit.`));
+                stream.destroy();
+                return;
+            }
+            chunks.push(chunk);
+        });
+        stream.on("end", () => {
+            if (!settled) {
+                settled = true;
+                resolve(Buffer.concat(chunks, totalBytes));
+            }
+        });
+        stream.on("error", fail);
     });
 }
 
@@ -156,7 +181,10 @@ export default class NodejsZipProvider implements ZipProvider {
 
     async readZipFile(
         source: ZipSource,
-        processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
+        processEntry: (
+            entry: ZipEntry,
+            readContent: (maximumBytes?: number) => Promise<Uint8Array>
+        ) => Promise<void>,
         filenameEncoding?: string,
         entryFilter?: (entry: ZipEntry) => boolean
     ): Promise<void> {
@@ -179,9 +207,9 @@ export default class NodejsZipProvider implements ZipProvider {
                     continue;
                 }
 
-                const readContent = async () => {
+                const readContent = async (maximumBytes?: number) => {
                     const readStream = await zipfile.openReadStreamPromise(entry);
-                    return await streamToBuffer(readStream);
+                    return await streamToBuffer(readStream, maximumBytes);
                 };
 
                 await processEntry(zipEntry, readContent);

@@ -6,7 +6,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 
 ## Implemented product shape
 
-- [x] MVP scope: one question/answer card per source note (`#flashcard` label); filtered decks and cloze cards were added after MVP, while `.apkg` import and FSRS parameter optimization remain deferred.
+- [x] MVP scope: one question/answer card per source note (`#flashcard` label); filtered decks, cloze cards, and partial `.apkg` import were added after MVP, while FSRS parameter optimization remains deferred.
 - [x] Ordinary Trilium notes carry card content; dedicated synchronized entities (`flashcards`, `flashcard_reviews`) hold scheduling state. No review state in labels or `localStorage`.
 - [x] Explicit `deckNoteId` per card selects decks; card identity is separate from branch identity. Missing/deleted decks repair to `root`; missing/deleted sources are deleted by consistency checks.
 - [x] Explicit opt-in via `#flashcard` so existing notes never become review items accidentally.
@@ -36,7 +36,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 
 - Multiple cards per note via cloze deletions implemented (`{{cN::text}}` syntax, index N → ordinal N-1, sync endpoint reconciles card set, dialog renders elided HTML with cloze number). Rich-text cloze toolbar button now wraps selected content, inserts a selected placeholder at a collapsed caret, and chooses the next canonical cloze index. Sibling templates remain open.
 - Filtered decks: backend implemented — a note carrying `#flashcardFilteredDeck` whose `searchString` label is a Trilium search query becomes a dynamic deck; the due queue, deck browser counts, and guards resolve it from matching source notes (`packages/trilium-core/src/services/flashcards/filtered_decks.ts`). Client work implemented: the deck browser marks filtered decks with a badge and a "New filtered deck" button creates a saved-search note with the `#flashcardFilteredDeck` + `searchString` labels. Manual per-card scheduling and drag-to-day scheduling on the due forecast are implemented.
-- Anki `.apkg` import/export wizard. Trilium JSON export/import of scheduling state plus review history is implemented (`GET /api/flashcards/export`, `POST /api/flashcards/import`, settings-page controls); `.apkg` conversion remains open.
+- Anki `.apkg` portability. Generic import now recreates deck/card content and referenced back/cloze media from legacy/current packages. Dedicated wizard, templates/CSS, Anki scheduling/history conversion, and `.apkg` export remain open. Trilium JSON export/import of scheduling state plus review history is implemented (`GET /api/flashcards/export`, `POST /api/flashcards/import`, settings-page controls).
 - Leech dashboard plus one-time threshold auto-suspend and `#flashcardLeech` marker: implemented (`GET /api/flashcards/leeches`, review-dialog leech section with persistent manual resume + per-note review).
 - FSRS parameter optimization with optimizer runtime review.
 - Note-info flashcard status indicator implemented in the note info tab.

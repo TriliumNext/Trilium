@@ -59,6 +59,19 @@ async function readZip(buffer: Buffer): Promise<Record<string, Buffer>> {
     return out;
 }
 
+function falsifyUncompressedSize(buffer: Buffer, size: number): Buffer {
+    const forged = Buffer.from(buffer);
+    for (let offset = 0; offset + 28 < forged.byteLength; offset++) {
+        const signature = forged.readUInt32LE(offset);
+        if (signature === 0x04034b50) {
+            forged.writeUInt32LE(size, offset + 22);
+        } else if (signature === 0x02014b50) {
+            forged.writeUInt32LE(size, offset + 24);
+        }
+    }
+    return forged;
+}
+
 describe("NodejsZipProvider", () => {
     it("round-trips string content", async () => {
         const buffer = await buildZip([{ name: "note.html", content: "<p>hello</p>" }]);
@@ -125,6 +138,16 @@ describe("NodejsZipProvider", () => {
 
         expect(seen).toHaveLength(1);
         expect(seen[0]).toMatchObject({ fileName: "keep.txt", uncompressedSize: 5 });
+    });
+
+    it("bounds actual expansion even when the ZIP declares a smaller size", async () => {
+        const buffer = await buildZip([{ name: "bomb.txt", content: "x".repeat(64 * 1024) }]);
+        const forged = falsifyUncompressedSize(buffer, 1);
+
+        await expect(provider.readZipFile(forged, async (entry, readContent) => {
+            expect(entry.uncompressedSize).toBe(1);
+            await readContent(1024);
+        })).rejects.toThrow("ZIP entry exceeds 1024 byte read limit");
     });
 
     it("stores an entry uncompressed when `store` is set and still round-trips", async () => {

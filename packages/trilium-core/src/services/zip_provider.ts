@@ -58,14 +58,20 @@ export interface ZipProvider {
     detectFilenameEncoding(source: ZipSource): Promise<string>;
 
     /**
-     * Iterates over every entry in a ZIP, calling `processEntry` for each one. `readContent()` inside the
-     * callback reads the raw bytes of that entry on demand. If `filenameEncoding` is provided,
-     * non-UTF-8-flagged filenames are decoded using it. Accepts raw bytes or — server/desktop only — a
-     * {@link ZipSource} path, in which case the zip is read straight from disk per entry.
+     * Iterates over every entry in a ZIP, calling `processEntry` for each one. `readContent()`
+     * inside the callback reads the raw bytes of that entry on demand. Pass a maximum to make
+     * providers abort actual expansion beyond that byte count instead of trusting the ZIP
+     * central-directory size; security-sensitive importers must use this for every selected entry.
+     * If `filenameEncoding` is provided, non-UTF-8-flagged filenames are decoded using it. Accepts
+     * raw bytes or — server/desktop only — a {@link ZipSource} path, in which case the zip is
+     * read straight from disk per entry.
      */
     readZipFile(
         source: ZipSource,
-        processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
+        processEntry: (
+            entry: ZipEntry,
+            readContent: (maximumBytes?: number) => Promise<Uint8Array>
+        ) => Promise<void>,
         filenameEncoding?: string,
         entryFilter?: (entry: ZipEntry) => boolean
     ): Promise<void>;
