@@ -398,6 +398,38 @@ describe("flashcards review dialog", () => {
         expect(mocks.getCard).not.toHaveBeenCalled();
     });
 
+    it("labels live regions and moves focus through review controls", async () => {
+        const card = makeCard();
+        mocks.getDueCards.mockResolvedValue({ cards: [ card ], totalDueCount: 1 });
+
+        await openDialog();
+
+        const stats = host.querySelector<HTMLElement>(".flashcards-session-stats");
+        const cardPane = host.querySelector<HTMLElement>(".flashcards-card-pane");
+        const controls = host.querySelector<HTMLElement>(".flashcards-action-row");
+        const revealButton = findButtonByText("flashcards.show_answer");
+
+        expect(stats?.getAttribute("role")).toBe("status");
+        expect(stats?.getAttribute("aria-live")).toBe("polite");
+        expect(stats?.getAttribute("aria-label")).toBe("flashcards.session_summary");
+        expect(cardPane?.getAttribute("aria-live")).toBe("polite");
+        expect(cardPane?.getAttribute("aria-label")).toBe("flashcards.current_card");
+        expect(controls?.getAttribute("role")).toBe("group");
+        expect(controls?.getAttribute("aria-label")).toBe("flashcards.review_controls");
+        expect(document.activeElement).toBe(revealButton);
+
+        await act(async () => {
+            revealButton?.click();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        const ratingControls = host.querySelector<HTMLElement>(".flashcards-rating-row");
+        const againButton = findButtonByText("flashcards.rating_1");
+        expect(ratingControls?.getAttribute("role")).toBe("group");
+        expect(ratingControls?.getAttribute("aria-label")).toBe("flashcards.review_controls");
+        expect(document.activeElement).toBe(againButton);
+    });
+
     it("renders imported rich fronts as sanitized HTML", async () => {
         const card = makeCard({
             front: '<img src="front.png"><b>Rich front</b>',
@@ -501,12 +533,16 @@ describe("flashcards review dialog", () => {
         const goodButton = findButtonByText("flashcards.rating_3");
         expect(goodButton).toBeTruthy();
 
-        // Two rapid clicks before the request resolves must produce one call.
+        // Two rapid clicks before the request resolves must produce one call and disable controls.
         await act(async () => {
             goodButton!.click();
             goodButton!.click();
+            await new Promise((resolve) => setTimeout(resolve, 0));
         });
 
+        const disabledButtons = [ ...host.querySelectorAll("button") ]
+            .filter((button) => button.disabled);
+        expect(disabledButtons.length).toBeGreaterThan(0);
         expect(mocks.reviewCard).toHaveBeenCalledTimes(1);
         expect(mocks.reviewCard).toHaveBeenCalledWith("card1", {
             rating: 3,

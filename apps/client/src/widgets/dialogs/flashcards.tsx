@@ -842,7 +842,12 @@ function ReviewStats({
     onReschedule: (due: string) => Promise<void>;
 }) {
     return (
-        <div className="flashcards-session-stats" aria-live="polite">
+        <div
+            className="flashcards-session-stats"
+            aria-label={t("flashcards.session_summary")}
+            aria-live="polite"
+            role="status"
+        >
             <span>{t("flashcards.due_count", { count: stats.dueCount })}</span>
             <span>{t("flashcards.new_count", { count: stats.newCount })}</span>
             <span>{t("flashcards.learning_count", { count: stats.learningCount })}</span>
@@ -1010,6 +1015,7 @@ function ReviewCard({
             />
             <section
                 className="flashcards-card-pane"
+                aria-label={t("flashcards.current_card")}
                 aria-live="polite"
                 aria-describedby={!submitting ? FORECAST_DRAG_HINT_ID : undefined}
                 draggable={!submitting}
@@ -1179,7 +1185,7 @@ function DialogFooter({
 
     if (!currentCard || !answerShown) {
         return (
-            <div className="flashcards-action-row">
+            <div className="flashcards-action-row" role="group" aria-label={t("flashcards.review_controls")}>
                 {currentCard && <Button
                     buttonRef={revealButtonRef}
                     text={t("flashcards.show_answer")}
@@ -1195,7 +1201,7 @@ function DialogFooter({
     }
 
     return (
-        <div className="flashcards-rating-row">
+        <div className="flashcards-rating-row" role="group" aria-label={t("flashcards.review_controls")}>
             {currentCard.previews.map((preview, index) => (
                 <Button
                     key={preview.rating}

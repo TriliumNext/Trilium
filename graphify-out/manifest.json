@@ -1525,8 +1525,8 @@
     "semantic_hash": "1c4320fd508ca048bfeec596c729caff"
   },
   "apps/client/src/translations/en/translation.json": {
-    "mtime": 1787928114.4274347,
-    "ast_hash": "34fbd702e31d0ad0bca4bf432f0736ad",
+    "mtime": 1787943847.214896,
+    "ast_hash": "c3362b2c83589afd7b1c148c5f918c18",
     "semantic_hash": ""
   },
   "apps/client/src/translations/es/entry.json": {
@@ -14775,8 +14775,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.tsx": {
-    "mtime": 1787918537.740004,
-    "ast_hash": "78d8879cb36af836ae44b451de5b1aa2",
+    "mtime": 1787943839.8966248,
+    "ast_hash": "01827940bd88a7dbe4d40a6cb95b433a",
     "semantic_hash": ""
   },
   "apps/web-clipper/.wxt/eslint-auto-imports.mjs": {
@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787929287.0439224,
-    "ast_hash": "367fdf30009ef97e28324e93c3c3ef35",
+    "mtime": 1787943889.896158,
+    "ast_hash": "15af650fac2f75fcad6f199aaf0fa33f",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -25000,8 +25000,8 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/dialogs/flashcards.spec.tsx": {
-    "mtime": 1787918948.4245362,
-    "ast_hash": "a997f10158f0c973a2be0787e2cfd12d",
+    "mtime": 1787943874.1599538,
+    "ast_hash": "022bcade3f5f57c345ba588d8ffac1af",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/cloze.spec.ts": {
@@ -25075,8 +25075,8 @@
     "semantic_hash": ""
   },
   "docs/Release Notes/Release Notes/v0.105.0.md": {
-    "mtime": 1787929274.7233107,
-    "ast_hash": "9d3fa54fabc8e94430a2bdbb3053256c",
+    "mtime": 1787929348.9705913,
+    "ast_hash": "481b9b170b568d820116e3f459a062a6",
     "semantic_hash": ""
   }
 }
