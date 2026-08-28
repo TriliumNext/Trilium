@@ -71,6 +71,7 @@ const collection: AnkiCollectionRow = {
 
 function card(overrides: Partial<AnkiCardRow>): AnkiCardRow {
     return {
+        cardId: 1001,
         noteId: 1,
         modelId: 100,
         fields: "Front\u001fBack",
@@ -418,6 +419,7 @@ describe("Anki import planning", () => {
             ...collection,
             crt: 1_700_000_000
         }, [card({
+            cardId: 99,
             type: 2,
             queue: 2,
             due: 3,
@@ -426,7 +428,16 @@ describe("Anki import planning", () => {
             reps: 7,
             lapses: 2,
             modifiedAt: 1_699_990_000
-        })]);
+        })], [{
+            id: 1_700_010_000_000,
+            cardId: 99,
+            ease: 4,
+            interval: 12,
+            lastInterval: 5,
+            factor: 2200,
+            durationMs: 1500,
+            type: 1
+        }]);
 
         expect(plan.notes[0]?.schedule).toMatchObject({
             state: 2,
@@ -439,6 +450,17 @@ describe("Anki import planning", () => {
             lapses: 2,
             lastReview: "2023-11-14 19:26:40.000Z",
             suspended: false
+        });
+        expect(plan.notes[0]?.reviews?.[0]).toMatchObject({
+            sourceReviewId: 1_700_010_000_000,
+            rating: 4,
+            state: 2,
+            dueAfter: "2023-11-27 01:00:00.000Z",
+            scheduledDays: 12,
+            scheduledDaysBefore: 5,
+            repsBefore: 0,
+            schedulingRevisionAfter: 1,
+            durationMs: 1500
         });
     });
 

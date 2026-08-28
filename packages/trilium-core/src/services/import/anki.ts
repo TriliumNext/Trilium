@@ -1,9 +1,10 @@
-import type { FlashcardRow } from "@triliumnext/commons";
+import type { FlashcardReviewRow, FlashcardRow } from "@triliumnext/commons";
 import { parse } from "node-html-parser";
 import striptags from "striptags";
 
 import type BNote from "../../becca/entities/bnote.js";
 import BFlashcard from "../../becca/entities/bflashcard.js";
+import BFlashcardReview from "../../becca/entities/bflashcard_review.js";
 import { ValidationError } from "../../errors.js";
 import * as cls from "../context.js";
 import { getCrypto } from "../encryption/crypto.js";
@@ -37,6 +38,7 @@ const MAX_MEDIA_FILE_SIZE = 64 * 1024 * 1024;
 const MAX_ARCHIVED_MEDIA_FILE_SIZE = MAX_MEDIA_FILE_SIZE + 1024 * 1024;
 const MAX_MEDIA_TOTAL_SIZE = 256 * 1024 * 1024;
 const MAX_MEDIA_ENTRY_COUNT = 100_000;
+const MAX_REVLOG_COUNT = 500_000;
 const SOUND_PATTERN = /\[sound:([^\]]+)]/gi;
 const FLASHCARD_FRONT_HTML_LABEL = "flashcardFrontHtml";
 
@@ -71,6 +73,17 @@ interface AnkiTemplateRow {
 interface AnkiNotetypeRow {
     id: number;
     config: Uint8Array;
+}
+
+export interface AnkiRevlogRow {
+    id: number;
+    cardId: number;
+    ease: number;
+    interval: number;
+    lastInterval: number;
+    factor: number;
+    durationMs: number;
+    type: number;
 }
 
 export interface AnkiCardRow {
@@ -131,12 +144,40 @@ export interface AnkiImportNote {
     content: string;
     tags: string[];
     sourceCardCount: number;
+    sourceCardId?: number;
     schedule?: AnkiSchedule;
+    reviews?: AnkiReview[];
 }
 
 interface AnkiCollectionData {
     collection: AnkiCollectionRow;
     cards: AnkiCardRow[];
+    reviews: AnkiRevlogRow[];
+}
+
+interface AnkiReview {
+    sourceReviewId: number;
+    rating: 1 | 2 | 3 | 4;
+    state: 0 | 1 | 2 | 3;
+    dueBefore: string;
+    dueAfter: string;
+    stabilityBefore: number;
+    stabilityAfter: number;
+    difficultyBefore: number;
+    difficultyAfter: number;
+    elapsedDays: number;
+    elapsedDaysBefore: number;
+    scheduledDays: number;
+    scheduledDaysBefore: number;
+    learningSteps: number;
+    learningStepsBefore: number;
+    repsBefore: number;
+    lapsesBefore: number;
+    lastReviewBefore: string | null;
+    schedulingRevisionBefore: number;
+    schedulingRevisionAfter: number;
+    reviewedAt: string;
+    durationMs: number | null;
 }
 
 interface AnkiSchedule {
@@ -173,7 +214,7 @@ async function importAnkiPackage(
 ): Promise<BNote> {
     const databaseBytes = await extractCollectionDatabase(source);
     const data = readCollection(databaseBytes);
-    const plan = buildAnkiImportPlan(data.collection, data.cards);
+    const plan = buildAnkiImportPlan(data.collection, data.cards, data.reviews);
 
     if (plan.notes.length === 0) {
         throw new ValidationError("The Anki package does not contain any cards.");
@@ -250,6 +291,7 @@ async function importAnkiPackage(
                 deckNoteId: deckNote.noteId
             });
             applyImportedSchedule(createdCard.cardId, imported.schedule);
+            importAnkiReviews(createdCard.cardId, imported.reviews ?? []);
             taskContext.increaseProgressCount();
         }
 
@@ -262,7 +304,8 @@ async function importAnkiPackage(
 
 export function buildAnkiImportPlan(
     collection: AnkiCollectionRow,
-    cardRows: AnkiCardRow[]
+    cardRows: AnkiCardRow[],
+    reviewRows: AnkiRevlogRow[] = []
 ): AnkiImportPlan {
     const decks = parseRecord<AnkiDeck>(collection.decks, "deck metadata");
     const models = parseRecord<AnkiModel>(collection.models, "note-type metadata");
@@ -275,6 +318,7 @@ export function buildAnkiImportPlan(
         grouped.set(key, rows);
     }
 
+    const reviewsByCardId = groupAnkiReviews(reviewRows);
     const notes: AnkiImportNote[] = [];
     const deckNames = new Set<string>();
     for (const [sourceNoteId, rows] of grouped) {
@@ -296,7 +340,9 @@ export function buildAnkiImportPlan(
                 content: rendered.back,
                 tags: parseTags(row.tags),
                 sourceCardCount: 1,
-                schedule: buildAnkiSchedule(row, collection.crt)
+                sourceCardId: row.cardId,
+                schedule: buildAnkiSchedule(row, collection.crt),
+                reviews: buildAnkiReviews(row, reviewsByCardId.get(row.cardId ?? -1) ?? [])
             });
         }
     }
@@ -711,7 +757,8 @@ function readCollection(bytes: Uint8Array): AnkiCollectionData {
         }
 
         const cards = readAnkiCards(database);
-        return { collection, cards };
+        const reviews = readAnkiReviews(database);
+        return { collection, cards, reviews };
     } catch (error) {
         if (error instanceof ValidationError) {
             throw error;
@@ -744,6 +791,30 @@ function readAnkiCards(database: ReadOnlyDatabase): AnkiCardRow[] {
             JOIN cards c ON c.nid = n.id
             ORDER BY n.id, c.ord
         `);
+    }
+}
+
+function readAnkiReviews(database: ReadOnlyDatabase): AnkiRevlogRow[] {
+    try {
+        const count = database.getRows<{ count: number }>(
+            "SELECT COUNT(*) AS count FROM revlog"
+        )[0]?.count ?? 0;
+        if (count > MAX_REVLOG_COUNT) {
+            throw new ValidationError(
+                `The Anki package contains more than ${MAX_REVLOG_COUNT} review log entries.`
+            );
+        }
+        return database.getRows<AnkiRevlogRow>(/*sql*/`
+            SELECT id, cid AS cardId, ease, ivl AS interval, lastIvl AS lastInterval,
+                   factor, time AS durationMs, type
+            FROM revlog
+            ORDER BY cid, id
+        `);
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            throw error;
+        }
+        return [];
     }
 }
 
@@ -890,6 +961,81 @@ export function applyAnkiMedia(
     return applyAttachments(note, withSoundLinks, mediaIndex, shrinkImages);
 }
 
+function groupAnkiReviews(rows: AnkiRevlogRow[]) {
+    const grouped = new Map<number, AnkiRevlogRow[]>();
+    for (const row of rows) {
+        const values = grouped.get(row.cardId) ?? [];
+        values.push(row);
+        grouped.set(row.cardId, values);
+    }
+    return grouped;
+}
+
+function buildAnkiReviews(card: AnkiCardRow, reviews: AnkiRevlogRow[]): AnkiReview[] {
+    let previousInterval = 0;
+    let previousDue = dateUtils.utcNowDateTime();
+    let previousReview: string | null = null;
+    let previousState: 0 | 1 | 2 | 3 = 0;
+    let lapsesBefore = 0;
+
+    return reviews.map((row, index) => {
+        const reviewedAt = ankiReviewIdToUtcDateTime(row.id);
+        const state = getAnkiReviewState(row.type);
+        const scheduledDays = normalizeAnkiInterval(row.interval);
+        const scheduledDaysBefore = normalizeAnkiInterval(row.lastInterval || previousInterval);
+        const lapsesAfter = card.lapses ?? 0;
+        const review: AnkiReview = {
+            sourceReviewId: row.id,
+            rating: normalizeAnkiRating(row.ease),
+            state,
+            dueBefore: previousDue,
+            dueAfter: dueFromReview(reviewedAt, scheduledDays),
+            stabilityBefore: Math.max(0, scheduledDaysBefore),
+            stabilityAfter: Math.max(0.1, scheduledDays || 0.1),
+            difficultyBefore: ankiFactorToDifficulty(row.factor || card.factor || 2500),
+            difficultyAfter: ankiFactorToDifficulty(row.factor || card.factor || 2500),
+            elapsedDays: previousReview ? daysBetween(previousReview, new Date(reviewedAt)) : 0,
+            elapsedDaysBefore: previousReview
+                ? daysBetween(previousReview, new Date(reviewedAt))
+                : 0,
+            scheduledDays,
+            scheduledDaysBefore,
+            learningSteps: state === 1 || state === 3 ? 1 : 0,
+            learningStepsBefore: previousState === 1 || previousState === 3 ? 1 : 0,
+            repsBefore: index,
+            lapsesBefore,
+            lastReviewBefore: previousReview,
+            schedulingRevisionBefore: index,
+            schedulingRevisionAfter: index + 1,
+            reviewedAt,
+            durationMs: normalizeAnkiReviewDuration(row.durationMs)
+        };
+        previousInterval = scheduledDays;
+        previousDue = review.dueAfter;
+        previousReview = reviewedAt;
+        previousState = state;
+        lapsesBefore = Math.min(lapsesAfter, lapsesBefore + (row.ease === 1 ? 1 : 0));
+        return review;
+    });
+}
+
+function importAnkiReviews(cardId: string, reviews: AnkiReview[]) {
+    for (const review of reviews) {
+        const reviewId = `${cardId}_${review.sourceReviewId}`.replace(/[^A-Za-z0-9_-]/g, "");
+        new BFlashcardReview({
+            ...review,
+            reviewId,
+            cardId,
+            algorithm: "fsrs-6",
+            algorithmVersion: "anki-import",
+            schedulerConfig: undefined,
+            clientRequestId: null,
+            utcDateCreated: review.reviewedAt,
+            utcDateModified: review.reviewedAt
+        } satisfies FlashcardReviewRow).save();
+    }
+}
+
 function applyImportedSchedule(cardId: string, schedule: AnkiSchedule | undefined) {
     if (!schedule) {
         return;
@@ -970,6 +1116,53 @@ function getAnkiDueDate(
     return dateUtils.utcNowDateTime();
 }
 
+function getAnkiReviewState(type: number): 0 | 1 | 2 | 3 {
+    if (type === 1) {
+        return 2;
+    }
+    if (type === 2) {
+        return 3;
+    }
+    return 1;
+}
+
+function normalizeAnkiRating(ease: number): 1 | 2 | 3 | 4 {
+    if (ease === 1 || ease === 2 || ease === 3 || ease === 4) {
+        return ease;
+    }
+    return 3;
+}
+
+function normalizeAnkiInterval(interval: number) {
+    const value = Number(interval);
+    if (!Number.isFinite(value)) {
+        return 0;
+    }
+    return Math.max(0, Math.round(value < 0 ? Math.abs(value) / 86400 : value));
+}
+
+function normalizeAnkiReviewDuration(durationMs: number) {
+    const value = Math.round(Number(durationMs));
+    if (!Number.isFinite(value) || value < 0) {
+        return null;
+    }
+    return Math.min(value, 24 * 60 * 60 * 1000);
+}
+
+function ankiReviewIdToUtcDateTime(reviewId: number) {
+    const milliseconds = Number(reviewId);
+    if (!Number.isFinite(milliseconds) || milliseconds <= 0) {
+        return dateUtils.utcNowDateTime();
+    }
+    return dateUtils.utcDateTimeStr(new Date(milliseconds));
+}
+
+function dueFromReview(reviewedAt: string, scheduledDays: number) {
+    const date = parseUtcDateTime(reviewedAt);
+    date.setUTCDate(date.getUTCDate() + Math.max(0, scheduledDays));
+    return dateUtils.utcDateTimeStr(date);
+}
+
 function ankiFactorToDifficulty(factor: number) {
     return Math.max(1, Math.min(10, 5 + ((2500 - factor) / 300)));
 }
@@ -983,11 +1176,15 @@ function unixSecondsToUtcDateTime(value: number | undefined) {
 }
 
 function daysBetween(value: string, now: Date) {
-    const date = new Date(value.replace(" ", "T"));
-    if (!Number.isFinite(date.getTime())) {
+    const date = parseUtcDateTime(value);
+    if (!Number.isFinite(date.getTime()) || !Number.isFinite(now.getTime())) {
         return 0;
     }
     return Math.max(0, Math.floor((now.getTime() - date.getTime()) / 86400000));
+}
+
+function parseUtcDateTime(value: string) {
+    return new Date(value.replace(" ", "T"));
 }
 
 function normalizeMediaReference(value: string | undefined): string | null {
