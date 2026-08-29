@@ -49,15 +49,21 @@ describe("buildShareLink", () => {
 
     it("keeps the subpath when the sync server is reverse-proxied below the domain root", () => {
         setGlob({ httpBaseUrl: "http://127.0.0.1:37742" });
-        expect(buildShareLink("abc123", "https://notes.example.com/trilium")).toBe("https://notes.example.com/trilium/share/abc123");
-        expect(buildShareLink("abc123", "https://notes.example.com/trilium/")).toBe("https://notes.example.com/trilium/share/abc123");
-        expect(buildShareLink("abc123", "https://notes.example.com/trilium///")).toBe("https://notes.example.com/trilium/share/abc123");
-        expect(buildShareLink("abc123", "https://notes.example.com/a/b")).toBe("https://notes.example.com/a/b/share/abc123");
+
+        const subpath = "https://notes.example.com/trilium";
+        expect(buildShareLink("abc123", subpath)).toBe(`${subpath}/share/abc123`);
+        expect(buildShareLink("abc123", `${subpath}/`)).toBe(`${subpath}/share/abc123`);
+        expect(buildShareLink("abc123", `${subpath}///`)).toBe(`${subpath}/share/abc123`);
+
+        const nested = "https://notes.example.com/a/b";
+        expect(buildShareLink("abc123", nested)).toBe(`${nested}/share/abc123`);
     });
 
     it("drops a query or fragment carried by the configured sync server address", () => {
         setGlob({ httpBaseUrl: "http://127.0.0.1:37742" });
-        expect(buildShareLink("abc123", "https://notes.example.com/trilium?x=1#y")).toBe("https://notes.example.com/trilium/share/abc123");
+
+        const subpath = "https://notes.example.com/trilium";
+        expect(buildShareLink("abc123", `${subpath}?x=1#y`)).toBe(`${subpath}/share/abc123`);
     });
 
     it("percent-encodes a shareId carrying characters that are not path-safe", () => {
