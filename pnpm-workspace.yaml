@@ -35,12 +35,12 @@ overrides:
   # copies in the tree mean two declarations of the `unique symbol` that marks a `Schema`, so a tool
   # built by one provider stops being assignable to the ToolSet `ai` expects (TS2322 on the Anthropic
   # web-search tool). Pin the version `ai` itself is built against, and raise it with the next bump.
-  "@ai-sdk/provider-utils": "5.0.29"
-  "mermaid": "11.17.0"
+  "@ai-sdk/provider-utils": "5.0.30"
+  "mermaid": "11.17.2"
   "preact": "10.29.8"
   "roughjs": "4.6.6"
   "@types/express-serve-static-core": "5.1.3"
-  "node-abi": "4.33.0"
+  "node-abi": "4.34.0"
   "flat@<5.0.1": ">=5.0.1"
   "debug@>=3.2.0 <3.2.7": ">=3.2.7"
   "nanoid@<3.3.8": ">=3.3.8"

@@ -107,6 +107,19 @@ export interface ISheetDrawing {
     transform?: IDrawingTransform | null;
     /** Cell-anchored extent (top-left/bottom-right), used by the XLSX emitter's two-cell anchor. */
     sheetTransform?: ISheetDrawingAnchor | null;
+    /** How much of the image is cropped away, in px of the drawing's own box on each side. */
+    srcRect?: ISourceRect | null;
+}
+
+/**
+ * A drawing's crop. Univer draws the whole image enlarged by these insets and offset by them, with
+ * the drawing's box as the window onto it, so each value is how far past that edge the image runs.
+ */
+export interface ISourceRect {
+    left?: number;
+    top?: number;
+    right?: number;
+    bottom?: number;
 }
 
 export interface ISheetDrawingAnchor {
@@ -149,7 +162,19 @@ export interface IStyleData {
     tr?: ITextRotation | null;
     bd?: IBorderData | null;
     n?: INumberFormat | null;
+    pd?: IPaddingData | null;
 }
+
+/** Cell padding in px. Univer leaves out the sides it does not set; see `DEFAULT_CELL_PADDING`. */
+export interface IPaddingData {
+    t?: number;
+    r?: number;
+    b?: number;
+    l?: number;
+}
+
+/** The padding Univer lays a cell out with when its style names none. */
+export const DEFAULT_CELL_PADDING = { t: 0, r: 2, b: 2, l: 2 };
 
 export interface INumberFormat {
     pattern?: string | null;
@@ -190,6 +215,10 @@ export interface IRange {
 export interface IRowData {
     h?: number;
     hd?: number;
+    /** Height Univer measured for a row that sizes itself to its content. */
+    ah?: number;
+    /** Whether the row sizes itself to its content. Absent counts as yes. */
+    ia?: number;
 }
 
 export interface IColumnData {
@@ -225,7 +254,12 @@ export const enum VerticalAlign {
     BOTTOM = 3
 }
 
+// Wrap strategies (from UniversJS). OVERFLOW runs long text across the empty cells beside it,
+// CLIP cuts it at the cell edge, and WRAP breaks it inside the cell.
 export const enum WrapStrategy {
+    UNSPECIFIED = 0,
+    OVERFLOW = 1,
+    CLIP = 2,
     WRAP = 3
 }
 
@@ -440,10 +474,15 @@ export interface Bounds {
 }
 
 /**
- * Computes the inclusive bounding rectangle of all populated cells, extended to cover
- * any merged ranges. Returns `null` when there are no cells and no merges (empty sheet).
+ * Computes the inclusive bounding rectangle of all populated cells, extended to cover any merged
+ * ranges. Returns `null` when there are no cells and no merges (empty sheet). Pass `counts` to
+ * bound the rectangle by a subset of the cells, such as only the ones holding something.
  */
-export function computeBounds(cellData: CellMatrix, mergeData: IRange[] = []): Bounds | null {
+export function computeBounds(
+    cellData: CellMatrix,
+    mergeData: IRange[] = [],
+    counts?: (cell: ICellData) => boolean
+): Bounds | null {
     let minRow = Infinity;
     let maxRow = -Infinity;
     let minCol = Infinity;
@@ -454,6 +493,8 @@ export function computeBounds(cellData: CellMatrix, mergeData: IRange[] = []): B
         const cols = cellData[row];
         for (const colStr of Object.keys(cols)) {
             const col = Number(colStr);
+            if (counts && !counts(cols[col])) continue;
+
             if (minRow > row) minRow = row;
             if (maxRow < row) maxRow = row;
             if (minCol > col) minCol = col;

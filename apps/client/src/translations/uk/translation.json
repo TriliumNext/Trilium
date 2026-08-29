@@ -193,7 +193,8 @@
     "broken_relations_to_be_deleted": "Наступні зв'язки будуть розірвані та видалені ({{ relationCount}})",
     "cancel": "Скасувати",
     "title": "Видалити нотатки",
-    "delete": "Видалити"
+    "delete": "Видалити",
+    "erase_notes_label": "Видалити назавжди"
   },
   "export": {
     "export_note_title": "Експорт нотатки",
@@ -304,7 +305,8 @@
     "no_changes_message": "Поки що жодних змін...",
     "undelete_link": "відновити",
     "confirm_undelete": "Ви хочете відновити цю нотатку та її піднотатки?",
-    "deleted_notes_title": "Видалені нотатки"
+    "deleted_notes_title": "Видалені нотатки",
+    "no_deleted_notes_erasure_hint": "Видалені нотатки зберігаються протягом {{- duration}}, перед тим як будуть видалені назавжди."
   },
   "include_note": {
     "dialog_title": "Включити нотатку",

@@ -2371,7 +2371,21 @@
     "marker-color": "Dath marcóra",
     "copy-coordinates": "Cóipeáil comhordanáidí",
     "expand-details": "Leathnaigh an nóta chun an léarscáil a líonadh",
-    "restore-details": "Cuir an nóta ar ais in aice leis an léarscáil"
+    "restore-details": "Cuir an nóta ar ais in aice leis an léarscáil",
+    "search": "Cuardaigh",
+    "search-placeholder": "Cuardaigh áit",
+    "search-online": "Cuardaigh ar líne le haghaidh \"{{- query}}\"",
+    "searching-online": "Ag cuardach ar líne…",
+    "no-places-found": "Níor aimsíodh aon áiteanna",
+    "search-failed": "Níorbh fhéidir áiteanna a chuardach",
+    "results-nearby": "In aice láimhe",
+    "results-far": "I bhfad i gcéin",
+    "add-place-as-marker": "Cuir leis mar mharcóir",
+    "previous-result": "Toradh roimhe seo",
+    "next-result": "An chéad toradh eile",
+    "result-position": "Toradh {{index}} de {{total}}, cliceáil chun filleadh air",
+    "results-on-map": "Ar an léarscáil seo",
+    "go-to-coordinates": "Téigh go dtí {{- coordinates}}"
   },
   "geo-map-context": {
     "open-location": "Oscail suíomh",
@@ -2508,7 +2522,8 @@
     "vector_dark": "Veicteoir (Dorcha)",
     "show-scale": "Taispeáin scála",
     "show-labels": "Taispeáin ainmneacha marcóirí",
-    "cluster-markers": "Grúpáil marcóirí in aice láimhe"
+    "cluster-markers": "Grúpáil marcóirí in aice láimhe",
+    "presentation-theme": "Téama"
   },
   "table_context_menu": {
     "delete_row": "Scrios an tsraith"

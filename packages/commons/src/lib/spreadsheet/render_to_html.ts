@@ -15,6 +15,8 @@ import { format as formatNumfmt, formatColor as formatNumfmtColor } from "numfmt
 import {
     BorderStyle,
     type CellDocumentSegment,
+    DEFAULT_CELL_PADDING,
+    type IPaddingData,
     type CellMatrix,
     CellValueType,
     computeBounds,
@@ -29,6 +31,8 @@ import {
     type IColumnData,
     isFiniteNumber,
     type IRange,
+    type IRowData,
+    type ISourceRect,
     type ISheetDrawing,
     type IStyleData,
     type ITextRotation,
@@ -84,6 +88,8 @@ interface PlacedImage {
     height: number;
     /** CSS `transform` value for rotation/flip, or "" when the image is upright and unflipped. */
     transform: string;
+    /** How far the image runs past each edge of the box, when only part of it is shown. */
+    crop: Required<ISourceRect> | null;
 }
 
 /**
@@ -107,10 +113,20 @@ function placeFloatingImages(sheet: IWorksheetData, drawings: ISheetDrawing[]): 
             top: toFinite(drawing.transform.top) - headerHeight,
             width: toFinite(drawing.transform.width),
             height: toFinite(drawing.transform.height),
-            transform: cssTransform(drawing.transform)
+            transform: cssTransform(drawing.transform),
+            crop: cropInsets(drawing.srcRect)
         });
     }
     return placed;
+}
+
+/** A drawing's crop insets, or `null` when the whole image is shown. */
+function cropInsets(srcRect: ISourceRect | null | undefined): Required<ISourceRect> | null {
+    if (!srcRect) return null;
+
+    const side = (value: number | undefined) => (isFiniteNumber(value) ? value : 0);
+    const insets = { left: side(srcRect.left), top: side(srcRect.top), right: side(srcRect.right), bottom: side(srcRect.bottom) };
+    return insets.left || insets.top || insets.right || insets.bottom ? insets : null;
 }
 
 /**
@@ -143,8 +159,23 @@ function wrapWithFloatingImages(tableHtml: string, images: PlacedImage[]): strin
     for (const image of images) {
         maxBottom = Math.max(maxBottom, image.top + image.height);
         const transform = image.transform ? `;transform:${image.transform}` : "";
+        const box = `position:absolute;left:${px(image.left)}px;top:${px(image.top)}px`
+            + `;width:${px(image.width)}px;height:${px(image.height)}px${transform}`;
+        const src = escapeHtml(image.src);
+
+        if (!image.crop) {
+            tags.push(`<img class="spreadsheet-floating-image" style="${box}" src="${src}" alt="">`);
+            continue;
+        }
+
+        // A cropped drawing keeps the box as its window and holds the whole image inside it,
+        // enlarged by the insets and pulled back by them, which is how the editor draws it.
+        const { left, top, right, bottom } = image.crop;
         tags.push(
-            `<img class="spreadsheet-floating-image" style="position:absolute;left:${px(image.left)}px;top:${px(image.top)}px;width:${px(image.width)}px;height:${px(image.height)}px${transform}" src="${escapeHtml(image.src)}" alt="">`
+            `<span class="spreadsheet-floating-image" style="${box};display:block;overflow:hidden">`
+            + `<img style="position:absolute;left:${px(-left)}px;top:${px(-top)}px`
+            + `;width:${px(image.width + left + right)}px;height:${px(image.height + top + bottom)}px" src="${src}" alt="">`
+            + `</span>`
         );
     }
 
@@ -213,29 +244,49 @@ function extendBoundsForImages(sheet: IWorksheetData, maxRow: number, maxCol: nu
     }
     if (bottomPx <= 0 && rightPx <= 0) return { maxRow, maxCol };
 
+    const defaultHeight = sheet.defaultRowHeight ?? 24;
+    const defaultWidth = sheet.defaultColumnWidth ?? 88;
     return {
-        maxRow: Math.max(maxRow, trackIndexAtPx(bottomPx, sheet.defaultRowHeight ?? 24, sheet.rowCount, (i) => sheet.rowData?.[i])),
-        maxCol: Math.max(maxCol, trackIndexAtPx(rightPx, sheet.defaultColumnWidth ?? 88, sheet.columnCount, (i) => sheet.columnData?.[i]))
+        maxRow: Math.max(maxRow, trackIndexAtPx(bottomPx, sheet.rowCount, (i) => {
+            const meta = sheet.rowData?.[i];
+            return meta?.hd ? 0 : rowHeight(meta, defaultHeight);
+        })),
+        maxCol: Math.max(maxCol, trackIndexAtPx(rightPx, sheet.columnCount, (i) => {
+            const meta = sheet.columnData?.[i];
+            return meta?.hd ? 0 : (isFiniteNumber(meta?.w) ? meta.w : defaultWidth);
+        }))
     };
 }
 
 /**
- * Returns the 0-based index of the last row/column needed to reach `targetPx` from the sheet
- * origin, walking the per-track sizes (`h`/`w`, hidden tracks contributing 0) and falling back to
- * `defaultSize`. Bounded by `count` (or a large cap) so a zero/degenerate size can't loop forever.
+ * A row's rendered height. Univer keeps the height it measured for a self-sizing row in `ah` and
+ * uses that unless the row was sized by hand (`ia === 0`), where `h` wins (`getRowHeight` in
+ * `@univerjs/core`). Reading only `h` leaves a self-sizing row at the sheet default, which shortens
+ * the grid and pulls the floating images, placed in the editor's coordinates, out of line with it.
  */
-function trackIndexAtPx(targetPx: number, defaultSize: number, count: number | undefined, meta: (index: number) => { hd?: number; h?: number; w?: number } | undefined): number {
-    if (targetPx <= 0 || defaultSize <= 0) return 0;
+function rowHeight(meta: IRowData | undefined, defaultHeight: number): number {
+    const measured = meta?.ah;
+    if ((meta?.ia == null || meta.ia === 1) && isFiniteNumber(measured)) return measured;
+
+    const height = meta?.h;
+    return isFiniteNumber(height) ? height : defaultHeight;
+}
+
+/**
+ * Returns the 0-based index of the last row/column needed to reach `targetPx` from the sheet
+ * origin, walking the per-track sizes. Bounded by `count` (or a large cap) so a degenerate size
+ * can't loop forever, and an axis whose tracks all measure zero extends by nothing at all.
+ */
+function trackIndexAtPx(targetPx: number, count: number | undefined, size: (index: number) => number): number {
+    if (targetPx <= 0) return 0;
     const cap = isFiniteNumber(count) && count > 0 ? count : 100000;
     let cumulative = 0;
     let index = 0;
     while (cumulative < targetPx && index < cap) {
-        const track = meta(index);
-        const size = track?.h ?? track?.w;
-        cumulative += track?.hd ? 0 : (isFiniteNumber(size) ? size : defaultSize);
+        cumulative += size(index);
         index++;
     }
-    return index - 1;
+    return cumulative > 0 ? index - 1 : 0;
 }
 
 // #endregion
@@ -243,9 +294,15 @@ function trackIndexAtPx(targetPx: number, defaultSize: number, count: number | u
 function renderSheet(sheet: IWorksheetData, styles: Record<string, IStyleData | null>, images: PlacedImage[]): string {
     const { cellData, mergeData = [], columnData = {}, rowData = {} } = sheet;
 
-    // Determine the actual bounds (only cells with data), then extend them to cover any floating
-    // images that reach past the data so the grid encloses them like the editor does.
-    const bounds = computeBounds(cellData, mergeData);
+    // A sheet often carries formatting far past its data: a fill applied to whole rows leaves tens
+    // of thousands of empty cells, each of which would become a `td` the browser has to lay out for
+    // a band it draws as one rectangle. The grid is bounded by the cells that hold something, and
+    // falls back to every cell for a sheet that is nothing but formatting. Then it is extended to
+    // cover any floating image that reaches past the data, so the grid encloses it as the editor does.
+    // A merge widens it as before, except one applied to entire rows or columns, which would
+    // pull the sheet back out to the far edge of the grid.
+    const bounds = computeBounds(cellData, boundingMerges(mergeData, sheet), (cell) => holdsSomething(cell, styles))
+        ?? computeBounds(cellData, mergeData);
     const { maxRow, maxCol } = extendBoundsForImages(sheet, bounds?.maxRow ?? -1, bounds?.maxCol ?? -1, images);
     if (maxRow < 0 || maxCol < 0) {
         return "<p>Empty sheet.</p>";
@@ -274,24 +331,31 @@ function renderSheet(sheet: IWorksheetData, styles: Record<string, IStyleData | 
     lines.push(buildTableTag(sheet, totalWidth));
 
     lines.push("<colgroup>");
-    for (const width of colWidths) {
-        lines.push(`<col style="width:${px(width)}px">`);
+    for (let index = 0; index < colWidths.length;) {
+        let span = 1;
+        while (index + span < colWidths.length && colWidths[index + span] === colWidths[index]) span++;
+        lines.push(`<col${span > 1 ? ` span="${span}"` : ""} style="width:${px(colWidths[index])}px">`);
+        index += span;
     }
     lines.push("</colgroup>");
 
     const defaultHeight = sheet.defaultRowHeight ?? 24;
+    const heights: number[] = [];
+    for (let row = minRow; row <= maxRow; row++) {
+        heights[row] = rowData[row]?.hd ? 0 : rowHeight(rowData[row], defaultHeight);
+    }
 
     for (let row = minRow; row <= maxRow; row++) {
         const rowMeta = rowData[row];
         if (rowMeta?.hd) continue;
 
-        const height = isFiniteNumber(rowMeta?.h) ? rowMeta.h : defaultHeight;
+        const height = heights[row];
         // Univer leaves a cell at the bottom of its row unless it sets `vt`, while HTML centres it.
         // The row carries that default because a `td` inherits `vertical-align`, so a cell that
         // sets its own still wins.
         lines.push(`<tr style="height:${height}px;vertical-align:bottom">`);
 
-        const neighbours: RowNeighbours = { row, minCol, maxCol, cellData, columnData, mergeMap };
+        const neighbours: RowNeighbours = { row, minCol, maxCol, cellData, columnData, mergeMap, defaultWidth };
 
         for (let col = minCol; col <= maxCol; col++) {
             if (columnData[col]?.hd) continue;
@@ -301,11 +365,20 @@ function renderSheet(sheet: IWorksheetData, styles: Record<string, IStyleData | 
 
             const cell = cellData[row]?.[col];
             const cellStyle = mergeAwareStyle(resolveCellStyle(cell?.s, styles), mergeInfo, row, col, cellData, styles);
+            const bound = spillBound(cell, cellStyle, col, mergeInfo, neighbours);
+            const padding = cellPadding(cellStyle);
+            const boxHeight = spannedHeight(heights, row, mergeInfo?.endRow ?? row)
+                - padding.t - padding.b
+                - collapsedBorderHeight(cellStyle, row, mergeInfo?.endRow ?? row, col, rowData, cellData, styles);
             const declarations = [buildCssText(cellStyle, cell)];
-            if (clipsOverflow(cell, cellStyle, col, mergeInfo, neighbours)) declarations.push("overflow:hidden");
+            if (hasContent(cell)) {
+                declarations.push(`padding:${px(padding.t)}px ${px(padding.r)}px ${px(padding.b)}px ${px(padding.l)}px`);
+            }
             const cssText = declarations.filter(Boolean).join(";");
-            const value = rotate(formatCellValue(cell, cellStyle), cellStyle?.tr)
-                + (cell ? renderCellImages(cell) : "");
+            const text = rotate(formatCellValue(cell, cellStyle), cellStyle);
+            const value = (isTurned(cellStyle?.tr)
+                ? turnedBox(text, boxHeight, cellStyle)
+                : cellBox(text, bound, boxHeight)) + (cell ? renderCellImages(cell) : "");
 
             const attrs: string[] = [];
             // Cells with a background fill carry `has-fill` so the stylesheet can suppress
@@ -496,52 +569,248 @@ interface RowNeighbours {
     cellData: CellMatrix;
     columnData: Record<number, IColumnData>;
     mergeMap: Map<string, MergeInfo>;
+    defaultWidth: number;
+}
+
+/** How far a cell's text can run past its own edges, in px on each side. */
+interface SpillBound {
+    before: number;
+    after: number;
 }
 
 /**
- * Whether a cell has to clip its text at its own edge. A spreadsheet spills text into a
- * neighbouring cell only while that neighbour is empty, and never spills a number or a boolean
- * (the overflow check in `@univerjs/engine-render`). The stylesheets let every cell spill, so
- * without this a long value is drawn over the value beside it. The spill direction follows the
- * alignment, and a wrapped cell never spills to begin with.
+ * The room a cell's text has before it reaches a cell that shows something. A spreadsheet runs text
+ * across the empty cells beside it and cuts it at the first occupied one, and keeps a number, a
+ * boolean or a cell set to CLIP inside its own edges (the overflow check in
+ * `@univerjs/engine-render`, and `WrapStrategy` in `@univerjs/core`). Text that nothing stops is
+ * given the room to the edge of the sheet, since the box that carries it clips both axes at once
+ * and so always needs a width. Returns `null` only when there is nothing to bound.
  */
-function clipsOverflow(
+function spillBound(
     cell: ICellData | undefined,
     style: IStyleData | null,
     col: number,
     merge: MergeOrigin | undefined,
     neighbours: RowNeighbours
-): boolean {
-    if (!hasContent(cell) || style?.tb === WrapStrategy.WRAP) return false;
-    if (cell?.t === CellValueType.NUMBER || cell?.t === CellValueType.BOOLEAN) return true;
+): SpillBound | null {
+    if (!hasContent(cell) || style?.tb === WrapStrategy.WRAP) return null;
 
-    // Rightwards, a merged cell starts looking past the last column its own range covers.
-    const before = () => neighbourHasContent(col, -1, neighbours);
-    const after = () => neighbourHasContent(merge?.endColumn ?? col, 1, neighbours);
-    switch (style?.ht) {
-        case HorizontalAlign.RIGHT: return before();
-        case HorizontalAlign.CENTER: return before() || after();
-        default: return after();
+    // Turned text stays in its own cell, as do a number, a boolean and a cell set to CLIP.
+    if (cell?.t === CellValueType.NUMBER || cell?.t === CellValueType.BOOLEAN
+        || style?.tb === WrapStrategy.CLIP || isTurned(style?.tr)) {
+        return { before: 0, after: 0 };
     }
+
+    // Text runs the way its alignment points; rightwards a merged cell starts past its own range.
+    const leftwards = () => spillRoom(col, -1, neighbours).width;
+    const rightwards = () => spillRoom(merge?.endColumn ?? col, 1, neighbours).width;
+
+    // Centred text has to stay centred on its own cell, so the room it is given is the same on
+    // both sides: growing one side further would carry the middle of the text away from the
+    // middle of the cell, which is where the editor keeps it.
+    if (style?.ht === HorizontalAlign.CENTER) {
+        const room = Math.min(leftwards(), rightwards());
+        return { before: room, after: room };
+    }
+
+    return style?.ht === HorizontalAlign.RIGHT
+        ? { before: leftwards(), after: 0 }
+        : { before: 0, after: rightwards() };
 }
 
 /**
- * Whether the cell rendered beside `from` shows anything. Adjacency follows the rendered row, not
- * the cell matrix: hidden columns are stepped over because nothing of them reaches the page, and a
- * column a merge covers reports that range's anchor, whose text is what fills the space there.
+ * The rendered width beside `from`, and whether a cell showing something is what ended it. The walk
+ * follows the rendered row: a hidden column takes up no width because nothing of it reaches the
+ * page, and a column a merge covers shows that range's anchor.
  */
-function neighbourHasContent(from: number, step: -1 | 1, neighbours: RowNeighbours): boolean {
-    const { row, minCol, maxCol, cellData, columnData, mergeMap } = neighbours;
+function spillRoom(from: number, step: -1 | 1, neighbours: RowNeighbours): { width: number; stopped: boolean } {
+    const { minCol, maxCol, columnData, defaultWidth } = neighbours;
 
+    let width = 0;
     for (let col = from + step; col >= minCol && col <= maxCol; col += step) {
         if (columnData[col]?.hd) continue;
+        if (hasContent(cellShownAt(col, neighbours))) return { width, stopped: true };
 
-        const info = mergeMap.get(cellKey(row, col));
-        return hasContent(info?.kind === "member"
-            ? cellData[info.anchorRow]?.[info.anchorColumn]
-            : cellData[row]?.[col]);
+        const columnWidth = columnData[col]?.w;
+        width += isFiniteNumber(columnWidth) ? columnWidth : defaultWidth;
     }
-    return false;
+    return { width, stopped: false };
+}
+
+/** The cell filling `col` in this row: a column a merge covers shows the range's anchor. */
+function cellShownAt(col: number, neighbours: RowNeighbours): ICellData | undefined {
+    const { row, cellData, mergeMap } = neighbours;
+
+    const info = mergeMap.get(cellKey(row, col));
+    return info?.kind === "member" ? cellData[info.anchorRow]?.[info.anchorColumn] : cellData[row]?.[col];
+}
+
+/**
+ * A cell's text is laid out on the font's own leading, as the editor lays it out. The page around it
+ * sets a line height for prose, which is taller than a spreadsheet row expects and pushes the text
+ * out of the bottom of a box measured from the row.
+ */
+const CELL_LINE_HEIGHT = "line-height:normal";
+
+/**
+ * Wraps a cell's text in the box that fixes its size. An HTML row grows to whatever it holds, while
+ * a spreadsheet row is exactly as tall as it says and clips what does not fit, so without this the
+ * grid drifts from the geometry the sheet declares and every absolutely placed image drifts with
+ * it. The box also carries the room the text has to run sideways, widened by it and clipped there,
+ * with the negative margins cancelling the extra width so the table's own layout is untouched.
+ */
+function cellBox(html: string, bound: SpillBound | null, height: number): string {
+    if (!html) return html;
+
+    const parts = ["display:block", "overflow:hidden"];
+    if (height > 0) parts.push(`max-height:${px(height)}px`);
+    if (bound && (bound.before || bound.after)) {
+        parts.push(`width:calc(100% + ${px(bound.before + bound.after)}px)`);
+        if (bound.before) parts.push(`margin-left:${px(-bound.before)}px`);
+        if (bound.after) parts.push(`margin-right:${px(-bound.after)}px`);
+    }
+    parts.push(CELL_LINE_HEIGHT);
+    return `<span style="${parts.join(";")}">${html}</span>`;
+}
+
+/** Whether a cell's text is turned at all, in any of the ways Univer can turn it. */
+function isTurned(rotation: ITextRotation | null | undefined): boolean {
+    if (!rotation) return false;
+    return Boolean(rotation.v) || (isFiniteNumber(rotation.a) && rotation.a !== 0);
+}
+
+/**
+ * Whether a rotation is painted by a transform rather than laid out, which is every angle other
+ * than a quarter turn. Only those hang from a cell edge; a quarter turn is a writing mode, which
+ * the cell's own alignments already place.
+ */
+function rotatesByTransform(rotation: ITextRotation | null | undefined): boolean {
+    if (!rotation || rotation.v || !isFiniteNumber(rotation.a)) return false;
+    return rotation.a !== 0 && rotation.a !== 90 && rotation.a !== -90;
+}
+
+/**
+ * The box a turned cell's text sits in. It fills the cell rather than hugging the text, so what it
+ * clips is the cell itself: a box only as tall as the text's own line would cut a band across the
+ * turn and drop everything above and below it. Filling the cell takes the placement away from the
+ * cell's alignments, so the box carries them itself.
+ */
+function turnedBox(html: string, height: number, style: IStyleData | null): string {
+    if (!html) return html;
+
+    const parts = [
+        "display:flex",
+        "overflow:hidden",
+        `align-items:${turnedAlign(style?.vt)}`,
+        `justify-content:${turnedJustify(style)}`
+    ];
+    if (height > 0) parts.push(`height:${px(height)}px`);
+    parts.push(CELL_LINE_HEIGHT);
+    return `<span style="${parts.join(";")}">${html}</span>`;
+}
+
+/** Where a turned cell puts its text down the cell, following the cell's vertical alignment. */
+function turnedAlign(verticalAlign: number | null | undefined): string {
+    if (verticalAlign === VerticalAlign.MIDDLE) return "center";
+    return verticalAlign === VerticalAlign.TOP ? "flex-start" : "flex-end";
+}
+
+/** Where it puts it across the cell: the cell's own alignment when it states one, else the side the turn is anchored to. */
+function turnedJustify(style: IStyleData | null): string {
+    const align = style?.ht ?? (tiltAnchor(style) === "right" ? HorizontalAlign.RIGHT : HorizontalAlign.LEFT);
+    if (align === HorizontalAlign.CENTER) return "center";
+    return align === HorizontalAlign.RIGHT ? "flex-end" : "flex-start";
+}
+
+/** The height a cell covers, summing the rows a `rowspan` reaches across. */
+function spannedHeight(heights: number[], from: number, to: number): number {
+    let total = 0;
+    for (let row = from; row <= to; row++) total += heights[row];
+    return total;
+}
+
+/**
+ * The height a cell's borders take from its row. Under `border-collapse` an edge is shared with the
+ * cell across it and the wider of the two borders wins, so a cell with none of its own still gives
+ * up half an edge to a bordered neighbour. Reading only the cell's own borders leaves a cell that
+ * fills its row exactly, which a turned one does, a border's half taller than the row it sits in.
+ */
+function collapsedBorderHeight(
+    style: IStyleData | null,
+    row: number,
+    endRow: number,
+    col: number,
+    rowData: Record<number, IRowData>,
+    cellData: CellMatrix,
+    styles: Record<string, IStyleData | null>
+): number {
+    const width = (border: IBorderStyleData | null | undefined) =>
+        (!border || border.s === BorderStyle.NONE ? 0 : Number.parseFloat(borderStyleToWidth(border.s)));
+
+    const above = resolveCellStyle(cellData[renderedRow(row, -1, rowData)]?.[col]?.s, styles);
+    const below = resolveCellStyle(cellData[renderedRow(endRow, 1, rowData)]?.[col]?.s, styles);
+
+    return (Math.max(width(style?.bd?.t), width(above?.bd?.b))
+        + Math.max(width(style?.bd?.b), width(below?.bd?.t))) / 2;
+}
+
+/** The row an edge is shared with: the nearest one that is drawn, since a hidden row draws nothing. */
+function renderedRow(from: number, step: -1 | 1, rowData: Record<number, IRowData>): number {
+    let row = from + step;
+    while (row >= 0 && rowData[row]?.hd) row += step;
+    return row;
+}
+
+/** The padding a cell is laid out with, which the box has to leave room for inside the row. */
+function cellPadding(style: IStyleData | null): Required<IPaddingData> {
+    const padding = style?.pd;
+    const side = (value: number | undefined, fallback: number) => (isFiniteNumber(value) ? value : fallback);
+    return {
+        t: side(padding?.t, DEFAULT_CELL_PADDING.t),
+        r: side(padding?.r, DEFAULT_CELL_PADDING.r),
+        b: side(padding?.b, DEFAULT_CELL_PADDING.b),
+        l: side(padding?.l, DEFAULT_CELL_PADDING.l)
+    };
+}
+
+/**
+ * The merges that say something about how far a sheet reaches. One applied to entire rows or columns
+ * is a formatting gesture rather than a statement that the sheet runs that far, so it is left out
+ * and clamped into the content instead.
+ *
+ * Across, that gesture is recognised by the sheet declaring every column Excel has: a banner merged
+ * by hand stops well short of that, and keeps widening the grid as any other merge does. Down, the
+ * same test is not available, because a sheet's row count is capped at the rows it uses rather than
+ * carried over from the file. So a merge is taken as the gesture there when it reaches the last
+ * declared row *and* covers at least the rows every sheet starts with, which no one merges by hand.
+ */
+function boundingMerges(mergeData: IRange[], sheet: IWorksheetData): IRange[] {
+    const columnCount = sheet.columnCount ?? 0;
+    const lastRow = (sheet.rowCount ?? 0) - 1;
+
+    return mergeData.filter((range) =>
+        !(columnCount >= EXCEL_COLUMN_COUNT && range.startColumn === 0 && range.endColumn >= columnCount - 1)
+        && !(range.startRow === 0 && range.endRow >= lastRow && range.endRow - range.startRow + 1 >= DEFAULT_ROW_COUNT));
+}
+
+/** The rows a sheet starts with, which both importers floor at and the editor creates. */
+const DEFAULT_ROW_COUNT = 1000;
+
+/** The columns an Excel sheet has, which only a sheet formatted across all of them declares. */
+const EXCEL_COLUMN_COUNT = 16384;
+
+/**
+ * Whether a cell holds something the grid has to reach, which is what it is bounded by. A formula
+ * counts even when its result is blank, since the cell is part of the sheet's data, and so does a
+ * border: an empty bordered cell is a drawn box, a form or a table outline someone means to keep.
+ * A fill does not, because it comes from colouring whole rows, which would carry the grid out to
+ * the far edge for a band nobody reads.
+ */
+function holdsSomething(cell: ICellData, styles: Record<string, IStyleData | null>): boolean {
+    if (cell.f || hasContent(cell)) return true;
+
+    const borders = resolveCellStyle(cell.s, styles)?.bd;
+    return Boolean(borders && (borders.t?.s || borders.r?.s || borders.b?.s || borders.l?.s));
 }
 
 /** Whether a cell shows anything. A cell carrying only a style is empty, as it is in the editor. */
@@ -681,29 +950,60 @@ function formatCellValue(cell: ICellData | undefined, style: IStyleData | null):
  * the `td` itself, which would take the background and borders with it, and images anchored in the
  * cell stay upright as they do in the editor.
  */
-function rotate(html: string, rotation: ITextRotation | null | undefined): string {
+function rotate(html: string, style: IStyleData | null): string {
     if (!html) return html;
 
-    const css = rotationCss(rotation);
+    const css = rotationCss(style?.tr, style?.vt);
     return css ? `<span style="${css}">${html}</span>` : html;
 }
 
 /**
- * The CSS for Univer's text rotation. A quarter turn and stacked text become a vertical writing
- * mode, which gives the text a real vertical box the row grows to fit; any other angle falls back
- * to a transform, which turns the glyphs without reserving room for them. Excel measures the angle
- * counter-clockwise and CSS turns clockwise, so the sign flips.
+ * The CSS for Univer's text rotation. Univer measures the angle the way CSS turns, clockwise from
+ * the horizontal, so a negative angle lifts the text and a positive one drops it. A quarter turn
+ * and stacked text become a vertical writing mode, which gives the text a real vertical box the row
+ * grows to fit; any other angle falls back to a transform, which turns the glyphs without reserving
+ * room for them.
  */
-function rotationCss(rotation: ITextRotation | null | undefined): string | null {
+function rotationCss(rotation: ITextRotation | null | undefined, verticalAlign: number | null | undefined): string | null {
+    // `vertical-align` keeps the turned text off the line box's baseline, whose descender gap
+    // would otherwise add height the row has to absorb.
+    const ROTATED = "display:inline-block;vertical-align:top";
+
     if (!rotation) return null;
     // Stacked text: upright characters reading downwards.
-    if (rotation.v) return "display:inline-block;writing-mode:vertical-rl;text-orientation:upright";
+    if (rotation.v) return `${ROTATED};writing-mode:vertical-rl;text-orientation:upright`;
 
     const angle = isFiniteNumber(rotation.a) ? rotation.a : 0;
     if (angle === 0) return null;
-    if (angle === 90) return "display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg)";
-    if (angle === -90) return "display:inline-block;writing-mode:vertical-rl";
-    return `display:inline-block;transform:rotate(${px(-angle)}deg)`;
+    if (angle === -90) return `${ROTATED};writing-mode:vertical-rl;transform:rotate(180deg)`;
+    if (angle === 90) return `${ROTATED};writing-mode:vertical-rl`;
+
+    // A middle-aligned cell turns its text about the centre, which leaves the shape centred.
+    if (verticalAlign === VerticalAlign.MIDDLE) return `${ROTATED};transform:rotate(${px(angle)}deg)`;
+
+    // Otherwise the text hangs from the cell edge it is aligned to, turning about the end of the
+    // string that meets it: lifting text meets the bottom with its start and the top with its end.
+    // Turning about that corner swings the text's own line height past it, so the shift takes that
+    // back; `lh` is the line height itself, which keeps the correction right at any font size.
+    const swing = Math.round(Math.sin(Math.abs(angle) * (Math.PI / 180)) * 1000) / 1000;
+    const fromTop = verticalAlign === VerticalAlign.TOP;
+    const lifts = angle < 0;
+    const origin = `${lifts === fromTop ? "right" : "left"} ${fromTop ? "top" : "bottom"}`;
+    return `${ROTATED};transform:translateX(calc(1lh * ${lifts === fromTop ? -swing : swing})) rotate(${px(angle)}deg)`
+        + `;transform-origin:${origin}`;
+}
+
+/**
+ * The side of its cell turned text is anchored to, or `null` when the cell has no turned text. The
+ * string meets the cell edge it is aligned to with one of its ends, and which end that is flips
+ * between an alignment to the top and one to the bottom or the middle.
+ */
+function tiltAnchor(style: IStyleData | null): "left" | "right" | null {
+    const rotation = style?.tr;
+    if (!rotatesByTransform(rotation) || !isFiniteNumber(rotation?.a)) return null;
+
+    const lifts = rotation.a < 0;
+    return lifts === (style?.vt === VerticalAlign.TOP) ? "right" : "left";
 }
 
 /**
