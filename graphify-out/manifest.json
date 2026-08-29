@@ -8380,8 +8380,8 @@
     "semantic_hash": "f5d8016916dea103cc3336b2b9920b54"
   },
   "apps/server/src/sql_provider.spec.ts": {
-    "mtime": 1787908331.5420198,
-    "ast_hash": "16137bf1569e835e99f3f8f773d9c295",
+    "mtime": 1787995423.508826,
+    "ast_hash": "372626db84421d7bf376c6c5233f4e5c",
     "semantic_hash": ""
   },
   "apps/server/src/sql_provider.ts": {
@@ -8675,8 +8675,8 @@
     "semantic_hash": "a636ae659922a6866051a29de389fab7"
   },
   "apps/standalone/src/lightweight/sql_provider.spec.ts": {
-    "mtime": 1787908344.7101889,
-    "ast_hash": "727a4046722e617ecc62f80151fadc72",
+    "mtime": 1787995432.923391,
+    "ast_hash": "414175dd6ea86e18a1d8de1865f2f66f",
     "semantic_hash": ""
   },
   "apps/standalone/src/lightweight/sql_provider.ts": {
@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787944209.4172528,
-    "ast_hash": "c3ea95f9b26c87132395500ac6e4cf78",
+    "mtime": 1787995447.1787088,
+    "ast_hash": "e6c866cc2f1372a31a42d584cbb39890",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {

@@ -54,8 +54,12 @@ describe("BetterSqlite3Provider", () => {
             INSERT INTO col VALUES (18, '', '');
             CREATE TABLE decks (id INTEGER, name TEXT);
             INSERT INTO decks VALUES (10, 'Languages::French');
+            CREATE TABLE notetypes (id INTEGER, config TEXT);
+            INSERT INTO notetypes VALUES (20, '{}');
             CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT);
             INSERT INTO fields VALUES (20, 0, 'Text');
+            CREATE TABLE templates (ntid INTEGER, ord INTEGER, name TEXT, config TEXT);
+            INSERT INTO templates VALUES (20, 0, 'Card 1', '{}');
         `);
         const bytes = source.serialize();
         source.close();
@@ -77,22 +81,37 @@ describe("BetterSqlite3Provider", () => {
         provider.close();
     });
 
-    it("loads from a file (WAL mode) and backs up to a destination", async () => {
+    it("loads from a file (WAL mode) and backs up flashcard tables to a destination", async () => {
         const dbPath = tmpDbPath();
         const provider = new BetterSqlite3Provider();
         provider.loadFromFile(dbPath, false);
-        provider.exec("CREATE TABLE x (id INTEGER)");
+        provider.exec(/*sql*/`
+            CREATE TABLE x (id INTEGER);
+            CREATE TABLE flashcards (cardId TEXT PRIMARY KEY, noteId TEXT, due TEXT, queue TEXT);
+            CREATE TABLE flashcard_reviews (reviewId TEXT PRIMARY KEY, cardId TEXT, rating INTEGER);
+            INSERT INTO flashcards VALUES ('card-backup', 'note-backup', '2026-01-02T12:00:00.000Z', 'review');
+            INSERT INTO flashcard_reviews VALUES ('review-backup', 'card-backup', 3);
+        `);
         expect(fs.existsSync(dbPath)).toBe(true);
 
         // Fresh destination → the pre-delete unlinkSync throws (missing) and is swallowed.
         const backupA = tmpDbPath();
-        provider.backup(backupA);
+        await provider.backup(backupA);
         await vi.waitFor(() => expect(fs.existsSync(backupA)).toBe(true), { timeout: 2000 });
+
+        const backedUp = provider.openReadOnlyDatabase(fs.readFileSync(backupA));
+        expect(backedUp.getRows("SELECT cardId, due, queue FROM flashcards")).toEqual([
+            { cardId: "card-backup", due: "2026-01-02T12:00:00.000Z", queue: "review" }
+        ]);
+        expect(backedUp.getRows("SELECT reviewId, cardId, rating FROM flashcard_reviews")).toEqual([
+            { reviewId: "review-backup", cardId: "card-backup", rating: 3 }
+        ]);
+        backedUp.close();
 
         // Pre-existing destination → unlinkSync removes it before the fresh backup.
         const backupB = tmpDbPath();
         fs.writeFileSync(backupB, "stale");
-        provider.backup(backupB);
+        await provider.backup(backupB);
         await vi.waitFor(() => expect(fs.statSync(backupB).size).toBeGreaterThan(5), { timeout: 2000 });
 
         provider.close();
