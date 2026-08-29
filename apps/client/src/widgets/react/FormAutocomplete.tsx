@@ -1,5 +1,6 @@
 import "./FormAutocomplete.css";
 
+import clsx from "clsx";
 import type { ComponentChildren, TargetedKeyboardEvent } from "preact";
 import { createPortal, type CSSProperties } from "preact/compat";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
@@ -66,6 +67,10 @@ interface FormAutocompleteProps extends Omit<FormTextBoxProps, "onChange"> {
      * the whole field instead of only the stretch of it left over for typing.
      */
     leading?: ComponentChildren;
+    /** Rendered inside the field after the input. */
+    trailing?: ComponentChildren;
+    /** Additional class name for the field wrapper. */
+    fieldClassName?: string;
     /**
      * Marks an entry as a heading over the ones below it rather than a choice of its own: it takes no
      * click, is stepped over on the way through the list, and is never what Enter takes.
@@ -94,7 +99,7 @@ interface FormAutocompleteProps extends Omit<FormTextBoxProps, "onChange"> {
  * The dropdown is portalled to the body and positioned over everything else, so it is not clipped
  * by scrolling ancestors. Selecting a suggestion reports it through `onChange`, exactly like typing.
  */
-export default function FormAutocomplete({ currentValue, onChange, source, openOnFocus, openOnEnter, onPick, keepOpenOnPick, renderItem, leading, autoActivate, isHeading, dropdownMinWidth, inputRef, onFocus, onBlur, onKeyDown, ...restProps }: FormAutocompleteProps) {
+export default function FormAutocomplete({ currentValue, onChange, source, openOnFocus, openOnEnter, onPick, keepOpenOnPick, renderItem, leading, trailing, fieldClassName, autoActivate, isHeading, dropdownMinWidth, inputRef, onFocus, onBlur, onKeyDown, ...restProps }: FormAutocompleteProps) {
     const ownInputRef = useRef<HTMLInputElement>(null);
     const inputEl = inputRef ?? ownInputRef;
     const fieldRef = useRef<HTMLDivElement>(null);
@@ -267,8 +272,8 @@ export default function FormAutocomplete({ currentValue, onChange, source, openO
 
     return (
         <>
-            {leading !== undefined
-                ? <div ref={fieldRef} className="tn-field form-autocomplete-field">{leading}{field}</div>
+            {leading !== undefined || trailing !== undefined
+                ? <div ref={fieldRef} className={clsx("tn-field form-autocomplete-field", fieldClassName)}>{leading}{field}{trailing}</div>
                 : field}
 
             {isOpen && items.length > 0 && position && createPortal(

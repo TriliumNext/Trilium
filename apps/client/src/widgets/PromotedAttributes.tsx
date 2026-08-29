@@ -1,9 +1,9 @@
 import "./PromotedAttributes.css";
 
-import { DefinitionObject, extractAttributeDefinitionTypeAndName, UpdateAttributeResponse } from "@triliumnext/commons";
+import { DefinitionObject, extractAttributeDefinitionTypeAndName, LabelType, UpdateAttributeResponse } from "@triliumnext/commons";
 import clsx from "clsx";
 import { ComponentChild, TargetedEvent } from "preact";
-import { Dispatch, StateUpdater, useCallback, useEffect, useState } from "preact/hooks";
+import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
@@ -294,13 +294,19 @@ function MultiLabelInput({ inputId, note, cell, componentId, setCells }: CellPro
     const { valueName, definition, definitionAttr, values, uniqueId } = cell;
     const labelType = definition.labelType ?? "text";
     const createOption = useCreateSelectOption(definitionAttr, componentId, setCells);
+    const suggestValues = useAttributeValueSuggestions(valueName, labelType);
+    // Serialize writes so quick successive selections cannot finish out of order.
+    const commitQueue = useRef(Promise.resolve());
 
-    const commit = useCallback(async (edited: string[]) => {
-        await attributes.setLabelValues(note, valueName, edited, componentId);
+    const commit = useCallback((edited: string[]) => {
         // The grid ignores reloads it is itself the source of (see usePromotedAttributeData), so the
-        // set it shows is patched in place, as updateAttribute does for a single value — otherwise
-        // the chips would not follow the value just taken.
+        // set it shows is patched in place, as updateAttribute does for a single value.
         setCells(prev => prev?.map(c => c.uniqueId === uniqueId ? { ...c, values: edited } : c));
+
+        const write = commitQueue.current.then(() => attributes.setLabelValues(note, valueName, edited, componentId));
+        // Continue processing queued edits after a failed write.
+        commitQueue.current = write.catch(() => {});
+        return write;
     }, [ note, valueName, componentId, uniqueId, setCells ]);
 
     return (
@@ -310,6 +316,7 @@ function MultiLabelInput({ inputId, note, cell, componentId, setCells }: CellPro
                 values={values ?? []}
                 options={definition.selectOptions}
                 onCreateOption={labelType === "select" ? createOption : undefined}
+                source={suggestValues}
                 inputId={inputId}
                 tabIndex={200 + definitionAttr.position}
                 onCommit={commit}
@@ -376,6 +383,35 @@ function MultiRelationInput({ inputId, note, cell, componentId, setCells }: Cell
             />
         </div>
     );
+}
+
+function useAttributeValueSuggestions(name: string, labelType: LabelType) {
+    const [ known, setKnown ] = useState<{ name: string; values: string[] }>();
+
+    useEffect(() => {
+        if (labelType !== "text" || !name) {
+            setKnown(undefined);
+            return;
+        }
+
+        let active = true;
+        server.get<string[]>(`attribute-values/${encodeURIComponent(name)}`).then((values) => {
+            if (active) {
+                setKnown({ name, values });
+            }
+        });
+        return () => {
+            active = false;
+        };
+    }, [ name, labelType ]);
+
+    return useMemo(() => labelType === "text" && name
+        ? async (query: string) => {
+            const term = query.trim().toLowerCase();
+            const values = known?.name === name ? known.values : [];
+            return values.filter((value) => value.toLowerCase().includes(term));
+        }
+        : undefined, [ known, labelType, name ]);
 }
 
 function useTextLabelAutocomplete(inputId: string, valueAttr: Attribute, definition: DefinitionObject, onChangeListener: OnChangeListener) {
