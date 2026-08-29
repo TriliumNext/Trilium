@@ -84,7 +84,7 @@ Flashcard cards and append-only review rows sync like other entities. They conta
 
 ## Release checklist
 
-- [ ] Add user/developer docs and release note. Developer guide, developer TODO docs, dependency notices, and release note now cover JSON and Anki `.apkg` portability; user-facing guide still needs final copy through edit-docs.
+- [x] Add user/developer docs and release note. User guide, developer guide, developer TODO docs, dependency notices, and release note cover JSON and Anki `.apkg` portability, authoring, review, settings, sync/backups, and privacy.
 - [x] Include dependency license attribution. Flashcard dependency notices cover pinned `ts-fsrs` and `fzstd` versions.
 - [x] Document database migration and downgrade limitation.
 - [x] Test backup/restore before release. Server provider backs up flashcard tables into a file and standalone provider serializes/restores the same table shape from bytes; both assert cards and review rows survive.

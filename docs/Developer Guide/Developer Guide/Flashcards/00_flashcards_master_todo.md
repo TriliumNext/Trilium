@@ -65,7 +65,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 - [x] Refresh, second-device sync, standalone, protected note, clone identity, and concurrent-review cases are covered by specs; mobile/desktop routing reuses existing shared paths.
 - [x] User can inspect due/new/learning/review counts, reviewed-today count, retention, rating counts, lapses, leeches, and an accessible proportional 7-day due forecast chart.
 - [x] Existing databases migrate without changing existing notes or options (additive migrations 241–243+).
-- [ ] Documentation explains authoring, deck selection, FSRS settings, Anki/JSON data portability, and privacy. Developer guide and release notes cover decisions, architecture, privacy, and portability; user-facing guide entry still needs the edit-docs workflow before release.
+- [x] Documentation explains authoring, deck selection, FSRS settings, Anki/JSON data portability, and privacy. Developer guide, user guide, release notes, dependency notices, and developer TODO docs cover the release scope.
 
 ## Investigation references
 

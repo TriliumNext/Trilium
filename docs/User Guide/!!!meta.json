@@ -7366,6 +7366,40 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "FlshcrdsUG01",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "gh7bpGYxajRS",
+                                "FlshcrdsUG01"
+                            ],
+                            "title": "Flashcards",
+                            "notePosition": 70,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "flashcards",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-card",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Flashcards.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "Wy267RK4M69c",
                             "notePath": [
                                 "pOsGYCXsbNQG",

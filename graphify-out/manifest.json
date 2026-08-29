@@ -6940,9 +6940,9 @@
     "semantic_hash": "a95982bba9977da693f3b9d36a375fdd"
   },
   "apps/server/src/assets/doc_notes/en/User Guide/!!!meta.json": {
-    "mtime": 1786902991.4052744,
-    "ast_hash": "25c2ec39ad56fbcb8dee7e832cd68588",
-    "semantic_hash": "25c2ec39ad56fbcb8dee7e832cd68588"
+    "mtime": 1787995895.2475295,
+    "ast_hash": "e5cc0511968e8ce80b858ec77ba1ce97",
+    "semantic_hash": ""
   },
   "apps/server/src/assets/doc_notes/en/User Guide/User Guide/Advanced Usage/Metrics/grafana-dashboard.json": {
     "mtime": 1786902991.4134378,
@@ -9300,9 +9300,9 @@
     "semantic_hash": "80226d0383f2cdacb24f42b9e19dd814"
   },
   "docs/User Guide/!!!meta.json": {
-    "mtime": 1786902991.5856588,
-    "ast_hash": "fa1840757aaebc5f7def16688bbada1d",
-    "semantic_hash": "fa1840757aaebc5f7def16688bbada1d"
+    "mtime": 1787995895.2467935,
+    "ast_hash": "7218d87d21014e4195eb14b9c9d7a125",
+    "semantic_hash": ""
   },
   "docs/User Guide/User Guide/Advanced Usage/Metrics/grafana-dashboard.json": {
     "mtime": 1786902991.5919478,
@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1787929280.6937182,
-    "ast_hash": "5ca0346721fbfd3885c84a49ebb9d500",
+    "mtime": 1787995904.8894262,
+    "ast_hash": "8be71a13f8c284f9c4735900712b318d",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787995575.8676853,
-    "ast_hash": "e9208c3a754e5069ff09b094d44b846c",
+    "mtime": 1787995911.3574224,
+    "ast_hash": "658be1ac5093fa4e13c884510e6cb798",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -25077,6 +25077,16 @@
   "docs/Release Notes/Release Notes/v0.105.0.md": {
     "mtime": 1787929348.9705913,
     "ast_hash": "481b9b170b568d820116e3f459a062a6",
+    "semantic_hash": ""
+  },
+  "apps/server/src/assets/doc_notes/en/User Guide/User Guide/Basic Concepts and Features/Flashcards.html": {
+    "mtime": 1787995873.3781383,
+    "ast_hash": "a40a0ed2647302ab66ec266597cfd413",
+    "semantic_hash": ""
+  },
+  "docs/User Guide/User Guide/Basic Concepts and Features/Flashcards.md": {
+    "mtime": 1787995845.3447022,
+    "ast_hash": "376f740b0c8ff820698d65f815e5c877",
     "semantic_hash": ""
   }
 }
