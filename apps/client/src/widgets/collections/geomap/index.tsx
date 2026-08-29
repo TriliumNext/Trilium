@@ -395,9 +395,14 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 />
                 <Tooltips selectedNoteId={selection?.noteId ?? null} paneMaximized={paneMaximized} />
                 {/* The preview under the pointer while a click is armed to mean a place — the note
-                    being moved wearing its own pin, a note to be created wearing the pin it will be
-                    given (see api.ts). */}
-                {placement && <GhostPin note={placement.mode === "move" ? notes.find((n) => n.noteId === placement.noteId) : undefined} />}
+                    being moved wearing its own pin, a note to be created wearing the one the map
+                    would give it (see GhostPin). */}
+                {placement && <GhostPin
+                    parentNote={note}
+                    note={placement.mode === "move"
+                        ? notes.find((n) => n.noteId === placement.noteId)
+                        : undefined}
+                />}
                 <DetailPane
                     notes={notes} parentNote={note} placing={!!placement} isReadOnly={isReadOnly}
                     selection={selection} onSelect={selectNote} onRelocate={startMarkerRelocation}

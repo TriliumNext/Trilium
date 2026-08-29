@@ -39,14 +39,28 @@ for size in "${sizes[@]}"; do
   inkscape -w $size -h $size "$source_icon_dir/icon-color.svg" -o "./png/${size}x${size}.png"
 done
 
-rm -r mac/*
-mkdir -p fakeapp.app
-npx iconsur set fakeapp.app -l -i "png/1024x1024.png" -o "mac/1024x1024.png" -s 0.8
-declare -a sizes=("16x16" "32x32" "128x128" "512x512")
-for size in "${sizes[@]}"; do
-  magick "mac/1024x1024.png" -resize "${size}" "mac/${size}.png"
-done
-icnsutil compose -f "icon.icns" ./mac/*.png
+# The .icns slots, as "chunk OSType:pixel size" pairs. icnsutil takes the OSType from the file
+# name, so the intermediates must be named by OSType rather than by size: a 16px or 32px PNG named
+# after its size is stored as icp4/icp5, which macOS IconServices decodes as raw pixel data and
+# draws as colored noise. macOS synthesizes the 16pt slot by downscaling ic11.
+icns_slots=( ic11:32 ic12:64 ic07:128 ic13:256 ic08:256 ic09:512 ic10:1024 )
+
+# Packs one .icns from a 1024x1024 master, using $work as scratch space for the resized slots.
+build_icns() {
+  local master="$1" out="$2" work="$3" slot key px
+  mkdir -p "$work"
+  for slot in "${icns_slots[@]}"; do
+    key=${slot%%:*}
+    px=${slot##*:}
+    magick "$master" -resize "${px}x${px}" "$work/${key}.png"
+  done
+  icnsutil compose -f "$out" "$work"/ic*.png
+}
+
+rm -rf mac
+mkdir -p mac fakeapp.app
+npx iconsur set fakeapp.app -l -i "png/1024x1024.png" -o "mac/master.png" -s 0.8
+build_icns "mac/master.png" "icon.icns" "mac/default"
 
 # Build Mac dev .icns
 declare -a sizes=("16" "32" "512" "1024")
@@ -54,12 +68,8 @@ for size in "${sizes[@]}"; do
   inkscape -w $size -h $size "$source_icon_dir/icon-purple.svg" -o "./png/${size}x${size}-dev.png"
 done
 
-npx iconsur set fakeapp.app -l -i "png/1024x1024-dev.png" -o "mac/1024x1024-dev.png" -s 0.8
-declare -a sizes=("16x16" "32x32" "128x128" "512x512")
-for size in "${sizes[@]}"; do
-  magick "mac/1024x1024-dev.png" -resize "${size}" "mac/${size}-dev.png"
-done
-icnsutil compose -f "icon-dev.icns" ./mac/*-dev.png
+npx iconsur set fakeapp.app -l -i "png/1024x1024-dev.png" -o "mac/master-dev.png" -s 0.8
+build_icns "mac/master-dev.png" "icon-dev.icns" "mac/dev"
 
 # Build Windows icon
 magick -background none "$source_icon_dir/icon-color.svg" -define icon:auto-resize=16,32,48,64,128,256 "./icon.ico"

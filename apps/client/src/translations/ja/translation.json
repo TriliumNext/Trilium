@@ -2318,7 +2318,21 @@
     "marker-color": "マーカーの色",
     "copy-coordinates": "座標をコピー",
     "expand-details": "ノートをマップ全体に表示",
-    "restore-details": "ノートをマップの横に戻す"
+    "restore-details": "ノートをマップの横に戻す",
+    "search": "検索",
+    "search-placeholder": "場所を検索",
+    "search-online": "\"{{- query}}\" をオンラインで検索",
+    "searching-online": "オンラインで検索中…",
+    "no-places-found": "場所が見つかりませんでした",
+    "search-failed": "場所を検索できませんでした",
+    "results-nearby": "近く",
+    "results-far": "遠く",
+    "add-place-as-marker": "マーカーとして追加",
+    "previous-result": "前の結果",
+    "next-result": "次の結果",
+    "result-position": "{{total}} 件中 {{index}} 件目の結果、クリックして戻る",
+    "results-on-map": "この地図上",
+    "go-to-coordinates": "{{- coordinates}} へ移動"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -2353,7 +2367,8 @@
     "vector_light": "Vector（ライト）",
     "vector_dark": "Vector （ダーク）",
     "show-labels": "マーカー名を表示",
-    "cluster-markers": "近くのマーカーをグループ化"
+    "cluster-markers": "近くのマーカーをグループ化",
+    "presentation-theme": "テーマ"
   },
   "call_to_action": {
     "next_theme_title": "新しいTriliumテーマをお試しください",

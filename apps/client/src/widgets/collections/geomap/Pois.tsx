@@ -1,6 +1,6 @@
 import "./Pois.css";
 
-import { type Map as MapLibreGLMap, type MapGeoJSONFeature, type MapMouseEvent, Popup } from "maplibre-gl";
+import { type AllPaintProperties, type ExpressionSpecification, type InterpolationSpecification, type Map as MapLibreGLMap, type MapGeoJSONFeature, type MapMouseEvent, Popup } from "maplibre-gl";
 import { useContext, useEffect } from "preact/hooks";
 
 import { CLUSTER_LAYERS } from "./clusters";
@@ -232,7 +232,11 @@ export default function Pois({ placing, onPick }: PoisProps) {
         const map = parentMap;
         // What the style painted its places with, to be put back when this is taken off. Either
         // may be absent, a style being composable in one and not the other.
-        let painted: { layer: string; color?: unknown; opacity?: unknown }[] = [];
+        let painted: {
+            layer: string;
+            color?: AllPaintProperties["icon-color"];
+            opacity?: AllPaintProperties["icon-opacity"];
+        }[] = [];
 
         /** Puts back what the style painted, for a map that keeps its layers after this goes. */
         function restore() {
@@ -354,7 +358,7 @@ function isOwnUnderPointer(map: MapLibreGLMap, point: MapMouseEvent["point"]) {
  * `["zoom"]` only as the input of an outermost `step` or `interpolate`. What each zoom is drawn in
  * is where the name is then asked about.
  */
-export function clickableTint(styleColor: string) {
+export function clickableTint(styleColor: string): ExpressionSpecification {
     return [
         "step",
         [ "zoom" ],
@@ -374,7 +378,7 @@ export function clickableTint(styleColor: string) {
  * style is fetched now rather than shipped (see map_layer), and one that lifts its places out of the
  * background on its own should not be argued with about how far.
  */
-export function clickableOpacity(styleOpacity: unknown) {
+export function clickableOpacity(styleOpacity: unknown): ExpressionSpecification | null {
     // A flat number has no zoom to it, so the raise is stepped in where the colour is (see
     // `clickableTint`) rather than standing at every zoom the style draws its places at.
     if (typeof styleOpacity === "number") {
@@ -392,7 +396,7 @@ export function clickableOpacity(styleOpacity: unknown) {
     }
 
     const { stops, interpolation } = ramp;
-    const raised: unknown[][] = stops.map(([ zoom, value ]) => [
+    const raised: (number | ExpressionSpecification)[][] = stops.map(([ zoom, value ]) => [
         zoom,
         zoom >= MIN_POI_ZOOM ? [ "case", namedPlace(), CLICKABLE_OPACITY, value ] : value
     ]);
@@ -408,7 +412,7 @@ export function clickableOpacity(styleOpacity: unknown) {
 }
 
 /** Whether a place carries a name, which is what it would be kept under (see `poiFromFeature`). */
-function namedPlace() {
+function namedPlace(): ExpressionSpecification {
     return [ "to-boolean", [ "coalesce", [ "get", "name_en" ], [ "get", "name" ] ] ];
 }
 
@@ -436,7 +440,9 @@ function readRamp(value: unknown) {
 
     // A base of one climbs evenly, which is what `linear` says; anything else is the curve the old
     // syntax spells `base`.
-    const interpolation = typeof base === "number" && base !== 1 ? [ "exponential", base ] : [ "linear" ];
+    const interpolation: InterpolationSpecification = typeof base === "number" && base !== 1
+        ? [ "exponential", base ]
+        : [ "linear" ];
 
     return { stops: read, interpolation };
 }

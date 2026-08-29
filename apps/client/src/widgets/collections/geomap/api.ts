@@ -1,4 +1,6 @@
-import FNote from "../../../entities/fnote";
+import { AttributeRow } from "@triliumnext/commons";
+
+import FNote, { type NoteType } from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
@@ -8,8 +10,8 @@ import { GPX_MIME } from "./GpxTrack";
 import type { GeoMouseEvent } from "./map";
 import { LOCATION_ATTRIBUTE } from "./Markers";
 
-/** The icon a note created on the map is given, and so what the ghost pin previews for one. */
-export const CHILD_NOTE_ICON = "bx bx-pin";
+/** The type a note put on the map is created as, and so what a template handed to it must match. */
+export const MARKER_NOTE_TYPE: NoteType = "text";
 
 export async function moveMarker(noteId: string, latLng: { lat: number; lng: number } | null) {
     const value = latLng ? [latLng.lat, latLng.lng].join(",") : "";
@@ -113,15 +115,21 @@ export async function createNewNote(parentNote: FNote, e: GeoMouseEvent) {
 export async function createNoteForPlace(parentNote: FNote, place: PlaceToKeep) {
     const title = place.unnamed ? undefined : place.name;
 
-    return createNoteAt(parentNote, [ place.lat, place.lng ], title);
+    return createNoteAt(parentNote, [ place.lat, place.lng ], title, place.icon);
 }
 
-/** What keeping a place as a marker needs of it: where it stands, and what to call it there. */
+/** What keeping a place as a marker needs of it: where it stands, what to call it there, and what
+ *  kind of place it is. */
 interface PlaceToKeep {
     name: string;
     lat: number;
     lng: number;
     unnamed?: boolean;
+    /**
+     * The boxicons class the place is drawn under, as `GeoSearchResult.icon` gives it. Absent where
+     * neither the geocoder nor the tile says what kind of place it is.
+     */
+    icon?: string;
 }
 
 /**
@@ -131,18 +139,29 @@ interface PlaceToKeep {
  * choosing, which is what leaves the naming to the server: an unnamed note takes the name every
  * new note takes — the one the tree's + button gives — and a map labelled `#titleTemplate` names
  * its markers by that instead.
+ *
+ * `icon` is what the place is already drawn under — a cart for a supermarket, a flag for a country
+ * (see placeIcon in osm_icons) — so the marker keeps the icon the panel offered it under. A note
+ * dropped by clicking the map has no such place behind it and is given no icon at all:
+ * `getNoteIcon` draws a note carrying a location as a pin, which leaves an icon the map hands down
+ * through `#child:iconClass` or a template to apply instead.
  */
-async function createNoteAt(parentNote: FNote, [ lat, lng ]: [number, number], title?: string) {
+async function createNoteAt(
+    parentNote: FNote, [ lat, lng ]: [number, number], title?: string, icon?: string) {
+    const noteAttributes: Omit<AttributeRow, "noteId" | "attributeId">[] = [
+        { type: "label", name: LOCATION_ATTRIBUTE, value: [ lat, lng ].join(",") }
+    ];
+    if (icon) {
+        noteAttributes.push({ type: "label", name: "iconClass", value: icon });
+    }
+
     const { note } = await note_create.createNote(parentNote.noteId, {
         title,
         content: "",
-        type: "text",
+        type: MARKER_NOTE_TYPE,
         activate: false,
         isProtected: parentNote.isProtected,
-        attributes: [
-            { type: "label", name: LOCATION_ATTRIBUTE, value: [ lat, lng ].join(",") },
-            { type: "label", name: "iconClass", value: CHILD_NOTE_ICON }
-        ]
+        attributes: noteAttributes
     });
 
     return note;

@@ -1,7 +1,7 @@
 import { becca, cls, getLog, routeHelpers, scriptService, utils } from "@triliumnext/core";
 import type { Request, Response, Router } from "express";
 
-import { namespace } from "../cls_provider.js";
+import { bindEmitter } from "../cls_provider.js";
 import { isScriptingEnabled } from "../services/scripting_guard.js";
 import sql from "../services/sql.js";
 
@@ -101,8 +101,8 @@ function register(router: Router) {
     // explicitly no CSRF middleware since it's meant to allow integration from external services
 
     router.all("/custom/*path", (req: Request, res: Response, _next) => {
-        namespace.bindEmitter(req);
-        namespace.bindEmitter(res);
+        bindEmitter(req);
+        bindEmitter(res);
 
         cls.init(() => handleRequest(req, res));
     });

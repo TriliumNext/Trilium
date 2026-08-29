@@ -1,6 +1,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { AttributionControl, type ErrorEvent as MapErrorEvent, Map as MapLibreGLMap, MapMouseEvent, type Point, type RequestTransformFunction, ScaleControl, type StyleSpecification, type TransformStyleFunction } from "maplibre-gl";
+import { AttributionControl, type ErrorEvent as MapErrorEvent, Map as MapLibreGLMap, MapMouseEvent, type Point, type RequestTransformFunction, ScaleControl, setWorkerUrl, type StyleSpecification, type TransformStyleFunction } from "maplibre-gl";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { ComponentChildren, createContext, RefObject } from "preact";
 import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 
@@ -17,6 +18,17 @@ export interface GeoMouseEvent {
     /** Where the event landed in the container, for hit-testing against the rendered layers. */
     point: Point;
 }
+
+/**
+ * Where MapLibre finds the worker that parses vector and GeoJSON tiles.
+ *
+ * MapLibre ships the worker as a sibling file of its own bundle and resolves it against
+ * `import.meta.url`, which after bundling names a chunk in `dist/src` that has no such sibling. The
+ * request 404s, no worker starts, and every source parsed off the main thread stays empty: a vector
+ * basemap draws nothing at all, and the markers and clusters go missing from a raster one. Named
+ * here instead so the bundler emits the worker and hands back the URL it was emitted under.
+ */
+setWorkerUrl(maplibreWorkerUrl);
 
 export const ParentMap = createContext<MapLibreGLMap | null>(null);
 

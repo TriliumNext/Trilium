@@ -43,7 +43,7 @@ rm -rf $BUILD_DIR/node/lib/node_modules/{npm,corepack} \
     $BUILD_DIR/node_modules/electron* \
     $BUILD_DIR/electron*.{js,map}
 
-printf "#!/bin/sh\nexec ./node/bin/node main.cjs\n" > $BUILD_DIR/trilium.sh
+printf "#!/bin/sh\nexec ./node/bin/node main.mjs\n" > $BUILD_DIR/trilium.sh
 chmod 755 $BUILD_DIR/trilium.sh
 
 VERSION=`jq -r ".version" package.json`

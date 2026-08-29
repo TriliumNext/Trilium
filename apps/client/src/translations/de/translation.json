@@ -597,7 +597,41 @@
     "calendar_week_numbers": "Zeigt die Wochennummer im Kalender an. Wird unabhängig vom festgelegten Wert angewendet.",
     "calendar_slot_duration": "Legt die Dauer jedes Zeitintervalls eines Kalenders im Format `<code>HH:MM:SS</code>` fest. Standardmäßig beträgt sie 15 Minuten.",
     "calendar_slot_label_interval": "Legt fest, in welchem Abstand die Zeitintervalle eines Kalenders beschriftet werden, im Format `<code>HH:MM:SS</code>`. Standardmäßig beträgt der Abstand eine Stunde.",
-    "calendar_title": "Legt das Attribut fest, aus dem der Titel eines Ereignisses übernommen wird, anstelle des Notiztitels. Entweder ein Label oder eine Beziehung, angegeben ohne `<code>#</code>` bzw. `<code>~</code>`."
+    "calendar_title": "Legt das Attribut fest, aus dem der Titel eines Ereignisses übernommen wird, anstelle des Notiztitels. Entweder ein Label oder eine Beziehung, angegeben ohne `<code>#</code>` bzw. `<code>~</code>`.",
+    "calendar_displayed_attributes": "Kommagetrennte Namen von Attributen, deren Werte im Ereignis angezeigt werden. Eine Beziehung wird als Titel der Notiz angezeigt, auf die sie verweist.",
+    "calendar_start_date": "Legt das Label fest, aus dem ein Ereignis sein Startdatum bezieht, anstelle von `<code>#startDate</code>`. Wird ohne `<code>#</code>` angegeben.",
+    "calendar_end_date": "Legt das Label fest, aus dem ein Ereignis sein Enddatum bezieht, anstelle von `<code>#endDate</code>`.",
+    "calendar_start_time": "Names the label an event reads its end date from, instead of `<code>#endDate</code>`.",
+    "calendar_end_time": "Legt das Label fest, aus dem ein Ereignis seine Endzeit bezieht, anstelle von `<code>#endTime</code>`.",
+    "calendar_recurrence": "Legt das Label fest, aus dem ein Ereignis seine Wiederholungsregel bezieht, anstelle von <code>#recurrence</code>.",
+    "start_date": "Das Datum, an dem ein Ereignis beginnt, im Format <code>YYYY-MM-DD</code>. Dadurch wird es im Kalender eingeordnet.",
+    "end_date": "Das Datum, an dem ein mehrtägiges Ereignis endet. Der Endtag ist eingeschlossen.",
+    "start_time": "Die Uhrzeit, zu der ein Ereignis beginnt, im 24-Stunden-Format <code>HH:MM</code>. Ohne diese Angabe gilt das Ereignis als ganztägig.",
+    "recurrence": "Eine CalDAV-`<code>RRULE</code>`-Zeichenfolge, die das Ereignis wiederholen lässt. Der Beginn wird aus `<code>#startDate</code>` und `<code>#startTime</code>` übernommen, daher enthält die Regel kein `<code>DTSTART</code>`.",
+    "geolocation": "Der Breiten- und Längengrad, an dem die Notiz auf einer geografischen Karte platziert wird.",
+    "map_type": "Legt fest, welche Notizkarte dargestellt wird: `<code>link</code>` für die Beziehungen zwischen Notizen oder <code>tree</code> für die Hierarchie.",
+    "map_style": "Legt fest, in welchem Stil eine geografische Karte dargestellt wird. Zur Auswahl stehen die in den Sammlungseigenschaften angebotenen Raster- und Vektorstile.",
+    "map_dark_style": "Kennzeichnet den in <code>map:style</code> angegebenen benutzerdefinierten Stil einer geografischen Karte als dunkel, sodass die Titel der Markierungen darauf hell dargestellt werden. Die in den Sammlungseigenschaften angebotenen Stile enthalten diese Information bereits und benötigen dieses Label nicht.",
+    "map_scale": "Zeigt eine Maßstabsleiste auf der geografischen Karte an.",
+    "map_hide_labels": "Blendet die Notiztitel neben den Markierungen auf einer geografischen Karte aus.",
+    "map_cluster": "Fasst nahe beieinanderliegende Markierungen zu einer einzelnen nummerierten Blase zusammen, die sich beim Anklicken öffnet.",
+    "wrap_lines": "Bricht lange Zeilen in dieser Code-Notiz um, anstatt horizontal zu scrollen.",
+    "internal_bookmark": "Eine Stelle innerhalb der Notiz, auf die direkt verlinkt werden kann. Wird von Trilium automatisch aktuell gehalten.",
+    "internal_link": "Eine Verknüpfung von dieser Notiz zu einer anderen, die von Trilium automatisch aktuell gehalten wird, damit Rückverweise und die Notizkarte dargestellt werden können.",
+    "image_link": "Ein in diese Notiz eingebettetes Bild, das von Trilium automatisch aktuell gehalten wird.",
+    "relation_map_link": "Eine auf dieser Beziehungskarte platzierte Notiz, die von Trilium automatisch aktuell gehalten wird.",
+    "include_note_link": "Eine in den Inhalt dieser Notiz eingebundene Notiz, die von Trilium automatisch aktuell gehalten wird.",
+    "date_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Tagesnotiz angewendet.",
+    "month_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Monatsnotiz angewendet.",
+    "quarter_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Quartalsnotiz angewendet.",
+    "year_template": "Wird in einem Kalender-Stamm festgelegt: Die Notiz, auf die diese Beziehung verweist, wird als `<code>~template</code>` auf jede darunter erstellte Jahresnotiz angewendet.",
+    "search_script": "Führt ein Backend-Skript aus, um die Ergebnisse dieser gespeicherten Suche zu erzeugen, anstatt `<code>#searchString</code>` auszuwerten. Das Skript gibt ein Array von Notiz-IDs zurück.",
+    "ancestor": "Beschränkt eine gespeicherte Suche auf den Unterbaum der Notiz, auf die diese Beziehung verweist.",
+    "target": "Die Notiz, die beim Betätigen eines Launchers geöffnet wird.",
+    "hoisted_note": "Die Notiz, die als Wurzel festgelegt wird, wenn ein Launcher sein Ziel öffnet.",
+    "share_logo": "Eine Bildnotiz, die als Logo der freigegebenen Seite verwendet wird. Sie muss sich innerhalb des freigegebenen Unterbaums befinden.",
+    "share_open_graph_image_relation": "Eine Bildnotiz, die als `<code>og:image</code>` der freigegebenen Seite bereitgestellt wird. Lege stattdessen das gleichnamige Label fest, um auf eine Adresse zu verweisen.",
+    "share_html": "Eine HTML-Notiz, die an der durch `<code>#shareHtmlLocation</code>` dieser Notiz festgelegten Stelle in die freigegebene Seite eingefügt wird. Sie muss sich innerhalb des freigegebenen Unterbaums befinden."
   },
   "attribute_editor": {
     "help_text_body1": "Um ein Label hinzuzufügen, geben Sie einfach z. B. <code>#rock</code> ein, oder wenn Sie auch einen Wert hinzufügen möchten, dann z. B. <code>#year = 2020</code>",
@@ -783,7 +817,32 @@
       "yearly": "Jährlich",
       "unit_years": "Jahre",
       "never": "Niemals",
-      "custom_rule": "Regel"
+      "custom_rule": "Regel",
+      "none": "Keine",
+      "does_not_repeat": "Keine Wiederholung",
+      "custom": "Custom",
+      "repeat_every": "Wiederholen alle",
+      "unit_days": "Tage",
+      "unit_weeks": "Wochen",
+      "unit_months": "Monate",
+      "on_days": "An Tagen",
+      "ends": "Endet",
+      "until": "Am Datum",
+      "count": "Nach",
+      "times": "Zeiten",
+      "custom_hint": "Eine iCalendar-Wiederholungsregel (RRULE) für erweiterte Einstellungen, die über die obigen Felder hinausgehen. Das Löschen beendet die Wiederholung."
+    },
+    "close_details": "Ereignisdetails schließen",
+    "expand_details": "Ereignis auf Fenstergröße vergrößern",
+    "restore_details": "Termin wieder neben seinen Platz im Kalender setzen",
+    "dates": {
+      "all_day": "Ganztägig",
+      "date": "Datum",
+      "start_date": "Startdatum",
+      "end_date": "Enddatum",
+      "time": "Zeit",
+      "start_time": "Startzeit",
+      "end_time": "Endzeit"
     }
   },
   "close_pane_button": {
@@ -831,7 +890,8 @@
     "new-version-available": "Neues Update verfügbar",
     "download-update": "Version {{latestVersion}} herunterladen",
     "search_notes": "Notizen durchsuchen",
-    "show_deleted_notes": "Gelöschte Notizen anzeigen"
+    "show_deleted_notes": "Gelöschte Notizen anzeigen",
+    "show_space_usage": "Speicherplatzbelegung anzeigen"
   },
   "sync_status": {
     "unknown": "<p>Der Synchronisations-Status wird bekannt, sobald der nächste Synchronisierungsversuch gestartet wird.</p><p>Klicken Sie hier, um die Synchronisierung jetzt auszulösen.</p>",
@@ -887,7 +947,8 @@
     "convert_format_warning": "Bei der Konvertierung können einige Formatierungen verloren gehen und anschließend Anpassungen nötig sein. Vorher wird eine Revision der aktuellen Notiz gespeichert, damit Sie sie wiederherstellen können. Möchten Sie fortfahren?",
     "convert_format_warning_risky": "Sie konvertieren zwischen zwei Formaten mit unterschiedlichen Möglichkeiten. Dabei können Formatierungen verloren gehen und nicht unterstützte Elemente entfernt werden.<br><br>Möchten Sie dieses Risiko vollständig übernehmen und mit der Konvertierung fortfahren?<br><br>Vorher wird eine Revision der aktuellen Notiz gespeichert, damit Sie zum ursprünglichen Format zurückkehren können.",
     "convert_to_markdown_successful": "Die Notiz wurde in Markdown konvertiert.",
-    "convert_to_text_successful": "Die Notiz wurde in eine Textnotiz konvertiert."
+    "convert_to_text_successful": "Die Notiz wurde in eine Textnotiz konvertiert.",
+    "note_attributes": "Notiz-Attribute"
   },
   "onclick_button": {
     "no_click_handler": "Das Schaltflächen-Widget „{{componentId}}“ hat keinen definierten Klick-Handler"
@@ -929,12 +990,14 @@
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
     "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
     "zoom_in_title": "Hineinzoomen",
-    "zoom_out_title": "Herauszoomen"
+    "zoom_out_title": "Herauszoomen",
+    "create_child_note_text": "Notiz hinzufügen"
   },
   "zpetne_odkazy": {
     "relation": "Relation",
     "backlink_one": "{{count}} Rücklink",
-    "backlink_other": "{{count}} Rücklinks"
+    "backlink_other": "{{count}} Rücklinks",
+    "no_backlinks": "Keine Notizen verlinken auf diese Notiz."
   },
   "mobile_detail_menu": {
     "insert_child_note": "Untergeordnete Notiz einfügen",
@@ -989,7 +1052,8 @@
     "open_all_in_tabs_tooltip": "Alle Resultate in neuen Tabs öffnen",
     "open_all_confirm_one": "Dies öffnet {{count}} Notiz in neuem Tab. Fortfahren?",
     "open_all_confirm_other": "Dies öffnet {{count}} Notizen in neuen Tabs. Fortfahren?",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "open_all_limit_exceeded": "Zu viele Notizen, um sie gleichzeitig zu öffnen ({{count}}). Das Maximum beträgt {{max}} – bitte grenzen Sie die Ergebnisse zuerst weiter ein."
   },
   "edited_notes": {
     "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet...",
@@ -1047,7 +1111,8 @@
     "link-distance": "Verbindungslänge",
     "too-many-notes_one": "Dieser Bereich enthält {{count}} Notiz. Die Anzeige kann die Leistung beeinträchtigen.",
     "too-many-notes_other": "Dieser Bereich enthält {{count}} Notizen. Die Anzeige aller Notizen kann die Leistung beeinträchtigen.",
-    "show-anyway": "Karte anzeigen"
+    "show-anyway": "Karte anzeigen",
+    "expand": "Karte vergrößern"
   },
   "note_paths": {
     "title": "Notizpfade",
@@ -1074,7 +1139,14 @@
     "add_new_attribute": "Neues Attribut hinzufügen",
     "remove_this_attribute": "Dieses Attribut entfernen",
     "unset-field-placeholder": "nicht gesetzt",
-    "remove_color": "Farblabel entfernen"
+    "remove_color": "Farblabel entfernen",
+    "send_email": "E-Mail an diese Adresse senden",
+    "call_phone": "Diese Nummer anrufen",
+    "create_option": "\"{{- option}}“ erstellen",
+    "remove_value": "Diesen Wert entfernen",
+    "select_values_placeholder": "Option auswählen oder neu erstellen",
+    "values_placeholder": "Wert eingeben und Eingabetaste drücken",
+    "add_value": "Diesen Wert hinzufügen"
   },
   "script_executor": {
     "query": "Abfrage",
@@ -3137,7 +3209,12 @@
   },
   "options": {
     "title": "Optionen",
-    "back": "Zurück zu allen Optionen"
+    "back": "Zurück zu allen Optionen",
+    "search_placeholder": "Sucheinstellungen",
+    "search_clear": "Suche leeren",
+    "search_title": "Optionensuche",
+    "search_hint": "Suchbegriff eingeben, um alle Einstellungsseiten zu durchsuchen.",
+    "search_no_results": "Keine Einstellung entspricht Ihrer Suche."
   },
   "split_editor": {
     "render_error": "Vorschau konnte nicht gerendert werden",
@@ -3298,5 +3375,45 @@
     "back": "Zurück",
     "next": "Weiter",
     "step_progress": "Schritt {{current}} von {{total}}"
+  },
+  "attribute_list_panel": {
+    "no_attributes": "Keine Attribute",
+    "owned_one": "{{count}} eigenes Attribut",
+    "owned_other": "{{count}} eigene Attribute",
+    "inherited_one": "{{count}} geerbtes Attribut",
+    "inherited_other": "{{count}} geerbte Attribute",
+    "definitions_one": "{{count}} Definition",
+    "definitions_other": "{{count}} Definitionen",
+    "internal_one": "{{count}} internes Systemattribut",
+    "internal_other": "{{count}} interne Systemattribute",
+    "back": "Zurück zu den Attributen",
+    "inheritable": "Vererbbar: Wird auf diese Notiz und alle Unternotizen angewendet",
+    "delete": "Dieses Attribut löschen",
+    "delete_confirm": "Das Attribut \"{{name}}“ löschen?",
+    "add_definition": "Neue Definition hinzufügen",
+    "no_target": "Keine Zielnotiz",
+    "no_value": "Kein Wert",
+    "change_target": "Zielnotiz ändern",
+    "inverse_hint": "Umkehrung von \"{{name}}\": Der Zielnotiz wird automatisch eine \"{{name}}\"-Relation zugewiesen, die hierher zurückverweist",
+    "type_label": "Label",
+    "type_relation": "Beziehung",
+    "type_label_definition": "Label-Definition",
+    "type_relation_definition": "Beziehungs-Definition",
+    "system_hint": "System: Dieser Name hat eine vordefinierte Bedeutung",
+    "add_attribute": "Attribut hinzufügen",
+    "creation_kind_label": "Label: Hier klicken oder ~ eingeben, um daraus eine Beziehung zu machen",
+    "creation_kind_relation": "Beziehung: Hier klicken oder # eingeben, um daraus ein Label zu machen"
+  },
+  "attribute_names": {
+    "system": "System",
+    "system_description": "Trilium verknüpft eine feste Bedeutung mit diesem Namen: Sein Wert kann das Verhalten der Notiz verändern, anstatt sie nur zu beschreiben."
+  },
+  "sidebar_help": {
+    "attributes_what": "Die Labels und Beziehungen, die direkt für diese Notiz festgelegt sind. Ein Label versieht die Notiz mit einem Namen und optional einem Wert; eine Beziehung verweist auf eine andere Notiz.",
+    "attributes_inheritable": "Wenn eine als vererbbar markiert wird, wird sie an den gesamten Unterbaum unterhalb dieser Notiz weitergegeben, wo sie als „geerbt“ statt als „eigen“ aufgeführt wird.",
+    "attributes_inherited_what": "Beschriftungen (Labels) und Beziehungen (Relations), die von anderen Stellen auf diese Notiz verweisen: entweder vererbte Einträge, die bei einer übergeordneten Notiz gesetzt wurden, oder Einträge, die über eine Vorlage (Template) übernommen wurden.",
+    "attributes_inherited_source": "Diese sind hier schreibgeschützt. Jede Zeile zeigt die Notiz an, von der sie stammt. Dort können sie geändert oder entfernt werden.",
+    "attributes_definitions_what": "Eine Definition ist das Schema hinter einem Attributnamen: Sie legt fest, welchen Typ von Wert das Attribut annehmen kann, ob es mehrfach vergeben werden darf und ob es als promoted (hervorgehoben) gekennzeichnet ist.",
+    "attributes_definitions_promoted": "Ein hervorgehobenes Attribut (promoted attribute) wird direkt in der Notiz als Formularfeld angezeigt, anstatt nur in diesem Bereich aufgelistet zu werden. Definitionen stammen in der Regel aus einer Vorlage (Template), und jede Zeile zeigt die Notiz an, in der die jeweilige Definition gespeichert ist."
   }
 }

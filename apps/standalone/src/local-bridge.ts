@@ -4,6 +4,7 @@ import type {
     StandaloneRestoreResult
 } from "@triliumnext/commons";
 
+import { reportSplashPhase } from "../../client/src/services/splash.js";
 import { showErrorOverlay } from "./error-overlay.js";
 import { isLeader } from "./leader_election.js";
 import LocalServerWorker from "./local-server-worker?worker";
@@ -302,6 +303,13 @@ export function startLocalServerWorker() {
 
     localWorker.onmessage = (event) => {
         const msg = event.data;
+
+        // How far the worker has got through its own startup, which the splash draws as progress.
+        // Only the leader tab has a worker, so only it sees these.
+        if (msg?.type === "STARTUP_PROGRESS") {
+            reportSplashPhase(msg.phase);
+            return;
+        }
 
         // Restore progress and outcome, which travel on their own channel rather than as a response
         // to a request: the backup that started them never went through one.

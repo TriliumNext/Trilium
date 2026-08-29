@@ -282,6 +282,9 @@ span[style] {
 /* #region Spreadsheet */
 .spreadsheet-table {
     border-collapse: collapse;
+    /* Honour the per-column widths in the colgroup, as the share renderer does, so the printed
+       grid keeps the editor's geometry and the floating images stay over the cells they belong to. */
+    table-layout: fixed;
     width: 100%;
     font-size: var(--print-font-size);
     print-color-adjust: exact;
@@ -290,8 +293,11 @@ span[style] {
 
 .spreadsheet-table td {
     padding: 2pt 4pt;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* Match the spreadsheet: long text runs into empty neighbouring cells instead of wrapping,
+       which keeps every row at its declared height. The renderer sets overflow:hidden on the cells
+       whose neighbour holds a value, so only those are cut. */
+    white-space: nowrap;
+    overflow: visible;
 }
 
 /* Gridlines: only when the sheet enables them, and only on unfilled cells (a background
@@ -301,6 +307,13 @@ span[style] {
    the custom border always wins the conflict and is never clobbered. */
 .spreadsheet-table.show-gridlines td:not(.has-fill) {
     border: 0.5pt solid var(--spreadsheet-gridline-color, #ccc);
+}
+
+/* On paper a link cannot be followed, so it keeps the cell's own text color and the underline
+   is the only marker, matching how .ck-content links print. */
+.spreadsheet-table a {
+    text-decoration: underline;
+    color: inherit;
 }
 /* #endregion */
 

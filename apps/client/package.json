@@ -55,10 +55,10 @@
     "jquery.fancytree": "2.38.5",
     "jsplumb": "2.15.6",
     "katex": "0.18.4",
-    "maplibre-gl": "5.24.0",
+    "maplibre-gl": "6.6.0",
     "mark.js": "8.11.1",
     "marked": "18.0.10",
-    "mermaid": "11.17.0",
+    "mermaid": "11.17.1",
     "mind-elixir": "5.15.1",
     "panzoom": "9.4.4",
     "preact": "10.29.8",
@@ -84,6 +84,7 @@
     "happy-dom": "20.11.6",
     "jsdom": "30.0.1",
     "lightningcss": "1.33.0",
+    "sass": "1.103.1",
     "stylelint": "17.14.1",
     "vite-plugin-static-copy": "4.1.1"
   }

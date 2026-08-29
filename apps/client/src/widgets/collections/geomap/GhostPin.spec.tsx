@@ -81,11 +81,13 @@ describe("GhostPin", () => {
         vi.unstubAllGlobals();
     });
 
-    function mount(map: ReturnType<typeof fakeMap>, note?: FNote) {
+    function mount(map: ReturnType<typeof fakeMap>, note?: FNote, parentNote?: FNote) {
         return act(async () => {
             render(
                 <ParentMap.Provider value={map as never}>
-                    <GhostPin note={note} />
+                    <GhostPin
+                        note={note}
+                        parentNote={parentNote ?? buildNote({ title: "The map" })} />
                 </ParentMap.Provider>,
                 container as HTMLElement
             );
@@ -128,6 +130,21 @@ describe("GhostPin", () => {
         expect(container?.querySelector(".geo-ghost-pin img")).toBeTruthy();
         expect(renderIconImage).toHaveBeenCalledWith("bx bx-pin", expect.anything());
         expect(await lastSvgBlob?.text()).toContain(`fill="${DEFAULT_MARKER_COLOR}"`);
+    });
+
+    it("wears what the map would give a new note, ahead of the pin", async () => {
+        const { renderIconImage } = await import("../../../services/icon_glyphs");
+        // Copied onto every note created under the map (see copyChildAttributes in core), so the
+        // marker the click drops is what the ghost has to offer.
+        const parent = buildNote({
+            title: "The map", "#child:iconClass": "bx bx-store", "#child:color": "green" });
+        const map = fakeMap();
+
+        await mount(map, undefined, parent);
+        await act(async () => { await settle(); });
+
+        expect(renderIconImage).toHaveBeenCalledWith("bx bx-store", expect.anything());
+        expect(await lastSvgBlob?.text()).toContain(`fill="green"`);
     });
 
     it("wears the moved note's own colour and icon", async () => {

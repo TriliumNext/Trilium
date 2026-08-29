@@ -23,6 +23,7 @@ import { format as formatNumfmt, getFormatDateInfo, isDateFormat } from "numfmt"
 
 import {
     computeBounds,
+    getCellDocumentText,
     getVisibleSheets,
     type ICellData,
     isFiniteNumber,
@@ -148,7 +149,10 @@ function renderSheet(sheet: IWorksheetData, styles: Record<string, IStyleData | 
  * serials (a numeric value with a date number format) are rendered as ISO 8601.
  */
 function cellText(cell: ICellData | undefined, styles: Record<string, IStyleData | null>): string {
-    if (!cell || cell.v == null) return "";
+    if (!cell) return "";
+
+    // A rich-text cell (a link, mixed formatting) can carry its text only in `p`.
+    if (cell.v == null || cell.v === "") return getCellDocumentText(cell);
     if (typeof cell.v === "boolean") return cell.v ? "TRUE" : "FALSE";
 
     const pattern = resolveCellStyle(cell.s, styles)?.n?.pattern;

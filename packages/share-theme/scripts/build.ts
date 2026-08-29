@@ -4,6 +4,9 @@ import path from "node:path";
 import dotenv from "dotenv";
 import * as esbuild from "esbuild";
 import { writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
+import * as sass from "sass";
 
 
 // const fileURL = fileURLToPath(import.meta.url);
@@ -46,6 +49,31 @@ for (const mod of modulesRequested) {
 if (!entryPoints.length) for (const mod of modules) entryPoints.push(makeEntry(mod));
 
 
+// Sass resolves relative paths on its own; bare specifiers such as
+// "katex/src/styles/katex.scss" go through Node.
+const nodeModulesImporter: sass.FileImporter<"sync"> = {
+    findFileUrl(url) {
+        if (url.startsWith(".") || url.startsWith("/")) {
+            return null;
+        }
+
+        return pathToFileURL(createRequire(path.join(rootDir, "package.json")).resolve(url));
+    }
+};
+
+// esbuild has no Sass support of its own. katex.scss needs it to build KaTeX's
+// stylesheet without the woff and ttf faces.
+const sassPlugin: esbuild.Plugin = {
+    name: "sass",
+    setup(build) {
+        build.onLoad({ filter: /\.scss$/ }, (args) => ({
+            contents: sass.compile(args.path, { importers: [nodeModulesImporter] }).css,
+            loader: "css",
+            resolveDir: path.dirname(args.path)
+        }));
+    }
+};
+
 async function runBuild(watch: boolean) {
     const before = performance.now();
     const opts: esbuild.BuildOptions = {
@@ -66,6 +94,7 @@ async function runBuild(watch: boolean) {
             ".html": "text",
             ".css": "css"
         },
+        plugins: [sassPlugin],
         logLevel: "info",
         metafile: true,
         minify: process.argv.includes("--minify")

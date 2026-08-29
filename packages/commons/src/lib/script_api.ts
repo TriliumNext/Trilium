@@ -1119,13 +1119,7 @@ export interface BackendApi {
      */
     xml2js: unknown;
     /**
-     * cheerio library for HTML parsing and manipulation. See {@link https://cheerio.js.org} for documentation
-     * @deprecated cheerio will be removed in a future version. Use api.htmlParser (node-html-parser) instead.
-     */
-    cheerio: unknown;
-    /**
-     * node-html-parser library for HTML parsing. See {@link https://github.com/piotr-nicol/node-html-parser} for documentation.
-     * This is the recommended replacement for cheerio.
+     * node-html-parser library for HTML parsing. See {@link https://github.com/taoqf/node-fast-html-parser} for documentation.
      */
     htmlParser: unknown;
 

@@ -2819,7 +2819,21 @@
     "marker-color": "마커 색상",
     "copy-coordinates": "좌표 복사",
     "expand-details": "노트를 맵에 맞게 확장",
-    "restore-details": "노트를 맵 옆으로 되돌리기"
+    "restore-details": "노트를 맵 옆으로 되돌리기",
+    "search": "검색",
+    "search-placeholder": "장소 검색",
+    "search-online": "온라인에서 \"{{- query}}\" 검색",
+    "searching-online": "온라인 검색 중…",
+    "no-places-found": "장소를 찾을 수 없습니다",
+    "search-failed": "장소를 검색할 수 없습니다",
+    "results-nearby": "주변 지역",
+    "results-far": "멀리 떨어진 지역",
+    "add-place-as-marker": "마커로 추가",
+    "previous-result": "이전 결과",
+    "next-result": "다음 결과",
+    "result-position": "총 {{total}}개 중 {{index}}번째 결과, 클릭하여 해당 결과로 돌아가기",
+    "results-on-map": "이 지도에서",
+    "go-to-coordinates": "{{- coordinates}}(으)로 이동"
   },
   "geo-map-context": {
     "open-location": "위치 열기",
@@ -3136,7 +3150,8 @@
     "vector_dark": "벡터(어둡게)",
     "show-scale": "축척 표시",
     "show-labels": "마커 이름 표시",
-    "cluster-markers": "가까운 마커 그룹화"
+    "cluster-markers": "가까운 마커 그룹화",
+    "presentation-theme": "테마"
   },
   "table_context_menu": {
     "delete_row": "행 삭제"

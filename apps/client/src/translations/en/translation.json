@@ -3331,7 +3331,8 @@
     "vector_dark": "Vector (Dark)",
     "show-scale": "Show scale",
     "show-labels": "Show marker names",
-    "cluster-markers": "Group nearby markers"
+    "cluster-markers": "Group nearby markers",
+    "presentation-theme": "Theme"
   },
   "table_context_menu": {
     "delete_row": "Delete row"

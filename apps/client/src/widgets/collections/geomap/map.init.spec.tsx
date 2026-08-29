@@ -28,9 +28,10 @@ function failingMap(): never {
 const { MapConstructor } = vi.hoisted(() => ({ MapConstructor: vi.fn() }));
 
 vi.mock("maplibre-gl", () => ({
+    AttributionControl: class {},
     Map: MapConstructor,
     ScaleControl: class {},
-    AttributionControl: class {}
+    setWorkerUrl: vi.fn()
 }));
 
 vi.mock("maplibre-gl/dist/maplibre-gl.css", () => ({}));

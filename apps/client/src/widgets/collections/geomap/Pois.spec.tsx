@@ -43,7 +43,7 @@ const { FakePopup } = vi.hoisted(() => {
     return { FakePopup };
 });
 
-vi.mock("maplibre-gl", () => ({ Popup: FakePopup }));
+vi.mock("maplibre-gl", () => ({ Popup: FakePopup, setWorkerUrl: vi.fn() }));
 
 /** What the tooltip currently reads, or `null` where none is up. */
 function tooltipText() {
