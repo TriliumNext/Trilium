@@ -58,10 +58,10 @@
 - [x] Add new client strings only to `apps/client/src/translations/en/translation.json`.
 - [x] Reuse `common` labels where existing; create dedicated `flashcards.*` namespace for new strings.
 - [x] Translate rating names, states, intervals, due counts, errors, conflict messages, and protected-state text.
-- [ ] Use `Trans` if translated text embeds note/deck links or reordered components. No embedded links yet; revisit when deck titles become links.
+- [x] Use `Trans` if translated text embeds note/deck links or reordered components. Not applicable in current release scope because flashcard strings do not embed note/deck links or component-order-dependent markup; revisit when deck titles become links.
 - [x] Ensure focus moves to answer/reveal/rating controls predictably.
 - [x] Use semantic headings, `aria-live` for result/progress updates, and visible focus states. Stats and card pane announce via `aria-live="polite"`; footer buttons receive focus per phase.
-- [x] Harden RTL, long translations, high zoom, reduced motion, and mobile narrow widths: use logical spacing, overflow-safe grids/text, stacked narrow-screen controls, scoped CSS, and reduced-motion overrides. Final visual smoke testing remains in the release checklist.
+- [x] Harden RTL, long translations, high zoom, reduced motion, and mobile narrow widths: use logical spacing, overflow-safe grids/text, stacked narrow-screen controls, scoped CSS, reduced-motion overrides, and structural CSS tests. Device/browser visual smoke remains a human release activity.
 
 ## Optional future UI
 

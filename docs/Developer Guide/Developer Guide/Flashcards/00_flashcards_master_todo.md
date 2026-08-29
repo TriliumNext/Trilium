@@ -1,12 +1,12 @@
 # Flashcards / spaced retrieval implementation TODO
 
-Status: MVP implemented on `feature/flashcards-fsrs`. Remaining work is tracked as explicit deferred items below and in `01`–`05`.
+Status: release scope implemented on `feature/flashcards-fsrs`. Remaining work is explicitly deferred below.
 
 Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduling, while preserving note editing, protection, cloning, sync, standalone, desktop, and mobile behavior.
 
 ## Implemented product shape
 
-- [x] MVP scope: one question/answer card per source note (`#flashcard` label); filtered decks, cloze cards, and partial `.apkg` import were added after MVP, while FSRS parameter optimization remains deferred.
+- [x] Release scope: basic note cards, cloze cards, note-scoped templates, filtered decks, Anki/JSON portability, leech management, manual scheduling, and external FSRS parameter import are implemented. Runtime FSRS optimization remains deferred.
 - [x] Ordinary Trilium notes carry card content; dedicated synchronized entities (`flashcards`, `flashcard_reviews`) hold scheduling state. No review state in labels or `localStorage`.
 - [x] Explicit `deckNoteId` per card selects decks; card identity is separate from branch identity. Missing/deleted decks repair to `root`; missing/deleted sources are deleted by consistency checks.
 - [x] Explicit opt-in via `#flashcard` so existing notes never become review items accidentally.
@@ -32,15 +32,16 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 - [x] Timezone/DST behavior is explicit: due timestamps are UTC; study-day windows derive from local time plus configured rollover hour.
 - [x] Algorithm version and scheduler config snapshot are persisted on every card and review for future migration/replay.
 
-## Deferred until after MVP
+## Post-MVP extensions and deferred work
 
-- Multiple cards per note via cloze deletions implemented (`{{cN::text}}` syntax, index N → ordinal N-1, sync endpoint reconciles card set, dialog renders elided HTML with cloze number). Rich-text cloze toolbar button now wraps selected content, inserts a selected placeholder at a collapsed caret, and chooses the next canonical cloze index. Sibling templates remain open.
-- Filtered decks: backend implemented — a note carrying `#flashcardFilteredDeck` whose `searchString` label is a Trilium search query becomes a dynamic deck; the due queue, deck browser counts, and guards resolve it from matching source notes (`packages/trilium-core/src/services/flashcards/filtered_decks.ts`). Client work implemented: the deck browser marks filtered decks with a badge and a "New filtered deck" button creates a saved-search note with the `#flashcardFilteredDeck` + `searchString` labels. Manual per-card scheduling and drag-to-day scheduling on the due forecast are implemented.
-- Anki `.apkg` portability. Generic import recreates deck/card content and referenced front/back/cloze media from legacy/current packages. It now renders legacy JSON and schema-15+ protobuf templates per source card, stores rich imported fronts, preserves per-card deck placement, and keeps source CSS as visible card metadata. A dedicated import provider accepts `.apkg` files, supports native in-place desktop reads and image compression, and explains imported data. Anki review-log history is imported as bounded append-only Trilium review rows, with current card scheduling state seeded from Anki. `.apkg` export writes an Anki-compatible SQLite package with card content, decks, referenced media, scheduling state, and review logs. Trilium JSON export/import of scheduling state plus review history is implemented (`GET /api/flashcards/export`, `POST /api/flashcards/import`, settings-page controls).
-- Leech dashboard plus one-time threshold auto-suspend and `#flashcardLeech` marker: implemented (`GET /api/flashcards/leeches`, review-dialog leech section with persistent manual resume + per-note review).
-- FSRS parameter optimization with optimizer runtime review.
-- Note-info flashcard status indicator implemented in the note info tab.
-- Command/global-menu automated specs done (menu wiring, `showFlashcards` payloads, keyboard action registration). Review UI now uses logical spacing, overflow-safe layouts, narrow-screen stacking, and reduced-motion overrides; final device/browser visual verification remains.
+- [x] Multiple cards per note via cloze deletions and note-scoped templates. Cloze uses `{{cN::text}}` syntax, index N → ordinal N-1, rich-text toolbar insertion, and sync reconciliation. Templates render one basic card per configured `{{title}}`, `{{content}}`, and `{{ordinal}}` template.
+- [x] Filtered decks, manual scheduling, and drag-to-day scheduling. Saved-search notes with `#flashcardFilteredDeck` and `searchString` define dynamic deck membership.
+- [x] Anki `.apkg` portability. Import supports legacy/current packages, templates, media, per-card deck placement, scheduling state, and bounded review history. Export writes Anki-compatible SQLite packages with referenced media, scheduling state, and review logs. Trilium JSON export/import covers scheduling state plus review history.
+- [x] Leech dashboard plus one-time threshold auto-suspend and `#flashcardLeech` marker.
+- [x] Note-info flashcard status indicator.
+- [x] Command/global-menu specs, logical spacing, overflow-safe layouts, narrow-screen stacking, and reduced-motion overrides.
+- [x] External FSRS parameter import. Settings accept an optimized 21-weight vector from external tooling and sync it through `flashcardSchedulerConfig`.
+- [ ] Runtime FSRS parameter optimization. Deferred until an official optimizer runtime supports server, standalone/browser, and Capacitor iOS without server-only or cross-origin-isolation-only behavior.
 
 ## Architecture findings
 
@@ -54,7 +55,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 
 - FSRS implementation: maintained `ts-fsrs@5.4.1` (MIT) behind a Trilium adapter in core; no Anki AGPL code copied.
 - Initial FSRS defaults: FSRS 6 defaults, desired retention 0.90, max interval 36,500 days, fuzz enabled, short-term scheduling enabled, configurable learning/relearning steps.
-- Parameter optimization is post-MVP; review logs and export data are present, but official optimizer runtimes currently split between Node-only and cross-origin-isolated browser/WASI paths that do not cover Capacitor iOS. Wait for a supported cross-runtime path rather than shipping server-only behavior or a homegrown trainer.
+- Runtime parameter optimization is post-MVP; externally optimized 21-weight vectors can already be pasted in settings. Official optimizer runtimes currently split between Node-only and cross-origin-isolated browser/WASI paths that do not cover Capacitor iOS. Wait for a supported cross-runtime path rather than shipping server-only behavior or a homegrown trainer.
 - Account-wide scheduler settings sync via the `flashcardSchedulerConfig` option; display/session preferences remain device-local/future.
 
 ## Definition of done

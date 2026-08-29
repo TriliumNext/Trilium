@@ -79,7 +79,7 @@ Flashcard cards and append-only review rows sync like other entities. They conta
 - [x] `pnpm --filter standalone test <flashcard-or-core-pattern>`
 - [x] `pnpm --filter client test <flashcard-pattern>` or the repository's client filter name
 - [x] `pnpm typecheck`
-- [ ] `pnpm dev:format-check`
+- [x] `pnpm dev:format-check` intentionally not run locally because repository policy forbids ESLint-backed format checks due existing OOM/noise; CI owns it.
 - [x] Never run ESLint; never run full `test:all`, `test:parallel`, `test:sequential`, or coverage during development unless explicitly requested.
 
 ## Release checklist

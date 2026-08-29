@@ -11,7 +11,7 @@
   - [x] Moved source notes keep card state; deleted source notes are repaired/hidden; protected notes never expose back content while locked; lost marker can be removed through controlled action.
 - [x] Decide identity model:
   - [x] Stable `cardId`, separate from `noteId` and branch ID.
-  - [x] One-card-per-note MVP via `ordinal = 0`; future templates/cloze can add more ordinals.
+  - [x] Multiple cards per note use stable `(noteId, ordinal, type)` identity: ordinal `0` for the default basic card, cloze index N → ordinal N-1, and note-scoped templates one basic card per template position.
   - [x] Clone semantics: cloned note shares note content but card identity remains tied to the source `noteId`; independent cards require explicit creation on the clone.
 - [x] Decide user settings:
   - [x] desired retention, maximum interval, fuzz, learning steps, relearning steps, and review order.
@@ -24,7 +24,7 @@
   - [x] Session queue size is capped by request limit; review cards precede learning/relearning, then new cards.
   - [x] Suspend, unsuspend, bury, reset, move deck, and latest-review undo boundaries are implemented with optimistic concurrency.
 - [x] Decide privacy behavior for protected notes and protected sessions.
-- [x] Decide export/import format and whether Anki `.apkg` compatibility is a goal. Decision: no `.apkg` compatibility promise in MVP; future data portability should use a Trilium JSON format for scheduling state plus ordinary note export for content.
+- [x] Decide export/import format and whether Anki `.apkg` compatibility is a goal. Release scope includes Trilium JSON scheduling/history export plus Anki `.apkg` import/export for decks, cards, referenced media, current scheduling state, and bounded review logs.
 
 ## Recommended relational model
 
