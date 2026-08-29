@@ -109,6 +109,11 @@ function removeOwnedRelationByName(note: FNote, relationName: string) {
     return false;
 }
 
+export interface AttributeValueState {
+    attributeId?: string;
+    value: string;
+}
+
 /**
  * Sets the labels of one name on a note to exactly `values`, for a field holding a set of them.
  *
@@ -116,9 +121,17 @@ function removeOwnedRelationByName(note: FNote, relationName: string) {
  * the ones after it rather than deleting and recreating the lot — which keeps their positions, and
  * with them the order the set reads in. Only owned labels are touched: an inherited one belongs to
  * the note it is written on.
+ *
+ * `current` carries returned state across serialized calls that run before the note cache reloads.
  */
-export async function setLabelValues(note: FNote, name: string, values: string[], componentId?: string) {
-    await setAttributeValues(note, "label", name, values, componentId);
+export async function setLabelValues(
+    note: FNote,
+    name: string,
+    values: string[],
+    componentId?: string,
+    current?: readonly AttributeValueState[]
+) {
+    return await setAttributeValues(note, "label", name, values, componentId, current);
 }
 
 /**
@@ -129,25 +142,43 @@ export async function setRelationValues(note: FNote, name: string, values: strin
     await setAttributeValues(note, "relation", name, values, componentId);
 }
 
-async function setAttributeValues(note: FNote, type: "label" | "relation", name: string, values: string[], componentId?: string) {
-    const existing = type === "label" ? note.getOwnedLabels(name) : note.getOwnedRelations(name);
+async function setAttributeValues(
+    note: FNote,
+    type: "label" | "relation",
+    name: string,
+    values: string[],
+    componentId?: string,
+    current?: readonly AttributeValueState[]
+) {
+    const existing = current
+        ?? (type === "label" ? note.getOwnedLabels(name) : note.getOwnedRelations(name));
+    const updated: AttributeValueState[] = [];
 
     for (const [ index, value ] of values.entries()) {
         const attributeId = existing[index]?.attributeId;
         if (existing[index]?.value === value) {
+            updated.push(existing[index]);
             continue;
         }
-        await server.put(
+        const response = await server.put<{ attributeId?: string }>(
             `notes/${note.noteId}/attribute`,
             { attributeId, type, name, value },
             componentId
         );
+        updated.push({ attributeId: response?.attributeId ?? attributeId, value });
     }
 
     // Whatever the new set did not fill is no longer held.
     for (const spare of existing.slice(values.length)) {
-        await server.remove(`notes/${note.noteId}/attributes/${spare.attributeId}`, componentId);
+        if (spare.attributeId) {
+            await server.remove(
+                `notes/${note.noteId}/attributes/${spare.attributeId}`,
+                componentId
+            );
+        }
     }
+
+    return updated;
 }
 
 /**

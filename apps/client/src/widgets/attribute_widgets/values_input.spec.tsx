@@ -33,7 +33,10 @@ describe("ValuesInput", () => {
 
     async function press(input: HTMLInputElement | null, key: string) {
         await act(async () => {
-            input?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+            input?.dispatchEvent(new KeyboardEvent(
+                "keydown",
+                { key, bubbles: true, cancelable: true }
+            ));
         });
     }
 
@@ -86,6 +89,46 @@ describe("ValuesInput", () => {
         await press(input, "Enter");
         expect(onCommit).not.toHaveBeenCalled();
         expect(input?.value).toBe("");
+    });
+
+    it("keeps newer edits while an earlier async commit updates values", async () => {
+        const finish: Array<() => void> = [];
+        const onCommit = vi.fn(() => new Promise<void>((resolve) => finish.push(resolve)));
+        let input = await mount({ labelType: "text", values: [ "one" ], onCommit });
+
+        await typeInto(input, "two");
+        await press(input, "Enter");
+        await typeInto(input, "three");
+        await press(input, "Enter");
+
+        input = await mount({ labelType: "text", values: [ "one", "two" ], onCommit });
+        await typeInto(input, "four");
+        await press(input, "Enter");
+
+        expect(onCommit).toHaveBeenLastCalledWith([ "one", "two", "three", "four" ]);
+        await act(async () => {
+            for (const resolve of finish) {
+                resolve();
+            }
+        });
+    });
+
+    it("restores accepted values after an async commit fails", async () => {
+        let rejectFirst: (error: Error) => void = () => {};
+        const onCommit = vi.fn()
+            .mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
+                rejectFirst = reject;
+            }))
+            .mockResolvedValue(undefined);
+        const input = await mount({ labelType: "text", values: [ "one" ], onCommit });
+
+        await typeInto(input, "two");
+        await press(input, "Enter");
+        await act(async () => rejectFirst(new Error("write refused")));
+        await typeInto(input, "three");
+        await press(input, "Enter");
+
+        expect(onCommit).toHaveBeenLastCalledWith([ "one", "three" ]);
     });
 
     it("asks for a date rather than taking it as the field reports one", async () => {
@@ -207,12 +250,18 @@ describe("ValuesInput", () => {
         };
 
         it("offers them on focus, minus the ones the field already holds", async () => {
-            const input = await mount({ labelType: "text", values: [ "Game" ], onCommit: vi.fn(), source });
+            const input = await mount({
+                labelType: "text",
+                values: [ "Game" ],
+                onCommit: vi.fn(),
+                source
+            });
 
             expect(container.querySelector(".tn-chip")?.closest(".values-input")).not.toBeNull();
 
             await act(async () => input?.focus());
-            expect((await settleDropdown()).map((item) => item.textContent)).toEqual([ "RPG", "\u4e09\u570b" ]);
+            expect((await settleDropdown()).map((item) => item.textContent))
+                .toEqual([ "RPG", "\u4e09\u570b" ]);
         });
 
         it("takes a picked entry as a chip, and stays open for the next", async () => {
@@ -248,7 +297,8 @@ describe("ValuesInput", () => {
             const input = await mount({ labelType: "text", values: [], onCommit, source });
 
             await typeInto(input, "\u4e09");
-            expect((await settleDropdown()).map((item) => item.textContent)).toEqual([ "\u4e09\u570b" ]);
+            expect((await settleDropdown()).map((item) => item.textContent))
+                .toEqual([ "\u4e09\u570b" ]);
             await press(input, "Enter");
             expect(onCommit).toHaveBeenCalledWith([ "\u4e09" ]);
 
@@ -261,7 +311,7 @@ describe("ValuesInput", () => {
             expect(onCommit).toHaveBeenCalledWith([ "\u4e09", "\u4e09\u570b" ]);
         });
 
-        it("keeps the button within the field the list hangs from, and its press taking", async () => {
+        it("keeps the add button inside the autocomplete field", async () => {
             const onCommit = vi.fn();
             const input = await mount({ labelType: "text", values: [ "Game" ], onCommit, source });
 
@@ -269,7 +319,8 @@ describe("ValuesInput", () => {
             const field = container.querySelector(".form-autocomplete-field.values-input");
             const add = container.querySelector<HTMLElement>(".values-input-add");
             expect(add?.closest(".form-autocomplete-field")).toBe(field);
-            expect(container.querySelector(".tn-chip")?.closest(".form-autocomplete-field")).toBe(field);
+            expect(container.querySelector(".tn-chip")?.closest(".form-autocomplete-field"))
+                .toBe(field);
 
             await act(async () => add?.click());
             expect(onCommit).toHaveBeenCalledWith([ "Game", "RPG" ]);
@@ -277,7 +328,12 @@ describe("ValuesInput", () => {
 
         it("keeps the keys and the leaving the field answers for itself", async () => {
             const onCommit = vi.fn();
-            const input = await mount({ labelType: "text", values: [ "Game", "RPG" ], onCommit, source });
+            const input = await mount({
+                labelType: "text",
+                values: [ "Game", "RPG" ],
+                onCommit,
+                source
+            });
 
             await press(input, "Backspace");
             expect(onCommit).toHaveBeenCalledWith([ "Game" ]);
@@ -292,7 +348,13 @@ describe("ValuesInput", () => {
 
         it("commits nothing while disabled, the list included", async () => {
             const onCommit = vi.fn();
-            const input = await mount({ labelType: "text", values: [ "Game" ], onCommit, source, disabled: true });
+            const input = await mount({
+                labelType: "text",
+                values: [ "Game" ],
+                onCommit,
+                source,
+                disabled: true
+            });
 
             await act(async () => input?.focus());
             expect(await settleDropdown()).toEqual([]);
@@ -307,7 +369,12 @@ describe("ValuesInput", () => {
         });
 
         it("keeps the box plain where the value is picked through a widget", async () => {
-            const input = await mount({ labelType: "color", values: [], onCommit: vi.fn(), source });
+            const input = await mount({
+                labelType: "color",
+                values: [],
+                onCommit: vi.fn(),
+                source
+            });
 
             await act(async () => input?.focus());
             expect(await settleDropdown()).toEqual([]);

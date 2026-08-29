@@ -19,7 +19,7 @@ interface ValuesInputProps {
     /** The values held, in the order they are shown. */
     values: readonly string[];
     /** Receives the values as they now stand, whenever one is taken or dropped. */
-    onCommit(values: string[]): void;
+    onCommit(values: string[]): void | Promise<void>;
     /** What removing a chip means, in the host's own words. Left out, a chip holds "a value". */
     removeButtonText?: string;
     /** What taking the box's content means, in the host's own words. Left out, it adds "a value". */
@@ -43,16 +43,30 @@ interface ValuesInputProps {
  * rather than quietly dropped. A value already held is not taken a second time: the chips are a set,
  * and two alike could not be told apart.
  */
-export default function ValuesInput({ labelType, values, onCommit, removeButtonText, addButtonText, source, inputId, tabIndex, placeholder, disabled }: ValuesInputProps) {
+export default function ValuesInput({
+    labelType,
+    values,
+    onCommit,
+    removeButtonText,
+    addButtonText,
+    source,
+    inputId,
+    tabIndex,
+    placeholder,
+    disabled
+}: ValuesInputProps) {
     const [ draft, setDraft ] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
-    // Keep local edits until the host reflects them in props. Only what the field does reads
-    // from here; what it shows stays the host's, so the chips are the set actually saved.
+    // `editedValues` accumulates edits before `values` updates. Pending commits keep newer edits
+    // from being replaced by an intermediate `values` update.
     const editedValues = useRef(values);
-    const lastValuesProp = useRef(values);
-    if (lastValuesProp.current !== values) {
-        lastValuesProp.current = values;
-        editedValues.current = values;
+    const latestValuesProp = useRef(values);
+    const pendingCommits = useRef(0);
+    if (latestValuesProp.current !== values) {
+        latestValuesProp.current = values;
+        if (pendingCommits.current === 0) {
+            editedValues.current = values;
+        }
     }
     const isColor = labelType === "color";
     // Every widget but the colour dialog has to be asked for its value, having no plain way of
@@ -64,11 +78,12 @@ export default function ValuesInput({ labelType, values, onCommit, removeButtonT
     const showAdd = needsAsking || (!isColor && draft.trim().length > 0);
     const suggests = !!source && !PICKED_TYPES.has(labelType);
 
-    // Filtered against the edits, not the prop: with the list open across picks, a value just
-    // taken would otherwise be offered again, on an entry that `take` then refuses.
+    // `keepOpenOnPick` keeps the list open, so filter `editedValues` to prevent duplicate `take()`
+    // calls before `values` updates.
     const suggest = useCallback(
-        async (query: string) => (await source?.(query) ?? []).filter((value) => !editedValues.current.includes(value)),
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- `values` is read through the ref above
+        async (query: string) => (await source?.(query) ?? [])
+            .filter((value) => !editedValues.current.includes(value)),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- read through editedValues
         [ source, values ]);
 
     // A colour picker holds its own value and is never told one: it is set at birth and only read
@@ -112,7 +127,7 @@ export default function ValuesInput({ labelType, values, onCommit, removeButtonT
 
         const edited = [ ...current, trimmed ];
         editedValues.current = edited;
-        onCommit(edited);
+        commit(edited);
     }
 
     function drop(value: string) {
@@ -120,11 +135,28 @@ export default function ValuesInput({ labelType, values, onCommit, removeButtonT
 
         const edited = editedValues.current.filter((held) => held !== value);
         editedValues.current = edited;
-        onCommit(edited);
+        commit(edited);
+    }
+
+    function commit(edited: string[]) {
+        const result = onCommit(edited);
+        if (!result) {
+            return;
+        }
+
+        pendingCommits.current++;
+        void result.then(settleCommit, settleCommit);
+    }
+
+    function settleCommit() {
+        pendingCommits.current--;
+        if (pendingCommits.current === 0) {
+            editedValues.current = latestValuesProp.current;
+        }
     }
 
     function handleKeyDown(e: TargetedKeyboardEvent<HTMLInputElement>) {
-        // Enter already spent on a picked suggestion; the text it was picked out of is not a value.
+        // FormAutocomplete consumed Enter to take a suggestion, so do not also commit the draft.
         if (e.defaultPrevented) {
             return;
         }
@@ -165,10 +197,7 @@ export default function ValuesInput({ labelType, values, onCommit, removeButtonT
             icon="bx bx-plus"
             text={addButtonText ?? t("promoted_attributes.add_value")}
             disabled={disabled}
-            // The value is read from the field rather than from the draft: leaving the field
-            // to press this takes it already, and the draft is empty by the time this runs.
-            // For a typed box that leaving is also the whole of the press — the take empties
-            // the box and the button goes with it, before the click lands on anything.
+            // `onBlur` can clear `draft` before the click, so read the current input value.
             onClick={() => take(inputRef.current?.value ?? "")}
         />
     );
@@ -224,7 +253,7 @@ export default function ValuesInput({ labelType, values, onCommit, removeButtonT
                         tabIndex={tabIndex}
                         type={LABEL_MAPPINGS[labelType] ?? "text"}
                         currentValue={draft}
-                        // Only while the field is empty: beside chips it would read as one of them.
+                        // Existing chips make the empty-field placeholder unnecessary.
                         placeholder={values.length ? undefined : placeholder}
                         disabled={disabled}
                         onChange={setDraft}

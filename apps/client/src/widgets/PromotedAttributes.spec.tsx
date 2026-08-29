@@ -226,54 +226,70 @@ describe("PromotedAttributesContent", () => {
         expect(multiInput.current?.values).toEqual([ "alpha", "beta" ]);
     });
 
-    it("keeps quick multi-label commits in order and shows their latest set immediately", async () => {
-        const note = buildNote({ title: "Task", "#label:tags": "promoted,multi,text", "#tags": "alpha" });
+    it("keeps quick multi-label commits in order and shows a set once it is written", async () => {
+        const note = buildNote({
+            title: "Task",
+            "#label:tags": "promoted,multi,text",
+            "#tags": "alpha"
+        });
         let finishFirstWrite: (response: { attributeId: string }) => void = () => {};
         serverPutMock.mockReturnValueOnce(new Promise((resolve) => {
             finishFirstWrite = resolve;
         }));
         mount(note);
 
+        const commit = multiInput.current?.onCommit as (values: string[]) => Promise<void>;
         let firstCommit: Promise<void> | undefined;
         await act(async () => {
-            firstCommit = (multiInput.current?.onCommit as (values: string[]) => Promise<void>)([ "alpha", "beta" ]);
+            firstCommit = commit([ "alpha", "beta" ]);
             await Promise.resolve();
         });
-        expect(multiInput.current?.values).toEqual([ "alpha", "beta" ]);
+        // `values` remains unchanged until `setLabelValues()` resolves.
+        expect(multiInput.current?.values).toEqual([ "alpha" ]);
         expect(serverPutMock).toHaveBeenCalledOnce();
 
         let secondCommit: Promise<void> | undefined;
         await act(async () => {
-            secondCommit = (multiInput.current?.onCommit as (values: string[]) => Promise<void>)([ "alpha", "beta", "gamma" ]);
+            secondCommit = commit([ "alpha", "beta", "gamma" ]);
             await Promise.resolve();
         });
-        expect(multiInput.current?.values).toEqual([ "alpha", "beta", "gamma" ]);
+        // `commitQueue` does not start the second request before the first request resolves.
         expect(serverPutMock).toHaveBeenCalledOnce();
 
         await act(async () => {
             finishFirstWrite({ attributeId: "beta-id" });
             await Promise.all([ firstCommit, secondCommit ]);
         });
+        expect(serverPutMock).toHaveBeenCalledTimes(2);
+        expect(multiInput.current?.values).toEqual([ "alpha", "beta", "gamma" ]);
     });
 
-    it("lets a failed write settle rather than stranding the edits queued behind it", async () => {
-        const note = buildNote({ title: "Task", "#label:tags": "promoted,multi,text", "#tags": "alpha" });
+    it("rebases edits queued after a failed multi-label write", async () => {
+        const note = buildNote({
+            title: "Task",
+            "#label:tags": "promoted,multi,text",
+            "#tags": "alpha"
+        });
         serverPutMock.mockRejectedValueOnce(new Error("write refused"));
         mount(note);
 
         const commit = multiInput.current?.onCommit as (values: string[]) => Promise<void>;
         let failed: Promise<void> | undefined;
+        let following: Promise<void> | undefined;
         await act(async () => {
             failed = commit([ "alpha", "beta" ]);
-            await failed.catch(() => {});
+            following = commit([ "alpha", "beta", "gamma" ]);
+            await Promise.allSettled([ failed, following ]);
         });
         await expect(failed).rejects.toThrow("write refused");
-
-        serverPutMock.mockClear();
-        await act(async () => {
-            await commit([ "alpha", "beta", "gamma" ]);
-        });
-        expect(serverPutMock).toHaveBeenCalled();
+        await expect(following).resolves.toBeUndefined();
+        expect(serverPutMock).toHaveBeenCalledTimes(2);
+        expect(serverPutMock).toHaveBeenLastCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "gamma" },
+            "cid"
+        );
+        expect(multiInput.current?.values).toEqual([ "alpha", "gamma" ]);
     });
 
     it("adds a select option to the definition itself, the field offering it from then on", async () => {

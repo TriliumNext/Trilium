@@ -230,6 +230,28 @@ describe("setLabelValues", () => {
         );
     });
 
+    it("reuses returned state before the note cache reloads", async () => {
+        const note = noteHolding("a");
+        vi.mocked(server.put).mockResolvedValueOnce({ attributeId: "attr-new" });
+
+        const current = await attributeService.setLabelValues(note, "tags", [ "a", "b" ]);
+        vi.mocked(server.put).mockClear();
+        await attributeService.setLabelValues(
+            note,
+            "tags",
+            [ "a", "b", "c" ],
+            undefined,
+            current
+        );
+
+        expect(server.put).toHaveBeenCalledOnce();
+        expect(server.put).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "c" },
+            undefined
+        );
+    });
+
     it("removes the labels the set no longer fills, emptying included", async () => {
         const note = noteHolding("a", "b", "c");
 

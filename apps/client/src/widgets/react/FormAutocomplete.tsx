@@ -99,7 +99,27 @@ interface FormAutocompleteProps extends Omit<FormTextBoxProps, "onChange"> {
  * The dropdown is portalled to the body and positioned over everything else, so it is not clipped
  * by scrolling ancestors. Selecting a suggestion reports it through `onChange`, exactly like typing.
  */
-export default function FormAutocomplete({ currentValue, onChange, source, openOnFocus, openOnEnter, onPick, keepOpenOnPick, renderItem, leading, trailing, fieldClassName, autoActivate, isHeading, dropdownMinWidth, inputRef, onFocus, onBlur, onKeyDown, ...restProps }: FormAutocompleteProps) {
+export default function FormAutocomplete({
+    currentValue,
+    onChange,
+    source,
+    openOnFocus,
+    openOnEnter,
+    onPick,
+    keepOpenOnPick,
+    renderItem,
+    leading,
+    trailing,
+    fieldClassName,
+    autoActivate,
+    isHeading,
+    dropdownMinWidth,
+    inputRef,
+    onFocus,
+    onBlur,
+    onKeyDown,
+    ...restProps
+}: FormAutocompleteProps) {
     const ownInputRef = useRef<HTMLInputElement>(null);
     const inputEl = inputRef ?? ownInputRef;
     const fieldRef = useRef<HTMLDivElement>(null);
@@ -273,7 +293,12 @@ export default function FormAutocomplete({ currentValue, onChange, source, openO
     return (
         <>
             {leading !== undefined || trailing !== undefined
-                ? <div ref={fieldRef} className={clsx("tn-field form-autocomplete-field", fieldClassName)}>{leading}{field}{trailing}</div>
+                ? <div
+                    ref={fieldRef}
+                    className={clsx("tn-field form-autocomplete-field", fieldClassName)}
+                >
+                    {leading}{field}{trailing}
+                </div>
                 : field}
 
             {isOpen && items.length > 0 && position && createPortal(

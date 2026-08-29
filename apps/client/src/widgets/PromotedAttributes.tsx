@@ -1,15 +1,28 @@
 import "./PromotedAttributes.css";
 
-import { DefinitionObject, extractAttributeDefinitionTypeAndName, LabelType, UpdateAttributeResponse } from "@triliumnext/commons";
+import {
+    DefinitionObject,
+    extractAttributeDefinitionTypeAndName,
+    LabelType,
+    UpdateAttributeResponse
+} from "@triliumnext/commons";
 import clsx from "clsx";
 import { ComponentChild, TargetedEvent } from "preact";
-import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import {
+    Dispatch,
+    StateUpdater,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from "preact/hooks";
 
 import NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
 import FNote from "../entities/fnote";
 import { Attribute } from "../services/attribute_parser";
-import attributes from "../services/attributes";
+import attributes, { type AttributeValueState } from "../services/attributes";
 import { t } from "../services/i18n";
 import server from "../services/server";
 import { randomString } from "../services/utils";
@@ -295,17 +308,57 @@ function MultiLabelInput({ inputId, note, cell, componentId, setCells }: CellPro
     const labelType = definition.labelType ?? "text";
     const createOption = useCreateSelectOption(definitionAttr, componentId, setCells);
     const suggestValues = useAttributeValueSuggestions(valueName, labelType);
-    // Serialize writes so quick successive selections cannot finish out of order.
-    const commitQueue = useRef(Promise.resolve());
+    const commitQueue = useRef<Promise<void>>(Promise.resolve());
+    const acceptedValues = useRef(values ?? []);
+    const acceptedAttributes = useRef<AttributeValueState[]>(note.getOwnedLabels(valueName));
+    const desiredValues = useRef(values ?? []);
+    const lastValuesProp = useRef(values);
+    const pendingCommits = useRef(0);
+    if (lastValuesProp.current !== values && pendingCommits.current === 0) {
+        lastValuesProp.current = values;
+        acceptedValues.current = values ?? [];
+        acceptedAttributes.current = note.getOwnedLabels(valueName);
+        desiredValues.current = values ?? [];
+    }
 
     const commit = useCallback((edited: string[]) => {
-        // The grid ignores reloads it is itself the source of (see usePromotedAttributeData), so the
-        // set it shows is patched in place, as updateAttribute does for a single value.
-        setCells(prev => prev?.map(c => c.uniqueId === uniqueId ? { ...c, values: edited } : c));
+        const previousDesired = desiredValues.current;
+        const previousSet = new Set(previousDesired);
+        const editedSet = new Set(edited);
+        const added = edited.filter((value) => !previousSet.has(value));
+        const removed = new Set(previousDesired.filter((value) => !editedSet.has(value)));
+        desiredValues.current = edited;
+        pendingCommits.current++;
 
-        const write = commitQueue.current.then(() => attributes.setLabelValues(note, valueName, edited, componentId));
-        // Continue processing queued edits after a failed write.
-        commitQueue.current = write.catch(() => {});
+        const write = commitQueue.current.then(async () => {
+            const accepted = acceptedValues.current.filter((value) => !removed.has(value));
+            for (const value of added) {
+                if (!accepted.includes(value)) {
+                    accepted.push(value);
+                }
+            }
+
+            acceptedAttributes.current = await attributes.setLabelValues(
+                note,
+                valueName,
+                accepted,
+                componentId,
+                acceptedAttributes.current
+            );
+            acceptedValues.current = accepted;
+            // `usePromotedAttributeData()` ignores reloads from `componentId`, so update the cell
+            // only after `setLabelValues()` succeeds.
+            setCells(prev => prev?.map(c =>
+                c.uniqueId === uniqueId ? { ...c, values: accepted } : c));
+        });
+        const settled = write.finally(() => {
+            pendingCommits.current--;
+            if (pendingCommits.current === 0) {
+                desiredValues.current = acceptedValues.current;
+            }
+        });
+        // A rejection does not block the next queued edit. `ValuesInput` observes `write` itself.
+        commitQueue.current = settled.catch(() => {});
         return write;
     }, [ note, valueName, componentId, uniqueId, setCells ]);
 
