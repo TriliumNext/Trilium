@@ -8,9 +8,12 @@ import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
 import { Card, OptionCardSection } from "../../react/Card";
 import ActionButton from "../../react/ActionButton";
+import FormTextArea from "../../react/FormTextArea";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import OptionsPageHeader from "./components/OptionsPageHeader";
+
+const FSRS_WEIGHT_COUNT = 21;
 
 export default function FlashcardSettings() {
     const [ schedulerConfig, setSchedulerConfig ] = useState<FlashcardSchedulerSettings | null>(null);
@@ -305,6 +308,34 @@ function renderSettingsCard({
                     disabled={saving}
                 />
             </OptionCardSection>
+
+            <OptionCardSection
+                name="flashcard-fsrs-weights"
+                label={t("flashcards.settings_weights")}
+                description={t("flashcards.settings_weights_description", {
+                    count: FSRS_WEIGHT_COUNT
+                })}
+                stacked
+            >
+                <FormTextArea
+                    currentValue={formatWeights(schedulerConfig.weights)}
+                    disabled={saving}
+                    rows={4}
+                    className="flashcards-weights-input"
+                    placeholder={t("flashcards.settings_weights_placeholder")}
+                    onBlur={(value) => {
+                        const weights = parseWeightList(value);
+                        if (weights === undefined) return;
+                        patchSchedulerConfig({ weights });
+                    }}
+                />
+                <ActionButton
+                    text={t("flashcards.settings_weights_reset")}
+                    icon="bx bx-reset"
+                    disabled={saving || !schedulerConfig.weights}
+                    onClick={() => patchSchedulerConfig({ weights: null })}
+                />
+            </OptionCardSection>
         </Card>
     );
 }
@@ -321,4 +352,31 @@ function parseStepList(value: string) {
     }
 
     return steps;
+}
+
+function parseWeightList(value: string) {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+        return null;
+    }
+
+    const weights = trimmed
+        .split(/[\s,]+/)
+        .map((weight) => Number(weight));
+
+    const hasInvalidWeight = weights.some((weight) => !Number.isFinite(weight) || weight <= 0);
+
+    if (weights.length !== FSRS_WEIGHT_COUNT || hasInvalidWeight) {
+        toast.showError(t("flashcards.settings_weights_validation", {
+            count: FSRS_WEIGHT_COUNT
+        }));
+        return undefined;
+    }
+
+    return weights;
+}
+
+function formatWeights(weights?: number[] | null) {
+    return weights?.join(", ") ?? "";
 }

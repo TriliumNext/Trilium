@@ -5,3 +5,7 @@
 .flashcards-data .flashcards-import-input {
     display: none;
 }
+
+.flashcards-settings .flashcards-weights-input {
+    font-family: var(--monospace-font-family);
+}

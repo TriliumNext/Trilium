@@ -94,6 +94,17 @@ describe("Flashcards API (core)", () => {
         expect(invalidRes.status).toBe(400);
         expect(invalidRes.body.message).toContain("Invalid flashcard learningSteps");
 
+        const invalidWeightsRes = await api.put<{ message: string }>("/api/flashcards/settings", {
+            body: {
+                schedulerConfig: {
+                    ...updateRes.body.schedulerConfig,
+                    weights: [1, 2, 3]
+                }
+            }
+        });
+        expect(invalidWeightsRes.status).toBe(400);
+        expect(invalidWeightsRes.body.message).toContain("Flashcard weights must contain 21 values");
+
         await api.put<FlashcardSettingsResponse>("/api/flashcards/settings", {
             body: { schedulerConfig: getRes.body.schedulerConfig }
         });

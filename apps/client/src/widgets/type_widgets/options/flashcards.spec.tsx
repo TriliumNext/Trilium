@@ -69,6 +69,40 @@ describe("flashcard scheduling settings", () => {
         expect(mocks.showError).toHaveBeenCalledWith("flashcards.settings_step_validation");
     });
 
+    it("saves pasted FSRS weight vectors and resets them to defaults", async () => {
+        await open();
+
+        const weights = Array.from({ length: 21 }, (_, index) => `${index + 1}.5`).join(", ");
+        changeTextArea("flashcards-weights-input", weights, "focusout");
+        await flush();
+
+        expect(mocks.setFlashcardSettings).toHaveBeenCalledWith({
+            schedulerConfig: expect.objectContaining({
+                weights: Array.from({ length: 21 }, (_, index) => index + 1.5)
+            })
+        });
+
+        const resetButton = host.querySelector<HTMLButtonElement>("button.bx-reset");
+        act(() => {
+            resetButton?.click();
+        });
+        await flush();
+
+        expect(mocks.setFlashcardSettings).toHaveBeenCalledWith({
+            schedulerConfig: expect.objectContaining({ weights: null })
+        });
+    });
+
+    it("rejects invalid FSRS weight vectors before calling the API", async () => {
+        await open();
+
+        changeTextArea("flashcards-weights-input", "1, 2, 3", "focusout");
+        await flush();
+
+        expect(mocks.setFlashcardSettings).not.toHaveBeenCalled();
+        expect(mocks.showError).toHaveBeenCalledWith("flashcards.settings_weights_validation");
+    });
+
     it("starts an Anki package export", async () => {
         await open();
 
@@ -111,6 +145,17 @@ function changeInput(name: string, value: string, event: string) {
         if (input) {
             input.value = value;
             input.dispatchEvent(new Event(event, { bubbles: true }));
+        }
+    });
+}
+
+function changeTextArea(name: string, value: string, event: string) {
+    const textarea = host.querySelector<HTMLTextAreaElement>(`.${name}`);
+
+    act(() => {
+        if (textarea) {
+            textarea.value = value;
+            textarea.dispatchEvent(new Event(event, { bubbles: true }));
         }
     });
 }

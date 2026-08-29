@@ -19,6 +19,7 @@ import dateUtils from "../utils/date";
 
 export const FSRS_ALGORITHM = "fsrs-6";
 export const FSRS_ALGORITHM_VERSION = "ts-fsrs@5.4.1";
+const FSRS_WEIGHT_COUNT = 21;
 
 export interface FlashcardSchedulerConfig extends Omit<FlashcardSchedulerSettings,
     "learningSteps" | "relearningSteps" | "weights"> {
@@ -278,6 +279,10 @@ function validateSchedulerConfig(config: FlashcardSchedulerConfig) {
     if (config.weights !== undefined) {
         if (!Array.isArray(config.weights)) {
             throw new ValidationError("Flashcard weights must be an array.");
+        }
+
+        if (config.weights.length !== FSRS_WEIGHT_COUNT) {
+            throw new ValidationError(`Flashcard weights must contain ${FSRS_WEIGHT_COUNT} values.`);
         }
 
         for (const [index, weight] of config.weights.entries()) {

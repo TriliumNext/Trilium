@@ -53,6 +53,8 @@ Flashcard settings are in Options -> Flashcards. Defaults work for most users. A
 *   day rollover hour,
 *   FSRS weights.
 
+Leave FSRS weights blank to use Trilium's built-in defaults. If you optimize parameters with external FSRS tooling, paste the full 21-number vector here and Trilium will sync it with the rest of the scheduler settings.
+
 If several devices sync the same database, reviews are scheduled by the backend that receives the review. Conflict protection prevents duplicate submissions from overwriting newer review state.
 
 ## Suspending and leeches

@@ -1525,8 +1525,8 @@
     "semantic_hash": "1c4320fd508ca048bfeec596c729caff"
   },
   "apps/client/src/translations/en/translation.json": {
-    "mtime": 1788001078.8852768,
-    "ast_hash": "b21a2ae5945bfec0e822660618cdf96f",
+    "mtime": 1788002409.06133,
+    "ast_hash": "6410385d1881032b07e162b3be27ca25",
     "semantic_hash": ""
   },
   "apps/client/src/translations/es/entry.json": {
@@ -14965,8 +14965,8 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/services/flashcards/fsrs_scheduler.ts": {
-    "mtime": 1787328094.8464303,
-    "ast_hash": "80cc6b145526e95b2fb68ab8c5a16b19",
+    "mtime": 1788002454.3544602,
+    "ast_hash": "9be85d04447b4be12a3040b57847502a",
     "semantic_hash": ""
   },
   ".claude/skills/analyzing-coverage/SKILL.md": {
@@ -17880,8 +17880,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/04_client_review_experience_todo.md": {
-    "mtime": 1788001144.0815809,
-    "ast_hash": "4b357eb4f53e78829038bde61bdc3f49",
+    "mtime": 1788002544.3215106,
+    "ast_hash": "64d8fe6a32f36da5feea2637a8b54aa5",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
@@ -24970,8 +24970,8 @@
     "semantic_hash": ""
   },
   "packages/trilium-core/src/routes/api/flashcards.spec.ts": {
-    "mtime": 1788001268.817594,
-    "ast_hash": "b2fac4898daab9053e2120849afade24",
+    "mtime": 1788002469.3647873,
+    "ast_hash": "61a27754c050c77e862321ada0cac3c6",
     "semantic_hash": ""
   },
   "packages/trilium-core/src/migrations/0241__flashcards.spec.ts": {
@@ -24980,13 +24980,13 @@
     "semantic_hash": ""
   },
   "apps/client/src/widgets/type_widgets/options/flashcards.spec.tsx": {
-    "mtime": 1787928327.9947028,
-    "ast_hash": "32879206e3c2ab542d6a74468cdc3f3a",
+    "mtime": 1788002508.1343052,
+    "ast_hash": "f933930ca2e760cb4622a73dbdeae635",
     "semantic_hash": ""
   },
   "apps/client/src/widgets/type_widgets/options/flashcards.tsx": {
-    "mtime": 1787928104.4085076,
-    "ast_hash": "f94edba4445050e9a14f42bdc514feed",
+    "mtime": 1788002649.6223736,
+    "ast_hash": "71248c8ec9a233b7ab2456024c498d88",
     "semantic_hash": ""
   },
   "context.md": {
@@ -25075,18 +25075,18 @@
     "semantic_hash": ""
   },
   "docs/Release Notes/Release Notes/v0.105.0.md": {
-    "mtime": 1788001194.9968047,
-    "ast_hash": "03778a54c8b5fd89b0b0b8d760ada6ff",
+    "mtime": 1788002584.0711534,
+    "ast_hash": "c5582c00842aae6fc59083ca80d2d235",
     "semantic_hash": ""
   },
   "apps/server/src/assets/doc_notes/en/User Guide/User Guide/Basic Concepts and Features/Flashcards.html": {
-    "mtime": 1788001166.8431575,
-    "ast_hash": "6448a6597fff7882577a85461048670f",
+    "mtime": 1788002571.7478697,
+    "ast_hash": "78788959b304cd1809066940d8cd4540",
     "semantic_hash": ""
   },
   "docs/User Guide/User Guide/Basic Concepts and Features/Flashcards.md": {
-    "mtime": 1788001154.5683563,
-    "ast_hash": "2e2272650c7bcb3f97d8307abce68551",
+    "mtime": 1788002559.2128472,
+    "ast_hash": "926f071075fdb4be1527e2c1e80d4d4f",
     "semantic_hash": ""
   }
 }
