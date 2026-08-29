@@ -14285,9 +14285,9 @@
     "semantic_hash": "86a2739a84d53022ad3f06f502225be3"
   },
   "packages/trilium-core/src/services/sync_update.spec.ts": {
-    "mtime": 1786902991.7657216,
-    "ast_hash": "7c2e737058050387047fdff7c5446fa7",
-    "semantic_hash": "7c2e737058050387047fdff7c5446fa7"
+    "mtime": 1787995562.071508,
+    "ast_hash": "559a78597b7ee971a676c73569d17f4c",
+    "semantic_hash": ""
   },
   "packages/trilium-core/src/services/sync_update.ts": {
     "mtime": 1787329242.8060436,
@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1787995447.1787088,
-    "ast_hash": "e6c866cc2f1372a31a42d584cbb39890",
+    "mtime": 1787995575.8676853,
+    "ast_hash": "e9208c3a754e5069ff09b094d44b846c",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {

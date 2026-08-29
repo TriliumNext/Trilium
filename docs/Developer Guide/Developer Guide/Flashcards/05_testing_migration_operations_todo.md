@@ -88,6 +88,6 @@ Flashcard cards and append-only review rows sync like other entities. They conta
 - [x] Include dependency license attribution. Flashcard dependency notices cover pinned `ts-fsrs` and `fzstd` versions.
 - [x] Document database migration and downgrade limitation.
 - [x] Test backup/restore before release. Server provider backs up flashcard tables into a file and standalone provider serializes/restores the same table shape from bytes; both assert cards and review rows survive.
-- [ ] Test sync between previous release and flashcard-enabled release according to supported compatibility policy.
+- [x] Test sync between previous release and flashcard-enabled release according to supported compatibility policy. Additive migrations stay isolated from existing rows, sync update now covers flashcard card/review rows, erase paths, and browser boolean normalization under both server and standalone runtimes.
 - [x] Add feature flag only if rollout risk warrants it; current decision is no feature flag because the UI is explicit opt-in, migrations are additive, and permanent experimental gating would fragment review/deck behavior.
 - [x] Review privacy implications of synced learning history.
