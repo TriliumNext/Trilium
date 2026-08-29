@@ -127,14 +127,16 @@
         }
     }
 
-    .flashcards-deck-browser {
+    .flashcards-deck-browser,
+    .flashcards-template-editor {
         border: 1px solid var(--main-border-color);
         border-radius: var(--border-radius);
         padding: 0.75rem;
     }
 
     .flashcards-deck-browser-header,
-    .flashcards-deck-heading {
+    .flashcards-deck-heading,
+    .flashcards-template-editor-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -142,9 +144,36 @@
     }
 
     .flashcards-deck-browser-header h3,
-    .flashcards-deck-heading h4 {
+    .flashcards-deck-heading h4,
+    .flashcards-template-editor-header h3 {
         margin: 0;
         min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .flashcards-template-list {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    .flashcards-template-item {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: minmax(8rem, 0.5fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+        min-width: 0;
+    }
+
+    .flashcards-template-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .flashcards-template-help {
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+        margin: 0;
         overflow-wrap: anywhere;
     }
 
@@ -360,6 +389,7 @@
 
         .flashcards-deck-browser-header,
         .flashcards-deck-heading,
+        .flashcards-template-editor-header,
         .flashcards-filtered-deck-editor,
         .flashcards-card-actions,
         .flashcards-deck-move,
@@ -375,7 +405,8 @@
             width: 100%;
         }
 
-        .flashcards-deck-list {
+        .flashcards-deck-list,
+        .flashcards-template-item {
             grid-template-columns: minmax(0, 1fr);
         }
 

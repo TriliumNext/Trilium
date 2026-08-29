@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => {
         getDecks: vi.fn(),
         getCard: vi.fn(),
         createCard: vi.fn(),
+        getTemplates: vi.fn(),
+        setTemplates: vi.fn(),
         getLeeches: vi.fn(),
         reviewCard: vi.fn(),
         setSuspended: vi.fn(),
@@ -46,6 +48,8 @@ vi.mock("../../services/flashcards", () => ({
         getDecks: mocks.getDecks,
         getCard: mocks.getCard,
         createCard: mocks.createCard,
+        getTemplates: mocks.getTemplates,
+        setTemplates: mocks.setTemplates,
         getLeeches: mocks.getLeeches,
         reviewCard: mocks.reviewCard,
         setSuspended: mocks.setSuspended,
@@ -124,6 +128,8 @@ beforeEach(() => {
     host = document.body.appendChild(document.createElement("div"));
     mocks.getStats.mockResolvedValue(statsResponse());
     mocks.getDecks.mockResolvedValue({ decks: [] });
+    mocks.getTemplates.mockResolvedValue({ templates: [] });
+    mocks.setTemplates.mockResolvedValue({ templates: [] });
 });
 
 afterEach(() => {
@@ -309,6 +315,50 @@ describe("flashcards review dialog", () => {
         expect(flashcardsCss).toContain("white-space: normal");
         expect(flashcardsCss).toContain("@media (prefers-reduced-motion: reduce)");
         expect(flashcardsCss).toContain("transition: none");
+    });
+
+    it("edits note-scoped card templates with shared form controls", async () => {
+        mocks.createCard.mockResolvedValue(makeCard());
+        mocks.getTemplates.mockResolvedValue({
+            templates: [ { name: "Reverse", front: "{{content}}", back: "{{title}}" } ]
+        });
+        mocks.setTemplates.mockResolvedValue({
+            templates: [ { name: "Reverse", front: "{{content}}", back: "{{title}}" } ]
+        });
+
+        await openDialog({ noteId: "note1" });
+
+        const editButton = findButtonByText("flashcards.edit_templates");
+        if (!editButton) {
+            throw new Error("Expected template edit button");
+        }
+
+        await act(async () => {
+            editButton.click();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(mocks.getTemplates).toHaveBeenCalledWith("note1");
+        expect(host.querySelector(".flashcards-template-editor")?.textContent)
+            .toContain("flashcards.template_help");
+        expect(host.querySelector(".flashcards-template-item input")?.getAttribute("aria-label"))
+            .toBe("flashcards.template_name");
+        expect(host.querySelectorAll(".flashcards-template-item textarea").length).toBe(2);
+
+        const saveButton = findButtonByText("flashcards.save_templates");
+        if (!saveButton) {
+            throw new Error("Expected template save button");
+        }
+
+        await act(async () => {
+            saveButton.click();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(mocks.setTemplates).toHaveBeenCalledWith("note1", {
+            templates: [ { name: "Reverse", front: "{{content}}", back: "{{title}}" } ]
+        });
+        expect(mocks.showMessage).toHaveBeenCalledWith("flashcards.templates_saved");
     });
 
     it("creates a filtered deck with accessible shared form controls", async () => {

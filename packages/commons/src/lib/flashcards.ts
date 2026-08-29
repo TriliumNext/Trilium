@@ -82,6 +82,20 @@ export interface FlashcardCreateRequest {
     deckNoteId?: string;
 }
 
+export interface FlashcardTemplate {
+    name: string;
+    front: string;
+    back: string;
+}
+
+export interface FlashcardTemplatesResponse {
+    templates: FlashcardTemplate[];
+}
+
+export interface FlashcardTemplatesUpdateRequest {
+    templates: FlashcardTemplate[];
+}
+
 export interface FlashcardReviewRequest {
     rating: FlashcardRating;
     durationMs?: number;

@@ -5,6 +5,7 @@ import type {
     FlashcardLeechSummary,
     FlashcardReviewCard,
     FlashcardReviewPreview,
+    FlashcardTemplate,
     FlashcardReviewResponse,
     FlashcardStatsResponse
 } from "@triliumnext/commons";
@@ -20,6 +21,7 @@ import { formatDateTime } from "../../utils/formatters";
 import { Badge } from "../react/Badge";
 import Button from "../react/Button";
 import FormSelect from "../react/FormSelect";
+import FormTextArea from "../react/FormTextArea";
 import FormTextBox from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
@@ -46,6 +48,7 @@ export default function FlashcardsDialog() {
     const [ currentCard, setCurrentCard ] = useState<FlashcardReviewCard | null>(null);
     const [ decks, setDecks ] = useState<FlashcardDeckSummary[]>([]);
     const [ selectedDeckNoteId, setSelectedDeckNoteId ] = useState<string | null>(null);
+    const [ sourceNoteId, setSourceNoteId ] = useState<string | null>(null);
     const [ stats, setStats ] = useState<FlashcardStatsResponse | null>(null);
     const [ dueQueueTotal, setDueQueueTotal ] = useState(0);
     const [ answerShown, setAnswerShown ] = useState(false);
@@ -67,6 +70,7 @@ export default function FlashcardsDialog() {
         setDueQueueTotal(0);
         setDecks([]);
         setSelectedDeckNoteId(deckNoteId ?? null);
+        setSourceNoteId(noteId ?? null);
         setAnswerShown(false);
         setReviewRequestId(randomString());
         setUndoableReview(null);
@@ -561,6 +565,11 @@ export default function FlashcardsDialog() {
                 {stats && stats.leechCount > 0 && (
                     <LeechSection onOpenNote={(noteId) => void openDialog({ noteId })} />
                 )}
+                {!loading && stats && sourceNoteId && <TemplateEditor
+                    noteId={sourceNoteId}
+                    disabled={submitting}
+                    onSaved={() => openDialog({ noteId: sourceNoteId, deckNoteId: selectedDeckNoteId ?? undefined })}
+                />}
                 {!loading && stats && <DeckBrowser
                     decks={decks}
                     stats={stats}
@@ -597,6 +606,155 @@ export default function FlashcardsDialog() {
             </div>
         </Modal>
     );
+}
+
+function TemplateEditor({ noteId, disabled, onSaved }: {
+    noteId: string;
+    disabled: boolean;
+    onSaved: () => Promise<void>;
+}) {
+    const [ editing, setEditing ] = useState(false);
+    const [ loading, setLoading ] = useState(false);
+    const [ saving, setSaving ] = useState(false);
+    const [ templates, setTemplates ] = useState<FlashcardTemplate[]>([]);
+    const [ error, setError ] = useState<string | null>(null);
+
+    async function openEditor() {
+        if (editing) {
+            setEditing(false);
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await flashcards.getTemplates(noteId);
+            setTemplates(response.templates.length > 0
+                ? response.templates
+                : [ createDefaultTemplate(1) ]);
+            setEditing(true);
+        } catch {
+            setError(t("flashcards.templates_load_failed"));
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function updateTemplate(index: number, patch: Partial<FlashcardTemplate>) {
+        setTemplates(templates.map((template, templateIndex) => templateIndex === index
+            ? { ...template, ...patch }
+            : template));
+    }
+
+    async function saveTemplates() {
+        setSaving(true);
+        setError(null);
+        try {
+            await flashcards.setTemplates(noteId, { templates });
+            toast.showMessage(t("flashcards.templates_saved"));
+            setEditing(false);
+            await onSaved();
+        } catch {
+            setError(t("flashcards.templates_save_failed"));
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <section className="flashcards-template-editor" aria-label={t("flashcards.templates")}>
+            <header className="flashcards-template-editor-header">
+                <h3>{t("flashcards.templates")}</h3>
+                <Button
+                    text={editing ? t("flashcards.cancel") : t("flashcards.edit_templates")}
+                    icon="bx-card"
+                    disabled={disabled || loading || saving}
+                    size="small"
+                    onClick={() => void openEditor()}
+                />
+            </header>
+            {error && <span className="flashcards-reschedule-error" role="alert">{error}</span>}
+            {editing && <div className="flashcards-template-list">
+                {templates.map((template, index) => <article
+                    className="flashcards-template-item"
+                    key={index}
+                >
+                    <FormTextBox
+                        aria-label={t("flashcards.template_name")}
+                        currentValue={template.name}
+                        disabled={saving}
+                        placeholder={t("flashcards.template_name")}
+                        onChange={(name) => updateTemplate(index, { name })}
+                    />
+                    <FormTextArea
+                        aria-label={t("flashcards.template_front")}
+                        currentValue={template.front}
+                        disabled={saving}
+                        placeholder={t("flashcards.template_front_placeholder", {
+                            title: "{{title}}",
+                            content: "{{content}}"
+                        })}
+                        rows={2}
+                        onChange={(front) => updateTemplate(index, { front })}
+                    />
+                    <FormTextArea
+                        aria-label={t("flashcards.template_back")}
+                        currentValue={template.back}
+                        disabled={saving}
+                        placeholder={t("flashcards.template_back_placeholder", {
+                            title: "{{title}}",
+                            content: "{{content}}"
+                        })}
+                        rows={2}
+                        onChange={(back) => updateTemplate(index, { back })}
+                    />
+                    <Button
+                        text={t("flashcards.remove_template")}
+                        icon="bx-trash"
+                        disabled={saving || templates.length === 1}
+                        size="small"
+                        onClick={() => setTemplates(
+                            templates.filter((_, templateIndex) => templateIndex !== index)
+                        )}
+                    />
+                </article>)}
+                <div className="flashcards-template-actions">
+                    <Button
+                        text={t("flashcards.add_template")}
+                        icon="bx-plus"
+                        disabled={saving || templates.length >= 8}
+                        size="small"
+                        onClick={() => setTemplates([
+                            ...templates,
+                            createDefaultTemplate(templates.length + 1)
+                        ])}
+                    />
+                    <Button
+                        text={t("flashcards.save_templates")}
+                        icon="bx-check"
+                        disabled={saving}
+                        size="small"
+                        onClick={() => void saveTemplates()}
+                    />
+                </div>
+                <p className="flashcards-template-help">
+                    {t("flashcards.template_help", {
+                        title: "{{title}}",
+                        content: "{{content}}",
+                        ordinal: "{{ordinal}}"
+                    })}
+                </p>
+            </div>}
+        </section>
+    );
+}
+
+function createDefaultTemplate(index: number): FlashcardTemplate {
+    return {
+        name: t("flashcards.template_default_name", { index }),
+        front: "{{title}}",
+        back: "{{content}}"
+    };
 }
 
 function DeckBrowser({

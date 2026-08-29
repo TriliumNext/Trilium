@@ -19,6 +19,8 @@ import type {
     FlashcardSettingsResponse,
     FlashcardSettingsUpdateRequest,
     FlashcardSetDueDateRequest,
+    FlashcardTemplatesResponse,
+    FlashcardTemplatesUpdateRequest,
     FlashcardStatsResponse,
     FlashcardSuspensionRequest,
     FlashcardUndoRequest
@@ -79,6 +81,14 @@ function getPreview(cardId: string) {
 
 function getSettings() {
     return server.get<FlashcardSettingsResponse>("flashcards/settings");
+}
+
+function getTemplates(noteId: string) {
+    return server.get<FlashcardTemplatesResponse>(`flashcards/notes/${noteId}/templates`);
+}
+
+function setTemplates(noteId: string, request: FlashcardTemplatesUpdateRequest) {
+    return server.put<FlashcardTemplatesResponse>(`flashcards/notes/${noteId}/templates`, request);
 }
 
 function setSettings(request: FlashcardSettingsUpdateRequest) {
@@ -207,6 +217,8 @@ export default {
     getCardForNote,
     getPreview,
     getSettings,
+    getTemplates,
+    setTemplates,
     setSettings,
     getStats,
     getLeeches,

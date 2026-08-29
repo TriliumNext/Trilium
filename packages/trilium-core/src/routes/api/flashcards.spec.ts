@@ -7,7 +7,8 @@ import type {
     FlashcardReviewCard,
     FlashcardReviewResponse,
     FlashcardSettingsResponse,
-    FlashcardStatsResponse
+    FlashcardStatsResponse,
+    FlashcardTemplatesResponse
 } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -96,6 +97,52 @@ describe("Flashcards API (core)", () => {
         await api.put<FlashcardSettingsResponse>("/api/flashcards/settings", {
             body: { schedulerConfig: getRes.body.schedulerConfig }
         });
+    });
+
+    it("reads, saves, and syncs custom flashcard templates", async () => {
+        const note = createTextNote("API template source", "<p>API back</p>");
+
+        const emptyRes = await api.get<FlashcardTemplatesResponse>(
+            `/api/flashcards/notes/${note.noteId}/templates`
+        );
+        expect(emptyRes.status).toBe(200);
+        expect(emptyRes.body.templates).toEqual([]);
+
+        const saveRes = await api.put<FlashcardTemplatesResponse>(
+            `/api/flashcards/notes/${note.noteId}/templates`,
+            {
+                body: {
+                    templates: [
+                        { name: "Forward", front: "{{title}}", back: "{{content}}" },
+                        { name: "Reverse", front: "{{content}}", back: "{{title}} #{{ordinal}}" }
+                    ]
+                }
+            }
+        );
+        expect(saveRes.status).toBe(200);
+        expect(saveRes.body.templates).toHaveLength(2);
+
+        const createRes = await api.post<FlashcardReviewCard>("/api/flashcards/cards", {
+            body: { noteId: note.noteId }
+        });
+        expect(createRes.status).toBe(200);
+        expect(createRes.body.front).toBe("API template source");
+        expect(createRes.body.back).toBe("<p>API back</p>");
+
+        const dueRes = await api.get<FlashcardDueResponse>("/api/flashcards/due", {
+            query: { limit: 100 }
+        });
+        const templateCards = dueRes.body.cards
+            .filter((card) => card.noteId === note.noteId)
+            .sort((a, b) => a.ordinal - b.ordinal);
+        expect(templateCards.map((card) => card.ordinal)).toEqual([0, 1]);
+        expect(templateCards[1]?.front).toBe("<p>API back</p>");
+
+        const invalidRes = await api.put<{ message: string }>(
+            `/api/flashcards/notes/${note.noteId}/templates`,
+            { body: { templates: [ { name: "Bad", front: "", back: "x" } ] } }
+        );
+        expect(invalidRes.status).toBe(400);
     });
 
     it("creates, lists, fetches, and reviews cards", async () => {

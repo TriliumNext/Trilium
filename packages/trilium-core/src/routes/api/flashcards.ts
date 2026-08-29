@@ -7,6 +7,7 @@ import type {
     FlashcardReviewRequest,
     FlashcardSettingsUpdateRequest,
     FlashcardSetDueDateRequest,
+    FlashcardTemplatesUpdateRequest,
     FlashcardSuspensionRequest,
     FlashcardUndoRequest
 } from "@triliumnext/commons";
@@ -36,6 +37,14 @@ function getCard(req: Request<{ cardId: string }>) {
 
 function getCardForNote(req: Request<{ noteId: string }>) {
     return flashcardService.getCardForNote(req.params.noteId);
+}
+
+function getTemplates(req: Request<{ noteId: string }>) {
+    return flashcardService.getTemplates(req.params.noteId);
+}
+
+function setTemplates(req: Request<{ noteId: string }, {}, FlashcardTemplatesUpdateRequest>) {
+    return flashcardService.setTemplates(req.params.noteId, req.body);
 }
 
 function getPreview(req: Request<{ cardId: string }>) {
@@ -112,6 +121,8 @@ export default {
     getDueCards,
     getCard,
     getCardForNote,
+    getTemplates,
+    setTemplates,
     getPreview,
     getSettings,
     setSettings,

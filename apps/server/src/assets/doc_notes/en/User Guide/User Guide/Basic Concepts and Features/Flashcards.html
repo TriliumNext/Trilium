@@ -4,6 +4,14 @@
 <p>For fill-in-the-blank cards, use cloze deletions inside text notes:</p>
 <pre><code class="language-text">The capital of France is {{c1::Paris}}.</code></pre>
 <p>Use the cloze toolbar button to wrap selected text. Repeated <code spellcheck="false">c1</code>, <code spellcheck="false">c2</code>, and later numbers become separate cloze cards for the same note.</p>
+<h2>Card templates</h2>
+<p>When you start flashcards from a note, use <strong>Edit templates</strong> to create multiple basic cards from the same note. Templates use these placeholders:</p>
+<ul>
+  <li><code spellcheck="false">{{title}}</code> - note title,</li>
+  <li><code spellcheck="false">{{content}}</code> - note body,</li>
+  <li><code spellcheck="false">{{ordinal}}</code> - card number for the current template.</li>
+</ul>
+<p>For example, a reverse card can use <code spellcheck="false">{{content}}</code> on the front and <code spellcheck="false">{{title}}</code> on the back. Saving templates syncs the card set for the note while keeping existing schedules for templates whose position did not change.</p>
 <h2>Reviewing cards</h2>
 <p>Open flashcards from the launcher bar, command palette, or note actions. The review dialog shows due cards first, then learning cards, then new cards.</p>
 <p>After revealing the answer, choose one of the ratings:</p>

@@ -13,6 +13,16 @@ The capital of France is {{c1::Paris}}.
 
 Use the cloze toolbar button to wrap selected text. Repeated `c1`, `c2`, and later numbers become separate cloze cards for the same note.
 
+## Card templates
+
+When you start flashcards from a note, use **Edit templates** to create multiple basic cards from the same note. Templates use these placeholders:
+
+*   `{{title}}` - note title,
+*   `{{content}}` - note body,
+*   `{{ordinal}}` - card number for the current template.
+
+For example, a reverse card can use `{{content}}` on the front and `{{title}}` on the back. Saving templates syncs the card set for the note while keeping existing schedules for templates whose position did not change.
+
 ## Reviewing cards
 
 Open flashcards from the launcher bar, command palette, or note actions. The review dialog shows due cards first, then learning cards, then new cards.

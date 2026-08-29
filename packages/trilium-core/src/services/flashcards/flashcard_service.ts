@@ -27,7 +27,10 @@ import type {
     FlashcardStatsResponse,
     FlashcardSuspensionRequest,
     FlashcardUndoRequest,
-    FlashcardSetDueDateRequest
+    FlashcardSetDueDateRequest,
+    FlashcardTemplate,
+    FlashcardTemplatesResponse,
+    FlashcardTemplatesUpdateRequest
 } from "@triliumnext/commons";
 
 import becca from "../../becca/becca.js";
@@ -57,11 +60,14 @@ const MAX_DUE_LIMIT = 100;
 const BURY_DURATION_MS = 24 * 60 * 60 * 1000;
 const FLASHCARD_LABEL = "flashcard";
 const FLASHCARD_FRONT_HTML_LABEL = "flashcardFrontHtml";
+const FLASHCARD_TEMPLATES_LABEL = "flashcardTemplates";
 const FLASHCARD_LEECH_LABEL = "flashcardLeech";
 const FLASHCARD_LEECH_THRESHOLD = 8;
 const FLASHCARD_SCHEDULER_CONFIG_OPTION = "flashcardSchedulerConfig";
 const FLASHCARD_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_REVIEW_DURATION_MS = 24 * 60 * 60 * 1000;
+const MAX_FLASHCARD_TEMPLATES = 8;
+const MAX_FLASHCARD_TEMPLATE_TEXT_LENGTH = 10_000;
 
 function createCard(request: FlashcardCreateRequest) {
     assertValidId(request?.noteId, "noteId");
@@ -89,6 +95,18 @@ function createCard(request: FlashcardCreateRequest) {
 
     if (clozeIndices.length > 0) {
         return createClozeCards(note.noteId, deckNoteId, clozeIndices);
+    }
+
+    const templates = getNoteFlashcardTemplates(note.noteId);
+    if (templates.length > 0) {
+        ensureFlashcardLabel(note.noteId);
+        syncBasicTemplateRows(note.noteId, deckNoteId, templates);
+        const existing = getSql().getRow<FlashcardRow>(/*sql*/`
+            SELECT * FROM flashcards
+            WHERE noteId = ? AND isDeleted = 0
+            ORDER BY ordinal ASC LIMIT 1`, [note.noteId]);
+
+        return buildReviewCard(existing, { includeBack: true });
     }
 
     const existing = getSql().getRow<FlashcardRow | null>(/*sql*/`
@@ -192,11 +210,18 @@ function syncNoteCards(noteId: string) {
     }
 
     const clozeIndices = extractClozeIndices(content);
+    const deckNoteId = getExistingDeckForNote(noteId);
+    const templates = getNoteFlashcardTemplates(noteId);
+
     if (clozeIndices.length === 0) {
-        return { createdCount: 0, removedCount: 0 };
+        if (templates.length === 0) {
+            return { createdCount: 0, removedCount: 0 };
+        }
+
+        ensureFlashcardLabel(noteId);
+        return syncBasicTemplateRows(noteId, deckNoteId, templates);
     }
 
-    const deckNoteId = getExistingDeckForNote(noteId);
     ensureFlashcardLabel(noteId);
     const createdCount = syncClozeRows(noteId, deckNoteId, clozeIndices);
 
@@ -205,7 +230,7 @@ function syncNoteCards(noteId: string) {
     const stale = getSql().getRows<FlashcardRow>(/*sql*/`
         SELECT * FROM flashcards
         WHERE noteId = ? AND isDeleted = 0`, [noteId])
-        .filter((row) => !liveIndices.has((row.ordinal ?? 0) + 1));
+        .filter((row) => row.cardType !== "cloze" || !liveIndices.has((row.ordinal ?? 0) + 1));
 
     const deleteId = randomString(10);
     for (const row of stale) {
@@ -225,6 +250,49 @@ function getExistingDeckForNote(noteId: string) {
         WHERE noteId = ? AND isDeleted = 0 LIMIT 1`, [noteId]);
 
     return row?.deckNoteId || getDefaultDeckNoteId(noteId);
+}
+
+function syncBasicTemplateRows(
+    noteId: string,
+    deckNoteId: string,
+    templates: FlashcardTemplate[]
+) {
+    let created = 0;
+    const now = new Date();
+
+    for (const [ ordinal ] of templates.entries()) {
+        const existing = getSql().getRow<{ cardId: string } | undefined>(/*sql*/`
+            SELECT cardId FROM flashcards
+            WHERE noteId = ? AND ordinal = ? AND isDeleted = 0`, [noteId, ordinal]);
+
+        if (!existing) {
+            new BFlashcard({
+                ...createEmptyFlashcardSchedule(now, getCurrentSchedulerConfig()),
+                noteId,
+                deckNoteId,
+                ordinal,
+                cardType: "basic"
+            }).save();
+            created++;
+        }
+    }
+
+    const stale = getSql().getRows<FlashcardRow>(/*sql*/`
+        SELECT * FROM flashcards
+        WHERE noteId = ? AND isDeleted = 0`, [noteId])
+        .filter((row) => (row.cardType ?? "basic") === "basic")
+        .filter((row) => (row.ordinal ?? 0) >= templates.length);
+
+    const deleteId = randomString(10);
+    for (const row of stale) {
+        const flashcard = becca.flashcards[row.cardId || ""] ?? new BFlashcard(row);
+        flashcard.markAsDeleted(deleteId);
+        if (row.cardId) {
+            delete becca.flashcards[row.cardId];
+        }
+    }
+
+    return { createdCount: created, removedCount: stale.length };
 }
 
 function ensureFlashcardLabel(noteId: string) {
@@ -576,6 +644,51 @@ function getSettings(): FlashcardSettingsResponse {
     return {
         schedulerConfig: getCurrentSchedulerConfig()
     };
+}
+
+function getTemplates(noteId: string): FlashcardTemplatesResponse {
+    assertValidId(noteId, "noteId");
+    becca.getNoteOrThrow(noteId);
+
+    return { templates: getNoteFlashcardTemplates(noteId) };
+}
+
+function setTemplates(
+    noteId: string,
+    request: FlashcardTemplatesUpdateRequest
+): FlashcardTemplatesResponse {
+    assertValidId(noteId, "noteId");
+    const note = becca.getNoteOrThrow(noteId);
+    const templates = normalizeFlashcardTemplates(request?.templates);
+    const label = note.getOwnedLabel(FLASHCARD_TEMPLATES_LABEL);
+
+    if (templates.length === 0) {
+        if (label) {
+            label.value = "[]";
+            label.save();
+        }
+        return { templates };
+    }
+
+    const value = JSON.stringify(templates);
+    if (label) {
+        label.value = value;
+        label.save();
+    } else {
+        new BAttribute({
+            noteId,
+            type: "label",
+            name: FLASHCARD_TEMPLATES_LABEL,
+            value,
+            isInheritable: false
+        }).save();
+    }
+
+    if (note.hasLabel(FLASHCARD_LABEL)) {
+        syncNoteCards(noteId);
+    }
+
+    return { templates };
 }
 
 function setSettings(request: FlashcardSettingsUpdateRequest): FlashcardSettingsResponse {
@@ -1202,24 +1315,53 @@ function buildReviewCard(
     }
 
     const content = note.getContent();
+    const contentText = typeof content === "string" ? content : "";
     const importedFrontHtml = note.getOwnedLabelValue(FLASHCARD_FRONT_HTML_LABEL);
+    const templates = getNoteFlashcardTemplates(note.noteId);
+    const template = card.cardType === "basic" ? templates[card.ordinal ?? 0] : undefined;
     const isCloze = card.cardType === "cloze";
+    const front = template
+        ? renderFlashcardTemplate(template.front, note.title, contentText, card.ordinal ?? 0)
+        : importedFrontHtml ?? (isCloze && typeof content === "string"
+            ? renderClozeFront(content, card.ordinal ?? 0)
+            : note.title);
     const reviewCard: FlashcardReviewCard = {
         ...buildCardSummary(card),
-        front: importedFrontHtml ?? (isCloze && typeof content === "string"
-            ? renderClozeFront(content, card.ordinal ?? 0)
-            : note.title),
-        frontIsHtml: importedFrontHtml !== null,
+        front,
+        frontIsHtml: !!template || importedFrontHtml !== null,
         previews: previewFlashcard(card, new Date(), getCurrentSchedulerConfig())
     };
 
     if (includeBack) {
-        reviewCard.back = typeof content === "string"
-            ? (isCloze ? renderClozeBack(content, card.ordinal ?? 0) : content)
-            : "";
+        reviewCard.back = template
+            ? renderFlashcardTemplate(template.back, note.title, contentText, card.ordinal ?? 0)
+            : (typeof content === "string"
+                ? (isCloze ? renderClozeBack(content, card.ordinal ?? 0) : content)
+                : "");
     }
 
     return reviewCard;
+}
+
+function renderFlashcardTemplate(
+    template: string,
+    title: string,
+    content: string,
+    ordinal: number
+) {
+    return template
+        .replaceAll("{{title}}", escapeHtml(title))
+        .replaceAll("{{content}}", content)
+        .replaceAll("{{ordinal}}", String(ordinal + 1));
+}
+
+function escapeHtml(value: string) {
+    return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
 }
 
 function buildCardSummary(card: FlashcardRow): FlashcardCardSummary {
@@ -1269,6 +1411,68 @@ function removeLeechLabel(noteId: string, deleteId = randomString(10)) {
     if (leechLabel) {
         leechLabel.markAsDeleted(deleteId);
     }
+}
+
+function getNoteFlashcardTemplates(noteId: string): FlashcardTemplate[] {
+    const labelValue = becca.getNoteOrThrow(noteId).getOwnedLabelValue(FLASHCARD_TEMPLATES_LABEL);
+    if (!labelValue) {
+        return [];
+    }
+
+    try {
+        return normalizeFlashcardTemplates(JSON.parse(labelValue));
+    } catch {
+        throw new ValidationError("Invalid flashcardTemplates label JSON.");
+    }
+}
+
+function normalizeFlashcardTemplates(input: unknown): FlashcardTemplate[] {
+    if (!Array.isArray(input)) {
+        throw new ValidationError("Flashcard templates must be an array.");
+    }
+
+    if (input.length > MAX_FLASHCARD_TEMPLATES) {
+        throw new ValidationError(`At most ${MAX_FLASHCARD_TEMPLATES} flashcard templates are supported.`);
+    }
+
+    return input.map((template, index) => normalizeFlashcardTemplate(template, index));
+}
+
+function normalizeFlashcardTemplate(template: unknown, index: number): FlashcardTemplate {
+    if (!template || typeof template !== "object") {
+        throw new ValidationError(`Flashcard template ${index + 1} must be an object.`);
+    }
+
+    const candidate = template as Partial<FlashcardTemplate>;
+    const name = candidate.name === undefined
+        ? `Card ${index + 1}`
+        : normalizeFlashcardTemplateText(candidate.name, `template ${index + 1} name`) || `Card ${index + 1}`;
+    const front = normalizeFlashcardTemplateText(candidate.front, `template ${index + 1} front`);
+    const back = normalizeFlashcardTemplateText(candidate.back, `template ${index + 1} back`);
+
+    if (!front.trim()) {
+        throw new ValidationError(`Flashcard template ${index + 1} front must not be empty.`);
+    }
+
+    if (!back.trim()) {
+        throw new ValidationError(`Flashcard template ${index + 1} back must not be empty.`);
+    }
+
+    return { name, front, back };
+}
+
+function normalizeFlashcardTemplateText(value: unknown, fieldName: string) {
+    if (typeof value !== "string") {
+        throw new ValidationError(`Flashcard ${fieldName} must be a string.`);
+    }
+
+    if (value.length > MAX_FLASHCARD_TEMPLATE_TEXT_LENGTH) {
+        throw new ValidationError(
+            `Flashcard ${fieldName} must be at most ${MAX_FLASHCARD_TEMPLATE_TEXT_LENGTH} characters.`
+        );
+    }
+
+    return value.trim();
 }
 
 function getCurrentSchedulerConfig() {
@@ -1326,6 +1530,8 @@ export default {
     getCardForNote,
     getPreview,
     getSettings,
+    getTemplates,
+    setTemplates,
     setSettings,
     getStats,
     setSuspended,

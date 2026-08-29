@@ -65,7 +65,7 @@
 
 ## Optional future UI
 
-- [ ] Card template editor and multiple cards per note.
+- [x] Card template editor and multiple cards per note. Note-scoped review sessions expose an editor backed by the synced `flashcardTemplates` label; each template renders one basic card via `{{title}}`, `{{content}}`, and `{{ordinal}}` placeholders.
 - [x] Cloze review rendering (server-rendered elisions, cloze number in card meta, background sync on note-scoped open).
 - [x] Cloze editor toolbar integration: wraps selected rich text, inserts a selected `text` placeholder at a collapsed caret, and increments the highest canonical `cN` index.
 - [x] Filtered/custom study decks backed by saved-search notes and current query membership.

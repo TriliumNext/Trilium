@@ -90,6 +90,44 @@ describe("flashcard service", () => {
         expect(rowCount).toBe(1);
     });
 
+    it("creates and renders one basic card per custom template", () => {
+        const note = createTextNote("Template source", "<p>Template back</p>");
+
+        const saved = runInContext(() => flashcardService.setTemplates(note.noteId, {
+            templates: [
+                { name: "Forward", front: "{{title}}", back: "{{content}}" },
+                { name: "Reverse", front: "{{content}}", back: "{{title}} #{{ordinal}}" }
+            ]
+        }));
+        const first = runInContext(() => flashcardService.createCard({ noteId: note.noteId }));
+        const sync = runInContext(() => flashcardService.syncNoteCards(note.noteId));
+        const rows = getSql().getRows<FlashcardRow>(/*sql*/`
+            SELECT * FROM flashcards
+            WHERE noteId = ? AND isDeleted = 0
+            ORDER BY ordinal`, [note.noteId]);
+        const second = runInContext(() => flashcardService.getCard(rows[1]?.cardId || ""));
+
+        expect(saved.templates.map((template) => template.name)).toEqual(["Forward", "Reverse"]);
+        expect(first.front).toBe("Template source");
+        expect(first.frontIsHtml).toBe(true);
+        expect(note.hasLabel("flashcard")).toBe(true);
+        expect(first.back).toBe("<p>Template back</p>");
+        expect(sync).toEqual({ createdCount: 0, removedCount: 0 });
+        expect(rows.map((row) => row.ordinal)).toEqual([0, 1]);
+        expect(second.front).toBe("<p>Template back</p>");
+        expect(second.back).toBe("Template source #2");
+
+        const trimmed = runInContext(() => flashcardService.setTemplates(note.noteId, {
+            templates: [ { name: "Only", front: "{{title}}", back: "{{content}}" } ]
+        }));
+        const liveCount = getSql().getValue<number>(/*sql*/`
+            SELECT COUNT(1) FROM flashcards
+            WHERE noteId = ? AND isDeleted = 0`, [note.noteId]);
+
+        expect(trimmed.templates).toHaveLength(1);
+        expect(liveCount).toBe(1);
+    });
+
     it("uses imported rich front HTML when present", () => {
         const note = createTextNote("Imported plain title", "Rendered back");
         runInContext(() => new BAttribute({

@@ -54,9 +54,12 @@ describe("flashcards client service", () => {
             .mockResolvedValueOnce({ cardId: "card1", previews: [] })
             .mockResolvedValueOnce({ dueCount: 0 })
             .mockResolvedValueOnce({ schedulerConfig: { requestRetention: 0.9 } })
+            .mockResolvedValueOnce({ templates: [] })
             .mockResolvedValueOnce(null)
             .mockResolvedValueOnce({ format: "trilium-flashcards", cards: [], reviews: [] });
-        serverMock.put.mockResolvedValueOnce({ schedulerConfig: { requestRetention: 0.85 } });
+        serverMock.put
+            .mockResolvedValueOnce({ schedulerConfig: { requestRetention: 0.85 } })
+            .mockResolvedValueOnce({ templates: [ { name: "Reverse", front: "{{content}}", back: "{{title}}" } ] });
         serverMock.remove.mockResolvedValueOnce({ removedCount: 1 });
         serverMock.post.mockResolvedValueOnce({ createdCards: 1, updatedCards: 0, skippedCards: 0, importedReviews: 2 });
 
@@ -68,6 +71,10 @@ describe("flashcards client service", () => {
         await flashcards.getStats();
         await flashcards.getSettings();
         await flashcards.setSettings({ schedulerConfig });
+        await flashcards.getTemplates("note1");
+        await flashcards.setTemplates("note1", {
+            templates: [ { name: "Reverse", front: "{{content}}", back: "{{title}}" } ]
+        });
         await flashcards.removeCardsForNote("note1");
         const noteCard = await flashcards.getCardForNote("note1");
         await flashcards.exportAll();
@@ -86,11 +93,15 @@ describe("flashcards client service", () => {
         expect(serverMock.get).toHaveBeenNthCalledWith(4, "flashcards/cards/card1/preview");
         expect(serverMock.get).toHaveBeenNthCalledWith(5, "flashcards/stats");
         expect(serverMock.get).toHaveBeenNthCalledWith(6, "flashcards/settings");
-        expect(serverMock.put).toHaveBeenCalledWith("flashcards/settings", { schedulerConfig });
+        expect(serverMock.put).toHaveBeenNthCalledWith(1, "flashcards/settings", { schedulerConfig });
+        expect(serverMock.get).toHaveBeenNthCalledWith(7, "flashcards/notes/note1/templates");
+        expect(serverMock.put).toHaveBeenNthCalledWith(2, "flashcards/notes/note1/templates", {
+            templates: [ { name: "Reverse", front: "{{content}}", back: "{{title}}" } ]
+        });
         expect(serverMock.remove).toHaveBeenCalledWith("flashcards/notes/note1/cards");
-        expect(serverMock.get).toHaveBeenNthCalledWith(7, "flashcards/notes/note1/card");
+        expect(serverMock.get).toHaveBeenNthCalledWith(8, "flashcards/notes/note1/card");
         expect(noteCard).toBeNull();
-        expect(serverMock.get).toHaveBeenNthCalledWith(8, "flashcards/export");
+        expect(serverMock.get).toHaveBeenNthCalledWith(9, "flashcards/export");
         expect(serverMock.post).toHaveBeenCalledWith("flashcards/import", {
             payload: { format: "trilium-flashcards", formatVersion: 1, exportedUtc: "", cards: [], reviews: [] }
         });
