@@ -1,4 +1,5 @@
 import type { FlashcardReviewCard } from "@triliumnext/commons";
+import { readFileSync } from "fs";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -66,12 +67,13 @@ vi.mock("../react/hooks", async (importOriginal) => ({
 }));
 
 vi.mock("../react/Modal", () => ({
-    default: ({ children, footer, show }: {
+    default: ({ children, className, footer, show }: {
         children?: unknown;
+        className?: string;
         footer?: unknown;
         show?: boolean;
     }) => (show
-        ? <div className="modal-stub">{children}{footer}</div>
+        ? <div className={`modal modal-stub ${className ?? ""}`}>{children}{footer}</div>
         : null)
 }));
 
@@ -282,6 +284,7 @@ describe("flashcards review dialog", () => {
 
         await openDialog();
 
+        expect(host.querySelector(".modal.flashcards-dialog")).toBeTruthy();
         expect(host.querySelector(".flashcards-dialog-body")?.textContent)
             .toContain(longText);
         expect(host.querySelector(".flashcards-deck-list")?.children.length).toBe(1);
@@ -290,6 +293,22 @@ describe("flashcards review dialog", () => {
             .toBeGreaterThanOrEqual(6);
         expect(host.querySelector(".flashcards-card-actions")?.textContent)
             .toContain("flashcards.reschedule_card");
+    });
+
+    it("keeps mobile and reduced-motion responsive CSS coverage", () => {
+        const flashcardsCss = readFileSync("src/widgets/dialogs/flashcards.css", "utf8");
+
+        expect(flashcardsCss).toContain("@media (max-width: 575.98px)");
+        expect(flashcardsCss).toContain(".flashcards-card-actions > .btn");
+        expect(flashcardsCss).toContain(".flashcards-deck-heading > .btn");
+        expect(flashcardsCss).toContain(".flashcards-rating-row .btn");
+        expect(flashcardsCss).toContain("flex-basis: 100%");
+        expect(flashcardsCss).toContain(".flashcards-deck-list");
+        expect(flashcardsCss).toContain("grid-template-columns: minmax(0, 1fr)");
+        expect(flashcardsCss).toContain(".flashcards-leech-title");
+        expect(flashcardsCss).toContain("white-space: normal");
+        expect(flashcardsCss).toContain("@media (prefers-reduced-motion: reduce)");
+        expect(flashcardsCss).toContain("transition: none");
     });
 
     it("creates a filtered deck with accessible shared form controls", async () => {
