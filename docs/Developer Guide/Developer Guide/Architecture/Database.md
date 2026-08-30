@@ -3,6 +3,10 @@ Trilium uses **SQLite** (via `better-sqlite3`) as its embedded database engine, 
 
 Schema location: `apps/server/src/assets/db/schema.sql`
 
+Flashcards add two synchronized tables: `flashcards` stores card scheduling state and
+`flashcard_reviews` stores review history used for audit, sync, import/export and conflict-safe
+replay.
+
 ### Data Access Patterns
 
 **Direct SQL:**
