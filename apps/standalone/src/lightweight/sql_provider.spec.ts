@@ -1,5 +1,6 @@
 import { getSql } from "@triliumnext/core";
 import type { Statement } from "@triliumnext/core";
+import { readAnkiCollectionMetadata } from "@triliumnext/core/src/services/import/anki.js";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import BrowserSqlProvider from "./sql_provider.js";
@@ -80,6 +81,31 @@ describe("BrowserSqlProvider initialization", () => {
         const noDb = newProviderWithModule();
         expect(noDb.isOpen()).toBe(false);
         expect(() => noDb.exec("SELECT 1")).toThrow("Database not opened");
+    });
+});
+
+describe("BrowserSqlProvider backup bytes", () => {
+    it("serializes and restores flashcard tables", () => {
+        const source = newProviderWithModule();
+        source.loadFromMemory();
+        source.exec(/*sql*/`
+            CREATE TABLE flashcards (cardId TEXT PRIMARY KEY, noteId TEXT, due TEXT, queue TEXT);
+            CREATE TABLE flashcard_reviews (reviewId TEXT PRIMARY KEY, cardId TEXT, rating INTEGER);
+            INSERT INTO flashcards VALUES ('card-backup', 'note-backup', '2026-01-02T12:00:00.000Z', 'review');
+            INSERT INTO flashcard_reviews VALUES ('review-backup', 'card-backup', 3);
+        `);
+
+        const restored = newProviderWithModule();
+        restored.loadFromBuffer(source.serialize());
+
+        expect(restored.prepare("SELECT cardId, due, queue FROM flashcards").all()).toEqual([
+            { cardId: "card-backup", due: "2026-01-02T12:00:00.000Z", queue: "review" }
+        ]);
+        expect(restored.prepare("SELECT reviewId, cardId, rating FROM flashcard_reviews").all())
+            .toEqual([{ reviewId: "review-backup", cardId: "card-backup", rating: 3 }]);
+
+        restored.close();
+        source.close();
     });
 });
 
@@ -311,6 +337,38 @@ describe("BrowserSqlProvider serialize / load / lifecycle", () => {
         reloaded.loadFromBuffer(Buffer.from(bytes));
         expect(reloaded.isDbInitialized()).toBe(true);
         reloaded.close();
+    });
+
+    it("opens imported SQLite bytes without replacing the live database", () => {
+        const seed = newProviderWithModule();
+        seed.loadFromMemory();
+        seed.exec(/*sql*/`
+            CREATE TABLE imported (value TEXT);
+            INSERT INTO imported VALUES ('anki');
+            CREATE TABLE col (ver INTEGER, decks TEXT, models TEXT);
+            INSERT INTO col VALUES (18, '', '');
+            CREATE TABLE decks (id INTEGER, name TEXT);
+            INSERT INTO decks VALUES (10, 'Languages::French');
+            CREATE TABLE notetypes (id INTEGER, config TEXT);
+            INSERT INTO notetypes VALUES (20, '{}');
+            CREATE TABLE fields (ntid INTEGER, ord INTEGER, name TEXT);
+            INSERT INTO fields VALUES (20, 0, 'Text');
+            CREATE TABLE templates (ntid INTEGER, ord INTEGER, name TEXT, config TEXT);
+            INSERT INTO templates VALUES (20, 0, 'Card 1', '{}');
+        `);
+        const bytes = seed.serialize();
+        seed.close();
+
+        const imported = provider.openReadOnlyDatabase(bytes);
+        expect(imported.getRows("SELECT value FROM imported")).toEqual([{ value: "anki" }]);
+        expect(JSON.parse(readAnkiCollectionMetadata(imported).decks)).toEqual({
+            "10": { id: 10, name: "Languages::French" }
+        });
+        expect(provider.prepare("SELECT COUNT(*) AS count FROM t").pluck().get([])).toEqual(
+            expect.any(Number)
+        );
+        imported.close();
+        imported.close();
     });
 
     it("close() drops the connection and is idempotent", () => {

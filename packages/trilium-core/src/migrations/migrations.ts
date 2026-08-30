@@ -9,6 +9,113 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Distinguish basic question/answer cards from cloze deletion cards.
+    {
+        version: 244,
+        sql: /*sql*/`
+            ALTER TABLE flashcards ADD COLUMN cardType TEXT NOT NULL DEFAULT 'basic';
+        `,
+        ignoreErrors: true
+    },
+    // Store the exact FSRS scheduler config used for cards and review logs.
+    {
+        version: 243,
+        sql: /*sql*/`
+            ALTER TABLE flashcards
+                ADD COLUMN schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"dailyNewCardLimit":20,"dailyReviewLimit":200,"dayRolloverHour":4,"weights":null}';
+            ALTER TABLE flashcard_reviews
+                ADD COLUMN schedulerConfig TEXT NOT NULL DEFAULT '{"requestRetention":0.9,"maximumInterval":36500,"enableFuzz":true,"enableShortTerm":true,"learningSteps":["1m","10m"],"relearningSteps":["10m"],"dailyNewCardLimit":20,"dailyReviewLimit":200,"dayRolloverHour":4,"weights":null}';
+        `,
+        ignoreErrors: true
+    },
+    // Add previous-card snapshot fields for flashcard review undo.
+    {
+        version: 242,
+        sql: /*sql*/`
+            ALTER TABLE flashcard_reviews ADD COLUMN elapsedDaysBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN scheduledDaysBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN learningStepsBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN repsBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN lapsesBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews ADD COLUMN lastReviewBefore TEXT DEFAULT NULL;
+            ALTER TABLE flashcard_reviews
+                ADD COLUMN schedulingRevisionBefore INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE flashcard_reviews
+                ADD COLUMN schedulingRevisionAfter INTEGER NOT NULL DEFAULT 0;
+        `,
+        ignoreErrors: true
+    },
+    // Add flashcards and FSRS review history.
+    {
+        version: 241,
+        sql: /*sql*/`
+            CREATE TABLE IF NOT EXISTS flashcards (
+                cardId TEXT NOT NULL PRIMARY KEY,
+                noteId TEXT NOT NULL,
+                deckNoteId TEXT NOT NULL,
+                ordinal INTEGER NOT NULL DEFAULT 0,
+                state INTEGER NOT NULL,
+                due TEXT NOT NULL,
+                stability REAL NOT NULL DEFAULT 0,
+                difficulty REAL NOT NULL DEFAULT 0,
+                elapsedDays INTEGER NOT NULL DEFAULT 0,
+                scheduledDays INTEGER NOT NULL DEFAULT 0,
+                learningSteps INTEGER NOT NULL DEFAULT 0,
+                reps INTEGER NOT NULL DEFAULT 0,
+                lapses INTEGER NOT NULL DEFAULT 0,
+                lastReview TEXT DEFAULT NULL,
+                suspended INTEGER NOT NULL DEFAULT 0,
+                algorithm TEXT NOT NULL DEFAULT 'fsrs-6',
+                algorithmVersion TEXT NOT NULL DEFAULT 'ts-fsrs@5.4.1',
+                schedulingRevision INTEGER NOT NULL DEFAULT 0,
+                utcDateCreated TEXT NOT NULL,
+                utcDateModified TEXT NOT NULL,
+                isDeleted INTEGER NOT NULL DEFAULT 0,
+                deleteId TEXT DEFAULT NULL
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS IDX_flashcards_noteId_ordinal
+                ON flashcards (noteId, ordinal)
+                WHERE isDeleted = 0;
+            CREATE INDEX IF NOT EXISTS IDX_flashcards_deck_due
+                ON flashcards (deckNoteId, suspended, isDeleted, due);
+            CREATE INDEX IF NOT EXISTS IDX_flashcards_due
+                ON flashcards (suspended, isDeleted, due);
+            CREATE INDEX IF NOT EXISTS IDX_flashcards_noteId
+                ON flashcards (noteId);
+
+            CREATE TABLE IF NOT EXISTS flashcard_reviews (
+                reviewId TEXT NOT NULL PRIMARY KEY,
+                cardId TEXT NOT NULL,
+                rating INTEGER NOT NULL,
+                state INTEGER NOT NULL,
+                dueBefore TEXT NOT NULL,
+                dueAfter TEXT NOT NULL,
+                stabilityBefore REAL NOT NULL,
+                stabilityAfter REAL NOT NULL,
+                difficultyBefore REAL NOT NULL,
+                difficultyAfter REAL NOT NULL,
+                elapsedDays INTEGER NOT NULL,
+                scheduledDays INTEGER NOT NULL,
+                learningSteps INTEGER NOT NULL,
+                reviewedAt TEXT NOT NULL,
+                durationMs INTEGER DEFAULT NULL,
+                algorithm TEXT NOT NULL,
+                algorithmVersion TEXT NOT NULL,
+                clientRequestId TEXT DEFAULT NULL,
+                utcDateCreated TEXT NOT NULL,
+                utcDateModified TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS IDX_flashcard_reviews_card_reviewedAt
+                ON flashcard_reviews (cardId, reviewedAt);
+            CREATE INDEX IF NOT EXISTS IDX_flashcard_reviews_reviewedAt
+                ON flashcard_reviews (reviewedAt);
+            CREATE UNIQUE INDEX IF NOT EXISTS IDX_flashcard_reviews_clientRequestId
+                ON flashcard_reviews (clientRequestId)
+                WHERE clientRequestId IS NOT NULL;
+        `
+    },
     // Give every board its own select definition for the label it groups by, so the columns stop
     // living only in the board.json attachment
     {

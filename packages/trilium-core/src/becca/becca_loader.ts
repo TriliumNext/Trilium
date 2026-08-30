@@ -1,4 +1,4 @@
-import type { AttributeRow, BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
+import type { AttributeRow, BranchRow, EtapiTokenRow, FlashcardRow, NoteRow, OptionRow } from "@triliumnext/commons";
 import eventService from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
@@ -10,6 +10,7 @@ import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
 import BEtapiToken from "./entities/betapi_token.js";
+import BFlashcard from "./entities/bflashcard.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
@@ -62,6 +63,10 @@ function load() {
             new BEtapiToken(row);
         }
 
+        for (const row of sql.getRows<FlashcardRow>(/*sql*/`SELECT * FROM flashcards WHERE isDeleted = 0`)) {
+            new BFlashcard(row);
+        }
+
     });
 
     for (const noteId in becca.notes) {
@@ -84,7 +89,7 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entity
         return;
     }
 
-    if (["notes", "branches", "attributes", "etapi_tokens", "options"].includes(entityName)) {
+    if (["notes", "branches", "attributes", "etapi_tokens", "options", "flashcards"].includes(entityName)) {
         const EntityClass = entityConstructor.getEntityFromEntityName(entityName);
         const primaryKeyName = EntityClass.primaryKeyName;
 
@@ -142,6 +147,8 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_DELETED, eventService.ENT
         attributeDeleted(entityId);
     } else if (entityName === "etapi_tokens") {
         etapiTokenDeleted(entityId);
+    } else if (entityName === "flashcards") {
+        flashcardDeleted(entityId);
     }
 });
 
@@ -275,6 +282,10 @@ function noteReorderingUpdated(branchIdList: number[]) {
 
 function etapiTokenDeleted(etapiTokenId: string) {
     delete becca.etapiTokens[etapiTokenId];
+}
+
+function flashcardDeleted(cardId: string) {
+    delete becca.flashcards[cardId];
 }
 
 

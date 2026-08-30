@@ -1,0 +1,268 @@
+export const FLASHCARD_STATES = [0, 1, 2, 3] as const;
+export type FlashcardState = (typeof FLASHCARD_STATES)[number];
+
+export const FLASHCARD_RATINGS = [1, 2, 3, 4] as const;
+export type FlashcardRating = (typeof FLASHCARD_RATINGS)[number];
+
+export const FLASHCARD_CARD_TYPES = ["basic", "cloze"] as const;
+export type FlashcardCardType = (typeof FLASHCARD_CARD_TYPES)[number];
+
+export interface FlashcardRow {
+    cardId?: string;
+    noteId: string;
+    deckNoteId: string;
+    ordinal?: number;
+    cardType?: FlashcardCardType;
+    state: FlashcardState;
+    due: string;
+    stability: number;
+    difficulty: number;
+    elapsedDays: number;
+    scheduledDays: number;
+    learningSteps: number;
+    reps: number;
+    lapses: number;
+    lastReview?: string | null;
+    suspended?: boolean;
+    algorithm?: string;
+    algorithmVersion?: string;
+    schedulerConfig?: string;
+    schedulingRevision?: number;
+    utcDateCreated?: string;
+    utcDateModified?: string;
+    isDeleted?: boolean;
+    deleteId?: string | null;
+}
+
+export interface FlashcardDeckSummary {
+    deckNoteId: string;
+    deckTitle: string;
+    totalCount: number;
+    dueCount: number;
+    newCount: number;
+    learningCount: number;
+    reviewCount: number;
+    suspendedCount: number;
+    /** True when this deck is a filtered deck (computed from a saved-search query). */
+    isFiltered?: boolean;
+}
+
+export interface FlashcardCardSummary {
+    cardId: string;
+    noteId: string;
+    deckNoteId: string;
+    noteTitle: string;
+    deckTitle: string;
+    cardType: FlashcardCardType;
+    ordinal: number;
+    state: FlashcardState;
+    due: string;
+    suspended: boolean;
+    leech: boolean;
+    schedulingRevision: number;
+    retrievability: number;
+}
+
+export interface FlashcardReviewCard extends FlashcardCardSummary {
+    front: string;
+    frontIsHtml?: boolean;
+    back?: string;
+    previews: FlashcardReviewPreview[];
+}
+
+export interface FlashcardReviewPreview {
+    rating: FlashcardRating;
+    due: string;
+    scheduledDays: number;
+    state: FlashcardState;
+}
+
+export interface FlashcardCreateRequest {
+    noteId: string;
+    deckNoteId?: string;
+}
+
+export interface FlashcardTemplate {
+    name: string;
+    front: string;
+    back: string;
+}
+
+export interface FlashcardTemplatesResponse {
+    templates: FlashcardTemplate[];
+}
+
+export interface FlashcardTemplatesUpdateRequest {
+    templates: FlashcardTemplate[];
+}
+
+export interface FlashcardReviewRequest {
+    rating: FlashcardRating;
+    durationMs?: number;
+    expectedSchedulingRevision?: number;
+    clientRequestId: string;
+}
+
+export interface FlashcardSuspensionRequest {
+    suspended: boolean;
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardResetRequest {
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardBuryRequest {
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardDeckMoveRequest {
+    deckNoteId: string;
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardSetDueDateRequest {
+    due: string;
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardUndoRequest {
+    reviewId: string;
+    expectedSchedulingRevision?: number;
+}
+
+export interface FlashcardSchedulerSettings {
+    requestRetention: number;
+    maximumInterval: number;
+    enableFuzz: boolean;
+    enableShortTerm: boolean;
+    learningSteps: string[];
+    relearningSteps: string[];
+    dailyNewCardLimit: number;
+    dailyReviewLimit: number;
+    dayRolloverHour: number;
+    weights?: number[] | null;
+}
+
+export interface FlashcardSettingsResponse {
+    schedulerConfig: FlashcardSchedulerSettings;
+}
+
+export interface FlashcardSettingsUpdateRequest {
+    schedulerConfig: FlashcardSchedulerSettings;
+}
+
+export interface FlashcardActionResponse {
+    card: FlashcardReviewCard;
+}
+
+export interface FlashcardReviewResponse {
+    card: FlashcardCardSummary;
+    reviewId: string;
+    previews: FlashcardReviewPreview[];
+}
+
+export interface FlashcardPreviewResponse {
+    cardId: string;
+    schedulingRevision: number;
+    previews: FlashcardReviewPreview[];
+}
+
+export interface FlashcardDueResponse {
+    cards: FlashcardReviewCard[];
+    totalDueCount: number;
+}
+
+export interface FlashcardDecksResponse {
+    decks: FlashcardDeckSummary[];
+}
+
+export interface FlashcardDueForecastDay {
+    date: string;
+    count: number;
+}
+
+export interface FlashcardStatsResponse {
+    dueCount: number;
+    newCount: number;
+    learningCount: number;
+    reviewCount: number;
+    suspendedCount: number;
+    leechCount: number;
+    reviewedTodayCount: number;
+    retentionRate: number | null;
+    lapseCount: number;
+    dueForecast: FlashcardDueForecastDay[];
+    ratingCounts: Record<FlashcardRating, number>;
+}
+
+export interface FlashcardRemoveResponse {
+    removedCount: number;
+}
+
+export interface FlashcardReviewRow {
+    reviewId?: string;
+    cardId: string;
+    rating: FlashcardRating;
+    state: FlashcardState;
+    dueBefore: string;
+    dueAfter: string;
+    stabilityBefore: number;
+    stabilityAfter: number;
+    difficultyBefore: number;
+    difficultyAfter: number;
+    elapsedDays: number;
+    elapsedDaysBefore: number;
+    scheduledDays: number;
+    scheduledDaysBefore: number;
+    learningSteps: number;
+    learningStepsBefore: number;
+    repsBefore: number;
+    lapsesBefore: number;
+    lastReviewBefore?: string | null;
+    schedulingRevisionBefore: number;
+    schedulingRevisionAfter: number;
+    reviewedAt: string;
+    durationMs?: number | null;
+    algorithm: string;
+    algorithmVersion: string;
+    schedulerConfig?: string;
+    clientRequestId?: string | null;
+    utcDateCreated?: string;
+    utcDateModified?: string;
+}
+
+export const FLASHCARD_EXPORT_FORMAT = "trilium-flashcards" as const;
+export const FLASHCARD_EXPORT_FORMAT_VERSION = 1 as const;
+
+export interface FlashcardLeechSummary {
+    cardId: string;
+    noteId: string;
+    noteTitle: string;
+    lapses: number;
+    suspended: boolean;
+}
+
+export interface FlashcardLeechesResponse {
+    leeches: FlashcardLeechSummary[];
+}
+
+/** Full dump of flashcard scheduling state plus the append-only review history. */
+export interface FlashcardExportPayload {
+    format: typeof FLASHCARD_EXPORT_FORMAT;
+    formatVersion: number;
+    exportedUtc: string;
+    cards: FlashcardRow[];
+    reviews: FlashcardReviewRow[];
+}
+
+export interface FlashcardImportRequest {
+    payload: FlashcardExportPayload;
+}
+
+export interface FlashcardImportResponse {
+    createdCards: number;
+    updatedCards: number;
+    skippedCards: number;
+    importedReviews: number;
+}

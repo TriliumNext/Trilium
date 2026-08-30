@@ -1,4 +1,4 @@
-import type { DatabaseProvider, Statement, Transaction } from "@triliumnext/core";
+import type { DatabaseProvider, IsolatedDatabase, ReadOnlyDatabase, Statement, Transaction } from "@triliumnext/core";
 import Database, { type Database as DatabaseType } from "better-sqlite3";
 import { unlinkSync } from "fs";
 
@@ -45,6 +45,17 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
         this.dbConnection = new Database(buffer, dbOpts);
     }
 
+    openReadOnlyDatabase(buffer: Uint8Array): ReadOnlyDatabase {
+        const connection = openDatabaseFromBuffer(buffer);
+        connection.pragma("query_only = ON");
+
+        return wrapIsolatedDatabase(connection);
+    }
+
+    createIsolatedDatabase(): IsolatedDatabase {
+        return wrapIsolatedDatabase(new Database(":memory:", dbOpts));
+    }
+
     detach() {
         // Closing is what folds the -wal file back into the database and lets the file be replaced;
         // on Windows it cannot even be renamed while a handle is open.
@@ -88,4 +99,29 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
         this.dbConnection?.close();
     }
 
+}
+
+function openDatabaseFromBuffer(buffer: Uint8Array) {
+    const view = Buffer.from(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    return new Database(view, dbOpts);
+}
+
+function wrapIsolatedDatabase(connection: DatabaseType): IsolatedDatabase {
+    return {
+        exec(query: string) {
+            connection.exec(query);
+        },
+        prepare(query: string): Statement {
+            return connection.prepare(query) as unknown as Statement;
+        },
+        getRows<T>(query: string, params: unknown[] = []): T[] {
+            return connection.prepare(query).all(params) as T[];
+        },
+        serialize(): Uint8Array {
+            return connection.serialize();
+        },
+        close() {
+            connection.close();
+        }
+    };
 }

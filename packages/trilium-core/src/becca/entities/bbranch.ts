@@ -197,6 +197,10 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
                 attachment.markAsDeleted(deleteId);
             }
 
+            for (const flashcard of Object.values(this.becca.flashcards).filter((card) => card.noteId === note.noteId)) {
+                flashcard.markAsDeleted(deleteId);
+            }
+
             note.markAsDeleted(deleteId);
 
             return true;

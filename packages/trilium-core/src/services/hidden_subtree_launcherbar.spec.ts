@@ -81,6 +81,7 @@ describe("buildLaunchBarConfig", () => {
             "_lbMobileSearchNotes",
             "_lbMobileToday",
             "_lbMobileRecentChanges",
+            "_lbMobileFlashcards",
             "_lbMobileBookmarks",
             "_lbMobileSyncStatus"
         ]);
@@ -102,6 +103,8 @@ describe("buildLaunchBarConfig", () => {
         expect(byId(config.desktopVisibleLaunchers, "_lbRecentChanges").command).toBe("showRecentChanges");
         expect(byId(config.desktopAvailableLaunchers, "_lbDeletedNotes").command).toBe("showDeletedNotes");
         expect(byId(config.desktopVisibleLaunchers, "_lbSettings").command).toBe("showOptions");
+        expect(byId(config.desktopAvailableLaunchers, "_lbFlashcards").command).toBe("showFlashcards");
+        expect(byId(config.mobileAvailableLaunchers, "_lbMobileFlashcards").command).toBe("showFlashcards");
         expect(byId(config.desktopAvailableLaunchers, "_commandPalette").command).toBe("commandPalette");
         expect(byId(config.desktopAvailableLaunchers, "_zenMode").command).toBe("toggleZenMode");
     });

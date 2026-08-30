@@ -50,6 +50,14 @@ function getDefaultKeyboardActions() {
             scope: "window"
         },
         {
+            actionName: "showFlashcards",
+            friendlyName: t("keyboard_action_names.show-flashcards"),
+            iconClass: "bx bx-brain",
+            defaultShortcuts: [],
+            description: t("keyboard_actions.show-flashcards"),
+            scope: "window"
+        },
+        {
             actionName: "commandPalette",
             friendlyName: t("keyboard_action_names.command-palette"),
             defaultShortcuts: ["CommandOrControl+Shift+J"],

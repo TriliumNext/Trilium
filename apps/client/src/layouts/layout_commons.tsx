@@ -16,6 +16,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["openAboutDialog"]} loader={() => import("../widgets/dialogs/about.js")} />)
         .child(<LazyDialog triggerEvents={["showCheatsheet"]} loader={() => import("../widgets/dialogs/help.js")} />)
         .child(<LazyDialog triggerEvents={["showRecentChanges", "showDeletedNotes"]} loader={() => import("../widgets/dialogs/recent_changes.js")} />)
+        .child(<LazyDialog triggerEvents={["showFlashcards"]} loader={() => import("../widgets/dialogs/flashcards.js")} />)
         .child(<LazyDialog triggerEvents={["editBranchPrefix"]} loader={() => import("../widgets/dialogs/branch_prefix.js")} />)
         .child(<LazyDialog triggerEvents={["sortChildNotes"]} loader={() => import("../widgets/dialogs/sort_child_notes.js")} />)
         .child(<LazyDialog triggerEvents={["showIncludeNoteDialog"]} loader={() => import("../widgets/dialogs/include_note.js")} />)

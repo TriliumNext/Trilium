@@ -19,6 +19,7 @@
     "chardet": "2.2.0",
     "color": "5.0.3",
     "escape-html": "1.0.3",
+    "fzstd": "0.1.1",
     "i18next": "26.4.0",
     "js-yaml": "5.4.1",
     "lz-string": "1.5.0",
@@ -30,6 +31,7 @@
     "sax": "1.6.1",
     "striptags": "3.2.0",
     "sucrase": "3.35.1",
+    "ts-fsrs": "5.4.1",
     "turnish": "1.12.2",
     "xml2js": "0.6.2",
     "zod": "4.4.3"

@@ -18,12 +18,13 @@ import InternationalizationOptions from "./options/i18n";
 import AdvancedSettings from "./options/advanced";
 import SecuritySettings from "./options/security";
 import LlmSettings from "./options/llm";
+import FlashcardSettings from "./options/flashcards";
 import "./ContentWidget.css";
 import { t } from "../../services/i18n";
 import BackendLog from "./code/BackendLog";
 import SpaceUsage from "./space_usage";
 
-export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsContentManager" | "_optionsMedia" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsEtapi" | "_optionsBackup" | "_optionsDatabase" | "_optionsSync" | "_optionsDesktop" | "_optionsOther" | "_optionsLocalization" | "_optionsSecurity" | "_optionsAdvanced" | "_optionsLlm";
+export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsContentManager" | "_optionsMedia" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsEtapi" | "_optionsBackup" | "_optionsDatabase" | "_optionsSync" | "_optionsDesktop" | "_optionsOther" | "_optionsLocalization" | "_optionsSecurity" | "_optionsAdvanced" | "_optionsLlm" | "_optionsFlashcards";
 
 /** The page behind each of these notes. Exported for the options search, which renders them all. */
 export const CONTENT_WIDGETS: Record<OptionPages | "_backendLog" | "_spaceUsage", (props: TypeWidgetProps) => JSX.Element> = {
@@ -45,9 +46,10 @@ export const CONTENT_WIDGETS: Record<OptionPages | "_backendLog" | "_spaceUsage"
     _optionsSecurity: SecuritySettings,
     _optionsAdvanced: AdvancedSettings,
     _optionsLlm: LlmSettings,
+    _optionsFlashcards: FlashcardSettings,
     _backendLog: BackendLog,
     _spaceUsage: SpaceUsage
-}
+};
 
 /**
  * Type widget that displays one or more widgets based on the type of note, generally used for options and other interactive notes such as the backend log.

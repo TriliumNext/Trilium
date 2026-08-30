@@ -156,6 +156,7 @@ export type CommandMappings = {
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
     showDeletedNotes: CommandData & { ancestorNoteId?: string };
+    showFlashcards: CommandData & { noteId?: string; deckNoteId?: string };
     showImportDialog: CommandData & { noteId: string };
     openNewNoteSplit: NoteCommandData;
     openInWindow: NoteCommandData;

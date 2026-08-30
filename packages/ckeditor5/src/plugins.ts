@@ -10,6 +10,7 @@ import ItalicAsEmPlugin from "./plugins/italic_as_em.js";
 import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
 import InternalLinkPlugin from "./plugins/internallink.js";
 import InsertDateTimePlugin from "./plugins/insert_date_time.js";
+import ClozePlugin from "./plugins/cloze.js";
 import ReferenceLink from "./plugins/referencelink.js";
 import RemoveFormatLinksPlugin from "./plugins/remove_format_links.js";
 import IndentBlockShortcutPlugin from "./plugins/indent_block_shortcut.js";
@@ -66,6 +67,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
 	StrikethroughAsDel,
     InternalLinkPlugin,
 	InsertDateTimePlugin,
+    ClozePlugin,
     RemoveFormatLinksPlugin,
     IndentBlockShortcutPlugin,
     MarkdownImportPlugin,

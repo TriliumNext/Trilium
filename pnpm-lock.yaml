@@ -1411,6 +1411,9 @@ importers:
       escape-html:
         specifier: 1.0.3
         version: 1.0.3
+      fzstd:
+        specifier: 0.1.1
+        version: 0.1.1
       i18next:
         specifier: 26.4.0
         version: 26.4.0(typescript@6.0.3)
@@ -1444,6 +1447,9 @@ importers:
       sucrase:
         specifier: 3.35.1
         version: 3.35.1
+      ts-fsrs:
+        specifier: 5.4.1
+        version: 5.4.1
       turnish:
         specifier: 1.12.2
         version: 1.12.2
@@ -8048,6 +8054,9 @@ packages:
   fuzzysort@3.1.0:
     resolution: {integrity: sha512-sR9BNCjBg6LNgwvxlBd0sBABvQitkLzoVY9MYYROQVX/FvfJ4Mai9LsGhDgd8qYdds0bY77VzYd5iuB+v5rwQQ==}
 
+  fzstd@0.1.1:
+    resolution: {integrity: sha512-dkuVSOKKwh3eas5VkJy1AW1vFpet8TA/fGmVA5krThl8YcOVE/8ZIoEA1+U1vEn5ckxxhLirSdY837azmbaNHA==}
+
   galactus@1.0.0:
     resolution: {integrity: sha512-R1fam6D4CyKQGNlvJne4dkNF+PvUUl7TAJInvTGa9fti9qAv95quQz29GXapA4d8Ec266mJJxFVh82M4GIIGDQ==}
     engines: {node: '>= 12'}
@@ -11498,6 +11507,10 @@ packages:
   ts-dedent@2.2.0:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
     engines: {node: '>=6.10'}
+
+  ts-fsrs@5.4.1:
+    resolution: {integrity: sha512-mOp9+oexJexBTkwjg/jQI1aSUQRLIAvbimeKHLSmVdNJPwObugFNKmZkoggH5d6kZ0uaWLboP1Al1DnXAfIb9w==}
+    engines: {node: '>=20.0.0'}
 
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
@@ -21092,6 +21105,8 @@ snapshots:
 
   fuzzysort@3.1.0: {}
 
+  fzstd@0.1.1: {}
+
   galactus@1.0.0(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
@@ -25062,6 +25077,8 @@ snapshots:
       typescript: 6.0.3
 
   ts-dedent@2.2.0: {}
+
+  ts-fsrs@5.4.1: {}
 
   ts-interface-checker@0.1.13: {}
 

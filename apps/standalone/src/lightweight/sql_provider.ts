@@ -1,5 +1,13 @@
 import { type BindableValue, type SAHPoolUtil, default as sqlite3InitModule } from "@sqlite.org/sqlite-wasm";
-import type { DatabaseProvider, RunResult, Statement, Transaction } from "@triliumnext/core";
+import type {
+    DatabaseProvider,
+    IsolatedDatabase,
+    Params,
+    ReadOnlyDatabase,
+    RunResult,
+    Statement,
+    Transaction
+} from "@triliumnext/core";
 
 // Type definitions for SQLite WASM (the library doesn't export these directly)
 type Sqlite3Module = Awaited<ReturnType<typeof sqlite3InitModule>>;
@@ -498,6 +506,63 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         }
     }
 
+    openReadOnlyDatabase(buffer: Uint8Array): ReadOnlyDatabase {
+        const database = this.openIsolatedDatabaseFromBuffer(buffer);
+        database.exec("PRAGMA query_only = ON");
+        return database;
+    }
+
+    private openIsolatedDatabaseFromBuffer(buffer: Uint8Array): IsolatedDatabase {
+        this.ensureSqlite3();
+        const sqlite3 = this.sqlite3;
+        if (!sqlite3) {
+            throw new Error("SQLite WASM is not initialized.");
+        }
+
+        const view = buffer.constructor === Uint8Array
+            ? buffer
+            : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        const pointer = sqlite3.wasm.allocFromTypedArray(view);
+        const connection = new sqlite3.oo1.DB({ filename: ":memory:", flags: "c" });
+        if (!connection.pointer) {
+            connection.close();
+            sqlite3.wasm.dealloc(pointer);
+            throw new Error("Failed to open imported database.");
+        }
+
+        const resultCode = sqlite3.capi.sqlite3_deserialize(
+            connection.pointer,
+            "main",
+            pointer,
+            view.byteLength,
+            view.byteLength,
+            0
+        );
+        if (resultCode !== 0) {
+            connection.close();
+            sqlite3.wasm.dealloc(pointer);
+            throw new Error(`Failed to deserialize imported database: ${resultCode}`);
+        }
+
+        return createIsolatedWasmDatabase(connection, sqlite3, pointer);
+    }
+
+    createIsolatedDatabase(): IsolatedDatabase {
+        this.ensureSqlite3();
+        const sqlite3 = this.sqlite3;
+        if (!sqlite3) {
+            throw new Error("SQLite WASM is not initialized.");
+        }
+
+        const connection = new sqlite3.oo1.DB({ filename: ":memory:", flags: "c" });
+        if (!connection.pointer) {
+            connection.close();
+            throw new Error("Failed to open isolated database.");
+        }
+
+        return createIsolatedWasmDatabase(connection, sqlite3);
+    }
+
     backup(_destinationFile: string): void {
         // In browser, we can serialize the database to a byte array
         // For actual file backup, we'd need to use File System Access API or download
@@ -673,4 +738,41 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             );
         }
     }
+}
+
+function createIsolatedWasmDatabase(
+    connection: Sqlite3Database,
+    sqlite3: Sqlite3Module,
+    allocatedPointer?: number
+): IsolatedDatabase {
+    let closed = false;
+
+    return {
+        exec(query: string) {
+            connection.exec(query);
+        },
+        prepare(query: string): Statement {
+            return new WasmStatement(connection.prepare(query), connection, sqlite3, query);
+        },
+        getRows<T>(query: string, params: Params = []): T[] {
+            const statement = new WasmStatement(connection.prepare(query), connection, sqlite3, query);
+            try {
+                return statement.all(params) as T[];
+            } finally {
+                statement.finalize();
+            }
+        },
+        serialize(): Uint8Array {
+            return sqlite3.capi.sqlite3_js_db_export(connection);
+        },
+        close() {
+            if (!closed) {
+                connection.close();
+                if (allocatedPointer !== undefined) {
+                    sqlite3.wasm.dealloc(allocatedPointer);
+                }
+                closed = true;
+            }
+        }
+    };
 }

@@ -4,6 +4,7 @@ import type TaskContext from "../task_context.js";
 import { extname } from "../utils/path.js";
 import type { ZipSource } from "../zip_provider.js";
 import anytypeImportService from "./anytype/importer.js";
+import ankiImportService from "./anki.js";
 import type { File } from "./common.js";
 import enexImportService from "./enex.js";
 import keepImportService from "./keep/importer.js";
@@ -62,7 +63,16 @@ async function routeToImporter(taskContext: TaskContext<"importNotes">, file: Fi
     // is real bytes, not a string body.
     const zipSource: ZipSource = file.path ? { path: file.path } : file.buffer as Uint8Array;
 
-    if (format === "notion" && (file.path || typeof file.buffer !== "string")) {
+    if (format === "anki" && (file.path || typeof file.buffer !== "string")) {
+        // The dedicated Anki provider tags its upload so native picks and renamed packages take the
+        // same route without relying on the original extension.
+        return await ankiImportService.importAnkiPackage(
+            taskContext,
+            zipSource,
+            parentNote,
+            file.originalname
+        );
+    } else if (format === "notion" && (file.path || typeof file.buffer !== "string")) {
         // An explicit format always wins over extension sniffing: a Notion export is just a `.zip`,
         // indistinguishable from a Trilium export without inspecting its contents. The Notion import
         // dialog tags the upload, so we route it to the Notion importer rather than the generic zip.
@@ -79,6 +89,17 @@ async function routeToImporter(taskContext: TaskContext<"importNotes">, file: Fi
         // An Obsidian vault is exported as a plain `.zip` of Markdown files, indistinguishable from a
         // Trilium export by extension alone; the Obsidian import dialog tags the upload to route it here.
         return await obsidianImportService.importObsidian(taskContext, zipSource, parentNote, file.originalname);
+    } else if (
+        extension === ".apkg"
+        && options.explodeArchives
+        && (file.path || typeof file.buffer !== "string")
+    ) {
+        return await ankiImportService.importAnkiPackage(
+            taskContext,
+            zipSource,
+            parentNote,
+            file.originalname
+        );
     } else if (extension === ".zip" && options.explodeArchives && (file.path || typeof file.buffer !== "string")) {
         return await zipImportService.importZip(taskContext, zipSource, parentNote);
     } else if (extension === ".opml" && options.explodeArchives) {

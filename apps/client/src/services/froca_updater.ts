@@ -41,6 +41,10 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
                 // NOOP - these entities are handled at the backend level and don't require frontend processing
             } else if (ec.entityName === "etapi_tokens") {
                 loadResults.hasEtapiTokenChanges = true;
+            } else if (ec.entityName === "flashcards") {
+                loadResults.addFlashcard(ec.entityId);
+            } else if (ec.entityName === "flashcard_reviews") {
+                loadResults.addFlashcardReview(ec.entityId);
             } else {
                 throw new Error(`Unknown entityName '${ec.entityName}'`);
             }

@@ -115,6 +115,10 @@ function updateNormalEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow |
 }
 
 function preProcessContent(remoteEC: EntityChange, remoteEntityRow: EntityRow) {
+    if (remoteEC.entityName === "flashcards") {
+        normalizeFlashcardBooleans(remoteEntityRow);
+    }
+
     if (remoteEC.entityName === "blobs" && remoteEntityRow.content !== null) {
         // we always use a Buffer object which is different from normal saving - there we use a simple string type for
         // "string notes". The problem is that in general, it's not possible to detect whether a blob content
@@ -128,6 +132,18 @@ function preProcessContent(remoteEC: EntityChange, remoteEntityRow: EntityRow) {
                 remoteEntityRow.content = "";
             }
         }
+    }
+}
+
+function normalizeFlashcardBooleans(remoteEntityRow: EntityRow) {
+    const row = remoteEntityRow as Record<string, unknown>;
+
+    if (typeof row.suspended === "boolean") {
+        row.suspended = row.suspended ? 1 : 0;
+    }
+
+    if (typeof row.isDeleted === "boolean") {
+        row.isDeleted = row.isDeleted ? 1 : 0;
     }
 }
 
@@ -192,7 +208,7 @@ function updateNoteReordering(remoteEC: EntityChange, remoteEntityRow: EntityRow
 function eraseEntity(entityChange: EntityChange) {
     const { entityName, entityId } = entityChange;
 
-    const entityNames = ["notes", "branches", "attributes", "revisions", "attachments", "blobs"];
+    const entityNames = ["notes", "branches", "attributes", "revisions", "attachments", "blobs", "flashcards", "flashcard_reviews"];
 
     if (!entityNames.includes(entityName)) {
         getLog().error(`Cannot erase ${entityName} '${entityId}'.`);

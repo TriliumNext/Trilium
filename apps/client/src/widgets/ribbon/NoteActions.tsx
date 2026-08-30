@@ -12,6 +12,7 @@ import FNote from "../../entities/fnote";
 import branches from "../../services/branches";
 import dialog from "../../services/dialog";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
+import flashcards from "../../services/flashcards";
 import { t } from "../../services/i18n";
 import protected_session from "../../services/protected_session";
 import server from "../../services/server";
@@ -78,6 +79,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     const parentComponent = useContext(ParentComponent);
     const noteType = useNoteProperty(note, "type") ?? "";
     const [viewType] = useNoteLabel(note, "viewType");
+    const isFlashcard = note.hasLabel("flashcard");
     const canBeConvertedToAttachment = note?.isEligibleForConversionToAttachment();
     const isSourceView = noteContext?.viewScope?.viewMode === "source";
     const isSearchable = isSourceView
@@ -135,6 +137,19 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                 </>}
 
                 <CommandItem command="findInText" icon="bx bx-search" disabled={!isSearchable} text={t("note_actions.search_in_note")} />
+                <CommandItem
+                    command={() => {
+                        if (isFlashcard) {
+                            void removeFlashcardsFromNote(note);
+                        } else {
+                            // App-global command keeps this action valid inside quick-edit popups too.
+                            appContext.triggerCommand("showFlashcards", { noteId: note.noteId });
+                        }
+                    }}
+                    icon="bx bx-brain"
+                    disabled={isInOptionsOrHelp || !isContentAvailable}
+                    text={t(isFlashcard ? "flashcards.remove_flashcard" : "flashcards.make_flashcard")}
+                />
                 <CommandItem command="showAttachments" icon="bx bx-paperclip" disabled={isInOptionsOrHelp} text={t("note_actions.note_attachments")} />
                 {isNewLayout && <CommandItem command="toggleRibbonTabNoteMap" icon="bx bxs-network-chart" disabled={isInOptionsOrHelp} text={t("note_actions.note_map")} />}
                 {/* The attributes panel is a right pane tab where there is a right pane; on a phone the
@@ -216,6 +231,15 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
             </Dropdown>
         </>
     );
+}
+
+async function removeFlashcardsFromNote(note: FNote) {
+    if (!await dialog.confirm(t("flashcards.remove_flashcard_confirm", { title: note.title }))) {
+        return;
+    }
+
+    const response = await flashcards.removeCardsForNote(note.noteId);
+    toast.showMessage(t("flashcards.flashcard_removed", { count: response.removedCount }));
 }
 
 function CodeProperties({ note }: { note: FNote }) {

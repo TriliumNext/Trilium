@@ -1,6 +1,7 @@
 import { type KeyboardShortcutWithRequiredActionName, type OptionDefinitions, type OptionMap, type OptionNames, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 
 import appInfo from "./app_info.js";
+import { DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON } from "./flashcards/fsrs_scheduler.js";
 import { getPlatform } from "./platform.js";
 import dateUtils from "./utils/date.js";
 import keyboardActions from "./keyboard_actions.js";
@@ -359,6 +360,13 @@ const defaultOptions: DefaultOption[] = [
         isSynced: true
     },
     { name: "experimentalFeatures", value: "[]", isSynced: true },
+
+    // Flashcards
+    {
+        name: "flashcardSchedulerConfig",
+        value: DEFAULT_FLASHCARD_SCHEDULER_CONFIG_JSON,
+        isSynced: true
+    },
 
     // AI / LLM
     // Was previously the "llm" experimental feature; inherit the value from there for existing users.

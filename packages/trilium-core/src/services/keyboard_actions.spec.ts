@@ -39,6 +39,14 @@ describe("keyboard_actions service", () => {
         expect(actions.some((a) => "actionName" in a && a.actionName === "jumpToNote")).toBe(true);
     });
 
+    it("registers showFlashcards as a window-scoped action with no default shortcut", () => {
+        const actions = keyboardActions.getDefaultKeyboardActions();
+        const flashcards = actions.find((a) => "actionName" in a && a.actionName === "showFlashcards");
+        expect(flashcards).toBeTruthy();
+        expect(flashcards && "scope" in flashcards ? flashcards.scope : undefined).toBe("window");
+        expect(flashcards && "defaultShortcuts" in flashcards ? flashcards.defaultShortcuts : undefined).toEqual([]);
+    });
+
     it("zoomIn is bound to the plus key as well as equals, so it works on non-US layouts", () => {
         const actions = keyboardActions.getDefaultKeyboardActions();
         const zoomIn = actions.find((a) => "actionName" in a && a.actionName === "zoomIn");

@@ -3,7 +3,7 @@ import packageJson from "../../package.json" with { type: "json" };
 import { AppInfo } from "@triliumnext/commons";
 import { getMaxMigrationVersion } from "../migrations/migrations.js";
 
-const SYNC_VERSION = 39;
+const SYNC_VERSION = 41;
 const CLIPPER_PROTOCOL_VERSION = "1.0";
 
 const appInfo: AppInfo = {
