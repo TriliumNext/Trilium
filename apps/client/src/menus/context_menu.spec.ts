@@ -60,6 +60,21 @@ describe("contextMenu", () => {
         expect(menu?.parentElement).toBe(document.body);
     });
 
+    // Titles name notes, attributes and search terms, none of which the reader wrote as markup.
+    it("shows a title that reads as markup as the text it is", async () => {
+        const menu = buildPage();
+        const contextMenu = await buildContextMenu();
+
+        await contextMenu.show({
+            x: 10, y: 10,
+            items: [ { title: "<img src=x onerror=alert(1)> & \"quoted\"", handler: () => {} } ],
+            selectMenuItemHandler: () => {}
+        });
+
+        expect(menu?.querySelector("img")).toBeNull();
+        expect(menu?.textContent).toContain("<img src=x onerror=alert(1)> & \"quoted\"");
+    });
+
     it("says whether it is up, for a host whose own press would otherwise not know", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();

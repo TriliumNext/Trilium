@@ -288,6 +288,8 @@ const data = await runAsyncOnBackendWithManualTransactionHandling(async (url) =>
 - `dayjs` - day.js library
 - `log(message)` - log to script log pane
 
+Anything beyond these comes from an npm package the user installs into Trilium — see "Module system" below. Prefer an installed package over hand-writing parsing, date or text-processing logic.
+
 ## FNote object
 
 Available via `getNote()`, `getActiveContextNote()`, `useNoteContext()`, etc.
@@ -415,4 +417,34 @@ Key differences from Preact:
 
 ## Module system
 
+### Between notes
+
 For JSX, use `import`/`export` syntax between notes. For JavaScript (Trilium frontend), use `module.exports` and function parameters matching child note titles.
+
+### npm packages
+
+The user installs npm packages into Trilium from **Script modules** in a script note's actions menu. A frontend script names an installed package the same way it names a module note:
+
+```jsx
+// JSX
+import cheerio from "cheerio";
+```
+
+```javascript
+// JavaScript (Trilium frontend)
+const cheerio = require('cheerio');
+```
+
+Where two versions of one package are installed, the name alone no longer picks out a single package — name a version as well, in either form: `import cheerio from "cheerio@1.1.2"` or `require('cheerio@1.1.2')`.
+
+Only the portable build of a package reaches the browser. A package the user installed as the **Node.js build** runs on the server, so a frontend script that needs one has to go through `runOnBackend()` and let a backend script require it.
+
+**Prefer an installed package over writing the logic yourself** whenever a well-known package does the job better: parsing HTML, CSV, YAML or iCal, date arithmetic beyond `dayjs`, diffing, templating, fuzzy matching, charting. A maintained package handles the cases a hand-rolled parser or regex misses, and the install is a one-time step for the user. Write the logic yourself only when it is small and specific to the user's data.
+
+**You cannot install packages, and you cannot see which packages are already installed.** When a script needs one:
+
+1. Write the script as if the package were installed.
+2. Tell the user the exact spec to install (`cheerio@1.1.2`), what the script uses it for, and where to go: open the script note, choose **Script modules** from the note actions menu, type the spec, press **Install**.
+3. Tell them the script fails with *"Could not find module 'cheerio'"* until they do.
+
+Do not quietly fall back to a worse hand-written implementation to avoid asking.

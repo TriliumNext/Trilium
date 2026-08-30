@@ -2403,7 +2403,9 @@
     "coverImage": "Cover image",
     "viewConfig": "View settings",
     "canvasLibraryItem": "Canvas library",
-    "importSource": "Import source"
+    "importSource": "Import source",
+    "scriptModule": "Script module",
+    "scriptModuleTypes": "Script module types"
   },
   "bookmark_switch": {
     "bookmark": "Bookmark",
@@ -4074,5 +4076,23 @@
       "invalid-symbol": "the markdown symbol should be one character, excepting \"[\", \" \", \"X\", and \"]\"",
       "duplicate-symbol": "duplicate markdown symbol"
     }
+  },
+  "script_modules": {
+    "title": "Script modules",
+    "install": "Install",
+    "installing": "Installing…",
+    "remove": "Remove",
+    "spec_placeholder": "cheerio@1.1.2",
+    "spec_description": "An npm package and an exact version. A search asks npmjs.com, so nothing leaves this instance until you pick the search entry.",
+    "none_installed": "No packages installed yet.",
+    "module_detail": "{{provider}} · {{fileCount}} files · {{size}}",
+    "search_online": "Search npmjs.com for \"{{- query}}\"",
+    "searching_online": "Searching npmjs.com…",
+    "search_failed": "Couldn't search for packages",
+    "no_results": "No packages found.",
+    "node_build": "Node.js build",
+    "node_build_hint": "Installs the real package instead of a browser build, so it can use Node.js APIs. It runs on the server and desktop app only, not in the browser or on mobile.",
+    "node_badge": "Node.js",
+    "node_badge_hint": "Runs on the server and desktop app only."
   }
 }

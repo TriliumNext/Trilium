@@ -190,9 +190,10 @@ async function info(message: MessageType, extraProps?: InfoExtraProps) {
 /**
  * Displays a confirmation dialog with the given message.
  *
- * @param message the message to display in the dialog. A string is rendered as HTML; pass an element
- *                where the wording needs structure the dialog should not have to parse — an
- *                admonition warning about what the action costs, say.
+ * @param message the message to display in the dialog. A string is rendered as HTML, sanitized by
+ *                DOMPurify so the note titles and attribute names these questions name cannot inject
+ *                markup; pass an element where the wording needs structure the dialog should not
+ *                have to parse — an admonition warning about what the action costs, say.
  * @returns A promise that resolves to true if the user confirmed, false otherwise.
  */
 async function confirm(message: MessageType) {

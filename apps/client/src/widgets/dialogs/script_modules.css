@@ -1,0 +1,62 @@
+.modal.script-modules-dialog {
+    .script-modules-install {
+        display: flex;
+        gap: 0.5em;
+        align-items: flex-start;
+    }
+
+    .script-modules-install > .form-group {
+        flex-grow: 1;
+        margin-bottom: 0;
+    }
+
+    .script-module-spec-input {
+        font-family: var(--monospace-font-family);
+    }
+
+    .script-modules-list {
+        list-style: none;
+        margin: 1em 0 0;
+        padding: 0;
+    }
+
+    .script-modules-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        padding: 0.4em 0;
+        border-bottom: 1px solid var(--main-border-color);
+    }
+
+    .script-modules-list li:last-child {
+        border-bottom: none;
+    }
+
+    .script-module-spec {
+        font-family: var(--monospace-font-family);
+    }
+
+    .script-module-node-badge {
+        --color: var(--muted-text-color);
+        flex-shrink: 0;
+    }
+
+    .script-module-detail {
+        flex-grow: 1;
+        text-align: right;
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+        white-space: nowrap;
+    }
+}
+
+/* The dropdown is portalled to the body, so these are not scoped under .script-modules-dialog. */
+.form-autocomplete-dropdown .script-module-entry-package .form-autocomplete-entry-name {
+    font-family: var(--monospace-font-family);
+}
+
+/* The row that goes and asks the registry is set apart from the packages it produces. */
+.form-autocomplete-dropdown .script-module-entry-search {
+    font-style: italic;
+    opacity: 0.85;
+}

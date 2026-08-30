@@ -1,3 +1,4 @@
+import type { FrontendScriptModule, ScriptFailure, UnavailableScriptModule } from "@triliumnext/commons";
 import { ScriptParams } from "@triliumnext/commons";
 import { t } from "i18next";
 import { transform } from "sucrase";
@@ -7,6 +8,7 @@ import type BNote from "../becca/entities/bnote.js";
 import type { ApiParams } from "./backend_script_api_interface.js";
 import { getLog } from "./log.js";
 import ScriptContext from "./script_context.js";
+import { collectFrontendModules } from "./script_modules/frontend.js";
 import { assertScriptingEnabled } from "./scripting_guard.js";
 import { getContext } from "./context.js";
 import { unwrapStringOrBuffer } from "./utils/binary.js";
@@ -19,6 +21,10 @@ export interface Bundle {
     html: string;
     allNotes?: BNote[];
     allNoteIds?: string[];
+    /** Packages the script requires, compiled for a runtime that cannot read the database. */
+    scriptModules?: FrontendScriptModule[];
+    /** Packages it asked for that could not be sent, so the failure can name a reason. */
+    unavailableModules?: UnavailableScriptModule[];
 }
 
 function executeNote(note: BNote, apiParams: ApiParams) {
@@ -180,6 +186,14 @@ function getScriptBundleForFrontend(note: BNote, script?: string, params?: Scrip
     bundle.allNoteIds = bundle.allNotes?.map((note) => note.noteId);
     delete bundle.allNotes;
 
+    const { modules, unavailable } = collectFrontendModules(bundle.script);
+    if (modules.length > 0) {
+        bundle.scriptModules = modules;
+    }
+    if (unavailable.length > 0) {
+        bundle.unavailableModules = unavailable;
+    }
+
     return bundle;
 }
 
@@ -247,7 +261,7 @@ apiContext.modules['${note.noteId}'] = { exports: {} };
 ${root ? "return " : ""}${isFrontend ? "await" : ""} ((${isFrontend ? "async" : ""} function(exports, module, require, api${modules.length > 0 ? ", " : ""}${modules.map((child) => sanitizeVariableName(child.title)).join(", ")}) {
 try {
 ${overrideContent || scriptContent};
-} catch (e) { throw new Error("Load of script note \\"${note.title}\\" (${note.noteId}) failed with: " + e.message, { cause: e }); }
+} catch (e) { throw Object.assign(new Error("Load of script note \\"${note.title}\\" (${note.noteId}) failed with: " + e.message, { cause: e }), { scriptNoteId: "${note.noteId}" }); }
 for (const exportKey in exports) module.exports[exportKey] = exports[exportKey];
 return module.exports;
 }).call({}, {}, apiContext.modules['${note.noteId}'], apiContext.require(${JSON.stringify(moduleNoteIds)}), apiContext.apis['${note.noteId}']${modules.length > 0 ? ", " : ""}${modules.map((mod) => `apiContext.modules['${mod.noteId}'].exports`).join(", ")}));
@@ -257,6 +271,40 @@ return module.exports;
     }
 
     return bundle;
+}
+
+/**
+ * Reads a script failure into its parts.
+ *
+ * The bundle wraps a failure once per note it passed through, and each wrapper carries the note it
+ * stands for — so the note that actually failed and the error underneath it are both here, and
+ * neither has to be read back out of the sentence afterwards. The wrappers stay in the message for
+ * the log, which is the one place the whole path is worth having.
+ */
+export function describeScriptFailure(e: unknown): ScriptFailure {
+    let message = typeof e === "string" ? e : "Unknown error";
+    let noteId: string | undefined;
+
+    const seen = new Set<unknown>();
+    let error: unknown = e;
+    while (error instanceof Error && !seen.has(error)) {
+        seen.add(error);
+        message = error.message;
+
+        // Only the wrappers are walked past. Going further would reach whatever the failure itself
+        // wrapped — for a missing module, Node's answer, which is the require stack of Trilium's
+        // own files that the failure's own message was written to keep out of the way.
+        const wrapped = (error as { scriptNoteId?: string }).scriptNoteId;
+        if (!wrapped) {
+            break;
+        }
+
+        // The deepest wrapper is the note nearest the failure, so a later one wins.
+        noteId = wrapped;
+        error = error.cause;
+    }
+
+    return { message, ...(noteId ? { noteId } : {}) };
 }
 
 export function buildJsx(contentRaw: string | Uint8Array) {

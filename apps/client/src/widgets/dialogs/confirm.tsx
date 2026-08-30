@@ -8,7 +8,7 @@ import { useMemo, useRef, useState } from "preact/hooks";
 import FormCheckbox from "../react/FormCheckbox";
 import { useTriliumEvent } from "../react/hooks";
 import { isValidElement, type VNode } from "preact";
-import { RawHtmlBlock } from "../react/RawHtml";
+import { SanitizedHtml } from "../react/RawHtml";
 
 interface ConfirmDialogProps {
     title?: string;
@@ -56,7 +56,7 @@ export default function ConfirmDialog() {
     }
 
     useTriliumEvent("showConfirmDialog", ({ message, callback }) => showDialog(null, message, callback, false));
-    useTriliumEvent("showConfirmDeleteNoteBoxWithNoteDialog", ({ title, message, callback, deletionTarget, mustDeleteNote }) => showDialog(title, message ?? t("confirm.are_you_sure_remove_note", { title: title }), callback, true, deletionTarget, mustDeleteNote));
+    useTriliumEvent("showConfirmDeleteNoteBoxWithNoteDialog", ({ title, message, callback, deletionTarget, mustDeleteNote }) => showDialog(title, message ?? t("confirm.are_you_sure_remove_note", { title }), callback, true, deletionTarget, mustDeleteNote));
 
     return (
         <Modal
@@ -88,7 +88,7 @@ export default function ConfirmDialog() {
         >
             {isValidElement(opts?.message)
             ? opts?.message
-            : <RawHtmlBlock html={opts?.message} />
+            : <SanitizedHtml html={opts?.message} />
             }
 
             {opts?.isConfirmDeleteNoteBox && (<>

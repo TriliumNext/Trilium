@@ -39,6 +39,12 @@ export async function initLocale(locale: LOCALE_IDS = "en", scope: "app" | "entr
         backend: {
             loadPath: `${window.glob.assetPath}/translations/{{lng}}/{{ns}}.json`
         },
+        // Interpolated values are not HTML-escaped. Almost every translated string is rendered as text
+        // — a Preact text node, a toast message, a menu entry — where escaping shows `&#x2F;` and
+        // `&#39;` to the reader, and Preact escapes what it renders anyway. The sinks that do render a
+        // translated string as markup guard themselves: `SanitizedHtml` in the confirm and info
+        // dialogs, a text node in context_menu.ts, `escapeHtml()` in note_autocomplete.ts.
+        interpolation: { escapeValue: false },
         returnEmptyString: false
     });
 

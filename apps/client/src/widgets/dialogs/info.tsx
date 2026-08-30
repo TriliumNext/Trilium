@@ -3,7 +3,7 @@ import Modal, { type ModalProps } from "../react/Modal";
 import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import { useRef, useState } from "preact/hooks";
-import { RawHtmlBlock } from "../react/RawHtml";
+import { SanitizedHtml } from "../react/RawHtml";
 import { useTriliumEvent } from "../react/hooks";
 import { isValidElement } from "preact";
 import { ConfirmWithMessageOptions } from "./confirm";
@@ -67,7 +67,7 @@ export default function InfoDialog() {
     >
         {isValidElement(opts?.message)
         ? opts?.message
-        : <RawHtmlBlock className="info-dialog-content" html={opts?.message} />
+        : <SanitizedHtml className="info-dialog-content" html={opts?.message} />
         }
     </Modal>);
 }

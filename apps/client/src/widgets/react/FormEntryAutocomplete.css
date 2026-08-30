@@ -1,0 +1,59 @@
+/* The dropdown is portalled to the body, so these are not scoped to the field. */
+.form-autocomplete-dropdown .form-autocomplete-entry {
+    display: flex;
+    /* The icon sits on the first line of a row that runs to two. */
+    align-items: flex-start;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.form-autocomplete-dropdown .form-autocomplete-entry .tn-icon {
+    flex-shrink: 0;
+    opacity: 0.7;
+    line-height: 1.4;
+}
+
+/* Overrides the single-line ellipsis in FormAutocomplete.css, so a detail line can wrap. */
+.form-autocomplete-dropdown .form-autocomplete-item:has(.form-autocomplete-entry) {
+    white-space: normal;
+    padding-block: 6px;
+}
+
+.form-autocomplete-dropdown .form-autocomplete-entry-lines {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.form-autocomplete-dropdown .form-autocomplete-entry-detail {
+    font-size: 0.85em;
+    opacity: 0.7;
+    /* Two lines at most: a Nominatim address can run to five, an npm description to a paragraph. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.form-autocomplete-dropdown .form-autocomplete-entry-trailing {
+    flex-shrink: 0;
+    align-self: center;
+    padding-inline-start: 8px;
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.6;
+}
+
+.form-autocomplete-dropdown .form-autocomplete-entry-inert {
+    font-style: italic;
+    opacity: 0.85;
+}
+
+/* A row that reports is not a choice, so it neither highlights nor takes a pointer. */
+.form-autocomplete-dropdown .form-autocomplete-item:has(.form-autocomplete-entry-inert) {
+    cursor: default;
+    background: none;
+    color: inherit;
+}

@@ -31,13 +31,13 @@ export const SKILLS: SkillDefinition[] = [
     },
     {
         name: "backend_scripting",
-        description: "Backend (Node.js) scripting API — creating notes, handling events, accessing entities, database operations, and automation.",
+        description: "Backend (Node.js) scripting API — creating notes, handling events, accessing entities, database operations, automation, and requiring installed npm packages.",
         summary: "the backend Node.js scripting API",
         file: "backend_scripting.md"
     },
     {
         name: "frontend_scripting",
-        description: "Frontend (browser) scripting API — UI widgets, navigation, dialogs, editor access, Preact/JSX components, and keyboard shortcuts.",
+        description: "Frontend (browser) scripting API — UI widgets, navigation, dialogs, editor access, Preact/JSX components, keyboard shortcuts, and importing installed npm packages.",
         summary: "the frontend browser scripting API",
         file: "frontend_scripting.md"
     },

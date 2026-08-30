@@ -1,0 +1,188 @@
+import type { ScriptModuleSummary, ScriptModuleTypes } from "@triliumnext/commons";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+
+import config from "../../services/config";
+import { getContext } from "../../services/context";
+import hiddenSubtreeService from "../../services/hidden_subtree";
+import { initRequest } from "../../services/request";
+import { encodeUtf8 } from "../../services/utils/binary";
+import { CoreApiTester } from "../../test/api_tester";
+import { fakeRequestProvider } from "../../test/request_provider";
+
+let api: CoreApiTester;
+
+/** What the fake esm.sh answers with, keyed by URL. */
+let served: Map<string, string>;
+/** Response headers the fake esm.sh adds, keyed by URL. */
+let servedHeaders: Map<string, Record<string, string>>;
+
+function serveEsmSh(name: string, version: string) {
+    const entry = `https://esm.sh/${name}@${version}?bundle&target=es2022`;
+    served.set(entry, `export * from "/${name}@${version}/es2022/${name}.mjs";`);
+    served.set(`https://esm.sh/${name}@${version}/es2022/${name}.mjs`, `export const ${name} = 1;`);
+}
+
+/** Serves the Node.js build of a package, which esm.sh answers at a target of its own. */
+function serveEsmShNode(name: string, version: string) {
+    served.set(`https://esm.sh/${name}@${version}?target=node`, `export const ${name} = 1;`);
+}
+
+/** Serves the package's declarations, and points its build at them the way esm.sh does. */
+function serveDeclarations(name: string, version: string, source: string) {
+    const types = `https://esm.sh/${name}@${version}/index.d.ts`;
+    servedHeaders.set(`https://esm.sh/${name}@${version}?bundle&target=es2022`,
+        { "x-typescript-types": types });
+    served.set(types, source);
+}
+
+describe("Script modules API (core)", () => {
+    const originalScriptingEnabled = config.Security.backendScriptingEnabled;
+
+    beforeAll(() => {
+        config.Security.backendScriptingEnabled = true;
+        api = CoreApiTester.build();
+        // Installs write under _scriptModules, which the subtree check materialises at startup.
+        getContext().init(() => hiddenSubtreeService.checkHiddenSubtree());
+    });
+
+    afterAll(() => {
+        config.Security.backendScriptingEnabled = originalScriptingEnabled;
+    });
+
+    beforeEach(() => {
+        served = new Map();
+        servedHeaders = new Map();
+        initRequest(fakeRequestProvider({
+            fetchResource: async (url) => {
+                const source = served.get(url);
+                if (source === undefined) {
+                    return { status: 404, ok: false, contentType: "text/plain", bytes: encodeUtf8("no") };
+                }
+                const contentType = url.includes("registry.npmjs.org")
+                    ? "application/json"
+                    : url.endsWith(".d.ts") ? "application/typescript" : "application/javascript";
+                return {
+                    status: 200,
+                    ok: true,
+                    contentType,
+                    headers: servedHeaders.get(url) ?? {},
+                    bytes: encodeUtf8(source)
+                };
+            }
+        }));
+    });
+
+    it("installs a package, lists it, and removes it", async () => {
+        serveEsmSh("alpha", "1.0.0");
+
+        const installed = await api.post<ScriptModuleSummary>("/api/script-modules", { body: { spec: "alpha@1.0.0" } });
+        expect(installed.status).toBe(200);
+        expect(installed.body.spec).toBe("alpha@1.0.0");
+        expect(installed.body.providerId).toBe("esm.sh");
+        expect(installed.body.fileCount).toBe(2);
+        expect(installed.body.size).toBeGreaterThan(0);
+
+        const listed = await api.get<ScriptModuleSummary[]>("/api/script-modules");
+        expect(listed.status).toBe(200);
+        expect(listed.body.map((module) => module.spec)).toContain("alpha@1.0.0");
+
+        const removed = await api.delete(`/api/script-modules/${installed.body.noteId}`);
+        expect(removed.status).toBe(204);
+
+        const afterRemoval = await api.get<ScriptModuleSummary[]>("/api/script-modules");
+        expect(afterRemoval.body.map((module) => module.spec)).not.toContain("alpha@1.0.0");
+    });
+
+    it("re-installing a version replaces it rather than adding a second copy", async () => {
+        serveEsmSh("beta", "2.0.0");
+
+        const first = await api.post<ScriptModuleSummary>("/api/script-modules", { body: { spec: "beta@2.0.0" } });
+        const second = await api.post<ScriptModuleSummary>("/api/script-modules", { body: { spec: "beta@2.0.0" } });
+
+        expect(second.body.noteId).toBe(first.body.noteId);
+        const listed = await api.get<ScriptModuleSummary[]>("/api/script-modules");
+        expect(listed.body.filter((module) => module.spec === "beta@2.0.0")).toHaveLength(1);
+    });
+
+    it("refuses a package it cannot name or cannot fetch", async () => {
+        expect((await api.post("/api/script-modules", { body: {} })).status).toBe(400);
+        expect((await api.post("/api/script-modules", { body: { spec: "pkg name" } })).status).toBe(400);
+        expect((await api.post("/api/script-modules", { body: { spec: "gone@1.0.0" } })).status).toBe(400);
+    });
+
+    it("searches the registry only when asked, and refuses a query it cannot use", async () => {
+        served.set("https://registry.npmjs.org/-/v1/search?text=cheerio&size=10", JSON.stringify({
+            objects: [{ package: { name: "cheerio", version: "1.2.0", description: "Parses HTML" } }]
+        }));
+
+        const found = await api.get<{ name: string; version: string }[]>("/api/script-modules/search?q=cheerio");
+        expect(found.status).toBe(200);
+        expect(found.body).toEqual([{ name: "cheerio", version: "1.2.0", description: "Parses HTML" }]);
+
+        expect((await api.get("/api/script-modules/search")).status).toBe(400);
+        expect((await api.get("/api/script-modules/search?q=%20")).status).toBe(400);
+    });
+
+    it("hands the editor the declarations of what is installed, and nothing for what is untyped", async () => {
+        serveEsmSh("typed", "1.0.0");
+        serveDeclarations("typed", "1.0.0", "export declare function typed(): string;\n");
+        serveEsmSh("untyped", "1.0.0");
+
+        await api.post("/api/script-modules", { body: { spec: "typed@1.0.0" } });
+        await api.post("/api/script-modules", { body: { spec: "untyped@1.0.0" } });
+
+        const types = await api.get<ScriptModuleTypes[]>("/api/script-modules/types");
+        expect(types.status).toBe(200);
+        expect(types.body.map((module) => module.name)).toEqual([ "typed" ]);
+
+        const [ typed ] = types.body;
+        expect(typed.spec).toBe("typed@1.0.0");
+        expect(typed.entry).toBe("typed@1.0.0_index.d.ts");
+        expect(typed.files).toEqual([
+            { name: "typed@1.0.0_index.d.ts", content: "export declare function typed(): string;\n" }
+        ]);
+    });
+
+    it("says whether a browser can reach each package, so a frontend note is not offered a Node build", async () => {
+        // Installed only for Node.js: nothing on a page can run it.
+        serveEsmShNode("nodeonly", "1.0.0");
+        servedHeaders.set("https://esm.sh/nodeonly@1.0.0?target=node",
+            { "x-typescript-types": "https://esm.sh/nodeonly@1.0.0/index.d.ts" });
+        served.set("https://esm.sh/nodeonly@1.0.0/index.d.ts", "export declare const x: number;\n");
+
+        // Installed both ways: the portable build is what the page runs.
+        serveEsmSh("both", "1.0.0");
+        serveDeclarations("both", "1.0.0", "export declare const y: number;\n");
+        serveEsmShNode("both", "1.0.0");
+
+        await api.post("/api/script-modules", { body: { spec: "nodeonly@1.0.0", target: "node" } });
+        await api.post("/api/script-modules", { body: { spec: "both@1.0.0" } });
+        await api.post("/api/script-modules", { body: { spec: "both@1.0.0", target: "node" } });
+
+        const types = await api.get<ScriptModuleTypes[]>("/api/script-modules/types");
+        const byName = new Map(types.body.map((module) => [ module.name, module ]));
+
+        expect(byName.get("nodeonly")?.portable).toBe(false);
+        expect(byName.get("both")?.portable).toBe(true);
+    });
+
+    it("404s when removing something that is not installed", async () => {
+        expect((await api.delete("/api/script-modules/smNoSuchThing")).status).toBe(404);
+    });
+
+    it("refuses to install or remove while backend scripting is off", async () => {
+        serveEsmSh("gamma", "1.0.0");
+        const installed = await api.post<ScriptModuleSummary>("/api/script-modules", { body: { spec: "gamma@1.0.0" } });
+        expect(installed.status).toBe(200);
+
+        config.Security.backendScriptingEnabled = false;
+        try {
+            expect((await api.post("/api/script-modules", { body: { spec: "gamma@1.0.0" } })).status).toBe(500);
+            expect((await api.delete(`/api/script-modules/${installed.body.noteId}`)).status).toBe(500);
+            // Listing stays available, so a pane can show what is there and say why it is inert.
+            expect((await api.get("/api/script-modules")).status).toBe(200);
+        } finally {
+            config.Security.backendScriptingEnabled = true;
+        }
+    });
+});

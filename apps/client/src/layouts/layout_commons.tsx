@@ -18,6 +18,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["showRecentChanges", "showDeletedNotes"]} loader={() => import("../widgets/dialogs/recent_changes.js")} />)
         .child(<LazyDialog triggerEvents={["editBranchPrefix"]} loader={() => import("../widgets/dialogs/branch_prefix.js")} />)
         .child(<LazyDialog triggerEvents={["sortChildNotes"]} loader={() => import("../widgets/dialogs/sort_child_notes.js")} />)
+        .child(<LazyDialog triggerEvents={["showScriptModules"]} loader={() => import("../widgets/dialogs/script_modules.js")} />)
         .child(<LazyDialog triggerEvents={["showIncludeNoteDialog"]} loader={() => import("../widgets/dialogs/include_note.js")} />)
         .child(<LazyDialog triggerEvents={["showNotePickerDialog"]} loader={() => import("../widgets/dialogs/note_picker.js")} />)
         .child(<LazyDialog triggerEvents={["chooseNoteType"]} loader={() => import("../widgets/dialogs/note_type_chooser.js")} />)

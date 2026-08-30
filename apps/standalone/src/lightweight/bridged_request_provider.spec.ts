@@ -225,12 +225,18 @@ describe("BridgedRequestProvider.fetchResource", () => {
             responseType: "arraybuffer"
         });
 
-        respond({ status: 200, headers: { "content-type": "text/html; charset=utf-8" }, body: btoa("<html/>") });
+        respond({
+            status: 200,
+            headers: { "Content-Type": "text/html; charset=utf-8", "X-TypeScript-Types": "/index.d.ts" },
+            body: btoa("<html/>")
+        });
 
         await expect(promise).resolves.toEqual({
             status: 200,
             ok: true,
             contentType: "text/html",
+            // Lower-cased here, since the native transports do not agree on the case they answer in.
+            headers: { "content-type": "text/html; charset=utf-8", "x-typescript-types": "/index.d.ts" },
             bytes: new TextEncoder().encode("<html/>")
         });
     });

@@ -1,5 +1,6 @@
 import { getNoteIcon } from "@triliumnext/commons";
 
+import { runBackendScript } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
@@ -1126,7 +1127,7 @@ export default class FNote {
         if (env === "frontend") {
             return await bundleService.getAndExecuteBundle(this.noteId);
         } else if (env === "backend") {
-            await server.post(`script/run/${this.noteId}`);
+            await runBackendScript(this.noteId);
         } else {
             throw new Error(`Unrecognized env type ${env} for note ${this.noteId}`);
         }

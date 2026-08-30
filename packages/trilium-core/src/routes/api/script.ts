@@ -4,7 +4,7 @@ import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
 import attributeService from "../../services/attributes.js";
-import scriptService, { type Bundle } from "../../services/script.js";
+import scriptService, { type Bundle, describeScriptFailure } from "../../services/script.js";
 import syncService from "../../services/sync.js";
 import { assertScriptingEnabled } from "../../services/scripting_guard.js";
 import { getSql } from "../../services/sql/index.js";
@@ -50,9 +50,14 @@ function run(req: Request<{ noteId: string }>) {
     assertScriptingEnabled();
     const note = becca.getNoteOrThrow(req.params.noteId);
 
-    const result = scriptService.executeNote(note, { originEntity: note });
-
-    return { executionResult: result };
+    try {
+        return { executionResult: scriptService.executeNote(note, { originEntity: note }) };
+    } catch (e) {
+        // Answered in parts rather than as one sentence: the cause chain does not survive the
+        // response, and what the caller wants out of it — what failed, and which note — would
+        // otherwise have to be read back out of the text on the other side.
+        return [ 500, describeScriptFailure(e) ];
+    }
 }
 
 function getBundlesWithLabel(label: string, value?: string) {

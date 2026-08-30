@@ -2,7 +2,6 @@ import "./SearchBox.css";
 
 import clsx from "clsx";
 import type { Map as MapLibreGLMap } from "maplibre-gl";
-import type { TargetedKeyboardEvent } from "preact";
 import { useCallback, useContext, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
@@ -11,7 +10,7 @@ import { logError } from "../../../services/ws";
 import { getMeasurementSystem } from "../../../utils/formatters";
 import { formatDistance } from "../../../utils/units";
 import { filterTokens, matchesFilter } from "../../react/filter";
-import FormAutocomplete from "../../react/FormAutocomplete";
+import FormEntryAutocomplete, { type AutocompleteEntry } from "../../react/FormEntryAutocomplete";
 import Icon from "../../react/Icon";
 import OverlayToolbar, { OverlayToolbarButton } from "../../react/OverlayToolbar";
 import { formatCoordinates, parseCoordinates } from "./coordinates";
@@ -73,19 +72,10 @@ interface SearchBoxProps {
     onPickResult(picked: { results: SearchResult[]; index: number } | null): void;
 }
 
-/**
- * One row of the result list. `key` identifies it, since `FormAutocomplete` items are strings and two
- * rows can read the same.
- */
-type SearchEntry = {
-    key: string;
-    label: string;
-    /** A boxicons class, as `FNote.getIcon()` gives it. Headings have none. */
-    icon?: string;
+/** One row of the result list, drawn by `FormEntryAutocomplete` from what it carries. */
+type SearchEntry = AutocompleteEntry & {
     /** How far the place is from the middle of the map, in metres. */
     distance?: number;
-    /** A second line under the first: the address that places a place, or whose answer a row is. */
-    detail?: string;
 } & (
     /** A note of the map's own. `center` is absent for a GPX track, which stands on no one point. */
     | { kind: "marker"; center?: [number, number]; noteId: string }
@@ -97,7 +87,7 @@ type SearchEntry = {
      * typed rather than something found for them.
      */
     | { kind: "point"; center: [number, number]; result: GeoSearchResult }
-    /** Names the run of rows below it; not a choice (see `isHeading` on FormAutocomplete). */
+    /** Names the run of rows below it; not a choice. */
     | { kind: "heading" }
     /** Runs the geocoder for `query`. */
     | { kind: "geocode"; query: string }
@@ -128,51 +118,38 @@ interface GeocodeRun {
  * Enter takes it — `autoActivate`, as the attribute pickers use it. From a field holding nothing but
  * a name, that is: Enter, which runs the geocoder, and Enter again, which takes what it found.
  *
- * `FormAutocomplete` handles the debounce, the stale-response guard, keyboard navigation and a
- * dropdown portalled out of the map's scrolling container. `keepOpenOnPick` keeps the list up so the
- * geocoder row can replace itself with results, so closing it after a marker or place is taken is
- * this component's job — see `dismissed`.
+ * `FormEntryAutocomplete` handles the debounce, the stale-response guard, keyboard navigation, a
+ * dropdown portalled out of the map's scrolling container, and standing the list down once a row has
+ * been taken — the geocoder row saying it starts something rather than settling it (`keepsListOpen`).
  */
 export default function SearchBox({ notes, onPickResult }: SearchBoxProps) {
     const map = useContext(ParentMap);
     const [ query, setQuery ] = useState("");
     const [ geocodeRun, setGeocodeRun ] = useState<GeocodeRun>();
-    // Empties the list once a marker or place has been taken, which is what closes the dropdown under
-    // `keepOpenOnPick`. Typing again clears it.
-    const [ dismissed, setDismissed ] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
-    const entriesByKey = useRef(new Map<string, SearchEntry>());
     // Discards a run superseded by a later one, since each reports through the same state.
     const latestRun = useRef(0);
     const provider = GEOCODING_PROVIDERS[DEFAULT_GEOCODING_PROVIDER_NAME];
 
-    const source = useCallback(async (currentQuery: string) => {
-        const trimmed = currentQuery.trim();
-        if (dismissed || trimmed.length < MIN_QUERY_LENGTH) {
-            entriesByKey.current = new Map();
-            return [];
-        }
-
+    const entries = useCallback(async (currentQuery: string) => {
         // Measured from the middle of what the map is showing, at the moment the list is built: two
         // places of the same name are told apart by which of them is at hand.
         const origin = map ? map.getCenter().toArray() : null;
-        const { places, notice } = geocodeEntries(geocodeRun, trimmed, provider.name);
-        const found = [ ...matchMarkers(notes, trimmed), ...places ]
+        const { places, notice } = geocodeEntries(geocodeRun, currentQuery, provider.name);
+        const found = [ ...matchMarkers(notes, currentQuery), ...places ]
             .map((entry) => withDistance(entry, origin));
         // Above the groups rather than sorted into them: a reader who typed a point named where
         // they were going, and what a search turned up answers a different question.
-        const point = pointEntry(trimmed);
-        const entries = [
+        const point = pointEntry(currentQuery);
+
+        return [
             ...(point ? [ withDistance(point, origin) ] : []),
             ...grouped(found),
             ...(notice ? [ notice ] : [])
         ];
-        entriesByKey.current = new Map(entries.map((entry) => [ entry.key, entry ]));
-        return entries.map((entry) => entry.key);
-    }, [ notes, geocodeRun, dismissed, map, provider ]);
+    }, [ notes, geocodeRun, map, provider ]);
 
     const changeQuery = useCallback((newQuery: string) => {
-        setDismissed(false);
         setQuery(newQuery);
         // Emptying the field is how the search is taken back off the map, pin and all.
         if (!newQuery.trim()) {
@@ -197,25 +174,6 @@ export default function SearchBox({ notes, onPickResult }: SearchBoxProps) {
         }
     }, [ provider, map ]);
 
-    /**
-     * Puts the rows back on offer, so a query that was right can be looked at again without being
-     * retyped: the field is come back to, or Enter is pressed on it with nothing on offer.
-     *
-     * Only where there is nothing on offer, since the Enter that takes a row arrives here too and
-     * would otherwise undo the dismissal it has just caused.
-     */
-    const offerRowsAgain = useCallback(() => {
-        if (!entriesByKey.current.size) {
-            setDismissed(false);
-        }
-    }, []);
-
-    const offerRowsOnEnter = useCallback((e: TargetedKeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            offerRowsAgain();
-        }
-    }, [ offerRowsAgain ]);
-
     /** Empties the field, which is also what takes a searched place off the map (see `changeQuery`). */
     const clearSearch = useCallback(() => {
         changeQuery("");
@@ -223,55 +181,20 @@ export default function SearchBox({ notes, onPickResult }: SearchBoxProps) {
         inputRef.current?.focus();
     }, [ changeQuery ]);
 
-    const pickEntry = useCallback((key: string) => {
-        const entry = entriesByKey.current.get(key);
-        if (!entry || !map) return;
+    const pickEntry = useCallback((entry: SearchEntry, offered: SearchEntry[]) => {
+        if (!map) return;
 
         if (entry.kind === "geocode") {
             runGeocoder(entry.query);
         } else if (entry.kind === "marker" || entry.kind === "place" || entry.kind === "point") {
-            setDismissed(true);
-
             // The whole of what was offered, so the map can step through the rest of it once the
             // list has stood down (see ResultNavigator).
-            const results = walkableResults(entriesByKey.current);
+            const results = walkableResults(offered);
             const index = results.findIndex((result) => keyOf(result) === entry.key);
             onPickResult({ results, index });
             frameResult(map, results[index]);
         }
     }, [ map, runGeocoder, onPickResult ]);
-
-    const isHeading = useCallback(
-        (key: string) => entriesByKey.current.get(key)?.kind === "heading", []);
-
-    const renderEntry = useCallback((key: string) => {
-        const entry = entriesByKey.current.get(key);
-        if (!entry) return key;
-
-        if (entry.kind === "heading") {
-            return entry.label;
-        }
-
-        // Two lines: what the row is, and under it what places it — the address of a place, and the
-        // geocoder's name on the rows that are its to answer for.
-        const [ name, detail ] = entry.kind === "place"
-            ? [ entry.result.name, describePlace(entry.result) ]
-            : [ entry.label, entry.detail ];
-
-        return (
-            <span className={`geo-search-entry geo-search-entry-${entry.kind}`}>
-                <Icon icon={entry.icon} />
-                <span className="geo-search-entry-lines">
-                    <span className="geo-search-entry-name">{name}</span>
-                    {detail && <span className="geo-search-entry-address">{detail}</span>}
-                </span>
-                {entry.distance !== undefined &&
-                    <span className="geo-search-entry-distance">
-                        {formatDistance(entry.distance, getMeasurementSystem())}
-                    </span>}
-            </span>
-        );
-    }, []);
 
     // The map failed to initialize, e.g. WebGL is unavailable (see map.tsx).
     if (!map) return null;
@@ -279,22 +202,18 @@ export default function SearchBox({ notes, onPickResult }: SearchBoxProps) {
     return (
         <OverlayToolbar className="geo-search-toolbar" titlePosition="bottom">
             <Icon icon="bx bx-search" className="geo-search-icon" />
-            <FormAutocomplete
+            <FormEntryAutocomplete
                 className="geo-search-input"
                 inputRef={inputRef}
                 currentValue={query}
                 onChange={changeQuery}
                 onPick={pickEntry}
-                source={source}
-                renderItem={renderEntry}
-                isHeading={isHeading}
+                entries={entries}
+                minQueryLength={MIN_QUERY_LENGTH}
                 dropdownMinWidth={RESULT_LIST_WIDTH}
                 autoActivate
                 openOnFocus
                 openOnEnter
-                keepOpenOnPick
-                onFocus={offerRowsAgain}
-                onKeyDown={offerRowsOnEnter}
                 placeholder={t("geo-map.search-placeholder")}
                 aria-label={t("geo-map.search")}
             />
@@ -315,10 +234,10 @@ export default function SearchBox({ notes, onPickResult }: SearchBoxProps) {
  * The rows that stand somewhere on the map, in the order they were offered — the headings and the
  * geocoder's own rows being neither results nor anywhere.
  */
-function walkableResults(entries: Map<string, SearchEntry>): SearchResult[] {
+function walkableResults(entries: SearchEntry[]): SearchResult[] {
     const results: SearchResult[] = [];
 
-    for (const entry of entries.values()) {
+    for (const entry of entries) {
         if (entry.kind === "marker") {
             results.push({ kind: "note", noteId: entry.noteId, center: entry.center });
         } else if (entry.kind === "place" || entry.kind === "point") {
@@ -344,7 +263,8 @@ function withDistance(entry: SearchEntry, origin: [number, number] | null): Sear
         return entry;
     }
 
-    return { ...entry, distance: metresBetween(origin, center) };
+    const distance = metresBetween(origin, center);
+    return { ...entry, distance, trailing: formatDistance(distance, getMeasurementSystem()) };
 }
 
 /** The great-circle metres between two `[lng, lat]` points. */
@@ -423,6 +343,8 @@ function geocodeEntries(run: GeocodeRun | undefined, query: string, provider: st
                 label: t("geo-map.search-online", { query }),
                 detail: provider,
                 icon: "bx bx-search-alt",
+                className: "geo-search-entry-geocode",
+                keepsListOpen: true,
                 query
             }
         };
@@ -473,7 +395,7 @@ function grouped(entries: SearchEntry[]): SearchEntry[] {
 }
 
 function headingEntry(key: string, label: string): SearchEntry {
-    return { kind: "heading", key: `heading:${key}`, label };
+    return { kind: "heading", key: `heading:${key}`, label, heading: true };
 }
 
 /**
@@ -510,11 +432,13 @@ function pointEntry(query: string): SearchEntry | null {
     };
 }
 
+/** Two lines: what the place is called, and under it the address that places it. */
 function placeEntry(result: GeoSearchResult): SearchEntry {
     return {
         kind: "place",
         key: `place:${result.id}`,
-        label: result.label,
+        label: result.name,
+        detail: describePlace(result),
         icon: result.icon ?? DEFAULT_PLACE_ICON,
         center: [ result.lng, result.lat ],
         result
@@ -523,5 +447,5 @@ function placeEntry(result: GeoSearchResult): SearchEntry {
 
 /** A row that reports on the geocoder rather than offering a place. */
 function infoEntry(label: string, icon: string, detail: string): SearchEntry {
-    return { kind: "info", key: STATUS_KEY, label, icon, detail };
+    return { kind: "info", key: STATUS_KEY, label, icon, detail, inert: true };
 }

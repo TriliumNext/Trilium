@@ -1,3 +1,6 @@
+// @vitest-environment jsdom
+// The dialog sanitizes a string message with DOMPurify, which needs browser-faithful DOM
+// traversal (NodeIterator); happy-dom mishandles it and leaves the markup as it found it.
 /**
  * The confirmation that offers to delete the note as well as take it off whatever is showing it.
  *
@@ -126,6 +129,24 @@ describe("ConfirmDialog", () => {
         await tick(true);
         expect(checkbox()).toBeTruthy();
         expect(outcome()).toBe("");
+    });
+
+    /**
+     * The questions this dialog asks name notes, attributes and tokens, whose text the reader did not
+     * write as markup — and a string message is rendered as HTML so a translated `<strong>` reads as
+     * emphasis rather than as angle brackets.
+     */
+    it("renders a message's markup but strips what could execute", async () => {
+        await act(async () => {
+            void host.handleEventInChildren("showConfirmDialog", {
+                message: `Delete <strong>a note</strong><img src=x onerror="alert(1)">?`,
+                callback: () => {}
+            });
+        });
+
+        const body = container.querySelector(".modal-body");
+        expect(body?.querySelector("strong")?.textContent).toBe("a note");
+        expect(body?.querySelector("img")?.getAttribute("onerror")).toBeNull();
     });
 
     it("offers nothing to tick when it is only being asked to confirm", async () => {

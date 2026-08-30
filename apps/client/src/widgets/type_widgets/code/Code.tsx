@@ -14,6 +14,7 @@ import { refToJQuerySelector } from "../../react/react_utils";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
 import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
+import { scriptRuntimeFor, useScriptModuleCompletions, useScriptModuleTypes } from "./script_modules";
 import { useSnippetSlashCommands } from "./snippets";
 
 interface CodeEditorProps {
@@ -145,12 +146,19 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
         note.noteId
     );
 
+    // The installed packages: their names offered on the specifier being typed, and their
+    // declarations handed to the language service so what the script imports of one is typed.
+    const scriptRuntime = scriptRuntimeFor(mime);
+    useScriptModuleCompletions(editorView, scriptRuntime);
+    const scriptModules = useScriptModuleTypes(scriptRuntime);
+
     return (
         <CodeEditor
             ntxId={ntxId} parentComponent={parentComponent}
             editorRef={combinedEditorRef} containerRef={containerRef}
             mime={mime ?? "text/plain"}
             customRequestHandler={customRequestHandler != null}
+            scriptModules={scriptModules}
             className="note-detail-code-editor"
             placeholder={placeholder ?? t("editable_code.placeholder")}
             vimKeybindings={vimKeymapEnabled}

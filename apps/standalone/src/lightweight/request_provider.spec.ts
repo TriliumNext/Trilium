@@ -166,6 +166,7 @@ describe("FetchRequestProvider.fetchResource", () => {
             status: 200,
             ok: true,
             contentType: "text/html",
+            headers: { "content-type": "text/html; charset=utf-8" },
             bytes: new TextEncoder().encode("<html/>")
         });
         expect(spy.mock.calls[0][1]).toMatchObject({ headers: { "user-agent": "TriliumNotes" } });

@@ -1,6 +1,9 @@
+import type { ScriptFailure } from "@triliumnext/commons";
+
 import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
-import toastService from "./toast.js";
+import server from "./server.js";
+import toastService, { showErrorForScriptNote } from "./toast.js";
 import { openInAppHelpFromUrl } from "./utils.js";
 
 /**
@@ -58,4 +61,45 @@ export function showBackendScriptingDisabledToast(noteId: string) {
             }
         ]
     });
+}
+
+/**
+ * Runs a backend script note, reporting a failure as a scripting error rather than as a request
+ * that went wrong.
+ *
+ * The generic report names a status code and a URL, which say where the failure was noticed rather
+ * than what a script author did — and the toast raised here shows the note itself, so it can be
+ * opened from the failure. Rethrows, so a caller can still tell the run did not happen.
+ */
+export async function runBackendScript(noteId: string): Promise<void> {
+    try {
+        await server.postWithSilentInternalServerError(`script/run/${noteId}`);
+    } catch (e) {
+        const failure = readScriptFailure(e);
+        // The note the server named is the one that failed, which is a child module note where one
+        // of those did; the note asked for is the fallback where it named none.
+        showErrorForScriptNote(failure.noteId ?? noteId, failure.message, { monospace: true });
+        throw e;
+    }
+}
+
+/** What the server said failed, as it answers it — parts rather than one sentence to unpick. */
+export function readScriptFailure(e: unknown): ScriptFailure {
+    if (typeof e !== "string") {
+        return { message: e instanceof Error ? e.message : String(e) };
+    }
+
+    try {
+        const parsed = JSON.parse(e);
+        if (parsed && typeof parsed.message === "string") {
+            return {
+                message: parsed.message,
+                ...(typeof parsed.noteId === "string" ? { noteId: parsed.noteId } : {})
+            };
+        }
+    } catch {
+        // Not JSON, so the body is the best the server said.
+    }
+
+    return { message: e };
 }

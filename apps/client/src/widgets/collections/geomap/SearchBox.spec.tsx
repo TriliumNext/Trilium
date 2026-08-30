@@ -141,8 +141,8 @@ function entries() {
 
 /** What a row is called: the first line of a place, and the whole of any other row. */
 function nameOf(row: HTMLElement) {
-    return row.querySelector(".geo-search-entry-name")?.textContent
-        ?? row.querySelector(".geo-search-entry-lines")?.textContent
+    return row.querySelector(".form-autocomplete-entry-name")?.textContent
+        ?? row.querySelector(".form-autocomplete-entry-lines")?.textContent
         ?? row.textContent;
 }
 
@@ -410,7 +410,7 @@ describe("geo map SearchBox", () => {
 
         const detailOf = (name: string) => rows()
             .find((row) => nameOf(row) === name)
-            ?.querySelector(".geo-search-entry-address")?.textContent;
+            ?.querySelector(".form-autocomplete-entry-detail")?.textContent;
 
         await type(container, "tokyo");
         // What is about to leave the map, said where it is read rather than in a setting somewhere.
@@ -435,8 +435,8 @@ describe("geo map SearchBox", () => {
         await pick(0);
 
         const lines = entries().map((entry) => [
-            entry.querySelector(".geo-search-entry-name")?.textContent,
-            entry.querySelector(".geo-search-entry-address")?.textContent
+            entry.querySelector(".form-autocomplete-entry-name")?.textContent,
+            entry.querySelector(".form-autocomplete-entry-detail")?.textContent
         ]);
         expect(lines).toEqual([
             [ "Tokyo", "Ōta, Japan" ],
@@ -451,7 +451,7 @@ describe("geo map SearchBox", () => {
         await type(container, "tokyo");
 
         const distances = () => entries().map((entry) =>
-            entry.querySelector(".geo-search-entry-distance")?.textContent ?? null);
+            entry.querySelector(".form-autocomplete-entry-trailing")?.textContent ?? null);
 
         // The note is on the other side of the world from the view, which is in Corfu.
         const [ tokyoTrip, geocoderRow ] = distances();

@@ -63,6 +63,12 @@ function mockServer() {
         console.warn(`Unsupported GET to mocked server: ${url}`);
     }
 
+    async function post(url: string, data: object) {
+        if (url === "tree/load") {
+            throw new Error(`A module tried to load from the server the following notes: ${((data as any).noteIds || []).join(",")}\nThis is not supported, use Froca mocking instead and ensure the note exist in the mock.`);
+        }
+    }
+
     return {
         default: {
             get,
@@ -71,11 +77,12 @@ function mockServer() {
             // in how it reports 404s, which the mock never produces, so share the same routing.
             getWithSilentNotFound: get,
 
-            async post(url: string, data: object) {
-                if (url === "tree/load") {
-                    throw new Error(`A module tried to load from the server the following notes: ${((data as any).noteIds || []).join(",")}\nThis is not supported, use Froca mocking instead and ensure the note exist in the mock.`);
-                }
-            },
+            // A backend script run goes through this variant so its failure is reported against the
+            // note rather than as a request that went wrong; it differs from `post` only in how it
+            // reports a 500, which the mock never produces.
+            postWithSilentInternalServerError: (url: string, data: object) => post(url, data),
+
+            post,
 
             // Widgets that persist as the user edits (attribute writes, view configs) reach for
             // these; without them the write rejects and surfaces as an unhandled rejection rather
