@@ -3164,17 +3164,32 @@
     "move-to": "이동",
     "insert-above": "위에 삽입",
     "insert-below": "아래에 삽입",
-    "delete-column": "열 삭제",
+    "delete-column": "열 삭제...",
     "delete-column-confirmation": "이 열을 삭제하시겠습니까? 이 열 아래의 노트에서도 해당 속성이 삭제됩니다.",
     "new-item": "새 항목",
     "new-item-placeholder": "노트 제목을 입력하세요...",
     "add-column": "열 추가",
     "add-column-placeholder": "열 이름을 입력하세요...",
     "edit-note-title": "노트 제목 편집 클릭",
-    "edit-column-title": "칼럼 제목 편집 클릭",
     "column-already-exists": "이 칼럼은 이미 게시판에 존재합니다.",
     "column-definition-save-error": "열은 보드에 저장했지만 상태 속성에는 저장하지 못했습니다.",
-    "status-alias": "상태"
+    "status-alias": "상태",
+    "archive-column": "열 보관",
+    "unarchive-column": "열 보관 해제",
+    "archived-badge": "보관됨",
+    "add-new-item": "새 노트 추가",
+    "add-existing-item": "기존 노트 추가...",
+    "add-existing-item-title": "기존 노트를 보드에 추가",
+    "add-existing-item-ok": "열에 추가",
+    "add-new-column": "새 열 추가",
+    "add-column-before": "앞에",
+    "add-column-after": "뒤에",
+    "new-column": "새 열",
+    "existing-item-conflict": "이 노트는 이미 “{{label}}” 기준으로 그룹화된 다른 보드에 속해 있습니다. 여기에 추가하면 원래 보드에서도 다른 열로 이동합니다. 그래도 추가하시겠습니까?",
+    "rename-column": "열 이름 변경",
+    "change-column-icon": "열 아이콘 변경",
+    "column-menu": "열 메뉴",
+    "save-error": "변경 사항을 저장할 수 없습니다."
   },
   "dashboard_view": {
     "refresh-widget": "새로 고침",
@@ -3344,7 +3359,9 @@
     "save_status_error": "저장 실패",
     "save_status_saving_tooltip": "변화가 지켜지고 있습니다.",
     "save_status_unsaved_tooltip": "저장하지 않은 변경 사항이 있습니다. 잠시 후 자동으로 저장됩니다.",
-    "save_status_error_tooltip": "노트를 저장하는 과정에서 오류가 발생했습니다. 가능하다면 노트 내용을 다른 곳에 복사해서 애플리케이션을 다시 불러오세요."
+    "save_status_error_tooltip": "노트를 저장하는 과정에서 오류가 발생했습니다. 가능하다면 노트 내용을 다른 곳에 복사해서 애플리케이션을 다시 불러오세요.",
+    "office_preview": "미리보기",
+    "office_preview_description": "이 문서는 읽기 전용 미리보기로 표시되므로 여기에서 편집할 수 없습니다.\n\n변경하려면 파일을 다운로드하여 외부 애플리케이션에서 편집한 후 새 수정본으로 다시 업로드하세요."
   },
   "status_bar": {
     "language_title": "콘텐츠 언어 변경",
@@ -3991,5 +4008,10 @@
     "reformat_callout": "콜아웃",
     "reformat_collapsible": "접이식 섹션",
     "reformat_action_items": "실행 항목"
+  },
+  "note_picker": {
+    "title": "노트 선택",
+    "label": "노트",
+    "ok": "선택"
   }
 }

@@ -524,16 +524,29 @@ describe("content_renderer", () => {
             }
         });
 
-        it("renders nothing for a source URL a frame has no business loading", () => {
-            // A web view frames a website, and the setup form only ever writes an absolute URL.
-            // Anything else reaches the label by another route — a hand-edited attribute, an
-            // import, ETAPI, a sync — and either cannot be framed at all or would frame this very
-            // server, which the sandbox's allow-same-origin would then not isolate from the page
-            // doing the framing.
+        it("loads a source rooted at the site serving the page, unchanged", () => {
+            // The user guide points its API reference pages at the Redoc and TypeDoc output the
+            // docs build writes beside them, which is only ever reachable as a rooted path.
             for (const src of [
-                "/relative/path",
+                "/rest-api/etapi/",
+                "/script-api/frontend/interfaces/FNote.html"
+            ]) {
+                expect(renderWebViewNote(src).frame?.getAttribute("src")).toBe(src);
+            }
+        });
+
+        it("renders nothing for a source URL a frame has no business loading", () => {
+            // A web view frames a website or a page of this site, and the setup form only ever
+            // writes an absolute URL. Anything else reaches the label by another route — a
+            // hand-edited attribute, an import, ETAPI, a sync — and either cannot be framed at all
+            // or leaves the site while looking rooted at it: the URL parser folds a backslash, and
+            // strips a tab, into the second slash that starts an authority.
+            for (const src of [
                 "//example.com/protocol-relative",
+                "/\\example.com/backslash",
+                "/\t/example.com",
                 "./a",
+                "relative/path",
                 "mailto:a@b.com",
                 "ftp://example.com/file",
                 "javascript:alert(1)",

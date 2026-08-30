@@ -181,21 +181,47 @@ function eraseDeletedEntities(eraseEntitiesAfterTimeInSeconds: number | null = n
     });
 }
 
-function eraseNotesWithDeleteId(deleteId: string) {
+/**
+ * Erases the entities marked by any of the given deletions, in a single pass.
+ *
+ * The client's `deleteNotes` deletes one branch per request, each with its own deleteId, and
+ * `setEntityChangesAsErased` marks entity changes that make every connected client reload. Erasing
+ * a whole group at once keeps that to a single reload, after its last request.
+ */
+function eraseNotesWithDeleteIds(deleteIds: string[]) {
+    if (deleteIds.length === 0) {
+        return;
+    }
+
     const sql = getSql();
-    const noteIdsToErase = sql.getColumn<string>("SELECT noteId FROM notes WHERE isDeleted = 1 AND deleteId = ?", [deleteId]);
+    const noteIdsToErase = sql.getManyRows<{ noteId: string }>(
+        /*sql*/`SELECT noteId FROM notes WHERE isDeleted = 1 AND deleteId IN (???)`,
+        deleteIds
+    ).map((row) => row.noteId);
     eraseNotes(noteIdsToErase);
 
-    const branchIdsToErase = sql.getColumn<string>("SELECT branchId FROM branches WHERE isDeleted = 1 AND deleteId = ?", [deleteId]);
+    const branchIdsToErase = sql.getManyRows<{ branchId: string }>(
+        /*sql*/`SELECT branchId FROM branches WHERE isDeleted = 1 AND deleteId IN (???)`,
+        deleteIds
+    ).map((row) => row.branchId);
     eraseBranches(branchIdsToErase);
 
-    const attributeIdsToErase = sql.getColumn<string>("SELECT attributeId FROM attributes WHERE isDeleted = 1 AND deleteId = ?", [deleteId]);
+    const attributeIdsToErase = sql.getManyRows<{ attributeId: string }>(
+        /*sql*/`SELECT attributeId FROM attributes WHERE isDeleted = 1 AND deleteId IN (???)`,
+        deleteIds
+    ).map((row) => row.attributeId);
     eraseAttributes(attributeIdsToErase);
 
-    const attachmentIdsToErase = sql.getColumn<string>("SELECT attachmentId FROM attachments WHERE isDeleted = 1 AND deleteId = ?", [deleteId]);
+    const attachmentIdsToErase = sql.getManyRows<{ attachmentId: string }>(
+        /*sql*/`SELECT attachmentId FROM attachments WHERE isDeleted = 1 AND deleteId IN (???)`,
+        deleteIds
+    ).map((row) => row.attachmentId);
     eraseAttachments(attachmentIdsToErase);
 
-    const cardIdsToErase = sql.getColumn<string>("SELECT cardId FROM flashcards WHERE isDeleted = 1 AND deleteId = ?", [deleteId]);
+    const cardIdsToErase = sql.getManyRows<{ cardId: string }>(
+        /*sql*/`SELECT cardId FROM flashcards WHERE isDeleted = 1 AND deleteId IN (???)`,
+        deleteIds
+    ).map((row) => row.cardId);
     eraseFlashcards(cardIdsToErase);
 
     eraseUnusedBlobs();
@@ -254,7 +280,7 @@ function startScheduledCleanup() {
 export default {
     eraseDeletedNotesNow,
     eraseUnusedAttachmentsNow,
-    eraseNotesWithDeleteId,
+    eraseNotesWithDeleteIds,
     eraseUnusedBlobs,
     eraseAttachments,
     eraseRevisions,

@@ -32,6 +32,7 @@ pnpm dev:format-check | dev:format-fix   # stylistic formatting
 - Only commit when explicitly asked to **in that message**, and the ask covers only the step it accompanies — a later step is left uncommitted until asked again. A remark like "commits go on main" is about branch choice, not standing permission to commit. Otherwise leave changes staged/unstaged for review.
 - **The issue-closing keyword goes in the commit/PR subject**, not the body — `fix(markdown): wrap imported tables (closes #10270)`.
 - **`git rm` is not a neutral delete.** It leaves the deletion staged, so a commit made before the matching reference updates are staged lands a `HEAD` pointing at a module that no longer exists. When removing a file whose references are edited in the same pass, delete it from the filesystem instead, or land the deletion and the reference updates together — never leave the index in a state that is broken on its own.
+- **Never run a tree-wide git operation — no `git stash`, `git checkout --`, `git restore`.** The user edits this worktree at the same time, so a stash takes their uncommitted work with it, and their IDE can flush a partial buffer onto the stashed state and block the pop. To decide whether a failure predates your change, argue statically instead — check whether the failing spec even imports the module you touched. If a real A/B is unavoidable, copy the file, edit it in place, and restore it, touching only files you wrote; prefer `git worktree add` on a temp dir over anything that reaches the whole tree.
 
 ## Monorepo Structure
 
@@ -196,6 +197,8 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 - **Build validation tests** check artifact integrity
 - **Write concise tests**: Group related assertions together in a single test case rather than creating many one-shot tests
 - **Extract and test business logic**: When adding pure business logic (e.g., data transformations, migrations, validations), extract it as a separate function and always write unit tests for it
+- **Confirm a new spec fails without the fix**: after adding a spec that covers a bug you just fixed, revert the fix, run the spec, confirm it fails, restore the fix, and report both results. A spec written against already-correct code can pass for the wrong reason — check every assertion in the reverted run, since one that still passes is either covering something else or is vacuous, and needs tightening (look the element up, assert it exists, *then* act on it)
+- **Don't drive the running app to verify a UI change** — the user exercises the UI and reports back, so a headless-browser walkthrough duplicates their work and adds no information. Ship once the relevant unit tests and `pnpm typecheck` are green, and state plainly what is and isn't verified. Booting an instance is for what the user cannot answer from the UI — which CSS rule actually won, a stacking or placement bug, a fixture-only repro: see `references/inspecting-the-running-app.md` in the `building-client-ui` skill
 
 ## Documentation
 

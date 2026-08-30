@@ -266,6 +266,30 @@ describe("Notes API (core)", () => {
             // Erasing removes the row entirely rather than just flagging it deleted.
             expect(noteIsDeleted(noteId)).toBeNull();
         });
+
+        it("holds a multi-note erase back until the last request of the task group", async () => {
+            const first = await createTextNote(api, { title: "Batch erase note 1" });
+            const second = await createTextNote(api, { title: "Batch erase note 2" });
+            const taskId = "test-note-erase-batch";
+
+            const firstRes = await api.delete(`/api/notes/${first.noteId}`, {
+                query: { taskId, last: "false", eraseNotes: "true" }
+            });
+            expect(firstRes.status).toBe(204);
+
+            // Soft-deleted, but not erased: the client is still sending the rest of the batch, and
+            // an erase here would reload it out from under them.
+            expect(noteIsDeleted(first.noteId)).toBe(1);
+
+            const secondRes = await api.delete(`/api/notes/${second.noteId}`, {
+                query: { taskId, last: "true", eraseNotes: "true" }
+            });
+            expect(secondRes.status).toBe(204);
+
+            // The last request erases everything the group deleted, in one go.
+            expect(noteIsDeleted(first.noteId)).toBeNull();
+            expect(noteIsDeleted(second.noteId)).toBeNull();
+        });
     });
 
     describe("creating with targets", () => {

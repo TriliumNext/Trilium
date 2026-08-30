@@ -5,7 +5,7 @@ import type BNote from "../becca/entities/bnote";
 import boxiconsManifest from "./icon_pack_boxicons-v2.json" with { type: "json" };
 import { getLog } from "./log";
 import search from "./search/services/search";
-import { safeExtractMessageAndStackFromError } from "./utils/index";
+import { escapeCssString, safeExtractMessageAndStackFromError } from "./utils/index";
 
 const PREFERRED_MIME_TYPE = [
     "font/woff2",
@@ -18,6 +18,14 @@ const MIME_TO_CSS_FORMAT_MAPPINGS: Record<typeof PREFERRED_MIME_TYPE[number], st
     "font/woff": "woff",
     "font/woff2": "woff2"
 };
+
+/**
+ * Character set a pack's prefix and each of its icon keys must match. Both are interpolated
+ * into a CSS class selector, which takes letters, digits, `-`, `_` and any code point at or
+ * above U+0080 unescaped. Anything else has to be rejected: a key holding `</style>` ends the
+ * inline `<style>` element that `generateCss()` output is served in.
+ */
+const CSS_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_\u0080-\uFFFF-]+$/;
 
 export const MIME_TO_EXTENSION_MAPPINGS: Record<string, string> = {
     "font/ttf": "ttf",
@@ -119,9 +127,8 @@ export function processIconPack(iconPackNote: BNote): ProcessedIconPack | undefi
         return;
     }
 
-    // Ensure prefix is alphanumeric only, dashes and underscores.
-    if (!/^[a-zA-Z0-9-_]+$/.test(prefix)) {
-        getLog().error(`Icon pack has invalid 'iconPack' prefix (only alphanumeric characters, dashes and underscores are allowed): ${iconPackNote.title} (${iconPackNote.noteId})`);
+    if (!CSS_CLASS_NAME_PATTERN.test(prefix)) {
+        getLog().error(`Icon pack has invalid 'iconPack' prefix (only letters, digits, dashes, underscores and non-ASCII characters are allowed): ${iconPackNote.title} (${iconPackNote.noteId})`);
         return;
     }
 
@@ -157,7 +164,13 @@ export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, pre
     try {
         const iconDeclarations: string[] = [];
         for (const [ key, mapping ] of Object.entries(manifest.icons)) {
-            iconDeclarations.push(`.${prefix}.${key}::before { content: "${mapping.glyph}"; }`);
+            if (!CSS_CLASS_NAME_PATTERN.test(key)) {
+                getLog().error(`Skipping icon '${key}' of icon pack '${prefix}': keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
+                continue;
+            }
+
+            const glyph = escapeCssString(String(mapping.glyph ?? ""));
+            iconDeclarations.push(`.${prefix}.${key}::before { content: "${glyph}"; }`);
         }
 
         const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;

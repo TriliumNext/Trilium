@@ -2085,7 +2085,6 @@
     "add-column": "Ajouter une colonne",
     "add-column-placeholder": "Entrez le nom de la colonne...",
     "edit-note-title": "Cliquez pour modifier le titre de la note",
-    "edit-column-title": "Cliquez pour modifier le titre de la colonne",
     "column-already-exists": "Cette colonne existe déjà sur le tableau."
   },
   "presentation_view": {

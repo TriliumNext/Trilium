@@ -1841,7 +1841,6 @@
     "add-column-placeholder": "Inserir nome da coluna...",
     "edit-note-title": "Clicar para editar o titulo da nota",
     "unarchive-note": "Remover nota do arquivo",
-    "edit-column-title": "Click para editar titulo da coluna",
     "column-already-exists": "Esta coluna já existe no quadro."
   },
   "command_palette": {

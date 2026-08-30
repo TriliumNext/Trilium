@@ -2141,7 +2141,6 @@
     "add-column": "कॉलम जोड़ें",
     "add-column-placeholder": "कॉलम का नाम लिखें..।",
     "edit-note-title": "टाइटल बदलने के लिए क्लिक करें",
-    "edit-column-title": "कॉलम का नाम बदलने के लिए क्लिक करें",
     "column-already-exists": "यह कॉलम बोर्ड पर पहले से है।"
   },
   "presentation_view": {

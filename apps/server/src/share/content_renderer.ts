@@ -38,6 +38,14 @@ const HIGHLIGHT_MAX_LINE_COUNT = 500;
 const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
 
 /**
+ * The base a web view's rooted source is resolved against, to tell a path that stays on this site
+ * from one that only looks rooted at it. `.invalid` is reserved and resolves nowhere, so a source
+ * that reaches this origin can only have done so by staying relative. See {@link isFramableSource}.
+ */
+const SAME_SITE_BASE = "https://web-view.invalid/";
+const SAME_SITE_ORIGIN = new URL(SAME_SITE_BASE).origin;
+
+/**
  * Represents the output of the content renderer.
  */
 export interface Result {
@@ -736,11 +744,6 @@ function renderSpreadsheet(result: Result) {
 /**
  * Renders a web view note as the frame that embeds its source.
  *
- * Only an absolute http(s) URL is framed, which is the source a web view is documented to take and
- * the only one its setup form will write. Any other value reaches the label by another route — a
- * hand-edited attribute, an import, ETAPI, a sync — and is either not framable at all or points at
- * this very server, which `allow-same-origin` would then not isolate from the page framing it.
- *
  * The frame is built as an element rather than assembled as a string: `setAttribute()` escapes the
  * value it is handed, so the source is placed as a value and can only ever be read back as one.
  */
@@ -748,8 +751,8 @@ function renderWebView(note: SNote | BNote, result: Result) {
     const url = note.getLabelValue("webViewSrc");
     if (!url) return;
 
-    if (!isHttpUrl(url)) {
-        getLog().error(`Web view of shared note '${note.noteId}' not rendered: '${url}' is not an absolute http(s) URL.`);
+    if (!isFramableSource(url)) {
+        getLog().error(`Web view of shared note '${note.noteId}' not rendered: '${url}' is neither an absolute http(s) URL nor a path on this site.`);
         return;
     }
 
@@ -761,6 +764,37 @@ function renderWebView(note: SNote | BNote, result: Result) {
     // embedding it; only dropping allow-same-origin would isolate it.
     frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups");
     result.content = frame.toString();
+}
+
+/**
+ * True when a web view's source is one the share page may frame: an absolute http(s) URL, or a path
+ * rooted at the site serving the page.
+ *
+ * Those two are what a web view is documented to take — the setup form writes the first, and the
+ * user guide's API reference pages carry the second to reach the Redoc and TypeDoc output the docs
+ * build writes beside them. Any other value reaches the label by another route — a hand-edited
+ * attribute, an import, ETAPI, a sync — and is either not framable at all or leaves the site while
+ * looking rooted at it.
+ *
+ * A rooted path is resolved against a base no source can name, so anything that reaches a different
+ * origin is rejected however it spelled the authority: `sanitizeUrl()` passes `//example.com` and
+ * `/\example.com` through untouched, and the URL parser folds a backslash, and strips a tab, into
+ * the second slash that starts one.
+ */
+function isFramableSource(url: string): boolean {
+    if (isHttpUrl(url)) {
+        return true;
+    }
+
+    if (!url.startsWith("/")) {
+        return false;
+    }
+
+    try {
+        return new URL(url, SAME_SITE_BASE).origin === SAME_SITE_ORIGIN;
+    } catch {
+        return false;
+    }
 }
 
 

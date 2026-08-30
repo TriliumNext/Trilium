@@ -2543,7 +2543,6 @@
     "add-column": "Cuir Colún leis",
     "add-column-placeholder": "Cuir isteach ainm an cholúin...",
     "edit-note-title": "Cliceáil chun teideal an nóta a chur in eagar",
-    "edit-column-title": "Cliceáil chun teideal an cholúin a chur in eagar",
     "column-already-exists": "Tá an colún seo ann cheana féin ar an mbord.",
     "column-definition-save-error": "Sábháladh na colúin ar an mbord, ach níorbh fhéidir iad a shábháil san tréith stádais.",
     "status-alias": "Stádas"

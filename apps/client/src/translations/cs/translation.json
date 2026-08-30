@@ -2002,7 +2002,6 @@
     "add-column": "Přidat sloupec",
     "add-column-placeholder": "Zadejte název sloupce...",
     "edit-note-title": "Kliknutím upravíte název poznámky",
-    "edit-column-title": "Kliknutím upravíte název sloupce",
     "column-already-exists": "Tento sloupec již na tabuli existuje."
   },
   "presentation_view": {

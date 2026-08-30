@@ -13,6 +13,7 @@ class TaskContext<T extends TaskType> {
     private totalCount: number | null;
     private phase: ProgressPhase | null;
     private lastSentCountTs: number;
+    private scheduledEraseDeleteIds: string[];
     data: TaskData<T>;
     noteDeletionHandlerTriggered: boolean;
 
@@ -21,6 +22,7 @@ class TaskContext<T extends TaskType> {
         this.taskType = taskType;
         this.data = data;
         this.noteDeletionHandlerTriggered = false;
+        this.scheduledEraseDeleteIds = [];
         this.totalCount = null;
         this.phase = null;
 
@@ -93,6 +95,23 @@ class TaskContext<T extends TaskType> {
             this.phase = null;
             this.lastSentCountTs = 0;
         }
+    }
+
+    /**
+     * Records a deleteId whose entities are to be erased once the task group ends. Erasing flags
+     * entity changes as erased, which makes every connected client reload; a delete-notes group
+     * spans one request per branch, so erasing before the last one cuts off the requests the client
+     * has yet to send.
+     */
+    scheduleErase(deleteId: string) {
+        this.scheduledEraseDeleteIds.push(deleteId);
+    }
+
+    /** Returns the deleteIds collected by {@link scheduleErase} and clears them. */
+    takeScheduledErases(): string[] {
+        const deleteIds = this.scheduledEraseDeleteIds;
+        this.scheduledEraseDeleteIds = [];
+        return deleteIds;
     }
 
     increaseProgressCount() {

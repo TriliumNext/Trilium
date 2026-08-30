@@ -2118,7 +2118,6 @@
     "new-item-placeholder": "輸入筆記標題…",
     "add-column-placeholder": "輸入行名…",
     "edit-note-title": "點擊以編輯筆記標題",
-    "edit-column-title": "點擊以編輯行標題",
     "column-already-exists": "此列已在看板上。"
   },
   "command_palette": {

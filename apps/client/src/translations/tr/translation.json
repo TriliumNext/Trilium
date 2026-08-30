@@ -3469,7 +3469,6 @@
     "add-column": "Sütun Ekle",
     "add-column-placeholder": "Sütun adını girin...",
     "edit-note-title": "Not başlığını düzenlemek için tıklayın",
-    "edit-column-title": "Sütun başlığını düzenlemek için tıklayın",
     "column-already-exists": "Bu sütun panoda zaten var.",
     "column-definition-save-error": "Sütunlar panoda kaydedildi, ancak durum özelliğine kaydedilemedi.",
     "status-alias": "Durum"

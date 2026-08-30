@@ -2794,7 +2794,6 @@
     "add-column": "Tambahkan Kolom",
     "add-column-placeholder": "Masukkan nama kolom...",
     "edit-note-title": "Klik untuk edit judul catatan",
-    "edit-column-title": "Klik untuk edit judul kolom",
     "column-already-exists": "Kolom ini sudah ada di board.",
     "column-definition-save-error": "Kolom telah disimpan pada papan, tetapi tidak dapat disimpan ke atribut status.",
     "status-alias": "Status"

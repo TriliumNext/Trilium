@@ -1831,8 +1831,7 @@
     "unarchive-note": "Розархівувати нотатку",
     "new-item-placeholder": "Введіть заголовок нотатки...",
     "add-column-placeholder": "Введіть назву стовпця...",
-    "edit-note-title": "Натисніть, щоб редагувати заголовок нотатки",
-    "edit-column-title": "Натисніть, щоб редагувати заголовок стовпця"
+    "edit-note-title": "Натисніть, щоб редагувати заголовок нотатки"
   },
   "command_palette": {
     "tree-action-name": "Дерево: {{name}}",

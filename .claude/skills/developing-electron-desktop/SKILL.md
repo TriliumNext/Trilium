@@ -42,6 +42,14 @@ apps/desktop/
 - **WebSocket is replaced by IPC**: `ipc_messaging_provider.ts` implements `MessagingProvider` over `webContents.send` / `ipcMain.on`, one client per `webContents.id`; the client side picks it up through `window.electronApi.ws` (`apps/client/src/services/ws.ts`). Don't open a TCP WebSocket from desktop code.
 - Window creation is gated on core init, not full server startup, so the renderer spins up while Express is still building (`coreInitializedPromise` / `expressAppPromise` in `main.ts`).
 
+## The `main()` prologue runs before the database
+
+Everything from the top of `main()` down to `dbProvider.loadFromFile(…)` runs before `app.on("ready")` and long before `initializeCore()` wires core's SQL layer. Chromium switches (`app.commandLine.appendSwitch`, `app.disableHardwareAcceleration`) must be applied before `ready`, which forces that shape — current readers are `lang` via `getElectronLocale()`, `smoothScrollEnabled` (#10559) and `hardwareAccelerationEnabled` (#10572). Three rules hold in that window:
+
+- **`options.getOptionOrNull()` always returns `null` there.** It falls back to `getSql()`, which throws before the provider is wired, so an option-derived switch silently takes its default (#10559). Read pre-`ready` values with `readDbOption(dbProvider, name)` instead.
+- **Keep the prologue await-free.** `app`, `config` and `dataDirs` are static imports precisely so `ready` cannot fire before the database is open. Adding an `await` — including a `await import(…)` for something already statically available — reintroduces the race that lands a switch too late.
+- **Open the database once.** The `BetterSqlite3Provider` the switches read from is the same instance handed to `initializeCore({ dbConfig: { provider } })`; don't open a second connection. The single-instance lock check stays *before* the open, so a second launch exits without touching the file.
+
 ## Adding an Electron API (renderer → main)
 
 Four files, always together:
@@ -154,6 +162,11 @@ CJS — the sandboxed renderer can't load an ESM preload, and the worker is spaw
   lands in a lazy chunk instead of the startup path — measured on identical boots, ESM +
   seams took the desktop main process from 348 MB to 287 MB RSS. The
   **`analyzing-backend-bundle` skill** has the measurement tools and the seam patterns.
+
+## Upstream Electron behaviours that bite
+
+- **`session.setSpellCheckerLanguages()` force-enables spell check.** Upstream runs `prefs.SetBoolean(kSpellCheckEnable, !langs.empty())`, so a non-empty language list clobbers an earlier `setSpellCheckerEnabled(false)` — the symptom is spell check reactivating on every launch even though the option is off (#10569). Set the languages **first** and `setSpellCheckerEnabled(enabled)` **last**; `setupSpellcheckForSession()` and `applySpellcheckLanguages()` in `services/window.ts` both re-assert the option afterwards for this reason.
+- **`electron.net` joins repeated header values with a bare comma**, where Node's `http` joins cookie arrays with `"; "` — which is why server↔server sync never hits this and desktop sync does. A `Cookie` header replayed from a raw `set-cookie` array arrives as `…HttpOnly,trilium.sid=x`, which `cookie.parse` reads as one junk key: the session cookie is lost and sync 401s with "Logged in session not found" as soon as a response carries any second `Set-Cookie` (a load-balancer affinity cookie) before Trilium's. `absorbSetCookies()` in `apps/server/src/services/request.ts` merges by name into a single `"; "`-joined string; keep any header a new `net`-based request path sends pre-joined (#10548).
 
 ## Running
 

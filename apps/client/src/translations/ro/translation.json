@@ -2464,7 +2464,6 @@
     "new-item-placeholder": "Introduceți titlul notiței...",
     "add-column-placeholder": "Introduceți denumirea coloanei...",
     "edit-note-title": "Clic pentru a edita titlul notiței",
-    "edit-column-title": "Clic pentru a edita titlul coloanei",
     "column-already-exists": "Această coloană deja există.",
     "column-definition-save-error": "Coloanele au fost salvate pe tablă, dar nu au putut fi salvate în atributul de stare.",
     "status-alias": "Stare"

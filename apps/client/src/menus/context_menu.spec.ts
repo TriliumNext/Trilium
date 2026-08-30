@@ -60,6 +60,26 @@ describe("contextMenu", () => {
         expect(menu?.parentElement).toBe(document.body);
     });
 
+    it("tints an item's icon with the colour class it carries, and only the icon", async () => {
+        const menu = buildPage();
+        const contextMenu = await buildContextMenu();
+
+        await contextMenu.show({
+            x: 10,
+            y: 10,
+            selectMenuItemHandler: () => {},
+            items: [
+                { title: "To Do", uiIcon: "bx bx-list-ul", iconColorClass: "use-note-color color-e64d4d" },
+                { title: "Done", uiIcon: "bx bx-check" }
+            ]
+        });
+
+        const icons = [ ...menu?.querySelectorAll(".dropdown-item .tn-icon") ?? [] ];
+        expect(icons.map(icon => icon.classList.contains("use-note-color"))).toEqual([ true, false ]);
+        // The label sits beside the icon rather than inside it, so it keeps the menu's own colour.
+        expect(menu?.querySelectorAll(".dropdown-item .use-note-color")).toHaveLength(1);
+    });
+
     it("says whether it is up, for a host whose own press would otherwise not know", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();

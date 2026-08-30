@@ -2432,7 +2432,6 @@
     "new-item-placeholder": "Ingresar título de la nota...",
     "add-column-placeholder": "Ingresar título de la columna...",
     "edit-note-title": "Haga clic para editar el título de la nota",
-    "edit-column-title": "Haga clic para editar el título de la columna",
     "remove-from-board": "Eliminar del tablero",
     "column-already-exists": "Esta columna ya existe en el tablero.",
     "column-definition-save-error": "Las columnas se guardaron en el tablero, pero no se pudieron guardar en el atributo de estado.",

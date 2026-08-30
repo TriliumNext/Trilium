@@ -868,20 +868,30 @@ function SetupOptionCard({ title, description, icon, onClick, disabled }: { titl
     );
 }
 
-async function getNetworkAddresses(): Promise<NetworkAddressesResponse> {
-    if (!isElectron()) {
+export async function getNetworkAddresses(): Promise<NetworkAddressesResponse> {
+    if (!isElectron() && !isLoopbackHostname(location.hostname)) {
         // The browser already reached this server over the network, so the
         // address it's using is reachable by definition.
         return { addresses: [`${location.protocol}//${location.host}`], reachableOnNetwork: true };
     }
 
-    // Node's `os` module isn't available in the renderer (node integration is
-    // disabled), and the desktop renderer's `location` points at the internal
-    // `trilium-app://` protocol rather than the real HTTP listener. So the
-    // server enumerates its interfaces and builds the reachable URLs (correct
-    // protocol and port included), and reports whether it's actually bound to a
-    // network-reachable interface.
+    // Either we're in Electron (`location` points at the internal `trilium-app://`
+    // protocol, not the real HTTP listener), or the page was loaded over loopback,
+    // e.g. a mobile app's embedded webview hitting a server running on the same
+    // device. Either way `location.host` isn't an address another device could
+    // use, so ask the server to enumerate its real network interfaces instead.
     return await server.get<NetworkAddressesResponse>("network-addresses");
+}
+
+/**
+ * Mirrors the loopback check the server applies to its own listen host in
+ * `isHostReachableOnNetwork`, but on `location.hostname`, where a browser
+ * serializes an IPv6 address with its brackets intact (`[::1]`), unlike the
+ * server's raw, unbracketed config value.
+ */
+function isLoopbackHostname(hostname: string): boolean {
+    const normalized = hostname.toLowerCase();
+    return normalized === "localhost" || normalized === "::1" || normalized === "[::1]" || normalized.startsWith("127.");
 }
 
 async function allowLanAccessAndRestart() {

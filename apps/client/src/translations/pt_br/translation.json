@@ -2292,7 +2292,6 @@
     "new-item-placeholder": "Escreva o título da nota...",
     "add-column-placeholder": "Escreva o nome da coluna...",
     "edit-note-title": "Clique para editar o título da nota",
-    "edit-column-title": "Clique para editar o título da coluna",
     "column-already-exists": "Esta coluna já existe no quadro.",
     "column-definition-save-error": "As colunas foram salvas no quadro, mas não puderam ser salvas no atributo de status.",
     "status-alias": "Status"
@@ -3969,5 +3968,9 @@
       "invalid-symbol": "o símbolo markdown deve ter um caractere, exceto \"[\", \" \", \"X\" e \"]\"",
       "duplicate-symbol": "símbolo markdown duplicado"
     }
+  },
+  "note_picker": {
+    "label": "Nota",
+    "ok": "Escolha"
   }
 }

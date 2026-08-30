@@ -2394,7 +2394,6 @@
     "new-item-placeholder": "Notiztitel eingeben...",
     "add-column-placeholder": "Spaltenname eingeben...",
     "edit-note-title": "Zum Bearbeiten des Notiztitels klicken",
-    "edit-column-title": "Zum Bearbeiten des Spaltentitels klicken",
     "column-already-exists": "Die Spalte ist auf dem Board bereits vorhanden."
   },
   "command_palette": {

@@ -31,7 +31,7 @@ const serverMock = vi.hoisted(() => ({
 }));
 vi.mock("./services/server", () => ({ default: serverMock }));
 
-import { afterLanguage, initialState, openedAtRestore, renderState, SyncFailed, SyncFromServer, SyncInProgress } from "./setup";
+import { afterLanguage, getNetworkAddresses, initialState, openedAtRestore, renderState, SyncFailed, SyncFromServer, SyncInProgress } from "./setup";
 
 type Stats = { outstandingPullCount: number; totalPullCount: number | null; initialized: boolean; lastSyncError?: string | null };
 
@@ -476,6 +476,44 @@ describe("SyncFromServer", () => {
 
         const host = c.querySelector<HTMLInputElement>("input");
         expect(host?.value).toBe("");
+    });
+});
+
+describe("getNetworkAddresses, deciding whose word to trust for this device's address", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("trusts the page's own address when a plain browser reached it over the network", async () => {
+        vi.stubGlobal("location", { protocol: "http:", host: "192.168.1.20:8080", hostname: "192.168.1.20" });
+
+        expect(await getNetworkAddresses()).toEqual({ addresses: [ "http://192.168.1.20:8080" ], reachableOnNetwork: true });
+        expect(serverMock.get).not.toHaveBeenCalledWith("network-addresses");
+    });
+
+    it("distrusts its own loopback address and asks the server instead, as a webview on the same device would hit", async () => {
+        vi.stubGlobal("location", { protocol: "http:", host: "127.0.0.1:8080", hostname: "127.0.0.1" });
+        mockRoutes({ "network-addresses": { addresses: [ "http://192.168.1.20:8080" ], reachableOnNetwork: true } });
+
+        expect(await getNetworkAddresses()).toEqual({ addresses: [ "http://192.168.1.20:8080" ], reachableOnNetwork: true });
+        expect(serverMock.get).toHaveBeenCalledWith("network-addresses");
+    });
+
+    it("distrusts a bracketed IPv6 loopback address the same way", async () => {
+        vi.stubGlobal("location", { protocol: "http:", host: "[::1]:8080", hostname: "[::1]" });
+        mockRoutes({ "network-addresses": { addresses: [ "http://192.168.1.20:8080" ], reachableOnNetwork: true } });
+
+        expect(await getNetworkAddresses()).toEqual({ addresses: [ "http://192.168.1.20:8080" ], reachableOnNetwork: true });
+        expect(serverMock.get).toHaveBeenCalledWith("network-addresses");
+    });
+
+    it("still asks the server in Electron, whose location points at the internal protocol rather than a real listener", async () => {
+        vi.stubGlobal("electronApi", {});
+        vi.stubGlobal("location", { protocol: "trilium-app:", host: "", hostname: "" });
+        mockRoutes({ "network-addresses": { addresses: [], reachableOnNetwork: false } });
+
+        expect(await getNetworkAddresses()).toEqual({ addresses: [], reachableOnNetwork: false });
+        expect(serverMock.get).toHaveBeenCalledWith("network-addresses");
     });
 });
 

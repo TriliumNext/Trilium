@@ -149,6 +149,8 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, note: FNo
                 // fair thing to want; the badge is there so it is not a surprise when it goes.
                 items: api.columns.map(columnToMoveTo => ({
                     title: columnToMoveTo,
+                    uiIcon: api.getColumnIcon(columnToMoveTo),
+                    iconColorClass: api.getColumnColorClass(columnToMoveTo),
                     enabled: columnToMoveTo !== column,
                     badges: api.isColumnArchived(columnToMoveTo)
                         ? [ { title: t("board_view.archived-badge") } ]

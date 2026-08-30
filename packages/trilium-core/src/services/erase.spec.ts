@@ -40,7 +40,7 @@ function entityChangeFor(entityName: string, entityId: string) {
 }
 
 describe("erase service (real DB)", () => {
-    describe("eraseNotesWithDeleteId", () => {
+    describe("eraseNotesWithDeleteIds", () => {
         it("erases a soft-deleted note plus its dependent branch and attribute, marking entity_changes as erased", () => {
             const note = createNote();
             const noteId = note.noteId;
@@ -59,7 +59,7 @@ describe("erase service (real DB)", () => {
             // Sanity: rows still physically present after a soft delete.
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
 
-            getContext().init(() => eraseService.eraseNotesWithDeleteId(deleteId));
+            getContext().init(() => eraseService.eraseNotesWithDeleteIds([ deleteId ]));
 
             // The physical rows are gone.
             expect(rowCount("notes", "noteId", noteId)).toBe(0);
@@ -85,7 +85,7 @@ describe("erase service (real DB)", () => {
 
             expect(rowCount("attachments", "attachmentId", attachmentId)).toBe(1);
 
-            getContext().init(() => eraseService.eraseNotesWithDeleteId(deleteId));
+            getContext().init(() => eraseService.eraseNotesWithDeleteIds([ deleteId ]));
 
             expect(rowCount("attachments", "attachmentId", attachmentId)).toBe(0);
             expect(entityChangeFor("attachments", attachmentId)?.isErased).toBe(1);
@@ -95,10 +95,36 @@ describe("erase service (real DB)", () => {
             const note = createNote();
             const noteId = note.noteId;
 
-            getContext().init(() => eraseService.eraseNotesWithDeleteId("nonexistent-delete-id"));
+            getContext().init(() =>
+                eraseService.eraseNotesWithDeleteIds([ "nonexistent-delete-id" ])
+            );
 
             // The live note is untouched.
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
+        });
+
+        it("erases every deletion of a batch, and does nothing for an empty batch", () => {
+            const first = createNote();
+            const second = createNote();
+            const firstDeleteId = `del-batch-a-${counter}`;
+            const secondDeleteId = `del-batch-b-${counter}`;
+
+            getContext().init(() => {
+                first.markAsDeleted(firstDeleteId);
+                second.markAsDeleted(secondDeleteId);
+            });
+
+            getContext().init(() => eraseService.eraseNotesWithDeleteIds([]));
+            expect(rowCount("notes", "noteId", first.noteId)).toBe(1);
+
+            getContext().init(() =>
+                eraseService.eraseNotesWithDeleteIds([ firstDeleteId, secondDeleteId ])
+            );
+
+            expect(rowCount("notes", "noteId", first.noteId)).toBe(0);
+            expect(rowCount("notes", "noteId", second.noteId)).toBe(0);
+            expect(entityChangeFor("notes", first.noteId)?.isErased).toBe(1);
+            expect(entityChangeFor("notes", second.noteId)?.isErased).toBe(1);
         });
     });
 

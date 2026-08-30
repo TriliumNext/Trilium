@@ -5,6 +5,7 @@ import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import branches from "../../../services/branches";
 import { executeBulkActions } from "../../../services/bulk_action";
+import cssClassManager from "../../../services/css_class_manager";
 import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
@@ -12,7 +13,7 @@ import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { BoardColumnData, BoardViewData } from ".";
-import { type BoardStatusDefinition, canStoreColumnsInDefinition, DEFAULT_GROUP_BY } from "./columns";
+import { type BoardStatusDefinition, canStoreColumnsInDefinition, DEFAULT_COLUMN_ICON, DEFAULT_GROUP_BY } from "./columns";
 import { ColumnMap } from "./data";
 
 /** One write's claim on a column, held until that write lands or is taken back. */
@@ -221,6 +222,30 @@ export default class BoardApi {
     /** Stores the colour a column is tinted with, or clears it when given nothing. */
     async setColumnColor(column: string, color: string | null) {
         this.updateColumn(column, { color: color ?? undefined });
+    }
+
+    /**
+     * The icon a column heading shows, for anything else that stands in for the column.
+     *
+     * In relation mode the column is a note, so the icon is that note's own — the same one
+     * `NoteLink` puts in the heading — and `setColumnIcon` is not offered there.
+     */
+    getColumnIcon(column: string) {
+        if (this.isRelationMode) {
+            return froca.getNoteFromCache(column)?.getIcon();
+        }
+
+        return this.viewConfig?.columns?.find(col => col.value === column)?.icon
+            ?? DEFAULT_COLUMN_ICON;
+    }
+
+    /**
+     * The classes tinting anything that stands in for a column with the colour picked for it, empty
+     * while it carries none. The colour is stored per column in both modes, unlike the icon.
+     */
+    getColumnColorClass(column: string) {
+        const color = this.viewConfig?.columns?.find(col => col.value === column)?.color;
+        return cssClassManager.createClassForColor(color ?? null);
     }
 
     /** Whether a column is archived, which the board shows only while archived notes are shown. */

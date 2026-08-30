@@ -19,7 +19,8 @@
     be <code spellcheck="false">font/woff2</code>, <code spellcheck="false">font/woff</code>,
     or <code spellcheck="false">font/ttf</code> and role <code spellcheck="false">file</code>).</li>
   <li>Add the label <code spellcheck="false">#iconPack=&lt;prefix&gt;</code> to
-    the note (prefix: alphanumeric, hyphen, underscore only).</li>
+    the note (prefix: letters, digits, hyphen, underscore and non-ASCII characters
+    only).</li>
   <li>Refresh the client and verify the icon pack appears in the icon selector.</li>
 </ol>
 <h2>Verify the icon set</h2>
@@ -102,6 +103,12 @@
       appear strange (e.g. ), but it will be rendered properly regardless.</li>
     <li>The manifest keys (e.g. <code spellcheck="false">ph-acorn</code>) should
       match the class names used by the font (prefix + name is a common pattern).</li>
+    <li>Like the prefix, a manifest key becomes a CSS class name, so it can contain
+      only letters, digits, hyphens, underscores and non-ASCII characters. Punctuation
+      and whitespace (e.g. <code spellcheck="false">ph.acorn</code> or <code spellcheck="false">ph acorn</code>)
+      are not usable as class names; icons with such a key are skipped and an
+      error is logged in&nbsp;<a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>,
+      while the rest of the pack still loads.</li>
   </ul>
 </aside>
 <h2>Concrete example: Phosphor Icons</h2>
@@ -196,8 +203,8 @@ processIconPack("light");</code></pre>
   since it also matches the prefix set in the original CSS. So in this case
   it would be <code spellcheck="false">#iconPack=ph</code>.</p>
 <aside class="admonition important">
-  <p>The prefix must consist of only alphanumeric characters, hyphens and underscore.
-    If the prefix doesn't match these constraints, the icon pack will be ignored
+  <p>The prefix must consist of only letters, digits, hyphens, underscores and
+    non-ASCII characters. If the prefix doesn't match these constraints, the icon pack will be ignored
     and an error will be logged in&nbsp;<a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>.</p>
 </aside>
 <h2>Creating the Trilium icon pack note</h2>
@@ -260,6 +267,10 @@ processIconPack("light");</code></pre>
   <li>Make sure the prefix is unique and not already taken by some other icon
     pack. When there are two icon packs with the same prefix, only one is used.
     The server logs will indicate if this situation occurs.</li>
-  <li>Make sure the prefix consists only of alphanumeric characters, hyphens
-    and underscore.</li>
+  <li>Make sure the prefix consists only of letters, digits, hyphens, underscores
+    and non-ASCII characters.</li>
+  <li>If the pack loads but individual icons are missing, check the logs for
+    <code spellcheck="false">Skipping icon '&lt;key&gt;' of icon pack</code> —
+    that key uses characters outside the allowed set and needs renaming in the
+    manifest.</li>
 </ul>

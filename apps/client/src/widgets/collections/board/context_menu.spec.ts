@@ -8,6 +8,7 @@ import dialog from "../../../services/dialog";
 import FNote from "../../../entities/fnote";
 import { buildNote } from "../../../test/easy-froca";
 import BoardApi from "./api";
+import { DEFAULT_COLUMN_ICON } from "./columns";
 import { openColumnContextMenu, openNoteContextMenu } from "./context_menu";
 
 // The card menu opens with the shared link items, which reach for the active note context.
@@ -228,6 +229,8 @@ describe("Board item context menu", () => {
         const api = {
             columns: [ "To Do", "Done" ],
             isColumnArchived: () => false,
+            getColumnIcon: () => DEFAULT_COLUMN_ICON,
+            getColumnColorClass: () => "",
             changeColumn: vi.fn(async () => {})
         } as unknown as BoardApi;
 
@@ -281,7 +284,9 @@ describe("Board item context menu", () => {
     it("marks the archived columns it offers to move a card to", () => {
         const api = {
             columns: [ "To Do", "Done" ],
-            isColumnArchived: (column: string) => column === "Done"
+            isColumnArchived: (column: string) => column === "Done",
+            getColumnIcon: () => DEFAULT_COLUMN_ICON,
+            getColumnColorClass: () => "",
         } as unknown as BoardApi;
 
         const moveTo = openItemMenu(api).find(item =>
@@ -293,5 +298,25 @@ describe("Board item context menu", () => {
         expect((moveTo.items ?? [])
             .map(item => !!(item && "badges" in item && item.badges?.length)))
             .toEqual([ false, true ]);
+    });
+
+    it("shows each column it offers to move a card to with the icon and colour it carries", () => {
+        const api = {
+            columns: [ "To Do", "Done" ],
+            isColumnArchived: () => false,
+            getColumnIcon: (column: string) =>
+                column === "Done" ? "bx bx-check-circle" : DEFAULT_COLUMN_ICON,
+            getColumnColorClass: (column: string) => column === "Done" ? "use-note-color" : ""
+        } as unknown as BoardApi;
+
+        const moveTo = openItemMenu(api).find(item =>
+            item && "uiIcon" in item && item.uiIcon === "bx bx-transfer");
+        if (!moveTo || !("items" in moveTo)) throw new Error("expected a move-to entry");
+
+        expect((moveTo.items ?? []).map(item => item && "uiIcon" in item ? item.uiIcon : undefined))
+            .toEqual([ DEFAULT_COLUMN_ICON, "bx bx-check-circle" ]);
+        expect((moveTo.items ?? [])
+            .map(item => item && "iconColorClass" in item ? item.iconColorClass : undefined))
+            .toEqual([ "", "use-note-color" ]);
     });
 });

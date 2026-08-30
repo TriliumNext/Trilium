@@ -202,10 +202,11 @@ function deleteNote(req: Request<{ noteId: string }>) {
     note.deleteNote(deleteId, taskContext);
 
     if (eraseNotes) {
-        eraseService.eraseNotesWithDeleteId(deleteId);
+        taskContext.scheduleErase(deleteId);
     }
 
     if (last) {
+        eraseService.eraseNotesWithDeleteIds(taskContext.takeScheduledErases());
         taskContext.taskSucceeded(null);
     }
 }

@@ -544,7 +544,6 @@
     "add-column": "Aggiungi colonna",
     "add-column-placeholder": "Inserisci il nome della colonna...",
     "edit-note-title": "Fare clic per modificare il titolo della nota",
-    "edit-column-title": "Fare clic per modificare il titolo della colonna",
     "column-already-exists": "Questa colonna esiste già nella bacheca.",
     "column-definition-save-error": "Le colonne sono state salvate sulla lavagna, ma non è stato possibile salvarle nell'attributo di stato.",
     "status-alias": "Stato"

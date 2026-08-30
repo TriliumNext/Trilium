@@ -11,7 +11,7 @@ First read the quick flow to get the overall steps. After that there is a concre
 3.  Create a manifest JSON that maps icon ids to glyphs and search terms.
 4.  Create a Trilium note of type Code, set language to JSON, paste the manifest as the note content.
 5.  Upload the font file as an attachment to the same note (MIME type must be `font/woff2`, `font/woff`, or `font/ttf` and role `file`).
-6.  Add the label `#iconPack=<prefix>` to the note (prefix: alphanumeric, hyphen, underscore only).
+6.  Add the label `#iconPack=<prefix>` to the note (prefix: letters, digits, hyphen, underscore and non-ASCII characters only).
 7.  Refresh the client and verify the icon pack appears in the icon selector.
 
 ## Verify the icon set
@@ -64,6 +64,7 @@ Example minimal manifest:
 > *   You can supply glyph as the escaped `\uXXXX` sequence or as the actual UTF‑8 character.
 > *   It is also possible to use the unescaped glyph inside the JSON. It will appear strange (e.g. ), but it will be rendered properly regardless.
 > *   The manifest keys (e.g. `ph-acorn`) should match the class names used by the font (prefix + name is a common pattern).
+> *   Like the prefix, a manifest key becomes a CSS class name, so it can contain only letters, digits, hyphens, underscores and non-ASCII characters. Punctuation and whitespace (e.g. `ph.acorn` or `ph acorn`) are not usable as class names; icons with such a key are skipped and an error is logged in <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>, while the rest of the pack still loads.
 
 ## Concrete example: Phosphor Icons
 
@@ -156,7 +157,7 @@ In order for an icon pack to be recognized, the prefix must be specified in the 
 For our example with Phosphor Icons, we can use the `ph` prefix since it also matches the prefix set in the original CSS. So in this case it would be `#iconPack=ph`.
 
 > [!IMPORTANT]
-> The prefix must consist of only alphanumeric characters, hyphens and underscore. If the prefix doesn't match these constraints, the icon pack will be ignored and an error will be logged in <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>.
+> The prefix must consist of only letters, digits, hyphens, underscores and non-ASCII characters. If the prefix doesn't match these constraints, the icon pack will be ignored and an error will be logged in <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>.
 
 ## Creating the Trilium icon pack note
 
@@ -187,4 +188,5 @@ If the icon pack doesn't show up, look through the <a class="reference-link" hr
 
 *   One example is if the font could not be retrieved: `ERROR: Icon pack is missing WOFF/WOFF2/TTF attachment: Boxicons v3 400 (dup) (XRzqDQ67fHEK)`.
 *   Make sure the prefix is unique and not already taken by some other icon pack. When there are two icon packs with the same prefix, only one is used. The server logs will indicate if this situation occurs.
-*   Make sure the prefix consists only of alphanumeric characters, hyphens and underscore.
+*   Make sure the prefix consists only of letters, digits, hyphens, underscores and non-ASCII characters.
+*   If the pack loads but individual icons are missing, check the logs for `Skipping icon '<key>' of icon pack` — that key uses characters outside the allowed set and needs renaming in the manifest.

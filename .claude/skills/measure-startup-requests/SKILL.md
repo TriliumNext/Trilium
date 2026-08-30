@@ -37,6 +37,27 @@ node .claude/skills/measure-startup-requests/analyze-requests.mjs diff <before.j
 3. Capture again and compare: `analyze-requests.mjs diff baseline.json after.json`.
 4. `probe` confirms specific heavy deps stayed off the boot path.
 
+## Timing one module graph, without logging in
+
+The capture above needs a session. To weigh a *single* entry point instead — "what does reaching
+CKEditor actually cost?" — skip the login entirely: Vite serves module URLs unauthenticated.
+
+- URL form: `http://localhost:8080/assets/v<version>/@fs/<absolute repo path>/…/file.ts`.
+- Navigate a blank page to that origin, `setContent("<html><body>")`, then take `performance.now()`
+  around `await import(url).catch(() => {})`.
+- **The `.catch` is what makes this work.** An ES module graph is fully fetched and instantiated
+  before any of it is evaluated, so a module whose *evaluation* throws without a session ("Logged in
+  session not found") still yields a valid download-and-instantiate measurement.
+- Constructing an editor in that page needs `{ licenseKey: "GPL" }`, or `create()` throws
+  `license-key-missing`.
+
+This is how the "first text note is slow" delay was attributed to the module graph rather than to
+the editor (dev server, 2026-08): `packages/ckeditor5/src/index.ts` ~290 ms / 216 modules and
+`EditableText.tsx` ~355 ms / 328 modules, against `PopupEditor.create()` at 83 ms first and ~25 ms
+after. That is why the idle preload (`preloadCommonNoteTypes` in `note_types.tsx`) is the lever —
+and why the 428 KB emoji `definitionsUrl` fetch is not a suspect: `EmojiRepository.init()` fires it
+without returning the promise, so it never blocks `create()`.
+
 ## Interpreting results
 
 - **Dev-mode numbers, not production.** The dev server serves unbundled ES modules (~500+ script

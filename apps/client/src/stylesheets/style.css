@@ -593,6 +593,11 @@ body.mobile .dropdown .dropdown-submenu {
     color: var(--dropdown-item-icon-destructive-color);
 }
 
+.dropdown-item .tn-icon.use-note-color {
+    --menu-item-icon-color: var(--custom-color);
+    color: var(--custom-color, inherit);
+}
+
 .dropdown-item > span:not([class]) {
     width: 100%;
 }

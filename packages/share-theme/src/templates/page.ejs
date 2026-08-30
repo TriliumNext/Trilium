@@ -92,7 +92,7 @@
     <!-- Meta Tags Generated via https://opengraph.dev -->
     <meta name="theme-color" content="<%= openGraphColor %>">
     <style id="trilium-icon-packs">
-      <%- iconPackCss %>
+      <%- utils.escapeInlineStylesheet(iconPackCss) %>
     </style>
     <%- renderSnippets("head:end") %>
 </head>

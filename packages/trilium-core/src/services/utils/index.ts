@@ -222,6 +222,26 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
 export const escapeHtml = escape;
 
 /**
+ * Escapes `value` for use inside a double-quoted CSS string, one hex escape per character.
+ * Covers the markup characters alongside the quote and the backslash, because the HTML
+ * parser ends a `<style>` element at `</style` no matter what CSS quoting says: an
+ * unescaped value carrying that sequence closes the element, and everything after it in
+ * the response is parsed as markup rather than as stylesheet content.
+ */
+export function escapeCssString(value: string): string {
+    return value.replace(/["'\\<>&\u0000-\u001F\u007F]/g, (char) => `\\${char.charCodeAt(0).toString(16)} `);
+}
+
+/**
+ * Escapes the `</style` sequences in `stylesheet` so it can be embedded in an inline
+ * `<style>` element without ending it early. `\3c ` is the CSS escape for `<`, so a
+ * sequence inside a string keeps its value; generated CSS carries none anywhere else.
+ */
+export function escapeInlineStylesheet(stylesheet: string): string {
+    return stylesheet.replace(/<(?=\/style)/gi, "\\3c ");
+}
+
+/**
  * Decodes the five HTML entities (and their numeric short forms) that the
  * former `unescape` npm dependency handled in its default mode: `&`, `<`, `>`,
  * `"` and `'`. Entities outside this set (other numeric/hex codes, named

@@ -2450,7 +2450,7 @@
     "move-to": "移动到",
     "insert-above": "在上方插入",
     "insert-below": "在下方插入",
-    "delete-column": "删除列",
+    "delete-column": "删除列...",
     "delete-column-confirmation": "确定要删除此列吗？此列下所有笔记中对应的属性也将被删除。",
     "new-item": "新增项目",
     "add-column": "添加列",
@@ -2459,11 +2459,26 @@
     "new-item-placeholder": "输入笔记标题...",
     "add-column-placeholder": "请输入列名...",
     "edit-note-title": "点击编辑笔记标题",
-    "edit-column-title": "点击编辑列标题",
     "remove-from-board": "从看板上移除",
     "column-already-exists": "此列已在看板上。",
     "column-definition-save-error": "列已保存在看板上，但无法保存到状态属性。",
-    "status-alias": "状态"
+    "status-alias": "状态",
+    "archive-column": "归档列",
+    "unarchive-column": "取消归档列",
+    "archived-badge": "已归档",
+    "add-new-item": "添加新笔记",
+    "add-existing-item": "添加现有笔记...",
+    "add-existing-item-title": "将现有笔记添加到看板",
+    "add-existing-item-ok": "添加到列",
+    "add-new-column": "添加新列",
+    "add-column-before": "之前",
+    "add-column-after": "之后",
+    "new-column": "新建列",
+    "existing-item-conflict": "此笔记已属于另一个按「{{label}}」分组的看板。将其添加到此看板还会把它移动到原看板的不同列中。仍要添加吗？",
+    "rename-column": "重命名列",
+    "change-column-icon": "更改列图标",
+    "column-menu": "列菜单",
+    "save-error": "无法保存更改。"
   },
   "command_palette": {
     "tree-action-name": "树形：{{name}}",
@@ -2621,7 +2636,9 @@
     "save_status_error_tooltip": "保存笔记时出错。如果可以，请尝试将笔记内容复制到其他位置并重新加载应用程序。",
     "save_status_saving_tooltip": "更改正在保存。",
     "doc_url": "在线文档",
-    "doc_url_description": "点击即可在在线文档网站上查看本页。"
+    "doc_url_description": "点击即可在在线文档网站上查看本页。",
+    "office_preview": "预览",
+    "office_preview_description": "此文档以只读预览形式显示，因此无法在此编辑。\n\n如需修改，请下载文件，在外部应用中编辑后，再作为新修订版本上传。"
   },
   "status_bar": {
     "language_title": "更改内容语言",
@@ -3991,5 +4008,10 @@
     "reformat_callout": "提示块",
     "reformat_collapsible": "可折叠区块",
     "reformat_action_items": "行动项"
+  },
+  "note_picker": {
+    "title": "选择笔记",
+    "label": "笔记",
+    "ok": "选择"
   }
 }
