@@ -89,6 +89,8 @@ export default class LoadResults {
     private contentNoteIdToComponentId: ContentNoteIdToComponentIdRow[];
     private optionNames: OptionNames[];
     private attachmentRows: AttachmentRow[];
+    private flashcardIds: string[];
+    private flashcardReviewIds: string[];
     public hasEtapiTokenChanges: boolean = false;
 
     constructor(entityChanges: EntityChange[]) {
@@ -118,6 +120,10 @@ export default class LoadResults {
         this.optionNames = [];
 
         this.attachmentRows = [];
+
+        this.flashcardIds = [];
+
+        this.flashcardReviewIds = [];
     }
 
     getEntityRow<T extends EntityRowNames>(entityName: T, entityId: string): EntityRowMappings[T] {
@@ -235,6 +241,14 @@ export default class LoadResults {
         return this.attachmentRows;
     }
 
+    addFlashcard(cardId: string) {
+        this.flashcardIds.push(cardId);
+    }
+
+    addFlashcardReview(reviewId: string) {
+        this.flashcardReviewIds.push(reviewId);
+    }
+
     /**
      * @returns {boolean} true if there are changes which could affect the attributes (including inherited ones)
      *          notably changes in note itself should not have any effect on attributes
@@ -253,6 +267,8 @@ export default class LoadResults {
             this.contentNoteIdToComponentId.length === 0 &&
             this.optionNames.length === 0 &&
             this.attachmentRows.length === 0 &&
+            this.flashcardIds.length === 0 &&
+            this.flashcardReviewIds.length === 0 &&
             !this.hasEtapiTokenChanges
         );
     }

@@ -400,9 +400,9 @@
     "semantic_hash": "1d4319a55c6288ae77992fb33c992c47"
   },
   "apps/client/src/server_types.ts": {
-    "mtime": 1786902991.2346234,
-    "ast_hash": "1b0eb1f369f0e98f9802396ecc4e73c5",
-    "semantic_hash": "1b0eb1f369f0e98f9802396ecc4e73c5"
+    "mtime": 1788070788.0938282,
+    "ast_hash": "a9a6ba9d0e4f122d6557a5177db32079",
+    "semantic_hash": ""
   },
   "apps/client/src/services/active_content.spec.ts": {
     "mtime": 1786902991.2347534,
@@ -730,14 +730,14 @@
     "semantic_hash": "bf0750e692a8059d7d5130314cd444d9"
   },
   "apps/client/src/services/froca_updater.spec.ts": {
-    "mtime": 1786902991.2401266,
-    "ast_hash": "16ece0bad37546ae73512ed059e61683",
-    "semantic_hash": "16ece0bad37546ae73512ed059e61683"
+    "mtime": 1788070820.7245243,
+    "ast_hash": "47142452c67347a822b6a9e61bebb36f",
+    "semantic_hash": ""
   },
   "apps/client/src/services/froca_updater.ts": {
-    "mtime": 1786902991.2401972,
-    "ast_hash": "6da6cfce76010159934d36bbfd8a2cb2",
-    "semantic_hash": "6da6cfce76010159934d36bbfd8a2cb2"
+    "mtime": 1788070805.588717,
+    "ast_hash": "e3e7bd29cabcbe54022337595cf8102a",
+    "semantic_hash": ""
   },
   "apps/client/src/services/frontend_script_api.spec.ts": {
     "mtime": 1786902991.2402806,
@@ -925,8 +925,8 @@
     "semantic_hash": "61c1d58fac13d1db6c50eccac00dfeeb"
   },
   "apps/client/src/services/load_results.ts": {
-    "mtime": 1787317782.232834,
-    "ast_hash": "c2a50c119b9c75d60ed447d07333e238",
+    "mtime": 1788070798.4997447,
+    "ast_hash": "1f079114ee3375aced1df67ebea47c5f",
     "semantic_hash": ""
   },
   "apps/client/src/services/math.ts": {
@@ -17860,8 +17860,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/00_flashcards_master_todo.md": {
-    "mtime": 1788035029.1945848,
-    "ast_hash": "a80b6ef8b8cdbc3a1252adfadb45bab0",
+    "mtime": 1788070056.5987158,
+    "ast_hash": "414b6807371d0d7cfcd836249b585053",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/01_product_and_data_model_todo.md": {
@@ -17885,8 +17885,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/05_testing_migration_operations_todo.md": {
-    "mtime": 1788035050.0869265,
-    "ast_hash": "845d9a6662f219823189a3fecd65a455",
+    "mtime": 1788069847.8317137,
+    "ast_hash": "9b214d39a33fc8face46a112fa091380",
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Interoperability/Exported content with extended task states.md": {
@@ -25070,8 +25070,8 @@
     "semantic_hash": ""
   },
   "docs/Developer Guide/Developer Guide/Flashcards/Flashcards.md": {
-    "mtime": 1787929259.6630685,
-    "ast_hash": "02ee120512acb93b6ceb88081d7079df",
+    "mtime": 1788070042.5548599,
+    "ast_hash": "f293e3612896f396d22a8c65f59b272b",
     "semantic_hash": ""
   },
   "docs/Release Notes/Release Notes/v0.105.0.md": {
@@ -25087,6 +25087,11 @@
   "docs/User Guide/User Guide/Basic Concepts and Features/Flashcards.md": {
     "mtime": 1788002559.2128472,
     "ast_hash": "926f071075fdb4be1527e2c1e80d4d4f",
+    "semantic_hash": ""
+  },
+  ".runtime/flashcards-electron-data/window-state.json": {
+    "mtime": 1788070471.8469145,
+    "ast_hash": "b4a299e5cd8762271afcafc5e4d70004",
     "semantic_hash": ""
   }
 }

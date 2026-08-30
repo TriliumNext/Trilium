@@ -73,7 +73,7 @@ Flashcard rows sync like other entities. They contain source/deck IDs, ratings, 
 
 Migration is additive and one-way. Users must keep a pre-upgrade backup before opening a database with a flashcard-enabled release if downgrade might be needed.
 
-Release verification still needs backup/restore and supported mixed-version sync policy checks before public rollout.
+Release verification covers backup persistence, synced flashcard card/review rows, erase paths, and the supported compatibility policy. Runtime FSRS optimization is out of release scope; users can import externally optimized FSRS parameters in settings.
 
 ## Test scope
 

@@ -1,6 +1,6 @@
 # Flashcards / spaced retrieval implementation TODO
 
-Status: release scope implemented on `feature/flashcards-fsrs`. Remaining work is explicitly deferred below.
+Status: release scope implemented on `feature/flashcards-fsrs`. Runtime FSRS optimization is explicitly out of scope for this release.
 
 Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduling, while preserving note editing, protection, cloning, sync, standalone, desktop, and mobile behavior.
 
@@ -41,7 +41,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 - [x] Note-info flashcard status indicator.
 - [x] Command/global-menu specs, logical spacing, overflow-safe layouts, narrow-screen stacking, and reduced-motion overrides.
 - [x] External FSRS parameter import. Settings accept an optimized 21-weight vector from external tooling and sync it through `flashcardSchedulerConfig`.
-- [ ] Runtime FSRS parameter optimization. Deferred until an official optimizer runtime supports server, standalone/browser, and Capacitor iOS without server-only or cross-origin-isolation-only behavior.
+- [x] Runtime FSRS parameter optimization is out of release scope by decision. Users can import externally optimized 21-weight vectors instead; revisit only if a supported optimizer runtime covers server, standalone/browser, and Capacitor iOS.
 
 ## Architecture findings
 
@@ -55,7 +55,7 @@ Goal: add Trilium-native flashcards with Anki-like review flow and FSRS scheduli
 
 - FSRS implementation: maintained `ts-fsrs@5.4.1` (MIT) behind a Trilium adapter in core; no Anki AGPL code copied.
 - Initial FSRS defaults: FSRS 6 defaults, desired retention 0.90, max interval 36,500 days, fuzz enabled, short-term scheduling enabled, configurable learning/relearning steps.
-- Runtime parameter optimization is post-MVP; externally optimized 21-weight vectors can already be pasted in settings. Official optimizer runtimes currently split between Node-only and cross-origin-isolated browser/WASI paths that do not cover Capacitor iOS. Wait for a supported cross-runtime path rather than shipping server-only behavior or a homegrown trainer.
+- Runtime parameter optimization is out of release scope; externally optimized 21-weight vectors can already be pasted in settings. Official optimizer runtimes currently split between Node-only and cross-origin-isolated browser/WASI paths that do not cover Capacitor iOS, so Trilium does not ship server-only behavior or a homegrown trainer.
 - Account-wide scheduler settings sync via the `flashcardSchedulerConfig` option; display/session preferences remain device-local/future.
 
 ## Definition of done

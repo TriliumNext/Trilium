@@ -27,7 +27,7 @@
 ## Sync and cross-runtime tests
 
 - [x] Test entity registration and Becca load/update/delete lifecycle. Scheduler config hash coverage, synced row application, and synced erase coverage added in service specs.
-- [x] Test initial sync, incremental sync, sector retry, content hash, backup restore, and erased rows. Synced row application, hash changes, and erasure are covered in service specs; full backup restore remains release verification.
+- [x] Test initial sync, incremental sync, sector retry, content hash, backup restore, and erased rows. Synced row application, hash changes, erasure, and provider backup/restore persistence are covered in targeted specs.
 - [x] Test review and card changes pulled in either order.
 - [x] Test conflicts from two devices with stale revisions.
 - [x] Run core specs in both server and standalone suites; core has no independent runner.
