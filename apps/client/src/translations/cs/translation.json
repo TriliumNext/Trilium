@@ -1,6 +1,18 @@
 {
   "about": {
-    "data_directory": "Datový adresář:"
+    "data_directory": "Datový adresář:",
+    "version_label": "Verze:",
+    "version": "{{appVersion}} (datbáze: {{dbVersion}}, synchronizační protokol: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revize: <buildRevision />",
+    "contributors_label": "Přispěvatelé:",
+    "contributor_roles": {
+      "lead-dev": "vedoucí vývojář",
+      "original-dev": "původní vývojář"
+    },
+    "github_tooltip": "Nahlašte chybu, doporučte funkcionalitu, nebo přispějte do kódu na GitHubu",
+    "license_tooltip": "Zobrazit licenci",
+    "donate": "Podpořit",
+    "donate_tooltip": "Přispět k podpoře tohoto projektu"
   },
   "toast": {
     "critical-error": {
@@ -24,7 +36,12 @@
     },
     "widget-missing-parent": "Vlastní widget nemá definovanou povinnou vlastnost „{{property}}“.\n\nPokud má být tento skript spuštěn bez prvku uživatelského rozhraní, použijte místo toho „#run=frontendStartup“.",
     "open-script-note": "Otevřít poznámku se skriptem",
-    "scripting-error": "Chyba vlastního skriptu: {{title}}"
+    "scripting-error": "Skript poznámky selhal při spouštění",
+    "unhandled-error": {
+      "title": "Úloha na pozadí selhala",
+      "details-button": "Zobrazit více datailů…",
+      "details-title": "Technické informace"
+    }
   },
   "add_link": {
     "add_link": "Přidat odkaz",
@@ -34,17 +51,22 @@
     "link_title": "Název odkazu",
     "button_add_link": "Přidat odkaz",
     "link_title_mirrors": "titulek odkazu odráží momentální titulek poznámky",
-    "link_title_arbitrary": "titulek odkazu může být změněn libovolně"
+    "link_title_arbitrary": "titulek odkazu může být změněn libovolně",
+    "edit_link": "Upravit odkaz",
+    "anchor": "Kotva (volitelné)",
+    "button_edit_link": "Uložit odkaz"
   },
   "branch_prefix": {
-    "prefix": "Předpona: ",
+    "prefix": "Předpona",
     "save": "Uložit",
     "edit_branch_prefix": "Upravit prefix větve",
     "edit_branch_prefix_multiple": "Upravit prefix větve pro {{count}} větví",
     "help_on_tree_prefix": "Nápověda k prefixu stromu",
     "branch_prefix_saved": "Prefix větve byl uložen.",
     "branch_prefix_saved_multiple": "Prefix větve byl uložen pro {{count}} větví.",
-    "affected_branches": "Ovlivněné větve ({{count}}):"
+    "affected_branches": "Ovlivněné větve ({{count}}):",
+    "preview_in_tree": "Náhled ve stromu",
+    "cancel": "Zrušit"
   },
   "bulk_actions": {
     "bulk_actions": "Hromadné akce",
@@ -76,17 +98,34 @@
     "erase_notes_warning": "Trvale smažte poznámky (nelze vrátit zpět), včetně všech klonů. Tím se vynutí opětovné načtení aplikace.",
     "notes_to_be_deleted": "Následující poznámky budou smazány ({{notesCount}})",
     "no_note_to_delete": "Žádná poznámka nebude smazána (pouze klony).",
-    "broken_relations_to_be_deleted": "Následující vazby budou přerušeny a smazány ({{relationCount}})"
+    "broken_relations_to_be_deleted": "Následující vazby budou přerušeny a smazány ({{relationCount}})",
+    "title": "Odstranit poznámky",
+    "clones_label": "Klony",
+    "erase_notes_label": "Trvale smazat",
+    "table_note_with_relation": "Poznámka s vazbou",
+    "table_relation": "Vazba",
+    "delete": "Smazat"
   },
   "export": {
     "close": "Zavřít",
     "export_note_title": "Exportovat poznámku",
     "export_type_subtree": "Tato poznámka a všechny její odvozené poznámky",
-    "export_type_single": "Pouze tato poznámka bez jejích potomků",
+    "export_type_single": "Pouze tato poznámka",
     "export": "Exportovat",
     "choose_export_type": "Nejprve vyberte typ exportu",
     "export_finished_successfully": "Export byl úspěšně dokončen.",
-    "format_pdf": "PDF – pro tisk nebo sdílení."
+    "format_pdf": "PDF – pro tisk nebo sdílení.",
+    "format": "Formát",
+    "format_html_name": "HTML",
+    "format_html_description": "Zachovat veškeré formátování",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Zachovává většinu formátování",
+    "format_opml_name": "OPML",
+    "format_share_name": "HTML pro web",
+    "recommended": "Doporučené",
+    "result_single_markdown": "Jeden Markdown (.md) soubor.",
+    "preparing_export": "Připravuji pro export…",
+    "export_in_progress_with_total": "Exportováno {{progressCount}} z {{totalCount}} poznámek"
   },
   "clone_to": {
     "clone_notes_to": "Klonovat poznámky do...",
@@ -171,7 +210,7 @@
     "explodeArchivesTooltip": "Pokud je toto zaškrtnuto, Trilium bude číst <code>.zip</code>, <code>.enex</code> a <code>.opml</code> soubory a vytvářet poznámky ze souborů uvnitř těchto archivů. Pokud není zaškrtnuto, Trilium připojí samotné archivy k poznámce.",
     "explodeArchives": "Číst obsah archivů <code>.zip</code>, <code>.enex</code> a <code>.opml</code>.",
     "shrinkImagesTooltip": "<p>Pokud zaškrtnete tuto možnost, Trilium se pokusí zmenšit importované obrázky škálováním a optimalizací, což může ovlivnit vnímanou kvalitu obrazu. Pokud není zaškrtnuto, obrázky budou importovány beze změn.</p><p>To se nevztahuje na importy <code>.zip</code> s metadaty, protože se předpokládá, že tyto soubory jsou již optimalizovány.</p>",
-    "shrinkImages": "Zmenšit obrázky",
+    "shrinkImages": "Komprimovat obrázky",
     "textImportedAsText": "Importovat HTML, Markdown a TXT jako textové poznámky, pokud to není z metadat zřejmé",
     "codeImportedAsCode": "Importovat rozpoznané soubory s kódem (např. <code>.json</code>) jako poznámky s kódem, pokud to není z metadat zřejmé",
     "replaceUnderscoresWithSpaces": "Nahradit podtržítka mezerami v názvech importovaných poznámek",
@@ -183,8 +222,14 @@
       "placeholder": "Zadejte HTML tagy, jeden na řádek",
       "reset_button": "Obnovit do výchozího seznamu"
     },
-    "in-progress": "Import probíhá: {{progress}}",
-    "successful": "Import byl úspěšně dokončen."
+    "in-progress": "Importováno: {{progress}} poznámek",
+    "successful": "Import byl úspěšně dokončen.",
+    "importIntoNoteNamed": "Importovat do {{- title}}",
+    "import_from": "Importovat z",
+    "cardName": "Soubory a ostatní formáty",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, obrázky a další",
+    "starting": "Importuji…",
+    "in-progress-with-total": "Importováno {{progress}} z {{total}} poznámek"
   },
   "include_note": {
     "dialog_title": "Zahrnout poznámku",
@@ -2051,8 +2096,7 @@
   },
   "server": {
     "unknown_http_error_title": "Chyba komunikace se serverem",
-    "unknown_http_error_content": "Stavový kód: {{statusCode}} \nURL: {{method}} {{url}} \nZpráva: {{message}}",
-    "traefik_blocks_requests": "Pokud používáte reverzní proxy Traefik, došlo k wprowadzeniu zásadní změny, která ovlivňuje komunikaci se serverem."
+    "unknown_http_error_content": "Stavový kód: {{statusCode}} \nURL: {{method}} {{url}} \nZpráva: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Přejít na předchozí poznámku",
@@ -2256,5 +2300,26 @@
       "get_attachment": "Získat přílohu",
       "get_attachment_content": "Přečíst obsah přílohy"
     }
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Přesuň soubor sem, nebo klikni na procházet",
+    "drop_or_browse_multiple": "Přesuň soubory sem, nebo klikni na procházet",
+    "browse_single": "Klikni pro výběr souboru",
+    "browse_multiple": "Klikni pro výběr souborů",
+    "remove_file": "Odstranit soubor"
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "Připojte ke svému účtu",
+    "connect_description": "Přihlašte se se svým Microsoft účtem k importování vašich OneNote poznámkových bloků.",
+    "connect": "Přihlašte se s Microsoftem",
+    "section_heading": "Microsoft OneNote",
+    "checking": "Připojování na OneNote…",
+    "connecting": "Čekání na dokončení přihlášení…",
+    "device_instructions": "Otevřete přihlašovací stránku Microsoft a vložte tento kód:",
+    "device_open_page": "Otevřít přihlašovací stránku",
+    "device_cancel": "Zrušit přihlašování",
+    "connected_as": "Připojen(a) jako {{name}}",
+    "disconnect": "Odpojit"
   }
 }

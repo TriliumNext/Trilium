@@ -57,6 +57,35 @@
     will not automatically apply the new template to the grandchild notes.
     Only the structure present at the time of note creation is considered.</p>
 </aside>
+<h2>Default parent for new notes</h2>
+<p>A template can gather the notes created from it in one place, instead
+  of having them land wherever they happen to be created. To do so, add a
+  <code
+  spellcheck="false">~template:newNoteDefaultParent</code>relation to the template note, pointing
+    at the note that should hold the instances, for example a <em>Person</em> template
+    pointing to a <em>People</em> note.</p>
+<p>Adding the relation several times places the new note in every target,
+  as&nbsp;<a class="reference-link" href="#root/_help_IakOLONlIfGI">Cloning Notes</a>.
+  The relation can also be inherited (e.g. from a folder holding several
+  templates), in which case a relation owned by the template itself replaces
+  the inherited one. The default parent is only inherited from the template's
+  ancestors in the tree: a template created from another template does not
+  adopt that template's default parent.</p>
+<p>The default parent is used whenever a note is created from the template
+  through the <em>Choose note type</em> dialog:</p>
+<ul>
+  <li>Via <code spellcheck="false">@</code>-completion in a&nbsp;<a class="reference-link"
+    href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note</li>
+  <li>Via the <em>Create and link child note</em> option of the note search (new
+    tab or&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>),
+    but only if the default/empty location is set.</li>
+</ul>
+<p>Creating an instance note from the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;context
+  menu (<em>Insert child note</em>, <em>Insert note after</em>) still creates
+  it at the chosen place.</p>
+<p>Unlike the&nbsp;<a class="reference-link" href="#root/_help_S0Fos78ZfcY7">Note Inbox</a>,
+  which holds quickly captured notes until they are sorted, the default parent
+  is meant as the instances' permanent location.</p>
 <h2>Regarding note types</h2>
 <p>By default, newly created notes are&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes.
   If a parent note defines a <code spellcheck="false">child:template</code> pointing

@@ -1,12 +1,10 @@
 import { getLog } from "../../services/log.js";
 import optionService from "../../services/options.js";
 
-import { AnthropicProvider } from "./providers/anthropic.js";
-import { DeepSeekProvider } from "./providers/deepseek.js";
-import { GoogleProvider } from "./providers/google.js";
-import { LocalProvider } from "./providers/local.js";
-import { OpenAiProvider } from "./providers/openai.js";
+import { createHostProvider } from "./host_providers.js";
 import type { LlmProvider, ModelInfo } from "./types.js";
+
+export { clearHostProviders, HOST_PROVIDED_TYPES, type HostProvidedType, registerHostProvider } from "./host_providers.js";
 
 /**
  * Configuration for a single LLM provider instance.
@@ -31,64 +29,6 @@ export interface LlmProviderSetup {
 const PROVIDER_TYPES = ["anthropic", "openai", "google", "deepseek", "claude-agent", "copilot-agent", "ollama", "lmstudio", "openai-compatible"];
 
 /**
- * Provider types core cannot build for itself, each mapped to the name the user
- * knows it by.
- *
- * What they have in common is a dependency on the runtime around them rather
- * than on an API key: both are CLIs this process spawns, authenticating through
- * the host's own account plumbing rather than a key the user pastes in. Core
- * runs in the browser too, where none of that exists, so the host that *can* do
- * it registers a factory at startup with {@link registerHostProvider}. Where
- * nothing registers one, selecting the provider fails with a message naming it
- * rather than a bare "unknown type".
- *
- * Adding one means an entry here, a literal branch in
- * {@link createProviderInstance} (see the note there on why it must be literal),
- * and a registration in whichever hosts can serve it.
- */
-export const HOST_PROVIDED_TYPES = {
-    /** Claude Pro/Max through the Claude Agent SDK, authenticated by `claude /login`. */
-    "claude-agent": "Claude Code",
-    /** GitHub Copilot through the Copilot CLI's ACP mode, authenticated by `copilot login`. */
-    "copilot-agent": "GitHub Copilot"
-} as const;
-
-/** A provider type from {@link HOST_PROVIDED_TYPES}. */
-export type HostProvidedType = keyof typeof HOST_PROVIDED_TYPES;
-
-const hostProviderFactories = new Map<string, () => LlmProvider>();
-
-/**
- * Register the host's implementation of a provider core cannot construct.
- * Called once at startup, before any chat can ask for it.
- */
-export function registerHostProvider(type: HostProvidedType, factory: () => LlmProvider) {
-    hostProviderFactories.set(type, factory);
-}
-
-/**
- * Forget every registered factory, putting the registry back to how a build that
- * supplies none starts. For a runtime that re-initialises core (tests, an
- * Electron reload), which registers again on the way back up.
- */
-export function clearHostProviders() {
-    hostProviderFactories.clear();
-}
-
-/**
- * Build a host-provided provider, or explain that this build has no one to build
- * it. The type is always a literal from the call site — see
- * {@link createProviderInstance} — never the string the user's config carried.
- */
-function createHostProvider(type: HostProvidedType): LlmProvider {
-    const factory = hostProviderFactories.get(type);
-    if (!factory) {
-        throw new Error(`The ${HOST_PROVIDED_TYPES[type]} provider is not available in this build.`);
-    }
-    return factory();
-}
-
-/**
  * Instantiate a provider from its type identifier.
  *
  * Deliberately a switch over literal cases rather than a lookup table: the
@@ -100,33 +40,38 @@ function createHostProvider(type: HostProvidedType): LlmProvider {
  * The host-provided factories are looked up too, but only ever under a literal
  * spelled out in their branch below — the untrusted string picks the branch and
  * goes no further.
+ *
+ * Each branch imports its provider module on first use: the SDK behind it must
+ * stay out of the startup path (and out of the standalone worker's boot) for
+ * users who never chat, so the import specifiers are literals inside the
+ * branches rather than at module scope.
  */
-function createProviderInstance(provider: string, apiKey: string, baseURL?: string): LlmProvider {
+async function createProviderInstance(provider: string, apiKey: string, baseURL?: string): Promise<LlmProvider> {
     switch (provider) {
         case "anthropic":
-            return new AnthropicProvider(apiKey, baseURL);
+            return new (await import("./providers/anthropic.js")).AnthropicProvider(apiKey, baseURL);
         case "openai":
-            return new OpenAiProvider(apiKey, baseURL);
+            return new (await import("./providers/openai.js")).OpenAiProvider(apiKey, baseURL);
         case "google":
-            return new GoogleProvider(apiKey, baseURL);
+            return new (await import("./providers/google.js")).GoogleProvider(apiKey, baseURL);
         // OpenAI-compatible on the wire, but carded separately from the generic
         // custom endpoint so its models resolve against the committed price table.
         case "deepseek":
-            return new DeepSeekProvider(apiKey, baseURL);
+            return new (await import("./providers/deepseek.js")).DeepSeekProvider(apiKey, baseURL);
         // Subscription providers, whose credentials belong to the host rather than
         // to a key the user pastes in — so the host builds them. One branch each,
         // naming its own type: see HOST_PROVIDED_TYPES.
         case "claude-agent":
-            return createHostProvider("claude-agent");
+            return await createHostProvider("claude-agent");
         case "copilot-agent":
-            return createHostProvider("copilot-agent");
+            return await createHostProvider("copilot-agent");
         // Self-hosted endpoints. The three cards differ only in the URL and setup
         // hint the UI prefills; they all speak the OpenAI-compatible API, with
         // Ollama and LM Studio additionally offering a richer native listing.
         case "ollama":
         case "lmstudio":
         case "openai-compatible":
-            return new LocalProvider(provider, apiKey, baseURL);
+            return new (await import("./providers/local.js")).LocalProvider(provider, apiKey, baseURL);
         default:
             throw new Error(`Unknown LLM provider type: ${provider}. Available: ${PROVIDER_TYPES.join(", ")}`);
     }
@@ -166,7 +111,7 @@ function getConfiguredProviders(): LlmProviderSetup[] {
  * Get a provider instance by its configuration ID.
  * If no ID is provided, returns the first configured provider.
  */
-export function getProvider(providerId?: string): LlmProvider {
+export async function getProvider(providerId?: string): Promise<LlmProvider> {
     const configs = getConfiguredProviders();
 
     if (configs.length === 0) {
@@ -188,7 +133,7 @@ export function getProvider(providerId?: string): LlmProvider {
     }
 
     // Create new provider instance
-    const provider = createProviderInstance(config.provider, config.apiKey, config.baseURL);
+    const provider = await createProviderInstance(config.provider, config.apiKey, config.baseURL);
     cachedProviders[config.id] = provider;
     return provider;
 }
@@ -196,7 +141,7 @@ export function getProvider(providerId?: string): LlmProvider {
 /**
  * Get the first configured provider of a specific type (e.g., "anthropic").
  */
-export function getProviderByType(providerType: string): LlmProvider {
+export async function getProviderByType(providerType: string): Promise<LlmProvider> {
     const configs = getConfiguredProviders();
     const config = configs.find(c => c.provider === providerType);
 
@@ -224,7 +169,7 @@ export function hasConfiguredProviders(): boolean {
  * dynamic listing.
  */
 export async function listProviderModels(provider: string, apiKey: string, baseURL?: string): Promise<ModelInfo[]> {
-    const instance = createProviderInstance(provider, apiKey, baseURL);
+    const instance = await createProviderInstance(provider, apiKey, baseURL);
     const models = await (instance.listModels?.() ?? instance.getAvailableModels());
     // Tag the default-selected set here so the recommendation rule lives on the
     // server — in the provider that owns its model id shape — rather than in the

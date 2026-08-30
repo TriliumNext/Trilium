@@ -317,7 +317,13 @@ class MockResponse {
     body?: string;
     headers: Record<string, string> = {};
 
+    // Express answers to both spellings, so the double has to as well: the routes under test
+    // reach header-setting helpers that pick either one.
     set(name: string, value: string) {
+        this.headers[name] = value;
+    }
+
+    setHeader(name: string, value: string) {
         this.headers[name] = value;
     }
 

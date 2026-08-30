@@ -17,7 +17,11 @@
     "license_tooltip": "ئىجازەتنامىنى كۆرۈش",
     "donate": "ئىئانە قىلىش",
     "donate_tooltip": "بۇ تۈرنى قوللاش ئۈچۈن ئىئانە قىلىڭ",
-    "version": "{{appVersion}} (ساندان: {{dbVersion}}، ماسقەدەملەش كېلىشىمى: {{syncVersion}})"
+    "version": "{{appVersion}} (ساندان: {{dbVersion}}، ماسقەدەملەش كېلىشىمى: {{syncVersion}})",
+    "channel": {
+      "nightly": "كېچەلىك",
+      "standalone": "يالغۇز"
+    }
   },
   "toast": {
     "critical-error": {
@@ -41,7 +45,10 @@
     },
     "widget-missing-parent": "ئۆزگەرتىلگەن كىچىك زاپچاستا زۆرۈر بولغان’{{property}}‘ خاسلىقى بەلگىلەنمىگەن.\n\nئەگەر بۇ سكريپت UI ئېلېمېنتلىرىسىز ئىجرا بولۇشقا مەجبۇر بولسا، \"#run=frontendStartup\" نى ئىشلىتىڭ.",
     "open-script-note": "script خاتىرىنى ئېچىش",
-    "scripting-error": "Custom script خاتالىقى: {{title}}"
+    "scripting-error": "سكىرىپت نوتىسى ئىجرا بولالمايدۇ",
+    "unhandled-error": {
+      "title": "ئاۋارىچىلىق تەسلىمىسى مۈشۈكلۈككە ئۇچرىدى"
+    }
   },
   "add_link": {
     "add_link": "ئۇلانما قوشۇش",

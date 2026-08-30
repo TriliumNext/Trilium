@@ -627,7 +627,8 @@
     "select_options_placeholder": "输入一个选项并按 Enter",
     "map_dark_style": "告知地理地图：<code>map:style</code> 中给定的自定义样式为深色样式，因此标记标题将以浅色绘制。集合属性中提供的样式本身即表明这一点，无需此类标注。",
     "map_cluster": "将彼此靠近的标记聚合成单个带编号的气泡，点击即可展开。",
-    "ai_quick_action": "将这篇笔记作为指令提供给文本编辑器的 AI 助手菜单。标题为操作命名，内容为提示词。"
+    "ai_quick_action": "将这篇笔记作为指令提供给文本编辑器的 AI 助手菜单。标题为操作命名，内容为提示词。",
+    "template_new_note_default_parent": "设置在模板笔记上：从该模板创建的笔记（如通过 @ 补全）会放置在目标笔记下，除非显式选择了其他位置。"
   },
   "attribute_editor": {
     "help_text_body1": "要添加标签，只需输入例如 <code>#rock</code> ；或者如果你还想同时添加数值，则可输入例如 <code>#year = 2020</code>",
@@ -886,7 +887,8 @@
     "new-version-available": "新更新可用",
     "download-update": "取得版本 {{latestVersion}}",
     "search_notes": "搜索笔记",
-    "show_deleted_notes": "显示已删除的笔记"
+    "show_deleted_notes": "显示已删除的笔记",
+    "show_space_usage": "显示空间占用"
   },
   "zen_mode": {
     "button_exit": "退出禅模式"
@@ -988,7 +990,8 @@
     "create_child_note_title": "创建子笔记并添加到图",
     "reset_pan_zoom_title": "重置平移和缩放到初始坐标和放大倍率",
     "zoom_in_title": "放大",
-    "zoom_out_title": "缩小"
+    "zoom_out_title": "缩小",
+    "create_child_note_text": "添加笔记"
   },
   "zpetne_odkazy": {
     "relation": "关系",
@@ -1627,7 +1630,8 @@
     "formatting-locale-auto": "依应用的语言设置",
     "default-content-language": "默认内容语言",
     "default-content-language-description": "笔记默认使用的编写语言，除非在「基本属性」部分为笔记单独设置了语言。它会影响从右到左的排版以及输入时产生的引号样式等功能。",
-    "default-content-language-auto": "跟随应用的语言"
+    "default-content-language-auto": "跟随应用的语言",
+    "dates-title": "日期与日历"
   },
   "backup": {
     "automatic_backup": "自动备份",
@@ -2123,7 +2127,8 @@
     "cut": "笔记已剪切到剪贴板。",
     "copied": "笔记已复制到剪贴板。",
     "copy_failed": "由于权限问题，无法复制到剪贴板。",
-    "copy_success": "已复制到剪贴板。"
+    "copy_success": "已复制到剪贴板。",
+    "copied_without_links": "笔记已复制到剪贴板，但笔记链接无法放入系统剪贴板。"
   },
   "entrypoints": {
     "note-revision-created": "笔记修订已创建。",
@@ -2270,7 +2275,21 @@
     "marker-color": "标记颜色",
     "copy-coordinates": "复制坐标",
     "expand-details": "展开笔记以填满地图",
-    "restore-details": "将笔记放回地图旁"
+    "restore-details": "将笔记放回地图旁",
+    "search": "搜索",
+    "search-placeholder": "搜索地点",
+    "search-online": "在线搜索「{{- query}}」",
+    "searching-online": "正在在线搜索…",
+    "no-places-found": "未找到地点",
+    "search-failed": "无法搜索地点",
+    "results-nearby": "附近",
+    "results-far": "远处",
+    "add-place-as-marker": "添加为标记",
+    "previous-result": "上一个结果",
+    "next-result": "下一个结果",
+    "result-position": "第 {{index}} 个结果，共 {{total}} 个，点击返回该结果",
+    "results-on-map": "当前地图上",
+    "go-to-coordinates": "前往{{- coordinates}}"
   },
   "geo-map-context": {
     "open-location": "打开位置",
@@ -2351,7 +2370,10 @@
   },
   "svg": {
     "export_to_png": "无法将图表导出为PNG。",
-    "export_to_svg": "此图像无法导出为SVG。"
+    "export_to_svg": "此图像无法导出为SVG。",
+    "zoom_in": "放大",
+    "zoom_out": "缩小",
+    "reset_zoom": "重置缩放"
   },
   "code_theme": {
     "title": "外观",
@@ -2417,7 +2439,8 @@
     "vector_dark": "矢量（深色）",
     "show-scale": "显示比例尺",
     "show-labels": "显示标记名称",
-    "cluster-markers": "聚合附近的标记"
+    "cluster-markers": "聚合附近的标记",
+    "presentation-theme": "主题"
   },
   "table_context_menu": {
     "delete_row": "删除行"
@@ -2489,9 +2512,7 @@
   },
   "settings": {
     "related_settings": "相关设置",
-    "related_actions": "相关操作",
-    "related_space_usage": "分析数据库内的空间占用",
-    "related_space_usage_description": "查看哪些笔记、修订和附件占用空间最多，并回收这些空间。"
+    "related_actions": "相关操作"
   },
   "settings_appearance": {
     "related_code_blocks": "文本笔记中代码块的色彩方案",
@@ -2559,7 +2580,8 @@
   "server": {
     "unknown_http_error_title": "与服务器通讯错误",
     "unknown_http_error_content": "状态码: {{statusCode}}\n地址: {{method}} {{url}}\n信息: {{message}}",
-    "traefik_blocks_requests": "如果你正在使用 Traefik 反向代理，其引入的一个重大更改会影响与服务器的通信。"
+    "reverse_proxy_blocked_title": "被反向代理拦截的请求",
+    "reverse_proxy_blocked_message": "部分请求在到达 Trilium 之前被拒绝（HTTP 400），极有可能是反向代理拦截了 URL 中的百分号编码字符所致。\n\nTraefik 3.6.4 至 3.6.6 版本默认有此行为：请升级到 Traefik 3.6.7 或更新版本，或在其配置中允许编码字符。"
   },
   "experimental_features": {
     "title": "实验选项",
@@ -2651,7 +2673,8 @@
     "tab_connections": "链接"
   },
   "attributes_panel": {
-    "title": "笔记属性"
+    "title": "笔记属性",
+    "edit_in_sidebar": "在侧栏中编辑"
   },
   "pdf": {
     "attachments_other": "{{count}} 个附件",
@@ -2659,7 +2682,11 @@
     "pages_alt": "第{{pageNumber}}页",
     "pages_loading": "加载中...",
     "layers_other": "{{count}} 层",
-    "annotations_other": "{{count}} 条注释"
+    "annotations_other": "{{count}} 条注释",
+    "annotation_drawing": "第 {{pageNumber}} 页上的绘图",
+    "annotation_highlight": "第 {{pageNumber}} 页上的高亮",
+    "annotation_note": "第 {{pageNumber}} 页上的注释",
+    "annotation_text_box": "第 {{pageNumber}} 页上的文本框"
   },
   "platform_indicator": {
     "available_on": "在 {{platform}} 上可用"
@@ -3132,7 +3159,7 @@
     "analyze_space_usage": "分析空间占用",
     "analyze_space_usage_description": "识别哪些笔记占用空间最多，更清晰地了解你的笔记有多大。",
     "analyze_space_usage_button": "分析",
-    "cleanup": "执行清理",
+    "cleanup": "清理数据库",
     "cleanup_description": "擦除已删除的笔记和附件，修剪修订快照并压缩图片，以保持数据库精简。",
     "related_backup": "备份",
     "related_backup_description": "创建或恢复数据库备份，管理自动备份。",
@@ -3199,7 +3226,9 @@
   },
   "common": {
     "save": "保存",
-    "cancel": "取消"
+    "cancel": "取消",
+    "fullscreen": "全屏",
+    "exit_fullscreen": "退出全屏"
   },
   "spreadsheet": {
     "read-only": "此注释为只读。",
@@ -3507,7 +3536,12 @@
   },
   "options": {
     "title": "选项",
-    "back": "返回所有选项"
+    "back": "返回所有选项",
+    "search_placeholder": "搜索设置",
+    "search_clear": "清除搜索",
+    "search_title": "选项搜索",
+    "search_hint": "输入关键字以在所有设置页面中搜索。",
+    "search_no_results": "没有设置符合您的需求。"
   },
   "full_content_width_switch": {
     "title": "全宽"
@@ -3674,15 +3708,13 @@
     "sort_by_title": "标题",
     "sort_by_date_created": "创建日期",
     "no_items": "未找到活动内容。",
-    "no_items_hint": "你创建的脚本、主题、模板和代码片段将在此处列出。",
-    "section_active_content": "活动内容与模板",
-    "section_space_usage": "空间使用情况"
+    "no_items_hint": "你创建的脚本、主题、模板和代码片段将在此处列出。"
   },
   "attribute_list_panel": {
     "no_attributes": "无属性",
     "owned_other": "{{count}} 个自有属性",
     "inherited_other": "{{count}} 个继承属性",
-    "definitions_other": "{{count}} 个定义",
+    "definitions_other": "{{count}} 个升级属性定义",
     "inheritable": "可继承：适用于此笔记及其整个子树",
     "delete": "删除此属性",
     "delete_confirm": "删除属性 \"{{name}}\"?",
@@ -3806,7 +3838,13 @@
     "compress_result_none": "没有可压缩的图片。",
     "compress_result_stopped": "处理 {{total}} 张图片中的 {{done}} 张后停止，体积从 {{before}} 降至 {{after}}。",
     "compress_result_stopped_no_gain": "处理 {{total}} 张图片中的 {{done}} 张后停止，没有一张能进一步缩小。",
-    "compress_result_stopped_none": "尚未处理任何图片就停止了。"
+    "compress_result_stopped_none": "尚未处理任何图片就停止了。",
+    "status_notes": "笔记",
+    "status_total": "总计",
+    "status_attachments": "附件",
+    "status_deleted_items": "已删除项",
+    "selection_hint": "点击某项查看详情",
+    "show_selection_details": "显示选中项详情"
   },
   "sidebar_help": {
     "attributes_inheritable": "将其标记为可继承后，它会向下传递到该笔记下的整个子树，并在其中显示为「可继承」而非「自有」。",
@@ -3822,9 +3860,7 @@
     "note_paths_what": "一篇笔记可以同时位于笔记树中的多个位置，每个位置都会以路径形式列在这里。",
     "note_paths_cloning": "「克隆（clone）」有别于「创建独立副本（duplicate）」：修改某一个克隆笔记，修改内容会同步到所有的该篇克隆笔记；删除其中一个路径的克隆笔记，不会影响到其他路径下的克隆副本。",
     "backlinks_what": "反向链接是那些指向这篇笔记的其他笔记，可能是通过正文里的链接，也可能是一条以这篇笔记为目标的关系。",
-    "backlinks_listing": "文本链接会连同其周围片段一起列出，关系则按其指向的名称列出。链接的这一侧不可编辑：当创建链接的笔记删除该链接时，它就会消失。",
-    "similar_notes_what": "即使没有任何链接关系，看起来也与这篇笔记相关的笔记。",
-    "similar_notes_how": "相似度是根据笔记内容、它们携带的属性和关系，以及创建时间的接近程度计算得出的。"
+    "backlinks_listing": "文本链接会连同其周围片段一起列出，关系则按其指向的名称列出。链接的这一侧不可编辑：当创建链接的笔记删除该链接时，它就会消失。"
   },
   "contextual_help": {
     "label": "帮助：{{- message}}",

@@ -1,0 +1,140 @@
+/* One scrolling list of every category rather than a stack of cards: the page spans the pane, and
+   its single block needs no space after it. Full width: the split resolves the cap for tabs, the
+   header inner for the settings dialog. */
+.note-split.options:has(.active-content-toolbar),
+.note-detail-content-widget-content:has(.active-content-toolbar) {
+    --options-card-max-width: 100%;
+}
+
+.note-detail-content-widget-content.options:has(.active-content-toolbar) > *:not(.options-page-header) {
+    margin-bottom: 0;
+}
+
+/* Lives in the sticky page header, which supplies its own spacing. */
+.active-content-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+}
+
+/* Space out the per-category lists, which bring no bottom margin of their own. */
+.active-content-list .note-list.list-view {
+    margin-bottom: 2em;
+}
+
+.active-content-filter {
+    flex-grow: 1;
+    max-width: 25em;
+}
+
+.active-content-toolbar-label {
+    /* Pushes the sort control to the trailing edge, leaving the filter box on the leading one. */
+    margin-inline-start: auto;
+    white-space: nowrap;
+}
+
+/* Values sit on the item's own line, so a row stays one line tall. */
+.active-content-properties {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35em;
+}
+
+/* `Badge` paints its background from `--color`. The selector repeats `.ext-badge` so the text colour
+   outranks the component's own `color: white`, which is unreadable on this light fill. */
+.ext-badge.active-content-badge {
+    --color: var(--more-accented-background-color);
+    color: var(--main-text-color);
+}
+
+/* Free-form values (a path, an icon prefix) stay plain text, where the name gives them meaning. */
+.active-content-property {
+    font-size: .75em;
+    opacity: .75;
+}
+
+/* A note in several categories gets a strip each; the extra gap keeps them from reading as one run. */
+.active-content-item-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.active-content-item-strip + .active-content-item-strip {
+    margin-inline-start: 0.75em;
+}
+
+.active-content-item-count {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* The item menu is portaled to <body> (so an open menu isn't counted as hovering its row), which
+   drops it below Bootstrap's modal when the page is opened in the settings dialog. Raised the same
+   way as the body-appended tooltips in style.css. */
+.active-content-item-menu .dropdown-menu {
+    z-index: 32767;
+}
+
+.active-content-loading {
+    opacity: 0.7;
+}
+
+/* Reads as secondary to the page title above it. Set on the buttons, which carry their own font
+   size and so would not inherit one from the group. */
+.active-content-view-choice button {
+    font-size: 0.85em;
+}
+
+/*
+ * The toolbar is one row of controls that a phone has no width for: the filter alone wants most of
+ * it. Keyed on `body.mobile` rather than on the width, to agree with `collapseOnMobile` on the view
+ * choice, which is a JS check on the same thing.
+ */
+body.mobile {
+    /* The filter takes the first line, the view controls the second, so neither is crushed. The
+       label keeps the `margin-inline-start: auto` it has across the toolbar, which on the line it
+       now leads takes up that line's slack instead, holding the controls at the trailing edge. */
+    .active-content-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .active-content-filter {
+        flex-basis: 100%;
+        max-width: none;
+    }
+}
+
+/* The row's detail, moved into the item's menu where a phone has room to read it. Stacked rather
+   than run together: the location is a sentence's worth on its own. */
+.active-content-item-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35em;
+    white-space: normal;
+
+    .active-content-properties {
+        justify-content: flex-start;
+    }
+}
+
+/* Broken where they must be: a path is one long run, a title may be, and the menu is no wider than
+   the screen. */
+.active-content-item-location,
+.active-content-item-name {
+    overflow-wrap: anywhere;
+}
+
+/* The one thing in the summary that is the item itself rather than something about it, so it is
+   read as the note was named. The heading it sits in is set in small uppercase, which suits the
+   word introducing a group but not a title someone typed. */
+.active-content-item-name {
+    color: var(--main-text-color);
+    font-size: 1.25em;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+}

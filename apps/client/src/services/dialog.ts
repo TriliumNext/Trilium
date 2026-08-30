@@ -1,3 +1,4 @@
+import type { NotePickerDialogOptions } from "../widgets/dialogs/note_picker.js";
 import { Modal } from "bootstrap";
 
 import appContext from "../components/app_context.js";
@@ -222,12 +223,19 @@ async function confirmDeleteNoteBoxWithNote(title: string, deletionTarget?: Note
     return new Promise<ConfirmDialogResult | undefined>((res) => appContext.triggerCommand("showConfirmDeleteNoteBoxWithNoteDialog", { ...options, title, callback: res, deletionTarget }));
 }
 
+/** Asks for a note, resolving to its id or to null where the reader picked none. */
+export async function chooseNote(props: Omit<NotePickerDialogOptions, "callback"> = {}) {
+    return new Promise<string | null>((res) =>
+        appContext.triggerCommand("showNotePickerDialog", { ...props, callback: res }));
+}
+
 export async function prompt(props: PromptDialogOptions) {
     return new Promise<string | null>((res) => appContext.triggerCommand("showPromptDialog", { ...props, callback: res }));
 }
 
 export default {
     info,
+    chooseNote,
     confirm,
     confirmDeleteNoteBoxWithNote,
     prompt

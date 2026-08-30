@@ -1,4 +1,4 @@
-import { isImageAttachmentRole, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { search as searchService, SearchContext, utils } from "@triliumnext/core";
 import type { NextFunction, Request, Response, Router } from "express";
 import safeCompare from "safe-compare";
@@ -230,7 +230,7 @@ function register(router: Router) {
             // explicit `?raw`), and `#shareRaw` is flagged dangerous (see builtin_attributes.ts),
             // so the instance owner is deliberately opting in to serve their own scriptable
             // content. Restricting it would break legitimate self-contained HTML pages.
-            if (note.mime === "image/svg+xml") {
+            if (isSvgMime(note.mime)) {
                 res.setHeader("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
                 res.setHeader("X-Content-Type-Options", "nosniff");
             }
@@ -240,7 +240,7 @@ function register(router: Router) {
             return;
         }
 
-        res.send(renderNoteContent(note));
+        res.send(renderNoteContent(note, (includedNote) => hasCredentialAccess(includedNote, req)));
     }
 
     router.get("/share/", (req, res) => {
@@ -315,7 +315,7 @@ function register(router: Router) {
 
         if (image.type === "image") {
             addNoIndexHeader(image, res);
-            if (image.mime === "image/svg+xml") {
+            if (isSvgMime(image.mime)) {
                 // SVG images require sanitization to prevent stored XSS
                 const content = image.getContent();
                 const svgContent = typeof content === "string" ? content : new TextDecoder().decode(content ?? new Uint8Array());
@@ -352,7 +352,7 @@ function register(router: Router) {
 
         if (isImageAttachmentRole(attachment.role)) {
             addNoIndexHeader(attachment.note, res);
-            if (attachment.mime === "image/svg+xml") {
+            if (isSvgMime(attachment.mime)) {
                 // SVG attachments require sanitization to prevent stored XSS
                 const content = attachment.getContent();
                 const svgContent = typeof content === "string" ? content : new TextDecoder().decode(content ?? new Uint8Array());

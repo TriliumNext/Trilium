@@ -62,6 +62,21 @@
         .dropdown-note-info {
             padding: 1em !important;
         }
+
+        .dropdown-note-paths {
+            .note-paths-widget {
+                padding: 0.5em;
+            }
+        }
+
+        .dropdown-backlinks {
+            --menu-padding-size: .9em;
+
+            min-width: 300px;
+            max-width: 500px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
     }
 
     > .attribute-list {
@@ -164,6 +179,25 @@ body.experimental-feature-new-layout .note-info-content {
             letter-spacing: .3pt;
             font-weight: 600;
             font-size: .85em;
+        }
+
+        .status-bar-sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: .85em;
+
+            &:hover {
+                text-decoration: none;
+
+                .status-bar-sidebar-link-text {
+                    text-decoration: underline;
+                }
+            }
+
+            .tn-icon {
+                font-size: 1.2em;
+            }
         }
 
         .icon-action {

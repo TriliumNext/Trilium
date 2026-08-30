@@ -2,7 +2,7 @@ import { type ChildProcess, spawn } from "child_process";
 import { join } from "path";
 
 /**
- * A real Trilium server instance (the production `dist/main.cjs` bundle, same as the e2e
+ * A real Trilium server instance (the production `dist/main.mjs` bundle, same as the e2e
  * webServer) spawned against its own data directory, plus the HTTP plumbing needed to drive
  * the sync protocol end-to-end: document setup, password, ETAPI seeding, sync-from-server and
  * completion polling.
@@ -27,7 +27,7 @@ export default class SyncInstance {
     async start() {
         const serverDir = join(__dirname, "..", "..");
 
-        this.child = spawn(process.execPath, ["dist/main.cjs"], {
+        this.child = spawn(process.execPath, ["dist/main.mjs"], {
             cwd: serverDir,
             env: {
                 ...process.env,

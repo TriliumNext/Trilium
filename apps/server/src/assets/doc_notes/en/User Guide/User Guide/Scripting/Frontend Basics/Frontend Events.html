@@ -1,0 +1,22 @@
+<p>Front-end scripts can be run automatically on certain triggering conditions.</p>
+<p>To do so, set the <code spellcheck="false">run</code>  <a href="#root/_help_HI6GBBIduIgv">label</a> to
+  either:</p>
+<ul>
+  <li><code spellcheck="false">frontendStartup</code> - when Trilium frontend
+    starts up (or is refreshed), but not on mobile.</li>
+  <li><code spellcheck="false">mobileStartup</code> - when Trilium frontend starts
+    up (or is refreshed), on mobile.</li>
+</ul>
+<aside class="admonition note">
+  <p>One script can be triggered on multiple events, this can be done by adding
+    multiple <code spellcheck="false">run</code> labels. Separating multiple
+    values by commas <strong>is not</strong> supported.</p>
+</aside>
+<p>Backend scripts have more powerful triggering conditions, for example
+  they can run automatically on a hourly or daily basis, but also on events
+  such as when a note is created or an attribute is modified. See the server-side&nbsp;
+  <a
+  class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>&nbsp;for more information.</p>
+<h2>Safe mode</h2>
+<p>While <a href="#root/_help_64ZTlUPgEPtW">safe mode</a> is active, scripts with
+  events won't trigger.</p>

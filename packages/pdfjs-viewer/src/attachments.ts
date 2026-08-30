@@ -51,7 +51,9 @@ async function extractAndSendAttachments() {
 
     window.parent.postMessage({
         type: "pdfjs-viewer-attachments",
-        attachments
+        attachments,
+        ntxId: window.TRILIUM_NTX_ID,
+        noteId: window.TRILIUM_NOTE_ID
     } satisfies PdfViewerAttachmentsMessage, window.location.origin);
 }
 

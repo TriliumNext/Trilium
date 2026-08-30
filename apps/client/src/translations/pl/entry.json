@@ -1,1 +1,32 @@
-{}
+{
+    "login": {
+        "heading": "Zaloguj się do Trilium Notes",
+        "password": "Hasło",
+        "totp-token": "Hasło jednorazowe lub kod odzyskiwania",
+        "button": "Zaloguj",
+        "remember-me": "Zapamiętaj mnie",
+        "incorrect-password": "Hasło jest nieprawidłowe. Spróbuj ponownie.",
+        "incorrect-totp": "Hasło jednorazowe jest niepoprawne, Spróbuj ponownie.",
+        "incorrect-recovery-code": "Kod odzyskiwanie jest niepoprawny lub został już użyty wcześniej.",
+        "too-many-attempts": "Zbyt wiele prób logowania. Odczekaj kilka minut i spróbuj ponownie.",
+        "connection-error": "Nie można było połączyć się z serwerem. Sprawdź swoje połączenie i spróbuj ponownie.",
+        "sign_in_with_sso": "Zaloguj z {{ssoIssuerName}}",
+        "sso-wrong-account": "Te konto nie jest połączone z tą instancją Trilium. Zaloguj się połączonym kontem.",
+        "sso-connection-failed": "Nie można połączyć się z serwisem autoryzacyjnym. Spróbuj ponownie albo sprawdź log serwera w celu sprawdzenia szczegółów."
+    },
+    "set_password": {
+        "heading": "Ustaw hasło",
+        "description": "Zanim zaczniesz korzystać z wersji webowej Trilium, musisz ustawić hasło. Będziesz go używać do logowania.",
+        "password": "Hasło",
+        "password-confirmation": "Potwierdź hasło",
+        "button": "Ustaw hasło",
+        "password-too-short": "Hasło musi mieć minimum {{length}} znaków.",
+        "passwords-dont-match": "Hasła nie są takie same."
+    },
+    "setup": {
+        "heading": "Rozpocznij swoją przygodę z Trilium",
+        "new-document": "Nowa baza wiedzy",
+        "new-document-description": "Zacznij z pustą bazą wiedzy i rozpocznij od zaraz.",
+        "sync-from-desktop": "Połącz z aplikacją desktopową"
+    }
+}

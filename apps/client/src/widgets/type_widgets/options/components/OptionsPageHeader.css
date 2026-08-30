@@ -116,20 +116,8 @@ body.experimental-feature-new-layout .options-page-header {
     }
 
     /* The name was all it carried, so it stands down rather than leaving an empty band above the
-       first card. */
-    .options-page-header-title-only:not(:has(.options-page-header-help)) {
-        display: none;
-    }
-
-    /* All but the help button, which stays reachable — as a page action at the head of the content,
-       though, rather than as a bar: the bar was there to hold the name. */
+       first card. Its help mark, where it had one, is handed to the header holding the name. */
     .options-page-header-title-only {
-        position: static;
-        border-bottom: none;
-        padding-block: 0;
-
-        .options-page-header-main {
-            justify-content: flex-end;
-        }
+        display: none;
     }
 }

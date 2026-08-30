@@ -14,6 +14,7 @@ import { t } from "../services/i18n";
 import { copyImageReferenceToClipboard } from "../services/image";
 import { getHelpUrlForNote } from "../services/in_app_help";
 import LoadResults from "../services/load_results";
+import { sanitizeNoteContentHtml } from "../services/sanitize_content";
 import server from "../services/server";
 import toast from "../services/toast";
 import tree from "../services/tree";
@@ -434,11 +435,26 @@ export function BacklinksList({ note }: { note: FNote }) {
                 <p className="backlink-relation">{backlink.relationName}</p>
             ) : (
                 backlink.excerpts.map((excerpt, excerptIndex) => (
-                    <RawHtml key={excerptIndex} html={excerpt} />
+                    <RawHtml key={excerptIndex} html={sanitizeNoteContentHtml(excerpt)} />
                 ))
             )}
         </li>
     ));
+}
+
+/**
+ * {@link BacklinksList} in the markup its styling hangs off (see Backlinks.css), for the places that
+ * frame the list rather than build it: the sidebar's card, the mobile note menu's modal, the status
+ * bar's dropdown. The floating button keeps its own container, being a popup it also sizes by hand.
+ */
+export function BacklinksWidget({ note }: { note: FNote }) {
+    return (
+        <div class="tn-backlinks-widget">
+            <ul class="backlinks-items">
+                <BacklinksList note={note} />
+            </ul>
+        </div>
+    );
 }
 
 function needsRefresh(note: FNote, loadResults: LoadResults) {

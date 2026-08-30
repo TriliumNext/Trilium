@@ -69,7 +69,15 @@
     "toggle-archived-notes": "Taispeáin/folaigh nótaí cartlannaithe sa chrann nótaí",
     "peek-right-pane": "Féach ar an bpainéal ar dheis mar phainéal sealadach a shnámhann os cionn an ábhair agus a dhúnann nuair a chailleann sé fócas",
     "show-deleted-notes": "Taispeáin an dialóg \"Nótaí Scriosta\"",
-    "show-shortcut-hints": "Taispeáin aicearraí méarchláir don ghiuirléid atá dírithe"
+    "show-shortcut-hints": "Taispeáin aicearraí méarchláir don ghiuirléid atá dírithe",
+    "show-space-usage": "Oscail an leathanach \"Úsáid Spáis\"",
+    "create-new-split": "Oscail scoilt nua folamh ar dheis an cheann gníomhach",
+    "close-active-split": "Dún an scoilt ghníomhach, ag coinneáil na scoilteanna eile den chluaisín ar oscailt",
+    "focus-split-left": "Bog an fócas go dtí an scoilt ar chlé den cheann gníomhach",
+    "focus-split-right": "Bog an fócas go dtí an scoilt ar dheis an cheann gníomhach",
+    "split-view": "Radharc scoilte",
+    "move-split-left": "Malartaigh an scoilt ghníomhach leis an gceann ar a chlé, ionas go mbogann an nóta agus go leanann an fócas é",
+    "move-split-right": "Malartaigh an scoilt ghníomhach leis an gceann ar a dheis, ionas go mbogann an nóta agus go leanann an fócas é"
   },
   "keyboard_action_names": {
     "back-in-note-history": "Ar ais i Stair na Nótaí",
@@ -171,7 +179,14 @@
     "toggle-archived-notes": "Infheictheacht Nótaí Cartlainne a Athrú",
     "peek-right-pane": "Féach ar an bPanáil Ar Dheis",
     "show-deleted-notes": "Taispeáin Nótaí Scriosta",
-    "show-shortcut-hints": "Taispeáin Leideanna Aicearraí"
+    "show-shortcut-hints": "Taispeáin Leideanna Aicearraí",
+    "show-space-usage": "Taispeáin Úsáid Spáis",
+    "create-new-split": "Cruthaigh Scoilt Nua",
+    "close-active-split": "Dún Scoilt Ghníomhach",
+    "move-split-left": "Bog Scoilt Ar Chlé",
+    "move-split-right": "Bog Scoilt ar Dheis",
+    "focus-split-left": "Fócas Scoilte ar Chlé",
+    "focus-split-right": "Fócas Scoilte ar Dheis"
   },
   "login": {
     "title": "Logáil Isteach",
@@ -309,7 +324,8 @@
     "deleted-notes-title": "Nótaí scriosta",
     "color-scheme-switcher-title": "Athraitheoir Scéim Dathanna",
     "content-manager-title": "Bainisteoir Ábhair",
-    "database-title": "Bunachar Sonraí"
+    "database-title": "Bunachar Sonraí",
+    "space-usage-title": "Úsáid Spáis"
   },
   "notes": {
     "new-note": "Nóta nua",
@@ -321,7 +337,8 @@
     "reading-log-failed": "Theip ar an gcomhad loga cúil '{{ fileName }}' a léamh."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "Ní féidir an cineál nóta seo a thaispeáint."
+    "note-cannot-be-displayed": "Ní féidir an cineál nóta seo a thaispeáint.",
+    "included-note-requires-credentials": "Tá an nóta seo atá san áireamh cosanta ag pasfhocal agus ní féidir é a thaispeáint anseo."
   },
   "pdf": {
     "export_filter": "Doiciméad PDF (*.pdf)",

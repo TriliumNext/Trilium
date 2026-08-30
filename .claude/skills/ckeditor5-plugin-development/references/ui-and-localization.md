@@ -234,6 +234,35 @@ collection, uses `submitHandler({ view: this })` in `render()` to turn native su
 `submit` event, delegates button events (`cancelButtonView.delegate('execute').to(this,'cancel')`),
 and exposes a `focus()` method. Add `tabindex: '-1'` and the `ck` class to UI roots.
 
+### Custom DOM inside a balloon needs `ck-reset_all-excluded`
+
+CKEditor wraps every floating UI root — balloons, mention panels, dropdown panels — in
+`.ck.ck-reset_all`. Its companion rule
+
+```css
+.ck-reset_all :not(.ck-reset_all-excluded, .ck-reset_all-excluded *) { … }
+```
+
+matches **every** descendant and forces `border: 0; width: auto; height: auto; padding: 0;
+margin: 0; background: none; color: var(--ck-color-text); font: …`. It has specificity (0,2,0)
+and `ckeditor5.css` loads after the client stylesheets, so ordinary client rules and shared
+Preact component styles (e.g. `.ext-badge` from `apps/client/src/widgets/react/Badge.css`)
+silently lose inside a balloon.
+
+The symptom reads as a missing stylesheet rather than a cascade conflict: the element keeps its
+classes and keeps every property the reset does **not** name (`display`, `border-radius`, `gap`),
+so only some of its styling disappears.
+
+**Fix:** put `ck-reset_all-excluded` on the outermost custom element — a mention feed
+`itemRenderer` root, a custom `View`'s element, anything wrapped in `MentionDomWrapperView`. The
+`:not()` covers the whole subtree, so one class exempts everything inside it. Do **not**
+out-specify the reset instead: winning a specificity war means restating the borrowed component's
+internals, which then drift from it.
+
+Diagnosing this from the sources is a trap — load `ckeditor5.css` *first* in a static test page
+and the client rules win, so the bug does not reproduce. Inspect `getComputedStyle` in the real
+app instead.
+
 ## Dialogs & modals
 
 The `Dialog` plugin shows views in a dialog (`isModal: false`) or modal (`isModal: true`,

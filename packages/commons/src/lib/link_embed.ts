@@ -1,3 +1,5 @@
+import { fnv1a } from "./utils.js";
+
 export const YOUTUBE_REGEX = /(?:youtube\.com\/watch\?[^\s#]*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
 
 export function extractYouTubeVideoId(url: string): string | null {
@@ -135,7 +137,7 @@ export function linkPreviewImageName(url: string): string {
         // URL. The digest identifies it regardless; only the readable part suffers.
     }
 
-    return `${capReadable(readable) || "image"}-${shortDigest(canonical)}`;
+    return `${capReadable(readable) || "image"}-${fnv1a(canonical).toString(16).padStart(8, "0")}`;
 }
 
 /** How much of the readable part to keep, so a long path does not crowd out the attachment list. */
@@ -155,24 +157,6 @@ function toFileNamePart(value: string): string {
 /** Bounds the readable part, and never lets it end on the punctuation a cut leaves behind. */
 function capReadable(value: string): string {
     return value.slice(0, PREVIEW_NAME_MAX_READABLE).replace(/^[-.]+|[-.]+$/g, "");
-}
-
-/**
- * A short digest of a string, used only to tell two addresses apart.
- *
- * FNV-1a, which is not a security primitive and is not asked to be one. Web Crypto is not an option
- * here: Trilium is served over plain HTTP as often as not, and `crypto.subtle` exists only in a
- * secure context.
- */
-function shortDigest(value: string): string {
-    let hash = 0x811c9dc5;
-
-    for (let i = 0; i < value.length; i++) {
-        hash ^= value.charCodeAt(i);
-        hash = Math.imul(hash, 0x01000193);
-    }
-
-    return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
 export interface LinkEmbedMetadata {

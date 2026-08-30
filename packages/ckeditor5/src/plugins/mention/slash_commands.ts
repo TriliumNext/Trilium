@@ -329,7 +329,10 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             id: "collapsible",
             title: t("Collapsible block"),
             description: t("Insert a toggleable section that hides/shows content on click."),
-            aliases: [ "details", "fold", "toggle" ],
+            aliases: [
+                "details", "fold", "toggle", "collapse", "expand", "accordion", "spoiler",
+                "summary", "disclosure", "hide"
+            ],
             icon: collapsibleIcon,
             commandName: "collapsible"
         },

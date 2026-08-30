@@ -115,7 +115,7 @@ Nossa documentação está disponível em vários formatos:
 * Built-in [dark
   theme](https://docs.triliumnotes.org/user-guide/concepts/themes), support for
   user themes
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   and [Markdown import &
   export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for

@@ -94,7 +94,7 @@ Trilium Notes
   [モバイルフロントエンド](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
 * 組み込みの
   [ダークテーマ](https://docs.triliumnotes.org/user-guide/concepts/themes)、ユーザーテーマのサポート
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   と
   [マークダウンのインポートとエクスポート](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) で

@@ -1,7 +1,7 @@
 import { render } from "preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const renderOfficeToHtml = vi.fn<(entityType: string, entityId: string) => Promise<string>>();
+const renderOfficeToHtml = vi.fn<(entityType: string, entityId: string) => Promise<{ css: string; html: string }>>();
 
 vi.mock("../../../services/office_renderer", () => ({
     renderOfficeToHtml: (...args: [string, string]) => renderOfficeToHtml(...args)
@@ -31,7 +31,7 @@ function mount(noteId = "office1", blobId = "blob1") {
 
 describe("OfficePreview", () => {
     it("shows the loading state, then the sanitized server-rendered HTML for the note", async () => {
-        let resolve: (html: string) => void = () => {};
+        let resolve: (preview: { css: string; html: string }) => void = () => {};
         renderOfficeToHtml.mockReturnValue(new Promise((r) => { resolve = r; }));
 
         mount("note42");
@@ -41,7 +41,7 @@ describe("OfficePreview", () => {
         // Effects run after the render tick, so the fetch is observed asynchronously.
         await vi.waitFor(() => expect(renderOfficeToHtml).toHaveBeenCalledWith("notes", "note42"));
 
-        resolve('<p class="converted-doc">Hello</p>');
+        resolve({ css: "", html: '<p class="converted-doc">Hello</p>' });
         await vi.waitFor(() => expect(container.querySelector(".converted-doc")?.textContent).toBe("Hello"));
 
         const body = container.querySelector(".office-preview-body");
@@ -60,18 +60,18 @@ describe("OfficePreview", () => {
     });
 
     it("re-fetches when the note's content (blobId) changes", async () => {
-        renderOfficeToHtml.mockResolvedValue("<p>v1</p>");
+        renderOfficeToHtml.mockResolvedValue({ css: "", html: "<p>v1</p>" });
         mount("note1", "blobA");
         await vi.waitFor(() => expect(container.querySelector(".office-preview-body")).not.toBeNull());
 
-        renderOfficeToHtml.mockResolvedValue('<p class="v2">v2</p>');
+        renderOfficeToHtml.mockResolvedValue({ css: "", html: '<p class="v2">v2</p>' });
         mount("note1", "blobB");
         await vi.waitFor(() => expect(container.querySelector(".v2")).not.toBeNull());
         expect(renderOfficeToHtml).toHaveBeenCalledTimes(2);
     });
 
     it("discards a conversion that resolves after unmount without touching the DOM", async () => {
-        let resolve: (html: string) => void = () => {};
+        let resolve: (preview: { css: string; html: string }) => void = () => {};
         renderOfficeToHtml.mockReturnValue(new Promise((r) => { resolve = r; }));
 
         mount();
@@ -79,7 +79,7 @@ describe("OfficePreview", () => {
         // path (not a never-started effect) is what's exercised.
         await vi.waitFor(() => expect(renderOfficeToHtml).toHaveBeenCalled());
         render(null, container);
-        resolve("<p>too late</p>");
+        resolve({ css: "", html: "<p>too late</p>" });
         // Let the microtask run; the cancelled effect must not re-render into the container.
         await Promise.resolve();
         expect(container.innerHTML).toBe("");

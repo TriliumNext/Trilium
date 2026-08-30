@@ -118,7 +118,7 @@ Nasza dokumentacja jest dostępna w wielu formatach:
 * Wbudowany [ciemny
   motyw](https://docs.triliumnotes.org/user-guide/concepts/themes) i wsparcie
   dla motywów użytkownika
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   oraz [import i eksport
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) do

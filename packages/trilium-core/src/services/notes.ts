@@ -1286,10 +1286,14 @@ function getUndeletedParentBranchIds(noteId: string, deleteId: string) {
     );
 }
 
+/** The note types `saveLinks()` reads links out of, minus the ones whose content holds none. */
+const SCANNED_ON_IMPORT: NoteType[] = ["text", "relationMap", "mindMap", "llmChat"];
+
 function scanForLinks(note: BNote, content: string | Uint8Array) {
-    // A mind map is scanned here as well as on save, so that one arriving by import carries its
-    // links to the notes it points at without having to be opened and edited first.
-    if (!note || !["text", "relationMap", "mindMap"].includes(note.type)) {
+    // Scanned here as well as on save, so that a note arriving by import carries its links to the
+    // notes it points at without having to be opened and edited first. A Markdown note is asked
+    // separately: it is a `code` note, whose type alone says nothing about the links it holds.
+    if (!note || !(SCANNED_ON_IMPORT.includes(note.type) || note.isMarkdown())) {
         return;
     }
 

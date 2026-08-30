@@ -227,8 +227,10 @@ describe("route wrapper branches (via controlled handlers)", () => {
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/r-obj")).body)).toEqual({ a: 1 });
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/r-tuple")).body)).toEqual({ created: true });
 
+        // apiResultHandler turns undefined into "", which goes out as an empty body — what the
+        // server's send() does with the same value, rather than a JSON-quoted empty string.
         const undefRes = await router.dispatch("GET", "http://localhost/t/r-undef");
-        expect(text(undefRes.body)).toBe('""');
+        expect(text(undefRes.body)).toBe("");
     });
 
     it("returns a plain route() result when no result handler is supplied", async () => {

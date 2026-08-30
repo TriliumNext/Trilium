@@ -515,8 +515,9 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
                     };
 
                     if (hrefLink.toLowerCase().startsWith("file:")) {
-                        // shell.openExternal mishandles Unicode file:// URLs on Windows;
-                        // convert to a filesystem path and use shell.openPath instead.
+                        // The main process resolves the URL to a path and picks the dispatch
+                        // that works per platform; shell.openExternal alone mishandles Unicode
+                        // file:// URLs on Windows.
                         window.electronApi.shell.openFileUrl(hrefLink).then((err: string) => {
                             if (err) reportLinkError(new Error(err));
                         }).catch(reportLinkError);

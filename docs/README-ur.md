@@ -112,7 +112,7 @@ Trilium Notes ایک مفت اور اوپن سورس، کراس پلیٹ فار�
   اینڈ](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
 * بلٹ ان [ڈارک تھیم](https://docs.triliumnotes.org/user-guide/concepts/themes)،
   یوزر تھیمز کی سپورٹ
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   اور [Markdown امپورٹ اور
   ایکسپورٹ](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * ویب مواد آسانی سے محفوظ کرنے کے لیے [ویب

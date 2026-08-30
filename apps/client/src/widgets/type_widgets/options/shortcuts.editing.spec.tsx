@@ -108,11 +108,20 @@ function rowFor(name: string) {
         .find((row) => row.querySelector(".tn-card-option-label")?.textContent?.includes(name));
 }
 
-/** Picks one of the filter menu's entries. The menu is only built once the dropdown is opened. */
+/**
+ * Picks one of the filter menu's entries. The menu is only built once the dropdown is opened, and
+ * it is carried out to the body from there, so it is looked for outside the page rather than in it.
+ */
 async function chooseFilter(index: number) {
-    await act(async () => host.querySelector<HTMLElement>(".header-stub .dropdown button")?.click());
+    const toggle = host.querySelector<HTMLElement>(".header-stub .dropdown button");
 
-    const items = [ ...host.querySelectorAll<HTMLElement>(".header-stub .dropdown-menu .dropdown-item") ];
+    // The menu is only put into the body once the toggle is pressed, which in a browser means the
+    // pointer going down before the click. `click()` alone sends no such press, and Bootstrap then
+    // opens against a menu that is not there yet.
+    await act(async () => void toggle?.dispatchEvent(new Event("pointerdown", { bubbles: true })));
+    await act(async () => toggle?.click());
+
+    const items = [ ...document.body.querySelectorAll<HTMLElement>(".dropdown-menu .dropdown-item") ];
     await act(async () => items[index]?.click());
 }
 

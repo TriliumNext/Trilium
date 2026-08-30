@@ -118,7 +118,7 @@ Tài liệu của chúng tôi có sẵn ở nhiều định dạng:
   tối](https://docs.triliumnotes.org/user-guide/concepts/themes), hỗ trợ giao
   diện do người dùng tùy chỉnh
 * Hỗ trợ nhập, xuất cho
-  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   và
   [Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) để

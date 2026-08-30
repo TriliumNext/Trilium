@@ -23,15 +23,21 @@ body.desktop .modal.options-dialog > .modal-dialog {
     height: 75vh;
 }
 
+/* Stated on the column itself rather than left to whichever child turns out to be the widest, so
+   that the search field takes the width it is given instead of setting it. */
 .modal.options-dialog > .modal-dialog > .modal-content > .modal-sidebar {
+    width: 240px;
     background-color: var(--card-background-color);
+}
+
+.modal.options-dialog > .modal-dialog > .modal-content > .modal-sidebar .settings-search {
+    margin: 8px 8px 0;
 }
 
 .modal.options-dialog > .modal-dialog > .modal-content > .modal-sidebar .settings-navigation {
     flex: 1 1 0;
     min-height: 0;
     overflow: auto;
-    width: 240px;
     padding: 8px;
 }
 
@@ -74,13 +80,101 @@ body.mobile .modal.options-dialog:not(.mobile-master-detail) > .modal-dialog {
 /* The master-detail flow itself is the shared one (master_detail.css); what is particular here is the
    page selector's own padding, and the settings page filling the pane it is wrapped in. */
 body.mobile .modal.options-dialog.mobile-master-detail {
+    /* What a card keeps from the edge of the screen: 16px, which is both Material's body margin for
+       a compact window and the inset iOS gives a grouped list, and which with the card's own 16px
+       starts the text 32px in, where a phone is read. Widened where a sensor housing eats into
+       the screen, which is a side of it rather than the start of a sentence: hence left and right,
+       not start and end. */
+    --options-inset-left: max(16px, env(safe-area-inset-left));
+    --options-inset-right: max(16px, env(safe-area-inset-right));
+
+    /* The room a scrolling pane keeps for its bar, held on both edges rather than the trailing one
+       alone: on one edge the cards sit off centre whenever the bar is absent, and a bar that comes
+       and goes as the page settles moves them about and reflows their text. The pane already holds
+       that much of the margin, so whatever stands inside it pads only what is left of it. */
+    --options-gutter: var(--scrollbar-thickness, 10px);
+    --options-pane-inset-left: max(0px, calc(var(--options-inset-left) - var(--options-gutter)));
+    --options-pane-inset-right: max(0px, calc(var(--options-inset-right) - var(--options-gutter)));
+
+    .tn-master-pane {
+        scrollbar-gutter: stable both-edges;
+    }
+
     .options-mobile-nav {
-        padding: 8px 25px;
+        padding-block: 8px;
+        padding-left: var(--options-pane-inset-left);
+        padding-right: var(--options-pane-inset-right);
+
+        /* The list is the pane's own content here, not a menu standing over something else. */
+        .dropdown-menu.static {
+            padding-block: 0;
+        }
+
+        /* A page in this list is somewhere to go rather than a line of a menu: it is given a
+           thumb's worth of height and its name carries a little more weight. The padding is a
+           floor under a name that wraps, held in `em` so it keeps up with the reading size; the
+           row itself is centred, so on one line the height is all that is felt. */
+        .dropdown-item {
+            min-height: 40px;
+            --menu-item-vertical-padding: 0.35em;
+            font-weight: 500;
+        }
+
+        /* The row centres what it holds, so the mark wants no nudge of its own: the -2px the theme
+           gives a menu item is undone here, `FormList` carrying no `tn-dropdown-menu` class to take
+           the theme's own zero. `line-height` boxes the glyph so the centring lands on the mark
+           rather than on the leading around it. */
+        .dropdown-item .tn-icon {
+            --menu-item-icon-vert-offset: 0;
+            /* Half of the 8px wanted between the mark and the name: `FormListItem` writes an
+               `&nbsp;` after the icon, which merges into the name's own text run and so can be
+               neither selected nor removed from here. It stands for the other half. */
+            margin-inline-end: 4px;
+            font-size: 1.4em;
+            line-height: 1;
+        }
+    }
+
+    /* Held to the same margin whatever the page: its own is a desktop measure, and in the old
+       layout it has none of its own at all. */
+    .note-detail-content-widget-content.options {
+        padding-left: var(--options-pane-inset-left);
+        padding-right: var(--options-pane-inset-right);
+    }
+
+    /* The bar above the cards keeps their margin, so the way back starts on the rail the cards
+       start on and the close button ends on the one they end on. `!important` answers the global
+       rule, which is in `rem` besides and would drift from a fixed inset as the text is resized. */
+    .modal-header {
+        padding-left: var(--options-inset-left) !important;
+        padding-right: var(--options-inset-right) !important;
+    }
+
+    /* Reaches both edges of the pane, its border with it, and takes the inset back as padding so
+       what it holds still lines up with the cards. The page's own gap above it is taken back too:
+       one bar standing at the top of the page wants one gap over its contents, not two. */
+    .options-page-header {
+        margin-top: calc(var(--default-padding, 15px) * -1);
+        margin-left: calc(var(--options-pane-inset-left) * -1);
+        margin-right: calc(var(--options-pane-inset-right) * -1);
+        padding-left: var(--options-pane-inset-left);
+        padding-right: var(--options-pane-inset-right);
+    }
+
+    /* Left to scroll away with the list beneath it, as a phone's search fields do. */
+    .settings-search {
+        margin-bottom: 12px;
+    }
+
+    /* The pane already holds the results clear of its edges, so the page inside adds nothing. */
+    .options-mobile-results .options-search {
+        padding-inline: 0;
     }
 
     .note-detail {
         height: 100%;
         overflow: auto;
+        scrollbar-gutter: stable both-edges;
     }
 }
 

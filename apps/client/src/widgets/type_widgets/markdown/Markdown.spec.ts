@@ -297,6 +297,6 @@ describe("renderWithSourceLines", () => {
     it("renders a colour the exporter preserved as inline HTML", () => {
         // Non-default colours survive a Markdown export as a span, so the preview has to show them.
         expect(html(`a <span style="color:#ff0000">**red**</span> b`))
-            .toBe(`<p>a <span style="color:#ff0000"><strong>red</strong></span> b</p>`);
+            .toBe(`<p>a <span style="color:#ff0000;"><strong>red</strong></span> b</p>`);
     });
 });

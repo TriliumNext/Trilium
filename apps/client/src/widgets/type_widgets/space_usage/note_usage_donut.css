@@ -1,0 +1,113 @@
+/* The semantic segment colors, and the trace a chosen one is marked with. Zero specificity, so a
+   theme overrides them from its own `:root` block; the values here are the light scheme. */
+:where(:root) {
+    /* What the note itself holds, and what hangs off it. */
+    --space-usage-body-color: #c7d6ed;
+    --space-usage-attachments-color: #eddebe;
+    /* History, quieter than either: a tier rather than a thing the user put there. */
+    --space-usage-revisions-color: #d6d8da;
+    /* The hatch's stripes: the same gray carried further from the fill, so the texture reads
+       at ring thickness without becoming a second color. */
+    --space-usage-revisions-stripe-color: #b8bbc0;
+
+    /* The hue each fill is built on, so a hovered or chosen segment is marked the way a hue-colored
+       one is: struck from that hue at the strength the primitive gives. The revisions gray
+       stands for a tier rather than a thing and has no hue to give, so it keeps the plain
+       defaults. */
+    --space-usage-body-hue: 217;
+    --space-usage-attachments-hue: 42;
+    --space-usage-body-hover-color: hsl(
+        var(--space-usage-body-hue)
+        var(--space-usage-donut-hover-saturation)
+        var(--space-usage-donut-hover-lightness)
+    );
+    --space-usage-body-selected-color: hsl(
+        var(--space-usage-body-hue)
+        var(--space-usage-donut-selected-saturation)
+        var(--space-usage-donut-selected-lightness)
+    );
+    --space-usage-attachments-hover-color: hsl(
+        var(--space-usage-attachments-hue)
+        var(--space-usage-donut-hover-saturation)
+        var(--space-usage-donut-hover-lightness)
+    );
+    --space-usage-attachments-selected-color: hsl(
+        var(--space-usage-attachments-hue)
+        var(--space-usage-donut-selected-saturation)
+        var(--space-usage-donut-selected-lightness)
+    );
+}
+
+.note-usage-donut {
+    .space-usage-segment-body {
+        --space-usage-donut-segment-color: var(--space-usage-body-color);
+        --space-usage-donut-segment-hover-color: var(--space-usage-body-hover-color);
+        --space-usage-donut-segment-selected-color: var(--space-usage-body-selected-color);
+    }
+
+    .space-usage-segment-attachment {
+        --space-usage-donut-segment-color: var(--space-usage-attachments-color);
+        --space-usage-donut-segment-hover-color: var(--space-usage-attachments-hover-color);
+        --space-usage-donut-segment-selected-color: var(--space-usage-attachments-selected-color);
+    }
+
+    /* Stroked with the hatch rather than a flat fill: history is not content the user put there,
+       and the texture says so without spending another color. */
+    .space-usage-segment-revisions {
+        --space-usage-donut-segment-color: url(#space-usage-revisions-hatch);
+    }
+
+    .space-usage-hatch-base {
+        fill: var(--space-usage-revisions-color);
+    }
+
+    .space-usage-hatch-stripe {
+        stroke: var(--space-usage-revisions-stripe-color);
+        stroke-width: 2;
+    }
+
+    /* Repeats .donut-segment to outrank the primitive's clickable-cursor rule. */
+    .donut-segment.space-usage-segment-others {
+        cursor: default;
+    }
+
+    /* Keeps the text inside the hole (inner ring inner edge ≈ 21% in from the box edge); nudged
+       upward so the button + four text lines sit visually centered rather than sagging low. */
+    .donut-chart-center {
+        padding: 23%;
+        gap: 2px;
+        transform: translateY(-4%);
+    }
+
+    .note-usage-donut-title {
+        overflow: hidden;
+        max-width: 100%;
+        color: var(--link-color);
+        font-size: 1.05rem;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .note-usage-donut-title:hover {
+        text-decoration: underline;
+    }
+
+    /* The lines carry their own tight leading, so the block sets its own spacing: one gap above it,
+       and the center's own gap no longer stretches the lines apart. */
+    .note-usage-donut-sizes {
+        display: flex;
+        flex-direction: column;
+        margin-top: 8px;
+        gap: 2px;
+    }
+
+    .note-usage-donut-size {
+        opacity: 0.7;
+        font-size: 0.85em;
+        line-height: 1.15;
+    }
+
+    .note-usage-donut-size-value {
+        font-weight: 600;
+    }
+}

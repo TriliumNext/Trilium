@@ -2,7 +2,6 @@
     width: 100%;
 }
 
-
 .pdf-annotation-item {
     display: flex;
     align-items: flex-start;
@@ -12,20 +11,32 @@
     border-radius: 6px;
     cursor: pointer;
     transition: filter 0.2s;
+    /* An untinted row sits on the panel itself, so it reads in the theme's colours. */
+    --annotation-text-color: var(--main-text-color);
+    --annotation-muted-text-color: var(--muted-text-color);
+    color: var(--annotation-text-color);
+}
+
+/* A tinted row carries its annotation's own colour behind the text, which no theme knows about,
+   so the text is fixed to suit the tint: dark on a pale highlight, light on the pen's black. */
+.pdf-annotation-item.tinted {
+    --annotation-text-color: #333;
+    --annotation-muted-text-color: #555;
+}
+
+.pdf-annotation-item.tinted-dark {
+    --annotation-text-color: #f0f0f0;
+    --annotation-muted-text-color: #d0d0d0;
 }
 
 .pdf-annotation-item:hover {
     filter: brightness(0.9);
 }
 
-.pdf-annotation-item,
-.pdf-annotation-item .tn-icon {
-    color: #333;
-}
-
 .pdf-annotation-item .tn-icon {
     flex-shrink: 0;
     font-size: 18px;
+    color: var(--annotation-text-color);
 }
 
 .pdf-annotation-info {
@@ -33,10 +44,15 @@
     min-width: 0;
 }
 
+.pdf-annotation-untitled {
+    font-size: 13px;
+    color: var(--annotation-muted-text-color);
+}
+
 .pdf-annotation-highlighted-text {
     font-size: 13px;
     font-style: italic;
-    color: #555;
+    color: var(--annotation-muted-text-color);
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -45,7 +61,7 @@
 
 .pdf-annotation-contents {
     font-size: 13px;
-    color: #333;
+    color: var(--annotation-text-color);
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -54,6 +70,6 @@
 
 .pdf-annotation-author {
     font-size: 11px;
-    color: #555;
+    color: var(--annotation-muted-text-color);
     margin-top: 2px;
 }

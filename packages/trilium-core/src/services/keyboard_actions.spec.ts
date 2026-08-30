@@ -59,6 +59,30 @@ describe("keyboard_actions service", () => {
         }
     });
 
+    it("ships the split actions unbound and in a section of their own", () => {
+        const actions = keyboardActions.getDefaultKeyboardActions();
+
+        const splitActions = [
+            "openNewNoteSplit", "closeActiveNoteSplit", "moveActiveNoteSplitLeft", "moveActiveNoteSplitRight",
+            "focusNoteSplitLeft", "focusNoteSplitRight"
+        ];
+
+        for (const actionName of splitActions) {
+            const action = actions.find((a) => "actionName" in a && a.actionName === actionName);
+            expect(action, actionName).toBeDefined();
+            expect(action && "defaultShortcuts" in action && action.defaultShortcuts, actionName).toEqual([]);
+        }
+
+        // The options page buckets each action under the separator preceding it, and with nothing
+        // bound by default that page is the only way to reach these -- so the six make up a section
+        // of their own, rather than trailing the two dozen tab actions.
+        const firstIndex = actions.findIndex((a) => "actionName" in a && a.actionName === splitActions[0]);
+        expect(actions[firstIndex - 1]).toHaveProperty("separator");
+        expect(actions.slice(firstIndex, firstIndex + splitActions.length)
+            .map((a) => "actionName" in a && a.actionName)).toEqual(splitActions);
+        expect(actions[firstIndex + splitActions.length]).toHaveProperty("separator");
+    });
+
     it("throws if loaded before translations are available", async () => {
         // keyboard_actions was already evaluated during the bootstrap (binding the
         // real i18next), so re-import a fresh copy that picks up the mocked module.

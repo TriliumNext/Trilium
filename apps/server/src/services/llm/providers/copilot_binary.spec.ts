@@ -13,14 +13,20 @@ vi.mock("fs", () => ({ existsSync: existsSyncMock }));
 vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info: vi.fn(), error: vi.fn() }) }));
 
 const { needsShell, resetCopilotBinaryCache, resolveCopilotBinaryPath } = await import("./copilot_binary.js");
+const { resetLoginShellPathCache } = await import("./binary_lookup.js");
 
 describe("resolveCopilotBinaryPath", () => {
     const originalOverride = process.env.TRILIUM_COPILOT_PATH;
     const originalPath = process.env.PATH;
+    const originalShell = process.env.SHELL;
     const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
 
     beforeEach(() => {
         resetCopilotBinaryCache();
+        resetLoginShellPathCache();
+        // No $SHELL: the login-shell fallback is a no-op, so these cases
+        // stay about the inherited PATH (binary_lookup.spec.ts covers it).
+        delete process.env.SHELL;
         execFileMock.mockReset();
         existsSyncMock.mockReset();
         existsSyncMock.mockReturnValue(true);
@@ -34,6 +40,11 @@ describe("resolveCopilotBinaryPath", () => {
             process.env.TRILIUM_COPILOT_PATH = originalOverride;
         }
         process.env.PATH = originalPath;
+        if (originalShell === undefined) {
+            delete process.env.SHELL;
+        } else {
+            process.env.SHELL = originalShell;
+        }
         if (originalPlatform) {
             Object.defineProperty(process, "platform", originalPlatform);
         }

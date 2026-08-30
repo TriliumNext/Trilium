@@ -3,11 +3,6 @@
 }
 
 .dropdown-menu.help-dropdown-content {
-    /* Dropdowns sit at 999, just under the popups anchored to the same widgets (e.g. the attribute
-       detail at 1000). Help is always an explicit, transient request, so it has to win over
-       whatever it was opened on top of. */
-    --bs-dropdown-zindex: 1001;
-
     max-width: 340px;
     padding: 12px;
     white-space: normal;

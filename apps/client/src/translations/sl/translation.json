@@ -1,1 +1,17 @@
-{}
+{
+  "about": {
+    "version_label": "različica:",
+    "version": "{{appVersion}} (podatkovna zbirka: {{dbVersion}}, sinhronizacijski protokol: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revision <buildRevision />",
+    "contributors_label": "Prispievatelia:",
+    "contributor_roles": {
+      "lead-dev": "vedúci vývojár",
+      "original-dev": "pôvodný vývojár"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran je leta 2024 ustanovil TriliumNext, skupnostni razcep (fork), ki je nastal potem, ko se je Zadam umaknil iz projekta. Zadam je kasneje izvirni repozitorij prenesel na ekipo TriliumNext in tako združil oba projekta nazaj v enega.",
+      "original-dev": "25 decembra 2017 je Zadam izdal prvo beta različico Trilium (piše se z enim samim \"l\", za razliko od rože lilija). Ker ni bil zadovoljen z obstoječimi organizatorji zapiskov, je ustvaril zmogljivo samogostiteljsko hierarhično bazo znanja, ki je na GitHubu zbrala več kot 22.000 zvezdic. Leta 2024, ko so ga življenjske obveznosti postale bolj natrgane, je projekt preklopil v vzdrževalni način."
+    },
+    "contributor_full_list": "Pozrite si celú komunitu"
+  }
+}

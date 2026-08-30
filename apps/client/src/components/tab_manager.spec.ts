@@ -190,6 +190,43 @@ describe("buildNoteContextStatesFromUrl", () => {
     });
 });
 
+describe("moving the focus between splits", () => {
+    it("steps one pane at a time and stops at both ends of the tab", async () => {
+        const tm = new TabManager();
+        // a pane resolves its siblings by asking the app which contexts are open
+        appContext.tabManager = tm;
+        const [ main ] = await openEmptyTabs(tm, 1);
+        const split = await tm.openEmptyTab(null, "root", main.ntxId);
+        const otherTab = await tm.openEmptyTab();
+        expect(tm.children.map((nc) => nc.ntxId)).toEqual([ main.ntxId, split.ntxId, otherTab.ntxId ]);
+
+        await tm.activateNoteContext(main.ntxId);
+        const triggerEvent = vi.spyOn(tm, "triggerEvent").mockReturnValue(undefined);
+
+        await tm.focusNoteSplitRightCommand();
+        expect(tm.activeNtxId).toBe(split.ntxId);
+        // activating the pane moves the tree; the caret follows on its own event
+        expect(triggerEvent).toHaveBeenCalledWith("focusOnDetail", { ntxId: split.ntxId });
+
+        // the tab next door is not the next pane
+        await tm.focusNoteSplitRightCommand();
+        expect(tm.activeNtxId).toBe(split.ntxId);
+
+        await tm.focusNoteSplitLeftCommand();
+        expect(tm.activeNtxId).toBe(main.ntxId);
+
+        // and nothing sits to the left of the first pane
+        await tm.focusNoteSplitLeftCommand();
+        expect(tm.activeNtxId).toBe(main.ntxId);
+
+        // a pane closed between the keypress and the handler leaves the id behind; resolving it is
+        // what getActiveMainContext() would throw over
+        tm.activeNtxId = "already-gone";
+        await tm.focusNoteSplitRightCommand();
+        expect(tm.activeNtxId).toBe("already-gone");
+    });
+});
+
 function openEmptyTabs(tm: TabManager, count: number) {
     return Promise.all(Array.from({ length: count }, () => tm.openEmptyTab()));
 }

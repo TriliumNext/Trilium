@@ -30,7 +30,7 @@ afterEach(() => {
 
 /** Marks an annotation-editing tool as active, as pdf.js does while a tool is selected. */
 function startEditing(mode = 15) {
-    setAnnotationEditorUIManager({ getMode: () => mode, getActive: () => null, unselectAll: vi.fn() });
+    setAnnotationEditorUIManager({ getMode: () => mode, getActive: () => null, hasSelection: false, unselectAll: vi.fn() });
 }
 
 /** Adds the `.page` element pdf.js renders each page into, and returns a child of it. */
@@ -98,9 +98,31 @@ describe("boot sequence", () => {
             await vi.waitFor(() => expect(viewer.messagesOfType(type).length).toBeGreaterThan(0));
         }
 
-        // And the save plumbing is live.
-        (viewer.pdfDocument.annotationStorage as any).onSetModified?.();
+        // And the save plumbing is live: dirtying the storage reaches the parent.
+        (viewer.pdfDocument.annotationStorage as any).setValue("field-1", { value: "typed" });
         expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(1);
+    });
+
+    it("addresses every message to the viewer that sent it", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        await bootWith("editable=1");
+
+        viewer.eventBus.dispatch("documentloaded", { source: null });
+        await vi.waitFor(() => expect(viewer.messagesOfType("pdfjs-viewer-annotations").length).toBeGreaterThan(0));
+
+        // Drive the senders that boot alone does not reach.
+        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 2 });
+        viewer.sendFromParent({ type: "trilium-request-thumbnail", pageNumber: 1 });
+        (viewer.pdfDocument.annotationStorage as any).setValue("field-1", { value: "typed" });
+        await vi.waitFor(() => expect(viewer.messagesOfType("pdfjs-viewer-current-page").length).toBeGreaterThan(0));
+
+        // A second open PDF posts onto the same parent window, so what each message carries is the
+        // only thing telling the two apart. One that says nothing is applied by whichever viewer
+        // happens to receive it — listing one document's annotations against another's pages.
+        expect(viewer.messages.length).toBeGreaterThan(0);
+        for (const message of viewer.messages) {
+            expect(message).toMatchObject({ type: expect.any(String), noteId: "note-1", ntxId: "ntx-1" });
+        }
     });
 
     it("applies the toolbar and sidebar switches from the URL", async () => {
@@ -158,24 +180,130 @@ describe("boot sequence", () => {
 });
 
 describe("reporting the document as modified", () => {
-    it("tells the parent on every signal pdf.js gives for a real change", async () => {
+    it("tells the parent on the signals pdf.js gives for a real change", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         const storage = viewer.pdfDocument.annotationStorage as any;
         const resetModified = vi.spyOn(storage, "resetModified");
         manageSave();
 
-        // The primary hook: pdf.js calls this whenever annotationStorage is dirtied.
-        storage.onSetModified();
-        // A tool's parameters changing (colour, thickness) also mutates the document.
-        viewer.eventBus.dispatch("switchannotationeditorparams", { source: null });
+        // The primary hook: pdf.js dirties annotationStorage, as filling in a form field does.
+        storage.setValue("field-1", { value: "typed" });
         // Deletions and undo/redo only surface here, and only when there is something to undo.
+        // Left unconditional: the first stroke of an ink session flips hasSomethingToUndo while
+        // the drawing is still outside annotationStorage, so there is nothing to compare against.
         viewer.eventBus.dispatch("editingstateschanged", { source: null, details: { hasSomethingToUndo: true } });
 
-        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(3);
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(2);
         expect(viewer.lastMessageOfType("pdfjs-viewer-document-modified"))
             .toEqual({ type: "pdfjs-viewer-document-modified", noteId: "note-1", ntxId: "ntx-1" });
         // Without the reset pdf.js keeps reporting the same change on every later edit.
-        expect(resetModified).toHaveBeenCalledTimes(3);
+        expect(resetModified).toHaveBeenCalledTimes(2);
+    });
+
+    it("stays quiet while pdf.js registers the annotations already in the document", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const storage = viewer.pdfDocument.annotationStorage as any;
+        const resetModified = vi.spyOn(storage, "resetModified");
+        manageSave();
+
+        // Entering an editing mode turns every stored annotation on a rendered page into an
+        // editor, and registering each one dirties annotationStorage. Nothing about the document
+        // changed, so pressing a toolbar button — or scrolling another annotated page into view —
+        // must not schedule a save, let alone one per annotation (#11059).
+        storage.onSetModified();
+        storage.onSetModified();
+
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(0);
+        // The flag still has to be cleared, or pdf.js' one-shot would never raise the next
+        // real change.
+        expect(resetModified).toHaveBeenCalledTimes(2);
+
+        // Which it does: an actual edit is still reported.
+        storage.setValue("field-1", { value: "typed" });
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(1);
+    });
+
+    it("treats a document that cannot be serialized as unchanged, then catches up", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const storage = viewer.pdfDocument.annotationStorage as any;
+        // pdf.js stores an editor before it is finished: "Add signature" leaves one with no
+        // outlines in annotationStorage until the dialog resolves, and serializing it throws.
+        // That is a state pdf.js passes through, not a change to report — and not a reason to
+        // let the throw out of the storage hook, or out of the setup, either.
+        const serializable = vi.spyOn(storage, "serializable", "get").mockImplementation(() => {
+            throw new Error("outlines are not set yet");
+        });
+        expect(() => manageSave()).not.toThrow();
+
+        expect(() => storage.setValue("sig-1", { value: "pending" })).not.toThrow();
+        viewer.eventBus.dispatch("switchannotationeditorparams", { source: null });
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(0);
+
+        // The interaction nudges still report blind, and cope with the same state.
+        startEditing();
+        renderPage().dispatchEvent(new Event("keyup", { bubbles: true }));
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(1);
+
+        // Once the editor is complete the document serializes again, and the change it made is
+        // reported against the last hash that could be read — not swallowed.
+        serializable.mockRestore();
+        storage.setValue("sig-1", { value: "signed" });
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(2);
+    });
+
+    it("stays quiet when a tool's parameters leave the document alone", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        manageSave();
+
+        // With nothing selected, the colour picker in a tool's parameter toolbar only sets what
+        // the next annotation will be drawn in.
+        viewer.eventBus.dispatch("switchannotationeditorparams", { source: null });
+
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(0);
+    });
+
+    it("reports a parameter change that does alter an annotation", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const storage = viewer.pdfDocument.annotationStorage as any;
+        manageSave();
+
+        // Recolouring a selected annotation rewrites what the document serializes to, and this
+        // event is the only notice of it — pdf.js updates the editor in place rather than going
+        // back through onSetModified. Detaching the hook reproduces that: the content changes,
+        // nothing else reports it.
+        const hook = storage.onSetModified;
+        storage.onSetModified = null;
+        storage.setValue("18R", { value: "recoloured" });
+        storage.onSetModified = hook;
+
+        viewer.eventBus.dispatch("switchannotationeditorparams", { source: null });
+
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(1);
+    });
+
+    it("survives an editor pdf.js has stored before finishing it", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const storage = viewer.pdfDocument.annotationStorage as any;
+        manageSave();
+
+        // Pressing "Add signature" adds a SignatureEditor to annotationStorage — its own
+        // isEmpty() returns false unconditionally — while its outlines are still null, and only
+        // fills them in when the signature dialog resolves. Serializing the document in between
+        // throws out of the storage hook, from where it reaches the console uncaught.
+        Object.defineProperty(storage, "serializable", {
+            configurable: true,
+            get() {
+                throw new TypeError("can't access property \"serialize\", this[#drawOutlines] is null");
+            }
+        });
+        expect(() => storage.onSetModified()).not.toThrow();
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(0);
+
+        // The hash the failed read fell back to has to be the one from before, or the finished
+        // signature would look unchanged and never be saved.
+        delete storage.serializable;
+        storage.setValue("field-1", { value: "typed" });
+        expect(viewer.messagesOfType("pdfjs-viewer-document-modified")).toHaveLength(1);
     });
 
     it("stays quiet when the editing state changes with nothing to undo", async () => {
@@ -251,7 +379,7 @@ describe("producing the saved document", () => {
         viewer = await installViewerApp(allFeaturesPdf());
         (globalThis as any).pdfjsLib = { getDocument };
         const unselectAll = vi.fn();
-        setAnnotationEditorUIManager({ getMode: () => 15, getActive: () => null, unselectAll });
+        setAnnotationEditorUIManager({ getMode: () => 15, getActive: () => null, hasSelection: false, unselectAll });
         manageSave();
 
         viewer.sendFromParent({ type: "trilium-request-blob" });
@@ -266,10 +394,6 @@ describe("producing the saved document", () => {
         expect(blob.data.length).toBeGreaterThan(0);
         // The bytes must be a real PDF the viewer can reopen, not a partial write.
         await expect(getDocument({ data: blob.data }).promise).resolves.toBeTruthy();
-
-        // Newly created highlights only get their overlaidText once written out, so the
-        // sidebar is refreshed from the saved bytes.
-        await vi.waitFor(() => expect(viewer.messagesOfType("pdfjs-viewer-annotations")).toHaveLength(1));
     });
 
     it("does not save on a request from another origin", async () => {

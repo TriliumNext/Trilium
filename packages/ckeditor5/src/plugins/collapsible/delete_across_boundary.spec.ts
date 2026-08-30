@@ -1,5 +1,6 @@
 import { _getModelData as getModelData, _setModelData as setModelData, ClassicEditor, Essentials, Paragraph } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import CollapsibleEditing from "./collapsible_editing.js";
@@ -27,6 +28,32 @@ describe("collapsible: deleting across the boundary", () => {
     function fireDelete(direction: "backward" | "forward" = "forward"): void {
         editor.editing.view.document.fire("delete", { direction, unit: "character", preventDefault: vi.fn() });
         editor.editing.view.forceRender();
+    }
+
+    /**
+     * A delete carrying a browser-computed range, the way `DeleteObserver` reports one for
+     * `deleteContentBackward`. `selectionToRemove` is built from a model range so a spec can
+     * state the span it means; the observer derives the same thing from the DOM.
+     */
+    function fireDeleteSelection(range: any, direction: "backward" | "forward" = "backward"): void {
+        const view = editor.editing.view;
+        view.document.fire("delete", {
+            direction,
+            unit: "selection",
+            selectionToRemove: view.createSelection(editor.editing.mapper.toViewRange(range)),
+            preventDefault: vi.fn()
+        });
+        view.forceRender();
+    }
+
+    /** Model range between two positions, each given as a path from the root. */
+    function modelRange(start: number[], end: number[]): any {
+        const model = editor.model;
+        const root = model.document.getRoot() as any;
+        return model.createRange(
+            model.createPositionFromPath(root, start),
+            model.createPositionFromPath(root, end)
+        );
     }
 
     /** The editing view of the outermost collapsible, as rendered. */
@@ -227,6 +254,178 @@ describe("collapsible: deleting across the boundary", () => {
                 "<details open=\"true\"><summary>T</summary><paragraph>[]z</paragraph></details>"
             );
             expect(renderedCollapsible()).toEqual({ title: "T", body: "z" });
+        });
+    });
+
+    /**
+     * Backspace at the start of the line below a *collapsed* collapsible (issue #11050).
+     *
+     * Chrome derives the target range of `deleteContentBackward` from the rendered layout,
+     * where a closed collapsible shows nothing but its title, so it reports a range running
+     * from the end of the <summary> through every hidden block to the caret. Acting on it
+     * wipes the body while the block stays closed, and the user sees nothing happen. The
+     * first four need a real key press: a synthetic `delete` event carries no browser range.
+     */
+    describe("Backspace below a collapsed collapsible", () => {
+        const BODY = "<paragraph>one</paragraph><paragraph>two</paragraph>";
+        const CLOSED = `<details><summary>Title</summary>${BODY}</details>`;
+        const OPEN = `<details open="true"><summary>Title</summary>${BODY}</details>`;
+
+        it("removes the blank line and leaves the hidden body untouched", async () => {
+            setModelData(editor.model, `${CLOSED}<paragraph>[]</paragraph>`);
+            editor.editing.view.focus();
+
+            await userEvent.keyboard("{Backspace}");
+
+            expect(getModelData(editor.model)).toBe(
+                `<details><summary>Title[]</summary>${BODY}</details>`
+            );
+            expect(renderedCollapsible()).toEqual({ title: "Title", body: "onetwo" });
+        });
+
+        it("expands the block when the line below it has content to merge in", async () => {
+            setModelData(editor.model, `${CLOSED}<paragraph>[]after</paragraph>`);
+            editor.editing.view.focus();
+
+            await userEvent.keyboard("{Backspace}");
+
+            // Merging "after" into a hidden block would take it off screen with no sign of
+            // where it went, so the collapsible opens and the result stays in view.
+            expect(getModelData(editor.model)).toBe(
+                "<details open=\"true\"><summary>Title</summary>" +
+                    "<paragraph>one</paragraph><paragraph>two[]after</paragraph>" +
+                "</details>"
+            );
+            expect(renderedCollapsible()).toEqual({ title: "Title", body: "onetwoafter" });
+        });
+
+        it("takes back the merge and the reveal on one undo", async () => {
+            setModelData(editor.model, `${CLOSED}<paragraph>[]after</paragraph>`);
+            editor.editing.view.focus();
+
+            await userEvent.keyboard("{Backspace}");
+            editor.execute("undo");
+
+            // The reveal rides the deletion's batch, so the block is collapsed again rather
+            // than left open over restored content.
+            expect(getModelData(editor.model)).toBe(
+                `<details><summary>Title[]</summary>${BODY}</details><paragraph>after</paragraph>`
+            );
+        });
+
+        it("expands a nested collapsed block that content merges into", async () => {
+            setModelData(editor.model,
+                "<details open=\"true\"><summary>Outer</summary>" +
+                    `<details><summary>Inner</summary>${BODY}</details>` +
+                    "<paragraph>[]x</paragraph>" +
+                "</details>");
+            editor.editing.view.focus();
+
+            await userEvent.keyboard("{Backspace}");
+
+            expect(getModelData(editor.model)).toBe(
+                "<details open=\"true\"><summary>Outer</summary>" +
+                    "<details open=\"true\"><summary>Inner</summary>" +
+                        "<paragraph>one</paragraph><paragraph>two[]x</paragraph>" +
+                    "</details>" +
+                "</details>"
+            );
+        });
+
+        it("leaves the block closed when the merge guard cancels the merge", () => {
+            // The range runs out of one collapsed block and into the next, so the guard sets
+            // `leaveUnmerged` and nothing is folded into the first — there is nothing to reveal.
+            setModelData(editor.model,
+                "<details><summary>A</summary><paragraph>[x</paragraph></details>" +
+                "<details><summary>B</summary><paragraph>y]z</paragraph></details>");
+
+            fireDeleteSelection(editor.model.document.selection.getFirstRange());
+
+            // A keeps its collapsed state; the caret lands in its title because the emptied
+            // body is hidden. B's title went with the selected range, as it always has.
+            expect(getModelData(editor.model)).toBe(
+                "<details><summary>A[]</summary><paragraph></paragraph></details>" +
+                "<details><summary></summary><paragraph>z</paragraph></details>"
+            );
+        });
+
+        it("protects a collapsed collapsible nested in an open one", async () => {
+            setModelData(editor.model,
+                "<details open=\"true\"><summary>Outer</summary>" +
+                    `<details><summary>Inner</summary>${BODY}</details>` +
+                    "<paragraph>[]</paragraph>" +
+                "</details>");
+            editor.editing.view.focus();
+
+            await userEvent.keyboard("{Backspace}");
+
+            expect(getModelData(editor.model)).toBe(
+                "<details open=\"true\"><summary>Outer</summary>" +
+                    `<details><summary>Inner[]</summary>${BODY}</details>` +
+                "</details>"
+            );
+        });
+
+        it("leaves an open collapsible to CKEditor's own merge", async () => {
+            setModelData(editor.model, `${OPEN}<paragraph>[]</paragraph>`);
+            editor.editing.view.focus();
+
+            await userEvent.keyboard("{Backspace}");
+
+            expect(getModelData(editor.model)).toBe(
+                "<details open=\"true\"><summary>Title</summary>" +
+                    "<paragraph>one</paragraph><paragraph>two[]</paragraph>" +
+                "</details>"
+            );
+        });
+
+        it("keeps a range the user selected across a collapsed collapsible", () => {
+            // A hand-made selection can legitimately span a closed block — dragging from
+            // above it to below it — and deleting that is what was asked for. Only a
+            // collapsed caret gets the browser's range second-guessed.
+            setModelData(editor.model,
+                `<paragraph>a[bove</paragraph>${CLOSED}<paragraph>be]low</paragraph>`);
+
+            fireDeleteSelection(editor.model.document.selection.getFirstRange());
+
+            expect(getModelData(editor.model)).toBe("<paragraph>a[]low</paragraph>");
+        });
+
+        it("leaves a browser range that stays clear of a collapsed body alone", () => {
+            setModelData(editor.model, `${CLOSED}<paragraph>abc[]</paragraph>`);
+
+            fireDeleteSelection(modelRange([1, 0], [1, 2]));
+
+            expect(getModelData(editor.model)).toBe(`${CLOSED}<paragraph>[]c</paragraph>`);
+        });
+
+        it("leaves a browser range confined to one collapsed collapsible alone", () => {
+            // Both ends sit inside the same closed block, so nothing is hidden from the
+            // range and the browser's reading of it stands. Reachable while find-in-note
+            // holds a match's block open without touching its model attribute.
+            setModelData(editor.model, `${CLOSED}<paragraph>[]</paragraph>`);
+
+            fireDeleteSelection(modelRange([0, 1, 0], [0, 1, 3]));
+
+            expect(getModelData(editor.model)).toBe(
+                "<details><summary>Title[]</summary>" +
+                    "<paragraph></paragraph><paragraph>two</paragraph>" +
+                "</details><paragraph></paragraph>"
+            );
+        });
+
+        it("leaves a browser range crossing an open collapsible alone", () => {
+            setModelData(editor.model, `${OPEN}<paragraph>[]after</paragraph>`);
+
+            // End of the last body block → start of the line below: what the browser reports
+            // when the body is on screen, and what CKEditor should act on unchanged.
+            fireDeleteSelection(modelRange([0, 2, 3], [1, 0]));
+
+            expect(getModelData(editor.model)).toBe(
+                "<details open=\"true\"><summary>Title</summary>" +
+                    "<paragraph>one</paragraph><paragraph>two[]after</paragraph>" +
+                "</details>"
+            );
         });
     });
 });

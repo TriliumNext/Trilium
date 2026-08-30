@@ -116,7 +116,7 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
 * Integriertes [dunkles
   Design](https://docs.triliumnotes.org/user-guide/concepts/themes),
   Unterstützung für benutzerdefinierte Designs
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   und [Markdown importieren und
   exportieren](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) zum
@@ -357,12 +357,13 @@ enthält weitere Details. Bei offenen Fragen kann über die im Abschnitt
 * [antoniotejada](https://github.com/nriver) für das ursprüngliche
   Syntaxhervorhebungs-Widget.
 * [Tabler-Icons](https://tabler.io/icons) für die Symbole in der Taskleiste.
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
-        OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+*   Die Anwendungssymbole im Importdialog stammen von:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) für
+        OneNote, Google Keep und Evernote.
+    *   [Font Awesome](https://fontawesome.com/) für Notion und Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) für Anytype.
+*  Die Symbole der LLM-Anbieter stammen von [Lobe
+   Icons](https://lobehub.com/icons).
 
 Trilium wäre ohne die zugrundeliegenden Technologien nicht möglich:
 

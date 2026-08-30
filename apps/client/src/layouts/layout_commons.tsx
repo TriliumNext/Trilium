@@ -20,6 +20,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["editBranchPrefix"]} loader={() => import("../widgets/dialogs/branch_prefix.js")} />)
         .child(<LazyDialog triggerEvents={["sortChildNotes"]} loader={() => import("../widgets/dialogs/sort_child_notes.js")} />)
         .child(<LazyDialog triggerEvents={["showIncludeNoteDialog"]} loader={() => import("../widgets/dialogs/include_note.js")} />)
+        .child(<LazyDialog triggerEvents={["showNotePickerDialog"]} loader={() => import("../widgets/dialogs/note_picker.js")} />)
         .child(<LazyDialog triggerEvents={["chooseNoteType"]} loader={() => import("../widgets/dialogs/note_type_chooser.js")} />)
         .child(<LazyDialog triggerEvents={["jumpToNote", "commandPalette"]} loader={() => import("../widgets/dialogs/jump_to_note.js")} />)
         .child(<LazyDialog triggerEvents={["showAddLinkDialog"]} loader={() => import("../widgets/dialogs/add_link.js")} />)

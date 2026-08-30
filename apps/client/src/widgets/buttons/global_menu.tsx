@@ -55,6 +55,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
             <MenuItem command="showFlashcards" icon="bx bx-brain" text={t("flashcards.title")} />
             <MenuItem command="showShareSubtree" icon="bx bx-share-alt" text={t("global_menu.show_shared_notes_subtree")} />
             <MenuItem command="showDeletedNotes" icon="bx bx-trash-alt" text={t("global_menu.show_deleted_notes")} />
+            <KeyboardActionMenuItem command="showSpaceUsage" icon="bx bx-pie-chart-alt-2" text={t("global_menu.show_space_usage")} />
             <FormDropdownDivider />
 
             <ZoomControls parentComponent={parentComponent} />

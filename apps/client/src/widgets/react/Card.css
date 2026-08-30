@@ -1,9 +1,18 @@
 :where(.tn-card, .tn-card-frame) {
     --card-border-radius: 8px;
     --card-padding-block: 8px;
-    --card-padding-inline: 16px;
+    --card-padding-inline: 12px;
     --card-section-gap: 3px;
-    --card-nested-section-indent: 30px;
+    --card-nested-section-indent: 12px;
+    /* Worn as a mask rather than drawn, so whatever carries it sets the colour. */
+    --card-chevron: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m5 2 6 6-6 6'/></svg>");
+}
+
+/* Gives the options below a width to measure, so they stack by the room they have and not by the
+   device: the same card is read at 900px on a desktop page, 450px in the dialog on a tablet and
+   300px in the phone's detail pane. */
+.tn-card {
+    container-type: inline-size;
 }
 
 .tn-card-frame,
@@ -77,6 +86,22 @@
         opacity: .7;
     }
 
+    /* A fact rather than a control: unlike the buttons a row is built around, a value gives way
+       when the line runs short, and breaks wherever it must rather than widening the card. */
+    .tn-card-option-value {
+        flex-shrink: 1;
+        min-width: 0;
+        text-align: end;
+        overflow-wrap: anywhere;
+    }
+
+    /* Small buttons acting on the row, held as one thing so that a row wearing two of them counts
+       for as much as a row wearing one. */
+    .tn-card-option-actions {
+        display: flex;
+        gap: 4px;
+    }
+
     .btn {
         white-space: nowrap;
     }
@@ -95,11 +120,29 @@
     }
 }
 
+/* The mark of a row that leads somewhere, worn alike by a link, a font row and a combo box. */
+.tn-card-chevron,
 .tn-card-section-chevron {
     flex-shrink: 0;
+    width: .9em;
+    height: .9em;
+    background-color: var(--muted-text-color);
+    -webkit-mask: var(--card-chevron) center / contain no-repeat;
+    mask: var(--card-chevron) center / contain no-repeat;
+}
+
+/* A link's own mark is pushed to the trailing edge; one placed by a row is already there. */
+.tn-card-section-chevron {
     margin-inline-start: auto;
-    color: var(--muted-text-color);
-    font-size: 1.3em;
+}
+
+/* The mark points the way the text runs, so it turns round where the text does. The combo box's is
+   drawn by a pseudo-element, which cannot be named inside `:is()`; outside the narrow layout it has
+   no `content` and so no box for this to turn. */
+body[dir=rtl] .tn-card-chevron,
+body[dir=rtl] .tn-card-section-chevron,
+body[dir=rtl] .tn-card-option::after {
+    transform: scaleX(-1);
 }
 
 /* Bootstrap sizes a form control to whatever holds it, so left alone a select or a figure takes the
@@ -133,13 +176,180 @@
     }
 }
 
-/* On a phone, a control too wide to sit beside the text takes the line below it. */
-body.mobile .tn-card-option:has(> .btn, > .slider) {
-    flex-direction: column;
-    align-items: stretch;
+/* On a narrow card a text box, a combo or any other wide control has no room left beside its label,
+   so it takes the line below it instead. Small controls stay beside the label: they leave it room,
+   and moving a switch down would cost a whole row and break the line the labels are read down. A
+   bare figure is small enough to stay; one carrying a unit beside it is not. A chevron is no
+   control at all but the mark of a row that leads somewhere, and keeps its place at every width. */
+@container (max-width: 500px) {
+    /* On a narrow card the name reads as a field label, set apart by weight rather than by size.
+       Every row gets it, or a card would mix two kinds of label between its rows. */
+    .tn-card-option-title {
+        font-weight: 500;
+    }
 
-    > .slider {
-        width: 100%;
+    /* Taller rows, a row here being reached by finger rather than by pointer. Set on the body
+       rather than on the card, which a query cannot reach from inside itself. */
+    .tn-card-body {
+        --card-padding-block: 12px;
+    }
+
+    .tn-card-option:not(:has(> :is(
+        .switch-widget, .icon-action, .tn-card-option-actions, select, .dropdown,
+        .tn-card-section-chevron, input[type="number"]
+    ))) {
+        flex-direction: column;
+        align-items: stretch;
+        /* Down the page the label already leads its control, so they need less room between. */
+        gap: 4px;
+
+        > * {
+            width: 100%;
+        }
+
+        /* Standing under its label rather than beside it, a value is read from the edge the label
+           starts at, not the one it was pushed against. */
+        > .tn-card-option-value {
+            text-align: start;
+        }
+    }
+
+    /* Beside a control, a sentence is left only a gutter to wrap in, and what explains a setting
+       runs long. Given a row of its own it reads across the card. Not every row, though: a stacked
+       one's label has the full width already, and a list of things (a token, a backup, a provider)
+       carries a short line under each name that reads better where it is, with the buttons that act
+       on it beside the pair. */
+    .tn-card-option:has(> :is(
+        .switch-widget, .tn-card-section-chevron, input[type="number"]
+    )):has(.tn-card-option-description) {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "title control"
+            "description description";
+        align-items: center;
+        column-gap: 8px;
+        /* The sentence stands off the row above by as much as the row stands off its edge. */
+        row-gap: var(--card-padding-block);
+
+        /* The label stops being a box of its own, so the lines it holds become items of the grid,
+           and the control falls into the one cell left on the first row. */
+        > .tn-card-option-label {
+            display: contents;
+        }
+
+        .tn-card-option-title {
+            grid-area: title;
+        }
+
+        .tn-card-option-description {
+            grid-area: description;
+        }
+    }
+
+    /* A combo is never typed into: it is tapped, and the picker takes the screen from there. So it
+       keeps its place beside the label and gives up its box, reading as the value plus a mark that
+       the row leads somewhere, which is the row the card's own links already make. The value gives
+       way before the label does, ending in an ellipsis where the two cannot both be shown. */
+    .tn-card .tn-card-option > :is(select, .dropdown),
+    .tn-card .tn-card-option > .dropdown > .btn {
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .tn-card .tn-card-option > select,
+    .tn-card .tn-card-option > .dropdown > .btn {
+        max-width: none;
+        /* Room at the end for the mark standing over it, so the value stops short of it. */
+        padding-inline: 0 calc(var(--card-option-mark-size) + 8px);
+        background: none;
+        color: var(--muted-text-color);
+        overflow: hidden;
+        text-align: end;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Each state the theme gives a combo box would put the frame and the arrow back, so all of them
+       are answered here. */
+    .tn-card .tn-card-option > select:is(:hover, :focus, :focus-visible, :active),
+    .tn-card .tn-card-option > .dropdown > .btn:is(:hover, :focus, :focus-visible, :active) {
+        box-shadow: none;
+        background: none;
+        color: var(--muted-text-color);
+    }
+
+    /* No ring around a box that is gone. On a phone only: a desktop window this narrow is still
+       moved through by keyboard, and the outline is the one thing showing where the focus sits. */
+    body.mobile .tn-card .tn-card-option > select:is(:focus, :focus-visible),
+    body.mobile .tn-card .tn-card-option > .dropdown > .btn:is(:focus, :focus-visible) {
+        outline: none;
+    }
+
+    /* Carried by the row rather than the control, since a bare `select` can hold no pseudo-element
+       of its own. Same mark as `.tn-card-chevron`, which a pseudo-element cannot be given. */
+    .tn-card .tn-card-option:has(> :is(select, .dropdown))::after {
+        content: "";
+        width: var(--card-option-mark-size);
+        height: var(--card-option-mark-size);
+        background-color: var(--muted-text-color);
+        -webkit-mask: var(--card-chevron) center / contain no-repeat;
+        mask: var(--card-chevron) center / contain no-repeat;
+    }
+
+    /* Laid out rather than flexed, so the name is given the width it asks for and the value takes
+       what is left. Flexed, the two gave way together and the name wrapped while the value, which
+       has an ellipsis to fall back on, kept its full width. */
+    .tn-card .tn-card-option:has(> :is(select, .dropdown)) {
+        --card-option-mark-size: .9em;
+
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas: "title value";
+        align-items: center;
+        column-gap: 8px;
+
+        /* The label stops being a box of its own, so the lines it holds become items of the grid.
+           Binding the text to the control is the `for` attribute's work, not the layout's. */
+        > .tn-card-option-label {
+            display: contents;
+        }
+
+        .tn-card-option-title {
+            grid-area: title;
+        }
+
+        > :is(select, .dropdown) {
+            grid-area: value;
+        }
+
+        /* Filling the track it was handed, so the value reads against the trailing edge and the
+           whole of the track answers a tap. */
+        > .dropdown > .btn {
+            flex: 1;
+        }
+
+        /* Over the control's own trailing end rather than beside it, and deaf to the pointer, so
+           that a tap meant for the mark reaches the control underneath and opens the picker. */
+        &::after {
+            grid-area: value;
+            justify-self: end;
+            pointer-events: none;
+        }
+    }
+
+    /* Beside the label a sentence is left only a gutter to wrap in, and the value floats halfway
+       down whatever that wrapping makes. Given a row of its own it runs the full width instead. */
+    .tn-card .tn-card-option:has(> :is(select, .dropdown)):has(.tn-card-option-description) {
+        grid-template-areas:
+            "title value"
+            "description description";
+        /* The sentence stands off the row above by as much as the row stands off its edge. */
+        row-gap: var(--card-padding-block);
+
+        .tn-card-option-description {
+            grid-area: description;
+        }
     }
 }
 
@@ -172,4 +382,22 @@ body.mobile .tn-card-option:has(> .btn, > .slider) {
             background-color: color-mix(in srgb, var(--card-background-color) calc(100% / (var(--tn-card-section-nesting-level) + 1)) , transparent);
         }
     }
+}
+
+/* A card the filter did not ask for by name is left with what matched and what accompanies it:
+   whatever else it holds belongs to the card as a whole. Details nested under a setting come with
+   it, whether or not they take part in a filter themselves. (An emptied card goes by the rule in
+   filter.css.) Hidden rather than dropped, so that what is filtered out keeps its state. */
+.tn-card.tn-filter-scope > .tn-card-body {
+    > :not(.tn-filter-match, .tn-filter-companion, .tn-card-section-nested) {
+        display: none;
+    }
+}
+
+/* A setting kept only for the details under it stands on whether one of them is still there. They
+   follow it as siblings, and a detail that did not match leaves nothing behind, so the one left
+   next to it is the one that matched. It has to be a detail: the next setting along, matched on its
+   own, says nothing about this one. */
+.tn-card-option.tn-filter-companion:not(:has(+ .tn-card-section-nested.tn-filter-match)) {
+    display: none;
 }

@@ -39,14 +39,14 @@
         # Don't refresh these by hand — `pnpm chore:update-flake-electron` rewrites both
         # bindings from the release's SHASUMS256.txt, and the update-nix-flake workflow
         # opens a PR whenever apps/desktop/package.json moves ahead of the pin.
-        pinnedElectronVersion = "43.4.0";
+        pinnedElectronVersion = "43.4.1";
         pinnedElectronHashes = {
-          x86_64-linux = "7c5f7918bcae74a05a814543940eb28469c055edaa3cfcf41d0ff1787b314c52";
-          armv7l-linux = "8fd14c358e04c1720f13b2ae1fced79d9abac30287c7b4ac330f14ec041ed0f0";
-          aarch64-linux = "17021d48739857106a26dd95bf749f95b89ae924955c3c7e7ff5a3f06251ac14";
-          x86_64-darwin = "7ab39ec1b0bcf5463f2dc0040142fbc1c30cd7bc3f99086066f588c717b11e24";
-          aarch64-darwin = "827f9f182566f46846377575b51c547b9926b111637313a373b6f717462aebac";
-          headers = "1mi5mn4r9mj9ml30jv0qsp3ma38sj83k8naahp45md235kmdry2l";
+          x86_64-linux = "79d4efd69f0ccf1fc11891ea5075329c7b3faddad79a08d9fb395bbd63169acf";
+          armv7l-linux = "2875860d6b7cb2e8a0142fb87f9f7be50a382a87a24bf15a0861f20ba53dc400";
+          aarch64-linux = "9e2b5cfbd387e138f06c7bb19b399bb3ee487dbb4110215df097d94e80431892";
+          x86_64-darwin = "4fd0f1826660a94216a0633600a3c3e2cd87ee9e4bc6f0e1edf717ad8e30c10b";
+          aarch64-darwin = "fe3cac8cbfd9ba1739fac6c69166cf30848741f93cbe251d800ae6ef7cebb64b";
+          headers = "0q7l48q2l4srmkw67l1bhk3qbybnqamcr5z8yrsnbxk8aazqjshv";
         };
         mkElectronBin = pkgs.callPackage (
           pkgs.path + "/pkgs/development/tools/electron/binary/generic.nix"
@@ -293,7 +293,7 @@ nodejs.python
               --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
               --set-default ELECTRON_IS_DEV 0 \
               --set TRILIUM_RESOURCE_DIR $out/opt/trilium \
-              --add-flags $out/opt/trilium/main.cjs
+              --add-flags $out/opt/trilium/main.mjs
           '';
         };
 
@@ -319,7 +319,7 @@ nodejs.python
             mkdir -p $out/{bin,opt/trilium-server}
             cp --archive apps/server/dist/* $out/opt/trilium-server
             makeWrapper ${lib.getExe nodejs} $out/bin/trilium-server \
-              --add-flags $out/opt/trilium-server/main.cjs
+              --add-flags $out/opt/trilium-server/main.mjs
           '';
         };
 

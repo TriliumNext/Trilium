@@ -12,9 +12,10 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import type React from "react";
 import { Trans } from "react-i18next";
 
+import appContext from "../../../components/app_context";
 import { isBackupDownloadSupported } from "../../../services/backup_download";
 import { summarizeBackups } from "../../../services/database_files";
-import dialogService from "../../../services/dialog";
+import dialogService, { closeActiveDialog } from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import {
@@ -30,13 +31,12 @@ import Admonition from "../../react/Admonition";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
 import DirectoryLink, { FileLink } from "../../react/DirectoryLink";
-import { useNoteContext } from "../../react/hooks";
+import { PageLink } from "../../react/LinkButton";
 import { useFetch } from "../../react/use_fetch";
+import { showCleanupDialog } from "../space_usage/cleanup_dialog";
 import DatabaseFileList from "./components/DatabaseFileList";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RelatedSettings from "./components/RelatedSettings";
-import { requestContentManagerSection } from "./content_manager";
-import { showCleanupDialog } from "./content_manager/space_usage/cleanup_dialog";
 
 /**
  * What can be done to the knowledge base as a whole, rather than to anything inside it: keeping the
@@ -48,8 +48,8 @@ import { showCleanupDialog } from "./content_manager/space_usage/cleanup_dialog"
  */
 export default function DatabaseSettings() {
     const startOverState = useStartOver();
-    // Maintenance is what changes the figures the card above it states — a rebuild its size, a
-    // cleanup what it holds — so they are read again afterwards rather than left as they were.
+    // The space and maintenance actions change what `DatabaseInfo` states, so bumping this token
+    // makes it read the figures again.
     const [ infoToken, setInfoToken ] = useState(0);
     const refreshInfo = useCallback(() => setInfoToken((token) => token + 1), []);
 
@@ -75,6 +75,7 @@ export default function DatabaseSettings() {
             )}
 
             <DatabaseInfo refreshToken={infoToken} />
+            <SpaceOptions onDatabaseChanged={refreshInfo} />
             <MaintenanceOptions onDatabaseChanged={refreshInfo} />
             <StartOverOption state={startOverState} />
             {/* An anonymized copy is a file written beside the database and handed to someone else.
@@ -109,7 +110,7 @@ function DatabaseInfo({ refreshToken }: { refreshToken: number }) {
     return (
         <Card className="database-info" heading={t("database.info")}>
             <OptionCardSection label={t("database.info_location")}>
-                <span className="database-info-value">
+                <span className="tn-card-option-value">
                     {/* Revealed rather than opened: a file manager is what a path is useful in,
                         and the database's own reader is Trilium. Where there is no path, the
                         storage holding it is named instead — nothing there can be pointed at. */}
@@ -120,7 +121,7 @@ function DatabaseInfo({ refreshToken }: { refreshToken: number }) {
             </OptionCardSection>
 
             <OptionCardSection label={t("database.info_content")}>
-                <span className="database-info-value">
+                <span className="tn-card-option-value">
                     {t("database.info_notes", { count: info.noteCount })}
                     {", "}
                     {t("database.info_attachments", { count: info.attachmentCount })}
@@ -128,13 +129,13 @@ function DatabaseInfo({ refreshToken }: { refreshToken: number }) {
             </OptionCardSection>
 
             <OptionCardSection label={t("database.info_created")}>
-                <span className="database-info-value">
+                <span className="tn-card-option-value">
                     {formatDateTime(info.utcDateCreated, "long", "none")}
                 </span>
             </OptionCardSection>
 
             <OptionCardSection label={t("database.info_size")}>
-                <span className="database-info-value">{formatSize(info.sizeBytes)}</span>
+                <span className="tn-card-option-value">{formatSize(info.sizeBytes)}</span>
             </OptionCardSection>
 
             {/* Absent where backups are not kept at all: the browser build's one backup is a
@@ -161,10 +162,11 @@ function BackupStanding({ refreshToken }: { refreshToken: number }) {
         <OptionCardSection label={t("database.info_backup")}>
             {/* The whole value is the way to the page that acts on it: this row states how the
                 backups stand, and everything else about them is done there. */}
-            <span className="database-info-value">
-                <a className="tn-link" href={BACKUP_PAGE_LINK}>
-                    {summarizeBackups(backups.backups) ?? t("database.info_no_backup")}
-                </a>
+            <span className="tn-card-option-value">
+                <PageLink
+                    href={BACKUP_PAGE_LINK}
+                    text={summarizeBackups(backups.backups) ?? t("database.info_no_backup")}
+                />
             </span>
         </OptionCardSection>
     );
@@ -174,37 +176,16 @@ function BackupStanding({ refreshToken }: { refreshToken: number }) {
 const BACKUP_PAGE_LINK = "#root/_hidden/_options/_optionsBackup";
 
 /**
- * Keeping the database in good order: finding out what it is spent on, taking back what is no longer
- * needed, and the checks and repairs that act on the file itself rather than on what is kept in it.
+ * Entry points to the two space tools: the Space Usage page reports where the space went, and
+ * `showCleanupDialog()` reclaims it. Analysis comes first because it informs the cleanup.
  *
- * The first two hand over to the tools that do the work — the Content Manager's space usage section
- * and its cleanup dialog — which is why they are named here rather than duplicated.
+ * Headingless, since it continues the figures in `DatabaseInfo`. It is a separate card because
+ * `DatabaseInfo` renders nothing until `database/info` resolves, and these actions must stay
+ * available when that request is slow or fails.
  */
-function MaintenanceOptions({ onDatabaseChanged }: { onDatabaseChanged: () => void }) {
-    const { noteContext } = useNoteContext();
-
+function SpaceOptions({ onDatabaseChanged }: { onDatabaseChanged: () => void }) {
     return (
-        <Card heading={t("database.maintenance")}>
-            <OptionCardSection
-                label={t("database.cleanup")}
-                description={t("database.cleanup_description")}
-            >
-                {/* Named after the tool it opens, so the button and the dialog's own heading
-                    cannot come to say different things. */}
-                <Button
-                    name="cleanup-button"
-                    text={t("space_usage.cleanup_title")}
-                    size="micro"
-                    onClick={() => void showCleanupDialog().then((reclaimed) => {
-                        // Erasing frees pages inside the file rather than shrinking it, so what
-                        // the card above has to re-read is what the database holds.
-                        if (reclaimed !== null) {
-                            onDatabaseChanged();
-                        }
-                    })}
-                />
-            </OptionCardSection>
-
+        <Card className="database-space">
             <OptionCardSection
                 label={t("database.analyze_space_usage")}
                 description={t("database.analyze_space_usage_description")}
@@ -214,16 +195,46 @@ function MaintenanceOptions({ onDatabaseChanged }: { onDatabaseChanged: () => vo
                     text={t("database.analyze_space_usage_button")}
                     size="micro"
                     onClick={() => {
-                        // The Content Manager opens on Active Content unless asked otherwise,
-                        // and navigating by hand rather than by link is what lets us ask first.
-                        requestContentManagerSection("spaceUsage");
-                        // Kept in whichever context this page is shown in — the settings dialog
-                        // holds a note context of its own, outside the tab manager.
-                        void noteContext?.setNote("_optionsContentManager", { keepActiveDialog: true });
+                        // Space Usage opens in its own tab, so close the options dialog first;
+                        // it would otherwise cover the tab.
+                        closeActiveDialog();
+                        void appContext.triggerCommand("showSpaceUsage");
                     }}
                 />
             </OptionCardSection>
 
+            <OptionCardSection
+                label={t("database.cleanup")}
+                description={t("database.cleanup_description")}
+            >
+                {/* Reuses the dialog's own title so the two cannot disagree. */}
+                <Button
+                    name="cleanup-button"
+                    text={t("space_usage.cleanup_title")}
+                    size="micro"
+                    onClick={() => void showCleanupDialog().then((reclaimed) => {
+                        // Erasing changes the note and attachment counts, so `DatabaseInfo`
+                        // reads them again.
+                        if (reclaimed !== null) {
+                            onDatabaseChanged();
+                        }
+                    })}
+                />
+            </OptionCardSection>
+        </Card>
+    );
+}
+
+/**
+ * Repairs that act on the database file rather than on its contents: consistency checks, SQLite's
+ * `integrity_check`, and `VACUUM`.
+ *
+ * These are troubleshooting tools, so they sit below `SpaceOptions`, which holds the actions most
+ * users come to this page for.
+ */
+function MaintenanceOptions({ onDatabaseChanged }: { onDatabaseChanged: () => void }) {
+    return (
+        <Card heading={t("database.maintenance")}>
             <OptionCardSection
                 label={t("consistency_checks.find_and_fix_label")}
                 description={t("consistency_checks.find_and_fix_description")}

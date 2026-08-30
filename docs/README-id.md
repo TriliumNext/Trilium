@@ -118,7 +118,7 @@ Dokumentasi kami tersedia dalam beberapa format:
 * [Tema gelap](https://docs.triliumnotes.org/user-guide/concepts/themes) bawaan,
   dukungan untuk tema pengguna
 * Impor & ekspor
-  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   dan
   [Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper)

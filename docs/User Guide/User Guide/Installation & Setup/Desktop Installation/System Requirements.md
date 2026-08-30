@@ -8,5 +8,5 @@ The desktop version of Trilium supports all three main operating systems:
     *   Most modern distributions are supported, including NixOS.
     *   ARM is supported in `aarch64` (no ARM v7 support).
 *   macOS
-    *   Minimum supported operating system: macOS Monterey
+    *   Minimum supported operating system: macOS Ventura
     *   Both Intel and Apple Silicon devices are supported.

@@ -1,0 +1,12 @@
+/* A list of boxes rather than a bulleted list: it keeps no bullet and no room for one, so the first
+   box starts on the same rail as the text around it. */
+.tn-checkbox-list {
+    margin-bottom: 0;
+    padding-inline-start: 0;
+    column-width: var(--checkbox-list-column-width, 400px);
+    list-style-type: none;
+
+    > li + li {
+        margin-block-start: 6px;
+    }
+}

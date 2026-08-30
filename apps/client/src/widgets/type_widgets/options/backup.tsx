@@ -61,6 +61,8 @@ function StoredBackupSettings() {
             <BackupConfiguration />
             {/* Desktop only: the passphrase needs an OS keyring to live in, which only the desktop has. */}
             {isElectron() && <BackupOptions />}
+
+            <BackupActions refreshCallback={refreshBackups} />
         </>
     );
 }
@@ -157,7 +159,7 @@ interface BackupStatusProps {
  * holds, which is not the same as what the page is for.
  */
 export function BackupStatus({ backups, refreshCallback }: BackupStatusProps) {
-    const [backupInProgress, setBackupInProgress] = useState(false);
+    const { backUpNow, backupInProgress } = useBackupNow(refreshCallback);
 
     return (
         <div className="backup-status">
@@ -179,24 +181,68 @@ export function BackupStatus({ backups, refreshCallback }: BackupStatusProps) {
                 text={t("backup.backup_now")}
                 size="micro"
                 disabled={backupInProgress}
-                onClick={async () => {
-                    setBackupInProgress(true);
-                    try {
-                        const { backupFile } = await server.post<BackupDatabaseNowResponse>(
-                            "database/backup-database"
-                        );
-
-                        toast.showMessage(
-                            t("backup.database_backed_up_to", { backupFilePath: backupFile }),
-                            10000
-                        );
-                        refreshCallback();
-                    } finally {
-                        setBackupInProgress(false);
-                    }
-                }}
+                onClick={backUpNow}
             />
         </div>
+    );
+}
+
+/**
+ * Taking a backup there and then, held apart from the button so that the settings search can offer
+ * the same command without a second copy of what it does.
+ */
+function useBackupNow(refreshCallback: () => void) {
+    const [ backupInProgress, setBackupInProgress ] = useState(false);
+
+    const backUpNow = useCallback(async () => {
+        setBackupInProgress(true);
+        try {
+            const { backupFile } = await server.post<BackupDatabaseNowResponse>(
+                "database/backup-database"
+            );
+
+            toast.showMessage(
+                t("backup.database_backed_up_to", { backupFilePath: backupFile }),
+                10000
+            );
+            refreshCallback();
+        } finally {
+            setBackupInProgress(false);
+        }
+    }, [ refreshCallback ]);
+
+    return { backUpNow, backupInProgress };
+}
+
+/**
+ * The page's own commands, which live in its header and so are out of the search's reach. Offered
+ * here as the settings they stand beside are, operated where they are found.
+ */
+function BackupActions({ refreshCallback }: { refreshCallback: () => void }) {
+    const { backUpNow, backupInProgress } = useBackupNow(refreshCallback);
+
+    return (
+        <Card filterOnly heading={t("settings.related_actions")}>
+            <OptionCardSection label={t("backup.backup_now")}>
+                <Button
+                    text={t("backup.backup_now")}
+                    disabled={backupInProgress}
+                    onClick={backUpNow}
+                />
+            </OptionCardSection>
+
+            {canBootToSetup() && (
+                <OptionCardSection
+                    label={t("backup.restore_backup")}
+                    description={t("backup.restart_for_restore")}
+                >
+                    <Button
+                        text={t("backup.restore_backup")}
+                        onClick={() => void restoreInSetup()}
+                    />
+                </OptionCardSection>
+            )}
+        </Card>
     );
 }
 
@@ -374,7 +420,7 @@ export function BackupOptions() {
                         : t("backup.no_keyring")}
                 >
                     {passphrase.set ? (
-                        <>
+                        <span className="tn-card-option-actions">
                             <Button
                                 name="change-backup-password-button"
                                 text={t("backup.change_password")}
@@ -385,7 +431,7 @@ export function BackupOptions() {
                                 currentValue={encryptionEnabled}
                                 onChange={(enabled) => enabled ? setEncryptionEnabled(true) : disableEncryption()}
                             />
-                        </>
+                        </span>
                     ) : (
                         <Button
                             name="turn-on-backup-encryption-button"

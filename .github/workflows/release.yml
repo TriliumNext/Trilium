@@ -140,6 +140,16 @@ jobs:
         with:
           sparse-checkout: |
             docs/Release Notes
+            scripts
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # The release body cannot be the note as it stands: its images are relative to the
+      # folder the note lives in, and GitHub resolves those against the releases URL.
+      - name: Compose the release body
+        run: node --experimental-strip-types scripts/release-notes-body.mts "${{ github.ref_name }}" "$RUNNER_TEMP/release-body.md"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v8
@@ -152,7 +162,7 @@ jobs:
         uses: softprops/action-gh-release@v3.0.2
         with:
           draft: false
-          body_path: docs/Release Notes/Release Notes/${{ github.ref_name }}.md
+          body_path: ${{ runner.temp }}/release-body.md
           fail_on_unmatched_files: true
           files: upload/*.*
           discussion_category_name: Releases

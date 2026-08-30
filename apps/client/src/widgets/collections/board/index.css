@@ -1,3 +1,18 @@
+/* Defaults for a theme that sets none of its own; the light values, the app's own default look. */
+:where(:root) {
+  --board-column-background-saturation: 26%;
+  --board-column-background-lightness: 86%;
+
+  --board-item-background-saturation: 100%;
+  --board-item-background-lightness: 96%;
+
+  --board-item-hover-background-saturation: 100%;
+  --board-item-hover-background-lightness: 98.5%;
+
+  --board-focus-outline-saturation: 55%;
+  --board-focus-outline-lightness: 45%;
+}
+
 .board-view {
   position: relative;
   height: 100%;
@@ -26,11 +41,19 @@ body.mobile .board-view-container {
 }
 
 .board-view-container .board-column {
+  /* No hue of its own: the same lightness, drained of colour. */
+  --board-column-hue: 0;
+  --board-column-saturation: 0%;
+
   width: 250px;
   flex-shrink: 0;
   border: 2px solid transparent;
   border-radius: 8px;
-  background-color: var(--accented-background-color);
+  background-color: hsl(
+    var(--board-column-hue),
+    var(--board-column-saturation),
+    var(--board-column-background-lightness)
+  );
   transition: border-color 0.2s ease;
   overflow-y: auto;
   max-height: 100%;
@@ -46,6 +69,11 @@ body.mobile .board-view-container .board-column {
 body.mobile .board-view-container .board-column,
 body.mobile .board-view-container .board-add-column {
     scroll-snap-align: center;
+}
+
+.board-view-container .board-column.with-hue {
+  --board-column-hue: var(--board-column-custom-hue);
+  --board-column-saturation: var(--board-column-background-saturation);
 }
 
 .board-view-container .board-column.drag-over {
@@ -70,12 +98,36 @@ body.mobile .board-view-container .board-add-column {
   align-items: center;
 }
 
+/* The column's own hue, or none: an ancestor carries the board note's colour class, which would
+   otherwise dress the icon in that note's hue. `initial` rather than `unset` for the fallback,
+   since this inherits and unsetting lets the ancestor's value back in. The themes re-derive the
+   icon colours from this, keyed on the same selector. */
+.board-view-container .board-column h3 {
+  --custom-color-hue: var(--board-column-custom-hue, initial);
+}
+
+.board-view-container .board-column h3 > .column-icon {
+  /* Sized down from the note header's button, whose scale suits a toolbar rather than a heading. */
+  --note-icon-size: 1.15em;
+  --note-icon-container-padding-size: 0.15em;
+
+  flex-shrink: 0;
+  margin-inline-end: 0.4em;
+}
+
+.board-view-container .board-column h3 > .column-icon button.note-icon {
+  /* Cap height rather than the glyph box, so the icon sits on the title's own line. */
+  line-height: 1;
+  color: inherit;
+}
+
 .board-view-container .board-column h3 a {
   text-decoration: none;
   color: inherit;
 }
 
 .board-view-container .board-column h3 .counter-badge {
+  flex-shrink: 0;
   background-color: var(--muted-text-color);
   color: var(--main-background-color);
   border-radius: 12px;
@@ -130,6 +182,12 @@ body.mobile .board-view-container .board-add-column {
   cursor: pointer;
 }
 
+.board-view-container .board-column h3 > .column-menu {
+  flex-shrink: 0;
+  margin-inline-start: 0.25em;
+  color: var(--muted-text-color);
+}
+
 .board-view-container .board-column > .board-column-content {
   flex-grow: 1;
   overflow-x: hidden;
@@ -137,7 +195,6 @@ body.mobile .board-view-container .board-add-column {
   padding: 0.5em;
 }
 
-.board-view-container .board-column h3:hover .edit-icon,
 .board-view-container .board-note:hover .edit-icon {
   opacity: 1;
 }
@@ -152,7 +209,6 @@ body.mobile .board-view-container .board-add-column {
   cursor: move;
   position: relative;
   background-color: var(--main-background-color);
-  border: 1px solid var(--main-border-color);
   opacity: 1;
   line-height: var(--card-line-height);
   overflow-wrap: break-word;
@@ -160,17 +216,82 @@ body.mobile .board-view-container .board-add-column {
   font-size: var(--card-font-size);
 }
 
+/* An item takes the hue of the column it stands in... */
+.board-view-container .board-column.with-hue .board-note {
+  --board-item-hue: var(--board-column-custom-hue);
+}
+
+/* ...and its own wherever it has one, the second selector outweighing the column's rule above
+   rather than merely following it. A card wears `with-hue` only for a colour of its own, which is
+   what tells it apart from one inheriting the hue of the note the board is shown in. */
+.board-view-container .board-note.with-hue,
+.board-view-container .board-column.with-hue .board-note.with-hue {
+  --board-item-hue: var(--custom-color-hue);
+}
+
+/* Whatever has a hue to show is painted with it; the rest keeps the saturation above. */
+.board-view-container .board-column.with-hue .board-note,
+.board-view-container .board-note.with-hue {
+  --board-item-saturation: var(--board-item-background-saturation);
+  --board-item-hover-saturation: var(--board-item-hover-background-saturation);
+}
+
+.board-view-container .board-note {
+  /* Overridden above by anything carrying a hue; without one the item is drained of colour. */
+  --board-item-hue: 0;
+  --board-item-saturation: 0%;
+  --board-item-hover-saturation: 0%;
+
+  background-color: hsl(
+    var(--board-item-hue),
+    var(--board-item-saturation),
+    var(--board-item-background-lightness)
+  );
+}
+
+.board-view-container .board-note:hover {
+  background-color: hsl(
+    var(--board-item-hue),
+    var(--board-item-hover-saturation),
+    var(--board-item-hover-background-lightness)
+  );
+}
+
 .board-view-container .board-note:first-of-type {
   margin-top: 0;
 }
 
+/* The outline of whatever is focused within, taking the hue of the nearest thing that has one: the
+   column for its header and buttons, the card for itself and what it holds. */
+.board-view-container .board-column.with-hue {
+  --board-focus-outline-color: hsl(
+    var(--board-column-custom-hue),
+    var(--board-focus-outline-saturation),
+    var(--board-focus-outline-lightness)
+  );
+}
+
+.board-view-container .board-column.with-hue .board-note,
+.board-view-container .board-note.with-hue {
+  --board-focus-outline-color: hsl(
+    var(--board-item-hue),
+    var(--board-focus-outline-saturation),
+    var(--board-focus-outline-lightness)
+  );
+}
+
 .board-view-container :focus {
-  outline: 3px solid var(--input-focus-outline-color);
+  /* Falls back where nothing around carries a hue, which is every board until one is coloured. */
+  outline: 3px solid var(--board-focus-outline-color, var(--input-focus-outline-color));
   outline-offset: 0;
 }
 
 .board-view-container .board-note {
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease, margin-top 0.2s ease;
+}
+
+.board-view-container .board-column.board-column-archived {
+  opacity: 0.5;
 }
 
 .board-view-container .board-note.archived {
@@ -187,7 +308,8 @@ body.mobile .board-view-container .board-add-column {
   top: 8px;
   inset-inline-end: 4px;
   padding: 2px;
-  background-color: var(--main-background-color);
+  /* Masks the title it sits over, so it takes the card's own colour rather than the plain one. */
+  background-color: inherit;
 }
 
 .board-view-container .board-note:hover {
@@ -199,7 +321,7 @@ body.mobile .board-view-container .board-add-column {
   top: 8px;
   inset-inline-end: 4px;
   color: var(--main-text-color);
-  background-color: var(--main-background-color);
+  background-color: inherit;
   padding-inline-start: 6px;
 }
 

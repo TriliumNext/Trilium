@@ -84,7 +84,7 @@ const { FakePopup, PREVIEW_WIDTH } = vi.hoisted(() => {
     return { FakePopup, PREVIEW_WIDTH, PREVIEW_HEIGHT };
 });
 
-vi.mock("maplibre-gl", () => ({ Popup: FakePopup }));
+vi.mock("maplibre-gl", () => ({ Popup: FakePopup, setWorkerUrl: vi.fn() }));
 
 /**
  * A map that delegates events — per layer or map-wide — and answers the questions the placement

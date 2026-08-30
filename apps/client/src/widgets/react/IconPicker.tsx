@@ -1,7 +1,7 @@
 import "./IconPicker.css";
 
 import { IconRegistry } from "@triliumnext/commons";
-import { Dropdown as BootstrapDropdown } from "bootstrap";
+import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { CSSProperties } from "preact";
 import { createPortal } from "preact/compat";
@@ -21,6 +21,15 @@ import Modal from "./Modal";
 
 /** The room one icon takes in the grid, which also decides how many fit across a given width. */
 export const ICON_SIZE = isMobile() ? 56 : 48;
+
+// One tooltip on the grid, delegated to the icon tiles. A module constant so the grid re-rendering
+// on every keystroke in the search does not tear the tooltip down and build it again each time.
+const ICON_TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
+    selector: "span",
+    customClass: "pre-wrap-text",
+    animation: false,
+    title() { return this.getAttribute("title") || ""; },
+};
 
 interface IconPickerProps {
     /** Receives the class of the icon picked, e.g. `bx bx-star`. */
@@ -47,12 +56,7 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount }
     const iconListRef = useRef<HTMLDivElement>(null);
     const [ search, setSearch ] = useState<string>();
     const [ filterByPrefix, setFilterByPrefix ] = useState<string | null>(null);
-    useStaticTooltip(iconListRef, {
-        selector: "span",
-        customClass: "pre-wrap-text",
-        animation: false,
-        title() { return this.getAttribute("title") || ""; },
-    });
+    useStaticTooltip(iconListRef, ICON_TOOLTIP_CONFIG);
 
     const allIcons = useAllIcons();
     const filteredIcons = useFilteredIcons(allIcons, search, filterByPrefix);

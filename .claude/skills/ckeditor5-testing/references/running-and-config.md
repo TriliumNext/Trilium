@@ -118,6 +118,57 @@ coverage: {
 `reporter: ['text', 'lcov']` + that `reportsDirectory` are what the `analyzing-coverage`
 analyzer (`lcov.info`) and Codecov consume — keep them when adding coverage to a package.
 
+## When the session never starts
+
+Two failure modes look like a broken suite but are environmental.
+
+### "This version of ChromeDriver only supports Chrome version N"
+
+webdriverio auto-manages the driver by detecting the installed Chrome's version. When Chrome has a
+**staged update** — a `new_chrome.exe` and a new version folder sitting in the install directory,
+waiting for a browser restart — detection reads the *staged* version and downloads that
+chromedriver, while the `chrome.exe` that actually launches is still the old major. Every run then
+dies at session start.
+
+Restarting Chrome fixes it permanently. To run before then, point wdio at the matching driver
+already in its cache (`%TEMP%\chromedriver\win64-<version>\` on Windows) by editing
+`packages/ckeditor5/vitest.config.ts` — at the **provider factory** level, because
+`@vitest/browser-webdriverio` drops per-instance options and only the factory's reach `remote()`:
+
+```ts
+provider: webdriverio({
+    capabilities: {
+        "wdio:chromedriverOptions": { binary: "<cached>/chromedriver-win64/chromedriver.exe" }
+    }
+}),
+```
+
+**Revert that edit after the run — never commit it.** `browserVersion` pins do not help at either
+level; wdio still resolves the local binary.
+
+### The run hangs at `[vite] [optimizer] bundling dependencies...`
+
+In a fresh git worktree the browser-mode suite reliably stalls there and never runs a test,
+eventually reporting "Browser connection was closed" or "no tests" — even after clearing
+`node_modules/.vite` and killing stray browsers. The cold Vite dep-optimize for the very large
+CKEditor dep set does not complete (it may be contending with the editor's own Vitest extension
+workers). The same spec runs in seconds from the **main checkout**, where that cache is warm.
+
+So validate browser-mode specs from the main checkout: copy the new `*.ts` + `*.spec.ts` into
+`<main>/packages/ckeditor5/src/plugins/`, run them there (add
+`--coverage.enabled --coverage.include='<file>'` to check the 100 % gate against just that file),
+then delete the temporary copies. A spec that imports the plugin directly does not need the
+`plugins.ts` / toolbar wiring to be present in main. Client (`apps/client`) happy-dom tests are
+unaffected — this is browser-mode only.
+
+### After an aborted run
+
+Killed runs leave **orphaned headless Chrome** processes (`--test-type=webdriver`, a `scoped_dir`
+user-data directory) holding resources. Kill those, and only those — never the user's interactive
+Chrome, and never the editor's Vitest extension workers or its Vite dev server. Also don't pipe
+vitest through `Select-Object -Last N`: it buffers everything until exit, so you lose all progress
+output.
+
 ## Debugging
 
 Browser-mode packages support an inspector + visible browser:

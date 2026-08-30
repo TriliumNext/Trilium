@@ -1,6 +1,6 @@
 import { becca_loader, cls, entity_changes, getLog, initializeCore, options, sql_init, ws } from "@triliumnext/core";
 import ServerBackupService from "@triliumnext/server/src/backup_provider.js";
-import ClsHookedExecutionContext from "@triliumnext/server/src/cls_provider.js";
+import AsyncLocalStorageExecutionContext from "@triliumnext/server/src/cls_provider.js";
 import { loadCoreSchema } from "@triliumnext/server/src/core_assets.js";
 import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
 import NodejsInAppHelpProvider from "@triliumnext/server/src/in_app_help_provider.js";
@@ -262,7 +262,7 @@ export async function main() {
         zip: new NodejsZipProvider(),
         zipExportProviderFactory: (await import("@triliumnext/server/src/services/export/zip/factory.js")).serverZipExportProviderFactory,
         request: new ElectronRequestProvider(),
-        executionContext: new ClsHookedExecutionContext(),
+        executionContext: new AsyncLocalStorageExecutionContext(),
         messaging,
         schema: loadCoreSchema(),
         platform: new DesktopPlatformProvider(),

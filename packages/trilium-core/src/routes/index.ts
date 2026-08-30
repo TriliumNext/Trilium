@@ -39,6 +39,7 @@ import fontsRoute from "./api/fonts";
 import flashcardsRoute from "./api/flashcards";
 import ocrRoute from "./api/ocr";
 import linkEmbedRoute from "./api/link_embed";
+import spreadsheetRoute from "./api/spreadsheet";
 import llmRoute from "./api/llm";
 
 // TODO: Deduplicate with routes.ts
@@ -194,6 +195,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     // POSTed rather than taking the URL in a query string: a link can carry a one-time token or a
     // signature, and a query string ends up in every access log along the way.
     asyncApiRoute(PST, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
+
+    asyncRoute(GET, "/api/spreadsheet/:noteId/xlsx", [checkApiAuthOrElectron], spreadsheetRoute.exportXlsx);
 
     // group of the services below are meant to be executed from the outside
     // Not transactional: a status read needs no transaction, and one is unopenable during the moment

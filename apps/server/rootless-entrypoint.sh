@@ -25,4 +25,4 @@ fi
 mkdir -p "${TRILIUM_DATA_DIR}"
 
 # Start the app
-exec node ./main.cjs
+exec node ./main.mjs

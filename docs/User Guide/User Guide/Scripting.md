@@ -54,7 +54,7 @@ You can see more scripting with explanation in <a class="reference-link" href="
 
 ## Events
 
-See <a class="reference-link" href="Scripting/Backend%20scripts/Events.md">Events</a>.
+See <a class="reference-link" href="Scripting/Backend%20scripts/Backend%20Events.md">Events</a>.
 
 ## Script API
 

@@ -117,7 +117,7 @@ Trilium Notes — це безкоштовний кросплатформний �
 * Вбудована [темна
   тема](https://docs.triliumnotes.org/user-guide/concepts/themes), підтримка тем
   користувача
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   та [Markdown імпорт &
   експорт](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) для

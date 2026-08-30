@@ -38,7 +38,7 @@ async function register(app: express.Application) {
         const vite = await createViteServer({
             server: {
                 middlewareMode: true,
-                hmr: {
+                ws: {
                     // Derive a unique HMR port from the application port so
                     // multiple dev instances (e.g. server on 8080, desktop on
                     // 37742) don't all fight over Vite's default port 24678.

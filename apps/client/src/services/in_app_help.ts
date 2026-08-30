@@ -89,11 +89,6 @@ export const bySidebarSection = {
         // Backlinks, covering both kinds one can come from.
         helpPage: "wfGXLmm7x27z",
         paragraphs: [ "sidebar_help.backlinks_what", "sidebar_help.backlinks_listing" ]
-    },
-    similarNotes: {
-        // Similar Notes.
-        helpPage: "xWtq5NUHOwql",
-        paragraphs: [ "sidebar_help.similar_notes_what", "sidebar_help.similar_notes_how" ]
     }
 } satisfies Record<string, SidebarSectionHelp>;
 

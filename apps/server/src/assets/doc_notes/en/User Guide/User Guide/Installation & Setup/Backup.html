@@ -18,11 +18,61 @@
 <p>Note that&nbsp;<a class="reference-link" href="#root/_help_cbkrhQjrkKrh">Synchronization</a>&nbsp;provides
   also some backup capabilities by its nature of distributing the data to
   other computers.</p>
-<h2>Downloading backup</h2>
-<p>You can download an existing backup by going to Settings &gt; Backup &gt;
-  Existing backups &gt; Download</p>
-<h2>Restoring backup</h2>
-<p>Let's assume you want to restore the weekly backup, here's how to do it:</p>
+<h2>Creating a backup</h2>
+<h3>On the desktop application and web client:</h3>
+<ol>
+  <li>Go to <strong>Settings → Backup</strong> and press the <strong>Backup Now</strong> button.</li>
+  <li>The backup creation process may take a few moments, especially for larger
+    databases. A notification will inform you when the backup is complete.</li>
+  <li>The backup will be saved as <strong>backup-now</strong> in the <strong>Existing Backups</strong> list,
+    where you can download it.</li>
+</ol>
+<h3>On the standalone client</h3>
+<ol>
+  <li><strong>Go to Settings → Backup</strong> and press the "<strong>Download backup</strong>"
+    button.</li>
+  <li>You will be prompted to <strong>restart the app</strong>. Confirm, and
+    the app will restart automatically.</li>
+  <li>Set a <strong>backup name</strong> or <strong>password</strong> (both optional),
+    then press "<strong>Continue</strong>".</li>
+  <li>Press the "<strong>Generate and download"</strong> button and wait for
+    the download to complete.</li>
+  <li>Once you confirm the download is saved on your device, press <strong>"Finish"</strong> to
+    complete</li>
+</ol>
+<h2>Downloading a backup</h2>
+<ul>
+  <li><strong>Desktop and web client</strong>: to download an existing backup,
+    navigate to <strong>Settings → Backup → Existing backups</strong> and select <strong>Download</strong>.</li>
+  <li><strong>Standalone client</strong>: automatic backups are not supported
+    in this version. You can manually create and download a backup by going
+    to <strong>Settings → Backup → Download backup.</strong>
+  </li>
+</ul>
+<h2>Restoring a backup</h2>
+<ul>
+  <li><strong>For a new Trilium instance</strong>: When setting up a new Trilium
+    instance, use the "Restore from backup" option in the setup menu to guide
+    you through restoring your existing backup.</li>
+  <li><strong>For an existing Trilium instance</strong>: To restore a backup
+    and replace your current database, go to <strong>Settings → Backup</strong> and
+    click <strong>Restore a backup</strong>. You will be prompted to restart
+    the app for the restoration process to begin. After restarting, you can
+    choose to back up the existing database before overwriting it. Note: For
+    the web client, use the Start Over feature (<strong>Settings → Database → Start over</strong>)
+    to switch to the setup screen and restore a backup.</li>
+</ul>
+<p>Next, select the backup file (.db or .tnbackup) from your device. The
+  web client is optimized for handling large backups and is resilient to
+  unstable network conditions, similar to the desktop application.</p>
+<p>If your database is encrypted, you will be prompted to enter the password
+  used for encrypting the backup file. Without the correct password, decryption
+  and restoration cannot proceed.</p>
+<p>Restoring a backup may take some time, depending on its size. Once it
+  completes, Trilium will open the freshly restored database.</p>
+<h3>The alternative way for restoring a backup</h3>
+<p>Let's assume you want to restore the weekly backup (only in .db format,
+  .tnbackup files are not supported by this method), here's how to do it:</p>
 <ul>
   <li>find <a href="#root/_help_tAassRL4RSQL">data directory</a> Trilium uses - easy
     way is to open "About Trilium Notes" from "Menu" in upper left corner and
@@ -33,7 +83,7 @@
     </ul>
   </li>
   <li>find <code spellcheck="false">~/trilium-data/backup/backup-weekly.db</code> -
-    this is the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;backup</li>
+    this is the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;backup.</li>
   <li>at this point stop/kill Trilium</li>
   <li>delete <code spellcheck="false">~/trilium-data/document.db</code>,
     <code
@@ -47,17 +97,88 @@
   </li>
   <li>start Trilium again</li>
 </ul>
-<p>If you have configured sync then you need to do it across all members
-  of the sync cluster, otherwise older version (restored backup) of the document
-  will be detected and synced to the newer version.</p>
-<h2>Disabling backup</h2>
-<p>Although this is not recommended, it is possible to disable backup in
-  <code
-  spellcheck="false">config.ini</code>in the <a href="#root/_help_tAassRL4RSQL">data directory</a>:</p><pre><code class="language-text-x-trilium-auto">[General]
+<aside class="admonition warning">
+  <p>If you have configured sync then you need to do it across all members
+    of the sync cluster, otherwise older version (restored backup) of the document
+    will be detected and synced to the newer version.</p>
+</aside>
+<h2>Changing the backup location in Trilium (desktop only)</h2>
+<p>Starting with version 0.105, the Trilium desktop client allows users to
+  change the directory where backups are stored. Follow these steps to specify
+  a custom backup directory:</p>
+<ol>
+  <li>Navigate to <strong>Settings</strong> → <strong>Backup Location</strong>.</li>
+  <li>Click the <strong>Select Location</strong> button.</li>
+  <li>Choose any writable directory on your file system. This could include
+    network shares, depending on your operating system.</li>
+</ol>
+<p>Once you set a custom directory, all manual and automatic backups will
+  be saved there. If the selected directory becomes unavailable, backups
+  may fail or revert to the default location.</p>
+<aside class="admonition tip">
+  <p>For better privacy when using unsafe backup locations, you can enable
+    backup encryption, which makes the backup file unreadable without the correct
+    password.</p>
+</aside>
+<h2>Backup encryption</h2>
+<p>Trilium can secure the entire content of the database backup, ensuring
+  it remains unreadable unless the correct password is provided. This is
+  particularly useful for storing backups in unsecured locations, like network
+  shares, unencrypted external drives, or cloud services.&nbsp;</p>
+<p>Encrypted database backups use the Trilium Backup Container (.tnbackup)
+  format, which relies on AES-256-GCM. This authenticated encryption mode
+  scrambles the data and generates a tag confirming it hasn't been altered.
+  The password itself isn't directly used as the key; it's processed through
+  scrypt, a key derivation function designed to be slow and memory-intensive,
+  making brute-force password guessing difficult even with powerful hardware.
+  Each backup also receives a random 16-byte salt, ensuring that the same
+  password never produces the same encryption key twice. Additionally, critical
+  metadata such as chunk order, length, and header flags are cryptographically
+  bound into the encryption (via "additional authenticated data"), preventing
+  undetected tampering like reorder, truncate, or splice operations.</p>
+<h3>Enabling backup encryption</h3>
+<p>To enable encryption for automatic backups in the Desktop application:</p>
+<ol>
+  <li>Go to <strong>Settings → Backup → Backup Options</strong>.</li>
+  <li>Click on <strong>Turn on Encryption</strong> and set a password.</li>
+</ol>
+<p>Once encryption is enabled, all newly created backups (both automatic
+  and manual) will be encrypted with the specified password. Backups created
+  prior to enabling encryption will remain unsecured.</p>
+<p>You can change the password anytime using the <strong>Change Password</strong> button.
+  The new password will apply to backups created after the change.</p>
+<p>To disable encryption, uncheck <strong>Settings → Backup → Enable Encryption</strong>.</p>
+<aside
+class="admonition note">
+  <p>On some systems, a keyring may not be available for Trilium to securely
+    store the encryption password. In such cases, the encryption option is
+    disabled.</p>
+  </aside>
+  <h2>Backup compression</h2>
+  <p>Database backups can be optionally compressed to minimize storage footprint.
+    This method is effective primarily when the database consists largely of
+    text content. However, media files (images, videos, audio), along with
+    PDF, ODF, and DOCX files, are already compressed in their original formats
+    and won't benefit from further compression.</p>
+  <p>Compressed backups are stored using the Trilium Backup Container (.tnbackup),
+    employing RFC 1952 GZIP compression.</p>
+  <aside class="admonition warning">
+    <p><strong>Note:</strong> Compression increases the time required for backup
+      creation and restoration. It may also lead to higher CPU usage during automatic
+      backups, potentially draining the battery faster on battery-powered devices.
+      Enable this option only if necessary.</p>
+  </aside>
+  <h3>Enabling Backup Compression (Desktop Only)</h3>
+  <p>To enable compression for new automatic and manual backups, navigate to <strong>Settings → Backup → Backup Options</strong> and
+    toggle <strong>Enable Compression</strong> to on.</p>
+  <h2>Disabling backup</h2>
+  <p>Although this is not recommended, it is possible to disable backup in
+    <code
+    spellcheck="false">config.ini</code>in the <a href="#root/_help_tAassRL4RSQL">data directory</a>:</p><pre><code class="language-text-x-trilium-auto">[General]
 ... some other configs
 # set to true to disable backups (e.g. because of limited space on server)
 noBackup=true</code></pre>
-<p>You can also review the <a href="#root/_help_Gzjqa934BdH4">configuration</a> file
-  to provide all <code spellcheck="false">config.ini</code> values as environment
-  variables instead.</p>
-<p>See <a href="https://github.com/TriliumNext/Trilium/blob/master/config-sample.ini">sample config</a>.</p>
+  <p>You can also review the <a href="#root/_help_Gzjqa934BdH4">configuration</a> file
+    to provide all <code spellcheck="false">config.ini</code> values as environment
+    variables instead.</p>
+  <p>See <a href="https://github.com/TriliumNext/Trilium/blob/master/config-sample.ini">sample config</a>.</p>

@@ -28,7 +28,9 @@ async function extractAndSendLayers() {
         if (!optionalContentConfig) {
             window.parent.postMessage({
                 type: "pdfjs-viewer-layers",
-                layers: []
+                layers: [],
+                ntxId: window.TRILIUM_NTX_ID,
+                noteId: window.TRILIUM_NOTE_ID
             } satisfies PdfViewerLayersMessage, window.location.origin);
             return;
         }
@@ -38,7 +40,9 @@ async function extractAndSendLayers() {
         if (!order || order.length === 0) {
             window.parent.postMessage({
                 type: "pdfjs-viewer-layers",
-                layers: []
+                layers: [],
+                ntxId: window.TRILIUM_NTX_ID,
+                noteId: window.TRILIUM_NOTE_ID
             } satisfies PdfViewerLayersMessage, window.location.origin);
             return;
         }
@@ -79,13 +83,17 @@ async function extractAndSendLayers() {
 
         window.parent.postMessage({
             type: "pdfjs-viewer-layers",
-            layers
+            layers,
+            ntxId: window.TRILIUM_NTX_ID,
+            noteId: window.TRILIUM_NOTE_ID
         } satisfies PdfViewerLayersMessage, window.location.origin);
     } catch (error) {
         console.error("Error extracting layers:", error);
         window.parent.postMessage({
             type: "pdfjs-viewer-layers",
-            layers: []
+            layers: [],
+            ntxId: window.TRILIUM_NTX_ID,
+            noteId: window.TRILIUM_NOTE_ID
         } satisfies PdfViewerLayersMessage, window.location.origin);
     }
 }

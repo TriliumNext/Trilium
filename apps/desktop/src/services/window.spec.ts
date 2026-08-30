@@ -159,9 +159,14 @@ const fakeGlobalShortcut = {
 const fakeNativeImage = {
     createFromBuffer: vi.fn(() => {
         if (state.nativeImageThrow) throw new Error("bad buffer");
-        return { isEmpty: () => state.nativeImageEmpty };
+        return { isEmpty: () => state.nativeImageEmpty, toPNG: () => Buffer.from([137, 80, 78, 71]) };
     })
 };
+
+class FakeClipboardItem {
+    constructor(readonly items: Record<string, unknown>) {}
+}
+
 const fakeApp = {
     setUserTasks: vi.fn(),
     relaunch: vi.fn(),
@@ -175,7 +180,8 @@ const electronSurface = {
     shell: fakeShell,
     globalShortcut: fakeGlobalShortcut,
     nativeImage: fakeNativeImage,
-    clipboard: { writeImage: vi.fn() },
+    clipboard: { write: vi.fn((_items: FakeClipboardItem[]) => Promise.resolve()), readText: vi.fn(() => Promise.resolve("")) },
+    ClipboardItem: FakeClipboardItem,
     nativeTheme: { themeSource: "system" },
     BrowserWindow: fakeBrowserWindowClass,
     ipcMain: {
@@ -781,21 +787,25 @@ describe("window service", () => {
             expect(fakeApp.exit).toHaveBeenCalled();
         });
 
-        it("copy-image-to-clipboard writes a valid image", () => {
-            fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1, 2, 3]));
-            expect(electronSurface.clipboard.writeImage).toHaveBeenCalled();
+        it("copy-image-to-clipboard writes a PNG clipboard item", async () => {
+            await fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1, 2, 3]));
+            const [items] = electronSurface.clipboard.write.mock.calls[0] as [FakeClipboardItem[]];
+            expect(items[0]).toBeInstanceOf(FakeClipboardItem);
+            const blob = items[0].items["image/png"] as Blob;
+            expect(blob.type).toBe("image/png");
+            expect(blob.size).toBe(4);
         });
 
-        it("copy-image-to-clipboard logs when the image is empty", () => {
+        it("copy-image-to-clipboard logs when the image is empty", async () => {
             state.nativeImageEmpty = true;
-            fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
+            await fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("nativeImage is empty"));
-            expect(electronSurface.clipboard.writeImage).not.toHaveBeenCalled();
+            expect(electronSurface.clipboard.write).not.toHaveBeenCalled();
         });
 
-        it("copy-image-to-clipboard logs when conversion throws", () => {
+        it("copy-image-to-clipboard logs when conversion throws", async () => {
             state.nativeImageThrow = true;
-            fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
+            await fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("failed"));
         });
 

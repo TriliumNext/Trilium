@@ -462,7 +462,12 @@ function HeadingStyleSelector({ currentValue, onChange }: { currentValue: string
     const currentStyle = HEADING_STYLES.find(s => s.value === currentValue) ?? HEADING_STYLES[0];
 
     return (
-        <Dropdown text={t(currentStyle.labelKey)} mobileBottomSheet>
+        <Dropdown
+            text={t(currentStyle.labelKey)} mobileBottomSheet
+            // The options card is a container, and so a backdrop root: left inside it the menu
+            // loses its blur and reads as a flat tint.
+            portalToBody
+        >
             {HEADING_STYLES.map(({ value, labelKey }) => (
                 <FormListItem
                     key={value}
@@ -596,7 +601,7 @@ function CodeBlockStyle() {
                 />
             </OptionCardSection>
 
-            <CardSection className="code-block-preview">
+            <CardSection className="code-block-preview" filterRole="companion">
                 <CodeBlockPreview theme={effectiveTheme} wordWrap={codeBlockWordWrap} tabWidth={codeBlockTabWidth} />
             </CardSection>
         </Card>

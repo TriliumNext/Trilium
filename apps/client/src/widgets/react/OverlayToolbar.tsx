@@ -1,5 +1,6 @@
 import "./OverlayToolbar.css";
 
+import clsx from "clsx";
 import { type ComponentChildren, createContext } from "preact";
 import { useContext } from "preact/hooks";
 
@@ -43,12 +44,12 @@ export default function OverlayToolbar({ className, titlePosition, children }: O
  * open its tooltips off the bottom edge — overridable per button where one of them is placed
  * differently from its neighbours.
  */
-export function OverlayToolbarButton({ titlePosition, ...props }: ActionButtonProps) {
+export function OverlayToolbarButton({ titlePosition, className, ...props }: ActionButtonProps) {
     const barDirection = useContext(TooltipDirection);
 
     return <ActionButton
         {...props}
-        className="tn-tool-button"
+        className={clsx("tn-tool-button", className)}
         noIconActionClass
         titlePosition={titlePosition ?? barDirection}
     />;

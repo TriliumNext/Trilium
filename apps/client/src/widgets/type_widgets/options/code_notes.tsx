@@ -149,7 +149,7 @@ function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
 
             {/* A specimen of the editor rather than a control standing beside a label, shown
                 the way a code block is shown in a note. */}
-            <CardSection className="code-note-preview">
+            <CardSection className="code-note-preview" filterRole="companion">
                 <CodeNotePreview wordWrapping={wordWrapping} themeName={effectiveTheme} indentSize={indentSize} />
             </CardSection>
         </Card>

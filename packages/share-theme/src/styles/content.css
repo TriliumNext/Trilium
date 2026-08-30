@@ -112,6 +112,13 @@ body.type-webView {
    merge into single lines instead of doubling across the default border-spacing gaps. */
 .spreadsheet-table {
     border-collapse: collapse;
+    /* The gridline color, for the sheets that enable gridlines; the rule drawing them is emitted
+       by the renderer, and a sheet carrying its own color overrides this on the table element.
+       Borders collapse, so adjacent cells' gridlines merge into single 1px lines (no doubling).
+       A real data border at the same 1px width ties the gridline under collapse and wins by
+       source order, so heavier (>=2px) and filled-cell borders always show; an unfilled cell's
+       own 1px border may cede its top/left edge to a neighbour's gridline — fine for a faint grid. */
+    --spreadsheet-gridline-color: var(--background-highlight);
     width: auto;
     margin-top: 1em;
     /* Honour the per-column widths emitted in the colgroup (and the explicit table width) so the
@@ -120,30 +127,15 @@ body.type-webView {
     table-layout: fixed;
 }
 
-.spreadsheet-table td {
+/* The context is in :where() so this stays a default: the renderer emits the commonest cell
+   style as a `.spreadsheet-table td` rule, which has to win over it. */
+:where(.spreadsheet-table) td {
     padding: 2px 4px;
     /* Match the spreadsheet: long text overflows into empty neighbouring cells rather than
        wrapping, which keeps every row at its declared height. Wrapping would grow rows and push
        the floating images (positioned in absolute px) out of alignment with the grid. */
     white-space: nowrap;
     overflow: visible;
-}
-
-/* When the source sheet has gridlines enabled, draw a light 1px line on every cell edge.
-   Implemented as a real border (not a box-shadow) so the gridline sits in the same
-   border-collapse model as the cells' own borders and aligns pixel-exactly with them — an
-   inset shadow is offset 1px inside the edge and visibly misaligns with collapsed borders.
-   Borders collapse, so adjacent cells' gridlines merge into single 1px lines (no doubling).
-
-   Filled cells (`has-fill`) are skipped: in the editor a background fill covers the grid, so
-   only unfilled cells show gridlines; a filled neighbour hides the line on that shared edge.
-   The color comes from the sheet when set, else the theme's table border color.
-
-   A real data border at the same 1px width ties the gridline under collapse and wins by
-   source order, so heavier (>=2px) and filled-cell borders always show; an unfilled cell's
-   own 1px border may cede its top/left edge to a neighbour's gridline — fine for a faint grid. */
-.spreadsheet-table.show-gridlines td:not(.has-fill) {
-    border: 1px solid var(--spreadsheet-gridline-color, var(--background-highlight));
 }
 
 /* A sheet that has floating images is wrapped in a positioned container; the images are emitted as

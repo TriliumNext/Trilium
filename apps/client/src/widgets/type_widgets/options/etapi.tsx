@@ -75,6 +75,17 @@ export default function EtapiSettings() {
             />
 
             <TokenList tokens={tokens} />
+
+            {/* The page's one command lives in its header, out of the search's reach. Offered
+                here as the settings on other pages are: named, and operated where it is found. */}
+            <Card filterOnly heading={t("settings.related_actions")}>
+                <OptionCardSection
+                    label={t("etapi.create_token")}
+                    description={t("etapi.description")}
+                >
+                    <Button text={t("etapi.create_token")} onClick={createTokenCallback} />
+                </OptionCardSection>
+            </Card>
         </>
     );
 }
@@ -111,7 +122,9 @@ function TokenList({ tokens }: { tokens: EtapiToken[] }) {
     }
 
     return (
-        <Card>
+        // A card of tokens the user named themselves, with no name of its own to be found by: the
+        // page's own sentence about what ETAPI is stands in for one.
+        <Card filterExtraKeywords={`${t("etapi.description")} ${t("etapi.token_name")}`}>
             {tokens.map(({ etapiTokenId, name, utcDateCreated }) => (
                 <OptionCardSection
                     key={etapiTokenId ?? name}
@@ -119,7 +132,7 @@ function TokenList({ tokens }: { tokens: EtapiToken[] }) {
                     description={formatDateTime(utcDateCreated)}
                 >
                     {etapiTokenId && (
-                        <span className="etapi-token-actions">
+                        <span className="tn-card-option-actions">
                             <ActionButton
                                 icon="bx bx-edit-alt"
                                 text={t("etapi.rename_token")}

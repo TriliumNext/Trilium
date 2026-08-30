@@ -1,5 +1,4 @@
 import type { LlmMessage } from "@triliumnext/commons";
-import { runChat } from "@triliumnext/core/src/services/llm/chat.js";
 import type { LlmProviderConfig } from "@triliumnext/core/src/services/llm/types.js";
 import type { Request, Response } from "express";
 
@@ -46,6 +45,10 @@ async function streamChat(req: Request, res: Response) {
     res.on("close", () => abortController.abort());
 
     try {
+        // Imported here rather than at module scope so the chat pipeline and
+        // the provider SDKs land in lazy chunks (the same convention as
+        // getProviderModels in core's routes/api/llm.ts).
+        const { runChat } = await import("@triliumnext/core/src/services/llm/chat.js");
         for await (const chunk of runChat(messages, config, abortController.signal)) {
             res.write(`data: ${JSON.stringify(chunk)}\n\n`);
             // Flush immediately to ensure real-time streaming

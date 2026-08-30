@@ -7,17 +7,18 @@
  * owned entirely by the CLI (`copilot login`, or credentials shared with any
  * other GitHub Copilot editor integration on the machine).
  *
- * Resolution order: the TRILIUM_COPILOT_PATH override, then `copilot` on
- * PATH. The resolved binary is probed with `--version` once so a broken/absent
- * install surfaces as a clear, actionable error instead of an opaque spawn
- * failure mid-chat.
+ * Resolution order: the TRILIUM_COPILOT_PATH override, then `copilot` on PATH
+ * (see `findOnPath`, which also asks the login shell). The resolved binary is
+ * probed with `--version` once so a broken/absent install surfaces as a clear,
+ * actionable error instead of an opaque spawn failure mid-chat.
  */
 
 import { getLog } from "@triliumnext/core";
 import { execFile } from "child_process";
 import { existsSync } from "fs";
-import path from "path";
 import { promisify } from "util";
+
+import { findOnPath } from "./binary_lookup.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -44,7 +45,7 @@ export function resetCopilotBinaryCache(): void {
 }
 
 async function probeBinary(): Promise<string> {
-    const binary = locateBinary();
+    const binary = await locateBinary();
 
     // Probe once: confirms the binary actually runs on this host (catches a
     // wrong-arch/broken install) and records the version for diagnostics.
@@ -66,7 +67,7 @@ async function probeBinary(): Promise<string> {
     return binary;
 }
 
-function locateBinary(): string {
+async function locateBinary(): Promise<string> {
     const override = process.env.TRILIUM_COPILOT_PATH?.trim();
     if (override) {
         if (!existsSync(override)) {
@@ -75,7 +76,7 @@ function locateBinary(): string {
         return override;
     }
 
-    const onPath = findOnPath("copilot");
+    const onPath = await findOnPath("copilot");
     if (onPath) {
         return onPath;
     }
@@ -89,24 +90,4 @@ function locateBinary(): string {
  */
 export function needsShell(binary: string): boolean {
     return /\.(cmd|bat)$/i.test(binary);
-}
-
-function findOnPath(binary: string): string | undefined {
-    // On Windows, npm-installed packages create a bare extensionless file (a
-    // POSIX bash script for Git Bash/WSL) alongside the real .cmd/.exe shims.
-    // The bash script can't be executed by Node's execFile/spawn, so we must
-    // try the Windows-native extensions first and skip the bare name entirely.
-    const extensions = process.platform === "win32" ? [".cmd", ".exe", ".bat"] : [""];
-    for (const dir of (process.env.PATH ?? "").split(path.delimiter)) {
-        if (!dir) {
-            continue;
-        }
-        for (const ext of extensions) {
-            const candidate = path.join(dir, binary + ext);
-            if (existsSync(candidate)) {
-                return candidate;
-            }
-        }
-    }
-    return undefined;
 }

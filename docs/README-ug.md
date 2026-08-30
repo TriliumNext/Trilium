@@ -121,7 +121,7 @@ docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 * ئىچىگە ئورۇنلاشتۇرۇلغان [قېنىق رەڭلىك
   تېما](https://docs.triliumnotes.org/user-guide/concepts/themes)
 * [Evernote دىن
-  ئەكىرىش](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  ئەكىرىش](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   ۋە [Markdown نى ئەكىرىش ھەم
   چىقىرىش](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * توردىكى مەزمۇنلارنى تېز ساقلاشقا ئىشلىتىلىدىغان [Web

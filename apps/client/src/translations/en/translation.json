@@ -640,6 +640,7 @@
     "run_on_attribute_creation": "Executes when new attribute is created for the note which defines this relation.",
     "run_on_attribute_change": "Executes when the attribute is changed of a note which defines this relation. This is triggered also when the attribute is deleted.",
     "relation_template": "Note's attributes will be inherited even without a parent-child relationship, note's content and subtree will be added to instance notes if empty. See documentation for details.",
+    "template_new_note_default_parent": "Set on a template note: notes created from the template (e.g. via @-completion) are placed under the target note, unless another location is picked explicitly.",
     "inherit": "Note's attributes will be inherited even without a parent-child relationship. See template relation for a similar concept. See attribute inheritance in the documentation.",
     "render_note": "Notes of type \"render HTML note\" will be rendered using a code note (HTML or script) and it is necessary to point using this relation to which note should be rendered.",
     "widget_relation": "Target of this relation will be executed and rendered as a widget in the sidebar.",
@@ -1069,7 +1070,12 @@
   },
   "options": {
     "title": "Options",
-    "back": "Back to all options"
+    "back": "Back to all options",
+    "search_placeholder": "Search settings",
+    "search_clear": "Clear the search",
+    "search_title": "Options search",
+    "search_hint": "Type a keyword to search across every settings page.",
+    "search_no_results": "No setting matches what you are looking for."
   },
   "global_menu": {
     "menu": "Menu",
@@ -1085,6 +1091,7 @@
     "configure_launchbar": "Configure Launchbar",
     "show_shared_notes_subtree": "Show Shared Notes Subtree",
     "show_deleted_notes": "Show Deleted Notes",
+    "show_space_usage": "Show Space Usage",
     "advanced": "Advanced",
     "open_dev_tools": "Open Dev Tools",
     "open_sql_console": "Open SQL Console",
@@ -1519,6 +1526,11 @@
     "too-many-notes_other": "There are {{count}} notes here. Showing them all may slow things down.",
     "show-anyway": "Show map"
   },
+  "note_picker": {
+    "title": "Choose a note",
+    "label": "Note",
+    "ok": "Choose"
+  },
   "note_paths": {
     "title": "Note Paths",
     "clone_button": "Clone note to new location...",
@@ -1602,9 +1614,7 @@
     "note_paths_what": "A note can sit in more than one place in the note tree at once, and each of those places is listed here as a path.",
     "note_paths_cloning": "Adding a place is called cloning: nothing is copied, so an edit made under one path shows under all of them, and removing one path leaves the note under the others.",
     "backlinks_what": "The notes pointing at this one, either through a link in their text or through a relation naming it.",
-    "backlinks_listing": "A text link is listed with the passage around it, a relation with the name it points by. This side of a link is not editable: it goes away when the note that made it drops the link.",
-    "similar_notes_what": "Notes that look related to this one even where nothing links them.",
-    "similar_notes_how": "The likeness is worked out from the content of the notes, the attributes and relations they carry, and how close together they were created."
+    "backlinks_listing": "A text link is listed with the passage around it, a relation with the name it points by. This side of a link is not editable: it goes away when the note that made it drops the link."
   },
   "abstract_search_option": {
     "remove_this_search_option": "Remove this search option",
@@ -1930,7 +1940,7 @@
     "analyze_space_usage": "Analyze space usage",
     "analyze_space_usage_description": "Identify which notes take up the most space, and get a clearer picture of how large your notes are.",
     "analyze_space_usage_button": "Analyze",
-    "cleanup": "Perform a cleanup",
+    "cleanup": "Clean up the database",
     "cleanup_description": "Erase deleted notes and attachments, trim revision snapshots and compress images to keep the database slim.",
     "start_over_description": "Switch to a new blank database, start again syncing with a new server or restore a backup. You will be prompted to backup your data before discarding the existing data.",
     "start_over": "Start over",
@@ -2911,6 +2921,7 @@
   "clipboard": {
     "cut": "Note(s) have been cut into clipboard.",
     "copied": "Note(s) have been copied into clipboard.",
+    "copied_without_links": "Note(s) have been copied into clipboard, but the note links could not be placed on the system clipboard.",
     "copy_failed": "Cannot copy to clipboard due to permission issues.",
     "copy_success": "Copied to clipboard."
   },
@@ -3113,7 +3124,21 @@
     "exit-3d": "Lay the map flat again",
     "close-details": "Close",
     "marker-color": "Marker color",
-    "copy-coordinates": "Copy coordinates"
+    "copy-coordinates": "Copy coordinates",
+    "search": "Search",
+    "search-placeholder": "Search for a place",
+    "search-online": "Search online for \"{{- query}}\"",
+    "searching-online": "Searching online…",
+    "no-places-found": "No places found",
+    "search-failed": "Couldn't search for places",
+    "results-nearby": "Nearby",
+    "results-far": "Far away",
+    "add-place-as-marker": "Add as marker",
+    "previous-result": "Previous result",
+    "next-result": "Next result",
+    "result-position": "Result {{index}} of {{total}}, click to return to it",
+    "results-on-map": "On this map",
+    "go-to-coordinates": "Go to {{- coordinates}}"
   },
   "embedded_note": {
     "open-note": "Open note",
@@ -3233,9 +3258,7 @@
     "sort_by_title": "Title",
     "sort_by_date_created": "Creation date",
     "no_items": "No active content found.",
-    "no_items_hint": "Scripts, themes, templates and snippets you create will be listed here.",
-    "section_active_content": "Active Content & Templates",
-    "section_space_usage": "Space Usage"
+    "no_items_hint": "Scripts, themes, templates and snippets you create will be listed here."
   },
   "space_usage": {
     "loading": "Measuring space usage...",
@@ -3278,6 +3301,12 @@
     "status_content_hint": "Space held by all notes (hidden ones included), their attachments and their revisions, with duplicated content counted once",
     "status_deleted": "{{size}} in deleted notes and attachments",
     "status_deleted_hint": "Space still held by deleted notes and by deleted attachments (whose note may still exist); erasing them reclaims it",
+    "status_notes": "Notes",
+    "status_total": "Total",
+    "status_attachments": "Attachments",
+    "status_deleted_items": "Deleted items",
+    "selection_hint": "Tap an item for details",
+    "show_selection_details": "Show selection details",
     "menu_show_details": "Show details",
     "menu_erase_deleted": "Erase deleted data",
     "erase_deleted_message": "Deleted data has been erased.",
@@ -3473,7 +3502,8 @@
     "vector_dark": "Vector (Dark)",
     "show-scale": "Show scale",
     "show-labels": "Show marker names",
-    "cluster-markers": "Group nearby markers"
+    "cluster-markers": "Group nearby markers",
+    "presentation-theme": "Theme"
   },
   "table_context_menu": {
     "delete_row": "Delete row"
@@ -3486,16 +3516,31 @@
     "move-to": "Move to",
     "insert-above": "Insert above",
     "insert-below": "Insert below",
-    "delete-column": "Delete column",
+    "delete-column": "Delete column...",
+    "archive-column": "Archive column",
+    "unarchive-column": "Unarchive column",
+    "archived-badge": "Archived",
     "delete-column-confirmation": "Are you sure you want to delete this column? The corresponding attribute will be deleted in the notes under this column as well.",
     "new-item": "New item",
     "new-item-placeholder": "Enter note title...",
-    "add-column": "Add Column",
+    "add-new-item": "Add new note",
+    "add-existing-item": "Add existing note...",
+    "add-existing-item-title": "Add an existing note to the board",
+    "add-existing-item-ok": "Add to column",
+    "add-new-column": "Add new column",
+    "add-column-before": "Before",
+    "add-column-after": "After",
+    "new-column": "New column",
+    "existing-item-conflict": "This note already belongs to another board that groups by “{{label}}”. Adding it here will move it to a different column on the original board as well. Add it anyway?",
+    "add-column": "Add column",
     "add-column-placeholder": "Enter column name...",
     "edit-note-title": "Click to edit note title",
-    "edit-column-title": "Click to edit column title",
+    "rename-column": "Rename column",
+    "change-column-icon": "Change column icon",
+    "column-menu": "Column menu",
     "column-already-exists": "This column already exists on the board.",
     "column-definition-save-error": "The columns were saved on the board, but could not be saved to the status attribute.",
+    "save-error": "The change could not be saved.",
     "status-alias": "Status"
   },
   "dashboard_view": {
@@ -3597,9 +3642,7 @@
   },
   "settings": {
     "related_settings": "Related settings",
-    "related_actions": "Related actions",
-    "related_space_usage": "Analyze the space usage within the database",
-    "related_space_usage_description": "See which notes, revisions and attachments take up the most space, and reclaim it."
+    "related_actions": "Related actions"
   },
   "settings_appearance": {
     "related_code_blocks": "Color scheme for code blocks in text notes",
@@ -3639,7 +3682,8 @@
   "server": {
     "unknown_http_error_title": "Communication error with the server",
     "unknown_http_error_content": "Status code: {{statusCode}}\nURL: {{method}} {{url}}\nMessage: {{message}}",
-    "traefik_blocks_requests": "If you are using the Traefik reverse proxy, it introduced a breaking change which affects the communication with the server."
+    "reverse_proxy_blocked_title": "Requests blocked by a reverse proxy",
+    "reverse_proxy_blocked_message": "Some requests were rejected (HTTP 400) before reaching Trilium, most likely by a reverse proxy that blocks percent-encoded characters in URLs.\n\nTraefik versions 3.6.4 to 3.6.6 do this by default: upgrade to Traefik 3.6.7 or newer, or allow encoded characters in its configuration."
   },
   "tab_history_navigation_buttons": {
     "go-back": "Go back to previous note",
@@ -3660,6 +3704,8 @@
     "read_only_auto_description": "This note was set automatically to read-only mode for performance reasons. This automatic limit is adjustable from settings.\n\nClick to edit it temporarily.",
     "read_only_temporarily_disabled": "Temporarily editable",
     "read_only_temporarily_disabled_description": "This note is currently editable, but it is normally read-only. The note will go back to being read-only as soon as you navigate to another note.\n\nClick to re-enable read-only mode.",
+    "office_preview": "Preview",
+    "office_preview_description": "This document is shown as a read-only preview, so it cannot be edited here.\n\nTo change it, download the file, edit it in an external application and upload it back as a new revision.",
     "shared_publicly": "Shared publicly",
     "shared_locally": "Shared locally",
     "shared_copy_to_clipboard": "Copy link to clipboard",
@@ -3714,7 +3760,8 @@
     "tab_width_style_tabs": "Tabs"
   },
   "attributes_panel": {
-    "title": "Note Attributes"
+    "title": "Note Attributes",
+    "edit_in_sidebar": "Edit in the sidebar"
   },
   "right_pane": {
     "empty_message": "Nothing to show for this note",
@@ -3773,7 +3820,11 @@
     "pages_alt": "Page {{pageNumber}}",
     "pages_loading": "Loading...",
     "annotations_one": "{{count}} annotation",
-    "annotations_other": "{{count}} annotations"
+    "annotations_other": "{{count}} annotations",
+    "annotation_drawing": "Drawing on page {{pageNumber}}",
+    "annotation_highlight": "Highlight on page {{pageNumber}}",
+    "annotation_note": "Note on page {{pageNumber}}",
+    "annotation_text_box": "Text box on page {{pageNumber}}"
   },
   "platform_indicator": {
     "available_on": "Available on {{platform}}"

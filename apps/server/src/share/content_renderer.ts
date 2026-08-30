@@ -117,7 +117,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
     });
 }
 
-export function renderNoteContent(note: SNote) {
+export function renderNoteContent(note: SNote, canAccessInclude?: CanAccessInclude) {
     const subRoot = getSharedSubTreeRoot(note);
 
     const ancestors: string[] = [];
@@ -161,6 +161,7 @@ export function renderNoteContent(note: SNote) {
         logoUrl,
         ancestors,
         isStatic: false,
+        canAccessInclude,
         faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
         iconPackCss: [
             ...iconPacks.map(p => iconPackService.generateCss(p, p.builtin
@@ -183,6 +184,7 @@ interface RenderArgs {
     logoUrl: string;
     ancestors: string[];
     isStatic: boolean;
+    canAccessInclude?: CanAccessInclude;
     faviconUrl: string;
     iconPackCss: string;
     iconPackSupportedPrefixes: string[];
@@ -199,7 +201,10 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     }
 
     // Static export preserves full include-note nesting; the live share view renders only the first level.
-    const { header, content, isEmpty } = getContent(note, { expandNestedIncludes: renderArgs.isStatic });
+    const { header, content, isEmpty } = getContent(note, {
+        expandNestedIncludes: renderArgs.isStatic,
+        canAccessInclude: renderArgs.canAccessInclude
+    });
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
     const opts = {
         note,
@@ -278,6 +283,14 @@ export function readTemplate(path: string) {
     return templateString;
 }
 
+/**
+ * Decides whether the caller is allowed to read a note that an include pulls in. The share routes
+ * pass their `shareCredentials` check here so that an include cannot hand out a note the same
+ * caller would be refused on a direct request. Omitted by the static export, whose caller is the
+ * already-authenticated instance owner.
+ */
+export type CanAccessInclude = (note: SNote) => boolean;
+
 export interface ShareRenderOptions {
     /**
      * Keep expanding include-note sections recursively at every depth. Used for static export, which
@@ -290,6 +303,8 @@ export interface ShareRenderOptions {
     includesAsReferenceLinks?: boolean;
     /** Internal: note IDs already rendered on the current include path, used as a recursion cycle guard. */
     seenNoteIds?: Set<string>;
+    /** See {@link CanAccessInclude}. When omitted, every included note is expanded. */
+    canAccessInclude?: CanAccessInclude;
 }
 
 export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}) {
@@ -340,7 +355,7 @@ function renderIndex(result: Result) {
     for (const childNote of rootNote.getChildNotes()) {
         const isExternalLink = childNote.hasLabel("shareExternalLink");
         const rawHref = childNote.getLabelValue("shareExternalLink") ?? "";
-        const href = isExternalLink ? escapeHtml(sanitize.sanitizeUrl(rawHref)) : `./${childNote.shareId}`;
+        const href = escapeHtml(isExternalLink ? sanitize.sanitizeUrl(rawHref) : `./${childNote.shareId}`);
         const target = isExternalLink ? `target="_blank" rel="noopener noreferrer"` : "";
         result.content += `<li><a class="${childNote.type}" href="${href}" ${target}>${childNote.escapedTitle}</a></li>`;
     }
@@ -459,6 +474,14 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         const includedNote = shaca.getNote(noteId);
         if (!includedNote) continue;
 
+        // An include must not disclose what a direct request for the same note would refuse: a note
+        // carrying `shareCredentials` the caller has not presented becomes a placeholder, and its
+        // title is withheld too, since an included note need not appear in the visible share tree.
+        if (options.canAccessInclude && !options.canAccessInclude(includedNote)) {
+            includeNoteEl.replaceWith(...parse(`<p class="include-note-forbidden">${escapeHtml(t("content_renderer.included-note-requires-credentials"))}</p>`, parseOpts).childNodes);
+            continue;
+        }
+
         // Deeper-than-first-level includes (and any cycle in the recursive path) degrade to a
         // reference link that the link-processing passes below resolve to the shared note.
         if (options.includesAsReferenceLinks || seenNoteIds.has(noteId)) {
@@ -467,8 +490,8 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         }
 
         const includedResult = getContent(includedNote, options.expandNestedIncludes
-            ? { expandNestedIncludes: true, seenNoteIds: new Set(seenNoteIds) }
-            : { includesAsReferenceLinks: true, seenNoteIds: new Set(seenNoteIds) });
+            ? { expandNestedIncludes: true, seenNoteIds: new Set(seenNoteIds), canAccessInclude: options.canAccessInclude }
+            : { includesAsReferenceLinks: true, seenNoteIds: new Set(seenNoteIds), canAccessInclude: options.canAccessInclude });
         if (typeof includedResult.content !== "string") continue;
 
         const includedDocument = parse(includedResult.content, parseOpts).childNodes;

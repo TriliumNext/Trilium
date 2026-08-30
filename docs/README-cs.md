@@ -115,7 +115,7 @@ Naše dokumenatce je dostupná ve vícero formátech:
 * Vestavěný [tmavý
   motiv](https://docs.triliumnotes.org/user-guide/concepts/themes), podpora
   uživatelských motivů
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   a [import & export
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Webový výstřižek](https://docs.triliumnotes.org/user-guide/setup/web-clipper)

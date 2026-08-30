@@ -1,0 +1,75 @@
+.options-search {
+    .options-search-loading,
+    .options-search-hint {
+        margin-top: 2em;
+        color: var(--muted-text-color);
+        font-size: 1.2em;
+        text-align: center;
+    }
+
+    .options-search-results,
+    .options-search-page {
+        display: flex;
+        flex-direction: column;
+        gap: 26px;
+    }
+
+    /* The layout above out-weighs the browser's own rule for the attribute, so it is said again. */
+    .options-search-results[hidden] {
+        display: none;
+    }
+
+    .options-search-page-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        color: var(--muted-text-color);
+        font-size: 1.5rem;
+        font-weight: 400;
+    }
+}
+
+/* A page's header is chrome, bar one thing: the switch governing a whole page (the LLM and
+   spellcheck pages) is a setting like any other, and sits there only because it rules the page.
+   So the band itself stands down, along with the name it would print — which is the name of
+   whichever page the dialog last showed, not the one it heads here — and what matched stays. */
+.options-search-page .options-page-header {
+    position: static;
+    border-bottom: none;
+    padding-block: 0;
+
+    .options-page-header-main {
+        display: none;
+    }
+
+    .options-page-header-below > :not(.tn-filter-match):not(:has(.tn-filter-match)) {
+        display: none;
+    }
+}
+
+/* The field says what is being done, so on a small screen the room above the results is worth more
+   than a banner repeating it. (The narrow flow drops it anyway, by the rule in
+   OptionsPageHeader.css that takes down a banner carrying nothing but a name.) */
+body.mobile .options-search .options-page-header {
+    display: none;
+}
+
+/*
+ * A page brings its whole self along, of which the search wants only what matched: its header names
+ * the page it thinks it is showing, and its tables and listings are not settings anyone can search
+ * for. A page is free to keep its cards inside a block of its own (the shortcuts page does), so
+ * what is kept is any block with something left in it rather than the cards alone.
+ *
+ * The page itself is a filter scope, and goes when empty by the rule in filter.css.
+ */
+.options-search-page {
+    > :not(.options-search-page-title, .tn-filter-match):not(:has(.tn-filter-match)) {
+        display: none;
+    }
+}
+
+/* Nothing to stand in for once the search has something to show. */
+.options-search-results:has(.tn-filter-match) .options-search-empty {
+    display: none;
+}

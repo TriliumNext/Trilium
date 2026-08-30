@@ -38,6 +38,12 @@ export interface TreemapItem<T = unknown> {
 
 interface TreemapProps<T> {
     root: TreemapItem<T>;
+    /**
+     * The cell drawn as the chosen one, by {@link TreemapItem.id}. For a consumer that keeps a
+     * selection rather than leaving identity to the hover: a touch screen has no hover, so the mark
+     * has to stay marked while whatever names it is read elsewhere on the screen.
+     */
+    selectedItemId?: string;
     onItemClick?: (item: TreemapItem<T>) => void;
     onItemContextMenu?: (item: TreemapItem<T>, event: MouseEvent) => void;
     className?: string;
@@ -84,7 +90,7 @@ const MIN_ICON_SIZE = 10;
  * tooltips behave like everywhere else in the app. The hue tint is mixed into the theme's own
  * surface color, which keeps the map coherent under any user theme.
  */
-export default function Treemap<T>({ root, onItemClick, onItemContextMenu, className }: TreemapProps<T>) {
+export default function Treemap<T>({ root, selectedItemId, onItemClick, onItemContextMenu, className }: TreemapProps<T>) {
     const { containerRef, containerProps, showTooltip, hideTooltip, tooltipNode } = useChartTooltip<HTMLDivElement>();
     const size = useElementSize(containerRef);
     const width = Math.floor(size?.width ?? 0);
@@ -129,7 +135,12 @@ export default function Treemap<T>({ root, onItemClick, onItemContextMenu, class
                 return (
                     <div
                         key={item.id}
-                        className={clsx("treemap-cell", item.hue !== undefined && "treemap-colored", item.className)}
+                        className={clsx(
+                            "treemap-cell",
+                            item.hue !== undefined && "treemap-colored",
+                            item.id === selectedItemId && "treemap-cell-selected",
+                            item.className
+                        )}
                         // Geometry and tint are computed per layout run, so they cannot live in a stylesheet.
                         style={{
                             left: cell.x0,

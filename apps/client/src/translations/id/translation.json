@@ -974,7 +974,8 @@
     "new-version-available": "Pembaruan Baru Tersedia",
     "download-update": "Dapatkan Versi {{latestVersion}}",
     "search_notes": "Cari catatan",
-    "show_deleted_notes": "Tampilkan Catatan yang Dihapus"
+    "show_deleted_notes": "Tampilkan Catatan yang Dihapus",
+    "show_space_usage": "Tampilkan Penggunaan Ruang"
   },
   "zen_mode": {
     "button_exit": "Keluar dari Mode Zen"
@@ -1076,7 +1077,8 @@
     "create_child_note_title": "Buat catatan anak dan tambahkan ke peta",
     "reset_pan_zoom_title": "Setel ulang pan & zoom ke koordinat dan pembesaran awal",
     "zoom_in_title": "Perbesar",
-    "zoom_out_title": "Perkecil"
+    "zoom_out_title": "Perkecil",
+    "create_child_note_text": "Tambahkan catatan"
   },
   "image_buttons": {
     "zoom_in": "Perbesar",
@@ -1543,7 +1545,7 @@
     "analyze_space_usage": "Analisis penggunaan ruang",
     "analyze_space_usage_description": "Identifikasi catatan mana yang memakan paling banyak ruang, dan dapatkan gambaran yang lebih jelas mengenai ukuran catatan Anda.",
     "analyze_space_usage_button": "Analisis",
-    "cleanup": "Lakukan pembersihan",
+    "cleanup": "Bersihkan basis data",
     "cleanup_description": "Hapus catatan dan lampiran yang dihapus, pangkas snapshot revisi, dan kompres gambar agar database tetap ramping.",
     "start_over_description": "Beralih ke database kosong baru, mulai lagi sinkronisasi dengan server baru, atau pulihkan cadangan. Anda akan diminta untuk mencadangkan data sebelum membuang data yang ada.",
     "start_over": "Mulai ulang",
@@ -1849,7 +1851,8 @@
     "formatting-locale-auto": "Berdasarkan bahasa aplikasi",
     "default-content-language": "Bahasa konten default",
     "default-content-language-description": "Bahasa yang digunakan untuk menulis catatan, kecuali jika bahasa ditetapkan pada catatan itu sendiri di bagian Properti Dasar. Bahasa ini memengaruhi fitur seperti perataan kanan ke kiri dan tanda kutip yang dihasilkan saat mengetik.",
-    "default-content-language-auto": "Berdasarkan bahasa aplikasi"
+    "default-content-language-auto": "Berdasarkan bahasa aplikasi",
+    "dates-title": "Tanggal & kalender"
   },
   "backup": {
     "title": "Cadangan",
@@ -2458,7 +2461,8 @@
     "cut": "Catatan telah dipotong ke clipboard.",
     "copied": "Catatan telah disalin ke clipboard.",
     "copy_failed": "Tidak dapat menyalin ke clipboard karena masalah izin.",
-    "copy_success": "Disalin ke clipboard."
+    "copy_success": "Disalin ke clipboard.",
+    "copied_without_links": "Catatan telah disalin ke papan klip, tetapi tautan catatan tidak dapat ditempatkan pada papan klip sistem."
   },
   "entrypoints": {
     "note-revision-created": "Revisi catatan telah dibuat.",
@@ -2614,7 +2618,21 @@
     "marker-color": "Warna penanda",
     "copy-coordinates": "Salin koordinat",
     "expand-details": "Perluas catatan untuk mengisi peta",
-    "restore-details": "Kembalikan catatan di samping peta"
+    "restore-details": "Kembalikan catatan di samping peta",
+    "search": "Cari",
+    "search-placeholder": "Cari tempat",
+    "search-online": "Cari online untuk \"{{- query}}\"",
+    "searching-online": "Mencari online…",
+    "no-places-found": "Tidak ada tempat yang ditemukan",
+    "search-failed": "Tidak dapat mencari tempat",
+    "results-nearby": "Terdekat",
+    "results-far": "Jauh",
+    "add-place-as-marker": "Tambahkan sebagai penanda",
+    "previous-result": "Hasil sebelumnya",
+    "next-result": "Hasil berikutnya",
+    "result-position": "Hasil {{index}} dari {{total}}, klik untuk kembali ke sana",
+    "results-on-map": "Pada peta ini",
+    "go-to-coordinates": "Buka {{- coordinates}}"
   },
   "geo-map-context": {
     "open-location": "Buka lokasi",
@@ -2687,7 +2705,10 @@
   },
   "svg": {
     "export_to_png": "Diagram tidak dapat diekspor ke PNG.",
-    "export_to_svg": "Diagram tidak dapat diekspor ke SVG."
+    "export_to_svg": "Diagram tidak dapat diekspor ke SVG.",
+    "zoom_in": "Perbesar",
+    "zoom_out": "Perkecil",
+    "reset_zoom": "Atur ulang zoom"
   },
   "code_theme": {
     "title": "Tampilan",
@@ -2861,9 +2882,7 @@
   },
   "settings": {
     "related_settings": "Pengaturan terkait",
-    "related_actions": "Tindakan terkait",
-    "related_space_usage": "Analisis penggunaan ruang dalam basis data",
-    "related_space_usage_description": "Lihat catatan, revisi, dan lampiran yang paling banyak menggunakan ruang, lalu bebaskan ruang tersebut."
+    "related_actions": "Tindakan terkait"
   },
   "settings_appearance": {
     "related_code_blocks": "Skema warna untuk blok kode di catatan teks",
@@ -2897,7 +2916,8 @@
   "server": {
     "unknown_http_error_title": "Kesalahan komunikasi dengan server",
     "unknown_http_error_content": "Kode status: {{statusCode}}\nURL: {{method}} {{url}}\nPesan: {{message}}",
-    "traefik_blocks_requests": "Jika Anda menggunakan reverse proxy Traefik, Traefik telah memperkenalkan perubahan yang bersifat breaking dan memengaruhi komunikasi dengan server."
+    "reverse_proxy_blocked_title": "Permintaan diblokir oleh proksi terbalik",
+    "reverse_proxy_blocked_message": "Beberapa permintaan ditolak (HTTP 400) sebelum mencapai Trilium, kemungkinan besar oleh proksi terbalik yang memblokir karakter terenkripsi persentase dalam URL.\n\nVersi Traefik 3.6.4 hingga 3.6.6 melakukan ini secara default: tingkatkan ke Traefik 3.6.7 atau lebih baru, atau izinkan karakter terenkripsi dalam konfigurasinya."
   },
   "tab_history_navigation_buttons": {
     "go-back": "Kembali ke catatan sebelumnya",
@@ -2965,7 +2985,8 @@
     "tab_width_style_tabs": "Tab"
   },
   "attributes_panel": {
-    "title": "Atribut Catatan"
+    "title": "Atribut Catatan",
+    "edit_in_sidebar": "Edit di bilah sisi"
   },
   "right_pane": {
     "empty_message": "Tidak ada yang ditampilkan untuk catatan ini",
@@ -3020,7 +3041,11 @@
     "pages_other": "{{count}} halaman",
     "pages_alt": "Halaman {{pageNumber}}",
     "pages_loading": "Memuat...",
-    "annotations_other": "{{count}} anotasi"
+    "annotations_other": "{{count}} anotasi",
+    "annotation_drawing": "Menggambar pada halaman {{pageNumber}}",
+    "annotation_highlight": "Sorotan pada halaman {{pageNumber}}",
+    "annotation_note": "Catatan pada halaman {{pageNumber}}",
+    "annotation_text_box": "Kotak teks pada halaman {{pageNumber}}"
   },
   "platform_indicator": {
     "available_on": "Tersedia di {{platform}}"
@@ -3262,7 +3287,9 @@
   },
   "common": {
     "save": "Simpan",
-    "cancel": "Batal"
+    "cancel": "Batal",
+    "fullscreen": "Layar penuh",
+    "exit_fullscreen": "Keluar layar penuh"
   },
   "spreadsheet": {
     "read-only": "Catatan ini hanya-baca.",
@@ -3434,7 +3461,12 @@
   },
   "options": {
     "back": "Kembali ke semua opsi",
-    "title": "Opsi"
+    "title": "Opsi",
+    "search_placeholder": "Pengaturan pencarian",
+    "search_clear": "Hapus pencarian",
+    "search_title": "Pencarian opsi",
+    "search_hint": "Ketik kata kunci untuk mencari di seluruh halaman pengaturan.",
+    "search_no_results": "Tidak ada pengaturan yang sesuai dengan yang Anda cari."
   },
   "image_navigation": {
     "previous": "Gambar sebelumnya: {{- title}}",
@@ -3614,9 +3646,7 @@
     "note_paths_what": "Sebuah catatan dapat berada di lebih dari satu lokasi dalam pohon catatan sekaligus, dan setiap lokasi tersebut ditampilkan di sini sebagai sebuah jalur.",
     "note_paths_cloning": "Menambahkan lokasi disebut cloning: tidak ada yang disalin, sehingga perubahan yang dilakukan melalui satu jalur akan muncul di semua jalur lainnya, dan menghapus satu jalur hanya menghilangkan lokasi tersebut tanpa memengaruhi yang lain.",
     "backlinks_what": "Catatan yang menunjuk ke catatan ini, baik melalui tautan di dalam teks maupun melalui relasi yang menamainya.",
-    "backlinks_listing": "Tautan teks ditampilkan bersama potongan teks di sekitarnya, sedangkan relasi ditampilkan bersama nama relasinya. Sisi tautan ini tidak dapat diedit: tautan akan hilang ketika catatan yang membuatnya menghapus tautan tersebut.",
-    "similar_notes_what": "Catatan yang tampak berkaitan dengan catatan ini meskipun tidak ada tautan yang menghubungkannya.",
-    "similar_notes_how": "Kemiripannya ditentukan berdasarkan isi catatan, atribut dan relasi yang dimilikinya, serta seberapa dekat waktu pembuatannya."
+    "backlinks_listing": "Tautan teks ditampilkan bersama potongan teks di sekitarnya, sedangkan relasi ditampilkan bersama nama relasinya. Sisi tautan ini tidak dapat diedit: tautan akan hilang ketika catatan yang membuatnya menghapus tautan tersebut."
   },
   "icon_pack": {
     "preview_title": "Pratinjau paket ikon",
@@ -3717,9 +3747,7 @@
     "sort_by_title": "Judul",
     "sort_by_date_created": "Tanggal pembuatan",
     "no_items": "Tidak ada konten aktif yang ditemukan.",
-    "no_items_hint": "Skrip, tema, templat, dan cuplikan yang Anda buat akan ditampilkan di sini.",
-    "section_active_content": "Konten Aktif & Templat",
-    "section_space_usage": "Penggunaan Ruang"
+    "no_items_hint": "Skrip, tema, templat, dan cuplikan yang Anda buat akan ditampilkan di sini."
   },
   "space_usage": {
     "loading": "Mengukur penggunaan ruang...",
@@ -3821,7 +3849,13 @@
     "compress_result_none": "Tidak ada gambar yang dapat dikompresi.",
     "compress_result_stopped": "Dihentikan setelah {{done}} dari {{total}} gambar diproses, mengurangi ukurannya dari {{before}} menjadi {{after}}.",
     "compress_result_stopped_no_gain": "Dihentikan setelah {{done}} dari {{total}} gambar diproses, dan tidak ada satu pun yang dapat diperkecil lagi.",
-    "compress_result_stopped_none": "Dihentikan sebelum ada gambar yang diproses."
+    "compress_result_stopped_none": "Dihentikan sebelum ada gambar yang diproses.",
+    "status_notes": "Catatan",
+    "status_total": "Total",
+    "status_attachments": "Lampiran",
+    "status_deleted_items": "Item yang dihapus",
+    "selection_hint": "Ketuk item untuk detail",
+    "show_selection_details": "Tampilkan detail pilihan"
   },
   "wizard": {
     "back": "Kembali",

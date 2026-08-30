@@ -5,6 +5,7 @@ import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import branches from "../../../services/branches";
 import { executeBulkActions } from "../../../services/bulk_action";
+import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import note_create from "../../../services/note_create";
@@ -14,9 +15,42 @@ import { BoardColumnData, BoardViewData } from ".";
 import { type BoardStatusDefinition, canStoreColumnsInDefinition, DEFAULT_GROUP_BY } from "./columns";
 import { ColumnMap } from "./data";
 
+/** One write's claim on a column, held until that write lands or is taken back. */
+interface ColumnClaim {
+    /**
+     * Stands for the write that made the claim, since what two writes leave behind need not tell
+     * them apart: one board read twice over can ask for the very same rename or deletion.
+     */
+    owner: object;
+    value: string | undefined;
+    /** Whether a record is left at all, as against the column being left to read as it stands. */
+    records: boolean;
+}
+
+/**
+ * The columns a board has in flight.
+ *
+ * Every write claims the columns it touches, and `renames` is what the last claim on each says.
+ * Claims are kept rather than a value and its predecessor because writes finish in any order: one
+ * taken back from under another leaves the one above it standing, and a column with no claims left
+ * has no record at all, whichever of the two failed first.
+ */
+export interface PendingColumnWrites {
+    renames: Map<string, string | undefined>;
+    claims: Map<string, ColumnClaim[]>;
+}
+
+/** Drops the record of a column the board now reads the same way from every source. */
+export function settleColumn(pending: PendingColumnWrites, column: string) {
+    pending.renames.delete(column);
+    pending.claims.delete(column);
+}
+
 export default class BoardApi {
 
     private isRelationMode: boolean;
+    /** The branch last sent to the end of each column, by {@link moveToColumnEnd}. */
+    private sentToColumnEnd = new Map<string, string>();
     statusAttribute: string;
 
     constructor(
@@ -27,6 +61,7 @@ export default class BoardApi {
         private viewConfig: BoardViewData,
         private saveConfig: (newConfig: BoardViewData) => void,
         private setBranchIdToEdit: (branchId: string | undefined) => void,
+        private pending: PendingColumnWrites = { renames: new Map(), claims: new Map() },
         private statusDefinition?: BoardStatusDefinition
     ) {
         this.isRelationMode = statusAttribute.startsWith("~");
@@ -54,6 +89,41 @@ export default class BoardApi {
         }
     }
 
+    /**
+     * Puts a note that already exists into a column, cloning it onto the board unless it is already
+     * somewhere beneath it.
+     *
+     * A note that already carries a value for the label the board groups by is on some other board
+     * grouped the same way, or is about to look like it: the value is the note's, not the board's,
+     * so writing ours moves it there too. Worth knowing but not worth refusing, since a note
+     * tracked on two boards is a fair thing to want.
+     *
+     * @returns whether the note was added, `false` when the user backed out.
+     */
+    async addExistingItem(column: string, noteId: string) {
+        const note = await froca.getNote(noteId, true);
+        if (!note) return false;
+
+        const isAlreadyOnBoard = note.hasAncestor(this.parentNote.noteId);
+        const currentValue = this.isRelationMode
+            ? note.getRelationValue(this.statusAttribute)
+            : note.getLabelValue(this.statusAttribute);
+
+        if (!isAlreadyOnBoard && currentValue) {
+            const confirmed = await dialog.confirm(t("board_view.existing-item-conflict", {
+                label: this.statusAttribute
+            }));
+            if (!confirmed) return false;
+        }
+
+        if (!isAlreadyOnBoard) {
+            await branches.cloneNoteToParentNote(noteId, this.parentNote.noteId);
+        }
+
+        await this.changeColumn(noteId, column);
+        return true;
+    }
+
     async changeColumn(noteId: string, newColumn: string) {
         if (this.isRelationMode) {
             await attributes.setRelation(noteId, this.statusAttribute, newColumn);
@@ -71,8 +141,48 @@ export default class BoardApi {
 
         // Add the new column to persisted data if it doesn't exist
         if (columns.some(col => col.value === columnName)) return false;
+        settleColumn(this.pending, columnName);
         this.storeColumns([ ...columns, { value: columnName } ]);
         return true;
+    }
+
+    /**
+     * Puts a new column beside an existing one, and hands back the name it was given for the caller
+     * to open its title editor with.
+     *
+     * Named rather than left blank: a column is known by its value, so until it has one there is
+     * nothing to place it by, nothing to store and nothing to rename. The stock name is numbered
+     * where it is already taken, so adding several in a row cannot silently do nothing.
+     */
+    async insertColumn(relativeTo: string, direction: "before" | "after") {
+        const stored = this.viewConfig?.columns ?? [];
+        const taken = new Set([ ...this.columns, ...stored.map(col => col.value) ]);
+
+        const stockName = t("board_view.new-column");
+        let name = stockName;
+        for (let suffix = 2; taken.has(name); suffix++) {
+            name = `${stockName} ${suffix}`;
+        }
+
+        // Placed by the stored order rather than the derived one, which lags a column just added:
+        // `columns` is rebuilt only when the view re-renders, while the config is written here.
+        // Columns the config does not know yet keep their derived places, at the end.
+        const order = stored.map(col => col.value);
+        for (const derived of this.columns) {
+            if (!order.includes(derived)) {
+                order.push(derived);
+            }
+        }
+
+        const neighbour = order.indexOf(relativeTo);
+        order.splice(
+            neighbour < 0 ? order.length : neighbour + (direction === "after" ? 1 : 0), 0, name);
+
+        // Entries carry more than their name, so each is moved rather than rebuilt.
+        const byValue = new Map(stored.map(col => [ col.value, col ]));
+        this.storeColumns(order.map(value => byValue.get(value) ?? { value }));
+
+        return name;
     }
 
     async removeColumn(column: string) {
@@ -82,7 +192,9 @@ export default class BoardApi {
         const action: BulkAction = this.isRelationMode
             ? { name: "deleteRelation", relationName: this.statusAttribute }
             : { name: "deleteLabel", labelName: this.statusAttribute };
-        await executeBulkActions(noteIds, [ action ]);
+        await this.retiredWhile(column, undefined,
+            () => executeBulkActions(noteIds, [ action ], { silent: true }));
+
         this.storeColumns((this.viewConfig?.columns ?? []).filter(col => col.value !== column));
     }
 
@@ -93,11 +205,57 @@ export default class BoardApi {
         const action: BulkAction = this.isRelationMode
             ? { name: "updateRelationTarget", relationName: this.statusAttribute, targetNoteId: newValue }
             : { name: "updateLabelValue", labelName: this.statusAttribute, labelValue: newValue };
-        await executeBulkActions(noteIds, [ action ]);
+        await this.retiredWhile(oldValue, newValue,
+            () => executeBulkActions(noteIds, [ action ], { silent: true }));
 
         // Rename the column in the persisted data.
         this.storeColumns((this.viewConfig?.columns ?? [])
             .map(col => col.value === oldValue ? { ...col, value: newValue } : col));
+    }
+
+    /** Stores the icon a column shows, or clears it back to the default when given nothing. */
+    async setColumnIcon(column: string, icon: string | undefined) {
+        this.updateColumn(column, { icon });
+    }
+
+    /** Stores the colour a column is tinted with, or clears it when given nothing. */
+    async setColumnColor(column: string, color: string | null) {
+        this.updateColumn(column, { color: color ?? undefined });
+    }
+
+    /** Whether a column is archived, which the board shows only while archived notes are shown. */
+    isColumnArchived(column: string) {
+        return !!this.viewConfig?.columns?.find(col => col.value === column)?.archived;
+    }
+
+    /**
+     * Archives a column or brings it back. An archived one is shown only while the board is set to
+     * show archived notes, and greyed out where it is.
+     */
+    async setColumnArchived(column: string, archived: boolean) {
+        this.updateColumn(column, { archived });
+    }
+
+    /**
+     * Writes properties onto a column, dropping each one given as nothing so that it goes back to
+     * its default rather than being stored empty.
+     *
+     * The column may have no stored entry at all: one resolved from the definition or from a value
+     * a note carries is shown without ever being written, so the first pick for it creates one.
+     */
+    private updateColumn(column: string, patch: Partial<BoardColumnData>) {
+        const columns = this.viewConfig?.columns ?? [];
+        const patched = (stored: BoardColumnData): BoardColumnData => {
+            const updated = { ...stored, ...patch };
+            if (!updated.icon) delete updated.icon;
+            if (!updated.color) delete updated.color;
+            if (!updated.archived) delete updated.archived;
+            return updated;
+        };
+
+        this.storeColumns(columns.some(col => col.value === column)
+            ? columns.map(col => col.value === column ? patched(col) : col)
+            : [ ...columns, patched({ value: column }) ]);
     }
 
     reorderColumn(fromIndex: number, toIndex: number) {
@@ -118,10 +276,101 @@ export default class BoardApi {
         // `columns` is derived render state and can lag behind the persisted config (it is rebuilt
         // only once the view re-renders), so anything it hasn't caught up with yet is kept at the
         // end instead of being dropped from the config.
+        const storedColumns = new Map(
+            (this.viewConfig?.columns ?? []).map(col => [ col.value, col ]));
         const missingColumns = (this.viewConfig?.columns ?? []).filter(col => !newColumns.includes(col.value));
-        this.storeColumns([ ...newColumns.map(value => ({ value })), ...missingColumns ]);
+        this.storeColumns([
+            // Reordering moves the entries, so each keeps the icon it holds rather than being
+            // rebuilt from its name.
+            ...newColumns.map(value => storedColumns.get(value) ?? { value }),
+            ...missingColumns
+        ]);
 
         return newColumns;
+    }
+
+    /**
+     * Runs the write that moves a column, with the record of it in place from the start so that a
+     * refresh in the middle reads the sources as they are about to be.
+     *
+     * Taken back out if the write does not land: left in, a rename nothing carries would keep the
+     * column under the name it failed to take, and a deletion that failed would keep hiding one
+     * that is still there, cards and all.
+     */
+    private async retiredWhile<T>(
+        oldValue: string, newValue: string | undefined, write: () => Promise<T>
+    ) {
+        const undoRetirement = this.retireColumn(oldValue, newValue);
+
+        try {
+            return await write();
+        } catch (e) {
+            undoRetirement();
+            throw e;
+        }
+    }
+
+    /**
+     * Records what a column became, so that `resolveBoardColumns` reads whichever of the notes, the
+     * view config and the definition has not been written yet as though it already were. That must
+     * be said outright: a value the board just renamed and one added from elsewhere look the same.
+     * {@link getBoardData} clears the record once no source lists the old value.
+     *
+     * @param newValue the name that replaced it, or `undefined` where the column was deleted.
+     * @returns a function taking back exactly the claims this call made, leaving those of any write
+     *          still in flight to say what the column reads as.
+     */
+    private retireColumn(oldValue: string, newValue?: string) {
+        const { renames, claims } = this.pending;
+        const owner = {};
+        const touched: string[] = [];
+
+        // The last claim on a column is the one the board reads, so this runs after every claim
+        // made and every claim taken back. A column no write claims any longer has no record.
+        const restate = (key: string) => {
+            const claim = claims.get(key)?.at(-1);
+            if (claim?.records) {
+                renames.set(key, claim.value);
+            } else {
+                renames.delete(key);
+            }
+        };
+
+        const write = (key: string, value: string | undefined, records: boolean) => {
+            claims.set(key, [ ...claims.get(key) ?? [], { owner, value, records } ]);
+            touched.push(key);
+            restate(key);
+        };
+
+        // A rename of a column whose own rename has not landed yet has to be followed through, or
+        // the old value the stale sources still carry would resolve to a name that is itself gone.
+        for (const [ from, to ] of renames) {
+            if (to === oldValue) {
+                write(from, newValue, true);
+            }
+        }
+
+        write(oldValue, newValue, true);
+
+        if (newValue) {
+            // Covers a rename back to a name still pending, whose record the loop above just turned
+            // into one mapping the name to itself.
+            write(newValue, undefined, false);
+        }
+
+        return () => {
+            for (const key of touched) {
+                const stack = claims.get(key);
+                const at = stack?.findIndex(claim => claim.owner === owner) ?? -1;
+                if (!stack || at < 0) continue;
+
+                stack.splice(at, 1);
+                if (!stack.length) {
+                    claims.delete(key);
+                }
+                restate(key);
+            }
+        };
     }
 
     /**
@@ -254,6 +503,30 @@ export default class BoardApi {
             return attributes.removeOwnedRelationByName(note, this.statusAttribute);
         }
         return attributes.removeOwnedLabelByName(note, this.statusAttribute);
+    }
+
+    /**
+     * Moves a card to the end of another column, where a new one would go.
+     *
+     * {@link moveWithinBoard} leaves a card crossing columns where the tree already had it, which
+     * is where a drop between two cards wants it. A card sent across by the keyboard is aimed at no
+     * card in particular, so it goes where the reader would look for it.
+     */
+    async moveToColumnEnd(noteId: string, branchId: string, targetColumn: string) {
+        // What is already at the end, as far as this instance can know: nothing waits for the board
+        // to redraw between two keystrokes, so the column map still shows the target as it was
+        // before the card the last press sent. Anything sent since is remembered here instead, and
+        // the memory lasts exactly as long as the map it stands in for, both being rebuilt by the
+        // refresh that catches up.
+        const last = this.sentToColumnEnd.get(targetColumn)
+            ?? (this.byColumn?.get(targetColumn) ?? []).at(-1)?.branch.branchId;
+
+        await this.changeColumn(noteId, targetColumn);
+        if (last && last !== branchId) {
+            await branches.moveAfterBranch([ branchId ], last);
+        }
+
+        this.sentToColumnEnd.set(targetColumn, branchId);
     }
 
     async moveWithinBoard(noteId: string, sourceBranchId: string, sourceIndex: number, targetIndex: number, sourceColumn: string, targetColumn: string) {

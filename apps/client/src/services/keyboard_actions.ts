@@ -54,14 +54,22 @@ async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, c
     return bindings;
 }
 
-getActionsForScope("window").then((actions) => {
+/**
+ * Binds every window-scoped action (jump to note, reload, tab switching, …) as a global shortcut
+ * routed through `appContext.triggerCommand`. `AppContext.initComponents()` calls this once
+ * `appContext.tabManager` exists; binding at module load instead left a window during startup in
+ * which a matching keypress (F5 held across a reload, for instance) threw on the missing tab manager.
+ */
+async function setupWindowShortcuts() {
+    const actions = await getActionsForScope("window");
+
     for (const action of actions) {
         /* v8 ignore next -- effectiveShortcuts is always normalized to an array by the loader (line 13) before this resolves, so the ?? [] fallback is unreachable */
         for (const shortcut of action.effectiveShortcuts ?? []) {
             shortcutService.bindGlobalShortcut(shortcut, () => appContext.triggerCommand(action.actionName, { ntxId: appContext.tabManager.activeNtxId }));
         }
     }
-});
+}
 
 async function getAction(actionName: string, silent = false) {
     await keyboardActionsLoaded;
@@ -129,6 +137,7 @@ function updateDisplayedShortcuts($container: JQuery<HTMLElement>) {
 
 export default {
     updateDisplayedShortcuts,
+    setupWindowShortcuts,
     setupActionsForElement,
     getAction,
     getActions,

@@ -1,6 +1,0 @@
-/* The card scrolls its own body (see RightPanelContainer.css), so the list is not capped a second time
-   within it — the cap in SimilarNotesTab.css is for the ribbon's tab, which has no such frame around it. */
-#right-pane .similar-notes-widget .similar-notes-wrapper {
-    max-height: unset;
-    padding: 0;
-}

@@ -1,8 +1,8 @@
 import branchService from "./branches.js";
 import toastService from "./toast.js";
 import froca from "./froca.js";
+import { copyHtml } from "./clipboard_ext.js";
 import linkService from "./link.js";
-import utils from "./utils.js";
 import { t } from "./i18n.js";
 import { throwError } from "./ws.js";
 
@@ -83,26 +83,26 @@ async function copy(branchIds: string[]) {
     clipboardBranchIds = branchIds;
     clipboardMode = "copy";
 
-    if (utils.isElectron()) {
-        // https://github.com/zadam/trilium/issues/2401
-        const htmlParts: string[] = [];
-        const textParts: string[] = [];
+    // Reference links go onto the system clipboard as well, so the notes can be pasted into the
+    // content of another note. https://github.com/zadam/trilium/issues/2401
+    const htmlParts: string[] = [];
+    const textParts: string[] = [];
 
-        for (const branch of froca.getBranches(clipboardBranchIds)) {
-            const $link = await linkService.createLink(`${branch.parentNoteId}/${branch.noteId}`, { referenceLink: true });
-            htmlParts.push($link[0].outerHTML);
-            textParts.push($link.text());
-        }
-
-        await navigator.clipboard.write([
-            new ClipboardItem({
-                "text/html": new Blob([htmlParts.join(", ")], { type: "text/html" }),
-                "text/plain": new Blob([textParts.join(", ")], { type: "text/plain" })
-            })
-        ]);
+    for (const branch of froca.getBranches(clipboardBranchIds)) {
+        const $link = await linkService.createLink(`${branch.parentNoteId}/${branch.noteId}`, { referenceLink: true });
+        htmlParts.push($link[0].outerHTML);
+        textParts.push($link.text());
     }
 
-    toastService.showMessage(t("clipboard.copied"));
+    // The notes sit on Trilium's own clipboard either way, so a refused system clipboard only costs
+    // the ability to paste them into a note's content.
+    const linksCopied = htmlParts.length === 0 || (await copyHtml(htmlParts.join(", "), textParts.join(", ")));
+
+    if (linksCopied) {
+        toastService.showMessage(t("clipboard.copied"));
+    } else {
+        toastService.showMessage(t("clipboard.copied_without_links"), 5000, "bx bx-error");
+    }
 }
 
 function cut(branchIds: string[]) {

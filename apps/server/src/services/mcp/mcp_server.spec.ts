@@ -52,8 +52,10 @@ const mutateRegistry: any = [
     ["mutate_tool", { description: "m", inputSchema: {}, mutates: true, execute: mutateExecute }]
 ];
 
+const resolveToolRegistriesMock = vi.fn(async () => {});
 vi.mock("@triliumnext/core/src/services/llm/tools/index.js", () => ({
-    allToolRegistries: [readRegistry, mutateRegistry]
+    allToolRegistries: [readRegistry, mutateRegistry],
+    resolveToolRegistries: resolveToolRegistriesMock
 }));
 
 const { createMcpServer } = await import("./mcp_server.js");
@@ -69,16 +71,17 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("createMcpServer", () => {
-    it("registers every tool from all registries", () => {
-        const server = createMcpServer();
+    it("registers every tool from all registries, after resolving the lazy ones", async () => {
+        const server = await createMcpServer();
 
         expect(server).toBeInstanceOf(FakeMcpServer);
         expect((server as any).info).toMatchObject({ name: "trilium-notes", version: "9.9.9-test" });
         expect(registered.map((r) => r.name)).toEqual(["read_tool", "mutate_tool"]);
+        expect(resolveToolRegistriesMock).toHaveBeenCalled();
     });
 
-    it("runs a read-only tool inside CLS without a transaction", () => {
-        createMcpServer();
+    it("runs a read-only tool inside CLS without a transaction", async () => {
+        await createMcpServer();
         const read = registered.find((r) => r.name === "read_tool")!;
 
         const result = read.callback({ foo: 1 });
@@ -89,8 +92,8 @@ describe("createMcpServer", () => {
         expect(result).toEqual({ content: [{ type: "text", text: JSON.stringify({ ok: "read" }) }] });
     });
 
-    it("runs a mutating tool inside CLS + a transaction", () => {
-        createMcpServer();
+    it("runs a mutating tool inside CLS + a transaction", async () => {
+        await createMcpServer();
         const mutate = registered.find((r) => r.name === "mutate_tool")!;
 
         const result = mutate.callback({ bar: 2 });

@@ -1,0 +1,69 @@
+/*
+ * A custom property only animates once it is registered with a type, so the two ends are declared as
+ * lengths for the transition below to have something to interpolate: the mask is recomputed as they
+ * grow, and a fade arrives and leaves over its 300ms instead of appearing whole. Where `@property` is
+ * not supported the fades simply snap, as they did before, and the `var()` fallbacks in the mask keep
+ * standing in for the initial values.
+ */
+@property --scrollable-label-fade-start {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --scrollable-label-fade-end {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+/*
+ * One line of text, swiped along where it does not fit, fading out at whichever edge it continues
+ * past. The fade is a mask rather than a painted gradient, as `.scroll-edge-fade` in style.css is for
+ * the vertical axis: it holds over any background, including a semi-transparent tint over a window
+ * material, which no painted color could match.
+ *
+ * The two ends are `var()` fallbacks rather than declarations, so a consumer's own fade width wins
+ * regardless of how the stylesheets end up bundled; the classes below are set by the component as the
+ * line is scrolled. The gradient's direction is a variable because a gradient can only be given a
+ * physical one, and the ends swap in a right-to-left page.
+ */
+.scrollable-label {
+    overflow-x: auto;
+    /* The swipe belongs to the label: without this it carries on into whatever the label sits in once
+       the line reaches its end, which on a phone is the page or the gesture that changes tabs. */
+    overscroll-behavior-inline: contain;
+    mask-image: linear-gradient(
+        var(--scrollable-label-direction, to right),
+        transparent,
+        black var(--scrollable-label-fade-start, 0px),
+        black calc(100% - var(--scrollable-label-fade-end, 0px)),
+        transparent
+    );
+    white-space: nowrap;
+    /* No room for a bar under a single line, and nothing for it to say that the fades do not. */
+    scrollbar-width: none;
+    transition:
+        --scrollable-label-fade-start 300ms ease,
+        --scrollable-label-fade-end 300ms ease;
+}
+
+.scrollable-label::-webkit-scrollbar {
+    display: none;
+}
+
+/* Far enough to read as a fade rather than as a cut, and no further: the text under it is still
+   being read. */
+.scrollable-label-fade-start {
+    --scrollable-label-fade-start: 20px;
+}
+
+.scrollable-label-fade-end {
+    --scrollable-label-fade-end: 20px;
+}
+
+/* Flipping the gradient flips which physical edge each end names, so the two stops above go on
+   meaning the start and the end of the line. */
+body[dir=rtl] .scrollable-label {
+    --scrollable-label-direction: to left;
+}

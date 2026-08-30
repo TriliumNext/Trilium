@@ -123,7 +123,7 @@ function HelpIcon({ iconRef, helpMessage, popup, onActivate, onDismiss }: HelpIc
     return (
         <span
             ref={iconRef}
-            className="bx bx-info-circle contextual-help"
+            className="bx bx-info-circle contextual-help-icon"
             role="button"
             tabIndex={0}
             aria-label={t("contextual_help.label", { message: helpMessage })}

@@ -84,28 +84,28 @@ interface PdfSaveSignaturesMessage extends WithContext {
     data: string;
 }
 
-interface PdfViewerTocMessage {
+interface PdfViewerTocMessage extends WithContext {
     type: "pdfjs-viewer-toc";
     data: PdfOutlineItem[];
 }
 
-interface PdfViewerActiveHeadingMessage {
+interface PdfViewerActiveHeadingMessage extends WithContext {
     type: "pdfjs-viewer-active-heading";
     headingId: string;
 }
 
-interface PdfViewerPageInfoMessage {
+interface PdfViewerPageInfoMessage extends WithContext {
     type: "pdfjs-viewer-page-info";
     totalPages: number;
     currentPage: number;
 }
 
-interface PdfViewerCurrentPageMessage {
+interface PdfViewerCurrentPageMessage extends WithContext {
     type: "pdfjs-viewer-current-page";
     currentPage: number;
 }
 
-interface PdfViewerThumbnailMessage {
+interface PdfViewerThumbnailMessage extends WithContext {
     type: "pdfjs-viewer-thumbnail";
     pageNumber: number;
     dataUrl: string;
@@ -118,7 +118,7 @@ interface PdfAttachment {
     size: number;
 }
 
-interface PdfViewerAttachmentsMessage {
+interface PdfViewerAttachmentsMessage extends WithContext {
     type: "pdfjs-viewer-attachments";
     attachments: PdfAttachment[];
     downloadAttachment?: (id: string) => void;
@@ -130,7 +130,7 @@ interface PdfLayer {
     visible: boolean;
 }
 
-interface PdfViewerLayersMessage {
+interface PdfViewerLayersMessage extends WithContext {
     type: "pdfjs-viewer-layers";
     layers: PdfLayer[];
     toggleLayer?: (layerId: string, visible: boolean) => void;
@@ -148,7 +148,7 @@ interface PdfAnnotationInfo {
     modificationDate: string | null;
 }
 
-interface PdfViewerAnnotationsMessage {
+interface PdfViewerAnnotationsMessage extends WithContext {
     type: "pdfjs-viewer-annotations";
     annotations: PdfAnnotationInfo[];
 }

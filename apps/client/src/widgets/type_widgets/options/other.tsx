@@ -10,11 +10,9 @@ import Button from "../../react/Button";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import { useNoteContext, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
 import OptionsPageHeader from "./components/OptionsPageHeader";
-import RelatedSettings from "./components/RelatedSettings";
 import TimeSelector from "./components/TimeSelector";
-import { requestContentManagerSection } from "./content_manager";
 
 export default function OtherSettings() {
     return (
@@ -27,35 +25,7 @@ export default function OtherSettings() {
             <HtmlImportTags />
             <ShareSettings />
             <NetworkSettings />
-            <RelatedActions />
         </>
-    );
-}
-
-function RelatedActions() {
-    const { noteContext } = useNoteContext();
-
-    return (
-        <RelatedSettings
-            title={t("settings.related_actions")}
-            items={[
-                {
-                    title: t("settings.related_space_usage"),
-                    description: t("settings.related_space_usage_description"),
-                    targetPage: "_optionsContentManager",
-                    onClick: (e) => {
-                        // The Content Manager opens on Active Content unless asked otherwise, and
-                        // navigating here rather than by the href is what lets us ask first.
-                        e.preventDefault();
-                        e.stopPropagation();
-                        requestContentManagerSection("spaceUsage");
-                        // Kept in whichever context this page is shown in — the settings dialog
-                        // holds a note context of its own, outside the tab manager.
-                        void noteContext?.setNote("_optionsContentManager", { keepActiveDialog: true });
-                    }
-                }
-            ]}
-        />
     );
 }
 
@@ -90,7 +60,8 @@ function NoteErasureTimeout() {
             heading={t("note_erasure_timeout.note_erasure_timeout_title")}
             description={t("note_erasure_timeout.description")}
         >
-            <OptionCardSection
+            <OptionCardSection
+
                 name="erase-entities-after"
                 label={t("note_erasure_timeout.erase_notes_after")}
                 description={t("note_erasure_timeout.erase_notes_after_description")}
@@ -126,7 +97,8 @@ function AttachmentErasureTimeout() {
             heading={t("attachment_erasure_timeout.attachment_erasure_timeout")}
             description={t("attachment_erasure_timeout.description")}
         >
-            <OptionCardSection
+            <OptionCardSection
+
                 name="erase-unused-attachments-after"
                 label={t("attachment_erasure_timeout.erase_attachments_after")}
                 description={t("attachment_erasure_timeout.erase_attachments_after_description")}
@@ -162,7 +134,8 @@ function RevisionSettings() {
 
     return (
         <Card heading={t("revisions_snapshot.title")}>
-            <OptionCardSection
+            <OptionCardSection
+
                 name="revision-snapshot-time-interval"
                 label={t("revisions_snapshot_interval.snapshot_time_interval_label")}
                 description={t("revisions_snapshot_interval.note_revisions_snapshot_description_short")}
@@ -174,7 +147,8 @@ function RevisionSettings() {
                 />
             </OptionCardSection>
 
-            <OptionCardSection
+            <OptionCardSection
+
                 name="revision-snapshot-number-limit"
                 label={t("revisions_snapshot_limit.snapshot_number_limit_label")}
                 description={t("revisions_snapshot_limit.note_revisions_snapshot_limit_description_short")}

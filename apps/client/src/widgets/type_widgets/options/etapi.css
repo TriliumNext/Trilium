@@ -18,8 +18,3 @@
     color: var(--muted-text-color);
     font-size: 13px;
 }
-
-.etapi-token-actions {
-    display: flex;
-    gap: 4px;
-}

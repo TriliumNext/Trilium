@@ -286,7 +286,8 @@
     "error_creating_anonymized_database": "Impossibile creare un database anonimo, controllare i log del backend per i dettagli",
     "description": "Crea una copia anonimizzata del tuo database da condividere con gli sviluppatori durante la risoluzione dei problemi, senza divulgare dati personali.",
     "anonymized_databases_location": "I database anonimizzati vengono archiviati in {{- anonymizedFolder}}.",
-    "download": "Scarica"
+    "download": "Scarica",
+    "delete_confirmation": "Elimina il database anonimizzato {{fileName}}? Il database originale non subirà alcuna modifica."
   },
   "cpu_arch_warning": {
     "title": "Per favore scarica la versione ARM64",
@@ -790,7 +791,8 @@
     "quickSearch": "concentrati sull'input della ricerca rapida",
     "inPageSearch": "ricerca all'interno della pagina",
     "editShortcuts": "Modifica scorciatoie da tastiera",
-    "toggleArchivedNotes": "Mostra/nascondi le note archiviate"
+    "toggleArchivedNotes": "Mostra/nascondi le note archiviate",
+    "openAiAssistant": "apri l'assistente AI sulla selezione"
   },
   "i18n": {
     "saturday": "Sabato",
@@ -1203,7 +1205,9 @@
     "hoisted_note": "La nota da issare quando un lanciatore apre il suo bersaglio.",
     "share_logo": "Una nota immagine utilizzata come logo della pagina condivisa. Deve essere posizionata all'interno della sottostruttura condivisa.",
     "share_open_graph_image_relation": "Una nota immagine fungeva da <code>og:image</code> della pagina condivisa. Imposta invece l'etichetta con lo stesso nome in modo che punti a un indirizzo.",
-    "share_html": "Una nota HTML inserita nella pagina condivisa, dove <code>#shareHtmlLocation</code> è presente nella nota. Deve trovarsi all'interno del sottoalbero condiviso."
+    "share_html": "Una nota HTML inserita nella pagina condivisa, dove <code>#shareHtmlLocation</code> è presente nella nota. Deve trovarsi all'interno del sottoalbero condiviso.",
+    "template_new_note_default_parent": "Nota relativa all'utilizzo di un modello: le note create a partire dal modello (ad esempio tramite il completamento con @) vengono inserite sotto la nota di destinazione, a meno che non venga esplicitamente scelta un'altra posizione.",
+    "ai_quick_action": "Propone questa nota come istruzione nel menu dell'assistente AI dell'editor di testo. Il titolo indica l'azione, il contenuto è il prompt."
   },
   "attribute_editor": {
     "help_text_body1": "Per aggiungere un'etichetta, basta digitare ad esempio <code>#rock</code> oppure, se si desidera aggiungere anche un valore, ad esempio <code>#year = 2020</code>",
@@ -1431,7 +1435,8 @@
     "new-version-available": "Nuovo aggiornamento disponibile",
     "download-update": "Ottieni la versione {{latestVersion}}",
     "search_notes": "Cerca note",
-    "show_deleted_notes": "Mostra le note eliminate"
+    "show_deleted_notes": "Mostra le note eliminate",
+    "show_space_usage": "Mostra l'utilizzo dello spazio"
   },
   "zen_mode": {
     "button_exit": "Esci dalla modalità Zen"
@@ -1533,7 +1538,8 @@
     "create_child_note_title": "Crea una nota secondaria e aggiungila alla mappa",
     "reset_pan_zoom_title": "Ripristina panoramica e zoom alle coordinate e all'ingrandimento iniziali",
     "zoom_in_title": "Ingrandisci",
-    "zoom_out_title": "Rimpicciolisci"
+    "zoom_out_title": "Rimpicciolisci",
+    "create_child_note_text": "Aggiungi una nota"
   },
   "zpetne_odkazy": {
     "relation": "relazione",
@@ -1597,7 +1603,8 @@
     "open_all_confirm_one": "Verrà aperta {{count}} nota in una nuova scheda. Vuoi continuare?",
     "open_all_confirm_many": "Verranno aperte {{count}} note in nuove schede. Vuoi continuare?",
     "open_all_confirm_other": "Verranno aperte {{count}} note in nuove schede. Vuoi continuare?",
-    "dashboard": "Pannello di controllo"
+    "dashboard": "Pannello di controllo",
+    "open_all_limit_exceeded": "Ci sono troppe note da aprire contemporaneamente ({{count}}). Il limite massimo è {{max}}; prova prima a restringere i risultati."
   },
   "edited_notes": {
     "no_edited_notes_found": "Nessuna nota modificata per questo giorno...",
@@ -1770,7 +1777,8 @@
     "editor_crashed_content": "I tuoi contenuti sono stati recuperati con successo, ma alcune delle modifiche più recenti potrebbero non essere state salvate.",
     "editor_crashed_details_button": "Visualizza ulteriori dettagli...",
     "editor_crashed_details_intro": "Se questo errore si verifica più volte, valuta la possibilità di segnalarlo su GitHub incollando le informazioni riportate di seguito.",
-    "editor_crashed_details_title": "Informazioni tecniche"
+    "editor_crashed_details_title": "Informazioni tecniche",
+    "nothing_selected_to_cut": "Seleziona prima del testo per estrarlo in una nota secondaria."
   },
   "empty": {
     "open_note_instruction": "Apri una nota digitandone il titolo nel campo sottostante oppure scegli una nota nell'albero.",
@@ -2524,9 +2532,7 @@
   },
   "settings": {
     "related_settings": "Impostazioni correlate",
-    "related_actions": "Azioni correlate",
-    "related_space_usage": "Analizzare l'utilizzo dello spazio all'interno del database",
-    "related_space_usage_description": "Scopri quali note, revisioni e allegati occupano più spazio e recuperalo."
+    "related_actions": "Azioni correlate"
   },
   "settings_appearance": {
     "related_code_blocks": "Schema di colori per i blocchi di codice nelle note di testo",
@@ -2592,8 +2598,7 @@
   },
   "server": {
     "unknown_http_error_title": "Errore di comunicazione con il server",
-    "unknown_http_error_content": "Codice di stato: {{statusCode}}\nURL: {{method}} {{url}}\nMessaggio: {{message}}",
-    "traefik_blocks_requests": "Se si utilizza il proxy inverso Traefik, è stata introdotta una modifica sostanziale che influisce sulla comunicazione con il server."
+    "unknown_http_error_content": "Codice di stato: {{statusCode}}\nURL: {{method}} {{url}}\nMessaggio: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Torna alla nota precedente",
@@ -3168,7 +3173,25 @@
     "back": "Indietro"
   },
   "database": {
-    "title": "Database"
+    "title": "Database",
+    "info": "Informazioni sul database",
+    "info_location": "Posizione",
+    "info_location_opfs": "Sistema di file privato di origine del browser (OPFS)",
+    "info_created": "Data di creazione originale",
+    "info_content": "Contenuto",
+    "info_notes_one": "{{count}} nota",
+    "info_notes_many": "{{count}} note",
+    "info_notes_other": "{{count}} note",
+    "info_attachments_one": "{{count}} allegato",
+    "info_attachments_many": "{{count}} allegati",
+    "info_attachments_other": "{{count}} allegati",
+    "info_size": "Dimensioni",
+    "info_backup": "Backup",
+    "info_no_backup": "Non ci sono ancora backup",
+    "maintenance": "Manutenzione",
+    "analyze_space_usage": "Analizzare l'utilizzo dello spazio",
+    "analyze_space_usage_description": "Individua quali appunti occupano più spazio e fatti un’idea più chiara delle loro dimensioni.",
+    "analyze_space_usage_button": "Analizzare"
   },
   "revisions_snapshot": {
     "title": "Note sulle revisioni"
@@ -3393,7 +3416,7 @@
       "task-state": "Stato dell'attività:",
       "text-snippet": "Frammento di testo",
       "text-snippets-found-0": "Frammenti di testo trovati: %0",
-      "tip": "Mancia",
+      "tip": "Suggerimento",
       "title": "Titolo",
       "to-do-list": "Lista delle cose da fare",
       "turn-the-current-block-into-a-heading": "Trasforma il blocco corrente in un'intestazione.",
@@ -3469,7 +3492,12 @@
   },
   "options": {
     "title": "Opzioni",
-    "back": "Torna a tutte le opzioni"
+    "back": "Torna a tutte le opzioni",
+    "search_placeholder": "Impostazioni di ricerca",
+    "search_clear": "Cancella la ricerca",
+    "search_title": "Ricerca per opzioni",
+    "search_hint": "Digita una parola chiave per effettuare una ricerca in tutte le pagine delle impostazioni.",
+    "search_no_results": "Nessuna impostazione corrisponde a ciò che stai cercando."
   },
   "split_editor": {
     "show_details": "Mostra i dettagli",
@@ -3645,9 +3673,7 @@
     "note_paths_what": "Una nota può trovarsi contemporaneamente in più di una posizione nell'albero delle note, e ciascuna di queste posizioni è elencata qui come un percorso.",
     "note_paths_cloning": "L'aggiunta di un percorso si chiama clonazione: non viene copiato nulla, quindi una modifica apportata a un percorso sarà visibile a tutti gli altri, e la rimozione di un percorso la nota rimarrà visibile anche negli altri.",
     "backlinks_what": "Le note che puntano a questa, o tramite un link nel loro testo o tramite una relazione che la nomina.",
-    "backlinks_listing": "Un collegamento testuale viene visualizzato con il passaggio che lo circonda, una relazione con il nome a cui punta. Questa parte del collegamento non è modificabile: scompare quando la nota che lo ha creato elimina il collegamento.",
-    "similar_notes_what": "Note che sembrano correlate a questa, anche se non c'è alcun collegamento tra di esse.",
-    "similar_notes_how": "La somiglianza viene dedotta dal contenuto delle note, dagli attributi e dalle relazioni che esse veicolano, e dalla vicinanza temporale con cui sono state create."
+    "backlinks_listing": "Un collegamento testuale viene visualizzato con il passaggio che lo circonda, una relazione con il nome a cui punta. Questa parte del collegamento non è modificabile: scompare quando la nota che lo ha creato elimina il collegamento."
   },
   "gpx_preview": {
     "distance": "Distanza",
@@ -3804,9 +3830,7 @@
     "sort_by_title": "Titolo",
     "sort_by_date_created": "Data di creazione",
     "no_items": "Nessun contenuto attivo trovato.",
-    "no_items_hint": "Qui verranno elencati gli script, i temi, i modelli e gli snippet che creerai.",
-    "section_active_content": "Contenuti interattivi e modelli",
-    "section_space_usage": "Utilizzo dello spazio"
+    "no_items_hint": "Qui verranno elencati gli script, i temi, i modelli e gli snippet che creerai."
   },
   "space_usage": {
     "loading": "Misurare l'utilizzo dello spazio...",

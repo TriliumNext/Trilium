@@ -1,6 +1,8 @@
+import { getContext } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BrowserRouter, createRouter } from "./browser_router.js";
+import { dbLock } from "./db_lock.js";
 
 const RAW_RESPONSE = Symbol.for("RAW_RESPONSE");
 const encoder = new TextEncoder();
@@ -169,6 +171,24 @@ describe("BrowserRouter result formatting", () => {
         expect(JSON.parse(decodeBody(res.body))).toEqual({ id: "x" });
     });
 
+    it("sends a string result as-is, so an HTML fragment is not JSON-escaped", async () => {
+        const router = new BrowserRouter();
+        router.get("/preview", () => "<table><td>a</td></table>");
+        const res = await router.dispatch("GET", "http://localhost/preview");
+        expect(res.status).toBe(200);
+        expect(res.headers["content-type"]).toContain("text/html");
+        expect(decodeBody(res.body)).toBe("<table><td>a</td></table>");
+    });
+
+    it("sends an error tuple's string as plain text, not a JSON-quoted copy", async () => {
+        const router = new BrowserRouter();
+        router.get("/bad", () => [400, "Description must be a string."]);
+        const res = await router.dispatch("GET", "http://localhost/bad");
+        expect(res.status).toBe(400);
+        expect(res.headers["content-type"]).toContain("text/plain");
+        expect(decodeBody(res.body)).toBe("Description must be a string.");
+    });
+
     it("serializes a plain object as a 200 JSON response", async () => {
         const router = new BrowserRouter();
         router.get("/obj", () => ({ ok: true }));
@@ -264,5 +284,61 @@ describe("BrowserRouter error formatting", () => {
         const res = await router.dispatch("GET", "http://localhost/str");
         expect(res.status).toBe(500);
         expect(JSON.parse(decodeBody(res.body))).toEqual({ message: "plain string" });
+    });
+});
+
+/**
+ * Every route `browser_routes.ts` registers opens its own execution context inside `dbLock`, which
+ * is what keeps one scope live at a time: a synchronous handler cannot be interleaved, and an
+ * asynchronous one holds the connection exclusively. A context opened by `dispatch` itself would
+ * sit outside that lock, so a second request in flight would cover the first — which the first
+ * reads again after its awaits.
+ */
+describe("BrowserRouter execution context", () => {
+    it("leaves a request's context to it while another request dispatches", async () => {
+        const router = new BrowserRouter();
+        const ctx = getContext();
+        let release = () => {};
+        const paused = new Promise<void>((resolve) => { release = resolve; });
+        let seenAfterAwait: string | undefined;
+
+        // Mirrors createAsyncRoute: exclusive for as long as its transaction stays open.
+        router.get("/slow", () => dbLock.runExclusive(() => ctx.init(async () => {
+            ctx.set("componentId", "slow");
+            await paused;
+            seenAfterAwait = ctx.get<string>("componentId");
+            return {};
+        })));
+
+        // Mirrors wrapHandler: shared, and synchronous once it holds the lock.
+        router.get("/quick", () => dbLock.runShared(() => ctx.init(() => {
+            ctx.set("componentId", "quick");
+            return {};
+        })));
+
+        const slow = router.dispatch("GET", "http://localhost/slow");
+        const quick = router.dispatch("GET", "http://localhost/quick");
+        release();
+        await Promise.all([slow, quick]);
+
+        expect(seenAfterAwait).toBe("slow");
+    });
+
+    it("does not open an execution context of its own", async () => {
+        const router = new BrowserRouter();
+        const ctx = getContext();
+        let scoped = true;
+        router.get("/bare", () => {
+            try {
+                ctx.set("componentId", "bare");
+            } catch {
+                scoped = false;
+            }
+            return {};
+        });
+
+        await router.dispatch("GET", "http://localhost/bare");
+
+        expect(scoped).toBe(false);
     });
 });

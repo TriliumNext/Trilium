@@ -1,7 +1,7 @@
 # Launch Bar Widgets
 Launch bar widgets are a subset of <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a> that can be used to render custom buttons and widgets inside the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>.
 
-## Creating a launch bar widget
+## Creating a launch bar widget for the desktop layout
 
 Unlike <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a>, the process of setting up a launch bar widget is slightly different:
 
@@ -14,3 +14,10 @@ Unlike <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a>,
 5.  Give the newly created launcher a name (and optionally a name).
 6.  In the <a class="reference-link" href="../../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> section, modify the _widget_ field to point to the newly created note.
 7.  [Refresh](../../Troubleshooting/Refreshing%20the%20application.md) the UI.
+
+## Mobile layout
+
+Custom launch bar widgets are also supported on the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>. To do so:
+
+1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> → _Advanced_ → _Show Hidden Subtree_.
+2.  Look for _Mobile Launch Bar_ and follow the same creation mechanism as in the previous section.

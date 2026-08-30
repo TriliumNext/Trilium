@@ -38,8 +38,9 @@ export function buildPdf(objects: string[]): Uint8Array {
 export const ATTACHMENT_TEXT = "hello attachment payload";
 
 /**
- * The all-features fixture: two pages, a two-level outline, a highlight plus a text
- * annotation, an embedded attachment, and two optional-content groups (one hidden).
+ * The all-features fixture: two pages, a two-level outline, a highlight plus a text, an ink, a
+ * free-text and a link annotation, an embedded attachment, and two optional-content groups (one
+ * hidden).
  *
  * Kept as a single document so one `getDocument()` call serves every contract test; the
  * per-feature expectations live in the specs.
@@ -55,9 +56,9 @@ export function allFeaturesPdf(): Uint8Array {
         "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>",
         // 3 — page 1, carrying both annotations.
         "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [5 0 R 14 0 R] >>",
-        // 4 — page 2, target of the second outline entry, carrying the two annotations that
-        //     must be filtered out: a link (wrong type) and a highlight with nothing to show.
-        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [16 0 R 17 0 R] >>",
+        // 4 — page 2, target of the second outline entry, carrying a link (the one type the
+        //     sidebar filters out) alongside the annotations it lists without a comment.
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [16 0 R 17 0 R 18 0 R 19 0 R 20 0 R] >>",
         // 5 — highlight annotation with a comment, author and colour.
         "<< /Type /Annot /Subtype /Highlight /Rect [100 700 200 720] "
             + "/Contents (A remark) /T (Alice) /C [1 0 0] "
@@ -87,9 +88,21 @@ export function allFeaturesPdf(): Uint8Array {
             + `stream\n${ATTACHMENT_TEXT}\nendstream`,
         // 16 — a link annotation: a type the sidebar does not display.
         "<< /Type /Annot /Subtype /Link /Rect [50 50 150 70] /A << /S /URI /URI (https://example.com) >> >>",
-        // 17 — a highlight with neither a comment nor highlighted text, so nothing to show.
+        // 17 — a highlight with neither a comment nor highlighted text: what a highlight on a
+        //      page with no extractable glyphs (a scan) looks like.
         "<< /Type /Annot /Subtype /Highlight /Rect [200 200 300 220] "
-            + "/QuadPoints [200 220 300 220 200 200 300 200] >>"
+            + "/QuadPoints [200 220 300 220 200 200 300 200] >>",
+        // 18 — an ink annotation, which is what pdf.js writes for a free-hand highlight.
+        "<< /Type /Annot /Subtype /Ink /Rect [400 400 500 450] /C [0 0 0] "
+            + "/InkList [[400 400 450 450 500 400]] >>",
+        // 19 — a free-text box, what the toolbar's text tool writes. Its own words are its
+        //      contents, so unlike ink it reaches the sidebar with something to show.
+        "<< /Type /Annot /Subtype /FreeText /Rect [100 300 300 340] "
+            + "/Contents (Typed in the box) /DA (/Helv 12 Tf 0 g) >>",
+        // 20 — the other ink: a highlight drawn free-hand, which pdf.js marks with /IT so it
+        //      can be told apart from object 18's pen stroke.
+        "<< /Type /Annot /Subtype /Ink /IT /InkHighlight /Rect [400 100 500 150] /C [1 1 0] "
+            + "/InkList [[400 100 450 150 500 100]] >>"
     ]);
 }
 

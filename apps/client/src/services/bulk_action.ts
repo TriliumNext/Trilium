@@ -95,7 +95,21 @@ function parseActions(note: FNote) {
         .filter((action) => !!action);
 }
 
-export async function executeBulkActions(targetNoteIds: string[], actions: BulkAction[], includeDescendants = false) {
+export interface BulkActionOptions {
+    /** Whether to apply the actions to every descendant of the given notes as well. */
+    includeDescendants?: boolean;
+    /**
+     * Whether to skip the "bulk actions executed" toast, for a caller whose own UI already
+     * shows the result of the change.
+     */
+    silent?: boolean;
+}
+
+export async function executeBulkActions(
+    targetNoteIds: string[],
+    actions: BulkAction[],
+    { includeDescendants = false, silent = false }: BulkActionOptions = {}
+) {
     await server.post("bulk-action/execute", {
         noteIds: targetNoteIds,
         includeDescendants,
@@ -103,7 +117,10 @@ export async function executeBulkActions(targetNoteIds: string[], actions: BulkA
     });
 
     await ws.waitForMaxKnownEntityChangeId();
-    toast.showMessage(t("bulk_actions.bulk_actions_executed"), 3000);
+
+    if (!silent) {
+        toast.showMessage(t("bulk_actions.bulk_actions_executed"), 3000);
+    }
 }
 
 export default {

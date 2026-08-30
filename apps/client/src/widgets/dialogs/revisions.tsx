@@ -31,7 +31,7 @@ import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } fro
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
 import { RawHtmlBlock, SanitizedHtml } from "../react/RawHtml";
-import PdfViewer from "../type_widgets/file/PdfViewer";
+import PdfViewer, { getPdfUrl } from "../type_widgets/file/PdfViewer";
 import { applyReferenceLinks } from "../type_widgets/text/read_only_helper";
 
 const DIFFABLE_TYPES = ["text", "code", "mermaid"];
@@ -844,7 +844,7 @@ function FilePreviewInner({ revisionItem, fullRevision }: { revisionItem: Revisi
     if (revisionItem.mime === "application/pdf") {
         return (
             <PdfViewer
-                pdfUrl={`../../api/revisions/${revisionItem.revisionId}/download`}
+                pdfUrl={getPdfUrl(`revisions/${revisionItem.revisionId}/download`)}
             />
         );
     }

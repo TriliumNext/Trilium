@@ -660,6 +660,34 @@ export default class TabManager extends Component {
         await this.activateTabContext(newActiveNtxId);
     }
 
+    async focusNoteSplitLeftCommand() {
+        await this.focusAdjacentNoteSplit(-1);
+    }
+
+    async focusNoteSplitRightCommand() {
+        await this.focusAdjacentNoteSplit(1);
+    }
+
+    /**
+     * Moves the focus one pane along inside the active tab. The panes of a tab are a row, so this
+     * stops at either end rather than wrapping around to the far side, and it never crosses into a
+     * neighbouring tab.
+     */
+    private async focusAdjacentNoteSplit(offset: number) {
+        const activeContext = this.noteContexts.find((nc) => nc.ntxId === this.activeNtxId);
+        if (!activeContext) return;
+
+        const panes = activeContext.getMainContext().getSubContexts();
+        const currentIndex = panes.indexOf(activeContext);
+        const targetNtxId = panes[currentIndex + offset]?.ntxId;
+        if (!targetNtxId) return;
+
+        // Activating the pane is what the tree and hoisting follow; the caret is a separate event,
+        // which the type widgets pick up for the pane it names.
+        await this.activateNoteContext(targetNtxId);
+        await this.triggerEvent("focusOnDetail", { ntxId: targetNtxId });
+    }
+
     async closeActiveTabCommand() {
         await this.removeNoteContext(this.activeNtxId);
     }

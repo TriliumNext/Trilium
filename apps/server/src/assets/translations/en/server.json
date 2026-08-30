@@ -39,6 +39,7 @@
     "show-deleted-notes": "Show \"Deleted Notes\" dialog",
     "show-sql-console": "Open \"SQL Console\" page",
     "show-backend-log": "Open \"Backend Log\" page",
+    "show-space-usage": "Open the \"Space Usage\" page",
     "show-help": "Open the built-in User Guide",
     "show-cheatsheet": "Show a modal with common keyboard operations",
     "show-shortcut-hints": "Show keyboard shortcuts for the focused widget",
@@ -70,7 +71,14 @@
     "save-named-revision": "Save a named revision of the active note",
     "toggle-book-properties": "Toggle Collection Properties",
     "toggle-classic-editor-toolbar": "Toggle the Formatting tab for the editor with fixed toolbar",
-    "toggle-zen-mode": "Enables/disables the zen mode (minimal UI for more focused editing)"
+    "toggle-zen-mode": "Enables/disables the zen mode (minimal UI for more focused editing)",
+    "create-new-split": "Open a new empty split to the right of the active one",
+    "close-active-split": "Close the active split, keeping the other splits of the tab open",
+    "focus-split-left": "Move the focus to the split on the left of the active one",
+    "focus-split-right": "Move the focus to the split on the right of the active one",
+    "split-view": "Split view",
+    "move-split-left": "Swap the active split with the one on its left, so the note moves and the focus follows it",
+    "move-split-right": "Swap the active split with the one on its right, so the note moves and the focus follows it"
   },
   "keyboard_action_names": {
     "back-in-note-history": "Back in Note History",
@@ -130,6 +138,7 @@
     "show-deleted-notes": "Show Deleted Notes",
     "show-sql-console": "Show SQL Console",
     "show-backend-log": "Show Backend Log",
+    "show-space-usage": "Show Space Usage",
     "show-help": "Show Help",
     "show-cheatsheet": "Show Cheatsheet",
     "show-shortcut-hints": "Show Shortcut Hints",
@@ -173,7 +182,13 @@
     "reset-zoom-level": "Reset Zoom Level",
     "copy-without-formatting": "Copy Without Formatting",
     "force-save-revision": "Force Save Revision",
-    "save-named-revision": "Save Named Revision"
+    "save-named-revision": "Save Named Revision",
+    "create-new-split": "Create New Split",
+    "close-active-split": "Close Active Split",
+    "move-split-left": "Move Split Left",
+    "move-split-right": "Move Split Right",
+    "focus-split-left": "Focus Split to the Left",
+    "focus-split-right": "Focus Split to the Right"
   },
   "login": {
     "title": "Login",
@@ -260,6 +275,7 @@
     "task-state-attr-is-completed": "Counts as completed",
     "task-state-attr-color": "Color",
     "task-state-attr-is-hidden": "Hidden from list",
+    "space-usage-title": "Space Usage",
     "backend-log-title": "Backend Log",
     "custom-dictionary-title": "Custom Dictionary",
     "user-hidden-title": "User Hidden",
@@ -331,7 +347,8 @@
     "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "This note type cannot be displayed."
+    "note-cannot-be-displayed": "This note type cannot be displayed.",
+    "included-note-requires-credentials": "This included note is password-protected and cannot be displayed here."
   },
   "onenote_import": {
     "root-title": "OneNote import",

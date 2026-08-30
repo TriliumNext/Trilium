@@ -30,12 +30,9 @@
     color: var(--muted-text-color);
 }
 
-/* The specimen is drawn at the user's own family and size, so it can outgrow the screen: on a narrow
-   card it takes the line below the name instead of being carried off the edge. */
-.appearance-fonts .tn-card {
-    container-type: inline-size;
-}
-
+/* The specimen is drawn at the user's own family and size, so it can outgrow the screen: it takes
+   the line below the name earlier than an ordinary option does. Measured against the card, which
+   `Card.css` makes a container. */
 @container (max-width: 600px) {
     .font-option {
         flex-direction: column;

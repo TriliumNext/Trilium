@@ -119,7 +119,7 @@ La documentación está disponible en varios formatos:
 * [Tema oscuro](https://docs.triliumnotes.org/user-guide/concepts/themes)
   integrado, con soporte para temas personalizados
 * Importación y exportación de
-  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   y
   [Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) para

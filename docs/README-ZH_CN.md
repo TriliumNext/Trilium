@@ -78,7 +78,7 @@ Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序
 * 即使笔记数量超过 10 万条，在易用性和性能方面仍能良好扩展
 * 为智能手机和平板电脑触控优化的[移动前端](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
 * 内置[暗色主题](https://docs.triliumnotes.org/user-guide/concepts/themes)，支持用户主题
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   导入以及 [Markdown
   导入与导出](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * 用于快速保存网页内容的 [Web

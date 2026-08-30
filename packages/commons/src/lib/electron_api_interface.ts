@@ -291,9 +291,11 @@ export interface ElectronShellApi {
 
     /**
      * Opens a `file://` URL with its default OS handler. Exists as a separate
-     * channel from {@link openExternal} because Electron's `shell.openExternal`
-     * mishandles Unicode characters in `file:` URLs on Windows; converting to
-     * a filesystem path and calling `shell.openPath` works correctly.
+     * channel from {@link openExternal} because neither Electron API opens every
+     * target correctly on Windows: `shell.openExternal` mishandles Unicode
+     * characters in `file:` URLs, while `shell.openPath` opens a directory with
+     * the Explorer-specific `explore` verb, bypassing the user's file manager.
+     * The main process picks between them per target.
      *
      * **Security:** the URL must use the `file:` scheme and must have an
      * empty hostname. UNC paths (`file://attacker.example/share/x`) are

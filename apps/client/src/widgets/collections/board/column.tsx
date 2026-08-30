@@ -1,19 +1,26 @@
+import clsx from "clsx";
 import { Fragment } from "preact";
-import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
+import {
+    useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState
+} from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
 
 import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
 import { ContextMenuEvent } from "../../../menus/context_menu";
 import branches from "../../../services/branches";
+import { getHue, parseColor } from "../../../services/css_class_manager";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import { DragData, TREE_CLIPBOARD_TYPE } from "../../note_tree";
+import ActionButton from "../../react/ActionButton";
 import Icon from "../../react/Icon";
+import { IconPickerButton } from "../../react/IconPicker";
 import NoteLink from "../../react/NoteLink";
 import { BoardActionsContext, BoardDragStateContext, TitleEditor } from ".";
 import BoardApi from "./api";
 import Card, { CARD_CLIPBOARD_TYPE, CardDragData } from "./card";
+import { DEFAULT_COLUMN_ICON } from "./columns";
 import { openColumnContextMenu } from "./context_menu";
 
 interface DragContext {
@@ -25,6 +32,9 @@ interface DragContext {
 export default function Column({
     column,
     columnIndex,
+    icon,
+    color,
+    archived,
     isDraggingColumn,
     columnItems,
     api,
@@ -34,6 +44,12 @@ export default function Column({
     isInRelationMode
 }: {
     columnItems?: { note: FNote, branch: FBranch }[];
+    /** The stored icon class, absent until one is picked. Unused in relation mode. */
+    icon?: string,
+    /** The stored CSS colour, absent until one is picked. */
+    color?: string,
+    /** Whether the column is archived. Only ever rendered while archived notes are shown. */
+    archived?: boolean,
     isDraggingColumn: boolean,
     api: BoardApi,
     parentNote: FNote,
@@ -42,6 +58,7 @@ export default function Column({
     isInRelationMode: boolean
 } & DragContext) {
     const [ isVisible, setVisible ] = useState(true);
+    const [ isCreatingNewItem, setIsCreatingNewItem ] = useState(false);
     const { setColumnNameToEdit } = useContext(BoardActionsContext);
     const { branchIdToEdit, columnNameToEdit, dropTarget, draggedCard, dropPosition } = useContext(BoardDragStateContext);
     const isEditing = (columnNameToEdit === column);
@@ -50,13 +67,24 @@ export default function Column({
         column, columnIndex, columnItems, isEditing, api, parentNote
     });
 
-    const handleEdit = useCallback(() => {
-        setColumnNameToEdit(column);
-    }, [column]);
+    const openMenu = useCallback((e: ContextMenuEvent) => {
+        openColumnContextMenu(api, e, {
+            value: column,
+            color,
+            archived,
+            onEditTitle: () => setColumnNameToEdit(column),
+            onNewItem: () => setIsCreatingNewItem(true),
+            onAddColumn: async (direction) => {
+                setColumnNameToEdit(await api.insertColumn(column, direction));
+            }
+        });
+    }, [ api, column, color, archived, setColumnNameToEdit ]);
 
-    const handleContextMenu = useCallback((e: ContextMenuEvent) => {
-        openColumnContextMenu(api, e, column);
-    }, [ api, column ]);
+    // A fully desaturated colour has no hue to tint with, and leaves the column plain.
+    const hue = useMemo(() => {
+        const parsed = color ? parseColor(color) : undefined;
+        return parsed ? getHue(parsed) : undefined;
+    }, [ color ]);
 
     const handleTitleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === "F2") {
@@ -92,12 +120,19 @@ export default function Column({
 
     return (
         <div
-            className={`board-column ${dropTarget === column && draggedCard?.fromColumn !== column ? 'drag-over' : ''}`}
+            data-column={column}
+            className={clsx("board-column", {
+                "drag-over": dropTarget === column && draggedCard?.fromColumn !== column,
+                // The class the themes key a hue off, worn here as anywhere else that carries one.
+                "with-hue": hue !== undefined,
+                "board-column-archived": archived
+            })}
             onDragOver={isAnyColumnDragging ? handleColumnDragOver : handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             style={{
-                display: !isVisible ? "none" : undefined
+                display: !isVisible ? "none" : undefined,
+                "--board-column-custom-hue": hue
             }}
         >
             <h3
@@ -105,10 +140,22 @@ export default function Column({
                 draggable
                 onDragStart={handleColumnDragStart}
                 onDragEnd={handleColumnDragEnd}
-                onContextMenu={handleContextMenu}
+                onContextMenu={openMenu}
                 onKeyDown={handleTitleKeyDown}
                 tabIndex={300}
             >
+                {/* In relation mode the column is a note, and NoteLink already shows that note's
+                    own icon, which is not the board's to change. */}
+                {!isInRelationMode && (
+                    <IconPickerButton
+                        className="column-icon"
+                        icon={icon ?? DEFAULT_COLUMN_ICON}
+                        title={t("board_view.change-column-icon")}
+                        onSelect={(picked) => api.setColumnIcon(column, picked)}
+                        onReset={icon ? () => api.setColumnIcon(column, undefined) : undefined}
+                    />
+                )}
+
                 {!isEditing ? (
                     <>
                         <span className="title">
@@ -116,12 +163,18 @@ export default function Column({
                                 ? <NoteLink notePath={column} showNoteIcon />
                                 : column}
                         </span>
-                        <span className="counter-badge">{columnItems?.length ?? 0}</span>
                         <div className="spacer" />
-                        <span
-                            className="edit-icon icon bx bx-edit-alt"
-                            title={t("board_view.edit-column-title")}
-                            onClick={handleEdit}
+                        <span className="counter-badge">{columnItems?.length ?? 0}</span>
+                        <ActionButton
+                            className="column-menu"
+                            icon="bx bx-dots-vertical-rounded"
+                            text={t("board_view.column-menu")}
+                            onClick={(e) => {
+                                // The header is the column's drag handle and opens this same menu
+                                // on a right click; neither should also fire from the button.
+                                e.stopPropagation();
+                                openMenu(e);
+                            }}
                         />
                     </>
                 ) : (
@@ -161,39 +214,95 @@ export default function Column({
                     <div className="board-drop-placeholder show" />
                 )}
 
-                <AddNewItem api={api} column={column} />
+                <AddNewItem
+                    api={api}
+                    column={column}
+                    itemCount={columnItems?.length ?? 0}
+                    isCreating={isCreatingNewItem}
+                    setIsCreating={setIsCreatingNewItem}
+                />
             </div>
         </div>
     );
 }
 
-function AddNewItem({ column, api }: { column: string, api: BoardApi }) {
-    const [ isCreatingNewItem, setIsCreatingNewItem ] = useState(false);
-    const addItemCallback = useCallback(() => setIsCreatingNewItem(true), []);
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (!isCreatingNewItem && e.key === "Enter") {
-            setIsCreatingNewItem(true);
+/**
+ * The editor a new card is named in, opened by the button below the column or by its menu. The
+ * state is the column's rather than this component's, since the menu is raised from the header.
+ */
+function AddNewItem({ column, api, itemCount, isCreating, setIsCreating }: {
+    column: string,
+    api: BoardApi,
+    /** How many cards stand above it, which is what moves it out of view as they come and go. */
+    itemCount: number,
+    isCreating: boolean,
+    setIsCreating: (isCreating: boolean) => void
+}) {
+    const [ initialTitle, setInitialTitle ] = useState("");
+    const slotRef = useRef<HTMLDivElement>(null);
+
+    // Reaching the button means reaching the end of the column, so what is under it comes into view
+    // with it. The browser scrolls only far enough to show the button itself.
+    const scrollToEnd = useCallback(() => {
+        const content = slotRef.current?.closest(".board-column-content");
+        if (content) {
+            content.scrollTop = content.scrollHeight;
         }
     }, []);
 
+    // A card added lands above the button and pushes it out of sight, and the editor stands taller
+    // than the button it replaces. Neither raises a focus event, so whatever is focused in here has
+    // to be followed back into view.
+    useLayoutEffect(() => {
+        if (slotRef.current?.contains(document.activeElement)) {
+            scrollToEnd();
+        }
+    }, [ itemCount, isCreating, scrollToEnd ]);
+
+    const open = useCallback((title: string) => {
+        setInitialTitle(title);
+        setIsCreating(true);
+    }, [ setIsCreating ]);
+
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (isCreating) return;
+
+        if (e.key === "Enter") {
+            open("");
+            return;
+        }
+
+        // Typing on the button starts the note off with what was typed, rather than asking for it
+        // twice. A printable key is one whose name is the character itself, which no modified press
+        // and none of the named keys are.
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            open(e.key);
+        }
+    }, [ isCreating, open ]);
+
     return (
         <div
-            className={`board-new-item ${isCreatingNewItem ? "editing" : ""}`}
-            onClick={addItemCallback}
+            ref={slotRef}
+            className={`board-new-item ${isCreating ? "editing" : ""}`}
+            onClick={() => open("")}
             onKeyDown={handleKeyDown}
+            onFocus={scrollToEnd}
             tabIndex={300}
         >
-            {!isCreatingNewItem ? (
+            {!isCreating ? (
                 <>
                     <Icon icon="bx bx-plus" />{" "}
                     {t("board_view.new-item")}
                 </>
             ) : (
                 <TitleEditor
+                    currentValue={initialTitle}
                     placeholder={t("board_view.new-item-placeholder")}
                     save={(title) => api.createNewItem(column, title)}
-                    dismiss={() => setIsCreatingNewItem(false)}
+                    dismiss={() => setIsCreating(false)}
                     mode="multiline" isNewItem
+                    selectOnFocus={false}
                 />
             )}
         </div>

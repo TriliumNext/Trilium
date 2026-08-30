@@ -17,6 +17,8 @@
 }
 
 .shortcut-header-filter {
+    /* The row measures itself, standing outside the cards and out of reach of their container. */
+    container-type: inline-size;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -27,15 +29,36 @@
         flex: 1;
     }
 
-    .dropdown,
-    > .btn {
+    > .dropdown {
         flex: 0 0 auto;
-        white-space: nowrap;
     }
 
     /* Highlight the filter button while a filter is applied. */
     .icon-action.active {
         color: var(--link-color);
+    }
+}
+
+/* The page's own actions, held as one item so they travel together when the row breaks. */
+.shortcut-header-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.5em;
+
+    > .btn {
+        white-space: nowrap;
+    }
+}
+
+/* Too little room for one line: the filter keeps the first with its button, and the actions take
+   the second, sharing it evenly between them. */
+@container (max-width: 500px) {
+    .shortcut-header-actions {
+        flex-basis: 100%;
+
+        > .btn {
+            flex: 1;
+        }
     }
 }
 
@@ -161,15 +184,17 @@
         }
     }
 
-    /* A card option stacks itself only for a button or a slider, and the editor is neither. */
-    body.mobile & {
-        .tn-card-option {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
+    /* The card stacks the row at this width on its own, so the chips read from the leading edge
+       rather than staying pushed against the trailing one. */
+    @container (max-width: 500px) {
         .shortcut-editor {
             justify-content: flex-start;
+        }
+
+        /* Read from the leading edge, the recorder stands after however many chips the row holds,
+           so there is no column left for the empty slot to hold open — only a hole before it. */
+        .shortcut-revert-slot:empty {
+            display: none;
         }
     }
 }

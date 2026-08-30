@@ -117,7 +117,7 @@ Onze documentatie is beschikbaar in meerdere formaten:
 * Ingebouwd [donker
   thema](https://docs.triliumnotes.org/user-guide/concepts/themes),
   ondersteuning voor gebruikera thema's
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   en [Markdown importeren &
   exporteren](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) om

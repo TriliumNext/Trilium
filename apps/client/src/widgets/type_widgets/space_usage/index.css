@@ -1,0 +1,209 @@
+/* The page replaces the note's scrolling with a viewport-filling layout: the flex chain runs from
+   the scroll container down to the section, so the charts get the pane's full height. */
+.scrolling-container:has(.space-usage-page) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.note-detail:has(.space-usage-page),
+.note-detail:has(.space-usage-page) .note-detail-content-widget,
+.note-detail:has(.space-usage-page) .note-detail-content-widget-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* The page itself does not scroll (whichever view is on show scrolls inside itself), so the bar
+   holds its place as a fixed-size flex item. The rule under it separates it from that view. */
+.space-usage-toolbar {
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5em;
+    border-bottom: 1px solid var(--main-border-color);
+    padding-bottom: 10px;
+}
+
+/* Reads as secondary to the note's own title above it. Set on the buttons, which carry their own
+   font size and so would not inherit one from the group. */
+.space-usage-view-choice button {
+    font-size: 0.85em;
+}
+
+.space-usage-page {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+
+    .space-usage-overview {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding-block: 8px;
+    }
+
+    /* Reads as a caption under the chart rather than a bar fenced off from it: centered, muted and
+       unruled, so the map keeps the eye and the totals stay available underneath it. */
+    .space-usage-status {
+        display: flex;
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.6em;
+        color: var(--muted-text-color);
+        font-size: 0.75em;
+    }
+
+    .space-usage-status-separator {
+        opacity: 0.6;
+    }
+
+    .space-usage-loading {
+        opacity: 0.7;
+    }
+}
+
+/*
+ * A phone has no width for the map to spread sideways, so it is given length instead: the page scrolls
+ * and the map is drawn a few screens tall. Keyed on `body.mobile`, as the rest of the app's phone
+ * layout is.
+ */
+body.mobile {
+    /* The viewport is already taller than the map area left over once the note's title, the toolbar,
+       the totals and the bottom bar have taken theirs, so this is around three of that area's own
+       heights of scrolling: enough for a note that would be a hairline across a narrow pane to hold
+       an area worth reading. */
+    --space-usage-mobile-map-height: 200dvh;
+
+    /* The page is the scroller, so everything in it travels: the totals lead the map rather than
+       trailing it, and leave the screen along with it as the map is walked down. A line held still
+       against moving cells reads as a bar stuck to the screen, which is what this is not. */
+    .space-usage-page {
+        overflow-y: auto;
+
+        /* The one exception: the view choice, the cleanup and the refresh stay put, so switching
+           views or asking for a fresh reading never means scrolling back up for the button. Sticks
+           the way the options pages' own header bar does.
+
+           Deliberately left at the default order, which is what keeps it first: only the overview's
+           own parts are reordered below, so whatever else a view puts on the page (Browse's chart,
+           either placeholder) still follows the bar as it does in the markup. */
+        .space-usage-toolbar {
+            position: sticky;
+            top: 0;
+            /* Above the 1-5 Bootstrap gives a control to lift it over its neighbours, below a
+               dropdown menu (999), which is meant to open over the bar. */
+            z-index: 10;
+            /* Opaque, or the cells would show through the bar on their way past it. */
+            background: var(--main-background-color);
+        }
+
+        /* Where the status line's sentences go on a phone (see StatusGrid): above the map, as the
+           line was, and no taller than the figures it holds. */
+        .space-usage-status-figures {
+            order: 1;
+            flex: 0 0 auto;
+            margin-block: 12px 8px;
+        }
+
+        /* Sized by the map it holds rather than by what is left of the screen: the page scrolls, so
+           there is no height here to fill. The room below is the strip's own height, measured by the
+           page: the strip stands over the map until the end of the scroll, and every cell has to be
+           reachable clear of it. */
+        .space-usage-overview {
+            order: 2;
+            flex: 0 0 auto;
+            padding-bottom: calc(8px + var(--space-usage-strip-height, 0px));
+        }
+
+        .space-usage-selection {
+            order: 3;
+        }
+    }
+
+    /* Outranks the primitive's own `height: 100%`, which is the whole point: the map is no longer
+       what fits on screen. */
+    .space-usage-overview .treemap {
+        height: var(--space-usage-mobile-map-height);
+    }
+}
+
+/* The totals as a grid of figures, two to a row until there is width for all four. Only a phone draws
+   it, but how a figure reads is no more about a phone than anything else on the page, so the look sits
+   here and the placing stays in the block above with the rest of what a phone moves.
+
+   The row measures itself against the element around it, which carries nothing else: a container
+   cannot answer its own query, so the two are separate elements rather than one. Flex rather than
+   columns, because how many go on a line is then a basis the cells can be given. */
+.space-usage-status-figures {
+    container-type: inline-size;
+}
+
+.space-usage-status-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 16px;
+}
+
+.space-usage-status-cell {
+    display: flex;
+    flex-direction: column;
+    /* Half a line less its share of the gap, so exactly two sit on one. */
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+}
+
+/* Room enough for all four: one row, each cell no wider than what it holds, the four set about the
+   middle of the row rather than spread across it. The gap opens up with them, or four cells that have
+   stopped filling the row read as one crowded block.
+
+   What is centred is the row, not what is written in it: inside a cell the label and the figure keep
+   to the writing direction, as they do on every other line of the page. */
+@container (min-width: 600px) {
+    .space-usage-status-grid {
+        column-gap: 48px;
+    }
+
+    .space-usage-status-cell {
+        flex: 0 1 auto;
+    }
+}
+
+/* What the figure is of, said quietly: it is read once, and the figure under it every time. */
+.space-usage-status-label {
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+}
+
+/* The same size and weight the selection strip gives a note's name, the other figure a phone reads
+   off this page. */
+.space-usage-status-value {
+    margin-top: -0.1em;
+    font-size: 1.35em;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* The bucket cells stand for no single note but for a crowd of them: the diagonal stripes set them
+   apart from the solid note cells without spending a hue (user themes make any fixed palette
+   unreliable), their hover tooltip says which crowd, and they respond to nothing.
+   Repeats .treemap-cell to outrank the primitive's cursor rule. */
+.space-usage-overview {
+    .treemap-cell.treemap-cell-other,
+    .treemap-cell.treemap-cell-hidden,
+    .treemap-cell.treemap-cell-revisions,
+    .treemap-cell.treemap-cell-deleted {
+        --space-usage-treemap-cell-background: repeating-linear-gradient(
+            -45deg,
+            var(--accented-background-color) 0 5px,
+            transparent 5px 10px
+        );
+
+        border: 1px dashed var(--main-border-color);
+        cursor: default;
+    }
+}

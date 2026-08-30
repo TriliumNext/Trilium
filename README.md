@@ -58,7 +58,7 @@ Our documentation is available in multiple formats:
 * Scales well in both usability and performance upwards of 100 000 notes
 * Touch optimized [mobile frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) for smartphones and tablets
 * Built-in [dark theme](https://docs.triliumnotes.org/user-guide/concepts/themes), support for user themes
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote) and [Markdown import & export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html) and [Markdown import & export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for easy saving of web content
 * Customizable UI (sidebar buttons, user-defined widgets, ...)
 * [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics), along with a Grafana Dashboard.

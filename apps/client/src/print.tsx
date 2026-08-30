@@ -206,4 +206,5 @@ export async function loadCustomCss(note: FNote) {
     await Promise.allSettled(loadPromises);
 }
 
-main();
+/** index.ts holds the splash up until the note has rendered. */
+export const ready = main();

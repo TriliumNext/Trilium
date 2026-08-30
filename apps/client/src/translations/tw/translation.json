@@ -48,7 +48,9 @@
     "scripting-error": "腳本筆記執行失敗",
     "unhandled-error": {
       "title": "背景任務執行失敗",
-      "details-button": "查看詳情…"
+      "details-button": "查看詳情…",
+      "details-intro": "應用程式仍在運行，您的筆記未受影響。如果這種情況持續發生，請考慮在 GitHub 上報告，並貼上以下資訊。",
+      "details-title": "技術資訊"
     }
   },
   "add_link": {
@@ -61,7 +63,9 @@
     "link_title": "連結標題",
     "button_add_link": "新增連結",
     "anchor": "錨點（可選）",
-    "anchor_none": "無（連結至筆記）"
+    "anchor_none": "無（連結至筆記）",
+    "edit_link": "編輯連結",
+    "button_edit_link": "儲存連結"
   },
   "branch_prefix": {
     "edit_branch_prefix": "編輯分支前綴",
@@ -107,8 +111,12 @@
     "cancel": "取消",
     "ok": "確定",
     "are_you_sure_remove_note": "確定要從關聯圖中移除筆記 \"{{title}}\" ？ ",
-    "if_you_dont_check": "如果不勾選此項，筆記將僅從關聯圖中移除。",
-    "also_delete_note": "同時刪除筆記"
+    "if_you_dont_check": "便條本身被保留；只是它在這裡的位置被移除了。",
+    "also_delete_note": "同時刪除筆記",
+    "delete_note_keeps_note_one": "這個便條有 {{count}} 個其他複本，因此便條本身被保留。",
+    "delete_note_keeps_note_other": "",
+    "delete_note_deletes_note": "這是該註解在樹中的唯一位置，因此註解本身將被刪除。這可以在最近的更動中復原。",
+    "delete_note_deletes_clones": "該註解將從它出現的所有 {{places}} 處被刪除。此操作可以在最近的更改中還原。"
   },
   "delete_notes": {
     "delete_all_clones_description": "同時刪除所有克隆（可以在最近修改中撤消）",
@@ -212,7 +220,8 @@
     "newTabNoteLink": "在新分頁開啟筆記連結",
     "newTabWithActivationNoteLink": "在新分頁開啟並切換至筆記連結",
     "editShortcuts": "編輯鍵盤快捷鍵",
-    "toggleArchivedNotes": "顯示/隱藏已歸檔的筆記"
+    "toggleArchivedNotes": "顯示/隱藏已歸檔的筆記",
+    "openAiAssistant": "在選取上打開 AI 助手"
   },
   "import": {
     "importIntoNote": "匯入至筆記",
@@ -222,7 +231,7 @@
     "safeImport": "安全匯入",
     "explodeArchivesTooltip": "根據 <code>.zip</code>、<code>.enex</code> 及 <code>.opml</code> 壓縮檔中的檔案建立筆記。若此功能關閉，則壓縮檔將以原始狀態附加。",
     "explodeArchives": "讀取<code>.zip</code>、<code>.enex</code>和<code>.opml</code>封存文件的內容。",
-    "shrinkImagesTooltip": "調整圖片大小並進行最佳化以節省空間，此過程可能會略微降低畫質。此功能不適用於帶有元資料的 <code>.zip</code> 匯入檔案，因這些檔案被視為已進行最佳化。",
+    "shrinkImagesTooltip": "減小導入圖片的大小，這可能會略微降低其品質。不適用於包含 Trilium 元資料的 <code>.zip</code> 導入，其圖片被假定已經壓縮過。",
     "shrinkImages": "壓縮圖片",
     "textImportedAsText": "如果元數據不明確，將HTML、Markdown和TXT匯入為文字筆記",
     "codeImportedAsCode": "如果詮釋資料不明確，將識別的程式碼檔案（例如<code>.json</code>）匯入為程式碼筆記",
@@ -242,12 +251,14 @@
     "import_from": "從…匯入",
     "cardName": "檔案及其他格式",
     "cardDescription": "ZIP、ENEX、OPML、Markdown、HTML、圖片等",
-    "shrinkImagesProviderTooltip": "調整圖片大小並進行最佳化以節省空間，此過程可能會略微降低畫質。",
+    "shrinkImagesProviderTooltip": "減小導入影像的尺寸，這可能會略微降低其品質。",
     "spreadsheetImportedAsSpreadsheet": "將 CSV 和 Excel 檔案匯入為可編輯的試算表，而非單純的檔案",
     "starting": "正在匯入……",
     "in-progress-with-total": "已匯入 {{progress}}/{{total}} 則筆記",
     "extracting": "已提取 {{progress}}/{{total}} 項內容",
-    "processing": "已處理 {{progress}}/{{total}} 則筆記"
+    "processing": "已處理 {{progress}}/{{total}} 則筆記",
+    "throttled": "服務正在對請求進行速率限制；導入正在等待訪問恢復…",
+    "throttled-with-total": "已匯入 {{progress}} 筆，共 {{total}} 筆筆記 — 服務正在限制請求，正在等待重新獲取存取權…"
   },
   "include_note": {
     "dialog_title": "內嵌筆記",
@@ -2207,8 +2218,7 @@
   },
   "server": {
     "unknown_http_error_title": "與伺服器通訊錯誤",
-    "unknown_http_error_content": "狀態碼：{{statusCode}}\n網址：{{method}} {{url}}\n訊息：{{message}}",
-    "traefik_blocks_requests": "若您正在使用 Traefik 反向代理，該代理已引入一項重大變更影響與伺服器的通訊。"
+    "unknown_http_error_content": "狀態碼：{{statusCode}}\n網址：{{method}} {{url}}\n訊息：{{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "返回前一筆記",
@@ -2674,7 +2684,8 @@
     "drop_or_browse_single": "將檔案拖曳至此處，或點擊瀏覽並選擇",
     "drop_or_browse_multiple": "將檔案拖曳至此處，或點擊瀏覽並選擇",
     "browse_single": "點擊以選擇檔案",
-    "browse_multiple": "點擊以選擇多個檔案"
+    "browse_multiple": "點擊以選擇多個檔案",
+    "remove_file": "刪除檔案"
   },
   "import_provider": {
     "choose_provider": "請從上方選擇要匯入的服務。"
@@ -2685,7 +2696,7 @@
     "connect_description": "請使用您的 Microsoft 帳戶登入，以匯入您的 OneNote 筆記本。",
     "connect": "使用 Microsoft 帳戶登入",
     "section_heading": "Microsoft OneNote",
-    "checking": "正在檢查 OneNote 連線……",
+    "checking": "正在連接到 OneNote…",
     "connecting": "正在等待登入完成……",
     "connected_as": "已以 {{name}} 身分登入",
     "disconnect": "中斷連結",
@@ -2695,7 +2706,8 @@
     "select_sections_hint": "OneNote 並未將原始順序包含在匯入資料中，因此章節和群組會依照建立日期進行排序，其排序方式可能與在 OneNote 中的顯示順序不符。",
     "import": "匯入所選內容",
     "attach_source": "附上原始 HTML（除錯）",
-    "attach_source_hint": "將每頁未經修改的 OneNote HTML 儲存為匯入筆記的附件，以便與轉換後的結果進行比對。"
+    "attach_source_hint": "將每頁未經修改的 OneNote HTML 儲存為匯入筆記的附件，以便與轉換後的結果進行比對。",
+    "device_instructions": "打開 Microsoft 登入頁面並輸入此代碼："
   },
   "notion_import": {
     "name": "Notion",

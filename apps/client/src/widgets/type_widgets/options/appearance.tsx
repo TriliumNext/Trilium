@@ -186,6 +186,9 @@ function UserInterface() {
                         {currentFamilyLabel}
                     </>}
                     mobileBottomSheet
+                    // The card is a container, and so a backdrop root: left inside it the menu
+                    // loses its blur and reads as a flat tint.
+                    portalToBody
                 >
                     {THEME_FAMILIES.map(family => (
                         <FormListItem
@@ -537,7 +540,7 @@ function Font({ label, description, sizeDescription, fontFamilyOption, fontSizeO
             >
                 <span className="font-option-preview">
                     <span className="font-option-specimen" style={{ fontFamily: getFontFamily(fontFamily ?? ""), fontSize: `${fontSize}%` }}>{displayLabel}</span>
-                    <span className="bx bx-chevron-right" />
+                    <span className="tn-card-chevron" />
                 </span>
             </OptionCardSection>
 

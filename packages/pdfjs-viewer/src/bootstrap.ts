@@ -3,7 +3,7 @@ import { extractAndSendToc, setupScrollToHeading, setupActiveHeadingTracking } f
 import { setupPdfPages } from "./pages";
 import { setupPdfAttachments } from "./attachments";
 import { setupPdfLayers } from "./layers";
-import { setupPdfAnnotations, setupAnnotationLiveUpdates, extractFromSavedData } from "./annotations";
+import { setupPdfAnnotations, setupAnnotationLiveUpdates } from "./annotations";
 import { commitPendingAnnotationEdits, isAnnotationEditingActive, setAnnotationEditorUIManager, suppressViewerUnloadPrompt } from "./editing";
 
 export async function main() {
@@ -125,14 +125,72 @@ export function manageSave() {
     let pointerDown = false;
     let pointerDownOnPage = false;
 
+    // What the document held when the parent was last told about it. Compared against, rather
+    // than trusted, because pdf.js reports far more than actual changes — see reportIfChanged.
+    let reportedHash = serializedHash() ?? "";
+
+    /**
+     * A digest of everything `saveDocument()` would write out, or `null` while the document
+     * cannot be serialized at all. pdf.js serializes an annotation it has not modified to nothing
+     * at all, so this stays put while the ones already stored in the document are registered, and
+     * moves as soon as one is genuinely edited.
+     *
+     * Unserializable is a state pdf.js passes through rather than an error: it stores an editor
+     * before finishing it, so pressing "Add signature" leaves one with no outlines in
+     * `annotationStorage` until the signature dialog resolves. Callers substitute the hash they
+     * already hold, which counts the document as unchanged until the editor is complete.
+     */
+    function serializedHash(): string | null {
+        try {
+            return (storage as any).serializable.hash;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Reports a possible modification, without asking whether the document really changed —
+     * for signals that can be raised by an edit `annotationStorage` cannot see yet. An ink
+     * drawing session lives outside it until committed, so an interaction that might have
+     * extended one has to be passed on blind.
+     */
     function onChange() {
-        if (!storage) return;
+        reportedHash = serializedHash() ?? reportedHash;
+        storage.resetModified();
+        announceModified();
+    }
+
+    /**
+     * Reports a modification only when the document really did change.
+     *
+     * Both signals routed here fire freely on their own: registering the annotations already
+     * stored on a page raises the storage hook once per annotation, on every toolbar press and
+     * as each annotated page scrolls into view, and a tool's colour picker announces a parameter
+     * change even with nothing selected, where it only sets what the *next* annotation will look
+     * like. Either one had the parent re-serialise and re-upload the whole PDF for nothing
+     * (#11059).
+     *
+     * Safe for the parameter change because pdf.js applies it before this runs: its own listener
+     * was registered at start-up, ours during `documentloaded`, and the event bus calls them in
+     * registration order.
+     */
+    function reportIfChanged() {
+        // Cleared whether or not this turns into an announcement: pdf.js raises the storage hook
+        // once per dirtying, so a flag left set would swallow the next real change.
+        storage.resetModified();
+
+        const hash = serializedHash() ?? reportedHash;
+        if (hash === reportedHash) return;
+        reportedHash = hash;
+        announceModified();
+    }
+
+    function announceModified() {
         window.parent.postMessage({
             type: "pdfjs-viewer-document-modified",
             ntxId: window.TRILIUM_NTX_ID,
             noteId: window.TRILIUM_NOTE_ID
         } satisfies PdfDocumentModifiedMessage, window.location.origin);
-        storage.resetModified();
     }
 
     window.addEventListener("message", async (event) => {
@@ -150,17 +208,14 @@ export function manageSave() {
                 ntxId: window.TRILIUM_NTX_ID,
                 noteId: window.TRILIUM_NOTE_ID
             } satisfies PdfDocumentBlobResultMessage, window.location.origin);
-            // Re-extract annotations from the saved data so new
-            // highlights get their overlaidText populated.
-            extractFromSavedData(data);
         }
     });
 
     (app.pdfDocument.annotationStorage as any).onSetModified = () => {
-        onChange();
+        reportIfChanged();
     };  // works great for most cases, including forms.
     app.eventBus.on("switchannotationeditorparams", () => {
-        onChange();
+        reportIfChanged();
     });
     // Catches deletions of existing annotations, undo/redo, and comment deletion
     // which don't trigger onSetModified or switchannotationeditorparams.

@@ -14,6 +14,9 @@ export const BOARD_TEMPLATE_ID = "_template_board";
 /** The label a board groups by when `#board:groupBy` does not name one. */
 export const DEFAULT_GROUP_BY = "status";
 
+/** The icon a column shows until one is picked for it. */
+export const DEFAULT_COLUMN_ICON = "bx bx-circle";
+
 export interface BoardStatusDefinition {
     /** The definition attribute, wherever it is owned. */
     attribute: FAttribute;
@@ -94,26 +97,49 @@ export function canStoreColumnsInDefinition(statusDefinition: BoardStatusDefinit
  * The columns to show, from the choices the definition offers, the columns the board persisted, and
  * the values its notes actually carry.
  *
- * The definition leads because it is the shared answer — the same list the promoted field and the
- * table view offer — and the other two follow so that a column can never disappear: one the board
- * arranged before it had a definition, or a value a note still holds after the option behind it was
- * renamed away, both keep their place rather than taking their notes with them. Blank entries are
- * dropped and the comparison is exact, since two columns differing only in case are two columns.
+ * The definition leads on membership because it is the shared answer — the same list the promoted
+ * field and the table view offer — and the other two follow so that a column can never disappear:
+ * one the board arranged before it had a definition, or a value a note still holds after the option
+ * behind it was renamed away, both keep their place rather than taking their notes with them. Blank
+ * entries are dropped and the comparison is exact, since two columns differing only in case are two
+ * columns.
+ *
+ * On order the attachment leads instead, wherever it already lists every column (see below).
+ *
+ * @param pendingRenames what the board has just renamed each column to, or `undefined` where it
+ *                       deleted one. The three sources are written one at a time, and a refresh in
+ *                       between would otherwise resolve the old value back and persist it, past
+ *                       which nothing here can drop it again. Substituted rather than skipped, so a
+ *                       renamed column keeps the slot the old name holds in a source still carrying
+ *                       it, rather than dropping behind every option the definition leads with.
  */
 export function resolveBoardColumns(
     definitionOptions: string[],
     persistedColumns: string[],
-    discoveredValues: string[]
+    discoveredValues: string[],
+    pendingRenames: ReadonlyMap<string, string | undefined> = new Map()
 ): string[] {
-    const columns: string[] = [];
-    const seen = new Set<string>();
+    const resolve = (candidates: string[]) => {
+        const columns: string[] = [];
+        const seen = new Set<string>();
 
-    for (const candidate of [ ...definitionOptions, ...persistedColumns, ...discoveredValues ]) {
-        const value = candidate.trim();
-        if (!value || seen.has(value)) continue;
-        seen.add(value);
-        columns.push(value);
-    }
+        for (const candidate of candidates) {
+            const trimmed = candidate.trim();
+            const value = pendingRenames.has(trimmed) ? pendingRenames.get(trimmed) : trimmed;
+            if (!value || seen.has(value)) continue;
+            seen.add(value);
+            columns.push(value);
+        }
 
-    return columns;
+        return columns;
+    };
+
+    const columns = resolve([ ...definitionOptions, ...persistedColumns, ...discoveredValues ]);
+    const persisted = resolve(persistedColumns);
+
+    // The definition leads on which columns there are, but not on the order once the board's own
+    // list holds every one of them: that list is the arrangement made here, which a definition
+    // shared with other notes cannot express, and which it lags by a round trip after every insert
+    // and reorder. Equal lengths are enough to tell, the attachment being one of the sources above.
+    return persisted.length === columns.length ? persisted : columns;
 }

@@ -275,6 +275,13 @@ export function setupShellHandlers() {
     electron.ipcMain.handle("open-file-url", (_event, fileUrl: string) => {
         try {
             const filePath = validateOpenFileUrl(fileUrl);
+
+            if (shouldOpenViaProtocolHandler(filePath)) {
+                return electron.shell.openExternal(url.pathToFileURL(filePath).href)
+                    .then(() => "")
+                    .catch((e) => coreUtils.safeExtractMessageAndStackFromError(e));
+            }
+
             return electron.shell.openPath(filePath);
         } catch (e) {
             getLog().error(`open-file-url failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
@@ -347,6 +354,32 @@ export function setupShellHandlers() {
             getLog().error(`open-custom failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
         }
     });
+}
+
+/**
+ * True when Windows must dispatch a directory through the `file:` protocol handler rather
+ * than `shell.openPath`.
+ *
+ * `shell.openPath` sends a directory to Chromium's `OpenFolderViaShell`, which hardcodes the
+ * `explore` verb — Explorer's own. A third-party file manager registers the default verb
+ * instead, so `explore` never reaches it and the folder always opens in Explorer.
+ * `shell.openExternal` invokes `open` on the URL, letting the shell resolve the handler the
+ * user actually configured. Files already take the default verb, so they keep `openPath`.
+ *
+ * Non-ASCII paths keep `openPath` too: `openExternal` percent-encodes the URL as UTF-8 and
+ * Windows decodes those escapes with the ANSI codepage, so the path arrives mangled. Such a
+ * directory opens in Explorer, which is what it did before this branch existed.
+ */
+function shouldOpenViaProtocolHandler(filePath: string): boolean {
+    if (process.platform !== "win32" || /[\u0080-\uffff]/.test(filePath)) {
+        return false;
+    }
+
+    try {
+        return fs.statSync(filePath).isDirectory();
+    } catch {
+        return false;
+    }
 }
 
 /**

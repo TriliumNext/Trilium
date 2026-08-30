@@ -38,6 +38,15 @@ function reportEscapedError(label: string, message: string, stack?: string) {
     }
 }
 
+/**
+ * Tell the page which startup step the worker has reached, so the splash's progress bar can
+ * advance. Import-free for the same reason as {@link reportEscapedError}: the first of these
+ * fires before any module has loaded. Ids match `STANDALONE_STARTUP_PHASES` in main.ts.
+ */
+function reportStartupPhase(phase: string) {
+    self.postMessage({ type: "STARTUP_PROGRESS", phase });
+}
+
 self.onerror = (message, source, lineno, colno, error) => {
     reportEscapedError(
         "Uncaught error",
@@ -228,6 +237,7 @@ async function initialize(): Promise<void> {
             await logService.initialize();
             logService.info("[Worker] Log service initialized with OPFS");
 
+            reportStartupPhase("sqlite");
             logService.info("[Worker] Initializing SQLite WASM...");
             await sqlProvider!.initWasm();
 
@@ -247,6 +257,7 @@ async function initialize(): Promise<void> {
             // Which pool entry holds the database is a stored answer rather than a constant: a
             // restore cannot rename an entry, so it writes the new database in beside the old one
             // and changes this. Unrestored instances read the name they have always used.
+            reportStartupPhase("database");
             const { readCurrentDatabaseName } = await import('./lightweight/database_restore.js');
             const dbName = await readCurrentDatabaseName();
 
@@ -277,6 +288,7 @@ async function initialize(): Promise<void> {
                 removeBackupLeftovers(backupPool);
             }
 
+            reportStartupPhase("core");
             logService.info("[Worker] Loading @triliumnext/core...");
             const schemaModule = await import("@triliumnext/core/src/assets/schema.sql?raw");
             coreModule = await import("@triliumnext/core");
@@ -345,6 +357,7 @@ async function initialize(): Promise<void> {
             coreModule.sql_init.initializeDb();
 
             if (coreModule.sql_init.isDbInitialized()) {
+                reportStartupPhase("becca");
                 logService.info("[Worker] Database already initialized, loading becca...");
                 await coreModule.becca_loader.beccaLoaded;
 
@@ -359,7 +372,9 @@ async function initialize(): Promise<void> {
                 const dbLocale = coreModule.options.getOptionOrNull("locale");
                 if (dbLocale && dbLocale !== "en") {
                     logService.info(`[Worker] Reconciling i18next locale to "${dbLocale}" from DB`);
-                    await coreModule.i18n.changeLanguage(dbLocale);
+                    // `changeLanguage` rebuilds the hidden subtree, and committing that writes
+                    // entity change ids into the execution context, so it needs one open.
+                    await coreModule.getContext().init(() => coreModule.i18n.changeLanguage(dbLocale));
                 }
             } else {
                 logService.info("[Worker] Database not initialized, skipping becca load (will be loaded during DB initialization)");
@@ -576,6 +591,7 @@ self.onmessage = async (event) => {
         if (!initReceived) {
             initReceived = true;
             console.log("[Worker] Starting initialization...");
+            reportStartupPhase("worker-modules");
             initialize().catch(err => {
                 console.error("[Worker] Initialization failed:", err);
                 self.postMessage({

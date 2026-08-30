@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { IMAGE_MIMES, IMAGE_UPLOAD_SUBTYPES, imageExtensionForMime, imageMimeForExtension, isAcceptedImageMime } from "./image_mimes.js";
+import { IMAGE_MIMES, IMAGE_UPLOAD_SUBTYPES, imageExtensionForMime, imageMimeForExtension, isAcceptedImageMime, isSvgMime } from "./image_mimes.js";
 
 describe("isAcceptedImageMime", () => {
     it("accepts every listed type and nothing else", () => {
@@ -94,5 +94,22 @@ describe("IMAGE_UPLOAD_SUBTYPES", () => {
         for (const subtype of IMAGE_UPLOAD_SUBTYPES) {
             expect(subtype, subtype).not.toContain("/");
         }
+    });
+});
+
+describe("isSvgMime", () => {
+    it("claims both spellings regardless of case or padding, and nothing else", () => {
+        for (const mime of [ "image/svg+xml", "image/svg", "IMAGE/SVG+XML", "  image/svg+xml  " ]) {
+            expect(isSvgMime(mime), mime).toBe(true);
+        }
+
+        // A serving route decides whether to sanitize on this, so anything it wrongly claims is
+        // corrupted on the way out and anything it wrongly rejects is served with its scripts.
+        for (const mime of [ "image/png", "image/svg+xmlish", "text/svg", "application/xml", "" ]) {
+            expect(isSvgMime(mime), mime).toBe(false);
+        }
+
+        expect(isSvgMime(undefined)).toBe(false);
+        expect(isSvgMime(null)).toBe(false);
     });
 });

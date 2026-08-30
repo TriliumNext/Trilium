@@ -108,7 +108,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
     } else if (["image", "canvas", "mindMap", "spreadsheet"].includes(type)) {
         await renderImage(entity, $renderedContent, options);
     } else if (!options.tooltip && type === "office") {
-        await renderOffice(entity, $renderedContent);
+        await renderOffice(entity, $renderedContent, options);
     } else if (!options.tooltip && ["file", "pdf", "audio", "video"].includes(type)) {
         await renderFile(entity, type, $renderedContent, options);
     } else if (type === "mermaid") {
@@ -309,9 +309,9 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
     let mediaOwnsFileActions = false;
 
     if (type === "pdf") {
-        const url = `../../api/${entityType}/${entityId}/open`;
         const $viewer = $(`<div style="height: 100%">`);
-        const PdfViewer = (await import("../widgets/type_widgets/file/PdfViewer")).default;
+        const { default: PdfViewer, getPdfUrl } = await import("../widgets/type_widgets/file/PdfViewer");
+        const url = getPdfUrl(`${entityType}/${entityId}/open`);
         render(h(PdfViewer, {pdfUrl: url, editable: false, toolbar: options.pdfToolbar ?? false}), $viewer.get(0)!);
 
         $content.append($viewer);
@@ -348,9 +348,9 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
  * Renders an inline preview of an office document (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and
  * EPUB) by fetching the server-rendered HTML preview and sanitizing it. On failure it
  * falls back to a notice plus the usual download/open actions, so the file is never left
- * unreachable.
+ * unreachable. `options.trim` asks for the corner of a workbook rather than all of it.
  */
-async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>) {
+async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
     const { entityType, entityId } = getEntityTypeAndId(entity);
 
     // The scroll host is a separate, unpadded element (like the note view's .scrolling-container)
@@ -364,7 +364,16 @@ async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuer
     $renderedContent.append($content);
 
     try {
-        $body.html(await renderOfficeToHtml(entityType, entityId));
+        // A note list asks for a trimmed render: a card shows a few rows, and a workbook that
+        // fills one runs to megabytes the browser would parse and lay out to display none of.
+        const { css, html } = await renderOfficeToHtml(entityType, entityId, { trim: options.trim });
+        $body.html(html);
+        if (css) {
+            // Built as an element with its text set, never parsed as markup, so a cell's styling
+            // cannot escape the rule it belongs to. It sits inside the preview body, so the
+            // browser drops it along with the rest when this note is closed.
+            $body.prepend($("<style>").text(css));
+        }
     } catch (e) {
         console.warn("Failed to render office document preview:", getErrorMessage(e));
         $scroll.remove();

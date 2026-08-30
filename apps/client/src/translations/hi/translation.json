@@ -45,7 +45,11 @@
       "title": "कस्टम React विजेट रेंडर नहीं हो पाया"
     },
     "widget-missing-parent": "कस्टम विजेट में ज़रूरी '{{property}}' प्रॉपर्टी नहीं मिली।\n\nअगर इस स्क्रिप्ट को बिना UI एलिमेंट के चलाना है, तो इसकी जगह '#run=frontendStartup' इस्तेमाल करें।",
-    "scripting-error": "कस्टम स्क्रिप्ट एरर: {{title}}"
+    "scripting-error": "स्क्रिप्ट नोट निष्पादित होने में विफल रहा",
+    "unhandled-error": {
+      "title": "एक बैकग्राउंड टास्क फ़ेल हो गया",
+      "details-button": "और विवरण देखें…"
+    }
   },
   "update_available": {
     "update_available": "उपलब्ध अद्यतन"
@@ -2224,8 +2228,7 @@
   },
   "server": {
     "unknown_http_error_title": "सर्वर के साथ कनेक्शन में एरर",
-    "unknown_http_error_content": "स्टेट्स कोड: {{statusCode}}\nURL: {{method}} {{url}}\nमैसेज: {{message}}",
-    "traefik_blocks_requests": "अगर आप Traefik प्रॉक्सी यूज़ कर रहे हैं, तो इसके बदलावों की वजह से सर्वर से जुड़ने में समस्या हो सकती है।"
+    "unknown_http_error_content": "स्टेट्स कोड: {{statusCode}}\nURL: {{method}} {{url}}\nमैसेज: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "पिछले नोट पर वापस जाएं",

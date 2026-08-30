@@ -121,7 +121,7 @@ Tá ár ndoiciméadacht ar fáil i bhformáidí éagsúla:
 * Téama dorcha
   ionsuite(https://docs.triliumnotes.org/user-guide/concepts/themes), tacaíocht
   do théamaí úsáideora
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   agus [Iompórtáil & Easpórtáil
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Gearrthóir

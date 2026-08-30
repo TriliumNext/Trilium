@@ -88,8 +88,11 @@ const server = vi.hoisted(() => ({
 vi.mock("../../../services/server", () => ({ default: server }));
 
 /** Deleting is asked about first; the answer is the test's to give. */
-const dialog = vi.hoisted(() => ({ confirm: vi.fn(async () => true) }));
-vi.mock("../../../services/dialog", () => ({ default: dialog }));
+const dialog = vi.hoisted(() => ({ confirm: vi.fn(async () => true), closeActiveDialog: vi.fn() }));
+vi.mock("../../../services/dialog", () => ({ default: dialog, closeActiveDialog: dialog.closeActiveDialog }));
+
+const appContext = vi.hoisted(() => ({ triggerCommand: vi.fn(async () => {}) }));
+vi.mock("../../../components/app_context", () => ({ default: appContext }));
 
 const toast = vi.hoisted(() => ({
     showMessage: vi.fn(),
@@ -102,19 +105,10 @@ vi.mock("./components/OptionsPageHeader", () => ({ default: () => null }));
 
 // Maintenance hands over to the Content Manager, which needs a note context to navigate with. Only
 // that hook is replaced: the card rows still need the rest of the module, ID generation included.
-const noteContext = vi.hoisted(() => ({ setNote: vi.fn(async () => {}) }));
-vi.mock("../../react/hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../react/hooks")>()),
-    useNoteContext: () => ({ noteContext })
-}));
-
-const contentManager = vi.hoisted(() => ({ requestContentManagerSection: vi.fn() }));
-vi.mock("./content_manager", () => contentManager);
-
 // Opening the real dialog would measure the whole database and draw its charts; what this page
 // answers for is that it opens one, and what it does with the answer.
 const cleanup = vi.hoisted(() => ({ showCleanupDialog: vi.fn(async () => 1234 as number | null) }));
-vi.mock("./content_manager/space_usage/cleanup_dialog", () => cleanup);
+vi.mock("../space_usage/cleanup_dialog", () => cleanup);
 
 import DatabaseSettings from "./database";
 
@@ -147,8 +141,8 @@ beforeEach(() => {
     standalone.enabled = false;
     BACKUPS = [ { mtime: new Date("2026-01-01T10:00:00Z") }, { mtime: new Date("2026-01-02T10:00:00Z") } ];
     ANONYMIZED = [ ANONYMIZED_COPY ];
-    noteContext.setNote.mockClear();
-    contentManager.requestContentManagerSection.mockClear();
+    dialog.closeActiveDialog.mockClear();
+    appContext.triggerCommand.mockClear();
     cleanup.showCleanupDialog.mockReset().mockResolvedValue(1234);
     server.get.mockClear();
     server.post.mockClear();
@@ -168,7 +162,7 @@ afterEach(() => {
 describe("what the database is", () => {
     /** The facts of the info card, in the order the card states them. */
     function infoValues() {
-        return [ ...container.querySelectorAll(".database-info .database-info-value") ]
+        return [ ...container.querySelectorAll(".database-info .tn-card-option-value") ]
             .map((value) => value.textContent);
     }
 
@@ -228,7 +222,12 @@ describe("what the database is", () => {
         renderPage();
         await settle();
 
-        expect(container.querySelector(".database-info a[href]")?.textContent).toBe("database.info_no_backup");
+        const link = container.querySelector(".database-info a[href]");
+        expect(link?.textContent).toBe("database.info_no_backup");
+        // The row is the way to the backup page, and says on its own what is there: a preview of a
+        // page of settings would tell the reader nothing.
+        expect(link?.getAttribute("href")).toBe("#root/_hidden/_options/_optionsBackup");
+        expect(link?.classList.contains("no-tooltip-preview")).toBe(true);
     });
 
     it("reads the figures again once the database has been compacted", async () => {
@@ -248,25 +247,28 @@ describe("what the database is", () => {
         renderPage();
         await settle();
 
-        // A card of empty rows would state no less, and rather less clearly. The rest of the page
-        // stands: each card answers for itself.
+        // Only `DatabaseInfo` depends on the figures; the other cards render regardless. That
+        // matters most for `SpaceOptions`: a database too large to measure quickly is exactly the
+        // one that needs analyzing and cleaning up.
         expect(container.querySelector(".database-info")).toBeNull();
+        expect(button("analyze-space-usage-button")).not.toBeNull();
+        expect(button("cleanup-button")).not.toBeNull();
         expect(button("check-integrity-button")).not.toBeNull();
     });
 });
 
-describe("database maintenance", () => {
-    it("hands the two tools over to the Content Manager rather than repeating them", async () => {
+describe("space usage and cleanup", () => {
+    it("hands both tools over to Space Usage rather than repeating them", async () => {
         renderPage();
         await settle();
 
         button("analyze-space-usage-button")?.click();
         await settle();
 
-        // The Content Manager opens on Active Content unless asked otherwise, and the page is
-        // reached through this page's own note context — Options can itself be a dialog.
-        expect(contentManager.requestContentManagerSection).toHaveBeenCalledWith("spaceUsage");
-        expect(noteContext.setNote).toHaveBeenCalledWith("_optionsContentManager", { keepActiveDialog: true });
+        // Space Usage stands on its own, so it opens in a tab; Options can itself be a dialog, and
+        // one left standing would cover the tab it just opened.
+        expect(appContext.triggerCommand).toHaveBeenCalledWith("showSpaceUsage");
+        expect(dialog.closeActiveDialog).toHaveBeenCalled();
 
         button("cleanup-button")?.click();
         await settle();
@@ -286,7 +288,9 @@ describe("database maintenance", () => {
 
         expect(server.get.mock.calls.filter(([ url ]) => url === "database/info")).toHaveLength(1);
     });
+});
 
+describe("database maintenance", () => {
     it("runs each check against its own endpoint, and says how it went", async () => {
         renderPage();
         await settle();

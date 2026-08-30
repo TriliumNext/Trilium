@@ -119,7 +119,7 @@ Documentația este disponibilă în mai multe formate:
 * [Temă întunecată](https://docs.triliumnotes.org/user-guide/concepts/themes)
   predefinită, dar și suport pentru teme personalizate
 * Import și export pentru
-  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   și
   [Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper)

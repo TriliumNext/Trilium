@@ -130,6 +130,22 @@ body[dir="rtl"].mobile .modal.mobile-master-detail.mobile-transition-to-list {
         text-overflow: ellipsis;
         flex-grow: 1;
     }
+
+    /* Follows the name it belongs to and takes the slack from there, so it stands beside the title
+       rather than at the far end, where the dialog's own close button is and where a press meant
+       for one would too easily land on the other. */
+    .tn-master-detail-page-actions {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 4px;
+        margin-inline-end: auto;
+    }
+
+    /* The name gives up the slack, the actions after it having taken it on. */
+    &:has(.tn-master-detail-page-actions) .tn-master-detail-title {
+        flex-grow: 0;
+    }
 }
 
 @keyframes tn-master-detail-in-end {

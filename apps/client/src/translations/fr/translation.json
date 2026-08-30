@@ -45,7 +45,13 @@
     },
     "widget-missing-parent": "Le widget personnalisé ne comprend pas de propriété '{{property}}' définie\n\nSi ce script est prévu pour être exécuté sans fonctionnalité UI, utilisez '#run=frontendStartup' plutôt.",
     "open-script-note": "Ouvrir une note script",
-    "scripting-error": "Échec du script personnalisé : {{title}}"
+    "scripting-error": "La note de script n'a pas pu s'exécuter",
+    "unhandled-error": {
+      "title": "Une tâche en arrière-plan a échoué",
+      "details-button": "Voir plus de détails...",
+      "details-intro": "L'application est toujours en cours d'exécution et vos notes ne sont pas affectées. Si cela continue à se produire, envisagez de le signaler sur GitHub en collant les informations ci-dessous.",
+      "details-title": "Informations techniques"
+    }
   },
   "add_link": {
     "add_link": "Ajouter un lien",
@@ -57,7 +63,9 @@
     "link_title": "Titre du lien",
     "button_add_link": "Ajouter un lien",
     "anchor": "Ancre (optionnel)",
-    "anchor_none": "Aucune (lien vers la note)"
+    "anchor_none": "Aucune (lien vers la note)",
+    "edit_link": "Modifier le lien",
+    "button_edit_link": "Enregistrer le lien"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifier le préfixe de branche",
@@ -103,7 +111,7 @@
     "cancel": "Annuler",
     "ok": "OK",
     "are_you_sure_remove_note": "Voulez-vous vraiment supprimer la note « {{title}} » de la carte des relations ? ",
-    "if_you_dont_check": "Si vous ne cochez pas cette case, la note sera seulement supprimée de la carte des relations.",
+    "if_you_dont_check": "La note elle-même est conservée ; seule sa place ici est enlevée.",
     "also_delete_note": "Supprimer également la note"
   },
   "delete_notes": {
@@ -2332,8 +2340,7 @@
   },
   "server": {
     "unknown_http_error_title": "Erreur de communication avec le serveur",
-    "unknown_http_error_content": "Code de statut: {{statusCode}}\nURL: {{method}} {{url}}\nMessage: {{message}}",
-    "traefik_blocks_requests": "Si vous utilisez le reverse proxy Traefik, celui-ci a introduit un changement de rupture qui affecte la communication avec le serveur."
+    "unknown_http_error_content": "Code de statut: {{statusCode}}\nURL: {{method}} {{url}}\nMessage: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Revenir à la note précédente",

@@ -130,7 +130,7 @@
     "cancel": "Cancelar",
     "title": "Eliminar notas",
     "clones_label": "Clones",
-    "delete_clones_description_one": "Eliminar también {{count}} clon adicional. Se puede deshacer en los cambios recientes.",
+    "delete_clones_description_one": "Eliminar también el otro clon. Se puede deshacer en los cambios recientes.",
     "delete_clones_description_many": "Eliminar también {{count}} clones adicionales. Se puede deshacer en los cambios recientes.",
     "delete_clones_description_other": "Eliminar también {{count}} clones adicionales. Se puede deshacer en los cambios recientes.",
     "erase_notes_label": "Borrar permanentemente",
@@ -222,7 +222,8 @@
     "inPageSearch": "búsqueda en la página",
     "title": "Hoja de ayuda",
     "editShortcuts": "Editar atajos de teclado",
-    "toggleArchivedNotes": "mostrar/ocultar notas archivadas"
+    "toggleArchivedNotes": "mostrar/ocultar notas archivadas",
+    "openAiAssistant": "abre el asistente de IA sobre la selección"
   },
   "import": {
     "importIntoNote": "Importar a nota",
@@ -631,7 +632,8 @@
     "share_open_graph_image_relation": "Una nota de imagen servida como <code>og:image</code> de la página compartida. Establezca en su lugar la etiqueta del mismo nombre para apuntar a una dirección.",
     "share_html": "Una nota HTML inyectada en la página compartida, donde indique <code>#shareHtmlLocation</code> en esa nota. Debe situarse dentro del subárbol compartido.",
     "map_dark_style": "Indica a un mapa geográfico que el estilo personalizado dado en <code>map:style</code> es oscuro, para que los títulos de los marcadores se dibujen claros sobre él. Los estilos ofrecidos en las propiedades de la colección ya lo indican por sí mismos y no necesitan esa etiqueta.",
-    "map_cluster": "Agrupa los marcadores dibujados cerca unos de otros en una sola burbuja numerada, que se abre al hacer clic."
+    "map_cluster": "Agrupa los marcadores dibujados cerca unos de otros en una sola burbuja numerada, que se abre al hacer clic.",
+    "ai_quick_action": "Ofrece esta nota como una instrucción en el menú del asistente de IA del editor de texto. El título nombra la acción, el contenido es el mensaje."
   },
   "attribute_editor": {
     "help_text_body1": "Para agregar una etiqueta, simplemente escriba, por ejemplo. <code>#rock</code> o si desea agregar también valor, p.e. <code>#año = 2020</code>",
@@ -992,7 +994,8 @@
     "create_child_note_title": "Crear una subnota y agregarla al mapa",
     "reset_pan_zoom_title": "Restablecer la panorámica y el zoom a las coordenadas y ampliación iniciales",
     "zoom_in_title": "Acercar",
-    "zoom_out_title": "Alejar"
+    "zoom_out_title": "Alejar",
+    "create_child_note_text": "Agregar nota"
   },
   "zpetne_odkazy": {
     "relation": "relación",
@@ -1365,8 +1368,9 @@
     "successfully_created_lightly_anonymized_database": "Se creó una base de datos ligeramente anónima en {{anonymizedFilePath}}",
     "no_anonymized_database_yet": "Aún no hay base de datos anónima.",
     "description": "Crear una copia anónima de su base de datos para compartir con los desarrolladores cuando depuren problemas, sin exponer datos personales.",
-    "anonymized_databases_location": "Las bases de datos anonimizadas se almacenan en {{- anonymizedFolder}}.",
-    "download": "Descargar"
+    "anonymized_databases_location": "Las bases de datos anonimizada se almacenan en <Folder/>.",
+    "download": "Descargar",
+    "delete_confirmation": "¿Eliminar la base de datos anonimizada {{fileName}}? La base de datos original no se ve afectada."
   },
   "database_integrity_check": {
     "title": "Verificación de integridad de la base de datos",
@@ -2526,9 +2530,7 @@
   },
   "settings": {
     "related_settings": "Configuración relacionada",
-    "related_actions": "Acciones relacionadas",
-    "related_space_usage": "Analizar el uso de espacio en la base de datos",
-    "related_space_usage_description": "Vea qué notas, revisiones y archivos adjuntos ocupan más espacio, y recupérelo."
+    "related_actions": "Acciones relacionadas"
   },
   "settings_appearance": {
     "related_code_blocks": "Esquema de colores para bloques de código en notas de texto",
@@ -2654,8 +2656,7 @@
   },
   "server": {
     "unknown_http_error_title": "Error de comunicación con el servidor",
-    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMensaje: {{message}}",
-    "traefik_blocks_requests": "Si está usando el proxy inverso Traefik, este introdujo un cambio que afecta la comunicación con el servidor."
+    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMensaje: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Volver a la nota anterior",
@@ -2911,7 +2912,9 @@
     "start_over": "Empezar de nuevo",
     "start_over_confirm": "Trilium volverá a la pantalla de configuración, donde podrá iniciar una nueva base de conocimientos, restaurar una copia de seguridad o sincronizar desde otro dispositivo. Primero se le ofrecerá una copia de seguridad de sus datos actuales, y no se elimina nada hasta que elija una de esas opciones. ¿Continuar?",
     "start_over_pending": "La pantalla de configuración aparecerá la próxima vez que se reinicie este servidor. Reinicie el servidor cuando esté listo, o cancele a continuación para dejarlo todo como está.",
-    "start_over_cancel": "Cancelar empezar de nuevo"
+    "start_over_cancel": "Cancelar empezar de nuevo",
+    "info": "Información de la base de datos",
+    "info_location": "Ubicación"
   },
   "revisions_snapshot": {
     "title": "Revisiones de nota"
@@ -3363,7 +3366,12 @@
   },
   "options": {
     "title": "Opciones",
-    "back": "Volver a todas las opciones"
+    "back": "Volver a todas las opciones",
+    "search_placeholder": "Configuración de búsqueda",
+    "search_clear": "Borrar la búsqueda",
+    "search_title": "Búsqueda de opciones",
+    "search_hint": "Escribe una palabra clave para buscar en todas las páginas de configuración.",
+    "search_no_results": "Ninguna configuración coincide con lo que estás buscando."
   },
   "image_buttons": {
     "zoom_in": "Acercar",
@@ -3554,9 +3562,7 @@
     "sort_by_title": "Título",
     "sort_by_date_created": "Fecha de creación",
     "no_items": "No se encontró contenido activo.",
-    "no_items_hint": "Los scripts, temas, plantillas y fragmentos que cree aparecerán aquí.",
-    "section_active_content": "Contenido activo y plantillas",
-    "section_space_usage": "Uso de espacio"
+    "no_items_hint": "Los scripts, temas, plantillas y fragmentos que cree aparecerán aquí."
   },
   "dashboard_view": {
     "refresh-widget": "Actualizar",
@@ -3903,9 +3909,7 @@
     "note_paths_what": "Una nota puede situarse en más de un lugar del árbol de notas a la vez, y cada uno de esos lugares se enumera aquí como una ruta.",
     "note_paths_cloning": "Añadir un lugar se llama clonar: no se copia nada, de modo que una edición hecha en una ruta se refleja en todas, y al quitar una ruta la nota permanece en las demás.",
     "backlinks_what": "Las notas que apuntan a esta, ya sea mediante un enlace en su texto o mediante una relación que la nombra.",
-    "backlinks_listing": "Un enlace de texto se enumera con el pasaje que lo rodea; una relación, con el nombre por el que apunta. Este lado del enlace no es editable: desaparece cuando la nota que lo creó elimina el enlace.",
-    "similar_notes_what": "Notas que parecen relacionadas con esta aunque nada las enlace.",
-    "similar_notes_how": "La similitud se calcula a partir del contenido de las notas, de los atributos y relaciones que llevan, y de lo próximas que estuvieron al crearse."
+    "backlinks_listing": "Un enlace de texto se enumera con el pasaje que lo rodea; una relación, con el nombre por el que apunta. Este lado del enlace no es editable: desaparece cuando la nota que lo creó elimina el enlace."
   },
   "attachment_roles": {
     "favicon": "Icono del sitio",

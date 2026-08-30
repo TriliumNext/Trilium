@@ -7,6 +7,8 @@ description: Use when filling in or improving a lagging UI translation locale in
 
 Trilium's UI is localized with **i18next**. English is the source of truth; other locales are normally crowd-translated via **Hosted Weblate**. This skill is for the *maintainer* case: deliberately filling a locale that lags behind (the recurring one is Romanian, `ro`).
 
+**Scope — this skill *fills* an already-registered locale.** To **add a brand-new locale** (e.g. Polish) you must first do the one-time registration and build wiring; that's a separate task. Follow `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md` to register it, then come back here to translate the strings.
+
 Every mechanical step is [locale.mjs](locale.mjs) — measure, export, validate, merge, audit. Read [romanian.md](romanian.md) for Romanian grammar and terminology.
 
 ```bash

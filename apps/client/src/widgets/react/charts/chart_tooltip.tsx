@@ -3,6 +3,16 @@ import "./chart_tooltip.css";
 import clsx from "clsx";
 import { useRef, useState } from "preact/hooks";
 
+import { isMobile } from "../../../services/utils";
+
+/**
+ * A touch screen has no pointer for the bubble to follow: the tap that stands in for a hover leaves it
+ * behind, over the chart, until something else is tapped. What it was there to say is said by the
+ * selection strip instead, which names the mark that was actually chosen. Read once, as the app's
+ * other phone branches do.
+ */
+const SHOWS_TOOLTIPS = !isMobile();
+
 interface ChartTooltipState {
     text: string;
     /** Viewport coordinates: the bubble is positioned fixed, so it escapes any clipping ancestor. */
@@ -41,9 +51,9 @@ export function useChartTooltip<T extends HTMLElement>() {
                 setTooltip((current) => current && { ...current, ...positionOf(event) }),
             onMouseLeave: () => setTooltip(null)
         },
-        /** Called by a mark on hover; a mark without tooltip text shows nothing. */
+        /** Called by a mark on hover; a mark without tooltip text, or a phone, shows nothing. */
         showTooltip: (text: string | undefined, event: { clientX: number, clientY: number }) =>
-            setTooltip(text ? { text, ...positionOf(event) } : null),
+            setTooltip(text && SHOWS_TOOLTIPS ? { text, ...positionOf(event) } : null),
         hideTooltip: () => setTooltip(null),
         /** Render inside the chart, after its marks. */
         tooltipNode: tooltip && (

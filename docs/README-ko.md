@@ -98,7 +98,7 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
   프런트엔드](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
 * 기본 제공 [다크 테마](https://docs.triliumnotes.org/user-guide/concepts/themes) 및 사용자
   테마 지원
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   및 [Markdown 가져오기 및
   내보내기](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * 웹 콘텐츠를 간편하게 저장하는 [웹

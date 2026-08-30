@@ -222,7 +222,7 @@ export interface FixedHeader {
 }
 
 /**
- * Parses and validates the 32 bytes every container starts with, which is as far as a reader can
+ * Parses and validates the 40 bytes every container starts with, which is as far as a reader can
  * get before it knows how long the header is.
  *
  * @param buffer the first {@link FIXED_HEADER_BYTES} bytes of the file.

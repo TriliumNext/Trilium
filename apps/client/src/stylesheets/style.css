@@ -2,13 +2,13 @@
 
 @font-face {
     font-family: Montserrat;
-    src: url(../fonts/Montserrat-Light.ttf);
+    src: url(../fonts/Montserrat-Light.woff2) format("woff2");
     font-weight: normal;
 }
 
 @font-face {
     font-family: Montserrat;
-    src: url(../fonts/Montserrat-SemiBold.ttf);
+    src: url(../fonts/Montserrat-SemiBold.woff2) format("woff2");
     font-weight: bold;
 }
 
@@ -454,6 +454,13 @@ button kbd {
     -webkit-user-select: none;
     --bs-dropdown-zindex: 999;
     --bs-dropdown-link-active-bg: var(--active-item-background-color) !important;
+}
+
+/* A portaled menu (the Dropdown's `portalToBody`) stacks in the root context, so it has to clear a
+   modal (1055) and a stacked quick-edit popup (1100), and stay under the prompts (2000) it can
+   summon. */
+body > .tn-dropdown-portal > .dropdown-menu {
+    --bs-dropdown-zindex: 1200;
 }
 
 body.desktop .dropdown-menu,

@@ -13,7 +13,7 @@ const ROW_HEIGHT = 180;
 const COLUMNS = 2;
 
 export default function PdfPages() {
-    const { note } = useActiveNoteContext();
+    const { note, noteContext } = useActiveNoteContext();
     const noteType = useNoteProperty(note, "type");
     const noteMime = useNoteProperty(note, "mime");
     const pagesData = useGetContextData("pdfPages");
@@ -24,12 +24,12 @@ export default function PdfPages() {
 
     return (pagesData &&
         <RightPanelWidget id="pdf-pages" title={t("pdf.pages", { count: pagesData?.totalPages || 0 })} grow>
-            <PdfPagesList key={note?.noteId} pagesData={pagesData} />
+            <PdfPagesList key={note?.noteId} pagesData={pagesData} ntxId={noteContext?.ntxId} />
         </RightPanelWidget>
     );
 }
 
-function PdfPagesList({ pagesData }: { pagesData: NoteContextDataMap["pdfPages"] }) {
+function PdfPagesList({ pagesData, ntxId }: { pagesData: NoteContextDataMap["pdfPages"]; ntxId: string | null | undefined }) {
     const [thumbnails, setThumbnails] = useState<Map<number, string>>(new Map());
     const requestedThumbnails = useRef<Set<number>>(new Set());
     const containerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +37,8 @@ function PdfPagesList({ pagesData }: { pagesData: NoteContextDataMap["pdfPages"]
 
     useEffect(() => {
         function handleThumbnail(event: CustomEvent) {
+            // Another open PDF renders onto the same window; its pages are not these.
+            if (event.detail.ntxId !== ntxId) return;
             const { pageNumber, dataUrl } = event.detail;
             setThumbnails(prev => new Map(prev).set(pageNumber, dataUrl));
         }
@@ -45,7 +47,7 @@ function PdfPagesList({ pagesData }: { pagesData: NoteContextDataMap["pdfPages"]
         return () => {
             window.removeEventListener("pdf-thumbnail", handleThumbnail as EventListener);
         };
-    }, []);
+    }, [ ntxId ]);
 
     useEffect(() => {
         const el = containerRef.current;

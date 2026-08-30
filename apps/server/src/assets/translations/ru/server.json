@@ -66,7 +66,13 @@
     "unhoist": "Убрать фокус с любой заметки",
     "force-save-revision": "Принудительное создать/сохранить снимок версии активной заметки",
     "save-named-revision": "Сохранить именованную ревизию активной заметки",
-    "toggle-archived-notes": "Показать/скрыть архивные заметки в дереве заметок"
+    "toggle-archived-notes": "Показать/скрыть архивные заметки в дереве заметок",
+    "show-deleted-notes": "Показать диалог \"Удалённые заметки\"",
+    "show-space-usage": "Открыть страницу \"Использование места\"",
+    "show-shortcut-hints": "Показать сочетания клавиш для активного виджета",
+    "peek-right-pane": "Показать правую панель в виде временной панели, которая парит над содержимым и закрывается, когда теряет фокус",
+    "create-new-split": "Открыть новое пустое окно справа от активного",
+    "close-active-split": "Закрыть активное окно, оставив открытыми остальные окна вкладки"
   },
   "hidden-subtree": {
     "localization": "Язык и регион",
@@ -79,7 +85,7 @@
     "shortcuts-title": "Сочетания клавиш",
     "images-title": "Медиа",
     "spellcheck-title": "Проверка орфографии",
-    "password-title": "Пароль",
+    "password-title": "Пароль и аутентификация",
     "etapi-title": "ETAPI",
     "multi-factor-authentication-title": "MFA",
     "backup-title": "Резервное копирование",
@@ -128,14 +134,20 @@
     "task-states-title": "Состояния задач",
     "task-state-none": "Нет",
     "task-state-doing": "В работе",
-    "task-state-done": "Выполнено",
+    "task-state-done": "Выполнена",
     "task-state-maybe": "Под вопросом",
-    "task-state-cancelled": "Отменено",
+    "task-state-cancelled": "Отменена",
     "task-state-attr-state-id": "Идентификатор (обязательно)",
     "task-state-attr-markdown-symbol": "Символ Markdown",
-    "task-state-attr-is-completed": "Считать статус выполненным",
+    "task-state-attr-is-completed": "Считать выполненной",
     "task-state-attr-color": "Цвет",
-    "task-state-attr-is-hidden": "Скрыт из спивска"
+    "task-state-attr-is-hidden": "Скрыто из списка",
+    "content-manager-title": "Менеджер контента",
+    "desktop-title": "Настольная версия",
+    "security-title": "Безопасность",
+    "database-title": "База данных",
+    "space-usage-title": "Использование места",
+    "deleted-notes-title": "Удалённые заметки"
   },
   "tray": {
     "bookmarks": "Закладки",
@@ -216,7 +228,7 @@
     "zoom-out": "Уменьшить масштаб",
     "zoom-in": "Увеличить масштаб",
     "open-note-externally": "Открыть заметку вне приложения",
-    "reload-frontend-app": "Перезагрузить приложение",
+    "reload-frontend-app": "Перезагрузить клиент приложения",
     "open-developer-tools": "Открытые инструменты разработчика",
     "find-in-text": "Найти в тексте",
     "toggle-left-pane": "Переключить левую панель",
@@ -244,7 +256,11 @@
     "export-active-note-as-pdf": "Экспортировать активную заметку в формате PDF",
     "toggle-note-hoisting": "Переключить закрепление заметки",
     "save-named-revision": "Сохранить именованную ревизию",
-    "toggle-archived-notes": "Переключить отображение архивных заметок"
+    "toggle-archived-notes": "Переключить отображение архивных заметок",
+    "show-deleted-notes": "Показать удалённые заметки",
+    "show-space-usage": "Показать использование места",
+    "show-shortcut-hints": "Показать подсказки по сочетаниям клавиш",
+    "peek-right-pane": "Посмотреть на правую панель"
   },
   "months": {
     "august": "Август",
@@ -279,7 +295,9 @@
     "remember-me": "Запомнить меня",
     "sign_in_with_sso": "Войти с помощью {{ ssoIssuerName }}",
     "incorrect-totp": "TOTP неверен. Попробуйте ещё раз.",
-    "incorrect-password": "Пароль неверный. Попробуйте ещё раз."
+    "incorrect-password": "Неверный пароль. Попробуйте ещё раз.",
+    "sso-wrong-account": "Эта учётная запись не связана с данным экземпляром Trilium. Войдите в систему с помощью связанной учётной записи.",
+    "sso-not-enrolled": "Единый вход ещё не настроен. Сначала войдите, используя свой пароль, а затем привяжите учётную запись в настройках."
   },
   "set_password": {
     "password": "Пароль",
@@ -339,7 +357,9 @@
     "presentation_slide_second": "Второй слайд",
     "presentation_slide_first": "Первый слайд",
     "presentation": "Презентация",
-    "presentation_slide": "Слайд презентации"
+    "presentation_slide": "Слайд презентации",
+    "code-snippet": "Фрагмент кода",
+    "markdown-snippet": "Фрагмент Markdown"
   },
   "share_404": {
     "title": "Не найдено",
@@ -394,5 +414,14 @@
       "fulltext-after-expression": "\"{{- token}}\" - неверное выражение. Для поиска текста поместите его перед фильтрами атрибутов (например, \"{{- token}} #метка\" вместо \"#метка {{- token}}\").",
       "unrecognized-expression": "Нераспознанное выражение \"{{- token}}\""
     }
+  },
+  "backup-password-dialog": {
+    "cancel": "Отмена"
+  },
+  "security-dialog": {
+    "cancel": "Отмена"
+  },
+  "start-over-dialog": {
+    "cancel": "Отмена"
   }
 }

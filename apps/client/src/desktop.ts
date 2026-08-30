@@ -18,23 +18,31 @@ import { preloadCommonNoteTypes } from "./widgets/note_types.js";
 
 await appContext.earlyInit();
 
-bundleService.getWidgetBundlesByParent().then(async (widgetBundles) => {
+/**
+ * Resolves once the layout is rendered and froca has the note tree. index.ts keeps the splash up
+ * until then, so the bundle, layout and tree requests below are not made behind a blank page. A
+ * failed start still resolves it: the toast that reports the failure has to become visible.
+ */
+export const ready = bundleService.getWidgetBundlesByParent().then(async (widgetBundles) => {
     // A dynamic import is required for layouts since they initialize components which require translations.
     const DesktopLayout = (await import("./layouts/desktop_layout.js")).default;
 
     appContext.setLayout(new DesktopLayout(widgetBundles));
-    appContext.start().then(() => {
-        reportFullRenderStartupMetric();
-        preloadCommonNoteTypes();
-    }).catch((e) => {
+    try {
+        await appContext.start();
+    } catch (e) {
         toastService.showPersistent({
             id: "critical-error",
             title: t("toast.critical-error.title"),
             icon: "alert",
-            message: t("toast.critical-error.message", { message: e.message })
+            message: t("toast.critical-error.message", { message: e instanceof Error ? e.message : String(e) })
         });
         console.error("Critical error occured", e);
-    });
+        return;
+    }
+
+    reportFullRenderStartupMetric();
+    preloadCommonNoteTypes();
 });
 
 glob.setupGlobs();

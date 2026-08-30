@@ -7,6 +7,10 @@ on:
   pull_request:
     paths:
       - "apps/client/src/translations/**"
+      - "apps/website/src/translations/**"
+      - "apps/website/src/locales.ts"
+      - "packages/commons/src/lib/i18n.ts"
+      - "scripts/translation/**"
       - ".github/workflows/i18n.yml"
 
 permissions:

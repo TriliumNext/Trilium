@@ -213,6 +213,7 @@
 
     --badge-temporaraily-editable-background-color: #35a64c;
     --badge-read-only-background-color: #c8302c;
+    --badge-office-preview-background-color: #566d87;
     --badge-share-background-color: #6b6b6b;
     --badge-snippet-background-color: #6b6b6b;
     --badge-clipped-note-background-color: #2284c0;
@@ -362,6 +363,54 @@
     --task-checkbox-unknown-state-color: #e95d5d;
     --task-checkbox-glyph-color: white;
 
+    --space-usage-treemap-cell-background: var(--accented-background-color);
+    --space-usage-treemap-cell-icon-color: var(--muted-text-color);
+    --space-usage-treemap-cell-hover-color: var(--main-text-color);
+    --space-usage-treemap-cell-selected-color: var(--main-text-color);
+
+    --space-usage-treemap-cell-saturation: 65%;
+    --space-usage-treemap-cell-lightness: 80%;
+
+    --space-usage-treemap-icon-saturation: 50%;
+    --space-usage-treemap-icon-lightness: 40%;
+
+    --space-usage-treemap-hover-saturation: 70%;
+    --space-usage-treemap-hover-lightness: 35%;
+
+    --space-usage-treemap-selected-saturation: 35%;
+    --space-usage-treemap-selected-lightness: 50%;
+
+    --space-usage-body-color: #c5d6ef;
+    --space-usage-attachments-color: #f0d5b0;
+    --space-usage-revisions-color: #83de95;
+    --space-usage-revisions-stripe-color: #47be5f;
+
+    --space-usage-donut-track-color: var(--main-border-color);
+    --space-usage-donut-segment-color: var(--accented-background-color);
+    --space-usage-donut-segment-hover-color: var(--input-focus-outline-color);
+    --space-usage-donut-segment-selected-color: var(--main-text-color);
+
+    --space-usage-donut-segment-saturation: 63%;
+    --space-usage-donut-segment-lightness: 75%;
+
+    --space-usage-donut-hover-saturation: 57%;
+    --space-usage-donut-hover-lightness: 68%;
+
+    --board-column-background-saturation: 26%;
+    --board-column-background-lightness: 86%;
+
+    --board-item-background-saturation: 100%;
+    --board-item-background-lightness: 96%;
+
+    --board-item-hover-background-saturation: 100%;
+    --board-item-hover-background-lightness: 98.5%;
+
+    --board-focus-outline-saturation: 50%;
+    --board-focus-outline-lightness: 34%;
+
+    --space-usage-donut-selected-saturation: 35%;
+    --space-usage-donut-selected-lightness: 45%;
+
 }
 
 #left-pane .fancytree-node.tinted,
@@ -404,7 +453,8 @@
 .geo-detail-sheet.with-hue,
 .nested-note-list-item.with-hue,
 .note-book-card.with-hue .note-book-header,
-.ck-template-icon.with-hue {
+.ck-template-icon.with-hue,
+.board-column h3 {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 44.5%, 43.1%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 91.3%, 91%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 55.1%, 50.2%);

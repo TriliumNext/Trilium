@@ -118,7 +118,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 * [الوضع الداكن](https://docs.triliumnotes.org/user-guide/concepts/themes)
   المدمج، ودعم سمات المستخدم
 * [إيفيرنوت
-  (Evernote)](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  (Evernote)](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   و[استيراد وتصدير ملفات
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [أداة قص الويب](https://docs.triliumnotes.org/user-guide/setup/web-clipper)

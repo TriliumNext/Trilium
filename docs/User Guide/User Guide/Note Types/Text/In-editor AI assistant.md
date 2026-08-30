@@ -13,7 +13,7 @@ To access the AI assistant:
 
 *   Look for the <img class="image_resized" style="aspect-ratio:150/150;width:3.16%;" src="In-editor AI assistant_ai.svg" width="150" height="150"> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. Press the button itself to enter the _Ask AI_ mode or press the arrow key next to it to access the quick commands and the model selection.
 *   Look for _AI assistant_ or any of the _AI_\-prefixed quick commands in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
-*   Press <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">Shift</kbd>+<kbd spellcheck="false">K</kbd>.
+*   Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
 *   On the desktop app, right click in the text and choose the _AI assistant_ option.
 
 ## What the assistant works on
@@ -40,7 +40,7 @@ Actions that need something to work on are greyed out when there is nothing to w
 
 ## Asking for something specific
 
-Choosing _Ask AI…_ opens a prompt where you can describe the change in your own words, for example: "make this less formal", "add a row for 2024", "write an intro paragraph for this section". Press <kbd spellcheck="false">Enter</kbd> or the send button to run it.
+Choosing _Ask AI…_ opens a prompt where you can describe the change in your own words, for example: "make this less formal", "add a row for 2024", "write an intro paragraph for this section". Press <kbd>Enter</kbd> or the send button to run it.
 
 Once a response arrives you can keep going in the same prompt, and the assistant treats it as a conversation rather than as a fresh request: after _Translate this to German_, asking for _make it shorter_ shortens the German, not the original.
 

@@ -9,7 +9,8 @@ description: >-
   editing engine (model, view, schema, conversion/upcast-downcast), commands,
   the UI library (buttons, dropdowns, dialogs, balloons, toolbars), widgets
   (block/inline, toWidget, nested editables), keystrokes, localization (t()),
-  registering a plugin into plugins.ts / the editor classes / toolbar.ts, or
+  registering a plugin into plugins.ts / the editor classes / toolbar.ts, persisting a
+  `data-trilium-*` attribute through the model→view→data→markdown→share pipeline, or
   adding a new plugin folder under src/plugins/. Covers the architecture,
   idiomatic patterns, Trilium packaging/registration, code-style conventions,
   and a review checklist.
@@ -260,6 +261,7 @@ Load the focused reference for the task at hand:
 | `references/widgets.md` | Block & inline widgets: `toWidget`/`toWidgetEditable`, nested editables, `insertObject`, widget toolbars, view↔model position mapping, custom properties, and external/async-rendered widgets (UI-element render callbacks, re-render on change, stale-render guard, lazy-load). |
 | `references/conventions.md` | Trilium conventions: imports from `ckeditor5`/`@triliumnext` + required file extensions, per-package license/headers (not uniform), `@triliumnext` scope + `workspace:*`, per-package tsconfig, `?raw` icons, localization via `editor.t()` message ids, `declare module 'ckeditor5'` augmentation, plus the upstream naming/CSS/BEM/JSDoc/TypeScript rules inherited via `eslint-config-ckeditor5`. For writing idiomatic code and reviewing. |
 | `references/tooling-and-packaging.md` | Trilium packaging & wiring: the `@triliumnext/ckeditor5-<feature>` package layout, `workspace:*` deps, `main: src/index.ts` (no per-package dist), tsconfig/eslint/stylelint setup, the full registration flow (`plugins.ts` arrays → editor classes `builtinPlugins` → `toolbar.ts`), the three editor classes, the Vite build, how `apps/client` creates the editor (config, watchdog, lazy premium), and the Inspector. |
+| `references/persisted-attributes.md` | Persisting a `data-trilium-*` attribute end to end: schema → both conversion directions → the **deliberate** markdown export/import decision (collapsed is DROPPED, task-state is KEPT) → editing-view-only CSS so read-only and share rendering stay correct. Read it before storing plugin state in the saved note content. |
 | `references/review-checklist.md` | A structured checklist for reviewing an existing plugin (architecture, schema, conversion, commands, UI, a11y, conventions). |
 | `references/recipes.md` | Task-oriented how-tos: insert content, find/iterate nodes, custom observers, place caret, extend other plugins' UI, etc. |
 | `references/core-plugin-patterns.md` | Canonical idioms mined from the actual `packages/*/src` source: toolbar+menu-bar button factory, plugin flags & `augmentation.ts`, `AttributeCommand`/`setAttributeProperties`, inline-attribute boundary helpers, `elementToStructure`+slots, reconversion, `BalloonToolbar`, raw-HTML widgets, sanitizing untrusted HTML (CKEditor ships no sanitizer — the host supplies one per feature namespace), clipboard pipeline, markers, post-fixers, async/upload. Each cites its source file. |

@@ -239,6 +239,65 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(attrs.some((a) => a.name === "outsideRel")).toBe(false);
         });
 
+        it("leaves out the link relations the importer rebuilds, and keeps the ones it reads back", async () => {
+            // Both notes go inside the exported subtree: a relation pointing out of it is dropped
+            // by the containment filter, which would hide what this test is about.
+            const { note: parent } = createNote("root", { title: "LinkHost", content: "" });
+            const { note: target } = createNote(parent.noteId, { title: "LinkTarget", content: "<p>t</p>" });
+            const { note } = createNote(parent.noteId, { title: "Linker", content: "<p>x</p>" });
+            getContext().init(() => {
+                note.addRelation("internalLink", target.noteId);
+                note.addRelation("imageLink", target.noteId);
+                // The importer reads these two back to remap note ids inside the content.
+                note.addRelation("includeNoteLink", target.noteId);
+                note.addRelation("relationMapLink", target.noteId);
+                note.addRelation("userRelation", target.noteId);
+            });
+
+            const { entries } = await exportSubtree(parent.getParentBranches()[0], "html");
+            const children = parseMeta(entries).files[0].children ?? [];
+            const linkerMeta = children.find((child) => child.title === "Linker");
+            const names = (linkerMeta?.attributes ?? []).map((a) => a.name);
+
+            expect(names).not.toContain("internalLink");
+            expect(names).not.toContain("imageLink");
+            expect(names).toContain("includeNoteLink");
+            expect(names).toContain("relationMapLink");
+            expect(names).toContain("userRelation");
+        });
+
+        it("comes back with those relations anyway, rebuilt from content and pointing at the new notes", async () => {
+            const { note: parent } = createNote("root", { title: "LinkRoundTrip", content: "" });
+            const { note: target } = createNote(parent.noteId, { title: "Target", content: "<p>t</p>" });
+            const { note: picture } = createNote(parent.noteId,
+                { title: "Picture", content: "png-bytes", type: "image", mime: "image/png" });
+            const { note: source } = createNote(parent.noteId, { title: "Source", content: "" });
+            getContext().init(() => source.setContent(
+                `<p>See <a href="#root/${target.noteId}">Target</a>.</p>`
+                + `<p><img src="api/images/${picture.noteId}/Picture.png"></p>`
+            ));
+
+            const taskContext = (await import("../task_context.js")).default;
+            const importZip = (await import("../import/zip.js")).default;
+            const { buffer } = await exportSubtree(parent.getParentBranches()[0], "html");
+            const imported = await getContext().init(async () => await importZip.importZip(
+                new taskContext("no-progress-reporting", "importNotes", {}),
+                buffer,
+                becca.getNoteOrThrow("root")
+            ));
+
+            const childByTitle = (title: string) =>
+                imported.getChildNotes().find((child) => child.title === title);
+            const importedSource = childByTitle("Source");
+            const relationTargets = (name: string) =>
+                (importedSource?.getRelations() ?? []).filter((rel) => rel.name === name).map((rel) => rel.value);
+
+            // New ids on the far side, so a relation copied out of the export could not have pointed here.
+            expect(childByTitle("Target")?.noteId).not.toBe(target.noteId);
+            expect(relationTargets("internalLink")).toStrictEqual([childByTitle("Target")?.noteId]);
+            expect(relationTargets("imageLink")).toStrictEqual([childByTitle("Picture")?.noteId]);
+        });
+
         it("excludes notes marked with #excludeFromExport", async () => {
             const { note: parent } = createNote("root", { title: "WithExcluded", content: "" });
             const { note: kept } = createNote(parent.noteId, { title: "Kept", content: "<p>kept</p>" });

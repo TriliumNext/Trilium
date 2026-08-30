@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import toast from "./toast.js";
 import utils from "./utils.js";
-import { copyHtmlWithToast, copyText, copyTextWithToast } from "./clipboard_ext.js";
+import { copyHtml, copyHtmlWithToast, copyText, copyTextWithToast } from "./clipboard_ext.js";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 
@@ -105,8 +105,68 @@ describe("copyTextWithToast", () => {
     });
 });
 
+describe("copyHtml", () => {
+    afterEach(() => {
+        delete (globalThis as any).ClipboardItem;
+    });
+
+    /** Install the `ClipboardItem` constructor the asynchronous Clipboard API needs. */
+    function stubClipboardItem() {
+        (globalThis as any).ClipboardItem = class {
+            constructor(public readonly data: Record<string, unknown>) {}
+        };
+    }
+
+    it("writes both flavours through navigator.clipboard when available", async () => {
+        const write = vi.fn(async (..._args: any[]) => {});
+        setClipboard({ write });
+        stubClipboardItem();
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard");
+
+        expect(await copyHtml("<b>x</b>", "x")).toBe(true);
+
+        const items = write.mock.calls[0][0] as any[];
+        expect(await (items[0].data["text/html"] as Blob).text()).toBe("<b>x</b>");
+        expect(await (items[0].data["text/plain"] as Blob).text()).toBe("x");
+        expect(copyHtmlToClipboard).not.toHaveBeenCalled();
+    });
+
+    it("falls back to the copy event outside a secure context, where the API is undefined (#10723)", async () => {
+        setClipboard(undefined);
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(true);
+
+        // The plain text defaults to the HTML.
+        expect(await copyHtml("<b>x</b>")).toBe(true);
+        expect(copyHtmlToClipboard).toHaveBeenCalledWith("<b>x</b>", "<b>x</b>");
+    });
+
+    it("returns false and warns when the copy event itself throws", async () => {
+        setClipboard(undefined);
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const error = new Error("execCommand failed");
+        vi.spyOn(utils, "copyHtmlToClipboard").mockImplementation(() => {
+            throw error;
+        });
+
+        expect(await copyHtml("<b>x</b>")).toBe(false);
+        expect(warn).toHaveBeenCalledWith(error);
+    });
+
+    it("falls back to the copy event when the write is denied, and reports a failure of both", async () => {
+        const denied = new Error("NotAllowedError");
+        setClipboard({ write: vi.fn(async () => { throw denied; }) });
+        stubClipboardItem();
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(false);
+
+        expect(await copyHtml("<b>x</b>", "x")).toBe(false);
+        expect(warn).toHaveBeenCalledWith(denied);
+        expect(copyHtmlToClipboard).toHaveBeenCalledWith("<b>x</b>", "x");
+    });
+});
+
 describe("copyHtmlWithToast", () => {
-    it("copies through the copy event, defaults the plain text to the HTML, and reports success", () => {
+    it("copies through the copy event, defaults the plain text to the HTML, and reports success", async () => {
         // No `navigator.clipboard` at all: the API is undefined outside secure contexts, which is
         // how Trilium is usually served over a LAN (#10723).
         setClipboard(undefined);
@@ -114,22 +174,23 @@ describe("copyHtmlWithToast", () => {
         const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
         const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
 
-        copyHtmlWithToast("<b>x</b>");
+        await copyHtmlWithToast("<b>x</b>");
         expect(copyHtmlToClipboard).toHaveBeenCalledWith("<b>x</b>", "<b>x</b>");
 
-        copyHtmlWithToast("<a href=\"#root/abc\">Note</a>", "#root/abc");
+        await copyHtmlWithToast("<a href=\"#root/abc\">Note</a>", "#root/abc");
         expect(copyHtmlToClipboard).toHaveBeenLastCalledWith("<a href=\"#root/abc\">Note</a>", "#root/abc");
 
         expect(showMessage).toHaveBeenCalledTimes(2);
         expect(showError).not.toHaveBeenCalled();
     });
 
-    it("shows an error message when the copy fails", () => {
+    it("shows an error message when the copy fails", async () => {
+        setClipboard(undefined);
         vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(false);
         const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
         const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
 
-        copyHtmlWithToast("<b>x</b>");
+        await copyHtmlWithToast("<b>x</b>");
 
         expect(showError).toHaveBeenCalledTimes(1);
         expect(showMessage).not.toHaveBeenCalled();

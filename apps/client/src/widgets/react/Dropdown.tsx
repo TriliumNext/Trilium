@@ -52,8 +52,9 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
      *
      * Use this when an ancestor establishes a containment/backdrop root (e.g. `container-type`,
      * `transform`, `filter`) which would otherwise flatten the menu's `backdrop-filter` blur into a
-     * flat tint. The menu is wrapped in a `<div class={className}>` so any CSS scoped under that
-     * class keeps applying even though the menu no longer lives inside the toggle's wrapper.
+     * flat tint. The menu is wrapped in a `<div class="tn-dropdown-portal {className}">` so any CSS
+     * scoped under that class keeps applying even though the menu no longer lives inside the
+     * toggle's wrapper, and so the menu outranks whatever stacking context it was lifted out of.
      */
     portalToBody?: boolean;
     /**
@@ -256,9 +257,10 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
             {portalToBody
                 // Keep the `className` scope on the portaled wrapper so CSS scoped under it (e.g.
                 // `.note-icon-widget .icon-list`) still applies even though the menu now lives in body.
+                // `tn-dropdown-portal` beside it carries the z-index a menu needs out here (style.css).
                 // Only mount it while needed (see `menuMounted`) so closed pickers don't each leave an
                 // empty menu wrapper in the body.
-                ? (menuMounted && createPortal(<div class={className ?? ""}>{menu}</div>, document.body))
+                ? (menuMounted && createPortal(<div class={`tn-dropdown-portal ${className ?? ""}`}>{menu}</div>, document.body))
                 : menu}
         </div>
     );

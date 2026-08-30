@@ -15,6 +15,11 @@ export function LocaleSelector({ id, locales, currentValue, onChange, defaultLoc
 }) {
     const currentValueWithDefault = currentValue ?? defaultLocale?.id ?? "";
     const { activeLocale, processedLocales } = useProcessedLocales(locales, defaultLocale, currentValueWithDefault);
+    // Deliberately not `portalToBody`, unlike the shorter menus on the other options pages. The card
+    // around it is a container and so a backdrop root, which leaves this menu a flat tint rather than
+    // frosted. That is the lesser cost: the list runs to every locale Trilium speaks and nothing caps
+    // a menu's height, so carried out to the body it would stand in a page that does not scroll, and
+    // every locale past the fold would be out of reach.
     return (
         <Dropdown id={id} text={activeLocale?.name} mobileBottomSheet>
             {processedLocales.map((locale, index) => (

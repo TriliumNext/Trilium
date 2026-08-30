@@ -69,7 +69,15 @@
     "peek-right-pane": "오른쪽 창을 콘텐츠 위의 임시 패널로 표시하고 포커스를 잃으면 닫기",
     "show-deleted-notes": "\"삭제된 노트\" 대화 상자 표시",
     "show-shortcut-hints": "포커스된 위젯의 키보드 단축키 표시",
-    "save-named-revision": "활성 노트의 이름 있는 수정본 저장"
+    "save-named-revision": "활성 노트의 이름 있는 수정본 저장",
+    "show-space-usage": "\"공간 사용량\" 페이지 열기",
+    "create-new-split": "활성 분할 화면 오른쪽에 새 빈 분할 화면 열기",
+    "close-active-split": "활성 분할 화면을 닫고 탭의 다른 분할 화면은 그대로 유지",
+    "focus-split-left": "활성 분할 화면 왼쪽의 분할 화면으로 포커스 이동",
+    "focus-split-right": "활성 분할 화면 오른쪽의 분할 화면으로 포커스 이동",
+    "split-view": "분할 화면",
+    "move-split-left": "활성 분할 화면을 왼쪽 분할 화면과 바꾸고, 노트와 포커스도 함께 이동",
+    "move-split-right": "활성 분할 화면을 오른쪽 분할 화면과 바꾸고, 노트와 포커스도 함께 이동"
   },
   "hidden-subtree": {
     "zen-mode": "젠 모드",
@@ -144,7 +152,8 @@
     "inbox-title": "받은 편지함",
     "tab-switcher-title": "탭 스위처",
     "sidebar-chat-title": "AI 채팅",
-    "database-title": "데이터베이스"
+    "database-title": "데이터베이스",
+    "space-usage-title": "공간 사용량"
   },
   "keyboard_action_names": {
     "back-in-note-history": "노트 기록에서 뒤로 이동",
@@ -246,7 +255,14 @@
     "toggle-note-hoisting": "노트 루트 보기 전환",
     "unhoist-note": "노트 루트 보기 해제",
     "toggle-left-pane": "왼쪽 창 전환",
-    "save-named-revision": "이름 있는 수정본 저장"
+    "save-named-revision": "이름 있는 수정본 저장",
+    "show-space-usage": "공간 사용량 표시",
+    "create-new-split": "새 분할 화면 만들기",
+    "close-active-split": "활성 분할 화면 닫기",
+    "move-split-left": "분할 화면 왼쪽으로 이동",
+    "move-split-right": "분할 화면 오른쪽으로 이동",
+    "focus-split-left": "왼쪽 분할 화면으로 포커스 이동",
+    "focus-split-right": "오른쪽 분할 화면으로 포커스 이동"
   },
   "login": {
     "title": "로그인",
@@ -328,7 +344,8 @@
     "reading-log-failed": "백엔드 로그 파일 '{{ fileName }}'을(를) 읽지 못했습니다."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "이 노트 유형은 표시할 수 없습니다."
+    "note-cannot-be-displayed": "이 노트 유형은 표시할 수 없습니다.",
+    "included-note-requires-credentials": "여기에 포함된 노트는 비밀번호로 보호되어 있어 표시할 수 없습니다."
   },
   "onenote_import": {
     "root-title": "OneNote 가져오기",

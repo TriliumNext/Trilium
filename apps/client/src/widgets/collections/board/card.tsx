@@ -73,7 +73,11 @@ function Card({
         openNoteContextMenu(api, e, note, branch.branchId, column);
     }, [ api, note, branch, column ]);
 
-    const handleOpen = useCallback(() => {
+    const handleOpen = useCallback((e: MouseEvent) => {
+        // A double click is one gesture, and its second click would open the note over itself: the
+        // popup already standing is taken as the one to stack on, and closing that leaves neither.
+        if (e.detail > 1) return;
+
         api.openNote(note.noteId);
     }, [ api, note ]);
 
@@ -105,6 +109,7 @@ function Card({
     return (
         <div
             className={`board-note ${colorClass} ${isDragging ? 'dragging' : ''} ${isEditing ? "editing" : ""} ${isArchived ? "archived" : ""}`}
+            data-note-id={note.noteId}
             draggable
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}

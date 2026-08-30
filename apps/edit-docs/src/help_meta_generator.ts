@@ -59,6 +59,17 @@ export function parseNoteMetaFile(noteMetaFile: NoteMetaFile, handleTextNote: Te
     return parsedMetaRoot?.children ?? [];
 }
 
+/**
+ * Drops the app version the exporter stamps onto a meta file. Nothing reads it back — neither the
+ * importer nor {@link parseNoteMetaFile} — while it moves on every release, so keeping it rewrites
+ * the committed documentation metadata for a field no code consults. An export a user takes of
+ * their own notes keeps it, as a record of the build that wrote the zip.
+ */
+export function stripAppVersion(meta: NoteMetaFile): Omit<NoteMetaFile, "appVersion"> {
+    const { appVersion, ...rest } = meta;
+    return rest;
+}
+
 interface CanonicalOccurrence {
     iconClass: string;
     docPath?: string;

@@ -13,7 +13,7 @@ import { setupWebContentsSecurity } from "./web_contents_security.js";
 //   - Dev: this file lives at apps/desktop/src/services/window.ts, and the
 //     preload bundle is one level up at apps/desktop/src/preload.compiled.cjs
 //     (built in place by scripts/electron-start.mts).
-//   - Prod: this file is bundled into apps/desktop/dist/main.cjs, with
+//   - Prod: this file is bundled into apps/desktop/dist/main.mjs, with
 //     preload.cjs sitting next to it in dist/ (NOT one level up — getting
 //     this wrong leaves the renderer without `window.electronApi`).
 //
@@ -500,14 +500,17 @@ export function setupWindowing() {
         electron.app.exit();
     });
 
-    electron.ipcMain.on("copy-image-to-clipboard", (_event, buffer: Uint8Array) => {
+    electron.ipcMain.on("copy-image-to-clipboard", async (_event, buffer: Uint8Array) => {
         try {
             const image = electron.nativeImage.createFromBuffer(Buffer.from(buffer));
             if (image.isEmpty()) {
                 getLog().error("copy-image-to-clipboard: nativeImage is empty, unsupported format?");
                 return;
             }
-            electron.clipboard.writeImage(image);
+            // `clipboard.write()` takes MIME-typed payloads, and PNG is the format every
+            // platform clipboard accepts, so the decoded image is re-encoded to PNG.
+            const png = new Uint8Array(image.toPNG());
+            await electron.clipboard.write([new electron.ClipboardItem({ "image/png": new Blob([png], { type: "image/png" }) })]);
         } catch (e) {
             getLog().error(`copy-image-to-clipboard failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
         }

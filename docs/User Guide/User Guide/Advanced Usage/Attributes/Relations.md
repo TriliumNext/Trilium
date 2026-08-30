@@ -40,8 +40,9 @@ These relations are supported and used internally by Trilium.
 
 | Label | Description |
 | --- | --- |
-| `runOn*` | See <a class="reference-link" href="../../Scripting/Backend%20scripts/Events.md">Events</a> |
+| `runOn*` | See <a class="reference-link" href="../../Scripting/Backend%20scripts/Backend%20Events.md">Events</a> |
 | `template` | note's attributes will be inherited even without a parent-child relationship, note's content and subtree will be added to instance notes if empty. See documentation for details. |
+| `template:newNoteDefaultParent` | set on a template note, points to the note under which notes created from the template are placed when no other location is picked; when set several times, the note is cloned into every target. See <a class="reference-link" href="../Templates.md">Templates</a>. |
 | `inherit` | note's attributes will be inherited even without a parent-child relationship. See <a class="reference-link" href="../Templates.md">Templates</a> for a similar concept. See <a class="reference-link" href="Attribute%20Inheritance.md">Attribute Inheritance</a> in the documentation. |
 | `renderNote` | notes of type <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a> will be rendered using a code note (HTML or script) and it is necessary to point using this relation to which note should be rendered |
 | `widget` | Used in the context of custom <a class="reference-link" href="../../Scripting/Frontend%20Basics/Launch%20Bar%20Widgets.md">Launch Bar Widgets</a>, to refer to the widget that will be rendered. |

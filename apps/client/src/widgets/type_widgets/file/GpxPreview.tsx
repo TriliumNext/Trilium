@@ -8,10 +8,10 @@ import { GpxElevationSample, GpxJourney, GpxStats, parseGpxStats } from "../../.
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import { formatDateTime, getMeasurementSystem } from "../../../utils/formatters";
+import { formatDistance, formatElevation, formatSpeed, type MeasurementSystem } from "../../../utils/units";
 import Alert from "../../react/Alert";
 import Collapsible from "../../react/Collapsible";
 
-type MeasurementSystem = ReturnType<typeof getMeasurementSystem>;
 
 interface GpxPreviewProps {
     note: FNote;
@@ -296,33 +296,6 @@ function nearestSample(profile: GpxElevationSample[], distance: number): GpxElev
     return distance - profile[lo].distance <= profile[hi].distance - distance ? profile[lo] : profile[hi];
 }
 
-const METERS_PER_MILE = 1609.344;
-const FEET_PER_METER = 3.28084;
-
-function formatDistance(meters: number, system: MeasurementSystem): string {
-    if (system === "imperial") {
-        return t("gpx_preview.unit_mi", { value: round(meters / METERS_PER_MILE) });
-    }
-    if (meters < 1000) {
-        return t("gpx_preview.unit_m", { value: Math.round(meters).toLocaleString() });
-    }
-    return t("gpx_preview.unit_km", { value: round(meters / 1000) });
-}
-
-function formatElevation(meters: number, system: MeasurementSystem): string {
-    if (system === "imperial") {
-        return t("gpx_preview.unit_ft", { value: Math.round(meters * FEET_PER_METER).toLocaleString() });
-    }
-    return t("gpx_preview.unit_m", { value: Math.round(meters).toLocaleString() });
-}
-
-function formatSpeed(kmh: number, system: MeasurementSystem): string {
-    if (system === "imperial") {
-        return t("gpx_preview.unit_mph", { value: round(kmh * 1000 / METERS_PER_MILE) });
-    }
-    return t("gpx_preview.unit_kmh", { value: round(kmh) });
-}
-
 function formatTravelDuration(milliseconds: number): string {
     const totalMinutes = Math.round(milliseconds / 60_000);
     const hours = Math.floor(totalMinutes / 60);
@@ -331,10 +304,4 @@ function formatTravelDuration(milliseconds: number): string {
         return t("gpx_preview.duration_minutes", { minutes });
     }
     return t("gpx_preview.duration_hours_minutes", { hours, minutes });
-}
-
-/** A magnitude-appropriate rounding: two decimals close up, none once they would say nothing. */
-function round(value: number): string {
-    const decimals = value >= 100 ? 0 : value >= 10 ? 1 : 2;
-    return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
 }

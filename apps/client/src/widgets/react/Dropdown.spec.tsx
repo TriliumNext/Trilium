@@ -106,6 +106,9 @@ describe("Dropdown", () => {
         const menu = document.body.querySelector(":scope > .my-scope > .dropdown-menu");
         expect(menu).toBeTruthy();
         expect(instance._menu).toBe(menu);
+        // `tn-dropdown-portal` is what style.css hangs the out-of-modal z-index on; without it a
+        // portaled menu paints under whatever dialog it was opened from.
+        expect(menu?.parentElement?.classList.contains("tn-dropdown-portal")).toBe(true);
 
         // Releasing focus without opening tears the empty menu back down.
         fire(getToggle(), "focusout");

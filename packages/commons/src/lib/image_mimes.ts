@@ -51,6 +51,18 @@ export function isAcceptedImageMime(mime: string | undefined | null): boolean {
 }
 
 /**
+ * Both spellings an SVG arrives under. A media type reaching a reader through one of these is an
+ * SVG document, so it must be sanitized before it is served: an SVG navigated to at the top level
+ * runs its `<script>` elements in Trilium's own origin.
+ */
+const SVG_MIMES: ReadonlySet<string> = new Set([ "image/svg", "image/svg+xml" ]);
+
+/** Whether content of this media type is served as an SVG document, and so has to be sanitized. */
+export function isSvgMime(mime: string | undefined | null): boolean {
+    return !!mime && SVG_MIMES.has(mime.trim().toLowerCase());
+}
+
+/**
  * The same list as the editor's `image.upload.types` wants it: bare subtypes, which it matches
  * against a dropped file as `^image/(<one of these>)$`. Anchored, so every subtype has to appear in
  * full — `svg` does not stand in for `svg+xml`.

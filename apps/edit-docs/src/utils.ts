@@ -1,7 +1,7 @@
 import { BackupService, initializeCore } from "@triliumnext/core";
 import IpcMessagingProvider from "@triliumnext/desktop/src/ipc_messaging_provider.js";
 import { registerTriliumAppScheme, setupTriliumAppProtocol } from "@triliumnext/desktop/src/protocol.js";
-import ClsHookedExecutionContext from "@triliumnext/server/src/cls_provider.js";
+import AsyncLocalStorageExecutionContext from "@triliumnext/server/src/cls_provider.js";
 import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
 import ServerPlatformProvider from "@triliumnext/server/src/platform_provider.js";
 import { serverImageProvider } from "@triliumnext/server/src/services/image_provider.js";
@@ -65,7 +65,7 @@ export async function initializeEditDocsCore() {
         crypto: new NodejsCryptoProvider(),
         zip: new NodejsZipProvider(),
         zipExportProviderFactory: serverZipExportProviderFactory,
-        executionContext: new ClsHookedExecutionContext(),
+        executionContext: new AsyncLocalStorageExecutionContext(),
         platform: new ServerPlatformProvider(),
         schema: readFileSync(require.resolve("@triliumnext/core/src/assets/schema.sql"), "utf-8"),
         translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslationsWithParams,
@@ -175,21 +175,28 @@ function waitForEnd(archive: Archiver, stream: WriteStream) {
  *
  * In the edit-docs instance the help notes carry plain, randomly generated IDs, but in
  * production they live under the `_help` subtree with a `_help_` prefix. This adds that
- * prefix to the link's target note ID.
+ * prefix to the link's target note ID, and reduces the link to that ID alone: the editor
+ * writes a full note path when a link is created, whose intermediate IDs belong to the
+ * docs instance and match nothing in the tree a reader has, leaving the client to fall
+ * back to the note's own path. The importer writes the same single-ID form, so a note
+ * exported straight after an edit now matches one that has been through an import.
  */
 export function rewriteHelpLinks(content: string): string {
-    return content.replace(/href="[^"]*#root[a-zA-Z0-9_/]*\/([a-zA-Z0-9_]+)[^"]*"/g, (match, targetNoteId) => {
-        // Canonical hidden-subtree notes (e.g. _options, _optionsTextNotes) keep their IDs in
-        // production, so they already start with an underscore. Only help notes (random
-        // alphanumeric IDs) get the `_help_` prefix; prefixing the others would produce broken
-        // `_help__optionsTextNotes`-style links (see issue #9646).
-        if (targetNoteId.startsWith("_")) {
-            return match;
-        }
-        const components = match.split("/");
-        components[components.length - 1] = `_help_${components[components.length - 1]}`;
-        return components.join("/");
-    });
+    return content.replace(/href="([^"]*#root)(?:[a-zA-Z0-9_/]*\/)?([a-zA-Z0-9_]+)([^"]*)"/g,
+        (match, prefix: string, targetNoteId: string, suffix: string) => {
+            if (targetNoteId.startsWith("_help_")) {
+                return `href="${prefix}/${targetNoteId}${suffix}"`;
+            }
+
+            // Canonical hidden-subtree notes (e.g. _options, _optionsTextNotes) keep their IDs in
+            // production, so they already start with an underscore, and their path is a real one.
+            // Only help notes (random alphanumeric IDs) get the `_help_` prefix; prefixing the
+            // others would produce broken `_help__optionsTextNotes`-style links (see issue #9646).
+            if (targetNoteId.startsWith("_")) {
+                return match;
+            }
+            return `href="${prefix}/_help_${targetNoteId}${suffix}"`;
+        });
 }
 
 export async function createZipFromDirectory(dirPath: string, zipPath: string) {

@@ -1,6 +1,7 @@
 import { trimIndentation } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
+import markdownExportService from "../export/markdown.js";
 import markdownService from "./markdown.js";
 
 describe("markdown", () => {
@@ -359,8 +360,14 @@ $$`;
             `    </tbody>`,
             `</table>`
         ].join("\n");
+        const expected = [
+            `<figure class="table"><table><tbody>`,
+            `<tr><th>Heading</th><td>Not a heading</td></tr>`,
+            `<tr><td>Heading</td><td>Not a heading</td></tr>`,
+            `</tbody></table></figure>`
+        ].join("");
         const result = markdownService.renderToHtml(html, "Title");
-        expect(result).toStrictEqual(html);
+        expect(result).toStrictEqual(expected);
         // No synthesized empty header row leaked in.
         expect(result).not.toContain("<thead>");
         expect(result).not.toContain("<th></th>");
@@ -396,6 +403,43 @@ $$`;
             - [ ] World`;
         const expected = `<ul class="todo-list"><li><label class="todo-list__label"><input type="checkbox" checked="checked" disabled="disabled"><span class="todo-list__label__description">Hello</span></label></li><li><label class="todo-list__label"><input type="checkbox" disabled="disabled"><span class="todo-list__label__description">World</span></label></li></ul>`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+    });
+
+    it("splits a todo list at a blank line into the lists the exporter wrote it from", () => {
+        // A blank line makes the list loose, so marked wraps each item in <p>. Left that
+        // way the checkbox lands inside the description span, where neither CKEditor's
+        // upcast nor `.todo-list__label > input` reaches it and the note shows a bare
+        // native checkbox. An empty `- [ ]` is not a task marker at all — it stays text.
+        const input = trimIndentation`\
+            Add a line break between two checkbox:
+
+            - [ ] Truc
+
+            - [ ] Machin
+
+            An empty item:
+
+            - [ ]`;
+        const todoList = (text: string) =>
+            `<ul class="todo-list"><li><label class="todo-list__label"><input type="checkbox" disabled="disabled">` +
+            `<span class="todo-list__label__description">${text}</span></label></li></ul>`;
+        const expected = [
+            `<p>Add a line break between two checkbox:</p>`,
+            todoList("Truc"),
+            `<p>&nbsp;</p>`,
+            todoList("Machin"),
+            `<p>An empty item:</p>`,
+            `<ul><li>[ ]</li></ul>`
+        ].join("");
+        expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+    });
+
+    it("round-trips two todo lists separated by an empty paragraph through the Markdown exporter", () => {
+        const todoList = (text: string) =>
+            `<ul class="todo-list"><li><label class="todo-list__label"><input type="checkbox" disabled="disabled">` +
+            `<span class="todo-list__label__description">${text}</span></label></li></ul>`;
+        const original = `${todoList("Truc")}<p>&nbsp;</p>${todoList("Machin")}`;
+        expect(markdownService.renderToHtml(markdownExportService.toMarkdown(original), "Title")).toStrictEqual(original);
     });
 
     it("imports todo list multistate markers as data-trilium-task-state and titles the <li> with the state's human name", () => {
@@ -450,5 +494,134 @@ $$`;
         const input = `*   &lt;note&gt; is note.`;
         const expected = /*html*/`<ul><li>&lt;note&gt; is note.</li></ul>`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+    });
+
+    it("keeps the trailing semicolon CKEditor writes into a style attribute", () => {
+        // Without it, the first save after an import rewrites every styled element in the note.
+        const input = `<ul style="list-style-type:disc;margin-left:0px;"><li style="margin-left:0px">Item</li></ul>`;
+        const expected = `<ul style="list-style-type:disc;margin-left:0px;"><li style="margin-left:0px;">Item</li></ul>`;
+        expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+        // Sanitization drops an empty attribute, so nothing comes back holding `style=";"`.
+        expect(markdownService.renderToHtml(`<p style="">Empty</p>`, "Title")).toStrictEqual(`<p>Empty</p>`);
+    });
+
+    describe("collapsible blocks", () => {
+        it("re-stamps the trilium-collapsible class and drops the indentation the exporter adds, so the block matches what the editor downcasts", () => {
+            const input = trimIndentation`\
+                <details>
+                    <summary>Configuration change</summary>
+                    <p>Set the following:</p>
+                    <pre><code class="language-text-x-yaml">entryPoints:
+                  web:
+                    http: true</code></pre>
+                    <aside class="admonition tip"><p>A tip.</p></aside>
+                </details>`;
+            const expected = [
+                `<details class="trilium-collapsible"><summary>Configuration change</summary><p>Set the following:</p>`,
+                `<pre><code class="language-text-x-yaml">entryPoints:\n  web:\n    http: true</code></pre>`,
+                `<aside class="admonition tip"><p>A tip.</p></aside></details>`
+            ].join("");
+            expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+        });
+
+        it("writes the class before an expanded block's open attribute and strips the indentation of nested lists", () => {
+            const input = trimIndentation`\
+                <details open="">
+                    <summary>Sum</summary>
+                    <ol>
+                        <li>
+                            <span>First</span>
+                            <ul>
+                                <li>
+                                    <span>Nested</span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                </details>`;
+            const expected = `<details class="trilium-collapsible" open=""><summary>Sum</summary><ol><li><span>First</span><ul><li><span>Nested</span></li></ul></li></ol></details>`;
+            expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+        });
+
+        it("keeps a user-added class, adds the styling hook only once and leaves an element holding text of its own untouched", () => {
+            expect(markdownService.renderToHtml(`<details class="custom"><summary>S</summary><p>B</p></details>`, "Title"))
+                .toStrictEqual(`<details class="custom trilium-collapsible"><summary>S</summary><p>B</p></details>`);
+            expect(markdownService.renderToHtml(`<details class="trilium-collapsible"><summary>S</summary><p>B</p></details>`, "Title"))
+                .toStrictEqual(`<details class="trilium-collapsible"><summary>S</summary><p>B</p></details>`);
+            expect(markdownService.renderToHtml(`<details>Just some <em>text</em> here</details>`, "Title"))
+                .toStrictEqual(`<details class="trilium-collapsible">Just some <em>text</em> here</details>`);
+        });
+
+        it("leaves a <details> shown inside a fenced code block as escaped sample text", () => {
+            const input = trimIndentation`\
+                \`\`\`html
+                <details><summary>S</summary></details>
+                \`\`\``;
+            expect(markdownService.renderToHtml(input, "Title"))
+                .toStrictEqual(`<pre><code class="language-text-html">&lt;details&gt;&lt;summary&gt;S&lt;/summary&gt;&lt;/details&gt;</code></pre>`);
+        });
+
+        it("round-trips a collapsible block through the Markdown exporter unchanged", () => {
+            const original = [
+                `<details class="trilium-collapsible" open=""><summary>Configuration change</summary>`,
+                `<p>Set the <a href="https://example.com"><strong>static</strong> configuration</a>:</p>`,
+                `<pre><code class="language-text-x-yaml">entryPoints:\n  web:\n    http: true</code></pre>`,
+                `<aside class="admonition tip"><p>A&nbsp;tip.</p></aside></details>`
+            ].join("");
+            expect(markdownService.renderToHtml(markdownExportService.toMarkdown(original), "Title")).toStrictEqual(original);
+        });
+    });
+    describe("tables", () => {
+        it("wraps a table kept as raw HTML in the figure CKEditor downcasts, and drops the indentation the exporter adds", () => {
+            const input = trimIndentation`\
+                <table class="ck-table-resized" style="border-style:none;">
+                    <colgroup>
+                        <col style="width:80.6%;">
+                        <col style="width:19.4%;">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <td>a</td>
+                            <td>b</td>
+                        </tr>
+                    </tbody>
+                </table>`;
+            const expected = [
+                `<figure class="table"><table class="ck-table-resized" style="border-style:none;">`,
+                `<colgroup><col style="width:80.6%;"><col style="width:19.4%;"></colgroup>`,
+                `<tbody><tr><td>a</td><td>b</td></tr></tbody></table></figure>`
+            ].join("");
+            expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+        });
+
+        it("leaves a table the renderer already wrapped alone rather than nesting a second figure", () => {
+            const input = trimIndentation`\
+                | a | b |
+                | --- | --- |
+                | 1 | 2 |`;
+            const expected = [
+                `<figure class="table"><table><thead><tr><th>a</th><th>b</th></tr></thead>`,
+                `<tbody><tr><td>1</td><td>2</td></tr></tbody></table></figure>`
+            ].join("");
+            expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+        });
+
+        it("keeps the whitespace inside a cell, which carries inline content rather than blocks", () => {
+            const input = `<table><tbody><tr><td>a <em>b</em> c</td><td> </td></tr></tbody></table>`;
+            const expected = `<figure class="table"><table><tbody><tr><td>a <em>b</em> c</td><td> </td></tr></tbody></table></figure>`;
+            expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+        });
+
+        it("round-trips a table through the Markdown exporter unchanged, whether it is kept as raw HTML or written as a pipe table", () => {
+            for (const original of [
+                `<figure class="table"><table class="ck-table-resized" style="border-style:none;"><colgroup><col style="width:80.6%;"><col style="width:19.4%;"></colgroup><thead><tr><th>a</th><th>b</th></tr></thead><tbody><tr><td><ul><li>one</li></ul></td><td>2</td></tr></tbody></table></figure>`,
+                `<figure class="table"><table><thead><tr><th>a</th><th>b</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table></figure>`,
+                `<details class="trilium-collapsible"><summary>S</summary><figure class="table"><table class="ck-table-resized"><colgroup><col style="width:50%;"></colgroup><tbody><tr><td>x</td></tr></tbody></table></figure></details>`
+            ]) {
+                const markdown = markdownExportService.toMarkdown(original);
+                expect(markdownService.renderToHtml(markdown, "Title")).toStrictEqual(original);
+                expect(markdownExportService.toMarkdown(markdownService.renderToHtml(markdown, "Title"))).toStrictEqual(markdown);
+            }
+        });
     });
 });

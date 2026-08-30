@@ -1,12 +1,3 @@
-/* Facts, not controls: unlike the buttons the card rows are built around, a value gives way when
-   the line runs short, and a path breaks wherever it must rather than widening the card. */
-.database-info .database-info-value {
-    flex-shrink: 1;
-    min-width: 0;
-    text-align: end;
-    overflow-wrap: anywhere;
-}
-
 /* The notice sits above the cards it precedes, so the gap belongs under it. */
 .admonition.start-over-pending {
     margin-bottom: 16px;

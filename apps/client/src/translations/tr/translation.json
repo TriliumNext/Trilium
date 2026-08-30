@@ -1758,9 +1758,7 @@
     "note_paths_what": "Bir not, aynı anda not ağacında birden fazla yerde bulunabilir ve bu yerlerin her biri burada bir yol olarak listelenir.",
     "note_paths_cloning": "Bir yer eklemeye klonlama denir: hiçbir şey kopyalanmaz, bu yüzden bir yol altında yapılan bir düzenleme hepsinde görünür ve bir yolu kaldırmak notu diğerlerinin altında bırakır.",
     "backlinks_what": "Metinlerinde bir bağlantı aracılığıyla veya buna adını veren bir ilişki aracılığıyla buna işaret eden notlar.",
-    "backlinks_listing": "Bir metin bağlantısı, etrafındaki pasajla birlikte listelenir; bir ilişki, işaret ettiği adla listelenir. Bir bağlantının bu tarafı düzenlenemez: bunu oluşturan not bağlantıyı bıraktığında kaybolur.",
-    "similar_notes_what": "Hiçbir şey onları bağlamasa bile buna ilişkili görünen notlar.",
-    "similar_notes_how": "Benzerlik, notların içeriğinden, taşıdıkları özellik ve ilişkilerden ve ne kadar yakın zamanda oluşturulduklarından hesaplanır."
+    "backlinks_listing": "Bir metin bağlantısı, etrafındaki pasajla birlikte listelenir; bir ilişki, işaret ettiği adla listelenir. Bir bağlantının bu tarafı düzenlenemez: bunu oluşturan not bağlantıyı bıraktığında kaybolur."
   },
   "abstract_search_option": {
     "remove_this_search_option": "Bu arama seçeneğini kaldır",
@@ -3218,9 +3216,7 @@
     "sort_by_title": "Başlık",
     "sort_by_date_created": "Oluşturulma tarihi",
     "no_items": "Etkin içerik bulunamadı.",
-    "no_items_hint": "Oluşturduğunuz betikler, temalar, şablonlar ve parçacıklar burada listelenecektir.",
-    "section_active_content": "Etkin İçerik ve Şablonlar",
-    "section_space_usage": "Alan Kullanımı"
+    "no_items_hint": "Oluşturduğunuz betikler, temalar, şablonlar ve parçacıklar burada listelenecektir."
   },
   "space_usage": {
     "loading": "Alan kullanımı ölçülüyor...",
@@ -3577,9 +3573,7 @@
   },
   "settings": {
     "related_settings": "İlgili ayarlar",
-    "related_actions": "İlgili eylemler",
-    "related_space_usage": "Veritabanı içindeki alan kullanımını analiz et",
-    "related_space_usage_description": "Hangi notların, revizyonların ve eklerin en fazla alan kapladığını görün ve alanı geri kazanın."
+    "related_actions": "İlgili eylemler"
   },
   "settings_appearance": {
     "related_code_blocks": "Metin notlarındaki kod blokları için renk düzeni",
@@ -3618,8 +3612,7 @@
   },
   "server": {
     "unknown_http_error_title": "Sunucuyla iletişim hatası",
-    "unknown_http_error_content": "Durum kodu: {{statusCode}}\nURL: {{method}} {{url}}\nMesaj: {{message}}",
-    "traefik_blocks_requests": "Traefik ters vekil sunucusunu kullanıyorsanız, sunucuyla iletişimi etkileyen bir değişiklik yaptı."
+    "unknown_http_error_content": "Durum kodu: {{statusCode}}\nURL: {{method}} {{url}}\nMesaj: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Önceki nota geri dön",

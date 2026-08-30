@@ -1,17 +1,44 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttribute from "../../../entities/fattribute";
+import branches from "../../../services/branches";
+import attributes from "../../../services/attributes";
+import { executeBulkActions } from "../../../services/bulk_action";
+import dialog from "../../../services/dialog";
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
+import note_create from "../../../services/note_create";
 import noteAttributeCache from "../../../services/note_attribute_cache";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { BoardViewData } from ".";
-import BoardApi from "./api";
+import BoardApi, { PendingColumnWrites } from "./api";
+import { ColumnMap } from "./data";
 import { BOARD_TEMPLATE_ID, getStatusDefinition } from "./columns";
 
 vi.mock("../../../services/bulk_action", () => ({
     executeBulkActions: vi.fn(async () => {})
+}));
+
+/** Makes the next bulk action fail, as an offline or rejecting server does. */
+function failNextBulkAction() {
+    vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
+}
+
+vi.mock("../../../services/branches", () => ({
+    default: {
+        cloneNoteToParentNote: vi.fn(async () => {}),
+        moveBeforeBranch: vi.fn(async () => {}),
+        moveAfterBranch: vi.fn(async () => {})
+    }
+}));
+
+vi.mock("../../../services/note_create", () => ({
+    default: { createNote: vi.fn(async () => ({ note: null, branch: null })) }
+}));
+
+vi.mock("../../../services/dialog", () => ({
+    default: { confirm: vi.fn(async () => true) }
 }));
 
 vi.mock("../../../services/i18n", () => ({
@@ -24,21 +51,25 @@ function createApi(
     viewConfig: BoardViewData,
     columns: string[],
     parentNote?: FNote,
-    statusAttribute = "status"
+    statusAttribute = "status",
+    byColumn: ColumnMap = new Map()
 ) {
     const board = parentNote ?? buildNote({ title: "Board" });
     const saved: BoardViewData[] = [];
+    const editing: (string | undefined)[] = [];
+    const pending: PendingColumnWrites = { renames: new Map(), claims: new Map() };
     const api = new BoardApi(
-        new Map(),
+        byColumn,
         columns,
         board,
         statusAttribute,
         viewConfig,
         (newConfig) => saved.push(newConfig),
-        () => {},
+        (branchId) => editing.push(branchId),
+        pending,
         getStatusDefinition(board, statusAttribute)
     );
-    return { api, saved };
+    return { api, saved, editing, pendingRenames: pending.renames };
 }
 
 describe("BoardApi column mutations", () => {
@@ -73,6 +104,292 @@ describe("BoardApi column mutations", () => {
         expect(saved).toHaveLength(0);
     });
 
+    it("puts a new column on either side of the one it is given", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] },
+            [ "To Do", "Done" ]
+        );
+
+        expect(await api.insertColumn("To Do", "after")).toBe("board_view.new-column");
+        expect(saved.at(-1)?.columns?.map(col => col.value))
+            .toEqual([ "To Do", "board_view.new-column", "Done" ]);
+
+        // The second is placed against the config just written, not the list the view still shows.
+        expect(await api.insertColumn("Done", "before")).toBe("board_view.new-column 2");
+        expect(saved.at(-1)?.columns?.map(col => col.value)).toEqual([
+            "To Do", "board_view.new-column", "board_view.new-column 2", "Done"
+        ]);
+    });
+
+    it("keeps the icon of a column it puts one beside", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do", icon: "bx bx-list-ul", color: "#e64d4d" } ] },
+            [ "To Do" ]
+        );
+
+        await api.insertColumn("To Do", "before");
+
+        expect(saved.at(-1)?.columns)
+            .toEqual([
+                { value: "board_view.new-column" },
+                { value: "To Do", icon: "bx bx-list-ul", color: "#e64d4d" }
+            ]);
+    });
+
+    it("keeps the icon of every column it reorders", () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do", icon: "bx bx-list-ul" }, { value: "Done" } ] },
+            [ "To Do", "Done" ]
+        );
+
+        api.reorderColumn(0, 2);
+
+        expect(saved.at(-1)?.columns)
+            .toEqual([ { value: "Done" }, { value: "To Do", icon: "bx bx-list-ul" } ]);
+    });
+
+    it("stores an icon, creating the entry a resolved column may not have yet", async () => {
+        const { api, saved } = createApi({ columns: [ { value: "To Do" } ] }, [ "To Do", "Done" ]);
+
+        await api.setColumnIcon("To Do", "bx bx-list-ul");
+        expect(saved.at(-1)?.columns).toEqual([ { value: "To Do", icon: "bx bx-list-ul" } ]);
+
+        // "Done" is resolved from the definition, so nothing has written it down yet.
+        await api.setColumnIcon("Done", "bx bx-check");
+        expect(saved.at(-1)?.columns).toEqual([
+            { value: "To Do", icon: "bx bx-list-ul" },
+            { value: "Done", icon: "bx bx-check" }
+        ]);
+    });
+
+    it("clears the icon back to the default rather than storing an empty one", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do", icon: "bx bx-list-ul" } ] }, [ "To Do" ]);
+
+        await api.setColumnIcon("To Do", undefined);
+
+        expect(saved.at(-1)?.columns).toEqual([ { value: "To Do" } ]);
+    });
+
+    it("stores a colour beside the icon, without either clearing the other", async () => {
+        const { api, saved } = createApi({ columns: [ { value: "To Do" } ] }, [ "To Do" ]);
+
+        await api.setColumnIcon("To Do", "bx bx-list-ul");
+        await api.setColumnColor("To Do", "#e64d4d");
+        expect(saved.at(-1)?.columns).toEqual([
+            { value: "To Do", icon: "bx bx-list-ul", color: "#e64d4d" }
+        ]);
+
+        // Clearing one leaves the other where it is.
+        await api.setColumnColor("To Do", null);
+        expect(saved.at(-1)?.columns).toEqual([ { value: "To Do", icon: "bx bx-list-ul" } ]);
+    });
+
+    it("archives a column and brings it back, storing nothing once it is not", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do", icon: "bx bx-list-ul" } ] }, [ "To Do" ]);
+
+        await api.setColumnArchived("To Do", true);
+        expect(saved.at(-1)?.columns).toEqual([
+            { value: "To Do", icon: "bx bx-list-ul", archived: true }
+        ]);
+
+        await api.setColumnArchived("To Do", false);
+        expect(saved.at(-1)?.columns).toEqual([ { value: "To Do", icon: "bx bx-list-ul" } ]);
+    });
+
+    it("keeps the icon of a column it renames", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "Done", icon: "bx bx-check" } ] }, [ "Done" ]);
+
+        await api.renameColumn("Done", "Shipped");
+
+        expect(saved.at(-1)?.columns).toEqual([ { value: "Shipped", icon: "bx bx-check" } ]);
+    });
+
+    it("records what each column it renames away or deletes became", async () => {
+        const { api, pendingRenames } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] },
+            [ "To Do", "Done" ]
+        );
+
+        await api.renameColumn("Done", "Shipped");
+        expect([ ...pendingRenames ]).toEqual([ [ "Done", "Shipped" ] ]);
+
+        await api.removeColumn("To Do");
+        expect([ ...pendingRenames ]).toEqual([ [ "Done", "Shipped" ], [ "To Do", undefined ] ]);
+
+        // A name is only held back while its removal is still landing, never against a column the
+        // user deliberately creates under it again.
+        await api.addNewColumn("To Do");
+        expect([ ...pendingRenames ]).toEqual([ [ "Done", "Shipped" ] ]);
+    });
+
+    /**
+     * A record left behind by a write that never landed goes on being applied: the column would
+     * show under a name nothing carries, or stay hidden though it is still there.
+     */
+    it("keeps no record of a rename or a deletion the server refused", async () => {
+        const { api, saved, pendingRenames } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] },
+            [ "To Do", "Done" ]
+        );
+
+        failNextBulkAction();
+        await expect(api.renameColumn("Done", "Shipped")).rejects.toThrow("offline");
+
+        failNextBulkAction();
+        await expect(api.removeColumn("To Do")).rejects.toThrow("offline");
+
+        expect([ ...pendingRenames ]).toEqual([]);
+        expect(saved).toHaveLength(0);
+    });
+
+    it("restores the record of an earlier rename when a later one is refused", async () => {
+        const { api, pendingRenames } = createApi({ columns: [ { value: "Done" } ] }, [ "Done" ]);
+
+        await api.renameColumn("Done", "Shipped");
+
+        // The refused rename re-pointed the first one on its way in, which has to be put back.
+        failNextBulkAction();
+        await expect(api.renameColumn("Shipped", "Delivered")).rejects.toThrow("offline");
+
+        expect([ ...pendingRenames ]).toEqual([ [ "Done", "Shipped" ] ]);
+    });
+
+    /**
+     * Two mutations can be in flight at once, so an undo has to take back what its own call did and
+     * nothing else: the record of a mutation still running, or one that has already failed, is not
+     * this one's to put back.
+     */
+    it("takes back only its own record when overlapping mutations fail", async () => {
+        const { api, pendingRenames } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] },
+            [ "To Do", "Done" ]
+        );
+
+        // Both start before either finishes, and both are refused.
+        failNextBulkAction();
+        failNextBulkAction();
+        const first = api.renameColumn("Done", "Shipped");
+        const second = api.removeColumn("To Do");
+
+        await expect(first).rejects.toThrow("offline");
+        await expect(second).rejects.toThrow("offline");
+        expect([ ...pendingRenames ]).toEqual([]);
+    });
+
+    it("leaves a mutation still in flight alone when another one fails", async () => {
+        const { api, pendingRenames } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] },
+            [ "To Do", "Done" ]
+        );
+
+        let releaseSecond = () => {};
+        vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
+        vi.mocked(executeBulkActions).mockImplementationOnce(
+            () => new Promise<void>((resolve) => { releaseSecond = resolve; }));
+
+        const failing = api.renameColumn("Done", "Shipped");
+        const running = api.removeColumn("To Do");
+
+        await expect(failing).rejects.toThrow("offline");
+        // The deletion is still going; its record must have survived the other one's undo.
+        expect([ ...pendingRenames ]).toEqual([ [ "To Do", undefined ] ]);
+
+        releaseSecond();
+        await running;
+    });
+
+    /**
+     * The later rename re-points the record the earlier one left, taking the key over. An undo that
+     * reverted it anyway would strip a rename still running of the record it needs.
+     */
+    it("leaves a key a later rename has taken over alone when the earlier one fails", async () => {
+        const { api, pendingRenames } = createApi({ columns: [ { value: "Done" } ] }, [ "Done" ]);
+
+        let releaseSecond = () => {};
+        vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
+        vi.mocked(executeBulkActions).mockImplementationOnce(
+            () => new Promise<void>((resolve) => { releaseSecond = resolve; }));
+
+        const failing = api.renameColumn("Done", "Shipped");
+        const running = api.renameColumn("Shipped", "Delivered");
+
+        await expect(failing).rejects.toThrow("offline");
+        expect([ ...pendingRenames ])
+            .toEqual([ [ "Done", "Delivered" ], [ "Shipped", "Delivered" ] ]);
+
+        releaseSecond();
+        await running;
+    });
+
+    /**
+     * Both writes ask for the same thing and both fail, the earlier one first. Its undo rightly
+     * leaves the record alone, the later write still having it; the later undo must then take the
+     * record away rather than put back what the earlier one left, which nothing is going to answer
+     * for any more.
+     */
+    it("leaves no record behind when two identical writes both fail", async () => {
+        const { api, pendingRenames } = createApi({ columns: [ { value: "Done" } ] }, [ "Done" ]);
+
+        let failSecond = (_: Error) => {};
+        vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
+        vi.mocked(executeBulkActions).mockImplementationOnce(
+            () => new Promise<void>((_, reject) => { failSecond = reject; }));
+
+        const first = api.renameColumn("Done", "Shipped");
+        const second = api.renameColumn("Done", "Shipped");
+
+        await expect(first).rejects.toThrow("offline");
+        expect([ ...pendingRenames ]).toEqual([ [ "Done", "Shipped" ] ]);
+
+        failSecond(new Error("offline"));
+        await expect(second).rejects.toThrow("offline");
+
+        // Neither rename landed, so the board has to read the column as it stands.
+        expect([ ...pendingRenames ]).toEqual([]);
+    });
+
+    /**
+     * Two writes can ask for exactly the same thing, and what they leave behind is then the same
+     * record. Only the owner tells them apart, so the one that fails cannot take back the other's.
+     */
+    it("leaves an identical record made by another write alone when one fails", async () => {
+        const { api, pendingRenames } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] },
+            [ "To Do", "Done" ]
+        );
+
+        let releaseSecond = () => {};
+        vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
+        vi.mocked(executeBulkActions).mockImplementationOnce(
+            () => new Promise<void>((resolve) => { releaseSecond = resolve; }));
+
+        // The same column, deleted twice over before either has answered.
+        const failing = api.removeColumn("Done");
+        const running = api.removeColumn("Done");
+
+        await expect(failing).rejects.toThrow("offline");
+        expect([ ...pendingRenames ]).toEqual([ [ "Done", undefined ] ]);
+
+        releaseSecond();
+        await running;
+    });
+
+    it("follows a rename through when the one before it has not landed yet", async () => {
+        const { api, pendingRenames } = createApi({ columns: [ { value: "Done" } ] }, [ "Done" ]);
+
+        await api.renameColumn("Done", "Shipped");
+        await api.renameColumn("Shipped", "Delivered");
+        expect([ ...pendingRenames ])
+            .toEqual([ [ "Done", "Delivered" ], [ "Shipped", "Delivered" ] ]);
+
+        // Renaming back to a name still pending leaves nothing mapping it to itself.
+        await api.renameColumn("Delivered", "Done");
+        expect([ ...pendingRenames ]).toEqual([ [ "Shipped", "Done" ], [ "Delivered", "Done" ] ]);
+    });
+
     /**
      * #10689 (second symptom): `columns` is derived render state, so it can lag behind the persisted
      * config. Rebuilding the whole config from it drops every column it has not caught up with.
@@ -94,6 +411,247 @@ describe("BoardApi column mutations", () => {
  * `_template_board` no longer defines the status label, so a board created afterwards has no
  * definition at all until the board view writes one from the columns it resolved.
  */
+describe("BoardApi card operations", () => {
+    beforeEach(() => {
+        vi.mocked(branches.moveBeforeBranch).mockClear();
+        vi.mocked(branches.moveAfterBranch).mockClear();
+        vi.mocked(note_create.createNote).mockClear();
+    });
+
+    /** A board whose second column holds three cards to move among. */
+    function createBoardWithCards() {
+        const board = buildNote({
+            title: "Board",
+            children: [
+                { title: "First", "#status": "Done" },
+                { title: "Second", "#status": "Done" },
+                { title: "Third", "#status": "Done" }
+            ]
+        });
+
+        const items = board.getChildBranches().flatMap(branch => {
+            const note = froca.getNoteFromCache(branch.noteId);
+            return note ? [ { branch, note } ] : [];
+        });
+        const byColumn: ColumnMap = new Map([ [ "To Do", [] ], [ "Done", items ] ]);
+
+        return { ...createApi({}, [ "To Do", "Done" ], board, "status", byColumn), items };
+    }
+
+    it("files a card moved to another column before the one it was dropped on", async () => {
+        const { api, items } = createBoardWithCards();
+        const [ first ] = items;
+
+        // The target column is empty, so there is nothing to place it against.
+        await api.moveWithinBoard(first.note.noteId, first.branch.branchId, 0, 1, "Done", "To Do");
+        expect(branches.moveBeforeBranch).not.toHaveBeenCalled();
+
+        await api.moveWithinBoard(first.note.noteId, first.branch.branchId, 0, 1, "To Do", "Done");
+        expect(branches.moveBeforeBranch)
+            .toHaveBeenCalledWith([ first.branch.branchId ], items[1].branch.branchId);
+    });
+
+    it("reorders within a column, and places past the last card after it", async () => {
+        const { api, items } = createBoardWithCards();
+        const [ first, , third ] = items;
+
+        await api.moveWithinBoard(first.note.noteId, first.branch.branchId, 0, 2, "Done", "Done");
+        expect(branches.moveBeforeBranch)
+            .toHaveBeenCalledWith([ first.branch.branchId ], third.branch.branchId);
+
+        await api.moveWithinBoard(first.note.noteId, first.branch.branchId, 0, 3, "Done", "Done");
+        expect(branches.moveAfterBranch)
+            .toHaveBeenCalledWith([ first.branch.branchId ], third.branch.branchId);
+    });
+
+    /**
+     * Nothing waits for the board to redraw between two keystrokes, so the column map the API holds
+     * still shows the target as it was before the first card arrived.
+     */
+    it("sends each card past the one it sent before, without waiting for a redraw", async () => {
+        const { api, items } = createBoardWithCards();
+        const [ first, second ] = items;
+
+        await api.moveToColumnEnd(first.note.noteId, first.branch.branchId, "To Do");
+        expect(branches.moveAfterBranch).not.toHaveBeenCalled();
+
+        await api.moveToColumnEnd(second.note.noteId, second.branch.branchId, "To Do");
+        expect(branches.moveAfterBranch)
+            .toHaveBeenLastCalledWith([ second.branch.branchId ], first.branch.branchId);
+    });
+
+    it("moves nothing for a card dropped where it is, or one it cannot find", async () => {
+        const { api, items } = createBoardWithCards();
+        const [ first ] = items;
+
+        await api.moveWithinBoard(first.note.noteId, first.branch.branchId, 1, 1, "Done", "Done");
+        await api.moveWithinBoard("missingNote", "missingBranch", 0, 2, "Done", "Done");
+
+        expect(branches.moveBeforeBranch).not.toHaveBeenCalled();
+        expect(branches.moveAfterBranch).not.toHaveBeenCalled();
+    });
+
+    it("takes a card off the board by removing the value it is grouped by", async () => {
+        const { api, items } = createBoardWithCards();
+        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+
+        await api.removeFromBoard(items[0].note.noteId);
+        expect(removeLabel).toHaveBeenCalledWith(items[0].note, "status");
+
+        // A note the cache has never heard of is left alone rather than throwing.
+        await api.removeFromBoard("missingNote");
+        expect(removeLabel).toHaveBeenCalledTimes(1);
+    });
+
+    it("takes a card off a relation board by removing that relation", async () => {
+        const board = buildNote({ title: "Board", children: [ { title: "Card" } ] });
+        const { api } = createApi({}, [], board, "~status");
+        const removeRelation = vi.spyOn(attributes, "removeOwnedRelationByName")
+            .mockReturnValue(true);
+
+        await api.removeFromBoard(board.getChildNoteIds()[0]);
+        expect(removeRelation).toHaveBeenCalledWith(expect.anything(), "status");
+    });
+
+    it("trims the title it renames a card to", async () => {
+        const { api, items } = createBoardWithCards();
+        const put = vi.spyOn(server, "put").mockResolvedValue(undefined);
+
+        await api.renameCard(items[0].note.noteId, "  Fresh title  ");
+
+        expect(put).toHaveBeenCalledWith(
+            "notes/" + items[0].note.noteId + "/title", { title: "Fresh title" });
+    });
+
+    it("inserts a card beside another and opens its title for editing", async () => {
+        const { api, editing, items } = createBoardWithCards();
+        const created = buildNote({ title: "Created" });
+        vi.spyOn(server, "put").mockResolvedValue(undefined);
+        vi.mocked(note_create.createNote).mockResolvedValue({
+            note: created, branch: { branchId: "createdBranch" }
+        } as never);
+
+        const note = await api.insertRowAtPosition("Done", items[0].branch.branchId, "after");
+
+        expect(note).toBe(created);
+        expect(note_create.createNote).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ targetBranchId: items[0].branch.branchId, target: "after" }));
+        expect(editing).toEqual([ "createdBranch" ]);
+    });
+
+    it("reports a card it could not create rather than filing nothing", async () => {
+        const { api, items } = createBoardWithCards();
+        vi.mocked(note_create.createNote).mockResolvedValue({ note: null, branch: null } as never);
+
+        await expect(api.insertRowAtPosition("Done", items[0].branch.branchId, "after"))
+            .rejects.toThrow("Failed to create note");
+    });
+
+    it("creates a card in a column, and reports a failure without throwing", async () => {
+        const { api } = createBoardWithCards();
+        const created = buildNote({ title: "Created" });
+        const put = vi.spyOn(server, "put").mockResolvedValue(undefined);
+        vi.mocked(note_create.createNote).mockResolvedValue({
+            note: created, branch: { branchId: "createdBranch" }
+        } as never);
+
+        await api.createNewItem("Done", "Created");
+        expect(put).toHaveBeenCalledWith(
+            "notes/" + created.noteId + "/set-attribute",
+            expect.objectContaining({ name: "status", value: "Done" }),
+            undefined);
+
+        // The board has already drawn the card, so a failure here is logged rather than thrown.
+        const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.mocked(note_create.createNote).mockRejectedValueOnce(new Error("offline"));
+        await expect(api.createNewItem("Done", "Another")).resolves.toBeUndefined();
+        expect(logged).toHaveBeenCalled();
+    });
+
+    it("hands the editing state straight through to the board", () => {
+        const { api, editing } = createBoardWithCards();
+
+        api.startEditing("someBranch");
+        api.dismissEditingTitle();
+
+        expect(editing).toEqual([ "someBranch", undefined ]);
+    });
+});
+
+describe("BoardApi.addExistingItem", () => {
+    let put: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        put = vi.spyOn(server, "put").mockResolvedValue(undefined);
+        vi.mocked(branches.cloneNoteToParentNote).mockClear();
+        vi.mocked(dialog.confirm).mockClear().mockResolvedValue(true);
+    });
+
+    /**
+     * A board holding `insider` a level down, alongside an unrelated `outsider`.
+     *
+     * The ids are generated rather than fixed: `buildNote` appends to the note attribute cache
+     * under the id given, so one reused across tests carries the previous test's attributes.
+     */
+    function createBoardWith(outsiderAttributes: Record<string, string> = {}) {
+        const board = buildNote({
+            title: "Board",
+            children: [
+                { title: "Branch", children: [ { title: "Insider", "#status": "To Do" } ] }
+            ]
+        });
+        const outsider = buildNote({ title: "Outsider", ...outsiderAttributes });
+        const branch = froca.getNoteFromCache(board.getChildNoteIds()[0]);
+
+        return {
+            api: createApi({ columns: [ { value: "To Do" } ] }, [ "To Do" ], board).api,
+            boardId: board.noteId,
+            insiderId: branch?.getChildNoteIds()[0] ?? "",
+            outsiderId: outsider.noteId
+        };
+    }
+
+    it("clones a note from outside the board, then files it in the column", async () => {
+        const { api, boardId, outsiderId } = createBoardWith();
+
+        expect(await api.addExistingItem("To Do", outsiderId)).toBe(true);
+        expect(branches.cloneNoteToParentNote).toHaveBeenCalledWith(outsiderId, boardId);
+
+        const [ url, body ] = put.mock.calls.at(-1) ?? [];
+        expect(url).toBe(`notes/${outsiderId}/set-attribute`);
+        expect(body).toMatchObject({ type: "label", name: "status", value: "To Do" });
+    });
+
+    // The board shows its whole subtree, so a grandchild is already on it.
+    it("only changes the column of a note already under the board", async () => {
+        const { api, insiderId } = createBoardWith();
+
+        expect(await api.addExistingItem("To Do", insiderId)).toBe(true);
+        expect(branches.cloneNoteToParentNote).not.toHaveBeenCalled();
+    });
+
+    it("warns before taking a note that carries the grouping label from elsewhere", async () => {
+        const { api, outsiderId } = createBoardWith({ "#status": "Done" });
+
+        expect(await api.addExistingItem("To Do", outsiderId)).toBe(true);
+        expect(dialog.confirm).toHaveBeenCalledTimes(1);
+
+        vi.mocked(dialog.confirm).mockResolvedValue(false);
+        vi.mocked(branches.cloneNoteToParentNote).mockClear();
+
+        expect(await api.addExistingItem("To Do", outsiderId)).toBe(false);
+        expect(branches.cloneNoteToParentNote).not.toHaveBeenCalled();
+    });
+
+    it("does not warn for a note that carries no value of its own", async () => {
+        const { api, outsiderId } = createBoardWith();
+
+        await api.addExistingItem("To Do", outsiderId);
+        expect(dialog.confirm).not.toHaveBeenCalled();
+    });
+});
+
 describe("BoardApi.syncColumnsToDefinition", () => {
     let put: ReturnType<typeof vi.spyOn>;
 

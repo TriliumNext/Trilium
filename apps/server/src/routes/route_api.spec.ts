@@ -1,9 +1,17 @@
+import { cls } from "@triliumnext/core";
 import express from "express";
 import { existsSync } from "fs";
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import { importMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import {
+    apiResultHandler,
+    asyncRoute,
+    importMiddlewareWithErrorHandling,
+    route,
+    router,
+    uploadMiddlewareWithErrorHandling
+} from "./route_api.js";
 
 /** Minimal app mounting only the import middleware + a handler that reports what it received. */
 function buildApp() {
@@ -130,5 +138,95 @@ describe("uploadMiddlewareWithErrorHandling (in-memory)", () => {
 
         expect(res.status).toBe(200);
         expect(res.body.hasFile).toBe(false);
+    });
+});
+
+/**
+ * `internalRoute` opens the CLS context every API handler runs in and seeds it from the
+ * `trilium-*` request headers. Entity changes are collected against that context, so losing it
+ * mid-request means writes are attributed to no component rather than failing loudly.
+ */
+describe("internalRoute CLS wiring", () => {
+    const closeProbe: { componentId?: string; wrote?: string; error?: string } = {};
+    let app: express.Application;
+
+    beforeAll(() => {
+        route("get", "/cls/echo", [], () => ({
+            componentId: cls.getComponentId(),
+            hoistedNoteId: cls.getHoistedNoteId(),
+            localNowDateTime: cls.get<string>("localNowDateTime")
+        }), apiResultHandler);
+
+        // `pace` selects one of two fixed delays: a timer whose duration comes from the request
+        // is a resource-exhaustion sink.
+        asyncRoute("get", "/cls/async", [], async (req) => {
+            const delayMs = req.query.pace === "slow" ? 30 : 1;
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            return { componentId: cls.getComponentId() };
+        }, apiResultHandler);
+
+        asyncRoute("get", "/cls/close-listener", [], (_req, res) => {
+            res.on("close", () => {
+                try {
+                    closeProbe.componentId = cls.getComponentId();
+                    cls.set("probe", "written");
+                    closeProbe.wrote = cls.get<string>("probe");
+                } catch (e: unknown) {
+                    closeProbe.error = e instanceof Error ? e.message : String(e);
+                }
+            });
+            return { ok: true };
+        }, apiResultHandler);
+
+        app = express();
+        app.use(router);
+    });
+
+    it("seeds the context from the trilium-* headers", async () => {
+        const res = await request(app)
+            .get("/cls/echo")
+            .set("trilium-component-id", "comp-1")
+            .set("trilium-hoisted-note-id", "noteABC")
+            .set("trilium-local-now-datetime", "2026-01-01 10:00:00.000+0100")
+            .expect(200);
+
+        expect(res.body).toEqual({
+            componentId: "comp-1",
+            hoistedNoteId: "noteABC",
+            localNowDateTime: "2026-01-01 10:00:00.000+0100"
+        });
+    });
+
+    it("defaults hoistedNoteId to root when the header is absent", async () => {
+        const res = await request(app).get("/cls/echo").expect(200);
+
+        expect(res.body.hoistedNoteId).toBe("root");
+        expect(res.body.componentId).toBeUndefined();
+    });
+
+    it("keeps each request's context across an await, including while they overlap", async () => {
+        const call = (pace: string) => request(app)
+            .get(`/cls/async?pace=${pace}`)
+            .set("trilium-component-id", pace)
+            .expect(200);
+
+        // The slow request starts first and finishes last, so the two are in flight together.
+        const [slow, fast] = await Promise.all([call("slow"), call("fast")]);
+
+        expect(slow.body.componentId).toBe("slow");
+        expect(fast.body.componentId).toBe("fast");
+    });
+
+    it("runs a res close listener inside the request's context", async () => {
+        await request(app)
+            .get("/cls/close-listener")
+            .set("trilium-component-id", "comp-close")
+            .expect(200);
+
+        await vi.waitFor(() => expect(closeProbe.componentId ?? closeProbe.error).toBeDefined());
+
+        expect(closeProbe.error).toBeUndefined();
+        expect(closeProbe.componentId).toBe("comp-close");
+        expect(closeProbe.wrote).toBe("written");
     });
 });

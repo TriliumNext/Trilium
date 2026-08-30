@@ -224,7 +224,8 @@ function FormListContent({ children, badges, description, disabled, disabledTool
 }
 
 interface FormListHeaderOpts {
-    text: string;
+    /** Usually a heading, but anything a group can be introduced by: a summary, a row of marks. */
+    text: ComponentChildren;
     /** Optional element rendered right-aligned in the header (e.g. an edit action). */
     action?: ComponentChildren;
 }

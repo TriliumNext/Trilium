@@ -69,7 +69,7 @@ export function ResizeImageSection(props: ImageCompressionSectionProps) {
 
     return (
         <CardSection
-            className="image-compression-section"
+            className="tn-card-option image-compression-section"
             subSectionsVisible={options.resize}
             subSections={[ <MaxImageDimensionsSection key="max-dimensions" {...props} /> ]}
         >
@@ -90,7 +90,7 @@ export function ResizeImageSection(props: ImageCompressionSectionProps) {
 /** The bound an image is scaled down to fit. */
 export function MaxImageDimensionsSection({ options, onChange, disabled, descriptions }: ImageCompressionSectionProps) {
     return (
-        <CardSection className="image-compression-section image-compression-section-nested">
+        <CardSection className="tn-card-option image-compression-section image-compression-section-nested">
             <SectionLabel
                 title={t("space_usage.compress_max_dimensions")}
                 description={descriptions?.maxWidthHeight}
@@ -120,7 +120,7 @@ export function JpegHandlingSection(props: ImageCompressionSectionProps) {
 
     return (
         <CardSection
-            className="image-compression-section"
+            className="tn-card-option image-compression-section"
             subSectionsVisible={options.jpegHandling === "compress"}
             subSections={[ <JpegQualitySection key="quality" {...props} /> ]}
         >
@@ -149,7 +149,7 @@ export function PngHandlingSection(props: ImageCompressionSectionProps) {
 
     return (
         <CardSection
-            className="image-compression-section"
+            className="tn-card-option image-compression-section"
             subSectionsVisible={options.pngHandling === "jpeg"}
             subSections={[ <ConversionQualitySection key="conversion-quality" {...props} /> ]}
         >
@@ -194,7 +194,7 @@ export function ConversionQualitySection({ options, onChange, disabled, descript
 /** Whether the run reaches past the note it was invoked on, into its whole subtree. */
 export function ProcessChildNotesSection({ options, onChange, disabled, descriptions }: ImageCompressionSectionProps) {
     return (
-        <CardSection className="image-compression-section">
+        <CardSection className="tn-card-option image-compression-section">
             <SectionLabel
                 title={t("space_usage.compress_process_child_notes")}
                 help={t("space_usage.compress_process_child_notes_help")}
@@ -232,7 +232,7 @@ export function UnsupportedFormatNotice() {
  */
 function SectionLabel({ title, help, description }: { title: string; help?: string; description?: string }) {
     const label = (
-        <span className="image-compression-section-title">
+        <span className="tn-card-option-title">
             {title}
             {help && <ContextualHelp helpMessage={help} />}
         </span>
@@ -243,9 +243,9 @@ function SectionLabel({ title, help, description }: { title: string; help?: stri
     }
 
     return (
-        <span className="image-compression-section-label">
+        <span className="tn-card-option-label">
             {label}
-            <small className="image-compression-section-description">{description}</small>
+            <small className="tn-card-option-description">{description}</small>
         </span>
     );
 }
@@ -291,7 +291,7 @@ function QualitySlider({ value, onChange, disabled, description }: {
     description?: string;
 }) {
     return (
-        <CardSection className={clsx("image-compression-section", "image-compression-section-nested")}>
+        <CardSection className={clsx("tn-card-option image-compression-section", "image-compression-section-nested")}>
             <SectionLabel title={t("space_usage.compress_quality")} description={description} />
             <span className="image-compression-section-value">
                 {t("space_usage.compress_quality_value", { quality: value })}

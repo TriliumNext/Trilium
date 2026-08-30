@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildNote } from "../test/easy-froca";
 import froca from "./froca";
+import noteAttributeCache from "./note_attribute_cache.js";
 import server from "./server.js";
 import ws from "./ws.js";
 
@@ -20,10 +21,17 @@ const h = vi.hoisted(() => {
         protectedAvailable: { value: false },
         triggerEvent: vi.fn(),
         triggerCommand: vi.fn(),
-        showMessage: vi.fn()
+        showMessage: vi.fn(),
+        cloneNoteToParentNote: vi.fn(async (..._args: unknown[]) => {})
     };
 });
-const { tabManager, protectedAvailable, triggerEvent, triggerCommand, showMessage } = h;
+const { tabManager, protectedAvailable, triggerEvent, triggerCommand, showMessage, cloneNoteToParentNote } = h;
+
+vi.mock("./branches.js", () => ({
+    default: {
+        cloneNoteToParentNote: (...args: unknown[]) => h.cloneNoteToParentNote(...args)
+    }
+}));
 
 vi.mock("../components/app_context.js", () => ({
     default: {
@@ -320,6 +328,97 @@ describe("chooseNoteType", () => {
         const payload = { success: true, noteType: "render" };
         triggerCommand.mockImplementation((_name: string, data: any) => data.callback(payload));
         await expect(noteCreateService.chooseNoteType()).resolves.toEqual(payload);
+    });
+
+    describe("template default parent", () => {
+        // Templates whose ~template:newNoteDefaultParent points at notes reachable from root, so
+        // that they have note paths.
+        const root = buildNote({
+            id: "root",
+            title: "root",
+            children: [
+                { id: "people", title: "People" },
+                { id: "advisors", title: "Advisors" },
+                { id: "person-tpl", title: "Person", "#template": "", "~template:newNoteDefaultParent": "people" },
+                { id: "multi-tpl", title: "Multi", "#template": "", "~template:newNoteDefaultParent": ["people", "advisors"] },
+                { id: "tpl-folder", title: "Templates", "~template:newNoteDefaultParent(inheritable)": "advisors", children: [
+                    { id: "inheriting-tpl", title: "Inheriting", "#template": "" },
+                    { id: "overriding-tpl", title: "Overriding", "#template": "", "~template:newNoteDefaultParent": "people" }
+                ] },
+                { id: "derived-tpl", title: "Derived", "#template": "", "~template": "person-tpl" },
+                { id: "derived2-tpl", title: "Derived from folder", "#template": "", "~template": "inheriting-tpl" },
+                { id: "plain-tpl", title: "Plain", "#template": "" }
+            ]
+        });
+        expect(root.noteId).toBe("root");
+
+        function choose(response: Record<string, unknown>) {
+            triggerCommand.mockImplementation((_name: string, data: any) => data.callback(response));
+            return noteCreateService.chooseNoteType();
+        }
+
+        it("routes a template without an explicit parent into the template's default parent", async () => {
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "person-tpl" }))
+                .resolves.toEqual({
+                    success: true, noteType: "text", templateNoteId: "person-tpl",
+                    notePath: "root/people", cloneToNoteIds: []
+                });
+        });
+
+        it("reports every default parent: the first as the note path, the rest as clone targets", async () => {
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "multi-tpl" }))
+                .resolves.toMatchObject({ notePath: "root/people", cloneToNoteIds: ["advisors"] });
+        });
+
+        it("ignores a destination flowing through ~template, whatever its inheritable flag", async () => {
+            // easy-froca seeds owned attributes into the attribute cache, which would mask template
+            // inheritance; recomputing resolves it the way the application does.
+            noteAttributeCache.invalidate();
+
+            // derived-tpl's base owns the relation without the flag; derived2-tpl's base sits in a
+            // folder whose relation is inheritable, so the flag arrives intact and only the
+            // owner-is-an-ancestor check tells the two inheritance paths apart.
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "derived-tpl" }))
+                .resolves.toEqual({ success: true, noteType: "text", templateNoteId: "derived-tpl" });
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "derived2-tpl" }))
+                .resolves.toEqual({ success: true, noteType: "text", templateNoteId: "derived2-tpl" });
+        });
+
+        it("uses an inherited default parent, unless the template owns one, which replaces it", async () => {
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "inheriting-tpl" }))
+                .resolves.toMatchObject({ notePath: "root/advisors", cloneToNoteIds: [] });
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "overriding-tpl" }))
+                .resolves.toMatchObject({ notePath: "root/people", cloneToNoteIds: [] });
+        });
+
+        it("keeps a parent the user picked over the template's default parent", async () => {
+            await expect(choose({
+                success: true, noteType: "text", templateNoteId: "person-tpl", notePath: "root/elsewhere"
+            })).resolves.toMatchObject({ notePath: "root/elsewhere" });
+        });
+
+        it("leaves the path unset without a template or without a default parent on it", async () => {
+            await expect(choose({ success: true, noteType: "text" }))
+                .resolves.toEqual({ success: true, noteType: "text" });
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "plain-tpl" }))
+                .resolves.not.toHaveProperty("notePath", expect.any(String));
+        });
+
+        it("creates the note in the first default parent and clones it into the others through createNoteWithTypePrompt", async () => {
+            setActiveContext(true);
+            triggerCommand.mockImplementation((_name: string, data: any) => {
+                data.callback({ success: true, noteType: "text", templateNoteId: "multi-tpl" });
+            });
+
+            await noteCreateService.createNoteWithTypePrompt("fallback-parent", {});
+
+            expect(server.post).toHaveBeenCalledWith(
+                `notes/people/children?target=into&targetBranchId=`,
+                expect.objectContaining({ templateNoteId: "multi-tpl" }),
+                undefined
+            );
+            expect(cloneNoteToParentNote).toHaveBeenCalledExactlyOnceWith(NOTE_ID, "advisors");
+        });
     });
 });
 

@@ -16,6 +16,9 @@ export const ANNOTATION_EDITOR_MODE_NONE = 0;
 export interface AnnotationEditorUIManagerLike {
     getMode(): number;
     getActive(): { isInEditMode(): boolean } | null;
+    /** Whether any editor is selected. Distinct from {@link getActive}, which pdf.js only sets
+     * once an editor is being *edited* — clicking an annotation selects it without activating it. */
+    readonly hasSelection: boolean;
     unselectAll(): void;
 }
 
@@ -51,14 +54,22 @@ export function isAnnotationEditingActive(uiManager: AnnotationEditorUIManagerLi
 /**
  * Commits pending annotation edits into `annotationStorage` so that a subsequent
  * `saveDocument()` includes them — unless the user is literally mid-interaction: committing
- * during an ink stroke would cut the stroke short, and committing a focused free-text editor
- * would steal the caret. Skipped edits are picked up by a later save, re-requested by the
- * interaction-end listeners in `manageSave()`.
+ * during an ink stroke would cut the stroke short, committing a focused free-text editor would
+ * steal the caret, and committing while an annotation is selected would drop the selection.
+ * Skipped edits are picked up by a later save, re-requested by the interaction-end listeners in
+ * `manageSave()`.
  */
 export function commitPendingAnnotationEdits(isPointerDown: boolean, uiManager: AnnotationEditorUIManagerLike | null = getAnnotationEditorUIManager()) {
     try {
         if (!uiManager || uiManager.getMode() === ANNOTATION_EDITOR_MODE_NONE) return;
         if (isPointerDown || uiManager.getActive()?.isInEditMode()) return;
+        // A selection is not pending work: whatever is selected is already in annotationStorage,
+        // so unselectAll() has nothing to commit here — it would only deselect, hiding the
+        // floating toolbar the colour picker lives in and closing any open comment popup, a
+        // second after the user opened one (#11059). The call is needed for an uncommitted
+        // drawing session, and that never coexists with a selection: the pen's session leaves
+        // nothing selected, while each free-hand highlight stroke commits as it ends.
+        if (uiManager.hasSelection) return;
 
         // unselectAll() commits the active editor and ends any in-progress drawing session —
         // the same code path pdf.js runs when Escape is pressed.

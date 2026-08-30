@@ -268,13 +268,16 @@ function toLinkProperty(type: string, href: string): Pick<NotionProperty, "value
  * arrow, which becomes two columns: the original (start) and a separate `<name> end` (end).
  */
 function parseDateProperties(name: string, cell: HTMLElement): NotionProperty[] {
-    const text = cell.querySelector("time")?.textContent;
+    const time = cell.querySelector("time");
+    const text = time?.textContent;
     if (!text) {
         return [];
     }
 
     const [start, end] = text.split("→").map((part) => part.trim());
-    return [toDateProperty(name, start), toDateProperty(`${name} end`, end)].filter((p): p is NotionProperty => p !== undefined);
+    // A `datetime` attribute describes a single instant, so a range reads both of its ends from the text.
+    return [toDateProperty(name, end ? start : notionTimeValue(time) ?? start), toDateProperty(`${name} end`, end)]
+        .filter((p): p is NotionProperty => p !== undefined);
 }
 
 /**
@@ -289,8 +292,8 @@ function toDateProperty(name: string, text: string | undefined): NotionProperty 
         return undefined;
     }
 
-    const date = new Date(text);
-    if (Number.isNaN(date.getTime())) {
+    const date = parseNotionDate(text);
+    if (!date) {
         return undefined;
     }
 
@@ -298,6 +301,26 @@ function toDateProperty(name: string, text: string | undefined): NotionProperty 
     return hasTime
         ? { name, value: dayjs(date).format("YYYY-MM-DD[T]HH:mm"), labelType: "datetime", multiplicity: "single" }
         : { name, value: dayjs(date).format("YYYY-MM-DD"), labelType: "date", multiplicity: "single" };
+}
+
+/**
+ * Reads a `<time>` element's value, preferring the machine-readable `datetime` attribute over the visible
+ * text. Notion renders that text in the export's own locale, and `new Date()` matches a month name only by
+ * its first three letters against the English abbreviations — so a French export keeps "mars" and
+ * "septembre" but drops "juillet" and "décembre".
+ */
+export function notionTimeValue(time: HTMLElement | null): string | undefined {
+    return (time?.getAttribute("datetime") ?? time?.textContent)?.replace(/@/g, "").trim() || undefined;
+}
+
+/**
+ * Parses one Notion date string. A bare `YYYY-MM-DD` is pinned to local midnight, since `new Date()` reads
+ * a date-only ISO string as UTC while the value is rendered back in local time, shifting the day west of
+ * Greenwich. Returns undefined when the string doesn't parse.
+ */
+export function parseNotionDate(text: string): Date | undefined {
+    const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00` : text);
+    return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 /**

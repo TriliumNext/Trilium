@@ -4,9 +4,6 @@ packages:
 
 nodeLinker: hoisted
 
-# pnpm v11 enabled this by default; @electron/rebuild pulls @electron/node-gyp via git.
-blockExoticSubdeps: false
-
 # pnpm v11 introduced a 1-day default release age; keep at 0 so Renovate-driven
 # updates and regular installs aren't stalled.
 minimumReleaseAge: 0
@@ -15,15 +12,21 @@ minimumReleaseAge: 0
 pmOnFail: ignore
 
 overrides:
+  # @electron/rebuild 3.7.x (via electron-forge 7) pins @electron/node-gyp to a GitHub
+  # tarball, which fails wherever only registry.npmjs.org is reachable and trips pnpm's
+  # blockExoticSubdeps default. Vanilla node-gyp >= 11.2 carries the fork's fixes, and
+  # rebuild's one import of it is API-compatible -- rebuild 4.0.1 made the identical
+  # swap (electron/rebuild#1185); electron-forge 7 still pins rebuild 3.7.x.
+  "@electron/node-gyp": "npm:node-gyp@^11.2.0"
   # CodeMirror 6 is a swarm of packages that peer-depend on a shared runtime
   # (view/state/language/...) and rely on single-instance object identity for
   # facets to work. A partial bump leaves two copies in the tree, which breaks
   # both typechecking (nominal type clashes) and runtime (lint markers, etc.).
   # Keep every core singleton pinned here so the whole tree resolves to one copy.
-  "@codemirror/view": "6.43.8"
+  "@codemirror/view": "6.43.9"
   "@codemirror/state": "6.7.1"
   "@codemirror/language": "6.12.4"
-  "@codemirror/commands": "6.10.4"
+  "@codemirror/commands": "6.11.0"
   "@codemirror/autocomplete": "6.20.3"
   "@codemirror/lint": "6.9.7"
   "@codemirror/search": "6.7.1"
@@ -35,12 +38,12 @@ overrides:
   # copies in the tree mean two declarations of the `unique symbol` that marks a `Schema`, so a tool
   # built by one provider stops being assignable to the ToolSet `ai` expects (TS2322 on the Anthropic
   # web-search tool). Pin the version `ai` itself is built against, and raise it with the next bump.
-  "@ai-sdk/provider-utils": "5.0.27"
-  "mermaid": "11.16.1"
+  "@ai-sdk/provider-utils": "5.0.30"
+  "mermaid": "11.17.2"
   "preact": "10.29.8"
   "roughjs": "4.6.6"
   "@types/express-serve-static-core": "5.1.3"
-  "node-abi": "4.33.0"
+  "node-abi": "4.34.0"
   "flat@<5.0.1": ">=5.0.1"
   "debug@>=3.2.0 <3.2.7": ">=3.2.7"
   "nanoid@<3.3.8": ">=3.3.8"
@@ -114,6 +117,9 @@ overrides:
 # CI install on its PRs (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH).
 ignoredOptionalDependencies:
   - "@anthropic-ai/claude-agent-sdk-*"
+  # sass wants @parcel/watcher for its --watch mode, which nothing here invokes -- Vite drives the
+  # compiler API. Skipping it avoids a native install script and twelve per-platform binaries.
+  - "@parcel/watcher"
 
 patchedDependencies:
   '@excalidraw/excalidraw@0.18.1': patches/@excalidraw__excalidraw@0.18.1.patch

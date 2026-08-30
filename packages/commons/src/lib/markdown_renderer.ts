@@ -374,6 +374,18 @@ function restoreFromMap(text: string, map: Map<string, string>): string {
     return text.replace(new RegExp(pattern, "g"), (match) => map.get(match) ?? match);
 }
 
+/** Drops the checkbox marked's lexer unshifts among a loose task item's inline tokens. */
+function dropCheckboxes(tokens: Token[] | undefined): Token[] {
+    /* v8 ignore next -- defensive: marked always lexes a paragraph's inline tokens */
+    return (tokens ?? []).filter((token) => token.type !== "checkbox");
+}
+
+/** Matches an item whose raw text ends in a blank line, i.e. one the next item is spaced away from. */
+const BLANK_LINE_AT_END = /\n[ \t]*\n$/;
+
+/** What CKEditor downcasts for the empty paragraph that separates two lists. */
+const EMPTY_PARAGRAPH = "<p>&nbsp;</p>";
+
 /**
  * Keep renderer code up to date with https://github.com/markedjs/marked/blob/master/src/Renderer.ts.
  *
@@ -427,60 +439,77 @@ export class CustomMarkdownRenderer extends Renderer {
     }
 
     override list(token: Tokens.List): string {
-        let result = super.list(token)
-            .replace("\n", "")
-            .trimEnd();
-
-        if (token.items.some((item) => item.task)) {
-            result = result.replace(/^<ul>/, '<ul class="todo-list">');
+        if (!token.ordered && token.items.some((item) => item.task)) {
+            return this.#taskLists(token);
         }
 
-        return result;
+        return super.list(token)
+            .replace("\n", "")
+            .trimEnd();
     }
 
     override checkbox({ checked }: Tokens.Checkbox): string {
         return `<input type="checkbox"${
-            checked ? 'checked="checked" ' : ""
-        }disabled="disabled">`;
+            checked ? ' checked="checked"' : ""
+        } disabled="disabled">`;
     }
 
     override listitem(item: Tokens.ListItem): string {
-        if (item.task) {
-            const taskState = (item as TaskListItem)._taskState;
-            const dataAttr = taskState ? ` data-trilium-task-state="${taskState}"` : "";
-            // Native hover tooltip on the `<li>` — matches the CKEditor data
-            // downcast, so shared / read-only / exported HTML all surface the
-            // state's human-readable title when the task item is hovered.
-            // Skipped when the state has no definition in the current config.
-            const stateDef = taskState ? this.#stateByName.get(taskState) : undefined;
-            const titleText = stateDef?.title || stateDef?.name;
-            const titleAttr = titleText ? ` title="${escapeHtml(titleText)}"` : "";
-            let itemBody = "";
-            const checkbox = this.checkbox({ checked: !!item.checked, raw: "- [ ]", type: "checkbox" });
-            if (item.loose) {
-                if (item.tokens[0]?.type === "paragraph") {
-                    item.tokens[0].text = checkbox + item.tokens[0].text;
-                    if (item.tokens[0].tokens && item.tokens[0].tokens.length > 0 && item.tokens[0].tokens[0].type === "text") {
-                        item.tokens[0].tokens[0].text = checkbox + escapeHtml(item.tokens[0].tokens[0].text);
-                        item.tokens[0].tokens[0].escaped = true;
-                    }
-                } else {
-                    item.tokens.unshift({
-                        type: "text",
-                        raw: checkbox,
-                        text: checkbox,
-                        escaped: true
-                    });
-                }
-            } else {
-                itemBody += checkbox;
-            }
-
-            itemBody += `<span class="todo-list__label__description">${this.parser.parse(item.tokens.filter((t) => t.type !== "checkbox"))}</span>`;
-            return `<li${dataAttr}${titleAttr}><label class="todo-list__label">${itemBody}</label></li>`;
+        if (!item.task) {
+            return super.listitem(item).trimEnd();
         }
 
-        return super.listitem(item).trimEnd();
+        const taskState = (item as TaskListItem)._taskState;
+        const dataAttr = taskState ? ` data-trilium-task-state="${taskState}"` : "";
+        // Native hover tooltip on the `<li>` — matches the CKEditor data
+        // downcast, so shared / read-only / exported HTML all surface the
+        // state's human-readable title when the task item is hovered.
+        // Skipped when the state has no definition in the current config.
+        const stateDef = taskState ? this.#stateByName.get(taskState) : undefined;
+        const titleText = stateDef?.title || stateDef?.name;
+        const titleAttr = titleText ? ` title="${escapeHtml(titleText)}"` : "";
+        const checkbox = this.checkbox({ checked: !!item.checked, raw: "- [ ]", type: "checkbox" });
+
+        // CKEditor reads the first block as the label's description and every later block
+        // as a sibling of `</label>`. A loose item wraps that first block in a `paragraph`,
+        // whose `<p>` has to go: `todoItemInputConverter` only upcasts an `<input>` that
+        // opens the item, and `.todo-list__label > input` only styles a direct child of
+        // the label.
+        const blocks = item.tokens.filter(
+            (token) => token.type !== "checkbox" && token.type !== "space"
+        );
+        const [first, ...rest] = blocks;
+        const description = first?.type === "paragraph"
+            ? this.parser.parseInline(dropCheckboxes(first.tokens))
+            : this.parser.parse(blocks.slice(0, 1));
+
+        return `<li${dataAttr}${titleAttr}><label class="todo-list__label">${checkbox}`
+            + `<span class="todo-list__label__description">${description}</span></label>`
+            + `${rest.length > 0 ? this.parser.parse(rest) : ""}</li>`;
+    }
+
+    /**
+     * Renders an unordered list holding task items, opening a new `<ul>` at every blank
+     * line between two items. CKEditor has no loose-list form, and the Markdown export
+     * writes exactly this blank line for two todo lists separated by an empty paragraph,
+     * so importing it back rebuilds the same lists.
+     */
+    #taskLists(token: Tokens.List): string {
+        const groups: Tokens.ListItem[][] = [[]];
+        for (const item of token.items) {
+            groups[groups.length - 1].push(item);
+            if (BLANK_LINE_AT_END.test(item.raw)) {
+                groups.push([]);
+            }
+        }
+
+        return groups
+            .filter((group) => group.length > 0)
+            .map((group) => {
+                const className = group.some((item) => item.task) ? ` class="todo-list"` : "";
+                return `<ul${className}>${group.map((item) => this.listitem(item)).join("")}</ul>`;
+            })
+            .join(EMPTY_PARAGRAPH);
     }
 
     override image(token: Tokens.Image): string {
@@ -607,8 +636,9 @@ export function renderToHtml(content: string, title: string, options: RenderToHt
     }
     html = options.sanitize(html);
 
-    // Add a trailing semicolon to CSS styles.
-    html = html.replaceAll(/(<(img|figure|col).*?style=".*?)"/g, '$1;"');
+    // Sanitization re-serializes a `style` attribute without the trailing semicolon CKEditor
+    // writes, which would rewrite a note the first time it is saved after an import.
+    html = html.replaceAll(/(<[a-z][^<>]*\sstyle="[^"]*[^";])"/gi, '$1;"');
 
     // Remove slash for self-closing tags to match CKEditor's approach.
     html = html.replace(/<(\w+)([^>]*)\s+\/>/g, "<$1$2>");

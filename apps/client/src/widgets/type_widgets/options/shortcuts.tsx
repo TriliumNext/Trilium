@@ -139,7 +139,10 @@ export default function ShortcutSettings() {
                             iconAction
                             title={t("shortcuts.filter")}
                             dropdownRef={filterDropdownRef}
-                            dropdownContainerClassName={isMobile() ? "mobile-bottom-menu" : undefined}
+                            mobileBottomSheet
+                            // The row is a container, and so a backdrop root: left inside it the
+                            // menu loses its blur and reads as a flat tint.
+                            portalToBody
                         >
                             <FilterContent
                                 activeFilter={activeFilter}
@@ -150,19 +153,23 @@ export default function ShortcutSettings() {
                             />
                         </Dropdown>
 
-                        <Button
-                            text={t("shortcuts.reload_app")}
-                            // Called rather than handed over: its one argument is the reason to be
-                            // logged for the reload, and passed straight to the button that would
-                            // have been the click event.
-                            onClick={() => reloadFrontendApp()}
-                            size="micro"
-                        />
-                        <Button
-                            text={t("shortcuts.set_all_to_default")}
-                            onClick={resetShortcuts}
-                            size="micro"
-                        />
+                        {/* Held together, so that a narrow page can put the pair on a line of
+                            their own under the filter rather than breaking them apart. */}
+                        <div className="shortcut-header-actions">
+                            <Button
+                                text={t("shortcuts.reload_app")}
+                                // Called rather than handed over: its one argument is the reason to
+                                // be logged for the reload, and passed straight to the button that
+                                // would have been the click event.
+                                onClick={() => reloadFrontendApp()}
+                                size="micro"
+                            />
+                            <Button
+                                text={t("shortcuts.set_all_to_default")}
+                                onClick={resetShortcuts}
+                                size="micro"
+                            />
+                        </div>
                     </div>
                 }
             />
@@ -197,6 +204,16 @@ export default function ShortcutSettings() {
                                 />
                             )}
             </div>
+
+            {/* "Reset all" says little once it is read away from the page it belongs to, so the
+                words it is found by come from what the action asks before it runs. */}
+            <Card filterOnly
+                  heading={t("settings.related_actions")}
+                  filterExtraKeywords={t("shortcuts.confirm_reset")}>
+                <OptionCardSection label={t("shortcuts.set_all_to_default")}>
+                    <Button text={t("shortcuts.set_all_to_default")} onClick={resetShortcuts} />
+                </OptionCardSection>
+            </Card>
         </>
     );
 }

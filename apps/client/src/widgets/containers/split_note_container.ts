@@ -121,6 +121,12 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
             return;
         }
 
+        // A tab whose only pane is this one has no split to close -- closing it would take the whole
+        // tab down. ClosePaneButton hides itself there; the keyboard action can still ask for it.
+        if (contexts[currentIndex].getMainContext().getSubContexts().length <= 1) {
+            return;
+        }
+
         const isRemoveMainContext = contexts[currentIndex].isMainContext();
         if (isRemoveMainContext && currentIndex + 1 < contexts.length) {
             const ntxIds = contexts.map((c) => c.ntxId).filter((c) => !!c) as string[];
@@ -143,10 +149,18 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         const contexts = appContext.tabManager.noteContexts;
 
         const currentIndex = contexts.findIndex((c) => c.ntxId === ntxId);
+        if (currentIndex === -1) {
+            logError(`invalid context! ntxId: ${ntxId}`);
+            return;
+        }
+
         const leftIndex = isMovingLeft ? currentIndex - 1 : currentIndex;
 
-        if (currentIndex === -1 || leftIndex < 0 || leftIndex + 1 >= contexts.length) {
-            logError(`invalid context! currentIndex: ${currentIndex}, leftIndex: ${leftIndex}, contexts.length: ${contexts.length}`);
+        // A tab lays its panes out as the main context followed by its sub-contexts, so the right
+        // half of the swapped pair is a sub-context whenever the pair sits inside one tab. Anything
+        // else is at a tab boundary, where a swap would move a pane into the neighbouring tab.
+        // MovePaneButton hides itself in that state; the keyboard actions can still ask for it.
+        if (leftIndex < 0 || leftIndex + 1 >= contexts.length || !contexts[leftIndex + 1].mainNtxId) {
             return;
         }
 
@@ -176,6 +190,24 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         await appContext.tabManager.activateNoteContext(isMovingLeft ? ntxIds[leftIndex + 1] : ntxIds[leftIndex]);
 
         splitService.moveNoteSplitResizer(ntxIds[leftIndex]);
+    }
+
+    /*
+     * Entry points for the split keyboard actions. They dispatch from `appContext`, which finds no
+     * matching command on its top-level components and distributes downwards as an event instead, so
+     * they cannot reuse the command handlers above -- those only run when a pane button bubbles the
+     * command up from the pane it belongs to.
+     */
+    async closeActiveNoteSplitEvent({ ntxId }: EventData<"closeActiveNoteSplit">) {
+        await this.closeThisNoteSplitCommand({ ntxId });
+    }
+
+    async moveActiveNoteSplitLeftEvent({ ntxId }: EventData<"moveActiveNoteSplitLeft">) {
+        await this.moveThisNoteSplitCommand({ ntxId, isMovingLeft: true });
+    }
+
+    async moveActiveNoteSplitRightEvent({ ntxId }: EventData<"moveActiveNoteSplitRight">) {
+        await this.moveThisNoteSplitCommand({ ntxId, isMovingLeft: false });
     }
 
     activeContextChangedEvent() {

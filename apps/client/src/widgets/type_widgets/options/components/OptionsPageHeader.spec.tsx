@@ -1,3 +1,4 @@
+import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderInto } from "../../../../test/render";
@@ -11,7 +12,7 @@ vi.mock("../../../react/hooks", async (importOriginal) => ({
     useNoteContext: () => ({ note: mocks.note })
 }));
 
-import OptionsPageHeader from "./OptionsPageHeader";
+import OptionsPageHeader, { PageHelpSlot } from "./OptionsPageHeader";
 
 const NOTE = { title: "Appearance", getIcon: () => "bx bx-palette" };
 
@@ -50,6 +51,25 @@ describe("OptionsPageHeader", () => {
         const container = renderInto(<OptionsPageHeader helpUrl="cbkrhQjrkKrh" />);
 
         expect(container.querySelector(".options-page-header-help")).not.toBeNull();
+    });
+
+    it("hands the help over to a host that has somewhere better for it, rather than drawing it", () => {
+        mocks.note = NOTE;
+        const taken: (string | undefined)[] = [];
+        let container!: HTMLElement;
+
+        // Handed over from an effect, which `renderInto` alone leaves pending.
+        act(() => {
+            container = renderInto(
+                <PageHelpSlot.Provider value={(helpUrl) => taken.push(helpUrl)}>
+                    <OptionsPageHeader helpUrl="cbkrhQjrkKrh" />
+                </PageHelpSlot.Provider>
+            );
+        });
+
+        expect(taken).toContain("cbkrhQjrkKrh");
+        // Drawn in one place or the other, never in both.
+        expect(container.querySelector(".options-page-header-help")).toBeNull();
     });
 
     it("renders nothing at all before the note has arrived and with nothing else to show", () => {

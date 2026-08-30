@@ -555,6 +555,20 @@ describe("buildTriliumSlashCommands", () => {
         expect(executeSpy).toHaveBeenCalledWith("alignment", { value });
     });
 
+    it("finds the collapsible block under the names other editors give it", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+
+        // "collapse" earns its place among the aliases: the title starts with "collapsi", so
+        // a fully typed "collapse" matches neither its prefix nor a substring of it.
+        for (const query of [
+            "details", "fold", "toggle", "collapse", "expand", "accordion", "spoiler",
+            "summary", "disclosure", "hide"
+        ]) {
+            expect(matchSlashCommands(definitions, query).map((entry) => entry.id))
+                .toContain("collapsible");
+        }
+    });
+
     it("defines one entry per admonition type, each applying its own type", () => {
         const { fake, executeSpy } = makeFakeEditor();
 

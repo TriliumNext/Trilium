@@ -221,6 +221,7 @@
 
     --badge-temporaraily-editable-background-color: #297331;
     --badge-read-only-background-color: #af4340;
+    --badge-office-preview-background-color: #3f5470;
     --badge-share-background-color: #4d4d4d;
     --badge-snippet-background-color: #4d4d4d;
     --badge-clipped-note-background-color: #295773;
@@ -362,7 +363,54 @@
     --task-checkbox-done-hover-color: #41b441;
     --task-checkbox-unknown-state-color: #e95d5d;
     --task-checkbox-glyph-color: white;
-    
+
+    --space-usage-treemap-cell-background: var(--accented-background-color);
+    --space-usage-treemap-cell-icon-color: var(--muted-text-color);
+    --space-usage-treemap-cell-hover-color: var(--main-text-color);
+    --space-usage-treemap-cell-selected-color: var(--main-text-color);
+
+    --space-usage-treemap-cell-saturation: 35%;
+    --space-usage-treemap-cell-lightness: 40%;
+
+    --space-usage-treemap-icon-saturation: 60%;
+    --space-usage-treemap-icon-lightness: 70%;
+
+    --space-usage-treemap-hover-saturation: 60%;
+    --space-usage-treemap-hover-lightness: 70%;
+
+    --space-usage-treemap-selected-saturation: 70%;
+    --space-usage-treemap-selected-lightness: 70%;
+
+    --space-usage-body-color: #a7c0d3;
+    --space-usage-attachments-color: #dec7a7;
+    --space-usage-revisions-color: #61d177;
+    --space-usage-revisions-stripe-color: #000000;
+
+    --space-usage-donut-track-color: var(--main-border-color);
+    --space-usage-donut-segment-color: var(--accented-background-color);
+    --space-usage-donut-segment-hover-color: var(--input-focus-outline-color);
+    --space-usage-donut-segment-selected-color: var(--main-text-color);
+
+    --space-usage-donut-segment-saturation: 55%;
+    --space-usage-donut-segment-lightness: 60%;
+
+    --space-usage-donut-hover-saturation: 90%;
+    --space-usage-donut-hover-lightness: 80%;
+
+    --board-column-background-saturation: 14%;
+    --board-column-background-lightness: 23%;
+
+    --board-item-background-saturation: 21%;
+    --board-item-background-lightness: 32%;
+
+    --board-item-hover-background-saturation: 25%;
+    --board-item-hover-background-lightness: 35%;
+
+    --board-focus-outline-saturation: 60%;
+    --board-focus-outline-lightness: 70%;
+
+    --space-usage-donut-selected-saturation: 90%;
+    --space-usage-donut-selected-lightness: 80%;
 }
 
 /*
@@ -432,7 +480,8 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 .geo-detail-sheet.with-hue,
 .nested-note-list-item.with-hue,
 .note-book-card.with-hue .note-book-header,
-.ck-template-icon.with-hue {
+.ck-template-icon.with-hue,
+.board-column h3 {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 15.8%, 30.9%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 100%, 76.5%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 28.3%, 36.7%);

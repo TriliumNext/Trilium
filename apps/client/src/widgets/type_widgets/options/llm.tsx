@@ -290,7 +290,7 @@ function ProviderList({ providers, onEdit, onDelete }: ProviderListProps) {
                         ? t("llm.provider_model_count", { count: modelCount })
                         : providerType?.name || provider.provider}
                 >
-                    <span className="llm-provider-actions">
+                    <span className="tn-card-option-actions">
                         <ActionButton
                             icon="bx bx-edit"
                             text={t("llm.edit_provider")}

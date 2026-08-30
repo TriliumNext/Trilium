@@ -1,5 +1,6 @@
 import "./NoteBadges.css";
 
+import { isOfficeMimeType } from "@triliumnext/commons";
 import { clsx } from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
@@ -8,7 +9,7 @@ import { t } from "../../services/i18n";
 import { goToLinkExt } from "../../services/link";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean } from "../react/hooks";
+import { useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../react/hooks";
 import { useShareState } from "../ribbon/BasicPropertiesTab";
 import { useShareInfo } from "../shared_info";
 import { ActiveContentBadges } from "./ActiveContentBadges";
@@ -19,6 +20,7 @@ export default function NoteBadges() {
         <div className="note-badges">
             <SaveStatusBadge />
             <ReadOnlyBadge />
+            <OfficePreviewBadge />
             <ShareBadge />
             <ClippedNoteBadge />
             <ExecuteBadge />
@@ -50,6 +52,31 @@ function ReadOnlyBadge() {
             onClick={() => enableEditing()}
         />;
     }
+}
+
+/**
+ * Marks a file note that `OfficePreview` renders as HTML (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and
+ * EPUB). The preview is a rendering of the document, not an editor, so the badge tells the reader
+ * why nothing can be typed into it. Unlike `ReadOnlyBadge` there is nothing to unlock.
+ */
+export function OfficePreviewBadge() {
+    const { note, viewScope } = useNoteContext();
+    const type = useNoteProperty(note, "type");
+    const mime = useNoteProperty(note, "mime");
+
+    const isPreviewShown = !viewScope?.viewMode || viewScope.viewMode === "default";
+    if (type !== "file" || !isOfficeMimeType(mime) || !isPreviewShown) {
+        return;
+    }
+
+    return (
+        <Badge
+            className="office-preview-badge"
+            icon="bx bx-show"
+            text={t("breadcrumb_badges.office_preview")}
+            tooltip={t("breadcrumb_badges.office_preview_description")}
+        />
+    );
 }
 
 function ShareBadge() {

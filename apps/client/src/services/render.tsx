@@ -4,6 +4,7 @@ import type FNote from "../entities/fnote.js";
 import { renderReactWidgetAtElement } from "../widgets/react/react_utils.jsx";
 import { type Bundle, executeBundleWithoutErrorHandling } from "./bundle.js";
 import froca from "./froca.js";
+import { keepStylesScoped, RENDER_SCOPE_CLASS } from "./render_css_scope.js";
 import server from "./server.js";
 
 /**
@@ -27,10 +28,11 @@ export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: Er
                 throw new Error(`Script note '${renderNoteId}' could not be loaded. It may be protected and require an active protected session.`);
             }
 
-            const $scriptContainer = $("<div>");
+            const $scriptContainer = $("<div>").addClass(RENDER_SCOPE_CLASS);
             $el.append($scriptContainer);
 
             $scriptContainer.append(bundle.html);
+            keepStylesScoped($scriptContainer[0]);
 
             // async so that scripts cannot block trilium execution
             executeBundleWithoutErrorHandling(bundle, note, $scriptContainer)

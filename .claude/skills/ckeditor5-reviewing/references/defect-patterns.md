@@ -205,6 +205,23 @@ variants, all of which render fine in English and are never translated anywhere:
   schema-disallowed; tear down. Tests are **Vitest** with real `ClassicEditor.create` and helpers
   from `ckeditor5`; run them via `pnpm --filter @triliumnext/ckeditor5 test`.
 
+**Coverage that certifies a bug instead of catching it.** The aggregate is gated at 100 %, so the
+incentive is to make a line *covered*, not correct — and a review that trusts the number misses
+what the number is hiding.
+- Spot: a `/* v8 ignore */` over a block described as unreachable; a spec asserting `.toThrow()`
+  on the plugin's own happy path; a spec that re-implements the helper it claims to test instead of
+  calling it; a spec whose only assertions are shape (`expect(arr).toHaveLength(3)`) and which never
+  names the behavior under test; a module whose sole consumer is its own spec.
+- Why: each of these has happened in-tree. An `inputTransformation` handler registered on
+  `Clipboard` instead of `ClipboardPipeline` — so it never fires in production — carried a
+  `v8 ignore` comment *documenting* it as unreachable while its spec asserted `.toThrow()`, locking
+  in a triple bug (wrong event, wrong payload field, an upcast that never matched). A leveled
+  logger's ignore comment covered the one branch that does run, leaving two permanent no-ops. A
+  view class stayed alive only because its spec imported it.
+- Fix: read every `v8 ignore` and every `.toThrow()` as a claim to verify. An ignore comment must
+  justify why the path *cannot* be reached, not record that it currently isn't; a `.toThrow()` must
+  test a documented error contract, not observed brokenness. Dead code gets deleted, not covered.
+
 ## Trilium integration
 
 The monorepo wiring and conventions — a plugin can be internally correct yet still broken because

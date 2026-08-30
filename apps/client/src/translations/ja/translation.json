@@ -110,7 +110,8 @@
     "new-version-available": "新しいアップデートが利用可能",
     "download-update": "{{latestVersion}} をバージョンを入手",
     "search_notes": "検索ノート",
-    "show_deleted_notes": "削除されたノートを表示"
+    "show_deleted_notes": "削除されたノートを表示",
+    "show_space_usage": "スペース使用状況を表示"
   },
   "left_pane_toggle": {
     "show_panel": "パネルを表示",
@@ -265,7 +266,8 @@
     "saturday": "土曜日",
     "default-content-language": "デフォルトのコンテンツ言語",
     "default-content-language-description": "基本プロパティ セクションでノート自体に言語が設定されていない場合、ノートは指定された言語で記述されます。これは、右から左への配置や、入力時に表示される引用符の種類などの機能に影響します。",
-    "default-content-language-auto": "アプリケーションの言語に基づく"
+    "default-content-language-auto": "アプリケーションの言語に基づく",
+    "dates-title": "日付とカレンダー"
   },
   "tab_row": {
     "close_tab": "タブを閉じる",
@@ -538,7 +540,8 @@
     "zoom_out_title": "ズームアウト",
     "zoom_in_title": "ズームイン",
     "create_child_note_title": "子ノートを作成し、マップに追加",
-    "reset_pan_zoom_title": "パンとズームを初期座標と倍率にリセット"
+    "reset_pan_zoom_title": "パンとズームを初期座標と倍率にリセット",
+    "create_child_note_text": "ノートを追加"
   },
   "tree-context-menu": {
     "advanced": "高度",
@@ -1541,7 +1544,8 @@
     "share_html": "共有ページに挿入される HTML ノート。挿入位置は、そのノート上の <code>#shareHtmlLocation</code> で指定します。共有対象のサブツリー内に配置されている必要があります。",
     "map_dark_style": "<code>map:style</code> で指定されたカスタムスタイルがダーク系であることを地図に伝えます。これにより、その上に表示されるマーカーのタイトルが明るい色で描画されるようになります。コレクションのプロパティで提供されるスタイルには、その情報が既に含まれているため、このような指定は不要です。",
     "map_cluster": "近接して描画されるマーカーをまとめ、番号付きの吹き出しとして表示します。この吹き出しはクリックすると開きます。",
-    "ai_quick_action": "このノートをテキストエディタの AI アシスタントメニューの指示として表示されます。タイトルがアクション名になり、内容がプロンプトになります。"
+    "ai_quick_action": "このノートをテキストエディタの AI アシスタントメニューの指示として表示されます。タイトルがアクション名になり、内容がプロンプトになります。",
+    "template_new_note_default_parent": "テンプレートノートに設定した場合: テンプレートから作成されたノート（例: @補完機能によるもの）は、明示的に別の場所が選択されない限り、対象のノートの配下に配置されます。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",
@@ -1669,7 +1673,8 @@
     "cut": "ノートはクリップボードに切り取りとられました。",
     "copied": "ノートはクリップボードにコピーされました。",
     "copy_failed": "権限の問題で、クリップボードにコピーできません。",
-    "copy_success": "クリップボードにコピーしました。"
+    "copy_success": "クリップボードにコピーしました。",
+    "copied_without_links": "ノートはクリップボードにコピーされましたが、ノートへのリンクはシステムクリップボードに配置できませんでした。"
   },
   "launcher_context_menu": {
     "add-note-launcher": "ノートランチャーを追加",
@@ -1763,7 +1768,10 @@
   },
   "svg": {
     "export_to_png": "図をPNG形式でエクスポートできませんでした。",
-    "export_to_svg": "図をSVG形式でエクスポートできませんでした。"
+    "export_to_svg": "図をSVG形式でエクスポートできませんでした。",
+    "zoom_in": "拡大",
+    "zoom_out": "縮小",
+    "reset_zoom": "ズームをリセット"
   },
   "code_theme": {
     "title": "外観",
@@ -2310,7 +2318,21 @@
     "marker-color": "マーカーの色",
     "copy-coordinates": "座標をコピー",
     "expand-details": "ノートをマップ全体に表示",
-    "restore-details": "ノートをマップの横に戻す"
+    "restore-details": "ノートをマップの横に戻す",
+    "search": "検索",
+    "search-placeholder": "場所を検索",
+    "search-online": "\"{{- query}}\" をオンラインで検索",
+    "searching-online": "オンラインで検索中…",
+    "no-places-found": "場所が見つかりませんでした",
+    "search-failed": "場所を検索できませんでした",
+    "results-nearby": "近く",
+    "results-far": "遠く",
+    "add-place-as-marker": "マーカーとして追加",
+    "previous-result": "前の結果",
+    "next-result": "次の結果",
+    "result-position": "{{total}} 件中 {{index}} 件目の結果、クリックして戻る",
+    "results-on-map": "この地図上",
+    "go-to-coordinates": "{{- coordinates}} へ移動"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -2345,7 +2367,8 @@
     "vector_light": "Vector（ライト）",
     "vector_dark": "Vector （ダーク）",
     "show-labels": "マーカー名を表示",
-    "cluster-markers": "近くのマーカーをグループ化"
+    "cluster-markers": "近くのマーカーをグループ化",
+    "presentation-theme": "テーマ"
   },
   "call_to_action": {
     "next_theme_title": "新しいTriliumテーマをお試しください",
@@ -2364,9 +2387,7 @@
   },
   "settings": {
     "related_settings": "関連設定",
-    "related_actions": "関連アクション",
-    "related_space_usage": "データベース内の容量使用状況を分析",
-    "related_space_usage_description": "容量を最も多く消費しているノート、変更履歴、添付ファイルを確認し、容量を解放します。"
+    "related_actions": "関連アクション"
   },
   "settings_appearance": {
     "related_code_blocks": "テキストノート内のコードブロックの配色",
@@ -2559,7 +2580,8 @@
   "server": {
     "unknown_http_error_title": "サーバーとの通信エラー",
     "unknown_http_error_content": "ステータスコード: {{statusCode}}\nURL: {{method}} {{url}}\nメッセージ: {{message}}",
-    "traefik_blocks_requests": "Traefik リバース プロキシを使用している場合、サーバーとの通信に影響する重大な変更が導入されました。"
+    "reverse_proxy_blocked_title": "リバースプロキシによってブロックされたリクエスト",
+    "reverse_proxy_blocked_message": "一部のリクエストが Trilium に到達する前に拒否（HTTP 400）されました。これはおそらく、URL 内のパーセントエンコードされた文字をブロックするリバースプロキシによるものと考えられます。\n\nTraefik バージョン 3.6.4 から 3.6.6 では、これがデフォルトで実行されます: Traefik 3.6.7以降にアップグレードするか、設定でエンコードされた文字を許可してください。"
   },
   "tab_history_navigation_buttons": {
     "go-back": "前のノートに戻る",
@@ -2641,7 +2663,7 @@
     "custom_widget_go_to_source": "ソースコードへ移動",
     "peek": "右ペインをピーク表示",
     "hide": "右ペインを非表示",
-    "dock": "パネルをドッキング",
+    "dock": "パネルを固定",
     "close": "パネルを閉じる",
     "tab_outline": "アウトライン",
     "tab_attributes": "属性",
@@ -2651,7 +2673,8 @@
     "tab_connections": "コネクション"
   },
   "attributes_panel": {
-    "title": "ノート属性"
+    "title": "ノート属性",
+    "edit_in_sidebar": "サイドバーで編集"
   },
   "pdf": {
     "attachments_other": "{{count}} 添付ファイル",
@@ -2659,7 +2682,11 @@
     "pages_other": "{{count}} ページ",
     "pages_alt": "ページ {{pageNumber}}",
     "pages_loading": "読み込み中...",
-    "annotations_other": "{{count}} 注釈"
+    "annotations_other": "{{count}} 注釈",
+    "annotation_drawing": "{{pageNumber}} ページの描画",
+    "annotation_highlight": "{{pageNumber}} ページのハイライト",
+    "annotation_note": "{{pageNumber}} ページのノート",
+    "annotation_text_box": "{{pageNumber}} のテキストボックス"
   },
   "platform_indicator": {
     "available_on": "{{platform}} で利用可能"
@@ -3075,7 +3102,7 @@
     "analyze_space_usage": "スペース利用状況を分析",
     "analyze_space_usage_description": "どのノートが最もスペースを占めているかを特定し、ノートのサイズをより明確に把握します。",
     "analyze_space_usage_button": "分析",
-    "cleanup": "クリーンアップの実行",
+    "cleanup": "データベースをクリーンアップ",
     "cleanup_description": "削除済みのノートや添付ファイルを消去し、変更履歴スナップショットを整理して画像を圧縮することで、データベースを軽量に保ちます。",
     "related_backup": "バックアップ",
     "related_backup_description": "データベースのバックアップ作成や復元、自動バックアップの管理を行います。"
@@ -3199,7 +3226,9 @@
   },
   "common": {
     "save": "保存",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "fullscreen": "全画面表示",
+    "exit_fullscreen": "全画面表示を終了"
   },
   "spreadsheet": {
     "read-only": "このノートは読み取り専用です。",
@@ -3458,7 +3487,12 @@
   },
   "options": {
     "title": "オプション",
-    "back": "すべてのオプションに戻る"
+    "back": "すべてのオプションに戻る",
+    "search_placeholder": "設定を検索",
+    "search_clear": "検索をクリア",
+    "search_title": "検索オプション",
+    "search_hint": "キーワードを入力して、すべての設定ページを検索します。",
+    "search_no_results": "該当する設定は見つかりませんでした。"
   },
   "dashboard_view": {
     "refresh-widget": "更新",
@@ -3673,9 +3707,7 @@
     "item_count_other": "{{count}} アイテム",
     "view_mode": "表示:",
     "view_by_category": "カテゴリ別",
-    "view_by_location": "場所別",
-    "section_active_content": "アクティブコンテンツとテンプレート",
-    "section_space_usage": "容量使用状況"
+    "view_by_location": "場所別"
   },
   "show-help": "ヘルプを表示",
   "attribute_list_panel": {
@@ -3806,7 +3838,13 @@
     "compress_result_none": "圧縮する画像はありません。",
     "compress_result_stopped": "{{total}} 枚中 {{done}} 枚の処理を完了し、サイズを {{before}} から {{after}} に縮小しました。",
     "compress_result_stopped_no_gain": "{{total}} 枚中 {{done}} 枚の処理を完了しましたが、これ以上サイズを小さくできる画像はありませんでした。",
-    "compress_result_stopped_none": "画像の処理が開始される前に停止しました。"
+    "compress_result_stopped_none": "画像の処理が開始される前に停止しました。",
+    "status_notes": "ノート",
+    "status_total": "合計",
+    "status_attachments": "添付ファイル",
+    "status_deleted_items": "削除済みアイテム",
+    "selection_hint": "アイテムをタップして詳細を表示",
+    "show_selection_details": "選択項目の詳細を表示"
   },
   "contextual_help": {
     "label": "ヘルプ: {{- message}}",
@@ -3826,9 +3864,7 @@
     "note_paths_what": "1 つのノートをノートツリー内の複数の場所に同時に配置することができ、それぞれの場所はパスとしてここに一覧表示されます。",
     "note_paths_cloning": "場所を追加することをクローンと呼ばれます。データは複製されないため、あるパスでの編集はすべてに反映され、あるパスを削除しても他の場所のノートはそのまま残ります。",
     "backlinks_what": "本文中のリンクや、そのノートを指し示すリレーションによって、このノートを参照しているノート。",
-    "backlinks_listing": "テキストリンクは前後の文章とともに表示され、リレーションはそのリンクの名前とともに表示されます。この画面からリンクを直接編集することはできません。リンク元のノートからリンクが削除されると、この表示も消滅します。",
-    "similar_notes_what": "直接的なリンクがなくても、このノートと関連性が高いと見なされるノート。",
-    "similar_notes_how": "この類似性は、ノートの内容、属性、設定されているリレーション、および作成時期の近さなどに基づいて算出されます。"
+    "backlinks_listing": "テキストリンクは前後の文章とともに表示され、リレーションはそのリンクの名前とともに表示されます。この画面からリンクを直接編集することはできません。リンク元のノートからリンクが削除されると、この表示も消滅します。"
   },
   "compress-images": "画像を圧縮",
   "compress-image": "画像を圧縮",

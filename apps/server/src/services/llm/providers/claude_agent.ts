@@ -20,7 +20,7 @@
  *     with every built-in Claude Code tool (file access, bash, …) disabled.
  */
 
-import { type Options as AgentOptions, query, type SDKAssistantMessage, type SDKMessage, type SDKUserMessage, type SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
+import type { Options as AgentOptions, query as queryFn, SDKAssistantMessage, SDKMessage, SDKUserMessage, SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources";
 import type { LlmMessage, LlmMessagePart, LlmStreamChunk } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
@@ -282,6 +282,7 @@ export class ClaudeAgentProvider implements LlmProvider {
             })
         };
 
+        const query = await loadQuery();
         const response = query({
             prompt: noInput,
             options: {
@@ -377,6 +378,7 @@ export class ClaudeAgentProvider implements LlmProvider {
         const toolIdsByBlockIndex = new Map<number, string>();
 
         try {
+            const query = await loadQuery();
             const response = query({
                 prompt,
                 options: {
@@ -541,6 +543,7 @@ export class ClaudeAgentProvider implements LlmProvider {
 
     async generateTitle(firstMessage: string): Promise<string> {
         try {
+            const query = await loadQuery();
             const response = query({
                 prompt: `Generate a short title (at most 5 words) summarizing this chat message. Reply with only the title, no quotes or punctuation around it:\n\n${firstMessage.substring(0, 500)}`,
                 options: {
@@ -631,7 +634,7 @@ export class ClaudeAgentProvider implements LlmProvider {
             // open port, and no dependency on the user-facing `mcpEnabled`
             // toggle (which exists to expose notes to *external* clients).
             options.mcpServers = {
-                trilium: { type: "sdk", name: "trilium", instance: createMcpServer() }
+                trilium: { type: "sdk", name: "trilium", instance: await createMcpServer() }
             };
             // Bare server prefix auto-allows every tool from that server.
             allowedTools.push("mcp__trilium");
@@ -936,4 +939,9 @@ function describeAgentError(error: unknown): string {
         return `Failed to start Claude Code: ${text}`;
     }
     return text;
+}
+
+// Dynamically imported so the agent SDK only loads when an agent chat actually runs.
+async function loadQuery(): Promise<typeof queryFn> {
+    return (await import("@anthropic-ai/claude-agent-sdk")).query;
 }

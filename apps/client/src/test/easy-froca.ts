@@ -8,8 +8,8 @@ import froca from "../services/froca.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
 import utils from "../services/utils.js";
 
-type AttributeDefinitions = { [key in `#${string}`]: string; };
-type RelationDefinitions = { [key in `~${string}`]: string; };
+type AttributeDefinitions = { [key in `#${string}`]: string | string[]; };
+type RelationDefinitions = { [key in `~${string}`]: string | string[]; };
 
 interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
     id?: string | undefined;
@@ -23,7 +23,10 @@ interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
 /**
  * Creates the given notes with the given title and optionally one or more attributes.
  *
- * For a label to be created, simply pass on a key prefixed with `#` and any desired value.
+ * For a label to be created, simply pass on a key prefixed with `#` and any desired value; `~` makes
+ * a relation. An array value creates one attribute per element, since an object literal cannot repeat
+ * a key. An `(inheritable)` suffix on the name marks the attribute inheritable, and the descendants
+ * built here see it through `note.getAttributes()`, like in the application.
  *
  * The notes and attributes will be injected in the froca.
  *
@@ -32,7 +35,8 @@ interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
  * @example
  * buildNotes([
  *  { title: "A", "#startDate": "2025-05-05" },
- *  { title: "B", "#startDate": "2025-05-07" }
+ *  { title: "B", "#startDate": "2025-05-07" },
+ *  { title: "C", "#shared(inheritable)": "x", "~template": ["tpl1", "tpl2"] }
  * ]);
  */
 export function buildNotes(notes: NoteDefinition[]) {
@@ -71,53 +75,43 @@ export function buildNote(noteDef: NoteDefinition) {
     note.getBlob = async () => blob;
 
     let position = 0;
-    for (const [ key, value ] of Object.entries(noteDef)) {
-        const attributeId = utils.randomString(12);
+    for (const [ key, rawValue ] of Object.entries(noteDef)) {
+        if (!key.startsWith("#") && !key.startsWith("~")) {
+            continue;
+        }
+
+        const type = key.startsWith("#") ? "label" : "relation";
         let name = key.substring(1);
-        const isInheritable = key.endsWith("(inheritable)");
+        const isInheritable = name.endsWith("(inheritable)");
         if (isInheritable) {
             name = name.substring(0, name.length - "(inheritable)".length);
         }
 
-        let attribute: FAttribute | null = null;
-        if (key.startsWith("#")) {
-            attribute = new FAttribute(froca, {
+        // An array stands for several attributes of the same name.
+        const values = Array.isArray(rawValue) ? rawValue : [ rawValue as string ];
+        for (const value of values) {
+            const attributeId = utils.randomString(12);
+            const attribute = new FAttribute(froca, {
                 noteId: note.noteId,
                 attributeId,
-                type: "label",
+                type,
                 name,
                 value,
                 position,
                 isInheritable
             });
-        }
 
-        if (key.startsWith("~")) {
-            attribute = new FAttribute(froca, {
-                noteId: note.noteId,
-                attributeId,
-                type: "relation",
-                name,
-                value,
-                position,
-                isInheritable
-            });
-        }
+            froca.attributes[attributeId] = attribute;
+            note.attributes.push(attributeId);
+            position++;
 
-        if (!attribute) {
-            continue;
+            // Inject the attribute into the note attribute cache, since FNote.getAttribute() doesn't always work.
+            // If we add support for templates into froca, this might cause issues.
+            if (!noteAttributeCache.attributes[note.noteId]) {
+                noteAttributeCache.attributes[note.noteId] = [];
+            }
+            noteAttributeCache.attributes[note.noteId].push(attribute);
         }
-
-        froca.attributes[attributeId] = attribute;
-        note.attributes.push(attributeId);
-        position++;
-
-        // Inject the attribute into the note attribute cache, since FNote.getAttribute() doesn't always work.
-        // If we add support for templates into froca, this might cause issues.
-        if (!noteAttributeCache.attributes[note.noteId]) {
-            noteAttributeCache.attributes[note.noteId] = [];
-        }
-        noteAttributeCache.attributes[note.noteId].push(attribute);
     }
 
     // Manage children.
@@ -137,7 +131,41 @@ export function buildNote(noteDef: NoteDefinition) {
             childNote.addParent(note.noteId, branchId, false);
             childNotePosition += 10;
         }
+
+        spreadInheritableAttributes(note);
     }
 
     return note;
+}
+
+/**
+ * Appends the note's inheritable attributes (own and already-inherited alike) to the cached
+ * attribute list of every descendant, the way the application's attribute inheritance resolves
+ * them. Needed because a note whose attributes were seeded into the cache above never computes
+ * its inherited ones.
+ */
+function spreadInheritableAttributes(note: FNote) {
+    const inheritableAttributes =
+        (noteAttributeCache.attributes[note.noteId] ?? []).filter((attr) => attr.isInheritable);
+    if (inheritableAttributes.length === 0) {
+        return;
+    }
+
+    for (const childNoteId of note.children) {
+        const childNote = froca.getNoteFromCache(childNoteId);
+        if (!childNote) {
+            continue;
+        }
+
+        if (!noteAttributeCache.attributes[childNoteId]) {
+            noteAttributeCache.attributes[childNoteId] = [];
+        }
+        for (const attr of inheritableAttributes) {
+            if (!noteAttributeCache.attributes[childNoteId].includes(attr)) {
+                noteAttributeCache.attributes[childNoteId].push(attr);
+            }
+        }
+
+        spreadInheritableAttributes(childNote);
+    }
 }

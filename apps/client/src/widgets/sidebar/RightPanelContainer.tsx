@@ -31,7 +31,6 @@ import PdfPages from "./pdf/PdfPages";
 import RightPanelWidget, { CollapsibleWidgets, ExpandWidgetRequest, ExpandWidgetRequests } from "./RightPanelWidget";
 import RightPanePeekButton from "./RightPanePeekButton";
 import RightPaneTabs, { RIGHT_PANE_TABS, RightPaneTabDefinition, RightPaneTabId } from "./RightPaneTabs";
-import SimilarNotes from "./SimilarNotes";
 import TableOfContents from "./TableOfContents";
 
 const MIN_WIDTH_PERCENT = 5;
@@ -75,7 +74,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
     useTriliumEvent("toggleRightPane", toggleDocked);
     useTriliumEvent("peekRightPane", togglePeek);
 
-    // An entry point aimed at one tab (the chat launcher, the status bar's connection badges): it opens
+    // An entry point aimed at one tab (the chat launcher, the note map's keyboard action): it opens
     // the pane on that tab, brings it to the front if the pane is already open on another one, and puts
     // it away again when it is the tab on show — see reduceTabSelection for what that amounts to.
     // `peek` opens it as a glance instead of a dock; `expandWidgetId` opens the one widget the entry
@@ -113,11 +112,8 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
 
     // Outside-press / Esc *soft*-dismisses the peek: it hides but stays mounted, so re-peeking is
     // instant and preserves widget state. The × button and the docked toggle hard-close (unmount).
-    // A `right-pane-peek-source` control (the status bar's connection badges) peeks the pane itself
-    // (see selectRightPaneTab above), so dismissing on its press would only close the pane for the
-    // click that follows to reopen it.
     usePeekDismiss(mode === "peek", dismiss, {
-        keepOpenSelector: "#right-pane, .right-pane-peek-button, .right-pane-peek-source",
+        keepOpenSelector: "#right-pane, .right-pane-peek-button",
         focusSelector: ".right-pane-peek-button"
     });
 
@@ -138,23 +134,27 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
                 <div class="right-pane-peek-spacer" />
                 {/* Mode class (right-pane-mode-docked / -peek) as a styling hook; none when closed. */}
                 <div id="right-pane" class={visible ? `right-pane-mode-${mode}` : undefined}>
-                    {visible && (
-                        <div class="right-pane-actions">
-                            {/* Pin only applies while peeking (it docks the pane); close shows in both modes. */}
-                            {mode === "peek" && <ActionButton icon="bx bx-pin" text={t("right_pane.dock")} onClick={dock} />}
-                            <ActionButton icon="bx bx-x" text={t("right_pane.close")} onClick={close} />
-                        </div>
-                    )}
                     {mounted && (
-                        tabs.length > 0 ? (
-                            <>
-                                <RightPaneTabs
-                                    tabs={tabs}
-                                    activeTabId={activeTab?.id}
-                                    onSelect={(tabId) => void setSelectedTabId(tabId)}
-                                />
-
-                                {tabs.filter((tab) => openedTabs.current.has(tab.id)).map((tab) => (
+                        <>
+                            {/* One flex row holding the tab strip and the pane's own actions, so a
+                                narrow pane shrinks the strip instead of sliding it under the buttons
+                                (see RightPanelContainer.css). */}
+                            <div class="right-pane-header">
+                                {tabs.length > 0 && (
+                                    <RightPaneTabs
+                                        tabs={tabs}
+                                        activeTabId={activeTab?.id}
+                                        onSelect={(tabId) => void setSelectedTabId(tabId)}
+                                    />
+                                )}
+                                <div class="right-pane-actions">
+                                    {/* Pin only applies while peeking (it docks the pane); close shows in both modes. */}
+                                    {mode === "peek" && <ActionButton icon="bx bx-pin" text={t("right_pane.dock")} onClick={dock} />}
+                                    <ActionButton icon="bx bx-x" text={t("right_pane.close")} onClick={close} />
+                                </div>
+                            </div>
+                            {tabs.length > 0 ? (
+                                tabs.filter((tab) => openedTabs.current.has(tab.id)).map((tab) => (
                                     <div
                                         key={tab.id}
                                         role="tabpanel"
@@ -172,22 +172,22 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
                                             </ExpandWidgetRequests.Provider>
                                         </CollapsibleWidgets.Provider>
                                     </div>
-                                ))}
-                            </>
-                        ) : (
-                            <NoItems
-                                icon="bx bx-sidebar"
-                                text={t("right_pane.empty_message")}
-                            >
-                                {/* The peek auto-closes (outside click / focus loss / Esc), so a manual hide button is redundant there. */}
-                                {mode !== "peek" && (
-                                    <Button
-                                        text={t("right_pane.empty_button")}
-                                        triggerCommand="toggleRightPane"
-                                    />
-                                )}
-                            </NoItems>
-                        )
+                                ))
+                            ) : (
+                                <NoItems
+                                    icon="bx bx-sidebar"
+                                    text={t("right_pane.empty_message")}
+                                >
+                                    {/* The peek auto-closes (outside click / focus loss / Esc), so a manual hide button is redundant there. */}
+                                    {mode !== "peek" && (
+                                        <Button
+                                            text={t("right_pane.empty_button")}
+                                            triggerCommand="toggleRightPane"
+                                        />
+                                    )}
+                                </NoItems>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -228,18 +228,13 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): 
         },
         {
             // Where the note sits in the tree, above what points at it: placements first, then the
-            // backlinks below take whatever height is left.
+            // backlinks below.
             el: <NotePaths />,
             enabled: !!note,
             tab: "connections"
         },
         {
             el: <Backlinks />,
-            enabled: !!note,
-            tab: "connections"
-        },
-        {
-            el: <SimilarNotes />,
             enabled: !!note,
             tab: "connections"
         },
@@ -386,7 +381,7 @@ function useSplit(mode: PaneMode) {
         const selectors = mode === "docked"
             ? [ "#center-pane", "#right-pane-host" ]
             : [ ".right-pane-peek-spacer", "#right-pane" ];
-        const minSize = mode === "docked" ? [ 300, 180 ] : [ 0, 180 ];
+        const minSize = mode === "docked" ? [ 300, 230 ] : [ 0, 230 ];
 
         const createSplit = () => Split(selectors, {
             sizes: [100 - rightPaneWidth, rightPaneWidth],
