@@ -324,6 +324,44 @@ describe("PromotedAttributesContent", () => {
         expect(multiInput.current?.values).toEqual([ "alpha", "beta", "cherry" ]);
     });
 
+    it("tracks and shows what was confirmed when a write fails partway", async () => {
+        const note = buildNote({
+            title: "Task",
+            "#label:tags": "promoted,multi,text",
+            "#tags": "alpha"
+        });
+        // Writing [alpha, beta, cherry]: the first PUT ("beta") succeeds, the second fails.
+        serverPutMock
+            .mockResolvedValueOnce({ attributeId: "beta-id" })
+            .mockRejectedValueOnce(new Error("write refused"));
+        mount(note);
+
+        const commit = multiInput.current?.onCommit as (values: string[]) => Promise<void>;
+        let failed: Promise<void> | undefined;
+        await act(async () => {
+            failed = commit([ "alpha", "beta", "cherry" ]);
+            await failed.catch(() => {});
+        });
+        await expect(failed).rejects.toThrow("write refused");
+
+        // The chips show what the note now actually holds, not the set that was asked for.
+        expect(multiInput.current?.values).toEqual([ "alpha", "beta" ]);
+
+        // The next edit diffs against that state: "beta" is not written a second time, and the
+        // spare beyond the new set — none here — leaves nothing stranded on the server.
+        serverPutMock.mockClear();
+        await act(async () => {
+            await commit([ "alpha", "beta", "date" ]);
+        });
+        expect(serverPutMock).toHaveBeenCalledOnce();
+        expect(serverPutMock).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "date" },
+            "cid"
+        );
+        expect(multiInput.current?.values).toEqual([ "alpha", "beta", "date" ]);
+    });
+
     it("adds a select option to the definition itself, the field offering it from then on", async () => {
         const note = buildNote({ title: "Task", "#label:status": "promoted,multi,select,options=Todo;Done" });
         mount(note);

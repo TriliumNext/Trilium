@@ -88,6 +88,123 @@ describe("SelectValuesInput", () => {
         expect(input?.value).toBe("");
     });
 
+    it("builds a second quick pick on the first, before the host has rendered it", async () => {
+        const finish: Array<() => void> = [];
+        const onCommit = vi.fn(() => new Promise<void>((resolve) => finish.push(resolve)));
+        await mount({ options, values: [], onCommit });
+
+        const input = container.querySelector("input");
+        await act(async () => input?.focus());
+        const first = await settleDropdown();
+        await act(async () => (first[0] as HTMLElement | undefined)?.click());
+        expect(onCommit).toHaveBeenCalledWith([ "Todo" ]);
+
+        // The host has not rendered the commit back as `values`. The refreshed list already leaves
+        // the taken value out, and the next pick builds on it instead of the stale prop.
+        const second = await settleDropdown();
+        expect(second.map((item) => item.textContent)).toEqual([ "In progress", "Done" ]);
+        await act(async () => (second[0] as HTMLElement | undefined)?.click());
+        expect(onCommit).toHaveBeenLastCalledWith([ "Todo", "In progress" ]);
+
+        await act(async () => {
+            for (const resolve of finish) {
+                resolve();
+            }
+        });
+    });
+
+    it("restores the accepted values after an async commit fails", async () => {
+        let rejectFirst: (error: Error) => void = () => {};
+        const onCommit = vi.fn()
+            .mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
+                rejectFirst = reject;
+            }))
+            .mockResolvedValue(undefined);
+        await mount({ options, values: [], onCommit });
+
+        const input = container.querySelector("input");
+        await act(async () => input?.focus());
+        const first = await settleDropdown();
+        await act(async () => (first[0] as HTMLElement | undefined)?.click());
+        expect(onCommit).toHaveBeenCalledWith([ "Todo" ]);
+        await act(async () => rejectFirst(new Error("write refused")));
+
+        // The failed pick is not built upon: the edits follow the prop again, so the next pick
+        // starts from the set the host accepted.
+        const second = await settleDropdown();
+        await act(async () => (second[1] as HTMLElement | undefined)?.click());
+        expect(onCommit).toHaveBeenLastCalledWith([ "In progress" ]);
+    });
+
+    it("offers a failed pick again, even on a list that already refreshed without it", async () => {
+        let rejectFirst: (error: Error) => void = () => {};
+        const onCommit = vi.fn(() => new Promise<void>((_resolve, reject) => {
+            rejectFirst = reject;
+        }));
+        await mount({ options, values: [], onCommit });
+
+        const input = container.querySelector("input");
+        await act(async () => input?.focus());
+        const first = await settleDropdown();
+        await act(async () => (first[0] as HTMLElement | undefined)?.click());
+
+        // The list has already refreshed without the pick when the write fails...
+        expect((await settleDropdown()).map((item) => item.textContent))
+            .toEqual([ "In progress", "Done" ]);
+        await act(async () => rejectFirst(new Error("write refused")));
+
+        // ...so the failure itself has to put the value back on offer.
+        expect((await settleDropdown()).map((item) => item.textContent))
+            .toEqual([ "Todo", "In progress", "Done" ]);
+    });
+
+    it("takes a value only once, however quickly it is picked", async () => {
+        // Between a pick and the list refreshing, the old entries still take clicks.
+        const finish: Array<() => void> = [];
+        const onCommit = vi.fn(() => new Promise<void>((resolve) => finish.push(resolve)));
+        await mount({ options, values: [], onCommit });
+
+        const input = container.querySelector("input");
+        await act(async () => input?.focus());
+        const items = await settleDropdown();
+        await act(async () => {
+            (items[0] as HTMLElement | undefined)?.click();
+            (items[0] as HTMLElement | undefined)?.click();
+        });
+
+        expect(onCommit).toHaveBeenCalledOnce();
+        expect(onCommit).toHaveBeenCalledWith([ "Todo" ]);
+        await act(async () => {
+            for (const resolve of finish) {
+                resolve();
+            }
+        });
+    });
+
+    it("observes an async commit result", async () => {
+        // The test environment swallows unhandled rejections silently, so ownership is asserted
+        // structurally: the field must assimilate what `onCommit` returns, which a fire-and-forget
+        // call would never touch. A rejecting host (the promoted-attribute grid) otherwise leaks
+        // every failed write as an unhandled rejection.
+        let subscribed = 0;
+        const write = {
+            then() {
+                subscribed++;
+                return Promise.resolve();
+            }
+        };
+        const onCommit = vi.fn(() => write as unknown as Promise<void>);
+        await mount({ options, values: [], onCommit });
+
+        const input = container.querySelector("input");
+        await act(async () => input?.focus());
+        const items = await settleDropdown();
+        await act(async () => (items[0] as HTMLElement | undefined)?.click());
+
+        expect(onCommit).toHaveBeenCalledWith([ "Todo" ]);
+        expect(subscribed).toBeGreaterThan(0);
+    });
+
     it("drops the last chip on backspace in an empty box, and leaves a filled one alone", async () => {
         const onCommit = vi.fn();
         await mount({ options, values: [ "Todo", "Done" ], onCommit });

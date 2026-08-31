@@ -22,7 +22,7 @@ import NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
 import FNote from "../entities/fnote";
 import { Attribute } from "../services/attribute_parser";
-import attributes, { type AttributeValueState } from "../services/attributes";
+import attributes, { type AttributeValueState, PartialWriteError } from "../services/attributes";
 import { t } from "../services/i18n";
 import server from "../services/server";
 import { randomString } from "../services/utils";
@@ -310,7 +310,8 @@ function MultiLabelInput({ inputId, note, cell, componentId, setCells }: CellPro
     const suggestValues = useAttributeValueSuggestions(valueName, labelType);
     const commitQueue = useRef<Promise<void>>(Promise.resolve());
     const acceptedValues = useRef(values ?? []);
-    const acceptedAttributes = useRef<AttributeValueState[]>(note.getOwnedLabels(valueName));
+    const acceptedAttributes =
+        useRef<readonly AttributeValueState[]>(note.getOwnedLabels(valueName));
     const desiredValues = useRef(values ?? []);
     const lastValuesProp = useRef(values);
     const pendingCommits = useRef(0);
@@ -338,19 +339,39 @@ function MultiLabelInput({ inputId, note, cell, componentId, setCells }: CellPro
                 }
             }
 
-            acceptedAttributes.current = await attributes.setLabelValues(
-                note,
-                valueName,
-                accepted,
-                componentId,
-                acceptedAttributes.current
-            );
-            acceptedValues.current = accepted;
-            // `usePromotedAttributeData()` ignores reloads from `componentId`, so update the cell
-            // only after `setLabelValues()` succeeds.
-            setCells(prev => prev?.map(c =>
-                c.uniqueId === uniqueId ? { ...c, values: accepted } : c));
+            let confirmed: readonly AttributeValueState[];
+            try {
+                confirmed = await attributes.setLabelValues(
+                    note,
+                    valueName,
+                    accepted,
+                    componentId,
+                    acceptedAttributes.current
+                );
+            } catch (e: unknown) {
+                // A write that failed partway did change the note. Track and show what the
+                // responses confirmed, so later diffs run against it — otherwise a value the note
+                // kept could never be removed here, and re-adding one it wrote would duplicate it.
+                if (e instanceof PartialWriteError) {
+                    applyConfirmedState(e.confirmed);
+                }
+                throw e;
+            }
+            applyConfirmedState(confirmed);
         });
+
+        function applyConfirmedState(confirmed: readonly AttributeValueState[]) {
+            acceptedAttributes.current = confirmed;
+            acceptedValues.current = confirmed.map((attr) => attr.value);
+            // The patch below echoes back as the `values` prop. Acknowledging it here keeps the
+            // reset above for genuinely external updates — re-reading froca on an own echo would
+            // replace `confirmed`, whose attribute ids froca only carries after the next sync.
+            lastValuesProp.current = acceptedValues.current;
+            // `usePromotedAttributeData()` ignores reloads from `componentId`, so patch the cell
+            // here — with what was confirmed, which on a partial failure is not what was asked.
+            setCells(prev => prev?.map(c =>
+                c.uniqueId === uniqueId ? { ...c, values: acceptedValues.current } : c));
+        }
         const settled = write.finally(() => {
             pendingCommits.current--;
             if (pendingCommits.current === 0) {

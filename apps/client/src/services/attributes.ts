@@ -115,6 +115,26 @@ export interface AttributeValueState {
 }
 
 /**
+ * Thrown when an exact-set write fails. `confirmed` is the state the responses confirmed before
+ * the failed request, so the caller can keep diffing against it instead of a set the server no
+ * longer matches. A failed response does not reveal whether the server applied that request.
+ * `cause` is the error that stopped the write.
+ *
+ * `confirmed` can hold the same value twice: renaming an attribute succeeds and trimming the old
+ * holder of the value then fails. A later write that removes the duplicated value removes every
+ * copy.
+ */
+export class PartialWriteError extends Error {
+    constructor(
+        readonly confirmed: readonly AttributeValueState[],
+        override readonly cause: unknown
+    ) {
+        super(cause instanceof Error ? cause.message : String(cause));
+        this.name = "PartialWriteError";
+    }
+}
+
+/**
  * Sets the labels of one name on a note to exactly `values`, for a field holding a set of them.
  *
  * The labels already there are reused in order, so taking a value out of the middle of a set renames
@@ -123,6 +143,8 @@ export interface AttributeValueState {
  * the note it is written on.
  *
  * `current` carries returned state across serialized calls that run before the note cache reloads.
+ *
+ * Rejects with {@link PartialWriteError} when a request fails partway, carrying what was confirmed.
  */
 export async function setLabelValues(
     note: FNote,
@@ -152,33 +174,40 @@ async function setAttributeValues(
 ) {
     const existing = current
         ?? (type === "label" ? note.getOwnedLabels(name) : note.getOwnedRelations(name));
-    const updated: AttributeValueState[] = [];
+    // Updated after every response, so a write that fails partway can report what was confirmed.
+    const confirmed: AttributeValueState[] = [ ...existing ];
 
-    for (const [ index, value ] of values.entries()) {
-        const attributeId = existing[index]?.attributeId;
-        if (existing[index]?.value === value) {
-            updated.push(existing[index]);
-            continue;
-        }
-        const response = await server.put<{ attributeId?: string }>(
-            `notes/${note.noteId}/attribute`,
-            { attributeId, type, name, value },
-            componentId
-        );
-        updated.push({ attributeId: response?.attributeId ?? attributeId, value });
-    }
-
-    // Whatever the new set did not fill is no longer held.
-    for (const spare of existing.slice(values.length)) {
-        if (spare.attributeId) {
-            await server.remove(
-                `notes/${note.noteId}/attributes/${spare.attributeId}`,
+    try {
+        for (const [ index, value ] of values.entries()) {
+            const attributeId = existing[index]?.attributeId;
+            if (existing[index]?.value === value) {
+                continue;
+            }
+            const response = await server.put<{ attributeId?: string }>(
+                `notes/${note.noteId}/attribute`,
+                { attributeId, type, name, value },
                 componentId
             );
+            confirmed[index] = { attributeId: response?.attributeId ?? attributeId, value };
         }
+
+        // Whatever the new set did not fill is no longer held. The next spare sits at
+        // `values.length` after every splice, the ones before it being gone already.
+        while (confirmed.length > values.length) {
+            const spare = confirmed[values.length];
+            if (spare.attributeId) {
+                await server.remove(
+                    `notes/${note.noteId}/attributes/${spare.attributeId}`,
+                    componentId
+                );
+            }
+            confirmed.splice(values.length, 1);
+        }
+    } catch (e: unknown) {
+        throw new PartialWriteError(confirmed, e);
     }
 
-    return updated;
+    return confirmed;
 }
 
 /**

@@ -4,7 +4,17 @@ import { buildNote } from "../test/easy-froca";
 import { allViewTypes } from "../widgets/collections/interface";
 import { getPresentationThemes } from "../widgets/collections/presentation/themes";
 import { MEDIA_PLAY_MODES } from "../widgets/type_widgets/file/media_play_mode";
-import attributeService, { getBuiltinLabelSelectOptions, getBuiltinLabelValueType, isBuiltinAttribute, removeOwnedAttributesByNameOrType, setAttribute, setBooleanWithInheritance, setLabel, setRelation } from "./attributes";
+import attributeService, {
+    getBuiltinLabelSelectOptions,
+    getBuiltinLabelValueType,
+    isBuiltinAttribute,
+    PartialWriteError,
+    removeOwnedAttributesByNameOrType,
+    setAttribute,
+    setBooleanWithInheritance,
+    setLabel,
+    setRelation
+} from "./attributes";
 import froca from "./froca";
 import server from "./server.js";
 
@@ -250,6 +260,74 @@ describe("setLabelValues", () => {
             { attributeId: undefined, type: "label", name: "tags", value: "c" },
             undefined
         );
+    });
+
+    it("reports the confirmed state when a write fails partway", async () => {
+        const note = noteHolding("a");
+        vi.mocked(server.put)
+            .mockResolvedValueOnce({ attributeId: "attr-b" })
+            .mockRejectedValueOnce(new Error("write refused"));
+
+        let error: unknown;
+        try {
+            await attributeService.setLabelValues(note, "tags", [ "a", "b", "c" ]);
+        } catch (e: unknown) {
+            error = e;
+        }
+
+        // The first PUT ("b") succeeds and the second ("c") fails; the error carries the
+        // confirmed state, so the caller keeps diffing against it instead of the set it asked for.
+        expect(error).toBeInstanceOf(PartialWriteError);
+        const partial = error as PartialWriteError;
+        expect(partial.confirmed).toEqual([
+            expect.objectContaining({ attributeId: "attr-0", value: "a" }),
+            { attributeId: "attr-b", value: "b" }
+        ]);
+        expect(partial.message).toBe("write refused");
+    });
+
+    it("reports the confirmed state when a removal fails partway", async () => {
+        const note = noteHolding("a", "b", "c");
+        vi.mocked(server.remove)
+            .mockResolvedValueOnce(undefined)
+            .mockRejectedValueOnce(new Error("remove refused"));
+
+        let error: unknown;
+        try {
+            await attributeService.setLabelValues(note, "tags", [ "a" ]);
+        } catch (e: unknown) {
+            error = e;
+        }
+
+        // The first DELETE ("b") succeeds and the second ("c") fails, so "c" is still held.
+        expect(error).toBeInstanceOf(PartialWriteError);
+        expect((error as PartialWriteError).confirmed).toEqual([
+            expect.objectContaining({ attributeId: "attr-0", value: "a" }),
+            expect.objectContaining({ attributeId: "attr-2", value: "c" })
+        ]);
+    });
+
+    it("reports a duplicated value when the trim fails after a rename", async () => {
+        const note = noteHolding("a", "b", "c");
+        // Writing [a, c] renames "b"'s attribute to "c" first, then trims the original "c".
+        vi.mocked(server.put).mockResolvedValueOnce({ attributeId: "attr-1" });
+        vi.mocked(server.remove).mockRejectedValueOnce(new Error("remove refused"));
+
+        let error: unknown;
+        try {
+            await attributeService.setLabelValues(note, "tags", [ "a", "c" ]);
+        } catch (e: unknown) {
+            error = e;
+        }
+
+        // The rename succeeded and the trim did not, so the note holds "c" twice. Reported as it
+        // is: a later write that drops "c" removes both copies.
+        expect(error).toBeInstanceOf(PartialWriteError);
+        expect((error as PartialWriteError).confirmed).toEqual([
+            expect.objectContaining({ attributeId: "attr-0", value: "a" }),
+            { attributeId: "attr-1", value: "c" },
+            expect.objectContaining({ attributeId: "attr-2", value: "c" })
+        ]);
     });
 
     it("removes the labels the set no longer fills, emptying included", async () => {
