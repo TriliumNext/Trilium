@@ -292,6 +292,38 @@ describe("PromotedAttributesContent", () => {
         expect(multiInput.current?.values).toEqual([ "alpha", "gamma" ]);
     });
 
+    it("preserves a value when its removal fails before a queued addition", async () => {
+        const note = buildNote({
+            title: "Task",
+            "#label:tags": "promoted,multi,text",
+            "#tags": "alpha"
+        });
+        hold(note, "label", "tags", "beta");
+        serverRemoveMock.mockRejectedValueOnce(new Error("remove refused"));
+        mount(note);
+
+        const commit = multiInput.current?.onCommit as (values: string[]) => Promise<void>;
+        let failedRemoval: Promise<void> | undefined;
+        let following: Promise<void> | undefined;
+        await act(async () => {
+            failedRemoval = commit([ "alpha" ]);
+            following = commit([ "alpha", "cherry" ]);
+            await Promise.allSettled([ failedRemoval, following ]);
+        });
+        await expect(failedRemoval).rejects.toThrow("remove refused");
+        await expect(following).resolves.toBeUndefined();
+
+        // `setLabelValues()` reuses `acceptedAttributes.current`, so the queued edit writes only
+        // "cherry" — "beta" matches the accepted state and is skipped.
+        expect(serverPutMock).toHaveBeenCalledOnce();
+        expect(serverPutMock).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "cherry" },
+            "cid"
+        );
+        expect(multiInput.current?.values).toEqual([ "alpha", "beta", "cherry" ]);
+    });
+
     it("adds a select option to the definition itself, the field offering it from then on", async () => {
         const note = buildNote({ title: "Task", "#label:status": "promoted,multi,select,options=Todo;Done" });
         mount(note);
@@ -689,6 +721,18 @@ describe("PromotedAttributesContent rendering", () => {
         expect(serverGetMock).toHaveBeenCalledWith("attribute-values/fresh");
         const suggestFresh = multiInput.current?.source as (query: string) => Promise<string[]>;
         expect(await suggestFresh("")).toEqual([]);
+    });
+
+    it("offers nothing when the suggestion request fails", async () => {
+        serverGetMock.mockRejectedValueOnce(new Error("offline"));
+        await renderCells(note, [ buildCell(note, {
+            name: "tags",
+            definition: { labelType: "text", multiplicity: "multi" },
+            values: []
+        }) ]);
+
+        const suggest = multiInput.current?.source as (query: string) => Promise<string[]>;
+        expect(await suggest("")).toEqual([]);
     });
 
     it("keeps a multi text field's suggestion source attached while its values load", async () => {

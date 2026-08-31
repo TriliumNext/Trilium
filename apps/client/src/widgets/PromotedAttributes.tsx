@@ -357,8 +357,10 @@ function MultiLabelInput({ inputId, note, cell, componentId, setCells }: CellPro
                 desiredValues.current = acceptedValues.current;
             }
         });
-        // A rejection does not block the next queued edit. `ValuesInput` observes `write` itself.
+        // A rejected `write` does not block the queue. The next edit starts from `acceptedValues`,
+        // so failed additions are not retried and failed removals stay in the accepted set.
         commitQueue.current = settled.catch(() => {});
+        // The un-caught `write`, so the caller can observe a rejection the queue never re-raises.
         return write;
     }, [ note, valueName, componentId, uniqueId, setCells ]);
 
@@ -452,6 +454,8 @@ function useAttributeValueSuggestions(name: string, labelType: LabelType) {
             if (active) {
                 setKnown({ name, values });
             }
+        }).catch(() => {
+            // Suggestions are optional, so ignore a failed `server.get()` request.
         });
         return () => {
             active = false;
