@@ -6,9 +6,26 @@ import dateUtils from "../../services/utils/date";
 import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
 import type { AttributeRow, AttributeType } from "@triliumnext/commons";
 import { normalize, sanitizeAttributeName } from "../../services/utils/index.js";
+import protectedSessionService from "../../services/protected_session.js";
+import { getLog } from "../../services/log.js";
 
 interface SavingOpts {
     skipValidation?: boolean;
+}
+
+interface AttributePojo {
+    attributeId: string;
+    noteId: string;
+    type: AttributeType;
+    name: string;
+    position: number;
+    /** Absent when a protected attribute is saved without a session, so the stored ciphertext stays untouched. */
+    value?: string;
+    isInheritable: boolean;
+    /** Absent when a JS migration saves attributes against a schema that predates the column. */
+    isProtected?: boolean;
+    utcDateModified?: string;
+    isDeleted: boolean;
 }
 
 /**
@@ -39,6 +56,9 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     /** Pre-normalized (lowercase, diacritics removed) value for search. */
     normalizedValue!: string;
 
+    /** `true` when `value` holds plaintext; `false` while a protected value stays encrypted. */
+    isDecrypted!: boolean;
+
     constructor(row?: AttributeRow) {
         super();
 
@@ -51,10 +71,10 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     }
 
     updateFromRow(row: AttributeRow) {
-        this.update([row.attributeId, row.noteId, row.type, row.name, row.value, row.isInheritable, row.position, row.utcDateModified]);
+        this.update([row.attributeId, row.noteId, row.type, row.name, row.value, row.isInheritable, row.position, row.utcDateModified, row.isProtected]);
     }
 
-    update([attributeId, noteId, type, name, value, isInheritable, position, utcDateModified]: any) {
+    update([attributeId, noteId, type, name, value, isInheritable, position, utcDateModified, isProtected]: any) {
         this.attributeId = attributeId;
         this.noteId = noteId;
         this.type = type;
@@ -62,11 +82,16 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
         this.position = position;
         this.value = value || "";
         this.isInheritable = !!isInheritable;
+        this.isProtected = !!isProtected;
         this.utcDateModified = utcDateModified;
 
         // Pre-compute normalized forms for search (avoids repeated normalize() calls in hot loops)
         this.normalizedName = normalize(this.name);
         this.normalizedValue = normalize(this.value);
+
+        this.isDecrypted = !this.attributeId || !this.isProtected;
+
+        this.decrypt();
 
         return this;
     }
@@ -219,7 +244,22 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
         this.becca.attributes[this.attributeId] = this;
     }
 
-    getPojo() {
+    decrypt() {
+        if (this.isProtected && !this.isDecrypted && protectedSessionService.isProtectedSessionAvailable()) {
+            try {
+                this.value = protectedSessionService.decryptString(this.value) || "";
+                this.normalizedValue = normalize(this.value);
+                // The owner note's flat text still holds the encrypted value.
+                this.becca.dirtyNoteFlatText(this.noteId);
+
+                this.isDecrypted = true;
+            } catch (e: any) {
+                getLog().error(`Could not decrypt attribute ${this.attributeId}: ${e.message} ${e.stack}`);
+            }
+        }
+    }
+
+    getPojo(): AttributePojo {
         return {
             attributeId: this.attributeId,
             noteId: this.noteId,
@@ -228,9 +268,31 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
             position: this.position,
             value: this.value,
             isInheritable: this.isInheritable,
+            isProtected: this.isProtected,
             utcDateModified: this.utcDateModified,
             isDeleted: false
         };
+    }
+
+    override getPojoToSave() {
+        const pojo = this.getPojo();
+
+        if (!this.becca.attributesHaveIsProtectedColumn) {
+            // A pre-241 JS migration is saving; the row must match that schema.
+            delete pojo.isProtected;
+            return pojo;
+        }
+
+        if (pojo.isProtected) {
+            if (this.isDecrypted && pojo.value) {
+                pojo.value = protectedSessionService.encrypt(pojo.value) || undefined;
+            } else {
+                // updating a protected attribute outside of a protected session keeps the original ciphertext
+                delete pojo.value;
+            }
+        }
+
+        return pojo;
     }
 
     createClone(type: AttributeType, name: string, value: string, isInheritable?: boolean) {
@@ -241,6 +303,7 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
             value: value,
             position: this.position,
             isInheritable: isInheritable,
+            isProtected: this.isProtected,
             utcDateModified: this.utcDateModified
         });
     }

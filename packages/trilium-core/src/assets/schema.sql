@@ -75,7 +75,8 @@ CREATE TABLE IF NOT EXISTS "attributes"
     utcDateModified TEXT not null,
     isDeleted    INT  not null,
     `deleteId`    TEXT DEFAULT NULL,
-    isInheritable int DEFAULT 0 NULL);
+    isInheritable int DEFAULT 0 NULL,
+    isProtected  INT  default 0 not null);
 CREATE UNIQUE INDEX `IDX_entityChanges_entityName_entityId` ON "entity_changes" (
                                                                                  `entityName`,
                                                                                  `entityId`

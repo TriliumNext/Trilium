@@ -92,6 +92,7 @@ export interface AttributeRow {
     position?: number | null;
     value?: string;
     isInheritable?: boolean;
+    isProtected?: boolean;
     utcDateModified?: string;
 }
 

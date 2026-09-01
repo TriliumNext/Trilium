@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { getContext } from "../../services/context.js";
+import dataEncryption from "../../services/encryption/data_encryption.js";
 import noteService from "../../services/notes.js";
+import protectedSessionService from "../../services/protected_session.js";
+import { getSql } from "../../services/sql/index.js";
+import TaskContext from "../../services/task_context.js";
 import { randomString } from "../../services/utils/index.js";
 import becca from "../becca.js";
 import BAttribute from "./battribute.js";
@@ -422,6 +426,98 @@ describe("BAttribute", () => {
 
             expect(makeAttr("label:").isDefinition()).toBe(false);
             expect(makeAttr("relation:").isDefinition()).toBe(false);
+        });
+    });
+
+    describe("protection", () => {
+        const DATA_KEY = Uint8Array.from(Array(16).fill(7));
+
+        function readStoredValue(attributeId: string): string {
+            return getSql().getValue<string>(/*sql*/`SELECT value FROM attributes WHERE attributeId = ?`, [attributeId]);
+        }
+
+        it("encrypts the value at rest and decrypts it once a session opens", () => {
+            protectedSessionService.setDataKey(DATA_KEY);
+            try {
+                const owner = createNote();
+                const attr = getContext().init(() =>
+                    new BAttribute({
+                        noteId: owner.noteId,
+                        type: "label",
+                        name: "apiKey",
+                        value: "hunter2",
+                        position: 0,
+                        isInheritable: false,
+                        isProtected: true
+                    }).save()
+                );
+
+                // In memory the value stays plaintext; on disk it is ciphertext.
+                expect(attr.value).toBe("hunter2");
+                expect(attr.isDecrypted).toBe(true);
+
+                const stored = readStoredValue(attr.attributeId);
+                expect(stored).not.toBe("hunter2");
+                expect(dataEncryption.decryptString(DATA_KEY, stored)).toBe("hunter2");
+
+                // Loading the row without a session keeps the ciphertext.
+                protectedSessionService.resetDataKey();
+                const locked = new BAttribute().update([attr.attributeId, owner.noteId, "label", "apiKey", stored, false, 0, attr.utcDateModified, true]);
+                expect(locked.isDecrypted).toBe(false);
+                expect(locked.value).toBe(stored);
+
+                // Opening a session decrypts in place.
+                protectedSessionService.setDataKey(DATA_KEY);
+                locked.decrypt();
+                expect(locked.isDecrypted).toBe(true);
+                expect(locked.value).toBe("hunter2");
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
+        });
+
+        it("protectNote carries owned labels along and leaves relations alone", () => {
+            protectedSessionService.setDataKey(DATA_KEY);
+            try {
+                const owner = createNote();
+                const target = createNote();
+                const [label, relation] = getContext().init(() => [
+                    new BAttribute({
+                        noteId: owner.noteId,
+                        type: "label",
+                        name: "secret",
+                        value: "swordfish",
+                        position: 0,
+                        isInheritable: false
+                    }).save(),
+                    new BAttribute({
+                        noteId: owner.noteId,
+                        type: "relation",
+                        name: "likes",
+                        value: target.noteId,
+                        position: 10,
+                        isInheritable: false
+                    }).save()
+                ]);
+
+                const taskContext = new TaskContext("no-progress-reporting", "protectNotes", { protect: true });
+                getContext().init(() => noteService.protectNoteRecursively(owner, true, false, taskContext));
+
+                expect(label.isProtected).toBe(true);
+                const stored = readStoredValue(label.attributeId);
+                expect(stored).not.toBe("swordfish");
+                expect(dataEncryption.decryptString(DATA_KEY, stored)).toBe("swordfish");
+
+                expect(relation.isProtected).toBe(false);
+                expect(readStoredValue(relation.attributeId)).toBe(target.noteId);
+
+                getContext().init(() => noteService.protectNoteRecursively(owner, false, false, taskContext));
+
+                expect(label.isProtected).toBe(false);
+                expect(readStoredValue(label.attributeId)).toBe("swordfish");
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
         });
     });
 });

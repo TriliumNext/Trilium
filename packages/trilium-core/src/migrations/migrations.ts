@@ -9,6 +9,14 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Attribute values can be encrypted with the note, so the row needs a protection flag
+    {
+        version: 241,
+        sql: /*sql*/`
+            ALTER TABLE attributes ADD COLUMN isProtected INT DEFAULT 0 NOT NULL;
+        `,
+        ignoreErrors: true
+    },
     // Give every board its own select definition for the label it groups by, so the columns stop
     // living only in the board.json attachment
     {

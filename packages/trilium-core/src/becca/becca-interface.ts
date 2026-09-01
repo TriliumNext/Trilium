@@ -28,6 +28,12 @@ export default class Becca {
     attributes!: Record<string, BAttribute>;
     /** Points from attribute type-name to list of attributes */
     attributeIndex!: Record<string, BAttribute[]>;
+
+    /**
+     * `false` while a JS migration from a pre-241 schema runs, so attribute saves omit the
+     * isProtected column the database does not have yet. becca_loader sets it on every load.
+     */
+    attributesHaveIsProtectedColumn = true;
     options!: Record<string, BOption>;
     etapiTokens!: Record<string, BEtapiToken>;
 
@@ -96,6 +102,10 @@ export default class Becca {
     decryptProtectedNotes() {
         for (const note of Object.values(this.notes)) {
             note.decrypt();
+        }
+
+        for (const attribute of Object.values(this.attributes)) {
+            attribute.decrypt();
         }
     }
 

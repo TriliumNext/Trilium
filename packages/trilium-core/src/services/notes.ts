@@ -442,6 +442,23 @@ function protectNote(note: BNote, protect: boolean) {
                 }
             }
         }
+
+        for (const attribute of note.getOwnedAttributes()) {
+            // Relations stay plaintext: their value is a noteId the tree machinery must read,
+            // and consistency checks delete relations whose value matches no note.
+            if (attribute.type !== "label" || protect === attribute.isProtected) {
+                continue;
+            }
+
+            try {
+                attribute.isProtected = protect;
+                attribute.save();
+            } catch (e) {
+                log.error(`Could not un/protect attribute '${attribute.attributeId}'`);
+
+                throw e;
+            }
+        }
     } catch (e) {
         log.error(`Could not un/protect note '${note.noteId}'`);
 

@@ -50,7 +50,13 @@ function load() {
             new BBranch().update(row).init();
         }
 
-        for (const row of sql.getRawRows<AttributeRow>(/*sql*/`SELECT attributeId, noteId, type, name, value, isInheritable, position, utcDateModified FROM attributes WHERE isDeleted = 0`)) {
+        // JS migrations older than the isProtected column (added in migration 241) load becca
+        // mid-upgrade, so the column can only be selected once it exists; without it every
+        // attribute loads as unprotected, which matches the pre-241 schema.
+        const hasAttributeIsProtected = sql.getRawRows(/*sql*/`PRAGMA table_info(attributes)`).some((column) => column[1] === "isProtected");
+        becca.attributesHaveIsProtectedColumn = hasAttributeIsProtected;
+
+        for (const row of sql.getRawRows<AttributeRow>(/*sql*/`SELECT attributeId, noteId, type, name, value, isInheritable, position, utcDateModified${hasAttributeIsProtected ? ", isProtected" : ""} FROM attributes WHERE isDeleted = 0`)) {
             new BAttribute().update(row).init();
         }
 
