@@ -62,14 +62,33 @@ describe("fancytree nodeKeydown patch (#11244)", () => {
             const tree: Fancytree.Fancytree = $tree.fancytree("getTree");
 
             // nodeKeydown()'s null-node fallback assumes tree.focusNode is populated the instant
-            // focusNode.setFocus() returns. Stub setFocus() as a no-op to violate that assumption
-            // directly, the same way a mid-flight DOM/tree update does in the real app.
-            vi.spyOn(tree, "getFirstChild").mockReturnValue({ setFocus: vi.fn() } as unknown as Fancytree.FancytreeNode);
+            // focusNode.setFocus() returns. Stub setFocus() as a no-op to violate that assumption.
+            const firstChild = { setFocus: vi.fn() } as unknown as Fancytree.FancytreeNode;
+            vi.spyOn(tree, "getFirstChild").mockReturnValue(firstChild);
             expect(tree.getActiveNode()).toBeNull();
             expect(tree.focusNode).toBeNull();
 
-            // Without the patch this threw "TypeError: Cannot read properties of null (reading 'debug')".
-            expect(() => tree.$container.trigger($.Event("keydown", { which: 65, key: "a" }))).not.toThrow();
+            const keydown = $.Event("keydown", { which: 65, key: "a" });
+            expect(() => tree.$container.trigger(keydown)).not.toThrow();
+        } finally {
+            $tree.remove();
+        }
+    });
+
+    it("still propagates an unrelated error from the same code path", () => {
+        const $tree = $("<div>").appendTo(document.body);
+
+        try {
+            $tree.fancytree({ keyboard: true, source: [{ title: "child", key: "child" }] });
+            const tree: Fancytree.Fancytree = $tree.fancytree("getTree");
+
+            vi.spyOn(tree, "getActiveNode").mockImplementation(() => {
+                throw new TypeError("unrelated failure");
+            });
+            expect(tree.focusNode).toBeNull();
+
+            const keydown = $.Event("keydown", { which: 65, key: "a" });
+            expect(() => tree.$container.trigger(keydown)).toThrow("unrelated failure");
         } finally {
             $tree.remove();
         }

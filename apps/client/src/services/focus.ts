@@ -1,18 +1,19 @@
 let $lastFocusedElement: JQuery<HTMLElement> | null;
 
-let pendingTitleFocusNtxId: string | null | undefined; // undefined = unset (distinct from a null ntxId)
+// undefined = unset, distinct from a null ntxId.
+let pendingTitleFocusNtxId: string | null | undefined;
 let pendingTitleFocusAt = 0;
 
 // Bounded so a request that never resolves can't suppress focus changes forever.
 const PENDING_TITLE_FOCUS_TIMEOUT_MS = 1500;
 
-/** Marks a new note's title as about to be focused, so other async focus handlers (see note_tree.ts #setActiveNode) can back off instead of racing it. See #11244. */
+/** Marks a new note's title as about to be focused, so other async focus handlers can back off. */
 export function markTitleFocusPending(ntxId: string | null) {
     pendingTitleFocusNtxId = ntxId;
     pendingTitleFocusAt = Date.now();
 }
 
-/** True if a title-focus request for `ntxId` (or any, if omitted) is still within its protection window. */
+/** True if a title-focus request for `ntxId` (or any, if omitted) is still pending. */
 export function isTitleFocusPending(ntxId?: string | null) {
     if (pendingTitleFocusNtxId === undefined) {
         return false;

@@ -2042,22 +2042,28 @@ patchScrollIntoViewCrash();
 
 type NodeKeydownFn = (this: Fancytree.Fancytree, ctx: Fancytree.EventData) => unknown;
 
-/**
- * jquery.fancytree's `nodeKeydown()` dereferences `this.focusNode` right after calling
- * `.setFocus()`, but that can still be null (DOM focus hasn't caught up yet), throwing
- * "Cannot read properties of null (reading 'debug')" and swallowing the keystroke. See #11244.
- */
+// jquery.fancytree's nodeKeydown() wrongly assumes this.focusNode is always populated
+// right after calling setFocus() on it. See #11244.
+const NULL_FOCUS_NODE_ERROR = /reading 'debug'/;
+
 function patchNodeKeydownCrash() {
     const { _FancytreeClass } = $.ui.fancytree as Fancytree.FancytreeStatic & {
         _FancytreeClass: { prototype: { nodeKeydown: NodeKeydownFn } };
     };
     const originalNodeKeydown = _FancytreeClass.prototype.nodeKeydown;
 
-    _FancytreeClass.prototype.nodeKeydown = function (this: Fancytree.Fancytree, ctx: Fancytree.EventData) {
+    _FancytreeClass.prototype.nodeKeydown = function (
+        this: Fancytree.Fancytree,
+        ctx: Fancytree.EventData
+    ) {
         try {
             return originalNodeKeydown.call(this, ctx);
         } catch (e) {
-            console.warn("Ignoring fancytree nodeKeydown crash", e);
+            if (e instanceof TypeError && NULL_FOCUS_NODE_ERROR.test(e.message)) {
+                console.warn("Ignoring fancytree nodeKeydown crash", e);
+                return;
+            }
+            throw e;
         }
     };
 }

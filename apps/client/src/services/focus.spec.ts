@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import $ from "jquery";
 
-import { focusSavedElement, isTitleFocusPending, markTitleFocusPending, saveFocusedElement } from "./focus.js";
+import {
+    focusSavedElement,
+    isTitleFocusPending,
+    markTitleFocusPending,
+    saveFocusedElement
+} from "./focus.js";
 
 afterEach(() => {
     document.body.innerHTML = "";
