@@ -1,11 +1,58 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import $ from "jquery";
 
-import { focusSavedElement, saveFocusedElement } from "./focus.js";
+import { focusSavedElement, isTitleFocusPending, markTitleFocusPending, saveFocusedElement } from "./focus.js";
 
 afterEach(() => {
     document.body.innerHTML = "";
     vi.restoreAllMocks();
+    vi.useRealTimers();
+});
+
+describe("pending title focus (#11244)", () => {
+    it("is not pending before anything marks it", () => {
+        expect(isTitleFocusPending()).toBe(false);
+        expect(isTitleFocusPending("ntx-1")).toBe(false);
+    });
+
+    it("is pending for the marked ntxId, for any ntxId query, but not for a different one", () => {
+        markTitleFocusPending("ntx-1");
+
+        expect(isTitleFocusPending("ntx-1")).toBe(true);
+        expect(isTitleFocusPending()).toBe(true);
+        expect(isTitleFocusPending("ntx-2")).toBe(false);
+    });
+
+    it("treats a null ntxId as its own identity, not as 'any'", () => {
+        markTitleFocusPending(null);
+
+        expect(isTitleFocusPending(null)).toBe(true);
+        expect(isTitleFocusPending("ntx-1")).toBe(false);
+        expect(isTitleFocusPending()).toBe(true);
+    });
+
+    it("expires after its protection window so it cannot suppress focus changes forever", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(0);
+
+        markTitleFocusPending("ntx-1");
+        expect(isTitleFocusPending("ntx-1")).toBe(true);
+
+        vi.setSystemTime(1499);
+        expect(isTitleFocusPending("ntx-1")).toBe(true);
+
+        vi.setSystemTime(1501);
+        expect(isTitleFocusPending("ntx-1")).toBe(false);
+        expect(isTitleFocusPending()).toBe(false);
+    });
+
+    it("a later mark supersedes an earlier one instead of accumulating", () => {
+        markTitleFocusPending("ntx-1");
+        markTitleFocusPending("ntx-2");
+
+        expect(isTitleFocusPending("ntx-1")).toBe(false);
+        expect(isTitleFocusPending("ntx-2")).toBe(true);
+    });
 });
 
 describe("focus service", () => {

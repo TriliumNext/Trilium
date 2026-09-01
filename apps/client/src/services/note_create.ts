@@ -7,6 +7,7 @@ import type FBranch from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
 import type { ChooseNoteTypeResponse } from "../widgets/dialogs/note_type_chooser.js";
 import branchService from "./branches.js";
+import { markTitleFocusPending } from "./focus.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import protectedSessionHolder from "./protected_session_holder.js";
@@ -112,6 +113,7 @@ async function createNote(parentNotePath: string | undefined, options: CreateNot
         });
 
         if (options.focus === "title") {
+            markTitleFocusPending(activeNoteContext.ntxId);
             appContext.triggerEvent("focusAndSelectTitle", { isNewNote: true, ntxId: activeNoteContext.ntxId });
         } else if (options.focus === "content") {
             appContext.triggerEvent("focusOnDetail", { ntxId: activeNoteContext.ntxId });

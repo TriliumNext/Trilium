@@ -53,6 +53,29 @@ describe("fancytree scrollIntoView patch", () => {
     });
 });
 
+describe("fancytree nodeKeydown patch (#11244)", () => {
+    it("does not crash when node.setFocus() returns without updating tree.focusNode", () => {
+        const $tree = $("<div>").appendTo(document.body);
+
+        try {
+            $tree.fancytree({ keyboard: true, source: [{ title: "child", key: "child" }] });
+            const tree: Fancytree.Fancytree = $tree.fancytree("getTree");
+
+            // nodeKeydown()'s null-node fallback assumes tree.focusNode is populated the instant
+            // focusNode.setFocus() returns. Stub setFocus() as a no-op to violate that assumption
+            // directly, the same way a mid-flight DOM/tree update does in the real app.
+            vi.spyOn(tree, "getFirstChild").mockReturnValue({ setFocus: vi.fn() } as unknown as Fancytree.FancytreeNode);
+            expect(tree.getActiveNode()).toBeNull();
+            expect(tree.focusNode).toBeNull();
+
+            // Without the patch this threw "TypeError: Cannot read properties of null (reading 'debug')".
+            expect(() => tree.$container.trigger($.Event("keydown", { which: 65, key: "a" }))).not.toThrow();
+        } finally {
+            $tree.remove();
+        }
+    });
+});
+
 describe("NoteTreeWidget", () => {
     afterEach(() => {
         vi.restoreAllMocks();
