@@ -79,7 +79,10 @@ page.on("websocket", (ws) => {
 console.log(`Navigating to ${baseUrl}...`);
 await page.goto(baseUrl, { waitUntil: "networkidle" });
 
-if (page.url().includes("login")) {
+// The login screen is rendered by the client at "/" (or "/?login") once /bootstrap reports no
+// session, so detect it by its password field rather than by the URL.
+const passwordField = page.locator('form input[name="password"]');
+if (await passwordField.count()) {
     const password = process.env.TRILIUM_PASSWORD;
     if (!password) {
         console.error("The instance requires a login; set the TRILIUM_PASSWORD environment variable.");
@@ -87,9 +90,10 @@ if (page.url().includes("login")) {
         process.exit(1);
     }
     console.log("Logging in...");
-    await page.fill("#password", password);
-    await page.click("form button.btn-success");
-    await page.waitForURL((url) => !url.pathname.includes("login"), { timeout: 30000 });
+    await passwordField.fill(password);
+    await page.click("form button.btn-primary");
+    // A successful login calls window.location.assign("."), which replaces the login form.
+    await passwordField.waitFor({ state: "detached", timeout: 30000 });
 }
 
 console.log("Waiting for the app to fully load...");
