@@ -213,6 +213,19 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
             this.validate();
         }
 
+        // A label born on a protected note is protected with it, matching what protectNote()
+        // does for the labels that already exist. Without a session the value could not be
+        // encrypted, so it stays plaintext until the next protectNote() pass catches it up.
+        if (
+            this.type === "label" &&
+            !this.isProtected &&
+            !(this.attributeId in this.becca.attributes) &&
+            protectedSessionService.isProtectedSessionAvailable() &&
+            this.getNote().isProtected
+        ) {
+            this.isProtected = true;
+        }
+
         this.name = sanitizeAttributeName(this.name);
 
         if (!this.value) {

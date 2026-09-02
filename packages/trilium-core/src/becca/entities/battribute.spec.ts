@@ -519,5 +519,24 @@ describe("BAttribute", () => {
                 protectedSessionService.resetDataKey();
             }
         });
+
+        it("a label added to an already-protected note is protected with it", () => {
+            protectedSessionService.setDataKey(DATA_KEY);
+            try {
+                const owner = createNote();
+                const taskContext = new TaskContext("no-progress-reporting", "protectNotes", { protect: true });
+                getContext().init(() => noteService.protectNoteRecursively(owner, true, false, taskContext));
+
+                // The owned-attributes editor lands here via updateNoteAttributes -> note.addAttribute.
+                const attr = getContext().init(() => owner.addAttribute("label", "lateSecret", "hunter3"));
+
+                expect(attr.isProtected).toBe(true);
+                const stored = readStoredValue(attr.attributeId);
+                expect(stored).not.toBe("hunter3");
+                expect(dataEncryption.decryptString(DATA_KEY, stored)).toBe("hunter3");
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
+        });
     });
 });
