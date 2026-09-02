@@ -37,6 +37,8 @@ jobs:
       ckeditor5: ${{ steps.filter.outputs.ckeditor5 }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
@@ -100,6 +102,8 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies
@@ -283,6 +287,8 @@ jobs:
       - name: Checkout the repository
         if: env.AFFECTED == 'true'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         if: env.AFFECTED == 'true'
@@ -338,6 +344,8 @@ jobs:
       - name: Checkout the repository
         if: env.AFFECTED == 'true'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         if: env.AFFECTED == 'true'
@@ -398,6 +406,8 @@ jobs:
       - name: Checkout the repository
         if: env.AFFECTED == 'true'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         if: env.AFFECTED == 'true'
@@ -465,6 +475,8 @@ jobs:
       - name: Checkout the repository
         if: env.AFFECTED == 'true'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         if: env.AFFECTED == 'true'
@@ -527,6 +539,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
@@ -566,6 +580,8 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies

@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies
@@ -66,6 +68,8 @@ jobs:
     runs-on: ${{ matrix.os.image }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
@@ -114,6 +118,8 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Run the build
         uses: ./.github/actions/build-server
@@ -138,6 +144,7 @@ jobs:
 
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           sparse-checkout: |
             docs/Release Notes
             scripts
