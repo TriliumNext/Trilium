@@ -39,8 +39,6 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          # No dependency cache on this publish job, a cache entry primed
-          # elsewhere must not feed what ships.
 
       - name: Install dependencies
         run: pnpm install --filter web-clipper --frozen-lockfile --ignore-scripts
