@@ -32,6 +32,32 @@ describe("Search API (core)", () => {
         expect(Array.isArray(res.body.searchResults)).toBe(true);
     });
 
+    it("scopes quick-search results to the hoisted subtree when hoistedNoteId is supplied", async () => {
+        // Create a workspace root and a note inside it that matches the unique token.
+        const { noteId: workspaceId } = await createTextNote(api, { title: "Workspace root" });
+        const SCOPED_TOKEN = "ZzScopedSearchTokenQwerty";
+        const { noteId: insideId } = await createTextNote(api, { parentNoteId: workspaceId, title: SCOPED_TOKEN });
+
+        // A note with the same token that lives outside the workspace.
+        const { noteId: outsideId } = await createTextNote(api, { title: SCOPED_TOKEN });
+
+        // Search scoped to the workspace — only the note inside must appear.
+        const scoped = await api.get<{ searchResultNoteIds: string[] }>(
+            `/api/quick-search/${SCOPED_TOKEN}?hoistedNoteId=${workspaceId}`
+        );
+        expect(scoped.status).toBe(200);
+        expect(scoped.body.searchResultNoteIds).toContain(insideId);
+        expect(scoped.body.searchResultNoteIds).not.toContain(outsideId);
+
+        // Without hoistedNoteId both notes must appear (unscoped fallback).
+        const unscoped = await api.get<{ searchResultNoteIds: string[] }>(
+            `/api/quick-search/${SCOPED_TOKEN}`
+        );
+        expect(unscoped.status).toBe(200);
+        expect(unscoped.body.searchResultNoteIds).toContain(insideId);
+        expect(unscoped.body.searchResultNoteIds).toContain(outsideId);
+    });
+
     it("lists template note ids including a freshly-labelled template", async () => {
         const { noteId } = await createTextNote(api, { title: "A template note" });
         await api.post(`/api/notes/${noteId}/attributes`, {
