@@ -94,6 +94,42 @@ describe("Tree", () => {
         }
     });
 
+    it("sorts notes by multiple attributes in order", () => {
+        const note = buildNote({
+            children: [
+                {title: "first", "#priority": "1", "#dueDate": "2026-05-20"},
+                {title: "third", "#priority": "2", "#dueDate": "2026-05-01"},
+                {title: "second", "#priority": "1", "#dueDate": "2026-05-10"}
+            ],
+            "#sorted": "priority,dueDate"
+        });
+
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["second", "first", "third"]);
+    });
+
+    it("supports explicit sort direction for each sorted attribute", () => {
+        const note = buildNote({
+            children: [
+                {title: "low-priority", "#priority": "1", "#dueDate": "2026-05-01"},
+                {title: "next-date", "#priority": "2", "#dueDate": "2026-05-02"},
+                {title: "high-priority", "#priority": "3", "#dueDate": "2026-05-01"}
+            ],
+            "#sorted": "dueDate:asc,priority:desc"
+        });
+
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["high-priority", "low-priority", "next-date"]);
+    });
+
     it("pins to the top and bottom", () => {
         const note = buildNote({
             children: [
