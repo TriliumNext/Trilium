@@ -89,7 +89,6 @@ const config: ForgeConfig = {
             config: {
                 options: {
                     ...baseLinuxMakerConfigOptions,
-                    desktopTemplate: undefined, // otherwise it would put in the wrong exec
                     icon: {
                         "128x128": path.join(APP_ICON_PATH, isNightly ? "png/128x128-dev.png" : "png/128x128.png"),
                     },
