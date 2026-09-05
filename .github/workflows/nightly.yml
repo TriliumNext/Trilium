@@ -67,12 +67,13 @@ jobs:
     runs-on: ${{ matrix.os.image }}
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         env:
@@ -99,7 +100,7 @@ jobs:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         with:
           make_latest: false
@@ -123,6 +124,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Build mobile APK
         uses: ./.github/actions/build-mobile
@@ -140,7 +143,7 @@ jobs:
           apps/mobile/android/app/build/outputs/apk/release/TriliumNotes-mobile-nightly.apk
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         if: ${{ github.ref == 'refs/heads/main' }}
         with:
           make_latest: false
@@ -173,6 +176,8 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Run the build
         uses: ./.github/actions/build-server
@@ -181,7 +186,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         with:
           make_latest: false

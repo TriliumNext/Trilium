@@ -37,8 +37,10 @@ jobs:
       ckeditor5: ${{ steps.filter.outputs.ckeditor5 }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
@@ -100,8 +102,10 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
@@ -128,7 +132,7 @@ jobs:
           retention-days: 30
 
       - name: Upload client coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-client.outcome == 'success' }}
         with:
           files: apps/client/test-output/vitest/coverage/lcov.info
@@ -137,9 +141,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload client test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-client.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/client/test-output/vitest/junit.xml
           flags: client
@@ -151,7 +155,7 @@ jobs:
         run: pnpm run --filter=desktop test --coverage
 
       - name: Upload desktop coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-desktop.outcome == 'success' }}
         with:
           files: apps/desktop/test-output/vitest/coverage/lcov.info
@@ -160,9 +164,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload desktop test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-desktop.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/desktop/test-output/vitest/junit.xml
           flags: desktop
@@ -174,7 +178,7 @@ jobs:
         run: pnpm run --filter=commons test --coverage
 
       - name: Upload commons coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-commons.outcome == 'success' }}
         with:
           files: packages/commons/test-output/vitest/coverage/lcov.info
@@ -183,9 +187,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload commons test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-commons.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/commons/test-output/vitest/junit.xml
           flags: commons
@@ -197,7 +201,7 @@ jobs:
         run: pnpm run --filter=codemirror test --coverage
 
       - name: Upload codemirror coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-codemirror.outcome == 'success' }}
         with:
           files: packages/codemirror/test-output/vitest/coverage/lcov.info
@@ -206,9 +210,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload codemirror test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-codemirror.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/codemirror/test-output/vitest/junit.xml
           flags: codemirror
@@ -220,7 +224,7 @@ jobs:
         run: pnpm run --filter=highlightjs test --coverage
 
       - name: Upload highlightjs coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-highlightjs.outcome == 'success' }}
         with:
           files: packages/highlightjs/test-output/vitest/coverage/lcov.info
@@ -229,9 +233,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload highlightjs test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-highlightjs.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/highlightjs/test-output/vitest/junit.xml
           flags: highlightjs
@@ -243,7 +247,7 @@ jobs:
         run: pnpm run --filter=pdfjs-viewer test --coverage
 
       - name: Upload pdfjs-viewer coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-pdfjs-viewer.outcome == 'success' }}
         with:
           files: packages/pdfjs-viewer/test-output/vitest/coverage/lcov.info
@@ -252,9 +256,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload pdfjs-viewer test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-pdfjs-viewer.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/pdfjs-viewer/test-output/vitest/junit.xml
           flags: pdfjs-viewer
@@ -283,8 +287,10 @@ jobs:
       - name: Checkout the repository
         if: env.AFFECTED == 'true'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         if: env.AFFECTED == 'true'
       - name: Set up node & dependencies
         if: env.AFFECTED == 'true'
@@ -310,7 +316,7 @@ jobs:
           retention-days: 30
 
       - name: Upload server coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-server.outcome == 'success' }}
         with:
           files: apps/server/test-output/vitest/coverage/lcov.info
@@ -319,9 +325,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload server test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-server.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/server/test-output/vitest/junit.xml
           flags: server
@@ -338,8 +344,10 @@ jobs:
       - name: Checkout the repository
         if: env.AFFECTED == 'true'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         if: env.AFFECTED == 'true'
       - name: Set up node & dependencies
         if: env.AFFECTED == 'true'
@@ -361,7 +369,7 @@ jobs:
         run: pnpm run --filter=standalone test --coverage
 
       - name: Upload standalone coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-standalone.outcome == 'success' }}
         with:
           files: apps/standalone/test-output/vitest/coverage/lcov.info
@@ -370,9 +378,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload standalone test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-standalone.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: apps/standalone/test-output/vitest/junit.xml
           flags: standalone
@@ -398,8 +406,10 @@ jobs:
       - name: Checkout the repository
         if: env.AFFECTED == 'true'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         if: env.AFFECTED == 'true'
       - name: Set up node & dependencies
         if: env.AFFECTED == 'true'
@@ -465,8 +475,10 @@ jobs:
       - name: Checkout the repository
         if: env.AFFECTED == 'true'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         if: env.AFFECTED == 'true'
       - name: Set up node & dependencies
         if: env.AFFECTED == 'true'
@@ -495,7 +507,7 @@ jobs:
         run: pnpm run --filter=ckeditor5 test --mergeReports --coverage
 
       - name: Upload ckeditor5 coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ !cancelled() && steps.test-ckeditor5.outcome == 'success' }}
         with:
           files: packages/ckeditor5/test-output/vitest/coverage/lcov.info
@@ -504,9 +516,9 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload ckeditor5 test results to Codecov
-        uses: codecov/test-results-action@v1
-        if: ${{ !cancelled() && steps.test-ckeditor5.outcome != 'skipped' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/ckeditor5/test-output/vitest/junit.xml
           flags: ckeditor5
@@ -527,7 +539,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
@@ -543,8 +557,8 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Trigger server build
         run: pnpm run server:build
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/build-push-action@v7
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: apps/server
           cache-from: type=gha
@@ -566,8 +580,10 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
@@ -587,10 +603,10 @@ jobs:
         run: echo "TEST_TAG=${TEST_TAG,,}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Build and export to Docker
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: apps/server
           file: apps/server/${{ matrix.dockerfile }}
@@ -605,7 +621,7 @@ jobs:
           echo "Container ID: $CONTAINER_ID"
 
       - name: Wait for the healthchecks to pass
-        uses: stringbean/docker-healthcheck-action@v3
+        uses: stringbean/docker-healthcheck-action@a958d329225ccbd485766815734e01c335e62bd4 # v3.0.0
         with:
           container: trilium_local
           wait-time: 50

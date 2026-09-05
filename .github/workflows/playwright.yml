@@ -65,6 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           filter: tree:0
           fetch-depth: 0
 
@@ -120,8 +121,10 @@ jobs:
     name: PDF viewer E2E tests
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -160,10 +163,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           filter: tree:0
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - uses: actions/setup-node@v7
         with:
           node-version: 24

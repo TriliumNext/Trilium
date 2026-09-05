@@ -46,6 +46,7 @@ runs:
     - name: Checkout base branch
       uses: actions/checkout@v7
       with:
+        persist-credentials: false
         ref: ${{ inputs.branch }}
         path: br-base
         token: ${{ inputs.ghToken }}
