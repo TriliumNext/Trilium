@@ -23,6 +23,13 @@ body.mobile .scrolling-container {
     --content-margin-inline: 8px;
 }
 
+/* Programmatic jumps in a code note (go to line, search, scroll to end) can travel through the
+   whole document; animating them makes CodeMirror render and discard every viewport along the
+   way, so they land instantly instead. */
+.note-split.type-code > .scrolling-container {
+    scroll-behavior: auto;
+}
+
 .note-split.type-code:not(.mime-text-x-sqlite, .mime-text-x-markdown) {
     &> .scrolling-container {
         background-color: var(--code-background-color);

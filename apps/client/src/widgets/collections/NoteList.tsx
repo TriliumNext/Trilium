@@ -9,7 +9,7 @@ import FNote from "../../entities/fnote";
 import type { PrintReport } from "../../print";
 import froca from "../../services/froca";
 import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
-import { useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent } from "../react/hooks";
+import { useGetContextDataFrom, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent } from "../react/hooks";
 import { allViewTypes, ViewModeMedia, ViewModeProps, ViewTypeOptions } from "./interface";
 import ViewModeStorage, { type ViewModeStorageType } from "./view_mode_storage";
 
@@ -20,6 +20,12 @@ interface NoteListProps {
     /** if set to `true` then only collection-type views are displayed such as geo-map and the calendar. The original book types grid and list will be ignored. */
     displayOnlyCollections?: boolean;
     isEnabled: boolean;
+    /**
+     * When false, the note's content is still being loaded and the legacy list/grid views hold off
+     * their visibility check: without content the widget sits inside the viewport, so observing it
+     * now would latch it visible on effectively every note. Defaults to true.
+     */
+    contentReady?: boolean;
     ntxId: string | null | undefined;
     media: ViewModeMedia;
     viewType: ViewTypeOptions | undefined;
@@ -62,11 +68,13 @@ export default function NoteList(props: Pick<NoteListProps, "displayOnlyCollecti
     const { note, noteContext, notePath, ntxId, viewScope } = useNoteContext();
     const viewType = useNoteViewType(note);
     const noteType = useNoteProperty(note, "type");
+    const contentLoad = useGetContextDataFrom(noteContext, "contentLoad");
     const [ enabled, setEnabled ] = useState(noteContext?.hasNoteList());
     useEffect(() => {
         setEnabled(noteContext?.hasNoteList());
     }, [ note, noteContext, viewType, viewScope?.viewMode, noteType ]);
-    return <CustomNoteList viewType={viewType} note={note} isEnabled={!!enabled} notePath={notePath} ntxId={ntxId} {...props} />;
+    return <CustomNoteList viewType={viewType} note={note} isEnabled={!!enabled} notePath={notePath} ntxId={ntxId}
+                           contentReady={contentLoad?.state !== "loading"} {...props} />;
 }
 
 export function SearchNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {
@@ -83,7 +91,7 @@ export function EmbeddedNoteList(props: Omit<NoteListProps, "isEnabled" | "viewT
     return <CustomNoteList {...props} isEnabled={true} viewType={viewType} />;
 }
 
-export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId, onReady, onProgressChanged, ...restProps }: NoteListProps) {
+export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, contentReady = true, notePath, highlightedTokens, displayOnlyCollections, ntxId, onReady, onProgressChanged, ...restProps }: NoteListProps) {
     const widgetRef = useRef<HTMLDivElement>(null);
     const noteIds = useNoteIds(shouldEnable ? note : null, viewType, ntxId);
     const isFullHeight = (viewType && viewType !== "list" && viewType !== "grid");
@@ -94,6 +102,13 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePa
     useEffect(() => {
         if (isFullHeight || displayOnlyCollections || note?.type === "book") {
             // Double role: no need to check if the note list is visible if the view is full-height or book, but also prevent legacy views if `displayOnlyCollections` is true.
+            return;
+        }
+
+        if (!contentReady) {
+            // Drop any previous latch and wait for the load to finish before observing — a note
+            // switch reports "loading" again, so this also resets the latch across note switches.
+            setIsIntersecting(false);
             return;
         }
 
@@ -117,7 +132,7 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePa
         // (intersection is false). https://github.com/zadam/trilium/issues/4165
         setTimeout(() => widgetRef.current && observer.observe(widgetRef.current), 10);
         return () => observer.disconnect();
-    }, [ widgetRef, isFullHeight, displayOnlyCollections, note ]);
+    }, [ widgetRef, isFullHeight, displayOnlyCollections, note, contentReady ]);
 
     // Preload the configuration.
     let props: ViewModeProps<any> | undefined | null = null;

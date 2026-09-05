@@ -3018,6 +3018,12 @@ iframe.print-iframe {
     overflow: hidden;
 }
 
+/* A full-height note fills the container instead of scrolling it, so the padding that lets
+   flowing content scroll past its end would only take height away from the note. */
+.scrolling-container:has(> .note-detail.full-height) > .scroll-padding-widget {
+    display: none;
+}
+
 @media (max-width: 991px) {
     body.mobile {
         .split-note-container-widget {
