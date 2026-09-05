@@ -30,7 +30,8 @@ body.mobile .scrolling-container {
     }
 
     .inline-title,
-    .title-actions {
+    .title-actions,
+    &> .scrolling-container > .note-list-widget {
         background-color: var(--main-background-color);
     }
 }
