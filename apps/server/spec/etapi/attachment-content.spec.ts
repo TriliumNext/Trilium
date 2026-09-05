@@ -53,6 +53,64 @@ describe("etapi/attachment-content", () => {
         expect(response.text).toStrictEqual(text);
     });
 
+    it("creates an attachment with base64-encoded binary content", async () => {
+        const binary = Buffer.from([
+            0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x01, 0x02, 0x03
+        ]);
+
+        const createResponse = await supertest(app)
+            .post(`/etapi/attachments`)
+            .auth(USER, token, { "type": "basic"})
+            .send({
+                "ownerId": createdNoteId,
+                "role": "image",
+                "mime": "image/png",
+                "title": "binary attachment",
+                "content": binary.toString("base64"),
+                "encoding": "base64"
+            })
+            .expect(201);
+        const attachmentId = createResponse.body.attachmentId;
+        expect(attachmentId).toBeTruthy();
+
+        const contentResponse = await supertest(app)
+            .get(`/etapi/attachments/${attachmentId}/content`)
+            .auth(USER, token, { "type": "basic"})
+            .expect(200);
+        expect(Buffer.from(contentResponse.body).equals(binary)).toBe(true);
+    });
+
+    it("rejects an unsupported encoding", async () => {
+        await supertest(app)
+            .post(`/etapi/attachments`)
+            .auth(USER, token, { "type": "basic"})
+            .send({
+                "ownerId": createdNoteId,
+                "role": "file",
+                "mime": "text/plain",
+                "title": "bad encoding",
+                "content": "data",
+                "encoding": "hex"
+            })
+            .expect(400);
+    });
+
+    it("rejects malformed base64 content", async () => {
+        const response = await supertest(app)
+            .post(`/etapi/attachments`)
+            .auth(USER, token, { "type": "basic"})
+            .send({
+                "ownerId": createdNoteId,
+                "role": "image",
+                "mime": "image/png",
+                "title": "malformed base64",
+                "content": "%%%not-base64%%%",
+                "encoding": "base64"
+            })
+            .expect(400);
+        expect(response.body.code).toStrictEqual("INVALID_BASE64_CONTENT");
+    });
+
     it("supports binary content", async() => {
         await supertest(app)
             .put(`/etapi/attachments/${createdAttachmentId}/content`)

@@ -1295,6 +1295,17 @@ components:
                     type: string
                 content:
                     type: string
+                    description: >
+                        Content of the attachment. JSON cannot carry raw binary data, so binary
+                        content must be base64-encoded and accompanied by `encoding: "base64"`;
+                        it is decoded before storage. Otherwise the value is stored as a plain string.
+                encoding:
+                    type: string
+                    enum:
+                        - base64
+                    description: >
+                        Optional content encoding. Only `base64` is supported; when set, `content`
+                        is decoded from base64 before storage.
                 position:
                     type: integer
                     format: int32
