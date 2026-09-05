@@ -4,6 +4,7 @@ import { Modal } from "bootstrap";
 import appContext from "../components/app_context.js";
 import type { ConfirmDeleteNoteBoxOptions, ConfirmDialogOptions, ConfirmDialogResult, ConfirmWithMessageOptions, MessageType } from "../widgets/dialogs/confirm.js";
 import { InfoExtraProps } from "../widgets/dialogs/info.jsx";
+import type { ItemPickerDialogOptions, PickerItem } from "../widgets/dialogs/item_picker.js";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import { focusSavedElement, saveFocusedElement } from "./focus.js";
 import keyboardActionsService from "./keyboard_actions.js";
@@ -20,8 +21,8 @@ export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = 
 
     saveFocusedElement();
 
-    // Lift this dialog above a stacked quick-edit / tree popup if one is open (see raiseAboveStackedPopup).
-    const bumpedZIndex = raiseAboveStackedPopup($dialog[0], declaredZIndex);
+    // Lift this dialog above whatever is already open, if anything is (see raiseAboveWhatIsOpen).
+    const bumpedZIndex = raiseAboveWhatIsOpen($dialog[0], declaredZIndex);
 
     Modal.getOrCreateInstance($dialog[0], config).show();
 
@@ -148,37 +149,41 @@ export function closeActiveDialog() {
     }
 }
 
+/** Bootstrap's own modal layer, used by a dialog that declares no z-index. */
+const STANDARD_MODAL_LAYER = 1055;
+
 /** Self-managing popups (quick-edit, tree popup) set their own z-index via CSS; never lift them. */
 const SELF_MANAGED_POPUP_SELECTOR = ".popup-editor-dialog, .tree-popup-editor-dialog";
 
 /**
- * When a quick-edit / tree popup is stacked on top of another modal it sits at z-index 1100 — above
- * the standard dialog layer (1055). A dialog opened from within it (delete/confirm/prompt/…) would
- * then render *behind* the popup. Detect that case and give the incoming dialog an inline z-index
- * just above the current top-most modal so it clears the popup.
+ * Raises a dialog above every modal already open, and returns the z-index it was given.
  *
- * The dialog's inline z-index is rewritten from scratch on every open, so a lift never outlives the
- * stacked context that warranted it. `declaredZIndex` is the layer the dialog defines for itself
- * (`Modal`'s `zIndex` prop, e.g. 1100 for the note type chooser or 2000 for confirm/prompt) and is
- * what it falls back to — clearing the property outright would strip that.
+ * Two cases need this. A quick-edit or tree popup stacked on a modal sits at 1100, above the
+ * standard 1055, so a dialog opened from it renders behind. Two dialogs that declare the same
+ * layer tie, and DOM order decides, which is not the dialog just opened.
  *
- * Returns the assigned z-index (for the caller to match the backdrop), or `null` when no lift was
- * applied.
+ * The z-index is rewritten on every open so a lift does not outlive it, and `declaredZIndex`
+ * (`Modal`'s `zIndex` prop) is what an unlifted dialog falls back to. The caller matches the
+ * backdrop to the result. Returns `null` when no lift is needed.
  */
-function raiseAboveStackedPopup(dialogEl: HTMLElement, declaredZIndex?: number): number | null {
-    const hasStackedPopup = document.body.classList.contains("popup-editor-stacked")
-        || document.body.classList.contains("tree-popup-stacked");
-    if (!hasStackedPopup || dialogEl.matches(SELF_MANAGED_POPUP_SELECTOR)) {
-        dialogEl.style.zIndex = declaredZIndex ? String(declaredZIndex) : "";
-        return null;
-    }
-
+function raiseAboveWhatIsOpen(dialogEl: HTMLElement, declaredZIndex?: number): number | null {
     const others = Array.from(document.querySelectorAll<HTMLElement>(".modal.show"))
         .filter((modal) => modal !== dialogEl);
     const maxZIndex = others.reduce((max, modal) => Math.max(max, parseInt(getComputedStyle(modal).zIndex, 10) || 0), 0);
 
-    // A dialog that already declares a layer above the popup keeps it; lifting only ever raises.
-    const zIndex = Math.max(maxZIndex + 10, declaredZIndex ?? 0);
+    const hasStackedPopup = document.body.classList.contains("popup-editor-stacked")
+        || document.body.classList.contains("tree-popup-stacked");
+    // The layer this dialog uses on its own, which decides whether anything open covers it.
+    const own = declaredZIndex ?? STANDARD_MODAL_LAYER;
+    const isCovered = hasStackedPopup || maxZIndex >= own;
+
+    if (!isCovered || dialogEl.matches(SELF_MANAGED_POPUP_SELECTOR)) {
+        dialogEl.style.zIndex = declaredZIndex ? String(declaredZIndex) : "";
+        return null;
+    }
+
+    // A dialog declaring a layer above everything open keeps it: the lift only raises.
+    const zIndex = Math.max(maxZIndex + 10, own);
     dialogEl.style.zIndex = String(zIndex);
     return zIndex;
 }
@@ -229,6 +234,19 @@ export async function chooseNote(props: Omit<NotePickerDialogOptions, "callback"
         appContext.triggerCommand("showNotePickerDialog", { ...props, callback: res }));
 }
 
+/**
+ * Picks one item out of many, grouped and searchable.
+ *
+ * Named for the one thing it does now: picking several at once is the same dialog with a different
+ * answer, and will be a method of its own beside this.
+ *
+ * @returns what was picked, or nothing where the reader backed out.
+ */
+export async function pickSingleItem(props: Omit<ItemPickerDialogOptions, "callback">) {
+    return new Promise<PickerItem | null>((res) =>
+        appContext.triggerCommand("showItemPickerDialog", { ...props, callback: res }));
+}
+
 export async function prompt(props: PromptDialogOptions) {
     return new Promise<string | null>((res) => appContext.triggerCommand("showPromptDialog", { ...props, callback: res }));
 }
@@ -238,5 +256,6 @@ export default {
     chooseNote,
     confirm,
     confirmDeleteNoteBoxWithNote,
+    pickSingleItem,
     prompt
 };

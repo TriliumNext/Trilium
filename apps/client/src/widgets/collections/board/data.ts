@@ -170,6 +170,10 @@ async function recursiveGroupBy(
         const note = await branch.getNote();
         if (!note || (!includeArchived && note.isArchived)) continue;
 
+        // A template is what a card is made from, not a card. One made from the board's own
+        // properties is filed under it, and the inbox would otherwise collect it as one.
+        const isTemplate = note.hasLabel("template");
+
         if (note.type !== "search" && note.hasChildren()) {
             await recursiveGroupBy(
                 note.getChildBranches(), byColumn, groupByColumn, includeArchived,
@@ -180,7 +184,7 @@ async function recursiveGroupBy(
         // Anything below the board's own children is a card's child, collected only when nested.
         const value = note.getLabelOrRelation(groupByColumn);
         const group = value || (inbox && (depth === 0 || inbox.nested) ? INBOX_COLUMN : undefined);
-        if (group === undefined || seenNoteIds.has(note.noteId)) {
+        if (group === undefined || isTemplate || seenNoteIds.has(note.noteId)) {
             continue;
         }
 

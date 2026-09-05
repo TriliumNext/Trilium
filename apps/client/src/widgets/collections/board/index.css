@@ -259,7 +259,7 @@ body.mobile .board-view-container .board-add-column {
   padding: 0.5em 0.5em 0;
 }
 
-/* A field standing among the cards is spaced as one of them, which is what it stands for. */
+/* A field between the cards is spaced like one. */
 .board-view-container .board-column-content > .board-new-item {
   margin-block: 0 0.65em;
 }

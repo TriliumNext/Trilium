@@ -35,6 +35,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["showInfoDialog"]} loader={() => import("../widgets/dialogs/info.js")} />)
         .child(<LazyDialog triggerEvents={["showConfirmDialog", "showConfirmDeleteNoteBoxWithNoteDialog"]} loader={() => import("../widgets/dialogs/confirm.js")} />)
         .child(<LazyDialog triggerEvents={["showPromptDialog"]} loader={() => import("../widgets/dialogs/prompt.js")} />)
+        .child(<LazyDialog triggerEvents={["showItemPickerDialog"]} loader={() => import("../widgets/dialogs/item_picker.js")} />)
         .child(<LazyDialog triggerEvents={["showCpuArchWarning"]} loader={() => import("../widgets/dialogs/incorrect_cpu_arch.js")} />)
         .child(<LazyDialog triggerEvents={["showOptions"]} loader={() => import("../widgets/dialogs/OptionsDialog.jsx")} />)
         .child(<LazyDialog triggerEvents={["showContentLanguagesDialog"]} loader={() => import("../widgets/dialogs/content_languages.js")} />)

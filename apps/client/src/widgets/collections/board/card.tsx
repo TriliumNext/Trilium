@@ -5,11 +5,12 @@ import {
 import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
 import BoardApi from "./api";
-import { BoardActionsContext, TitleEditor } from ".";
+import { BoardActionsContext, BoardPromotedAttributesContext, TitleEditor } from ".";
 import { ContextMenuEvent } from "../../../menus/context_menu";
 import { openNoteContextMenu } from "./context_menu";
 import { t } from "../../../services/i18n";
 import UserAttributesDisplay from "../../attribute_widgets/UserAttributesList";
+import { parseNavigationStateFromUrl } from "../../../services/link";
 import { FLIP_SETTLE_MS } from "../../react/flip";
 import {
     useNoteColorClass, useNoteIcon, useNoteLabel, useNoteLabelBoolean, useTriliumEvent
@@ -58,6 +59,7 @@ function Card({
     onInsert: (index: number) => void
 }) {
     const { setBranchIdToEdit } = useContext(BoardActionsContext);
+    const shownAttributes = useContext(BoardPromotedAttributesContext);
     // Tracks the `color` label, which the board does not redraw a card for.
     const colorClass = useNoteColorClass(note) || "";
     const editorRef = useRef<HTMLInputElement>(null);
@@ -88,6 +90,20 @@ function Card({
         // A double click is one gesture, and its second click would open the note over itself: the
         // popup already standing is taken as the one to stack on, and closing that leaves neither.
         if (e.detail > 1) return;
+
+        // A link the card draws, such as the target of a relation, names a note of its own. It is
+        // opened in the popup like any other card, and the press is taken here so that neither the
+        // page's own link handler (which would open a tab) nor the card below it acts on it too.
+        const link = (e.target as HTMLElement | null)?.closest<HTMLAnchorElement>("a[href]");
+        if (link) {
+            const { notePath } = parseNavigationStateFromUrl(link.getAttribute("href") ?? undefined);
+            e.preventDefault();
+            e.stopPropagation();
+            if (notePath) {
+                api.openNote(notePath);
+            }
+            return;
+        }
 
         api.openNote(note.noteId);
     }, [ api, note ]);
@@ -182,7 +198,11 @@ function Card({
                         title={t("board_view.edit-note-title")}
                         onClick={handleEdit}
                     />
-                    <UserAttributesDisplay note={note} ignoredAttributes={[statusAttribute]} />
+                    <UserAttributesDisplay
+                        note={note}
+                        ignoredAttributes={[statusAttribute]}
+                        shownAttributes={shownAttributes}
+                    />
                 </>
             ) : (
                 <TitleEditor

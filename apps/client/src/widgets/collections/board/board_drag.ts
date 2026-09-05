@@ -6,7 +6,7 @@ import {
     type CardBox, cardInsertionIndex, columnAt, columnCovers, columnInsertionIndex
 } from "./drag_geometry";
 import { type BoardMeasurement, measureBoard, toAreaY, toBoardX } from "./drag_measure";
-import { createEdgeScroller, type ScrollTarget } from "./edge_scroll";
+import { createEdgeScroller, type ScrollTarget } from "../../react/edge_scroll";
 
 /** How far a pointer travels before a press with a button held is taken for a drag. */
 const MOUSE_THRESHOLD = 4;

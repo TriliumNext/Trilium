@@ -49,6 +49,11 @@ export interface AttributeDetailOpts {
     parent?: HTMLElement;
     hideMultiplicity?: boolean;
     /**
+     * Leaves out the inheritable and promoted toggles. For a host that sets both itself, such as a
+     * collection whose attributes are all inheritable and promoted.
+     */
+    hideInheritance?: boolean;
+    /**
      * Places the popup beside this element instead of at `x`/`y`. For hosts whose attributes are shown
      * far from the note attributes pane the coordinates are otherwise resolved against, e.g. the
      * attributes panel in the right pane.
@@ -326,6 +331,7 @@ export function isSameShow(previous: AttributeDetailOpts | null, next: Attribute
     return !next.focus
         && previous.isOwned === next.isOwned
         && previous.hideMultiplicity === next.hideMultiplicity
+        && previous.hideInheritance === next.hideInheritance
         && previous.attribute.noteId === next.attribute.noteId
         && previous.attribute.type === next.attribute.type
         && previous.attribute.name === next.attribute.name
@@ -699,20 +705,22 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     />
                 )}
 
-                <OptionsRowWithToggle
-                    name="attr-inheritable"
-                    label={t("attribute_detail.inheritable")}
-                    description={t("attribute_detail.inheritable_title")}
-                    currentValue={isInheritable}
-                    disabled={!isOwned}
-                    onChange={(checked) => {
-                        setIsInheritable(checked);
-                        attribute.isInheritable = checked;
-                        onAttributesChanged?.(allAttributes ?? []);
-                    }}
-                />
+                {!opts.hideInheritance && (
+                    <OptionsRowWithToggle
+                        name="attr-inheritable"
+                        label={t("attribute_detail.inheritable")}
+                        description={t("attribute_detail.inheritable_title")}
+                        currentValue={isInheritable}
+                        disabled={!isOwned}
+                        onChange={(checked) => {
+                            setIsInheritable(checked);
+                            attribute.isInheritable = checked;
+                            onAttributesChanged?.(allAttributes ?? []);
+                        }}
+                    />
+                )}
 
-                {isDefinition(attrType) && (
+                {isDefinition(attrType) && !opts.hideInheritance && (
                     <OptionsRowWithToggle
                         name="attr-promoted"
                         label={t("attribute_detail.promoted")}

@@ -275,6 +275,33 @@ describe("createNote", () => {
     });
 });
 
+describe("createTemplateNote", () => {
+    /**
+     * A template is a note carrying `#template`, and it is opened in a popup rather than in the
+     * tab: what asked for one is usually a dialog the reader is still standing in.
+     */
+    it("makes a note carrying the label under the given one, and opens it in a popup", async () => {
+        const result = await noteCreateService.createTemplateNote("board1", "New card template");
+
+        expect(server.post).toHaveBeenCalledWith(
+            expect.stringContaining("notes/board1/children"),
+            expect.objectContaining({
+                title: "New card template",
+                type: "text",
+                attributes: [
+                    { type: "label", name: "template", value: "", isInheritable: false }
+                ]
+            }),
+            undefined
+        );
+        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", {
+            noteIdOrPath: NOTE_ID,
+            showNoteTypeSwitcher: true
+        });
+        expect(result).toBe(childNote);
+    });
+});
+
 describe("createNoteWithTypePrompt", () => {
     it("returns undefined and posts nothing when the chooser is cancelled", async () => {
         triggerCommand.mockImplementation((_name: string, data: any) => {

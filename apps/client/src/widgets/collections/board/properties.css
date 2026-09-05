@@ -1,0 +1,8 @@
+/* The dialog stacks its cards, so the space between them is its own rather than each card's. */
+.modal.board-properties-dialog .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-inline: 25px;
+    padding-block-end: 25px;
+}

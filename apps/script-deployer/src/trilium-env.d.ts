@@ -38,6 +38,7 @@ declare module "trilium:api" {
         getNoteContexts, getMainNoteContexts, getActiveContextTextEditor, getActiveContextCodeEditor,
         getActiveNoteDetailWidget, getActiveContextNotePath, getComponentByEl,
         showMessage, showError, showInfoDialog, showConfirmDialog, showPromptDialog,
+        pickSingleItem,
         createLink, createNoteLink, triggerCommand, triggerEvent, setupElementTooltip,
         protectNote, protectSubTree,
         getTodayNote, getDayNote, getWeekFirstDayNote, getWeekNote, getMonthNote, getQuarterNote, getYearNote,

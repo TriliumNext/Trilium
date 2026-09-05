@@ -31,7 +31,14 @@ const draws = vi.hoisted(() => new Map<string, number>());
 vi.mock("../../attribute_widgets/UserAttributesList", () => ({
     default: ({ note }: { note: { noteId: string } }) => {
         draws.set(note.noteId, (draws.get(note.noteId) ?? 0) + 1);
-        return null;
+        // What a relation draws: a link to the note it points at, and beside it one to a page of
+        // its own, which is not the card's to open.
+        return (
+            <span className="user-attributes">
+                <a className="relation-link" href="#root/targetNote">Target</a>
+                <a className="outside-link" href="https://example.invalid">Elsewhere</a>
+            </span>
+        );
     }
 }));
 
@@ -120,6 +127,39 @@ describe("Board card", () => {
 
         expect(openInPopup)
             .toHaveBeenCalledWith("openInPopup", { noteIdOrPath: first });
+    });
+
+    /**
+     * A relation on a card is drawn as a link to the note it points at. The page's own link handler
+     * would open that in a tab, and the card underneath would open itself over the top of it.
+     */
+    it("opens what a link inside it points at, and only that", async () => {
+        const { first } = await renderBoard();
+        const opened = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+        const link = card(first).querySelector<HTMLElement>(".relation-link");
+        if (!link) throw new Error("expected the relation link");
+
+        const press = new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 });
+        await act(async () => { link.dispatchEvent(press); });
+
+        expect(opened).toHaveBeenCalledTimes(1);
+        expect(opened).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: "root/targetNote" });
+        // Taken here, so the page's own handler never sees it and no tab is opened.
+        expect(press.defaultPrevented).toBe(true);
+        expect(press.cancelBubble).toBe(true);
+    });
+
+    /** A link out of Trilium is the browser's to follow, and opens no card over it. */
+    it("leaves a link that names no note alone", async () => {
+        const { first } = await renderBoard();
+        const opened = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+        opened.mockClear();
+
+        await act(async () => {
+            card(first).querySelector<HTMLElement>(".outside-link")?.click();
+        });
+
+        expect(opened).not.toHaveBeenCalled();
     });
 
     /**

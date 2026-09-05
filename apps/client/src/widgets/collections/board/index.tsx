@@ -17,19 +17,17 @@ import { isIMEComposing } from "../../../services/shortcuts";
 import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
 import toast from "../../../services/toast";
 import { escapeHtml, isMobile } from "../../../services/utils";
-import {
-    getNoteTypeOptions, type NoteTypeOption, resolveNoteTypeOptions
-} from "../../../services/note_types";
+import { type NoteTypeOption, resolveNoteTypeOptions } from "../../../services/note_types";
+import type { PromotedAttributeSetting } from "../promoted_attributes";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import FormTextArea from "../../react/FormTextArea";
 import FormTextBox from "../../react/FormTextBox";
 import {
     useContextualShortcutHints, useNoteContext, useNoteLabelBoolean, useNoteLabelWithDefault,
-    useTrackedElement, useTriliumEvent
+    useNoteTypeOptions, useTrackedElement, useTriliumEvent
 } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoteAutocomplete from "../../react/NoteAutocomplete";
-import NoteTypeSelectorDialog from "../../react/NoteTypeSelectorDialog";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import { onWheelHorizontalScroll } from "../../widget_utils";
 import ActionButton from "../../react/ActionButton";
@@ -45,6 +43,7 @@ import { DEFAULT_COLUMN_ICON, DEFAULT_GROUP_BY, getStatusDefinition, INBOX_COLUM
 import Column from "./column";
 import { currentCardTemplate, DEFAULT_CARD_TEMPLATES } from "./card_templates";
 import ColumnLimitDialog from "./column_limit";
+import BoardProperties from "./properties";
 import { openBoardContextMenu, openCreateColumnMenu } from "./context_menu";
 import { applyCardMove, ColumnMap, getBoardData } from "./data";
 import { useBoardKeyboard } from "./keyboard";
@@ -69,6 +68,11 @@ export interface BoardViewData {
     templates?: string[];
     /** The one last used, which the next card is made from. */
     template?: string;
+    /**
+     * Which promoted attributes the cards show, and in what order. An attribute the list does not
+     * name is shown after the ones it does; see {@link resolvePromotedAttributes}.
+     */
+    promotedAttributes?: PromotedAttributeSetting[];
 }
 
 export interface BoardColumnData {
@@ -174,6 +178,14 @@ export const BoardActionsContext = createContext<BoardActions>({
     setDropTarget: () => undefined
 });
 
+/**
+ * Which promoted attributes a card draws, in order.
+ *
+ * A context rather than a prop: a card is memoized, so this is what reaches one when the reader
+ * arranges the attributes and nothing about the card itself has changed.
+ */
+export const BoardPromotedAttributesContext = createContext<string[] | undefined>(undefined);
+
 export const BoardDragStateContext = createContext<BoardDragState>({
     draggedCard: null,
     draggedColumn: null,
@@ -267,55 +279,9 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     const [ isPeekingAll, setIsPeekingAll ] = useState(false);
     /** Whether the editor a column is named in is open, which the board's own menu also opens. */
     const [ isCreatingColumn, setIsCreatingColumn ] = useState(false);
-    /** Everything a card could be made from, read once: the note types and every template. */
-    const [ availableTemplates, setAvailableTemplates ] = useState<NoteTypeOption[]>([]);
-    const [ isPickingTemplates, setIsPickingTemplates ] = useState(false);
-
-    /** How many reads of the templates were asked for, and the newest one answered. */
-    const readsAsked = useRef(0);
-    const readAnswered = useRef(0);
-    const readTemplates = useCallback(() => {
-        const read = ++readsAsked.current;
-        getNoteTypeOptions().then((templates) => {
-            // Two reads can be in flight at once, the one made on arrival and one a template being
-            // made asks for. They need not answer in the order they were asked, and one of them
-            // can fail and leave no answer at all, so what is taken is what no newer answer has
-            // been taken over.
-            if (read > readAnswered.current) {
-                readAnswered.current = read;
-                setAvailableTemplates(templates);
-            }
-        }).catch((e) => console.error("Failed to read what a card can be made from:", e));
-    }, []);
-
-    useEffect(() => {
-        readTemplates();
-        // A read still in flight when the board goes has nothing left to answer.
-        return () => { readAnswered.current = readsAsked.current + 1; };
-    }, [ readTemplates ]);
-
-    // A board outlives the templates it read: one made while it stands would never be offered, and
-    // one deleted would go on being offered until the board was drawn afresh. A template is a note
-    // carrying `#template`, and its title and icon are what the picker shows.
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        const offered = new Set(availableTemplates
-            .map((option) => option.options.templateNoteId)
-            .filter((noteId) => !!noteId));
-        // A note taking `#template` or losing it changes what a card can be made from. So does any
-        // attribute of a note already offered: the icon the picker shows comes from `iconClass`,
-        // from `workspaceIconClass` where there is none, and from a `#geoLocation` on a text note,
-        // all of them labels rather than part of the note row a reload would report.
-        const templated = loadResults.getAttributeRows().some((attribute) =>
-            attribute.name === "template"
-                || (!!attribute.noteId && offered.has(attribute.noteId)));
-        const renamed = availableTemplates.some((option) =>
-            option.options.templateNoteId
-                && loadResults.isNoteReloaded(option.options.templateNoteId));
-
-        if (templated || renamed) {
-            readTemplates();
-        }
-    });
+    /** Everything a card could be made from: the note types and every template. */
+    const availableTemplates = useNoteTypeOptions();
+    const [ isEditingProperties, setIsEditingProperties ] = useState(false);
     const selectColumn = useCallback<Dispatch<StateUpdater<string | undefined>>>((column) => {
         setIsPeekingAll(false);
         setActiveColumn(column);
@@ -385,12 +351,10 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         }
 
         openBoardContextMenu(event, {
-            inboxShown: inboxEnabled,
             archivedShown: includeArchived,
             onAddColumn: () => setIsCreatingColumn(true),
-            onShowInbox: (shown) => api.setInboxEnabled(shown),
             onShowArchived: (shown) => api.setArchivedShown(shown),
-            onCustomizeTemplates: () => setIsPickingTemplates(true),
+            onOpenProperties: () => setIsEditingProperties(true),
             onCollapseAll: () => {
                 // The open column is closed with the rest: it holds the peek that would otherwise
                 // keep it open against what is being written for it.
@@ -419,8 +383,16 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         offered: offeredTemplates,
         current: currentCardTemplate(offeredTemplates, api.getLastCardTemplateId()),
         onSelect: (template: NoteTypeOption) => api.setLastCardTemplateId(template.id),
-        onMore: () => setIsPickingTemplates(true)
+        onMore: () => setIsEditingProperties(true)
     }), [ api, viewConfig, offeredTemplates ]);
+
+    // Held while the names are the same, since a new array would redraw every card on every render.
+    const shownAttributesRef = useRef<string[]>([]);
+    const resolvedAttributes = api.getVisiblePromotedAttributeNames();
+    if (resolvedAttributes.join(",") !== shownAttributesRef.current.join(",")) {
+        shownAttributesRef.current = resolvedAttributes;
+    }
+    const shownAttributes = shownAttributesRef.current;
 
     const boardActions = useMemo<BoardActions>(() => ({
         setBranchIdToEdit,
@@ -740,6 +712,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         <div className="board-view">
             <CollectionProperties note={parentNote} />
             <BoardActionsContext.Provider value={boardActions}>
+                <BoardPromotedAttributesContext.Provider value={shownAttributes}>
                 <BoardDragStateContext.Provider value={boardDragState}>
                     {byColumn && columns && <div
                         ref={containerRef}
@@ -821,14 +794,11 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                                     column={columnLimitToEdit}
                                     onClose={() => setColumnLimitToEdit(undefined)}
                                 />
-                                <NoteTypeSelectorDialog
-                                    available={availableTemplates}
-                                    selected={api.getCardTemplateIds()}
-                                    shown={isPickingTemplates}
-                                    title={t("board_view.templates-title")}
-                                    hint={t("board_view.templates-hint")}
-                                    onSave={(ids) => api.setCardTemplateIds(ids)}
-                                    onClose={() => setIsPickingTemplates(false)}
+                                <BoardProperties
+                                    api={api}
+                                    note={parentNote}
+                                    shown={isEditingProperties}
+                                    onClose={() => setIsEditingProperties(false)}
                                 />
                             </>,
                             document.body
@@ -841,6 +811,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                         )}
                     </div>}
                 </BoardDragStateContext.Provider>
+                </BoardPromotedAttributesContext.Provider>
             </BoardActionsContext.Provider>
         </div>
     );

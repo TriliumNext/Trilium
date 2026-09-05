@@ -2,7 +2,7 @@ import "./UserAttributesList.css";
 
 import type { DefinitionObject } from "@triliumnext/commons";
 import { ComponentChildren, CSSProperties } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
@@ -15,6 +15,11 @@ import NoteLink from "../react/NoteLink";
 interface UserAttributesListProps {
     note: FNote;
     ignoredAttributes?: string[];
+    /**
+     * The attributes to draw, by name and in the order they are given. Without it every attribute
+     * carrying a definition is drawn, in the order the definitions stand in.
+     */
+    shownAttributes?: string[];
 }
 
 interface AttributeWithDefinitions {
@@ -25,8 +30,10 @@ interface AttributeWithDefinitions {
     def: DefinitionObject;
 }
 
-export default function UserAttributesDisplay({ note, ignoredAttributes }: UserAttributesListProps) {
-    const userAttributes = useNoteAttributesWithDefinitions(note, ignoredAttributes);
+export default function UserAttributesDisplay({
+    note, ignoredAttributes, shownAttributes
+}: UserAttributesListProps) {
+    const userAttributes = useNoteAttributesWithDefinitions(note, ignoredAttributes, shownAttributes);
     return userAttributes?.length > 0 && (
         <div className="user-attributes">
             {userAttributes?.map(attr => buildUserAttribute(attr))}
@@ -35,14 +42,24 @@ export default function UserAttributesDisplay({ note, ignoredAttributes }: UserA
 
 }
 
-function useNoteAttributesWithDefinitions(note: FNote, attributesToIgnore:  string[] = []): AttributeWithDefinitions[] {
-    const [ userAttributes, setUserAttributes ] = useState<AttributeWithDefinitions[]>(getAttributesWithDefinitions(note, attributesToIgnore));
+function useNoteAttributesWithDefinitions(
+    note: FNote, attributesToIgnore: string[] = [], shown?: string[]
+): AttributeWithDefinitions[] {
+    const [ userAttributes, setUserAttributes ] = useState<AttributeWithDefinitions[]>(
+        getAttributesWithDefinitions(note, attributesToIgnore, shown));
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (loadResults.getAttributeRows().some(attr => attributes.isAffecting(attr, note))) {
-            setUserAttributes(getAttributesWithDefinitions(note, attributesToIgnore));
+            setUserAttributes(getAttributesWithDefinitions(note, attributesToIgnore, shown));
         }
     });
+
+    // What is drawn and in what order is the caller's, and it changes as the reader arranges it.
+    const key = shown?.join(",");
+    useEffect(() => {
+        setUserAttributes(getAttributesWithDefinitions(note, attributesToIgnore, shown));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ note, key ]);
 
     return userAttributes;
 }
@@ -115,7 +132,9 @@ function buildUserAttribute(attr: AttributeWithDefinitions): ComponentChildren {
     return <UserAttribute attr={attr} style={style}>{content}</UserAttribute>;
 }
 
-function getAttributesWithDefinitions(note: FNote, attributesToIgnore: string[] = []): AttributeWithDefinitions[] {
+function getAttributesWithDefinitions(
+    note: FNote, attributesToIgnore: string[] = [], shown?: string[]
+): AttributeWithDefinitions[] {
     const attributeDefintions = note.getAttributeDefinitions();
     const result: AttributeWithDefinitions[] = [];
     for (const attr of attributeDefintions) {
@@ -140,5 +159,15 @@ function getAttributesWithDefinitions(note: FNote, attributesToIgnore: string[] 
             }
         }
     }
-    return result;
+
+    if (!shown) {
+        return result;
+    }
+
+    // Sorted rather than gathered in the given order, so an attribute carrying several values keeps
+    // them together: the sort is stable, and they were pushed one after another above.
+    const at = new Map(shown.map((name, index) => [ name, index ]));
+    return result
+        .filter(attr => at.has(attr.name))
+        .sort((a, b) => (at.get(a.name) ?? 0) - (at.get(b.name) ?? 0));
 }

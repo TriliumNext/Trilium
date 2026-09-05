@@ -12,7 +12,7 @@ import { t } from "../../../services/i18n";
 import { escapeHtml } from "../../../services/utils";
 import ColorPicker from "../../react/ColorPicker";
 import Api from "./api";
-import { INBOX_COLUMN, INBOX_COLUMN_ICON } from "./columns";
+import { INBOX_COLUMN } from "./columns";
 
 /** What the column menu is opened for: the column itself, and what it can be asked to do. */
 interface ColumnMenuTarget {
@@ -170,21 +170,18 @@ const LISTED_COLUMNS = 7;
 
 /** What the board is, and what it can be asked to do, for a press on the ground its columns stand on. */
 interface BoardMenuTarget {
-    /** Whether the board keeps an inbox column, which the entry reports and toggles. */
-    inboxShown: boolean;
-    /** Whether the board draws the notes filed as archived. */
+    /** Whether the board renders notes labelled `archived`. */
     archivedShown: boolean;
-    /** Opens the editor a column is named in, the same one the button at the end opens. */
+    /** Opens the column name editor, the same one the button at the end opens. */
     onAddColumn: () => void;
     onCollapseAll: () => void;
     onExpandAll: () => void;
-    onShowInbox: (shown: boolean) => void;
     onShowArchived: (shown: boolean) => void;
-    /** Opens the dialog naming what a new card can be made from. */
-    onCustomizeTemplates: () => void;
+    /** Opens `BoardProperties`, which configures the card templates. */
+    onOpenProperties: () => void;
 }
 
-/** What the board itself offers, for a press on the ground the columns stand on. */
+/** The board's own menu, opened by a right click outside any column. */
 export function openBoardContextMenu(event: ContextMenuEvent, board: BoardMenuTarget) {
     event.preventDefault();
     event.stopPropagation();
@@ -211,12 +208,6 @@ export function openBoardContextMenu(event: ContextMenuEvent, board: BoardMenuTa
             },
             { kind: "separator" },
             {
-                title: t("board_view.show-inbox-column"),
-                uiIcon: INBOX_COLUMN_ICON,
-                trailingIcon: board.inboxShown ? "bx bx-check" : undefined,
-                handler: () => board.onShowInbox(!board.inboxShown)
-            },
-            {
                 title: t("board_view.show-archived-notes"),
                 uiIcon: "bx bx-archive",
                 trailingIcon: board.archivedShown ? "bx bx-check" : undefined,
@@ -224,9 +215,9 @@ export function openBoardContextMenu(event: ContextMenuEvent, board: BoardMenuTa
             },
             { kind: "separator" },
             {
-                title: t("board_view.customize-templates"),
-                uiIcon: "bx bx-list-ul",
-                handler: board.onCustomizeTemplates
+                title: t("board_view.properties"),
+                uiIcon: "bx bx-cog",
+                handler: board.onOpenProperties
             }
         ],
         selectMenuItemHandler() {}

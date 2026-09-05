@@ -14,6 +14,10 @@ import { type NoteTypeOption, resolveNoteTypeOptions } from "../../../services/n
 import server from "../../../services/server";
 import ws from "../../../services/ws";
 import toast from "../../../services/toast";
+import {
+    type PromotedAttribute, resolvePromotedAttributes, storedPromotedAttributes,
+    visiblePromotedAttributeNames
+} from "../promoted_attributes";
 import { BoardColumnData, BoardViewData } from ".";
 import { currentCardTemplate, DEFAULT_CARD_TEMPLATES } from "./card_templates";
 import {
@@ -635,6 +639,32 @@ export default class BoardApi {
     /** Which of them a new card is made from, until another is picked. */
     getLastCardTemplateId() {
         return this.viewConfig?.template;
+    }
+
+    /** The order and what is hidden, as the view config holds it. */
+    getStoredPromotedAttributes() {
+        return this.viewConfig?.promotedAttributes;
+    }
+
+    /** The promoted attributes the board defines, in the order the reader put them. */
+    getPromotedAttributes() {
+        return resolvePromotedAttributes(
+            this.parentNote, this.viewConfig?.promotedAttributes, [ this.statusAttribute ]);
+    }
+
+    /** Which of them a card draws, in order. */
+    getVisiblePromotedAttributeNames() {
+        return visiblePromotedAttributeNames(this.getPromotedAttributes());
+    }
+
+    /**
+     * Stores the order and what is hidden.
+     *
+     * The whole list is written, so an attribute the board no longer defines is dropped from the
+     * config by the same call that arranges the rest.
+     */
+    async setPromotedAttributes(attributes: PromotedAttribute[]) {
+        this.storeConfig({ promotedAttributes: storedPromotedAttributes(attributes) });
     }
 
     /** Sets what the board offers. An empty set would leave nothing to make a card from. */

@@ -37,6 +37,14 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     font-size: 1.1em;
 }
 
+/* Pinned to the foot of the dialog rather than following the content, which has no room set
+   aside for it. Anchored to `.modal-content`, which Bootstrap positions. */
+.modal.popup-editor-dialog .note-type-switcher {
+    position: absolute;
+    inset-block: auto 12px;
+    inset-inline: 12px;
+}
+
 /* The note-title header (icon + editable title) is shared with the tree popup, the calendar's event
    sheet and the geo map's marker sheet, which reuse the same TitleRow; keep the selectors together
    so the dialogs stay pixel-identical. This file is loaded wherever the app is: the quick editor

@@ -225,6 +225,10 @@ function IconPickerModalButton({
                 className="note-icon"
                 icon={icon}
                 text={title}
+                // The dropdown button a desktop shows is a `btn`, which the note icon's own rules
+                // size. `icon-action` instead is sized by the theme as a toolbar button, which is
+                // larger, so the same icon would be drawn differently on the two.
+                noIconActionClass
                 onClick={() => {
                     setModalShown(true);
                     onOpened?.();

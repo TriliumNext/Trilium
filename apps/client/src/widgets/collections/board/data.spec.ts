@@ -86,6 +86,32 @@ describe("Board data", () => {
         expect(noteIds.length).toBe(3);
     });
     /**
+     * A template is what a card is made from, not a card. One made from the board's own properties
+     * is filed under the board with no grouping value, which the inbox would otherwise collect.
+     */
+    it("leaves a template under the board out of the cards", async () => {
+        const board = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                { title: "Card", "#status": "To Do" },
+                { title: "A template", "#template": "" },
+                { title: "Unassigned" }
+            ]
+        });
+
+        const data = await getBoardData(
+            board, "status", { columns: [ { value: "To Do" } ] }, false, [], new Map(), true);
+
+        const titles = (column: string) =>
+            (data.byColumn.get(column) ?? []).map((item) => item.note.title);
+        expect(titles("To Do")).toEqual([ "Card" ]);
+        // The one with no value is collected; the template is not.
+        expect(titles("")).toEqual([ "Unassigned" ]);
+    });
+
+    /**
      * A column inserted or dragged is written to the attachment at once and to the definition a
      * round trip later. The refresh in between must not put it back where the definition says.
      */

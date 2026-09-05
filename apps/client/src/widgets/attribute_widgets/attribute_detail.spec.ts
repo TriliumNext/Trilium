@@ -169,6 +169,8 @@ describe("attribute detail popup naming", () => {
         expect(isSameShow(shown, opts({ attribute: { type: "relation", name: "author", value: "Tolkien" } }))).toBe(false);
         expect(isSameShow(shown, opts({ ...shown, isOwned: false }))).toBe(false);
         expect(isSameShow(shown, opts({ ...shown, focus: "name" }))).toBe(false);
+        // Which rows the form carries is part of what it would show.
+        expect(isSameShow(shown, opts({ ...shown, hideInheritance: true }))).toBe(false);
 
         // ...but the very same request handed back is the host re-rendering around an untouched
         // popup, which every keystroke does — rebuilding the form there costs the focus and, with a

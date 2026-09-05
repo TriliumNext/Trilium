@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { canScroll, createEdgeScroller, edgePull } from "./edge_scroll";
+import { canScroll, createEdgeScroller, edgePull, type Insets } from "./edge_scroll";
 
 describe("edgePull", () => {
     /** A box from 100 to 500, with the pull reaching 50 in from each edge. */
@@ -133,6 +133,56 @@ describe("createEdgeScroller", () => {
 
         expect(board.scrollLeft).toBeGreaterThan(200);
         expect(column.scrollTop).toBeGreaterThan(200);
+    });
+
+    /**
+     * A container reaching under a fixed toolbar has an edge no finger can be carried to: the pull
+     * is measured against what is left of the screen, so resting against the bar pulls as hard as
+     * resting on the edge would.
+     */
+    it("measures the pull from the edge of what is left of the screen", () => {
+        const bar = 56;
+        // As far down as a finger goes with a bar that deep over the foot of the screen.
+        const finger = window.innerHeight - bar - 2;
+
+        const walked = (reach?: () => Insets) => {
+            // A pane filling the screen, and so reaching under the bar itself.
+            const element = container();
+            element.getBoundingClientRect = () => new DOMRect(0, 0, 400, window.innerHeight);
+
+            scroller = createEdgeScroller({ margin: 100, speed: 1000, reach });
+            scroller.update([ { element, axis: "y" } ], 200, finger);
+            vi.advanceTimersByTime(300);
+            const walkedBy = element.scrollTop - 200;
+            scroller.stop();
+            return walkedBy;
+        };
+
+        const past = walked();
+        const upTo = walked(() => ({ top: 0, bottom: bar, left: 0, right: 0 }));
+
+        expect(past).toBeGreaterThan(0);
+        // Nearly the whole pull rather than the little left over past the bar.
+        expect(upTo).toBeGreaterThan(past * 1.8);
+    });
+
+    /**
+     * The app's own scrolling containers are styled `scroll-behavior: smooth`, which would make an
+     * animation of every frame's step: each one replaces the last before it has arrived, and the
+     * walk crawls at a fraction of the speed it was asked for.
+     */
+    it("asks for each step instantly, however the container is styled", () => {
+        const element = container();
+        const asked: unknown[] = [];
+        element.scrollTo = (options: unknown) => { asked.push(options); };
+        scroller = createEdgeScroller();
+
+        scroller.update([ { element, axis: "y" } ], 200, 395);
+        vi.advanceTimersByTime(100);
+
+        expect(asked.length).toBeGreaterThan(0);
+        expect(asked.every((options) => (options as ScrollToOptions).behavior === "instant"))
+            .toBe(true);
     });
 
     it("says so after each frame that moved something", () => {

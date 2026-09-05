@@ -1385,6 +1385,12 @@
   },
   "promoted_attributes": {
     "promoted_attributes": "Promoted Attributes",
+    "create_attribute": "Create a new attribute",
+    "edit_attribute": "Edit this attribute",
+    "delete_attribute": "Delete this attribute",
+    "delete_confirmation": "Delete <strong>{{name}}</strong> and its values from every note in this collection? This cannot be undone.",
+    "shown_on_items": "Shown on the items",
+    "hidden_from_items": "Hidden from the items",
     "unset-field-placeholder": "not set",
     "url_placeholder": "http://website...",
     "open_external_link": "Open external link",
@@ -2520,8 +2526,23 @@
     "collections": "Collections",
     "spreadsheet": "Spreadsheet",
     "note-types": "Note types",
-    "built-in-templates": "Built-in templates",
-    "selector-save": "Save"
+    "built-in-templates": "Built-in templates"
+  },
+  "template_selection": {
+    "add-existing": "Add existing template",
+    "add-title": "Add a template",
+    "create": "Create a new template",
+    "new-name": "New template",
+    "menu": "Template menu",
+    "remove": "Remove from the list"
+  },
+  "item_picker": {
+    "title": "Pick an item",
+    "search": "Search…",
+    "nothing-found": "Nothing matches what you typed."
+  },
+  "sortable_card": {
+    "reorder": "Drag to reorder"
   },
   "protect_note": {
     "toggle-on": "Protect the note",
@@ -3425,12 +3446,18 @@
     "collapse-all-columns": "Collapse all columns",
     "expand-all-columns": "Expand all columns",
     "show-inbox-column": "Show inbox column",
-    "show-archived-notes": "Show archived notes",
-    "customize-templates": "Customize card templates",
+    "show-archived-notes": "Show archived cards/columns",
+    "general": "General",
+    "show-archived": "Show archived cards and columns",
+    "properties": "Board properties",
+    "properties-title": "Board properties",
+    "card-templates": "Card templates",
+    "card-templates-hint": "Choose what note types and note templates you would like to use when creating new board cards.",
+    "promoted-attributes": "Card attributes",
+    "promoted-attributes-hint": "Choose which attributes the cards show, and drag them into the order they appear in.",
+    "new-template-name": "New card template",
     "more-templates": "More templates…",
     "card-template": "Select a card template",
-    "templates-title": "Templates offered on this board",
-    "templates-hint": "Pick what a new card can be made from. At least one is needed.",
     "collapse-hint": "Double click to collapse",
     "set-limit": "Set limit...",
     "set-limit-ok": "Set limit",

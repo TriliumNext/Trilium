@@ -1562,3 +1562,60 @@ describe("filing a card under the inbox", () => {
         expect(removeRelation).toHaveBeenCalled();
     });
 });
+
+describe("the promoted attributes a card shows", () => {
+    /** A board defining two promoted labels, which is what the cards can show. */
+    function boardWithAttributes() {
+        return buildNote({
+            title: "Board",
+            "#label:dueDate(inheritable)": "promoted,single,date",
+            "#label:owner(inheritable)": "promoted,single,text"
+        });
+    }
+
+    /**
+     * A board is usually given `#hidePromotedAttributes` so its own title row stays clear, and it
+     * groups by a label its cards draw as columns rather than as a value.
+     */
+    it("lists what the cards can draw, whatever the board hides on itself", () => {
+        const board = buildNote({
+            title: "Board",
+            "#hidePromotedAttributes": "",
+            "#label:status(inheritable)": "promoted,single,text",
+            "#label:dueDate(inheritable)": "promoted,single,date",
+            "#label:internal(inheritable)": "single,text"
+        });
+        const { api } = createApi({}, [], board);
+
+        // The label it groups by is drawn as a column, and an unpromoted one is still drawn.
+        expect(api.getVisiblePromotedAttributeNames()).toEqual([ "dueDate", "internal" ]);
+    });
+
+    it("shows every one of them until the reader arranges them", () => {
+        const { api } = createApi({}, [], boardWithAttributes());
+
+        expect(api.getVisiblePromotedAttributeNames()).toEqual([ "dueDate", "owner" ]);
+        expect(api.getStoredPromotedAttributes()).toBeUndefined();
+    });
+
+    it("follows the stored order, and leaves out what is hidden", () => {
+        const stored = [ { name: "owner" }, { name: "dueDate", hidden: true } ];
+        const { api } = createApi({ promotedAttributes: stored }, [], boardWithAttributes());
+
+        expect(api.getVisiblePromotedAttributeNames()).toEqual([ "owner" ]);
+        expect(api.getPromotedAttributes().map(attribute => attribute.name))
+            .toEqual([ "owner", "dueDate" ]);
+        expect(api.getStoredPromotedAttributes()).toBe(stored);
+    });
+
+    it("stores the whole list, an attribute the board has dropped along with it", async () => {
+        const { api, saved } = createApi(
+            { promotedAttributes: [ { name: "gone" } ] }, [], boardWithAttributes());
+
+        await api.setPromotedAttributes(api.getPromotedAttributes().map(
+            attribute => attribute.name === "owner" ? { ...attribute, hidden: true } : attribute));
+
+        expect(saved.at(-1)?.promotedAttributes)
+            .toEqual([ { name: "dueDate" }, { name: "owner", hidden: true } ]);
+    });
+});

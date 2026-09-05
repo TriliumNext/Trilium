@@ -8,6 +8,8 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { Modal as BootstrapModal } from "bootstrap";
+
 import Component from "../../../components/component";
 import contextMenu from "../../../menus/context_menu";
 import dialog from "../../../services/dialog";
@@ -24,7 +26,7 @@ import BoardView, { BoardViewData } from ".";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../../services/note_types";
 import { collectShortcutHints } from "../../../services/shortcut_hints";
 import BoardApi, { getPendingWrites } from "./api";
-import { DEFAULT_COLUMN_ICON, INBOX_COLUMN_ICON } from "./columns";
+import { DEFAULT_COLUMN_ICON } from "./columns";
 
 // Stands in for the server: by the time the bulk action resolves, the notes carry the new value,
 // which is what makes the old column empty rather than merely renamed.
@@ -511,7 +513,7 @@ describe("Collapsed board columns", () => {
                 : []);
         expect(entries.map(entry => entry.icon)).toEqual([
             "bx bx-columns", "bx bx-collapse-alt", "bx bx-expand-alt",
-            INBOX_COLUMN_ICON, "bx bx-archive", "bx bx-list-ul"
+            "bx bx-archive", "bx bx-cog"
         ]);
         const entry = (icon: string) => entries.find(item => item.icon === icon)?.handler;
 
@@ -586,7 +588,6 @@ describe("Collapsed board columns", () => {
     it("opens the column editor and toggles what the board shows, from its menu", async () => {
         const { mountPoint } = await setup();
         const board = mountPoint.querySelector<HTMLElement>(".board-view-container");
-        const inbox = vi.spyOn(BoardApi.prototype, "setInboxEnabled").mockResolvedValue(undefined);
         const archived = vi.spyOn(BoardApi.prototype, "setArchivedShown")
             .mockResolvedValue(undefined);
         const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
@@ -599,12 +600,11 @@ describe("Collapsed board columns", () => {
             return found;
         };
 
-        // Neither is on, so neither is ticked, and pressing them asks for them.
-        expect("trailingIcon" in entry(INBOX_COLUMN_ICON) && entry(INBOX_COLUMN_ICON).trailingIcon)
+        // Archived notes are not shown, so the entry is not ticked, and pressing it asks for them.
+        // The inbox column is turned on in the properties dialog rather than here.
+        expect("trailingIcon" in entry("bx bx-archive") && entry("bx bx-archive").trailingIcon)
             .toBeUndefined();
-        entry(INBOX_COLUMN_ICON).handler?.(entry(INBOX_COLUMN_ICON), {} as never);
         entry("bx bx-archive").handler?.(entry("bx bx-archive"), {} as never);
-        expect(inbox).toHaveBeenCalledWith(true);
         expect(archived).toHaveBeenCalledWith(true);
 
         // The same editor the slot at the end of the board opens.
@@ -616,7 +616,6 @@ describe("Collapsed board columns", () => {
         expect(mountPoint.querySelector(".board-add-column input")).toBeTruthy();
 
         show.mockRestore();
-        inbox.mockRestore();
         archived.mockRestore();
     });
 
@@ -1753,6 +1752,25 @@ describe("Board column rename", () => {
         return field;
     }
 
+    /**
+     * Takes a dialog down as Bootstrap would.
+     *
+     * Its own teardown waits on a transition that happy-dom never runs, so a dialog left open keeps
+     * the focus trap Bootstrap put on the page: every editor the tests after it open would lose the
+     * focus the moment it was given.
+     */
+    async function dismiss(dialog?: HTMLElement) {
+        await act(async () => {
+            dialog?.dispatchEvent(new Event("hidden.bs.modal", { bubbles: true }));
+            await flush();
+        });
+
+        BootstrapModal.getInstance(dialog as HTMLElement)?.dispose();
+        dialog?.remove();
+        document.querySelector(".modal-backdrop")?.remove();
+        document.body.classList.remove("modal-open");
+    }
+
     /** The element standing for a note, which a move draws afresh. */
     function drawn(container: HTMLElement, noteId: string) {
         const element = [ ...container.querySelectorAll<HTMLElement>(".board-note") ]
@@ -2459,11 +2477,9 @@ describe("Board column rename", () => {
         }
     });
 
-    /** The pill's last entry opens the dialog that decides what the board offers. */
-    it("opens the templates dialog from the pill, and stores what is ticked", async () => {
+    /** The pill's last entry leads where the board's own menu does: how the board is set up. */
+    it("opens the board's properties from the pill, listing what it offers in order", async () => {
         const { container } = await setup();
-        const stored = vi.spyOn(BoardApi.prototype, "setCardTemplateIds")
-            .mockResolvedValue(undefined);
         const slot = container.querySelectorAll<HTMLElement>(".board-column")[1]
             .querySelector<HTMLElement>(".board-new-item");
 
@@ -2489,53 +2505,26 @@ describe("Board column rename", () => {
             more.click();
             await flush();
         });
+        // The card reads what a note can be made from as it is drawn, which takes a moment.
+        await act(async () => { await flush(); });
 
-        // The last of them: a dialog portalled to the page outlives the board that drew it here,
-        // so every board this file has rendered has left one behind.
-        const dialog = [ ...document.querySelectorAll<HTMLElement>(".note-type-selector-dialog") ]
+        // The last of them: a dialog portalled to the page outlives the board that drew it here.
+        const dialog = [ ...document.querySelectorAll<HTMLElement>(".board-properties-dialog") ]
             .at(-1);
         expect(dialog).toBeTruthy();
 
-        const boxes = [ ...(dialog?.querySelectorAll<HTMLInputElement>("input[type=checkbox]") ?? []) ];
-        // The name carries a suffix of its own, which is what ties the box to its label.
-        const named = boxes.map(box => box.getAttribute("name")?.replace(/-[^-]{10}$/, ""));
-        // Everything the app can make is listed, with what the board offers already ticked.
-        expect(named).toEqual([
-            "type:text:text/html",
-            "type:code:text/x-markdown",
-            "type:canvas:application/json",
-            "type:spreadsheet:application/json",
-            "type:mermaid:text/mermaid"
-        ]);
-        expect(boxes.filter(box => box.checked).length).toBe(4);
+        // What the board offers, in the order it stores them, each carried by a grip of its own.
+        const templates = dialog?.querySelector<HTMLElement>(".template-selection-card");
+        const named = [ ...(templates?.querySelectorAll(".template-selection-name") ?? []) ]
+            .map(element => element.textContent);
+        expect(named).toEqual([ "Text", "Markdown", "Canvas", "Spreadsheet" ]);
+        expect(templates?.querySelectorAll(".tn-sortable-grip").length).toBe(4);
+        expect(templates?.querySelectorAll(".tn-sortable-adder").length).toBe(2);
 
-        // Nothing ticked is nothing a card could be made from, so it cannot be saved.
-        await act(async () => {
-            for (const box of boxes.filter(box => box.checked)) {
-                box.checked = false;
-                box.dispatchEvent(new Event("change", { bubbles: true }));
-            }
-            await flush();
-        });
-        const save = [ ...(dialog?.querySelectorAll<HTMLButtonElement>("button") ?? []) ]
-            .find(button => button.textContent?.includes("selector-save"));
-        expect(save?.disabled).toBe(true);
+        // And the attributes the cards show, which the same dialog arranges.
+        expect(dialog?.querySelector(".promoted-attributes-card")).toBeTruthy();
 
-        await act(async () => {
-            boxes[4].checked = true;
-            boxes[4].dispatchEvent(new Event("change", { bubbles: true }));
-            await flush();
-        });
-        expect(save?.disabled).toBe(false);
-
-        await act(async () => {
-            dialog?.querySelector("form")?.dispatchEvent(
-                new Event("submit", { bubbles: true, cancelable: true }));
-            await flush();
-        });
-        expect(stored).toHaveBeenCalledWith([ "type:mermaid:text/mermaid" ]);
-
-        stored.mockRestore();
+        await dismiss(dialog);
     });
 
     /**
@@ -3235,5 +3224,71 @@ describe("Board grouped by a relation", () => {
         await act(async () => { await flush(); });
 
         return { board: mountPoint, target };
+    }
+});
+
+describe("the promoted attributes a card shows", () => {
+    let container: HTMLElement;
+    let drawn = 0;
+
+    afterEach(() => {
+        render(null, container);
+        container.remove();
+    });
+
+    it("draws every one of them until the board's config arranges them", async () => {
+        await draw();
+
+        expect(pills()).toEqual([ "Due: 2026-01-01", "owner: Ada" ]);
+    });
+
+    it("draws them in the stored order, and leaves out what is hidden", async () => {
+        await draw([ { name: "owner" }, { name: "dueDate", hidden: true } ]);
+
+        expect(pills()).toEqual([ "owner: Ada" ]);
+    });
+
+    it("draws an attribute the config has never named, after the ones it has", async () => {
+        await draw([ { name: "owner" } ]);
+
+        expect(pills()).toEqual([ "owner: Ada", "Due: 2026-01-01" ]);
+    });
+
+    /** A board defining two promoted labels, one card carrying a value for each. */
+    async function draw(promotedAttributes?: { name: string, hidden?: boolean }[]) {
+        // The cache keeps what a note id was built with, so a card of its own is what keeps this
+        // test's values off the one the test before it drew.
+        const card = `promotedCard${++drawn}`;
+        const note = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            "#label:dueDate(inheritable)": "promoted,alias=Due,single,text",
+            "#label:owner(inheritable)": "promoted,single,text",
+            children: [
+                { id: card, title: "First", "#status": "To Do", "#dueDate": "2026-01-01",
+                    "#owner": "Ada" }
+            ]
+        });
+
+        container = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={new Component()}>
+                    <Harness
+                        note={note}
+                        noteIds={[ ...note.getChildNoteIds() ]}
+                        initialConfig={{ columns: [ { value: "To Do" } ], promotedAttributes }}
+                    />
+                </ParentComponent.Provider>,
+                container
+            );
+        });
+        await act(async () => { await flush(); });
+    }
+
+    function pills() {
+        return [ ...container.querySelectorAll(".board-note .user-attribute") ]
+            .map(element => element.textContent);
     }
 });

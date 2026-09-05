@@ -1,3 +1,4 @@
+import { Modal } from "bootstrap";
 import $ from "jquery";
 import { vi } from "vitest";
 
@@ -6,6 +7,7 @@ vi.mock("../services/ws.js", mockWebsocket);
 vi.mock("../services/server.js", mockServer);
 
 injectGlobals();
+survivePendingModalCallbacks();
 
 function injectGlobals() {
     const uncheckedWindow = window as any;
@@ -19,6 +21,28 @@ function injectGlobals() {
     };
 }
 
+/**
+ * Keeps a disposed modal readable by the callbacks Bootstrap has already queued.
+ *
+ * `dispose()` nulls every property (twbs/bootstrap#37474) while the end of the opening is still
+ * waiting on a `transitionend` that happy-dom never fires, so it runs against a disposed instance
+ * some milliseconds later and throws where no test can catch it. A teardown that disposes a modal
+ * is how a spec releases the focus trap, so leave values those callbacks can read.
+ */
+function survivePendingModalCallbacks() {
+    const proto = Modal.prototype as unknown as Record<string, unknown>;
+    const dispose = proto.dispose as () => void;
+
+    proto.dispose = function (this: Record<string, unknown>) {
+        dispose.call(this);
+        this._config = { focus: false, backdrop: false, keyboard: false };
+        this._element = document.createElement("noscript");
+        this._dialog = this._element;
+        this._focustrap = { activate() {}, deactivate() {} };
+        this._backdrop = { show() {}, hide() {}, dispose() {} };
+    };
+}
+
 function mockWebsocket() {
     function subscribeToMessages(_callback: (message: unknown) => void) {
         // Do nothing.
@@ -28,14 +52,19 @@ function mockWebsocket() {
         // Do nothing.
     }
 
+    // Awaited before reading back what the server wrote. No write happens under test.
+    async function waitForMaxKnownEntityChangeId() {}
+
     return {
         default: {
-            subscribeToMessages
+            subscribeToMessages,
+            waitForMaxKnownEntityChangeId
         },
         // consumers also import these as named exports (e.g. useNoteIds); leaving them out makes
         // the subscription effect throw, which silently skips every later effect of the component
         subscribeToMessages,
         unsubscribeToMessage,
+        waitForMaxKnownEntityChangeId,
         // Code that reports a failure this way is usually in a catch block, so an undefined export
         // here throws over the error being handled and loses whatever the component did about it.
         logError(_message: string) {}

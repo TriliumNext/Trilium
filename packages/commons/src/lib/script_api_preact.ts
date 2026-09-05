@@ -397,6 +397,51 @@ interface SliderProps {
 export declare const Slider: FunctionComponent<SliderProps>;
 
 /**
+ * A card whose segments the reader can put in any order, by carrying the grip on a segment or with
+ * the keyboard. The order is the caller's: every change is reported through `onChange`, and the
+ * card draws whatever it is handed back.
+ *
+ * `items` are named by a `key` that outlives the order they stand in; `renderItem` draws a segment
+ * for a card that shows more than a name, and `itemCreationButtons` puts a row of buttons at the
+ * foot of the card that make another entry, answering with nothing where the reader backs out.
+ */
+interface SortableItem {
+    key: string;
+    caption?: ComponentChildren;
+    icon?: string;
+}
+interface ItemCreationButton<T extends SortableItem> {
+    label: string;
+    icon?: string;
+    /** Turns the button off, for a caller that cannot make an entry yet. */
+    disabled?: boolean;
+    onCreateItem: (event?: MouseEvent) => T | undefined | Promise<T | undefined>;
+}
+interface SortableCardProps<T extends SortableItem> {
+    /** See `CardProps`: the words a filter finds the card by, and whether it is filter-only. */
+    filterExtraKeywords?: string;
+    filterOnly?: boolean;
+    items: T[];
+    onChange: (items: T[]) => void;
+    renderItem?: (item: T, index: number) => ComponentChildren;
+    /** Up to three, drawn as a row of buttons at the foot of the card. */
+    itemCreationButtons?: ItemCreationButton<T>[];
+    /** Which edge of a segment the grip stands on. The trailing one by default. */
+    gripPlacement?: "start" | "end";
+    /** Called with the focused entry for a key the card does not handle itself. */
+    onItemKeyDown?: (item: T, event: KeyboardEvent) => void;
+    selectedKey?: string;
+    onSelect?: (key: string) => void;
+    heading?: string;
+    description?: ComponentChildren;
+    actions?: ComponentChildren;
+    className?: string;
+}
+// Generic, as the component itself is: the entries are the caller's own, so what `onChange` and
+// `renderItem` are handed is the caller's type and not what this card asks of it.
+export declare const SortableCard: <T extends SortableItem>(props: SortableCardProps<T>) => VNode;
+
+/**
  * Generic Tabulator-based data grid. The full Tabulator `Options` surface is loosened here (any option
  * may be passed through); `data` is the row array, `columns` the column definitions, `modules` the
  * Tabulator modules to register, `events` the event handlers and `tabulatorRef` receives the instance.

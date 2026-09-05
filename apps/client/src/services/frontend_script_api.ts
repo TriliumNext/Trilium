@@ -287,6 +287,7 @@ export interface Api {
      * @returns promise resolving to the answer provided by the user
      */
     showPromptDialog: typeof dialogService.prompt;
+    pickSingleItem: typeof dialogService.pickSingleItem;
 
     /**
      * Trigger command. This is a very low-level API which should be avoided if possible.
@@ -687,6 +688,7 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     this.showConfirmDialog = dialogService.confirm;
 
     this.showPromptDialog = dialogService.prompt;
+    this.pickSingleItem = dialogService.pickSingleItem;
 
     this.triggerCommand = (name, data) => appContext.triggerCommand(name, data);
     this.triggerEvent = (name, data) => appContext.triggerEvent(name, data);

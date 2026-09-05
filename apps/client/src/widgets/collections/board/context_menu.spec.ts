@@ -9,7 +9,7 @@ import dialog from "../../../services/dialog";
 import FNote from "../../../entities/fnote";
 import { buildNote } from "../../../test/easy-froca";
 import BoardApi from "./api";
-import { DEFAULT_COLUMN_ICON, INBOX_COLUMN_ICON } from "./columns";
+import { DEFAULT_COLUMN_ICON } from "./columns";
 import { openBoardContextMenu, openColumnContextMenu, openNoteContextMenu } from "./context_menu";
 
 // The card menu opens with the shared link items, which reach for the active note context.
@@ -717,20 +717,18 @@ describe("Board context menu", () => {
 
     /**
      * What the board itself offers, for a press on the ground the columns stand on. The last entry
-     * opens the dialog naming what a card can be made from, which the pill inside the field a card
-     * is named in opens as well.
+     * opens what the board is set up with, which the pill inside the field a card is named in
+     * opens as well.
      */
-    it("offers what the board holds, and a way to what its cards are made from", () => {
+    it("offers what the board holds, and a way to how it is set up", () => {
         const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
         const board = {
-            inboxShown: true,
             archivedShown: false,
             onAddColumn: vi.fn(),
             onCollapseAll: vi.fn(),
             onExpandAll: vi.fn(),
-            onShowInbox: vi.fn(),
             onShowArchived: vi.fn(),
-            onCustomizeTemplates: vi.fn()
+            onOpenProperties: vi.fn()
         };
 
         openBoardContextMenu({
@@ -741,17 +739,18 @@ describe("Board context menu", () => {
         } as ContextMenuEvent, board);
 
         const items = show.mock.calls.at(-1)?.[0].items ?? [];
-        // A separator stands between what the board shows and what its cards are made from.
+        // A separator stands between what the board shows and how it is set up. The inbox column
+        // is turned on in the properties dialog, which the last entry opens.
         expect(items.map(item => item && "uiIcon" in item ? item.uiIcon : "---")).toEqual([
             "bx bx-columns", "---",
             "bx bx-collapse-alt", "bx bx-expand-alt", "---",
-            INBOX_COLUMN_ICON, "bx bx-archive", "---",
-            "bx bx-list-ul"
+            "bx bx-archive", "---",
+            "bx bx-cog"
         ]);
 
         const entry = items.at(-1);
-        if (!entry || !("handler" in entry)) throw new Error("expected an entry for the templates");
+        if (!entry || !("handler" in entry)) throw new Error("expected an entry for the properties");
         entry.handler?.(entry, {} as never);
-        expect(board.onCustomizeTemplates).toHaveBeenCalled();
+        expect(board.onOpenProperties).toHaveBeenCalled();
     });
 });
