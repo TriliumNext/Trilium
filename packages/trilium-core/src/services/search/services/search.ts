@@ -269,9 +269,12 @@ function loadNeededInfoFromDatabase() {
         noteBlobs[noteId][blobId] = length;
 
         if (isNoteRevision) {
-            const noteRevision = becca.notes[noteId];
-            if (noteRevision && noteRevision.revisionCount) {
-                noteRevision.revisionCount++;
+            const note = becca.notes[noteId];
+            // Why the existence-only guard: `revisionCount` was reset to 0 a few lines above, so
+            // the old truthiness check made this increment dead code and every comparison against
+            // `note.revisionCount` matched only zero (#11131).
+            if (note) {
+                note.revisionCount = (note.revisionCount ?? 0) + 1;
             }
         }
     }
@@ -475,7 +478,15 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
     const isPureExpressionQuery = query.trim().startsWith('#');
 
     if (isPureExpressionQuery) {
-        // For pure expression queries, use standard search without progressive phases
+        // For pure expression queries, use standard search without progressive phases.
+        // This path must not skip the database load: `#label note.contentSize >= 0` asks for a
+        // db-backed property just like any other query, and the values are memoized on the becca
+        // notes, so skipping the load made the answer depend on what was searched earlier in the
+        // process (#11131).
+        if (searchContext.dbLoadNeeded) {
+            loadNeededInfoFromDatabase();
+        }
+
         return performSearch(expression, searchContext, searchContext.enableFuzzyMatching);
     }
 
