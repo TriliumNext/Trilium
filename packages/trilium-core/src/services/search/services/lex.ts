@@ -126,7 +126,9 @@ function lex(str: string) {
             }
         }
 
-        if (chr === ",") {
+        // Commas are stripped as fulltext noise, but not inside quotes — a quoted operand
+        // (e.g. #geolocation="48.8583,2.2945") must keep the exact value the user stored.
+        if (chr === "," && !quotes) {
             continue;
         }
 

@@ -20,6 +20,13 @@ describe("Lexer fulltext", () => {
         expect(lex("'i can use \" or ` or #~=*' without problem").fulltextTokens.map((t) => t.token)).toEqual(['i can use " or ` or #~=*', "without", "problem"]);
     });
 
+    it("commas are noise in fulltext but kept inside quotes", () => {
+        expect(lex("europe, austria").fulltextTokens.map((t) => t.token)).toEqual(["europe", "austria"]);
+
+        // Quoted values must survive verbatim — e.g. the Geo Map manual's #geolocation="48.8583,2.2945".
+        expect(lex("'48.8583,2.2945'").fulltextTokens.map((t) => t.token)).toEqual(["48.8583,2.2945"]);
+    });
+
     it("I can use backslash to escape quotes", () => {
         expect(lex('hello \\"world\\"').fulltextTokens.map((t) => t.token)).toEqual(["hello", '"world"']);
 
@@ -104,6 +111,20 @@ describe("Lexer expression", () => {
             { token: "*=*", inQuotes: false, startIndex: 6, endIndex: 8 },
             { token: "text", inQuotes: true, startIndex: 10, endIndex: 13 }
         ]);
+    });
+
+    it("keeps commas inside a quoted operand", () => {
+        // The Geo Map manual stores coordinates as #geolocation="48.8583,2.2945"; the lexer used
+        // to strip the comma even inside quotes, making the stored value unreachable (#11132).
+        expect(lex('#geolocation="48.8583,2.2945"').expressionTokens.map((t) => t.token)).toEqual(
+            ["#geolocation", "=", "48.8583,2.2945"]
+        );
+        expect(lex("#geolocation='48.8583,2.2945'").expressionTokens.map((t) => t.token)).toEqual(
+            ["#geolocation", "=", "48.8583,2.2945"]
+        );
+
+        const quoted = lex('#geolocation="48.8583,2.2945"').expressionTokens[2];
+        expect(quoted.inQuotes).toBe(true);
     });
 
     it("simple label operator with param without quotes", () => {

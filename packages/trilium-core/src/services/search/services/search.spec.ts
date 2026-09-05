@@ -114,6 +114,26 @@ describe("Search", () => {
         expect(findNoteByTitle(searchResults, "Austria")).toBeTruthy();
     });
 
+    it("label comparison with a comma in a quoted value", () => {
+        rootNote.child(note("Eiffel Tower").label("geolocation", "48.8583,2.2945")).child(note("Charles Bridge").label("geolocation", "50.0865,14.4114"));
+
+        const searchContext = new SearchContext();
+
+        // The Geo Map manual documents exactly this form; the lexer used to strip the comma
+        // inside the quotes, so the stored value could never be matched (#11132).
+        let searchResults = searchService.findResultsWithQuery('#geolocation="48.8583,2.2945"', searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "Eiffel Tower")).toBeTruthy();
+
+        searchResults = searchService.findResultsWithQuery("#geolocation='50.0865,14.4114'", searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "Charles Bridge")).toBeTruthy();
+
+        // A quoted value that matches no stored value still returns nothing.
+        searchResults = searchService.findResultsWithQuery('#geolocation="48.8583"', searchContext);
+        expect(searchResults.length).toEqual(0);
+    });
+
     it("label comparison with full syntax", () => {
         rootNote.child(note("Europe").child(note("Austria").label("capital", "Vienna")).child(note("Czech Republic").label("capital", "Prague")));
 
