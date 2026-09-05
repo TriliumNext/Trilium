@@ -12,7 +12,10 @@ import { clampDragDestination } from "../services/tab_pinning.js";
 import { buildTabTitle, TAB_TITLE_SEPARATOR } from "../services/tab_title.js";
 import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
-import { setupHorizontalScrollViaWheel } from "./widget_utils.js";
+import { setupHorizontalScrollViaWheel, shouldCoalesceWheelSwitch, tabWheelAction } from "./widget_utils.js";
+
+/** One wheel gesture may switch at most one tab inside this window. */
+const WHEEL_SWITCH_COALESCE_MS = 250;
 
 const isDesktop = utils.isDesktop();
 
@@ -352,6 +355,11 @@ export default class TabRowWidget extends BasicWidget {
     /** Monotonic id stamped on a tab per `updateTab` call, so an out-of-order async update can detect it's stale. */
     private tabUpdateId = 0;
 
+    /** Timestamp of the last wheel-driven tab switch, for gesture coalescing. */
+    private lastWheelSwitchAt = 0;
+    /** Direction of that switch: a reversed wheel is a new gesture, not a continuation. */
+    private lastWheelSwitchAction: "next" | "previous" | null = null;
+
     doRender() {
         this.$widget = $(TAB_ROW_TPL);
         this.$tabScrollingContainer = this.$widget.children(".tab-row-widget-scrolling-container");
@@ -429,6 +437,44 @@ export default class TabRowWidget extends BasicWidget {
     };
 
     setupScrollEvents() {
+        // Bound before the horizontal scroller: when the row has nothing to
+        // scroll the switch owns the wheel and stops the scroller's no-op
+        // scroll; when it overflows the action is null and scrolling keeps
+        // its established job (#11095).
+        this.$tabScrollingContainer.on("wheel", (event) => {
+            const action = tabWheelAction(
+                event.originalEvent as WheelEvent,
+                this.$tabScrollingContainer[0]
+            );
+
+            if (!action) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            // One physical gesture emits several wheel events (trackpad flicks
+            // especially); switch once per gesture, not once per event. A
+            // same-direction event inside the window extends it (a sustained
+            // gesture stays one switch); a reversed direction switches at once.
+            const now = Date.now();
+            if (
+                shouldCoalesceWheelSwitch({
+                    lastSwitchAt: this.lastWheelSwitchAt,
+                    lastAction: this.lastWheelSwitchAction,
+                    action,
+                    now,
+                    coalesceMs: WHEEL_SWITCH_COALESCE_MS
+                })
+            ) {
+                this.lastWheelSwitchAt = now;
+                return;
+            }
+            this.lastWheelSwitchAt = now;
+            this.lastWheelSwitchAction = action;
+            this.triggerCommand(action === "next" ? "activateNextTab" : "activatePreviousTab");
+        });
+
         setupHorizontalScrollViaWheel(this.$tabScrollingContainer);
 
         this.$scrollButtonLeft[0].addEventListener('click', () => this.scrollTabContainer(-210));
