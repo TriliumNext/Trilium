@@ -1,6 +1,6 @@
 import "../theme/collapsible_list_items.css";
 
-import { Command, DomEventObserver, FindAndReplaceEditing, ListEditing, MouseObserver, Plugin, type Editor, type FindResultType, type ModelElement, type ModelNode, type ModelWriter, type ViewDocumentDomEventData, type ViewDocumentMouseDownEvent, type ViewDocumentMouseOutEvent, type ViewElement } from "ckeditor5";
+import { Command, DomEventObserver, FindAndReplaceEditing, ListEditing, MouseObserver, Plugin, type Editor, type EnterCommand, type FindResultType, type ListSplitCommand, type ModelElement, type ModelNode, type ModelWriter, type ViewDocumentDomEventData, type ViewDocumentEnterEvent, type ViewDocumentMouseDownEvent, type ViewDocumentMouseOutEvent, type ViewElement } from "ckeditor5";
 
 export const LIST_COLLAPSED_ATTRIBUTE = "listCollapsed";
 
@@ -70,6 +70,7 @@ export default class CollapsibleListItems extends Plugin {
         this._enableToggleOnGutterClick();
         this._enableArrowHoverFeedback();
         this._enableToggleOnKeystroke();
+        this._enableEnterAfterCollapsedItem();
         this._enableAutoExpand();
         this._enableFindReveal();
     }
@@ -177,6 +178,74 @@ export default class CollapsibleListItems extends Plugin {
             editor.execute("toggleListCollapse");
             cancel();
         });
+    }
+
+    /** Moves new list siblings after hidden descendants for both CKEditor Enter command paths. */
+    private _enableEnterAfterCollapsedItem() {
+        const editor = this.editor;
+        const enterCommand = editor.commands.get("enter") as EnterCommand;
+        const splitCommand = editor.commands.get("splitListItemBefore") as ListSplitCommand;
+        let pendingEnterSplit: ModelElement | null = null;
+
+        // ListEditing handles an empty final block with splitListItemBefore and stops the event,
+        // so EnterCommand never runs on that path.
+        this.listenTo<ViewDocumentEnterEvent>(
+            editor.editing.view.document, "enter", (_evt, data) => {
+                if (data.isSoft) {
+                    pendingEnterSplit = null;
+                    return;
+                }
+                const selectedBlock = getSelectedListBlock(editor);
+                pendingEnterSplit = selectedBlock?.isEmpty
+                    && selectedBlock.getAttribute(LIST_COLLAPSED_ATTRIBUTE) === true
+                    && hasNestedItems(selectedBlock)
+                    ? selectedBlock
+                    : null;
+
+                if (pendingEnterSplit) {
+                    // The split command runs synchronously; clear state if another listener
+                    // handles Enter.
+                    void Promise.resolve().then(() => {
+                        pendingEnterSplit = null;
+                    });
+                }
+            }, { context: "li", priority: "high" }
+        );
+
+        this.listenTo(splitCommand, "afterExecute", () => {
+            if (!pendingEnterSplit || pendingEnterSplit !== getSelectedListBlock(editor)) {
+                return;
+            }
+            pendingEnterSplit = null;
+            editor.model.change((writer) => this._moveItemAfterCollapsedDescendants(writer));
+        });
+
+        this.listenTo(enterCommand, "afterExecute", (_evt, data: { writer: ModelWriter }) => {
+            this._moveItemAfterCollapsedDescendants(data.writer);
+        });
+    }
+
+    /**
+     * Moves the item Enter creates in a collapsed list item after that item's hidden descendants.
+     */
+    private _moveItemAfterCollapsedDescendants(writer: ModelWriter) {
+        const block = getSelectedListBlock(this.editor);
+        if (!block || !block.isEmpty) {
+            return;
+        }
+
+        const previousBlock = block.previousSibling;
+        if (!isListBlock(previousBlock)
+            || previousBlock.getAttribute(LIST_COLLAPSED_ATTRIBUTE) !== true
+            || previousBlock.getAttribute("listItemId") === block.getAttribute("listItemId")) {
+            return;
+        }
+
+        const lastNestedBlock = getNestedBlocks(block).at(-1);
+        if (!lastNestedBlock) {
+            return;
+        }
+        writer.move(writer.createRangeOn(block), writer.createPositionAfter(lastNestedBlock));
     }
 
     /**
@@ -397,14 +466,25 @@ function getArrowBlockAtPointer(editor: Editor, data: ViewDocumentDomEventData<M
 
 function toggleCollapsed(editor: Editor, block: ModelElement): void {
     const collapse = !block.getAttribute(LIST_COLLAPSED_ATTRIBUTE);
+    const itemBlocks = getItemBlocks(block);
+    const selectionBlock = editor.model.document.selection.getFirstPosition()?.parent;
+    const hidesSelection = collapse
+        && !!selectionBlock
+        && selectionBlock.is("element")
+        && getNestedBlocks(block).includes(selectionBlock);
 
     editor.model.change((writer) => {
-        for (const itemBlock of getItemBlocks(block)) {
+        for (const itemBlock of itemBlocks) {
             if (collapse) {
                 writer.setAttribute(LIST_COLLAPSED_ATTRIBUTE, true, itemBlock);
             } else {
                 writer.removeAttribute(LIST_COLLAPSED_ATTRIBUTE, itemBlock);
             }
+        }
+
+        if (hidesSelection) {
+            const lastItemBlock = itemBlocks[itemBlocks.length - 1];
+            writer.setSelection(writer.createPositionAt(lastItemBlock, "end"));
         }
     });
 }
@@ -470,6 +550,22 @@ function hasNestedItems(block: ModelElement): boolean {
     return false;
 }
 
+/** Returns the list blocks hidden by collapsing `block`, including all descendant levels. */
+function getNestedBlocks(block: ModelElement): ModelElement[] {
+    const blocks: ModelElement[] = [];
+    const indent = getIndent(block);
+    const lastItemBlock = getItemBlocks(block).at(-1);
+
+    for (
+        let sibling = lastItemBlock?.nextSibling;
+        isListBlock(sibling) && getIndent(sibling) > indent;
+        sibling = sibling.nextSibling
+    ) {
+        blocks.push(sibling);
+    }
+    return blocks;
+}
+
 /** All consecutive blocks belonging to the same (possibly multi-block) list item. */
 function getItemBlocks(block: ModelElement): ModelElement[] {
     const itemId = block.getAttribute("listItemId");
@@ -505,7 +601,7 @@ function getCollapsedAncestors(block: ModelElement): ModelElement[] {
     return ancestors;
 }
 
-function isListBlock(node: ModelNode | null): node is ModelElement {
+function isListBlock(node: ModelNode | null | undefined): node is ModelElement {
     return !!node && node.is("element") && node.hasAttribute("listItemId");
 }
 

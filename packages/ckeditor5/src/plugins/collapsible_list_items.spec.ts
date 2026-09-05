@@ -120,6 +120,23 @@ describe("CollapsibleListItems", () => {
         expect(editor.getData()).not.toContain("data-trilium-collapsed");
     });
 
+    it("moves the selection to the parent when collapsing hides it (#11256)", () => {
+        setSelectionIn(editor, 1);
+        const parentItem = editor.editing.view.getDomRoot()?.querySelector("li");
+        expect(parentItem).toBeTruthy();
+        if (!parentItem) {
+            return;
+        }
+
+        mouseDownAt(parentItem, -10);
+
+        const parentBlock = getBlock(editor, 0);
+        const position = editor.model.document.selection.getFirstPosition();
+        expect(parentBlock.getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        expect(position?.parent).toBe(parentBlock);
+        expect(position?.offset).toBe(parentBlock.maxOffset);
+    });
+
     it("expands automatically when an item is indented under a collapsed parent", () => {
         editor.execute("toggleListCollapse");
         setSelectionIn(editor, 3); // "Sibling", still visible at indent 0
@@ -149,6 +166,105 @@ describe("CollapsibleListItems", () => {
         });
 
         expect(getBlock(editor, 5).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
+    });
+
+    it("leaves Enter behavior unchanged outside collapsed list items", () => {
+        setModelData(editor.model, "<paragraph>paragraph[]</paragraph>");
+        editor.execute("enter");
+        expect(editor.model.document.getRoot()?.childCount).toBe(2);
+
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="u-a" listType="bulleted">item[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="u-b" listType="bulleted">child</paragraph>');
+        editor.execute("enter");
+        expect(getBlock(editor, 1).isEmpty).toBe(true);
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("u-b");
+    });
+
+    it("moves a sibling past hidden children when Enter exits a collapsed multi-block item", () => {
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="m-a" listType="bulleted">first</paragraph>' +
+            '<paragraph listIndent="0" listItemId="m-a" listType="bulleted">second[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="m-b" listType="bulleted">child</paragraph>');
+
+        editor.execute("toggleListCollapse");
+        pressEnter(editor);
+
+        expect(getBlock(editor, 0).getAttribute("listItemId")).toBe("m-a");
+        expect(getBlock(editor, 1).getAttribute("listItemId")).toBe("m-a");
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("m-a");
+        expect(getBlock(editor, 2).isEmpty).toBe(true);
+
+        pressEnter(editor, true);
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("m-a");
+
+        pressEnter(editor);
+
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("m-b");
+        expect(getBlock(editor, 3).getAttribute("listItemId")).not.toBe("m-a");
+        expect(getBlock(editor, 3).getAttribute("listIndent")).toBe(0);
+        expect(getBlock(editor, 3).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
+        expect(editor.model.document.selection.getFirstPosition()?.parent)
+            .toBe(getBlock(editor, 3));
+
+        editor.execute("undo");
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("m-a");
+        expect(getBlock(editor, 2).isEmpty).toBe(true);
+        expect(getBlock(editor, 3).getAttribute("listItemId")).toBe("m-b");
+    });
+
+    it("inserts after the hidden children when Enter splits a collapsed item (#11256)", () => {
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="t-a" listType="todo">todo1[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="t-b" listType="todo">a</paragraph>' +
+            '<paragraph listIndent="1" listItemId="t-c" listType="todo">b</paragraph>');
+
+        editor.execute("toggleListCollapse");
+        editor.execute("enter");
+
+        expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        expect(getBlock(editor, 1).getAttribute("listItemId")).toBe("t-b");
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("t-c");
+        expect(getBlock(editor, 3).getAttribute("listIndent")).toBe(0);
+        expect(getBlock(editor, 3).isEmpty).toBe(true);
+        expect(editor.model.document.selection.getFirstPosition()?.parent)
+            .toBe(getBlock(editor, 3));
+
+        editor.execute("undo");
+        expect(editor.model.document.getRoot()?.childCount).toBe(3);
+        expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+    });
+
+    it("inserts after the entire hidden subtree when Enter splits a collapsed item", () => {
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="d-a" listType="bulleted">parent[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="d-b" listType="bulleted">mid</paragraph>' +
+            '<paragraph listIndent="2" listItemId="d-c" listType="bulleted">leaf</paragraph>');
+
+        editor.execute("toggleListCollapse");
+        editor.execute("enter");
+
+        expect(getBlock(editor, 0).getAttribute("listItemId")).toBe("d-a");
+        expect(getBlock(editor, 1).getAttribute("listItemId")).toBe("d-b");
+        expect(getBlock(editor, 2).getAttribute("listItemId")).toBe("d-c");
+        expect(getBlock(editor, 3).getAttribute("listIndent")).toBe(0);
+        expect(getBlock(editor, 3).isEmpty).toBe(true);
+    });
+
+    it("does not crash when Enter follows a collapsed item with no remaining children", () => {
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="s-a" listType="bulleted">parent[]</paragraph>' +
+            '<paragraph listIndent="1" listItemId="s-b" listType="bulleted">kid</paragraph>');
+
+        editor.execute("toggleListCollapse");
+        for (let i = 0; i < 4; i++) {
+            editor.execute("forwardDelete");
+        }
+
+        expect(editor.model.document.getRoot()?.childCount).toBe(1);
+        expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        expect(() => editor.execute("enter")).not.toThrow();
+        expect(editor.model.document.getRoot()?.childCount).toBe(2);
     });
 
     it("toggles when clicking the arrow in the gutter and ignores other clicks", () => {
@@ -563,6 +679,10 @@ function pressCtrlEnter(editor: ClassicEditor): void {
         ctrlKey: true,
         preventDefault: () => {}
     });
+}
+
+function pressEnter(editor: ClassicEditor, isSoft = false): void {
+    editor.editing.view.document.fire("enter", { preventDefault: () => {}, isSoft });
 }
 
 /**
