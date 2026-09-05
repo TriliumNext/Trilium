@@ -117,7 +117,7 @@ interface SelectValuesInputProps {
     /** The values held, in the order they are shown. */
     values: readonly string[];
     /** Receives the values as they now stand, whenever one is taken or dropped. */
-    onCommit(values: string[]): void;
+    onCommit(values: string[]): void | Promise<void>;
     /**
      * Adds an option to the definition, for the entry offered on text naming none of them. Left out,
      * the field picks from the options as they stand.
@@ -146,30 +146,74 @@ interface SelectValuesInputProps {
  */
 export function SelectValuesInput({ options, values, onCommit, onCreateOption, renderValue, inputId, tabIndex, placeholder, disabled }: SelectValuesInputProps) {
     const [ filter, setFilter ] = useState("");
+    // Counts local edits. The list refetches when its `source` changes identity, which `values`
+    // alone no longer drives: an edit reaches the prop only once the host accepts it.
+    const [ editRound, setEditRound ] = useState(0);
+    // Tracks edits until they come back as `values`, so a pick made before the host re-renders
+    // builds on the pick before it rather than on the stale prop. The chips still render from
+    // `values`, which is the set the host has accepted.
+    const editedValues = useRef(values);
+    const latestValuesProp = useRef(values);
+    const pendingCommits = useRef(0);
+    if (latestValuesProp.current !== values) {
+        latestValuesProp.current = values;
+        if (pendingCommits.current === 0) {
+            editedValues.current = values;
+        }
+    }
 
     // Taken values leave the list: what is held is shown as a chip, so offering it again would only
-    // invite a duplicate the field cannot show apart from the first.
+    // invite a duplicate the field cannot show apart from the first. Excluded by the edits, not the
+    // prop: `keepOpenOnPick` leaves the list open, so a value just taken must leave it at once.
     const source = useCallback(async (query: string) => selectEntriesFor({
         options,
         filter: query,
-        exclude: values,
+        exclude: editedValues.current,
         canCreate: !!onCreateOption
-    }), [ options, values, onCreateOption ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `values` is read through editedValues
+    }), [ options, values, editRound, onCreateOption ]);
 
     function take(value: string) {
         setFilter("");
-        onCommit([ ...values, value ]);
+        if (editedValues.current.includes(value)) {
+            return;
+        }
+        commit([ ...editedValues.current, value ]);
     }
 
     function drop(value: string) {
-        onCommit(values.filter((held) => held !== value));
+        commit(editedValues.current.filter((held) => held !== value));
+    }
+
+    function commit(edited: string[]) {
+        editedValues.current = edited;
+        setEditRound((round) => round + 1);
+        const result = onCommit(edited);
+        if (!result) {
+            return;
+        }
+
+        // An async host reports a failed write itself; here its settling only says when the edits
+        // may follow the prop again — and gives a rejection its owner.
+        pendingCommits.current++;
+        void Promise.resolve(result).then(settleCommit, settleCommit);
+    }
+
+    function settleCommit() {
+        pendingCommits.current--;
+        if (pendingCommits.current === 0) {
+            editedValues.current = latestValuesProp.current;
+            // The edits changed without a commit, so the refetch is asked for here: a failure has
+            // put a value back on offer, and a list already refreshed would keep hiding it.
+            setEditRound((round) => round + 1);
+        }
     }
 
     function handleKeyDown(e: TargetedKeyboardEvent<HTMLInputElement>) {
         // Backspace on an empty box drops the last chip, the box having nothing of its own to erase.
-        if (e.key === "Backspace" && !e.currentTarget.value && values.length) {
+        if (e.key === "Backspace" && !e.currentTarget.value && editedValues.current.length) {
             e.preventDefault();
-            drop(values[values.length - 1]);
+            drop(editedValues.current[editedValues.current.length - 1]);
         }
     }
 
