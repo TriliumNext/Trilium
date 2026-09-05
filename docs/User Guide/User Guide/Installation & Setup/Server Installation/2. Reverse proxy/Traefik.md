@@ -3,7 +3,7 @@ The goal of this article is to configure Traefik proxy and HTTPS. See [#7768](ht
 
 ## Breaking change in Traefik 3.6.4
 
-Traefik 3.6.4 introduced a [breaking change](https://doc.traefik.io/traefik/migrate/v3/#encoded-characters-in-request-path) regarding how percent-encoded characters are handled in URLs. More specifically some URLs used by Trilium (such as `search/%23workspace%20%23!template`) are automatically rejected by Traefik, resulting in HTTP 400 errors.
+Traefik 3.6.4 introduced a [breaking change](https://doc.traefik.io/traefik/migrate/v3/#encoded-characters-in-request-path) regarding how percent-encoded characters are handled in URLs. Earlier Trilium clients sent search text in paths such as `/api/search/%23workspace%20%23!template`. Traefik automatically rejects these paths and returns HTTP 400. Updated clients send search text in a query parameter, but a cached older client can still use the old path.
 
 The easiest solution is to update to Traefik 3.6.7 or later which reverts this configuration change. Alternatively, the configuration can be changed according to the section below.
 
@@ -16,7 +16,7 @@ The easiest solution is to update to Traefik 3.6.7 or later which reverts this c
       encodedCharacters:
         allowEncodedSlash: true
         allowEncodedHash: true</code></pre>
-    <aside class="admonition tip"><p>If you still have issues, depending on how Trilium is used (especially regarding search), you might need to enable more encoded character groups. For more information, see <a href="https://github.com/TriliumNext/Trilium/issues/7968">the relevant GitHub issue</a>; feel free to report your findings.</p></aside>
+    <aside class="admonition tip"><p>If issues continue with an older client, you might need to enable more encoded character groups. For more information, see <a href="https://github.com/TriliumNext/Trilium/issues/7968">the relevant GitHub issue</a>; feel free to report your findings.</p></aside>
 </details>
 
 ### Build the docker-compose file

@@ -261,7 +261,9 @@ export default class QuickSearchWidget extends BasicWidget {
                 ${t("quick-search.searching")}
             </span>`);
 
-        const { searchResultNoteIds, searchResults, highlightedTokens, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
+        const { searchResultNoteIds, searchResults, highlightedTokens, error } = await server.get<QuickSearchResponse>(
+            `quick-search?searchString=${encodeURIComponent(searchString)}`
+        );
 
         this.lastResultViewScope = highlightedTokens?.length ? { searchTerms: highlightedTokens } : undefined;
 
