@@ -144,7 +144,17 @@ function search(req: Request<{ searchString: string }>) {
         ignoreHoistedNote: true
     });
 
-    return searchService.findResultsWithQuery(searchString, searchContext).map((sr) => sr.noteId);
+    const results = searchService.findResultsWithQuery(searchString, searchContext);
+
+    // The parse layer records the problem and degrades the expression to a
+    // match-everything scan, so a dropped error answers HTTP 200 with the whole
+    // tree (root and _hidden included). Fail the query instead — quick-search
+    // already surfaces this same error to its caller.
+    if (searchContext.hasError()) {
+        throw new ValidationError(searchContext.getError()!);
+    }
+
+    return results.map((sr) => sr.noteId);
 }
 
 function getRelatedNotes(req: Request) {
