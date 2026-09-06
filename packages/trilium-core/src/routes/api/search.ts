@@ -107,8 +107,8 @@ function getSearchResultDetails(req: Request<{ noteId: string }>): SearchResultD
     };
 }
 
-function quickSearch(req: Request<{ searchString: string }>) {
-    const { searchString } = req.params;
+function quickSearch(req: Request<{ searchString?: string }>) {
+    const searchString = getSearchString(req);
 
     const searchContext = new SearchContext({
         fastSearch: false,
@@ -134,8 +134,8 @@ function quickSearch(req: Request<{ searchString: string }>) {
     };
 }
 
-function search(req: Request<{ searchString: string }>) {
-    const { searchString } = req.params;
+function search(req: Request<{ searchString?: string }>) {
+    const searchString = getSearchString(req);
 
     const searchContext = new SearchContext({
         fastSearch: false,
@@ -145,6 +145,16 @@ function search(req: Request<{ searchString: string }>) {
     });
 
     return searchService.findResultsWithQuery(searchString, searchContext).map((sr) => sr.noteId);
+}
+
+function getSearchString(req: Request<{ searchString?: string }>): string {
+    const searchString = req.params.searchString ?? req.query.searchString;
+
+    if (typeof searchString !== "string" || searchString.length === 0) {
+        throw new ValidationError("Search string must be a non-empty string.");
+    }
+
+    return searchString;
 }
 
 function getRelatedNotes(req: Request) {

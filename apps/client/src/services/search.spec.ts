@@ -9,13 +9,13 @@ describe("search service", () => {
         vi.restoreAllMocks();
     });
 
-    it("searchForNoteIds encodes the search string in the URL and returns the server result", async () => {
+    it("searchForNoteIds uses a query parameter", async () => {
         const get = vi.fn(async () => ["id1", "id2"]);
         server.get = get as typeof server.get;
 
-        const result = await searchService.searchForNoteIds("a b & #c");
+        const result = await searchService.searchForNoteIds("a/b & #c");
 
-        expect(get).toHaveBeenCalledWith(`search/${encodeURIComponent("a b & #c")}`);
+        expect(get).toHaveBeenCalledWith(`search?searchString=${encodeURIComponent("a/b & #c")}`);
         expect(result).toEqual(["id1", "id2"]);
     });
 
@@ -28,7 +28,7 @@ describe("search service", () => {
 
         const notes = await searchService.searchForNotes("query");
 
-        expect(get).toHaveBeenCalledWith(`search/${encodeURIComponent("query")}`);
+        expect(get).toHaveBeenCalledWith(`search?searchString=${encodeURIComponent("query")}`);
         expect(notes.map((n) => n.noteId)).toEqual([noteA.noteId, noteB.noteId]);
     });
 

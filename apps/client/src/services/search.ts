@@ -2,7 +2,7 @@ import server from "./server.js";
 import froca from "./froca.js";
 
 async function searchForNoteIds(searchString: string) {
-    return await server.get<string[]>(`search/${encodeURIComponent(searchString)}`);
+    return await server.get<string[]>(`search?searchString=${encodeURIComponent(searchString)}`);
 }
 
 async function searchForNotes(searchString: string) {
