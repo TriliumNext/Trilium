@@ -1,0 +1,27 @@
+# Plumber overlay: inherits every control from the CLI's built-in
+# baseline, only the differences for this repo are written here.
+# Run 'plumber config resolve' to see the full effective config.
+extends: plumber:default
+version: '2.0'
+
+github:
+  controls:
+    githubActionMustComeFromAuthorizedSources:
+      # Keep the curated default list and trust the actions this repo
+      # already uses on top of it, all pinned by commit SHA.
+      includePlumberDefaults: true
+      trustedGithubActions:
+        - dorny/paths-filter
+        - eps1lon/actions-label-merge-conflict
+        - imjasonh/setup-crane
+        - softprops/action-gh-release
+        - stringbean/docker-healthcheck-action
+        - vedantmgoyal9/winget-releaser
+
+    # main is protected. The release/* branches are one frozen branch
+    # per shipped release, the requirement stays where releases cut
+    # from.
+    branchMustBeProtected:
+      defaultMustBeProtected: true
+      namePatterns:
+        - main
