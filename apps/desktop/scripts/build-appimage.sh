@@ -66,7 +66,7 @@ Exec=$EXECUTABLE_NAME %U
 Icon=$EXECUTABLE_NAME
 Type=Application
 StartupNotify=true
-StartupWMClass=$PRODUCT_NAME
+StartupWMClass=$EXECUTABLE_NAME
 Categories=Office;Utility;
 DESKTOP_EOF
 
