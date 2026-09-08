@@ -11,6 +11,9 @@ vi.mock("../../services/experimental_features", async (importOriginal) => ({
 import type { AttributeDetailOpts } from "./attribute_detail";
 
 const VIEWPORT = { width: 1200, height: 800 };
+// Each test deliberately re-imports the popup module to exercise module-load feature flags.
+// The cold import can exceed Vitest's default timeout when the complete client suite runs.
+const MODULE_IMPORT_TIMEOUT = 60_000;
 
 describe("attribute detail popup positioning", () => {
     beforeEach(() => {
@@ -30,7 +33,7 @@ describe("attribute detail popup positioning", () => {
         expect(popup.style.left).toBe("");
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("position popup"));
         warn.mockRestore();
-    });
+    }, MODULE_IMPORT_TIMEOUT);
 
     it("puts an anchored popup on whichever side of its anchor has the room for it", async () => {
         const { positionPopup } = await load();
@@ -52,7 +55,7 @@ describe("attribute detail popup positioning", () => {
         sizeViewport(305, VIEWPORT.height);
         positionPopup(popup, opts({ anchor: anchoredAt({ left: 10, right: 300, top: 40 }) }), NO_OFFSET);
         expect(popup.style.left).toBe("10px");
-    });
+    }, MODULE_IMPORT_TIMEOUT);
 
     it("places an unanchored popup below the click, against whichever edge it falls nearest", async () => {
         const { positionPopup } = await load();
@@ -71,7 +74,7 @@ describe("attribute detail popup positioning", () => {
         expect(popup.style.left).toBe("");
         expect(popup.style.right).toBe("10px");
         expect(popup.style.maxHeight).toBe("50px"); // 800 - 700 - 50
-    });
+    }, MODULE_IMPORT_TIMEOUT);
 
     it("sits above the attributes pane under the new layout, and above the status bar without one", async () => {
         newLayout.enabled = true;
@@ -103,7 +106,7 @@ describe("attribute detail popup positioning", () => {
         expect(popup.style.left).toBe("10px");
 
         newLayout.enabled = false;
-    });
+    }, MODULE_IMPORT_TIMEOUT);
 
     /** Re-imports the module so the layout flag above is read afresh. */
     async function load() {

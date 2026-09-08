@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import { loadUniverLocale, resolveUniverLocaleSource, SPREADSHEET_PRESET_PACKAGES, UNIVER_LOCALES } from "./locales";
 
+// Importing every Univer preset is intentionally slow on a cold CI worker.
+const LOCALE_IMPORT_TIMEOUT = 60_000;
+
 describe("UNIVER_LOCALES", () => {
     it("maps every displayable Trilium UI language (fails when a new language is added)", () => {
         // A newly introduced Trilium UI language must get an explicit entry (a source or null),
@@ -38,7 +41,7 @@ describe("UNIVER_LOCALES", () => {
                 expect(Object.keys(module.default).length, id).toBeGreaterThan(0);
             }
         }
-    });
+    }, LOCALE_IMPORT_TIMEOUT);
 
     it("loads and merges the locale matching the Trilium language", async () => {
         // "fr" maps to fr-FR, exercising the resolve -> import -> merge path end to end.

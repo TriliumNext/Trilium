@@ -56,8 +56,8 @@
   "private": true,
   "devDependencies": {
     "@fast-csv/parse": "5.0.7",
-    "@stylistic/eslint-plugin": "5.10.0",
     "@playwright/test": "1.62.1",
+    "@stylistic/eslint-plugin": "5.10.0",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "24.13.3",
