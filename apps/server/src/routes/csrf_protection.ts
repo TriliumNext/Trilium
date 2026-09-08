@@ -17,7 +17,23 @@ const doubleCsrfUtilities = doubleCsrf({
         httpOnly: true
     },
     cookieName: CSRF_COOKIE_NAME,
-    getSessionIdentifier: (req) => req.session.id
+    getSessionIdentifier: (req) => req.session.id,
+    // Browser form submissions cannot set custom headers. Keep the existing header
+    // transport for XHR/API calls, and accept the same token in a URL-encoded form
+    // body so state-changing navigations can follow an OIDC redirect without CORS.
+    getCsrfTokenFromRequest: (req) => {
+        const headerToken = req.headers["x-csrf-token"];
+        if (typeof headerToken === "string") {
+            return headerToken;
+        }
+
+        if (req.is("application/x-www-form-urlencoded")) {
+            const bodyToken = req.body?.["x-csrf-token"];
+            return typeof bodyToken === "string" ? bodyToken : undefined;
+        }
+
+        return undefined;
+    }
 });
 
 export const { generateCsrfToken } = doubleCsrfUtilities;

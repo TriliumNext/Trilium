@@ -100,8 +100,24 @@ export default class Entrypoints extends Component {
     }
 
     async logoutCommand() {
-        await server.post("../logout");
-        window.location.replace(`/login`);
+        // A fetch/XHR follows an OIDC logout redirect as a cross-origin XHR, which
+        // providers reject during CORS preflight. Submit the CSRF-protected POST as
+        // a browser navigation so the provider redirect remains a top-level request.
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = window.glob.httpBaseUrl
+            ? new URL("/logout", window.glob.httpBaseUrl).href
+            : new URL(`${window.glob.baseApiUrl}../logout`, window.location.href).href;
+        form.hidden = true;
+
+        const csrfToken = document.createElement("input");
+        csrfToken.type = "hidden";
+        csrfToken.name = "x-csrf-token";
+        csrfToken.value = window.glob.csrfToken;
+        form.append(csrfToken);
+
+        document.body.append(form);
+        form.submit();
     }
 
     backInNoteHistoryCommand() {
