@@ -64,8 +64,10 @@ export class LocalProvider extends BaseProvider {
 
     private readonly kind: LocalProviderKind;
     private openai: OpenAISDKProvider;
-    /** Canonical endpoint root, without a trailing `/v1`. */
+    /** Endpoint root used by the native runtime probes. */
     private root: string;
+    /** OpenAI-compatible API root, preserving a version path supplied by the user. */
+    private apiBaseURL: string;
     /**
      * Whether the models are known to come from a local runtime, and are
      * therefore free to run. The named cards are local by definition; the
@@ -79,11 +81,13 @@ export class LocalProvider extends BaseProvider {
         this.kind = kind;
         this.name = kind;
         this.isLocalRuntime = kind !== "openai-compatible";
-        this.root = resolveRoot(kind, this.baseURL);
+        const endpoint = resolveEndpoint(kind, this.baseURL);
+        this.root = endpoint.root;
+        this.apiBaseURL = endpoint.apiBaseURL;
 
         this.openai = createOpenAI({
             apiKey: apiKey || PLACEHOLDER_API_KEY,
-            baseURL: `${this.root}/v1`,
+            baseURL: this.apiBaseURL,
             fetch: llmFetch
         });
     }
@@ -170,7 +174,7 @@ export class LocalProvider extends BaseProvider {
 
     /** The universal fallback: the OpenAI-compatible `/v1/models` listing. */
     private async listOpenAiCompatibleModels(): Promise<LocalModel[]> {
-        const url = `${this.root}/v1/models`;
+        const url = `${this.apiBaseURL}/models`;
         const payload = await this.probeJson(url);
         if (payload === undefined) {
             throw new Error(`No model listing endpoint found at ${this.root} — is this an OpenAI-compatible server?`);
@@ -259,38 +263,44 @@ export class LocalProvider extends BaseProvider {
 }
 
 /**
- * Canonical endpoint root for a card: the configured URL (validated), or the
- * card's own default, with any trailing `/v1` removed so both spellings a user
- * might enter — `http://localhost:1234` and `http://localhost:1234/v1` — resolve
- * to the same instance. The `/v1` is re-appended for the SDK and the
- * OpenAI-compatible listing; the native listings hang off the root.
+ * Resolve the native runtime root and the OpenAI-compatible API root. A bare
+ * host gets the conventional `/v1` suffix, while an explicit version path
+ * (for example Zhipu's `/api/paas/v4`) is preserved as entered. This lets
+ * OpenAI-compatible providers expose versioned APIs other than `/v1`.
  */
-function resolveRoot(kind: LocalProviderKind, baseURL: string | undefined): string {
+function resolveEndpoint(kind: LocalProviderKind, baseURL: string | undefined): { root: string; apiBaseURL: string } {
     const fallback = DEFAULT_BASE_URLS[kind];
     if (!baseURL) {
         if (!fallback) {
             throw new Error("A base URL is required for an OpenAI-compatible provider.");
         }
-        return stripApiVersion(fallback);
+        return endpointFromUrl(fallback);
     }
     try {
         const parsed = new URL(baseURL);
         if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
             throw new Error(`unsupported protocol ${parsed.protocol}`);
         }
-        return stripApiVersion(baseURL);
+        return endpointFromUrl(baseURL);
     } catch (e) {
         if (!fallback) {
             throw new Error(`Invalid base URL "${baseURL}": ${e instanceof Error ? e.message : String(e)}`);
         }
         getLog().error(`${kind}: invalid base URL "${baseURL}" (${e}), falling back to ${fallback}`);
-        return stripApiVersion(fallback);
+        return endpointFromUrl(fallback);
     }
 }
 
 /** Trailing slashes are already gone (the base class normalizes them). */
-function stripApiVersion(url: string): string {
-    return url.endsWith("/v1") ? url.slice(0, -"/v1".length) : url;
+function endpointFromUrl(url: string): { root: string; apiBaseURL: string } {
+    const versionPath = /\/v\d+(?:[a-z]+\d*)?$/i.test(url);
+    if (versionPath) {
+        return {
+            root: url.replace(/\/v\d+(?:[a-z]+\d*)?$/i, ""),
+            apiBaseURL: url
+        };
+    }
+    return { root: url, apiBaseURL: `${url}/v1` };
 }
 
 /**

@@ -108,6 +108,11 @@ describe("LocalProvider", () => {
             expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "local", baseURL: "https://proxy.example.com/llm/v1", fetch: llmFetch });
         });
 
+        it("preserves an explicit API version other than /v1", () => {
+            new LocalProvider("openai-compatible", "", "https://open.bigmodel.cn/api/paas/v4");
+            expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "local", baseURL: "https://open.bigmodel.cn/api/paas/v4", fetch: llmFetch });
+        });
+
         it("forwards a supplied API key to the SDK", () => {
             new LocalProvider("openai-compatible", "sk-proxy", "http://box:8080/v1");
             expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "sk-proxy", baseURL: "http://box:8080/v1", fetch: llmFetch });
@@ -187,6 +192,18 @@ describe("LocalProvider", () => {
 
             expect(models[0].pricing).toBeUndefined();
             expect(provider.getModelPricing("gpt-4.1")).toBeUndefined();
+        });
+
+        it("lists models from an explicit non-v1 API version", async () => {
+            fetchMock.mockImplementation(routes({ "/api/paas/v4/models": openAiModels(["glm-4.5"]) }));
+
+            const provider = new LocalProvider("openai-compatible", "", "https://open.bigmodel.cn/api/paas/v4");
+
+            await expect(provider.listModels()).resolves.toEqual([expect.objectContaining({ id: "glm-4.5" })]);
+            expect(fetchMock).toHaveBeenLastCalledWith(
+                "https://open.bigmodel.cn/api/paas/v4/models",
+                expect.anything()
+            );
         });
 
         it("prices an endpoint identified as a local runtime as free", async () => {
