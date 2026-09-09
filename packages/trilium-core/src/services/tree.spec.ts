@@ -195,7 +195,7 @@ describe("Tree", () => {
         expect(orderedTitles).toStrictEqual(["a", "b", "e", "c", "d"]);
     });
 
-    it("applies #sortDirection to the levels without a direction of their own and to the title tiebreak", () => {
+    it("applies #sortDirection to the levels without their own and to the title tiebreak", () => {
         const note = buildNote({
             children: [
                 {title: "a", "#priority": "1"},

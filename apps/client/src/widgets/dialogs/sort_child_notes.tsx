@@ -1,17 +1,18 @@
 import "./sort_child_notes.css";
 
 import { useState } from "preact/hooks";
+
 import { t } from "../../services/i18n";
+import server from "../../services/server";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
 import FormCheckbox from "../react/FormCheckbox";
+import FormGroup from "../react/FormGroup";
 import FormSelect from "../react/FormSelect";
 import FormTextBox from "../react/FormTextBox";
+import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import SegmentedChoice from "../react/SegmentedChoice";
-import server from "../../services/server";
-import FormGroup from "../react/FormGroup";
-import { useTriliumEvent } from "../react/hooks";
 
 type SortKind = "title" | "dateCreated" | "dateModified" | "label";
 
@@ -45,9 +46,21 @@ export default function SortChildNotesDialog() {
 
     function moveLevel(index: number, offset: -1 | 1) {
         const reordered = [ ...levels ];
-        [ reordered[index], reordered[index + offset] ] = [ reordered[index + offset], reordered[index] ];
+        const other = index + offset;
+        [ reordered[index], reordered[other] ] = [ reordered[other], reordered[index] ];
         setLevels(reordered);
     }
+
+    const kindOptions = [
+        { kind: "title", title: t("sort_child_notes.title") },
+        { kind: "dateCreated", title: t("sort_child_notes.date_created") },
+        { kind: "dateModified", title: t("sort_child_notes.date_modified") },
+        { kind: "label", title: t("sort_child_notes.label") }
+    ];
+    const directionOptions = [
+        { value: "asc", icon: "bx-sort-up", title: t("sort_child_notes.ascending") },
+        { value: "desc", icon: "bx-sort-down", title: t("sort_child_notes.descending") }
+    ];
 
     async function onSubmit() {
         await server.put(`notes/${parentNoteId}/sort-children`, {
@@ -76,19 +89,16 @@ export default function SortChildNotesDialog() {
         >
             <div className="sort-criteria">
                 <h5>{t("sort_child_notes.sorting_criteria")}</h5>
-                <p className="sort-levels-description">{t("sort_child_notes.sorting_criteria_description")}</p>
+                <p className="sort-levels-description">
+                    {t("sort_child_notes.sorting_criteria_description")}
+                </p>
                 <div className="sort-levels">
                     {levels.map((level, index) => (
                         <div className="sort-level" key={index}>
                             <FormSelect
                                 className="sort-level-kind"
-                                values={[
-                                    { key: "title", title: t("sort_child_notes.title") },
-                                    { key: "dateCreated", title: t("sort_child_notes.date_created") },
-                                    { key: "dateModified", title: t("sort_child_notes.date_modified") },
-                                    { key: "label", title: t("sort_child_notes.label") }
-                                ]}
-                                keyProperty="key"
+                                values={kindOptions}
+                                keyProperty="kind"
                                 titleProperty="title"
                                 currentValue={level.kind}
                                 onChange={(kind) => updateLevel(index, { kind: kind as SortKind })}
@@ -103,12 +113,11 @@ export default function SortChildNotesDialog() {
                                 />
                             )}
                             <SegmentedChoice
-                                options={[
-                                    { value: "asc", icon: "bx-sort-up", title: t("sort_child_notes.ascending") },
-                                    { value: "desc", icon: "bx-sort-down", title: t("sort_child_notes.descending") }
-                                ]}
+                                options={directionOptions}
                                 currentValue={level.descending ? "desc" : "asc"}
-                                onChange={(direction) => updateLevel(index, { descending: direction === "desc" })}
+                                onChange={(direction) => {
+                                    updateLevel(index, { descending: direction === "desc" });
+                                }}
                             />
                             <ActionButton
                                 className="sort-level-up"
@@ -167,7 +176,10 @@ export default function SortChildNotesDialog() {
 /** Writes the levels in the `#sorted` format the server parses, e.g. `priority:desc,title:asc`. */
 export function serializeSortLevels(levels: SortLevel[]) {
     return levels
-        .map((level) => ({ ...level, key: level.kind === "label" ? level.labelName.trim() : level.kind }))
+        .map((level) => ({
+            ...level,
+            key: level.kind === "label" ? level.labelName.trim() : level.kind
+        }))
         .filter((level) => level.key)
         .map((level) => `${level.key}:${level.descending ? "desc" : "asc"}`)
         .join(",");

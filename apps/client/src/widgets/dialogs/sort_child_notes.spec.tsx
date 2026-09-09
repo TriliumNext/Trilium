@@ -36,7 +36,9 @@ describe("SortChildNotesDialog", () => {
             </ParentComponent.Provider>
         );
         await act(async () => {
-            void host.handleEventInChildren("sortChildNotes", { noteId: "parent", selectedOrActiveBranchIds: [] });
+            void host.handleEventInChildren("sortChildNotes", {
+                noteId: "parent", selectedOrActiveBranchIds: []
+            });
         });
     });
 

@@ -80,18 +80,18 @@ function wouldAddingBranchCreateCycle(parentNoteId: string, childNoteId: string)
 export interface SortCriterion {
     /** `title`, `dateCreated`, `dateModified` or the name of a label on the child notes. */
     key: string;
-    /** Set by an explicit `:asc`/`:desc` flag; `undefined` follows the parent's `#sortDirection`. */
+    /** Set by an explicit `:asc`/`:desc` flag; `undefined` follows `#sortDirection`. */
     descending?: boolean;
 }
 
 /**
- * Parses a `#sorted` value such as `priority:desc,dueDate,title` into its levels: comma-separated sort
- * keys, each optionally followed by `:asc` or `:desc`. An empty value sorts by title.
+ * Parses a `#sorted` value such as `priority:desc,dueDate,title` into its levels: comma-separated
+ * sort keys, each optionally followed by `:asc` or `:desc`. An empty value sorts by title.
  */
 export function parseSortCriteria(value: string | null | undefined): SortCriterion[] {
     const criteria: SortCriterion[] = [];
     for (const level of (value ?? "").split(",")) {
-        // Only a trailing flag is a direction, so a label name that contains a colon still works as a key.
+        // Only a trailing flag is a direction, so a label name with a colon still works as a key.
         const separator = level.lastIndexOf(":");
         const flag = separator === -1 ? "" : level.slice(separator + 1).trim().toLowerCase();
         const isDirection = flag === "asc" || flag === "desc";
@@ -104,11 +104,18 @@ export function parseSortCriteria(value: string | null | undefined): SortCriteri
 }
 
 /**
- * Sorts the children of `parentNoteId` by the levels of `sortBy` (see {@link parseSortCriteria}); a level
- * without its own direction and the final title tiebreak follow `reverse`. `#top`, `#bottom` and folders
- * take precedence over every level and ignore the direction.
+ * Sorts the children of `parentNoteId` by the levels of `sortBy` (see {@link parseSortCriteria});
+ * a level without its own direction and the final title tiebreak follow `reverse`. `#top`,
+ * `#bottom` and folders take precedence over every level and ignore the direction.
  */
-function sortNotes(parentNoteId: string, sortBy: string = "title", reverse = false, foldersFirst = false, sortNatural = false, _sortLocale?: string | null) {
+function sortNotes(
+    parentNoteId: string,
+    sortBy: string = "title",
+    reverse = false,
+    foldersFirst = false,
+    sortNatural = false,
+    _sortLocale?: string | null
+) {
     const criteria = parseSortCriteria(sortBy);
 
     // sortLocale can not be empty string or null value, default value must be set to undefined.
@@ -127,11 +134,14 @@ function sortNotes(parentNoteId: string, sortBy: string = "title", reverse = fal
             let rawValue: string | null;
 
             if (key === "title") {
-                const branch = note.getParentBranches().find((branch) => branch.parentNoteId === parentNoteId);
+                const branch = note.getParentBranches()
+                    .find((branch) => branch.parentNoteId === parentNoteId);
                 const prefix = branch?.prefix;
                 rawValue = prefix ? `${prefix} - ${note.title}` : note.title;
             } else {
-                rawValue = ["dateCreated", "dateModified"].includes(key) ? (note as any)[key] : note.getLabelValue(key);
+                rawValue = ["dateCreated", "dateModified"].includes(key)
+                    ? (note as any)[key]
+                    : note.getLabelValue(key);
             }
 
             return typeof rawValue === "string" ? rawValue.toLowerCase() : rawValue;

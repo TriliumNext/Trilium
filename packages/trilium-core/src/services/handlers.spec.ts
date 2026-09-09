@@ -116,11 +116,15 @@ describe("handlers", () => {
             addAttribute("ml-par", "label", "sorted", "priority:desc,dueDate");
 
             const unrelated = addAttribute("ml-chld", "label", "priorityNote", "x");
-            eventService.emit(eventService.ENTITY_CHANGED, { entityName: "attributes", entity: unrelated });
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "attributes", entity: unrelated
+            });
             expect(sortNotesIfNeeded).not.toHaveBeenCalledWith("ml-par");
 
             const dueDate = addAttribute("ml-chld", "label", "dueDate", "2026-01-01");
-            eventService.emit(eventService.ENTITY_CHANGED, { entityName: "attributes", entity: dueDate });
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "attributes", entity: dueDate
+            });
             expect(sortNotesIfNeeded).toHaveBeenCalledWith("ml-par");
         });
 
