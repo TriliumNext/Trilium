@@ -7,7 +7,7 @@ The inbox is the default destination for quickly captured notes. When a note is 
 *   The global _Create note into inbox_ shortcut (default <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>P</kbd>).
 *   The _New note_ action in the [tray icon menu](../../Installation%20%26%20Setup/Desktop%20Installation/Tray%20icon%20%26%20automatic%20startup.md).
 *   The <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a> extension.
-*   The _Create note_ option offered when a search finds no match, in <a class="reference-link" href="../Navigation/Jump%20to%20%26%20command%20palette.md">Jump to & command palette</a>, in an empty tab and in the `@` completion of a text note.
+*   The _Create note_ option offered when a search finds no match, in <a class="reference-link" href="../Navigation/Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a>, in an empty tab and in the `@` completion of a text note.
 
 ## Setting a note inbox
 

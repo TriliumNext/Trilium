@@ -5,8 +5,10 @@
   sort future notes added to this parent note.</p>
 <p>The sorting dialog allows:</p>
 <ul>
-  <li>Sorting by title, creation or modification date.</li>
-  <li>Changing sorting direction can also be adjusted (ascending or descending).</li>
+  <li>Sorting by title, creation or modification date, or by the value of a
+    label on the child notes.</li>
+  <li>Sorting by several such criteria in turn, each ascending or descending:
+    the next level only decides between notes the previous ones left equal.</li>
   <li>Ensuring folders are displayed at the top.</li>
   <li>Natural sort, based on the sorting rules of a particular language.</li>
 </ul>
@@ -27,9 +29,17 @@
         </td>
         <td>
           <p>Keeps child notes sorted by title alphabetically.</p>
-          <p>When given a value, it will sort by the value of another label instead.
-            If one of the child notes doesn't have the specified label, the title will
-            be used for them instead.</p>
+          <p>When given a value, it will sort by other criteria instead: a comma-separated
+            list of levels, each <code spellcheck="false">title</code>, <code spellcheck="false">dateCreated</code>,
+            <code
+            spellcheck="false">dateModified</code>or the name of a label on the child notes, optionally
+              followed by <code spellcheck="false">:asc</code> or <code spellcheck="false">:desc</code>.
+              For example <code spellcheck="false">#sorted="priority:desc,dueDate"</code> sorts
+              by priority, highest first, and notes of equal priority by due date. A
+              child note without a level's label comes after every note that has it,
+              in either direction; when neither note has it, the next level decides.
+              A misspelt direction such as <code spellcheck="false">dueDate:acs</code> is
+              read as a label name, which no note has, so that level changes nothing.</p>
         </td>
       </tr>
       <tr>
@@ -42,6 +52,9 @@
             <li><code spellcheck="false">ASC</code>, ascending (default)</li>
             <li><code spellcheck="false">DESC</code>, descending</li>
           </ul>
+          <p>A level of <code spellcheck="false">sorted</code> with its own <code spellcheck="false">:asc</code> or
+            <code
+            spellcheck="false">:desc</code>keeps that direction regardless.</p>
         </td>
       </tr>
       <tr>
@@ -103,6 +116,15 @@
         spellcheck="false">#sorted=myOrder</code>on the parent note and using <code spellcheck="false">#myOrder=001</code>,
           <code
           spellcheck="false">#myOrder=002</code>, etc., on child notes.</li>
+      <li><strong>Multi-Level Sorting</strong>: Several of the above can be combined,
+        separated by commas; each level is applied only where the previous ones
+        are equal. Every level can carry its own direction with <code spellcheck="false">:asc</code> or
+        <code
+        spellcheck="false">:desc</code>, otherwise it follows <code spellcheck="false">#sortDirection</code>.
+          For example <code spellcheck="false">#sorted="priority:desc,area,dateCreated"</code> sorts
+          by priority, highest first, then by area, then by creation date. A note
+          missing a level's label sorts after the notes that have it, whatever the
+          direction; two notes both missing it are left to the next level.</li>
     </ul>
   </li>
   <li><strong>Alphabetical Sorting</strong>: Used as a last resort when other

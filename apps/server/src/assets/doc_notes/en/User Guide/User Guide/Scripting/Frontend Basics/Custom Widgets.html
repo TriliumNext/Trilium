@@ -142,6 +142,39 @@ class="table">
       <code
       spellcheck="false">right-pane</code>have special requirements that need to be accounted for
         (see the table above).</p>
+  <h2>Multiple widgets in a single note</h2>
+  <p>A widget note usually returns one widget, but it can also return an array
+    of them. This is useful when several widgets share code or state, since
+    they can all live in the same note instead of being split across notes
+    that need a shared module.</p>
+  <p>Each widget of the array is registered on its own, so they can have different
+    parents and positions. A widget that is missing its <code spellcheck="false">parentWidget</code> (or
+    <code
+    spellcheck="false">parent</code>for Preact) is reported as an error without affecting the
+      other widgets of the note.</p>
+  <h3>Legacy version (jQuery)</h3><pre><code class="language-text-x-trilium-auto">class TreeWidget extends api.BasicWidget {
+    get parentWidget() { return "left-pane"; }
+    doRender() { this.$widget = $("&lt;span&gt;Left pane&lt;/span&gt;"); }
+}
+
+class SidebarWidget extends api.BasicWidget {
+    get parentWidget() { return "right-pane"; }
+    doRender() { this.$widget = $("&lt;span&gt;Right pane&lt;/span&gt;"); }
+}
+
+module.exports = [ new TreeWidget(), new SidebarWidget() ];</code></pre>
+  <h3>Preact version</h3><pre><code class="language-text-x-trilium-auto">import { defineWidget } from "trilium:preact";
+
+export default [
+    defineWidget({
+        parent: "left-pane",
+        render: () =&gt; &lt;span&gt;Left pane from Preact.&lt;/span&gt;
+    }),
+    defineWidget({
+        parent: "right-pane",
+        render: () =&gt; &lt;span&gt;Right pane from Preact.&lt;/span&gt;
+    })
+];</code></pre>
   <h2>Launch bar widgets</h2>
   <p>Launch bar widgets are similar to <em>Custom widgets</em> but are specific
     to the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>.
