@@ -154,14 +154,10 @@ function sortNotes(
             return a < b ? -1 : a > b ? 1 : 0;
         }
 
-        // A child without the level's label sorts after every child that has it, whatever the
-        // direction; two children without it are left for the next level to order.
+        // A child without the level's label sorts by its title in that label's place.
         function compareLevel(a: BNote, b: BNote, key: string, descending: boolean) {
-            const valueA = fetchValue(a, key);
-            const valueB = fetchValue(b, key);
-            if (valueA === null || valueB === null) {
-                return (valueA === null ? 1 : 0) - (valueB === null ? 1 : 0);
-            }
+            const valueA = fetchValue(a, key) ?? fetchValue(a, "title") ?? "";
+            const valueB = fetchValue(b, key) ?? fetchValue(b, "title") ?? "";
             const result = compare(valueA, valueB);
             return descending ? -result : result;
         }
