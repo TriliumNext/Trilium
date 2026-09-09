@@ -5,8 +5,8 @@ You can sort notes by right-clicking the parent note in the <a class="reference
 
 The sorting dialog allows:
 
-*   Sorting by title, creation or modification date.
-*   Changing sorting direction can also be adjusted (ascending or descending).
+*   Sorting by title, creation or modification date, or by the value of a label on the child notes.
+*   Sorting by several such criteria in turn, each ascending or descending: the next level only decides between notes the previous ones left equal.
 *   Ensuring folders are displayed at the top.
 *   Natural sort, based on the sorting rules of a particular language.
 

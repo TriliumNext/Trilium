@@ -1,0 +1,33 @@
+.modal.sort-child-notes-dialog {
+    .sort-levels-description {
+        color: var(--muted-text-color);
+        margin-bottom: 8px;
+    }
+
+    .sort-levels {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .sort-level {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .sort-level-kind {
+            flex: 0 0 11em;
+        }
+
+        .sort-level-label {
+            flex: 1 1 8em;
+            min-width: 0;
+        }
+
+        .tn-segmented-choice {
+            margin-inline-start: auto;
+            flex-shrink: 0;
+        }
+    }
+}
