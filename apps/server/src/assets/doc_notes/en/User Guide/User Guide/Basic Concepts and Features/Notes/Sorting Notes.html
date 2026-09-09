@@ -33,13 +33,12 @@
             list of levels, each <code spellcheck="false">title</code>, <code spellcheck="false">dateCreated</code>,
             <code
             spellcheck="false">dateModified</code>or the name of a label on the child notes, optionally
-              followed by <code spellcheck="false">:asc</code> or <code spellcheck="false">:desc</code>.
-              For example <code spellcheck="false">#sorted="priority:desc,dueDate"</code> sorts
-              by priority, highest first, and notes of equal priority by due date. A
-              child note without a level's label comes after every note that has it,
-              in either direction; when neither note has it, the next level decides.
-              A misspelt direction such as <code spellcheck="false">dueDate:acs</code> is
-              read as a label name, which no note has, so that level changes nothing.</p>
+              followed by <code spellcheck="false">asc</code> or <code spellcheck="false">desc</code>,
+              as in a search's <code spellcheck="false">orderBy</code>. For example
+              <code
+              spellcheck="false">#sorted="priority desc, dueDate"</code>sorts by priority, highest first,
+                and notes of equal priority by due date. If one of the child notes doesn't
+                have a level's label, its title is used in its place.</p>
         </td>
       </tr>
       <tr>
@@ -52,9 +51,9 @@
             <li><code spellcheck="false">ASC</code>, ascending (default)</li>
             <li><code spellcheck="false">DESC</code>, descending</li>
           </ul>
-          <p>A level of <code spellcheck="false">sorted</code> with its own <code spellcheck="false">:asc</code> or
+          <p>A level of <code spellcheck="false">sorted</code> followed by its own
             <code
-            spellcheck="false">:desc</code>keeps that direction regardless.</p>
+            spellcheck="false">asc</code>or <code spellcheck="false">desc</code> keeps that direction regardless.</p>
         </td>
       </tr>
       <tr>
@@ -118,13 +117,11 @@
           spellcheck="false">#myOrder=002</code>, etc., on child notes.</li>
       <li><strong>Multi-Level Sorting</strong>: Several of the above can be combined,
         separated by commas; each level is applied only where the previous ones
-        are equal. Every level can carry its own direction with <code spellcheck="false">:asc</code> or
-        <code
-        spellcheck="false">:desc</code>, otherwise it follows <code spellcheck="false">#sortDirection</code>.
-          For example <code spellcheck="false">#sorted="priority:desc,area,dateCreated"</code> sorts
-          by priority, highest first, then by area, then by creation date. A note
-          missing a level's label sorts after the notes that have it, whatever the
-          direction; two notes both missing it are left to the next level.</li>
+        are equal. Every level can carry its own direction as a word after the
+        name, <code spellcheck="false">asc</code> or <code spellcheck="false">desc</code>,
+        otherwise it follows <code spellcheck="false">#sortDirection</code>. For
+        example <code spellcheck="false">#sorted="priority desc, area, dateCreated"</code> sorts
+        by priority, highest first, then by area, then by creation date.</li>
     </ul>
   </li>
   <li><strong>Alphabetical Sorting</strong>: Used as a last resort when other
