@@ -214,7 +214,7 @@ describe("Tree", () => {
         expect(orderedTitles).toStrictEqual(["top", "a", "c", "b", "bottom"]);
     });
 
-    it("keeps folders first under #sortDirection=desc, as the label says", () => {
+    it("groups folders last under #sortDirection=desc, as the single-key sort did", () => {
         const note = buildNote({
             children: [
                 {title: "a"},
@@ -230,7 +230,7 @@ describe("Tree", () => {
             tree.sortNotesIfNeeded(note.noteId);
         });
         const orderedTitles = note.children.map((child) => child.title);
-        expect(orderedTitles).toStrictEqual(["p2", "p1", "b", "a"]);
+        expect(orderedTitles).toStrictEqual(["b", "a", "p2", "p1"]);
     });
 
     it("orders several #top and #bottom notes by their values, whatever the direction", () => {

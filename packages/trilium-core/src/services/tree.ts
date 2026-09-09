@@ -105,8 +105,8 @@ export function parseSortCriteria(value: string | null | undefined): SortCriteri
 
 /**
  * Sorts the children of `parentNoteId` by the levels of `sortBy` (see {@link parseSortCriteria});
- * a level without its own direction and the final title tiebreak follow `reverse`. `#top`,
- * `#bottom` and folders take precedence over every level and ignore the direction.
+ * a level without its own direction, the folders-first grouping and the final title tiebreak
+ * follow `reverse`; `#top` and `#bottom` take precedence over everything and ignore it.
  */
 function sortNotes(
     parentNoteId: string,
@@ -185,8 +185,9 @@ function sortNotes(
                 const aHasChildren = a.hasChildren();
                 const bHasChildren = b.hasChildren();
 
+                // Folders group first ascending and last descending, as the single-key sort did.
                 if (aHasChildren !== bHasChildren) {
-                    return aHasChildren ? -1 : 1;
+                    return (aHasChildren ? -1 : 1) * (reverse ? -1 : 1);
                 }
             }
 
