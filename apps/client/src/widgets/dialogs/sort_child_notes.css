@@ -1,4 +1,19 @@
 .modal.sort-child-notes-dialog {
+    /* The criteria rows set the dialog's width; the prose wraps to it rather than widening it. */
+    :where(body:not(.mobile)) & .modal-dialog {
+        width: fit-content;
+        min-width: 440px;
+    }
+
+    .modal-body > :not(.sort-criteria),
+    .sort-levels-description {
+        contain: inline-size;
+    }
+
+    .sort-criteria {
+        margin-block: 8px 28px;
+    }
+
     .sort-levels-description {
         color: var(--muted-text-color);
         margin-bottom: 8px;
@@ -25,8 +40,15 @@
             min-width: 0;
         }
 
+        /* Direction, reorder and remove sit at the row's end regardless of what the row holds. */
         .tn-segmented-choice {
             margin-inline-start: auto;
+            flex-shrink: 0;
+        }
+
+        .sort-level-up,
+        .sort-level-down,
+        .sort-level-remove {
             flex-shrink: 0;
         }
     }

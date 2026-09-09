@@ -43,6 +43,12 @@ export default function SortChildNotesDialog() {
         setLevels(levels.map((level, i) => (i === index ? { ...level, ...change } : level)));
     }
 
+    function moveLevel(index: number, offset: -1 | 1) {
+        const reordered = [ ...levels ];
+        [ reordered[index], reordered[index + offset] ] = [ reordered[index + offset], reordered[index] ];
+        setLevels(reordered);
+    }
+
     async function onSubmit() {
         await server.put(`notes/${parentNoteId}/sort-children`, {
             sortBy: serializeSortLevels(levels),
@@ -59,7 +65,7 @@ export default function SortChildNotesDialog() {
         <Modal
             className="sort-child-notes-dialog"
             title={t("sort_child_notes.sort_children_by")}
-            size="lg" maxWidth={560}
+            size="lg" maxWidth={680}
             onSubmit={onSubmit}
             onHidden={() => setShown(false)}
             show={shown}
@@ -68,59 +74,74 @@ export default function SortChildNotesDialog() {
                 <Button text={t("sort_child_notes.sort")} keyboardShortcut="Enter" />
             </>}
         >
-            <h5>{t("sort_child_notes.sorting_criteria")}</h5>
-            <p className="sort-levels-description">{t("sort_child_notes.sorting_criteria_description")}</p>
-            <div className="sort-levels">
-                {levels.map((level, index) => (
-                    <div className="sort-level" key={index}>
-                        <FormSelect
-                            className="sort-level-kind"
-                            values={[
-                                { key: "title", title: t("sort_child_notes.title") },
-                                { key: "dateCreated", title: t("sort_child_notes.date_created") },
-                                { key: "dateModified", title: t("sort_child_notes.date_modified") },
-                                { key: "label", title: t("sort_child_notes.label") }
-                            ]}
-                            keyProperty="key"
-                            titleProperty="title"
-                            currentValue={level.kind}
-                            onChange={(kind) => updateLevel(index, { kind: kind as SortKind })}
-                        />
-                        {level.kind === "label" && (
-                            <FormTextBox
-                                className="sort-level-label"
-                                placeholder={t("sort_child_notes.label_name")}
-                                required
-                                currentValue={level.labelName}
-                                onChange={(labelName) => updateLevel(index, { labelName })}
+            <div className="sort-criteria">
+                <h5>{t("sort_child_notes.sorting_criteria")}</h5>
+                <p className="sort-levels-description">{t("sort_child_notes.sorting_criteria_description")}</p>
+                <div className="sort-levels">
+                    {levels.map((level, index) => (
+                        <div className="sort-level" key={index}>
+                            <FormSelect
+                                className="sort-level-kind"
+                                values={[
+                                    { key: "title", title: t("sort_child_notes.title") },
+                                    { key: "dateCreated", title: t("sort_child_notes.date_created") },
+                                    { key: "dateModified", title: t("sort_child_notes.date_modified") },
+                                    { key: "label", title: t("sort_child_notes.label") }
+                                ]}
+                                keyProperty="key"
+                                titleProperty="title"
+                                currentValue={level.kind}
+                                onChange={(kind) => updateLevel(index, { kind: kind as SortKind })}
                             />
-                        )}
-                        <SegmentedChoice
-                            options={[
-                                { value: "asc", label: t("sort_child_notes.ascending") },
-                                { value: "desc", label: t("sort_child_notes.descending") }
-                            ]}
-                            currentValue={level.descending ? "desc" : "asc"}
-                            onChange={(direction) => updateLevel(index, { descending: direction === "desc" })}
-                        />
-                        <ActionButton
-                            className="sort-level-remove"
-                            icon="bx bx-x"
-                            text={t("sort_child_notes.remove_level")}
-                            disabled={levels.length === 1}
-                            onClick={() => setLevels(levels.filter((_, i) => i !== index))}
-                        />
-                    </div>
-                ))}
+                            {level.kind === "label" && (
+                                <FormTextBox
+                                    className="sort-level-label"
+                                    placeholder={t("sort_child_notes.label_name")}
+                                    required
+                                    currentValue={level.labelName}
+                                    onChange={(labelName) => updateLevel(index, { labelName })}
+                                />
+                            )}
+                            <SegmentedChoice
+                                options={[
+                                    { value: "asc", icon: "bx-sort-up", title: t("sort_child_notes.ascending") },
+                                    { value: "desc", icon: "bx-sort-down", title: t("sort_child_notes.descending") }
+                                ]}
+                                currentValue={level.descending ? "desc" : "asc"}
+                                onChange={(direction) => updateLevel(index, { descending: direction === "desc" })}
+                            />
+                            <ActionButton
+                                className="sort-level-up"
+                                icon="bx bx-up-arrow-alt"
+                                text={t("sort_child_notes.move_level_up")}
+                                disabled={index === 0}
+                                onClick={() => moveLevel(index, -1)}
+                            />
+                            <ActionButton
+                                className="sort-level-down"
+                                icon="bx bx-down-arrow-alt"
+                                text={t("sort_child_notes.move_level_down")}
+                                disabled={index === levels.length - 1}
+                                onClick={() => moveLevel(index, 1)}
+                            />
+                            <ActionButton
+                                className="sort-level-remove"
+                                icon="bx bx-x"
+                                text={t("sort_child_notes.remove_level")}
+                                disabled={levels.length === 1}
+                                onClick={() => setLevels(levels.filter((_, i) => i !== index))}
+                            />
+                        </div>
+                    ))}
+                </div>
+                <Button
+                    className="sort-level-add"
+                    icon="bx bx-plus"
+                    text={t("sort_child_notes.add_level")}
+                    size="small"
+                    onClick={() => setLevels([ ...levels, NEW_LEVEL ])}
+                />
             </div>
-            <Button
-                className="sort-level-add"
-                icon="bx bx-plus"
-                text={t("sort_child_notes.add_level")}
-                size="small"
-                onClick={() => setLevels([ ...levels, NEW_LEVEL ])}
-            />
-            <br/>
 
             <h5>{t("sort_child_notes.folders")}</h5>
             <FormCheckbox

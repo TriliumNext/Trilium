@@ -68,7 +68,7 @@ describe("SortChildNotesDialog", () => {
     }
 
     function buttonTitled(scope: Element, title: string) {
-        return [ ...scope.querySelectorAll("button") ].find((button) => button.textContent?.trim() === title);
+        return scope.querySelector(`button[title="${title}"]`);
     }
 
     async function submit() {
@@ -107,6 +107,20 @@ describe("SortChildNotesDialog", () => {
         await submit();
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
             sortBy: "priority:desc,dateModified:asc"
+        }));
+    });
+
+    it("reorders levels with the arrows, which are off at the ends", async () => {
+        await click(container.querySelector(".sort-level-add"));
+        const [ first, second ] = levels();
+        await choose(second.querySelector("select"), "dateCreated");
+        expect(first.querySelector(".sort-level-up")).toHaveProperty("disabled", true);
+        expect(second.querySelector(".sort-level-down")).toHaveProperty("disabled", true);
+
+        await click(second.querySelector(".sort-level-up"));
+        await submit();
+        expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
+            sortBy: "dateCreated:asc,title:asc"
         }));
     });
 
