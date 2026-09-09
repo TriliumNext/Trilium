@@ -69,6 +69,17 @@ async function getProxyAgent(opts: ClientOpts) {
     return new AgentClass(opts.proxy);
 }
 
+/**
+ * The addresses or CIDRs the operator named for calls to a configured API endpoint, so a
+ * destination that resolves to one the built-in ranges refuse — a Tailscale tailnet node,
+ * whose 100.64.0.0/10 address is carrier-grade NAT — is still reachable. Only `fetchApi`
+ * honours it, and it can open only carrier-grade-NAT addresses.
+ */
+function apiAllowedAddresses(): string[] {
+    const raw = process.env.TRILIUM_SAFE_FETCH_ALLOWLIST;
+    return raw ? raw.split(",") : [];
+}
+
 export default class NodeRequestProvider implements RequestProvider {
 
     /**
@@ -212,17 +223,21 @@ export default class NodeRequestProvider implements RequestProvider {
      * Calls a configured API endpoint, vetted the same way {@link fetchResource} is but under a
      * policy that fits what is being called rather than what a note linked to.
      *
-     * Three things differ, and each is the endpoint's nature rather than a relaxation for its own
+     * Four things differ, and each is the endpoint's nature rather than a relaxation for its own
      * sake. A private address is allowed where the caller says the operator chose the destination,
      * because a model server on this machine is the ordinary case and the ranges that stay refused
-     * are the ones nothing is served on. No deadline is imposed, because a completion runs for
-     * however long the model takes and the caller carries its own abort. And a redirect is refused
-     * outright: the hop would be re-vetted as an address, but the request's `Authorization` header
-     * would go with it, and an API key is not something to hand to whoever a base URL names.
+     * are the ones nothing is served on. An address the operator allowlisted — a Tailscale tailnet
+     * node, whose carrier-grade-NAT address the built-in ranges refuse — is reached too, but only
+     * where the operator chose the destination and only for that range, so a metadata endpoint
+     * stays refused. No deadline is imposed, because a completion runs for however long the model
+     * takes and the caller carries its own abort. And a redirect is refused outright: the hop
+     * would be re-vetted as an address, but the request's `Authorization` header would go with it,
+     * and an API key is not something to hand to whoever a base URL names.
      */
     async fetchApi(url: string, init: RequestInit, opts: FetchApiOpts): Promise<Response> {
         return await safeFetch(url, init, {
             allowPrivateNetwork: opts.allowPrivateNetwork,
+            allowedAddresses: apiAllowedAddresses(),
             timeoutMs: null,
             maxRedirects: 0
         });

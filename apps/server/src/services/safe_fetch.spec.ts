@@ -40,6 +40,16 @@ vi.mock("undici", () => ({
 
 import { safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
 
+// A minimal response-shaped object for tests that run outside the safeFetch describe block.
+function makeResponseStub(body: ReadableStream | null, init: ResponseInit) {
+    return {
+        status: init.status ?? 200,
+        statusText: init.statusText ?? "OK",
+        headers: new Headers(init.headers),
+        body
+    } as unknown as Response;
+}
+
 describe("validateUrl", () => {
     it("accepts http URLs", () => {
         const result = validateUrl("http://example.com");
@@ -197,6 +207,53 @@ describe("validateHostResolution, for a destination the operator configured", ()
 
         const error: Error = await validateHostResolution("169.254.169.254", true).then(() => new Error("resolved"), e => e);
         expect(error.message).not.toContain("private/internal");
+    });
+});
+
+describe("validateHostResolution, with an allowlist of the operator's addresses", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("permits a tailnet node the operator allowlisted, on the operator path", async () => {
+        // The exact node, allowed.
+        await expect(validateHostResolution("100.83.121.222", true, ["100.83.121.222"])).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+    });
+
+    it("applies the allowlist only to the addresses listed, not to the whole carrier-grade-NAT range", async () => {
+        // The point of scoping to specific addresses: the rest of the range stays refused.
+        await expect(validateHostResolution("100.83.121.222", true, ["100.83.121.222"])).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+        // A different tailnet node, not on the list, is still refused.
+        await expect(validateHostResolution("100.64.0.5", true, ["100.83.121.222"])).rejects.toThrow("link-local");
+    });
+
+    it("accepts a CIDR entry covering the allowed subnet", async () => {
+        await expect(validateHostResolution("100.83.121.222", true, ["100.83.121.0/24"])).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+        // Outside the subnet.
+        await expect(validateHostResolution("100.83.122.222", true, ["100.83.121.0/24"])).rejects.toThrow("link-local");
+    });
+
+    it("is not applied on the strict path, so note content cannot steer the server to a tailnet node", async () => {
+        // Even though the operator allowlists this node, a destination that arrived in note
+        // content is vetted under the strict policy, which ignores the list.
+        await expect(validateHostResolution("100.83.121.222", false, ["100.83.121.222"])).rejects.toThrow("private/internal");
+    });
+
+    it("reaches an allowlisted tailnet host end to end when the caller permits private addresses", async () => {
+        const fetchMock = undiciFetch;
+        fetchMock.mockReset();
+        agentInstances.length = 0;
+        fetchMock.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        // A literal tailnet address: allowed under the operator policy thanks to the allowlist.
+        await expect(safeFetch("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true, allowedAddresses: ["100.83.121.222"] })).resolves.toBeDefined();
+        // The same address without the operator flag is refused, proving the flag is what opened it.
+        await expect(safeFetch("http://100.83.121.222/v1")).rejects.toThrow("private/internal");
     });
 });
 
