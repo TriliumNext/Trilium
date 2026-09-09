@@ -630,7 +630,9 @@
     "ai_quick_action": "将这篇笔记作为指令提供给文本编辑器的 AI 助手菜单。标题为操作命名，内容为提示词。",
     "template_new_note_default_parent": "设置在模板笔记上：从该模板创建的笔记（如通过 @ 补全）会放置在目标笔记下，除非显式选择了其他位置。",
     "custom_font": "标记在 Trilium 选项的字体选择器中提供的字体文件，置于笔记自身标题之下。",
-    "enable_inbox_column": "对于看板集合，显示收件箱列，其中列出所有未被分配到看板列的子笔记。"
+    "enable_inbox_column": "对于看板集合，显示收件箱列，其中列出所有未被分配到看板列的子笔记。",
+    "sort_columns": "对于看板集合，指各列对其卡片进行排序的顺序；除非某列被赋予了自己的排序顺序，否则它遵循此顺序。值可为 <code>title</code>, <code>creationDate</code> 或 <code>attr:</code> 后跟提升属性的名称。",
+    "sort_columns_descending": "对于看板集合，按 <code>#sortColumns</code> 的顺序反向运行。"
   },
   "attribute_editor": {
     "help_text_body1": "要添加标签，只需输入例如 <code>#rock</code> ；或者如果你还想同时添加数值，则可输入例如 <code>#year = 2020</code>",
@@ -1149,7 +1151,9 @@
     "delete_attribute": "删除此属性",
     "delete_confirmation": "从该集合中的每一张笔记中删除 <strong>{{name}}</strong> 及其值？此操作无法撤销。",
     "shown_on_items": "在项目上显示",
-    "hidden_from_items": "在项目上隐藏"
+    "hidden_from_items": "在项目上隐藏",
+    "label_name": "标签：{{name}}",
+    "relation_name": "关系：{{name}}"
   },
   "script_executor": {
     "query": "查询",
@@ -2255,7 +2259,8 @@
     "open_note_in_new_split": "在新分屏中打开笔记",
     "open_note_in_new_window": "在新窗口中打开笔记",
     "open_note_in_popup": "快速编辑",
-    "open_note_in_other_split": "在另一个分屏中打开笔记"
+    "open_note_in_other_split": "在另一个分屏中打开笔记",
+    "open_note": "打开笔记"
   },
   "electron_integration": {
     "desktop-application": "桌面应用程序",
@@ -2586,7 +2591,14 @@
     "card-outside-filter": "此卡片在当前筛选范围之外",
     "sort": "排序",
     "sort-manually": "手动",
-    "sorted-no-reorder": "由于这是已排序的列，卡片无法重新排序。"
+    "sorted-no-reorder": "由于这是已排序的列，卡片无法重新排序。",
+    "insert-new": "插入新建",
+    "group-by": "按…对卡片分组",
+    "grouping-already-defined": "该看板已定义“{{- name}}”。请从列表中选择它进行分组。",
+    "sort-cards": "对卡片排序",
+    "sort-board-default": "看板默认",
+    "sort-actions": "更多操作",
+    "reset-columns-to-default": "将所有列重置为默认值"
   },
   "command_palette": {
     "tree-action-name": "树形：{{name}}",
@@ -4158,6 +4170,11 @@
     "title": "标题",
     "creation-date": "创建日期与时间",
     "ascending": "升序",
-    "descending": "降序"
+    "descending": "降序",
+    "default": "默认"
+  },
+  "attribute_menu": {
+    "attributes": "属性",
+    "not-set": "未设置"
   }
 }

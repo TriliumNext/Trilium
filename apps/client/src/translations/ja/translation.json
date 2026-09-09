@@ -762,7 +762,14 @@
     "card-outside-filter": "このカードは現在のフィルタリング範囲外です",
     "sort": "並べ替え",
     "sort-manually": "手動",
-    "sorted-no-reorder": "並べ替えが適用されている列のため、カードの順序を変更することはできません。"
+    "sorted-no-reorder": "並べ替えが適用されている列のため、カードの順序を変更することはできません。",
+    "insert-new": "新しく追加",
+    "group-by": "カードのグループ化",
+    "grouping-already-defined": "\"{{- name}}\" はこのボード上で既に定義されています。リストから選択してグループ化してください。",
+    "sort-cards": "カードの並べ替え",
+    "sort-board-default": "ボードのデフォルト",
+    "sort-actions": "その他の操作",
+    "reset-columns-to-default": "すべての列をデフォルトにリセット"
   },
   "code_buttons": {
     "execute_button_title": "スクリプトを実行",
@@ -1644,14 +1651,17 @@
     "ai_quick_action": "このノートをテキストエディタの AI アシスタントメニューの指示として表示されます。タイトルがアクション名になり、内容がプロンプトになります。",
     "template_new_note_default_parent": "テンプレートノートに設定した場合: テンプレートから作成されたノート（例: @補完機能によるもの）は、明示的に別の場所が選択されない限り、対象のノートの配下に配置されます。",
     "custom_font": "Trilium のオプションにあるフォント選択画面で、ノートのタイトルの下に表示されるフォントファイルを指定します。",
-    "enable_inbox_column": "ボードコレクションの場合、インボックス列が表示され、ボード列に割り当てられていないすべての子ノートが一覧表示されます。"
+    "enable_inbox_column": "ボードコレクションの場合、インボックス列が表示され、ボード列に割り当てられていないすべての子ノートが一覧表示されます。",
+    "sort_columns": "ボードコレクションにおいて、列がカードを並べ替える際の基準となる順序です。列に独自の並べ替え順序が指定されていない限り、この順序が適用されます。<code>title</code>、<code>creationDate</code>、または <code>attr:</code> に続けて昇格(プロモート)された属性名を指定します。",
+    "sort_columns_descending": "ボードコレクションの場合、<code>#sortColumns</code> で指定された順序を逆順にします。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",
     "open_note_in_new_tab": "新しいタブでノートを開く",
     "open_note_in_new_split": "新しく分割してノートを開く",
     "open_note_in_new_window": "新しいウィンドウでノートを開く",
-    "open_note_in_other_split": "他の分割画面でノートを開く"
+    "open_note_in_other_split": "他の分割画面でノートを開く",
+    "open_note": "ノートを開く"
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -2042,7 +2052,9 @@
     "delete_attribute": "この属性を削除",
     "delete_confirmation": "このコレクション内のすべてのノートから <strong>{{name}}</strong> とその値を削除しますか？この操作は元に戻せません。",
     "shown_on_items": "アイテムに表示",
-    "hidden_from_items": "アイテムから非表示"
+    "hidden_from_items": "アイテムから非表示",
+    "label_name": "ラベル: {{name}}",
+    "relation_name": "リレーション: {{name}}"
   },
   "relation_map": {
     "remove_note": "ノートを削除",
@@ -4158,6 +4170,11 @@
     "title": "タイトル",
     "creation-date": "作成日時",
     "ascending": "昇順",
-    "descending": "降順"
+    "descending": "降順",
+    "default": "デフォルト"
+  },
+  "attribute_menu": {
+    "attributes": "属性",
+    "not-set": "未設定"
   }
 }

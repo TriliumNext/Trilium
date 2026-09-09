@@ -23,8 +23,7 @@
 
 Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 오픈 소스 크로스 플랫폼 계층형 노트 작성 애플리케이션입니다.
 
-Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
-Notes", with one `l`.
+"Trillium Notes"를 찾고 계신가요? 이 프로젝트의 공식 표기는 `l`이 하나인 "Trilium Notes"입니다.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 

@@ -10,7 +10,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.49",
     "@ai-sdk/google": "4.0.64",
-    "@ai-sdk/openai": "4.0.59",
+    "@ai-sdk/openai": "4.0.60",
     "@braintree/sanitize-url": "7.1.2",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/turndown-plugin-gfm": "workspace:*",
