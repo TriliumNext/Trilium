@@ -3,7 +3,7 @@ import {note, NoteBuilder} from "../test/becca_mocking.js";
 import becca from "../becca/becca.js";
 import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
-import tree from "./tree.js";
+import tree, { parseSortCriteria } from "./tree.js";
 import {buildNote} from "../test/becca_easy_mocking.js";
 import { getContext } from "./context.js";
 
@@ -176,4 +176,57 @@ describe("Tree", () => {
             expect(orderedTitles).toStrictEqual(["top", "1", "2", "3", "10", "20", "bottom"]);
         }
     )
+
+    it("sorts by several levels, each with its own direction", () => {
+        const note = buildNote({
+            children: [
+                {title: "c", "#priority": "1", "#area": "home"},
+                {title: "b", "#priority": "2", "#area": "work"},
+                {title: "a", "#priority": "2", "#area": "home"},
+                {title: "d", "#priority": "1", "#area": "work"},
+                {title: "e", "#priority": "1", "#area": "home"}
+            ],
+            "#sorted": "priority:desc, area, title:desc"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["a", "b", "e", "c", "d"]);
+    });
+
+    it("applies #sortDirection to the levels without a direction of their own and to the title tiebreak", () => {
+        const note = buildNote({
+            children: [
+                {title: "a", "#priority": "1"},
+                {title: "b", "#priority": "2"},
+                {title: "c", "#priority": "2"},
+                {title: "top", "#top": ""},
+                {title: "bottom", "#bottom": ""}
+            ],
+            "#sorted": "priority:asc,dateCreated",
+            "#sortDirection": "desc"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["top", "a", "c", "b", "bottom"]);
+    });
+
+    it("parses a #sorted value into its levels", () => {
+        expect(parseSortCriteria("")).toEqual([{ key: "title", descending: undefined }]);
+        expect(parseSortCriteria(null)).toEqual([{ key: "title", descending: undefined }]);
+        expect(parseSortCriteria("myOrder")).toEqual([{ key: "myOrder", descending: undefined }]);
+        expect(parseSortCriteria(" priority : DESC , , area:asc, title ")).toEqual([
+            { key: "priority", descending: true },
+            { key: "area", descending: false },
+            { key: "title", descending: undefined }
+        ]);
+        // A colon inside a label name is not a direction flag.
+        expect(parseSortCriteria("calendar:view:desc,calendar:view")).toEqual([
+            { key: "calendar:view", descending: true },
+            { key: "calendar:view", descending: undefined }
+        ]);
+    });
 });

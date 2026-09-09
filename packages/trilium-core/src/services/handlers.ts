@@ -1,7 +1,7 @@
 import eventService from "./events.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
 import scriptService from "./script.js";
-import treeService from "./tree.js";
+import treeService, { parseSortCriteria } from "./tree.js";
 import noteService from "./notes.js";
 import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
@@ -193,9 +193,9 @@ function handleMaybeSortingLabel(entity: BAttribute) {
             }
 
             if (
-                sorted.includes(entity.name) || // hacky check if this label is used in the sort
                 entity.name === "top" ||
-                entity.name === "bottom"
+                entity.name === "bottom" ||
+                parseSortCriteria(sorted).some((criterion) => criterion.key === entity.name)
             ) {
                 treeService.sortNotesIfNeeded(parentNote.noteId);
             }

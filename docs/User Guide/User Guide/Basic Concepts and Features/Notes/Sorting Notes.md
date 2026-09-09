@@ -24,11 +24,11 @@ Child notes can be automatically sorted by attaching specific [labels](../../Adv
     <tbody>
         <tr>
             <td><code spellcheck="false">#sorted</code></td>
-            <td><p>Keeps child notes sorted by title alphabetically.</p><p>When given a value, it will sort by the value of another label instead. If one of the child notes doesn't have the specified label, the title will be used for them instead.</p></td>
+            <td><p>Keeps child notes sorted by title alphabetically.</p><p>When given a value, it will sort by other criteria instead: a comma-separated list of levels, each <code spellcheck="false">title</code>, <code spellcheck="false">dateCreated</code>, <code spellcheck="false">dateModified</code> or the name of a label on the child notes, optionally followed by <code spellcheck="false">:asc</code> or <code spellcheck="false">:desc</code>. For example <code spellcheck="false">#sorted="priority:desc,dueDate"</code> sorts by priority, highest first, and notes of equal priority by due date. If one of the child notes doesn't have a level's label, its title is used in its place.</p></td>
         </tr>
         <tr>
             <td><code spellcheck="false">#sortDirection</code></td>
-            <td><p>If <code spellcheck="false">sorted</code> is applied, specifies the direction of the sort:</p><ul><li><code spellcheck="false">ASC</code>, ascending (default)</li><li><code spellcheck="false">DESC</code>, descending</li></ul></td>
+            <td><p>If <code spellcheck="false">sorted</code> is applied, specifies the direction of the sort:</p><ul><li><code spellcheck="false">ASC</code>, ascending (default)</li><li><code spellcheck="false">DESC</code>, descending</li></ul><p>A level of <code spellcheck="false">sorted</code> with its own <code spellcheck="false">:asc</code> or <code spellcheck="false">:desc</code> keeps that direction regardless.</p></td>
         </tr>
         <tr>
             <td><code spellcheck="false">#sortFoldersFirst</code></td>
@@ -61,6 +61,7 @@ Sorting is done by comparing note properties or specific labels on child notes. 
     *   **Default Sorting**: If `#sorted` has no value, notes are sorted alphabetically.
     *   **Property Sorting**: If `#sorted` is set to `title`, `dateModified`, or `dateCreated`, notes are sorted based on the specified property.
     *   **Label Sorting**: If `#sorted` has any other value, this value is treated as the name of a child note's label, and sorting is based on the values of this label. For example, setting `#sorted=myOrder` on the parent note and using `#myOrder=001`, `#myOrder=002`, etc., on child notes.
+    *   **Multi-Level Sorting**: Several of the above can be combined, separated by commas; each level is applied only where the previous ones are equal. Every level can carry its own direction with `:asc` or `:desc`, otherwise it follows `#sortDirection`. For example `#sorted="priority:desc,area,dateCreated"` sorts by priority, highest first, then by area, then by creation date.
 4.  **Alphabetical Sorting**: Used as a last resort when other criteria result in equality.
 
 All comparisons are made string-wise (e.g., "1" \< "2" or "2020-10-10" < "2021-01-15", but also "2" \> "10").
