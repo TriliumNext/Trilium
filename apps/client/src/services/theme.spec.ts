@@ -28,8 +28,8 @@ function stubComputedStyle(props: Record<string, string>) {
     })) as unknown as typeof window.getComputedStyle;
 }
 
-function setTheme(theme: ThemeValue) {
-    win.glob = { ...(win.glob ?? {}), theme };
+function setTheme(theme: ThemeValue, themeBase?: ThemeValue) {
+    win.glob = { ...(win.glob ?? {}), theme, themeBase };
 }
 
 /** happy-dom models no window visibility, so `document.hidden` is shadowed on the instance. */
@@ -91,6 +91,17 @@ describe("getThemeStyle", () => {
         // A non light/dark CSS value also resolves to auto.
         stubComputedStyle({ "--theme-style": "sepia", "--theme-style-auto": "false" });
         expect(getThemeStyle()).toBe("auto");
+    });
+
+    it("reports a custom theme on the next base as auto", () => {
+        // The base's media-gated stylesheets set --theme-style, so it only reports the OS preference.
+        setTheme("my-theme", "next");
+        stubComputedStyle({ "--theme-style": "dark", "--theme-style-auto": "" });
+        expect(getThemeStyle()).toBe("auto");
+
+        // A fixed base still describes the theme, so the CSS fallback keeps deciding.
+        setTheme("my-theme", "next-dark");
+        expect(getThemeStyle()).toBe("dark");
     });
 
     it("handles a missing window.glob via optional chaining", () => {

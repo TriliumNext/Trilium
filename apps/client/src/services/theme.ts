@@ -18,6 +18,12 @@ export function getThemeStyle(): "auto" | "light" | "dark" {
         return "dark";
     }
 
+    // A custom theme on the `next` base takes --theme-style from the base's media-gated
+    // stylesheets, so the value tracks the OS preference rather than describing the theme.
+    if (window.glob?.themeBase === "next") {
+        return "auto";
+    }
+
     const style = window.getComputedStyle(document.body);
     const themeStyle = style.getPropertyValue("--theme-style");
     if (style.getPropertyValue("--theme-style-auto") !== "true" && (themeStyle === "light" || themeStyle === "dark")) {
