@@ -80,24 +80,24 @@ function wouldAddingBranchCreateCycle(parentNoteId: string, childNoteId: string)
 export interface SortCriterion {
     /** `title`, `dateCreated`, `dateModified` or the name of a label on the child notes. */
     key: string;
-    /** Set by an explicit `:asc`/`:desc` flag; `undefined` follows `#sortDirection`. */
+    /** Set by an explicit `asc`/`desc` after the key; `undefined` follows `#sortDirection`. */
     descending?: boolean;
 }
 
 /**
- * Parses a `#sorted` value such as `priority:desc,dueDate,title` into its levels: comma-separated
- * sort keys, each optionally followed by `:asc` or `:desc`. An empty value sorts by title.
+ * Parses a `#sorted` value such as `priority desc, dueDate, title` into its levels: comma-separated
+ * sort keys, each optionally followed by `asc` or `desc`, the way search's `orderBy` is written.
+ * An empty value sorts by title.
  */
 export function parseSortCriteria(value: string | null | undefined): SortCriterion[] {
     const criteria: SortCriterion[] = [];
     for (const level of (value ?? "").split(",")) {
-        // Only a trailing flag is a direction, so a label name with a colon still works as a key.
-        const separator = level.lastIndexOf(":");
-        const flag = separator === -1 ? "" : level.slice(separator + 1).trim().toLowerCase();
-        const isDirection = flag === "asc" || flag === "desc";
-        const key = (isDirection ? level.slice(0, separator) : level).trim();
+        const words = level.trim().split(/\s+/);
+        const last = words[words.length - 1].toLowerCase();
+        const isDirection = words.length > 1 && (last === "asc" || last === "desc");
+        const key = (isDirection ? words.slice(0, -1) : words).join(" ");
         if (key) {
-            criteria.push({ key, descending: isDirection ? flag === "desc" : undefined });
+            criteria.push({ key, descending: isDirection ? last === "desc" : undefined });
         }
     }
     return criteria.length > 0 ? criteria : [{ key: "title" }];

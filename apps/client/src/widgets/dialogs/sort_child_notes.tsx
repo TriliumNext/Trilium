@@ -173,7 +173,7 @@ export default function SortChildNotesDialog() {
     )
 }
 
-/** Writes the levels in the `#sorted` format the server parses, e.g. `priority:desc,title:asc`. */
+/** Writes the levels in the `#sorted` format the server parses, e.g. `priority desc, title`. */
 export function serializeSortLevels(levels: SortLevel[]) {
     return levels
         .map((level) => ({
@@ -181,6 +181,6 @@ export function serializeSortLevels(levels: SortLevel[]) {
             key: level.kind === "label" ? level.labelName.trim() : level.kind
         }))
         .filter((level) => level.key)
-        .map((level) => `${level.key}:${level.descending ? "desc" : "asc"}`)
-        .join(",");
+        .map((level) => (level.descending ? `${level.key} desc` : level.key))
+        .join(", ");
 }

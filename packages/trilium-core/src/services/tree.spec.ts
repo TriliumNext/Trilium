@@ -186,7 +186,7 @@ describe("Tree", () => {
                 {title: "d", "#priority": "1", "#area": "work"},
                 {title: "e", "#priority": "1", "#area": "home"}
             ],
-            "#sorted": "priority:desc, area, title:desc"
+            "#sorted": "priority desc, area, title desc"
         });
         getContext().init(() => {
             tree.sortNotesIfNeeded(note.noteId);
@@ -204,7 +204,7 @@ describe("Tree", () => {
                 {title: "top", "#top": ""},
                 {title: "bottom", "#bottom": ""}
             ],
-            "#sorted": "priority:asc,dateCreated",
+            "#sorted": "priority asc,dateCreated",
             "#sortDirection": "desc"
         });
         getContext().init(() => {
@@ -273,15 +273,17 @@ describe("Tree", () => {
         expect(parseSortCriteria("")).toEqual([{ key: "title", descending: undefined }]);
         expect(parseSortCriteria(null)).toEqual([{ key: "title", descending: undefined }]);
         expect(parseSortCriteria("myOrder")).toEqual([{ key: "myOrder", descending: undefined }]);
-        expect(parseSortCriteria(" priority : DESC , , area:asc, title ")).toEqual([
+        expect(parseSortCriteria(" priority   DESC , , area asc, title ")).toEqual([
             { key: "priority", descending: true },
             { key: "area", descending: false },
             { key: "title", descending: undefined }
         ]);
-        // A colon inside a label name is not a direction flag.
-        expect(parseSortCriteria("calendar:view:desc,calendar:view")).toEqual([
+        // A colon is an ordinary character of a label name.
+        expect(parseSortCriteria("calendar:view desc,calendar:view")).toEqual([
             { key: "calendar:view", descending: true },
             { key: "calendar:view", descending: undefined }
         ]);
+        // A direction word on its own is a key, not a direction.
+        expect(parseSortCriteria("desc")).toEqual([{ key: "desc", descending: undefined }]);
     });
 });

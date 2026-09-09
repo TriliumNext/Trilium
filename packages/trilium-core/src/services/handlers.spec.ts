@@ -113,7 +113,7 @@ describe("handlers", () => {
 
         it("re-sorts the parent only when the changed label is one of the #sorted levels", () => {
             buildNote({ id: "ml-par", children: [{ id: "ml-chld" }] });
-            addAttribute("ml-par", "label", "sorted", "priority:desc,dueDate");
+            addAttribute("ml-par", "label", "sorted", "priority desc, dueDate");
 
             const unrelated = addAttribute("ml-chld", "label", "priorityNote", "x");
             eventService.emit(eventService.ENTITY_CHANGED, {

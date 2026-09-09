@@ -345,7 +345,7 @@ export interface Api {
         parentNoteId: string,
         sortConfig: {
             /** Comma-separated levels of 'title', 'dateCreated', 'dateModified' or a label name,
-             * each with an optional ':asc' or ':desc' flag, e.g. 'priority:desc,dueDate'. The
+             * each optionally followed by 'asc' or 'desc', e.g. 'priority desc, dueDate'. The
              * format is that of the #sorted label, see "Sorting Notes" in the User Guide. */
             sortBy?: string;
             /** Sorts the levels without a flag of their own descending. */
