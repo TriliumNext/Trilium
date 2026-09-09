@@ -253,20 +253,41 @@ describe("Tree", () => {
         expect(orderedTitles).toStrictEqual(["top1", "top2", "b", "a", "bottom2", "bottom1"]);
     });
 
-    it("sorts a child without the level's label by its title in the label's place", () => {
+    it("sorts children without a level's label after those with it, whatever the direction", () => {
+        const children: Parameters<typeof buildNote>[0]["children"] = [
+            {title: "m", "#order": "z"},
+            {title: "unlabelled"},
+            {title: "a", "#order": "b"}
+        ];
+        for (const [direction, expected] of [
+            ["asc", ["a", "m", "unlabelled"]],
+            ["desc", ["m", "a", "unlabelled"]]
+        ] as const) {
+            const note = buildNote({ children, "#sorted": "order", "#sortDirection": direction });
+            getContext().init(() => {
+                tree.sortNotesIfNeeded(note.noteId);
+            });
+            expect(note.children.map((child) => child.title)).toStrictEqual([...expected]);
+        }
+    });
+
+    it("leaves children that both lack a level's label to the next level", () => {
         const note = buildNote({
             children: [
-                {title: "m", "#order": "z"},
-                {title: "unlabelled"},
-                {title: "a", "#order": "b"}
+                {title: "z", "#priority": "1"},
+                {title: "b", "#dueDate": "2026-02-01"},
+                {title: "c", "#dueDate": "2026-01-01"},
+                {title: "a"}
             ],
-            "#sorted": "order"
+            "#sorted": "priority,dueDate"
         });
         getContext().init(() => {
             tree.sortNotesIfNeeded(note.noteId);
         });
+        // Only "z" has a priority; the other three fall through to dueDate, and "a", lacking that
+        // too, comes last rather than being placed by its title ahead of them.
         const orderedTitles = note.children.map((child) => child.title);
-        expect(orderedTitles).toStrictEqual(["a", "unlabelled", "m"]);
+        expect(orderedTitles).toStrictEqual(["z", "c", "b", "a"]);
     });
 
     it("parses a #sorted value into its levels", () => {
