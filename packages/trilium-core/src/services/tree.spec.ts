@@ -214,6 +214,61 @@ describe("Tree", () => {
         expect(orderedTitles).toStrictEqual(["top", "a", "c", "b", "bottom"]);
     });
 
+    it("keeps folders first under #sortDirection=desc, as the label says", () => {
+        const note = buildNote({
+            children: [
+                {title: "a"},
+                {title: "p1", children: [{title: "1.1"}]},
+                {title: "b"},
+                {title: "p2", children: [{title: "2.1"}]}
+            ],
+            "#sorted": "",
+            "#sortDirection": "desc",
+            "#sortFoldersFirst": ""
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["p2", "p1", "b", "a"]);
+    });
+
+    it("orders several #top and #bottom notes by their values, whatever the direction", () => {
+        const note = buildNote({
+            children: [
+                {title: "bottom2", "#bottom": "2"},
+                {title: "top2", "#top": "2"},
+                {title: "b"},
+                {title: "top1", "#top": "1"},
+                {title: "bottom1", "#bottom": "1"},
+                {title: "a"}
+            ],
+            "#sorted": "",
+            "#sortDirection": "desc"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["top1", "top2", "b", "a", "bottom2", "bottom1"]);
+    });
+
+    it("sorts a child without the level's label by its title in the label's place", () => {
+        const note = buildNote({
+            children: [
+                {title: "m", "#order": "z"},
+                {title: "unlabelled"},
+                {title: "a", "#order": "b"}
+            ],
+            "#sorted": "order"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["a", "unlabelled", "m"]);
+    });
+
     it("parses a #sorted value into its levels", () => {
         expect(parseSortCriteria("")).toEqual([{ key: "title", descending: undefined }]);
         expect(parseSortCriteria(null)).toEqual([{ key: "title", descending: undefined }]);
