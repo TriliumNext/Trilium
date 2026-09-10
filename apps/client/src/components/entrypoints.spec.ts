@@ -44,7 +44,8 @@ describe("logoutCommand", () => {
             ...window.glob,
             baseApiUrl: "api/",
             csrfToken: "csrf-test-token",
-            httpBaseUrl: undefined
+            httpBaseUrl: undefined,
+            isElectron: false
         };
     });
 
@@ -57,7 +58,9 @@ describe("logoutCommand", () => {
         expect(form).not.toBeNull();
         expect(form?.method).toBe("POST");
         expect(form?.action).toBe("http://localhost:3000/logout");
-        expect(form?.querySelector("input[name='x-csrf-token']")?.getAttribute("value")).toBe("csrf-test-token");
+        expect(
+            form?.querySelector("input[name='x-csrf-token']")?.getAttribute("value")
+        ).toBe("csrf-test-token");
         expect(submit).toHaveBeenCalledOnce();
     });
 
@@ -68,6 +71,21 @@ describe("logoutCommand", () => {
         await entrypoints.logoutCommand();
 
         expect(document.body.querySelector("form")?.action).toBe("http://127.0.0.1:37742/logout");
+    });
+
+    it("keeps Electron logout on the trusted app protocol", async () => {
+        const happyDOM = (window as unknown as {
+            happyDOM: { setURL(url: string): void }
+        }).happyDOM;
+        happyDOM.setURL("trilium-app://app/");
+        window.glob.isElectron = true;
+        window.glob.httpBaseUrl = "http://127.0.0.1:37742";
+        vi.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => {});
+
+        await entrypoints.logoutCommand();
+
+        expect(document.body.querySelector("form")?.action).toBe("trilium-app://app/logout");
+        happyDOM.setURL("http://localhost:3000/");
     });
 
     it("keeps the browser deployment path", async () => {

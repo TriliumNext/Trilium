@@ -1,6 +1,34 @@
 import { describe, expect, it } from "vitest";
 
-import { describeError, extractOAuthErrorDetail } from "./error_handlers.js";
+import {
+    describeError,
+    extractOAuthErrorDetail,
+    isLogoutFormNavigation
+} from "./error_handlers.js";
+
+describe("isLogoutFormNavigation", () => {
+    it("recognizes HTML form posts to logout", () => {
+        const req = {
+            method: "POST",
+            path: "/logout",
+            headers: { accept: "text/html,application/xhtml+xml" },
+            is: () => "application/x-www-form-urlencoded"
+        };
+
+        expect(isLogoutFormNavigation(req as never)).toBe(true);
+    });
+
+    it("does not classify API requests as navigations", () => {
+        const req = {
+            method: "POST",
+            path: "/logout",
+            headers: { accept: "application/json" },
+            is: () => "application/x-www-form-urlencoded"
+        };
+
+        expect(isLogoutFormNavigation(req as never)).toBe(false);
+    });
+});
 
 describe("extractOAuthErrorDetail", () => {
     it("combines OAuth error code and description", () => {
