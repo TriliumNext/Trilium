@@ -12,12 +12,12 @@ vi.mock("../../services/i18n", () => ({
 }));
 
 describe("serializeSortLevels", () => {
-    it("writes each level as key:direction, skipping a label level with no name", () => {
+    it("writes each level as its key plus desc where descending, skipping a nameless label", () => {
         expect(serializeSortLevels([
-            { kind: "label", labelName: " priority ", descending: true },
-            { kind: "label", labelName: "", descending: false },
-            { kind: "dateCreated", labelName: "", descending: false },
-            { kind: "title", labelName: "ignored", descending: true }
+            { kind: "label", labelName: " priority ", direction: "desc" },
+            { kind: "label", labelName: "", direction: "asc" },
+            { kind: "dateCreated", labelName: "", direction: "asc" },
+            { kind: "title", labelName: "ignored", direction: "desc" }
         ])).toBe("priority desc, dateCreated, title desc");
     });
 });
@@ -81,8 +81,9 @@ describe("SortChildNotesDialog", () => {
         });
     }
 
-    it("starts with one level and sends the classic single-criterion sort", async () => {
+    it("starts with one unremovable level and sends the single-criterion sort", async () => {
         expect(levels()).toHaveLength(1);
+        expect(levels()[0].querySelector(".sort-level-remove")).toHaveProperty("disabled", true);
         await submit();
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
             sortBy: "title",
@@ -126,8 +127,15 @@ describe("SortChildNotesDialog", () => {
         }));
     });
 
-    it("keeps the only level from being removed", () => {
-        const remove = levels()[0].querySelector<HTMLButtonElement>(".sort-level-remove[disabled]");
-        expect(remove).not.toBeNull();
+    it("refuses a label name the attribute rules would not allow", async () => {
+        await choose(levels()[0].querySelector("select"), "label");
+        const input = levels()[0].querySelector<HTMLInputElement>(".sort-level-label");
+        await type(input, "priority desc");
+        expect(input?.checkValidity()).toBe(false);
+        // A browser compiles `pattern` with the v flag, which happy-dom lacks; check the rule itself.
+        const pattern = new RegExp(`^(?:${input?.getAttribute("pattern")})$`, "v");
+        expect(pattern.test("priority")).toBe(true);
+        expect(pattern.test("calendar:view")).toBe(true);
+        expect(pattern.test("priority desc")).toBe(false);
     });
 });

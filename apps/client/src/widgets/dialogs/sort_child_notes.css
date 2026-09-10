@@ -3,6 +3,7 @@
     :where(body:not(.mobile)) & .modal-dialog {
         width: fit-content;
         min-width: 440px;
+        max-width: 680px;
     }
 
     .modal-body > :not(.sort-criteria),

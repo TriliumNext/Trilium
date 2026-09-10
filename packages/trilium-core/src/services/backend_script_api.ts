@@ -344,11 +344,10 @@ export interface Api {
     sortNotes(
         parentNoteId: string,
         sortConfig: {
-            /** Comma-separated levels of 'title', 'dateCreated', 'dateModified' or a label name,
-             * each optionally followed by 'asc' or 'desc', e.g. 'priority desc, dueDate'. The
-             * format is that of the #sorted label, see "Sorting Notes" in the User Guide. */
+            /** The `#sorted` grammar: 'title', 'dateCreated', 'dateModified' or a label name per
+             * level, each optionally followed by 'asc' or 'desc', e.g. 'priority desc, dueDate'. */
             sortBy?: string;
-            /** Sorts the levels without a flag of their own descending. */
+            /** Descending for levels without their own direction, the folders grouping and ties. */
             reverse?: boolean;
             foldersFirst?: boolean;
         }

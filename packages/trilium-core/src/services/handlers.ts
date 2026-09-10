@@ -1,7 +1,9 @@
+import { parseSortCriteria } from "@triliumnext/commons";
+
 import eventService from "./events.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
 import scriptService from "./script.js";
-import treeService, { parseSortCriteria } from "./tree.js";
+import treeService from "./tree.js";
 import noteService from "./notes.js";
 import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";

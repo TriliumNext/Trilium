@@ -1,5 +1,10 @@
 import "./sort_child_notes.css";
 
+import {
+    ATTRIBUTE_NAME_PATTERN,
+    serializeSortCriteria,
+    type SortCriterion
+} from "@triliumnext/commons";
 import { useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
@@ -12,7 +17,7 @@ import FormSelect from "../react/FormSelect";
 import FormTextBox from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
-import SegmentedChoice from "../react/SegmentedChoice";
+import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 
 type SortKind = "title" | "dateCreated" | "dateModified" | "label";
 
@@ -20,10 +25,10 @@ interface SortLevel {
     kind: SortKind;
     /** The label the level sorts by; only read where {@link kind} is `label`. */
     labelName: string;
-    descending: boolean;
+    direction: "asc" | "desc";
 }
 
-const NEW_LEVEL: SortLevel = { kind: "title", labelName: "", descending: false };
+const NEW_LEVEL: SortLevel = { kind: "title", labelName: "", direction: "asc" };
 
 export default function SortChildNotesDialog() {
     const [ parentNoteId, setParentNoteId ] = useState<string>();
@@ -57,7 +62,7 @@ export default function SortChildNotesDialog() {
         { kind: "dateModified", title: t("sort_child_notes.date_modified") },
         { kind: "label", title: t("sort_child_notes.label") }
     ];
-    const directionOptions = [
+    const directionOptions: SegmentedChoiceOption<SortLevel["direction"]>[] = [
         { value: "asc", icon: "bx-sort-up", title: t("sort_child_notes.ascending") },
         { value: "desc", icon: "bx-sort-down", title: t("sort_child_notes.descending") }
     ];
@@ -78,7 +83,7 @@ export default function SortChildNotesDialog() {
         <Modal
             className="sort-child-notes-dialog"
             title={t("sort_child_notes.sort_children_by")}
-            size="lg" maxWidth={680}
+            size="lg"
             onSubmit={onSubmit}
             onHidden={() => setShown(false)}
             show={shown}
@@ -108,16 +113,15 @@ export default function SortChildNotesDialog() {
                                     className="sort-level-label"
                                     placeholder={t("sort_child_notes.label_name")}
                                     required
+                                    pattern={ATTRIBUTE_NAME_PATTERN}
                                     currentValue={level.labelName}
                                     onChange={(labelName) => updateLevel(index, { labelName })}
                                 />
                             )}
                             <SegmentedChoice
                                 options={directionOptions}
-                                currentValue={level.descending ? "desc" : "asc"}
-                                onChange={(direction) => {
-                                    updateLevel(index, { descending: direction === "desc" });
-                                }}
+                                currentValue={level.direction}
+                                onChange={(direction) => updateLevel(index, { direction })}
                             />
                             <ActionButton
                                 className="sort-level-up"
@@ -145,7 +149,7 @@ export default function SortChildNotesDialog() {
                 </div>
                 <Button
                     className="sort-level-add"
-                    icon="bx bx-plus"
+                    icon="bx-plus"
                     text={t("sort_child_notes.add_level")}
                     size="small"
                     onClick={() => setLevels([ ...levels, NEW_LEVEL ])}
@@ -173,14 +177,14 @@ export default function SortChildNotesDialog() {
     )
 }
 
-/** Writes the levels in the `#sorted` format the server parses, e.g. `priority desc, title`. */
+/** Writes the levels in the `#sorted` grammar, skipping a label level that names no label. */
 export function serializeSortLevels(levels: SortLevel[]) {
-    return levels
-        .map((level) => ({
-            ...level,
-            key: level.kind === "label" ? level.labelName.trim() : level.kind
-        }))
-        .filter((level) => level.key)
-        .map((level) => (level.descending ? `${level.key} desc` : level.key))
-        .join(", ");
+    const criteria: SortCriterion[] = [];
+    for (const level of levels) {
+        const key = level.kind === "label" ? level.labelName.trim() : level.kind;
+        if (key) {
+            criteria.push({ key, descending: level.direction === "desc" });
+        }
+    }
+    return serializeSortCriteria(criteria);
 }

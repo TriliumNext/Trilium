@@ -1,5 +1,7 @@
 "use strict";
 
+import { parseSortCriteria } from "@triliumnext/commons";
+
 import { getLog } from "./log.js";
 import BBranch from "../becca/entities/bbranch.js";
 import entityChangesService from "./entity_changes.js";
@@ -77,36 +79,9 @@ function wouldAddingBranchCreateCycle(parentNoteId: string, childNoteId: string)
     return parentAncestorNoteIds.some((parentAncestorNoteId) => childSubtreeNoteIds.has(parentAncestorNoteId));
 }
 
-export interface SortCriterion {
-    /** `title`, `dateCreated`, `dateModified` or the name of a label on the child notes. */
-    key: string;
-    /** Set by an explicit `asc`/`desc` after the key; `undefined` follows `#sortDirection`. */
-    descending?: boolean;
-}
-
 /**
- * Parses a `#sorted` value such as `priority desc, dueDate, title` into its levels: comma-separated
- * sort keys, each optionally followed by `asc` or `desc`, the way search's `orderBy` is written.
- * An empty value sorts by title.
- */
-export function parseSortCriteria(value: string | null | undefined): SortCriterion[] {
-    const criteria: SortCriterion[] = [];
-    for (const level of (value ?? "").split(",")) {
-        const words = level.trim().split(/\s+/);
-        const last = words[words.length - 1].toLowerCase();
-        const isDirection = words.length > 1 && (last === "asc" || last === "desc");
-        const key = (isDirection ? words.slice(0, -1) : words).join(" ");
-        if (key) {
-            criteria.push({ key, descending: isDirection ? last === "desc" : undefined });
-        }
-    }
-    return criteria.length > 0 ? criteria : [{ key: "title" }];
-}
-
-/**
- * Sorts the children of `parentNoteId` by the levels of `sortBy` (see {@link parseSortCriteria});
- * a level without its own direction, the folders-first grouping and the final title tiebreak
- * follow `reverse`; `#top` and `#bottom` take precedence over everything and ignore it.
+ * Sorts the children of `parentNoteId` by the levels of `sortBy`; `reverse` is the direction of a
+ * level without its own, of the folders grouping and of ties, never of `#top` and `#bottom`.
  */
 function sortNotes(
     parentNoteId: string,
@@ -139,8 +114,8 @@ function sortNotes(
                 const prefix = branch?.prefix;
                 rawValue = prefix ? `${prefix} - ${note.title}` : note.title;
             } else {
-                rawValue = ["dateCreated", "dateModified"].includes(key)
-                    ? (note as any)[key]
+                rawValue = key === "dateCreated" || key === "dateModified"
+                    ? note[key] ?? null
                     : note.getLabelValue(key);
             }
 
@@ -185,7 +160,7 @@ function sortNotes(
                 const aHasChildren = a.hasChildren();
                 const bHasChildren = b.hasChildren();
 
-                // Folders group first ascending and last descending, as the single-key sort did.
+                // Folders group first ascending and last descending.
                 if (aHasChildren !== bHasChildren) {
                     return (aHasChildren ? -1 : 1) * (reverse ? -1 : 1);
                 }
