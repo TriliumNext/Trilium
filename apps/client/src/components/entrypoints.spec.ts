@@ -64,36 +64,37 @@ describe("logoutCommand", () => {
         expect(submit).toHaveBeenCalledOnce();
     });
 
-    it("uses the server origin supplied to the Electron renderer", async () => {
+    it("selects the correct logout target for each runtime", async () => {
+        const submit = vi.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => {});
+        const actions: string[] = [];
+
         window.glob.httpBaseUrl = "http://127.0.0.1:37742";
-        vi.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => {});
-
         await entrypoints.logoutCommand();
+        actions.push(document.body.querySelector("form")?.action ?? "");
 
-        expect(document.body.querySelector("form")?.action).toBe("http://127.0.0.1:37742/logout");
-    });
-
-    it("keeps Electron logout on the trusted app protocol", async () => {
+        document.body.replaceChildren();
         const happyDOM = (window as unknown as {
             happyDOM: { setURL(url: string): void }
         }).happyDOM;
         happyDOM.setURL("trilium-app://app/");
         window.glob.isElectron = true;
-        window.glob.httpBaseUrl = "http://127.0.0.1:37742";
-        vi.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => {});
-
         await entrypoints.logoutCommand();
+        actions.push(document.body.querySelector("form")?.action ?? "");
 
-        expect(document.body.querySelector("form")?.action).toBe("trilium-app://app/logout");
+        document.body.replaceChildren();
+        window.glob.isElectron = false;
+        window.glob.httpBaseUrl = undefined;
         happyDOM.setURL("http://localhost:3000/");
-    });
-
-    it("keeps the browser deployment path", async () => {
         window.history.replaceState({}, "", "/trilium/");
-        vi.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => {});
-
         await entrypoints.logoutCommand();
+        actions.push(document.body.querySelector("form")?.action ?? "");
+        happyDOM.setURL("http://localhost:3000/");
 
-        expect(document.body.querySelector("form")?.action).toBe("http://localhost:3000/trilium/logout");
+        expect(actions).toEqual([
+            "http://127.0.0.1:37742/logout",
+            "trilium-app://app/logout",
+            "http://localhost:3000/trilium/logout"
+        ]);
+        expect(submit).toHaveBeenCalledTimes(3);
     });
 });
