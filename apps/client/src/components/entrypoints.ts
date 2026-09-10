@@ -104,10 +104,11 @@ export default class Entrypoints extends Component {
         // Electron keeps the request on its trusted custom protocol.
         const form = document.createElement("form");
         form.method = "POST";
+        const httpBaseUrl = window.glob.httpBaseUrl;
         form.action = window.glob.isElectron
             ? new URL(`${window.glob.baseApiUrl}../logout`, window.location.href).href
-            : window.glob.httpBaseUrl
-                ? new URL("/logout", window.glob.httpBaseUrl).href
+            : httpBaseUrl
+                ? new URL("/logout", httpBaseUrl).href
                 : new URL(`${window.glob.baseApiUrl}../logout`, window.location.href).href;
         form.hidden = true;
 

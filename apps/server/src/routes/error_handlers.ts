@@ -68,8 +68,8 @@ function register(app: Application) {
 export function isLogoutFormNavigation(req: Request): boolean {
     return req.method === "POST"
         && req.path === "/logout"
-        && req.is("application/x-www-form-urlencoded")
-        && req.headers.accept?.includes("text/html") === true;
+        && req.is("application/x-www-form-urlencoded") === "application/x-www-form-urlencoded"
+        && req.get("Accept")?.includes("text/html") === true;
 }
 
 /**
