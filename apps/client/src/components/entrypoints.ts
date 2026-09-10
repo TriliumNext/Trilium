@@ -105,17 +105,19 @@ export default class Entrypoints extends Component {
         const form = document.createElement("form");
         form.method = "POST";
         const httpBaseUrl = window.glob.httpBaseUrl;
-        form.action = window.glob.isElectron
-            ? new URL(`${window.glob.baseApiUrl}../logout`, window.location.href).href
-            : httpBaseUrl
-                ? new URL("/logout", httpBaseUrl).href
-                : new URL(`${window.glob.baseApiUrl}../logout`, window.location.href).href;
+        if (window.glob.isElectron) {
+            form.action = String(new URL(`${window.glob.baseApiUrl}../logout`, window.location.href).href);
+        } else if (httpBaseUrl) {
+            form.action = String(new URL("/logout", httpBaseUrl).href);
+        } else {
+            form.action = String(new URL(`${window.glob.baseApiUrl}../logout`, window.location.href).href);
+        }
         form.hidden = true;
 
         const csrfToken = document.createElement("input");
         csrfToken.type = "hidden";
         csrfToken.name = "x-csrf-token";
-        csrfToken.value = window.glob.csrfToken;
+        csrfToken.value = window.glob.csrfToken ?? "";
         form.append(csrfToken);
 
         document.body.append(form);
