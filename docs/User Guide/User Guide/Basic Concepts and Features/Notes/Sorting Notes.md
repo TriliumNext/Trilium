@@ -32,7 +32,7 @@ Child notes can be automatically sorted by attaching specific [labels](../../Adv
         </tr>
         <tr>
             <td><code spellcheck="false">#sortFoldersFirst</code></td>
-            <td>If <code spellcheck="false">sorted</code> is applied, folders (notes with children) will be sorted as a group at the top, and the rest will be sorted.</td>
+            <td>If <code spellcheck="false">sorted</code> is applied, folders (notes with children) will be sorted as a group at the top (at the bottom when <code spellcheck="false">#sortDirection</code> is <code spellcheck="false">desc</code>), and the rest will be sorted.</td>
         </tr>
         <tr>
             <td><code spellcheck="false">#sortNatural</code></td>
