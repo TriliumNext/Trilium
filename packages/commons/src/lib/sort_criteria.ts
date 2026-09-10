@@ -25,9 +25,14 @@ export function parseSortCriteria(value: string | null | undefined): SortCriteri
     return criteria.length > 0 ? criteria : [{ key: "title" }];
 }
 
-/** Writes levels back into the `#sorted` grammar; a level that is not descending is written bare. */
+/** Writes levels back into the `#sorted` grammar; only a level without a direction is bare. */
 export function serializeSortCriteria(criteria: SortCriterion[]) {
     return criteria
-        .map(({ key, descending }) => (descending ? `${key} desc` : key))
+        .map(({ key, descending }) => {
+            if (descending === undefined) {
+                return key;
+            }
+            return `${key} ${descending ? "desc" : "asc"}`;
+        })
         .join(", ");
 }

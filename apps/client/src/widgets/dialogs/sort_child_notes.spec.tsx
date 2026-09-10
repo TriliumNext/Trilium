@@ -18,7 +18,7 @@ describe("serializeSortLevels", () => {
             { kind: "label", labelName: "", direction: "asc" },
             { kind: "dateCreated", labelName: "", direction: "asc" },
             { kind: "title", labelName: "ignored", direction: "desc" }
-        ])).toBe("priority desc, dateCreated, title desc");
+        ])).toBe("priority desc, dateCreated asc, title desc");
     });
 });
 
@@ -86,7 +86,7 @@ describe("SortChildNotesDialog", () => {
         expect(levels()[0].querySelector(".sort-level-remove")).toHaveProperty("disabled", true);
         await submit();
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
-            sortBy: "title",
+            sortBy: "title asc",
             foldersFirst: false,
             sortNatural: false
         }));
@@ -109,7 +109,7 @@ describe("SortChildNotesDialog", () => {
 
         await submit();
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
-            sortBy: "priority desc, dateModified"
+            sortBy: "priority desc, dateModified asc"
         }));
     });
 
@@ -123,7 +123,7 @@ describe("SortChildNotesDialog", () => {
         await click(second.querySelector(".sort-level-up"));
         await submit();
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
-            sortBy: "dateCreated, title"
+            sortBy: "dateCreated asc, title asc"
         }));
     });
 

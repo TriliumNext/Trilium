@@ -28,8 +28,7 @@ describe("sort criteria", () => {
             { key: "title", descending: undefined }
         ];
         const written = serializeSortCriteria(criteria);
-        expect(written).toBe("priority desc, dateCreated, title");
-        expect(parseSortCriteria(written).map((c) => Boolean(c.descending)))
-            .toEqual(criteria.map((c) => Boolean(c.descending)));
+        expect(written).toBe("priority desc, dateCreated asc, title");
+        expect(parseSortCriteria(written)).toEqual(criteria);
     });
 });

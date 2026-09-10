@@ -177,7 +177,7 @@ export default function SortChildNotesDialog() {
     )
 }
 
-/** Writes the levels in the `#sorted` grammar, skipping a label level that names no label. */
+/** Writes the levels in the `#sorted` grammar with their directions, skipping a nameless label. */
 export function serializeSortLevels(levels: SortLevel[]) {
     const criteria: SortCriterion[] = [];
     for (const level of levels) {
