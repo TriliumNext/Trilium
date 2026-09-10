@@ -96,6 +96,21 @@ describe("HtmlExportProvider", () => {
             expect(rewriteFn.mock.calls[0][1]).toBe(noteMeta);
         });
 
+        it("keeps the space after an inline tag that the pretty-printer wraps inside of", () => {
+            const { provider } = buildProvider({ zipExportOptions: { skipHtmlTemplate: true } });
+            const noteMeta: NoteMeta = { format: "html", notePath: ["root", "leaf"] };
+            // Long enough that the 70-column wrap lands inside the third <code> tag.
+            const content = "<p>When given a value, it will sort by other criteria instead: a comma-separated "
+                + "list of levels, each <code spellcheck=\"false\">title</code>, "
+                + "<code spellcheck=\"false\">dateCreated</code>, "
+                + "<code spellcheck=\"false\">dateModified</code> or the name of a label on the child notes.</p>";
+
+            const result = provider.prepareContent("Sorting", content, noteMeta) as string;
+
+            expect(result).not.toMatch(/<\/code>[A-Za-z]/);
+            expect(result.replace(/\s+/g, " ")).toContain("</code> or the name of a label");
+        });
+
         it("uses a bare style.css path for a top-level note (notePath length 1)", () => {
             const { provider } = buildProvider();
             const result = provider.prepareContent("T", "<p>x</p>", {

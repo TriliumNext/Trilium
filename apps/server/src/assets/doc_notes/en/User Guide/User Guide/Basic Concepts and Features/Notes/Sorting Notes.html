@@ -5,10 +5,8 @@
   sort future notes added to this parent note.</p>
 <p>The sorting dialog allows:</p>
 <ul>
-  <li>Sorting by title, creation or modification date, or by the value of a
-    label on the child notes.</li>
-  <li>Sorting by several such criteria in turn, each ascending or descending:
-    the next level only decides between notes the previous ones left equal.</li>
+  <li>Sorting by title, creation or modification date.</li>
+  <li>Changing sorting direction can also be adjusted (ascending or descending).</li>
   <li>Ensuring folders are displayed at the top.</li>
   <li>Natural sort, based on the sorting rules of a particular language.</li>
 </ul>
@@ -29,16 +27,9 @@
         </td>
         <td>
           <p>Keeps child notes sorted by title alphabetically.</p>
-          <p>When given a value, it will sort by other criteria instead: a comma-separated
-            list of levels, each <code spellcheck="false">title</code>, <code spellcheck="false">dateCreated</code>,
-            <code
-            spellcheck="false">dateModified</code>or the name of a label on the child notes, optionally
-              followed by <code spellcheck="false">asc</code> or <code spellcheck="false">desc</code>,
-              as in a search's <code spellcheck="false">orderBy</code>. For example
-              <code
-              spellcheck="false">#sorted="priority desc, dueDate"</code>sorts by priority, highest first,
-                and notes of equal priority by due date. If one of the child notes doesn't
-                have a level's label, its title is used in its place.</p>
+          <p>When given a value, it will sort by the value of another label instead.
+            If one of the child notes doesn't have the specified label, the title will
+            be used for them instead.</p>
         </td>
       </tr>
       <tr>
@@ -51,9 +42,6 @@
             <li><code spellcheck="false">ASC</code>, ascending (default)</li>
             <li><code spellcheck="false">DESC</code>, descending</li>
           </ul>
-          <p>A level of <code spellcheck="false">sorted</code> followed by its own
-            <code
-            spellcheck="false">asc</code>or <code spellcheck="false">desc</code> keeps that direction regardless.</p>
         </td>
       </tr>
       <tr>
@@ -70,8 +58,7 @@
       <tr>
         <td><code spellcheck="false">#sortLocale</code>
         </td>
-        <td>The language code driving the natural sort (e.g. <code spellcheck="false">zh-CN</code>,
-          <code
+        <td>The language code driving the natural sort (e.g. <code spellcheck="false">zh-CN</code>, <code
           spellcheck="false">de</code>). Only meaningful together with <code spellcheck="false">#sortNatural</code>.</td>
       </tr>
       <tr>
@@ -110,18 +97,10 @@
         the specified property.</li>
       <li><strong>Label Sorting</strong>: If <code spellcheck="false">#sorted</code> has
         any other value, this value is treated as the name of a child note's label,
-        and sorting is based on the values of this label. For example, setting
-        <code
-        spellcheck="false">#sorted=myOrder</code>on the parent note and using <code spellcheck="false">#myOrder=001</code>,
-          <code
-          spellcheck="false">#myOrder=002</code>, etc., on child notes.</li>
-      <li><strong>Multi-Level Sorting</strong>: Several of the above can be combined,
-        separated by commas; each level is applied only where the previous ones
-        are equal. Every level can carry its own direction as a word after the
-        name, <code spellcheck="false">asc</code> or <code spellcheck="false">desc</code>,
-        otherwise it follows <code spellcheck="false">#sortDirection</code>. For
-        example <code spellcheck="false">#sorted="priority desc, area, dateCreated"</code> sorts
-        by priority, highest first, then by area, then by creation date.</li>
+        and sorting is based on the values of this label. For example, setting <code
+        spellcheck="false">#sorted=myOrder</code> on the parent note and using <code
+        spellcheck="false">#myOrder=001</code>, <code spellcheck="false">#myOrder=002</code>,
+        etc., on child notes.</li>
     </ul>
   </li>
   <li><strong>Alphabetical Sorting</strong>: Used as a last resort when other

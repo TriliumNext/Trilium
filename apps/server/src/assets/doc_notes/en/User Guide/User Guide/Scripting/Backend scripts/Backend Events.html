@@ -146,14 +146,12 @@
   </table>
 </figure>
 <h2>Origin entity</h2>
-<p>When a script is run by an event such as the ones described above,
-  <code
-  spellcheck="false">api.originEntity</code>will get populated with the note, branch or attribute
-    that triggered the change.</p>
+<p>When a script is run by an event such as the ones described above, <code
+  spellcheck="false">api.originEntity</code> will get populated with the note,
+  branch or attribute that triggered the change.</p>
 <p>For example, here's a script with <code spellcheck="false">~runOnAttributeChange</code> which
-  automatically changes the color of a note based on the value of the
-  <code
-  spellcheck="false">mycategory</code>label:</p><pre><code class="language-text-javascript">const attr = api.originEntity;
+  automatically changes the color of a note based on the value of the <code
+  spellcheck="false">mycategory</code> label:</p><pre><code class="language-text-javascript">const attr = api.originEntity;
 if (attr.name !== "mycategory") return;
 const note = api.getNote(attr.noteId);
 if (attr.value === "Health") {

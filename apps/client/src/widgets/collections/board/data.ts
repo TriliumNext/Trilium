@@ -18,32 +18,50 @@ export interface ColumnItem {
 export type ColumnMap = Map<string, ColumnItem[]>;
 
 /**
- * The columns as they stand once a card has moved, for drawing the outcome before the writes land.
+ * The columns as they stand once cards have moved, for drawing the outcome before the writes land.
  *
  * A card crossing columns is written twice, the value first and the branch after, and each lands a
  * redraw of its own. The first shows the card in its new column at whatever place its old branch
  * gives it, which is above every card already there.
  *
- * @param index where the card goes, counting the target column as it stands at the moment of the
- *              drop, the card itself included where it does not leave its column.
+ * The cards keep the order `noteIds` lists them in, wherever they came from, and land together.
+ * A card the board does not hold is left out; where that is all of them, the map is handed back as
+ * it stands.
+ *
+ * @param index where the cards go, counting the target column as it stands at the moment of the
+ *              drop, the cards being moved included where they do not leave that column.
  */
-export function applyCardMove(
-    byColumn: ColumnMap, noteId: string, from: string, to: string, index: number
+export function applyCardMoves(
+    byColumn: ColumnMap, noteIds: string[], to: string, index: number
 ): ColumnMap {
-    const source = [ ...(byColumn.get(from) ?? []) ];
-    const at = source.findIndex((item) => item.note.noteId === noteId);
-    if (at < 0) {
+    const moving = new Set(noteIds);
+    const next: ColumnMap = new Map();
+    const picked = new Map<string, ColumnItem>();
+
+    for (const [ column, items ] of byColumn) {
+        const kept: ColumnItem[] = [];
+        for (const item of items) {
+            if (moving.has(item.note.noteId)) {
+                picked.set(item.note.noteId, item);
+            } else {
+                kept.push(item);
+            }
+        }
+
+        next.set(column, kept);
+    }
+
+    if (!picked.size) {
         return byColumn;
     }
 
-    const [ moved ] = source.splice(at, 1);
-    const next = new Map(byColumn);
-    next.set(from, source);
-
-    const target = from === to ? source : [ ...(byColumn.get(to) ?? []) ];
-    // Taking the card out shifts everything after it up one, so a place beyond where it stood
-    // names one card earlier in the list left behind.
-    target.splice(from === to && index > at ? index - 1 : index, 0, moved);
+    // Taking the cards out shifts everything below them up, so a place counted with them still in
+    // the column names one card earlier for each of them standing above it.
+    const above = (byColumn.get(to) ?? []).slice(0, index)
+        .filter((item) => moving.has(item.note.noteId)).length;
+    const target = next.get(to) ?? [];
+    target.splice(index - above, 0,
+        ...noteIds.flatMap((noteId) => picked.get(noteId) ?? []));
     next.set(to, target);
 
     return next;

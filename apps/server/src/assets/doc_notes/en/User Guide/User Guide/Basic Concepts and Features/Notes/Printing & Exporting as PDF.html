@@ -64,8 +64,7 @@
 <aside class="admonition note">
   <p>Most of the options here (expect printer &amp; which pages to print) are
     managed at note level through&nbsp;<a class="reference-link" href="#root/_help_zEY4DaJG4YT5">Attributes</a>&nbsp;(such
-    as <code spellcheck="false">#printLandscape</code>, <code spellcheck="false">#printPageSize</code>,
-    <code
+    as <code spellcheck="false">#printLandscape</code>, <code spellcheck="false">#printPageSize</code>, <code
     spellcheck="false">#printScale</code>, <code spellcheck="false">#printMargins</code>).</p>
   <p>This means that the print settings will be restored when printing the
     same note. There are no default settings that can be configured for all
@@ -83,13 +82,12 @@
   constraints and it will be hidden.</p>
 <h2>Reporting issues with the rendering</h2>
 <p>Should you encounter any visual issues in the resulting PDF file (e.g.
-  a table does not fit properly, there is cut off text, etc.) feel free to
-  <a
-  href="#root/_help_wy8So3yZZlH9">report the issue</a>. In this case, it's best to offer a sample note (click
-    on the
-    <img src="Printing & Exporting as PDF_image.png" width="29"
-    height="31">button, select Export note → This note and all of its descendants → HTML
-    in ZIP archive). Make sure not to accidentally leak any personal information.</p>
+  a table does not fit properly, there is cut off text, etc.) feel free to <a
+  href="#root/_help_wy8So3yZZlH9">report the issue</a>. In this case, it's best
+  to offer a sample note (click on the
+  <img src="Printing & Exporting as PDF_image.png"
+  width="29" height="31">button, select Export note → This note and all of its descendants → HTML
+  in ZIP archive). Make sure not to accidentally leak any personal information.</p>
 <p>Consider adjusting font sizes and using <a href="#root/_help_CohkqWQC1iBv">page breaks</a> to
   work around the layout.</p>
 <aside class="admonition tip">
@@ -158,8 +156,7 @@
         where each slide/sub-note is displayed.
         <ul>
           <li>Most note types are supported, especially the ones that have an image
-            representation such as&nbsp;<a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>&nbsp;and&nbsp;
-            <a
+            representation such as&nbsp;<a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>&nbsp;and&nbsp;<a
             class="reference-link" href="#root/_help_gBbsAeiuUxI5">Mind Map</a>.</li>
         </ul>
       </li>
@@ -191,8 +188,7 @@
   <li>Create a CSS <a href="#root/_help_6f9hih2hXXZk">code note</a>.</li>
   <li>On the note being printed, apply the <code spellcheck="false">~printCss</code> relation
     to point to the newly created CSS code note.</li>
-  <li>To apply the CSS to multiple notes, consider using <a href="#root/_help_bwZpz2ajCEwO">inheritable attributes</a> or&nbsp;
-    <a
+  <li>To apply the CSS to multiple notes, consider using <a href="#root/_help_bwZpz2ajCEwO">inheritable attributes</a> or&nbsp;<a
     class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>.</li>
 </ul>
 <p>For example, to change the font of the document from the one defined by
@@ -212,17 +208,16 @@
   <li>If the note pointing to the <code spellcheck="false">printCss</code> doesn't
     have the right note type or mime type, it will be ignored.</li>
   <li>If migrating from a previous version where&nbsp;<a class="reference-link"
-    href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>, there's no need for
-    <code
-    spellcheck="false">@media print {</code> since the style-sheet is used only for printing.</li>
+    href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>, there's no need for <code
+    spellcheck="false">@media print {</code>  since the style-sheet is used
+    only for printing.</li>
 </ul>
 <h2>Under the hood</h2>
 <p>Both printing and exporting as PDF use the same mechanism: a note is rendered
   individually in a separate webpage that is then sent to the browser or
   the Electron application either for printing or exporting as PDF.</p>
 <p>The webpage that renders a single note can actually be accessed in a web
-  browser. For example <code spellcheck="false">http://localhost:8080/#root/WWRGzqHUfRln/RRZsE9Al8AIZ?ntxId=0o4fzk</code> becomes
-  <code
+  browser. For example <code spellcheck="false">http://localhost:8080/#root/WWRGzqHUfRln/RRZsE9Al8AIZ?ntxId=0o4fzk</code> becomes <code
   spellcheck="false">http://localhost:8080/?print#root/WWRGzqHUfRln/RRZsE9Al8AIZ</code>.</p>
 <p>Accessing the print note in a web browser allows for easy debugging to
   understand why a particular note doesn't render well. The mechanism for

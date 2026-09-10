@@ -1,4 +1,5 @@
 import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
+import clsx from "clsx";
 import { ComponentChildren, HTMLAttributes } from "preact";
 import { createPortal, CSSProperties, HTMLProps } from "preact/compat";
 import { MutableRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -242,13 +243,21 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
         // attribute into the tooltip and drops it, so the browser's own doesn't double up with ours.
         <div ref={containerRef} class={`dropdown ${className ?? ""}`} style={{ display: "flex" }} title={title}>
             <button
-                className={`${iconAction ? "icon-action" : "btn"} ${!noSelectButtonStyle ? "select-button" : ""} ${buttonClassName ?? ""} ${!hideToggleArrow ? "dropdown-toggle" : ""}`}
+                // `buttonClassName` updates rewrite the class list.
+                // `shown` keeps Bootstrap's marker on later renders.
+                className={clsx(
+                    iconAction ? "icon-action" : "btn",
+                    !noSelectButtonStyle && "select-button",
+                    buttonClassName,
+                    !hideToggleArrow && "dropdown-toggle",
+                    shown && "show"
+                )}
                 ref={triggerRef}
                 type="button"
                 data-bs-toggle="dropdown"
                 data-bs-display={ isStatic ? "static" : undefined }
                 aria-haspopup="true"
-                aria-expanded="false"
+                aria-expanded={shown}
                 id={id ?? ariaId}
                 disabled={disabled}
                 // Mount the portaled menu just before it can open: any interaction that leads to a

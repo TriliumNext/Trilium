@@ -7,9 +7,9 @@
   you pick also decides where your notes travel: a cloud API billed per use,
   a subscription you already pay for, or a model running on your own hardware,
   in which case nothing leaves the machine. See&nbsp;<a class="reference-link"
-  href="#root/_help_bkPZAMT7d2sR">Providers</a>&nbsp;for what each involves, and&nbsp;
-  <a
-  class="reference-link" href="#root/_help_cRRrdZjgyhNc">Privacy</a>&nbsp;for exactly what gets sent.</p>
+  href="#root/_help_bkPZAMT7d2sR">Providers</a>&nbsp;for what each involves, and&nbsp;<a
+  class="reference-link" href="#root/_help_cRRrdZjgyhNc">Privacy</a>&nbsp;for exactly
+  what gets sent.</p>
 <p>Once enabled, the assistant is available as:</p>
 <ul>
   <li>As a dedicated note type, it can read and modify notes through tools,
@@ -119,141 +119,141 @@
 class="admonition note">
   <p>Currently only the search native to the LLM provider is supported. External
     search providers such as Exa, Tavily &amp; SearXNG are not yet supported.</p>
-  </aside>
-  <h3>Note access (tools)</h3>
-  <p>Tools allow the agentic AI to understand and operate on notes directly
-    within your Trilium instance.</p>
-  <p>This feature is on by default but it can easily be disabled by clicking
-    on the model selector at the bottom of the chat and unchecking <em>Note access</em>.</p>
-  <p>Here are a few tools that Trilium provides for the LLM:</p>
-  <ul>
-    <li>At note level:
-      <ul>
-        <li>Search for notes</li>
-        <li>Get the metadata or content of a note.</li>
-        <li>Edit a note
-          <ul>
-            <li>There are multiple mechanism for the LLM to edit a note: completely by
-              re-writing it, find/replace of a text sequence or append.</li>
-            <li>Whenever the AI makes a change, a <a href="#root/_help_vZWERwf8U3nx">revision</a> is
-              saved to be able to revert any unwanted changes.</li>
-          </ul>
-        </li>
-        <li>Create a new note</li>
-        <li>Rename or delete a note.</li>
-      </ul>
-    </li>
-    <li>At attribute level:
-      <ul>
-        <li>Get the full list of attributes, or a specific attribute.</li>
-        <li>Set the value of an attribute.</li>
-        <li>Delete an attribute.</li>
-      </ul>
-    </li>
-    <li>At tree level:
-      <ul>
-        <li>Get the direct children of a note.</li>
-        <li>Get the entire subtree of a note.</li>
-        <li>Move or clone a note somewhere else.</li>
-      </ul>
-    </li>
-    <li>For&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>:
-      <ul>
-        <li>Get metadata for an attachment.</li>
-        <li>Get the content of an attachment.</li>
-      </ul>
-    </li>
-    <li>Skills (see the dedicated section).</li>
-  </ul>
-  <aside class="admonition warning">
-    <p>Currently there is <strong>no permission management</strong> implemented
-      for note tools, meaning that the LLM could potentially remove existing
-      notes or clutter the tree with notes. Generally most actions are easily
-      reversible (deleting the notes, restoring deleted notes, reverting modifications
-      to a note), but there are some that are harder to revert (e.g. setting
-      an attribute because there is no attribute history).</p>
-  </aside>
-  <aside class="admonition note">
-    <p>Gemini has a special case in which <em>Note access</em> and <em>Web search</em> can't
-      be both enabled at the same time.</p>
-  </aside>
-  <h3>Attachments</h3>
-  <p>Since Trilium v0.140.0,&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>&nbsp;allow
-    for multi-modal chat:</p>
-  <ul>
-    <li>Raster image (sent as vision input, except for SVGs) with the following
-      supported formats: PNG, JPEG, GIF, WebP.</li>
-    <li>PDFs, sent natively to the provider (supported by Anthropic, OpenAI and
-      Google).</li>
-    <li>SVG images (sent as raw HTML).</li>
-    <li>Text files.</li>
-  </ul>
-  <p>To upload an attachment:</p>
-  <ul>
-    <li>Press the dedicated <em>Attach</em> button (paperclip icon) underneath the
-      text box.</li>
-    <li>Paste an image directly from clipboard using Ctrl+V.</li>
-  </ul>
-  <p>Once one or more attachments are uploaded, they will appear directly above
-    the text box:</p>
-  <ul>
-    <li>Images have a small thumbnail for easy identifications.</li>
-    <li>Every attachment can be deleted by pressing their corresponding X button.</li>
-  </ul>
-  <p>When an attachment is present, the LLM is instructed to consider the attachment
-    with priority, even if it has access to the current note.</p>
-  <aside class="admonition note">
-    <p>Currently Trilium doesn't pre-process the attachments (e.g. via&nbsp;
-      <a
-      class="reference-link" href="#root/_help_TiQbQDgP8L5t">Text Extraction (OCR)</a>) before sending them to the LLM provider.</p>
-  </aside>
-  <h3>Mentions</h3>
-  <p>Mentions are a way to insert references to notes other than the current
-    note, using the same mechanism as&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>.
-    To refer to another note, simply type @ followed by the name of the note
-    to reference.</p>
-  <p>This feature is mostly helpful when note tools are enabled, otherwise
-    the LLM will have no way to access the given note.</p>
-  <h3>Skills</h3>
-  <p>Skills in Trilium are specialized instruction sets that help the AI be
-    more productive by understanding how Trilium.</p>
-  <p>These skills are not loaded by default to avoid an increased consumption
-    of tokens, but the AI can load them on-demand if <em>Note tools</em> are
-    enabled.</p>
-  <p>The following skills are built-in:</p>
-  <ul>
-    <li>Search syntax: understands the full syntax of&nbsp;<a class="reference-link"
-      href="#root/_help_eIg8jdvaoNNd">Search</a>.</li>
-    <li>Backend scripting: to be able to write proper&nbsp;<a class="reference-link"
-      href="#root/_help_SPirpZypehBG">Backend scripts</a>.</li>
-    <li>Frontend scripting: to be able to write proper <a href="#root/_help_yIhgI5H7A2Sm">front-end scripts</a> (basic
-      scripts, widgets,&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>).</li>
-  </ul>
-  <p>When <em>Note tools</em> are enabled the skills will automatically be made
-    available to the AI, so no user interaction is required.</p>
-  <aside class="admonition note">
-    <p>Custom skills are currently not supported but they are planned.</p>
-  </aside>
-  <h3>MCP</h3>
-  <p>Trilium comes with a built-in MCP server which allows you to use an external
-    agent such as Claude Code have access to your database. See the dedicated&nbsp;
-    <a
-    class="reference-link" href="#root/_help_KOWBFgsZXJAD">MCP</a>&nbsp;page for more details.</p>
-  <h2>History</h2>
-  <h3>Removal in v0.102.0</h3>
-  <p>Starting with version v0.102.0, AI/LLM integration has been removed from
-    the Trilium Notes core.</p>
-  <p>While a significant amount of effort went into developing this feature,
-    maintaining and supporting it long-term proved to be unsustainable.</p>
-  <p>When upgrading to v0.102.0, your Chat notes will be preserved, but instead
-    of the dedicated chat window they will be turned to a normal&nbsp;<a class="reference-link"
-    href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note, revealing the underlying
-    JSON of the conversation.</p>
-  <h3>Reintroduction in v0.103.0</h3>
-  <p>Given the recent advancements of the AI scene, we decided to give the
-    LLM integration another try. v0.103.0 introduces a completely new chat
-    system.</p>
-  <p>One of the key changes that lead to the reimplementation is that now we
-    are using a library (<a href="https://github.com/vercel/ai">Vercel AI</a>)
-    to manage the inner mechanism and the differences between LLM providers
-    instead of having to implement it on our own.</p>
+</aside>
+<h3>Note access (tools)</h3>
+<p>Tools allow the agentic AI to understand and operate on notes directly
+  within your Trilium instance.</p>
+<p>This feature is on by default but it can easily be disabled by clicking
+  on the model selector at the bottom of the chat and unchecking <em>Note access</em>.</p>
+<p>Here are a few tools that Trilium provides for the LLM:</p>
+<ul>
+  <li>At note level:
+    <ul>
+      <li>Search for notes</li>
+      <li>Get the metadata or content of a note.</li>
+      <li>Edit a note
+        <ul>
+          <li>There are multiple mechanism for the LLM to edit a note: completely by
+            re-writing it, find/replace of a text sequence or append.</li>
+          <li>Whenever the AI makes a change, a <a href="#root/_help_vZWERwf8U3nx">revision</a> is
+            saved to be able to revert any unwanted changes.</li>
+        </ul>
+      </li>
+      <li>Create a new note</li>
+      <li>Rename or delete a note.</li>
+    </ul>
+  </li>
+  <li>At attribute level:
+    <ul>
+      <li>Get the full list of attributes, or a specific attribute.</li>
+      <li>Set the value of an attribute.</li>
+      <li>Delete an attribute.</li>
+    </ul>
+  </li>
+  <li>At tree level:
+    <ul>
+      <li>Get the direct children of a note.</li>
+      <li>Get the entire subtree of a note.</li>
+      <li>Move or clone a note somewhere else.</li>
+    </ul>
+  </li>
+  <li>For&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>:
+    <ul>
+      <li>Get metadata for an attachment.</li>
+      <li>Get the content of an attachment.</li>
+    </ul>
+  </li>
+  <li>Skills (see the dedicated section).</li>
+</ul>
+<aside class="admonition warning">
+  <p>Currently there is <strong>no permission management</strong> implemented
+    for note tools, meaning that the LLM could potentially remove existing
+    notes or clutter the tree with notes. Generally most actions are easily
+    reversible (deleting the notes, restoring deleted notes, reverting modifications
+    to a note), but there are some that are harder to revert (e.g. setting
+    an attribute because there is no attribute history).</p>
+</aside>
+<aside class="admonition note">
+  <p>Gemini has a special case in which <em>Note access</em> and <em>Web search</em> can't
+    be both enabled at the same time.</p>
+</aside>
+<h3>Attachments</h3>
+<p>Since Trilium v0.140.0,&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>&nbsp;allow
+  for multi-modal chat:</p>
+<ul>
+  <li>Raster image (sent as vision input, except for SVGs) with the following
+    supported formats: PNG, JPEG, GIF, WebP.</li>
+  <li>PDFs, sent natively to the provider (supported by Anthropic, OpenAI and
+    Google).</li>
+  <li>SVG images (sent as raw HTML).</li>
+  <li>Text files.</li>
+</ul>
+<p>To upload an attachment:</p>
+<ul>
+  <li>Press the dedicated <em>Attach</em> button (paperclip icon) underneath the
+    text box.</li>
+  <li>Paste an image directly from clipboard using Ctrl+V.</li>
+</ul>
+<p>Once one or more attachments are uploaded, they will appear directly above
+  the text box:</p>
+<ul>
+  <li>Images have a small thumbnail for easy identifications.</li>
+  <li>Every attachment can be deleted by pressing their corresponding X button.</li>
+</ul>
+<p>When an attachment is present, the LLM is instructed to consider the attachment
+  with priority, even if it has access to the current note.</p>
+<aside class="admonition note">
+  <p>Currently Trilium doesn't pre-process the attachments (e.g. via&nbsp;<a
+    class="reference-link" href="#root/_help_TiQbQDgP8L5t">Text Extraction (OCR)</a>)
+    before sending them to the LLM provider.</p>
+</aside>
+<h3>Mentions</h3>
+<p>Mentions are a way to insert references to notes other than the current
+  note, using the same mechanism as&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>.
+  To refer to another note, simply type @ followed by the name of the note
+  to reference.</p>
+<p>This feature is mostly helpful when note tools are enabled, otherwise
+  the LLM will have no way to access the given note.</p>
+<h3>Skills</h3>
+<p>Skills in Trilium are specialized instruction sets that help the AI be
+  more productive by understanding how Trilium.</p>
+<p>These skills are not loaded by default to avoid an increased consumption
+  of tokens, but the AI can load them on-demand if <em>Note tools</em> are
+  enabled.</p>
+<p>The following skills are built-in:</p>
+<ul>
+  <li>Search syntax: understands the full syntax of&nbsp;<a class="reference-link"
+    href="#root/_help_eIg8jdvaoNNd">Search</a>.</li>
+  <li>Backend scripting: to be able to write proper&nbsp;<a class="reference-link"
+    href="#root/_help_SPirpZypehBG">Backend scripts</a>.</li>
+  <li>Frontend scripting: to be able to write proper <a href="#root/_help_yIhgI5H7A2Sm">front-end scripts</a> (basic
+    scripts, widgets,&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>).</li>
+</ul>
+<p>When <em>Note tools</em> are enabled the skills will automatically be made
+  available to the AI, so no user interaction is required.</p>
+<aside class="admonition note">
+  <p>Custom skills are currently not supported but they are planned.</p>
+</aside>
+<h3>MCP</h3>
+<p>Trilium comes with a built-in MCP server which allows you to use an external
+  agent such as Claude Code have access to your database. See the dedicated&nbsp;<a
+  class="reference-link" href="#root/_help_KOWBFgsZXJAD">MCP</a>&nbsp;page for
+  more details.</p>
+<h2>History</h2>
+<h3>Removal in v0.102.0</h3>
+<p>Starting with version v0.102.0, AI/LLM integration has been removed from
+  the Trilium Notes core.</p>
+<p>While a significant amount of effort went into developing this feature,
+  maintaining and supporting it long-term proved to be unsustainable.</p>
+<p>When upgrading to v0.102.0, your Chat notes will be preserved, but instead
+  of the dedicated chat window they will be turned to a normal&nbsp;<a class="reference-link"
+  href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note, revealing the underlying
+  JSON of the conversation.</p>
+<h3>Reintroduction in v0.103.0</h3>
+<p>Given the recent advancements of the AI scene, we decided to give the
+  LLM integration another try. v0.103.0 introduces a completely new chat
+  system.</p>
+<p>One of the key changes that lead to the reimplementation is that now we
+  are using a library (<a href="https://github.com/vercel/ai">Vercel AI</a>)
+  to manage the inner mechanism and the differences between LLM providers
+  instead of having to implement it on our own.</p>

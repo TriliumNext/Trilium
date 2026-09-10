@@ -95,6 +95,24 @@ describe("Dropdown", () => {
         expect(instance.dispose).toHaveBeenCalledTimes(1);
     });
 
+    it("preserves Bootstrap's open marker when the button class changes", () => {
+        const el = renderInto(<Dropdown buttonClassName="bx bx-note">item</Dropdown>);
+        const dropdownEl = el.querySelector(".dropdown");
+        expect(dropdownEl).toBeTruthy();
+
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("show.bs.dropdown");
+        });
+        getToggle().classList.add("show");
+        expect(getToggle().classList.contains("show")).toBe(true);
+
+        void act(() => render(<Dropdown buttonClassName="bx bx-star">item</Dropdown>, el));
+
+        expect(getToggle().classList.contains("bx-star")).toBe(true);
+        expect(getToggle().classList.contains("show")).toBe(true);
+        expect(getToggle().getAttribute("aria-expanded")).toBe("true");
+    });
+
     it("mounts the portaled menu on arm (pointerdown/focus), wires _menu, and tears down on blur without open", () => {
         renderInto(<Dropdown portalToBody className="my-scope" text="btn">item</Dropdown>);
 

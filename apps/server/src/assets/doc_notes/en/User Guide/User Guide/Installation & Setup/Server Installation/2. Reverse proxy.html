@@ -18,10 +18,9 @@
 <p>Regardless of the proxy you choose, make sure of the following:</p>
 <ul>
   <li><strong>Forward the WebSocket upgrade.</strong> Trilium uses a WebSocket
-    for synchronization and live UI updates. Your proxy must pass the
-    <code
-    spellcheck="false">Upgrade</code>and <code spellcheck="false">Connection</code> headers through,
-      otherwise the client will appear to load but never receive updates.</li>
+    for synchronization and live UI updates. Your proxy must pass the <code
+    spellcheck="false">Upgrade</code> and <code spellcheck="false">Connection</code> headers
+    through, otherwise the client will appear to load but never receive updates.</li>
   <li><strong>Configure the trusted proxy.</strong> So that Trilium sees the
     real client IP (for rate limiting, logging, and secure cookies) rather
     than the proxy's address. See&nbsp;<a class="reference-link" href="#root/_help_LLzSMXACKhUs">Trusted proxy</a>.</li>

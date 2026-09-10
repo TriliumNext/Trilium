@@ -1,7 +1,6 @@
 <aside class="admonition note">
   <p>This page explains, step‑by‑step, how to create a custom icon pack. For
-    a general description of how to use already existing icon packs, see&nbsp;
-    <a
+    a general description of how to use already existing icon packs, see&nbsp;<a
     class="reference-link" href="#root/_help_gOKqSJgXLcIj">Icon Packs</a>.</p>
 </aside>
 <p>First read the quick flow to get the overall steps. After that there is
@@ -114,11 +113,10 @@
   </ul>
 </aside>
 <h2>Concrete example: Phosphor Icons</h2>
-<p><a href="https://phosphoricons.com/">Phosphor Icons</a> provide a
-  <code
-  spellcheck="false">selection.json</code>that includes <code spellcheck="false">properties.code</code> (the
-    codepoint) and <code spellcheck="false">properties.name</code> (the icon
-    name). The goal: convert that into Trilium's manifest.</p>
+<p><a href="https://phosphoricons.com/">Phosphor Icons</a> provide a <code
+  spellcheck="false">selection.json</code> that includes <code spellcheck="false">properties.code</code> (the
+  codepoint) and <code spellcheck="false">properties.name</code> (the icon
+  name). The goal: convert that into Trilium's manifest.</p>
 <p>Sample <code spellcheck="false">selection.json</code> excerpt:</p><pre><code class="language-text-x-trilium-auto">{
   "icons": [
     {
@@ -222,21 +220,19 @@ processIconPack("light");</code></pre>
   <li>Copy and paste the manifest generated in the previous step as the content
     of this note.</li>
   <li>Go to the <a href="#root/_help_0vhv7lsOLy82">note attachment</a> and upload the
-    font file (in <code spellcheck="false">.woff2</code>, <code spellcheck="false">.woff</code>,
-    <code
+    font file (in <code spellcheck="false">.woff2</code>, <code spellcheck="false">.woff</code>, <code
     spellcheck="false">.ttf</code>) format.
-      <ol>
-        <li>Trilium identifies the font to use from attachments via the MIME type,
-          make sure the MIME type is displayed correctly after uploading the attachment
-          (for example <code spellcheck="false">font/woff2</code>).</li>
-        <li>Make sure the <code spellcheck="false">role</code> appears as <code spellcheck="false">file</code>,
-          otherwise the font will not be identified.</li>
-        <li>Multiple attachments are supported, but only one font will actually be
-          used in Trilium's order of preference: <code spellcheck="false">.woff2</code>,
-          <code
-          spellcheck="false">.woff</code>, <code spellcheck="false">.ttf</code>. As such, there's not
-            much reason to upload more than one font per icon pack.</li>
-      </ol>
+    <ol>
+      <li>Trilium identifies the font to use from attachments via the MIME type,
+        make sure the MIME type is displayed correctly after uploading the attachment
+        (for example <code spellcheck="false">font/woff2</code>).</li>
+      <li>Make sure the <code spellcheck="false">role</code> appears as <code spellcheck="false">file</code>,
+        otherwise the font will not be identified.</li>
+      <li>Multiple attachments are supported, but only one font will actually be
+        used in Trilium's order of preference: <code spellcheck="false">.woff2</code>, <code
+        spellcheck="false">.woff</code>, <code spellcheck="false">.ttf</code>. As
+        such, there's not much reason to upload more than one font per icon pack.</li>
+    </ol>
   </li>
   <li>Add label: <code spellcheck="false">#iconPack=&lt;prefix&gt;</code> (for
     Phosphor example: <code spellcheck="false">#iconPack=ph</code>).</li>
@@ -275,8 +271,7 @@ processIconPack("light");</code></pre>
     The server logs will indicate if this situation occurs.</li>
   <li>Make sure the prefix consists only of letters, digits, hyphens, underscores
     and non-ASCII characters.</li>
-  <li>If the pack loads but individual icons are missing, check the logs for
-    <code
-    spellcheck="false">Skipping icon '&lt;key&gt;' of icon pack</code>— that key uses characters
-      outside the allowed set and needs renaming in the manifest.</li>
+  <li>If the pack loads but individual icons are missing, check the logs for <code
+    spellcheck="false">Skipping icon '&lt;key&gt;' of icon pack</code> — that
+    key uses characters outside the allowed set and needs renaming in the manifest.</li>
 </ul>

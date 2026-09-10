@@ -58,6 +58,15 @@
             "groupName": "ckeditor monorepo"
         },
         {
+            "description": "Group FullCalendar packages because mixed core versions make plugins incompatible.",
+            "matchPackageNames": [
+                "fullcalendar",
+                "@fullcalendar/**",
+                "@full-ui/**"
+            ],
+            "groupName": "fullcalendar monorepo"
+        },
+        {
             "matchPackageNames": "@univerjs/**",
             "groupName": "univer monorepo"
         },

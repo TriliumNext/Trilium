@@ -9,11 +9,11 @@
 </ul>
 <p>To get started, the first step is to enable JSX in the list of Code languages.
   Go to Options → Code Notes and check the “JSX” language. Afterwards, proceed
-  with the documentation in either&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>&nbsp;or&nbsp;
-  <a
-  class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>, which will both have a section on how to use the new
-    Preact integration.</p>
-<aside class="admonition important">
+  with the documentation in either&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>&nbsp;or&nbsp;<a
+  class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>, which
+  will both have a section on how to use the new Preact integration.</p>
+<aside
+class="admonition important">
   <p>The documentation assumes prior knowledge with React or Preact. As a starting
     point, consider the <a href="https://www.freecodecamp.org/learn/front-end-development-libraries-v9/">FreeCodeCamp course on Front End Development Libraries</a> or
     the <a href="https://preactjs.com/tutorial/">Preact Tutorial</a>.</p>
@@ -44,20 +44,18 @@ const [ myState, setMyState ] = useState("Hi");</code></pre>
     );
 }</code></pre>
 <h3>Import/export are not required</h3>
-<p>These imports are syntactic sugar meant to replace the usage for the
-  <code
-  spellcheck="false">api</code>global object (see&nbsp;<a class="reference-link" href="#root/_help_GLks18SNjxmC">Script API</a>).&nbsp;</p>
-<aside
-class="admonition note">
+<p>These imports are syntactic sugar meant to replace the usage for the <code
+  spellcheck="false">api</code> global object (see&nbsp;<a class="reference-link"
+  href="#root/_help_GLks18SNjxmC">Script API</a>).&nbsp;</p>
+<aside class="admonition note">
   <p>The <code spellcheck="false">import</code> and <code spellcheck="false">export</code> syntax
-    work only for JSX notes. Standard/jQuery code notes still need to use the
-    <code
-    spellcheck="false">api</code>global and <code spellcheck="false">module.exports</code>.</p>
-  </aside>
-  <h2>Under the hood</h2>
-  <p>Unlike JavaScript, JSX requires pre-processing to turn it into JavaScript
-    (just like TypeScript). To do so, Trilium uses <a href="https://github.com/alangpierce/sucrase">Sucrase</a>,
-    a JavaScript library which processes the JSX to pure JavaScript. The processing
-    is done each time a script is run (for widgets this happens at every program
-    startup). If you notice any performance degradation due to long compilation,
-    consider <a href="#root/_help_wy8So3yZZlH9">reporting the issue</a> to us.</p>
+    work only for JSX notes. Standard/jQuery code notes still need to use the <code
+    spellcheck="false">api</code> global and <code spellcheck="false">module.exports</code>.</p>
+</aside>
+<h2>Under the hood</h2>
+<p>Unlike JavaScript, JSX requires pre-processing to turn it into JavaScript
+  (just like TypeScript). To do so, Trilium uses <a href="https://github.com/alangpierce/sucrase">Sucrase</a>,
+  a JavaScript library which processes the JSX to pure JavaScript. The processing
+  is done each time a script is run (for widgets this happens at every program
+  startup). If you notice any performance degradation due to long compilation,
+  consider <a href="#root/_help_wy8So3yZZlH9">reporting the issue</a> to us.</p>

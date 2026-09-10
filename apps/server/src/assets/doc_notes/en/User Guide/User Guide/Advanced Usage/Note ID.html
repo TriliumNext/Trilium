@@ -9,16 +9,16 @@
   for all the notes. This also includes other entities that are part of the
   import/export process such as&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>.</p>
 <h2>Note collisions</h2>
-<p>Since the Note ID is a fixed-width randomly generated number, due to the
-  <a
-  href="https://en.wikipedia.org/wiki/Pigeonhole_principle">pigeonhole principle</a>, there is a possibility that a newly created
-    note will have the same ID as an existing note.</p>
-<p>Since the note ID is alphanumeric and the length is 12 we have&nbsp;
-  <span
-  class="math-tex">\(62^{12}\)</span>&nbsp;unique IDs. However since we are generating them
-    randomly, we can use a collision calculator such as the one for <a href="https://alex7kom.github.io/nano-nanoid-cc/?alphabet=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&amp;size=12&amp;speed=1000&amp;speedUnit=hour">Nano ID</a> to
-    determine that we'd need to create 1000 notes per hour every hour for 9
-    centuries in order to have at least 1% probability of a note collision.</p>
+<p>Since the Note ID is a fixed-width randomly generated number, due to the <a
+  href="https://en.wikipedia.org/wiki/Pigeonhole_principle">pigeonhole principle</a>,
+  there is a possibility that a newly created note will have the same ID
+  as an existing note.</p>
+<p>Since the note ID is alphanumeric and the length is 12 we have&nbsp;<span
+  class="math-tex">\(62^{12}\)</span>&nbsp;unique IDs. However since we are
+  generating them randomly, we can use a collision calculator such as the
+  one for <a href="https://alex7kom.github.io/nano-nanoid-cc/?alphabet=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&amp;size=12&amp;speed=1000&amp;speedUnit=hour">Nano ID</a> to
+  determine that we'd need to create 1000 notes per hour every hour for 9
+  centuries in order to have at least 1% probability of a note collision.</p>
 <p>As such, Trilium does not take any explicit action against potential note
   collisions, similar to other software that makes uses of unique hashes
   such as <a href="https://stackoverflow.com/questions/10434326/hash-collision-in-git">Git</a>.

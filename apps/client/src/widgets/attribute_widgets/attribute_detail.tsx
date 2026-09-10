@@ -60,6 +60,11 @@ export interface AttributeDetailOpts {
      */
     hideType?: boolean;
     /**
+     * Leaves out the rows the chosen kind adds, such as the precision of a number or the options of a
+     * select. For a host that fills them in itself, such as a board whose columns are the options.
+     */
+    hideTypeOptions?: boolean;
+    /**
      * Places the popup beside this element instead of at `x`/`y`. For hosts whose attributes are shown
      * far from the note attributes pane the coordinates are otherwise resolved against, e.g. the
      * attributes panel in the right pane.
@@ -339,6 +344,7 @@ export function isSameShow(previous: AttributeDetailOpts | null, next: Attribute
         && previous.hideMultiplicity === next.hideMultiplicity
         && previous.hideInheritance === next.hideInheritance
         && previous.hideType === next.hideType
+        && previous.hideTypeOptions === next.hideTypeOptions
         && previous.attribute.noteId === next.attribute.noteId
         && previous.attribute.type === next.attribute.type
         && previous.attribute.name === next.attribute.name
@@ -625,7 +631,8 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "label-definition" && definition.labelType === "number" && (
+                {attrType === "label-definition" && definition.labelType === "number"
+                    && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-number-precision"
                         label={t("attribute_detail.precision")}
@@ -645,7 +652,8 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "label-definition" && definition.labelType === "select" && (
+                {attrType === "label-definition" && definition.labelType === "select"
+                    && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-select-options"
                         label={t("attribute_detail.select_options")}
@@ -666,7 +674,7 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "relation-definition" && (
+                {attrType === "relation-definition" && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-inverse-relation"
                         label={t("attribute_detail.inverse_relation")}

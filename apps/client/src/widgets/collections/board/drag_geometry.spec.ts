@@ -12,6 +12,7 @@ function columns(cards: Record<string, CardBox[]> = {}): ColumnBox[] {
         left: index * 120,
         width: 100,
         top: 0,
+        origin: 0,
         height: 400,
         cards: cards[value] ?? []
     }));
@@ -79,7 +80,7 @@ describe("columnCovers", () => {
      */
     it("tells the column from the empty space below a short one", () => {
         const strip: ColumnBox = {
-            value: "Parked", left: 0, width: 36, top: 0, height: 90, cards: []
+            value: "Parked", left: 0, width: 36, top: 0, height: 90, origin: 0, cards: []
         };
 
         expect(columnCovers(strip, 18, 0)).toBe(true);

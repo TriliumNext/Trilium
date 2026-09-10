@@ -3,10 +3,10 @@
   for all configuration options.</p>
 <h2>Location of the configuration file</h2>
 <p>The configuration file is not located in the same directory as the application.
-  Instead, the <code spellcheck="false">config.ini</code> is located in the&nbsp;
-  <a
-  class="reference-link" href="#root/_help_tAassRL4RSQL">Data directory</a>. As such, the configuration file is only available
-    after starting the application and creating a database.</p>
+  Instead, the <code spellcheck="false">config.ini</code> is located in the&nbsp;<a
+  class="reference-link" href="#root/_help_tAassRL4RSQL">Data directory</a>. As
+  such, the configuration file is only available after starting the application
+  and creating a database.</p>
 <h2>Configuration Precedence</h2>
 <p>Configuration values are loaded in the following order of precedence (highest
   to lowest):</p>
@@ -25,8 +25,7 @@
 <ul>
   <li><code spellcheck="false">SECTION</code> is the INI section name in UPPERCASE</li>
   <li><code spellcheck="false">KEY</code> is the camelCase configuration key
-    converted to UPPERCASE (e.g., <code spellcheck="false">instanceName</code> →
-    <code
+    converted to UPPERCASE (e.g., <code spellcheck="false">instanceName</code> → <code
     spellcheck="false">INSTANCENAME</code>)</li>
 </ul>
 <p>Additionally, shorter aliases are available for common configurations
@@ -290,8 +289,7 @@
 </ul>
 <h3>Sync Variables</h3>
 <ul>
-  <li><code spellcheck="false">TRILIUM_SYNC_SERVER_HOST</code> (alternative to
-    <code
+  <li><code spellcheck="false">TRILIUM_SYNC_SERVER_HOST</code> (alternative to <code
     spellcheck="false">TRILIUM_SYNC_SYNCSERVERHOST</code>)</li>
   <li><code spellcheck="false">TRILIUM_SYNC_SERVER_TIMEOUT</code> (alternative
     to <code spellcheck="false">TRILIUM_SYNC_SYNCSERVERTIMEOUT</code>)</li>
@@ -300,11 +298,9 @@
 </ul>
 <h3>OAuth/MFA Variables</h3>
 <ul>
-  <li><code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code> (alternative to
-    <code
+  <li><code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code> (alternative to <code
     spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>)</li>
-  <li><code spellcheck="false">TRILIUM_OAUTH_CLIENT_ID</code> (alternative to
-    <code
+  <li><code spellcheck="false">TRILIUM_OAUTH_CLIENT_ID</code> (alternative to <code
     spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>)</li>
   <li><code spellcheck="false">TRILIUM_OAUTH_CLIENT_SECRET</code> (alternative
     to <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>)</li>
@@ -316,8 +312,7 @@
     to <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>)</li>
   <li><code spellcheck="false">TRILIUM_OAUTH_HTTP_TIMEOUT</code> (alternative
     to <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT</code>)</li>
-  <li><code spellcheck="false">TRILIUM_OAUTH_SCOPE</code> (alternative to
-    <code
+  <li><code spellcheck="false">TRILIUM_OAUTH_SCOPE</code> (alternative to <code
     spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE</code>)</li>
 </ul>
 <h3>Logging Variables</h3>
@@ -328,12 +323,10 @@
 <h2>Boolean Values</h2>
 <p>Boolean environment variables accept the following values:</p>
 <ul>
-  <li><strong>True</strong>: <code spellcheck="false">"true"</code>, <code spellcheck="false">"1"</code>,
-    <code
+  <li><strong>True</strong>: <code spellcheck="false">"true"</code>, <code spellcheck="false">"1"</code>, <code
     spellcheck="false">1</code>
   </li>
-  <li><strong>False</strong>: <code spellcheck="false">"false"</code>, <code spellcheck="false">"0"</code>,
-    <code
+  <li><strong>False</strong>: <code spellcheck="false">"false"</code>, <code spellcheck="false">"0"</code>, <code
     spellcheck="false">0</code>
   </li>
   <li>Any other value defaults to <code spellcheck="false">false</code>

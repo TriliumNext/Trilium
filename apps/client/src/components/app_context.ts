@@ -569,6 +569,8 @@ type EventMappings = {
     geoMapCreateChildNote: {
         ntxId: string | null | undefined; // TODO: deduplicate ntxId
     };
+    /** Opens the board's properties dialog, which only the board itself can show. */
+    showBoardProperties: { ntxId: string | null | undefined; };
     tabReorder: {
         ntxIdsInOrder: string[];
     };

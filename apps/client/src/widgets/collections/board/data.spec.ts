@@ -9,11 +9,11 @@ import type { PromotedAttribute } from "../promoted_attributes";
 import type { SortContext, SortKey } from "../sorting";
 import { INBOX_COLUMN } from "./columns";
 import {
-    affectsSortOrder, applyCardMove, type ColumnMap, type ColumnSort, filterColumnMap,
+    affectsSortOrder, applyCardMoves, type ColumnMap, type ColumnSort, filterColumnMap,
     getBoardData, resolveColumnSorts, resolveSortWatch, sortColumnMap, unfilteredCardIndex
 } from "./data";
 
-describe("applyCardMove", () => {
+describe("applyCardMoves", () => {
     /** Cards named by their note id, which is all this reads them for. */
     function board(columns: Record<string, string[]>): ColumnMap {
         return new Map(Object.entries(columns).map(([ column, ids ]) => [
@@ -26,23 +26,23 @@ describe("applyCardMove", () => {
         (map.get(column) ?? []).map((item) => item.note.noteId);
 
     it("takes a card out of one column and puts it in another", () => {
-        const next = applyCardMove(board({ A: [ "a1", "a2", "a3" ], B: [ "b1", "b2" ] }),
-            "a2", "A", "B", 1);
+        const next = applyCardMoves(board({ A: [ "a1", "a2", "a3" ], B: [ "b1", "b2" ] }),
+            [ "a2" ], "B", 1);
 
         expect(names(next, "A")).toEqual([ "a1", "a3" ]);
         expect(names(next, "B")).toEqual([ "b1", "a2", "b2" ]);
     });
 
     it("puts it at either end of the column it lands in", () => {
-        const start = applyCardMove(board({ A: [ "a1" ], B: [ "b1", "b2" ] }), "a1", "A", "B", 0);
+        const start = applyCardMoves(board({ A: [ "a1" ], B: [ "b1", "b2" ] }), [ "a1" ], "B", 0);
         expect(names(start, "B")).toEqual([ "a1", "b1", "b2" ]);
 
-        const end = applyCardMove(board({ A: [ "a1" ], B: [ "b1", "b2" ] }), "a1", "A", "B", 2);
+        const end = applyCardMoves(board({ A: [ "a1" ], B: [ "b1", "b2" ] }), [ "a1" ], "B", 2);
         expect(names(end, "B")).toEqual([ "b1", "b2", "a1" ]);
     });
 
     it("puts it in a column holding none", () => {
-        const next = applyCardMove(board({ A: [ "a1" ], B: [] }), "a1", "A", "B", 0);
+        const next = applyCardMoves(board({ A: [ "a1" ], B: [] }), [ "a1" ], "B", 0);
 
         expect(names(next, "A")).toEqual([]);
         expect(names(next, "B")).toEqual([ "a1" ]);
@@ -55,16 +55,35 @@ describe("applyCardMove", () => {
     it("counts a move down its own column against the list it came from", () => {
         const start = board({ A: [ "a1", "a2", "a3" ] });
 
-        expect(names(applyCardMove(start, "a1", "A", "A", 3), "A")).toEqual([ "a2", "a3", "a1" ]);
-        expect(names(applyCardMove(start, "a1", "A", "A", 2), "A")).toEqual([ "a2", "a1", "a3" ]);
-        expect(names(applyCardMove(start, "a3", "A", "A", 0), "A")).toEqual([ "a3", "a1", "a2" ]);
-        expect(names(applyCardMove(start, "a3", "A", "A", 1), "A")).toEqual([ "a1", "a3", "a2" ]);
+        expect(names(applyCardMoves(start, [ "a1" ], "A", 3), "A")).toEqual([ "a2", "a3", "a1" ]);
+        expect(names(applyCardMoves(start, [ "a1" ], "A", 2), "A")).toEqual([ "a2", "a1", "a3" ]);
+        expect(names(applyCardMoves(start, [ "a3" ], "A", 0), "A")).toEqual([ "a3", "a1", "a2" ]);
+        expect(names(applyCardMoves(start, [ "a3" ], "A", 1), "A")).toEqual([ "a1", "a3", "a2" ]);
+    });
+
+    it("moves several cards from several columns, keeping the order they are given in", () => {
+        const next = applyCardMoves(
+            board({ A: [ "a1", "a2", "a3" ], B: [ "b1", "b2" ], C: [] }),
+            [ "a1", "b2", "a3" ], "C", 0);
+
+        expect(names(next, "A")).toEqual([ "a2" ]);
+        expect(names(next, "B")).toEqual([ "b1" ]);
+        expect(names(next, "C")).toEqual([ "a1", "b2", "a3" ]);
+    });
+
+    it("counts a move of several down their own column against the cards staying put", () => {
+        const start = board({ A: [ "a1", "a2", "a3", "a4" ] });
+
+        expect(names(applyCardMoves(start, [ "a1", "a2" ], "A", 4), "A"))
+            .toEqual([ "a3", "a4", "a1", "a2" ]);
+        expect(names(applyCardMoves(start, [ "a1", "a4" ], "A", 2), "A"))
+            .toEqual([ "a2", "a1", "a4", "a3" ]);
     });
 
     it("leaves the board alone for a card it does not hold", () => {
         const start = board({ A: [ "a1" ], B: [] });
 
-        expect(applyCardMove(start, "nope", "A", "B", 0)).toBe(start);
+        expect(applyCardMoves(start, [ "nope" ], "B", 0)).toBe(start);
     });
 
     describe("filterColumnMap", () => {

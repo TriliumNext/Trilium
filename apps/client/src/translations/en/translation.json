@@ -746,6 +746,7 @@
     "max_nesting_depth": "How many levels of children a table shows. Notes cannot be reordered while it is set.",
     "include_archived": "Includes archived notes in this collection, which are otherwise left out.",
     "enable_inbox_column": "For board collections, shows the inbox column, which lists all child notes that are not assigned to a board column.",
+    "board_card_redirect_to": "On a board card, opening the card jumps to the note this points at instead of opening the card itself.",
     "sort_columns": "For board collections, the order the columns sort their cards in, which a column follows unless it is given an order of its own. Holds <code>title</code>, <code>creationDate</code> or <code>attr:</code> followed by a promoted attribute's name.",
     "sort_columns_descending": "For board collections, runs the order in <code>#sortColumns</code> backwards.",
     "calendar_view": "Which view a calendar opens in: <code>timeGridDay</code>, <code>timeGridWeek</code>, <code>dayGridMonth</code>, <code>multiMonthYear</code> or <code>listMonth</code>.",
@@ -3520,7 +3521,10 @@
       "move_across": "Move to the previous / next column",
       "move_to_end_column": "Move to the first / last column",
       "move_column": "Move the column left / right",
-      "move_column_to_edge": "Move the column to the far left / right"
+      "move_column_to_edge": "Move the column to the far left / right",
+      "selection": "Selection",
+      "select_column": "Select every item of the column",
+      "clear_selection": "Clear the selection"
     },
     "status-alias": "Status",
     "filter-placeholder": "Filter board...",
@@ -3529,10 +3533,11 @@
     "card-outside-filter": "This card is outside of the current filtering scope",
     "sort": "Sort",
     "sort-manually": "Manually",
-    "sort-cards": "Sort cards",
+    "default-card-order": "Default card order",
+    "default-card-order-description": "How cards are sorted in each column, unless you choose different sorting options for a particular column.",
     "sort-board-default": "Board's default",
-    "sort-actions": "More actions",
-    "reset-columns-to-default": "Reset all columns to default",
+    "reset-column-sorting": "Reset sorting options to default for all columns",
+    "reset-column-sorting-confirm": "Do you want to reset the sorting options for all columns from the current view to default?",
     "sorted-no-reorder": "Cards cannot be reordered, since this is a sorted column."
   },
   "dashboard_view": {

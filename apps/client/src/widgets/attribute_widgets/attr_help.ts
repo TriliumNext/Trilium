@@ -192,6 +192,7 @@ export const ATTR_HELP: AttrHelpMap = {
         internalBookmark: t("attribute_detail.internal_bookmark")
     },
     relation: {
+        boardCardRedirectTo: t("attribute_detail.board_card_redirect_to"),
         runOnNoteCreation: t("attribute_detail.run_on_note_creation"),
         runOnChildNoteCreation: t("attribute_detail.run_on_child_note_creation"),
         runOnNoteTitleChange: t("attribute_detail.run_on_note_title_change"),

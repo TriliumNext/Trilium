@@ -203,9 +203,10 @@ describe("BoardGroupBy", () => {
         expect(mocks.detail.opts).toMatchObject({
             isOwned: true,
             focus: "name",
-            // A grouping is a select whose options are the columns, and a card stands in one of
-            // them: none of the three is the reader's to change here.
+            // A grouping is a select whose options are the columns the board makes, and a card
+            // stands in one of them: none of the four is the reader's to change here.
             hideType: true,
+            hideTypeOptions: true,
             hideMultiplicity: true,
             hideInheritance: true,
             attribute: {

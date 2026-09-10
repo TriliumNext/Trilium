@@ -1,7 +1,7 @@
-<p>Although Obsidian was indirectly supported through the standard&nbsp;
-  <a
-  class="reference-link" href="#root/_help_Oau6X9rCuegd">Markdown</a>&nbsp;import, its vault structure is distinct enough to warrant
-    its own dedicated import channel.</p>
+<p>Although Obsidian was indirectly supported through the standard&nbsp;<a
+  class="reference-link" href="#root/_help_Oau6X9rCuegd">Markdown</a>&nbsp;import,
+  its vault structure is distinct enough to warrant its own dedicated import
+  channel.</p>
 <h2>Import process</h2>
 <p>The first step is to obtain a .zip of your Obsidian vault:</p>
 <ol>
@@ -32,18 +32,17 @@
   <li><a class="reference-link" href="#root/_help_S6Xx8QIWTV66">Lists</a>
   </li>
   <li>To-do lists</li>
-  <li><a class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;and&nbsp;
-    <a
+  <li><a class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;and&nbsp;<a
     class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>
-      <ul>
-        <li>Non-Markdown files in the Vault are treated as attachments by default
-          if they are referenced by at least one note.</li>
-        <li>Otherwise, they will be imported as&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>&nbsp;notes.</li>
-      </ul>
+    <ul>
+      <li>Non-Markdown files in the Vault are treated as attachments by default
+        if they are referenced by at least one note.</li>
+      <li>Otherwise, they will be imported as&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>&nbsp;notes.</li>
+    </ul>
   </li>
-  <li>Transclusions are converted to&nbsp;<a class="reference-link" href="#root/_help_nBAXQFj20hS1">Include Note</a>&nbsp;or&nbsp;
-    <a
-    class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;(depending on type).</li>
+  <li>Transclusions are converted to&nbsp;<a class="reference-link" href="#root/_help_nBAXQFj20hS1">Include Note</a>&nbsp;or&nbsp;<a
+    class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;(depending
+    on type).</li>
   <li><a class="reference-link" href="#root/_help_YfYAtQBcfo5V">Math Equations</a>&nbsp;(inline
     or block)</li>
   <li><a class="reference-link" href="#root/_help_QxEyIjRBizuC">Code blocks</a>, with
@@ -51,11 +50,10 @@
   <li>Links between pages are converted to&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>.</li>
   <li>Callouts are converted to Trilium's <a href="#root/_help_NwBbFdNZ9h7O">Admonitions</a>.
     <ul>
-      <li>Obsidian has many more types of callouts (<code spellcheck="false">tldr</code>,
-        <code
-        spellcheck="false">question</code>, <code spellcheck="false">attention</code>), these are
-          all mapped to one of Trilium's existing admonition types (e.g. Note, Tip,
-          Important).</li>
+      <li>Obsidian has many more types of callouts (<code spellcheck="false">tldr</code>, <code
+        spellcheck="false">question</code>, <code spellcheck="false">attention</code>),
+        these are all mapped to one of Trilium's existing admonition types (e.g.
+        Note, Tip, Important).</li>
       <li>Custom titles are kept and shown as a bold line at the top of the admonition,
         since there is no concept of admonition title in Trilium.</li>
       <li>Foldable callouts are imported expanded and without a fold marker.</li>
@@ -78,15 +76,14 @@
   between the two is where the property information is stored (i.e. name
   and type): in Obsidian everything is stored at vault level and shared across
   all notes, whereas in Trilium each page can have individual promoted attributes,
-  shared through&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;or&nbsp;
-  <a
+  shared through&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;or&nbsp;<a
   class="reference-link" href="#root/_help_bwZpz2ajCEwO">Attribute Inheritance</a>.</p>
 <p>Another important difference is that promoted attributes in Trilium are
   always displayed, even if empty. In Obsidian, these are simply suggested
   when creating a new property.</p>
-<p>To reconcile all these differences, properties are converted to&nbsp;
-  <a
-  class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;at note level.</p>
+<p>To reconcile all these differences, properties are converted to&nbsp;<a
+  class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;at
+  note level.</p>
 <p>The following note types are supported:</p>
 <figure class="table">
   <table>
@@ -111,8 +108,7 @@
       </tr>
       <tr>
         <td>Checkbox</td>
-        <td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/
-          <code
+        <td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/<code
           spellcheck="false">false</code>).</td>
       </tr>
       <tr>
@@ -133,15 +129,12 @@
   in Trilium as well:</p>
 <ul>
   <li><code spellcheck="false">tags</code>, where every tag is turned into its
-    own <a href="#root/_help_HI6GBBIduIgv">label</a> (e.g. <code spellcheck="false">#one</code>,
-    <code
-    spellcheck="false">#two</code>when <code spellcheck="false">tags: [ one, two ]</code>).</li>
-  <li><code spellcheck="false">aliases</code> are simply mapped to individual
-    <code
-    spellcheck="false">#alias</code>labels</li>
-  <li><code spellcheck="false">cssclasses</code>, <code spellcheck="false">publish</code>,
-    <code
-    spellcheck="false">permalink</code>are ignored.</li>
+    own <a href="#root/_help_HI6GBBIduIgv">label</a> (e.g. <code spellcheck="false">#one</code>, <code
+    spellcheck="false">#two</code> when <code spellcheck="false">tags: [ one, two ]</code>).</li>
+  <li><code spellcheck="false">aliases</code> are simply mapped to individual <code
+    spellcheck="false">#alias</code> labels</li>
+  <li><code spellcheck="false">cssclasses</code>, <code spellcheck="false">publish</code>, <code
+    spellcheck="false">permalink</code> are ignored.</li>
 </ul>
 <h2>Limitations</h2>
 <ul>

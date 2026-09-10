@@ -1,6 +1,6 @@
-<p>Trilium supports simple backup scheme where it saves copy of the&nbsp;
-  <a
-  class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;on these events:</p>
+<p>Trilium supports simple backup scheme where it saves copy of the&nbsp;<a
+  class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;on these
+  events:</p>
 <ul>
   <li>once a day</li>
   <li>once a week</li>
@@ -85,12 +85,10 @@
   <li>find <code spellcheck="false">~/trilium-data/backup/backup-weekly.db</code> -
     this is the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;backup.</li>
   <li>at this point stop/kill Trilium</li>
-  <li>delete <code spellcheck="false">~/trilium-data/document.db</code>,
-    <code
-    spellcheck="false">~/trilium-data/document.db-wal</code>and <code spellcheck="false">~/trilium-data/document.db-shm</code> (latter
-      two files are auto generated)</li>
-  <li>copy and rename this <code spellcheck="false">~/trilium-data/backup/backup-weekly.db</code> to
-    <code
+  <li>delete <code spellcheck="false">~/trilium-data/document.db</code>, <code
+    spellcheck="false">~/trilium-data/document.db-wal</code> and <code spellcheck="false">~/trilium-data/document.db-shm</code> (latter
+    two files are auto generated)</li>
+  <li>copy and rename this <code spellcheck="false">~/trilium-data/backup/backup-weekly.db</code> to <code
     spellcheck="false">~/trilium-data/document.db</code>
   </li>
   <li>make sure that the file is writable, e.g. with <code spellcheck="false">chmod 600 document.db</code>
@@ -153,32 +151,31 @@ class="admonition note">
   <p>On some systems, a keyring may not be available for Trilium to securely
     store the encryption password. In such cases, the encryption option is
     disabled.</p>
-  </aside>
-  <h2>Backup compression</h2>
-  <p>Database backups can be optionally compressed to minimize storage footprint.
-    This method is effective primarily when the database consists largely of
-    text content. However, media files (images, videos, audio), along with
-    PDF, ODF, and DOCX files, are already compressed in their original formats
-    and won't benefit from further compression.</p>
-  <p>Compressed backups are stored using the Trilium Backup Container (.tnbackup),
-    employing RFC 1952 GZIP compression.</p>
-  <aside class="admonition warning">
-    <p><strong>Note:</strong> Compression increases the time required for backup
-      creation and restoration. It may also lead to higher CPU usage during automatic
-      backups, potentially draining the battery faster on battery-powered devices.
-      Enable this option only if necessary.</p>
-  </aside>
-  <h3>Enabling Backup Compression (Desktop Only)</h3>
-  <p>To enable compression for new automatic and manual backups, navigate to <strong>Settings → Backup → Backup Options</strong> and
-    toggle <strong>Enable Compression</strong> to on.</p>
-  <h2>Disabling backup</h2>
-  <p>Although this is not recommended, it is possible to disable backup in
-    <code
-    spellcheck="false">config.ini</code>in the <a href="#root/_help_tAassRL4RSQL">data directory</a>:</p><pre><code class="language-text-x-trilium-auto">[General]
+</aside>
+<h2>Backup compression</h2>
+<p>Database backups can be optionally compressed to minimize storage footprint.
+  This method is effective primarily when the database consists largely of
+  text content. However, media files (images, videos, audio), along with
+  PDF, ODF, and DOCX files, are already compressed in their original formats
+  and won't benefit from further compression.</p>
+<p>Compressed backups are stored using the Trilium Backup Container (.tnbackup),
+  employing RFC 1952 GZIP compression.</p>
+<aside class="admonition warning">
+  <p><strong>Note:</strong> Compression increases the time required for backup
+    creation and restoration. It may also lead to higher CPU usage during automatic
+    backups, potentially draining the battery faster on battery-powered devices.
+    Enable this option only if necessary.</p>
+</aside>
+<h3>Enabling Backup Compression (Desktop Only)</h3>
+<p>To enable compression for new automatic and manual backups, navigate to <strong>Settings → Backup → Backup Options</strong> and
+  toggle <strong>Enable Compression</strong> to on.</p>
+<h2>Disabling backup</h2>
+<p>Although this is not recommended, it is possible to disable backup in <code
+  spellcheck="false">config.ini</code> in the <a href="#root/_help_tAassRL4RSQL">data directory</a>:</p><pre><code class="language-text-x-trilium-auto">[General]
 ... some other configs
 # set to true to disable backups (e.g. because of limited space on server)
 noBackup=true</code></pre>
-  <p>You can also review the <a href="#root/_help_Gzjqa934BdH4">configuration</a> file
-    to provide all <code spellcheck="false">config.ini</code> values as environment
-    variables instead.</p>
-  <p>See <a href="https://github.com/TriliumNext/Trilium/blob/master/config-sample.ini">sample config</a>.</p>
+<p>You can also review the <a href="#root/_help_Gzjqa934BdH4">configuration</a> file
+  to provide all <code spellcheck="false">config.ini</code> values as environment
+  variables instead.</p>
+<p>See <a href="https://github.com/TriliumNext/Trilium/blob/master/config-sample.ini">sample config</a>.</p>

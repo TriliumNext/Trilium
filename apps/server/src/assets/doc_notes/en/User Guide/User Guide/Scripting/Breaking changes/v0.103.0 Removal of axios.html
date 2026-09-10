@@ -11,9 +11,8 @@
   trojan. The Trilium's main developer almost got compromised, but <code spellcheck="false">pnpm</code> not
   trusting unknown post-install scripts successfully avoided that.</p>
 <h2>Migration</h2>
-<p>Replace <code spellcheck="false">api.axios</code> calls with the native
-  <code
-  spellcheck="false">fetch()</code>API.</p>
+<p>Replace <code spellcheck="false">api.axios</code> calls with the native <code
+  spellcheck="false">fetch()</code> API.</p>
 <h3><code spellcheck="false">GET</code> calls</h3>
 <p>Before (Axios):</p><pre><code class="language-text-javascript">const response = await api.axios.get('https://api.example.com/data');
 const data = response.data;</code></pre>

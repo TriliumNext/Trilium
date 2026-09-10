@@ -766,10 +766,7 @@
     "insert-new": "新しく追加",
     "group-by": "カードのグループ化",
     "grouping-already-defined": "\"{{- name}}\" はこのボード上で既に定義されています。リストから選択してグループ化してください。",
-    "sort-cards": "カードの並べ替え",
-    "sort-board-default": "ボードのデフォルト",
-    "sort-actions": "その他の操作",
-    "reset-columns-to-default": "すべての列をデフォルトにリセット"
+    "sort-board-default": "ボードのデフォルト"
   },
   "code_buttons": {
     "execute_button_title": "スクリプトを実行",

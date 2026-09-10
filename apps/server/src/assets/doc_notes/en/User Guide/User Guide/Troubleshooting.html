@@ -13,16 +13,14 @@
   Trilium to crash. If Trilium attempts to reload the problematic note upon
   restart, it will continue to crash.</p>
 <p>To resolve this, use the <code spellcheck="false">TRILIUM_START_NOTE_ID</code> environment
-  variable to reset the open tabs to a single specified note ID (e.g.,
-  <code
+  variable to reset the open tabs to a single specified note ID (e.g., <code
   spellcheck="false">root</code>). In Linux, you can set it as follows:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_START_NOTE_ID=root ./trilium</code></pre>
 <h2>Broken Script Prevents Application Startup</h2>
 <p>If a custom script causes Trilium to crash, and it is set as a startup
   script or in an active <a href="#root/_help_MgibgPcfeuGz">custom widget</a>, start
   Triliumin "safe mode" to prevent any custom scripts from executing:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_SAFE_MODE=true ./trilium</code></pre>
 <p>Depending on your Trilium distribution, you may have pre-made scripts
-  available: <code spellcheck="false">trilium-safe-mode.bat</code> and
-  <code
+  available: <code spellcheck="false">trilium-safe-mode.bat</code> and <code
   spellcheck="false">trilium-safe-mode.sh</code>.</p>
 <p>Once Trilium starts, locate and fix or delete the problematic note.</p>
 <h2>Sync and Consistency Checks</h2>

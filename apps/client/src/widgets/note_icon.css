@@ -1,3 +1,7 @@
+div.note-icon-root {
+    display: contents;
+}
+
 div.note-icon-widget {
     /* The size of the icon */
     --note-icon-size: 30px;

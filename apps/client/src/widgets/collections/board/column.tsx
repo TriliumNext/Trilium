@@ -47,6 +47,9 @@ import { DEFAULT_CARD_ICON, DEFAULT_COLUMN_ICON, INBOX_COLUMN } from "./columns"
 import { openColumnContextMenu, openColumnSortMenu, openCreateCardMenu } from "./context_menu";
 import type { ColumnSort } from "./data";
 import { cardSpacing } from "./drag_measure";
+import {
+    REVEAL_CARD, type RevealCardDetail, useColumnWindow, WINDOW_THRESHOLD
+} from "./windowing";
 import { BoardDropStateContext, useDropIndex, useIsDropTarget } from "./drop_state";
 
 interface DragContext {
@@ -186,10 +189,15 @@ export default function Column({
     // `isNew` stays true until another column is added, so the reveal is recorded here rather than
     // replayed on every redraw of the board.
     const [ isRevealed, setIsRevealed ] = useState(false);
-    const { setColumnNameToEdit, setColumnLimitToEdit, setActiveColumn } =
+    const { setColumnNameToEdit, setColumnLimitToEdit, setActiveColumn, setInsertingColumn } =
         useContext(BoardActionsContext);
     const { branchIdToEdit, columnNameToEdit, draggedCard, draggedColumn } =
         useContext(BoardDragStateContext);
+    // Every card on the move. The one under the pointer is taken out of the flow by the gesture
+    // itself; the rest of a carried selection stay where they are drawn and are dimmed instead.
+    const carriedNoteIds = draggedCard
+        ? new Set(draggedCard.noteIds ?? [ draggedCard.noteId ])
+        : null;
     // Asked about this column alone: where the gap stands changes on every step of a drag, and a
     // column that the answer does not concern is left as it is rather than drawn again.
     const standingDropIndex = useDropIndex(column);
@@ -205,6 +213,15 @@ export default function Column({
     const headerRef = useRef<HTMLHeadingElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const scrollFade = useScrollFade(contentRef);
+    const noteIds = useMemo(
+        () => (columnItems ?? []).map(({ note }) => note.noteId), [ columnItems ]);
+    // A column of thousands draws only what the reader can see. Left off below the threshold, so
+    // an ordinary board keeps the code path it has always had.
+    const isWindowed = noteIds.length > WINDOW_THRESHOLD;
+    const { bounds, windowChanged, scrollToCard } = useColumnWindow(contentRef, noteIds, isWindowed);
+    const shownItems = isWindowed
+        ? (columnItems ?? []).slice(bounds.from, bounds.until)
+        : (columnItems ?? []);
     // Cards slide to follow the drop gap opening and closing. Measured only when the column's own
     // cards have changed: reading one position costs a layout of the whole board, and anything
     // else that redraws it would have every column read one per card.
@@ -216,10 +233,13 @@ export default function Column({
         // Paused where nothing has moved the cards, so the places it knows are still good.
         paused: !cardsChanged,
         // Off for the length of a gesture, so the commit that ends one records where the cards
-        // landed rather than sliding them there.
-        disabled: !!draggedCard || !!draggedColumn || !!isResizing
+        // landed rather than sliding them there. A window that has just swapped its cards is the
+        // same case: the places recorded before it name cards that are no longer drawn, and
+        // sliding from them would animate a scroll as though the column had been reordered.
+        disabled: !!draggedCard || !!draggedColumn || !!isResizing || windowChanged
     });
 
+    const windowFrom = isWindowed ? bounds.from : 0;
     // The gap is a standing element that slides, and the cards beside it are transformed: putting
     // one among the cards, or taking one out, restyles every element the board holds.
     const gapRef = useRef<HTMLDivElement>(null);
@@ -245,16 +265,24 @@ export default function Column({
         // moves, and the ones past its foot are left alone whatever it holds.
         const reach = Math.ceil(area.clientHeight / MIN_CARD_HEIGHT) + 1;
 
+        // A windowed column draws a slice of its cards, so a place in the column has to be read
+        // as a place among the ones drawn before it can name an element.
+        const placeOf = (index: number) => index - windowFrom;
+
         // Read before anything is written, and `offsetTop` is no business of a transform anyway.
         if (dropIndex !== null) {
-            const standing = cards[dropIndex];
+            const standing = cards[placeOf(dropIndex)];
             // `lift()` sets `display: none` on the carried card, so a gap past the last one
             // measures against the last card still laid out.
             const drawn = [ ...cards ].filter(card => card.style.display !== "none");
             const last = drawn[drawn.length - 1];
             const top = standing
                 ? standing.offsetTop
-                : (last ? last.offsetTop + last.offsetHeight + cardSpacing() : 0);
+                // Above the window, place the gap at the first rendered card; below it, after
+                // the last.
+                : (placeOf(dropIndex) < 0
+                    ? (cards[0]?.offsetTop ?? 0)
+                    : (last ? last.offsetTop + last.offsetHeight + cardSpacing() : 0));
             gap.style.transform = `translateY(${top}px)`;
             gap.style.height = `${height}px`;
         }
@@ -273,7 +301,7 @@ export default function Column({
             return;
         }
 
-        const from = dropIndex;
+        const from = Math.max(0, placeOf(dropIndex));
         const until = Math.min(cards.length, from + reach);
         const last = aside.current;
         // A step of a drag moves the gap by a card, so only the few cards it passed change what
@@ -293,7 +321,7 @@ export default function Column({
             }
         }
         aside.current = { from, until, room };
-    }, [ dropIndex, draggedCard, columnItems ]);
+    }, [ dropIndex, draggedCard, columnItems, windowFrom ]);
     const { handleDragOver, handleDragLeave, handleDrop } = useDragging({
         column, columnIndex, columnItems, isEditing, api, parentNote, onLanded: setCreatedNoteId
     });
@@ -511,6 +539,45 @@ export default function Column({
         return () => window.clearTimeout(timer);
     }, [ insertedNoteId, columnItems ]);
 
+    // A card created at the foot of a long column falls outside the window, so the card's own
+    // scroll effect never runs. Scroll to it here, which renders it.
+    const arrived = createdNoteId ?? landedNoteId;
+    useEffect(() => {
+        if (!isWindowed || !arrived) return;
+
+        const index = noteIds.indexOf(arrived);
+        if (index >= 0 && (index < bounds.from || index >= bounds.until)) {
+            scrollToCard(index);
+        }
+    }, [ arrived, isWindowed, noteIds, bounds.from, bounds.until, scrollToCard ]);
+
+    // The keyboard can walk onto a card the window leaves undrawn, which cannot be focused until
+    // it is in the page.
+    useEffect(() => {
+        const board = contentRef.current?.closest<HTMLElement>(".board-view-container");
+        if (!board || !isWindowed) return;
+
+        const reveal = (event: Event) => {
+            const { detail } = event as CustomEvent<RevealCardDetail>;
+            if (detail.column === column) {
+                scrollToCard(detail.index, detail.immediate);
+            }
+        };
+
+        board.addEventListener(REVEAL_CARD, reveal);
+        return () => board.removeEventListener(REVEAL_CARD, reveal);
+    }, [ column, isWindowed, scrollToCard ]);
+
+    // The board raises its backdrop for any open field, and each column holds its own.
+    useEffect(() => {
+        setInsertingColumn(column, !!insertBefore);
+        return () => setInsertingColumn(column, false);
+    }, [ column, insertBefore, setInsertingColumn ]);
+
+    // Whether the title being edited is one of this column's, which lifts the mask below.
+    const hasEditedCard = !!branchIdToEdit
+        && !!columnItems?.some(({ branch }) => branch.branchId === branchIdToEdit);
+
     // The field a card is inserted in, drawn where the reader asked for the card. The same field
     // as the one below the column, so a card is made the same way wherever it goes.
     const insertField = insertBefore && (
@@ -534,6 +601,8 @@ export default function Column({
                 // The class the themes key a hue off, worn here as anywhere else that carries one.
                 "with-hue": hue !== undefined,
                 "board-column-archived": archived,
+                "editing-open": hasEditedCard || !!insertBefore,
+                windowed: isWindowed,
                 "over-limit": isOverLimit,
                 collapsed: isCollapsed,
                 "quick-collapse": isCollapsingByHand,
@@ -658,8 +727,11 @@ export default function Column({
                 className={clsx("board-column-content", scrollFade.className)}
                 style={scrollFade.style}
                 onWheel={handleScroll}
+                data-window-from={isWindowed ? windowFrom : undefined}
+                data-window-count={isWindowed ? noteIds.length : undefined}
             >
-                {(columnItems ?? []).map(({ note, branch }, index) => (
+                <div className="board-window-spacer" style={{ height: `${bounds.above}px` }} />
+                {shownItems.map(({ note, branch }, offset) => (
                     <Fragment key={note.noteId}>
                         {insertBefore?.branchId === branch.branchId && insertField}
                         <Card
@@ -667,12 +739,12 @@ export default function Column({
                             note={note}
                             branch={branch}
                             column={column}
-                            index={index}
+                            index={bounds.from + offset}
                             statusAttribute={api.statusAttribute}
                             isNew={note.noteId === createdNoteId
                                 || note.noteId === landedNoteId}
                             focusOnArrival={note.noteId === insertedNoteId}
-                            isDragging={draggedCard?.noteId === note.noteId}
+                            isDragging={!!carriedNoteIds?.has(note.noteId)}
                             isEditing={branch.branchId === branchIdToEdit}
                             onFocusCard={onFocusCard}
                             onInsert={beginInsert}
@@ -680,6 +752,7 @@ export default function Column({
                         />
                     </Fragment>
                 ))}
+                <div className="board-window-spacer" style={{ height: `${bounds.below}px` }} />
                 {insertBefore && !insertBefore.branchId && insertField}
                 {/* Both stand here for the length of the board's life: an element appearing
                     among the cards, or leaving them, is what a drag cannot afford. */}

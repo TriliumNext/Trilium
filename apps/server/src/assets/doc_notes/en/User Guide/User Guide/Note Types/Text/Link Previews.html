@@ -75,55 +75,53 @@ class="admonition note">
   <p>A URL is only auto-converted when the pasted text <em>is</em> the URL. Links
     with a display name (e.g. <a href="https://triliumnotes.org">Trilium Notes website</a>)
     are left as plain links.</p>
-  </aside>
-  <h3>2. By using the "Link preview" toolbar button</h3>
-  <p>Click <strong>Link preview</strong> in the formatting toolbar to open the <em>Link preview</em> popup.
-    Paste the URL and choose the type of preview.</p>
-  <h2>Altering an existing link preview</h2>
-  <p>Click on an inserted link preview to select it, and a small toolbar will
-    appear with the following options:</p>
-  <ul>
-    <li>The normal link operations (opening in a new tab, copying the link, unlinking).</li>
-    <li>A button to edit the title of the link preview. This is especially useful
-      if the title is hidden behind a login screen.</li>
-    <li>A way to switch between the link preview modes (Inline, Card or Embed)
-      as well as to convert it to a normal link instead.
-      <ul>
-        <li>The Embed option is only enabled when the URL points to a supported service
-          (YouTube today).</li>
-      </ul>
-    </li>
-  </ul>
-  <h2>Where the preview data comes from</h2>
-  <p>When you insert a link preview, Trilium fetches metadata once and stores
-    it inside the note's HTML:</p>
-  <ul>
-    <li><strong>YouTube URLs</strong> — title, channel name, and thumbnail are
-      fetched via YouTube's public oEmbed endpoint.</li>
-    <li><strong>All other URLs</strong> — Trilium fetches the page and reads OpenGraph
-      tags (<code spellcheck="false">og:title</code>, <code spellcheck="false">og:description</code>,
-      <code
-      spellcheck="false">og:image</code>, <code spellcheck="false">og:site_name</code>), falling
-        back to the page's <code spellcheck="false">&lt;title&gt;</code> and
-        <code
-        spellcheck="false">&lt;meta name="description"&gt;</code>. The site's favicon is downloaded
-          and inlined.</li>
-  </ul>
-  <p>Because the data is stored in the note itself, link previews continue
-    to render correctly when you reopen the note, share/publish it, or export
-    to HTML — without any further network requests.</p>
-  <p>The metadata is captured <strong>at insertion time</strong> and is not automatically
-    refreshed. If the linked page later changes its title or thumbnail, you'll
-    need to re-insert the link to pick up the new values. To refresh a link,
-    simply create it again.</p>
-  <p>When accessing a&nbsp;<a class="reference-link" href="#root/_help_WOcw2SLH6tbX">Server Installation</a>,
-    the data is fetched from the remote URL by the server and not the client.</p>
-  <h2>Known limitations</h2>
-  <ul>
-    <li>The Embed display mode currently only supports YouTube. Other video and
-      media platforms fall back to a Card preview.</li>
-    <li>Pages that block automated fetches may produce a minimal preview (hostname
-      only).</li>
-    <li>Link previews require the Trilium server to reach the target URL, so they
-      won't generate previews for pages on networks the server can't see.</li>
-  </ul>
+</aside>
+<h3>2. By using the "Link preview" toolbar button</h3>
+<p>Click <strong>Link preview</strong> in the formatting toolbar to open the <em>Link preview</em> popup.
+  Paste the URL and choose the type of preview.</p>
+<h2>Altering an existing link preview</h2>
+<p>Click on an inserted link preview to select it, and a small toolbar will
+  appear with the following options:</p>
+<ul>
+  <li>The normal link operations (opening in a new tab, copying the link, unlinking).</li>
+  <li>A button to edit the title of the link preview. This is especially useful
+    if the title is hidden behind a login screen.</li>
+  <li>A way to switch between the link preview modes (Inline, Card or Embed)
+    as well as to convert it to a normal link instead.
+    <ul>
+      <li>The Embed option is only enabled when the URL points to a supported service
+        (YouTube today).</li>
+    </ul>
+  </li>
+</ul>
+<h2>Where the preview data comes from</h2>
+<p>When you insert a link preview, Trilium fetches metadata once and stores
+  it inside the note's HTML:</p>
+<ul>
+  <li><strong>YouTube URLs</strong> — title, channel name, and thumbnail are
+    fetched via YouTube's public oEmbed endpoint.</li>
+  <li><strong>All other URLs</strong> — Trilium fetches the page and reads OpenGraph
+    tags (<code spellcheck="false">og:title</code>, <code spellcheck="false">og:description</code>, <code
+    spellcheck="false">og:image</code>, <code spellcheck="false">og:site_name</code>),
+    falling back to the page's <code spellcheck="false">&lt;title&gt;</code> and <code
+    spellcheck="false">&lt;meta name="description"&gt;</code>. The site's favicon
+    is downloaded and inlined.</li>
+</ul>
+<p>Because the data is stored in the note itself, link previews continue
+  to render correctly when you reopen the note, share/publish it, or export
+  to HTML — without any further network requests.</p>
+<p>The metadata is captured <strong>at insertion time</strong> and is not automatically
+  refreshed. If the linked page later changes its title or thumbnail, you'll
+  need to re-insert the link to pick up the new values. To refresh a link,
+  simply create it again.</p>
+<p>When accessing a&nbsp;<a class="reference-link" href="#root/_help_WOcw2SLH6tbX">Server Installation</a>,
+  the data is fetched from the remote URL by the server and not the client.</p>
+<h2>Known limitations</h2>
+<ul>
+  <li>The Embed display mode currently only supports YouTube. Other video and
+    media platforms fall back to a Card preview.</li>
+  <li>Pages that block automated fetches may produce a minimal preview (hostname
+    only).</li>
+  <li>Link previews require the Trilium server to reach the target URL, so they
+    won't generate previews for pages on networks the server can't see.</li>
+</ul>

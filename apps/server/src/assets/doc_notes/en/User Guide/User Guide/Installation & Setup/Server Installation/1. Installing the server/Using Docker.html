@@ -1,5 +1,4 @@
-<p>Official docker images are published on docker hub for <strong>AMD64</strong>, <strong>ARMv7</strong> and <strong>ARM64/v8</strong>:
-  <a
+<p>Official docker images are published on docker hub for <strong>AMD64</strong>, <strong>ARMv7</strong> and <strong>ARM64/v8</strong>: <a
   href="https://hub.docker.com/r/triliumnext/trilium/">https://hub.docker.com/r/triliumnext/trilium/</a>
 </p>
 <h2>Prerequisites</h2>
@@ -9,11 +8,10 @@
 <p><strong>Note:</strong> Trilium's Docker container requires root privileges
   to operate correctly.</p>
 <aside class="admonition warning">
-  <p>If you're using a SMB/CIFS share or folder as your Trilium data directory,
-    <a
-    href="https://github.com/TriliumNext/Notes/issues/415#issuecomment-2344824400">you'll need</a>to add the mount options of <code spellcheck="false">nobrl</code> and
-      <code
-      spellcheck="false">noperm</code>when mounting your SMB share.</p>
+  <p>If you're using a SMB/CIFS share or folder as your Trilium data directory, <a
+    href="https://github.com/TriliumNext/Notes/issues/415#issuecomment-2344824400">you'll need</a> to
+    add the mount options of <code spellcheck="false">nobrl</code> and <code spellcheck="false">noperm</code> when
+    mounting your SMB share.</p>
 </aside>
 <h2>Running with Docker Compose</h2>
 <h3>Grab the latest docker-compose.yml:</h3><pre><code class="language-text-x-trilium-auto">wget https://raw.githubusercontent.com/TriliumNext/Trilium/master/docker-compose.yml</code></pre>
@@ -27,8 +25,7 @@
 <h3>Pulling the Docker Image</h3>
 <p>To pull the image, use the following command, replacing <code spellcheck="false">[VERSION]</code> with
   the desired version or tag, such as <code spellcheck="false">v0.91.6</code> or
-  just <code spellcheck="false">latest</code>. (See published tag names at
-  <a
+  just <code spellcheck="false">latest</code>. (See published tag names at <a
   href="https://hub.docker.com/r/triliumnext/trilium/tags">https://hub.docker.com/r/triliumnext/trilium/tags</a>.):</p><pre><code class="language-text-x-trilium-auto">docker pull triliumnext/trilium:v0.91.6</code></pre>
 <p><strong>Warning:</strong> Avoid using the "latest" tag, as it may automatically
   upgrade your instance to a new minor version, potentially disrupting sync
@@ -149,9 +146,8 @@ docker run -d --name trilium -p 8080:8080 --user $(id -u):$(id -g) -v ~/trilium-
 <ol>
   <li>The host directory has appropriate permissions for the UID/GID you're
     using</li>
-  <li>You're setting both <code spellcheck="false">TRILIUM_UID</code> and
-    <code
-    spellcheck="false">TRILIUM_GID</code>to match the owner of the host directory</li>
+  <li>You're setting both <code spellcheck="false">TRILIUM_UID</code> and <code
+    spellcheck="false">TRILIUM_GID</code> to match the owner of the host directory</li>
 </ol><pre><code class="language-text-x-trilium-auto"># For example, if your data directory is owned by UID 1001 and GID 1001:
 TRILIUM_UID=1001 TRILIUM_GID=1001 docker-compose -f docker-compose.rootless.yml up -d
 </code></pre>

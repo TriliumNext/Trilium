@@ -85,6 +85,7 @@ overrides:
 
 patchedDependencies:
   '@excalidraw/excalidraw@0.18.1': 859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2
+  html@1.0.0: 8acc288f8e9cde3c8a0c6e89f0b3796aeeb8251b88db9d1ba313e2352a591d68
 
 importers:
 
@@ -206,8 +207,8 @@ importers:
         specifier: 0.18.1
         version: 0.18.1(patch_hash=859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@fullcalendar/rrule':
-        specifier: 7.0.2
-        version: 7.0.2(rrule@2.8.1)(temporal-polyfill@1.0.4)
+        specifier: 7.1.0
+        version: 7.1.0(rrule@2.8.1)(temporal-polyfill@1.0.4)
       '@mermaid-js/layout-elk':
         specifier: 0.2.2
         version: 0.2.2(mermaid@11.17.2)
@@ -281,8 +282,8 @@ importers:
         specifier: 9.0.0
         version: 9.0.0
       dompurify:
-        specifier: 3.4.14
-        version: 3.4.14
+        specifier: 3.4.15
+        version: 3.4.15
       draggabilly:
         specifier: 3.0.0
         version: 3.0.0
@@ -290,8 +291,8 @@ importers:
         specifier: 1.51.4
         version: 1.51.4(preact-render-to-string@6.7.0)
       fullcalendar:
-        specifier: 7.0.2
-        version: 7.0.2(preact-render-to-string@6.7.0)(temporal-polyfill@1.0.4)
+        specifier: 7.1.0
+        version: 7.1.0(preact-render-to-string@6.7.0)(temporal-polyfill@1.0.4)
       gridstack:
         specifier: 13.2.0
         version: 13.2.0
@@ -314,8 +315,8 @@ importers:
         specifier: 2.15.6
         version: 2.15.6
       katex:
-        specifier: 0.18.6
-        version: 0.18.6
+        specifier: 0.18.7
+        version: 0.18.7
       maplibre-gl:
         specifier: 6.7.0
         version: 6.7.0
@@ -733,7 +734,7 @@ importers:
         version: 8.3.0
       html:
         specifier: 1.0.0
-        version: 1.0.0
+        version: 1.0.0(patch_hash=8acc288f8e9cde3c8a0c6e89f0b3796aeeb8251b88db9d1ba313e2352a591d68)
       http-proxy-agent:
         specifier: 9.1.0
         version: 9.1.0(supports-color@10.2.2)
@@ -876,8 +877,8 @@ importers:
         specifier: 1.51.4
         version: 1.51.4(preact-render-to-string@6.7.0)
       fullcalendar:
-        specifier: 7.0.2
-        version: 7.0.2(preact-render-to-string@6.7.0)(temporal-polyfill@1.0.4)
+        specifier: 7.1.0
+        version: 7.1.0(preact-render-to-string@6.7.0)(temporal-polyfill@1.0.4)
       i18next:
         specifier: 26.4.2
         version: 26.4.2(typescript@6.0.3)
@@ -906,8 +907,8 @@ importers:
         specifier: 2.15.6
         version: 2.15.6
       katex:
-        specifier: 0.18.6
-        version: 0.18.6
+        specifier: 0.18.7
+        version: 0.18.7
       maplibre-gl:
         specifier: 6.7.0
         version: 6.7.0
@@ -1327,8 +1328,8 @@ importers:
         specifier: 7.5.0
         version: 7.5.0
       katex:
-        specifier: 0.18.6
-        version: 0.18.6
+        specifier: 0.18.7
+        version: 0.18.7
       mermaid:
         specifier: 11.17.2
         version: 11.17.2
@@ -2808,19 +2809,19 @@ packages:
       '@codemirror/view': 6.43.11
       '@lezer/highlight': 1.2.3
 
-  '@full-ui/headless-calendar@7.0.2':
-    resolution: {integrity: sha512-i6UlTNjBVuiBca5Sq6OoLxFqK6eaQ/v1XOLObjRkzXLuSuNn+qs9/dUvlzrbeesn7QbRH7+u7lyvlQyq8WvmGA==}
+  '@full-ui/headless-calendar@7.1.0':
+    resolution: {integrity: sha512-T54tSUik/ia9Jj4xduFHv1p98eVBgLnE33Q6qhpg+WWkqKCLBCbtVyMcTPPIOP5jjTV2MbtjrRvRt1RLSryGHA==}
     peerDependencies:
       temporal-polyfill: ^1.0.1
 
-  '@fullcalendar/core@7.0.2':
-    resolution: {integrity: sha512-EkhE1wkPttp5kKNmUNLsMwl8nUuQmLdj30SPKagOEWMJUE4AHETAu/F/SbYoRq+nksm2GWPe9cQs1kbQP2H9pA==}
+  '@fullcalendar/core@7.1.0':
+    resolution: {integrity: sha512-a+ABP7zQpPWpwPT8EsOdShpeOVrJyx/XYStqERd8ibld/FLi/dzpd95r7w3RIdFqFm9iUv0gdGvBshSlI/dbPw==}
     peerDependencies:
-      '@full-ui/headless-calendar': 7.0.2
+      '@full-ui/headless-calendar': 7.1.0
       temporal-polyfill: ^1.0.1
 
-  '@fullcalendar/rrule@7.0.2':
-    resolution: {integrity: sha512-kg+mf4/eDhneBSIl8nrPkdoga66JUuEjD4R3rTt4q+x1Jxs2SCsgD78rg7IkqeVD76Dq6VqYFQJajv6q4MYuEw==}
+  '@fullcalendar/rrule@7.1.0':
+    resolution: {integrity: sha512-ZrxWrRUO21r+4kC8pJIr/6Y46fa8tRsgEAm3vphgTJy38d4jn0pY2EvBxPSDh0syP9YhWyJuOIYZfXCgp/DZZg==}
     peerDependencies:
       rrule: ^2.6.0
       temporal-polyfill: ^1.0.1
@@ -7228,6 +7229,9 @@ packages:
   dompurify@3.4.14:
     resolution: {integrity: sha512-dVoH9z+MY+C9IilgGCk3YfFqjLi3fChm2OiKJMzh6axrJ5qwxqWaZamgmHrpv22CN/KdbZJuGEGgfQoL00LTdg==}
 
+  dompurify@3.4.15:
+    resolution: {integrity: sha512-EUBjM+B+lkDE41iE82DDSCfkoPGfXx8IxFxPMjNzm/Uk4xDet77rTN9wqlxlVg71kK7XGuUMv6wUxJUwwv+Xyw==}
+
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
 
@@ -7891,8 +7895,8 @@ packages:
     engines: {node: '>=0.6'}
     deprecated: This package is no longer supported.
 
-  fullcalendar@7.0.2:
-    resolution: {integrity: sha512-xqt/4CrnabOUVfu5PExyc6plbwH8QA1jAusRw6JOUfS+BmpA19W74lNLDty6EO0H+2cm/qVMza4TgQiJLHPAqQ==}
+  fullcalendar@7.1.0:
+    resolution: {integrity: sha512-Pvr/fLrwuwfIjRygNKHJdHFJ8QGWjkAf6FFaMAi7Iv/fFftZQXV49smJE8KTgSVW/GxrqjN5t5Zw2OBTRKcnzA==}
     peerDependencies:
       temporal-polyfill: ^1.0.1
 
@@ -8795,8 +8799,8 @@ packages:
     resolution: {integrity: sha512-Eeo8Ys1doU1z+x8AZsPpQu+p/QcZBI5PeOo7QGQdy2x2m0MU/hYagBbGOmXwr5KVbEfVuWv9LpnQWeehogurjg==}
     hasBin: true
 
-  katex@0.18.6:
-    resolution: {integrity: sha512-5B7yiIsr7gq9hlIH6uG7hTNglHSz7I+Csa9I66dK4Ljz/YEGQMoBcC1IwtFFp34I7byBcEPtCyYFNnzuxZnGlw==}
+  katex@0.18.7:
+    resolution: {integrity: sha512-h+UCwkZ+4Jz8WQ7MLGfj7UVFrRCizGb912fwF4luGdYsC5paYG1vx+jy+KRcC/XkpjGva/P7nAWuxNnPzRvzHw==}
     hasBin: true
 
   kdbush@4.1.0:
@@ -14095,19 +14099,19 @@ snapshots:
       '@codemirror/view': 6.43.11
       '@lezer/highlight': 1.2.3
 
-  '@full-ui/headless-calendar@7.0.2(temporal-polyfill@1.0.4)':
+  '@full-ui/headless-calendar@7.1.0(temporal-polyfill@1.0.4)':
     dependencies:
       temporal-polyfill: 1.0.4
 
-  '@fullcalendar/core@7.0.2(@full-ui/headless-calendar@7.0.2(temporal-polyfill@1.0.4))(temporal-polyfill@1.0.4)':
+  '@fullcalendar/core@7.1.0(@full-ui/headless-calendar@7.1.0(temporal-polyfill@1.0.4))(temporal-polyfill@1.0.4)':
     dependencies:
-      '@full-ui/headless-calendar': 7.0.2(temporal-polyfill@1.0.4)
+      '@full-ui/headless-calendar': 7.1.0(temporal-polyfill@1.0.4)
       temporal-polyfill: 1.0.4
 
-  '@fullcalendar/rrule@7.0.2(rrule@2.8.1)(temporal-polyfill@1.0.4)':
+  '@fullcalendar/rrule@7.1.0(rrule@2.8.1)(temporal-polyfill@1.0.4)':
     dependencies:
-      '@full-ui/headless-calendar': 7.0.2(temporal-polyfill@1.0.4)
-      '@fullcalendar/core': 7.0.2(@full-ui/headless-calendar@7.0.2(temporal-polyfill@1.0.4))(temporal-polyfill@1.0.4)
+      '@full-ui/headless-calendar': 7.1.0(temporal-polyfill@1.0.4)
+      '@fullcalendar/core': 7.1.0(@full-ui/headless-calendar@7.1.0(temporal-polyfill@1.0.4))(temporal-polyfill@1.0.4)
       rrule: 2.8.1
       temporal-polyfill: 1.0.4
 
@@ -19803,6 +19807,10 @@ snapshots:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
+  dompurify@3.4.15:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
+
   domutils@3.2.2:
     dependencies:
       dom-serializer: 2.0.0
@@ -20735,10 +20743,10 @@ snapshots:
       mkdirp: 0.5.6
       rimraf: 2.6.3
 
-  fullcalendar@7.0.2(preact-render-to-string@6.7.0)(temporal-polyfill@1.0.4):
+  fullcalendar@7.1.0(preact-render-to-string@6.7.0)(temporal-polyfill@1.0.4):
     dependencies:
-      '@full-ui/headless-calendar': 7.0.2(temporal-polyfill@1.0.4)
-      '@fullcalendar/core': 7.0.2(@full-ui/headless-calendar@7.0.2(temporal-polyfill@1.0.4))(temporal-polyfill@1.0.4)
+      '@full-ui/headless-calendar': 7.1.0(temporal-polyfill@1.0.4)
+      '@fullcalendar/core': 7.1.0(@full-ui/headless-calendar@7.1.0(temporal-polyfill@1.0.4))(temporal-polyfill@1.0.4)
       preact: 10.29.8(preact-render-to-string@6.7.0)
       temporal-polyfill: 1.0.4
     transitivePeerDependencies:
@@ -21155,7 +21163,7 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
-  html@1.0.0:
+  html@1.0.0(patch_hash=8acc288f8e9cde3c8a0c6e89f0b3796aeeb8251b88db9d1ba313e2352a591d68):
     dependencies:
       concat-stream: 1.6.2
 
@@ -21740,7 +21748,7 @@ snapshots:
     dependencies:
       commander: 8.3.0
 
-  katex@0.18.6:
+  katex@0.18.7:
     dependencies:
       commander: 15.0.0
 

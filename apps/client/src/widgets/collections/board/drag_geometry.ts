@@ -28,6 +28,14 @@ export interface ColumnBox {
     top: number;
     height: number;
     /**
+     * Where the column's first card begins, in the space {@link toAreaY} reads a point into.
+     *
+     * The column's own top padding, which the boxes below already include but a place counted from
+     * the heights alone does not. Left out, every such place is short by it, and a point near a
+     * boundary falls into the slot below the one the gap is drawn at.
+     */
+    origin: number;
+    /**
      * The cards as drawn, in order, the dragged one included. Counting it keeps the index in the
      * same terms as the list the board holds, which is what a move is expressed in.
      */

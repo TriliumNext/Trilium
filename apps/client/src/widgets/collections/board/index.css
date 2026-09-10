@@ -22,6 +22,21 @@
   --board-collapse-duration-quick: 0.3s;
   --board-expand-duration: 0.2s;
 
+  /* The lift a card takes under the pointer, named so that a picked-out card can carry its ring
+     and this shadow together. */
+  --board-item-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
+  /* What a carried card casts, which the stack of a carried selection is drawn behind. */
+  --board-drag-shadow: 4px 8px 16px rgba(0, 0, 0, 0.5);
+  /* How far each card of a carried stack stands out from the one in front of it. */
+  --board-drag-stack-offset: 4px;
+  /* The ring a carried card wears, which the stack behind it starts clear of. */
+  --board-drag-ring-width: 3px;
+  /* The ring a picked-out card carries. */
+  --board-selected-ring-color: var(--link-color);
+  /* Dims the board while a card is being named. Kept light: it draws the eye to the field rather
+     than hiding what is behind it. */
+  --board-edit-backdrop: rgba(0, 0, 0, 0.15);
+
   --board-focus-outline-saturation: 55%;
   --board-focus-outline-lightness: 45%;
   /* Follows the theme of its own accord, so neither theme has to name it again. */
@@ -38,6 +53,8 @@
   --card-font-size: 0.9em;
   --card-line-height: 1.2;
   --card-padding: 0.6em;
+  /* What stands between a card's title and the row of badges under it, in both modes. */
+  --card-badge-gap: 8px;
   /* The icon a card carries, and where it and the title stand from the card's leading edge. The
      card and the editor it opens into are laid out from these, so switching between them moves
      nothing. All three are worked out in the card's own font. */
@@ -417,6 +434,13 @@ body.mobile .board-view-container .board-add-column {
   }
 }
 
+/* A card carrying `boardCardRedirectTo` opens the note it points at, so its title reads as a link.
+   Drawn on `.text` rather than on `.title`: a decoration set on the title propagates to the icon
+   beside it, and a descendant cannot turn a propagated one off. */
+.board-view-container .board-note.shortcut:hover > .title > .text {
+  text-decoration: underline;
+}
+
 .board-view-container .board-note > .title > .icon {
   flex: none;
   display: flex;
@@ -440,8 +464,27 @@ body.mobile .board-view-container .board-add-column {
 }
 
 .board-view-container .board-note:hover {
-  box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--board-item-hover-shadow);
 }
+
+/* A picked-out card. An inset ring rather than an outline, since focus is drawn as an outline and
+   a card can be both picked out and focused. */
+.board-view-container .board-note.selected {
+  box-shadow: inset 0 0 0 2px var(--board-selected-ring-color);
+}
+
+.board-view-container .board-note.selected:hover {
+  box-shadow:
+    inset 0 0 0 2px var(--board-selected-ring-color),
+    var(--board-item-hover-shadow);
+}
+
+/* A card travelling with the one under the pointer. That one is taken out of the flow by the
+   gesture; the rest stay where they are drawn. */
+.board-view-container .board-note.dragging {
+  opacity: 0.4;
+}
+
 
 .board-view-container .board-note:hover > .edit-icon {
   position: absolute;
@@ -498,7 +541,8 @@ body.mobile .board-view-container .board-add-column {
 /* The card is focused by the press that picks it up and then taken out of the page, which drops the
    focus; the copy carries the ring on so what is being moved still reads as what is focused. */
 .board-view-container .board-note.board-drag-preview {
-  outline: 3px solid var(--board-focus-outline-color, var(--board-focus-outline-plain-color));
+  outline: var(--board-drag-ring-width) solid
+    var(--board-focus-outline-color, var(--board-focus-outline-plain-color));
   outline-offset: 0;
 }
 
@@ -513,7 +557,64 @@ body.mobile .board-view-container .board-add-column {
   pointer-events: none;
   cursor: move;
   opacity: 0.85;
-  box-shadow: 4px 8px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--board-drag-shadow);
+}
+
+/* What a carried selection is drawn as: one card-shaped block holding how many are on the move. */
+.board-view-container .board-note.board-drag-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6em;
+  font-weight: 600;
+
+  /* The card's own colour, which the stack behind it is drawn in at lower opacity. */
+  --board-drag-stack-card:
+    var(--board-item-hue)
+    var(--board-item-saturation)
+    var(--board-item-background-lightness);
+}
+
+/* The cards behind the one carried, drawn as copies of its shape rather than as elements: only the
+   sliver past the front card shows, and a real card would repeat the ring the front one carries.
+   Each is a fill with a copy one pixel wider behind it, which is what draws its edge.
+
+   Every offset starts past the ring, which is drawn over the shapes below and would otherwise take
+   its own width out of the first card alone, leaving that one standing out less than the rest. */
+.board-view-container .board-note.board-drag-count {
+  --board-drag-stack-1:
+    calc(var(--board-drag-ring-width) + var(--board-drag-stack-offset));
+  --board-drag-stack-2:
+    calc(var(--board-drag-ring-width) + var(--board-drag-stack-offset) * 2 + 1px);
+
+  /* Each card behind stands back a little further than the one in front of it. */
+  --board-drag-stack-fade-1: 85%;
+  --board-drag-stack-fade-2: 75%;
+}
+
+.board-view-container .board-note.board-drag-count[data-layers="2"] {
+  box-shadow:
+    var(--board-drag-stack-1) var(--board-drag-stack-1) 0 0
+      hsl(var(--board-drag-stack-card) / var(--board-drag-stack-fade-1)),
+    var(--board-drag-stack-1) var(--board-drag-stack-1) 0 1px
+      color-mix(in srgb, var(--board-selected-ring-color)
+        var(--board-drag-stack-fade-1), transparent),
+    var(--board-drag-shadow);
+}
+
+.board-view-container .board-note.board-drag-count[data-layers="3"] {
+  box-shadow:
+    var(--board-drag-stack-1) var(--board-drag-stack-1) 0 0
+      hsl(var(--board-drag-stack-card) / var(--board-drag-stack-fade-1)),
+    var(--board-drag-stack-1) var(--board-drag-stack-1) 0 1px
+      color-mix(in srgb, var(--board-selected-ring-color)
+        var(--board-drag-stack-fade-1), transparent),
+    var(--board-drag-stack-2) var(--board-drag-stack-2) 0 0
+      hsl(var(--board-drag-stack-card) / var(--board-drag-stack-fade-2)),
+    var(--board-drag-stack-2) var(--board-drag-stack-2) 0 1px
+      color-mix(in srgb, var(--board-selected-ring-color)
+        var(--board-drag-stack-fade-2), transparent),
+    var(--board-drag-shadow);
 }
 
 /* Reaching the end of the board scrolls neither the page nor anything else. */
@@ -524,6 +625,19 @@ body.mobile .board-view-container .board-add-column {
 /* A column contains only what it can scroll itself. `contain` on both axes would also hold a
    sideways swipe that starts on a card, which the column cannot scroll and the board can: Chrome
    stops it at the column instead of passing it on, and the board never moves. */
+/* Stands for the cards a windowed column is not drawing, so the column is the height it would be
+   were it drawing them. */
+.board-view-container .board-window-spacer {
+  margin: 0;
+}
+
+/* A measurement that corrects the spacer above moves everything below it, and the column moves its
+   own scroll position by as much to hold the reader still. The browser must not do so as well: the
+   two chase each other and never settle. */
+.board-view-container .board-column.windowed > .board-column-content {
+  overflow-anchor: none;
+}
+
 .board-view-container .board-column-content {
   overscroll-behavior-y: contain;
   /* What the gap is placed against, and what a card's `offsetTop` is then counted from. */
@@ -560,6 +674,89 @@ body.mobile .board-view-container .board-add-column {
   display: flex;
   align-items: center;
   padding: 0;
+}
+
+/* Dims the board while a card is being named.
+ *
+ * A sibling of `.board-view-container` rather than a child, so it covers the board at its own size
+ * instead of the scrolled width. Nothing between a card and here opens a stacking context, so the
+ * card rises above it on its own `z-index`. */
+.board-view .board-edit-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background-color: var(--board-edit-backdrop);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* `editing-open` is set by `index.tsx` for a card being renamed or a field open between two cards;
+   the field at the foot of a column leaves the backdrop down. */
+.board-view.editing-open .board-edit-backdrop {
+  opacity: 1;
+}
+
+.board-view-container .board-note.editing,
+.board-view-container .board-new-item.inserting {
+  z-index: 51;
+}
+
+/* Stops the cards receiving the pointer while a title is being typed, so that dismissing the field
+   cannot also open a note or select a card. `:hover` follows hit testing rather than events, so
+   `pointer-events` is the only way to suppress it. `.board-column` itself keeps its events, which
+   is what keeps the board scrolling. The edited field is excluded with `:not(.editing)` rather than
+   re-enabled in a later rule, which this selector would outweigh.
+
+   This restyles every card, a few hundred milliseconds on a board of thousands, so it waits for
+   `frozen` instead of matching the backdrop: applied in the frame the fade starts in, the
+   recalculation drops the fade's frames. */
+.board-view.frozen :is(
+  .board-column > h3,
+  .board-column > .board-new-item,
+  .board-column-content > *:not(.editing)
+) {
+  pointer-events: none;
+}
+
+/* `motion-disabled` sets `transition: none !important` on everything, so `.board-edit-backdrop`
+   fires no `transitionend` and `frozen` is never set. There is no fade to protect either, so the
+   same fields freeze the board as soon as they open. */
+body#trilium-app.motion-disabled .board-view.editing-open :is(
+  .board-column > h3,
+  .board-column > .board-new-item,
+  .board-column-content > *:not(.editing)
+) {
+  pointer-events: none;
+}
+
+/* The fade a column draws over its edges is a mask, and a mask holds everything under it in a
+   layer of its own, which the field being typed into could not rise out of. Taken off the one
+   column that holds it, for as long as it stands. `!important` because `useScrollFade` writes the
+   mask on the element itself. */
+.board-view-container .board-column.editing-open .board-column-content {
+  mask: none !important;
+}
+
+/* A card being edited stacks the field over what it shows, rather than standing them side by side:
+   the badges are drawn either way, so the card keeps its own height as the editor opens. */
+.board-view-container .board-note.editing {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* The card gives its padding to the field while one is open, so what stands under it is inset by
+   the card's own instead. The field's foot padding already stands between the text and this row,
+   so only what is left of the gap is added, and the card is the height it is either way. */
+.board-view-container .board-note.editing .user-attributes {
+  margin-block-start: calc(var(--card-badge-gap) - var(--card-padding));
+  padding-inline: var(--card-padding);
+  padding-block-end: var(--card-padding);
+}
+
+/* Named here as well, so both modes are worked out from the one value. */
+.board-view-container .board-note .user-attributes {
+  margin-block-start: var(--card-badge-gap);
 }
 
 /* One line stands exactly as tall as the card, or as the closed button; typing more grows it from

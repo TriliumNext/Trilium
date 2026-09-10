@@ -2595,10 +2595,7 @@
     "insert-new": "插入新建",
     "group-by": "按…对卡片分组",
     "grouping-already-defined": "该看板已定义“{{- name}}”。请从列表中选择它进行分组。",
-    "sort-cards": "对卡片排序",
-    "sort-board-default": "看板默认",
-    "sort-actions": "更多操作",
-    "reset-columns-to-default": "将所有列重置为默认值"
+    "sort-board-default": "看板默认"
   },
   "command_palette": {
     "tree-action-name": "树形：{{name}}",

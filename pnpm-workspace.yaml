@@ -123,6 +123,7 @@ ignoredOptionalDependencies:
 
 patchedDependencies:
   '@excalidraw/excalidraw@0.18.1': patches/@excalidraw__excalidraw@0.18.1.patch
+  html@1.0.0: patches/html@1.0.0.patch
 
 allowBuilds:
   "@parcel/watcher": false

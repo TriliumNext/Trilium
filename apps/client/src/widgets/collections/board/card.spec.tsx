@@ -82,7 +82,7 @@ describe("Board card", () => {
 
         expect(cardClasses(first)).not.toContain("archived");
 
-        await addLabel(component, first, "archived");
+        await addAttribute(component, first, "archived");
 
         expect(cardClasses(first)).toContain("archived");
         expect(cardClasses(second)).not.toContain("archived");
@@ -117,7 +117,7 @@ describe("Board card", () => {
 
         expect(cardClasses(first)).not.toContain(coloured);
 
-        await addLabel(component, first, "color", "#ff0000");
+        await addAttribute(component, first, "color", "#ff0000");
 
         expect(cardClasses(first)).toContain(coloured);
         expect(cardClasses(second)).not.toContain(coloured);
@@ -128,7 +128,7 @@ describe("Board card", () => {
 
         expect(cardIcon(first)).not.toContain("bx-bug");
 
-        await addLabel(component, first, "iconClass", "bx bx-bug");
+        await addAttribute(component, first, "iconClass", "bx bx-bug");
 
         expect(cardIcon(first)).toContain("bx-bug");
     });
@@ -141,6 +141,51 @@ describe("Board card", () => {
 
         expect(openInPopup)
             .toHaveBeenCalledWith("openInPopup", { noteIdOrPath: first });
+    });
+
+    /**
+     * A card carrying `boardCardRedirectTo` stands in for the note it points at, so the open gesture
+     * navigates there rather than opening an editor for the card itself.
+     */
+    it("jumps to the note it redirects to instead of opening itself", async () => {
+        const { first, component } = await renderBoard();
+        await addAttribute(component, first, "boardCardRedirectTo", "targetNote", "relation");
+
+        const openInPopup = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+        const setNote = vi.fn();
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = { getActiveContext: () => ({ setNote }) } as never;
+
+        try {
+            await act(async () => { card(first).click(); });
+        } finally {
+            // Put back before the assertions: a stub left standing reaches every later test.
+            appContext.tabManager = previousTabManager;
+        }
+
+        expect(setNote).toHaveBeenCalledWith("targetNote");
+        expect(openInPopup).not.toHaveBeenCalled();
+        // `shortcut` is what underlines the title on hover, drawing it as a link.
+        expect(cardClasses(first)).toContain("shortcut");
+    });
+
+    it("marks no card a shortcut without the relation", async () => {
+        const { first } = await renderBoard();
+
+        expect(cardClasses(first)).not.toContain("shortcut");
+    });
+
+    /**
+     * The underline is drawn on the text alone. A decoration set on `.title` would propagate to the
+     * icon standing beside the text, and a descendant cannot turn a propagated one off.
+     */
+    it("keeps the title text in an element of its own, apart from the icon", async () => {
+        const { first } = await renderBoard();
+        const title = card(first).querySelector(".title");
+
+        expect(title?.querySelector(".text")).toBeTruthy();
+        expect(title?.querySelector(".text .icon")).toBeNull();
+        expect(title?.querySelector(":scope > .icon")).toBeTruthy();
     });
 
     /**
@@ -256,6 +301,198 @@ describe("Board card", () => {
         expect(openInPopup).not.toHaveBeenCalled();
     });
 
+    describe("picking several cards out", () => {
+        it("marks a card on Ctrl and click, and lets go of it on the next one", async () => {
+            const { first, second } = await renderBoard();
+            const openInPopup = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+
+            await click(first, { ctrlKey: true });
+            expect(cardClasses(first)).toContain("selected");
+            expect(cardClasses(second)).not.toContain("selected");
+            // Picking a card out is not opening it.
+            expect(openInPopup).not.toHaveBeenCalled();
+
+            await click(second, { ctrlKey: true });
+            expect(cardClasses(first)).toContain("selected");
+            expect(cardClasses(second)).toContain("selected");
+
+            await click(first, { ctrlKey: true });
+            expect(cardClasses(first)).not.toContain("selected");
+            expect(cardClasses(second)).toContain("selected");
+        });
+
+        it("takes everything between the two cards on Shift and click", async () => {
+            const { first, second, extra } = await renderBoard([ "To Do", "To Do" ]);
+
+            await click(first, { ctrlKey: true });
+            await click(extra[1], { shiftKey: true });
+
+            expect(selectedCards()).toEqual([ "First", "Second", "Extra 1", "Extra 2" ]);
+        });
+
+        /**
+         * A range is measured against one column, so an anchor left in another is not in the list
+         * the press is counted against and the card it landed on is taken on its own.
+         */
+        it("keeps a range inside one column", async () => {
+            const { first, extra } = await renderBoard([ "Done", "Done" ]);
+
+            await click(first, { ctrlKey: true });
+            await click(extra[1], { shiftKey: true });
+
+            expect(selectedCards()).toEqual([ "Extra 2" ]);
+        });
+
+        it("takes every card of the column focus is in on Ctrl+A", async () => {
+            const { first, extra } = await renderBoard([ "Done" ]);
+
+            await act(async () => {
+                card(first).focus();
+                press(card(first), "a", { ctrlKey: true });
+            });
+
+            // The card in the other column is left alone, whichever way the columns are drawn.
+            expect(selectedCards()).toEqual([ "First", "Second" ]);
+            expect(cardClasses(extra[0])).not.toContain("selected");
+        });
+
+        it("gives the whole selection up on a plain click, which opens the note", async () => {
+            const { first, second } = await renderBoard();
+            const openInPopup = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+
+            await click(first, { ctrlKey: true });
+            await click(second, { ctrlKey: true });
+            await click(first, {});
+
+            expect(selectedCards()).toEqual([]);
+            expect(openInPopup).toHaveBeenCalledTimes(1);
+        });
+
+        it("opens the menu on the whole selection when it is opened from within it", async () => {
+            const { first, second } = await renderBoard();
+            const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+
+            await click(first, { ctrlKey: true });
+            await click(second, { ctrlKey: true });
+            await act(async () => {
+                card(second).dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+            });
+
+            // The entries that only make sense for one card are gone.
+            expect(menuTitles(show)).not.toContain("board_view.edit-title");
+            expect(menuTitles(show)).toContain("board_view.remove-from-board");
+        });
+
+        it("acts on a card alone when the menu is opened outside the selection", async () => {
+            const { first, second } = await renderBoard();
+            const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+
+            await click(first, { ctrlKey: true });
+            await act(async () => {
+                card(second).dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+            });
+
+            expect(menuTitles(show)).toContain("board_view.edit-title");
+            expect(selectedCards()).toEqual([]);
+        });
+
+        /** The titles of the cards picked out, in the order the board draws them. */
+        function selectedCards() {
+            return [ ...(container?.querySelectorAll(".board-note.selected") ?? []) ]
+                .map((element) => element.querySelector(".title")?.textContent);
+        }
+
+        function menuTitles(show: { mock: { calls: unknown[][] } }) {
+            const items = (show.mock.calls.at(-1)?.[0] as
+                { items: { title?: string }[] } | undefined)?.items ?? [];
+            return items.map((item) => item.title);
+        }
+
+        async function click(noteId: string, modifiers: MouseEventInit) {
+            await act(async () => {
+                card(noteId).dispatchEvent(new MouseEvent(
+                    "click", { bubbles: true, cancelable: true, detail: 1, ...modifiers }));
+            });
+        }
+    });
+
+    describe("the drag that carries a card off the board", () => {
+        it("fills the drag with the one card, in the two entries the tree reads", async () => {
+            const { first } = await renderBoard();
+            const data = new Map<string, string>();
+
+            fireDrag(card(first), "dragstart", { setData: (type: string, value: string) => data.set(type, value) });
+
+            expect(data.get("application/x-fancytree-node")).toBe("");
+            expect(JSON.parse(data.get("text") ?? "[]")).toEqual([
+                { noteId: first, branchId: expect.any(String), title: "First" }
+            ]);
+        });
+
+        /** A drag started on a card that is picked out takes everything picked out with it. */
+        it("fills it with every card picked out, where the one dragged is among them", async () => {
+            const { first, second } = await renderBoard();
+            const data = new Map<string, string>();
+
+            await act(async () => {
+                card(first).dispatchEvent(new MouseEvent(
+                    "click", { bubbles: true, cancelable: true, detail: 1, ctrlKey: true }));
+            });
+            await act(async () => {
+                card(second).dispatchEvent(new MouseEvent(
+                    "click", { bubbles: true, cancelable: true, detail: 1, ctrlKey: true }));
+            });
+
+            fireDrag(card(first), "dragstart", { setData: (type: string, value: string) => data.set(type, value) });
+
+            expect(JSON.parse(data.get("text") ?? "[]").map((entry: { title: string }) => entry.title))
+                .toEqual([ "First", "Second" ]);
+        });
+    });
+
+    /**
+     * The card is the same height either way, so opening the editor neither drops what the card
+     * shows nor moves the cards below it.
+     */
+    it("keeps the badges it shows while its title is being edited", async () => {
+        const { first } = await renderBoard();
+        // Held on to: the editor takes the place of the title the lookup goes by.
+        const element = card(first);
+        expect(element.querySelector(".user-attributes")).toBeTruthy();
+
+        await act(async () => { press(element, "F2"); });
+
+        expect(element.querySelector("textarea")).toBeTruthy();
+        expect(element.querySelector(".user-attributes")).toBeTruthy();
+    });
+
+    /**
+     * The wash over the board is raised by the stylesheet from the classes checked here, since each
+     * field keeps its own state and there is nothing above them all to read. These are the names it
+     * goes by; the wash itself is a rule that `happy-dom` lays nothing out for.
+     */
+    it("marks what a backdrop is raised for while a title is being typed", async () => {
+        const { first } = await renderBoard();
+        expect(container?.querySelector(".board-edit-backdrop")).toBeTruthy();
+        // Held on to: the editor takes the place of the title the lookup goes by.
+        const element = card(first);
+
+        await act(async () => { press(element, "F2"); });
+        expect(element.classList.contains("editing")).toBe(true);
+
+        const editor = element.querySelector<HTMLTextAreaElement>("textarea");
+        if (!editor) throw new Error("expected the title editor");
+        await act(async () => { press(editor, "Escape"); });
+        expect(element.classList.contains("editing")).toBe(false);
+
+        // The field that opens between two cards is marked; the one at the foot of the column is
+        // left as it is, and raises nothing.
+        await act(async () => { press(element, "Enter"); });
+        expect(container?.querySelectorAll(".board-new-item.inserting")).toHaveLength(1);
+        expect(container?.querySelector(".board-new-item:not(.inserting)")?.classList
+            .contains("inserting")).toBe(false);
+    });
+
     it("offers the card menu on a right click", async () => {
         const { first } = await renderBoard();
         const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
@@ -284,16 +521,25 @@ describe("Board card", () => {
     }
 
     /** Renders a board of two cards and hands back the component their subscriptions register on. */
-    async function renderBoard() {
+    /**
+     * Draws a board of two cards under "To Do".
+     *
+     * @param extra the cards to add beyond those two, each named by the column it stands in. Only
+     * the tests about picking several cards out need them.
+     */
+    async function renderBoard(extra: string[] = []) {
         const first = `card${idSeed++}`;
         const second = `card${idSeed++}`;
+        const rest = extra.map((status, at) => (
+            { id: `card${idSeed++}`, title: `Extra ${at + 1}`, "#status": status }));
         const note = buildNote({
             title: "Board",
             "#collection": "",
             "#viewType": "board",
             children: [
                 { id: first, title: "First", "#status": "To Do" },
-                { id: second, title: "Second", "#status": "To Do" }
+                { id: second, title: "Second", "#status": "To Do" },
+                ...rest
             ]
         });
 
@@ -308,7 +554,7 @@ describe("Board card", () => {
                     <BoardView
                         note={note}
                         notePath={`root/${note.noteId}`}
-                        noteIds={[ first, second ]}
+                        noteIds={[ first, second, ...rest.map((card) => card.id) ]}
                         highlightedTokens={null}
                         viewConfig={{ columns: [ { value: "To Do" } ] }}
                         saveConfig={() => {}}
@@ -321,7 +567,7 @@ describe("Board card", () => {
         });
         await settle();
 
-        return { note, component, first, second };
+        return { note, component, first, second, extra: rest.map((card) => card.id) };
     }
 
     /** Moves a card to another column the way an edit made anywhere else reaches the board. */
@@ -353,18 +599,24 @@ describe("Board card", () => {
             .map(column => column.getAttribute("data-column"));
     }
 
-    /** Adds a label to a note already in froca and announces it the way a websocket message would. */
-    async function addLabel(component: Component, noteId: string, name: string, value = "") {
+    /**
+     * Adds an attribute to a note already in froca and announces it the way a websocket message
+     * would.
+     */
+    async function addAttribute(
+        component: Component, noteId: string, name: string, value = "",
+        type: "label" | "relation" = "label"
+    ) {
         const attributeId = utils.randomString(12);
         const attribute = new FAttribute(froca, {
-            noteId, attributeId, type: "label", name, value, position: 0, isInheritable: false
+            noteId, attributeId, type, name, value, position: 0, isInheritable: false
         });
 
         froca.attributes[attributeId] = attribute;
         froca.notes[noteId].attributes.push(attributeId);
         noteAttributeCache.attributes[noteId] = [ ...(noteAttributeCache.attributes[noteId] ?? []), attribute ];
 
-        const entity = { attributeId, noteId, type: "label", name, value, isDeleted: false };
+        const entity = { attributeId, noteId, type, name, value, isDeleted: false };
         const loadResults = new LoadResults([ {
             entityName: "attributes", entityId: attributeId, entity, hash: "", isSynced: true, isErased: false
         } ]);

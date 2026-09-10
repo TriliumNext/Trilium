@@ -62,7 +62,7 @@ describe("buildAttributeMenuItems", () => {
 
         it("is marked while the item carries it, and turned off when picked", () => {
             const note = buildNote({ title: "Card", "#done": "true" });
-            const items = buildAttributeMenuItems<string>({ note, attributes: flag });
+            const items = buildAttributeMenuItems<string>({ notes: [ note ], attributes: flag });
 
             expect(items[1]).toMatchObject({ trailingIcon: "bx bx-check" });
             pick(items[1]);
@@ -71,11 +71,33 @@ describe("buildAttributeMenuItems", () => {
 
         it("is unmarked while the item does not, and turned on when picked", () => {
             const note = buildNote({ title: "Card" });
-            const items = buildAttributeMenuItems<string>({ note, attributes: flag });
+            const items = buildAttributeMenuItems<string>({ notes: [ note ], attributes: flag });
 
             expect(items[1]).toMatchObject({ trailingIcon: undefined });
             pick(items[1]);
             expect(writes.setLabelValues).toHaveBeenCalledWith(note, "done", [ "true" ]);
+        });
+
+        it("is marked only while every selected item carries it", () => {
+            const set = buildNote({ title: "One", "#done": "true" });
+            const unset = buildNote({ title: "Two" });
+
+            expect(buildAttributeMenuItems<string>({ notes: [ set, unset ], attributes: flag })[1])
+                .toMatchObject({ trailingIcon: undefined });
+            expect(buildAttributeMenuItems<string>({
+                notes: [ set, buildNote({ title: "Three", "#done": "true" }) ], attributes: flag
+            })[1]).toMatchObject({ trailingIcon: "bx bx-check" });
+        });
+
+        it("writes the value to every selected item, settling a disagreement", async () => {
+            const set = buildNote({ title: "One", "#done": "true" });
+            const unset = buildNote({ title: "Two" });
+
+            await pick(
+                buildAttributeMenuItems<string>({ notes: [ set, unset ], attributes: flag })[1]);
+
+            expect(writes.setLabelValues).toHaveBeenCalledWith(set, "done", [ "true" ]);
+            expect(writes.setLabelValues).toHaveBeenCalledWith(unset, "done", [ "true" ]);
         });
 
         // The stored values are the checkbox's own, so the entry says what the item draws: a box
@@ -83,7 +105,9 @@ describe("buildAttributeMenuItems", () => {
         it("counts every value but true as unset", () => {
             for (const value of [ "false", "", "yes" ]) {
                 const note = buildNote({ title: "Card", "#done": value });
-                const items = buildAttributeMenuItems<string>({ note, attributes: flag });
+                const items = buildAttributeMenuItems<string>({
+                    notes: [ note ], attributes: flag
+                });
 
                 expect(items[1]).toMatchObject({ trailingIcon: undefined });
             }
@@ -99,8 +123,8 @@ describe("buildAttributeMenuItems", () => {
         }) ];
 
         /** The entries a state's submenu offers, the caller having none of its own to add. */
-        function options(note: FNote) {
-            const items = buildAttributeMenuItems<string>({ note, attributes: state });
+        function options(...notes: FNote[]) {
+            const items = buildAttributeMenuItems<string>({ notes, attributes: state });
             const entry = items[1];
             if (!entry || !("items" in entry)) throw new Error("expected a submenu");
             return entry.items ?? [];
@@ -144,6 +168,35 @@ describe("buildAttributeMenuItems", () => {
             expect(writes.setLabelValues).toHaveBeenCalledWith(note, "state", []);
         });
 
+        it("marks the option only while every selected item holds it", () => {
+            const doing = buildNote({ title: "One", "#state": "Doing" });
+
+            expect(marked(options(doing, buildNote({ title: "Two", "#state": "Doing" }))))
+                .toEqual([ `<span class="tn-menu-name">Doing</span>` ]);
+            expect(marked(options(doing, buildNote({ title: "Two", "#state": "Done" }))))
+                .toEqual([]);
+            expect(marked(options(doing, buildNote({ title: "Two" })))).toEqual([]);
+        });
+
+        it("marks Not set only while every selected item holds none", () => {
+            const unset = buildNote({ title: "One" });
+
+            expect(marked(options(unset, buildNote({ title: "Two" }))))
+                .toEqual([ `<span class="tn-menu-name">attribute_menu.not-set</span>` ]);
+            expect(marked(options(unset, buildNote({ title: "Two", "#state": "Doing" }))))
+                .toEqual([]);
+        });
+
+        it("writes the option picked to every selected item", async () => {
+            const first = buildNote({ title: "One" });
+            const second = buildNote({ title: "Two", "#state": "Done" });
+
+            await pick(options(first, second)[2]);
+
+            expect(writes.setLabelValues).toHaveBeenCalledWith(first, "state", [ "Doing" ]);
+            expect(writes.setLabelValues).toHaveBeenCalledWith(second, "state", [ "Doing" ]);
+        });
+
         /**
          * Only the labels a note owns are removed, so a note with nothing of its own would keep the
          * value it inherits. An empty label of its own overrides it.
@@ -182,7 +235,7 @@ function build(
     attributes: PromotedAttribute[],
     title?: string
 ) {
-    return buildAttributeMenuItems<string>({ note: buildNote(note), attributes, title });
+    return buildAttributeMenuItems<string>({ notes: [ buildNote(note) ], attributes, title });
 }
 
 function attribute(fields: Partial<PromotedAttribute> & { name: string }): PromotedAttribute {
@@ -206,7 +259,8 @@ const marked = (items: MenuItem<string>[]) => items
     .filter(item => "trailingIcon" in item && item.trailingIcon)
     .map(item => ("title" in item ? item.title : ""));
 
+/** Runs an entry's handler and hands back what it returns, so a caller can wait for its writes. */
 function pick(item: MenuItem<string> | undefined) {
     if (!item || !("handler" in item)) throw new Error("expected a menu entry");
-    item.handler?.(item as MenuCommandItem<string>, {} as never);
+    return item.handler?.(item as MenuCommandItem<string>, {} as never);
 }

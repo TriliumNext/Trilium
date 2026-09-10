@@ -64,9 +64,10 @@ export default function BoardGroupBy({ note, options, current, onSelect }: {
             x: event.pageX,
             y: event.pageY,
             focus: "name",
-            // The board answers for all three: a grouping is a promoted, inheritable select whose
-            // options are its columns, and a card stands in one column at a time.
+            // The board answers for all four: a grouping is a promoted, inheritable select whose
+            // options are the columns the board makes, and a card stands in one column at a time.
             hideType: true,
+            hideTypeOptions: true,
             hideMultiplicity: true,
             hideInheritance: true
         });

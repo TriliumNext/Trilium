@@ -10,24 +10,21 @@
 <ol>
   <li>Create a&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
     with the language <em>Embedded JavaScript</em> (EJS).</li>
-  <li>For a shared note to apply the newly created template, apply the
-    <code
-    spellcheck="false">~shareTemplate</code>relation pointing to the note created at step (1).
-      Make use of&nbsp;<a class="reference-link" href="#root/_help_bwZpz2ajCEwO">Attribute Inheritance</a>&nbsp;to
-      apply it to multiple shared notes.</li>
+  <li>For a shared note to apply the newly created template, apply the <code
+    spellcheck="false">~shareTemplate</code> relation pointing to the note created
+    at step (1). Make use of&nbsp;<a class="reference-link" href="#root/_help_bwZpz2ajCEwO">Attribute Inheritance</a>&nbsp;to
+    apply it to multiple shared notes.</li>
 </ol>
 <p>There are two important constraints to be aware of:</p>
 <ul>
   <li>Because EJS templates execute arbitrary server-side JavaScript, <code spellcheck="false">~shareTemplate</code> only
-    takes effect when backend scripting is enabled. If it is disabled (see&nbsp;
-    <a
-    class="reference-link" href="#root/_help_fiHicjpHjIRJ">Security</a>), the relation is ignored and the default template is used.
-      For the same reason, <strong>only apply templates from notes you trust</strong>.</li>
-  <li>The template note must be part of the shared subtree (just like <code spellcheck="false">~shareCss</code>,
-    <code
-    spellcheck="false">~shareJs</code>) in order for it to be loaded. To prevent it from being
-      shown in the navigation, apply <code spellcheck="false">#shareHiddenFromTree</code> to
-      it.</li>
+    takes effect when backend scripting is enabled. If it is disabled (see&nbsp;<a
+    class="reference-link" href="#root/_help_fiHicjpHjIRJ">Security</a>), the relation
+    is ignored and the default template is used. For the same reason, <strong>only apply templates from notes you trust</strong>.</li>
+  <li>The template note must be part of the shared subtree (just like <code spellcheck="false">~shareCss</code>, <code
+    spellcheck="false">~shareJs</code>) in order for it to be loaded. To prevent
+    it from being shown in the navigation, apply <code spellcheck="false">#shareHiddenFromTree</code> to
+    it.</li>
 </ul>
 <h2>Content of the share template</h2>
 <p>Use the <a href="https://github.com/TriliumNext/Notes/blob/develop/packages/share-theme/src/templates/page.ejs">original template</a> as
@@ -47,8 +44,7 @@
       <tr>
         <td><code spellcheck="false">note</code>
         </td>
-        <td>The note being rendered. Use it to read attributes (<code spellcheck="false">note.getLabelValue(...)</code>),
-          <code
+        <td>The note being rendered. Use it to read attributes (<code spellcheck="false">note.getLabelValue(...)</code>), <code
           spellcheck="false">note.title</code>, child notes, etc.</td>
       </tr>
       <tr>
@@ -88,9 +84,8 @@
       <tr>
         <td><code spellcheck="false">isStatic</code>
         </td>
-        <td><code spellcheck="false">true</code> during a static HTML export,
-          <code
-          spellcheck="false">false</code>for a live server render.</td>
+        <td><code spellcheck="false">true</code> during a static HTML export, <code
+          spellcheck="false">false</code> for a live server render.</td>
       </tr>
       <tr>
         <td><code spellcheck="false">t</code>
@@ -100,8 +95,7 @@
       <tr>
         <td><code spellcheck="false">utils</code>
         </td>
-        <td>Helper utilities such as <code spellcheck="false">slugify()</code> and
-          <code
+        <td>Helper utilities such as <code spellcheck="false">slugify()</code> and <code
           spellcheck="false">stripTags()</code>.</td>
       </tr>
     </tbody>
@@ -113,9 +107,9 @@
   takes the shared page down.</p>
 <h2>Splitting a template into partials</h2>
 <p>A template can pull in other EJS notes as partials. Create them as <strong>child notes</strong> of
-  the template note (each also a <code spellcheck="false">code</code> /
-  <code
-  spellcheck="false">application/x-ejs</code>note) and reference them by title:</p><pre><code class="language-text-x-trilium-auto">&lt;%- include("header") %&gt;
+  the template note (each also a <code spellcheck="false">code</code> / <code
+  spellcheck="false">application/x-ejs</code> note) and reference them by
+  title:</p><pre><code class="language-text-x-trilium-auto">&lt;%- include("header") %&gt;
 
 &lt;main&gt;
     &lt;h1&gt;&lt;%= note.title %&gt;&lt;/h1&gt;

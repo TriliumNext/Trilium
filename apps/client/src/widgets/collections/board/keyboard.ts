@@ -1,11 +1,13 @@
+import { askForCard } from "./windowing";
 import { cardFollows } from "./columns";
 import { RefObject } from "preact";
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 
 import branches from "../../../services/branches";
 import { FLIP_SETTLE_MS } from "../../react/flip";
+import { SelectionStore } from "../../react/selection";
 import BoardApi from "./api";
-import { ColumnMap } from "./data";
+import { ColumnItem, ColumnMap } from "./data";
 
 /** Sideways, and with Ctrl, these carry the focused card the whole way rather than one column. */
 const CARD_END_KEYS = [ "ArrowLeft", "ArrowRight" ];
@@ -70,6 +72,19 @@ export interface BoardKeyboardOptions {
      * for the focus to land on.
      */
     setActiveColumn: (column: string) => void;
+    /** Which cards are picked out, which Ctrl+A fills with the focused column. */
+    selection: SelectionStore;
+    /**
+     * Sends cards to the end of another column, drawing them there while the writes are made. The
+     * board draws the outcome itself, so a move's two writes are not two redraws.
+     */
+    sendCardsToColumn: (
+        cards: { noteId: string, branchId: string }[], targetColumn: string
+    ) => Promise<unknown>;
+    /** As {@link sendCardsToColumn}, for a move to a place among the cards already in a column. */
+    moveCardsWithin: (
+        cards: { noteId: string, branchId: string }[], column: string, index: number
+    ) => Promise<unknown>;
 }
 
 /**
@@ -88,9 +103,14 @@ export interface BoardKeyboardOptions {
  * would otherwise be left focused on nothing.
  */
 export function useBoardKeyboard({
-    containerRef, columns, byColumn, api, moveColumn, insertColumn, setActiveColumn
+    containerRef, columns, byColumn, api, moveColumn, insertColumn, setActiveColumn, selection,
+    sendCardsToColumn, moveCardsWithin
 }: BoardKeyboardOptions) {
     const pendingFocus = useRef<PendingFocus | null>(null);
+    /** The card `askForCard` has already run for, so it does not run again on every render. */
+    const asked = useRef<string | null>(null);
+    /** The last spot walked to, for a key pressed while focus is between two renders. */
+    const lastSpot = useRef<Spot | null>(null);
 
     // Every render, since a redraw is the only thing that takes focus away here and more than one
     // of them follows a move.
@@ -121,7 +141,28 @@ export function useBoardKeyboard({
 
         if (element) {
             reveal(element);
+            return;
         }
+
+        // The card has landed in a windowed column that is not drawing it, so there is nothing to
+        // focus yet. `askForCard` scrolls that column, which draws the card.
+        //
+        // Waited for here rather than left to this effect running again: the scroll re-renders the
+        // column alone, and the board this effect belongs to is not drawn again by it.
+        const { noteId } = pending.intent;
+        if (asked.current === noteId) return;
+
+        const place = placeOf(byColumn, noteId);
+        if (!place) return;
+
+        asked.current = noteId;
+        askForCard(container, place.column, place.index);
+        waitForCard(container, noteId, (card) => {
+            asked.current = null;
+            if (pendingFocus.current === pending && document.activeElement === document.body) {
+                reveal(card);
+            }
+        });
     });
 
     /**
@@ -158,10 +199,22 @@ export function useBoardKeyboard({
         // work over a board as over anything else.
         if (e.altKey && !e.ctrlKey) return;
 
-        const spot = spotOf(container, document.activeElement);
+        const spot = spotOf(container, document.activeElement)
+            // Focus can be left on nothing by a redraw that took the card it was on out of the
+            // page. Fall back to the previous spot rather than letting the key through, which
+            // would scroll the board instead of moving along it.
+            ?? (NAVIGATION_KEYS.includes(e.key) ? lastSpot.current : null);
         if (!spot) return;
 
         if (e.ctrlKey) {
+            // Every card of the column focus is in, wherever inside it focus sits. The button that
+            // adds a column stands in none, and Ctrl+A there is the page's own.
+            if (e.key === "a" && !e.altKey && !e.shiftKey && spot.kind !== "add-column") {
+                take(e);
+                selection.selectAll(api.getColumnNoteIds(columns[spot.column]));
+                return;
+            }
+
             // A column beside the one focus is in, wherever inside it focus sits. The button that
             // adds a column stands beside none, and is the plain way to add one at the end anyway.
             if (e.key === "Enter" && !e.altKey && spot.kind !== "add-column") {
@@ -191,10 +244,24 @@ export function useBoardKeyboard({
             }
 
             const moved = move(
-                spot, e.key, { columns, byColumn, api, setActiveColumn }, e.shiftKey);
+                spot,
+                e.key,
+                {
+                    columns, byColumn, api, setActiveColumn, selection, sendCardsToColumn,
+                    moveCardsWithin
+                },
+                e.shiftKey);
             if (moved) {
                 const pending: PendingFocus = { intent: moved.intent };
                 pendingFocus.current = pending;
+
+                // Taken now rather than left to the redraw, which gives the intent up when focus
+                // rests anywhere but where it names: a set of cards is sent from one of its own
+                // members, and the card it names is another of them. Scrolling is left to
+                // `reveal`, which waits for the card to stop moving.
+                if ("noteId" in moved.intent) {
+                    findCard(container, moved.intent.noteId)?.focus({ preventScroll: true });
+                }
 
                 // Nothing is going to arrive, so focus is not held for it any longer.
                 moved.done.catch(() => {
@@ -213,7 +280,7 @@ export function useBoardKeyboard({
         if (NAVIGATION_KEYS.includes(e.key)) {
             // The plain arrows would otherwise scroll the page past the end of a column.
             take(e);
-            walk(container, spot, e.key);
+            lastSpot.current = walk(container, spot, e.key) ?? spot;
             return;
         }
 
@@ -246,7 +313,7 @@ export function useBoardKeyboard({
             const item = itemAt(columns, byColumn, spot);
             if (item) {
                 take(e);
-                api.openNote(item.note.noteId);
+                api.openCard(item.note);
             }
             return;
         }
@@ -278,35 +345,58 @@ export function useBoardKeyboard({
         if (e.key === "Delete" && spot.kind === "item") {
             const item = itemAt(columns, byColumn, spot);
             if (!item) return;
+            // Plain Delete clears the grouping value, which with the inbox drawn moves the card
+            // there rather than off the board. Shift+Delete still deletes the note.
+            if (!e.shiftKey && api.isInboxEnabled) return;
             take(e);
+
+            // The whole selection while the focused card belongs to it, and that card alone
+            // otherwise, which is the question the card's own menu answers the same way.
+            if (!selection.has(item.note.noteId)) {
+                selection.clear();
+            }
+            const selected = api.getCards(selection.keys);
+            const going = selected.length ? selected : [ item ];
 
             // Straight away rather than through `pendingFocus`, which waits for a redraw: until the
             // card goes, focus is still on it, and a redraw arriving first would read that as the
-            // reader having chosen where to be and let the intent go.
-            neighbourOf(container, columns, byColumn, spot)?.focus();
+            // reader having chosen where to be and let the intent go. The cards on their way out
+            // are passed over, since focus would land on one about to be drawn no more.
+            neighbourOf(container, columns, byColumn, spot,
+                new Set(going.map((card) => card.note.noteId)))?.focus();
 
             if (e.shiftKey) {
-                // The note itself, with the confirmation deleting one anywhere else asks for.
-                branches.deleteNotes([ item.branch.branchId ], false, false);
+                // The notes themselves, with the confirmation deleting one anywhere else asks for.
+                branches.deleteNotes(going.map((card) => card.branch.branchId), false, false);
             } else {
-                api.removeFromBoard(item.note.noteId);
+                void api.removeFromBoard(going.map((card) => card.note.noteId));
             }
         }
-    }, [ containerRef, columns, byColumn, api, moveColumn, insertColumn, setActiveColumn ]);
+    }, [
+        containerRef, columns, byColumn, api, moveColumn, insertColumn, setActiveColumn, selection
+    ]);
 
     return { onKeyDown, focusColumn, focusCard };
 }
 
-/** What to put focus on once a card goes: the one under it, the one over it, or the column. */
+/**
+ * What to put focus on once a card goes: the one under it, the one over it, or the column.
+ *
+ * @param going the cards leaving with it, which are passed over: a whole selection can be deleted
+ * at once, and the card beside the focused one can be on its way out too.
+ */
 function neighbourOf(
     container: HTMLElement,
     columns: string[],
     byColumn: ColumnMap | undefined,
-    spot: Extract<Spot, { kind: "item" }>
+    spot: Extract<Spot, { kind: "item" }>,
+    going: ReadonlySet<string> = new Set()
 ) {
     const column = columns[spot.column];
     const items = byColumn?.get(column) ?? [];
-    const next = items[spot.item + 1] ?? items[spot.item - 1];
+    const stays = (item: ColumnItem) => !going.has(item.note.noteId);
+    const next = items.slice(spot.item + 1).find(stays)
+        ?? items.slice(0, spot.item).findLast(stays);
 
     return next
         ? findCard(container, next.note.noteId)
@@ -359,7 +449,7 @@ function spotOf(container: HTMLElement, element: Element | null): Spot | null {
     const card = element.closest(".board-note");
     if (!card) return null;
 
-    return { kind: "item", column, item: cardsOf(columnElement).indexOf(card as HTMLElement) };
+    return { kind: "item", column, item: indexOfCard(card as HTMLElement, columnElement) };
 }
 
 /**
@@ -369,15 +459,36 @@ function spotOf(container: HTMLElement, element: Element | null): Spot | null {
  * right cross to the next column's first card, or to its button where it holds none: its header is
  * reached by pressing up from there, which is the only way a header is reached at all.
  */
-function walk(container: HTMLElement, from: Spot, key: string) {
+function walk(container: HTMLElement, from: Spot, key: string): Spot | null {
     const next = destination(container, from, key);
-    if (!next) return false;
+    if (!next) return null;
 
     const element = elementAt(container, next);
-    if (!element) return false;
+    if (element) {
+        reveal(element);
+        return next;
+    }
 
-    reveal(element);
-    return true;
+    // A windowed column draws a slice of its cards, and the walk has stepped onto one outside it.
+    // `askForCard` scrolls that column, which puts the card in the page so it can be focused.
+    if (next.kind === "item") {
+        const column = columnsOf(container)[next.column];
+        const value = column?.dataset.column;
+        if (!column || value === undefined) return null;
+
+        // `immediate` draws the card before this returns, so it is focused in this keystroke.
+        // Deferred to a later frame, the scroll can unmount the card being walked from, leaving
+        // `document.activeElement` on the body: `spotOf` then finds no spot and the browser
+        // scrolls the board instead.
+        askForCard(container, value, next.item, true);
+        const arrived = cardAt(column, next.item);
+        if (arrived) {
+            reveal(arrived);
+            return next;
+        }
+    }
+
+    return null;
 }
 
 function destination(container: HTMLElement, from: Spot, key: string): Spot | null {
@@ -396,7 +507,7 @@ function destination(container: HTMLElement, from: Spot, key: string): Spot | nu
 
     if (from.kind === "add-column") return null;
 
-    const items = cardsOf(columnsOf(container)[from.column]).length;
+    const items = cardCountOf(columnsOf(container)[from.column]);
     if (key === "Home") return entryOf(container, from.column);
     if (key === "End") {
         return items
@@ -423,7 +534,7 @@ function entryOf(container: HTMLElement, column: number): Spot {
         return { kind: "header", column };
     }
 
-    return cardsOf(element).length
+    return cardCountOf(element)
         ? { kind: "item", column, item: 0 }
         : { kind: "add-item", column };
 }
@@ -436,8 +547,10 @@ function entryOf(container: HTMLElement, column: number): Spot {
 function move(
     spot: Spot,
     key: string,
-    { columns, byColumn, api, setActiveColumn }:
-        Pick<BoardKeyboardOptions, "columns" | "byColumn" | "api" | "setActiveColumn">,
+    { columns, byColumn, api, setActiveColumn, selection, sendCardsToColumn, moveCardsWithin }:
+        Pick<BoardKeyboardOptions,
+            "columns" | "byColumn" | "api" | "setActiveColumn" | "selection"
+            | "sendCardsToColumn" | "moveCardsWithin">,
     /** Whether the card goes the whole way rather than one place. */
     toEnd = false
 ): { intent: FocusIntent; done: Promise<unknown> } | false {
@@ -447,7 +560,16 @@ function move(
     const column = columns[spot.column];
     const items = byColumn?.get(column) ?? [];
     const { noteId } = item.note;
-    const { branchId } = item.branch;
+
+    // The whole selection while the focused card belongs to it, and that card alone otherwise.
+    // A move leaves a selection the card is no part of standing: nothing is lost by it, and a key
+    // that only reorders should not also undo what the reader has picked out.
+    const selected = api.getCards(selection.keys);
+    const moving = selection.has(noteId) && selected.length ? selected : [ item ];
+    const carried = moving.map((card) => ({
+        noteId: card.note.noteId,
+        branchId: card.branch.branchId
+    }));
 
     if (key === "ArrowLeft" || key === "ArrowRight") {
         const target = toEnd
@@ -456,26 +578,51 @@ function move(
         // Only the whole way can ask for the column a card already stands in.
         if (!target || target === column) return false;
 
-        // The card is drawn under the column it lands in, so a collapsed one has to open first for
-        // there to be anything to focus.
+        // A selection standing in several columns is left alone: each card has a neighbour of its
+        // own, and sending them all to one column is not what the key means anywhere else.
+        if (moving.some((card) => api.getCardColumn(card.note.noteId) !== column)) {
+            return false;
+        }
+
+        // The cards are drawn under the column they land in, so a collapsed one has to open first
+        // for there to be anything to focus.
         setActiveColumn(target);
 
-        return { intent: { noteId }, done: api.moveToColumnEnd(noteId, branchId, target) };
+        // The last of them, which is the one that lands furthest down the column it joins: focus
+        // is what the board scrolls to, so this is what makes the end of the set visible. For one
+        // card it is that card, as it has always been.
+        const arrived = moving.at(-1) ?? item;
+
+        return {
+            intent: { noteId: arrived.note.noteId },
+            done: sendCardsToColumn(carried, target)
+        };
+    }
+
+    // Where the cards stand in the column, which they can only be reordered as one if they stand
+    // together in it. A selection reaching into another column, or one with cards between its own,
+    // has no single place to be moved to and the key is answered with nothing.
+    const places = moving.map((card) =>
+        items.findIndex((candidate) => candidate.note.noteId === card.note.noteId));
+    const start = Math.min(...places);
+    const end = Math.max(...places);
+    if (places.some((place) => place < 0) || end - start !== places.length - 1) {
+        return false;
     }
 
     const last = items.length - 1;
-    // A card is placed before a position too, so moving one down means passing the one below it.
-    const to = key === "ArrowUp" && spot.item > 0 ? spot.item - 1
-        : key === "ArrowDown" && spot.item < last ? spot.item + 2
-        : key === "Home" && spot.item > 0 ? 0
-        : key === "End" && spot.item < last ? items.length
+    // A card is placed before a position too, so moving down means passing the one below the run.
+    const to = key === "ArrowUp" && start > 0 ? start - 1
+        : key === "ArrowDown" && end < last ? end + 2
+        : key === "Home" && start > 0 ? 0
+        : key === "End" && end < last ? items.length
         : null;
 
     if (to === null) return false;
 
     return {
         intent: { noteId },
-        done: api.moveWithinBoard(noteId, branchId, spot.item, to, column, column)
+        done: moveCardsWithin(carried, column, to)
     };
 }
 
@@ -559,7 +706,41 @@ function elementAt(container: HTMLElement, spot: Spot): HTMLElement | null {
 
     if (spot.kind === "header") return column.querySelector("h3");
     if (spot.kind === "add-item") return column.querySelector(".board-new-item");
-    return cardsOf(column)[spot.item] ?? null;
+    return cardAt(column, spot.item);
+}
+
+/**
+ * Watches for a card to be drawn, for the few frames a column takes to scroll to it.
+ *
+ * Given up on rather than waited for indefinitely: a card that never arrives means the move did not
+ * land where it was expected, and focus is better left alone than chased.
+ */
+function waitForCard(
+    container: HTMLElement, noteId: string, then: (card: HTMLElement) => void, tries = 8
+) {
+    const card = findCard(container, noteId);
+    if (card) {
+        then(card);
+        return;
+    }
+
+    if (tries > 0) {
+        requestAnimationFrame(() => waitForCard(container, noteId, then, tries - 1));
+    }
+}
+
+/** Which column holds a note and where in it, for a card the board is not drawing. */
+function placeOf(byColumn: ColumnMap | undefined, noteId: string) {
+    if (!byColumn) return undefined;
+
+    for (const [ column, items ] of byColumn) {
+        const index = items.findIndex((item) => item.note.noteId === noteId);
+        if (index >= 0) {
+            return { column, index };
+        }
+    }
+
+    return undefined;
 }
 
 /** Found by what it stands for rather than by where it sits, which a move is about to change. */
@@ -584,4 +765,32 @@ function cardsOf(column: Element | undefined) {
     }
 
     return [ ...column.querySelectorAll<HTMLElement>(".board-note") ];
+}
+
+/**
+ * How many cards a column holds, which a windowed one draws only part of.
+ *
+ * Read from what the column states rather than counted off the page, or walking one would stop at
+ * the edge of what happens to be drawn.
+ */
+function cardCountOf(column: Element | undefined) {
+    if (!column || column.classList.contains("collapsed")) {
+        return 0;
+    }
+
+    const stated = column.querySelector<HTMLElement>(".board-column-content")?.dataset.windowCount;
+    const count = stated === undefined ? Number.NaN : Number(stated);
+    return Number.isFinite(count) ? count : cardsOf(column).length;
+}
+
+/** The place a card holds in its column, which it states for a windowed one. */
+function indexOfCard(card: HTMLElement, column: Element | undefined) {
+    const stated = card.dataset.index;
+    const index = stated === undefined ? Number.NaN : Number(stated);
+    return Number.isFinite(index) ? index : cardsOf(column).indexOf(card);
+}
+
+/** The card at a place in a column, or nothing where the column is not drawing it. */
+function cardAt(column: Element, index: number) {
+    return column.querySelector<HTMLElement>(`.board-note[data-index="${index}"]`);
 }

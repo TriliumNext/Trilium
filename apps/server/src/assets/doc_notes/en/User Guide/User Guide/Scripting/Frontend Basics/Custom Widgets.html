@@ -10,10 +10,10 @@
   Both legacy and Preact widgets have the same capabilities, with a single
   difference:</p>
 <ul>
-  <li>Preact widgets are content-sized by default whereas legacy widgets need
-    <code
-    spellcheck="false">this.contentSized()</code>applied in the constructor. For more information,
-      see the corresponding section in&nbsp;<a class="reference-link" href="#root/_help_gMkgcLJ6jBkg">Troubleshooting</a>.</li>
+  <li>Preact widgets are content-sized by default whereas legacy widgets need <code
+    spellcheck="false">this.contentSized()</code> applied in the constructor.
+    For more information, see the corresponding section in&nbsp;<a class="reference-link"
+    href="#root/_help_gMkgcLJ6jBkg">Troubleshooting</a>.</li>
 </ul>
 <p>Wherever possible, widget examples will be both in the legacy and Preact
   format.</p>
@@ -112,8 +112,7 @@ class="table">
               instance of the class (e.g. <code spellcheck="false">no new</code>) because
               it needs to be multiplied for each note, so that splits work correctly.</li>
             <li>Since the <code spellcheck="false">class</code> is exported instead of an
-              instance, the <code spellcheck="false">parentWidget</code> getter must be
-              <code
+              instance, the <code spellcheck="false">parentWidget</code> getter must be <code
               spellcheck="false">static</code>, otherwise the widget is ignored.</li>
           </ul>
         </td>
@@ -134,25 +133,22 @@ class="table">
       </tr>
     </tbody>
   </table>
-  </figure>
-  <p>To position the widget somewhere else, just change the value passed to
-    <code
-    spellcheck="false">get parentWidget()</code>for legacy widgets or the <code spellcheck="false">parent</code> field
-      for Preact. Do note that some positions such as <code spellcheck="false">note-detail-pane</code> and
-      <code
-      spellcheck="false">right-pane</code>have special requirements that need to be accounted for
-        (see the table above).</p>
-  <h2>Multiple widgets in a single note</h2>
-  <p>A widget note usually returns one widget, but it can also return an array
-    of them. This is useful when several widgets share code or state, since
-    they can all live in the same note instead of being split across notes
-    that need a shared module.</p>
-  <p>Each widget of the array is registered on its own, so they can have different
-    parents and positions. A widget that is missing its <code spellcheck="false">parentWidget</code> (or
-    <code
-    spellcheck="false">parent</code>for Preact) is reported as an error without affecting the
-      other widgets of the note.</p>
-  <h3>Legacy version (jQuery)</h3><pre><code class="language-text-x-trilium-auto">class TreeWidget extends api.BasicWidget {
+</figure>
+<p>To position the widget somewhere else, just change the value passed to <code
+  spellcheck="false">get parentWidget()</code> for legacy widgets or the <code
+  spellcheck="false">parent</code> field for Preact. Do note that some positions
+  such as <code spellcheck="false">note-detail-pane</code> and <code spellcheck="false">right-pane</code> have
+  special requirements that need to be accounted for (see the table above).</p>
+<h2>Multiple widgets in a single note</h2>
+<p>A widget note usually returns one widget, but it can also return an array
+  of them. This is useful when several widgets share code or state, since
+  they can all live in the same note instead of being split across notes
+  that need a shared module.</p>
+<p>Each widget of the array is registered on its own, so they can have different
+  parents and positions. A widget that is missing its <code spellcheck="false">parentWidget</code> (or <code
+  spellcheck="false">parent</code> for Preact) is reported as an error without
+  affecting the other widgets of the note.</p>
+<h3>Legacy version (jQuery)</h3><pre><code class="language-text-x-trilium-auto">class TreeWidget extends api.BasicWidget {
     get parentWidget() { return "left-pane"; }
     doRender() { this.$widget = $("&lt;span&gt;Left pane&lt;/span&gt;"); }
 }
@@ -163,7 +159,7 @@ class SidebarWidget extends api.BasicWidget {
 }
 
 module.exports = [ new TreeWidget(), new SidebarWidget() ];</code></pre>
-  <h3>Preact version</h3><pre><code class="language-text-x-trilium-auto">import { defineWidget } from "trilium:preact";
+<h3>Preact version</h3><pre><code class="language-text-x-trilium-auto">import { defineWidget } from "trilium:preact";
 
 export default [
     defineWidget({
@@ -175,18 +171,18 @@ export default [
         render: () =&gt; &lt;span&gt;Right pane from Preact.&lt;/span&gt;
     })
 ];</code></pre>
-  <h2>Launch bar widgets</h2>
-  <p>Launch bar widgets are similar to <em>Custom widgets</em> but are specific
-    to the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>.
-    See&nbsp;<a class="reference-link" href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>&nbsp;for
-    more information.</p>
-  <h2>Custom position</h2>
-  <p>The position of a custom widget is defined via a <code spellcheck="false">position</code> integer.</p>
-  <p>In legacy widgets:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
+<h2>Launch bar widgets</h2>
+<p>Launch bar widgets are similar to <em>Custom widgets</em> but are specific
+  to the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>.
+  See&nbsp;<a class="reference-link" href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>&nbsp;for
+  more information.</p>
+<h2>Custom position</h2>
+<p>The position of a custom widget is defined via a <code spellcheck="false">position</code> integer.</p>
+<p>In legacy widgets:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
 	// [..
 	get position() { return 10; }
 }</code></pre>
-  <p>In Preact widgets:</p><pre><code class="language-text-x-trilium-auto">export default defineWidget({
+<p>In Preact widgets:</p><pre><code class="language-text-x-trilium-auto">export default defineWidget({
     // [...]
     position: 10
 });</code></pre>

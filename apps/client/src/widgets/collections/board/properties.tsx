@@ -3,9 +3,9 @@ import "./properties.css";
 import { useCallback } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
+import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
-import ActionButton from "../../react/ActionButton";
-import { Card, OptionCardSection } from "../../react/Card";
+import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import FormToggle from "../../react/FormToggle";
 import { useNoteLabelBoolean } from "../../react/hooks";
 import Modal from "../../react/Modal";
@@ -15,7 +15,6 @@ import type { PromotedAttribute } from "../promoted_attributes";
 import SortDropdown from "../SortDropdown";
 import { parseSortKey } from "../sorting";
 import BoardApi from "./api";
-import { openSortActionsMenu } from "./context_menu";
 import { useBoardSort } from "./sort";
 
 /** The board's settings, other than its columns and cards. */
@@ -68,6 +67,13 @@ function General({ api, note }: { api: BoardApi, note: FNote }) {
     const [ inboxShown ] = useNoteLabelBoolean(note, "enableInboxColumn");
     const [ archivedShown ] = useNoteLabelBoolean(note, "includeArchived");
     const defaultSort = useBoardSort(note);
+    // Every column at once, and a column's own order is not kept anywhere else: the reader is asked
+    // before it goes.
+    const resetColumnSorts = useCallback(async () => {
+        if (await dialog.confirm(t("board_view.reset-column-sorting-confirm"))) {
+            await api.resetColumnSortsToDefault();
+        }
+    }, [ api ]);
 
     return (
         <Card className="board-properties-general" heading={t("board_view.general")}>
@@ -94,7 +100,23 @@ function General({ api, note }: { api: BoardApi, note: FNote }) {
 
             <OptionCardSection
                 name="board-sort-cards"
-                label={t("board_view.sort-cards")}
+                label={t("board_view.default-card-order")}
+                description={t("board_view.default-card-order-description")}
+                subSectionsVisible
+                subSections={
+                    <CardSection
+                        className="board-sort-reset"
+                        href="#"
+                        noContainedNavigation
+                        onAction={(event) => {
+                            // The anchor is what makes the segment read as a link; the address
+                            // itself leads nowhere, and `goToLink` would navigate by it.
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void resetColumnSorts();
+                        }}
+                    >{t("board_view.reset-column-sorting")}</CardSection>
+                }
             >
                 <SortDropdown
                     className="board-sort-picker"
@@ -107,18 +129,6 @@ function General({ api, note }: { api: BoardApi, note: FNote }) {
                     // rejects that key as well: `setDefaultSort` takes a plain sort key.
                     onSelect={(orderBy) => api.setDefaultSort(parseSortKey(orderBy))}
                     onDirectionChange={(descending) => api.setDefaultSortDirection(descending)}
-                />
-
-                <ActionButton
-                    className="board-sort-actions"
-                    icon="bx bx-dots-vertical-rounded"
-                    text={t("board_view.sort-actions")}
-                    onClick={(event) => {
-                        // The press would otherwise reach the document, where the menu closes
-                        // itself on any click outside it.
-                        event.stopPropagation();
-                        openSortActionsMenu(api, event);
-                    }}
                 />
             </OptionCardSection>
         </Card>

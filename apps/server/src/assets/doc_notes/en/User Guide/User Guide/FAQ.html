@@ -33,21 +33,20 @@
   <li>given its size it would probably pivot the attention away from my main
     focus which is a personal note-taking</li>
   <li>the assumption that only single person has access to the app simplifies
-    many things, or just outright makes them possible. In multi-user app, our
-    <a
-    href="#root/_help_CdNpE2pqjmI6">scripting</a>support would be a XSS security hole, while with the single
-      user assumption it's an endless customizable tool.</li>
+    many things, or just outright makes them possible. In multi-user app, our <a
+    href="#root/_help_CdNpE2pqjmI6">scripting</a>support would be a XSS security
+    hole, while with the single user assumption it's an endless customizable
+    tool.</li>
 </ul>
 <h2>How to open multiple documents in one Trilium instance</h2>
 <p>This is normally not supported - one Trilium process can open only a single
   instance of a <a href="#root/_help_wX4HbRucYSDD">database</a>. However, you can
   run two Trilium processes (from one installation), each connected to a
-  separate document. To achieve this, you need to set a location for the
-  <a
-  href="#root/_help_tAassRL4RSQL">data directory</a>in the <code spellcheck="false">TRILIUM_DATA_DIR</code> environment
-    variable and separate port on <code spellcheck="false">TRILIUM_PORT</code> environment
-    variable. How to do that depends on the platform, in Unix-based systems
-    you can achieve that by running command such as this:</p><pre><code class="language-text-x-sh">TRILIUM_DATA_DIR=/home/me/path/to/data/dir TRILIUM_PORT=12345 trilium </code></pre>
+  separate document. To achieve this, you need to set a location for the <a
+  href="#root/_help_tAassRL4RSQL">data directory</a> in the <code spellcheck="false">TRILIUM_DATA_DIR</code> environment
+  variable and separate port on <code spellcheck="false">TRILIUM_PORT</code> environment
+  variable. How to do that depends on the platform, in Unix-based systems
+  you can achieve that by running command such as this:</p><pre><code class="language-text-x-sh">TRILIUM_DATA_DIR=/home/me/path/to/data/dir TRILIUM_PORT=12345 trilium </code></pre>
 <p>You can save this command into a <code spellcheck="false">.sh</code> script
   file or make an alias. Do this similarly for a second instance with different
   data directory and port.</p>
@@ -89,11 +88,10 @@
 <h3>Why does search sometimes find results with typos?</h3>
 <p>Trilium uses a progressive search strategy that includes fuzzy matching
   when exact matches return fewer than 5 results. This finds notes despite
-  minor typos in your search query. You can use fuzzy search operators (
-  <code
-  spellcheck="false">~=</code>for fuzzy exact match and <code spellcheck="false">~*</code> for
-    fuzzy contains). See the&nbsp;<a class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;documentation
-    for details.</p>
+  minor typos in your search query. You can use fuzzy search operators (<code
+  spellcheck="false">~=</code> for fuzzy exact match and <code spellcheck="false">~*</code> for
+  fuzzy contains). See the&nbsp;<a class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;documentation
+  for details.</p>
 <h3>How can I search for notes when I'm not sure of the exact spelling?</h3>
 <p>Use the fuzzy search operators:</p>
 <ul>

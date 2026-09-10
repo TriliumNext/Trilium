@@ -301,268 +301,265 @@
 class="admonition note">
   <p>If the map is locked for editing (see below), the map needs to be unlocked
     before moving the marker.</p>
-  </aside>
-  <h2>Interaction with the markers</h2>
-  <ul>
-    <li>Hovering over a marker will display a&nbsp;<a class="reference-link" href="#root/_help_lgKX7r3aL30x">Note Tooltip</a>&nbsp;with
-      the content of the note it belongs to.
-      <ul>
-        <li>Clicking on the note title in the tooltip will navigate to the note in
-          the current view.</li>
-      </ul>
-    </li>
-    <li>Right-clicking the marker will open a contextual menu (as described below).</li>
-    <li>Clicking a marker will focus on the marker and display a dedicated popup
-      with the details. This works regardless of whether the map is editable
-      or not.</li>
-  </ul>
-  <h3>Popup view</h3>
-  <p>When a marker or a track is clicked, a popup will open to the right which
-    contains the following information:</p>
-  <ul>
-    <li>The title and icon of the marker, both editable.</li>
-    <li>An indicator for the coordinates; clicking it will copy the coordinates
-      to clipboard.</li>
-    <li>A button to maximize the popup.</li>
-    <li>Buttons to interact with the markers:
-      <ul>
-        <li>Open the marker in the same pane, new tab, etc.</li>
-        <li>A button to open the location in a dedicated application (e.g. Google
-          Maps on mobile).</li>
-        <li>Color picker to change the color of the marker.</li>
-        <li>Button to remove the marker from the map, which can optionally delete
-          its corresponding note. Removing a marker without deleting the note will
-          only remove its <code spellcheck="false">#geolocation</code> attribute (case
-          in which the coordinates have to be manually added back in in order to
-          get the note to show on the map again).</li>
-      </ul>
-    </li>
-    <li>The&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;of
-      the marker, if any.</li>
-    <li>The note's content which can be edited directly from the panel.</li>
-  </ul>
-  <p>To dismiss the popup:</p>
-  <ul>
-    <li>Press the X button at the top-right of the popup.</li>
-    <li>In the map, press anywhere outside the popup.</li>
-    <li>Or simply press the Escape key.</li>
-  </ul>
-  <p>When a marker is clicked, the map will automatically adjust the viewport
-    so that the marker is still visible with the popup open. The currently
-    selected marker is shown slightly bigger.</p>
-  <p>It is possible to switch between markers by clicking on them even when
-    the popup view is already open.</p>
-  <p>Markers can have&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;between
-    them and clicking on such a link will automatically adjust the viewport
-    and the popup view to the new note.</p>
-  <h3>Contextual menu</h3>
-  <p>It's possible to press the right mouse button to display a contextual
-    menu.</p>
-  <ol>
-    <li>If right-clicking an empty section of the map (not on a marker), it allows
-      to:
-      <ol>
-        <li>Displays the latitude and longitude. Clicking this option will copy them
-          to the clipboard.</li>
-        <li>Open the location using an external application (if the operating system
-          supports it).</li>
-        <li>Adding a new marker at that location.</li>
-      </ol>
-    </li>
-    <li>If right-clicking on a marker, it allows to:
-      <ol>
-        <li>Displays the latitude and longitude. Clicking this option will copy them
-          to the clipboard.</li>
-        <li>Open the location using an external application (if the operating system
-          supports it).</li>
-        <li>Open the note in a new tab, split or window.</li>
-        <li>Button to remove the marker from the map, which can optionally delete
-          its corresponding note. Removing a marker without deleting the note will
-          only remove its <code spellcheck="false">#geolocation</code> attribute (case
-          in which the coordinates have to be manually added back in in order to
-          get the note to show on the map again).</li>
-      </ol>
-    </li>
-  </ol>
-  <h3>Icon and color of the markers</h3>
-  <figure class="image image-style-align-right image_resized" style="width:47.42%;">
-    <img style="aspect-ratio:885/321;" src="3_Geo Map_image.png"
-    width="885" height="321">
-  </figure>
-  <p>The markers will have the same icon as the note.</p>
-  <p>It's possible to add a custom color to a marker by assigning them a
-    <code
-    spellcheck="false">#color</code>attribute such as <code spellcheck="false">#color=green</code>.</p>
-  <h3>Adding the coordinates manually</h3>
-  <p>Searching for the place is usually quicker (see <em>Searching the map</em> above).
-    The steps below remain useful for a coordinate that is already to hand,
-    or for a place the search cannot find.</p>
-  <p>In a nutshell, create a child note and set the <code spellcheck="false">#geolocation</code> attribute
-    to the coordinates.</p>
-  <p>The value of the attribute is made up of the latitude and longitude separated
-    by a comma.</p>
-  <h4>Adding from Google Maps</h4>
-  <ol>
-    <li>In Google Maps, on the web:
-      <ol>
-        <li>Look for a desired location, right click on it and a context menu will
-          show up.</li>
-        <li>Simply click on the first item displaying the coordinates and they will
-          be copied to clipboard.</li>
-      </ol>
-    </li>
-    <li>In Trilium, create a child note under the map.</li>
-    <li>Then paste the value inside the text box into the <code spellcheck="false">#geolocation</code> attribute
-      of a child note of the map (don't forget to surround the value with a
-      <code
-      spellcheck="false">"</code>character).</li>
-  </ol>
-  <h4>Adding from OpenStreetMap</h4>
-  <p>Similarly to the Google Maps approach:</p>
-  <ol>
-    <li>Go to any location on openstreetmap.org and right click to bring up the
-      context menu. Select the <em>Show address</em> item.</li>
-    <li>The address will be visible in the top-left of the screen, in the place
-      of the search bar.&nbsp;Select the coordinates and copy them into the clipboard.</li>
-    <li>Simply paste the value inside the text box into the <code spellcheck="false">#geolocation</code> attribute
-      of a child note of the map and then it should be displayed on the map.</li>
-  </ol>
-  <h2>Adding GPS tracks (.gpx)</h2>
-  <figure class="image">
-    <img style="aspect-ratio:1566/1155;" src="1_Geo Map_image.png"
-    width="1566" height="1155">
-  </figure>
-  <p>Trilium can display GPS tracks on the geo map, in the form of <code spellcheck="false">.gpx</code> files.</p>
-  <p>To add a track, either:</p>
-  <ol>
-    <li>Drag &amp; drop a <code spellcheck="false">.gpx</code> file inside the geo
-      map in the note tree.
-      <ol>
-        <li>In order for the file to be recognized as a GPS track, it needs to show
-          up as <code spellcheck="false">application/gpx+xml</code> in the <em>File type</em> field.</li>
-      </ol>
-    </li>
-    <li>Press the <em>Add a GPS track from a GPX file</em> which will directly prompt
-      for a GPX file and import it as a subnote of the collection.</li>
-  </ol>
-  <p>When going back to the map, the track should now be visible.</p>
-  <p>The starting point of the track will be displayed as a marker, with the
-    name of the note underneath. The start marker will also respect the icon
-    and the <code spellcheck="false">color</code> of the note. The end marker
-    is displayed with a distinct icon.</p>
-  <p>If the track file contains multiple tracks, they will all be displayed
-    as well as markers. Trilium will also split a single track that happens
-    to have non-continuous points.</p>
-  <p>If the GPX contains waypoints, they will also be displayed, including
-    their names.</p>
-  <p>When the track is clicked, the entire route is brought into view, as well
-    as the right popup will indicate details about the track such as distance,
-    duration and the elevation map. This information is also displayed when
-    clicking the <code spellcheck="false">.gpx</code> note itself.</p>
-  <p>When clicking on the markers of a track (whether it's the start or stop
-    builtin markers, or custom markers that are part of the track), only that
-    marker is brought into view, as opposed to the entire route.</p>
-  <h2>Read-only mode</h2>
-  <p>When a map is <a href="#root/_help_CoFPLs3dRlXc">read-only</a> all editing features
-    will be disabled such as:</p>
-  <ul>
-    <li>The add button at the bottom of the map.</li>
-    <li>Repositioning markers.</li>
-    <li>Editing from the contextual menu (removing locations or adding new items).</li>
-    <li>Keeping a place as a marker, whether you found it by searching or clicked
-      it on the map. You can still search and click, and you can still look at
-      a place and copy its coordinates.</li>
-  </ul>
-  <p>To set a map as read-only, go to&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;→ <em>Editable</em> → <em>Read-only</em> (on
-    the new layout, or in Basic Properties on the&nbsp;<a class="reference-link"
-    href="#root/_help_BlN9DFI679QC">Ribbon</a>&nbsp;for the old layout).</p>
-  <h2>Configuration</h2>
-  <h3>Map Style</h3>
-  <p>The styling of the map can be adjusted in the&nbsp;<a class="reference-link"
-    href="#root/_help_CssoWBu8I7jF">Collection Properties</a>&nbsp;or manually via
-    the <code spellcheck="false">#map:style</code> attribute.</p>
-  <p>The geo map comes with two different types of styles:</p>
-  <ul>
-    <li>Raster styles
-      <ul>
-        <li>For these styles the map is represented as a grid of images at different
-          zoom levels. This is the traditional way OpenStreetMap used to work.</li>
-        <li>Zoom is slightly restricted.</li>
-        <li>Currently, the only raster theme is the original OpenStreetMap style.</li>
-      </ul>
-    </li>
-    <li>Vector styles
-      <ul>
-        <li>Vector styles are not represented as images, but as geometrical shapes.
-          This makes the rendering much smoother, especially when zooming and looking
-          at the building edges, for example.</li>
-        <li>The map can be zoomed in much further.</li>
-        <li>These come in various styles that are both light (Colorful, Graybeard,
-          Neutrino) and dark (Eclipse, Shadow).</li>
-        <li>The vector styles come from <a href="https://versatiles.org/">VersaTiles</a>,
-          a free and open-source project providing map tiles based on OpenStreetMap.</li>
-        <li>The VersaTiles layers also provide 3D building information (see below).</li>
-      </ul>
-    </li>
-  </ul>
-  <p>The default theme is Versatiles Colorful (vector).</p>
-  <h4>3D view with buildings</h4>
-  <figure class="image">
-    <img style="aspect-ratio:2727/1642;" src="2_Geo Map_image.png"
-    width="2727" height="1642">
-  </figure>
-  <p>Trilium v0.105.0 introduces a 3D view, courtesy of MapLibre GL. To enter
-    3D mode, simply press the corresponding button at the bottom-right of the
-    map or press Ctrl and drag across the map.</p>
-  <p>The buildings will only appear from zoom 14 onwards to avoid lag.</p>
-  <aside
-  class="admonition note">
-    <p>To get 3D buildings, make sure you are using the <em>VersaTiles</em> styles
-      which provide the building informatia via the <code spellcheck="false">versatiles-shortbread</code> source.</p>
-    </aside>
-    <h3>Custom map style / tiles</h3>
-    <p>Starting with v0.102.0 it is possible to use custom tile sets, but only
-      in raster format.</p>
-    <p>To do so, manually set the <code spellcheck="false">#map:style</code> 
-      <a
-      href="#root/_help_HI6GBBIduIgv">label</a>to the URL of the tile set. For example, to use Esri.NatGeoWorldMap,
-        set the value to <a href="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D."><code spellcheck="false">https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}</code>.</a>
-    </p>
-    <p>Additionally:</p>
+</aside>
+<h2>Interaction with the markers</h2>
+<ul>
+  <li>Hovering over a marker will display a&nbsp;<a class="reference-link" href="#root/_help_lgKX7r3aL30x">Note Tooltip</a>&nbsp;with
+    the content of the note it belongs to.
     <ul>
-      <li>Hi-DPI tiles are supported via the <code spellcheck="false">{r}</code> placeholder.</li>
-      <li>To mark the custom style as dark (which affects the styling of the UI),
-        apply the <code spellcheck="false">map:darkStyle</code> label. This attribute
-        also overrides builtin themes.</li>
+      <li>Clicking on the note title in the tooltip will navigate to the note in
+        the current view.</li>
     </ul>
-    <aside class="admonition note">
-      <p>For a list of tile sets, see the <a href="https://leaflet-extras.github.io/leaflet-providers/preview/">Leaflet Providers preview</a> page.
-        Select a desired tile set and just copy the URL from the <em>Plain JavaScript</em> example.</p>
-    </aside>
-    <p>Custom vector map support is planned, but not yet implemented.</p>
-    <h3>Other options</h3>
-    <p>The following options can be configured either via the&nbsp;<a class="reference-link"
-      href="#root/_help_CssoWBu8I7jF">Collection Properties</a>, by clicking on the
-      settings (Gear icon). Alternatively, each of these options also have a
-      corresponding <a href="#root/_help_HI6GBBIduIgv">label</a> that can be set manually.</p>
+  </li>
+  <li>Right-clicking the marker will open a contextual menu (as described below).</li>
+  <li>Clicking a marker will focus on the marker and display a dedicated popup
+    with the details. This works regardless of whether the map is editable
+    or not.</li>
+</ul>
+<h3>Popup view</h3>
+<p>When a marker or a track is clicked, a popup will open to the right which
+  contains the following information:</p>
+<ul>
+  <li>The title and icon of the marker, both editable.</li>
+  <li>An indicator for the coordinates; clicking it will copy the coordinates
+    to clipboard.</li>
+  <li>A button to maximize the popup.</li>
+  <li>Buttons to interact with the markers:
     <ul>
-      <li>Scale, which illustrates the scale of the map in either kilometers or
-        miles in the bottom-left of the map.
-        <ul>
-          <li>The unit is determined by the <em>Formatting locale</em> option in <em>Language &amp; Region</em>.</li>
-        </ul>
-      </li>
-      <li>The name of the markers is displayed by default underneath the pin on
-        the map. Since v0.102.0, it is possible to hide these labels which increases
-        the performance and decreases clutter when there are many markers on the
-        map.</li>
-      <li>v0.105.0 also introduces a feature called <em>Group nearby markers</em> which
-        will cluster multiple markers together at low zoom.
-        <ul>
-          <li>The clusters display the number of items they contain. The color also
-            changes based on the count.</li>
-          <li>Clicking on a cluster will automatically zoom in so that the individual
-            markers that make up the cluster are now visible.</li>
-        </ul>
-      </li>
+      <li>Open the marker in the same pane, new tab, etc.</li>
+      <li>A button to open the location in a dedicated application (e.g. Google
+        Maps on mobile).</li>
+      <li>Color picker to change the color of the marker.</li>
+      <li>Button to remove the marker from the map, which can optionally delete
+        its corresponding note. Removing a marker without deleting the note will
+        only remove its <code spellcheck="false">#geolocation</code> attribute (case
+        in which the coordinates have to be manually added back in in order to
+        get the note to show on the map again).</li>
     </ul>
+  </li>
+  <li>The&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;of
+    the marker, if any.</li>
+  <li>The note's content which can be edited directly from the panel.</li>
+</ul>
+<p>To dismiss the popup:</p>
+<ul>
+  <li>Press the X button at the top-right of the popup.</li>
+  <li>In the map, press anywhere outside the popup.</li>
+  <li>Or simply press the Escape key.</li>
+</ul>
+<p>When a marker is clicked, the map will automatically adjust the viewport
+  so that the marker is still visible with the popup open. The currently
+  selected marker is shown slightly bigger.</p>
+<p>It is possible to switch between markers by clicking on them even when
+  the popup view is already open.</p>
+<p>Markers can have&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;between
+  them and clicking on such a link will automatically adjust the viewport
+  and the popup view to the new note.</p>
+<h3>Contextual menu</h3>
+<p>It's possible to press the right mouse button to display a contextual
+  menu.</p>
+<ol>
+  <li>If right-clicking an empty section of the map (not on a marker), it allows
+    to:
+    <ol>
+      <li>Displays the latitude and longitude. Clicking this option will copy them
+        to the clipboard.</li>
+      <li>Open the location using an external application (if the operating system
+        supports it).</li>
+      <li>Adding a new marker at that location.</li>
+    </ol>
+  </li>
+  <li>If right-clicking on a marker, it allows to:
+    <ol>
+      <li>Displays the latitude and longitude. Clicking this option will copy them
+        to the clipboard.</li>
+      <li>Open the location using an external application (if the operating system
+        supports it).</li>
+      <li>Open the note in a new tab, split or window.</li>
+      <li>Button to remove the marker from the map, which can optionally delete
+        its corresponding note. Removing a marker without deleting the note will
+        only remove its <code spellcheck="false">#geolocation</code> attribute (case
+        in which the coordinates have to be manually added back in in order to
+        get the note to show on the map again).</li>
+    </ol>
+  </li>
+</ol>
+<h3>Icon and color of the markers</h3>
+<figure class="image image-style-align-right image_resized" style="width:47.42%;">
+  <img style="aspect-ratio:885/321;" src="3_Geo Map_image.png"
+  width="885" height="321">
+</figure>
+<p>The markers will have the same icon as the note.</p>
+<p>It's possible to add a custom color to a marker by assigning them a <code
+  spellcheck="false">#color</code> attribute such as <code spellcheck="false">#color=green</code>.</p>
+<h3>Adding the coordinates manually</h3>
+<p>Searching for the place is usually quicker (see <em>Searching the map</em> above).
+  The steps below remain useful for a coordinate that is already to hand,
+  or for a place the search cannot find.</p>
+<p>In a nutshell, create a child note and set the <code spellcheck="false">#geolocation</code> attribute
+  to the coordinates.</p>
+<p>The value of the attribute is made up of the latitude and longitude separated
+  by a comma.</p>
+<h4>Adding from Google Maps</h4>
+<ol>
+  <li>In Google Maps, on the web:
+    <ol>
+      <li>Look for a desired location, right click on it and a context menu will
+        show up.</li>
+      <li>Simply click on the first item displaying the coordinates and they will
+        be copied to clipboard.</li>
+    </ol>
+  </li>
+  <li>In Trilium, create a child note under the map.</li>
+  <li>Then paste the value inside the text box into the <code spellcheck="false">#geolocation</code> attribute
+    of a child note of the map (don't forget to surround the value with a <code
+    spellcheck="false">"</code> character).</li>
+</ol>
+<h4>Adding from OpenStreetMap</h4>
+<p>Similarly to the Google Maps approach:</p>
+<ol>
+  <li>Go to any location on openstreetmap.org and right click to bring up the
+    context menu. Select the <em>Show address</em> item.</li>
+  <li>The address will be visible in the top-left of the screen, in the place
+    of the search bar.&nbsp;Select the coordinates and copy them into the clipboard.</li>
+  <li>Simply paste the value inside the text box into the <code spellcheck="false">#geolocation</code> attribute
+    of a child note of the map and then it should be displayed on the map.</li>
+</ol>
+<h2>Adding GPS tracks (.gpx)</h2>
+<figure class="image">
+  <img style="aspect-ratio:1566/1155;" src="1_Geo Map_image.png"
+  width="1566" height="1155">
+</figure>
+<p>Trilium can display GPS tracks on the geo map, in the form of <code spellcheck="false">.gpx</code> files.</p>
+<p>To add a track, either:</p>
+<ol>
+  <li>Drag &amp; drop a <code spellcheck="false">.gpx</code> file inside the geo
+    map in the note tree.
+    <ol>
+      <li>In order for the file to be recognized as a GPS track, it needs to show
+        up as <code spellcheck="false">application/gpx+xml</code> in the <em>File type</em> field.</li>
+    </ol>
+  </li>
+  <li>Press the <em>Add a GPS track from a GPX file</em> which will directly prompt
+    for a GPX file and import it as a subnote of the collection.</li>
+</ol>
+<p>When going back to the map, the track should now be visible.</p>
+<p>The starting point of the track will be displayed as a marker, with the
+  name of the note underneath. The start marker will also respect the icon
+  and the <code spellcheck="false">color</code> of the note. The end marker
+  is displayed with a distinct icon.</p>
+<p>If the track file contains multiple tracks, they will all be displayed
+  as well as markers. Trilium will also split a single track that happens
+  to have non-continuous points.</p>
+<p>If the GPX contains waypoints, they will also be displayed, including
+  their names.</p>
+<p>When the track is clicked, the entire route is brought into view, as well
+  as the right popup will indicate details about the track such as distance,
+  duration and the elevation map. This information is also displayed when
+  clicking the <code spellcheck="false">.gpx</code> note itself.</p>
+<p>When clicking on the markers of a track (whether it's the start or stop
+  builtin markers, or custom markers that are part of the track), only that
+  marker is brought into view, as opposed to the entire route.</p>
+<h2>Read-only mode</h2>
+<p>When a map is <a href="#root/_help_CoFPLs3dRlXc">read-only</a> all editing features
+  will be disabled such as:</p>
+<ul>
+  <li>The add button at the bottom of the map.</li>
+  <li>Repositioning markers.</li>
+  <li>Editing from the contextual menu (removing locations or adding new items).</li>
+  <li>Keeping a place as a marker, whether you found it by searching or clicked
+    it on the map. You can still search and click, and you can still look at
+    a place and copy its coordinates.</li>
+</ul>
+<p>To set a map as read-only, go to&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;→ <em>Editable</em> → <em>Read-only</em> (on
+  the new layout, or in Basic Properties on the&nbsp;<a class="reference-link"
+  href="#root/_help_BlN9DFI679QC">Ribbon</a>&nbsp;for the old layout).</p>
+<h2>Configuration</h2>
+<h3>Map Style</h3>
+<p>The styling of the map can be adjusted in the&nbsp;<a class="reference-link"
+  href="#root/_help_CssoWBu8I7jF">Collection Properties</a>&nbsp;or manually via
+  the <code spellcheck="false">#map:style</code> attribute.</p>
+<p>The geo map comes with two different types of styles:</p>
+<ul>
+  <li>Raster styles
+    <ul>
+      <li>For these styles the map is represented as a grid of images at different
+        zoom levels. This is the traditional way OpenStreetMap used to work.</li>
+      <li>Zoom is slightly restricted.</li>
+      <li>Currently, the only raster theme is the original OpenStreetMap style.</li>
+    </ul>
+  </li>
+  <li>Vector styles
+    <ul>
+      <li>Vector styles are not represented as images, but as geometrical shapes.
+        This makes the rendering much smoother, especially when zooming and looking
+        at the building edges, for example.</li>
+      <li>The map can be zoomed in much further.</li>
+      <li>These come in various styles that are both light (Colorful, Graybeard,
+        Neutrino) and dark (Eclipse, Shadow).</li>
+      <li>The vector styles come from <a href="https://versatiles.org/">VersaTiles</a>,
+        a free and open-source project providing map tiles based on OpenStreetMap.</li>
+      <li>The VersaTiles layers also provide 3D building information (see below).</li>
+    </ul>
+  </li>
+</ul>
+<p>The default theme is Versatiles Colorful (vector).</p>
+<h4>3D view with buildings</h4>
+<figure class="image">
+  <img style="aspect-ratio:2727/1642;" src="2_Geo Map_image.png"
+  width="2727" height="1642">
+</figure>
+<p>Trilium v0.105.0 introduces a 3D view, courtesy of MapLibre GL. To enter
+  3D mode, simply press the corresponding button at the bottom-right of the
+  map or press Ctrl and drag across the map.</p>
+<p>The buildings will only appear from zoom 14 onwards to avoid lag.</p>
+<aside
+class="admonition note">
+  <p>To get 3D buildings, make sure you are using the <em>VersaTiles</em> styles
+    which provide the building informatia via the <code spellcheck="false">versatiles-shortbread</code> source.</p>
+</aside>
+<h3>Custom map style / tiles</h3>
+<p>Starting with v0.102.0 it is possible to use custom tile sets, but only
+  in raster format.</p>
+<p>To do so, manually set the <code spellcheck="false">#map:style</code>  <a
+  href="#root/_help_HI6GBBIduIgv">label</a> to the URL of the tile set. For example,
+  to use Esri.NatGeoWorldMap, set the value to <a href="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D."><code spellcheck="false">https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}</code>.</a>
+</p>
+<p>Additionally:</p>
+<ul>
+  <li>Hi-DPI tiles are supported via the <code spellcheck="false">{r}</code> placeholder.</li>
+  <li>To mark the custom style as dark (which affects the styling of the UI),
+    apply the <code spellcheck="false">map:darkStyle</code> label. This attribute
+    also overrides builtin themes.</li>
+</ul>
+<aside class="admonition note">
+  <p>For a list of tile sets, see the <a href="https://leaflet-extras.github.io/leaflet-providers/preview/">Leaflet Providers preview</a> page.
+    Select a desired tile set and just copy the URL from the <em>Plain JavaScript</em> example.</p>
+</aside>
+<p>Custom vector map support is planned, but not yet implemented.</p>
+<h3>Other options</h3>
+<p>The following options can be configured either via the&nbsp;<a class="reference-link"
+  href="#root/_help_CssoWBu8I7jF">Collection Properties</a>, by clicking on the
+  settings (Gear icon). Alternatively, each of these options also have a
+  corresponding <a href="#root/_help_HI6GBBIduIgv">label</a> that can be set manually.</p>
+<ul>
+  <li>Scale, which illustrates the scale of the map in either kilometers or
+    miles in the bottom-left of the map.
+    <ul>
+      <li>The unit is determined by the <em>Formatting locale</em> option in <em>Language &amp; Region</em>.</li>
+    </ul>
+  </li>
+  <li>The name of the markers is displayed by default underneath the pin on
+    the map. Since v0.102.0, it is possible to hide these labels which increases
+    the performance and decreases clutter when there are many markers on the
+    map.</li>
+  <li>v0.105.0 also introduces a feature called <em>Group nearby markers</em> which
+    will cluster multiple markers together at low zoom.
+    <ul>
+      <li>The clusters display the number of items they contain. The color also
+        changes based on the count.</li>
+      <li>Clicking on a cluster will automatically zoom in so that the individual
+        markers that make up the cluster are now visible.</li>
+    </ul>
+  </li>
+</ul>

@@ -68,10 +68,10 @@
             </td>
             <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD</code>
             </td>
-            <td>Token-endpoint auth method: <code spellcheck="false">client_secret_basic</code> or
-              <code
-              spellcheck="false">client_secret_post</code>. Empty auto-detects. &nbsp;Only needed if sign-in
-                fails with a <code spellcheck="false">WWW-Authenticate</code> or <code spellcheck="false">invalid_client</code> error.</td>
+            <td>Token-endpoint auth method: <code spellcheck="false">client_secret_basic</code> or <code
+              spellcheck="false">client_secret_post</code>. Empty auto-detects. &nbsp;Only
+              needed if sign-in fails with a <code spellcheck="false">WWW-Authenticate</code> or <code
+              spellcheck="false">invalid_client</code> error.</td>
           </tr>
           <tr>
             <td>ID token algorithm</td>
@@ -79,27 +79,24 @@
             </td>
             <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG</code>
             </td>
-            <td><span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span> 
-              <code
-              spellcheck="false">RS256</code><span style="color:rgb(32,32,32);">,</span>  <code spellcheck="false">EdDSA</code>
-                <span
-                style="color:rgb(32,32,32);">,</span> <code spellcheck="false">ES256</code><span style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span> 
-                  <code
-                  spellcheck="false">unexpected JWT alg</code> <span style="color:rgb(32,32,32);">error.</span>
+            <td><span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span>  <code
+              spellcheck="false">RS256</code><span style="color:rgb(32,32,32);">,</span>  <code
+              spellcheck="false">EdDSA</code><span style="color:rgb(32,32,32);">,</span>  <code
+              spellcheck="false">ES256</code><span style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span>  <code
+              spellcheck="false">unexpected JWT alg</code>  <span style="color:rgb(32,32,32);">error.</span>
             </td>
           </tr>
         </tbody>
       </table>
-      </figure>
-      <p>Asterisk (*) marks a required field</p>
+    </figure>
+    <p>Asterisk (*) marks a required field</p>
   </li>
   <li>
     <p>The default OAuth issuer is Google. To use other services such as Authentik
-      or Auth0, you can configure the settings via <code spellcheck="false">oauthIssuerBaseUrl</code>,
-      <code
+      or Auth0, you can configure the settings via <code spellcheck="false">oauthIssuerBaseUrl</code>, <code
       spellcheck="false">oauthIssuerName</code>, and <code spellcheck="false">oauthIssuerIcon</code> in
-        the <code spellcheck="false">config.ini</code> file. Alternatively, these
-        values can be set using environment variables:</p>
+      the <code spellcheck="false">config.ini</code> file. Alternatively, these
+      values can be set using environment variables:</p>
     <figure class="table">
       <table>
         <thead>
@@ -120,15 +117,12 @@
             <td>Either the issuer itself (<code spellcheck="false">https://auth.example.com</code>)
               or a full discovery URL (<code spellcheck="false">https://auth.example.com/.well-known/openid-configuration</code>).
               <br>
-              <br>A URL containing <code spellcheck="false">/.well-known/</code> is used as-is
-              <span
-              style="color:rgb(32,32,32);">, which is convenient when your provider hands you a discovery URL to
-                copy. A trailing slash may be included or omitted; Trilium matches whichever
-                spelling the provider advertises.</span>
-                <br>
-                <br>Use the full form when your provider advertises an issuer that differs
-                from the path serving its discovery document, such as Authentik in "global"
-                issuer mode.</td>
+              <br>A URL containing <code spellcheck="false">/.well-known/</code> is used as-is<span
+              style="color:rgb(32,32,32);">, which is convenient when your provider hands you a discovery URL to copy. A trailing slash may be included or omitted; Trilium matches whichever spelling the provider advertises.</span> 
+              <br>
+              <br>Use the full form when your provider advertises an issuer that differs
+              from the path serving its discovery document, such as Authentik in "global"
+              issuer mode.</td>
           </tr>
           <tr>
             <td>Issuer name</td>
@@ -184,10 +178,9 @@
             </td>
             <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE</code>
             </td>
-            <td>Space-separated list of OIDC scopes requested at login. Defaults to
-              <code
-              spellcheck="false">openid profile email</code>. <code spellcheck="false">openid</code> is required
-                and is prepended automatically if you omit it.</td>
+            <td>Space-separated list of OIDC scopes requested at login. Defaults to <code
+              spellcheck="false">openid profile email</code>. <code spellcheck="false">openid</code> is
+              required and is prepended automatically if you omit it.</td>
           </tr>
         </tbody>
       </table>
@@ -203,16 +196,12 @@
   </li>
 </ol>
 <aside class="admonition note">
-  <p>Legacy environment variables are also supported: <code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code>,
-    <code
+  <p>Legacy environment variables are also supported: <code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code>, <code
     spellcheck="false">TRILIUM_OAUTH_CLIENT_ID</code>, <code spellcheck="false">TRILIUM_OAUTH_CLIENT_SECRET</code>,
-      and for customizing the provider: <code spellcheck="false">TRILIUM_OAUTH_ISSUER_BASE_URL</code>,
-      <code
-      spellcheck="false">TRILIUM_OAUTH_ISSUER_NAME</code>, <code spellcheck="false">TRILIUM_OAUTH_ISSUER_ICON</code>,
-        <code
-        spellcheck="false">TRILIUM_OAUTH_HTTP_TIMEOUT</code>, <code spellcheck="false">TRILIUM_OAUTH_SCOPE</code>,
-          <code
-          spellcheck="false">TRILIUM_OAUTH_CLIENT_AUTH_METHOD</code>, <code spellcheck="false">TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG</code>.</p>
+    and for customizing the provider: <code spellcheck="false">TRILIUM_OAUTH_ISSUER_BASE_URL</code>, <code
+    spellcheck="false">TRILIUM_OAUTH_ISSUER_NAME</code>, <code spellcheck="false">TRILIUM_OAUTH_ISSUER_ICON</code>, <code
+    spellcheck="false">TRILIUM_OAUTH_HTTP_TIMEOUT</code>, <code spellcheck="false">TRILIUM_OAUTH_SCOPE</code>, <code
+    spellcheck="false">TRILIUM_OAUTH_CLIENT_AUTH_METHOD</code>, <code spellcheck="false">TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG</code>.</p>
 </aside>
 <h2>Connecting to the authentication provider</h2>
 <p>Once the server has been configured at the previous step, the next step
@@ -269,27 +258,23 @@
 <h2>Troubleshooting</h2>
 <h3>Setup fails with a <code spellcheck="false">WWW-Authenticate</code> or <code spellcheck="false">invalid_client</code> error</h3>
 <p>Your provider disagrees with Trilium about how client credentials should
-  be sent to the token endpoint. Set <code spellcheck="false">oauthClientAuthMethod</code> to
-  <code
-  spellcheck="false">client_secret_post</code>(or <code spellcheck="false">client_secret_basic</code> if
-    it's already set to post) and restart. Providers vary: some reject
-    <code
-    spellcheck="false">client_secret_post</code>outright because the method is fixed when the
-      client is registered (e.g. Authelia), so if one value doesn't work, try
-      the other.</p>
+  be sent to the token endpoint. Set <code spellcheck="false">oauthClientAuthMethod</code> to <code
+  spellcheck="false">client_secret_post</code> (or <code spellcheck="false">client_secret_basic</code> if
+  it's already set to post) and restart. Providers vary: some reject <code
+  spellcheck="false">client_secret_post</code> outright because the method
+  is fixed when the client is registered (e.g. Authelia), so if one value
+  doesn't work, try the other.</p>
 <h3>Setup fails with <code spellcheck="false">invalid user</code></h3>
 <p>If you are running behind a <a href="#root/_help_vcjrb3VVYPZI">reverse proxy</a>,
-  a buffer overflow can also cause this issue. Here is a sample fix for&nbsp;
-  <a
+  a buffer overflow can also cause this issue. Here is a sample fix for&nbsp;<a
   class="reference-link" href="#root/_help_ud6MShXL4WpO">Nginx</a>: </p><pre><code class="language-text-x-trilium-auto">proxy_buffer_size 128k;
 proxy_buffers 4 256k;
 proxy_busy_buffers_size 256k;</code></pre>
 <h3>Setup fails with an <code spellcheck="false">unexpected JWT alg</code> error</h3>
-<p>Depending on your version the message reads <code spellcheck="false">unexpected JWT "alg" header parameter</code> or
-  <code
-  spellcheck="false">unexpected JWT alg received, expected RS256, got: EdDSA</code>. Both mean
-    the same thing: your provider signs ID tokens with an algorithm other than
-    RS256. Pocket ID (Ed25519) and Kanidm (ES256) do this.</p>
+<p>Depending on your version the message reads <code spellcheck="false">unexpected JWT "alg" header parameter</code> or <code
+  spellcheck="false">unexpected JWT alg received, expected RS256, got: EdDSA</code>.
+  Both mean the same thing: your provider signs ID tokens with an algorithm
+  other than RS256. Pocket ID (Ed25519) and Kanidm (ES256) do this.</p>
 <p>From v0.104.2 Trilium detects the algorithm from your provider automatically,
   and the log records the outcome (<code spellcheck="false">OAuth: the issuer does not sign ID tokens with RS256; expecting ES256</code>).
   If detection can't reach the provider it falls back to RS256, so check

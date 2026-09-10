@@ -46,9 +46,8 @@ module.exports = new MyWidget();</code></pre>
 <h3>Step 3: Styling the Widget</h3>
 <p>To make the button more visually appealing and position it correctly,
   we'll apply some custom styling. Trilium includes <a href="https://boxicons.com">Box Icons</a>,
-  which we'll use to replace the button text with an icon. For example the
-  <code
-  spellcheck="false">bx bxs-magic-wand</code>icon.</p>
+  which we'll use to replace the button text with an icon. For example the <code
+  spellcheck="false">bx bxs-magic-wand</code> icon.</p>
 <p>Here's the updated template:</p><pre><code class="language-text-x-trilium-auto">const template = `&lt;div id="my-widget"&gt;&lt;button class="tree-floating-button bx bxs-magic-wand tree-settings-button"&gt;&lt;/button&gt;&lt;/div&gt;`;</code></pre>
 <p>Next, we'll adjust the button's position using CSS:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
     get position() { return 1; }

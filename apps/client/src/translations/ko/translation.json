@@ -3305,10 +3305,7 @@
     "grouping-already-defined": "\"{{- name}}\" 항목은 이 보드에 이미 정의되어 있습니다. 이 항목으로 그룹화하려면 목록에서 선택하세요.",
     "sort": "정렬",
     "sort-manually": "수동",
-    "sort-cards": "카드 정렬",
     "sort-board-default": "보드 기본값",
-    "sort-actions": "추가 작업",
-    "reset-columns-to-default": "모든 열을 기본값으로 재설정",
     "sorted-no-reorder": "정렬된 열에서는 카드 순서를 변경할 수 없습니다."
   },
   "dashboard_view": {

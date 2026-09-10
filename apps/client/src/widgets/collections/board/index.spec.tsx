@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Modal as BootstrapModal } from "bootstrap";
 
+import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
 import contextMenu from "../../../menus/context_menu";
 import dialog from "../../../services/dialog";
@@ -788,10 +789,15 @@ describe("A board in a tab the reader is not looking at", () => {
         });
 
         // The context the board belongs to, reached the way `useNoteContext` reaches it: from the
-        // nearest ancestor carrying one.
-        let active = true;
+        // nearest ancestor carrying one. The board compares main contexts, so the tab is what the
+        // stub stands for and a split pane of it would answer with the same one.
+        const tab = {};
+        const otherTab = {};
+        let shown: object = tab;
         const host = new Component();
-        Object.assign(host, { noteContext: { isActive: () => active } });
+        Object.assign(host, { noteContext: { getMainContext: () => tab } });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = { getActiveMainContext: () => shown } as never;
 
         const mountPoint = document.createElement("div");
         container = mountPoint;
@@ -821,8 +827,8 @@ describe("A board in a tab the reader is not looking at", () => {
         await draw();
         expect(columnOf("First")).toBe("To Do");
 
-        // The card moves column while the tab is in the background.
-        active = false;
+        // The card moves column while another tab is the one being looked at.
+        shown = otherTab;
         for (const attribute of froca.getNoteFromCache("one")?.getAttributes() ?? []) {
             if (attribute.name === "status") attribute.value = "Done";
         }
@@ -830,9 +836,71 @@ describe("A board in a tab the reader is not looking at", () => {
         expect(columnOf("First")).toBe("To Do");
 
         // Looked at again, it catches up with what it missed.
-        active = true;
+        shown = tab;
         await draw();
         expect(columnOf("First")).toBe("Done");
+
+        appContext.tabManager = previousTabManager;
+    });
+
+    /**
+     * `getActiveMainContext` names one pane across the whole app, so a board sharing a tab with the
+     * focused pane is on screen and redraws: a card dropped onto it from another split appears at
+     * once rather than waiting for something to force a refresh.
+     */
+    it("redraws for a change while it is the split the reader is not focused on", async () => {
+        const note = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                { id: "split1", title: "First", "#status": "To Do" },
+                { id: "split2", title: "Second", "#status": "Done" }
+            ]
+        });
+
+        // One tab, and the board is in a pane of it that does not hold the focus.
+        const tab = {};
+        const host = new Component();
+        Object.assign(host, { noteContext: { getMainContext: () => tab } });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = { getActiveMainContext: () => tab } as never;
+
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        const draw = async () => {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={host}>
+                        <Harness
+                            note={note}
+                            noteIds={[ ...note.getChildNoteIds() ]}
+                            initialConfig={{ columns: [ { value: "To Do" }, { value: "Done" } ] }}
+                        />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+            await act(async () => { await flush(); });
+        };
+
+        const columnOf = (title: string) => [ ...mountPoint.querySelectorAll(".board-column") ]
+            .find(column => [ ...column.querySelectorAll(".board-note") ]
+                .some(card => card.textContent?.includes(title)))
+            ?.getAttribute("data-column");
+
+        await draw();
+        expect(columnOf("First")).toBe("To Do");
+
+        for (const attribute of froca.getNoteFromCache("split1")?.getAttributes() ?? []) {
+            if (attribute.name === "status") attribute.value = "Done";
+        }
+        await draw();
+        expect(columnOf("First")).toBe("Done");
+
+        appContext.tabManager = previousTabManager;
     });
 });
 
@@ -1124,7 +1192,8 @@ describe("Board column rename", () => {
         expect(sections.map(section => section.titleKey)).toEqual([
             "board_view.hints.navigation",
             "board_view.hints.editing",
-            "board_view.hints.moving"
+            "board_view.hints.moving",
+            "board_view.hints.selection"
         ]);
         // Every key the board answers for is spoken for, and none it does not.
         expect(sections.flatMap(section => section.hints)).toEqual([
@@ -1155,7 +1224,9 @@ describe("Board column rename", () => {
             {
                 keys: [ "Ctrl+Alt+Home", "Ctrl+Alt+End" ],
                 labelKey: "board_view.hints.move_column_to_edge"
-            }
+            },
+            { keys: [ "Ctrl+A" ], labelKey: "board_view.hints.select_column" },
+            { keys: [ "Escape" ], labelKey: "board_view.hints.clear_selection" }
         ]);
     });
 
@@ -2285,7 +2356,15 @@ describe("Board column rename", () => {
 
         // Stored on the board, so the next editor opens on it as well.
         expect(saved.at(-1)?.template).toBe("type:canvas:application/json");
-        expect([ ...(menu?.querySelectorAll(".dropdown-item") ?? []) ]
+
+        // Picking closes the menu, as any dropdown item click does; open it again to read the tick.
+        await act(async () => {
+            pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            await flush();
+        });
+        const reopened = [ ...document.querySelectorAll<HTMLElement>(".card-template-pill") ].at(-1);
+        expect([ ...(reopened?.querySelectorAll(".dropdown-item") ?? []) ]
             .map(item => !!item.querySelector(".card-template-current")))
             .toEqual([ false, false, true, false, false ]);
 
@@ -3144,6 +3223,83 @@ describe("Board editors and menus", () => {
         await act(async () => { await flush(); });
     }
 
+    /**
+     * The backdrop and the frozen cards are driven by classes rather than by `:has()`: a `:has()`
+     * naming a descendant makes every card insertion invalidate the whole board.
+     */
+    it("marks the board and the one column while a card title is being edited", async () => {
+        const board = await renderBoard();
+        const view = board.querySelector<HTMLElement>(".board-view");
+        const columns = board.querySelectorAll<HTMLElement>(".board-column");
+        const card = columns[0]?.querySelector<HTMLElement>(".board-note");
+        if (!view || !card || columns.length < 2) throw new Error("expected a card in two columns");
+
+        expect(view.classList.contains("editing-open")).toBe(false);
+
+        await act(async () => {
+            card.dispatchEvent(new KeyboardEvent("keydown", { key: "F2", bubbles: true }));
+            await flush();
+        });
+
+        expect(view.classList.contains("editing-open")).toBe(true);
+        expect(columns[0].classList.contains("editing-open")).toBe(true);
+        expect(columns[1].classList.contains("editing-open")).toBe(false);
+
+        const editor = card.querySelector<HTMLTextAreaElement>("textarea");
+        if (!editor) throw new Error("expected the card editor to be open");
+
+        await act(async () => {
+            editor.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+            await flush();
+        });
+
+        expect(view.classList.contains("editing-open")).toBe(false);
+        expect(columns[0].classList.contains("editing-open")).toBe(false);
+    });
+
+    it("marks a field opened between cards, and leaves the one at a column's foot unmarked", async () => {
+        const board = await renderBoard();
+        const view = board.querySelector<HTMLElement>(".board-view");
+        const columns = board.querySelectorAll<HTMLElement>(".board-column");
+        const card = columns[0]?.querySelector<HTMLElement>(".board-note");
+        if (!view || !card || columns.length < 2) throw new Error("expected a card in two columns");
+
+        await act(async () => {
+            card.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+            await flush();
+        });
+
+        expect(board.querySelector(".board-new-item.inserting")).toBeTruthy();
+        expect(view.classList.contains("editing-open")).toBe(true);
+        expect(columns[0].classList.contains("editing-open")).toBe(true);
+        expect(columns[1].classList.contains("editing-open")).toBe(false);
+
+        const field = columns[0].querySelector<HTMLTextAreaElement>(
+            ".board-new-item.inserting textarea");
+        if (!field) throw new Error("expected the insert field to be open");
+
+        await act(async () => {
+            field.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+            await flush();
+        });
+
+        expect(view.classList.contains("editing-open")).toBe(false);
+
+        // The field below a column makes a card the same way but leaves the board undimmed.
+        const footer = columns[1].querySelector<HTMLElement>(".board-new-item");
+        if (!footer) throw new Error("expected the column footer");
+
+        await act(async () => {
+            footer.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+            await flush();
+        });
+
+        expect(footer.classList.contains("editing")).toBe(true);
+        expect(footer.classList.contains("inserting")).toBe(false);
+        expect(view.classList.contains("editing-open")).toBe(false);
+        expect(columns[1].classList.contains("editing-open")).toBe(false);
+    });
+
     async function renderBoard() {
         const note = buildNote({
             title: "Board",
@@ -3391,6 +3547,33 @@ describe("Board filtering", () => {
         results.addBranch("branch1", "other");
         return results;
     }
+
+    /**
+     * The move is drawn at once, into the unfiltered map. Counting the place among the shown cards
+     * instead puts the card partway up the column, and it jumps to the end when the write lands.
+     */
+    it("sends a card to the end of the column, not to the end of what the filter shows", async () => {
+        // "To Do" holds three cards and shows one, so the two counts are far enough apart to tell
+        // which of them the move used.
+        await setup({ matched: [ "filtered3", "filtered4" ] });
+        expect(cardTitles(0)).toEqual([ "Third" ]);
+        expect(cardTitles(1)).toEqual([ "Fourth" ]);
+
+        const carried = container.querySelectorAll<HTMLElement>(".board-column")[1]
+            ?.querySelector<HTMLElement>(".board-note");
+        if (!carried) throw new Error("expected a card in the second column");
+
+        carried.focus();
+        await act(async () => {
+            carried.dispatchEvent(new KeyboardEvent("keydown", {
+                key: "ArrowLeft", ctrlKey: true, bubbles: true, cancelable: true
+            }));
+            await flush();
+        });
+
+        // Drawn behind the card already shown, which is where the end of the column is.
+        expect(cardTitles(0)).toEqual([ "Third", "Fourth" ]);
+    });
 
     it("shows only the matched cards, in their own order, keeping every column", async () => {
         // The matches arrive in score order; the board must keep branch order regardless.
@@ -3970,4 +4153,182 @@ describe("Switchable board grouping", () => {
         expect(columnTitles(mountPoint)).toEqual([ "Low", "High" ]);
         expect(columnIcons(mountPoint)).toEqual([ "bx bx-down-arrow", DEFAULT_COLUMN_ICON ]);
     });
+});
+
+describe("Board properties from the note menu", () => {
+    let container: HTMLElement | undefined;
+
+    afterEach(() => {
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+
+        // A modal Bootstrap still believes is shown traps the focus of every later test, and its
+        // teardown waits on a transition happy-dom never runs.
+        const modal = document.querySelector<HTMLElement>(".board-properties-dialog");
+        if (modal) {
+            BootstrapModal.getInstance(modal)?.dispose();
+            modal.remove();
+        }
+        document.querySelector(".modal-backdrop")?.remove();
+        document.body.classList.remove("modal-open");
+    });
+
+    /**
+     * The menu is drawn outside the board, so it asks for the dialog by event. Each open board
+     * hears it, and only the one in the tab the menu was opened from answers.
+     */
+    it("opens the dialog for its own tab, and not for another one", async () => {
+        const host = await renderBoardInContext("ntx-1");
+        const isOpen = () => !!document.querySelector(".board-properties-dialog .modal-dialog");
+
+        expect(isOpen()).toBe(false);
+
+        await act(async () => {
+            await host.handleEvent("showBoardProperties", { ntxId: "ntx-2" });
+            await flush();
+        });
+        expect(isOpen()).toBe(false);
+
+        await act(async () => {
+            await host.handleEvent("showBoardProperties", { ntxId: "ntx-1" });
+            await flush();
+        });
+        expect(isOpen()).toBe(true);
+    });
+
+    /** Mounts a board belonging to the given tab, returning what events reach it through. */
+    async function renderBoardInContext(ntxId: string) {
+        const note = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                { title: "First", "#status": "To Do" },
+                { title: "Second", "#status": "Done" }
+            ]
+        });
+
+        const host = new Component();
+        Object.assign(host, { noteContext: { ntxId, isActive: () => true } });
+
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={host}>
+                    <Harness
+                        note={note}
+                        noteIds={[ ...note.getChildNoteIds() ]}
+                        initialConfig={{ columns: [ { value: "To Do" }, { value: "Done" } ] }}
+                    />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => { await flush(); });
+
+        return host;
+    }
+});
+
+describe("a column windowed for its size", () => {
+    let container: HTMLElement | undefined;
+
+    beforeEach(() => {
+        saved.length = 0;
+        vi.restoreAllMocks();
+        vi.spyOn(server, "put").mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    it("draws a slice of a big column and stands spacers for the rest", async () => {
+        const board = await renderSized(200, 3);
+        const columns = board.querySelectorAll<HTMLElement>(".board-column");
+        const big = columns[0];
+        const small = columns[1];
+        if (!big || !small) throw new Error("expected two columns");
+
+        const drawn = big.querySelectorAll(".board-note");
+        expect(drawn.length).toBeGreaterThan(0);
+        expect(drawn.length).toBeLessThan(200);
+        expect(big.classList.contains("windowed")).toBe(true);
+
+        const area = big.querySelector<HTMLElement>(".board-column-content");
+        expect(area?.dataset.windowCount).toBe("200");
+        expect(area?.dataset.windowFrom).toBe("0");
+
+        // The cards it is not drawing are held by the spacer below them.
+        const spacers = big.querySelectorAll<HTMLElement>(".board-window-spacer");
+        expect(spacers).toHaveLength(2);
+        expect(spacers[0].style.height).toBe("0px");
+        expect(Number.parseFloat(spacers[1].style.height)).toBeGreaterThan(0);
+
+        // A column that fits keeps the path it has always had.
+        expect(small.classList.contains("windowed")).toBe(false);
+        expect(small.querySelectorAll(".board-note")).toHaveLength(3);
+        expect(small.querySelector<HTMLElement>(".board-column-content")?.dataset.windowCount)
+            .toBeUndefined();
+    });
+
+    /**
+     * The drag and the keyboard both name a card by the place it holds in its column. Counting
+     * drawn elements would name a place among whatever is on screen, which moves as it scrolls.
+     */
+    it("gives each card the place it holds in the column, not among the ones drawn", async () => {
+        const board = await renderSized(200, 3);
+        const drawn = [ ...board.querySelectorAll<HTMLElement>(".board-column-content .board-note") ];
+        const big = drawn.filter((card) => card.closest(".board-column")
+            === board.querySelector(".board-column"));
+
+        expect(big.map((card) => card.dataset.index))
+            .toEqual(big.map((_, index) => String(index)));
+    });
+
+    async function renderSized(big: number, small: number) {
+        const note = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                ...Array.from({ length: big }, (_, i) => ({
+                    title: `Big ${i}`, "#status": "To Do"
+                })),
+                ...Array.from({ length: small }, (_, i) => ({
+                    title: `Small ${i}`, "#status": "Done"
+                }))
+            ]
+        });
+
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={new Component()}>
+                    <Harness
+                        note={note}
+                        noteIds={[ ...note.getChildNoteIds() ]}
+                        initialConfig={{ columns: [ { value: "To Do" }, { value: "Done" } ] }}
+                    />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => { await flush(); });
+
+        return mountPoint;
+    }
 });

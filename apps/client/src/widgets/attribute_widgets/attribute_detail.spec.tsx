@@ -5,6 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Component from "../../components/component";
 import { ParentComponent } from "../react/react_utils";
 
+// i18next is never initialized here, so `t()` returns undefined and a row whose label is only a
+// translated string renders without the `<label for>` the tests below look rows up by.
+vi.mock("../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/i18n")>()),
+    t: (key: string) => key
+}));
+
 // The popup docks differently under the new layout, and the flag behind that is read once when the
 // module loads — so the two are exercised by loading it twice.
 const newLayout = vi.hoisted(() => ({ enabled: false }));
@@ -198,6 +205,7 @@ describe("attribute detail popup naming", () => {
         expect(isSameShow(shown, opts({ ...shown, hideInheritance: true }))).toBe(false);
         expect(isSameShow(shown, opts({ ...shown, hideMultiplicity: true }))).toBe(false);
         expect(isSameShow(shown, opts({ ...shown, hideType: true }))).toBe(false);
+        expect(isSameShow(shown, opts({ ...shown, hideTypeOptions: true }))).toBe(false);
 
         // ...but the very same request handed back is the host re-rendering around an untouched
         // popup, which every keystroke does — rebuilding the form there costs the focus and, with a
@@ -346,10 +354,11 @@ describe("the rows the form carries", () => {
             !!host.querySelector(`[name="${name}"], [id^="${name}"], [for^="${name}"]`);
     }
 
-    it("carries the kind, multiplicity and inheritance rows by default", async () => {
+    it("carries the kind, kind options, multiplicity and inheritance rows by default", async () => {
         const has = await renderForm();
 
         expect(has("attr-label-type")).toBe(true);
+        expect(has("attr-select-options")).toBe(true);
         expect(has("attr-multiplicity")).toBe(true);
         expect(has("attr-inheritable")).toBe(true);
     });
@@ -361,6 +370,18 @@ describe("the rows the form carries", () => {
         expect(has("attr-label-type")).toBe(false);
         // Only that row: the rest of the form is untouched.
         expect(has("attr-name")).toBe(true);
+        expect(has("attr-multiplicity")).toBe(true);
+        expect(has("attr-inheritable")).toBe(true);
+    });
+
+    /** A host that fills the kind's own rows in itself, such as a board making the columns. */
+    it("leaves out the select options alone for `hideTypeOptions`", async () => {
+        const has = await renderForm({ hideTypeOptions: true });
+
+        expect(has("attr-select-options")).toBe(false);
+        // Only that row: the rest of the form is untouched.
+        expect(has("attr-name")).toBe(true);
+        expect(has("attr-label-type")).toBe(true);
         expect(has("attr-multiplicity")).toBe(true);
         expect(has("attr-inheritable")).toBe(true);
     });

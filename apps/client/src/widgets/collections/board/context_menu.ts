@@ -1,14 +1,16 @@
 import { useState } from "preact/hooks";
 
-import FNote from "../../../entities/fnote";
-import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import type { CommandNames } from "../../../components/app_context";
+import FNote from "../../../entities/fnote";
 import contextMenu, { ContextMenuEvent, MenuItem } from "../../../menus/context_menu";
+import { getArchiveMenuItems, menuName } from "../../../menus/context_menu_utils";
+import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import link_context_menu from "../../../menus/link_context_menu";
+import attributes from "../../../services/attributes";
 import branches from "../../../services/branches";
 import dialog from "../../../services/dialog";
-import { getArchiveMenuItem, menuName } from "../../../menus/context_menu_utils";
 import { t } from "../../../services/i18n";
+import { shared } from "../../../services/note_set";
 import ColorPicker from "../../react/ColorPicker";
 import { buildAttributeMenuItems } from "../attribute_menu";
 import { buildSortMenuItems, type SortMenuOptions } from "../sort_menu";
@@ -253,27 +255,6 @@ export function openColumnSortMenu(api: Api, x: number, y: number, column: strin
     });
 }
 
-/**
- * What can be done to the orders the columns hold, offered beside the board's own order.
- *
- * Opened at the pointer from the button in the properties card, as the template entries there open
- * theirs.
- */
-export function openSortActionsMenu(api: Api, event: { pageX: number, pageY: number }) {
-    contextMenu.show({
-        x: event.pageX,
-        y: event.pageY,
-        items: [
-            {
-                title: t("board_view.reset-columns-to-default"),
-                uiIcon: "bx bx-reset",
-                handler: () => api.resetColumnSortsToDefault()
-            }
-        ],
-        selectMenuItemHandler() {}
-    });
-}
-
 /** What the board asks the shared sort menu for, wherever it is opened. */
 function sortMenuOptions(api: Api, column: string): SortMenuOptions {
     return {
@@ -401,33 +382,60 @@ function ColumnColorPicker({ api, value, color }: { api: Api, value: string, col
     });
 }
 
+/** What a card's menu acts on: the card it was opened from, and the notes it writes to. */
+export interface NoteMenuTarget {
+    /** The card the menu was opened on. */
+    note: FNote;
+    branchId: string;
+    column: string;
+    /** This card's index in its column, which an insert is placed against. */
+    index: number;
+    /**
+     * Every note the menu writes to: this card alone, or the whole selection it belongs to. Always
+     * holds the card the menu was opened on.
+     */
+    notes: FNote[];
+    /** The branches those notes have on this board, in the order `notes` lists them. */
+    branchIds: string[];
+    /** Refocuses the card after a column change has redrawn it elsewhere. */
+    onFocusCard: (noteId: string) => void;
+    /** Opens the new-card editor at an index in the column, above or below this card. */
+    onInsert: (index: number) => void;
+    /** Opens the editor at the foot of the column, which a sorted column offers instead. */
+    onNewItem: () => void;
+}
+
 /**
- * The columns a card can be moved to, listed in the menu rather than in a submenu, which would put
- * every column a step further away. Past `LISTED_COLUMNS`, the rest move into one submenu entry,
- * and the card's current column is always listed.
+ * The columns the cards can be moved to, listed in the menu rather than in a submenu, which would
+ * put every column a step further away. Past `LISTED_COLUMNS`, the rest move into one submenu
+ * entry, and the column the cards are in is always listed.
  *
- * An archived column is offered like any other, with a badge, since the card then leaves the
+ * An archived column is offered like any other, with a badge, since the cards then leave the
  * board's default view.
  */
-function buildColumnItems(
-    api: Api, note: FNote, column: string, onFocusCard: (noteId: string) => void
-): MenuItem<CommandNames>[] {
+function buildColumnItems(api: Api, target: NoteMenuTarget): MenuItem<CommandNames>[] {
+    // Marked only while every card stands in the same column: one check on a selection spanning
+    // several would name one column as the state of all of them.
+    const standing = shared(target.notes, (note) => api.getCardColumn(note.noteId));
+    const current = standing.agreed ? standing.value : undefined;
+
     const items: MenuItem<CommandNames>[] = api.columns.map((name) => ({
         title: menuName(api.getColumnTitle(name)),
         uiIcon: api.getColumnIcon(name),
         iconColorClass: api.getColumnColorClass(name),
-        // The one it is already under is shown rather than hidden, so the list reads as the whole
-        // set of columns and says which of them this card belongs to.
-        trailingIcon: name === column ? "bx bx-check" : undefined,
-        className: name === column ? "board-current-column" : undefined,
+        // The one they are already under is shown rather than hidden, so the list reads as the
+        // whole set of columns and says which of them the cards belong to.
+        trailingIcon: name === current ? "bx bx-check" : undefined,
+        className: name === current ? "board-current-column" : undefined,
         badges: api.isColumnArchived(name)
             ? [ { title: t("board_view.archived-badge") } ]
             : undefined,
         handler: () => {
-            // Asked for before the write: the card is drawn afresh under the column
-            // it lands in, so the element the menu was opened from will be gone.
-            onFocusCard(note.noteId);
-            api.changeColumn(note.noteId, name);
+            // Asked for before the write: the cards are drawn afresh under the column they land
+            // in, so the element the menu was opened from will be gone.
+            target.onFocusCard(target.note.noteId);
+            return Promise.all(
+                target.notes.map((note) => api.changeColumn(note.noteId, name)));
         }
     }));
 
@@ -438,11 +446,11 @@ function buildColumnItems(
     const listed = items.slice(0, LISTED_COLUMNS);
     const rest = items.slice(LISTED_COLUMNS);
 
-    // The card's own column is listed even where it falls outside: the check beside it is what
-    // says which column the card is in, and behind an entry it says nothing.
-    const current = api.columns.indexOf(column);
-    if (current >= LISTED_COLUMNS) {
-        listed.push(...rest.splice(current - LISTED_COLUMNS, 1));
+    // The cards' own column is listed even where it falls outside: the check beside it is what
+    // says which column they are in, and behind an entry it says nothing.
+    const at = current === undefined ? -1 : api.columns.indexOf(current);
+    if (at >= LISTED_COLUMNS) {
+        listed.push(...rest.splice(at - LISTED_COLUMNS, 1));
     }
 
     return [
@@ -455,42 +463,37 @@ function buildColumnItems(
     ];
 }
 
-export function openNoteContextMenu(
-    api: Api, event: ContextMenuEvent, note: FNote, branchId: string, column: string,
-    /** This card's index in its column, which an insert is placed against. */
-    index: number,
-    /** Refocuses the card after a column change has redrawn it elsewhere. */
-    onFocusCard: (noteId: string) => void,
-    /** Opens the new-card editor at an index in the column, above or below this card. */
-    onInsert: (index: number) => void,
-    /** Opens the editor at the foot of the column, which a sorted column offers instead. */
-    onNewItem: () => void
-) {
+export function openNoteContextMenu(api: Api, event: ContextMenuEvent, target: NoteMenuTarget) {
+    const { note, branchId, column, index, notes, branchIds } = target;
+
     event.preventDefault();
     event.stopPropagation();
 
     // A sorted column decides where its cards go, so the entries naming a place are left out.
     const isSorted = api.isColumnSorted(column);
+    // What only makes sense for one card: a place to insert at, a title to edit, a note to open.
+    // Everything below writes to every selected note instead.
+    const isSingle = notes.length === 1;
 
     // What the card is placed beside, and the copy made below it.
-    const placement: MenuItem<CommandNames>[] = [
+    const placement: MenuItem<CommandNames>[] = !isSingle ? [] : [
         // A sorted column takes its new cards at the foot, where its own button makes them.
         ...(isSorted ? [ {
             title: t("board_view.insert-new"),
             uiIcon: "bx bx-plus",
-            handler: onNewItem
+            handler: target.onNewItem
         } ] : [
             {
                 title: t("board_view.insert-above"),
                 uiIcon: "bx bx-list-plus",
                 shortcut: "Shift+Enter",
-                handler: () => onInsert(index)
+                handler: () => target.onInsert(index)
             },
             {
                 title: t("board_view.insert-below"),
                 uiIcon: "bx bx-empty",
                 shortcut: "Enter",
-                handler: () => onInsert(index + 1)
+                handler: () => target.onInsert(index + 1)
             }
         ]),
         {
@@ -506,54 +509,91 @@ export function openNoteContextMenu(
             handler: () => {
                 // Asked for before the write: the card is blurred as it is moved in the page, and
                 // the reveal that follows the focus is what shows where it went.
-                onFocusCard(note.noteId);
+                target.onFocusCard(note.noteId);
                 api.moveToColumnStart(note.noteId, branchId, column);
             }
         } ])
+    ];
+
+    // What is done to the card itself, which a selection has none of: the menu it opens leads with
+    // the columns instead.
+    const identity: MenuItem<CommandNames>[] = !isSingle ? [] : [
+        // Space opens the same popup for the card the cursor stands on.
+        { ...link_context_menu.getQuickEditItem(), shortcut: "Space" },
+        {
+            title: t("board_view.edit-title"),
+            uiIcon: "bx bx-rename",
+            shortcut: "F2",
+            handler: () => api.startEditing(branchId)
+        },
+        link_context_menu.getOpenNoteItem(event),
+        { kind: "separator" }
     ];
 
     contextMenu.show({
         x: event.pageX,
         y: event.pageY,
         items: [
-            // Space opens the same popup for the card the cursor stands on.
-            { ...link_context_menu.getQuickEditItem(), shortcut: "Space" },
-            {
-                title: t("board_view.edit-title"),
-                uiIcon: "bx bx-rename",
-                shortcut: "F2",
-                handler: () => api.startEditing(branchId)
-            },
-            link_context_menu.getOpenNoteItem(event),
-            { kind: "separator" },
+            ...identity,
             ...placement,
             { kind: "header", title: api.getStatusLabel() },
-            ...buildColumnItems(api, note, column, onFocusCard),
+            ...buildColumnItems(api, target),
             ...buildAttributeMenuItems<CommandNames>({
-                note,
+                notes,
                 attributes: api.getPromotedAttributes()
             }),
             { kind: "separator" },
-            getArchiveMenuItem(note),
-            {
+            ...getArchiveMenuItems<CommandNames>(notes),
+            // The inbox holds the cards with no grouping value, so clearing that value keeps a
+            // card on the board. Deleting the note is what takes it off.
+            ...(api.isInboxEnabled ? [] : [ {
                 title: t("board_view.remove-from-board"),
                 uiIcon: "bx bx-task-x",
                 shortcut: "Delete",
-                handler: () => api.removeFromBoard(note.noteId)
-            },
+                handler: () => api.removeFromBoard(notes.map((selected) => selected.noteId))
+            } ]),
             {
                 title: t("board_view.delete-note"),
                 uiIcon: "bx bx-trash",
                 shortcut: "Shift+Delete",
-                handler: () => branches.deleteNotes([ branchId ], false, false)
+                handler: () => branches.deleteNotes(branchIds, false, false)
             },
             { kind: "separator" },
             {
                 kind: "custom",
-                componentFn: () => NoteColorPicker({note})
+                componentFn: () => isSingle
+                    ? NoteColorPicker({ note })
+                    : CardsColorPicker({ notes })
             }
         ],
         selectMenuItemHandler: ({ command }) =>  link_context_menu.handleLinkContextMenuItem(command, event, note.noteId),
     });
 }
 
+/**
+ * The colour of several cards at once, shown as their colour only while they agree on one.
+ *
+ * `NoteColorPicker` reads and writes one note, so a selection is painted through the plain picker,
+ * as a column's colour is. Keeps the picked value rather than re-reading it: the menu renders once,
+ * and a redraw underneath never reaches it.
+ */
+function CardsColorPicker({ notes }: { notes: FNote[] }) {
+    const agreed = shared(notes, (note) => note.getLabelValue("color") ?? null);
+    const [ currentColor, setCurrentColor ] = useState(agreed.agreed ? agreed.value : null);
+
+    return ColorPicker({
+        className: "note-color-picker",
+        currentValue: currentColor,
+        onChange: async (picked) => {
+            setCurrentColor(picked);
+            await Promise.all(notes.map((note) => picked !== null
+                ? attributes.setLabel(note.noteId, "color", picked)
+                : attributes.removeOwnedLabelByName(note, "color")));
+        },
+        tooltips: {
+            clear: t("note-color.clear-color"),
+            set: t("note-color.set-color"),
+            setCustom: t("note-color.set-custom-color")
+        }
+    });
+}

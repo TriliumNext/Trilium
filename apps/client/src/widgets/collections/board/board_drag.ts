@@ -3,10 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { useTrackedElement } from "../../react/hooks";
 import {
-    type CardBox, cardInsertionIndex, columnAt, columnCovers, columnInsertionIndex
+    type CardBox, cardInsertionIndex, columnAt, type ColumnBox, columnCovers, columnInsertionIndex
 } from "./drag_geometry";
-import { type BoardMeasurement, measureBoard, toAreaY, toBoardX } from "./drag_measure";
+import {
+    type BoardMeasurement, measureBoard, placeInModel, toAreaY, toBoardX
+} from "./drag_measure";
 import { createEdgeScroller, type ScrollTarget } from "../../react/edge_scroll";
+import { getColumnModel } from "./windowing";
 
 /** How far a pointer travels before a press with a button held is taken for a drag. */
 const MOUSE_THRESHOLD = 4;
@@ -20,6 +23,12 @@ const TOUCH_TOLERANCE = 8;
 /** How much a carried card shrinks. Written with the movement, a class could not add to it. */
 const DRAG_SCALE = 0.9;
 
+/**
+ * How many cards a carried selection is drawn as, however many are on the move: the one holding the
+ * count and the two behind it. `index.css` draws the ones behind from `data-layers`.
+ */
+const STACK_LAYERS = 3;
+
 /** How tall a carried column is allowed to stand, so a full one can be seen past. */
 const COLUMN_DRAG_MAX_HEIGHT = 150;
 
@@ -32,9 +41,17 @@ const COMPATIBILITY_WINDOW_MS = 700;
 /** Which card is being carried, named the way the board's own moves are. */
 export interface DraggedCard {
     noteId: string;
+    /**
+     * Every card on the move, in the order the board draws them, this one among them. Holds one
+     * entry unless the card was taken hold of as part of a selection.
+     */
+    noteIds: string[];
     fromColumn: string;
     index: number;
-    /** How tall it stands, so the gap held open for it is the size it will fill. */
+    /**
+     * How tall the cards being carried stand together, so the gap held open for them is the space
+     * they will fill and the column they land in does not resize around them.
+     */
     height: number;
 }
 
@@ -45,6 +62,13 @@ export interface DropPosition {
 }
 
 export interface BoardDragCallbacks {
+    /**
+     * Which cards travel with the one being pressed, in the order the board draws them.
+     *
+     * Asked as the press lands rather than when the drag opens, so the answer is the selection as
+     * it stood when the reader took hold. Answers with the card alone where it is not selected.
+     */
+    carriedWith(noteId: string): string[];
     /** A card has been taken hold of, and is now being carried. */
     onCardStart(card: DraggedCard): void;
     /**
@@ -101,6 +125,8 @@ export function useBoardDrag(
     const [ isDragging, setDragging ] = useState(false);
     // Held in a ref rather than in state: every move reads them, and none of them draw anything.
     const gesture = useRef<Gesture | null>(null);
+    /** The card a Ctrl press made natively draggable, which `disarm` puts back. */
+    const armed = useRef<HTMLElement | null>(null);
     const latest = useRef(callbacks);
     latest.current = callbacks;
     // The board draws its container only once the notes have loaded, and filling a ref triggers no
@@ -224,7 +250,7 @@ export function useBoardDrag(
                 ? {
                     column: column.value,
                     index: area
-                        ? placeIn(column.cards, toAreaY(area, topY), held.card, column.value)
+                        ? placeAt(area, toAreaY(area, topY), held.card, column)
                         : 0
                 }
                 : null;
@@ -269,7 +295,19 @@ export function useBoardDrag(
             // Anything the card or the heading offers in its own right keeps its press.
             if (!target || target.closest("input, textarea, button, a")) return;
 
-            const started = startCard(target) ?? startColumn(target, container);
+            // Ctrl hands the press to the browser's own drag, which is the only one that reaches
+            // outside the board: the note tree, and a board in another split. `draggable` is set
+            // here rather than left on the card so that an ordinary press still opens the board's
+            // own gesture, and cleared again in `disarm`.
+            const held = target.closest<HTMLElement>(".board-note");
+            if (held && !held.classList.contains("editing") && (event.ctrlKey || event.metaKey)) {
+                held.draggable = true;
+                armed.current = held;
+                return;
+            }
+
+            const started = startCard(target, latest.current.carriedWith)
+                ?? startColumn(target, container);
             if (!started) return;
 
             gesture.current = {
@@ -329,7 +367,23 @@ export function useBoardDrag(
             }
         };
 
+        /**
+         * Takes `draggable` off the card a Ctrl press armed.
+         *
+         * Left on, the next ordinary press on that card would start a native drag instead of the
+         * board's own. Called from `dragend` for a press that became a drag, and from `pointerup`
+         * for a Ctrl click that did not: a native drag delivers no `pointerup`.
+         */
+        const disarm = () => {
+            if (armed.current) {
+                armed.current.draggable = false;
+                armed.current = null;
+            }
+        };
+
         const onPointerUp = (event: PointerEvent) => {
+            disarm();
+
             const held = gesture.current;
             if (!held || event.pointerId !== held.pointerId) return;
 
@@ -338,6 +392,7 @@ export function useBoardDrag(
             const tapped = held.touch && !held.active && event.type === "pointerup"
                 && Math.hypot(event.clientX - held.startX, event.clientY - held.startY)
                     <= TOUCH_TOLERANCE;
+            const dragged = held.active && event.type === "pointerup";
             const target = held.menuTarget;
             // A tap on a collapsed column opens it: that is what the strip is for, and its menu is
             // on the button it carries. Everything else answers a tap with its menu, the long
@@ -352,14 +407,29 @@ export function useBoardDrag(
                 // first of them takes the menu straight back off again. Refused at `touchend`,
                 // which is what the browser makes them from, and which has yet to be sent.
                 justTapped = true;
-                // The click is left out as well, for a browser that sends one regardless. Given up
-                // after a moment so a later click of the reader's own is never the one taken.
-                container.addEventListener("click", swallow, { capture: true, once: true });
-                window.setTimeout(
-                    () => container.removeEventListener("click", swallow, { capture: true }),
-                    COMPATIBILITY_WINDOW_MS);
+                // The click is left out as well, for a browser that sends one regardless.
+                swallowNextClick();
                 askForMenu(target, event.clientX, event.clientY);
             }
+
+            // A mouse drag is followed by a click on whatever the press and the release have in
+            // common, which for a card carried anywhere is the board itself. Taken here, so that
+            // what a click on the board means is not also what letting go of a card means.
+            if (dragged) {
+                swallowNextClick();
+            }
+        };
+
+        /**
+         * Refuses the one click the browser is about to send, if it sends one.
+         *
+         * Given up after a moment so a later click of the reader's own is never the one taken.
+         */
+        const swallowNextClick = () => {
+            container.addEventListener("click", swallow, { capture: true, once: true });
+            window.setTimeout(
+                () => container.removeEventListener("click", swallow, { capture: true }),
+                COMPATIBILITY_WINDOW_MS);
         };
 
         /** Set between a tap and the `touchend` the browser would make mouse events from. */
@@ -402,6 +472,7 @@ export function useBoardDrag(
         };
 
         container.addEventListener("contextmenu", onContextMenu, { capture: true });
+        container.addEventListener("dragend", disarm);
         container.addEventListener("pointerdown", onPointerDown);
         container.addEventListener("pointermove", onPointerMove);
         container.addEventListener("pointerup", onPointerUp);
@@ -412,7 +483,9 @@ export function useBoardDrag(
 
         return () => {
             close(true);
+            disarm();
             container.removeEventListener("contextmenu", onContextMenu, { capture: true });
+            container.removeEventListener("dragend", disarm);
             container.removeEventListener("pointerdown", onPointerDown);
             container.removeEventListener("pointermove", onPointerMove);
             container.removeEventListener("pointerup", onPointerUp);
@@ -472,6 +545,23 @@ function row(held: Gesture & { kind: "column" }) {
 }
 
 /**
+ * The place a carried card would take in a column.
+ *
+ * For a windowed column this reads the column's current `ColumnModel`: the boxes `measureBoard`
+ * takes at the start of a gesture only estimate the cards that were not drawn then, and an
+ * auto-scroll goes on to draw them at their own heights.
+ */
+function placeAt(area: HTMLElement, y: number, card: DraggedCard, column: ColumnBox): number {
+    const model = getColumnModel(area);
+    if (!model) {
+        return placeIn(column.cards, y, card, column.value);
+    }
+
+    return placeInModel(
+        model, y - column.origin, column.value === card.fromColumn ? card.index : undefined);
+}
+
+/**
  * The place a carried card would take in a column, counting that column as the board holds it.
  *
  * The cards were measured with the carried one among them, and it leaves the flow the moment it is
@@ -505,27 +595,54 @@ function askForMenu(element: HTMLElement, clientX: number, clientY: number) {
 }
 
 /** What a press on a card starts, or nothing where the press was not on one. */
-function startCard(target: HTMLElement): CardSubject | null {
+function startCard(
+    target: HTMLElement, carriedWith: (noteId: string) => string[]
+): CardSubject | null {
     const element = target.closest<HTMLElement>(".board-note");
     const columnElement = element?.closest<HTMLElement>(".board-column");
     const noteId = element?.dataset.noteId;
     if (!element || !columnElement || !noteId) return null;
 
-    const cards = [ ...columnElement.querySelectorAll(".board-note") ];
+    // A windowed column draws a slice of its cards, so the index comes from `data-index` rather
+    // than from the card's position among the ones on screen.
+    const stated = element.dataset.index;
+    const place = stated === undefined ? Number.NaN : Number(stated);
+    const index = Number.isFinite(place)
+        ? place
+        : [ ...columnElement.querySelectorAll(".board-note") ].indexOf(element);
+    const noteIds = carriedWith(noteId);
     return {
         kind: "card",
         element,
         menuTarget: element,
         card: {
             noteId,
+            noteIds,
             fromColumn: columnElement.dataset.column ?? "",
-            index: cards.indexOf(element),
-            height: element.getBoundingClientRect().height
+            index,
+            height: carriedHeight(element, noteIds)
         },
         position: null,
         inside: false,
         reported: false
     };
+}
+
+/**
+ * How much room the cards being carried take together: their own heights, and the space between
+ * each pair of them.
+ *
+ * Measured from the board rather than from the column, since a selection can reach across columns.
+ * A card the board is no longer drawing counts for nothing.
+ */
+function carriedHeight(element: HTMLElement, noteIds: string[]) {
+    const board = element.closest(".board-view-container") ?? element.ownerDocument;
+    const spacing = parseFloat(getComputedStyle(element).marginBottom) || 0;
+
+    return noteIds.reduce((total, noteId) => {
+        const card = board.querySelector<HTMLElement>(`.board-note[data-note-id="${noteId}"]`);
+        return total + (card?.getBoundingClientRect().height ?? 0);
+    }, spacing * (noteIds.length - 1));
 }
 
 /**
@@ -558,7 +675,13 @@ function startColumn(target: HTMLElement, container: HTMLElement): ColumnSubject
  */
 function lift(held: Gesture, container: HTMLElement) {
     const rect = held.element.getBoundingClientRect();
-    const preview = held.element.cloneNode(true) as HTMLElement;
+    // A selection is carried as one blank card saying how many are on the move. The cards
+    // themselves stay where they are drawn, and a stack of copies would hide the board they are
+    // being placed on without saying any more than the count does.
+    const carried = held.kind === "card" ? held.card.noteIds.length : 1;
+    const preview = carried > 1
+        ? countPreview(carried)
+        : held.element.cloneNode(true) as HTMLElement;
 
     preview.classList.add("board-drag-preview");
     preview.removeAttribute("data-note-id");
@@ -603,6 +726,21 @@ function lift(held: Gesture, container: HTMLElement) {
             height: rect.height
         }
     };
+}
+
+/**
+ * A card-shaped copy standing for the cards being carried, with their number in the middle and a
+ * stack drawn behind it.
+ *
+ * `data-layers` counts the copy itself, so two cards on the move leave one card behind it and any
+ * more leave two. The number in the middle is what says how many there really are.
+ */
+function countPreview(count: number) {
+    const preview = document.createElement("div");
+    preview.className = "board-note board-drag-count";
+    preview.dataset.layers = String(Math.min(count, STACK_LAYERS));
+    preview.textContent = String(count);
+    return preview;
 }
 
 interface CardSubject {

@@ -19,10 +19,10 @@
 <p>The problem with above steps is that once you close the SSH connection,
   the Trilium process is terminated. To avoid that, you have two options:</p>
 <ul>
-  <li>Kill it (with e.g. <kbd>Ctrl</kbd> + <kbd>C</kbd>) and run again like this:
-    <code
-    spellcheck="false">nohup ./trilium.sh &amp;</code>. (nohup keeps the process running in the
-      background, <code spellcheck="false">&amp;</code> runs it in the background)</li>
+  <li>Kill it (with e.g. <kbd>Ctrl</kbd> + <kbd>C</kbd>) and run again like this: <code
+    spellcheck="false">nohup ./trilium.sh &amp;</code>. (nohup keeps the process
+    running in the background, <code spellcheck="false">&amp;</code> runs it
+    in the background)</li>
   <li>Configure systemd to automatically run Trilium in the background on every
     boot</li>
 </ul>

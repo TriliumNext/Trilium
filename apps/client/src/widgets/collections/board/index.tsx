@@ -11,6 +11,7 @@ import {
 
 import { type HighlightedTokenInfo, normalizeBoardGroupBy } from "@triliumnext/commons";
 
+import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
@@ -21,6 +22,7 @@ import { ContextMenuEvent } from "../../../menus/context_menu";
 import { isIMEComposing } from "../../../services/shortcuts";
 import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
 import toast from "../../../services/toast";
+import ws from "../../../services/ws";
 import { escapeHtml, isMobile } from "../../../services/utils";
 import { type NoteTypeOption, resolveNoteTypeOptions } from "../../../services/note_types";
 import { type PromotedAttributeSetting, resolvePromotedAttributes } from "../promoted_attributes";
@@ -40,12 +42,14 @@ import ActionButton from "../../react/ActionButton";
 import { IconPickerButton } from "../../react/IconPicker";
 import { useDragPan } from "../../react/drag_pan";
 import { FLIP_SETTLE_MS, useFlip } from "../../react/flip";
+import { SelectionContext, SelectionStore } from "../../react/selection";
 import { CollectionFilterInput, useCollectionFilter } from "../collection_filter";
 import { ViewModeProps } from "../interface";
 import Api, { getPendingWrites, PendingColumnWrites, settleColumn } from "./api";
 import { useBoardDrag } from "./board_drag";
 import { columnGapStandsAside, columnStandsAside, movesColumn } from "./drag_geometry";
 import { forgetCardHeights } from "./drag_measure";
+import { forgetWindowHeights } from "./windowing";
 import { BoardDropStateContext, DropStateStore } from "./drop_state";
 import BoardApi from "./api";
 import { adoptLegacyColumns, readColumns } from "./column_storage";
@@ -58,7 +62,7 @@ import BoardProperties from "./properties";
 import { openBoardContextMenu, openCreateColumnMenu } from "./context_menu";
 import { useBoardSort } from "./sort";
 import {
-    affectsSortOrder, applyCardMove, ColumnMap, filterColumnMap, getBoardData, resolveColumnSorts,
+    affectsSortOrder, applyCardMoves, ColumnMap, filterColumnMap, getBoardData, resolveColumnSorts,
     resolveSortWatch, sortColumnMap, unfilteredCardIndex
 } from "./data";
 import { useBoardKeyboard } from "./keyboard";
@@ -140,6 +144,11 @@ export interface BoardColumnData {
 
 interface CardDrag {
     noteId: string;
+    /**
+     * Every card on the move, this one among them. One entry unless the card was taken hold of as
+     * part of a selection; absent for a drag from the note tree, which carries no card.
+     */
+    noteIds?: string[];
     branchId: string;
     fromColumn: string;
     index: number;
@@ -184,6 +193,13 @@ interface BoardActions {
     setDraggedColumn: (column: ColumnDrag | null) => void;
     setDropPosition: (position: ColumnDrag | null) => void;
     setDropTarget: (target: string | null) => void;
+    /**
+     * Reports whether a column holds an open insert field, which the board reads to raise the
+     * backdrop. Held here rather than matched with `:has()` in the stylesheet: a `:has()` naming a
+     * descendant makes every card insertion invalidate the whole board, which on a column of
+     * thousands is hundreds of milliseconds of style recalculation per card added.
+     */
+    setInsertingColumn: (column: string, isOpen: boolean) => void;
 }
 
 /**
@@ -213,7 +229,8 @@ export const BoardActionsContext = createContext<BoardActions>({
     setDraggedCard: () => undefined,
     setDraggedColumn: () => undefined,
     setDropPosition: () => undefined,
-    setDropTarget: () => undefined
+    setDropTarget: () => undefined,
+    setInsertingColumn: () => undefined
 });
 
 /**
@@ -243,6 +260,9 @@ export const BoardKeptCardsContext = createContext<Set<string>>(new Set());
  * board handles itself (see `keyboard.ts` and the card and column handlers), none of them
  * rebindable, so each is listed literally rather than through a registered action.
  */
+/** Shared empty set for a board with no insert field open, so no render allocates one. */
+const NO_COLUMNS: ReadonlySet<string> = new Set();
+
 /** How long a finger stays on the create button before it offers where to put the card. */
 const HOLD_TO_PLACE_MS = 500;
 
@@ -291,6 +311,13 @@ const BOARD_HINTS: ShortcutHintDefinition = [
                 keys: [ "Ctrl+Alt+Home", "Ctrl+Alt+End" ],
                 labelKey: "board_view.hints.move_column_to_edge"
             }
+        ]
+    },
+    {
+        titleKey: "board_view.hints.selection",
+        hints: [
+            { keys: [ "Ctrl+A" ], labelKey: "board_view.hints.select_column" },
+            { keys: [ "Escape" ], labelKey: "board_view.hints.clear_selection" }
         ]
     }
 ];
@@ -342,6 +369,11 @@ export default function BoardView({
      * the gap is not near.
      */
     const dropState = useMemo(() => new DropStateStore(), []);
+    /**
+     * Which cards are picked out, kept out of the board's state for the same reason: selecting one
+     * card must wake that card and no other.
+     */
+    const selection = useMemo(() => new SelectionStore(), []);
     const setDropPosition = useCallback((position: ColumnDrag | null) => {
         dropState.set({ ...dropState.get(), position });
     }, [ dropState ]);
@@ -367,6 +399,26 @@ export default function BoardView({
     /** Everything a card could be made from: the note types and every template. */
     const availableTemplates = useNoteTypeOptions();
     const [ isEditingProperties, setIsEditingProperties ] = useState(false);
+    /** Adds `frozen`, which takes `pointer-events` off the cards. Set once the backdrop has faded in. */
+    const [ isFrozen, setIsFrozen ] = useState(false);
+    /** The columns holding an open insert field, which each column reports for itself. */
+    const [ insertingColumns, setInsertingColumns ] = useState<ReadonlySet<string>>(NO_COLUMNS);
+    const setInsertingColumn = useCallback((column: string, isOpen: boolean) => {
+        setInsertingColumns((current) => {
+            if (current.has(column) === isOpen) {
+                return current;
+            }
+
+            const next = new Set(current);
+            if (isOpen) {
+                next.add(column);
+            } else {
+                next.delete(column);
+            }
+
+            return next;
+        });
+    }, []);
     const selectColumn = useCallback<Dispatch<StateUpdater<string | undefined>>>((column) => {
         setIsPeekingAll(false);
         setActiveColumn(column);
@@ -461,6 +513,16 @@ export default function BoardView({
         () => resolveSortWatch(allByColumn, columnSorts, sortContext.definitions),
         [ allByColumn, columnSorts, sortContext ]);
 
+    // A card the board has stopped drawing, because it was deleted, archived out of view or moved
+    // off the board, leaves the selection with it. A command would otherwise write to a note the
+    // reader can no longer see.
+    useEffect(() => {
+        if (byColumn) {
+            selection.retain(new Set([ ...byColumn.values() ]
+                .flatMap((items) => items.map((item) => item.note.noteId))));
+        }
+    }, [ byColumn, selection ]);
+
     if (!apiRef.current || apiRef.current.board !== boardIdentity) {
         apiRef.current = {
             board: boardIdentity,
@@ -475,6 +537,9 @@ export default function BoardView({
             saveConfig, setBranchIdToEdit, statusDefinition, allByColumn, filter.keepNote);
     }
     const api = apiRef.current.api;
+    // Set here rather than passed in: the api outlives a refresh, and the board can be drawn in a
+    // pane other than the focused one.
+    api.noteContext = noteContext;
     // Every member is one of useState's own setters, so this value is built once and never changes
     // identity -- a drag cannot reach anything that reads only this.
     const openBoardMenu = useCallback((event: ContextMenuEvent) => {
@@ -536,10 +601,11 @@ export default function BoardView({
         setDraggedCard,
         setDraggedColumn,
         setDropPosition,
-        setDropTarget
+        setDropTarget,
+        setInsertingColumn
     }), [
         setBranchIdToEdit, setColumnNameToEdit, setColumnLimitToEdit, selectColumn,
-        setDraggedCard, setDraggedColumn, setDropPosition, setDropTarget
+        setDraggedCard, setDraggedColumn, setDropPosition, setDropTarget, setInsertingColumn
     ]);
 
     // Read off the config rather than off `columns`, which the resolver hands back as names alone.
@@ -593,8 +659,13 @@ export default function BoardView({
     // measured at. A phone gives a column a share of the window, so a window that changes size
     // takes the heights with it.
     useEffect(() => {
-        window.addEventListener("resize", forgetCardHeights);
-        return () => window.removeEventListener("resize", forgetCardHeights);
+        const forget = () => {
+            forgetCardHeights();
+            forgetWindowHeights();
+        };
+
+        window.addEventListener("resize", forget);
+        return () => window.removeEventListener("resize", forget);
     }, []);
 
     // Which columns stand narrow, as a line, so that one opening or closing is read off a single
@@ -640,9 +711,15 @@ export default function BoardView({
         // hears every change: a card renamed once redraws each of them, whichever is on screen. The
         // change is remembered instead, and drawn once the tab is looked at again. Asked of the
         // context rather than of the box, which is empty for a board that has not drawn yet.
+        // Compared by main context, not `noteContext.isActive()`: that names one pane across the
+        // whole app, so a board in a split the reader is not focused on is on screen but would
+        // never redraw, the `ResizeObserver` above having no size change to report.
         // Only once it has drawn: a board opened straight into a background tab has to draw at
         // least once, or there is no container to notice the tab being shown and it stays empty.
-        if (byColumn && noteContext && !noteContext.isActive()) {
+        // Nothing is deferred where the active tab cannot be read, so an answer that has yet to
+        // arrive leaves the board drawn rather than blank.
+        const shownTab = appContext.tabManager?.getActiveMainContext();
+        if (byColumn && noteContext && shownTab && shownTab !== noteContext.getMainContext()) {
             isStale.current = true;
             return;
         }
@@ -731,12 +808,21 @@ export default function BoardView({
     // The gesture drives the same state a drag from the note tree does, so the placeholders and the
     // card's own dimming are drawn from one place whichever brought the card here.
     const { isDragging: isDraggingItem, remeasure } = useBoardDrag(containerRef, {
+        carriedWith: (noteId) => (selection.has(noteId)
+            ? api.getCards(selection.keys).map((card) => card.note.noteId)
+            : [ noteId ]),
         onCardStart: (card) => {
             // The card leaves the flow and the gap opens in its place, which eased would read as
             // the column closing up and sliding back open.
             holdStill();
+            // A card taken hold of from outside the selection travels alone, and what was picked
+            // out is given up: those cards stay where they are, and would still read as selected.
+            if (!selection.has(card.noteId)) {
+                selection.clear();
+            }
             setDraggedCard({
                 noteId: card.noteId,
+                noteIds: card.noteIds,
                 branchId: byColumn?.get(card.fromColumn)?.[card.index]?.branch.branchId ?? "",
                 fromColumn: card.fromColumn,
                 index: card.index,
@@ -761,23 +847,29 @@ export default function BoardView({
             // card, hide the gap and close the room it took, and if those reach the screen in
             // separate frames the reader sees a gap open where nothing is being carried any more.
             closeGaps(containerRef.current);
-            const branchId = byColumn?.get(card.fromColumn)?.[card.index]?.branch.branchId;
+            // Every card on the move, in the order the board draws them, with the branches they
+            // are moved by. One entry unless the card was carried as part of a selection.
+            const carried = api.getCards(new Set(card.noteIds));
             const isSortedTarget = !!position && columnSorts.has(position.column);
-            // A drop inside a sorted column changes nothing: `sortColumnMap` already placed it.
-            if (isSortedTarget && position?.column === card.fromColumn) {
+            // A drop inside a sorted column changes nothing: `sortColumnMap` already placed the
+            // cards. Only while every card carried is already there; one from another column still
+            // has to be filed under this one.
+            const allInTarget = !!position && carried.every((item) =>
+                api.getCardColumn(item.note.noteId) === position.column);
+            if (isSortedTarget && allInTarget) {
                 setDraggedCard(null);
                 dropState.set({ position: null, target: null });
                 focusCard(card.noteId);
                 return;
             }
 
-            if (position && branchId && byColumn && allByColumn) {
+            if (position && carried.length && byColumn && allByColumn) {
                 // Drawn at once, into `allByColumn` since that is what `byColumn` derives from, at
                 // the index `unfilteredCardIndex` translates rather than the visible drop index.
                 // The index does not matter for a sorted column: `sortColumnMap` reorders the
                 // map afterwards.
-                setAllByColumn(applyCardMove(
-                    allByColumn, card.noteId, card.fromColumn, position.column,
+                setAllByColumn(applyCardMoves(
+                    allByColumn, carried.map((item) => item.note.noteId), position.column,
                     unfilteredCardIndex(
                         byColumn.get(position.column) ?? [],
                         allByColumn.get(position.column) ?? [],
@@ -786,16 +878,16 @@ export default function BoardView({
                     setLandedNoteId(card.noteId);
                 }
                 movesInFlight.current++;
-                // Any refresh already on its way is about the board as it stood before the drop,
-                // and would put the card back where it came from as it resolves.
+                // As `holdMove` does for a move made by the keyboard, and for the same reason: the
+                // board is held where the drop has drawn it until `froca` has the changes.
                 refreshSeqRef.current++;
                 api.moveWithinBoard(
-                    card.noteId, branchId, card.index, position.index,
-                    card.fromColumn, position.column)
-                    // Nothing is asked for once the writes are in: `froca` learns of the branch
-                    // move from the server a moment later, so a refresh here reads the new column
-                    // with the old order and puts the card at the top of it. The change reaches the
-                    // board as an entity reload, which settles it once there is something to read.
+                    carried.map((item) => ({
+                        noteId: item.note.noteId,
+                        branchId: item.branch.branchId
+                    })),
+                    position.column, position.index)
+                    .then(settled)
                     .finally(() => { movesInFlight.current--; });
             }
             setDraggedCard(null);
@@ -984,16 +1076,98 @@ export default function BoardView({
         setColumnDropPosition(null);
     }, [ api, shownColumns ]);
 
-    const { onKeyDown: handleKeyDown, focusColumn, focusCard } = useBoardKeyboard({
+    /**
+     * Draws a move where it will leave the cards and holds the board there until the writes are in.
+     *
+     * A move is a write per card that changes column and one per branch being placed, and each
+     * lands a redraw of its own. Drawn as they arrive, the cards are seen to shuffle into place one
+     * after another: under their new column in the order their old branches give them, then each
+     * into the position the next write settles. The board is drawn where the move ends instead.
+     */
+    const holdMove = useCallback((
+        cards: { noteId: string, branchId: string }[],
+        targetColumn: string,
+        targetIndex: number,
+        done: Promise<unknown>
+    ) => {
+        if (allByColumn) {
+            setAllByColumn(applyCardMoves(
+                allByColumn, cards.map((card) => card.noteId), targetColumn, targetIndex));
+        }
+
+        movesInFlight.current++;
+        // Any refresh already on its way is about the board as it stood before the move, and would
+        // put the cards back where they came from as it resolves.
+        refreshSeqRef.current++;
+
+        // Held until `froca` has the changes, not merely until the server has answered for them:
+        // the answers come back over HTTP and the changes over the websocket, so a refresh let
+        // through in between reads a board with some of the cards moved and the rest still where
+        // they were, and draws that.
+        return done
+            .then(settled)
+            .finally(() => { movesInFlight.current--; });
+    }, [ allByColumn ]);
+
+    /** Sends cards to the end of another column, which is where the keyboard puts them. */
+    const sendCardsToColumn = useCallback((
+        cards: { noteId: string, branchId: string }[], targetColumn: string
+    ) => holdMove(
+        // The end of the column itself, not of what a filter leaves showing of it: the move is
+        // drawn into `allByColumn`, so a place counted among the shown cards would put the card
+        // partway up the column and leave it to jump to the end as the write lands.
+        cards, targetColumn, allByColumn?.get(targetColumn)?.length ?? 0,
+        api.moveToColumnEnd(cards, targetColumn)),
+    [ api, holdMove, allByColumn ]);
+
+    /** Moves cards to a place among the ones already in a column. */
+    const moveCardsWithin = useCallback((
+        cards: { noteId: string, branchId: string }[], column: string, index: number
+    ) => holdMove(
+        cards, column,
+        unfilteredCardIndex(byColumn?.get(column) ?? [], allByColumn?.get(column) ?? [], index),
+        api.moveWithinBoard(cards, column, index)),
+    [ api, holdMove, byColumn, allByColumn ]);
+
+    const clearSelectionOutsideCards = useCallback((e: MouseEvent) => {
+        if (!(e.target as HTMLElement | null)?.closest(".board-note")) {
+            selection.clear();
+        }
+    }, [ selection ]);
+
+    const { onKeyDown: handleBoardKeys, focusColumn, focusCard } = useBoardKeyboard({
         containerRef,
         setActiveColumn,
         columns: shownColumns,
         byColumn,
         api,
         moveColumn: handleColumnDrop,
+        selection,
+        sendCardsToColumn,
+        moveCardsWithin,
         insertColumn: useCallback(async (relativeTo: string, direction: "before" | "after") => {
             setColumnNameToEdit(await api.insertColumn(relativeTo, direction));
         }, [ api ])
+    });
+
+    // Escape gives the selection up, before the board's own keys are offered the press: nothing
+    // else on the board answers for Escape, and a reader who has picked cards out expects it to
+    // undo that first.
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (e.key === "Escape" && selection.size) {
+            e.stopPropagation();
+            selection.clear();
+            return;
+        }
+
+        handleBoardKeys(e);
+    }, [ selection, handleBoardKeys ]);
+
+    // The note actions menu offers the properties dialog, which lives here rather than in the menu.
+    useTriliumEvent("showBoardProperties", ({ ntxId }) => {
+        if (ntxId === noteContext?.ntxId) {
+            setIsEditingProperties(true);
+        }
     });
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
@@ -1024,7 +1198,20 @@ export default function BoardView({
         : undefined;
 
     return (
-        <div className="board-view">
+        <div className={clsx("board-view", {
+            frozen: isFrozen,
+            "editing-open": branchIdToEdit !== undefined || insertingColumns.size > 0
+        })}>
+            {/* Dims the board while a title is being typed, with the edited card lifted above it.
+                Always rendered so that it can fade in.
+
+                `frozen` waits for the fade to finish: setting it restyles every card, which in the
+                same frame drops the fade's frames. */}
+            <div
+                className="board-edit-backdrop"
+                onTransitionEnd={(e) => setIsFrozen(
+                    getComputedStyle(e.currentTarget as HTMLElement).opacity === "1")}
+            />
             <CollectionProperties
                 note={parentNote}
                 rightChildren={<>
@@ -1046,6 +1233,7 @@ export default function BoardView({
                 <BoardKeptCardsContext.Provider value={filter.keptNoteIds}>
                 <BoardDropStateContext.Provider value={dropState}>
                 <BoardDragStateContext.Provider value={boardDragState}>
+                <SelectionContext.Provider value={selection}>
                     {byColumn && columns && <div
                         ref={containerRef}
                         className={clsx("board-view-container", {
@@ -1053,6 +1241,7 @@ export default function BoardView({
                             panning: isPanning
                         })}
                         onKeyDown={handleKeyDown}
+                        onClick={clearSelectionOutsideCards}
                         onContextMenu={openBoardMenu}
                         onWheel={onWheelHorizontalScroll}
                     >
@@ -1154,6 +1343,7 @@ export default function BoardView({
                             />
                         )}
                     </div>}
+                </SelectionContext.Provider>
                 </BoardDragStateContext.Provider>
                 </BoardDropStateContext.Provider>
                 </BoardKeptCardsContext.Provider>
@@ -1176,6 +1366,23 @@ export default function BoardView({
  * Naming the winning check, rather than returning a boolean, is what lets the profiler attribute a
  * redraw to a cause.
  */
+/** How long the board waits for a move's changes before drawing again regardless. */
+const SETTLE_TIMEOUT_MS = 10000;
+
+/**
+ * Waits for `froca` to hold what a move has written.
+ *
+ * `waitForMaxKnownEntityChangeId` never settles while the websocket delivers nothing, and the board
+ * holds its refreshes until this resolves: unlimited, a connection gone quiet would stop the board
+ * redrawing for the rest of the session.
+ */
+function settled() {
+    return Promise.race([
+        ws.waitForMaxKnownEntityChangeId(),
+        new Promise<void>((resolve) => { window.setTimeout(resolve, SETTLE_TIMEOUT_MS); })
+    ]);
+}
+
 /**
  * Puts every card back where the column draws it, closes every gap and gives back the room they
  * took.
