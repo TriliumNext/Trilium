@@ -1328,7 +1328,16 @@ function scanForLinks(note: BNote, content: string | Uint8Array) {
             const { forceFrontendReload, content: newContent } = saveLinks(note, content);
 
             if (content !== newContent) {
+                // A scan localizing already-fetched pictures (or normalizing
+                // links) is a background cosmetic swap, not a new edit: keep
+                // the note's dates. This runs deferred (image-download timers,
+                // ETAPI post-processing), so re-stamping here would overwrite
+                // dates an importer just restored via ETAPI dateModified.
+                const prevUtcModified = note.utcDateModified;
                 note.setContent(newContent, { forceFrontendReload });
+                if (prevUtcModified) {
+                    note.setDateCreatedAndModified(undefined, prevUtcModified);
+                }
             }
         });
     } catch (e: any) {
