@@ -76,6 +76,36 @@ describe("etapi/create-entities", () => {
         });
     });
 
+    it("preserves modification dates on create-note", async () => {
+        const explicit = await createNoteWithTimestamps("modified-override", {
+            dateCreated: "2023-08-21 23:38:51.123+0200",
+            utcDateCreated: "2023-08-21 21:38:51.123Z",
+            dateModified: "2024-05-06 10:11:12.456+0200",
+            utcDateModified: "2024-05-06 08:11:12.456Z"
+        });
+        // The server re-derives the local column from UTC, so compare instants.
+        expect(explicit.body.note.title).toStrictEqual("modified-override");
+        expect(explicit.body.note.utcDateModified).toStrictEqual("2024-05-06 08:11:12.456Z");
+        expect(asInstant(explicit.body.note.dateModified)).toStrictEqual(
+            Date.parse("2024-05-06T08:11:12.456Z")
+        );
+
+        const localOnly = await createNoteWithTimestamps("modified-local-only", {
+            dateModified: "2024-05-06 10:11:12.456+0200"
+        });
+        expect(localOnly.body.note.utcDateModified).toStrictEqual("2024-05-06 08:11:12.456Z");
+        expect(asInstant(localOnly.body.note.dateModified)).toStrictEqual(
+            Date.parse("2024-05-06T08:11:12.456Z")
+        );
+
+        const before = Date.now();
+        const defaulted = await createNoteWithTimestamps("modified-default", {});
+        // UTC DB format is "YYYY-MM-DD HH:mm:ss.SSSZ".
+        expect(asInstant(defaulted.body.note.utcDateModified)).toBeGreaterThanOrEqual(
+            before - 60_000
+        );
+    });
+
     it("obtains attribute information", async () => {
         const response = await supertest(app)
             .get(`/etapi/attributes/${createdAttributeId}`)
@@ -154,6 +184,21 @@ describe("etapi/create-entities", () => {
         });
     });
 });
+
+/**
+ * Parse a Trilium local or UTC datetime string to epoch ms.
+ */
+function asInstant(s: string) {
+    return new Date(s.replace(" ", "T")).getTime();
+}
+
+async function createNoteWithTimestamps(title: string, timestamps: Record<string, string>) {
+    return supertest(app)
+        .post("/etapi/create-note")
+        .auth(USER, token, { "type": "basic"})
+        .send({ parentNoteId: "root", title, type: "text", content: "x", ...timestamps })
+        .expect(201);
+}
 
 async function createNote() {
     const noteId = `forcedId${randomInt(1000)}`;

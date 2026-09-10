@@ -51,7 +51,9 @@ function register(router: Router) {
         isExpanded: [v.notNull, v.isBoolean],
         noteId: [v.notNull, v.isValidEntityId],
         dateCreated: [v.notNull, v.isString, v.isLocalDateTime],
-        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime]
+        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime],
+        dateModified: [v.notNull, v.isString, v.isLocalDateTime],
+        utcDateModified: [v.notNull, v.isString, v.isUtcDateTime]
     };
 
     eu.route(router, "post", "/etapi/create-note", (req, res, next) => {

@@ -1150,6 +1150,20 @@ components:
                 utcDateCreated:
                     $ref: "#/components/schemas/UtcDateTime"
                     description: UTC timestap of the note creation. Specify only if you want to override the default (current datetime).
+                dateModified:
+                    $ref: "#/components/schemas/LocalDateTime"
+                    description: >
+                        Local timestamp of the note's last modification. Optional, for migration
+                        imports that preserve the source's last-modified date. If both modification
+                        timestamps are supplied, utcDateModified takes precedence. Omit to stamp
+                        the current datetime.
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    description: >
+                        UTC timestamp of the note's last modification. Optional, for migration
+                        imports that preserve the source's last-modified date. If both modification
+                        timestamps are supplied, this value takes precedence. Omit to stamp the
+                        current datetime.
         Note:
             type: object
             properties:
