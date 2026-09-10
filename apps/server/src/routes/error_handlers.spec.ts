@@ -7,24 +7,22 @@ import {
 } from "./error_handlers.js";
 
 describe("isLogoutFormNavigation", () => {
+    const request = (accept: string) => ({
+        method: "POST",
+        path: "/logout",
+        headers: { accept },
+        is: () => "application/x-www-form-urlencoded",
+        get: (header: string) => header.toLowerCase() === "accept" ? accept : undefined
+    });
+
     it("recognizes HTML form posts to logout", () => {
-        const req = {
-            method: "POST",
-            path: "/logout",
-            headers: { accept: "text/html,application/xhtml+xml" },
-            is: () => "application/x-www-form-urlencoded"
-        };
+        const req = request("text/html,application/xhtml+xml");
 
         expect(isLogoutFormNavigation(req as never)).toBe(true);
     });
 
     it("does not classify API requests as navigations", () => {
-        const req = {
-            method: "POST",
-            path: "/logout",
-            headers: { accept: "application/json" },
-            is: () => "application/x-www-form-urlencoded"
-        };
+        const req = request("application/json");
 
         expect(isLogoutFormNavigation(req as never)).toBe(false);
     });
