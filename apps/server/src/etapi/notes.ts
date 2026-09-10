@@ -1,5 +1,5 @@
 import { type ExportFormat, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
-import { becca } from "@triliumnext/core";
+import { becca, date_utils } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
 
@@ -83,7 +83,9 @@ function register(router: Router) {
         type: [v.notNull, v.isString],
         mime: [v.notNull, v.isString],
         dateCreated: [v.notNull, v.isString, v.isLocalDateTime],
-        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime]
+        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime],
+        dateModified: [v.notNull, v.isString, v.isLocalDateTime],
+        utcDateModified: [v.notNull, v.isString, v.isUtcDateTime]
     };
 
     eu.route<{ noteId: string }>(router, "patch", "/etapi/notes/:noteId", (req, res, next) => {
@@ -104,6 +106,20 @@ function register(router: Router) {
         noteService.saveRevisionIfNeeded(note);
         eu.validateAndPatch(note, req.body, ALLOWED_PROPERTIES_FOR_PATCH);
         note.save();
+
+        // Every regular save() re-stamps "now" via BNote.beforeSaving, so a
+        // caller-supplied modification date would be lost. Re-apply it after
+        // the save with the same raw-SQL bypass the create-note path and the
+        // ENEX/OneNote/Notion importers use (BNote.setDateCreatedAndModified).
+        // This lets importers restore the source date after content rewrites
+        // (e.g. attachment URL replacement via PUT /content, which re-stamps).
+        const utcDateModified = req.body.utcDateModified
+            ?? (req.body.dateModified
+                ? date_utils.utcDateTimeStr(date_utils.parseDateTime(req.body.dateModified))
+                : undefined);
+        if (utcDateModified) {
+            note.setDateCreatedAndModified(undefined, utcDateModified);
+        }
 
         res.json(mappers.mapNoteToPojo(note));
     });

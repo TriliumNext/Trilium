@@ -106,6 +106,41 @@ describe("etapi/create-entities", () => {
         );
     });
 
+    it("restores modification dates via PATCH after a content rewrite", async () => {
+        const created = await createNoteWithTimestamps("modified-patch-restore", {
+            dateModified: "2024-05-06 10:11:12.456+0200",
+            utcDateModified: "2024-05-06 08:11:12.456Z"
+        });
+        const noteId = created.body.note.noteId;
+
+        // A content rewrite (e.g. attachment URL replacement) re-stamps now.
+        await supertest(app)
+            .put(`/etapi/notes/${noteId}/content`)
+            .auth(USER, token, { "type": "basic"})
+            .set("Content-Type", "text/plain")
+            .send("rewritten <p>content</p>")
+            .expect(204);
+
+        const bumped = await supertest(app)
+            .get(`/etapi/notes/${noteId}`)
+            .auth(USER, token, { "type": "basic"})
+            .expect(200);
+        expect(asInstant(bumped.body.utcDateModified)).toBeGreaterThan(
+            Date.parse("2024-05-06T08:11:12.456Z")
+        );
+
+        // PATCH restores the source date despite save() re-stamping now.
+        const restored = await supertest(app)
+            .patch(`/etapi/notes/${noteId}`)
+            .auth(USER, token, { "type": "basic"})
+            .send({ utcDateModified: "2024-05-06 08:11:12.456Z" })
+            .expect(200);
+        expect(restored.body.utcDateModified).toStrictEqual("2024-05-06 08:11:12.456Z");
+        expect(asInstant(restored.body.dateModified)).toStrictEqual(
+            Date.parse("2024-05-06T08:11:12.456Z")
+        );
+    });
+
     it("obtains attribute information", async () => {
         const response = await supertest(app)
             .get(`/etapi/attributes/${createdAttributeId}`)
