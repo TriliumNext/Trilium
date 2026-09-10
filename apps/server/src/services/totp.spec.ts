@@ -1,8 +1,9 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { TotpValidateOptions } from "time2fa";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGenerateKey, mockValidate } = vi.hoisted(() => ({
     mockGenerateKey: vi.fn<(opts: { issuer: string; user: string }) => { secret: string; url: string }>(),
-    mockValidate: vi.fn<(args: { passcode: string; secret: string }) => boolean>()
+    mockValidate: vi.fn<(args: TotpValidateOptions) => boolean>()
 }));
 
 vi.mock("time2fa", () => ({
@@ -12,6 +13,7 @@ vi.mock("time2fa", () => ({
 import type { OptionNames } from "@triliumnext/commons";
 import { becca_loader, cls, options } from "@triliumnext/core";
 import migrateDisableTotpWhenMfaWasTurnedOff from "@triliumnext/core/src/migrations/0239__disable_totp_when_mfa_was_turned_off";
+import crypto from "crypto";
 
 import recoveryCodes from "./encryption/recovery_codes.js";
 import totpEncryption from "./encryption/totp_encryption.js";
@@ -175,7 +177,7 @@ describe("totp", () => {
 
         mockValidate.mockReturnValue(true);
         expect(totp.validateTOTPForSecret(SECRET, "000000")).toBe(true);
-        expect(mockValidate).toHaveBeenCalledWith({ passcode: "000000", secret: SECRET });
+        expect(mockValidate).toHaveBeenCalledWith({ passcode: "000000", secret: SECRET, drift: 1 });
 
         mockValidate.mockReturnValue(false);
         expect(totp.validateTOTPForSecret(SECRET, "000000")).toBe(false);
@@ -218,6 +220,59 @@ describe("totp", () => {
         errorSpy.mockRestore();
     });
 
+    /**
+     * Regression cover for #11439. `time2fa` defaults to zero drift, so up to v0.105.0 Trilium
+     * matched a passcode only against the single 30-second window the request landed in. Enrollment
+     * and login both rejected codes that Google Authenticator and `oathtool --totp -b` agreed were
+     * correct, whenever the window rolled over between the authenticator showing a code and the
+     * server checking it. RFC 6238 section 5.2 recommends one step of tolerance either side.
+     *
+     * These tests run against the real library, which the rest of the file mocks, and against
+     * passcodes computed independently of it, so they cover the acceptance window rather than the
+     * argument passed.
+     */
+    describe("clock drift tolerance", () => {
+        // A 10-byte secret, base32-encoded: the shape Totp.generateKey issues and the only size the
+        // library accepts.
+        const REAL_SECRET = "KG2GFNXR22IVIVTG";
+        const WINDOW_SECONDS = 30;
+        // Mid-window, so shifting by one step lands squarely in a neighbouring window instead of
+        // depending on where the boundary happens to fall.
+        const SERVER_NOW = 1789038000 + WINDOW_SECONDS / 2;
+
+        beforeEach(async () => {
+            const { Totp } = await vi.importActual<typeof import("time2fa")>("time2fa");
+            mockValidate.mockImplementation((args) => Totp.validate(args));
+            vi.useFakeTimers();
+            vi.setSystemTime(SERVER_NOW * 1000);
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it("accepts the neighbouring windows and rejects anything further out", () => {
+            for (const offset of [ -WINDOW_SECONDS, 0, WINDOW_SECONDS ]) {
+                const passcode = authenticatorCodeAt(REAL_SECRET, SERVER_NOW + offset);
+                expect(totp.validateTOTPForSecret(REAL_SECRET, passcode)).toBe(true);
+            }
+
+            for (const offset of [ -2 * WINDOW_SECONDS, 2 * WINDOW_SECONDS ]) {
+                const passcode = authenticatorCodeAt(REAL_SECRET, SERVER_NOW + offset);
+                expect(totp.validateTOTPForSecret(REAL_SECRET, passcode)).toBe(false);
+            }
+        });
+
+        it("applies the same tolerance at login", () => {
+            cls.init(() => {
+                totp.setSecret(REAL_SECRET);
+            });
+
+            const passcode = authenticatorCodeAt(REAL_SECRET, SERVER_NOW + WINDOW_SECONDS);
+            expect(totp.validateTOTP(passcode)).toBe(true);
+        });
+    });
+
     it("resetTotp clears the secret and recovery codes", () => {
         cls.init(() => {
             options.setOption("mfaMethod", "totp");
@@ -235,3 +290,37 @@ describe("totp", () => {
         expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
     });
 });
+
+/**
+ * The RFC 6238 passcode for `secret` at `epochSeconds`, computed independently of `time2fa` — the
+ * stand-in for what Google Authenticator or `oathtool --totp -b <secret>` shows at that moment.
+ */
+function authenticatorCodeAt(secret: string, epochSeconds: number): string {
+    const counter = Buffer.alloc(8);
+    counter.writeUInt32BE(Math.floor(epochSeconds / 30), 4);
+
+    const digest = crypto.createHmac("sha1", decodeBase32(secret)).update(counter).digest();
+    const offset = digest[digest.length - 1] & 0x0f;
+    const truncated = digest.readUInt32BE(offset) & 0x7fffffff;
+
+    return (truncated % 1_000_000).toString().padStart(6, "0");
+}
+
+function decodeBase32(secret: string): Buffer {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    const bytes: number[] = [];
+    let value = 0;
+    let bits = 0;
+
+    for (const char of secret.replace(/=+$/, "").toUpperCase()) {
+        value = (value << 5) | alphabet.indexOf(char);
+        bits += 5;
+
+        if (bits >= 8) {
+            bytes.push((value >>> (bits - 8)) & 0xff);
+            bits -= 8;
+        }
+    }
+
+    return Buffer.from(bytes);
+}

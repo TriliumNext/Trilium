@@ -1,8 +1,16 @@
-import { options } from "@triliumnext/core";
+import { getLog, options } from "@triliumnext/core";
 import { Totp } from "time2fa";
 
 import recoveryCodesService from "./encryption/recovery_codes.js";
 import totpEncryptionService from "./encryption/totp_encryption.js";
+
+/**
+ * Time steps accepted either side of the server's current 30-second window. `time2fa` defaults
+ * to 0, which rejects a code entered in the last seconds of its window, and one from an
+ * authenticator whose clock sits slightly off the server's. RFC 6238 section 5.2 recommends at
+ * most one step of tolerance.
+ */
+const VALIDATION_DRIFT_STEPS = 1;
 
 function isTotpEnabled(): boolean {
     return options.getOptionOrNull("mfaMethod") === "totp" &&
@@ -59,10 +67,20 @@ function validateTOTPForSecret(secret: string, submittedPasscode: string): boole
     if (!secret) return false;
 
     try {
-        return Totp.validate({
+        const valid = Totp.validate({
             passcode: submittedPasscode,
-            secret: secret.trim()
+            secret: secret.trim(),
+            drift: VALIDATION_DRIFT_STEPS
         });
+
+        if (!valid) {
+            // Records the rejection so a refused second factor is diagnosable from the backend
+            // log. The passcode is single-use and already spent, so its length is safe to log and
+            // tells a malformed entry apart from a genuine mismatch.
+            getLog().info(`TOTP passcode rejected (${submittedPasscode.length} characters).`);
+        }
+
+        return valid;
     } catch (e) {
         console.error("Failed to validate TOTP:", e);
         return false;

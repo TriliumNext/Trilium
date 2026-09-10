@@ -1,10 +1,11 @@
 import { cls, options } from "@triliumnext/core";
 import type { Request } from "express";
+import type { TotpValidateOptions } from "time2fa";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGenerateKey, mockValidate } = vi.hoisted(() => ({
     mockGenerateKey: vi.fn<(opts: { issuer: string; user: string }) => { secret: string; url: string }>(),
-    mockValidate: vi.fn<(args: { passcode: string; secret: string }) => boolean>()
+    mockValidate: vi.fn<(args: TotpValidateOptions) => boolean>()
 }));
 
 vi.mock("time2fa", () => ({
@@ -46,7 +47,7 @@ describe("TOTP API", () => {
             { success: boolean; recoveryCodes?: string[] };
         expect(result.success).toBe(true);
         expect(result.recoveryCodes).toHaveLength(8);
-        expect(mockValidate).toHaveBeenCalledWith({ passcode: "000000", secret: SECRET });
+        expect(mockValidate).toHaveBeenCalledWith({ passcode: "000000", secret: SECRET, drift: 1 });
         // Verifying alone must neither enable TOTP nor store the recovery codes.
         expect(totpRoute.getTOTPStatus().set).toBe(false);
         expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
