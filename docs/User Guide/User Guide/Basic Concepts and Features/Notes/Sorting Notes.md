@@ -24,7 +24,7 @@ Child notes can be automatically sorted by attaching specific [labels](../../Adv
     <tbody>
         <tr>
             <td><code spellcheck="false">#sorted</code></td>
-            <td><p>Keeps child notes sorted by title alphabetically.</p><p>When given a value, it will sort by other criteria instead: a comma-separated list of levels, each <code spellcheck="false">title</code>, <code spellcheck="false">dateCreated</code>, <code spellcheck="false">dateModified</code> or the name of a label on the child notes, optionally followed by <code spellcheck="false">asc</code> or <code spellcheck="false">desc</code>, as in a search's <code spellcheck="false">orderBy</code>. For example <code spellcheck="false">#sorted="priority desc, dueDate"</code> sorts by priority, highest first, and notes of equal priority by due date. If one of the child notes doesn't have a level's label, its title is used in its place.</p></td>
+            <td><p>Keeps child notes sorted by title alphabetically.</p><p>When given a value, it will sort by other criteria instead: a comma-separated list of levels, each <code spellcheck="false">title</code>, <code spellcheck="false">dateCreated</code>, <code spellcheck="false">dateModified</code> or the name of a label on the child notes, optionally followed by <code spellcheck="false">asc</code> or <code spellcheck="false">desc</code>, as in a search's <code spellcheck="false">orderBy</code>. For example <code spellcheck="false">#sorted="priority desc, dueDate"</code> sorts by priority, highest first, and notes of equal priority by due date. A child note without a level's label counts as the largest value there: last ascending, first descending. When neither note has the label, the next level decides.</p></td>
         </tr>
         <tr>
             <td><code spellcheck="false">#sortDirection</code></td>
@@ -64,4 +64,4 @@ Sorting is done by comparing note properties or specific labels on child notes. 
     *   **Multi-Level Sorting**: Several of the above can be combined, separated by commas; each level is applied only where the previous ones are equal. Every level can carry its own direction as a word after the name, `asc` or `desc`, otherwise it follows `#sortDirection`. For example `#sorted="priority desc, area, dateCreated"` sorts by priority, highest first, then by area, then by creation date.
 4.  **Alphabetical Sorting**: Used as a last resort when other criteria result in equality.
 
-All comparisons are made string-wise (e.g., "1" \< "2" or "2020-10-10" < "2021-01-15", but also "2" \> "10").
+Two values that both read as numbers compare numerically (2 before 10) and two that both read as dates compare chronologically, as in a search's `orderBy`; anything else compares as text.
