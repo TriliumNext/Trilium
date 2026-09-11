@@ -3,6 +3,7 @@
 import { parseSortCriteria } from "@triliumnext/commons";
 
 import { getLog } from "./log.js";
+import { compareSortValues } from "./utils/sort_values.js";
 import BBranch from "../becca/entities/bbranch.js";
 import entityChangesService from "./entity_changes.js";
 import becca from "../becca/becca.js";
@@ -129,11 +130,10 @@ function sortNotes(
             return a < b ? -1 : a > b ? 1 : 0;
         }
 
-        // A child without the level's label sorts by its title in that label's place.
+        // The same rules as a search's orderBy: a child without the label counts as the largest
+        // value, two without it tie, and dates and numbers compare as such rather than as text.
         function compareLevel(a: BNote, b: BNote, key: string, descending: boolean) {
-            const valueA = fetchValue(a, key) ?? fetchValue(a, "title") ?? "";
-            const valueB = fetchValue(b, key) ?? fetchValue(b, "title") ?? "";
-            const result = compare(valueA, valueB);
+            const result = compareSortValues(fetchValue(a, key), fetchValue(b, key), compare);
             return descending ? -result : result;
         }
 

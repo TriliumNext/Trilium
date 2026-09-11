@@ -68,9 +68,10 @@ export default function SortChildNotesDialog() {
     ];
 
     async function onSubmit() {
+        // The first level's direction also decides where folders group and how ties break.
         await server.put(`notes/${parentNoteId}/sort-children`, {
             sortBy: serializeSortLevels(levels),
-            sortDirection: "asc",
+            sortDirection: levels[0].direction,
             foldersFirst,
             sortNatural,
             sortLocale
@@ -159,6 +160,7 @@ export default function SortChildNotesDialog() {
             <h5>{t("sort_child_notes.folders")}</h5>
             <FormCheckbox
                 label={t("sort_child_notes.sort_folders_at_top")}
+                hint={t("sort_child_notes.folders_follow_first_level")}
                 name="sort-folders-first"
                 currentValue={foldersFirst} onChange={setFoldersFirst}
             />

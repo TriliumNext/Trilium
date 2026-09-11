@@ -510,6 +510,7 @@
     "descending": "Descending",
     "folders": "Folders",
     "sort_folders_at_top": "sort folders at the top",
+    "folders_follow_first_level": "At the bottom instead when the first level is descending.",
     "natural_sort": "Natural Sort",
     "sort_with_respect_to_different_character_sorting": "sort with respect to different character sorting and collation rules in different languages or regions.",
     "natural_sort_language": "Natural sort language",

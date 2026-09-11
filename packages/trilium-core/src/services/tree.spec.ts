@@ -255,19 +255,41 @@ describe("Tree", () => {
         expect(orderedTitles).toStrictEqual(["top1", "top2", "b", "a", "bottom2", "bottom1"]);
     });
 
-    it("sorts a child without the level's label by its title in the label's place", () => {
+    it("counts a missing label as the largest value; the next level breaks a double miss", () => {
+        const children: Parameters<typeof buildNote>[0]["children"] = [
+            {title: "m", "#order": "z"},
+            {title: "unlabelled", "#area": "b"},
+            {title: "also", "#area": "a"},
+            {title: "a", "#order": "b"}
+        ];
+        for (const [direction, expected] of [
+            ["asc", ["a", "m", "also", "unlabelled"]],
+            ["desc", ["unlabelled", "also", "m", "a"]]
+        ] as const) {
+            const note = buildNote({
+                children, "#sorted": "order, area", "#sortDirection": direction
+            });
+            getContext().init(() => {
+                tree.sortNotesIfNeeded(note.noteId);
+            });
+            expect(note.children.map((child) => child.title)).toStrictEqual([...expected]);
+        }
+    });
+
+    it("compares numbers and dates as such rather than as text", () => {
         const note = buildNote({
             children: [
-                {title: "m", "#order": "z"},
-                {title: "unlabelled"},
-                {title: "a", "#order": "b"}
+                {title: "ten", "#priority": "10", "#due": "2026-02-01"},
+                {title: "two", "#priority": "2", "#due": "2026-02-01"},
+                {title: "one", "#priority": "1", "#due": "2026-01-15"},
+                {title: "nine", "#priority": "9", "#due": "2026-01-15"}
             ],
-            "#sorted": "order"
+            "#sorted": "due, priority desc"
         });
         getContext().init(() => {
             tree.sortNotesIfNeeded(note.noteId);
         });
         const orderedTitles = note.children.map((child) => child.title);
-        expect(orderedTitles).toStrictEqual(["a", "unlabelled", "m"]);
+        expect(orderedTitles).toStrictEqual(["nine", "one", "ten", "two"]);
     });
 });
