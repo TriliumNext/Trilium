@@ -716,7 +716,10 @@
       "move_across": "前 / 次 の列に移動",
       "move_to_end_column": "最初 / 最後 の列に移動",
       "move_column": "列を 左 / 右 に移動",
-      "move_column_to_edge": "列を 一番左 / 一番右 に移動"
+      "move_column_to_edge": "列を 一番左 / 一番右 に移動",
+      "selection": "選択",
+      "select_column": "列内のすべての項目を選択",
+      "clear_selection": "選択を解除"
     },
     "inbox": "インボックス",
     "inherited-column": "このカードは、テンプレートまたは親ノートから列情報を取得するため、そこで変更できます。",
@@ -766,7 +769,11 @@
     "insert-new": "新しく追加",
     "group-by": "カードのグループ化",
     "grouping-already-defined": "\"{{- name}}\" はこのボード上で既に定義されています。リストから選択してグループ化してください。",
-    "sort-board-default": "ボードのデフォルト"
+    "sort-board-default": "ボードのデフォルト",
+    "default-card-order": "デフォルトのカード並び順",
+    "default-card-order-description": "特定の列に対して異なる並べ替えオプションを選択しない限り、各列のカードはこの順序で並べ替えられます。",
+    "reset-column-sorting": "すべての列の並べ替えオプションをデフォルトにリセット",
+    "reset-column-sorting-confirm": "現在のビューにあるすべての列の並べ替えオプションを、デフォルトにリセットしますか？"
   },
   "code_buttons": {
     "execute_button_title": "スクリプトを実行",
@@ -1650,7 +1657,8 @@
     "custom_font": "Trilium のオプションにあるフォント選択画面で、ノートのタイトルの下に表示されるフォントファイルを指定します。",
     "enable_inbox_column": "ボードコレクションの場合、インボックス列が表示され、ボード列に割り当てられていないすべての子ノートが一覧表示されます。",
     "sort_columns": "ボードコレクションにおいて、列がカードを並べ替える際の基準となる順序です。列に独自の並べ替え順序が指定されていない限り、この順序が適用されます。<code>title</code>、<code>creationDate</code>、または <code>attr:</code> に続けて昇格(プロモート)された属性名を指定します。",
-    "sort_columns_descending": "ボードコレクションの場合、<code>#sortColumns</code> で指定された順序を逆順にします。"
+    "sort_columns_descending": "ボードコレクションの場合、<code>#sortColumns</code> で指定された順序を逆順にします。",
+    "board_card_redirect_to": "ボード上のカードを開いたとき、カード自体を開くのではなく、そのカードが指し示しているノートに移動します。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",

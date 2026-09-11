@@ -99,7 +99,14 @@
     "toggle-archived-notes": "Attiva/disattiva la visualizzazione delle note archiviate",
     "show-deleted-notes": "Mostra le note eliminate",
     "show-shortcut-hints": "Mostra suggerimenti sui collegamenti",
-    "peek-right-pane": "Anteprima del riquadro destro"
+    "peek-right-pane": "Anteprima del riquadro destro",
+    "show-space-usage": "Mostra l'utilizzo dello spazio",
+    "create-new-split": "Crea una nuova suddivisione",
+    "close-active-split": "Chiudi la divisione attiva",
+    "move-split-left": "Sposta a sinistra",
+    "move-split-right": "Sposta la divisione a destra",
+    "focus-split-left": "Focus spostato a sinistra",
+    "focus-split-right": "Focus diviso a destra"
   },
   "hidden-subtree": {
     "options-title": "Opzioni",
@@ -173,7 +180,9 @@
     "deleted-notes-title": "Note eliminate",
     "color-scheme-switcher-title": "Selettore della combinazione di colori",
     "content-manager-title": "Responsabile dei contenuti",
-    "desktop-title": "Desktop"
+    "desktop-title": "Desktop",
+    "space-usage-title": "Utilizzo dello spazio",
+    "database-title": "Database"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -185,7 +194,8 @@
     "reading-log-failed": "La lettura del file di log del backend '{{ fileName }}' è fallita."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "Questo tipo di nota non può essere visualizzato."
+    "note-cannot-be-displayed": "Questo tipo di nota non può essere visualizzato.",
+    "included-note-requires-credentials": "Questa nota allegata è protetta da password e non può essere visualizzata qui."
   },
   "pdf": {
     "export_filter": "Documento PDF (*.pdf)",
@@ -297,7 +307,15 @@
     "toggle-archived-notes": "Mostra/nascondi le note archiviate nell'albero delle note",
     "show-deleted-notes": "Visualizza la finestra di dialogo \"Note eliminate\"",
     "show-shortcut-hints": "Mostra le scorciatoie da tastiera per il widget attivo",
-    "peek-right-pane": "Visualizza il riquadro destro come un pannello temporaneo che si sovrappone al contenuto e si chiude quando perde il focus"
+    "peek-right-pane": "Visualizza il riquadro destro come un pannello temporaneo che si sovrappone al contenuto e si chiude quando perde il focus",
+    "show-space-usage": "Apri la pagina \"Utilizzo dello spazio\"",
+    "create-new-split": "Apri una nuova finestra divisa vuota a destra di quella attiva",
+    "close-active-split": "Chiudi la finestra divisa attiva, lasciando aperte le altre finestre divise della scheda",
+    "focus-split-left": "Sposta il focus sulla divisione a sinistra di quella attiva",
+    "focus-split-right": "Sposta il focus sulla divisione a destra di quella attiva",
+    "split-view": "Visualizzazione divisa",
+    "move-split-left": "Scambia la divisione attiva con quella alla sua sinistra, in modo che la nota si sposti e il focus la segua",
+    "move-split-right": "Scambia la divisione attiva con quella alla sua destra, in modo che la nota si sposti e il focus la segua"
   },
   "login": {
     "title": "Accedi",
@@ -391,7 +409,8 @@
     "background": "Contesto",
     "markdown-snippet": "Snippet Markdown",
     "code-snippet": "Codice Snippet",
-    "dashboard": "Pannello di controllo"
+    "dashboard": "Pannello di controllo",
+    "ai-quick-action": "Azione rapida AI"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Database non inizializzato, seguire le istruzioni a schermo.",
@@ -447,7 +466,7 @@
       "row-sections": "Sezioni importate",
       "row-duration": "Durata totale dell'importazione",
       "row-images": "Immagini",
-      "row-attachments": "Allegati",
+      "row-attachments": "File allegati",
       "row-ink": "Pagine con scritte a mano o disegni",
       "row-links": "Collegamenti tra pagine",
       "row-throttling": "Tempo limitato da Microsoft Graph",
@@ -513,5 +532,16 @@
     "clear-message": "I backup non saranno più crittografati.",
     "clear-detail": "I backup già creati mantengono la password con cui sono stati effettuati e possono essere ripristinati utilizzandola.\n\nSe non ti aspettavi questa richiesta, annullala: potrebbe essere stata richiesta da una nota o da uno script.",
     "clear-confirm": "Password dimenticata"
+  },
+  "setup-window": {
+    "getting-started": "Guida introduttiva - Trilium Notes",
+    "start-over": "Ricomincia da capo - Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "Ricomincia da capo",
+    "message": "Riavviare Trilium e tornare alla schermata di configurazione?",
+    "detail": "Ti verrà prima proposto di eseguire un backup della tua attuale base di conoscenza. Nulla verrà eliminato finché non deciderai di creare una nuova base di conoscenza, ripristinare un backup o eseguire la sincronizzazione da un altro dispositivo.\n\nNon procedere se uno script o una nota che non conosci ti ha invitato a farlo.",
+    "cancel": "Annulla",
+    "confirm": "Riavvia e ricomincia da capo"
   }
 }

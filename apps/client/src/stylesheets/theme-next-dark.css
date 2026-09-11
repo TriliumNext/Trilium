@@ -411,6 +411,10 @@
     --board-item-hover-background-saturation: 25%;
     --board-item-hover-background-lightness: 35%;
 
+    --board-drop-hint-background-saturation: 20%;
+    --board-drop-hint-background-lightness: 45%;
+    --board-drop-hint-color: #ffffffc9;
+
     --board-focus-outline-saturation: 60%;
     --board-focus-outline-lightness: 70%;
 

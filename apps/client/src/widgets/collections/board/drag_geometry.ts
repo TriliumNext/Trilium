@@ -36,10 +36,63 @@ export interface ColumnBox {
      */
     origin: number;
     /**
+     * Where the heading begins and where the button that adds a card ends, down the page. A pointer
+     * past either one places the card at that end of the column. Neither the heading nor the button
+     * counts as past: over them the column auto-scrolls instead, which is how a position in the
+     * middle is reached. These hold for the length of a drag for the same reason {@link top} does.
+     */
+    headStart: number;
+    footEnd: number;
+    /** Whether the column sorts its own cards, in which case the drop position is not chosen. */
+    sorted: boolean;
+    /** The column's own colour as a hue, or nothing where it has none. */
+    hue?: string;
+    /**
      * The cards as drawn, in order, the dragged one included. Counting it keeps the index in the
      * same terms as the list the board holds, which is what a move is expressed in.
      */
     cards: CardBox[];
+    /**
+     * How many cards the column holds, the dragged one included. Read off the column rather than
+     * counted here: a collapsed one draws none of them, and a windowed one only a slice.
+     */
+    count: number;
+}
+
+/** Which end of a column a card would be placed at. */
+export type ColumnEnd = "first" | "last";
+
+/**
+ * How far past the heading or the button the pointer must go for that end to count, in pixels.
+ *
+ * Between the two the column auto-scrolls, and a pointer that has only just left that band is
+ * usually crossing it rather than aiming at an end.
+ */
+const END_OFFSET = 30;
+
+/**
+ * The end of a column a point lies past: above the heading, or below the button that adds a card,
+ * by {@link END_OFFSET} in either case.
+ *
+ * A card dropped there goes to that end whatever the column is scrolled to, which saves dragging it
+ * the length of a long column. Returns `undefined` for a sorted column, where the drop position is
+ * not chosen.
+ *
+ * @param y the pointer, down the page. A position among the cards is read from the carried card's
+ * top edge instead; both ends lie outside the column, which only the pointer reaches.
+ */
+export function columnEndAt(column: ColumnBox, y: number): ColumnEnd | undefined {
+    // With no space between the two ends there is no middle, and every point would match one of
+    // them.
+    if (column.sorted || column.footEnd <= column.headStart) {
+        return undefined;
+    }
+
+    if (y < column.headStart - END_OFFSET) {
+        return "first";
+    }
+
+    return y >= column.footEnd + END_OFFSET ? "last" : undefined;
 }
 
 /**

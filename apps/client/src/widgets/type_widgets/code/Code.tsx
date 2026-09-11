@@ -17,12 +17,7 @@ import { TypeWidgetProps } from "../type_widget";
 import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
 import { useSnippetSlashCommands } from "./snippets";
 
-interface CodeEditorProps {
-    /** By default, the code editor will try to match the color of the scrolling container to match the one from the theme for a full-screen experience. If the editor is embedded, it makes sense not to have this behaviour. */
-    noBackgroundChange?: boolean;
-}
-
-export interface EditableCodeProps extends TypeWidgetProps, Omit<CodeEditorProps, "onContentChanged"> {
+export interface EditableCodeProps extends TypeWidgetProps {
     // if true, the update will be debounced to prevent excessive updates. Especially useful if the editor is linked to a live preview.
     debounceUpdate?: boolean;
     lineWrapping?: boolean;
@@ -37,7 +32,7 @@ export interface EditableCodeProps extends TypeWidgetProps, Omit<CodeEditorProps
     editorRef?: Ref<VanillaCodeMirror>;
 }
 
-export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, parentComponent, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
+export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
     const [ content, setContent ] = useState("");
     const blob = useNoteBlob(note);
     // Read reactively so switching the language from the dropdown re-highlights live, rather than
@@ -64,7 +59,7 @@ export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, parentCompon
 
     return (
         <CodeEditor
-            ntxId={ntxId} parentComponent={parentComponent}
+            ntxId={ntxId}
             editorRef={editorRef}
             className="note-detail-readonly-code-content"
             content={content}
@@ -157,7 +152,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
 
     return (
         <CodeEditor
-            ntxId={ntxId} parentComponent={parentComponent}
+            ntxId={ntxId}
             editorRef={combinedEditorRef} containerRef={containerRef}
             mime={mime ?? "text/plain"}
             customRequestHandler={customRequestHandler != null}
@@ -182,7 +177,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
     );
 }
 
-export function CodeEditor({ parentComponent, ntxId, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized, lineWrapping, noBackgroundChange, ...editorProps }: CodeEditorProps & CodeMirrorProps & Pick<TypeWidgetProps, "parentComponent" | "ntxId">) {
+export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized, lineWrapping, ...editorProps }: CodeMirrorProps & Pick<TypeWidgetProps, "ntxId">) {
     const codeEditorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useSyncedRef(externalContainerRef);
     const initialized = useRef($.Deferred());
@@ -199,24 +194,12 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
         ? (colorScheme === "dark" ? darkTheme : lightTheme)
         : codeNoteTheme;
 
-    // React to background color.
-    const [ backgroundColor, setBackgroundColor ] = useState<string>();
-    useEffect(() => {
-        if (!backgroundColor || noBackgroundChange) return;
-        parentComponent?.$widget.closest(".scrolling-container").css("--code-background-color", backgroundColor);
-    }, [ backgroundColor ]);
-
     // React to theme changes.
     useEffect(() => {
         if (codeEditorRef.current && effectiveTheme.startsWith(DEFAULT_PREFIX)) {
             const theme = getThemeById(effectiveTheme.substring(DEFAULT_PREFIX.length));
             if (theme) {
-                codeEditorRef.current.setTheme(theme).then(() => {
-                    const editor = containerRef.current?.querySelector(".cm-editor");
-                    if (!editor) return;
-                    const style = window.getComputedStyle(editor);
-                    setBackgroundColor(style.backgroundColor);
-                });
+                codeEditorRef.current.setTheme(theme);
             }
         }
     }, [ codeEditorRef, effectiveTheme ]);

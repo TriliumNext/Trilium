@@ -31,14 +31,24 @@
   <li>The underlying technology is Tesseract.js.</li>
 </ul>
 <h3>PDFs</h3>
-<p>Currently only text extraction is supported and not OCR.</p>
+<p>The PDF extraction supports:</p>
 <ul>
-  <li>This means that the PDF needs to have proper text information in it (i.e.
-    the text can be selected in a PDF viewer), whereas scanned documents are
-    not yet supported.</li>
-  <li>There are plans to integrate the same OCR-based recognition for PDFs used
-    for images, but this is not yet implemented.</li>
+  <li>PDFs with text information (e.g. a PDF created by a browser or a word
+    processing application), in which the text is extracted.</li>
+  <li>Scanned PDFs, and other PDFs whose text cannot be selected (such as documents
+    whose text was converted to outlines), in which the text is extracted through
+    an OCR process.</li>
+  <li>Mixed PDFs, containing both text and images with text content.</li>
 </ul>
+<p>Note that OCR extraction is limited to 50 pages per PDF, pages containing
+  text information (not as an image) are not subject to this limitation.</p>
+<aside
+class="admonition note">
+  <p>Text extraction for scanned PDFs using OCR was introduced in v0.106.0.
+    If a scanned PDF was already processed by an earlier version, reprocess
+    it individually via <em>Process OCR</em>; batch processing only handles
+    files that haven't been OCR'd yet.</p>
+</aside>
 <h3>Office documents</h3>
 <p>The text will be extracted from the following file formats:</p>
 <ul>

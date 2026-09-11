@@ -128,12 +128,18 @@
         "restore-error-swap-failed-reload": "Non è stato possibile sostituire il database. Il database precedente è stato ripristinato, ma Trilium non è riuscito a riaprirlo. Aggiorna questa pagina per continuare.",
         "restore-error-check-failed": "Non è stato possibile verificare il backup. Potrebbe trattarsi di un problema legato a questo dispositivo piuttosto che al backup stesso, quindi vale la pena riprovare.",
         "restore-error-failed": "Non è stato possibile completare il ripristino. Non è stato sostituito nulla, quindi la tua knowledge base è rimasta invariata.",
-        "restore-error-incomplete": "Questo file di backup è incompleto. Probabilmente non è stato copiato o scaricato per intero, quindi prova a trasferirlo di nuovo."
+        "restore-error-incomplete": "Questo file di backup è incompleto. Probabilmente non è stato copiato o scaricato per intero, quindi prova a trasferirlo di nuovo.",
+        "create-new-document-failed": "Non è stato possibile creare la tua knowledge base",
+        "existing-data-skip": "No, prosegui senza eseguire il backup",
+        "existing-data-skip-warning": "Non è stato ancora cancellato nulla. La tua knowledge base verrà sostituita solo quando deciderai di crearne una nuova, ripristinare un backup o eseguire la sincronizzazione da un altro dispositivo.",
+        "unlock-refused": "Questi dati non sono stati accettati. Si prega di riprovare.",
+        "keep-existing": "Torna all'app",
+        "keep-existing-description": "Continua a utilizzare la tua base di conoscenze esistente e torna all'app."
     },
     "login": {
         "password": "Password",
         "remember-me": "Ricordami",
-        "incorrect-totp": "La password monouso non è corretta. Per favore riprova.",
+        "incorrect-totp": "La password one-time non è corretta. Per favore riprova.",
         "heading": "Accedi a Trilium Notes",
         "totp-token": "Password monouso o codice di recupero",
         "button": "Login",

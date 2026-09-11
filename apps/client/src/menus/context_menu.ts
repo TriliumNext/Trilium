@@ -330,7 +330,9 @@ class ContextMenu {
 
         const $link = $("<span>")
             .append($icon)
-            .append(" &nbsp; ") // some space between icon and text
+            // An element, not spaces: in a flex row, text merges with a plain title but is
+            // trimmed before one boxed by `menuName()`, indenting the two kinds of row apart.
+            .append($("<span>").addClass("tn-menu-gap"))
             .append(item.title);
 
         if ("badges" in item && item.badges) {
@@ -393,8 +395,12 @@ class ContextMenu {
                     return false;
                 }
 
-                // Prevent submenu from failing to expand on mobile
-                if (!("items" in item && item.items)) {
+                // A submenu's parent stays open so that it can still be expanded. One carrying a
+                // command or handler of its own is dismissed like any other item once it has run.
+                const opensSubmenu = "items" in item && !!item.items;
+                const acts = ("handler" in item && !!item.handler)
+                    || ("command" in item && !!item.command);
+                if (!opensSubmenu || acts) {
                     this.hide();
                 }
 

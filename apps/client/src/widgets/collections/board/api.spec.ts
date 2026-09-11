@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../../components/app_context";
 import FAttribute from "../../../entities/fattribute";
@@ -1883,6 +1883,62 @@ describe("renaming a column that names itself", () => {
     });
 });
 
+describe("renaming a column to a name already taken", () => {
+    /**
+     * A column is identified by the name its cards carry, so writing another column's name over it
+     * would merge the two. The rename is refused and reported instead.
+     */
+    it("refuses the rename, says so and leaves both columns alone", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] }, [ "To Do", "Done" ]);
+        const put = vi.spyOn(server, "put").mockResolvedValue(undefined);
+        const message = vi.spyOn(toast, "showMessage").mockReturnValue(undefined);
+
+        expect(await api.setColumnTitle("To Do", "Done")).toBe(false);
+
+        expect(message).toHaveBeenCalledWith(
+            "board_view.column-name-taken", undefined, "bx bx-duplicate");
+        expect(put).not.toHaveBeenCalled();
+        expect(saved).toEqual([]);
+    });
+
+    /**
+     * The name a column is known by, not only the value its cards carry: the inbox has no value
+     * and is named by `displayName`, so a second column under that name reads as a duplicate.
+     */
+    it("counts a column with no cards yet, and the name the inbox goes by", async () => {
+        const { api, saved } = createApi(
+            {
+                columns: [
+                    { value: "", displayName: "Unsorted" },
+                    { value: "To Do" },
+                    { value: "Done" }
+                ]
+            },
+            // "Done" is stored but holds no cards, so the board does not derive it.
+            [ "", "To Do" ]
+        );
+        vi.spyOn(server, "put").mockResolvedValue(undefined);
+        vi.spyOn(toast, "showMessage").mockReturnValue(undefined);
+
+        expect(await api.setColumnTitle("To Do", "Done")).toBe(false);
+        expect(await api.setColumnTitle("To Do", "Unsorted")).toBe(false);
+        expect(await api.setColumnTitle("", "Done")).toBe(false);
+        expect(saved).toEqual([]);
+    });
+
+    it("takes a free name, and a column keeping the one it has", async () => {
+        const { api } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] }, [ "To Do", "Done" ]);
+        const put = vi.spyOn(server, "put").mockResolvedValue(undefined);
+
+        await api.setColumnTitle("To Do", "Doing");
+        await api.setColumnTitle("Done", "Done");
+
+        expect(put).toHaveBeenCalledTimes(2);
+    });
+});
+
 describe("filing a card under the inbox", () => {
     /**
      * Landing in the inbox means carrying no value at all. A relation the card takes from elsewhere
@@ -2382,5 +2438,107 @@ describe("a selection of cards", () => {
             { type: "label", name: "status", value: "Done", isInheritable: false }, undefined);
         expect(branches.moveBeforeBranch).not.toHaveBeenCalled();
         expect(branches.moveAfterBranch).not.toHaveBeenCalled();
+    });
+});
+
+describe("how wide the board draws its columns", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("reads the label, falling back to the default for a width it does not offer", () => {
+        const width = (label?: string) => createApi(
+            {}, [], buildNote(label ? { title: "Board", "#boardCardWidth": label }
+                : { title: "Board" })).api.columnWidth;
+
+        expect(width()).toBe("narrow");
+        expect(width("medium")).toBe("medium");
+        expect(width("wide")).toBe("wide");
+        expect(width("enormous")).toBe("narrow");
+    });
+
+    it("writes the label for a width other than the default", async () => {
+        const board = buildNote({ title: "Board" });
+        const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
+        const { api } = createApi({}, [], board);
+
+        await api.setColumnWidth("wide");
+
+        expect(setLabel).toHaveBeenCalledWith(board.noteId, "boardCardWidth", "wide");
+    });
+
+    /** Kept tidy: a board drawn at the default width carries no label for it at all. */
+    it("takes the label off for the default width", async () => {
+        const board = buildNote({ title: "Board", "#boardCardWidth": "wide" });
+        const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
+        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName")
+            .mockResolvedValue(true);
+        const { api } = createApi({}, [], board);
+
+        await api.setColumnWidth("narrow");
+
+        expect(removeLabel).toHaveBeenCalledWith(board, "boardCardWidth");
+        expect(setLabel).not.toHaveBeenCalled();
+    });
+
+    /** Dropping its own label there would hand the board the inherited width straight back. */
+    it("writes the default out where the board inherits another width", async () => {
+        const parent = buildNote({
+            title: "Parent",
+            "#boardCardWidth(inheritable)": "wide",
+            children: [ { title: "Board" } ]
+        });
+        const board = froca.getNoteFromCache(parent.getChildNoteIds()[0]);
+        if (!board) throw new Error("expected the board to be in froca");
+        const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
+        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName")
+            .mockResolvedValue(true);
+        const { api } = createApi({}, [], board);
+
+        expect(api.columnWidth).toBe("wide");
+
+        await api.setColumnWidth("narrow");
+
+        expect(setLabel).toHaveBeenCalledWith(board.noteId, "boardCardWidth", "narrow");
+        expect(removeLabel).not.toHaveBeenCalled();
+    });
+});
+
+describe("the columns as the right pane lists them", () => {
+    it("names each column, gives it its icon and counts the cards it holds", () => {
+        const board = buildNote({ title: "Board" });
+        const cards = new Map([
+            [ "", [ { note: { noteId: "a" } }, { note: { noteId: "b" } } ] ],
+            [ "To Do", [ { note: { noteId: "c" } } ] ]
+        ]) as unknown as ColumnMap;
+        const { api } = createApi(
+            {
+                columns: [
+                    { value: "", displayName: "Unsorted" },
+                    { value: "To Do", icon: "bx bx-star" },
+                    { value: "Done" }
+                ]
+            },
+            [ "", "To Do", "Done" ], board, "status", cards);
+
+        expect(api.getColumnOutline([ "", "To Do", "Done" ])).toEqual([
+            { value: "", title: "Unsorted", icon: "bx bxs-inbox", count: 2 },
+            { value: "To Do", title: "To Do", icon: "bx bx-star", count: 1 },
+            // A column the board draws no cards for still stands, and counts none.
+            { value: "Done", title: "Done", icon: DEFAULT_COLUMN_ICON, count: 0 }
+        ]);
+    });
+
+    /** A relation board keys its columns by note id, which says nothing to a reader on its own. */
+    it("names a relation board's columns by the notes they point at", () => {
+        const target = buildNote({ title: "Alice", "#iconClass": "bx bx-user" });
+        const board = buildNote({ title: "Board" });
+        const { api } = createApi({}, [ "", target.noteId ], board, "~assignee");
+
+        expect(api.getColumnOutline([ "", target.noteId, "missing" ])).toEqual([
+            { value: "", title: "board_view.inbox", icon: "bx bxs-inbox", count: 0 },
+            // The note's own icon, as `FNote` gives it, class and all.
+            { value: target.noteId, title: "Alice", icon: "tn-icon bx bx-user", count: 0 },
+            // A note the cache has not got: the value is all there is to go on.
+            { value: "missing", title: "missing", icon: DEFAULT_COLUMN_ICON, count: 0 }
+        ]);
     });
 });

@@ -1,4 +1,4 @@
-import { IconRegistry } from "@triliumnext/commons";
+import { iconFontFaceOverrides, type IconFontMetrics, IconRegistry } from "@triliumnext/commons";
 
 import type BAttachment from "../becca/entities/battachment";
 import type BNote from "../becca/entities/bnote";
@@ -38,6 +38,12 @@ export interface IconPackManifest {
         glyph: string,
         terms: string[];
     }>;
+    /**
+     * Where the pack draws its glyphs, so that a browser centres them on the box they were drawn in
+     * rather than on the one the font's platform metrics describe. Packs built before this was
+     * measured carry none, and are left to the browser.
+     */
+    metrics?: IconFontMetrics;
 }
 
 export interface ProcessedIconPack {
@@ -174,12 +180,17 @@ export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, pre
         }
 
         const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;
+        const fontFace = [
+            `font-family: '${fontFamily}';`,
+            "font-weight: normal;",
+            "font-style: normal;",
+            `src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');`,
+            ...iconFontFaceOverrides(manifest.metrics)
+        ].join("\n                ");
+
         return `\
             @font-face {
-                font-family: '${fontFamily}';
-                font-weight: normal;
-                font-style: normal;
-                src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');
+                ${fontFace}
             }
 
             .${prefix} {

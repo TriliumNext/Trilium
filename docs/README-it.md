@@ -25,8 +25,8 @@ Trilium Notes è un'applicazione per appunti ad organizzazione gerarchica,
 studiata per la costruzione di archivi di conoscenza personali di grandi
 dimensioni.
 
-Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
-Notes", with one `l`.
+Cerchi "Trillium Notes"? La grafia ufficiale del progetto è "Trilium Notes", con
+una sola `l`.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 

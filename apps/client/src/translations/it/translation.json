@@ -618,10 +618,64 @@
       "move_across": "Muovi alla colonna precedente / successiva",
       "move_to_end_column": "Muovi alla prima / ultima colonna",
       "move_column": "Muovi alla colonna di sinistra / destra",
-      "move_column_to_edge": "Muovi alla colonna all'estrema sinistra / destra"
+      "move_column_to_edge": "Muovi alla colonna all'estrema sinistra / destra",
+      "remove_column": "Elimina colonna (sull'intestazione della colonna selezionata)",
+      "move_within": "Vai all'inizio / alla fine della colonna",
+      "selection": "Selezione",
+      "select_column": "Seleziona tutti gli elementi della colonna",
+      "clear_selection": "Deseleziona tutto"
     },
     "filter-placeholder": "Filtra lavagna...",
-    "sort-manually": "Manualmente"
+    "sort-manually": "Manualmente",
+    "edit-title": "Modifica titolo e icona",
+    "insert-new": "Inserisci nuovo",
+    "move-to-top": "Torna all'inizio",
+    "more-columns": "Altri Stati…",
+    "archive-column": "Colonna Archivio",
+    "unarchive-column": "Colonna \"Rimuovi dall'archivio\"",
+    "archived-badge": "Archiviato",
+    "inbox": "Posta in arrivo",
+    "inherited-column": "Questa scheda riprende la colonna da un modello o da una nota principale, dove è possibile modificarla.",
+    "inbox-nested": "Includi le note annidate",
+    "inbox-remove": "Rimuovi la colonna \"Posta in arrivo\"",
+    "card-count-with-archived_one": "{{count}} elemento attivo, {{archived}} archiviato",
+    "card-count-with-archived_many": "{{count}} elementi attivi, {{archived}} archiviati",
+    "card-count-with-archived_other": "{{count}} elementi attivi, {{archived}} archiviati",
+    "card-count-over-limit": "Il limite di note impostato per questa colonna è stato superato!",
+    "create-at-top": "Crea in alto",
+    "create-at-bottom": "Crea in fondo alla pagina",
+    "create-column-at-start": "Crea una colonna all'inizio",
+    "create-column-at-end": "Crea una colonna alla fine",
+    "existing-item-conflict": "Questa nota fa già parte di un'altra bacheca che raggruppa per “{{label}}”. Aggiungendola qui, verrà spostata anche in una colonna diversa nella bacheca originale. Vuoi aggiungerla comunque?",
+    "collapse-column": "Comprimi colonna",
+    "keep-column-collapsed": "Mantieni la colonna nascosta",
+    "collapse-all-columns": "Comprimi tutte le colonne",
+    "expand-all-columns": "Espandi tutte le colonne",
+    "show-inbox-column": "Mostra la colonna \"Posta in arrivo\"",
+    "show-archived-notes": "Mostra schede/colonne archiviate",
+    "show-archived": "Mostra le schede e le colonne archiviate",
+    "properties": "Proprietà della scheda",
+    "properties-title": "Proprietà della scheda",
+    "card-templates": "Modelli di biglietti",
+    "card-templates-hint": "Scegli quali tipi di note e quali modelli di note desideri utilizzare quando crei nuove schede sulla bacheca.",
+    "promoted-attributes": "Caratteristiche della scheda",
+    "promoted-attributes-hint": "Scegli quali attributi visualizzare sulle schede e trascinali nell'ordine in cui devono apparire.",
+    "new-template-name": "Nuovo modello di scheda",
+    "more-templates": "Altri modelli…",
+    "card-template": "Seleziona un modello di scheda",
+    "collapse-hint": "Fai doppio clic per nascondere",
+    "limit-capacity": "Avviso in caso di superamento della capacità della colonna",
+    "move-column-first": "Come prima colonna",
+    "group-by": "Ordina le schede per",
+    "grouping-already-defined": "\"{{- name}}\" è già definito in questa bacheca. Selezionalo dall'elenco per raggruppare i contenuti in base a questo criterio.",
+    "card-outside-filter": "Questa scheda non rientra nell'ambito di filtraggio attuale",
+    "sort": "Ordina",
+    "default-card-order": "Ordine predefinito delle carte",
+    "default-card-order-description": "Le schede vengono ordinate in ciascuna colonna secondo questo criterio, a meno che non si scelgano opzioni di ordinamento diverse per una colonna specifica.",
+    "sort-board-default": "Inadempienza del consiglio di amministrazione",
+    "reset-column-sorting": "Ripristina le impostazioni predefinite per l'ordinamento di tutte le colonne",
+    "reset-column-sorting-confirm": "Vuoi ripristinare le impostazioni predefinite per le opzioni di ordinamento di tutte le colonne della vista corrente?",
+    "sorted-no-reorder": "Non è possibile riordinare le schede, poiché si tratta di una colonna ordinata."
   },
   "backup": {
     "enable_weekly_backup": "Backup settimanale",
@@ -1284,7 +1338,10 @@
     "template_new_note_default_parent": "Nota relativa all'utilizzo di un modello: le note create a partire dal modello (ad esempio tramite il completamento con @) vengono inserite sotto la nota di destinazione, a meno che non venga esplicitamente scelta un'altra posizione.",
     "ai_quick_action": "Propone questa nota come istruzione nel menu dell'assistente AI dell'editor di testo. Il titolo indica l'azione, il contenuto è il prompt.",
     "custom_font": "Segna i file dei caratteri che sono offerti nel selettore di caratteri nelle opzioni di Trilium, sotto il titolo degli appunti.",
-    "enable_inbox_column": "Per le raccolte delle bacheche, mostra la colonna \"Posta in arrivo\", che elenca tutte le note secondarie non assegnate a una colonna della bacheca."
+    "enable_inbox_column": "Per le raccolte delle bacheche, mostra la colonna \"Posta in arrivo\", che elenca tutte le note secondarie non assegnate a una colonna della bacheca.",
+    "board_card_redirect_to": "Su una scheda del tabellone, aprendo la scheda si passa direttamente alla nota a cui questa rimanda, invece di aprire la scheda stessa.",
+    "sort_columns": "Per le collezioni di bacheche, l'ordine in cui le colonne ordinano le schede; tale ordine viene seguito da una colonna a meno che non le venga assegnato un ordine specifico. Contiene <code>titolo</code>, <code>data di creazione</code> o <code>attr:</code> seguito dal nome di un attributo promosso.",
+    "sort_columns_descending": "Per le raccolte di schede, esegue l'ordine in <code>#sortColumns</code> in ordine inverso."
   },
   "attribute_editor": {
     "help_text_body1": "Per aggiungere un'etichetta, basta digitare ad esempio <code>#rock</code> oppure, se si desidera aggiungere anche un valore, ad esempio <code>#year = 2020</code>",
@@ -1782,7 +1839,9 @@
     "delete_attribute": "Elimina questo attributo",
     "delete_confirmation": "Eliminare <strong>{{name}}</strong> e i suoi valori da tutte le note in questa collezione? Quest'operazione non può essere annullata.",
     "shown_on_items": "Mostra sugli oggetti",
-    "hidden_from_items": "Nascosto dagli oggetti"
+    "hidden_from_items": "Nascosto dagli oggetti",
+    "label_name": "Etichetta: {{name}}",
+    "relation_name": "Relazione: {{name}}"
   },
   "script_executor": {
     "query": "Domanda",
@@ -2503,7 +2562,8 @@
     "open_note_in_new_split": "Apri nota in una nuova divisione",
     "open_note_in_new_window": "Apri la nota in una nuova finestra",
     "open_note_in_popup": "Modifica rapida",
-    "open_note_in_other_split": "Apri nota nell'altra divisione"
+    "open_note_in_other_split": "Apri nota nell'altra divisione",
+    "open_note": "Nota aperta"
   },
   "help-button": {
     "title": "Apri la pagina di aiuto pertinente"
@@ -2590,7 +2650,8 @@
     "cluster-markers": "Raggruppa i marcatori vicini",
     "presentation-theme": "Tema",
     "board-inbox-column": "Mostra la colonna \"Posta in arrivo\"",
-    "board-inbox-column-help": "Mostra la colonna \"Posta in arrivo\", che elenca le note secondarie non assegnate a nessuna colonna."
+    "board-inbox-column-help": "Mostra la colonna \"Posta in arrivo\", che elenca le note secondarie non assegnate a nessuna colonna.",
+    "vector_auto": "Vector (Auto)"
   },
   "table_context_menu": {
     "delete_row": "Elimina riga"
@@ -2708,7 +2769,9 @@
   },
   "server": {
     "unknown_http_error_title": "Errore di comunicazione con il server",
-    "unknown_http_error_content": "Codice di stato: {{statusCode}}\nURL: {{method}} {{url}}\nMessaggio: {{message}}"
+    "unknown_http_error_content": "Codice di stato: {{statusCode}}\nURL: {{method}} {{url}}\nMessaggio: {{message}}",
+    "reverse_proxy_blocked_title": "Richieste bloccate da un proxy inverso",
+    "reverse_proxy_blocked_message": "Alcune richieste sono state respinte (HTTP 400) prima di raggiungere Trilium, molto probabilmente da un proxy inverso che blocca i caratteri codificati in formato percentuale negli URL.\n\nLe versioni di Traefik dalla 3.6.4 alla 3.6.6 si comportano così per impostazione predefinita: esegui l'aggiornamento a Traefik 3.6.7 o versioni successive, oppure consenti l'uso di caratteri codificati nella configurazione."
   },
   "tab_history_navigation_buttons": {
     "go-back": "Torna alla nota precedente",
@@ -2741,7 +2804,8 @@
     "save_status_error_tooltip": "Si è verificato un errore durante il salvataggio della nota. Se possibile, prova a copiare il contenuto della nota altrove e a ricaricare l'applicazione.",
     "doc_url": "Documentazione online",
     "doc_url_description": "Clicca qui per visualizzare questa pagina sul sito web della documentazione online.",
-    "office_preview": "Anteprima"
+    "office_preview": "Anteprima",
+    "office_preview_description": "Questo documento viene visualizzato come anteprima in sola lettura, pertanto non è possibile modificarlo qui.\n\nPer modificarlo, scarica il file, modificalo in un'applicazione esterna e ricaricalo come nuova revisione."
   },
   "breadcrumb": {
     "workspace_badge": "Area di lavoro",
@@ -2791,7 +2855,8 @@
     "tab_width_style_tabs": "Schede"
   },
   "attributes_panel": {
-    "title": "Attributi delle note"
+    "title": "Attributi delle note",
+    "edit_in_sidebar": "Modifica nella barra laterale"
   },
   "right_pane": {
     "empty_message": "Nulla da segnalare per questa nota",
@@ -2824,7 +2889,10 @@
     "annotations_one": "{{count}} annotazione",
     "annotations_many": "{{count}} annotazioni",
     "annotations_other": "{{count}} annotazioni",
-    "annotation_drawing": "Disegnare sulla pagina {{pageNumber}}"
+    "annotation_drawing": "Disegnare sulla pagina {{pageNumber}}",
+    "annotation_highlight": "In evidenza a pagina {{pageNumber}}",
+    "annotation_note": "Nota alla pagina {{pageNumber}}",
+    "annotation_text_box": "Casella di testo alla pagina {{pageNumber}}"
   },
   "web_view_setup": {
     "title": "Crea una visualizzazione live di una pagina web direttamente in Trilium",
@@ -3136,7 +3204,11 @@
     "mcp_config_description": "Crea un token in Opzioni → ETAPI, quindi aggiungi quanto segue alla configurazione MCP del tuo assistente, sostituendo il segnaposto con il tuo token:",
     "mcp_config_token_placeholder": "il tuo token etapi",
     "mcp_config_cli_description": "Claude Code può essere configurato anche dalla riga di comando:",
-    "mcp_config_warning": "Un token garantisce l'accesso completo in lettura e scrittura a tutte le tue note, quindi trattalo come una password. Se ti connetti da un altro dispositivo, è preferibile utilizzare HTTPS: un token inviato tramite HTTP non crittografato può essere intercettato."
+    "mcp_config_warning": "Un token garantisce l'accesso completo in lettura e scrittura a tutte le tue note, quindi trattalo come una password. Se ti connetti da un altro dispositivo, è preferibile utilizzare HTTPS: un token inviato tramite HTTP non crittografato può essere intercettato.",
+    "enabled": "Funzionalità di intelligenza artificiale",
+    "enabled_description": "Aggiunge la barra laterale della chat con IA e le note della chat LLM, utilizzando i provider configurati di seguito.",
+    "provider_desc_copilot_agent": "È necessaria la CLI di GitHub Copilot sul computer su cui è in esecuzione Trilium.",
+    "copilot_agent_description": "Utilizza l'abbonamento a GitHub Copilot tramite la CLI di GitHub Copilot, quindi non è necessaria alcuna chiave API. La CLI di Copilot deve essere installata sul computer su cui è in esecuzione Trilium (il server in caso di self-hosting, oppure questo computer in ambiente desktop); effettuare l'accesso una sola volta eseguendo il comando \"copilot login\" su quel computer: l'accesso a Copilot già esistente da un altro editor verrà riutilizzato automaticamente."
   },
   "ocr": {
     "extracted_text": "Testo estratto (OCR)",
@@ -3368,7 +3440,9 @@
   },
   "common": {
     "save": "Salva",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "fullscreen": "A schermo intero",
+    "exit_fullscreen": "Esci dalla modalità a schermo intero"
   },
   "spreadsheet": {
     "read-only": "Questa nota è di sola lettura.",
@@ -3543,7 +3617,25 @@
       "turn-the-current-block-into-a-heading": "Trasforma il blocco corrente in un'intestazione.",
       "turn-the-current-block-into-a-paragraph": "Trasforma il blocco di testo attuale in un paragrafo.",
       "url": "URL",
-      "warning": "Avvertimento"
+      "warning": "Avvertimento",
+      "ai-0": "AI: %0",
+      "ai-assistant": "Assistente AI",
+      "applies-to-the-current-paragraph": "Si applica al paragrafo corrente.",
+      "ask-ai": "Chiedi all'IA…",
+      "ask-ai-to": "Chiedi all'IA di…",
+      "ask-ai-to-rewrite-the-selection-or-generate-new-content": "Chiedi all'IA di riscrivere la selezione o di generare nuovo contenuto.",
+      "changes": "Modifiche",
+      "describe-a-change-then-press-enter": "Descrivi una modifica, quindi premi Invio",
+      "insert-below": "Inserisci qui sotto",
+      "looks-good-already-nothing-to-change": "Sembra già a posto - non c'è nulla da cambiare.",
+      "result": "Risultato",
+      "send": "Invia",
+      "stop": "Stop",
+      "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "Il file è troppo grande per essere caricato (HTTP 413). Se Trilium si trova dietro un proxy inverso, aumentare il limite di dimensione del corpo della richiesta.",
+      "the-server-responded-with-http-0": "Il server ha risposto con HTTP %0.",
+      "tokens": "tokens",
+      "try-again": "Prova ancora",
+      "working": "In corso…"
     },
     "task-state-dropped-title": "Stati di attività non validi",
     "task-state-dropped-message_one": "La definizione dello stato di un'attività personalizzata non è valida ed è stata ignorata.",
@@ -4195,9 +4287,27 @@
     "command_action_items": "Estrai le azioni da intraprendere",
     "command_translate": "Traduci in {{language}}",
     "action_fix_typos": "Correggere gli errori di battitura",
-    "tone_casual": "Casual",
+    "tone_casual": "Casuale",
     "reformat_callout": "Nota esplicativa",
     "reformat_collapsible": "Pieghevole",
     "reformat_action_items": "Azioni da intraprendere"
+  },
+  "attribute_menu": {
+    "attributes": "Attributi",
+    "not-set": "Non impostato"
+  },
+  "collection_filter": {
+    "placeholder": "Filtra...",
+    "clear": "Svuota il filtro",
+    "fetch-error": "Non è stato possibile eseguire il filtro.",
+    "submit": "Applica il filtro"
+  },
+  "sorting": {
+    "default": "Default",
+    "none": "Nessuno",
+    "title": "Titolo",
+    "creation-date": "Data & ora di creazione",
+    "ascending": "In ordine crescente",
+    "descending": "In ordine discendente"
   }
 }

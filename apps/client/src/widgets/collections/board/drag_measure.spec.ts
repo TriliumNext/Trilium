@@ -35,6 +35,12 @@ function buildBoard({ scrollLeft = 200, areaScrollTop = 20, cardCounts = [ 2, 1 
         // On screen the columns have already been scrolled 200px to the left.
         place(column, { left: 50 + index * 120 - scrollLeft, top: 0, width: 100, height: 400 });
 
+        // The column is padded, so neither its heading nor the button at its foot is flush with
+        // it: the two ends are read from those rather than from the column's own box.
+        const heading = document.createElement("h3");
+        column.appendChild(heading);
+        place(heading, { left: 0, top: 8, width: 100, height: 40 });
+
         const area = document.createElement("div");
         area.className = "board-column-content";
         column.appendChild(area);
@@ -55,6 +61,13 @@ function buildBoard({ scrollLeft = 200, areaScrollTop = 20, cardCounts = [ 2, 1 
                 height: 50
             });
         }
+    }
+
+    for (const column of container.querySelectorAll<HTMLElement>(".board-column")) {
+        const adder = document.createElement("div");
+        adder.className = "board-new-item";
+        column.appendChild(adder);
+        place(adder, { left: 0, top: 352, width: 100, height: 40 });
     }
 
     return container;
@@ -392,5 +405,41 @@ describe("measuring a windowed column", () => {
         const [ column ] = measureBoard(board).columns;
 
         expect(column.cards).toHaveLength(60);
+    });
+});
+
+describe("what a column offers a card carried past it", () => {
+    it("reads the two ends from the heading and the button at the foot", () => {
+        const [ first ] = measureBoard(buildBoard()).columns;
+
+        // The column's own box runs 0 to 400; these are its heading and its button.
+        expect(first.headStart).toBe(8);
+        expect(first.footEnd).toBe(392);
+        expect(first.sorted).toBe(false);
+    });
+
+    it("reads a column that orders its own cards off the column itself", () => {
+        const board = buildBoard();
+        board.querySelectorAll<HTMLElement>(".board-column")[1].dataset.sorted = "true";
+
+        expect(measureBoard(board).columns.map((column) => column.sorted)).toEqual([ false, true ]);
+    });
+});
+
+describe("what the reader sees of the board", () => {
+    it("is the note list holding it, and the board itself where it stands outside one", () => {
+        const board = buildBoard();
+
+        expect(measureBoard(board).viewport).toEqual({ top: 0, bottom: 400 });
+
+        // The note list is what scrolls and clips, so a board inside one is seen through it.
+        const list = document.createElement("div");
+        list.className = "note-list-widget-content";
+        document.body.appendChild(list);
+        place(list, { left: 0, top: 100, width: 600, height: 250 });
+        list.appendChild(board);
+
+        expect(measureBoard(board).viewport).toEqual({ top: 100, bottom: 350 });
+        list.remove();
     });
 });

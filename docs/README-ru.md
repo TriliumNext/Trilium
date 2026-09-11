@@ -24,8 +24,8 @@ LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
 Trilium Notes – это приложение для заметок с иерархической структурой,
 ориентированное на создание больших персональных баз знаний.
 
-Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
-Notes", with one `l`.
+Ищете "Trillium Notes"? Каноническое написание названия проекта — "Trilium
+Notes", с одной буквой `l`.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 

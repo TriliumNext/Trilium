@@ -80,12 +80,14 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     readOnlyCode: {
         view: async () => (await import("./type_widgets/code/Code")).ReadOnlyCode,
         className: "note-detail-readonly-code",
-        printable: true
+        printable: true,
+        isFullHeight: true
     },
     editableCode: {
         view: async () => (await import("./type_widgets/code/Code")).EditableCode,
         className: "note-detail-code",
-        printable: true
+        printable: true,
+        isFullHeight: true
     },
     mermaid: {
         view: () => import("./type_widgets/mermaid/Mermaid"),

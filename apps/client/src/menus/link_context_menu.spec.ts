@@ -92,7 +92,11 @@ describe("getItems", () => {
     it("folds the three places into one submenu, quick edit standing on its own", () => {
         const open = linkContextMenu.getOpenNoteItem(contextMenuEvent());
 
-        expect(open).toMatchObject({ title: "link_context_menu.open_note" });
+        // The entry acts as well as folding: picking it opens the note where it is opened most.
+        expect(open).toMatchObject({
+            title: "link_context_menu.open_note",
+            command: "openNoteInNewTab"
+        });
         expect("items" in open && open.items?.map((item) => "command" in item && item.command))
             .toEqual([ "openNoteInNewTab", "openNoteInNewSplit", "openNoteInNewWindow" ]);
         expect(linkContextMenu.getQuickEditItem()).toMatchObject({

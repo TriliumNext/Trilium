@@ -1,6 +1,6 @@
 # See the comment in Dockerfile: better-sqlite3 v13 ships N-API prebuilds, so
 # there is no native compile step and no builder stage, and the Linux prebuilds
-# need trixie's glibc rather than bullseye's.
+# need trixie's glibc rather than bookworm's.
 FROM node:24.20.0-trixie-slim
 # Create a non-root user with configurable UID/GID
 ARG USER=trilium

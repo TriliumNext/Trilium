@@ -43,6 +43,12 @@
             "enabled": false
         },
         {
+            "description": "pnpm 12 ships native binaries instead of a JS implementation and publishes none for 32-bit ARM, which Dockerfile.legacy builds for. The last release that runs anywhere Node does is 11.x",
+            "matchFileNames": ["apps/server/docker/package.json"],
+            "matchPackageNames": ["pnpm"],
+            "allowedVersions": "<12"
+        },
+        {
             "matchPackageNames": ["@fsegurai/codemirror-theme-**", "@catppuccin/codemirror"],
             "groupName": "codemirror themes"
         },

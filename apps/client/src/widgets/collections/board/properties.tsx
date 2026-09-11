@@ -5,9 +5,11 @@ import { useCallback } from "preact/hooks";
 import type FNote from "../../../entities/fnote";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
+import { isMobile } from "../../../services/utils";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
+import FormSelect from "../../react/FormSelect";
 import FormToggle from "../../react/FormToggle";
-import { useNoteLabelBoolean } from "../../react/hooks";
+import { useNoteLabelBoolean, useNoteLabelWithDefault } from "../../react/hooks";
 import Modal from "../../react/Modal";
 import PromotedAttributesCard from "../../react/PromotedAttributesCard";
 import TemplateSelectionCard from "../../react/TemplateSelectionCard";
@@ -15,6 +17,7 @@ import type { PromotedAttribute } from "../promoted_attributes";
 import SortDropdown from "../SortDropdown";
 import { parseSortKey } from "../sorting";
 import BoardApi from "./api";
+import { COLUMN_WIDTH_LABEL, DEFAULT_COLUMN_WIDTH, parseColumnWidth } from "./columns";
 import { useBoardSort } from "./sort";
 
 /** The board's settings, other than its columns and cards. */
@@ -66,6 +69,8 @@ export default function BoardProperties({ api, note, shown, onClose }: {
 function General({ api, note }: { api: BoardApi, note: FNote }) {
     const [ inboxShown ] = useNoteLabelBoolean(note, "enableInboxColumn");
     const [ archivedShown ] = useNoteLabelBoolean(note, "includeArchived");
+    const [ columnWidth ] =
+        useNoteLabelWithDefault(note, COLUMN_WIDTH_LABEL, DEFAULT_COLUMN_WIDTH);
     const defaultSort = useBoardSort(note);
     // Every column at once, and a column's own order is not kept anywhere else: the reader is asked
     // before it goes.
@@ -97,6 +102,27 @@ function General({ api, note }: { api: BoardApi, note: FNote }) {
                     onChange={(shown) => api.setArchivedShown(shown)}
                 />
             </OptionCardSection>
+
+            {/* `body.mobile` in index.css fixes the column width against the viewport, which is
+                what the three widths here would otherwise set. */}
+            {!isMobile() && (
+                <OptionCardSection
+                    name="board-column-width"
+                    label={t("board_view.column-width")}
+                >
+                    <FormSelect
+                        values={[
+                            { value: "narrow", title: t("board_view.column-width-narrow") },
+                            { value: "medium", title: t("board_view.column-width-medium") },
+                            { value: "wide", title: t("board_view.column-width-wide") }
+                        ]}
+                        keyProperty="value"
+                        titleProperty="title"
+                        currentValue={parseColumnWidth(columnWidth)}
+                        onChange={(width) => api.setColumnWidth(parseColumnWidth(width))}
+                    />
+                </OptionCardSection>
+            )}
 
             <OptionCardSection
                 name="board-sort-cards"

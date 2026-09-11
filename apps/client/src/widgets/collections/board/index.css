@@ -16,7 +16,12 @@
   /* Matches the height a normal header takes, so a collapsed column reads as one turned on
      its side. */
   --board-collapsed-column-width: 2.25em;
-  --board-column-width: 275px;
+  /* The three widths the board properties offer, and the one in use. Each is its own variable so
+     a theme can change one width without taking over which of them a board picks. */
+  --board-column-width-narrow: 275px;
+  --board-column-width-medium: 325px;
+  --board-column-width-wide: 400px;
+  --board-column-width: var(--board-column-width-narrow);
   --board-column-border-width: 2px;
   --board-collapse-duration: 1s;
   --board-collapse-duration-quick: 0.3s;
@@ -27,12 +32,21 @@
   --board-item-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
   /* What a carried card casts, which the stack of a carried selection is drawn behind. */
   --board-drag-shadow: 4px 8px 16px rgba(0, 0, 0, 0.5);
+  /* What a carried copy is drawn at, and what it fades to once it stands against the board's
+     edge with only a sliver of itself in view. */
+  --board-drag-opacity: 0.85;
+  --board-drag-opacity-faded: 0.4;
   /* How far each card of a carried stack stands out from the one in front of it. */
   --board-drag-stack-offset: 4px;
   /* The ring a carried card wears, which the stack behind it starts clear of. */
   --board-drag-ring-width: 3px;
   /* The ring a picked-out card carries. */
   --board-selected-ring-color: var(--link-color);
+  /* The overlay on a carried card while it would drop at one end of a column, painted in the hue
+     the card itself is. */
+  --board-drop-hint-background-saturation: 35%;
+  --board-drop-hint-background-lightness: 25%;
+  --board-drop-hint-color: #ffffff;
   /* Dims the board while a card is being named. Kept light: it draws the eye to the field rather
      than hiding what is behind it. */
   --board-edit-backdrop: rgba(0, 0, 0, 0.15);
@@ -110,6 +124,30 @@ body.mobile .board-view-container.board-dragging {
   scroll-behavior: auto;
 }
 
+/* While something is carried, everything the pointer crosses says so: the copy following it is out
+   of hit testing, so the cursor comes from whatever lies beneath. It outweighs the cursors the
+   heading, the cards and the buttons set for themselves, and the class goes on once a gesture
+   rather than once a step, which is what makes a rule reaching this far affordable. */
+.board-view-container.board-dragging,
+.board-view-container.board-dragging * {
+  cursor: grabbing !important;
+}
+
+/* Set from `#boardCardWidth`, and only while the board carries it: without one of these classes
+   `--board-column-width` keeps the value it inherits, which a theme can set. The columns and
+   everything measured against them read the width off that one variable. */
+.board-view.board-narrow-columns {
+  --board-column-width: var(--board-column-width-narrow);
+}
+
+.board-view.board-medium-columns {
+  --board-column-width: var(--board-column-width-medium);
+}
+
+.board-view.board-wide-columns {
+  --board-column-width: var(--board-column-width-wide);
+}
+
 .board-view-container .board-column {
   width: var(--board-column-width);
   flex-shrink: 0;
@@ -147,7 +185,6 @@ body.mobile .board-view-container .board-add-column {
 
 .board-view-container .board-column.drag-over {
   border-color: var(--main-text-color);
-  background-color: var(--hover-item-background-color);
 }
 
 .board-view-container .board-column h3 {
@@ -181,8 +218,11 @@ body.mobile .board-view-container .board-add-column {
 
 .board-view-container .board-column h3 > .column-icon {
   /* Sized down from the note header's button, whose scale suits a toolbar rather than a heading. */
-  --note-icon-size: 1.15em;
-  --note-icon-container-padding-size: 0.15em;
+  --note-icon-size: 1em;
+  /* In pixels, as everywhere else the ring is set: it has to be whole for the glyph to sit centred
+     in the disc, and the glyph alone follows the heading's font. The two together give the disc
+     its width. */
+  --note-icon-container-padding-size: 5px;
 
   flex-shrink: 0;
   margin-inline-end: 0.4em;
@@ -416,15 +456,19 @@ body.mobile .board-view-container .board-add-column {
 
 /*
  * The title and the icon before it, which stand where the editor's field and picker do: the icon at
- * `--card-icon-inset` from the card's edge and centred on the first line, the title at
- * `--card-title-inset` with the lines below it kept off the icon, as the field's own padding keeps
- * them.
+ * `--card-icon-inset` from the card's edge, the title at `--card-title-inset` with the lines below
+ * it kept off the icon, as the field's own padding keeps them.
+ *
+ * A hanging indent rather than two boxes beside each other: the icon shares the first line's box,
+ * so it and the title rest on one baseline and rasterise on the same pixel row. Laid out as boxes
+ * of their own they round to the grid apart, which put the icon a pixel off on some cards.
  *
  * The card's padding is already in front of both, so each is drawn back by it.
  */
 .board-view-container .board-note > .title {
-  display: flex;
-  align-items: flex-start;
+  display: block;
+  padding-inline-start: calc(var(--card-title-inset) - var(--card-padding));
+  text-indent: calc(var(--card-icon-inset) - var(--card-title-inset));
 
   /* The spans mark.js wraps a filter's matched tokens in. Matches the search result cards. */
   .ck-find-result {
@@ -441,16 +485,16 @@ body.mobile .board-view-container .board-add-column {
   text-decoration: underline;
 }
 
+/* Inline, so the glyph sits on the title's own baseline. The trailing space assumes the pack draws
+   its icons on a `--card-icon-size` advance, as the layout above already did. */
 .board-view-container .board-note > .title > .icon {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--card-icon-size);
-  height: calc(var(--card-line-height) * 1em);
-  margin-inline-start: calc(var(--card-icon-inset) - var(--card-padding));
+  display: inline;
   margin-inline-end: calc(
     var(--card-title-inset) - var(--card-icon-inset) - var(--card-icon-size));
+  /* A pack centres its ink on the em box, which sits above the middle of the title's capitals. In
+     whole pixels, so the glyph keeps a fixed relation to the row the line is drawn on. */
+  vertical-align: -1px;
+  vertical-align: round(-0.0555em, 1px);
 }
 
 .board-view-container .board-note > .edit-icon {
@@ -555,9 +599,53 @@ body.mobile .board-view-container .board-add-column {
   will-change: transform;
   z-index: 1000;
   pointer-events: none;
-  cursor: move;
-  opacity: 0.85;
+  opacity: var(--board-drag-opacity);
   box-shadow: var(--board-drag-shadow);
+}
+
+/* Opaque rather than tinted: while it is up, the message replaces the card's own content. */
+.board-view-container .board-drag-preview .board-drop-hint {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  padding: var(--card-padding);
+  /* No saturation until `hint-tinted` sets it, so an unnamed hue paints grey rather than red. */
+  background-color: hsl(
+    var(--board-drop-hint-hue, 0),
+    0%,
+    var(--board-drop-hint-background-lightness)
+  );
+  text-align: center;
+  font-weight: 600;
+  color: var(--board-drop-hint-color);
+  transition: background-color 250ms ease, color 250ms ease;
+}
+
+/* The card's own hue, or the hue of the column it is held over. */
+.board-view-container .board-drag-preview.hint-tinted .board-drop-hint {
+  background-color: hsl(
+    var(--board-drop-hint-hue),
+    var(--board-drop-hint-background-saturation),
+    var(--board-drop-hint-background-lightness)
+  );
+}
+
+/* No focus ring while the overlay is up: it would outline the overlay rather than the card. The
+   opacity follows `--board-drag-visible`, 1 while the copy is in view and 0 against the edge. */
+.board-view-container .board-drag-preview.showing-drop-hint {
+  outline: none;
+  opacity: calc(
+    var(--board-drag-opacity-faded)
+    + (var(--board-drag-opacity) - var(--board-drag-opacity-faded))
+      * var(--board-drag-visible, 1)
+  );
+}
+
+.board-view-container .board-drag-preview.showing-drop-hint .board-drop-hint {
+  display: flex;
 }
 
 /* What a carried selection is drawn as: one card-shaped block holding how many are on the move. */

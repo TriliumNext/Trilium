@@ -62,6 +62,8 @@ describe("Board properties", () => {
     let labels: Record<string, string>;
     /** What the board was asked to do with the order it holds. */
     let sorting: string[];
+    /** The widths the board was asked to draw its columns at. */
+    let widths: string[];
     /** Draws the dialog again, for a test that changed what the board says. */
     let draw: () => void;
 
@@ -70,6 +72,7 @@ describe("Board properties", () => {
         storedAttributes = [];
         toggled = [];
         sorting = [];
+        widths = [];
         labels = { includeArchived: "true" };
         container = document.createElement("div");
         document.body.appendChild(container);
@@ -102,7 +105,8 @@ describe("Board properties", () => {
             setDefaultSortDirection: async (isDescending: boolean) => {
                 sorting.push(`descending:${isDescending}`);
             },
-            resetColumnSortsToDefault: async () => { sorting.push("reset"); }
+            resetColumnSortsToDefault: async () => { sorting.push("reset"); },
+            setColumnWidth: async (width: string) => { widths.push(width); }
         } as unknown as BoardApi;
 
         draw = () => act(() => {
@@ -154,7 +158,7 @@ describe("Board properties", () => {
             const rows = general()
                 ?.querySelectorAll(".tn-card-section:not(.tn-card-section-nested)") ?? [];
 
-            expect(rows.length).toBe(3);
+            expect(rows.length).toBe(4);
             expect(toggleAt(0)?.classList.contains("on")).toBe(false);
             expect(toggleAt(1)?.classList.contains("on")).toBe(true);
         });
@@ -214,6 +218,44 @@ describe("Board properties", () => {
 
         function resetLink() {
             return general()?.querySelector<HTMLElement>(".board-sort-reset");
+        }
+    });
+
+    describe("how wide it draws its columns", () => {
+        it("offers the three widths the board knows", () => {
+            // happy-dom does not follow which option Preact marks as selected, so what the board
+            // holds is covered by `parseColumnWidth` and the api instead.
+            expect([ ...(picker()?.options ?? []) ].map((option) => option.textContent)).toEqual([
+                "board_view.column-width-narrow",
+                "board_view.column-width-medium",
+                "board_view.column-width-wide"
+            ]);
+        });
+
+        it("asks the board for the width that was picked", () => {
+            const select = picker();
+            if (!select) throw new Error("expected a width picker on the board properties");
+
+            act(() => {
+                select.value = "medium";
+                select.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+
+            expect(widths).toEqual([ "medium" ]);
+        });
+
+        /** A phone lays the columns out at a width of its own, so there is nothing to pick. */
+        it("is left out on mobile", () => {
+            window.glob.device = "mobile";
+            act(() => { render(null, container); });
+            draw();
+
+            expect(picker()).toBeFalsy();
+            window.glob.device = "desktop";
+        });
+
+        function picker() {
+            return general()?.querySelector<HTMLSelectElement>("select");
         }
     });
 

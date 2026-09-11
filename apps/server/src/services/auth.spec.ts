@@ -493,7 +493,7 @@ describe("Auth", () => {
         it("does not consume a recovery code when the password is wrong", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(false as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
-            const validateSpy = vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            const validateSpy = vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(true);
 
             expect(await verifyLoginCredentials("wrong-password", RECOVERY_CODE)).toBe("password");
@@ -508,7 +508,7 @@ describe("Auth", () => {
         it("returns null for a correct password when TOTP is disabled", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
-            const validateSpy = vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            const validateSpy = vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
 
             expect(await verifyLoginCredentials("correct", "")).toBeNull();
             // With TOTP disabled the second factor is skipped entirely.
@@ -518,7 +518,7 @@ describe("Auth", () => {
         it("returns null for a correct password with a valid TOTP token, without touching recovery codes", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
-            vi.spyOn(totp, "validateTOTP").mockReturnValue(true);
+            vi.spyOn(totp, "verifyTOTP").mockReturnValue(true);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
 
             expect(await verifyLoginCredentials("correct", "123456")).toBeNull();
@@ -529,7 +529,7 @@ describe("Auth", () => {
         it("consumes a recovery code only after the password is verified", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
-            vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(true);
 
             expect(await verifyLoginCredentials("correct", RECOVERY_CODE)).toBeNull();
@@ -539,7 +539,7 @@ describe("Auth", () => {
         it("rejects a correct password paired with an invalid second factor", async () => {
             vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
-            vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            vi.spyOn(totp, "verifyTOTP").mockReturnValue(false);
             vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
 
             expect(await verifyLoginCredentials("correct", "000000")).toBe("totp");

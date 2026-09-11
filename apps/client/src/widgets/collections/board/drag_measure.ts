@@ -7,6 +7,12 @@ export interface BoardMeasurement {
     columns: ColumnBox[];
     /** Each column's card area, which a point has to be read against to place a card in it. */
     areas: Map<string, HTMLElement>;
+    /**
+     * What the reader sees of the board, down the page: the box of the note list holding it, or
+     * the board itself where it stands outside one. The copy being carried is clipped to this
+     * rather than to the window, so it is what says how much of the copy can be seen.
+     */
+    viewport: { top: number, bottom: number };
 }
 
 /**
@@ -20,7 +26,10 @@ export interface BoardMeasurement {
  * pass over the whole board that nothing goes on to look at.
  */
 export function measureBoard(container: HTMLElement, withCards = true): BoardMeasurement {
-    const origin = container.getBoundingClientRect().left - container.scrollLeft;
+    const box = container.getBoundingClientRect();
+    const origin = box.left - container.scrollLeft;
+    const clipped = (container.closest<HTMLElement>(".note-list-widget-content") ?? container)
+        .getBoundingClientRect();
     const columns: ColumnBox[] = [];
     const areas = new Map<string, HTMLElement>();
 
@@ -41,18 +50,31 @@ export function measureBoard(container: HTMLElement, withCards = true): BoardMea
             areas.set(value, area);
         }
 
+        const heading = element.querySelector<HTMLElement>(":scope > h3");
+        const adder = element.querySelector<HTMLElement>(":scope > .board-new-item");
+
+        const cards = withCards ? measureCards(area) : [];
+        const stated = Number(element.dataset.count);
+
         columns.push({
             value,
             left: rect.left - origin,
             width: rect.width,
             top: rect.top,
             height: rect.height,
+            headStart: heading?.getBoundingClientRect().top ?? rect.top,
+            footEnd: adder?.getBoundingClientRect().bottom ?? rect.bottom,
+            sorted: element.dataset.sorted === "true",
+            hue: element.classList.contains("with-hue")
+                ? element.style.getPropertyValue("--board-column-custom-hue")
+                : undefined,
             origin: withCards ? contentOrigin(area) : 0,
-            cards: withCards ? measureCards(area) : []
+            cards,
+            count: Number.isFinite(stated) ? stated : cards.length
         });
     }
 
-    return { columns, areas };
+    return { columns, areas, viewport: { top: clipped.top, bottom: clipped.bottom } };
 }
 
 /**

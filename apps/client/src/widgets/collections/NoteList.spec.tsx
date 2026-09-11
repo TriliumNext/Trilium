@@ -273,4 +273,54 @@ describe("CustomNoteList visibility latch", () => {
         expect(observer.disconnect).toHaveBeenCalled();
         expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
     });
+
+    it("waits for the note content before observing, and drops the latch when a new load starts", async () => {
+        const note = buildNote({ title: "Parent", type: "text" });
+        note.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => [ "child-a" ]);
+        note.getAttachmentsByRole = vi.fn(async () => []);
+
+        const parent = new Component();
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        const renderList = async (contentReady: boolean) => {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={parent}>
+                        <CustomNoteList
+                            note={note}
+                            viewType="grid"
+                            isEnabled={true}
+                            contentReady={contentReady}
+                            notePath={`root/${note.noteId}`}
+                            ntxId="ntx-1"
+                            media="screen"
+                        />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+            // Let the 10ms observe delay (Firefox race workaround) elapse.
+            await act(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 25));
+            });
+        };
+
+        // While the content is loading the widget still sits inside the viewport, so observing
+        // now would latch it visible on effectively every note.
+        await renderList(false);
+        expect(MockIntersectionObserver.instances.every((o) => o.observe.mock.calls.length === 0)).toBe(true);
+
+        // Content loaded: observe, and render once actually visible.
+        await renderList(true);
+        const observer = MockIntersectionObserver.instances.find((o) => o.observe.mock.calls.length > 0);
+        if (!observer) throw new Error("expected the note list to observe once the content loaded");
+        await act(async () => observer.fire(true));
+        expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
+
+        // A new load (e.g. a note switch) resets the latch instead of keeping the list mounted.
+        await renderList(false);
+        expect(mountPoint.querySelector(".note-list-widget-content")).toBeNull();
+    });
 });

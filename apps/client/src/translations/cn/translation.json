@@ -632,7 +632,8 @@
     "custom_font": "标记在 Trilium 选项的字体选择器中提供的字体文件，置于笔记自身标题之下。",
     "enable_inbox_column": "对于看板集合，显示收件箱列，其中列出所有未被分配到看板列的子笔记。",
     "sort_columns": "对于看板集合，指各列对其卡片进行排序的顺序；除非某列被赋予了自己的排序顺序，否则它遵循此顺序。值可为 <code>title</code>, <code>creationDate</code> 或 <code>attr:</code> 后跟提升属性的名称。",
-    "sort_columns_descending": "对于看板集合，按 <code>#sortColumns</code> 的顺序反向运行。"
+    "sort_columns_descending": "对于看板集合，按 <code>#sortColumns</code> 的顺序反向运行。",
+    "board_card_redirect_to": "在看板卡片上，打开卡片会跳转到它所指向的笔记，而不是打开卡片本身。"
   },
   "attribute_editor": {
     "help_text_body1": "要添加标签，只需输入例如 <code>#rock</code> ；或者如果你还想同时添加数值，则可输入例如 <code>#year = 2020</code>",
@@ -2545,7 +2546,10 @@
       "move_across": "移动到上一列 / 下一列",
       "move_to_end_column": "移动到第一列 / 最后一列",
       "move_column": "左 / 右移动列",
-      "move_column_to_edge": "将列移动到最左 / 最右"
+      "move_column_to_edge": "将列移动到最左 / 最右",
+      "selection": "选择",
+      "select_column": "选中该列中的所有项目",
+      "clear_selection": "清除所选内容"
     },
     "inbox": "收件箱",
     "inherited-column": "此卡片从模板或父笔记继承其列，可在来源处进行更改。",
@@ -2595,7 +2599,11 @@
     "insert-new": "插入新建",
     "group-by": "按…对卡片分组",
     "grouping-already-defined": "该看板已定义“{{- name}}”。请从列表中选择它进行分组。",
-    "sort-board-default": "看板默认"
+    "sort-board-default": "看板默认",
+    "default-card-order": "默认卡片顺序",
+    "default-card-order-description": "决定各列中卡片的排序方式；若某列单独设置了排序，则以该列设置为准。",
+    "reset-column-sorting": "将所有列的排序重置为默认",
+    "reset-column-sorting-confirm": "是否要将当前视图中所有列的排序重置为默认？"
   },
   "command_palette": {
     "tree-action-name": "树形：{{name}}",

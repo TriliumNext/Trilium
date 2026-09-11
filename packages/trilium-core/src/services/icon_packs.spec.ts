@@ -164,6 +164,39 @@ describe("CSS generation", () => {
         expect(css).toContain(`.bx.bx-ball::before { content: "\ue9c2"; }`);
         expect(css).toContain(`.bx.bxs-party::before { content: "\uec92"; }`);
     });
+
+    it("declares the box a pack was measured in, and nothing where it was not", () => {
+        const measured = cssForManifest({ ...manifest, metrics: { ascent: 0.875, descent: 0.125 } });
+        expect(measured).toContain("ascent-override: 87.5%;");
+        expect(measured).toContain("descent-override: 12.5%;");
+        expect(measured).toContain("line-gap-override: 0%;");
+
+        const unmeasured = cssForManifest(manifest);
+        expect(unmeasured).toContain("@font-face");
+        expect(unmeasured).not.toContain("ascent-override");
+        expect(unmeasured).not.toContain("descent-override");
+    });
+
+    it("drops metrics a pack's author wrote by hand and got wrong", () => {
+        const evil = "0%; } body { display: none } @font-face { a: 1";
+
+        const css = cssForManifest({ ...manifest, metrics: { ascent: evil, descent: 0.1 } as never });
+        expect(css).not.toContain("ascent-override");
+        expect(css).not.toContain("display: none");
+    });
+
+    function cssForManifest(iconPackManifest: IconPackManifest) {
+        const processed = processIconPack(buildNote({
+            type: "text",
+            title: "Boxicons v2",
+            content: JSON.stringify(iconPackManifest),
+            attachments: [ defaultAttachment ],
+            "#iconPack": "bx"
+        }));
+        expect(processed).toBeTruthy();
+
+        return (processed && generateCss(processed, "/api/attachments/x/download")) ?? "";
+    }
 });
 
 describe("Generating CSS for untrusted manifests", () => {

@@ -32,6 +32,37 @@ export const INBOX_COLUMN = "";
 /** Default icon for the inbox column, used instead of the standard one until another is picked. */
 export const INBOX_COLUMN_ICON = "bx bxs-inbox";
 
+/** The label naming how wide the board draws its columns. */
+export const COLUMN_WIDTH_LABEL = "boardCardWidth";
+
+/** The widths the board offers, in the order the properties dialog lists them. */
+export const COLUMN_WIDTHS = [ "narrow", "medium", "wide" ] as const;
+
+export type ColumnWidth = typeof COLUMN_WIDTHS[number];
+
+/** The width a board with no label of its own draws its columns at. */
+export const DEFAULT_COLUMN_WIDTH: ColumnWidth = "narrow";
+
+/**
+ * Reads a stored width, falling back to the default for anything the board does not offer. The
+ * label is the user's to edit by hand, so it can name a width that does not exist.
+ */
+export function parseColumnWidth(value: string | null | undefined) {
+    return COLUMN_WIDTHS.find(width => width === value) ?? DEFAULT_COLUMN_WIDTH;
+}
+
+/**
+ * The class a board wears for the width it names, or nothing where it names none.
+ *
+ * A board that names no width wears no class, so `--board-column-width` keeps whatever value it
+ * inherits: the default in this stylesheet, or a theme's own if one sets it.
+ */
+export function columnWidthClass(value: string | null | undefined) {
+    const width = COLUMN_WIDTHS.find(candidate => candidate === value);
+
+    return width ? `board-${width}-columns` : undefined;
+}
+
 export interface BoardStatusDefinition {
     /** The definition attribute, wherever it is owned. */
     attribute: FAttribute;

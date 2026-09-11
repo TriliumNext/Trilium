@@ -8,7 +8,9 @@ import { buildNote } from "../../../test/easy-froca";
 import {
     BOARD_TEMPLATE_ID,
     canStoreColumnsInDefinition,
+    columnWidthClass,
     getStatusDefinition,
+    parseColumnWidth,
     resolveBoardColumns
 } from "./columns";
 
@@ -203,5 +205,34 @@ describe("the inbox column", () => {
 
         expect(resolveBoardColumns([ "To Do", "Done" ], [ "", "To Do", "Done" ], [], pending))
             .toEqual([ "", "To Do" ]);
+    });
+});
+
+describe("parseColumnWidth", () => {
+    /** The label is the user's to write by hand, so it can name a width the board does not have. */
+    it("reads the three widths and falls back to the narrow default", () => {
+        expect(parseColumnWidth("narrow")).toBe("narrow");
+        expect(parseColumnWidth("medium")).toBe("medium");
+        expect(parseColumnWidth("wide")).toBe("wide");
+
+        expect(parseColumnWidth("enormous")).toBe("narrow");
+        expect(parseColumnWidth("")).toBe("narrow");
+        expect(parseColumnWidth(null)).toBe("narrow");
+        expect(parseColumnWidth(undefined)).toBe("narrow");
+    });
+});
+
+describe("columnWidthClass", () => {
+    it("names a class only for a width the board names itself", () => {
+        expect(columnWidthClass("narrow")).toBe("board-narrow-columns");
+        expect(columnWidthClass("medium")).toBe("board-medium-columns");
+        expect(columnWidthClass("wide")).toBe("board-wide-columns");
+
+        // Nothing to wear, so `--board-column-width` keeps the value it inherits. A theme setting
+        // that variable is what this leaves room for.
+        expect(columnWidthClass("enormous")).toBeUndefined();
+        expect(columnWidthClass("")).toBeUndefined();
+        expect(columnWidthClass(null)).toBeUndefined();
+        expect(columnWidthClass(undefined)).toBeUndefined();
     });
 });

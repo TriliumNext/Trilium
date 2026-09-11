@@ -271,6 +271,9 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "enableInboxColumn", valueType: "boolean", hasUserValue: true },
     // Carried by a card that stands in for another note: opening it navigates there instead.
     { type: "relation", name: "boardCardRedirectTo" },
+    // How wide the board draws its columns. Absent for the narrow default.
+    { type: "label", name: "boardCardWidth", valueType: "select", hasUserValue: true,
+        selectOptions: [ "narrow", "medium", "wide" ] },
     // The order a board offers for its columns, which its properties apply to every column at once.
     { type: "label", name: "sortColumns", valueType: "text", hasUserValue: true },
     { type: "label", name: "sortColumnsDescending", valueType: "boolean", hasUserValue: true },

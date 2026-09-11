@@ -132,6 +132,44 @@ describe("contextMenu", () => {
         expect(menu?.querySelectorAll(".dropdown-item .use-note-color")).toHaveLength(1);
     });
 
+    it("puts itself away once a submenu's parent acts, and stays up for one that only folds", async () => {
+        const menu = buildPage();
+        const contextMenu = await buildContextMenu();
+        const picked: string[] = [];
+
+        const show = () => contextMenu.show({
+            x: 10,
+            y: 10,
+            selectMenuItemHandler: (item) => { picked.push(String(item.title)); },
+            items: [
+                { title: "Open note", command: "openNoteInNewTab", items: [ { title: "New tab" } ] },
+                { title: "More", items: [ { title: "Archived" } ] }
+            ]
+        });
+        const pressRow = (title: string) => {
+            // Read off the row's own line: its text also holds whatever its submenu lists.
+            const row = [ ...menu?.querySelectorAll("li.dropdown-item") ?? [] ]
+                .find((item) => item.querySelector(":scope > span")?.textContent?.trim() === title);
+            expect(row, title).toBeTruthy();
+            const press = new MouseEvent("mousedown", { bubbles: true, button: 0 });
+            // happy-dom leaves the legacy `which` unset, which is what the menu reads for the
+            // primary button.
+            Object.defineProperty(press, "which", { value: 1 });
+            row?.dispatchEvent(press);
+        };
+
+        await show();
+        pressRow("Open note");
+        expect(picked).toEqual([ "Open note" ]);
+        expect(contextMenu.isShown()).toBe(false);
+
+        await show();
+        pressRow("More");
+        expect(picked).toEqual([ "Open note", "More" ]);
+        // Nothing ran, so the menu is left standing for the submenu to be reached from.
+        expect(contextMenu.isShown()).toBe(true);
+    });
+
     it("says whether it is up, for a host whose own press would otherwise not know", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();

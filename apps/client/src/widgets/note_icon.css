@@ -11,7 +11,9 @@ div.note-icon-widget {
 }
 
 .note-icon-widget button.note-icon {
-    --size: calc(var(--note-icon-size) + var(--note-icon-container-padding-size) * 2);
+    /* `1em` is this button's font size, which `--note-icon-size` already set: naming that variable
+       here again would scale a value given in `em` a second time. */
+    --size: calc(1em + var(--note-icon-container-padding-size) * 2);
 
     width: var(--size);
     height: var(--size);
@@ -21,6 +23,17 @@ div.note-icon-widget {
     color: var(--muted-text-color);
     cursor: pointer;
     font-size: var(--note-icon-size);
+}
+
+/* A glyph rasterises on whole pixels while the disc behind it does not, so a gap of half a pixel
+   between the two puts the icon high or low depending on where the widget lands on the page.
+   Rounding both leaves a gap of twice the ring, which is always whole. */
+@supports (width: round(1px, 1px)) {
+    .note-icon-widget button.note-icon {
+        --size: calc(1em + round(var(--note-icon-container-padding-size), 1px) * 2);
+
+        font-size: round(var(--note-icon-size), 1px);
+    }
 }
 
 .note-icon-widget button.note-icon:disabled {

@@ -66,6 +66,12 @@ jobs:
               shell: bash
               forge_platform: linux
     runs-on: ${{ matrix.os.image }}
+    defaults:
+      run:
+        # Under pnpm/action-setup's pnpm 12 bootstrap, `pnpm` invoked from PowerShell on the
+        # win-signing runner exits 0 without running anything, so the steps below have to
+        # reach it through the same shell the build uses.
+        shell: ${{ matrix.os.shell }}
     steps:
       - uses: actions/checkout@v7
         with:

@@ -22,7 +22,7 @@ import type FNote from "../../entities/fnote.js";
 import server from "../../services/server.js";
 import { buildNote } from "../../test/easy-froca.js";
 import { ParentComponent } from "../react/react_utils.js";
-import { TemplateNoteTypes, useBuiltinTemplates } from "./NoteTypeSwitcher.js";
+import NoteTypeSwitcher, { TemplateNoteTypes, useBuiltinTemplates } from "./NoteTypeSwitcher.js";
 
 // happy-dom has no ResizeObserver; Dropdown only needs observe/disconnect to exist.
 class ResizeObserverStub {
@@ -61,6 +61,32 @@ async function flush() {
     for (let i = 0; i < 3; i++) {
         await act(async () => { await new Promise((resolve) => setTimeout(resolve)); });
     }
+}
+
+describe("NoteTypeSwitcher", () => {
+    it("offers a switch on a text note, and stays away from code notes", () => {
+        // The switcher resolves the built-in templates through froca on mount.
+        buildNote({ id: "_templates", title: "Templates" });
+
+        expect(renderSwitcher(buildNote({ id: "textNote", title: "Note", type: "text" }))).not.toBeNull();
+        expect(renderSwitcher(buildNote({ id: "codeNote", title: "Script", type: "code", mime: "application/javascript;env=backend" }))).toBeNull();
+    });
+});
+
+function renderSwitcher(note: FNote) {
+    if (container?.isConnected) {
+        act(() => render(null, container));
+        container.remove();
+    }
+
+    const host = new Component();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    act(() => render(
+        <ParentComponent.Provider value={host}><NoteTypeSwitcher note={note} /></ParentComponent.Provider>,
+        container
+    ));
+    return container.querySelector(".note-type-switcher");
 }
 
 describe("TemplateNoteTypes", () => {

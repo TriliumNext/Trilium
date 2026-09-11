@@ -71,6 +71,19 @@ export interface NoteContextDataMap {
         annotations: PdfAnnotationInfo[];
         scrollToAnnotation(annotationId: string, pageNumber: number): void;
     };
+    /** Published by a board, so the right pane can list its columns and scroll the board to one. */
+    boardColumns: {
+        /** The columns in the order the board draws them. */
+        columns: {
+            /** What identifies the column, which is the value its cards carry. */
+            value: string;
+            title: string;
+            icon: string;
+            /** How many cards it holds, counting what an active filter leaves in. */
+            count: number;
+        }[];
+        scrollToColumn(column: string): void;
+    };
     saveState: {
         state: SaveState;
     };

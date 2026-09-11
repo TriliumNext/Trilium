@@ -20,6 +20,7 @@ import { PaneMode, usePaneMode, usePeekDismiss } from "../react/peek_pane";
 import LegacyRightPanelWidget from "../right_panel_widget";
 import AttributeList from "./AttributeList";
 import Backlinks from "./Backlinks";
+import BoardColumns from "./BoardColumns";
 import ChatHighlightsList from "./ChatHighlightsList";
 import HighlightsList from "./HighlightsList";
 import NoteMap from "./NoteMap";
@@ -203,6 +204,8 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): 
     // Published by the LLM chat; drives the chat highlights widget's visibility (only shown once
     // the chat has at least one highlight).
     const chatHighlights = useGetContextData("chatHighlights");
+    // Published by a board, which is what says the note is being shown as one.
+    const boardColumns = useGetContextData("boardColumns");
     // Subscribe to the AI toggle so the LLM chat is added/removed reactively without a page reload.
     const [ aiEnabled ] = useTriliumOptionBool("aiEnabled");
     const isPdf = noteType === "file" && noteMime === "application/pdf";
@@ -266,6 +269,13 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): 
         {
             el: <HighlightsList />,
             enabled: (noteType === "text" || !!note?.isMarkdown()) && highlightsList.length > 0,
+            tab: "outline"
+        },
+        {
+            el: <BoardColumns />,
+            // Gated on being a board rather than on having columns, so that a board with none of
+            // them shows the card's own empty state.
+            enabled: boardColumns !== undefined,
             tab: "outline"
         },
         {

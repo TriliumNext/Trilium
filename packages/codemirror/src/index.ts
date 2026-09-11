@@ -210,13 +210,25 @@ export default class CodeMirror extends EditorView {
     }
 
     setText(content: string) {
-        this.dispatch({
+        const transaction = this.state.update({
             changes: {
                 from: 0,
                 to: this.state.doc.length,
                 insert: content || "",
             }
-        })
+        });
+        // Dispatching a full-document replacement maps the viewport onto the whole new document.
+        // A visible editor's next measure shrinks it back, but an editor inside a display:none
+        // subtree cannot measure (`measure()` bails out off-screen), so every line of the new
+        // document stays rendered in the DOM for as long as the editor stays hidden — e.g. a
+        // background tab that received its content after being covered. Rebuilding the view from
+        // the updated state resets the viewport to the initial estimate instead; the first
+        // measure after the editor becomes visible then sizes it to the real geometry.
+        if (this.dom.offsetParent === null) {
+            this.setState(transaction.state);
+        } else {
+            this.dispatch(transaction);
+        }
     }
 
     async setTheme(theme: ThemeDefinition) {

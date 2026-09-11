@@ -41,12 +41,14 @@ function getQuickEditItem(): MenuItem<CommandNames> {
  * The same places, folded into one submenu, for a menu that lists entries of its own beside them.
  *
  * The items keep their commands, so `handleLinkContextMenuItem` handles them from a submenu as it
- * does from the top level.
+ * does from the top level. The entry carries the first of those commands itself, so that picking it
+ * opens a new tab without going into the submenu for the place it is opened in most often.
  */
 function getOpenNoteItem(e: ContextMenuEvent | GeoMouseEvent): MenuItem<CommandNames> {
     return {
         title: t("link_context_menu.open_note"),
         uiIcon: "bx bx-link-external",
+        command: "openNoteInNewTab",
         items: getOpenItems(e)
     };
 }

@@ -17,7 +17,7 @@ In previous versions of Trilium, the title bar was fixed at all times. In the ne
 
 Whenever the title is scrolled past, the fixed title is shown instead.
 
-This only affects <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> and <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes. Note types that take the entirety of the screen such as <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a> will always have only the fixed title bar.
+This only affects <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes. Note types that take the entirety of the screen, such as <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> and <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>, will always have only the fixed title bar.
 
 Depending on the note type, the inline title will also present some more interactive options such as being able to switch the note type (see below).
 
@@ -25,7 +25,7 @@ Depending on the note type, the inline title will also present some more interac
 
 ### New note type switcher
 
-When a new <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> or <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note is created, a note type switcher will appear below the _Inline title_. Apart from changing the note type, it's also possible to apply a [template](../../Advanced%20Usage/Templates.md).
+When a new <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note is created, a note type switcher will appear below the _Inline title_. Apart from changing the note type, it's also possible to apply a [template](../../Advanced%20Usage/Templates.md).
 
 The switcher will disappear as soon as a text is entered.
 

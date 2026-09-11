@@ -809,7 +809,8 @@
     "custom_font": "Trilium 옵션의 글꼴 선택기에 표시할 글꼴 파일을 지정합니다. 노트 자체 제목 아래에 표시됩니다.",
     "enable_inbox_column": "보드 컬렉션에서 받은 편지함 열을 표시합니다. 이 열에는 보드 열에 할당되지 않은 모든 하위 노트가 나열됩니다.",
     "sort_columns": "보드 컬렉션에서 열이 카드를 정렬하는 순서를 지정합니다. 열에 별도의 정렬 순서가 지정되지 않은 경우 이 설정을 따릅니다. <code>title</code>, <code>creationDate</code> 또는 <code>attr:</code> 뒤에 승격된 속성의 이름을 사용할 수 있습니다.",
-    "sort_columns_descending": "보드 컬렉션에서는 <code>#sortColumns</code> 설정의 정렬 순서를 반대로 적용합니다."
+    "sort_columns_descending": "보드 컬렉션에서는 <code>#sortColumns</code> 설정의 정렬 순서를 반대로 적용합니다.",
+    "board_card_redirect_to": "보드 카드에서 카드를 열면 카드 자체가 아니라 이 카드가 가리키는 노트로 이동합니다."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
@@ -3256,7 +3257,10 @@
       "move_across": "이전 / 다음 열로 이동",
       "move_to_end_column": "첫 번째 / 마지막 열로 이동",
       "move_column": "열을 왼쪽 / 오른쪽으로 이동",
-      "move_column_to_edge": "열을 맨 왼쪽 / 맨 오른쪽으로 이동"
+      "move_column_to_edge": "열을 맨 왼쪽 / 맨 오른쪽으로 이동",
+      "selection": "선택",
+      "select_column": "열의 모든 항목 선택",
+      "clear_selection": "선택 해제"
     },
     "inbox": "받은 편지함",
     "inherited-column": "이 카드는 템플릿 또는 상위 노트에서 열을 상속받으며, 해당 위치에서 변경할 수 있습니다.",
@@ -3306,7 +3310,11 @@
     "sort": "정렬",
     "sort-manually": "수동",
     "sort-board-default": "보드 기본값",
-    "sorted-no-reorder": "정렬된 열에서는 카드 순서를 변경할 수 없습니다."
+    "sorted-no-reorder": "정렬된 열에서는 카드 순서를 변경할 수 없습니다.",
+    "default-card-order": "기본 카드 정렬 순서",
+    "default-card-order-description": "특정 열에 별도의 정렬 옵션을 지정하지 않은 경우, 각 열에서 카드가 정렬되는 방식입니다.",
+    "reset-column-sorting": "모든 열의 정렬 옵션을 기본값으로 재설정",
+    "reset-column-sorting-confirm": "현재 보기의 모든 열에 대한 정렬 옵션을 기본값으로 재설정하시겠습니까?"
   },
   "dashboard_view": {
     "refresh-widget": "새로 고침",
