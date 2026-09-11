@@ -294,7 +294,8 @@ interface UrlParts {
  */
 export function calculateExtraWindowUrl(target: NoteCommandData, location: UrlParts = window.location) {
     const params = new URLSearchParams(location.search);
-    params.set("extraWindow", "1");
+    const extraWindowId = utils.randomString(5);
+    params.set("extraWindow", extraWindowId);
 
     return `${location.protocol}//${location.host}${location.pathname}?${params}${calculateHash(target)}`;
 }

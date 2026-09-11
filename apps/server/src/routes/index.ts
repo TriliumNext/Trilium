@@ -182,6 +182,9 @@ export function bootstrap(req: Request, res: Response) {
             && (supportsBackgroundMaterial || isMac)
             && !nativeTitleBarVisible,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
+        windowId: typeof req.query.extraWindow === "string"
+            ? req.query.extraWindow
+            : "main",
         iconPackCss: [
             ...iconPacks
                 .map((p: iconPackService.ProcessedIconPack) => iconPackService.generateCss(p, p.builtin

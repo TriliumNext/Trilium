@@ -128,7 +128,7 @@ function loadIcons() {
 function setBodyAttributes() {
     if (!glob.dbInitialized) return;
 
-    const { device, headingStyle, layoutOrientation, platform, isElectron, hasNativeTitleBar, hasBackgroundEffects, currentLocale } = window.glob;
+    const { device, headingStyle, layoutOrientation, platform, isElectron, hasNativeTitleBar, hasBackgroundEffects, currentLocale, isMainWindow } = window.glob;
     const classesToSet = [
         device,
         `heading-style-${headingStyle}`,
@@ -136,7 +136,8 @@ function setBodyAttributes() {
         `platform-${platform}`,
         isElectron && "electron",
         hasNativeTitleBar && "native-titlebar",
-        hasBackgroundEffects && "background-effects"
+        hasBackgroundEffects && "background-effects",
+        !isMainWindow && 'extra-window'
     ].filter(Boolean) as string[];
 
     for (const classToSet of classesToSet) {

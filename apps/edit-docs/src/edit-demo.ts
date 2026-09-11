@@ -40,7 +40,7 @@ async function setOptions() {
 
     // Set initial note to the first visible child of root (not _hidden)
     const startNoteId = sql.getValue("SELECT noteId FROM branches WHERE parentNoteId = 'root' AND isDeleted = 0 AND noteId != '_hidden' ORDER BY notePosition") || "root";
-    optionsService.setOption("openNoteContexts", JSON.stringify([{ notePath: startNoteId, active: true }]));
+    optionsService.setOption("openNoteContexts", JSON.stringify([{ windowId: "main", createdAt: 0, closedAt: 0, contexts: [{ notePath: startNoteId, active: true }] }]));
 }
 
 async function registerHandlers() {

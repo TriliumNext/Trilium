@@ -1068,6 +1068,7 @@ export type BootstrapDefinition = {
     appCssNoteIds: string[];
     isDev: boolean;
     isMainWindow: boolean;
+    windowId?: string;
     isProtectedSessionAvailable: boolean;
     triliumVersion: string;
     appPath: string;

@@ -35,7 +35,12 @@ function getPreloadScript(): string {
 // Prevent the window being garbage collected
 let mainWindow: BrowserWindow | null;
 let setupWindow: BrowserWindow | null;
-let allWindows: BrowserWindow[] = []; // Used to store all windows, sorted by the order of focus.
+
+interface WindowEntry {
+    window: BrowserWindow;
+    windowId: string; // custom window ID
+}
+let allWindowEntries: WindowEntry[] = [];
 const loadedSpellcheckSessions = new WeakSet<Session>();
 const exportRevealSessions = new WeakSet<Session>();
 
@@ -44,19 +49,29 @@ const exportRevealSessions = new WeakSet<Session>();
 // The close-to-tray interceptor checks this so a true quit isn't swallowed into a hide.
 let isQuitting = false;
 
-function trackWindowFocus(win: BrowserWindow) {
+function trackWindowFocus(win: BrowserWindow, windowId: string) {
     // We need to get the last focused window from allWindows. If the last window is closed, we return the previous window.
     // Therefore, we need to push the window into the allWindows array every time it gets focused.
     win.on("focus", () => {
-        allWindows = allWindows.filter(w => !w.isDestroyed() && w !== win);
-        allWindows.push(win);
+        allWindowEntries = allWindowEntries.filter(w => !w.window.isDestroyed() && w.window !== win);
+        allWindowEntries.push({ window: win, windowId: windowId });
         if (!optionService.getOptionBool("disableTray")) {
             electron.ipcMain.emit("reload-tray");
         }
     });
 
     win.on("closed", () => {
-        allWindows = allWindows.filter(w => !w.isDestroyed());
+        const savedWindows = JSON.parse(optionService.getOption("openNoteContexts")) || [];
+
+        const win = savedWindows.find(w => w.windowId === windowId);
+        if (win) {
+            win.closedAt = Date.now();
+        }
+
+        cls.wrap(() => {
+            optionService.setOption("openNoteContexts", JSON.stringify(savedWindows));
+        })();
+        allWindowEntries = allWindowEntries.filter(w => !w.window.isDestroyed());
         if (!optionService.getOptionBool("disableTray")) {
             electron.ipcMain.emit("reload-tray");
         }
@@ -70,12 +85,13 @@ function trackWindowFocus(win: BrowserWindow) {
  * into a window in the opener's renderer process; both paths end in
  * `adoptExtraWindow()`.
  */
-async function createExtraWindow(extraWindowHash: string) {
+async function createExtraWindow(extraWindowHash: string, extraWindowId?: string) {
     const { BrowserWindow } = await import("electron");
 
     const win = new BrowserWindow(getExtraWindowOptions());
-    win.loadURL(`${TRILIUM_APP_BASE_URL}?extraWindow=1${extraWindowHash}`);
-    adoptExtraWindow(win);
+    extraWindowId = extraWindowId ?? coreUtils.randomString(5);
+    win.loadURL(`${TRILIUM_APP_BASE_URL}?extraWindow=${extraWindowId}${extraWindowHash}`);
+    adoptExtraWindow(win, extraWindowId);
 }
 
 /** Constructor options shared by both ways an extra window is created. */
@@ -101,10 +117,10 @@ function getExtraWindowOptions(): BrowserWindowConstructorOptions {
 }
 
 /** Per-window wiring for an extra window, whichever way it was created. */
-function adoptExtraWindow(win: BrowserWindow) {
+function adoptExtraWindow(win: BrowserWindow, extraWindowId: string) {
     win.setMenuBarVisibility(false);
     configureWebContents(win.webContents, optionService.getOptionBool("spellCheckEnabled"));
-    trackWindowFocus(win);
+    trackWindowFocus(win, extraWindowId);
 }
 
 async function createMainWindow(startHidden = false) {
@@ -182,7 +198,7 @@ async function createMainWindow(startHidden = false) {
     mainWindow.on("closed", () => (mainWindow = null));
 
     configureWebContents(mainWindow.webContents, spellcheckEnabled);
-    trackWindowFocus(mainWindow);
+    trackWindowFocus(mainWindow, "main");
 }
 
 function getWindowExtraOpts() {
@@ -228,7 +244,10 @@ async function configureWebContents(webContents: WebContents, spellcheckEnabled:
     // `window.open` from this renderer creates an extra window in the same
     // process (see installWindowOpenPolicy); it needs the same wiring as one
     // the main process created.
-    webContents.on("did-create-window", (child) => adoptExtraWindow(child));
+    webContents.on("did-create-window", (win, details) => {
+        const extraWindowId = new URL(details.url).searchParams.get("extraWindowId");
+        adoptExtraWindow(win, extraWindowId ?? "main");
+    });
 
     // Forward full-screen events to the renderer via IPC.
     const win = electron.BrowserWindow.fromWebContents(webContents);
@@ -475,11 +494,15 @@ function getMainWindow() {
 }
 
 function getLastFocusedWindow() {
-    return allWindows.length > 0 ? allWindows[allWindows.length - 1] : null;
+    return allWindowEntries.length > 0 ? allWindowEntries[allWindowEntries.length - 1]?.window : null;
 }
 
 function getAllWindows() {
-    return allWindows;
+    return allWindowEntries.map(e => e.window);
+}
+
+function getAllWindowIds(): string[] {
+    return allWindowEntries.map(e => e.windowId);
 }
 
 /**
@@ -681,5 +704,6 @@ export default {
     registerGlobalShortcuts,
     getMainWindow,
     getLastFocusedWindow,
-    getAllWindows
+    getAllWindows,
+    getAllWindowIds
 };

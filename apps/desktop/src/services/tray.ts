@@ -76,6 +76,29 @@ function getWindowTitle(window: BrowserWindow | null) {
     return titleWithoutAppName;
 }
 
+/**
+ * Some windows may have closed abnormally, leaving closedAt as 0 in openNoteContexts.
+ * This function normalizes those timestamps to the current time for correct sorting/filtering.
+ */
+function normalizeOpenNoteContexts() {
+    const savedWindows =  JSON.parse(optionService.getOption("openNoteContexts")) || [];
+    const now = Date.now();
+
+    let changed = false;
+    for (const win of savedWindows) {
+        if (win.windowId !== "main" && win.closedAt === 0) {
+            win.closedAt = now;
+            changed = true;
+        }
+    }
+    
+    if (changed) {
+        cls.wrap(() => {
+            optionService.setOption("openNoteContexts",JSON.stringify(savedWindows));
+        });
+    }
+}
+
 function updateWindowVisibilityMap(allWindows: BrowserWindow[]) {
     const currentWindowIds: number[] = allWindows.map(window => window.id);
 
@@ -197,6 +220,40 @@ function updateTrayMenu() {
         return menuItems;
     }
 
+    function buildClosedWindowsMenu() {
+        const savedWindows =  JSON.parse(optionService.getOption("openNoteContexts")) || [];
+        const openedWindowIds = windowService.getAllWindowIds();
+        const closedWindows = savedWindows
+            .filter(win => !openedWindowIds.includes(win.windowId))
+            .sort((a, b) => { return a.closedAt - b.closedAt; });  // sort by time in ascending order
+
+        const menuItems: Electron.MenuItemConstructorOptions[] = [];
+        for (let i = closedWindows.length - 1; i >= 0; i--) {
+            const win = closedWindows[i];
+
+            const activeCtx = win.contexts.find(c => c.active === true);
+            const activateNotePath = (activeCtx ?? win.contexts[0])?.notePath;
+            const activateNoteId = activateNotePath?.split("/").pop() ?? null;
+            if (!activateNoteId) continue;
+            
+            // Get the title of the closed window
+            const winTitle = (() => {
+                const raw = becca_service.getNoteTitle(activateNoteId);
+                const truncated = raw.length > 20 ? `${raw.slice(0, 17)}…` : raw;
+                const tabCount = win.contexts.filter(ctx => ctx.mainNtxId === null).length;
+                return tabCount > 1 ? `${truncated} (${t("tray.tabs-total", { number: tabCount })})` : truncated;
+            })();
+
+            menuItems.push({
+                label: winTitle,
+                type: "normal",
+                click: () => win.windowId !== "main" ? windowService.createExtraWindow("", win.windowId) : windowService.createMainWindow()
+            });
+        }
+
+        return menuItems;
+    }
+
     const windowVisibilityMenuItems: Electron.MenuItemConstructorOptions[] = [];
 
     // Only call getWindowTitle if windowVisibilityMap has more than one window
@@ -259,6 +316,12 @@ function updateTrayMenu() {
             type: "submenu",
             icon: getIconPath("recents"),
             submenu: buildRecentNotesMenu()
+        },
+        {
+            label: t("tray.recently-closed-windows"),
+            type: "submenu",
+            icon: getIconPath("closed-windows"),
+            submenu: buildClosedWindowsMenu()
         },
         { type: "separator" },
         {
@@ -332,6 +395,7 @@ function reloadTray() {
     if (tray) {
         updateTrayMenu();
     } else {
+        normalizeOpenNoteContexts();
         createTray();
     }
 }

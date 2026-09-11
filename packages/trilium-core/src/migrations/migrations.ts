@@ -9,6 +9,11 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Migrate openNoteContexts option to the new structured format with window metadata
+    {
+        version: 241,
+        module: async () => import("./0241__migrate_open_note_contexts_format.js")
+    },
     // Give every board its own select definition for the label it groups by, so the columns stop
     // living only in the board.json attachment
     {
