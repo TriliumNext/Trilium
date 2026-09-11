@@ -29,7 +29,7 @@ test("a tab copied to a new window opens on the same database, as a non-main win
     ]);
     await extraPage.waitForLoadState("domcontentloaded");
 
-    expect(new URL(extraPage.url()).searchParams.get("extraWindow")).toBe("1");
+    expect(new URL(extraPage.url()).searchParams.get("extraWindow")).toBe(true);
 
     // It must come up on the leader's database rather than an empty in-memory one, which it can only
     // do by proxying its API traffic through the service worker.
