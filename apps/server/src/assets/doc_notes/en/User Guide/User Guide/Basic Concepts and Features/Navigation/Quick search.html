@@ -9,8 +9,8 @@
   href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;function, which opens in a dedicated
   tab and has support for advanced queries.</p>
 <p>For even faster navigation, it's possible to use&nbsp;<a class="reference-link"
-  href="#root/_help_F1r9QtzQLZqm">Jump to...</a>&nbsp;which will only search through
-  the note titles instead of the content.</p>
+  href="#root/_help_F1r9QtzQLZqm">Jump to &amp; command palette</a>&nbsp;which
+  will only search through the note titles instead of the content.</p>
 <h2>Layout</h2>
 <p>Based on the&nbsp;<a class="reference-link" href="#root/_help_x0JgW8UqGXvq">Vertical and horizontal layout</a>,
   the quick search is placed:</p>
@@ -50,6 +50,21 @@
   <li>Includes fuzzy matches when exact results are fewer than 5</li>
   <li>Exact matches appear before fuzzy matches</li>
 </ol>
+<h3>Search Scope</h3>
+<p>Quick search covers only the subtree you are currently working in:</p>
+<ul>
+  <li>Without hoisting, it covers the whole note tree.</li>
+  <li>Under a <a href="#root/_help_OR8WJ7Iz9K4U">hoisted note</a> or
+    inside a <a href="#root/_help_9sRHySam5fXb">workspace</a>,
+    it covers only that subtree.</li>
+  <li>Notes that exist only in the hidden tree, such as the built-in help pages
+    and the launch bar configuration, are not returned. Hoist into the help
+    to search it, or use <a href="#root/_help_F1r9QtzQLZqm">Jump to…</a>,
+    which searches titles across the hidden tree.</li>
+</ul>
+<p>To search the whole database while hoisted, use the full&nbsp;<a class="reference-link"
+  href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;and
+  leave <em>Ancestor</em> field empty.</p>
 <h3>Keyboard Navigation</h3>
 <ul>
   <li>Press <code spellcheck="false">Enter</code> to open the first result</li>
@@ -66,12 +81,12 @@
   <li><strong>Match locations</strong>: Bold text indicates where matches occur</li>
 </ol>
 <h2>Quick Search - Exact Match Operator</h2>
-<p>Quick Search shares the same search engine as the full <a class="reference-link"
+<p>Quick Search shares the same search engine as the full&nbsp;<a class="reference-link"
   href="#root/_help_eIg8jdvaoNNd">Search</a>, so the exact match operator (<code
   spellcheck="false">=</code>) behaves identically in both. Start your query
   with <code spellcheck="false">=</code> (no space after it) to switch from
   the default "contains" behavior to exact whole-word or phrase matching.</p>
-<p><strong>What <code spellcheck="false">=</code> actually does:</strong> it
+<p><strong>What </strong><code spellcheck="false"><strong>=</strong></code><strong> actually does:</strong> it
   finds notes where the title or content contains your term as a <strong>whole word or phrase</strong>,
   ignoring surrounding punctuation. It does <strong>not</strong> require the
   whole note to equal your term, and it does <strong>not</strong> do substring

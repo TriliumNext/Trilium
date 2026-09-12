@@ -53,7 +53,7 @@ Some layers have a purpose-built spec harness documented in the skill that owns 
 - Coverage: append `--coverage`.
 - Server tests run **sequentially** (shared DB, `pool: "forks"`, fork isolation is **per file**). Client/package tests run in parallel.
 
-> **Windows/sandbox note:** `pnpm --filter … exec vitest` can trigger a pnpm auto-install that hits `EPERM`. If so, run the hoisted binary directly (it lives in the **repo-root** `node_modules`): `CI=true node node_modules/vitest/vitest.mjs run <spec> --root apps/client`, or `node_modules/.bin/vitest.CMD run <spec> --root apps/<app>`.
+> **Windows/sandbox note:** any `pnpm --filter …` invocation — `exec vitest` and the package's own `test` script alike — can trigger a pnpm auto-install that hits `EPERM`/`Access is denied` on a `node_modules` directory VS Code holds open (it rolls back, but the run is lost). If so, run the hoisted binary directly (it lives in the **repo-root** `node_modules`): `CI=true node node_modules/vitest/vitest.mjs run <spec> --root apps/client`, or `node_modules/.bin/vitest.CMD run <spec> --root apps/<app>`.
 
 ## Coverage config rules (Vitest 4)
 

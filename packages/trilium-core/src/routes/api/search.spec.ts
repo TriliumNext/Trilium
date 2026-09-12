@@ -15,6 +15,13 @@ async function createSearchNote(searchString: string): Promise<string> {
     return created.body.noteId;
 }
 
+/** Runs a quick search as a client hoisted into `hoistedNoteId`, or unhoisted when it is omitted. */
+function quickSearch(searchString: string, hoistedNoteId?: string) {
+    return api.get<{ searchResultNoteIds: string[] }>(`/api/quick-search/${searchString}`, {
+        headers: hoistedNoteId ? { "trilium-hoisted-note-id": hoistedNoteId } : undefined
+    });
+}
+
 describe("Search API (core)", () => {
     let createdNoteId: string;
 
@@ -93,6 +100,37 @@ describe("Search API (core)", () => {
         expect(res.status).toBe(200);
         expect(res.body.error).toBeFalsy();
         expect(res.body.highlightedTokens).not.toContain(pattern);
+    });
+
+    it("confines a quick search to the hoisted subtree, hidden subtree included", async () => {
+        const token = "ZzHoistedQuickSearchQwerty";
+        const workspace = await createTextNote(api, { title: "Workspace" });
+        const inside = await createTextNote(api, { parentNoteId: workspace.noteId, title: `${token} inside` });
+        const outside = await createTextNote(api, { title: `${token} outside` });
+        const hidden = await createTextNote(api, { parentNoteId: "_lbBookmarks", title: `${token} hidden` });
+
+        const inWorkspace = await quickSearch(token, workspace.noteId);
+        expect(inWorkspace.status).toBe(200);
+        expect(inWorkspace.body.searchResultNoteIds).toContain(inside.noteId);
+        expect(inWorkspace.body.searchResultNoteIds).not.toContain(outside.noteId);
+
+        // A hoist into the hidden subtree scopes the search to that subtree like any other hoist,
+        // so browsing the in-app help does not surface the user's own notes.
+        const inHidden = await quickSearch(token, "_lbBookmarks");
+        expect(inHidden.status).toBe(200);
+        expect(inHidden.body.searchResultNoteIds).toContain(hidden.noteId);
+        expect(inHidden.body.searchResultNoteIds).not.toContain(outside.noteId);
+    });
+
+    it("omits hidden notes from an unhoisted quick search", async () => {
+        const token = "ZzUnhoistedQuickSearchQwerty";
+        const visible = await createTextNote(api, { title: `${token} visible` });
+        const hidden = await createTextNote(api, { parentNoteId: "_lbBookmarks", title: `${token} hidden` });
+
+        const res = await quickSearch(token);
+        expect(res.status).toBe(200);
+        expect(res.body.searchResultNoteIds).toContain(visible.noteId);
+        expect(res.body.searchResultNoteIds).not.toContain(hidden.noteId);
     });
 
     it("lists template note ids including a freshly-labelled template", async () => {

@@ -5,7 +5,7 @@ The _Quick search_ function does a full-text search (that is, it searches throug
 
 The alternative to the quick search is the <a class="reference-link" href="Search.md">Search</a> function, which opens in a dedicated tab and has support for advanced queries.
 
-For even faster navigation, it's possible to use <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to...</a> which will only search through the note titles instead of the content.
+For even faster navigation, it's possible to use <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a> which will only search through the note titles instead of the content.
 
 ## Layout
 
@@ -44,6 +44,16 @@ Quick search uses progressive search:
 2.  Includes fuzzy matches when exact results are fewer than 5
 3.  Exact matches appear before fuzzy matches
 
+### Search Scope
+
+Quick search covers only the subtree you are currently working in:
+
+*   Without hoisting, it covers the whole note tree.
+*   Under a [hoisted note](Note%20Hoisting.md) or inside a [workspace](Workspaces.md), it covers only that subtree.
+*   Notes that exist only in the hidden tree, such as the built-in help pages and the launch bar configuration, are not returned. Hoist into the help to search it, or use [Jump to…](Jump%20to%20%26%20command%20palette.md), which searches titles across the hidden tree.
+
+To search the whole database while hoisted, use the full <a class="reference-link" href="Search.md">Search</a> and leave _Ancestor_ field empty.
+
 ### Keyboard Navigation
 
 *   Press `Enter` to open the first result
@@ -60,9 +70,9 @@ Quick search uses progressive search:
 
 ## Quick Search - Exact Match Operator
 
-Quick Search shares the same search engine as the full <a class="reference-link" href="Search.md">Search</a>, so the exact match operator (`=`) behaves identically in both. Start your query with `=` (no space after it) to switch from the default "contains" behavior to exact whole-word or phrase matching.
+Quick Search shares the same search engine as the full <a class="reference-link" href="Search.md">Search</a>, so the exact match operator (`=`) behaves identically in both. Start your query with `=` (no space after it) to switch from the default "contains" behavior to exact whole-word or phrase matching.
 
-**What `=` actually does:** it finds notes where the title or content contains your term as a **whole word or phrase**, ignoring surrounding punctuation. It does **not** require the whole note to equal your term, and it does **not** do substring or fuzzy matching.
+**What** `**=**` **actually does:** it finds notes where the title or content contains your term as a **whole word or phrase**, ignoring surrounding punctuation. It does **not** require the whole note to equal your term, and it does **not** do substring or fuzzy matching.
 
 | Query | Example note content | Matches? | Why |
 | --- | --- | --- | --- |

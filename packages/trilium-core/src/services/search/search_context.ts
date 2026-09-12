@@ -51,8 +51,6 @@ class SearchContext {
         this.ancestorNoteId = params.ancestorNoteId;
 
         if (!this.ancestorNoteId && !this.ignoreHoistedNote) {
-            // hoisting in hidden subtree should not limit autocomplete
-            // since we want to link (create relations) to the normal non-hidden notes
             this.ancestorNoteId = hoistedNoteService.getHoistedNoteId();
         }
 

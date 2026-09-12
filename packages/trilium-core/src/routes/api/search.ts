@@ -116,10 +116,11 @@ function quickSearch(req: Request<{ searchString: string }>) {
     const searchContext = new SearchContext({
         fastSearch: false,
         includeArchivedNotes: false,
-        includeHiddenNotes: true,
         fuzzyAttributeSearch: true,
         ignoreInternalAttributes: true,
-        ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
+        // Quick search covers the subtree the user is looking at, so a hoist into the hidden
+        // subtree scopes it there too. Only link autocomplete widens to root, for link targets.
+        ancestorNoteId: hoistedNoteService.getHoistedNoteId()
     });
 
     const trimmed = searchService.findResultsWithQuery(searchString, searchContext).slice(0, 200);

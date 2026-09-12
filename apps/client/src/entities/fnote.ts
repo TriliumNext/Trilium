@@ -453,16 +453,6 @@ export default class FNote {
         };
 
         notePaths.sort((a, b) => {
-            if (activeNotePath) {
-                const activeSegments = activeNotePath.split('/');
-                const aOverlap = prefixMatchLength(a.notePath, activeSegments);
-                const bOverlap = prefixMatchLength(b.notePath, activeSegments);
-                // Paths with more matching prefix segments are prioritized
-                // when the match count is equal, other criteria are used for sorting
-                if (bOverlap !== aOverlap) {
-                    return bOverlap - aOverlap;
-                }
-            }
             if (a.isInHoistedSubTree !== b.isInHoistedSubTree) {
                 return a.isInHoistedSubTree ? -1 : 1;
             } else if (a.isArchived !== b.isArchived) {
@@ -474,6 +464,19 @@ export default class FNote {
                 return a.isSearch ? 1 : -1;
             }
             /* v8 ignore stop */
+
+            if (activeNotePath) {
+                // Among otherwise equal paths, the one sharing the longest prefix with the active
+                // note wins, so opening a clone keeps the user where they came from. The checks
+                // above outrank it: an active `_hidden` note must not promote a bookmark clone.
+                const activeSegments = activeNotePath.split("/");
+                const aOverlap = prefixMatchLength(a.notePath, activeSegments);
+                const bOverlap = prefixMatchLength(b.notePath, activeSegments);
+                if (bOverlap !== aOverlap) {
+                    return bOverlap - aOverlap;
+                }
+            }
+
             return a.notePath.length - b.notePath.length;
         });
 
