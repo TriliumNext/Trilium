@@ -109,7 +109,7 @@ export function RelationValueChips({ values }: { values: readonly string[] }) {
  */
 function NoteTitle({ note }: { note: FNote | null | undefined }) {
     if (!note) return null;
-    return <><Icon icon={note.getIcon()} />{" "}{note.title}</>;
+    return <><Icon icon={note.getIcon()} />&nbsp;{note.title}</>;
 }
 
 /**

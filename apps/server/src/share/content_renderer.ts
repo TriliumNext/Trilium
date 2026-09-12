@@ -610,12 +610,15 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
  */
 function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
+    // The `&nbsp;` after the icon keeps it on the same line as the title: the icon renders as an
+    // `inline-block` span, so the boundary between it and the title is otherwise a wrap
+    // opportunity.
     const href = linkEl.getAttribute("href") ?? "";
 
     // Handle attachment reference links
     if (linkEl.classList.contains("attachment-link")) {
         const title = linkEl.innerText;
-        linkEl.innerHTML = `<span><span class="tn-icon bx bx-download"></span>${utils.escapeHtml(title)}</span>`;
+        linkEl.innerHTML = `<span><span class="tn-icon bx bx-download"></span>&nbsp;${utils.escapeHtml(title)}</span>`;
         return;
     }
 
@@ -627,7 +630,7 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
     } else if (note.isProtected) {
         linkEl.innerHTML = "[protected]";
     } else {
-        linkEl.innerHTML = `<span><span class="${escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
+        linkEl.innerHTML = `<span><span class="${escapeHtml(note.getIcon())}"></span>&nbsp;${utils.escapeHtml(note.title)}</span>`;
     }
 }
 

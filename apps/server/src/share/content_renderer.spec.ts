@@ -298,7 +298,7 @@ describe("content_renderer", () => {
                 expect(result.content).toStrictEqual(trimIndentation`\
                     <h1>Test</h1>
                     <p>
-                        <a class="reference-link attachment-link role-file" href="api/attachments/q14s2Id7V6pp/download"><span><span class="tn-icon bx bx-download"></span>5863845791835102555.mp4</span></a>
+                        <a class="reference-link attachment-link role-file" href="api/attachments/q14s2Id7V6pp/download"><span><span class="tn-icon bx bx-download"></span>&nbsp;5863845791835102555.mp4</span></a>
                         &nbsp;
                     </p>
                 `);
@@ -362,7 +362,7 @@ describe("content_renderer", () => {
                 const result = getContent(note);
                 expect(result.content).toStrictEqual(trimIndentation`\
                     <p>
-                        <a class="reference-link type-text" href="./MSkxxCFbBsYP"><span><span class="tn-icon bx bx-note"></span>The quick &lt;strong&gt;brown&lt;/strong&gt; fox</span></a>
+                        <a class="reference-link type-text" href="./MSkxxCFbBsYP"><span><span class="tn-icon bx bx-note"></span>&nbsp;The quick &lt;strong&gt;brown&lt;/strong&gt; fox</span></a>
                     </p>
                 `);
             });

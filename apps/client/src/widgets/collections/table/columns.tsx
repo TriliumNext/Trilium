@@ -164,7 +164,7 @@ export function buildColumnDefinitions({ info, movableRows, existingColumnData, 
             formatter: wrapFormatter(({ cell }) => {
                 const { noteId, iconClass, colorClass } = cell.getRow().getData();
                 return <span className={`reference-link ${colorClass}`} data-href={`#root/${noteId}`}>
-                    <Icon icon={iconClass} />{" "}{cell.getValue()}
+                    <Icon icon={iconClass} />&nbsp;{cell.getValue()}
                 </span>;
             }),
             width: 400
@@ -341,7 +341,7 @@ function NoteFormatter({ cell }: FormatterOpts) {
     }, [ noteId ]);
 
     return <span className={`reference-link ${note?.getColorClass()}`} data-href={`#root/${noteId}`}>
-        {note && <><Icon icon={note?.getIcon()} />{" "}{note.title}</>}
+        {note && <><Icon icon={note?.getIcon()} />&nbsp;{note.title}</>}
     </span>;
 }
 

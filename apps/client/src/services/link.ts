@@ -99,6 +99,13 @@ const MAX_SPLIT_PANES_IN_HASH = 8;
 /** Hash parameters that belong to a pane's view scope rather than to the window as a whole. */
 const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark"];
 
+/**
+ * Separates a note icon from the title that follows it. The icon renders as an `inline-block`
+ * span, so the boundary between it and the title is a soft wrap opportunity: a plain space, or no
+ * space at all, lets a line end on the icon and push the title to the next line (#11459).
+ */
+const NON_BREAKING_SPACE = "\u00a0";
+
 interface CreateLinkOptions {
     title?: string;
     showTooltip?: boolean;
@@ -174,7 +181,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
         const icon = await getLinkIcon(noteId, viewMode);
 
         if (icon) {
-            $container.append($("<span>").addClass(`bx ${icon}`)).append(" ");
+            $container.append($("<span>").addClass(`bx ${icon}`)).append(NON_BREAKING_SPACE);
         }
     }
 
@@ -638,7 +645,7 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
         const icon = await getLinkIcon(noteId, viewScope?.viewMode);
 
         if (icon) {
-            $el.prepend($("<span>").addClass(icon));
+            $el.prepend($("<span>").addClass(icon), document.createTextNode(NON_BREAKING_SPACE));
         }
     }
 }

@@ -56,10 +56,6 @@
     height: auto;
 }
 
-a.reference-link > span > .tn-icon {
-    margin-inline-end: 3px;
-}
-
 body:not(.math-loaded) .math-tex {
     visibility: hidden;
 }

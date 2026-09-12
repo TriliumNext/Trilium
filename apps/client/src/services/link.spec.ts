@@ -402,6 +402,9 @@ describe("createLink", () => {
         expect($a.hasClass("reference-link")).toBe(true);
         // an icon span is prepended
         expect($el.children("span.bx").length).toBeGreaterThan(0);
+        // a non-breaking space separates the icon from the link, so a line cannot break between
+        // them and leave the icon orphaned at the end of it
+        expect($el.children("span.bx")[0].nextSibling?.textContent).toBe("\u00a0");
     });
 
     it("uses an explicit title without consulting the tree", async () => {
@@ -842,6 +845,9 @@ describe("loadReferenceLinkTitle", () => {
         const $iconSpan = $el.children("span").first();
         expect($iconSpan.length).toBe(1);
         expect($iconSpan.hasClass("bx-star")).toBe(true);
+        // and it is followed by a non-breaking space, so the icon cannot be left alone at the end
+        // of a line with the title wrapped onto the next one
+        expect($iconSpan[0].nextSibling?.textContent).toBe("\u00a0");
     });
 
     it("uses the element's own href and finds the inner anchor when none is passed", async () => {

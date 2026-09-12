@@ -2289,7 +2289,6 @@ button.close:hover {
 .reference-link .tn-icon {
     position: relative;
     top: 1px;
-    margin-inline-end: 3px;
 }
 
 .options-section:first-of-type h4 {
