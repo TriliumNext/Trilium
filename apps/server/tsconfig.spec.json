@@ -26,6 +26,8 @@
     "src/**/*.d.ts",
     "src/**/*.ts",
     "src/**/*.json",
+    "spec/setup.ts",
+    "spec/build-checks/**/*.ts",
     "spec/support/**/*.ts",
     "package.json"
   ]
