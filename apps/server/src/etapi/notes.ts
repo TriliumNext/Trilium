@@ -107,12 +107,8 @@ function register(router: Router) {
         eu.validateAndPatch(note, req.body, ALLOWED_PROPERTIES_FOR_PATCH);
         note.save();
 
-        // Every regular save() re-stamps "now" via BNote.beforeSaving, so a
-        // caller-supplied modification date would be lost. Re-apply it after
-        // the save with the same raw-SQL bypass the create-note path and the
-        // ENEX/OneNote/Notion importers use (BNote.setDateCreatedAndModified).
-        // This lets importers restore the source date after content rewrites
-        // (e.g. attachment URL replacement via PUT /content, which re-stamps).
+        // BNote.beforeSaving re-stamps the current time, so apply the caller-supplied
+        // modification date after note.save().
         const utcDateModified = req.body.utcDateModified
             ?? (req.body.dateModified
                 ? date_utils.utcDateTimeStr(date_utils.parseDateTime(req.body.dateModified))
