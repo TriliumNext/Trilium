@@ -1,15 +1,28 @@
 import "./PromotedAttributes.css";
 
-import { DefinitionObject, extractAttributeDefinitionTypeAndName, UpdateAttributeResponse } from "@triliumnext/commons";
+import {
+    DefinitionObject,
+    extractAttributeDefinitionTypeAndName,
+    LabelType,
+    UpdateAttributeResponse
+} from "@triliumnext/commons";
 import clsx from "clsx";
 import { ComponentChild, TargetedEvent } from "preact";
-import { Dispatch, StateUpdater, useCallback, useEffect, useState } from "preact/hooks";
+import {
+    Dispatch,
+    StateUpdater,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from "preact/hooks";
 
 import NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
 import FNote from "../entities/fnote";
 import { Attribute } from "../services/attribute_parser";
-import attributes from "../services/attributes";
+import attributes, { type AttributeValueState, PartialWriteError } from "../services/attributes";
 import { t } from "../services/i18n";
 import server from "../services/server";
 import { randomString } from "../services/utils";
@@ -294,13 +307,82 @@ function MultiLabelInput({ inputId, note, cell, componentId, setCells }: CellPro
     const { valueName, definition, definitionAttr, values, uniqueId } = cell;
     const labelType = definition.labelType ?? "text";
     const createOption = useCreateSelectOption(definitionAttr, componentId, setCells);
+    const suggestValues = useAttributeValueSuggestions(valueName, labelType);
+    const commitQueue = useRef<Promise<void>>(Promise.resolve());
+    const acceptedValues = useRef(values ?? []);
+    const acceptedAttributes =
+        useRef<readonly AttributeValueState[]>(note.getOwnedLabels(valueName));
+    const desiredValues = useRef(values ?? []);
+    const lastValuesProp = useRef(values);
+    const pendingCommits = useRef(0);
+    if (lastValuesProp.current !== values && pendingCommits.current === 0) {
+        lastValuesProp.current = values;
+        acceptedValues.current = values ?? [];
+        acceptedAttributes.current = note.getOwnedLabels(valueName);
+        desiredValues.current = values ?? [];
+    }
 
-    const commit = useCallback(async (edited: string[]) => {
-        await attributes.setLabelValues(note, valueName, edited, componentId);
-        // The grid ignores reloads it is itself the source of (see usePromotedAttributeData), so the
-        // set it shows is patched in place, as updateAttribute does for a single value — otherwise
-        // the chips would not follow the value just taken.
-        setCells(prev => prev?.map(c => c.uniqueId === uniqueId ? { ...c, values: edited } : c));
+    const commit = useCallback((edited: string[]) => {
+        const previousDesired = desiredValues.current;
+        const previousSet = new Set(previousDesired);
+        const editedSet = new Set(edited);
+        const added = edited.filter((value) => !previousSet.has(value));
+        const removed = new Set(previousDesired.filter((value) => !editedSet.has(value)));
+        desiredValues.current = edited;
+        pendingCommits.current++;
+
+        const write = commitQueue.current.then(async () => {
+            const accepted = acceptedValues.current.filter((value) => !removed.has(value));
+            for (const value of added) {
+                if (!accepted.includes(value)) {
+                    accepted.push(value);
+                }
+            }
+
+            let confirmed: readonly AttributeValueState[];
+            try {
+                confirmed = await attributes.setLabelValues(
+                    note,
+                    valueName,
+                    accepted,
+                    componentId,
+                    acceptedAttributes.current
+                );
+            } catch (e: unknown) {
+                // A write that failed partway did change the note. Track and show what the
+                // responses confirmed, so later diffs run against it — otherwise a value the note
+                // kept could never be removed here, and re-adding one it wrote would duplicate it.
+                if (e instanceof PartialWriteError) {
+                    applyConfirmedState(e.confirmed);
+                }
+                throw e;
+            }
+            applyConfirmedState(confirmed);
+        });
+
+        function applyConfirmedState(confirmed: readonly AttributeValueState[]) {
+            acceptedAttributes.current = confirmed;
+            acceptedValues.current = confirmed.map((attr) => attr.value);
+            // The patch below echoes back as the `values` prop. Acknowledging it here keeps the
+            // reset above for genuinely external updates — re-reading froca on an own echo would
+            // replace `confirmed`, whose attribute ids froca only carries after the next sync.
+            lastValuesProp.current = acceptedValues.current;
+            // `usePromotedAttributeData()` ignores reloads from `componentId`, so patch the cell
+            // here — with what was confirmed, which on a partial failure is not what was asked.
+            setCells(prev => prev?.map(c =>
+                c.uniqueId === uniqueId ? { ...c, values: acceptedValues.current } : c));
+        }
+        const settled = write.finally(() => {
+            pendingCommits.current--;
+            if (pendingCommits.current === 0) {
+                desiredValues.current = acceptedValues.current;
+            }
+        });
+        // A rejected `write` does not block the queue. The next edit starts from `acceptedValues`,
+        // so failed additions are not retried and failed removals stay in the accepted set.
+        commitQueue.current = settled.catch(() => {});
+        // The un-caught `write`, so the caller can observe a rejection the queue never re-raises.
+        return write;
     }, [ note, valueName, componentId, uniqueId, setCells ]);
 
     return (
@@ -310,6 +392,7 @@ function MultiLabelInput({ inputId, note, cell, componentId, setCells }: CellPro
                 values={values ?? []}
                 options={definition.selectOptions}
                 onCreateOption={labelType === "select" ? createOption : undefined}
+                source={suggestValues}
                 inputId={inputId}
                 tabIndex={200 + definitionAttr.position}
                 onCommit={commit}
@@ -376,6 +459,37 @@ function MultiRelationInput({ inputId, note, cell, componentId, setCells }: Cell
             />
         </div>
     );
+}
+
+function useAttributeValueSuggestions(name: string, labelType: LabelType) {
+    const [ known, setKnown ] = useState<{ name: string; values: string[] }>();
+
+    useEffect(() => {
+        if (labelType !== "text" || !name) {
+            setKnown(undefined);
+            return;
+        }
+
+        let active = true;
+        server.get<string[]>(`attribute-values/${encodeURIComponent(name)}`).then((values) => {
+            if (active) {
+                setKnown({ name, values });
+            }
+        }).catch(() => {
+            // Suggestions are optional, so ignore a failed `server.get()` request.
+        });
+        return () => {
+            active = false;
+        };
+    }, [ name, labelType ]);
+
+    return useMemo(() => labelType === "text" && name
+        ? async (query: string) => {
+            const term = query.trim().toLowerCase();
+            const values = known?.name === name ? known.values : [];
+            return values.filter((value) => value.toLowerCase().includes(term));
+        }
+        : undefined, [ known, labelType, name ]);
 }
 
 function useTextLabelAutocomplete(inputId: string, valueAttr: Attribute, definition: DefinitionObject, onChangeListener: OnChangeListener) {

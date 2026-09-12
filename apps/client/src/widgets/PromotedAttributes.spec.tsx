@@ -226,6 +226,142 @@ describe("PromotedAttributesContent", () => {
         expect(multiInput.current?.values).toEqual([ "alpha", "beta" ]);
     });
 
+    it("keeps quick multi-label commits in order and shows a set once it is written", async () => {
+        const note = buildNote({
+            title: "Task",
+            "#label:tags": "promoted,multi,text",
+            "#tags": "alpha"
+        });
+        let finishFirstWrite: (response: { attributeId: string }) => void = () => {};
+        serverPutMock.mockReturnValueOnce(new Promise((resolve) => {
+            finishFirstWrite = resolve;
+        }));
+        mount(note);
+
+        const commit = multiInput.current?.onCommit as (values: string[]) => Promise<void>;
+        let firstCommit: Promise<void> | undefined;
+        await act(async () => {
+            firstCommit = commit([ "alpha", "beta" ]);
+            await Promise.resolve();
+        });
+        // `values` remains unchanged until `setLabelValues()` resolves.
+        expect(multiInput.current?.values).toEqual([ "alpha" ]);
+        expect(serverPutMock).toHaveBeenCalledOnce();
+
+        let secondCommit: Promise<void> | undefined;
+        await act(async () => {
+            secondCommit = commit([ "alpha", "beta", "gamma" ]);
+            await Promise.resolve();
+        });
+        // `commitQueue` does not start the second request before the first request resolves.
+        expect(serverPutMock).toHaveBeenCalledOnce();
+
+        await act(async () => {
+            finishFirstWrite({ attributeId: "beta-id" });
+            await Promise.all([ firstCommit, secondCommit ]);
+        });
+        expect(serverPutMock).toHaveBeenCalledTimes(2);
+        expect(multiInput.current?.values).toEqual([ "alpha", "beta", "gamma" ]);
+    });
+
+    it("rebases edits queued after a failed multi-label write", async () => {
+        const note = buildNote({
+            title: "Task",
+            "#label:tags": "promoted,multi,text",
+            "#tags": "alpha"
+        });
+        serverPutMock.mockRejectedValueOnce(new Error("write refused"));
+        mount(note);
+
+        const commit = multiInput.current?.onCommit as (values: string[]) => Promise<void>;
+        let failed: Promise<void> | undefined;
+        let following: Promise<void> | undefined;
+        await act(async () => {
+            failed = commit([ "alpha", "beta" ]);
+            following = commit([ "alpha", "beta", "gamma" ]);
+            await Promise.allSettled([ failed, following ]);
+        });
+        await expect(failed).rejects.toThrow("write refused");
+        await expect(following).resolves.toBeUndefined();
+        expect(serverPutMock).toHaveBeenCalledTimes(2);
+        expect(serverPutMock).toHaveBeenLastCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "gamma" },
+            "cid"
+        );
+        expect(multiInput.current?.values).toEqual([ "alpha", "gamma" ]);
+    });
+
+    it("preserves a value when its removal fails before a queued addition", async () => {
+        const note = buildNote({
+            title: "Task",
+            "#label:tags": "promoted,multi,text",
+            "#tags": "alpha"
+        });
+        hold(note, "label", "tags", "beta");
+        serverRemoveMock.mockRejectedValueOnce(new Error("remove refused"));
+        mount(note);
+
+        const commit = multiInput.current?.onCommit as (values: string[]) => Promise<void>;
+        let failedRemoval: Promise<void> | undefined;
+        let following: Promise<void> | undefined;
+        await act(async () => {
+            failedRemoval = commit([ "alpha" ]);
+            following = commit([ "alpha", "cherry" ]);
+            await Promise.allSettled([ failedRemoval, following ]);
+        });
+        await expect(failedRemoval).rejects.toThrow("remove refused");
+        await expect(following).resolves.toBeUndefined();
+
+        // `setLabelValues()` reuses `acceptedAttributes.current`, so the queued edit writes only
+        // "cherry" — "beta" matches the accepted state and is skipped.
+        expect(serverPutMock).toHaveBeenCalledOnce();
+        expect(serverPutMock).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "cherry" },
+            "cid"
+        );
+        expect(multiInput.current?.values).toEqual([ "alpha", "beta", "cherry" ]);
+    });
+
+    it("tracks and shows what was confirmed when a write fails partway", async () => {
+        const note = buildNote({
+            title: "Task",
+            "#label:tags": "promoted,multi,text",
+            "#tags": "alpha"
+        });
+        // Writing [alpha, beta, cherry]: the first PUT ("beta") succeeds, the second fails.
+        serverPutMock
+            .mockResolvedValueOnce({ attributeId: "beta-id" })
+            .mockRejectedValueOnce(new Error("write refused"));
+        mount(note);
+
+        const commit = multiInput.current?.onCommit as (values: string[]) => Promise<void>;
+        let failed: Promise<void> | undefined;
+        await act(async () => {
+            failed = commit([ "alpha", "beta", "cherry" ]);
+            await failed.catch(() => {});
+        });
+        await expect(failed).rejects.toThrow("write refused");
+
+        // The chips show what the note now actually holds, not the set that was asked for.
+        expect(multiInput.current?.values).toEqual([ "alpha", "beta" ]);
+
+        // The next edit diffs against that state: "beta" is not written a second time, and the
+        // spare beyond the new set — none here — leaves nothing stranded on the server.
+        serverPutMock.mockClear();
+        await act(async () => {
+            await commit([ "alpha", "beta", "date" ]);
+        });
+        expect(serverPutMock).toHaveBeenCalledOnce();
+        expect(serverPutMock).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "date" },
+            "cid"
+        );
+        expect(multiInput.current?.values).toEqual([ "alpha", "beta", "date" ]);
+    });
+
     it("adds a select option to the definition itself, the field offering it from then on", async () => {
         const note = buildNote({ title: "Task", "#label:status": "promoted,multi,select,options=Todo;Done" });
         mount(note);
@@ -592,6 +728,70 @@ describe("PromotedAttributesContent rendering", () => {
         await renderCells(note, [ buildCell(note, { name: "fresh", definition: { labelType: "text" }, uniqueId: "fresh" }) ]);
         expect(autocompleteMock).not.toHaveBeenCalled();
     });
+
+    it("hands a field holding several values the names already entered under its own", async () => {
+        serverGetMock.mockResolvedValueOnce([ "Game", "RPG" ]);
+        await renderCells(note, [ buildCell(note, {
+            name: "tags",
+            definition: { labelType: "text", multiplicity: "multi" },
+            values: [ "Game" ]
+        }) ]);
+        expect(serverGetMock).toHaveBeenCalledWith("attribute-values/tags");
+
+        const suggest = multiInput.current?.source as (query: string) => Promise<string[]>;
+        expect(await suggest("")).toEqual([ "Game", "RPG" ]);
+        expect(await suggest(" ga ")).toEqual([ "Game" ]);
+
+        await renderCells(note, [ buildCell(note, {
+            name: "due",
+            definition: { labelType: "date", multiplicity: "multi" },
+            values: [],
+            uniqueId: "due"
+        }) ]);
+        expect(multiInput.current?.source).toBeUndefined();
+
+        await renderCells(note, [ buildCell(note, {
+            name: "fresh",
+            definition: { labelType: "text", multiplicity: "multi" },
+            values: [],
+            uniqueId: "fresh"
+        }) ]);
+        expect(serverGetMock).toHaveBeenCalledWith("attribute-values/fresh");
+        const suggestFresh = multiInput.current?.source as (query: string) => Promise<string[]>;
+        expect(await suggestFresh("")).toEqual([]);
+    });
+
+    it("offers nothing when the suggestion request fails", async () => {
+        serverGetMock.mockRejectedValueOnce(new Error("offline"));
+        await renderCells(note, [ buildCell(note, {
+            name: "tags",
+            definition: { labelType: "text", multiplicity: "multi" },
+            values: []
+        }) ]);
+
+        const suggest = multiInput.current?.source as (query: string) => Promise<string[]>;
+        expect(await suggest("")).toEqual([]);
+    });
+
+    it("keeps a multi text field's suggestion source attached while its values load", async () => {
+        let finishLoading: (values: string[]) => void = () => {};
+        serverGetMock.mockReturnValueOnce(new Promise<string[]>((resolve) => {
+            finishLoading = resolve;
+        }));
+
+        await renderCells(note, [ buildCell(note, {
+            name: "tags",
+            definition: { labelType: "text", multiplicity: "multi" },
+            values: []
+        }) ]);
+
+        const loadingSource = multiInput.current?.source as (query: string) => Promise<string[]>;
+        expect(await loadingSource("")).toEqual([]);
+
+        await act(async () => finishLoading([ "Game", "RPG" ]));
+        const loadedSource = multiInput.current?.source as (query: string) => Promise<string[]>;
+        expect(await loadedSource("rp")).toEqual([ "RPG" ]);
+    });
 });
 
 describe("usePromotedAttributeData", () => {
@@ -694,7 +894,8 @@ function buildCell(note: FNote, {
     value = "",
     definition = {},
     attributeId = "valueAttrId",
-    uniqueId = "cell-1"
+    uniqueId = "cell-1",
+    values
 }: {
     name?: string;
     type?: "label" | "relation";
@@ -702,6 +903,7 @@ function buildCell(note: FNote, {
     definition?: DefinitionObject;
     attributeId?: string;
     uniqueId?: string;
+    values?: string[];
 } = {}): CellLike {
     const definitionAttr = new FAttribute(froca, {
         noteId: note.noteId,
@@ -721,7 +923,8 @@ function buildCell(note: FNote, {
         definitionAttr,
         definition: { isPromoted: true, ...definition },
         valueAttr: { attributeId, type, name, value, noteId: note.noteId },
-        valueName: name
+        valueName: name,
+        ...(values && { values })
     };
 }
 

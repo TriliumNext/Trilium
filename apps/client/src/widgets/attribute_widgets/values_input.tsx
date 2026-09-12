@@ -3,11 +3,12 @@ import "./values_input.css";
 import { type LabelType } from "@triliumnext/commons";
 import clsx from "clsx";
 import type { ComponentChildren, TargetedKeyboardEvent } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
 import Chip from "../react/Chip";
+import FormAutocomplete from "../react/FormAutocomplete";
 import FormTextBox from "../react/FormTextBox";
 import { ColorSwatch } from "./label_value_display";
 import { DEFAULT_COLOR, LABEL_MAPPINGS } from "./label_value_input";
@@ -18,11 +19,13 @@ interface ValuesInputProps {
     /** The values held, in the order they are shown. */
     values: readonly string[];
     /** Receives the values as they now stand, whenever one is taken or dropped. */
-    onCommit(values: string[]): void;
+    onCommit(values: string[]): void | Promise<void>;
     /** What removing a chip means, in the host's own words. Left out, a chip holds "a value". */
     removeButtonText?: string;
     /** What taking the box's content means, in the host's own words. Left out, it adds "a value". */
     addButtonText?: string;
+    /** Provides suggestions for values entered under the same name. */
+    source?(query: string): Promise<string[]>;
     /** Set onto the box, so that a host's own label points at the field. */
     inputId?: string;
     /** Set onto the box, for a host placing its fields in a tab order of its own. */
@@ -40,9 +43,31 @@ interface ValuesInputProps {
  * rather than quietly dropped. A value already held is not taken a second time: the chips are a set,
  * and two alike could not be told apart.
  */
-export default function ValuesInput({ labelType, values, onCommit, removeButtonText, addButtonText, inputId, tabIndex, placeholder, disabled }: ValuesInputProps) {
+export default function ValuesInput({
+    labelType,
+    values,
+    onCommit,
+    removeButtonText,
+    addButtonText,
+    source,
+    inputId,
+    tabIndex,
+    placeholder,
+    disabled
+}: ValuesInputProps) {
     const [ draft, setDraft ] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
+    // `editedValues` accumulates edits before `values` updates. Pending commits keep newer edits
+    // from being replaced by an intermediate `values` update.
+    const editedValues = useRef(values);
+    const latestValuesProp = useRef(values);
+    const pendingCommits = useRef(0);
+    if (latestValuesProp.current !== values) {
+        latestValuesProp.current = values;
+        if (pendingCommits.current === 0) {
+            editedValues.current = values;
+        }
+    }
     const isColor = labelType === "color";
     // Every widget but the colour dialog has to be asked for its value, having no plain way of
     // saying it is done with.
@@ -51,6 +76,15 @@ export default function ValuesInput({ labelType, values, onCommit, removeButtonT
     // to take, the same button offers the confirming where it can be seen. Not before: empty, it
     // would have nothing to add, and sit there asking to be explained.
     const showAdd = needsAsking || (!isColor && draft.trim().length > 0);
+    const suggests = !!source && !PICKED_TYPES.has(labelType);
+
+    // `keepOpenOnPick` keeps the list open, so filter `editedValues` to prevent duplicate `take()`
+    // calls before `values` updates.
+    const suggest = useCallback(
+        async (query: string) => (await source?.(query) ?? [])
+            .filter((value) => !editedValues.current.includes(value)),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- read through editedValues
+        [ source, values ]);
 
     // A colour picker holds its own value and is never told one: it is set at birth and only read
     // from after that. Anything written into it can reach a dialog that is still open — it reports
@@ -88,100 +122,147 @@ export default function ValuesInput({ labelType, values, onCommit, removeButtonT
     function take(value: string) {
         const trimmed = value.trim();
         setDraft("");
-        if (disabled || !trimmed || values.includes(trimmed)) return;
-        onCommit([ ...values, trimmed ]);
+        const current = editedValues.current;
+        if (disabled || !trimmed || current.includes(trimmed)) return;
+
+        const edited = [ ...current, trimmed ];
+        editedValues.current = edited;
+        commit(edited);
     }
 
     function drop(value: string) {
         if (disabled) return;
-        onCommit(values.filter((held) => held !== value));
+
+        const edited = editedValues.current.filter((held) => held !== value);
+        editedValues.current = edited;
+        commit(edited);
+    }
+
+    function commit(edited: string[]) {
+        const result = onCommit(edited);
+        if (!result) {
+            return;
+        }
+
+        pendingCommits.current++;
+        void result.then(settleCommit, settleCommit);
+    }
+
+    function settleCommit() {
+        pendingCommits.current--;
+        if (pendingCommits.current === 0) {
+            editedValues.current = latestValuesProp.current;
+        }
     }
 
     function handleKeyDown(e: TargetedKeyboardEvent<HTMLInputElement>) {
+        // FormAutocomplete consumed Enter to take a suggestion, so do not also commit the draft.
+        if (e.defaultPrevented) {
+            return;
+        }
+
         if (e.key === "Enter") {
             // Consumed, so that it does not also reach whatever the field sits in — a table cell
             // takes Enter as "done here", which would end the edit at the first value.
             e.preventDefault();
             e.stopPropagation();
             take(e.currentTarget.value);
-        } else if (e.key === "Backspace" && !e.currentTarget.value && values.length) {
+        } else if (e.key === "Backspace" && !e.currentTarget.value && editedValues.current.length) {
             // Backspace on an empty box drops the last chip, the box having nothing of its own to
             // erase. With something typed it is the box's own, as anywhere else.
             e.preventDefault();
-            drop(values[values.length - 1]);
+            drop(editedValues.current[editedValues.current.length - 1]);
         }
+    }
+
+    const chips = values.map((value) => (
+        <Chip
+            key={value}
+            removeButtonText={removeButtonText ?? t("promoted_attributes.remove_value")}
+            disabled={disabled}
+            onRemove={() => drop(value)}
+        >
+            {/* A colour reads as its swatch even while being edited, `#3d5a80` naming
+                nothing to the eye. A swatch rather than the chip's own ground, as the
+                read-only chips wear it: this chip also holds the button removing it,
+                which no ground a user may pick can be trusted to keep visible. */}
+            <span>{isColor ? <ColorSwatch color={value} /> : value}</span>
+        </Chip>
+    ));
+
+    const addButton = showAdd && (
+        <ActionButton
+            key="add"
+            className="values-input-add"
+            icon="bx bx-plus"
+            text={addButtonText ?? t("promoted_attributes.add_value")}
+            disabled={disabled}
+            // `onBlur` can clear `draft` before the click, so read the current input value.
+            onClick={() => take(inputRef.current?.value ?? "")}
+        />
+    );
+
+    if (suggests) {
+        return (
+            <FormAutocomplete
+                inputRef={inputRef}
+                id={inputId}
+                tabIndex={tabIndex}
+                type={LABEL_MAPPINGS[labelType] ?? "text"}
+                fieldClassName="values-input"
+                currentValue={draft}
+                placeholder={values.length ? undefined : placeholder}
+                disabled={disabled}
+                openOnFocus
+                keepOpenOnPick
+                source={suggest}
+                leading={chips}
+                trailing={addButton}
+                onChange={setDraft}
+                onPick={take}
+                onBlur={take}
+                onKeyDown={handleKeyDown}
+            />
+        );
     }
 
     return (
         // Values and the box they are entered in share the one wrapping line, the box after them,
         // however they are entered — a widget of the browser's own only dresses the box differently.
         <div className={clsx("tn-field values-input", PICKED_TYPES.has(labelType) && "widget-entry")}>
-            {values.map((value) => (
-                <Chip
-                    key={value}
-                    removeButtonText={removeButtonText ?? t("promoted_attributes.remove_value")}
-                    disabled={disabled}
-                    onRemove={() => drop(value)}
-                >
-                    {/* A colour reads as its swatch even while being edited, `#3d5a80` naming
-                        nothing to the eye. A swatch rather than the chip's own ground, as the
-                        read-only chips wear it: this chip also holds the button removing it,
-                        which no ground a user may pick can be trusted to keep visible. */}
-                    <span>{isColor ? <ColorSwatch color={value} /> : value}</span>
-                </Chip>
-            ))}
+            {chips}
             {/* The box and the button that asks for what it holds are one thing on the page, so they
                 are wrapped as one: whatever wraps or is ordered, they go together, and the button
-                never ends up on a line without the box it belongs to.
-
-                Keyed, as the chips before them are: a field of keyed and unkeyed siblings together is
-                matched up by position as it grows, so taking a second value would rebuild the box
-                rather than keep it — losing the focus in it, and with it the widget it had open. */}
+                never ends up on a line without the box it belongs to. */}
             <Entry grouped={PICKED_TYPES.has(labelType)}>
-            {isColor ? (
-                <input
-                    key="field"
-                    ref={inputRef}
-                    id={inputId}
-                    tabIndex={tabIndex}
-                    className="form-control"
-                    type="color"
-                    disabled={disabled}
-                />
-            ) : (
-                <FormTextBox
-                    key="field"
-                    inputRef={inputRef}
-                    id={inputId}
-                    tabIndex={tabIndex}
-                    type={LABEL_MAPPINGS[labelType] ?? "text"}
-                    currentValue={draft}
-                    // Only while the field is empty: beside chips it would read as one of them.
-                    placeholder={values.length ? undefined : placeholder}
-                    disabled={disabled}
-                    onChange={setDraft}
-                    onBlur={take}
-                    onKeyDown={handleKeyDown}
-                />
-            )}
+                {isColor ? (
+                    <input
+                        key="field"
+                        ref={inputRef}
+                        id={inputId}
+                        tabIndex={tabIndex}
+                        className="form-control"
+                        type="color"
+                        disabled={disabled}
+                    />
+                ) : (
+                    <FormTextBox
+                        key="field"
+                        inputRef={inputRef}
+                        id={inputId}
+                        tabIndex={tabIndex}
+                        type={LABEL_MAPPINGS[labelType] ?? "text"}
+                        currentValue={draft}
+                        // Existing chips make the empty-field placeholder unnecessary.
+                        placeholder={values.length ? undefined : placeholder}
+                        disabled={disabled}
+                        onChange={setDraft}
+                        onBlur={take}
+                        onKeyDown={handleKeyDown}
+                    />
+                )}
 
-            {/* A widget says nothing useful about when it is done — a date reports a change per part
-                of it — so a field entered through one is asked rather than watched. Enter does as
-                much for the keyboard; this is the same thing where it can be seen. */}
-            {showAdd && (
-                <ActionButton
-                    key="add"
-                    className="values-input-add"
-                    icon="bx bx-plus"
-                    text={addButtonText ?? t("promoted_attributes.add_value")}
-                    disabled={disabled}
-                    // The value is read from the field rather than from the draft: leaving the field
-                    // to press this takes it already, and the draft is empty by the time this runs.
-                    // For a typed box that leaving is also the whole of the press — the take empties
-                    // the box and the button goes with it, before the click lands on anything.
-                    onClick={() => take(inputRef.current?.value ?? "")}
-                />
-            )}
+                {addButton}
             </Entry>
         </div>
     );

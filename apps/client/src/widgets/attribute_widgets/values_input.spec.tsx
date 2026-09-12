@@ -33,8 +33,18 @@ describe("ValuesInput", () => {
 
     async function press(input: HTMLInputElement | null, key: string) {
         await act(async () => {
-            input?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+            input?.dispatchEvent(new KeyboardEvent(
+                "keydown",
+                { key, bubbles: true, cancelable: true }
+            ));
         });
+    }
+
+    async function settleDropdown() {
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+        });
+        return [ ...document.querySelectorAll<HTMLElement>(".form-autocomplete-dropdown li") ];
     }
 
     it("commits nothing while disabled, whatever reaches it", async () => {
@@ -79,6 +89,46 @@ describe("ValuesInput", () => {
         await press(input, "Enter");
         expect(onCommit).not.toHaveBeenCalled();
         expect(input?.value).toBe("");
+    });
+
+    it("keeps newer edits while an earlier async commit updates values", async () => {
+        const finish: Array<() => void> = [];
+        const onCommit = vi.fn(() => new Promise<void>((resolve) => finish.push(resolve)));
+        let input = await mount({ labelType: "text", values: [ "one" ], onCommit });
+
+        await typeInto(input, "two");
+        await press(input, "Enter");
+        await typeInto(input, "three");
+        await press(input, "Enter");
+
+        input = await mount({ labelType: "text", values: [ "one", "two" ], onCommit });
+        await typeInto(input, "four");
+        await press(input, "Enter");
+
+        expect(onCommit).toHaveBeenLastCalledWith([ "one", "two", "three", "four" ]);
+        await act(async () => {
+            for (const resolve of finish) {
+                resolve();
+            }
+        });
+    });
+
+    it("restores accepted values after an async commit fails", async () => {
+        let rejectFirst: (error: Error) => void = () => {};
+        const onCommit = vi.fn()
+            .mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
+                rejectFirst = reject;
+            }))
+            .mockResolvedValue(undefined);
+        const input = await mount({ labelType: "text", values: [ "one" ], onCommit });
+
+        await typeInto(input, "two");
+        await press(input, "Enter");
+        await act(async () => rejectFirst(new Error("write refused")));
+        await typeInto(input, "three");
+        await press(input, "Enter");
+
+        expect(onCommit).toHaveBeenLastCalledWith([ "one", "three" ]);
     });
 
     it("asks for a date rather than taking it as the field reports one", async () => {
@@ -191,6 +241,145 @@ describe("ValuesInput", () => {
             }
         };
     }
+
+    describe("offering the values entered elsewhere", () => {
+        const known = [ "Game", "RPG", "\u4e09\u570b" ];
+        const source = async (query: string) => {
+            const term = query.trim().toLowerCase();
+            return known.filter((value) => value.toLowerCase().includes(term));
+        };
+
+        it("offers them on focus, minus the ones the field already holds", async () => {
+            const input = await mount({
+                labelType: "text",
+                values: [ "Game" ],
+                onCommit: vi.fn(),
+                source
+            });
+
+            expect(container.querySelector(".tn-chip")?.closest(".values-input")).not.toBeNull();
+
+            await act(async () => input?.focus());
+            expect((await settleDropdown()).map((item) => item.textContent))
+                .toEqual([ "RPG", "\u4e09\u570b" ]);
+        });
+
+        it("takes a picked entry as a chip, and stays open for the next", async () => {
+            const onCommit = vi.fn();
+            const input = await mount({ labelType: "text", values: [ "Game" ], onCommit, source });
+
+            await act(async () => input?.focus());
+            const items = await settleDropdown();
+            await act(async () => items[1]?.click());
+
+            expect(onCommit).toHaveBeenCalledWith([ "Game", "\u4e09\u570b" ]);
+            expect(document.querySelector(".form-autocomplete-dropdown")).not.toBeNull();
+
+            await act(async () => items[0]?.click());
+            expect(onCommit).toHaveBeenLastCalledWith([ "Game", "\u4e09\u570b", "RPG" ]);
+        });
+
+        it("stops offering a value it has taken, before the host has said so", async () => {
+            const onCommit = vi.fn();
+            const input = await mount({ labelType: "text", values: [ "Game" ], onCommit, source });
+
+            await act(async () => input?.focus());
+            const items = await settleDropdown();
+            await act(async () => items[0]?.click());
+            expect(onCommit).toHaveBeenCalledWith([ "Game", "RPG" ]);
+
+            await typeInto(input, "rp");
+            expect(await settleDropdown()).toEqual([]);
+        });
+
+        it("leaves Enter meaning what was typed until an entry is stepped onto", async () => {
+            const onCommit = vi.fn();
+            const input = await mount({ labelType: "text", values: [], onCommit, source });
+
+            await typeInto(input, "\u4e09");
+            expect((await settleDropdown()).map((item) => item.textContent))
+                .toEqual([ "\u4e09\u570b" ]);
+            await press(input, "Enter");
+            expect(onCommit).toHaveBeenCalledWith([ "\u4e09" ]);
+
+            onCommit.mockClear();
+            await typeInto(input, "\u4e09");
+            await settleDropdown();
+            await press(input, "ArrowDown");
+            await press(input, "Enter");
+            expect(onCommit).toHaveBeenCalledTimes(1);
+            expect(onCommit).toHaveBeenCalledWith([ "\u4e09", "\u4e09\u570b" ]);
+        });
+
+        it("keeps the add button inside the autocomplete field", async () => {
+            const onCommit = vi.fn();
+            const input = await mount({ labelType: "text", values: [ "Game" ], onCommit, source });
+
+            await typeInto(input, "RPG");
+            const field = container.querySelector(".form-autocomplete-field.values-input");
+            const add = container.querySelector<HTMLElement>(".values-input-add");
+            expect(add?.closest(".form-autocomplete-field")).toBe(field);
+            expect(container.querySelector(".tn-chip")?.closest(".form-autocomplete-field"))
+                .toBe(field);
+
+            await act(async () => add?.click());
+            expect(onCommit).toHaveBeenCalledWith([ "Game", "RPG" ]);
+        });
+
+        it("keeps the keys and the leaving the field answers for itself", async () => {
+            const onCommit = vi.fn();
+            const input = await mount({
+                labelType: "text",
+                values: [ "Game", "RPG" ],
+                onCommit,
+                source
+            });
+
+            await press(input, "Backspace");
+            expect(onCommit).toHaveBeenCalledWith([ "Game" ]);
+
+            onCommit.mockClear();
+            await typeInto(input, "\u4e09\u570b | Game");
+            await act(async () => {
+                input?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+            });
+            expect(onCommit).toHaveBeenCalledWith([ "Game", "\u4e09\u570b | Game" ]);
+        });
+
+        it("commits nothing while disabled, the list included", async () => {
+            const onCommit = vi.fn();
+            const input = await mount({
+                labelType: "text",
+                values: [ "Game" ],
+                onCommit,
+                source,
+                disabled: true
+            });
+
+            await act(async () => input?.focus());
+            expect(await settleDropdown()).toEqual([]);
+
+            await typeInto(input, "RPG");
+            await press(input, "Enter");
+            await press(input, "Backspace");
+            await act(async () => {
+                input?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+            });
+            expect(onCommit).not.toHaveBeenCalled();
+        });
+
+        it("keeps the box plain where the value is picked through a widget", async () => {
+            const input = await mount({
+                labelType: "color",
+                values: [],
+                onCommit: vi.fn(),
+                source
+            });
+
+            await act(async () => input?.focus());
+            expect(await settleDropdown()).toEqual([]);
+        });
+    });
 
     it("drops the last chip on backspace in an empty box, and leaves a filled one alone", async () => {
         const onCommit = vi.fn();
