@@ -50,11 +50,26 @@ function register(app: Application) {
             getLog().error(`Error on ${req.method} ${req.url}: ${detail}`);
         }
 
+        // A logout form is a top-level navigation so OIDC redirects can leave the origin.
+        // Keep validation and provider failures inside the app instead of rendering an error body.
+        if (isLogoutFormNavigation(req)) {
+            res.redirect("..");
+            return;
+        }
+
         res.status(statusCode).send({
             message: err instanceof Error ? err.message : "Unknown Error"
         });
 
     });
+}
+
+/** Whether a failed logout came from the browser form navigation. */
+export function isLogoutFormNavigation(req: Request): boolean {
+    return req.method === "POST"
+        && req.path === "/logout"
+        && req.is("application/x-www-form-urlencoded") === "application/x-www-form-urlencoded"
+        && req.get("Accept")?.includes("text/html") === true;
 }
 
 /**

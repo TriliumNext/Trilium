@@ -213,9 +213,7 @@ export function isPermissionAllowedForOrigin(kind: SessionKind, permission: stri
  * meta refresh) can proceed, and which `window.open` URLs become extra
  * windows. Only the app shell itself is allowed: the `trilium-app://app`
  * origin (the sole host ever served — see the loadURL call sites), and only
- * at the root path; the query string (`?extraWindow=1`) and the hash are not
- * part of the check. Anything deeper is in-page SPA routing (which
- * `will-navigate` does not fire for) or hostile.
+ * at the root path or the renderer's logout endpoint.
  *
  * `localhost` was previously allowed too, from the era when the desktop
  * renderer was served over `http://127.0.0.1:<port>`. The custom-protocol
@@ -227,7 +225,9 @@ export function isNavigationAllowed(targetUrl: string): boolean {
     const parsedUrl = url.parse(targetUrl);
 
     const isAppShell = parsedUrl.protocol === `${TRILIUM_APP_SCHEME}:` && parsedUrl.hostname === TRILIUM_APP_HOST;
-    return isAppShell && (!parsedUrl.pathname || parsedUrl.pathname === "/");
+    return isAppShell && (!parsedUrl.pathname
+        || parsedUrl.pathname === "/"
+        || parsedUrl.pathname === "/logout");
 }
 
 /**

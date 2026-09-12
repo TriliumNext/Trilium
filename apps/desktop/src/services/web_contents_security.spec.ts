@@ -579,14 +579,17 @@ describe("navigation guard", () => {
         setupWebContentsSecurity(SECURITY_OPTIONS);
     });
 
-    it("only allows the app shell at its root path", () => {
+    it("allows the app shell root and the logout endpoint", () => {
         expect(isNavigationAllowed("trilium-app://app/")).toBe(true);
         // Root "/?" path is allowed.
         expect(isNavigationAllowed("trilium-app://app/?")).toBe(true);
         // The extra-window URL: root path with a query string and a hash.
         expect(isNavigationAllowed("trilium-app://app/?extraWindow=1#root/abc")).toBe(true);
 
-        // App shell but non-root path is blocked (in-page SPA routing / hostile).
+        // Logout is a form POST dispatched through the trusted custom protocol.
+        expect(isNavigationAllowed("trilium-app://app/logout")).toBe(true);
+
+        // Other app paths are blocked (in-page SPA routing / hostile).
         expect(isNavigationAllowed("trilium-app://app/somewhere")).toBe(false);
         // Our scheme but not the app host — only `trilium-app://app` is ever served.
         expect(isNavigationAllowed("trilium-app://evil/")).toBe(false);
