@@ -75,6 +75,7 @@ const h = vi.hoisted(() => ({
     createMainWindow: vi.fn((..._a: unknown[]) => Promise.resolve()),
     createSetupWindow: vi.fn((..._a: unknown[]) => Promise.resolve()),
     createExtraWindow: vi.fn((..._a: unknown[]) => {}),
+    showAndFocusWindow: vi.fn((..._a: unknown[]) => {}),
     registerGlobalShortcuts: vi.fn((..._a: unknown[]) => Promise.resolve()),
     setupAutoLaunch: vi.fn(),
     applyLaunchOnStartup: vi.fn(),
@@ -222,6 +223,7 @@ vi.mock("./services/window", () => ({
         createExtraWindow: (...a: unknown[]) => h.createExtraWindow(...a),
         createMainWindow: (...a: unknown[]) => h.createMainWindow(...a),
         createSetupWindow: (...a: unknown[]) => h.createSetupWindow(...a),
+        showAndFocusWindow: (...a: unknown[]) => h.showAndFocusWindow(...a),
         registerGlobalShortcuts: (...a: unknown[]) => h.registerGlobalShortcuts(...a)
     },
     setupWindowing: vi.fn()
@@ -293,7 +295,11 @@ function resetState() {
     h.createMainWindow.mockClear();
     h.createSetupWindow.mockClear();
     h.createExtraWindow.mockClear();
+    h.showAndFocusWindow.mockClear();
     h.registerGlobalShortcuts.mockClear();
+    h.wasLaunchedHidden.mockReset();
+    h.wasLaunchedHidden.mockReturnValue(false);
+    h.disableTray = false;
     h.unregisterAll.mockClear();
     h.startServer = () => Promise.resolve({});
 }
@@ -551,38 +557,43 @@ describe("app event handlers", () => {
             expect(h.createExtraWindow).toHaveBeenCalledWith("");
         });
 
-        it("restores, shows and focuses a minimized last-focused window", async () => {
-            const restore = vi.fn();
-            const show = vi.fn();
-            const focus = vi.fn();
-            h.lastFocusedWindow = { isMinimized: () => true, restore, show, focus };
+        it("reveals the last-focused window", async () => {
+            const targetWindow = {
+                isMinimized: () => true,
+                restore: vi.fn(),
+                show: vi.fn(),
+                focus: vi.fn()
+            };
+            h.lastFocusedWindow = targetWindow;
             await bootAndReady();
             const handler = h.appOn.get("second-instance");
             handler?.({}, []);
-            expect(restore).toHaveBeenCalled();
-            expect(show).toHaveBeenCalled();
-            expect(focus).toHaveBeenCalled();
+            expect(h.showAndFocusWindow).toHaveBeenCalledWith(targetWindow);
         });
 
-        it("shows and focuses a non-minimized last-focused window without restoring", async () => {
-            const restore = vi.fn();
-            const show = vi.fn();
-            const focus = vi.fn();
-            h.lastFocusedWindow = { isMinimized: () => false, restore, show, focus };
-            await bootAndReady();
-            const handler = h.appOn.get("second-instance");
-            handler?.({}, []);
-            expect(restore).not.toHaveBeenCalled();
-            expect(show).toHaveBeenCalled();
-            expect(focus).toHaveBeenCalled();
-        });
-
-        it("does nothing when there is no last-focused window", async () => {
+        it("falls back to the main window when a hidden start has no focus history", async () => {
+            const targetWindow = {
+                isMinimized: () => false,
+                restore: vi.fn(),
+                show: vi.fn(),
+                focus: vi.fn()
+            };
             h.lastFocusedWindow = null;
+            h.mainWindow = targetWindow;
+            await bootAndReady();
+            const handler = h.appOn.get("second-instance");
+            handler?.({}, []);
+            expect(h.showAndFocusWindow).toHaveBeenCalledWith(targetWindow);
+        });
+
+        it("does nothing when there is no existing window", async () => {
+            h.lastFocusedWindow = null;
+            h.mainWindow = null;
             await bootAndReady();
             const handler = h.appOn.get("second-instance");
             expect(() => handler?.({}, [])).not.toThrow();
             expect(h.createExtraWindow).not.toHaveBeenCalled();
+            expect(h.showAndFocusWindow).not.toHaveBeenCalled();
         });
     });
 
@@ -613,23 +624,44 @@ describe("app event handlers", () => {
 
             // Existing windows → do not create another; instead reveal the
             // (possibly close-to-tray-hidden) last focused window.
-            const show = vi.fn();
-            const focus = vi.fn();
             h.allWindows = [{}];
-            h.lastFocusedWindow = { isMinimized: () => false, restore: vi.fn(), show, focus };
+            const lastFocusedWindow = {
+                isMinimized: () => false,
+                restore: vi.fn(),
+                show: vi.fn(),
+                focus: vi.fn()
+            };
+            h.lastFocusedWindow = lastFocusedWindow;
             await activate?.();
             expect(h.createMainWindow).toHaveBeenCalledTimes(2);
-            expect(show).toHaveBeenCalled();
-            expect(focus).toHaveBeenCalled();
+            expect(h.showAndFocusWindow).toHaveBeenCalledWith(lastFocusedWindow);
 
             // Hidden-on-autostart window was never focused → fall back to the main window.
-            const mainShow = vi.fn();
-            const mainFocus = vi.fn();
             h.lastFocusedWindow = null;
-            h.mainWindow = { isMinimized: () => false, restore: vi.fn(), show: mainShow, focus: mainFocus };
+            const mainWindow = {
+                isMinimized: () => false,
+                restore: vi.fn(),
+                show: vi.fn(),
+                focus: vi.fn()
+            };
+            h.mainWindow = mainWindow;
             await activate?.();
-            expect(mainShow).toHaveBeenCalled();
-            expect(mainFocus).toHaveBeenCalled();
+            expect(h.showAndFocusWindow).toHaveBeenLastCalledWith(mainWindow);
+        });
+
+        it("starts hidden only when the tray can reveal the window", async () => {
+            h.wasLaunchedHidden.mockReturnValue(true);
+            await bootAndReady();
+            await h.appOn.get("ready")?.();
+            expect(h.createMainWindow).toHaveBeenCalledWith(true);
+        });
+
+        it("starts visible when the tray is disabled", async () => {
+            h.wasLaunchedHidden.mockReturnValue(true);
+            h.disableTray = true;
+            await bootAndReady();
+            await h.appOn.get("ready")?.();
+            expect(h.createMainWindow).toHaveBeenCalledWith(false);
         });
 
         it("does not register activate on non-darwin even when DB is initialized", async () => {

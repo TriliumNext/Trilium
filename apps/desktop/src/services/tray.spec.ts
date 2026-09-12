@@ -32,7 +32,8 @@ const state = vi.hoisted(() => ({
     lastFocusedWindow: null as unknown,
     mainWindow: null as unknown,
     allWindows: [] as unknown[],
-    browserWindowAll: [] as unknown[]
+    browserWindowAll: [] as unknown[],
+    showAndFocusWindow: vi.fn()
 }));
 
 // `getTodayNote` returns a fake note used by the "today" menu item.
@@ -103,7 +104,8 @@ vi.mock("./window.js", () => ({
     default: {
         getLastFocusedWindow: () => state.lastFocusedWindow,
         getMainWindow: () => state.mainWindow,
-        getAllWindows: () => state.allWindows
+        getAllWindows: () => state.allWindows,
+        showAndFocusWindow: (...args: unknown[]) => state.showAndFocusWindow(...args)
     }
 }));
 
@@ -272,8 +274,7 @@ describe("tray", () => {
             // Now simulate it being hidden, then click shows + focuses.
             win.listeners.get("hide")?.();
             click?.();
-            expect(win.show).toHaveBeenCalled();
-            expect(win.focus).toHaveBeenCalled();
+            expect(state.showAndFocusWindow).toHaveBeenCalledWith(win);
         });
 
         it("click handler summons a window started hidden (no focus history)", () => {
@@ -291,8 +292,7 @@ describe("tray", () => {
             state.ipcHandlers.get("reload-tray")?.();
 
             state.trayInstance?.clickHandlers.get("click")?.();
-            expect(win.show).toHaveBeenCalled();
-            expect(win.focus).toHaveBeenCalled();
+            expect(state.showAndFocusWindow).toHaveBeenCalledWith(win);
             expect(win.hide).not.toHaveBeenCalled();
         });
     });
@@ -419,8 +419,7 @@ describe("tray", () => {
                 | Electron.MenuItemConstructorOptions
                 | undefined;
             cbB?.click?.(undefined as never, undefined as never, undefined as never);
-            expect(winB.show).toHaveBeenCalled();
-            expect(winB.focus).toHaveBeenCalled();
+            expect(state.showAndFocusWindow).toHaveBeenCalledWith(winB);
         });
 
         it("prunes closed windows and registers listeners for new ones", () => {
