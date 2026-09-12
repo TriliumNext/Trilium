@@ -9,6 +9,7 @@ import MathInputView, { LatexTextAreaView, MathFieldFocusableView } from './math
 interface MathField extends HTMLElement {
 	value: string;
 	readOnly: boolean;
+	inlineShortcuts?: Record<string, string | { value: string; after?: string }>;
 	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }
 
@@ -49,6 +50,27 @@ describe( 'MathInputView', () => {
 
 		expect( mathfield.tagName.toLowerCase() ).toBe( 'math-field' );
 		expect( mathfield.getAttribute( 'tabindex' ) ).toBe( '0' );
+	} );
+
+	it( 'renders only the LaTeX textarea when MathLive is disabled', () => {
+		view = new MathInputView( new Locale(), false );
+		view.render();
+		document.body.appendChild( view.element as HTMLElement );
+
+		expect( view.element?.querySelector( '.ck-mathlive-container' ) ).toBeNull();
+		expect( view.mathfield ).toBeNull();
+		expect( textarea().tagName ).toBe( 'TEXTAREA' );
+	} );
+
+	it( 'accepts custom MathLive inline shortcuts from a document event', async () => {
+		const addShortcut = ( event: Event ) => {
+			( event as CustomEvent<Record<string, string>> ).detail.sq = '\\sqrt{#?}';
+		};
+		document.addEventListener( 'mathlive:custom-shortcuts', addShortcut, { once: true } );
+
+		const mathfield = await renderAndWait();
+
+		expect( mathfield.inlineShortcuts?.sq ).toBe( '\\sqrt{#?}' );
 	} );
 
 	describe( 'syncing', () => {
@@ -298,6 +320,16 @@ describe( 'MathInputView', () => {
 			const focus = vi.spyOn( textarea(), 'focus' );
 
 			view.latexTextAreaView.focus();
+
+			expect( focus ).toHaveBeenCalled();
+		} );
+
+		it( 'focuses the textarea when MathLive is disabled', () => {
+			view = new MathInputView( new Locale(), false );
+			view.render();
+			const focus = vi.spyOn( view.latexTextAreaView, 'focus' );
+
+			view.focus();
 
 			expect( focus ).toHaveBeenCalled();
 		} );

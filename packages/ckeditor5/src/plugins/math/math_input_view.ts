@@ -1,6 +1,7 @@
 // Math input widget: wraps a MathLive <math-field> and a LaTeX textarea
 // and keeps them in sync for the CKEditor 5 math dialog.
-import { View, type Locale, type FocusableView } from 'ckeditor5';
+import { View, type Locale, type FocusableView, type TemplateDefinition } from 'ckeditor5';
+import type { InlineShortcutDefinitions } from 'mathlive';
 import 'mathlive/fonts.css'; // Auto-bundles offline fonts
 import 'mathlive/static.css'; // Static styles for mathlive
 
@@ -11,7 +12,7 @@ interface MathFieldElement extends HTMLElement {
 	value: string;
 	readOnly: boolean;
 	mathVirtualKeyboardPolicy: string;
-	inlineShortcuts?: Record<string, string>;
+	inlineShortcuts?: InlineShortcutDefinitions;
 	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }
 
@@ -55,25 +56,32 @@ export default class MathInputView extends View {
 	private _destroyed = false;
 	private _vkGeometryHandler?: () => void;
 	private _updating = false;
+	private readonly _enableMathField: boolean;
 	private static _configured = false;
 
 	/** Replaces the editor when MathLive fails to load; resolved up front, while the locale is at hand. */
 	private readonly _unavailableLabel: string;
 
-	constructor( locale: Locale ) {
+	constructor( locale: Locale, enableMathField = true ) {
 		super( locale );
+		this._enableMathField = enableMathField;
 		this._unavailableLabel = locale.t( 'Math editor unavailable' );
 		this.latexTextAreaView = new LatexTextAreaView( locale );
 		this.mathFieldFocusableView = new MathFieldFocusableView( locale, this );
 		this.set( 'value', null );
 		this.set( 'isReadOnly', false );
+		const children: Array<TemplateDefinition | View> = [];
+		// Only include the MathLive container in the DOM when the feature is enabled
+		if ( this._enableMathField ) {
+			children.push( { tag: 'div', attributes: { class: [ 'ck-mathlive-container' ] } } );
+		}
+		children.push(
+			{ tag: 'label', attributes: { class: [ 'ck-latex-label' ] }, children: [ locale.t( 'LaTeX' ) ] },
+			{ tag: 'div', attributes: { class: [ 'ck-latex-wrapper' ] }, children: [ this.latexTextAreaView ] }
+		);
 		this.setTemplate( {
 			tag: 'div', attributes: { class: [ 'ck', 'ck-math-input' ] },
-			children: [
-				{ tag: 'div', attributes: { class: [ 'ck-mathlive-container' ] } },
-				{ tag: 'label', attributes: { class: [ 'ck-latex-label' ] }, children: [ locale.t( 'LaTeX' ) ] },
-				{ tag: 'div', attributes: { class: [ 'ck-latex-wrapper' ] }, children: [ this.latexTextAreaView ] }
-			]
+			children
 		} );
 	}
 
@@ -116,7 +124,7 @@ export default class MathInputView extends View {
 				if ( this.mathfield.value.trim() !== newVal.trim() ) {
 					this._setMathfieldValue( newVal );
 				}
-			} else if ( newVal !== '' ) {
+			} else if ( this._enableMathField && newVal !== '' ) {
 				this._initMathField( false );
 			}
 			this._updating = false;
@@ -147,7 +155,9 @@ export default class MathInputView extends View {
 		if ( textarea.value !== initial ) {
 			textarea.value = initial;
 		}
-		this._loadMathLive();
+		if ( this._enableMathField ) {
+			this._loadMathLive();
+		}
 	}
 
 	// Loads the MathLive library dynamically
@@ -200,7 +210,10 @@ export default class MathInputView extends View {
 		// Set shortcuts after mounting (accessing inlineShortcuts requires mounted element)
 		try {
 			if ( mf.inlineShortcuts ) {
-				mf.inlineShortcuts = { ...mf.inlineShortcuts, dx: 'dx', dy: 'dy', dt: 'dt' };
+				// Allows external listeners to inject custom MathLive shortcuts by mutating event.detail.
+				const customShortcuts: InlineShortcutDefinitions = {};
+				document.dispatchEvent( new CustomEvent( 'mathlive:custom-shortcuts', { detail: customShortcuts } ) );
+				mf.inlineShortcuts = { ...mf.inlineShortcuts, ...customShortcuts };
 			}
 		} catch {
 			// Inline shortcut configuration is optional; ignore failures to avoid breaking the math field.
@@ -255,7 +268,11 @@ export default class MathInputView extends View {
 	}
 
 	public focus(): void {
-		this.mathfield?.focus();
+		if ( this.mathfield ) {
+			this.mathfield.focus();
+		} else {
+			this.latexTextAreaView.focus();
+		}
 	}
 
 	public override destroy(): void {

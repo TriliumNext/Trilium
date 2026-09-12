@@ -117,7 +117,7 @@ interface DynamicConfig {
         copyToClipboard(src: string): void;
         download(src: string): void;
     };
-    math: { lazyLoad(): Promise<void> };
+    math: { enableMathField: boolean; lazyLoad(): Promise<void> };
     mermaid: { lazyLoad(): Promise<unknown> };
     syntaxHighlighting: { loadHighlightJs(): Promise<{ default: unknown }> };
     mention?: {
@@ -620,6 +620,15 @@ function toolbarItems(config: EditorConfig): unknown[] {
 }
 
 describe("CK config - disabled plugins", () => {
+    it("passes the MathLive option to the math editor", async () => {
+        const defaultConfig = await buildDynamicConfig();
+        expect(defaultConfig.math.enableMathField).toBe(true);
+
+        optionsState.map["mathFieldEnabled"] = "false";
+        const disabledConfig = await buildDynamicConfig();
+        expect(disabledConfig.math.enableMathField).toBe(false);
+    });
+
     it("removes the emoji and slash-command plugins based on their option toggles", async () => {
         const disabled = await buildConfig(baseOpts());
         expect(disabled.removePlugins).toContain("TriliumEmojiMention");
