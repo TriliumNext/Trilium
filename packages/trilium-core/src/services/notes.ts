@@ -61,6 +61,14 @@ export interface NoteParams {
     dateCreated?: string;
     utcDateCreated?: string;
     /**
+     * Optional override of the note's modification timestamps (ETAPI only).
+     * Applied after the note and its content are saved, since every regular
+     * save re-stamps "now". Migration importers use this to preserve the
+     * source's last-modified date. Omit both to keep the default behavior.
+     */
+    dateModified?: string;
+    utcDateModified?: string;
+    /**
      * Set internally when the client requested no `type` and it was derived from the parent note instead.
      * In that case a `child:template` of a different type is still applied (and converts the note), whereas
      * an explicitly chosen type wins over such a template (#3015).
@@ -243,6 +251,14 @@ function createNewNote(params: NoteParams): {
         throw new Error(error);
     }
 
+    if ((error = date_utils.validateLocalDateTime(params.dateModified))) {
+        throw new Error(error);
+    }
+
+    if ((error = date_utils.validateUtcDateTime(params.utcDateModified))) {
+        throw new Error(error);
+    }
+
     // When creating from a template, inherit the template's type and mime if not explicitly provided.
     // This ensures binary types (PDF, images, etc.) get the correct mime from the start.
     if (params.templateNoteId) {
@@ -323,6 +339,16 @@ function createNewNote(params: NoteParams): {
             copyAttachments(templateNote, note);
 
             // no special handling for ~inherit since it doesn't matter if it's assigned with the note creation or later
+        }
+
+        // Preserve the source's modification time after all content writes,
+        // since each save() re-stamps the current time.
+        const utcDateModified = params.utcDateModified
+            ?? (params.dateModified
+                ? date_utils.utcDateTimeStr(date_utils.parseDateTime(params.dateModified))
+                : undefined);
+        if (utcDateModified) {
+            note.setDateCreatedAndModified(undefined, utcDateModified);
         }
 
         copyChildAttributes(parentNote, note, params.isTypeDefaulted);
@@ -1302,7 +1328,16 @@ function scanForLinks(note: BNote, content: string | Uint8Array) {
             const { forceFrontendReload, content: newContent } = saveLinks(note, content);
 
             if (content !== newContent) {
+                // A scan localizing already-fetched pictures (or normalizing
+                // links) is a background cosmetic swap, not a new edit: keep
+                // the note's dates. This runs deferred (image-download timers,
+                // ETAPI post-processing), so re-stamping here would overwrite
+                // dates an importer just restored via ETAPI dateModified.
+                const prevUtcModified = note.utcDateModified;
                 note.setContent(newContent, { forceFrontendReload });
+                if (prevUtcModified) {
+                    note.setDateCreatedAndModified(undefined, prevUtcModified);
+                }
             }
         });
     } catch (e: any) {
