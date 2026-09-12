@@ -87,6 +87,7 @@ describe("SortChildNotesDialog", () => {
         await submit();
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
             sortBy: "title asc",
+            sortDirection: "asc",
             foldersFirst: false,
             sortNatural: false
         }));
@@ -108,8 +109,10 @@ describe("SortChildNotesDialog", () => {
         expect(levels()).toHaveLength(2);
 
         await submit();
+        // The first level's direction is the request's, which is what groups folders last.
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
-            sortBy: "priority desc, dateModified asc"
+            sortBy: "priority desc, dateModified asc",
+            sortDirection: "desc"
         }));
     });
 
@@ -123,7 +126,8 @@ describe("SortChildNotesDialog", () => {
         await click(second.querySelector(".sort-level-up"));
         await submit();
         expect(put).toHaveBeenCalledWith("notes/parent/sort-children", expect.objectContaining({
-            sortBy: "dateCreated asc, title asc"
+            sortBy: "dateCreated asc, title asc",
+            sortDirection: "asc"
         }));
     });
 
