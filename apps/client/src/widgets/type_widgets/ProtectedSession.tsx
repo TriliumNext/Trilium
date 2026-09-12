@@ -1,14 +1,22 @@
-import { useCallback, useRef } from "preact/hooks";
+import "./ProtectedSession.css";
+
+import type { TargetedSubmitEvent } from "preact";
+import { useCallback, useEffect, useRef } from "preact/hooks";
+
 import { t } from "../../services/i18n";
+import protected_session from "../../services/protected_session";
 import Button from "../react/Button";
 import FormGroup from "../react/FormGroup";
 import FormTextBox from "../react/FormTextBox";
-import "./ProtectedSession.css";
-import protected_session from "../../services/protected_session";
-import type { TargetedSubmitEvent } from "preact";
 
-export default function ProtectedSession() {
+export default function ProtectedSession({ autoFocus = false }: { autoFocus?: boolean }) {
     const passwordRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (autoFocus) {
+            passwordRef.current?.focus();
+        }
+    }, [ autoFocus ]);
 
     const submitCallback = useCallback((e: TargetedSubmitEvent<HTMLFormElement>) => {
         if (!passwordRef.current) return;
@@ -38,5 +46,5 @@ export default function ProtectedSession() {
                 keyboardShortcut="Enter"
             />
         </form>
-    )
+    );
 }
