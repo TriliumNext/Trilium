@@ -4255,5 +4255,10 @@
     "creation-date": "Creation date & time",
     "ascending": "Ascending",
     "descending": "Descending"
+  },
+  "content_lightbox": {
+    "diagram_title": "Diagram",
+    "formula_title": "Formula",
+    "code_title": "Code block"
   }
 }

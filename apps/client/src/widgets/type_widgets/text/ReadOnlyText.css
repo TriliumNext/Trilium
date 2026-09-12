@@ -13,6 +13,17 @@
         max-width: 100%;
         height: auto;
     }
+
+    .mermaid-diagram[data-processed="true"] svg,
+    span.math-tex,
+    pre:has(> code) {
+        cursor: zoom-in;
+    }
+
+    /* An included diagram opens its note, so it gets the same cursor as an image. */
+    .include-note-content.type-mermaid svg {
+        cursor: pointer;
+    }
 }
 
 /* Top-level (not scoped to the note view) so a swallowed mermaid failure is

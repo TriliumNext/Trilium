@@ -1,0 +1,34 @@
+/* Focusable wrapper that receives keyboard zoom/pan; fills the available space. */
+.zoom-pan-viewer-root {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    outline: none;
+
+    /* Overrides the `fit-content` sizing react-zoom-pan-pinch injects, so the viewport fills the root
+       and the content fits and pans within it. */
+    .zoom-pan-viewer-viewport.react-transform-wrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* The grab cursor only while the content is large enough to pan (zoomed past the fitted size). */
+    .zoom-pan-viewer-viewport.pannable {
+        cursor: grab;
+    }
+
+    .zoom-pan-viewer-viewport.pannable.panning {
+        cursor: grabbing;
+    }
+
+    /* In measure mode the fit scale lands only once the viewport and the content have been measured;
+       until then the content would show at scale 1. */
+    .zoom-pan-viewer-viewport.fitting {
+        visibility: hidden;
+    }
+
+    /* Above the transformed content; see `placement` on OverlayControlGroup for the corner. */
+    .zoom-pan-viewer-controls {
+        z-index: 1;
+    }
+}

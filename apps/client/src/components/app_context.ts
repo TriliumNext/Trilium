@@ -25,6 +25,7 @@ import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
 import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
+import type { ContentLightboxData } from "../widgets/dialogs/content_lightbox.jsx";
 import type { PrintPreviewData } from "../widgets/dialogs/print_preview.jsx";
 import type { NotePickerDialogOptions } from "../widgets/dialogs/note_picker.js";
 import type { ItemPickerDialogOptions } from "../widgets/dialogs/item_picker.js";
@@ -358,6 +359,7 @@ export type CommandMappings = {
     lastTab: CommandData;
     showNoteSource: CommandData;
     showNoteOCRText: CommandData;
+    showContentLightbox: CommandData & ContentLightboxData;
     showOcrTextDialog: CommandData & {
         textUrl: string;
         processUrl: string;

@@ -22,7 +22,7 @@ import CKEditorWithWatchdog, { CKEditorApi, NotificationEventData, NotificationE
 import getTemplates, { updateTemplateCache } from "./snippets.js";
 import linkEmbedService from "../../../services/link_embed";
 import { usesClassicToolbar } from "./toolbar";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
+import { loadIncludedNote, refreshIncludedNote, setupContentExpansion, setupImageOpening } from "./utils";
 
 /**
  * The editor can operate into two distinct modes:
@@ -464,6 +464,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 onEditorInitialized={(editor) => {
                     if (containerRef.current) {
                         setupImageOpening(containerRef.current, false);
+                        setupContentExpansion(containerRef.current, { codeBlocks: false });
                     }
 
                     initialized.current.resolve();
