@@ -2,6 +2,7 @@ import type { TextRepresentationResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
+import blobService from "../../services/blob.js";
 import { getSql } from "../../services/sql/index.js";
 
 /** The `[status, body]` tuple the result handler turns into a 404. */
@@ -20,7 +21,7 @@ function getNoteOCRText(req: Request<{ noteId: string }>): TextRepresentationRes
         return [ 404, { success: false, message: "Note not found" } ];
     }
 
-    return getTextRepresentation(note.blobId);
+    return getTextRepresentation(note.blobId, !!note.isProtected);
 }
 
 /** The attachment counterpart of {@link getNoteOCRText}. */
@@ -30,11 +31,15 @@ function getAttachmentOCRText(req: Request<{ attachmentId: string }>): TextRepre
         return [ 404, { success: false, message: "Attachment not found" } ];
     }
 
-    return getTextRepresentation(attachment.blobId);
+    return getTextRepresentation(attachment.blobId, !!attachment.isProtected);
 }
 
-function getTextRepresentation(blobId: string | undefined): TextRepresentationResponse {
-    let ocrText: string | null = null;
+/**
+ * A protected entity's text is stored encrypted, so it is reported as absent rather than shown when
+ * there is no protected session to read it with — the same answer the note's own content gives.
+ */
+function getTextRepresentation(blobId: string | undefined, isProtected: boolean): TextRepresentationResponse {
+    let storedText: string | null = null;
 
     if (blobId) {
         const result = getSql().getRow<{
@@ -46,13 +51,15 @@ function getTextRepresentation(blobId: string | undefined): TextRepresentationRe
         `, [ blobId ]);
 
         if (result) {
-            ocrText = result.textRepresentation;
+            storedText = result.textRepresentation;
         }
     }
 
+    const ocrText = blobService.decryptTextRepresentation(storedText, isProtected);
+
     return {
         success: true,
-        text: ocrText || "",
+        text: ocrText,
         hasOcr: !!ocrText
     };
 }

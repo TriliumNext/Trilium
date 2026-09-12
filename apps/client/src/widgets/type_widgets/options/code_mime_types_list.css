@@ -8,6 +8,15 @@
         break-inside: avoid-column;
     }
 
+    /* The initial the group is filed under, marked the way a card marks its heading. */
+    h5 {
+        margin-bottom: 0.25em;
+        font-size: .75rem;
+        font-weight: bold;
+        letter-spacing: .4pt;
+        text-transform: uppercase;
+    }
+
     ul {
         padding-inline-start: 0;
     }

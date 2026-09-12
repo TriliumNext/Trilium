@@ -25,6 +25,9 @@ Is feidhmchlár saor in aisce agus foinse oscailte, tras-ardán, ordlathach é
 Trilium Notes chun nótaí a thógáil le fócas ar bhunachair mhóra eolais
 phearsanta a thógáil.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Íoslódáil
@@ -121,7 +124,7 @@ Tá ár ndoiciméadacht ar fáil i bhformáidí éagsúla:
 * Téama dorcha
   ionsuite(https://docs.triliumnotes.org/user-guide/concepts/themes), tacaíocht
   do théamaí úsáideora
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   agus [Iompórtáil & Easpórtáil
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Gearrthóir
@@ -358,12 +361,14 @@ Linn" thuas.
 * [antoniotejada](https://github.com/nriver) don ghiuirléid aibhsithe comhréire
   bunaidh.
 * [Deilbhíní Tábla](https://tabler.io/icons) do na deilbhíní sa tráidire córais.
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
-        OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+*   Is as: na deilbhíní feidhmchláir sa dialóg allmhairithe:
+    *   [Deilbhíní Dearaidh Ábhair](https://pictogrammers.com/library/mdi/) le
+        haghaidh OneNote, Google Keep, Evernote.
+    *   [Cló iontach](https://fontawesome.com/) le haghaidh Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) le haghaidh Aon
+        Chineál.
+*  Is as [Lobe Icons](https://lobehub.com/icons) atá deilbhíní an tsoláthraí
+   LLM.
 
 Ní bheadh Trilium indéanta gan na teicneolaíochtaí atá taobh thiar de:
 

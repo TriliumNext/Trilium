@@ -396,7 +396,7 @@ function useTextLabelAutocomplete(inputId: string, valueAttr: Attribute, definit
 
     // Initialize autocomplete.
     useEffect(() => {
-        if (attributeValues?.length === 0) return;
+        if (!attributeValues?.length) return;
         const el = document.getElementById(inputId) as HTMLInputElement | null;
         if (!el) return;
 

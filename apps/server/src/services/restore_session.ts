@@ -93,6 +93,10 @@ export const backupUpload = createChunkedUpload<PendingBackup>({
     directory: path.join(dataDir.TMP_DIR, "uploads"),
     maxTotalBytes: MAX_BACKUP_BYTES,
     requireFreeSpace: true,
+    // The newest attempt wins. An upload whose connection is gone cannot say so, and until it aged
+    // out it left the user refused every time they tried again — on the one screen where trying
+    // again is all they can do, since a failed upload is what brought them back to it.
+    whenAtCapacity: "supersede",
     // An upload that ends with nothing to show for it gives setup back. Expiry is the case that
     // needs saying: it happens on a timer, with no request to fail and nobody to tell, and without
     // this the instance would refuse every other way of setting itself up until it was restarted.

@@ -81,7 +81,7 @@ function OpenAllButton({ note, isOpening, setIsOpening }: {
         if (count === 0) return;
 
         if (count > MAX_OPEN_TABS) {
-            toast.showError(t("book_properties.open_all_too_many", { count, max: MAX_OPEN_TABS }));
+            toast.showError(t("book_properties.open_all_limit_exceeded", { count, max: MAX_OPEN_TABS }));
             return;
         }
 
@@ -131,6 +131,7 @@ function ViewTypeSwitcher({ viewType, setViewType }: { viewType: ViewTypeOptions
     return (
         <Dropdown
             dropdownContainerRef={dropdownContainerRef}
+            noDropdownListStyle
             text={<>
                 <Icon icon={ICON_MAPPINGS[viewType]} />&nbsp;
                 {VIEW_TYPE_MAPPINGS[viewType]}

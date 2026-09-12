@@ -1,3 +1,5 @@
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
+
 import FNote from "../../entities/fnote";
 import type { PrintReport } from "../../print";
 
@@ -15,7 +17,7 @@ export interface ViewModeProps<T extends object> {
      * We're using noteIds so that it's not necessary to load all notes at once when paging.
      */
     noteIds: string[];
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     viewConfig: T | undefined;
     saveConfig(newConfig: T): void;
     media: ViewModeMedia;

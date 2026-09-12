@@ -13,22 +13,12 @@
  *
  * @example Writing an encrypted, compressed container
  * ```ts
+ * // One forward pass, so the destination is never written back to: write to a temporary name and
+ * // rename on success, and a partial file never looks finished.
  * await writeBackupContainer(createReadStream(source), createWriteStream(partial), {
  *     compress: true,
  *     passphrase,
- *     plaintextSize: (await stat(source)).size,
- *     // Reopening to patch keeps this simple. Do not hand the payload stream a FileHandle with
- *     // `autoClose: false` and patch through that handle: its `close()` then waits forever on a
- *     // stream that never emits `close`.
- *     patchHeader: async (offset, data) => {
- *         const handle = await open(partial, "r+");
- *         try {
- *             await handle.write(data, 0, data.length, offset);
- *             await handle.sync();
- *         } finally {
- *             await handle.close();
- *         }
- *     }
+ *     plaintextSize: (await stat(source)).size
  * });
  * await rename(partial, final);
  * ```
@@ -40,6 +30,14 @@
  *     fs.createWriteStream(database),
  *     { passphrase, onProgress: (progress) => report(Math.round(progress * 100)) }
  * );
+ * ```
+ *
+ * @example Listing a directory of them, opening none
+ * ```ts
+ * const info = getInfo(await read(path, FIXED_HEADER_BYTES));
+ * if (info.isValid && info.isSupported) {
+ *     rows.push({ path, taken: info.creationTimestamp, size: info.size });
+ * }
  * ```
  *
  * @module
@@ -56,7 +54,12 @@ export {
     FRAME_SIZE,
     SCRYPT_BOUNDS,
     SCRYPT_DEFAULTS,
-    type ScryptParams
+    type ScryptParams,
+    containerSize,
+    type ContainerTrailer,
+    decodeTrailer,
+    encodeTrailer,
+    TRAILER_BYTES
 } from "./format.js";
 export { readBackupContainer, writeBackupContainer } from "./node-streams.js";
 export {
@@ -65,14 +68,15 @@ export {
     type ProgressOptions
 } from "./progress.js";
 export {
-    type BackupContainerInfo,
+    type BackupContainerSummary,
+    type ContainerHead,
     DEFAULT_MAX_OUTPUT_BYTES,
-    peekBackupContainer,
+    getInfo,
     type ReadBackupContainerOptions,
-    type ReadBackupContainerResult
+    type ReadBackupContainerResult,
+    type SupportedBackupContainer
 } from "./read.js";
 export {
-    type PatchHeader,
     type WriteBackupContainerOptions,
     type WriteBackupContainerResult
 } from "./write.js";

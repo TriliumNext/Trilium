@@ -24,7 +24,7 @@ declare global {
 
     interface EditorComponent extends Component {
         loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string): Promise<void>;
-        createNoteForReferenceLink(title: string): Promise<string>;
+        createNoteForReferenceLink(title: string, intoInbox: boolean): Promise<string | undefined>;
         loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string): void;
         /**
          * Reads a page's preview metadata through the host. Never rejects: any failure — network

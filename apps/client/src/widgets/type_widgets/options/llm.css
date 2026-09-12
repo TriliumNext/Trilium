@@ -4,6 +4,10 @@
     gap: 0.5em;
 }
 
+.llm-add-provider {
+    text-align: end;
+}
+
 /* Scale the provider logo down to sit inline with the row label text. */
 .llm-provider-name .masked-icon {
     --masked-icon-size: 1.2em;

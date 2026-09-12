@@ -1,6 +1,7 @@
 import { BootstrapDefinition, ElectronApi, ElectronContextMenuParams, StandaloneApi } from "@triliumnext/commons";
 
 import appContext, { AppContext } from "./components/app_context";
+import type triliumPerf from "./services/debug_perf";
 import type FNote from "./entities/fnote";
 import type { PrintReport } from "./print";
 import type { lint } from "./services/eslint";
@@ -44,6 +45,9 @@ declare global {
         logError(message: string);
         logInfo(message: string);
 
+        /** Opt-in main-thread profiler, driven from the devtools console. See `services/debug_perf`. */
+        triliumPerf: typeof triliumPerf;
+
         process?: ElectronProcess;
         glob?: CustomGlobals;
 
@@ -60,6 +64,21 @@ declare global {
         electronApi?: ElectronApi;
         /** Present only in the standalone build, where the stack runs in this browser. */
         standaloneApi?: StandaloneApi;
+
+        /**
+         * Chromium's Local Font Access API, absent from the DOM typings. Defined only in a secure
+         * context on Chromium, and it rejects unless the `local-fonts` permission is granted — see
+         * `listSystemFontFamilies`, which is the only caller.
+         */
+        queryLocalFonts?: () => Promise<FontData[]>;
+    }
+
+    /** One installed font face, as {@link Window.queryLocalFonts} reports it. */
+    interface FontData {
+        family: string;
+        fullName: string;
+        postscriptName: string;
+        style: string;
     }
 
 

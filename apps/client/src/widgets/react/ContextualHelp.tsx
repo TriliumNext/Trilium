@@ -40,9 +40,9 @@ function HoveredHelp({ helpMessage }: ContextualHelpProps) {
     useStaticTooltip(ref, useMemo(() => ({
         title: helpMessage,
         placement: "bottom" as const,
-        // Bootstrap appends tooltips to `<body>`, where the base `.tooltip` z-index sits below a
-        // modal — and these icons are often shown inside the settings dialog, so without this the
-        // hint would open behind the dialog that triggered it.
+        // These icons are often shown inside the settings dialog, and the dialog's own overlays
+        // (the content manager's, say) lift themselves above the base tooltip layer. `tooltip-top`
+        // is the app's "above everything" layer, so the hint clears those too.
         customClass: "tooltip-top"
     }), [ helpMessage ]));
 
@@ -123,7 +123,7 @@ function HelpIcon({ iconRef, helpMessage, popup, onActivate, onDismiss }: HelpIc
     return (
         <span
             ref={iconRef}
-            className="bx bx-info-circle contextual-help"
+            className="bx bx-info-circle contextual-help-icon"
             role="button"
             tabIndex={0}
             aria-label={t("contextual_help.label", { message: helpMessage })}

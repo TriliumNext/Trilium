@@ -90,7 +90,6 @@ Of note:
 *   Both “Single value” and “Multi value” attributes are supported. In case of multi-value, a badge is displayed for every instance of the attribute.
 *   All label types are supported, including dates, booleans and URLs.
 *   Relation attributes are also supported as well, showing a link with the target note title and icon.
-*   Currently, it's not possible to adjust which promoted attributes are displayed, since all promoted attributes will be displayed (except the `board:groupBy` one). There are plans to improve upon this being able to hide promoted attributes individually.
 
 ### Grouping by another label
 

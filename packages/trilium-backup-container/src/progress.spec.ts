@@ -117,7 +117,12 @@ describe("reading", () => {
 
         await readFromBuffer(written.bytes, { onProgress, progressIntervalMs: 0 });
 
-        expect(reports).toEqual([ 0.5, 1, 1 ]);
+        // Not exact fractions: an unencrypted payload is emitted a trailer's length behind the
+        // input, since that much is held back until the input ends and it can be told apart from
+        // the payload. What has to hold is that it climbs and arrives.
+        expect(reports.at(-1)).toBe(1);
+        expect(reports).toEqual([ ...reports ].sort((left, right) => left - right));
+        expect(reports[0]).toBeCloseTo(0.5, 3);
     });
 
     it.each(FORMATS)("measures the database coming out of a %s container", async (
@@ -198,16 +203,21 @@ describe("reading", () => {
         const database = fakeDatabase(2 * FRAME_SIZE);
         const written = await writeToBuffer(database, { plaintextSize: database.length });
 
-        // Claim a third more than the container actually holds, which is only caught at the end.
+        // Claim a third more than the container actually holds, which is only caught at the end,
+        // where the header's figure meets the one the trailer counted.
         const lying = Buffer.from(written.bytes);
-        lying.writeBigUInt64LE(BigInt(3 * FRAME_SIZE), 24);
+        lying.writeBigUInt64LE(BigInt(3 * FRAME_SIZE), 32);
 
         const failure = await reasonOf(
             readFromBuffer(lying, { onProgress, progressIntervalMs: 0 })
         );
 
         expect(failure).toBe("size-mismatch");
-        expect(reports).toEqual([ 1 / 3, 2 / 3 ]);
+        // Climbs towards the size it was told and stops where the payload really ended, which is
+        // the point: completion is never reported for a database that did not measure up.
+        expect(reports[0]).toBeCloseTo(1 / 3, 3);
+        expect(reports.at(-1)).toBeCloseTo(2 / 3, 3);
+        expect(reports).not.toContain(1);
     });
 
     it("stops reporting when the destination fails, without reporting completion after it", async () => {

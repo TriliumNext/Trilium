@@ -62,9 +62,6 @@ contextBridge.exposeInMainWorld("electronApi", {
         closeWindow() {
             ipcRenderer.send("close-window");
         },
-        createExtraWindow(extraWindowHash: string) {
-            ipcRenderer.send("create-extra-window", { extraWindowHash });
-        },
         isAlwaysOnTop(): boolean {
             return ipcRenderer.sendSync("is-always-on-top");
         },
@@ -133,6 +130,9 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         openPath(path: string): Promise<string> {
             return ipcRenderer.invoke("open-path", path);
+        },
+        showItemInFolder(path: string) {
+            ipcRenderer.send("show-item-in-folder", path);
         },
         openFileUrl(fileUrl: string): Promise<string> {
             return ipcRenderer.invoke("open-file-url", fileUrl);
@@ -238,6 +238,9 @@ contextBridge.exposeInMainWorld("electronApi", {
     dialog: {
         pickDirectory(opts?: { defaultPath?: string }) {
             return ipcRenderer.invoke("dialog-pick-directory", opts);
+        },
+        confirmStartOver(): Promise<boolean> {
+            return ipcRenderer.invoke("dialog-confirm-start-over");
         }
     },
 

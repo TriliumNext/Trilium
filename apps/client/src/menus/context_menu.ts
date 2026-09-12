@@ -47,6 +47,12 @@ export interface MenuCommandItem<T> {
      * If not set, no icon is displayed and the item will appear shifted slightly to the left if there are other items with icons. To avoid this, use `bx bx-empty`.
      */
     uiIcon?: string;
+    /**
+     * Classes tinting {@link uiIcon} with the colour of whatever the item stands for, as
+     * `cssClassManager.createClassForColor()` and `FNote#getColorClass()` return them. Only the
+     * icon is tinted, the label staying readable against the highlight.
+     */
+    iconColorClass?: string;
     badges?: MenuItemBadge[];
     templateNoteId?: string;
     enabled?: boolean;
@@ -56,6 +62,15 @@ export interface MenuCommandItem<T> {
     keyboardShortcut?: KeyboardActionNames;
     spellingSuggestion?: string;
     checked?: boolean;
+    /** Classes put on the item itself, for a menu styling one of its entries differently. */
+    className?: string;
+    /**
+     * An icon shown at the trailing edge of the item, where a shortcut would go.
+     *
+     * Unlike {@link checked}, which takes the place of {@link uiIcon}, this leaves the item's own
+     * icon standing — for a list where that icon is what tells one entry from another.
+     */
+    trailingIcon?: string;
     columns?: number;
 }
 
@@ -188,11 +203,13 @@ class ContextMenu {
     private repositionSubmenu(submenuEl: HTMLElement) {
         const CONTEXT_MENU_PADDING = 5;
 
-        // Reset so the natural (downward) placement is measured on every hover.
+        // Reset so the natural (downward, trailing) placement is measured on every hover.
         submenuEl.classList.remove("submenu-flip-up");
+        submenuEl.classList.remove("submenu-flip-start");
 
         const rect = submenuEl.getBoundingClientRect();
         const clientHeight = document.documentElement.clientHeight;
+        const clientWidth = document.documentElement.clientWidth;
         const overflowsBottom = rect.bottom > clientHeight - CONTEXT_MENU_PADDING;
         // Only flip up if there is actually more room above the parent than below, otherwise flipping
         // would just clip the other end.
@@ -200,6 +217,17 @@ class ContextMenu {
 
         if (overflowsBottom && fitsWhenFlippedUp) {
             submenuEl.classList.add("submenu-flip-up");
+        }
+
+        // The same for the side it opens on, which is the trailing one by default and the leading
+        // one in a right-to-left page. Whichever edge it runs past, the flip puts it on the other
+        // side of its parent, and only where the whole submenu fits there.
+        const fitsWhenFlippedToStart = rect.left - rect.width >= CONTEXT_MENU_PADDING;
+        const fitsWhenFlippedToEnd = rect.right + rect.width <= clientWidth - CONTEXT_MENU_PADDING;
+
+        if ((rect.right > clientWidth - CONTEXT_MENU_PADDING && fitsWhenFlippedToStart)
+                || (rect.left < CONTEXT_MENU_PADDING && fitsWhenFlippedToEnd)) {
+            submenuEl.classList.add("submenu-flip-start");
         }
     }
 
@@ -292,6 +320,9 @@ class ContextMenu {
             const icon = (item.checked ? "bx bx-check" : item.uiIcon);
             if (icon) {
                 $icon.addClass([icon, "tn-icon"]);
+                if (item.iconColorClass) {
+                    $icon.addClass(item.iconColorClass);
+                }
             } else {
                 $icon.append("&nbsp;");
             }
@@ -299,7 +330,9 @@ class ContextMenu {
 
         const $link = $("<span>")
             .append($icon)
-            .append(" &nbsp; ") // some space between icon and text
+            // An element, not spaces: in a flex row, text merges with a plain title but is
+            // trimmed before one boxed by `menuName()`, indenting the two kinds of row apart.
+            .append($("<span>").addClass("tn-menu-gap"))
             .append(item.title);
 
         if ("badges" in item && item.badges) {
@@ -336,8 +369,14 @@ class ContextMenu {
             $link.append($("<kbd>").text(item.shortcut));
         }
 
+        if ("trailingIcon" in item && item.trailingIcon) {
+            $link.append($("<span>")
+                .addClass([ item.trailingIcon, "tn-icon", "menu-trailing-icon" ]));
+        }
+
         const $item = $("<li>")
             .addClass("dropdown-item")
+            .addClass("className" in item ? item.className ?? "" : "")
             .append($link)
             .on("contextmenu", (e) => false)
             // important to use mousedown instead of click since the former does not change focus
@@ -356,8 +395,12 @@ class ContextMenu {
                     return false;
                 }
 
-                // Prevent submenu from failing to expand on mobile
-                if (!("items" in item && item.items)) {
+                // A submenu's parent stays open so that it can still be expanded. One carrying a
+                // command or handler of its own is dismissed like any other item once it has run.
+                const opensSubmenu = "items" in item && !!item.items;
+                const acts = ("handler" in item && !!item.handler)
+                    || ("command" in item && !!item.command);
+                if (!opensSubmenu || acts) {
                     this.hide();
                 }
 

@@ -113,6 +113,32 @@ describe("ShortcutHintsPanel", () => {
         expect(document.querySelector(".shortcut-hints-panel")).toBeNull();
     });
 
+    /** A button pinned to the foot of what it sits over, as the board's is. */
+    it("opens the dropdown upwards when the anchor stands low in the window", () => {
+        const host = mountPanel();
+        const anchor = document.createElement("button");
+        document.body.appendChild(anchor);
+        // happy-dom lays nothing out, so the anchor is put near the foot of the window by hand.
+        anchor.getBoundingClientRect = () => ({
+            top: window.innerHeight - 40,
+            bottom: window.innerHeight - 10,
+            right: 300
+        }) as DOMRect;
+
+        try {
+            act(() => {
+                host.handleEvent("shortcutHintsRequested", { sections: SECTIONS, anchor });
+            });
+
+            const panel = document.querySelector<HTMLElement>(".shortcut-hints-panel");
+            // Its foot sits a gap above the anchor's head, and the corner offset is cleared.
+            expect(panel?.style.bottom).toBe("46px");
+            expect(panel?.style.top).toBe("auto");
+        } finally {
+            anchor.remove();
+        }
+    });
+
     it("opens as a dropdown positioned under an anchor, and clicking the anchor does not dismiss it", () => {
         const host = mountPanel();
         const anchor = document.createElement("button");

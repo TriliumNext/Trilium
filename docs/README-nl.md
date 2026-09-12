@@ -25,6 +25,9 @@ Trillium Notes is een gratis en open-source, platformonafhankelijke,
 hiërarchische notitie-applicatie die zich richt op het opbouwen van grote
 persoonlijke kennisbanken.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## Download
@@ -117,7 +120,7 @@ Onze documentatie is beschikbaar in meerdere formaten:
 * Ingebouwd [donker
   thema](https://docs.triliumnotes.org/user-guide/concepts/themes),
   ondersteuning voor gebruikera thema's
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   en [Markdown importeren &
   exporteren](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) om

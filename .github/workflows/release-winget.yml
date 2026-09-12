@@ -8,6 +8,9 @@ on:
         description: 'Git tag to release from'
         type: string
         required: true
+# The winget publish authenticates with a PAT, the job token is not used.
+permissions: {}
+
 jobs:
   release-winget:
     runs-on: ubuntu-latest

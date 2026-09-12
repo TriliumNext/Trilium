@@ -545,6 +545,21 @@ describe("processNoteContent", () => {
         expect(note?.mime).toBe("text/csv");
     });
 
+    it("drops the extension of a font or a recording in a plain archive, as a single-file import does", async () => {
+        const zipBuffer = await createZipBuffer({
+            "Iosevka-Regular.ttf": Buffer.from("\0\u0001\0\0"),
+            "Interview.mp3": Buffer.from("ID3"),
+            // Nothing records that this is a spreadsheet but its name, so the name keeps it.
+            "Numbers.ods": Buffer.from("PK")
+        });
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-font-zip", {});
+        const titleOf = (mime: string) => rootNote.getChildNotes().find((note) => note.mime === mime)?.title;
+
+        expect(titleOf("font/ttf")).toBe("Iosevka-Regular");
+        expect(titleOf("audio/mpeg")).toBe("Interview");
+        expect(titleOf("application/vnd.oasis.opendocument.spreadsheet")).toBe("Numbers.ods");
+    });
+
     it("skips macOS resource-fork entries and reports an archive that holds nothing else", async () => {
         // A zip zipped on macOS carries a __MACOSX/ sidecar for every real entry. With nothing but
         // those, no note is ever created and the import has no root to hand back.
@@ -739,6 +754,48 @@ describe("processNoteContent", () => {
         await expect(testImportBuffer(zipBuffer, "import-name-collision-nested")).rejects.toThrow("Missing parent note ID.");
     });
 
+    it("imports a note whose file name carries a character outside Latin-1", async () => {
+        // Entry names come from note titles, so a curly apostrophe (U+2019) is routine. A provider that
+        // mangles it makes the path miss its !!!meta.json entry, at which point the importer falls back
+        // to path-based parentage and aborts on the folder it can no longer place the note under.
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "curlyFolder1",
+                title: "Map",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dataFileName: "Map.html",
+                dirFileName: "Map",
+                attributes: [],
+                attachments: [],
+                children: [{
+                    noteId: "curlyChild01",
+                    title: "Private Murnahan’s Holotape",
+                    type: "text",
+                    mime: "text/html",
+                    format: "html",
+                    dataFileName: "Private Murnahan’s Holotape.html",
+                    attributes: [],
+                    attachments: []
+                }]
+            }]
+        };
+
+        const zipBuffer = Buffer.from(zipSync({
+            "!!!meta.json": strToU8(JSON.stringify(metaFile)),
+            "Map.html": strToU8("<p>map</p>"),
+            "Map/Private Murnahan’s Holotape.html": strToU8("<p>holotape</p>")
+        }));
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-non-latin1-name");
+        const folder = rootNote.getChildNotes().find((n) => n.title === "Map");
+
+        expect(folder?.getChildNotes().map((n) => n.title)).toEqual(["Private Murnahan’s Holotape"]);
+    });
+
     it("restores a cloned note whose clone entry precedes its primary", async () => {
         // An export writes a clone as a stub entry carrying the same noteId as the primary. When the
         // stub is read first, its branch materialises a type-less skeleton note in becca; the primary
@@ -831,6 +888,138 @@ describe("processNoteContent", () => {
         }
     });
 }, 60_000);
+
+describe("link scanning on import", () => {
+    it("gives an imported Markdown note the link relations its content carries", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "mdLinkHost01",
+                title: "Host",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dataFileName: "Host.html",
+                dirFileName: "Host",
+                attributes: [],
+                attachments: [],
+                children: [
+                    {
+                        noteId: "mdLinkGuide1",
+                        title: "Guide",
+                        type: "code",
+                        mime: "text/x-markdown",
+                        dataFileName: "Guide.md",
+                        attributes: [],
+                        attachments: []
+                    },
+                    {
+                        noteId: "mdLinkTarget",
+                        title: "Target",
+                        type: "text",
+                        mime: "text/html",
+                        format: "html",
+                        dataFileName: "Target.html",
+                        attributes: [],
+                        attachments: []
+                    },
+                    {
+                        noteId: "mdLinkPictur",
+                        title: "Picture.png",
+                        type: "image",
+                        mime: "image/png",
+                        dataFileName: "Picture.png",
+                        attributes: [],
+                        attachments: []
+                    }
+                ]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Host.html": "<p>host</p>",
+            "Host/Guide.md": "See [Target](Target.html) and ![pic](Picture.png).",
+            "Host/Target.html": "<p>target</p>",
+            "Host/Picture.png": Buffer.from("fake image data")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-md-links");
+        const childByTitle = (title: string) => importedNote.getChildNotes().find((child) => child.title === title);
+        const guide = childByTitle("Guide");
+        const targets = (name: string) =>
+            (guide?.getRelations() ?? []).filter((rel) => rel.name === name).map((rel) => rel.value);
+
+        // The importer rewrote both links to the ids it just handed out, so the relations point there.
+        expect(childByTitle("Target")?.noteId).not.toBe("mdLinkTarget");
+        expect(targets("internalLink")).toStrictEqual([childByTitle("Target")?.noteId]);
+        expect(targets("imageLink")).toStrictEqual([childByTitle("Picture.png")?.noteId]);
+    });
+
+    it("gives an imported chat the relations its wiki-links and tool calls name, when the ids survive the import", async () => {
+        // A chat references notes by id in its own JSON, which the importer does not remap, so the
+        // relations resolve only where the ids are kept — restoring into the instance they came from.
+        const chat = {
+            messages: [{
+                role: "assistant",
+                content: [
+                    { type: "text", content: "As covered in [[chatTarget001]]." },
+                    { type: "tool_call", toolCall: { input: { noteId: "chatTarget001" } } }
+                ]
+            }]
+        };
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "chatHost0001",
+                title: "Chat Host",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dataFileName: "Chat Host.html",
+                dirFileName: "Chat Host",
+                attributes: [],
+                attachments: [],
+                children: [
+                    {
+                        noteId: "chatNote0001",
+                        title: "Chat",
+                        type: "llmChat",
+                        mime: "application/json",
+                        dataFileName: "Chat.json",
+                        attributes: [],
+                        attachments: []
+                    },
+                    {
+                        noteId: "chatTarget001",
+                        title: "Chat Target",
+                        type: "text",
+                        mime: "text/html",
+                        format: "html",
+                        dataFileName: "Chat Target.html",
+                        attributes: [],
+                        attachments: []
+                    }
+                ]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Chat Host.html": "<p>host</p>",
+            "Chat Host/Chat.json": JSON.stringify(chat),
+            "Chat Host/Chat Target.html": "<p>target</p>"
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-chat-links", { textImportedAsText: true }, { preserveIds: true });
+        const chatNote = importedNote.getChildNotes().find((child) => child.title === "Chat");
+
+        expect((chatNote?.getRelations() ?? []).filter((rel) => rel.name === "internalLink").map((rel) => rel.value))
+            .toStrictEqual(["chatTarget001"]);
+    });
+});
 
 describe("attribute handling on import", () => {
     it("rewrites promoted-attribute definitions and drops unrecognized types", async () => {

@@ -6,16 +6,19 @@ import { deferred } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
+import { consumeBookmark } from "../../../services/bookmark_jump";
+import dateNoteService from "../../../services/date_notes";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
+import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
-import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
+import CKEditorWithWatchdog, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditorWithWatchdog";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
 import linkEmbedService from "../../../services/link_embed";
 import { usesClassicToolbar } from "./toolbar";
@@ -65,14 +68,14 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             contentRef.current = newContent;
             watchdogRef.current?.editor?.setData(newContent);
 
+            // Jump to the first search match when navigated from search results.
+            consumeSearchTerms(noteContext, ntxId);
+
             // Scroll to bookmark anchor if navigated with ?bookmark=...
             const viewScope = noteContext?.viewScope;
             if (viewScope?.bookmark) {
                 requestAnimationFrame(() => {
-                    const el = watchdogRef.current?.editor?.editing.view.getDomRoot()
-                        ?.querySelector(`[id="${CSS.escape(viewScope.bookmark!)}"]`);
-                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    viewScope.bookmark = undefined;
+                    consumeBookmark(watchdogRef.current?.editor?.editing.view.getDomRoot(), viewScope);
                 });
             }
         },
@@ -82,6 +85,8 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         }
     });
     const templates = useTemplates();
+
+    useSearchTermsConsumer(note, noteContext, ntxId);
 
     useTriliumEvent("scrollToEnd", () => {
         const editor = watchdogRef.current?.editor;
@@ -155,8 +160,8 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             linkEmbedService.renderMentionPreview(container, metadata, editable);
         },
         // Creating notes in @-completion
-        async createNoteForReferenceLink(title: string) {
-            const notePath = noteContext?.notePath;
+        async createNoteForReferenceLink(title: string, intoInbox: boolean) {
+            const notePath = intoInbox ? await dateNoteService.getInboxNotePath() : noteContext?.notePath;
             if (!notePath) return;
 
             const resp = await note_create.createNoteWithTypePrompt(notePath, {
@@ -196,18 +201,30 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             }
         },
         async cutIntoNoteCommand() {
-            const note = appContext.tabManager.getActiveContextNote();
-            if (!note) return;
+            // The note this editor is showing, not whichever one the tab manager considers active: the
+            // editor also runs in a split, in the quick editor and in the embedded panes of the map and
+            // calendar views, where the active context is a different note entirely. Asking the tab
+            // manager there put the sub-note under an unrelated parent, and — since the selection was
+            // only saved when the *active* note was a text note — usually created it empty (#9890).
+            const sourceNote = noteContext?.note;
+            const parentNotePath = noteContext?.notePath;
+            // This component's own editor, rather than noteContext.getTextEditor(): that one races the
+            // round trip through the event bus against a 200 ms timeout and resolves to null when it
+            // loses, which again meant an empty sub-note and a selection left where it was.
+            const textEditor = await waitForEditor() as CKTextEditor | undefined;
+            if (!sourceNote || !parentNotePath || !textEditor) return;
+
+            if (!textEditor.getSelectedHtml()) {
+                toast.showMessage(t("editable_text.nothing_selected_to_cut"));
+                return;
+            }
 
             // without await as this otherwise causes deadlock through component mutex
-            const parentNotePath = appContext.tabManager.getActiveContextNotePath();
-            if (noteContext && parentNotePath) {
-                note_create.createNote(parentNotePath, {
-                    isProtected: note.isProtected,
-                    saveSelection: true,
-                    textEditor: await noteContext?.getTextEditor()
-                });
-            }
+            note_create.createNote(parentNotePath, {
+                isProtected: sourceNote.isProtected,
+                saveSelection: true,
+                textEditor
+            });
         },
         async saveNoteDetailNowCommand() {
             // used by cutToNote in CKEditor build
@@ -566,13 +583,19 @@ function useWatchdogCrashHandling() {
     return onWatchdogStateChange;
 }
 
-function onNotificationWarning(data, evt) {
-    const title = data.title;
-    const message = data.message.message;
+/**
+ * Renders a CKEditor warning (a failed upload, most commonly) as a Trilium toast instead of the
+ * `window.alert` the notification plugin falls back to, and stops the event so that fallback never
+ * runs.
+ *
+ * Exported for testing.
+ */
+export function onNotificationWarning(evt: NotificationEventInfo, data: NotificationEventData) {
+    const { title, message } = data;
 
     if (title && message) {
-        toast.showErrorTitleAndMessage(data.title, data.message.message);
-    } else if (title) {
+        toast.showErrorTitleAndMessage(title, message);
+    } else if (title || message) {
         toast.showError(title || message);
     }
 

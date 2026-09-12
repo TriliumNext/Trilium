@@ -9,11 +9,12 @@ vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
 }));
 
 vi.mock("@triliumnext/core", () => ({
-    getLog: () => ({ info: vi.fn(), error: errorLogMock }),
-    // buildSystemPrompt (reached via composeSystemPrompt) reads the workspace
-    // task states; no custom states in this unit test.
-    task_states: { getTaskStates: () => [] }
+    getLog: () => ({ info: vi.fn(), error: errorLogMock })
 }));
+
+// buildSystemPrompt (reached via composeSystemPrompt) reads the workspace task
+// states; no custom states in this unit test.
+vi.mock("@triliumnext/core/src/services/task_states.js", () => ({ getTaskStates: () => [] }));
 
 // In-process MCP: the provider hands the agent Trilium's own MCP server
 // instance; stub the factory so tests don't build the real tool registry.
@@ -29,7 +30,7 @@ vi.mock("../../data_dir.js", async () => {
 vi.mock("../../port.js", () => ({ default: 8080 }));
 
 const buildNoteHintMock = vi.hoisted(() => vi.fn((noteId: string): string | null => `NOTE_META(${noteId})`));
-vi.mock("../note_hint.js", () => ({ buildNoteHint: buildNoteHintMock }));
+vi.mock("@triliumnext/core/src/services/llm/note_hint.js", () => ({ buildNoteHint: buildNoteHintMock }));
 
 // BYO binary resolution shells out to the user's `claude`; stub it so tests
 // don't depend on a real install. Resolves a path by default; can be made to
@@ -40,7 +41,7 @@ vi.mock("./claude_binary.js", () => ({ resolveClaudeBinaryPath: resolveClaudeBin
 // Attachment resolution reads bytes out of Becca, which the core mock above
 // omits — stub it so the multimodal tests drive block construction directly.
 const resolveAttachmentPartMock = vi.hoisted(() => vi.fn());
-vi.mock("../attachment_content.js", () => ({ resolveAttachmentPart: resolveAttachmentPartMock }));
+vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", () => ({ resolveAttachmentPart: resolveAttachmentPartMock }));
 
 // The Windows `.cmd` shim delegates to child_process.spawn; the provider never
 // spawns otherwise, so mocking the whole module is safe.
@@ -356,7 +357,7 @@ describe("ClaudeAgentProvider.chatChunks", () => {
     it("wires Trilium's in-process MCP server instance and disables built-in tools", async () => {
         scriptAgent([successResult()]);
         const provider = new ClaudeAgentProvider();
-        await collect(provider.chatChunks([{ role: "user", content: "hi" }], {}));
+        await collect(provider.chatChunks([{ role: "user", content: "hi" }], { enableNoteTools: true }));
 
         const options = queryMock.mock.calls[0][0].options;
         expect(options.tools).toEqual([]);
@@ -452,6 +453,21 @@ describe("ClaudeAgentProvider.chatChunks", () => {
         // Prompt matches the wiring: no note-tools guidance when they're off.
         expect(options.systemPrompt).not.toContain("load_skill");
         expect(options.systemPrompt).toContain("do not have access to the user's notes");
+    });
+
+    // A caller with no opinion gets no note access, the same reading `base_provider` gives an
+    // absent flag — so what a request leaves unsaid means one thing across every provider. This
+    // used to go the other way here, handing the whole tree to anything that simply did not ask.
+    it("omits note-tools wiring when the chat says nothing about them", async () => {
+        scriptAgent([successResult()]);
+        const provider = new ClaudeAgentProvider();
+        await collect(provider.chatChunks([{ role: "user", content: "hi" }], {}));
+
+        const options = queryMock.mock.calls[0][0].options;
+        expect(options.mcpServers).toBeUndefined();
+        expect(createMcpServerMock).not.toHaveBeenCalled();
+        expect(options.allowedTools).toEqual([]);
+        expect(options.systemPrompt).not.toContain("load_skill");
     });
 
     it("logs a diagnostic when the in-process MCP bridge fails to connect", async () => {

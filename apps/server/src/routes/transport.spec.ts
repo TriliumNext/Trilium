@@ -265,11 +265,12 @@ describe("Route transport & middleware", () => {
 
                 cls.init(() => optionService.setOption("mcpEnabled", "true"));
 
-                // Nothing above was an authentication failure, so a valid token must still be
-                // served. If every 4xx/5xx counts, this is a 429 — and since the limiter runs
-                // ahead of the guard, an unauthenticated caller can spend the budget on purpose
-                // and lock out a legitimate client, or everyone sharing a NAT or Docker bridge
-                // address, for fifteen minutes.
+                // Nothing above was an authentication failure, so none of it may cost budget —
+                // and a valid token is skipped by the limiter outright in any case. If either
+                // rule slips, this is a 429: the limiter runs ahead of the guard, so an
+                // unauthenticated caller could otherwise spend the budget on purpose and lock
+                // out a legitimate client, or everyone sharing a NAT or Docker bridge address,
+                // for fifteen minutes.
                 const res = await mcpPostFrom("203.0.113.1")
                     .set("Authorization", `Bearer ${authToken}`)
                     .send(initializeRequest);
@@ -285,12 +286,20 @@ describe("Route transport & middleware", () => {
                 }
 
                 // Repeated bad tokens are what the limiter exists for: once the budget is gone
-                // the IP is cut off, valid token or not. Guards against "fixing" the above by
+                // the guessing stops being answered. Guards against "fixing" the above by
                 // dropping the limiter.
+                await mcpPostFrom("203.0.113.2")
+                    .set("Authorization", "Bearer still_not_a_real_token")
+                    .send(initializeRequest)
+                    .expect(429);
+
+                // The client that does hold a token is served throughout: it never spends
+                // budget, so it cannot be locked out by someone else's guessing from the same
+                // address — which is everyone, behind a NAT, a Docker bridge or a proxy.
                 const res = await mcpPostFrom("203.0.113.2")
                     .set("Authorization", `Bearer ${authToken}`)
                     .send(initializeRequest);
-                expect(res.status).toBe(429);
+                expect(res.status).toBe(200);
             });
         });
     });

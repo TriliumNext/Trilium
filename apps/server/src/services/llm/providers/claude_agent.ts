@@ -20,25 +20,29 @@
  *     with every built-in Claude Code tool (file access, bash, …) disabled.
  */
 
-import { type Options as AgentOptions, query, type SDKAssistantMessage, type SDKMessage, type SDKUserMessage, type SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
+import type { Options as AgentOptions, query as queryFn, SDKAssistantMessage, SDKMessage, SDKUserMessage, SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources";
-import type { LlmFilePart, LlmImagePart, LlmMessage, LlmMessagePart, LlmStreamChunk, LlmTextAttachmentPart } from "@triliumnext/commons";
+import type { LlmMessage, LlmMessagePart, LlmStreamChunk } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
+import { resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
+import { buildNoteHint } from "@triliumnext/core/src/services/llm/note_hint.js";
+import { anthropicRecommendedIds } from "@triliumnext/core/src/services/llm/providers/anthropic.js";
+import { buildModelList, mergeModelLists, type RemoteModel } from "@triliumnext/core/src/services/llm/providers/base_provider.js";
+import { buildSystemPrompt } from "@triliumnext/core/src/services/llm/system_prompt.js";
+import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "@triliumnext/core/src/services/llm/types.js";
 import { encodeBase64 } from "@triliumnext/core/src/services/utils/binary.js";
 import { spawn as nodeSpawn } from "child_process";
-import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
 
 import dataDirs from "../../data_dir.js";
 import { createMcpServer } from "../../mcp/mcp_server.js";
-import { resolveAttachmentPart } from "../attachment_content.js";
-import { buildNoteHint } from "../note_hint.js";
-import { buildSystemPrompt } from "../system_prompt.js";
-import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
-import { anthropicRecommendedIds } from "./anthropic.js";
-import { buildModelList, mergeModelLists, type RemoteModel } from "./base_provider.js";
 import { resolveClaudeBinaryPath } from "./claude_binary.js";
+import { attachmentPlaceholder, buildHistoryReplay, flattenContent, hashTranscript } from "./transcript.js";
+
+// Re-exported for existing importers (specs, siblings); the implementations
+// now live in the shared transcript module.
+export { buildSeededPrompt, hashTranscript } from "./transcript.js";
 
 /** Image media types Anthropic accepts as a base64 image block. */
 type SupportedImageMime = "image/png" | "image/jpeg" | "image/gif" | "image/webp";
@@ -278,6 +282,7 @@ export class ClaudeAgentProvider implements LlmProvider {
             })
         };
 
+        const query = await loadQuery();
         const response = query({
             prompt: noInput,
             options: {
@@ -373,6 +378,7 @@ export class ClaudeAgentProvider implements LlmProvider {
         const toolIdsByBlockIndex = new Map<number, string>();
 
         try {
+            const query = await loadQuery();
             const response = query({
                 prompt,
                 options: {
@@ -537,6 +543,7 @@ export class ClaudeAgentProvider implements LlmProvider {
 
     async generateTitle(firstMessage: string): Promise<string> {
         try {
+            const query = await loadQuery();
             const response = query({
                 prompt: `Generate a short title (at most 5 words) summarizing this chat message. Reply with only the title, no quotes or punctuation around it:\n\n${firstMessage.substring(0, 500)}`,
                 options: {
@@ -627,7 +634,7 @@ export class ClaudeAgentProvider implements LlmProvider {
             // open port, and no dependency on the user-facing `mcpEnabled`
             // toggle (which exists to expose notes to *external* clients).
             options.mcpServers = {
-                trilium: { type: "sdk", name: "trilium", instance: createMcpServer() }
+                trilium: { type: "sdk", name: "trilium", instance: await createMcpServer() }
             };
             // Bare server prefix auto-allows every tool from that server.
             allowedTools.push("mcp__trilium");
@@ -642,9 +649,15 @@ export class ClaudeAgentProvider implements LlmProvider {
  * Whether the chat requested note tools. With in-process MCP the tools have no
  * external dependency, so this is simply the chat toggle — the tool wiring and
  * the system prompt both gate on it so they never disagree.
+ *
+ * A config that does not mention them does not get them. That reading matches
+ * `base_provider`, which every AI-SDK provider inherits, so what a request
+ * leaves unsaid means the same thing whichever provider answers it; the
+ * previous `!== false` handed the whole note tree to any caller that simply
+ * had no opinion.
  */
 function areNoteToolsAvailable(config: Pick<LlmProviderConfig, "enableNoteTools">): boolean {
-    return config.enableNoteTools !== false;
+    return !!config.enableNoteTools;
 }
 
 /**
@@ -887,49 +900,6 @@ async function* streamSingleUserMessage(content: ContentBlockParam[]): AsyncIter
     yield { type: "user", message: { role: "user", content }, parent_tool_use_id: null };
 }
 
-/** Flatten possibly-multimodal message content to plain text (attachments as placeholders). */
-function flattenContent(content: string | LlmMessagePart[]): string {
-    if (typeof content === "string") {
-        return content;
-    }
-    return content
-        .map(part => (part.type === "text" ? part.text : attachmentPlaceholder(part)))
-        .join("\n");
-}
-
-/** Short "[attached …]" stand-in used wherever an attachment's bytes aren't sent. */
-function attachmentPlaceholder(part: LlmImagePart | LlmFilePart | LlmTextAttachmentPart): string {
-    const kind = part.type === "image" ? "image" : "file";
-    const name = "filename" in part ? `: ${part.filename}` : "";
-    return `[attached ${kind}${name}]`;
-}
-
-/**
- * Stable hash of a transcript (roles + text only). Used to detect whether the
- * history the client sent still matches what the mapped agent session saw.
- */
-export function hashTranscript(messages: LlmMessage[]): string {
-    const normalized = messages.map(m => [m.role, flattenContent(m.content).trim()]);
-    return createHash("sha256").update(JSON.stringify(normalized)).digest("hex");
-}
-
-/**
- * First prompt of a reseeded session: replays the retained transcript as
- * context so the agent can continue a conversation whose session was lost or
- * diverged (edited history, server restart).
- */
-export function buildSeededPrompt(history: LlmMessage[], lastText: string): string {
-    return `${buildHistoryReplay(history)}\n\n${lastText}`;
-}
-
-/** The `<conversation_history>` replay block, without any trailing user message. */
-function buildHistoryReplay(history: LlmMessage[]): string {
-    const transcript = history
-        .map(m => `${m.role === "user" ? "User" : "Assistant"}: ${flattenContent(m.content)}`)
-        .join("\n\n");
-    return `<conversation_history>\nThis is the prior conversation between the user and you. Continue it naturally; do not mention this replay.\n\n${transcript}\n</conversation_history>`;
-}
-
 /** Strip the MCP prefix so the client shows "search_notes", not "mcp__trilium__search_notes". */
 function friendlyToolName(name: string): string {
     return name.replace(/^mcp__trilium__/, "");
@@ -969,4 +939,9 @@ function describeAgentError(error: unknown): string {
         return `Failed to start Claude Code: ${text}`;
     }
     return text;
+}
+
+// Dynamically imported so the agent SDK only loads when an agent chat actually runs.
+async function loadQuery(): Promise<typeof queryFn> {
+    return (await import("@anthropic-ai/claude-agent-sdk")).query;
 }

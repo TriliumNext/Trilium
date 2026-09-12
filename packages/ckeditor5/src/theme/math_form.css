@@ -16,9 +16,6 @@
     z-index: calc(var(--ck-z-panel) + 2000) !important;
     position: fixed !important;
 }
-.ck.ck-balloon-panel, .ck.ck-balloon-panel .ck-balloon-panel__content {
-    overflow: visible !important;
-}
 
 /* === MAIN DIALOG === */
 .ck.ck-math-form {
@@ -209,12 +206,3 @@
 .ck-button-save:hover { opacity: 0.9; }
 .ck-button-cancel:hover { background: var(--ck-color-base-background); }
 
-/* === OVERFLOW FIX: Allow tooltips to escape === */
-.ck.ck-balloon-panel,
-.ck.ck-balloon-panel .ck-balloon-panel__content,
-.ck.ck-math-form,
-.ck-math-view,
-.ck.ck-math-input {
-    overflow: visible !important;
-    clip-path: none !important;
-}

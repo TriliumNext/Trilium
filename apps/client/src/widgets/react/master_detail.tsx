@@ -121,13 +121,20 @@ interface MasterDetailHeaderProps {
     listIcon?: string;
     /** The dialog's own actions, which belong to the list rather than to one page of it. */
     listActions?: ComponentChildren;
+    /**
+     * Actions belonging to the page on show. The header carries the page's name here, so a control
+     * that explains or acts on the page as a whole reads beside it rather than inside the page.
+     */
+    pageActions?: ComponentChildren;
 }
 
 /**
  * The header of a master-detail modal, in place of its static title (which master_detail.css hides):
  * the way back and the name of what is on show, or the dialog's own name while the list is.
  */
-export function MasterDetailHeader({ inPage, onBack, backTitle, pageTitle, listTitle, listIcon, listActions }: MasterDetailHeaderProps) {
+export function MasterDetailHeader({
+    inPage, onBack, backTitle, pageTitle, listTitle, listIcon, listActions, pageActions
+}: MasterDetailHeaderProps) {
     return (
         <div class="tn-master-detail-header">
             {inPage ? (
@@ -141,7 +148,9 @@ export function MasterDetailHeader({ inPage, onBack, backTitle, pageTitle, listT
             {(inPage ? pageTitle : listTitle) && (
                 <h5 class="tn-master-detail-title">{inPage ? pageTitle : listTitle}</h5>
             )}
-            {!inPage && listActions}
+            {inPage
+                ? pageActions && <div class="tn-master-detail-page-actions">{pageActions}</div>
+                : listActions}
         </div>
     );
 }

@@ -20,16 +20,41 @@
 
 .geo-map-container {
   /* How far everything standing over the map is held off its edges: the zoom controls (see
-     MapToolbar.css), the editing bar, and MapLibre's own scale and attribution below. The very
-     room the image viewer keeps its controls at, taken from the shared name rather than restated
-     (see the overlay buttons in theme-next/base.css), so the two cannot drift apart. */
+     MapToolbar.css), the editing bar, the detail pane (see DetailPane.css) and MapLibre's own scale
+     and attribution below. The very room the image viewer keeps its controls at, taken from the
+     shared name rather than restated (see the overlay buttons in theme-next/base.css), so the two
+     cannot drift apart.
+
+     Then the same room named once per edge, which is what everything over the map is actually placed
+     from: in fullscreen the edges of the map are the edges of the screen, and part of a screen may
+     not be the screen's to draw on (see below). Every placement goes through these rather than
+     through the room above, so that saying it once there is enough. */
   --geo-map-inset: var(--overlay-button-inset, 10px);
+  --geo-map-inset-top: var(--geo-map-inset);
+  --geo-map-inset-bottom: var(--geo-map-inset);
+  --geo-map-inset-left: var(--geo-map-inset);
+  --geo-map-inset-right: var(--geo-map-inset);
+
+  /* The two sides again, in the reading direction, for the app's own furniture — which is placed
+     that way round, the trailing corner being the corner the reader ends a line at. MapLibre's
+     corners are named left and right whatever the direction, so its controls keep the pair above. */
+  --geo-map-inset-start: var(--geo-map-inset-left);
+  --geo-map-inset-end: var(--geo-map-inset-right);
 
   /* How tall the controls in the corner stand, which is what anything else opened over that corner
      has to end above (see DetailPane.css). The image viewer's zoom controls are the same height,
      being the same group (see the overlay buttons in theme-next/forms.css); the fallback is that
      height where no theme names one. */
   --geo-map-toolbar-height: var(--overlay-button-height, 28px);
+
+  /* Where the head of the leading column stands: the search bar (see SearchBox.css) and the result
+     navigator placed from it (see ResultNavigator.css). Overridden for mobile below. */
+  --geo-map-search-top: var(--geo-map-inset-top);
+
+  /* Where the foot of the map stops anything reaching down towards it: the room kept from the
+     bottom, the height of the bars standing there (MapToolbar, EditToolbar), and as much air again.
+     Read by the detail pane and by the place panel on mobile. */
+  --geo-map-foot: calc(var(--geo-map-inset-bottom) + var(--geo-map-toolbar-height) + var(--geo-map-inset));
 
   /*
    * What everything standing over the map is dressed in — our own control groups and MapLibre's
@@ -69,14 +94,47 @@
      attribution stands at the head instead (see map.tsx). */
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl,
   .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
-    margin-bottom: var(--geo-map-inset);
-    margin-inline: var(--geo-map-inset);
+    margin-bottom: var(--geo-map-inset-bottom);
+    margin-left: var(--geo-map-inset-left);
+    margin-right: var(--geo-map-inset-right);
   }
 
   .maplibregl-ctrl-top-left .maplibregl-ctrl {
-    margin-top: var(--geo-map-inset);
-    margin-inline: var(--geo-map-inset);
+    margin-top: var(--geo-map-inset-top);
+    margin-left: var(--geo-map-inset-left);
+    margin-right: var(--geo-map-inset-right);
   }
+}
+
+/* On mobile the attribution takes the top leading corner (see map.tsx), so the column starts below
+   it: the room kept from the top, the attribution's own height, and as much air again. */
+body.mobile .geo-map-container {
+  --geo-map-search-top: calc(var(--geo-map-inset-top) * 2 + var(--geo-map-toolbar-height));
+}
+
+/* Read the other way round, the trailing corner is the left one. Only which side is which changes;
+   what each side is worth is settled above and in fullscreen below, and is read through from here. */
+body[dir=rtl] .geo-map-container {
+  --geo-map-inset-start: var(--geo-map-inset-right);
+  --geo-map-inset-end: var(--geo-map-inset-left);
+}
+
+/*
+ * On a screen of its own, the map keeps clear of whatever the screen keeps for itself — the notch
+ * and the home bar of a phone, and the rounded corners and the camera housing of a laptop that has
+ * one, which is why this is not asked only of mobile. Nothing outside the map can do it for it:
+ * fullscreen takes the container out of the layout that pads for these (see `#root-widget` and the
+ * panes in style.css) and lays it over the whole screen instead, so its own edges are the ones that
+ * have to give way. The mind map reckons its own fullscreen the same way (see MindMap.css).
+ *
+ * The map itself still fills the screen corner to corner — only what stands over it is held off,
+ * which is the point of insetting rather than padding.
+ */
+.geo-map-container:fullscreen {
+  --geo-map-inset-top: calc(var(--geo-map-inset) + env(safe-area-inset-top));
+  --geo-map-inset-bottom: calc(var(--geo-map-inset) + env(safe-area-inset-bottom));
+  --geo-map-inset-left: calc(var(--geo-map-inset) + env(safe-area-inset-left));
+  --geo-map-inset-right: calc(var(--geo-map-inset) + env(safe-area-inset-right));
 }
 
 /*
@@ -105,18 +163,34 @@
 }
 
 /*
- * The control groups standing over the map — the camera's in the foot corner (MapToolbar) and the
- * editing actions at the middle of the foot (EditToolbar) — dressed in the set the map's furniture
- * shares, handed over here under the names the shared group reads (see the overlay buttons in
- * theme-next/forms.css). The hover pair has no overlay-button name of its own, so the group's is
- * asked for directly.
+ * Everything the control groups standing over the map have in common — the camera's in the foot
+ * corner (MapToolbar) and the editing actions at the middle of the foot (EditToolbar) — said here
+ * once for both: the room they keep from the map's edges, the layer they stand on, and the set the
+ * map's furniture is dressed in, all under the names the shared group reads (see the overlay buttons
+ * in theme-next/forms.css). What is left for each of them to say is the corner it stands at.
  *
  * Set on the groups rather than on the map, so that nothing else standing over the map is dressed
  * for a theme the reader did not choose — a marker's preview is the app's own note tooltip, and it
- * belongs to the app. The last pair marks a choice in force, which is the editing group's + while
- * the map waits to be told a place.
+ * belongs to the app.
  */
 .geo-map-container .tn-overlay-control-group {
+  /* The room the map keeps at each of its edges, handed to whichever corner a group names (see
+     `placement` on OverlayControlGroup): in fullscreen the edges of the map are the edges of the
+     screen, and part of a screen may not be the screen's to draw on. Told per edge, so that a group
+     at the foot stands clear of a home bar and still on the line the scale opposite it keeps. */
+  --overlay-group-inset-top: var(--geo-map-inset-top);
+  --overlay-group-inset-bottom: var(--geo-map-inset-bottom);
+  --overlay-group-inset-start: var(--geo-map-inset-start);
+  --overlay-group-inset-end: var(--geo-map-inset-end);
+
+  /* Above the canvas whatever order the two end up in: MapLibre builds its part of the container
+     itself, so what Preact renders alongside is not reliably the later sibling. The number clears
+     MapLibre's own control corners, which sit at 2. */
+  z-index: 3;
+
+  /* The hover pair has no overlay-button name of its own, so the group's is asked for directly; the
+     last pair marks a choice in force, which is the editing group's + while the map waits to be told
+     a place. */
   --overlay-button-background: var(--geo-map-panel-background);
   --overlay-button-color: var(--geo-map-panel-text-color);
   --overlay-button-backdrop-filter: var(--dropdown-backdrop-filter, blur(10px));

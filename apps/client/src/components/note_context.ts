@@ -39,6 +39,16 @@ const READ_ONLY_CAPABLE_TYPES: string[] = [
     "spreadsheet"
 ];
 
+/**
+ * Collection view types that honour `#readOnly`, making a `book` note read-only capable.
+ *
+ * Listed by view type rather than by note type because the other views ignore the label: reporting
+ * a table or a board as read-only would put a badge over a collection that can still be edited.
+ */
+const READ_ONLY_CAPABLE_VIEW_TYPES: string[] = [
+    "geoMap"
+];
+
 export interface NoteContextDataMap {
     toc: HeadingContext;
     highlights: HighlightContext;
@@ -60,6 +70,19 @@ export interface NoteContextDataMap {
     pdfAnnotations: {
         annotations: PdfAnnotationInfo[];
         scrollToAnnotation(annotationId: string, pageNumber: number): void;
+    };
+    /** Published by a board, so the right pane can list its columns and scroll the board to one. */
+    boardColumns: {
+        /** The columns in the order the board draws them. */
+        columns: {
+            /** What identifies the column, which is the value its cards carry. */
+            value: string;
+            title: string;
+            icon: string;
+            /** How many cards it holds, counting what an active filter leaves in. */
+            count: number;
+        }[];
+        scrollToColumn(column: string): void;
     };
     saveState: {
         state: SaveState;
@@ -358,9 +381,13 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return false;
         }
 
-        // Note types that support a read-only state (via the #readOnly label, source view, or auto-readonly).
+        // What supports a read-only state at all, via the #readOnly label, the source view or
+        // auto-readonly.
         const isPdf = this.note.type === "file" && this.note.mime === "application/pdf";
-        if (!isPdf && !READ_ONLY_CAPABLE_TYPES.includes(this.note.type)) {
+        const isReadOnlyCapableCollection = this.note.type === "book"
+            && READ_ONLY_CAPABLE_VIEW_TYPES.includes(this.note.getLabelValue("viewType") ?? "");
+        if (!isPdf && !isReadOnlyCapableCollection
+                && !READ_ONLY_CAPABLE_TYPES.includes(this.note.type)) {
             return false;
         }
 

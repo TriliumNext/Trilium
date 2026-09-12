@@ -280,6 +280,22 @@ function escapeRegExp(string: string): string {
 }
 
 /**
+ * Maximum edit distance allowed for a fuzzy match, scaled by token length the way
+ * Elasticsearch's `fuzziness: AUTO` does: 0 for 1-2 characters, 1 for 3-5, and
+ * `FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE` beyond that. A flat distance of 2 is loose
+ * enough to match "sync" against "send".
+ */
+export function getAutoMaxEditDistance(tokenLength: number): number {
+    if (tokenLength <= 2) {
+        return 0;
+    }
+    if (tokenLength <= 5) {
+        return 1;
+    }
+    return FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE;
+}
+
+/**
  * Checks if a word matches a token with fuzzy matching and returns the matched word.
  * Optimized for common case where distances are small.
  *
@@ -288,7 +304,7 @@ function escapeRegExp(string: string): string {
  * @param maxDistance Maximum allowed edit distance
  * @returns The matched word if found, null otherwise
  */
-export function fuzzyMatchWordWithResult(token: string, text: string, maxDistance: number = FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE): string | null {
+export function fuzzyMatchWordWithResult(token: string, text: string, maxDistance: number = getAutoMaxEditDistance(token.length)): string | null {
     // Input validation
     if (typeof token !== 'string' || typeof text !== 'string') {
         return null;
@@ -304,12 +320,8 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
         const normalizedToken = token.toLowerCase();
         const normalizedText = text.toLowerCase();
 
-        // Exact match check first (most common case)
-        if (normalizedText.includes(normalizedToken)) {
-            // Find the exact match position and return the original substring with case preserved
-            const matchIndex = normalizedText.indexOf(normalizedToken);
-            return text.substring(matchIndex, matchIndex + normalizedToken.length);
-        }
+        // A substring is not a fuzzy match, so there is no whole-text shortcut here. Callers that
+        // want substring semantics run their own `includes()` check first.
 
         // For fuzzy matching, split into words and check each against the token
         const words = normalizedText.split(/\s+/).filter(word => word.length > 0);
@@ -319,13 +331,14 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
             const word = words[i];
             const originalWord = originalWords[i];
 
-            // Skip if word is too different in length for fuzzy matching
-            if (Math.abs(word.length - normalizedToken.length) > maxDistance) {
+            // A word containing the token is a substring relationship, not a typo, so "sync"
+            // must not fuzzy-match "async".
+            if (word.length > normalizedToken.length && word.includes(normalizedToken)) {
                 continue;
             }
 
-            // For very short tokens or very different lengths, be more strict
-            if (normalizedToken.length < 4 || Math.abs(word.length - normalizedToken.length) > 2) {
+            // Skip if word is too different in length for fuzzy matching
+            if (Math.abs(word.length - normalizedToken.length) > maxDistance) {
                 continue;
             }
 
@@ -353,6 +366,58 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
  * @param maxDistance Maximum allowed edit distance
  * @returns True if the word matches the token within the distance threshold
  */
-export function fuzzyMatchWord(token: string, text: string, maxDistance: number = FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE): boolean {
+export function fuzzyMatchWord(token: string, text: string, maxDistance: number = getAutoMaxEditDistance(token.length)): boolean {
     return fuzzyMatchWordWithResult(token, text, maxDistance) !== null;
+}
+
+/**
+ * Punctuation trimmed from word boundaries during tokenization: quotes, brackets, dashes and
+ * general punctuation. Connector punctuation (`_`) and symbols (`+`, `=`) are excluded, so
+ * `_private` and `c++` survive intact.
+ */
+const WORD_BOUNDARY_PUNCTUATION = "\\p{Pi}\\p{Pf}\\p{Ps}\\p{Pe}\\p{Po}\\p{Pd}";
+const LEADING_PUNCTUATION = new RegExp(`^[${WORD_BOUNDARY_PUNCTUATION}]+`, "u");
+const TRAILING_PUNCTUATION = new RegExp(`[${WORD_BOUNDARY_PUNCTUATION}]+$`, "u");
+
+/**
+ * Strips leading and trailing punctuation from a word, so a query token matches a content word
+ * wrapped in punctuation: `(sync)`, `sync,` and `"sync"` all compare equal to `sync`. Inner
+ * punctuation is untouched, so `d'artagnan` keeps its apostrophe. `f#` does lose its `#`, which
+ * stays consistent because the same stripping runs on both sides of every comparison.
+ */
+export function stripWordPunctuation(word: string): string {
+    if (!word) {
+        return "";
+    }
+
+    return word.replace(LEADING_PUNCTUATION, "").replace(TRAILING_PUNCTUATION, "");
+}
+
+/**
+ * Splits text into normalized, punctuation-stripped words. Exact word and phrase matching
+ * tokenize through this, so punctuation in the content cannot prevent a word from matching.
+ */
+export function tokenizeIntoWords(text: string): string[] {
+    return normalizeSearchText(text)
+        .split(/\s+/)
+        .map(stripWordPunctuation)
+        .filter((word) => word.length > 0);
+}
+
+/**
+ * Whether `phrase` appears as a consecutive run of words inside `words`. Both are expected to be
+ * tokenized already, via `tokenizeIntoWords()`. An empty phrase never matches.
+ */
+export function wordsContainPhrase(words: string[], phrase: string[]): boolean {
+    if (phrase.length === 0 || phrase.length > words.length) {
+        return false;
+    }
+
+    for (let i = 0; i <= words.length - phrase.length; i++) {
+        if (phrase.every((phraseWord, j) => words[i + j] === phraseWord)) {
+            return true;
+        }
+    }
+
+    return false;
 }

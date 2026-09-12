@@ -4,7 +4,7 @@ import { join } from "path";
 import { initializeCore, options } from "@triliumnext/core";
 import { serverZipExportProviderFactory } from "../src/services/export/zip/factory.js";
 import ServerBackupService from "../src/backup_provider.js";
-import ClsHookedExecutionContext from "../src/cls_provider.js";
+import AsyncLocalStorageExecutionContext from "../src/cls_provider.js";
 import NodejsCryptoProvider from "../src/crypto_provider.js";
 import NodejsZipProvider from "../src/zip_provider.js";
 import ServerPlatformProvider from "../src/platform_provider.js";
@@ -41,7 +41,7 @@ beforeAll(async () => {
         crypto: new NodejsCryptoProvider(),
         zip: new NodejsZipProvider(),
         zipExportProviderFactory: serverZipExportProviderFactory,
-        executionContext: new ClsHookedExecutionContext(),
+        executionContext: new AsyncLocalStorageExecutionContext(),
         schema: readFileSync(require.resolve("@triliumnext/core/src/assets/schema.sql"), "utf-8"),
         platform: new ServerPlatformProvider(),
         translations: initializeTranslationsWithParams,

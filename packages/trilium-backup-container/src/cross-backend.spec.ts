@@ -3,7 +3,7 @@ import { gunzipSync } from "node:zlib";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { webBackend } from "./backend-web.js";
-import { FRAME_SIZE, HEADER_BYTES_PLAIN } from "./format.js";
+import { FRAME_SIZE, HEADER_BYTES_PLAIN, TRAILER_BYTES } from "./format.js";
 import {
     failureOfWeb,
     fakeDatabase,
@@ -71,9 +71,12 @@ describe("cross-backend round trips", () => {
 
     it("writes byte-identical plain containers on both backends", async () => {
         const database = fakeDatabase(9_000);
+        // Stated rather than taken from the clock, which is the one field two writes are entitled
+        // to disagree on: a millisecond between them would fail this for the wrong reason.
+        const shared = { plaintextSize: database.length, timestamp: Date.UTC(2026, 0, 2, 3, 4, 5) };
 
-        const node = await writeToBuffer(database, { plaintextSize: database.length });
-        const web = await writeToBufferWeb(database, { plaintextSize: database.length });
+        const node = await writeToBuffer(database, shared);
+        const web = await writeToBufferWeb(database, shared);
 
         expect(web.bytes.equals(node.bytes)).toBe(true);
     });
@@ -119,7 +122,7 @@ describe("web gzip canonical form", () => {
     it("normalises MTIME and the OS byte whatever the platform compressor emits", async () => {
         const database = fakeDatabase(5_000);
         const written = await writeToBufferWeb(database, { compress: true });
-        const payload = written.bytes.subarray(HEADER_BYTES_PLAIN);
+        const payload = written.bytes.subarray(HEADER_BYTES_PLAIN, -TRAILER_BYTES);
 
         expect(payload.readUInt16BE(0)).toBe(0x1f8b);
         expect(payload.readUInt32LE(4)).toBe(0);           // MTIME, so no timestamp leaks
@@ -144,7 +147,7 @@ describe("web failure reasons", () => {
 
     it("recovers with skipVerifier when only the verifier tag is damaged", async () => {
         const written = await encrypted();
-        const damaged = flipByte(written.bytes, 65);   // inside the verifier tag, bytes 60 to 75
+        const damaged = flipByte(written.bytes, 73);   // inside the verifier tag, bytes 68 to 83
 
         const recovered = await readFromBufferWeb(
             damaged,
@@ -176,17 +179,15 @@ describe("web failure reasons", () => {
         // Corrupt the deflate data, then repair the digest so the failure can only come from the
         // decoder.
         const damaged = flipByte(written.bytes, HEADER_BYTES_PLAIN + 30);
-        createHash("sha256").update(damaged.subarray(HEADER_BYTES_PLAIN)).digest().copy(
-            damaged,
-            HEADER_BYTES_PLAIN - 32
-        );
+        createHash("sha256").update(damaged.subarray(HEADER_BYTES_PLAIN, -TRAILER_BYTES)).digest()
+            .copy(damaged, damaged.length - TRAILER_BYTES);
 
         expect(await failureOfWeb(damaged)).toBe("damaged-payload");
     });
 
     it("surfaces a digest mismatch through the decompressor untranslated", async () => {
         const written = await writeToBuffer(fakeDatabase(50_000), { compress: true });
-        const damaged = flipByte(written.bytes, HEADER_BYTES_PLAIN - 5);   // inside the digest
+        const damaged = flipByte(written.bytes, written.bytes.length - TRAILER_BYTES + 5);   // in the digest
 
         expect(await failureOfWeb(damaged)).toBe("digest-mismatch");
     });

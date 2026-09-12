@@ -3,6 +3,16 @@ import "./chart_tooltip.css";
 import clsx from "clsx";
 import { useRef, useState } from "preact/hooks";
 
+import { isMobile } from "../../../services/utils";
+
+/**
+ * A touch screen has no pointer for the bubble to follow: the tap that stands in for a hover leaves it
+ * behind, over the chart, until something else is tapped. What it was there to say is said by the
+ * selection strip instead, which names the mark that was actually chosen. Read once, as the app's
+ * other phone branches do.
+ */
+const SHOWS_TOOLTIPS = !isMobile();
+
 interface ChartTooltipState {
     text: string;
     /** Viewport coordinates: the bubble is positioned fixed, so it escapes any clipping ancestor. */
@@ -41,17 +51,18 @@ export function useChartTooltip<T extends HTMLElement>() {
                 setTooltip((current) => current && { ...current, ...positionOf(event) }),
             onMouseLeave: () => setTooltip(null)
         },
-        /** Called by a mark on hover; a mark without tooltip text shows nothing. */
+        /** Called by a mark on hover; a mark without tooltip text, or a phone, shows nothing. */
         showTooltip: (text: string | undefined, event: { clientX: number, clientY: number }) =>
-            setTooltip(text ? { text, ...positionOf(event) } : null),
+            setTooltip(text && SHOWS_TOOLTIPS ? { text, ...positionOf(event) } : null),
         hideTooltip: () => setTooltip(null),
         /** Render inside the chart, after its marks. */
         tooltipNode: tooltip && (
             // The `tooltip show` classes matter: the themes set the colours on `.tooltip` and scope
             // the text colour to `.tooltip .tooltip-inner`, so a bare inner would inherit the page's.
-            // `tooltip-top` is the app's "raise above everything" class: the base `.tooltip` z-index
-            // is derived from a CKEditor variable that is out of scope here, leaving the bubble at
-            // `auto` — under the hovered mark, which lifts itself to draw its outline.
+            // `tooltip-top` is the app's "raise above everything" class. Unlike a Bootstrap tooltip,
+            // this bubble is rendered inside the chart rather than appended to `<body>`, so it is
+            // stacked against the chart's own marks — and the hovered one lifts itself to draw its
+            // outline, which the base tooltip layer would not clear.
             <div
                 className={clsx(
                     "tooltip", "show", "tooltip-top", "chart-tooltip",

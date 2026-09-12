@@ -37,6 +37,7 @@ Trilium will identify your Claude Code binary in this order:
 
 *   By looking for a `TRILIUM_CLAUDE_CODE_PATH` environment variable pointing to the Claude binary. This allows overriding the path if needed.
 *   By looking for `claude` in your PATH, generally works in most circumstances.
+*   By asking your login shell for its `PATH` which lets a desktop install find a CLI installed through `nvm`, `fnm`, `asdf` or Homebrew, since a GUI-launched app doesn't inherit your terminal's environment.
 
 After your provider is set up, you'll benefit from the same features as an API key (note tools, web search, extended thinking, image/PDF attachments, streaming).
 
@@ -67,5 +68,7 @@ Even for local providers that are not directly supported by Trilium, you can sti
 If your desired hosted (e.g. OpenRouter, Groq, Mistral) or local LLM provider is not listed in Trilium, you can use the dedicated _OpenAI-compatible_ provider from the _Custom endpoint_ section.
 
 This allows you to set the base URL to an OpenAI-compatible API, with an optional API key if required by the service.
+
+Enter the base URL exactly as the service documents it, including its version path, such as `https://api.groq.com/openai/v1` or `https://open.bigmodel.cn/api/paas/v4`. Only a bare host such as `http://localhost:8080` is completed with `/v1`.
 
 For custom endpoints, the pricing of the models is not known so the cost of a conversation will not be displayed; this is especially relevant for hosted providers.

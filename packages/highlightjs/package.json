@@ -11,7 +11,7 @@
     "@catppuccin/highlightjs": "1.0.1",
     "@exercism/highlightjs-gdscript": "0.0.1",
     "@triliumnext/commons": "workspace:*",
-    "highlight.js": "11.11.1",
+    "highlight.js": "11.12.0",
     "highlightjs-cobol": "0.3.3",
     "highlightjs-cypher": "1.2.0"
   }

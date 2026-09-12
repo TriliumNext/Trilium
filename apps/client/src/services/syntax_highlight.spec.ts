@@ -45,6 +45,20 @@ vi.mock("@triliumnext/highlightjs", () => {
     };
 });
 
+// Capture the color-scheme subscription so tests can fire it directly, keeping the rest of theme.ts real
+// (getEffectiveCodeBlockTheme resolves the light/dark choice through getEffectiveThemeStyle).
+const themeSubscription = vi.hoisted(() => ({ listeners: [] as Array<() => void> }));
+vi.mock("./theme.js", async (orig) => {
+    const actual = (await orig()) as Record<string, unknown>;
+    return {
+        ...actual,
+        onEffectiveThemeStyleChange: (listener: () => void) => {
+            themeSubscription.listeners.push(listener);
+            return () => {};
+        }
+    };
+});
+
 // Spy on the clipboard helpers so we can assert which copy path the click handlers take
 // (copyTextWithToast in-app vs copyText in share mode). Persists across vi.resetModules().
 const clip = vi.hoisted(() => ({
@@ -106,7 +120,8 @@ describe("syntax_highlight", () => {
         hl.loadTheme.mockClear().mockImplementation(async () => {});
         hl.highlight.mockClear().mockImplementation(() => ({ value: "HL" }));
         hl.highlightAuto.mockClear().mockImplementation(() => ({ value: "AUTO" }));
-        // matchMedia is required by the color-scheme listener.
+        themeSubscription.listeners.length = 0;
+        // matchMedia backs getEffectiveThemeStyle, which picks the light or dark code-block theme.
         (window as any).matchMedia = vi.fn(() => ({
             matches: false,
             addEventListener: vi.fn(),
@@ -387,7 +402,7 @@ describe("syntax_highlight", () => {
     });
 
     describe("color scheme listener + cache eviction", () => {
-        it("registers a matchMedia listener once and re-applies theme on change", async () => {
+        it("subscribes to the effective color scheme once and re-applies the theme on change", async () => {
             const mod = await freshModule();
             setOptions({
                 codeBlockThemeMatchesApp: "true",
@@ -396,53 +411,41 @@ describe("syntax_highlight", () => {
                 codeNotesMimeTypes: "[]"
             });
 
-            let changeHandler: (() => void) | undefined;
-            const addEventListener = vi.fn((_evt: string, cb: () => void) => {
-                changeHandler = cb;
-            });
-            (window as any).matchMedia = vi.fn(() => ({ matches: true, addEventListener }));
+            (window as any).matchMedia = vi.fn(() => ({ matches: true, addEventListener: vi.fn() }));
             (window as any).glob = { isMainWindow: true, theme: "auto" };
 
             // first ensure registers the listener and marks highlightingLoaded
             await mod.ensureMimeTypesForHighlighting("text-css");
-            expect(addEventListener).toHaveBeenCalledTimes(1);
+            expect(themeSubscription.listeners).toHaveLength(1);
 
             hl.loadTheme.mockClear();
-            // OS scheme change with matchesApp=true + highlightingLoaded -> re-load theme
+            // Scheme change with matchesApp=true + highlightingLoaded -> re-load theme
             // (the handler resolves highlight.js via a dynamic import, hence the waitFor)
-            changeHandler!();
+            themeSubscription.listeners[0]?.();
             await vi.waitFor(() => expect(hl.loadTheme).toHaveBeenCalledTimes(1));
 
-            // a second ensure must NOT register the listener again
+            // a second ensure must NOT subscribe again
             await mod.ensureMimeTypesForHighlighting("text-x-csrc");
-            expect(addEventListener).toHaveBeenCalledTimes(1);
+            expect(themeSubscription.listeners).toHaveLength(1);
         });
 
-        it("registers the matchMedia listener at most once (idempotent)", async () => {
+        it("subscribes at most once (idempotent)", async () => {
             const mod = await freshModule();
-            const addEventListener = vi.fn();
-            (window as any).matchMedia = vi.fn(() => ({ matches: false, addEventListener }));
 
             mod.ensureColorSchemeListener();
             mod.ensureColorSchemeListener(); // second call hits the early-return
-            expect(addEventListener).toHaveBeenCalledTimes(1);
+            expect(themeSubscription.listeners).toHaveLength(1);
         });
 
         it("does not re-apply the theme on change when matchesApp is false", async () => {
             const mod = await freshModule();
             setOptions({ codeBlockThemeMatchesApp: "false", codeBlockTheme: "default:vs", codeNotesMimeTypes: "[]" });
 
-            let changeHandler: (() => void) | undefined;
-            const addEventListener = vi.fn((_evt: string, cb: () => void) => {
-                changeHandler = cb;
-            });
-            (window as any).matchMedia = vi.fn(() => ({ matches: false, addEventListener }));
-
             await mod.ensureMimeTypesForHighlighting("text-css");
             hl.loadTheme.mockClear();
 
             setOptions({ codeBlockThemeMatchesApp: "false", codeBlockTheme: "default:vs" });
-            changeHandler!();
+            themeSubscription.listeners[0]?.();
             expect(hl.loadTheme).not.toHaveBeenCalled();
         });
 

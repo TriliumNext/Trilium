@@ -4,7 +4,7 @@ import type { DatabaseBackup, ExistingBackupsResponse } from "@triliumnext/commo
 import type { ComponentChildren } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { uploadInChunks } from "./services/chunked_upload";
+import { ChunkedUploadError, uploadInChunks } from "./services/chunked_upload";
 import { describeDatabaseFile, describeDatabaseFormat } from "./services/database_files";
 import { t } from "./services/i18n";
 import server from "./services/server";
@@ -47,7 +47,15 @@ const STEP_ORDER: Step[] = [ "picking", "uploading", "passphrase", "restoring" ]
 /** Failures the same backup can still get past, which send the user back to the passphrase rather than to the start. */
 const PASSPHRASE_FAILURES = new Set([ "passphrase-required", "wrong-passphrase-or-damaged-header" ]);
 
-export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () => void; onRestored: () => void }) {
+export default function RestoreFromBackup({ onBack, onRestored }: {
+    /**
+     * Leaves the restore for the step of the wizard that led here. Omitted where nothing did: an
+     * instance sent straight to this screen by a marker has no earlier step to be shown, so the
+     * first step of the restore has nowhere to go back to and offers no way.
+     */
+    onBack?: () => void;
+    onRestored: () => void;
+}) {
     const [ step, setStep ] = useState<Step>("picking");
     const [ selection, setSelection ] = useState<Selection | null>(null);
     const [ upload, setUpload ] = useState<UploadState | null>(null);
@@ -146,7 +154,7 @@ export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () =
         uploadCancellation.current = cancellation;
 
         setStep("uploading");
-        setUpload({ sentBytes: 0, totalBytes: file.size, fraction: 0, bytesPerSecond: 0 });
+        setUpload({ sentBytes: 0, totalBytes: file.size, fraction: 0, bytesPerSecond: 0, reconnecting: false });
 
         try {
             const uploaded = await uploadInChunks<{ fileName: string; encrypted: boolean }>({
@@ -154,8 +162,8 @@ export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () =
                 blob: file,
                 fileName: file.name,
                 signal: cancellation.signal,
-                onProgress: ({ sentBytes, totalBytes, fraction, bytesPerSecond }) =>
-                    setUpload({ sentBytes, totalBytes, fraction, bytesPerSecond })
+                onProgress: ({ sentBytes, totalBytes, fraction, bytesPerSecond, reconnecting }) =>
+                    setUpload({ sentBytes, totalBytes, fraction, bytesPerSecond, reconnecting })
             });
 
             await restore({ source: "pending", fileName: uploaded.fileName, encrypted: uploaded.encrypted });
@@ -165,7 +173,7 @@ export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () =
             // An upload the user walked away from ends in a failure they chose, and being told
             // about it would read as something having gone wrong.
             if (!cancellation.signal.aborted) {
-                raiseError(t("setup.restore-error-upload-failed"), detailOf(e));
+                raiseError(uploadFailureHeadline(e), detailOf(e));
             }
         } finally {
             uploadCancellation.current = null;
@@ -187,9 +195,15 @@ export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () =
         if (previous) {
             setStep(previous);
         } else {
-            onBack();
+            onBack?.();
         }
     }
+
+    /**
+     * Whether there is anywhere to go back to: an earlier step of the restore, or the step of the
+     * wizard that led into it. The replacement itself has neither, and cannot be interrupted anyway.
+     */
+    const canGoBack = step !== "restoring" && (!!PREVIOUS_STEP[step] || !!onBack);
 
     function onRestoreFailed(failure: { error?: string; reason?: string }) {
         if (failure.reason && PASSPHRASE_FAILURES.has(failure.reason)) {
@@ -211,8 +225,10 @@ export default function RestoreFromBackup({ onBack, onRestored }: { onBack: () =
             illustration={<Icon icon="bx bx-archive-in" className="illustration-icon" />}
             error={error}
             errorId={errorId}
-            // Nothing to go back to once the database is being replaced.
-            onBack={step === "restoring" ? undefined : goBack}
+            // Offered only where there is somewhere to go: not once the database is being replaced,
+            // and not from the first step of a restore that is the whole of what the wizard was
+            // opened for.
+            onBack={canGoBack ? goBack : undefined}
         >
             {/* In the flow rather than filling the page: each step is a different height, and the
                 one arriving is what the page should be as tall as. */}
@@ -267,6 +283,20 @@ function Failure({ headline, detail }: { headline: string; detail?: string }) {
     );
 }
 
+/**
+ * The sentence for an upload that did not finish.
+ *
+ * A connection that goes away is waited out rather than reported, so an upload only fails here once
+ * there is nothing left to wait for. The two endings differ in what the user should do next: an
+ * upload the server no longer holds has to be started again, while anything else is a reason it
+ * refused, and telling them to try again would be telling them to repeat it.
+ */
+function uploadFailureHeadline(e: unknown): string {
+    const gone = e instanceof ChunkedUploadError && (e.status === 404 || e.status === 410);
+
+    return gone ? t("setup.restore-error-upload-interrupted") : t("setup.restore-error-upload-failed");
+}
+
 /** What a thrown failure has to say for itself, for the detail line under the headline. */
 function detailOf(e: unknown): string | undefined {
     const message = e instanceof Error ? e.message : String(e);
@@ -288,6 +318,10 @@ function headlineFor(reason: string | undefined): string {
         case "database-too-old": return t("setup.restore-error-too-old");
         case "database-not-initialized": return t("setup.restore-error-unfinished");
         case "swap-failed": return t("setup.restore-error-swap-failed");
+        case "swap-failed-reload": return t("setup.restore-error-swap-failed-reload");
+        case "check-failed": return t("setup.restore-error-check-failed");
+        case "restore-failed": return t("setup.restore-error-failed");
+        case "backup-incomplete": return t("setup.restore-error-incomplete");
         case "migration-failed": return t("setup.restore-error-would-not-open");
         case "restore-refused": return t("setup.restore-error-refused");
         case "already-initialized": return t("setup.restore-error-already-initialized");
@@ -311,6 +345,8 @@ interface UploadState {
     fraction: number;
     /** Averaged over the transfer so far, so it settles rather than jumping about between pieces. */
     bytesPerSecond: number;
+    /** Whether the upload is waiting on a connection that has gone away. */
+    reconnecting: boolean;
 }
 
 /** The backups already here, and the way to a file that is not. */
@@ -440,12 +476,21 @@ function UploadProgress({ upload }: { upload: UploadState }) {
                         })}
                     </span>
 
-                    {/* Only once something has actually gone out: before the first piece lands there
-                        is no elapsed time to divide by, and a rate of nothing says nothing. */}
-                    {upload.bytesPerSecond > 0 && (
-                        <span class="restore-upload-speed">
-                            {t("setup.restore-upload-speed", { speed: formatSize(upload.bytesPerSecond) })}
+                    {/* In place of the speed while the connection is gone, which is where the eye
+                        already is and where a rate averaged over a transfer that has stopped would
+                        otherwise sit unchanged, saying everything is fine. */}
+                    {upload.reconnecting ? (
+                        <span class="restore-upload-reconnecting">
+                            <Icon icon="bx bx-wifi-off" /> {t("setup.restore-upload-reconnecting")}
                         </span>
+                    ) : (
+                        // Only once something has actually gone out: before the first piece lands
+                        // there is no elapsed time to divide by, and a rate of nothing says nothing.
+                        upload.bytesPerSecond > 0 && (
+                            <span class="restore-upload-speed">
+                                {t("setup.restore-upload-speed", { speed: formatSize(upload.bytesPerSecond) })}
+                            </span>
+                        )
                     )}
                 </div>
             </CardSection>
@@ -560,7 +605,7 @@ function RestoreProgress({ reported, onRestored, onFailed }: {
     // the user three things they will never see happen.
     return (
         <div class="restore-current-step">
-            <div class="restore-step-name">{t(`setup.restore-stage-${shownStage}`)}</div>
+            <div class="restore-step-name">{stageLabel(shownStage)}</div>
 
             {/* Only where the step can say how far it has got. The ones that cannot show nothing,
                 rather than an empty bar that never moves. */}
@@ -574,4 +619,29 @@ function RestoreProgress({ reported, onRestored, onFailed }: {
             <small class="restore-do-not-close">{t("setup.restore-do-not-close")}</small>
         </div>
     );
+}
+
+/**
+ * What to call the stage the restore says it is at.
+ *
+ * Spelled out rather than composed into a key. Built as `restore-stage-${stage}`, a stage nobody
+ * wrote a sentence for printed its own key at the user: `done` is reported by the browser-only
+ * restore in the moment between the last step and the reload, and that moment is the one the user
+ * is watching hardest.
+ *
+ * `done` is not a step at all but what follows the last one, so it says what is about to happen
+ * instead of naming something already finished. A failure says nothing here, because the screen it
+ * is about to be replaced by says it properly.
+ */
+export function stageLabel(stage: string): string {
+    switch (stage) {
+        case "validating": return t("setup.restore-stage-validating");
+        case "swapping": return t("setup.restore-stage-swapping");
+        case "migrating": return t("setup.restore-stage-migrating");
+        case "done": return t("setup.redirecting");
+        case "failed": return "";
+        // Staging both as itself and as the answer for a stage this does not know: whatever it is
+        // called, a restore that has not ended is one still working on the backup.
+        default: return t("setup.restore-stage-staging");
+    }
 }

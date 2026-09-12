@@ -185,6 +185,17 @@ describe("preferences and pass-through reads", () => {
         expect(readThroughPatch("unrelated")).toBe("kept");
         expect(readThroughPatch("never-written")).toBeNull();
     });
+
+    it("still answers with parseable JSON when no options were injected", () => {
+        // How bootstrap.ts calls it. pdf.js hands whatever comes back straight to JSON.parse, and
+        // `undefined` made that throw on every editable document — caught by the viewer, but left
+        // a SyntaxError in the console for a document that was perfectly fine.
+        interceptPersistence();
+
+        const stored = readThroughPatch("pdfjs.preferences");
+        expect(typeof stored).toBe("string");
+        expect(() => JSON.parse(stored ?? "")).not.toThrow();
+    });
 });
 
 describe("view-history persistence", () => {

@@ -19,8 +19,14 @@ interface OverlayPanelProps {
      */
     header: ComponentChildren;
     /** Whatever else the header row offers, standing between the header and the close button —
-     *  the geo pane's maximize, say (see MaximizeToQuickEditAction). */
+     *  the geo pane's maximize, say (see MaximizeAction). */
     headerActions?: ComponentChildren;
+    /**
+     * The panel has been grown to fill the canvas it stands over, which is a way it is drawn and
+     * not a surface of its own: what it holds — a note's editor, mid-edit — is never unmounted for
+     * it. Where it grows to is the caller's to state, as where it stands is (see the CSS).
+     */
+    maximized?: boolean;
     /** The way to send the panel away, offered at the end of the header row. Left out, the panel
      *  has no way of dismissing itself. */
     close?: {
@@ -41,11 +47,11 @@ interface OverlayPanelProps {
  * left to the caller, which is what differs between two of them. The same division
  * {@link OverlayToolbar} makes for the bars those canvases carry.
  */
-export default function OverlayPanel({ className, containerRef, header, headerActions, close, children }: OverlayPanelProps) {
+export default function OverlayPanel({ className, containerRef, header, headerActions, close, maximized, children }: OverlayPanelProps) {
     return (
         <div
             ref={containerRef}
-            className={clsx("tn-overlay-panel", className)}
+            className={clsx("tn-overlay-panel", maximized && "maximized", className)}
             /* Keep interactions inside the panel from reaching the canvas underneath. */
             onMouseDown={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}

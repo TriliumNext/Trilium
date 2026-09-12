@@ -52,34 +52,29 @@ export function chunked(data: Buffer, chunkSize: number): Readable {
 export interface WrittenContainer {
     bytes: Buffer;
     result: WriteBackupContainerResult;
-    patchedAt: number[];
 }
 
-export type WriteOptions = Omit<WriteBackupContainerOptions, "patchHeader">;
+export type WriteOptions = WriteBackupContainerOptions;
 
-/** Writes a container in memory, applying the digest patch the way a file destination would. */
+/**
+ * Writes a container in memory.
+ *
+ * Nothing is written back to: a container is produced in one forward pass, so what the sink
+ * received in order is the whole file.
+ */
 export async function writeToBuffer(
     input: Buffer | Readable,
     options: WriteOptions = {}
 ): Promise<WrittenContainer> {
     const sink = new MemorySink();
-    const patches: { offset: number; data: Buffer }[] = [];
 
     const result = await writeBackupContainer(
         Buffer.isBuffer(input) ? Readable.from([ input ]) : input,
         sink,
-        {
-            ...options,
-            patchHeader: (offset, data) => { patches.push({ offset, data: Buffer.from(data) }); }
-        }
+        options
     );
 
-    const bytes = sink.toBuffer();
-    for (const patch of patches) {
-        patch.data.copy(bytes, patch.offset);
-    }
-
-    return { bytes, result, patchedAt: patches.map((patch) => patch.offset) };
+    return { bytes: sink.toBuffer(), result };
 }
 
 export interface ReadContainer {
@@ -103,23 +98,14 @@ export async function writeToBufferWeb(
     options: WriteOptions = {}
 ): Promise<WrittenContainer> {
     const collector = webCollector();
-    const patches: { offset: number; data: Buffer }[] = [];
 
     const result = await writeBackupContainerWeb(
         Buffer.isBuffer(input) ? webSource(input) : input,
         collector.stream,
-        {
-            ...options,
-            patchHeader: (offset, data) => { patches.push({ offset, data: Buffer.from(data) }); }
-        }
+        options
     );
 
-    const bytes = collector.toBuffer();
-    for (const patch of patches) {
-        patch.data.copy(bytes, patch.offset);
-    }
-
-    return { bytes, result, patchedAt: patches.map((patch) => patch.offset) };
+    return { bytes: collector.toBuffer(), result };
 }
 
 /** The web counterpart of {@link readFromBuffer}. */

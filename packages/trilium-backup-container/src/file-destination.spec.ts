@@ -19,7 +19,7 @@ describe("file destination", () => {
         await rm(directory, { recursive: true, force: true });
     });
 
-    it("writes to a file, patches the digest, and reads back byte for byte", async () => {
+    it("writes to a file in one pass and reads back byte for byte", async () => {
         const database = fakeDatabase(3 * 1024 * 1024);
         const source = join(directory, "document.db");
         const partial = join(directory, "backup.part");
@@ -32,19 +32,10 @@ describe("file destination", () => {
             compress: true,
             passphrase: "file test",
             scrypt: FAST_SCRYPT,
-            plaintextSize: (await stat(source)).size,
-            patchHeader: async (offset, data) => {
-                const handle = await open(partial, "r+");
-                try {
-                    await handle.write(data, 0, data.length, offset);
-                    await handle.sync();
-                } finally {
-                    await handle.close();
-                }
-            }
+            plaintextSize: (await stat(source)).size
         });
 
-        expect(result).toMatchObject({ headerLength: 108, compressed: true, encrypted: true });
+        expect(result).toMatchObject({ headerLength: 84, compressed: true, encrypted: true });
 
         await rename(partial, container);
         expect((await stat(container)).size).toBeLessThan(database.length);

@@ -10,6 +10,7 @@ import BNote from "../becca/entities/bnote.js";
 import { ValidationError } from "../errors.js";
 import { getLog } from "../services/log.js";
 import protectedSessionService from "../services/protected_session.js";
+import blobService from "./blob.js";
 import * as cls from "./context.js";
 import entityChangesService from "./entity_changes.js";
 import eventService from "./events.js";
@@ -414,9 +415,12 @@ function protectNote(note: BNote, protect: boolean) {
     try {
         if (protect !== note.isProtected) {
             const content = note.getContent();
+            const extractedText = readExtractedText(note.blobId, note.isProtected);
 
             note.isProtected = protect;
             note.setContent(content, { forceSave: true });
+
+            writeExtractedText(note.blobId, extractedText, protect);
         }
 
         revisionService.protectRevisions(note);
@@ -425,9 +429,12 @@ function protectNote(note: BNote, protect: boolean) {
             if (protect !== attachment.isProtected) {
                 try {
                     const content = attachment.getContent();
+                    const extractedText = readExtractedText(attachment.blobId, attachment.isProtected);
 
                     attachment.isProtected = protect;
                     attachment.setContent(content, { forceSave: true });
+
+                    writeExtractedText(attachment.blobId, extractedText, protect);
                 } catch (e) {
                     log.error(`Could not un/protect attachment '${attachment.attachmentId}'`);
 
@@ -440,6 +447,41 @@ function protectNote(note: BNote, protect: boolean) {
 
         throw e;
     }
+}
+
+/**
+ * The text OCR pulled out of a file, read off the blob holding it.
+ *
+ * (Un)protecting re-saves content that has not changed a byte, but a blob's identity takes its
+ * protection into account, so the re-save lands on a different row — one with no extracted text on it.
+ * The text describes the same file either way, so it is read here while the old state still says how
+ * it is stored, and put back by {@link writeExtractedText} once the new state does.
+ */
+function readExtractedText(blobId: string | undefined, isProtected: boolean | undefined): string {
+    if (!blobId) {
+        return "";
+    }
+
+    const row = getSql().getRowOrNull<{ textRepresentation: string | null }>(
+        /*sql*/`SELECT textRepresentation FROM blobs WHERE blobId = ?`,
+        [blobId]
+    );
+
+    return blobService.decryptTextRepresentation(row?.textRepresentation, !!isProtected);
+}
+
+/** Puts {@link readExtractedText}'s text back, on the blob the re-save produced and in its terms. */
+function writeExtractedText(blobId: string | undefined, extractedText: string, isProtected: boolean) {
+    if (!blobId || !extractedText) {
+        return;
+    }
+
+    getSql().execute(
+        /*sql*/`UPDATE blobs SET textRepresentation = ? WHERE blobId = ?`,
+        [blobService.encryptTextRepresentation(extractedText, isProtected), blobId]
+    );
+
+    entityChangesService.putBlobEntityChange(blobId);
 }
 
 export function checkImageAttachments(note: BNote, content: string) {
@@ -1244,10 +1286,14 @@ function getUndeletedParentBranchIds(noteId: string, deleteId: string) {
     );
 }
 
+/** The note types `saveLinks()` reads links out of, minus the ones whose content holds none. */
+const SCANNED_ON_IMPORT: NoteType[] = ["text", "relationMap", "mindMap", "llmChat"];
+
 function scanForLinks(note: BNote, content: string | Uint8Array) {
-    // A mind map is scanned here as well as on save, so that one arriving by import carries its
-    // links to the notes it points at without having to be opened and edited first.
-    if (!note || !["text", "relationMap", "mindMap"].includes(note.type)) {
+    // Scanned here as well as on save, so that a note arriving by import carries its links to the
+    // notes it points at without having to be opened and edited first. A Markdown note is asked
+    // separately: it is a `code` note, whose type alone says nothing about the links it holds.
+    if (!note || !(SCANNED_ON_IMPORT.includes(note.type) || note.isMarkdown())) {
         return;
     }
 

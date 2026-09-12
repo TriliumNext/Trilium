@@ -2,11 +2,13 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGenerateKey, mockValidate } = vi.hoisted(() => ({
     mockGenerateKey: vi.fn<(opts: { issuer: string; user: string }) => { secret: string; url: string }>(),
-    mockValidate: vi.fn<(args: { passcode: string; secret: string }) => boolean>()
+    mockValidate: vi.fn<typeof import("time2fa").Hotp.validate>()
 }));
 
-vi.mock("time2fa", () => ({
-    Totp: { generateKey: mockGenerateKey, validate: mockValidate }
+vi.mock("time2fa", async (importOriginal) => ({
+    ...await importOriginal<typeof import("time2fa")>(),
+    Totp: { generateKey: mockGenerateKey },
+    Hotp: { validate: mockValidate }
 }));
 
 import type { OptionNames } from "@triliumnext/commons";
@@ -175,7 +177,8 @@ describe("totp", () => {
 
         mockValidate.mockReturnValue(true);
         expect(totp.validateTOTPForSecret(SECRET, "000000")).toBe(true);
-        expect(mockValidate).toHaveBeenCalledWith({ passcode: "000000", secret: SECRET });
+        expect(mockValidate).toHaveBeenCalledWith(
+            { passcode: "000000", secret: SECRET, counter: expect.any(Number) }, expect.anything());
 
         mockValidate.mockReturnValue(false);
         expect(totp.validateTOTPForSecret(SECRET, "000000")).toBe(false);
@@ -194,7 +197,7 @@ describe("totp", () => {
         expect(mockValidate).not.toHaveBeenCalled();
     });
 
-    it("validateTOTP delegates to Totp.validate when a secret is set", () => {
+    it("validateTOTP delegates to Hotp.validate when a secret is set", () => {
         cls.init(() => {
             totp.setSecret(SECRET);
         });
@@ -206,7 +209,7 @@ describe("totp", () => {
         expect(totp.validateTOTP("000000")).toBe(false);
     });
 
-    it("validateTOTP returns false when Totp.validate throws", () => {
+    it("validateTOTP returns false when Hotp.validate throws", () => {
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         cls.init(() => {
             totp.setSecret(SECRET);
@@ -216,6 +219,78 @@ describe("totp", () => {
         });
         expect(totp.validateTOTP("bad")).toBe(false);
         errorSpy.mockRestore();
+    });
+
+    it("verifyTOTP accepts a code only once, while validateTOTP records nothing", async () => {
+        const codeFor = await useRealCodes();
+        const verify = (counter: number) => cls.init(() => totp.verifyTOTP(codeFor(counter)));
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        try {
+            cls.init(() => totp.setSecret(SECRET));
+            vi.setSystemTime(new Date("2026-01-01T00:00:10Z"));
+            const step = Math.floor(Date.now() / 1000 / 30);
+
+            expect(cls.init(() => totp.validateTOTP(codeFor(step)))).toBe(true);
+            expect(verify(step)).toBe(true);
+            expect(verify(step)).toBe(false);
+
+            vi.setSystemTime(new Date("2026-01-01T00:00:40Z"));
+            expect(verify(step + 1)).toBe(true);
+
+            // At step + 2 the window reaches back to step + 1, whose code is already used.
+            vi.setSystemTime(new Date("2026-01-01T00:01:10Z"));
+            expect(verify(step + 1)).toBe(false);
+            // A code from an authenticator one step ahead passes, and after it nothing older does.
+            expect(verify(step + 3)).toBe(true);
+            expect(verify(step + 2)).toBe(false);
+
+            // Enrolling a secret clears the recorded step.
+            cls.init(() => totp.setSecret(SECRET));
+            expect(verify(step + 2)).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("verifyTOTP only tries steps after the last used one", () => {
+        // Six-digit codes can repeat between steps; a code that matches every step stands in.
+        mockValidate.mockReturnValue(true);
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        try {
+            cls.init(() => totp.setSecret(SECRET));
+            vi.setSystemTime(new Date("2026-01-01T00:00:40Z"));
+            const step = Math.floor(Date.now() / 1000 / 30);
+            const verify = () => cls.init(() => totp.verifyTOTP("000000"));
+
+            for (const expected of [ step - 1, step, step + 1 ]) {
+                expect(verify()).toBe(true);
+                expect(options.getOption("totpLastUsedStep")).toBe(String(expected));
+            }
+            expect(verify()).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("enrollment accepts a step either side, the wizard only the current one", async () => {
+        const codeFor = await useRealCodes();
+        vi.useFakeTimers({ toFake: [ "Date" ] });
+        try {
+            cls.init(() => totp.setSecret(SECRET));
+            vi.setSystemTime(new Date("2026-01-01T00:00:40Z"));
+            const step = Math.floor(Date.now() / 1000 / 30);
+
+            expect(totp.validateTOTPForSecret(SECRET, codeFor(step - 1))).toBe(true);
+            expect(totp.validateTOTPForSecret(SECRET, codeFor(step + 1))).toBe(true);
+            expect(totp.validateTOTPForSecret(SECRET, codeFor(step - 2))).toBe(false);
+            expect(totp.validateTOTPForSecret(SECRET, codeFor(step + 2))).toBe(false);
+
+            expect(cls.init(() => totp.validateTOTP(codeFor(step)))).toBe(true);
+            expect(cls.init(() => totp.validateTOTP(codeFor(step - 1)))).toBe(false);
+            expect(cls.init(() => totp.validateTOTP(codeFor(step + 1)))).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it("resetTotp clears the secret and recovery codes", () => {
@@ -235,3 +310,12 @@ describe("totp", () => {
         expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
     });
 });
+
+/** Routes the mocked `Hotp.validate` to the real one and returns the real code for a time step. */
+async function useRealCodes() {
+    const actual = await vi.importActual<typeof import("time2fa")>("time2fa");
+    const config = actual.generateConfig();
+    mockValidate.mockImplementation(actual.Hotp.validate.bind(actual.Hotp));
+
+    return (counter: number) => actual.Hotp.generatePasscode({ secret: SECRET, counter }, config);
+}

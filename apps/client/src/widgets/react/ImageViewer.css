@@ -6,19 +6,10 @@
     outline: none;
 }
 
-/* Zoom controls pinned to the bottom-right corner of the viewport. */
+/* Pinned by the corner it names (see `placement` on OverlayControlGroup); left here is only what it
+   stands above, which is the image and nothing else. The shortcut-hints button opposite it needs
+   nothing at all — it stands where every one of them does, and brings that with it. */
 .image-viewer-controls {
-    position: absolute;
-    inset-inline-end: var(--overlay-button-inset, 10px);
-    bottom: var(--overlay-button-inset, 10px);
-    z-index: 1;
-}
-
-/* Shortcut-hints button pinned to the top-right corner of the viewport. */
-.image-viewer-hint-button {
-    position: absolute;
-    inset-inline-end: var(--overlay-button-inset, 10px);
-    top: var(--overlay-button-inset, 10px);
     z-index: 1;
 }
 

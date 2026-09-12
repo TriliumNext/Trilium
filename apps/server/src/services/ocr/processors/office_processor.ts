@@ -1,6 +1,6 @@
 import { OFFICE_FILE_TYPE_HINTS, OFFICE_MIME_TYPES } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
-import { OfficeParser, type OfficeParserConfig } from 'officeparser';
+import { type OfficeParserConfig } from 'officeparser';
 
 import { OCRProcessingOptions, OCRResult } from '../ocr_service.js';
 import { FileProcessor } from './file_processor.js';
@@ -36,6 +36,8 @@ export class OfficeProcessor extends FileProcessor {
 
         const fileType = OFFICE_FILE_TYPE_HINTS[mimeType];
         const config = fileType ? { ...PARSER_CONFIG, fileType } : PARSER_CONFIG;
+        // Dynamically imported so officeparser only loads when an Office file is actually processed.
+        const { OfficeParser } = await import('officeparser');
         const ast = await OfficeParser.parseOffice(buffer, config);
         const trimmed = ast.toText().trim();
 

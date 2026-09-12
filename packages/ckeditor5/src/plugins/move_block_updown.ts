@@ -2,7 +2,7 @@
  * https://github.com/TriliumNext/Trilium/issues/1002
  */
 
-import { Command, ModelDocumentSelection, ModelElement, ModelNode, Plugin, ModelRange, _isMac, Editor } from 'ckeditor5';
+import { Command, ModelDocumentSelection, ModelElement, ModelLiveRange, ModelNode, Plugin, _isMac, Editor } from 'ckeditor5';
 
 const keyMap = {
     ArrowUp: 'moveBlockUp',
@@ -76,13 +76,13 @@ abstract class MoveBlockUpDownCommand extends Command {
             ? selectedBlocks
             : [...selectedBlocks].reverse();
 
-        // Store selection offsets
-		const firstBlock = selectedBlocks[0];
-		const lastBlock = selectedBlocks[selectedBlocks.length - 1];
-		/* v8 ignore next 1 -- getFirstPosition only returns null when no ranges; isEnabled already requires selectedBlocks.length > 0 */
-		const startOffset = model.document.selection.getFirstPosition()?.offset ?? 0;
-		/* v8 ignore next 1 -- getLastPosition only returns null when no ranges; isEnabled already requires selectedBlocks.length > 0 */
-		const endOffset = model.document.selection.getLastPosition()?.offset ?? 0;
+		// Live ranges follow the caret through the move operations, so the selection
+		// ends up on the same characters it started on. Re-deriving it from an offset
+		// stored beforehand cannot: a caret in a collapsible's <summary> resolves to the
+		// enclosing <details>, whose offsets count child blocks, so offset 5 of a title
+		// restored onto the <details> lands in the body — after which the next keystroke
+		// moves a body block instead of the collapsible (see #11081).
+		const restoredRanges = [...selection.getRanges()].map(range => ModelLiveRange.fromRange(range));
 
 		model.change((writer) => {
 			// Move blocks
@@ -95,30 +95,14 @@ abstract class MoveBlockUpDownCommand extends Command {
 				}
 			}
 
-			// Restore selection
-			let range: ModelRange;
-			/* v8 ignore next 1 -- ModelElement.maxOffset is always a number; the ?? fallback is a defensive guard */
-			const maxStart = firstBlock.maxOffset ?? startOffset;
-			/* v8 ignore next 1 -- ModelElement.maxOffset is always a number; the ?? fallback is a defensive guard */
-			const maxEnd = lastBlock.maxOffset ?? endOffset;
-			// If original offsets valid within bounds, restore partial selection
-			if (startOffset <= maxStart && endOffset <= maxEnd) {
-				const clampedStart = Math.min(startOffset, maxStart);
-				const clampedEnd = Math.min(endOffset, maxEnd);
-				range = writer.createRange(
-					writer.createPositionAt(firstBlock, clampedStart),
-					writer.createPositionAt(lastBlock, clampedEnd)
-				);
-			} else { // Fallback: select entire moved blocks (handles tables)
-				range = writer.createRange(
-					writer.createPositionBefore(firstBlock),
-					writer.createPositionAfter(lastBlock)
-				);
-			}
-			writer.setSelection(range);
+			writer.setSelection(restoredRanges.map(range => range.toRange()));
 			this.editor.editing.view.focus();
 			scrollToSelection(this.editor);
 		});
+
+		for (const range of restoredRanges) {
+			range.detach();
+		}
     }
 
 	getSelectedBlocks(selection: ModelDocumentSelection) {

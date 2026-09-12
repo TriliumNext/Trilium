@@ -146,12 +146,23 @@ describe("bulk_action service", () => {
         server.post = vi.fn(async () => ({})) as typeof server.post;
         vi.spyOn(toast, "showMessage").mockImplementation(() => {});
 
-        await executeBulkActions(["x"], [] as any, true);
+        await executeBulkActions(["x"], [] as any, { includeDescendants: true });
 
         expect(server.post).toHaveBeenCalledWith("bulk-action/execute", {
             noteIds: ["x"],
             includeDescendants: true,
             actions: []
         });
+    });
+
+    it("executeBulkActions still applies the actions when told to stay silent", async () => {
+        server.post = vi.fn(async () => ({})) as typeof server.post;
+        const toastSpy = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+
+        await executeBulkActions(["x"], [] as any, { silent: true });
+
+        expect(server.post).toHaveBeenCalledTimes(1);
+        expect(ws.waitForMaxKnownEntityChangeId).toHaveBeenCalledTimes(1);
+        expect(toastSpy).not.toHaveBeenCalled();
     });
 });

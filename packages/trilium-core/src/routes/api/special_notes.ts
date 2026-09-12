@@ -10,6 +10,10 @@ function getInboxNote(req: Request<{ date: string }>) {
     return specialNotesService.getInboxNote(req.params.date);
 }
 
+function getInboxTarget() {
+    return specialNotesService.getInboxTarget();
+}
+
 function getDayNote(req: Request<{ date: string }>) {
     const calendarRootId = req.query.calendarRootId;
     const calendarRoot = typeof calendarRootId === "string" ? becca.getNoteOrThrow(calendarRootId) : null;
@@ -107,8 +111,32 @@ function createOrUpdateScriptLauncherFromApi(req: Request) {
     return specialNotesService.createOrUpdateScriptLauncherFromApi(req.body);
 }
 
+function createLlmChat() {
+    return specialNotesService.createLlmChat();
+}
+
+function getMostRecentLlmChat() {
+    const chat = specialNotesService.getMostRecentLlmChat();
+    // Return null explicitly if no chat found (not undefined)
+    return chat || null;
+}
+
+function getOrCreateLlmChat() {
+    return specialNotesService.getOrCreateLlmChat();
+}
+
+function getRecentLlmChats(req: Request) {
+    const limit = parseInt(req.query.limit as string) || 10;
+    return specialNotesService.getRecentLlmChats(limit);
+}
+
+function saveLlmChat(req: Request<{ llmChatNoteId: string }>) {
+    return specialNotesService.saveLlmChat(req.body?.llmChatNoteId);
+}
+
 export default {
     getInboxNote,
+    getInboxTarget,
     getDayNote,
     getWeekFirstDayNote,
     getWeekNote,
@@ -122,5 +150,10 @@ export default {
     saveSearchNote,
     createLauncher,
     resetLauncher,
-    createOrUpdateScriptLauncherFromApi
+    createOrUpdateScriptLauncherFromApi,
+    createLlmChat,
+    getMostRecentLlmChat,
+    getOrCreateLlmChat,
+    getRecentLlmChats,
+    saveLlmChat
 };

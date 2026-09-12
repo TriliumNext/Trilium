@@ -43,7 +43,9 @@ describe("annotation type constants", () => {
         // annotations.ts re-declares these rather than importing them, because the viewer
         // bundle owns pdf.js at runtime; that copy has to be kept honest from here.
         expect(AnnotationType.TEXT).toBe(UpstreamAnnotationType.TEXT);
+        expect(AnnotationType.FREETEXT).toBe(UpstreamAnnotationType.FREETEXT);
         expect(AnnotationType.HIGHLIGHT).toBe(UpstreamAnnotationType.HIGHLIGHT);
+        expect(AnnotationType.INK).toBe(UpstreamAnnotationType.INK);
 
         // editing.ts documents this as "Matches AnnotationEditorType.NONE in pdf.js".
         expect(ANNOTATION_EDITOR_MODE_NONE).toBe(AnnotationEditorType.NONE);
@@ -123,6 +125,15 @@ describe("PDFDocumentProxy shape", () => {
         expect(sticky?.contentsObj?.str).toBe("A sticky note");
     });
 
+    it("still reports /IT, the only thing separating a free-hand highlight from a pen stroke", async () => {
+        const page = await viewer.pdfDocument.getPage(2);
+        const inks = (await page.getAnnotations({ intent: "display" }))
+            .filter((annotation: any) => annotation.annotationType === UpstreamAnnotationType.INK);
+
+        // Both are Ink; dropping `it` would relabel every highlight drawn free-hand as a drawing.
+        expect(inks.map((ink: any) => ink.it)).toEqual([ undefined, "InkHighlight" ]);
+    });
+
     it("exposes optional-content groups with the name/usage/visible fields we filter on", async () => {
         const config = await viewer.pdfDocument.getOptionalContentConfig();
         expect(config).not.toBeNull();
@@ -166,6 +177,20 @@ describe("PDFDocumentProxy shape", () => {
         ]);
         // Specifically: never a bare nested array, which the old flattening looked for.
         expect(order.some((item: any) => Array.isArray(item))).toBe(false);
+    });
+
+    it("still lets the editing manager report a selection apart from an active editor", async () => {
+        // commitPendingAnnotationEdits() reads `hasSelection` to know a save has nothing to
+        // commit. Were it renamed, the read would be `undefined` — falsy, so the guard would
+        // quietly stop guarding and every save would again drop the user's selection (#11059).
+        // `getActive()` is not a substitute: pdf.js sets it only once an editor is being edited.
+        const { AnnotationEditorUIManager } = await import("pdfjs-dist/legacy/build/pdf.mjs") as any;
+        expect(AnnotationEditorUIManager).toBeDefined();
+
+        const prototype = AnnotationEditorUIManager.prototype;
+        expect(Object.getOwnPropertyDescriptor(prototype, "hasSelection")?.get).toEqual(expect.any(Function));
+        expect(prototype.getActive).toEqual(expect.any(Function));
+        expect(prototype.unselectAll).toEqual(expect.any(Function));
     });
 
     it("keeps annotationStorage's modification hooks reachable", () => {

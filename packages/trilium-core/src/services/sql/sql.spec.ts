@@ -1,7 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { getContext } from "../context.js";
+import { getLog } from "../log.js";
 import { getSql } from "./index.js";
+import { SqlService, type SqlServiceParams } from "./sql.js";
 
 // happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
 const isBrowserRuntime = typeof window !== "undefined";
@@ -88,15 +90,12 @@ describe("SqlService (real DB)", () => {
             getSql().insert(table, { name: "b", val: 2 });
 
             expect(getSql().getValue<number>(`SELECT COUNT(*) FROM "${table}"`)).toBe(2);
-            // Distinct query strings: getColumn pluck-mode and getRows row-mode
-            // share the statement cache by query text, so reusing the exact same
-            // string would leave the cached statement stuck in pluck mode.
             expect(
-                getSql().getColumn<string>(`SELECT name FROM "${table}" /*col*/ ORDER BY val`)
+                getSql().getColumn<string>(`SELECT name FROM "${table}" ORDER BY val`)
             ).toEqual(["a", "b"]);
 
             const all = getSql().getRows<{ name: string }>(
-                `SELECT name FROM "${table}" /*rows*/ ORDER BY val`
+                `SELECT name FROM "${table}" ORDER BY val`
             );
             expect(all.map((r) => r.name)).toEqual(["a", "b"]);
 
@@ -110,6 +109,27 @@ describe("SqlService (real DB)", () => {
                 [2]
             );
             expect(single).toEqual({ name: "b" });
+        });
+
+        it("keeps a plucking reader from changing what the same query returns to a row reader", () => {
+            // The statement cache is keyed by query text and both pluck and raw stick to a statement
+            // once set, so a plucking read used to leave every later read of the byte-identical query
+            // returning bare values instead of rows — for the rest of the process, and wherever in the
+            // codebase that query happened to be repeated.
+            const table = createTempTable();
+            getSql().insert(table, { name: "a", val: 1 });
+            const query = `SELECT name FROM "${table}" WHERE val = ?`;
+
+            expect(getSql().getValue<string>(query, [1])).toBe("a");
+            expect(getSql().getRow<{ name: string }>(query, [1])).toEqual({ name: "a" });
+            expect(getSql().getRowOrNull<{ name: string }>(query, [1])).toEqual({ name: "a" });
+            expect(getSql().getRows<{ name: string }>(query, [1])).toEqual([{ name: "a" }]);
+
+            // ...and in the other order, so neither mode is merely winning by going first.
+            const reverse = `SELECT name FROM "${table}" WHERE val = ? /* reverse */`;
+            expect(getSql().getRows<{ name: string }>(reverse, [1])).toEqual([{ name: "a" }]);
+            expect(getSql().getColumn<string>(reverse, [1])).toEqual(["a"]);
+            expect(getSql().getRow<{ name: string }>(reverse, [1])).toEqual({ name: "a" });
         });
 
         it("getRowOrNull returns null when no rows match", () => {
@@ -157,15 +177,20 @@ describe("SqlService (real DB)", () => {
             expect(a).toBe(b);
         });
 
-        // Node's better-sqlite3 provider prepares a fresh statement object per
-        // cache key, so raw vs non-raw yield distinct instances. The WASM
-        // (sql.js) provider may hand back the same object for identical SQL, so
-        // this distinctness is a Node-provider impl detail, not a portable contract.
-        it.skipIf(isBrowserRuntime)("keeps raw and non-raw statements as distinct cache entries", () => {
-            const sql = getSql();
-            const plain = sql.stmt("SELECT 2");
-            const raw = sql.stmt("SELECT 2", true);
-            expect(plain).not.toBe(raw);
+        it("reads one query in every shape, whichever was asked for first", () => {
+            // Statements are shared and their output mode sticks, so the shape a read gets has to come
+            // from the read rather than from whatever the last one left behind. Keeping the modes in
+            // separate cache entries was not enough: the browser provider caches by query text too, and
+            // handed both entries the same statement.
+            const table = createTempTable();
+            getSql().insert(table, { name: "a", val: 1 });
+            const query = `SELECT name, val FROM "${table}"`;
+
+            expect(getSql().getColumn<string>(query)).toEqual(["a"]);
+            expect(getSql().getRawRows<[string, number]>(query)).toEqual([["a", 1]]);
+            expect(getSql().getRows<{ name: string; val: number }>(query)).toEqual([{ name: "a", val: 1 }]);
+            expect(getSql().getValue<string>(query)).toBe("a");
+            expect(getSql().getRow<{ name: string; val: number }>(query)).toEqual({ name: "a", val: 1 });
         });
     });
 
@@ -347,6 +372,28 @@ describe("SqlService (real DB)", () => {
                 ).toThrow("inner-fail");
                 expect(getContext().get("disableSlowQueryLogging")).toBeFalsy();
             });
+        });
+    });
+
+    describe("detaching", () => {
+        it("lets go once, and says nothing the second time", () => {
+            // The setup screen erases the database, which detaches it; a restore started straight
+            // afterwards detaches again on its way to swapping the files in. That second one has
+            // nothing to do, and used to fail on a connection that was already gone.
+            let attached = true;
+            const provider = {
+                detach: () => { attached = false; },
+                isAttached: () => attached,
+                get inTransaction(): boolean {
+                    if (!attached) throw new Error("DB not open.");
+                    return false;
+                }
+            };
+            const sql = new SqlService({ provider } as unknown as SqlServiceParams, getLog());
+
+            sql.detachConnection();
+            expect(attached).toBe(false);
+            expect(() => sql.detachConnection()).not.toThrow();
         });
     });
 

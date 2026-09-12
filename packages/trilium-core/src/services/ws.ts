@@ -200,6 +200,16 @@ function syncFailed() {
     sendMessageToAllClients({ type: "sync-failed", lastSyncedPush });
 }
 
+/**
+ * Tells the user that syncing has stopped because the given sectors kept diverging from the sync
+ * server's, which no amount of retrying will fix. The sync status icon only ever shows a generic
+ * failure (indistinguishable from an unreachable server), so this state — which needs the user to
+ * act — is raised as a notification of its own.
+ */
+function syncHashCheckFailed(sectors: string[]) {
+    sendMessageToAllClients({ type: "sync-hash-check-failed", sectors });
+}
+
 function reloadFrontend(reason: string) {
     sendMessageToAllClients({ type: "reload-frontend", reason });
 }
@@ -215,6 +225,7 @@ export default {
     syncPullInProgress,
     syncFinished,
     syncFailed,
+    syncHashCheckFailed,
     sendTransactionEntityChangesToAllClients,
     setLastSyncedPush,
     reloadFrontend

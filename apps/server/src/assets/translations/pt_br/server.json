@@ -66,24 +66,29 @@
     "toggle-zen-mode": "Ativa/desativa o modo zen (interface mínima para uma edição mais focada)",
     "show-cheatsheet": "Exibir um modal com operações comuns de teclado",
     "toggle-archived-notes": "Mostrar/ocultar notas arquivadas na árvore de notas",
-    "save-named-revision": "Guardar uma revisão com nome da nota ativa"
+    "save-named-revision": "Guardar uma revisão com nome da nota ativa",
+    "show-deleted-notes": "Mostrar o diálogo \"Notas excluídas\"",
+    "show-shortcut-hints": "Mostrar os atalhos de teclado do widget em foco",
+    "peek-right-pane": "Espiar o painel direito como um painel temporário que flutua sobre o conteúdo e fecha ao perder o foco"
   },
   "login": {
     "title": "Login",
     "heading": "Trilium login",
-    "incorrect-password": "Senha incorreta. Tente novamente.",
+    "incorrect-password": "A senha está incorreta. Tente novamente.",
     "password": "Senha",
-    "remember-me": "Lembrar",
+    "remember-me": "Lembrar de mim",
     "button": "Login",
     "incorrect-totp": "O código TOTP está incorreto. Por favor, tente novamente.",
-    "sign_in_with_sso": "Fazer login com {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Fazer login com {{ ssoIssuerName }}",
+    "sso-wrong-account": "Essa conta não é a vinculada a esta instância do Trilium. Entre com a conta vinculada.",
+    "sso-not-enrolled": "O login único ainda não está configurado. Entre com sua senha primeiro, depois vincule sua conta nas configurações."
   },
   "set_password": {
     "title": "Definir senha",
     "heading": "Definir senha",
-    "description": "Antes de começar a usar o Trilium web, você precisa definir uma senha. Você usará essa senha para fazer login.",
+    "description": "Antes de começar a usar o Trilium pela web, você precisa definir uma senha primeiro. Você usará esta senha para entrar.",
     "password": "Senha",
-    "password-confirmation": "Confirmar Senha",
+    "password-confirmation": "Confirmação da senha",
     "button": "Definir senha"
   },
   "share_404": {
@@ -224,7 +229,10 @@
     "copy-without-formatting": "Copiar Sem Formatação",
     "force-save-revision": "Forçar Salvamento da Revisão",
     "toggle-archived-notes": "Alternar a visibilidade das notas arquivadas",
-    "save-named-revision": "Guardar revisão com nome"
+    "save-named-revision": "Guardar revisão com nome",
+    "show-deleted-notes": "Mostrar notas excluídas",
+    "show-shortcut-hints": "Mostrar dicas de atalho",
+    "peek-right-pane": "Espiar painel direito"
   },
   "weekdayNumber": "Semana {weekNumber}",
   "quarterNumber": "Trimestre {quarterNumber}",
@@ -284,7 +292,23 @@
     "custom-dictionary-title": "Dizionário personalizado",
     "llm-title": "IA / LLM",
     "tab-switcher-title": "Alternador de guias",
-    "sidebar-chat-title": "IA Chat"
+    "sidebar-chat-title": "IA Chat",
+    "task-states-title": "Estados de tarefa",
+    "task-state-none": "Nenhum",
+    "task-state-doing": "Fazendo",
+    "task-state-done": "Concluído",
+    "task-state-maybe": "Talvez",
+    "task-state-cancelled": "Cancelado",
+    "task-state-attr-state-id": "Identificador (obrigatório)",
+    "task-state-attr-markdown-symbol": "Símbolo Markdown",
+    "task-state-attr-is-completed": "Conta como concluído",
+    "task-state-attr-color": "Cor",
+    "task-state-attr-is-hidden": "Oculto da lista",
+    "deleted-notes-title": "Notas excluídas",
+    "color-scheme-switcher-title": "Alternador de esquema de cores",
+    "content-manager-title": "Gerenciador de conteúdo",
+    "desktop-title": "Desktop",
+    "security-title": "Segurança"
   },
   "notes": {
     "new-note": "Nova nota",
@@ -319,7 +343,8 @@
     "old_version": "A migração direta da sua versão atual não é suportada. Por favor, atualize primeiro para a versão mais recente v0.60.4 e somente depois para esta versão.",
     "error_message": "Erro durante a migração para a versão {{version}}: {{stack}}",
     "wrong_db_version": "A versão do banco de dados ({{version}}) é mais recente do que a esperada pelo aplicativo ({{targetVersion}}), o que significa que ele foi criado por uma versão mais nova e incompatível do Trilium. Atualize para a versão mais recente do Trilium para resolver esse problema.",
-    "invalid_db_version": "A versão da base de dados não é um número válido. Normalmente, isto indica que a opção «dbVersion» na base de dados está corrompida. Por favor, recupere os dados a partir de uma cópia de segurança."
+    "invalid_db_version": "A versão da base de dados não é um número válido. Normalmente, isto indica que a opção «dbVersion» na base de dados está corrompida. Por favor, recupere os dados a partir de uma cópia de segurança.",
+    "automatic_migrations_disabled": "As migrações automáticas do banco de dados estão desativadas pela variável de ambiente TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}"
   },
   "modals": {
     "error_title": "Erro"
@@ -334,7 +359,8 @@
     "expand": "Expandir",
     "toggle-navigation": "Alternar Navegação",
     "toggle-toc": "Alternar Índice",
-    "logo-alt": "Logótipo"
+    "logo-alt": "Logótipo",
+    "login": "Entrar"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Trecho de texto",
@@ -362,7 +388,10 @@
     "presentation_slide": "Slide de apresentação",
     "presentation_slide_first": "Primeiro slide",
     "presentation_slide_second": "Segundo slide",
-    "background": "Plano de fundo"
+    "background": "Plano de fundo",
+    "markdown-snippet": "Trecho Markdown",
+    "code-snippet": "Trecho de código",
+    "dashboard": "Painel"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB não inicializada, por favor siga as instruções na tela.",
@@ -383,5 +412,106 @@
       "fulltext-after-expression": "“{{- token}}” não é uma expressão válida. Para pesquisar texto, coloque-o antes dos filtros de atributos (por exemplo, “{{- token}} #label” em vez de “#label {{- token}}”).",
       "unrecognized-expression": "Expressão não reconhecida \"{{- token}}\""
     }
+  },
+  "note_conversion": {
+    "revision_before_markdown": "Antes da conversão para Markdown",
+    "revision_before_text": "Antes da conversão para nota de texto"
+  },
+  "onenote_import": {
+    "root-title": "Importação do OneNote",
+    "failed-page-placeholder": "Esta página não pôde ser importada do OneNote. Erro: {{error}}",
+    "failed-section-placeholder": "Esta seção não pôde ser importada do OneNote, então foi criada vazia. Erro: {{error}}",
+    "protected-section-error": "Esta seção é protegida por senha. Remova a senha dela no OneNote e importe-a novamente.",
+    "protected-section-placeholder": "Esta seção é protegida por senha, então suas páginas não puderam ser importadas e ela foi criada vazia. Para importá-la, abra a seção no OneNote, remova a proteção por senha (clique com o botão direito na seção &rarr; Proteção por Senha &rarr; Remover Senha) e execute a importação novamente.",
+    "report": {
+      "row-pages": "Páginas importadas com sucesso",
+      "row-notebooks": "Blocos de notas importados",
+      "row-sections": "Seções importadas",
+      "row-duration": "Duração total da importação",
+      "row-images": "Imagens",
+      "row-attachments": "Anexos de arquivo",
+      "row-ink": "Páginas com escrita à mão ou desenhos",
+      "row-links": "Links entre páginas",
+      "row-throttling": "Tempo limitado pelo Microsoft Graph",
+      "value-links": "{{resolved}} resolvidos, {{unresolved}} apontando para fora da seleção importada",
+      "value-throttling_one": "{{- wait}} ({{count}} requisições limitadas)",
+      "value-throttling_many": "",
+      "value-throttling_other": "",
+      "skipped-sections-title": "Seções que não puderam ser importadas",
+      "skipped-sections-section": "Seção",
+      "skipped-sections-notebook": "Bloco de notas",
+      "skipped-sections-error": "Erro",
+      "failed-pages-title": "Páginas que não puderam ser importadas",
+      "failed-pages-page": "Página",
+      "failed-pages-section": "Seção",
+      "failed-pages-error": "Erro",
+      "failed-resources-title": "Imagens e anexos ausentes",
+      "failed-resources-item_one": "{{- pageLink}}: {{count}} recursos não puderam ser baixados",
+      "failed-resources-item_many": "",
+      "failed-resources-item_other": ""
+    }
+  },
+  "notion_import": {
+    "root-title": "Importação do Notion",
+    "markdown-export-unsupported": "Isto parece ser uma exportação \"Markdown & CSV\" do Notion, que o Trilium não consegue importar. Reexporte seu workspace do Notion usando o formato de exportação \"HTML\" e importe esse em vez disso.",
+    "subpage-folders-disabled": "Esta exportação do Notion foi criada sem a opção \"Criar pastas para subpáginas\", então a hierarquia de páginas não pode ser reconstruída. Reexporte do Notion com \"Criar pastas para subpáginas\" ativado e importe esse em vez disso."
+  },
+  "keep_import": {
+    "root-title": "Importação do Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Importação do Anytype",
+    "protobuf-export-unsupported": "Isto parece ser uma exportação \"Protobuf\" do Anytype, que o Trilium não consegue importar. Reexporte seu espaço do Anytype usando o formato \"Any-Block\" com \"JSON\" selecionado e importe esse em vez disso.",
+    "markdown-export-unsupported": "Isto parece ser uma exportação \"Markdown\" do Anytype, que o Trilium não consegue importar. Reexporte seu espaço do Anytype usando o formato \"Any-Block\" com \"JSON\" selecionado e importe esse em vez disso."
+  },
+  "obsidian_import": {
+    "root-title": "Importação do Obsidian"
+  },
+  "export": {
+    "zip_filter": "Arquivo ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "A seleção de arquivo expirou ou é inválida. Escolha o arquivo novamente."
+  },
+  "restore": {
+    "pick_backup_title": "Escolha um backup para restaurar",
+    "backup_filter": "Backup do Trilium (*.db, *.tnbackup)",
+    "any_file_filter": "Todos os arquivos"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Falha no backup do banco de dados: não foi possível gravar em {{- location}}. Fazendo backup no local padrão em vez disso.",
+    "passphrase_unavailable": "A senha do backup não pôde ser lida, então este backup não está criptografado. Ele foi salvo no local padrão em vez do escolhido."
+  },
+  "dialog": {
+    "select_directory": "Selecionar pasta"
+  },
+  "backup-password-dialog": {
+    "cancel": "Cancelar",
+    "set-title": "Definir a senha do backup?",
+    "set-message": "Os backups futuros serão criptografados com esta senha.",
+    "set-detail": "O Trilium não pode exibir esta senha novamente, então guarde uma cópia em um lugar seguro: sem ela, um backup não pode ser restaurado.\n\nSe você não esperava ser solicitado, cancele — uma nota ou um script pode ter solicitado isso.",
+    "set-confirm": "Definir senha",
+    "clear-title": "Esquecer a senha do backup?",
+    "clear-message": "Os backups não serão mais criptografados.",
+    "clear-detail": "Os backups já gravados mantêm a senha com que foram feitos e ainda podem ser restaurados com ela.\n\nSe você não esperava ser solicitado, cancele — uma nota ou um script pode ter solicitado isso.",
+    "clear-confirm": "Esquecer senha"
+  },
+  "security-dialog": {
+    "enable-title": "Ativar {{settingLabel}}",
+    "enable-message": "Tem certeza de que deseja ativar {{settingLabel}}?",
+    "enable-detail": "{{warning}}\n\nAtive isto apenas se você pretende explicitamente usar este recurso. Não o ative se solicitado por um script ou por uma nota desconhecida.\n\nEsta alteração requer reiniciar para ter efeito.",
+    "disable-title": "Desativar {{settingLabel}}",
+    "disable-message": "{{settingLabel}} será desativado.",
+    "disable-detail": "Esta alteração requer reiniciar para ter efeito.",
+    "cancel": "Cancelar",
+    "enable": "Ativar",
+    "disable": "Desativar",
+    "dont-ask-again": "Não perguntar novamente até reiniciar",
+    "backend-scripting": "Execução de scripts de backend",
+    "backend-scripting-warning": "Scripts de backend têm acesso total ao servidor, incluindo o sistema de arquivos e a rede.",
+    "sql-console": "Console SQL",
+    "sql-console-warning": "O console SQL permite executar consultas SQL arbitrárias contra o banco de dados.",
+    "lan-access": "acesso à rede",
+    "lan-access-warning": "O aplicativo e suas notas compartilhadas serão servidos pela rede — acessíveis a partir de um navegador neste computador e de outros dispositivos na sua rede local."
   }
 }

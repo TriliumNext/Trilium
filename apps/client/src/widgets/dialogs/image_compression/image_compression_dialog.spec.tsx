@@ -143,7 +143,7 @@ function rows(within: ParentNode = document.body) {
 
 const titles = () => titlesOf(document.body);
 const titlesOf = (within: ParentNode) =>
-    rows(within).map((row) => row.querySelector(".image-compression-section-title")?.textContent);
+    rows(within).map((row) => row.querySelector(".tn-card-option-title")?.textContent);
 
 const cards = () => Array.from(document.body.querySelectorAll<HTMLElement>(".modal-stub .tn-card"));
 const numberField = () => document.body.querySelector<HTMLInputElement>(".image-compression-section-number");
@@ -151,7 +151,7 @@ const slider = () => document.body.querySelector<HTMLInputElement>(".slider");
 const qualityRows = () => rows().filter((row) => !!row.querySelector(".slider"));
 const qualityReading = () => document.body.querySelector(".image-compression-section-value")?.textContent ?? "";
 const toggles = () => Array.from(document.body.querySelectorAll<HTMLInputElement>(".switch-toggle"));
-const hasHelp = (row: HTMLElement) => !!row.querySelector(".image-compression-section-title .contextual-help");
+const hasHelp = (row: HTMLElement) => !!row.querySelector(".tn-card-option-title .contextual-help-icon");
 
 /** The buttons of one format's choice, the groups being in the order the card lists them. */
 const choiceButtons = (group: number) =>
@@ -333,7 +333,7 @@ describe("showImageCompressionDialog", () => {
         // A slider says which way it is going but never where it is, so the row reads
         // title, value, control — the reading placed before the control it reads.
         expect(Array.from(qualityRows()[0].children).map((child) => child.classList[0])).toEqual([
-            "image-compression-section-title",
+            "tn-card-option-title",
             "image-compression-section-value",
             "slider"
         ]);

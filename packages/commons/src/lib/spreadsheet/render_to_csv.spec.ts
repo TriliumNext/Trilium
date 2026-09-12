@@ -79,6 +79,18 @@ describe("renderSpreadsheetToCsv", () => {
         expect(csv).toBe("x,y");
     });
 
+    it("ignores cells that carry only formatting when bounding the grid", () => {
+        // An Excel template borders the rows meant to be filled in, leaving stored but empty cells
+        // past the data; a merge past the data does not widen the grid either.
+        const csv = renderSpreadsheetToCsv(workbook({
+            0: { 0: { v: "a" }, 1: { v: "b" }, 2: { s: "bordered" } },
+            1: { 0: { v: "c" }, 1: { v: "d" } },
+            2: { 0: { s: "bordered" }, 1: { s: "bordered" } },
+            3: { 0: { s: "bordered" }, 1: { s: "bordered" } }
+        }, { mergeData: [{ startRow: 5, endRow: 5, startColumn: 0, endColumn: 4 }] }));
+        expect(csv).toBe("a,b\r\nc,d");
+    });
+
     it("renders numbers and booleans as raw values", () => {
         const csv = renderSpreadsheetToCsv(workbook({
             0: { 0: { v: 42, t: 2 }, 1: { v: true, t: 3 }, 2: { v: false, t: 3 } }
@@ -148,9 +160,9 @@ describe("renderSpreadsheetToCsv", () => {
 
     it("treats empty and null cell values as empty fields", () => {
         const csv = renderSpreadsheetToCsv(workbook({
-            0: { 0: { v: "" }, 1: { v: null }, 2: { v: "z" } }
+            0: { 0: { v: "a" }, 1: { v: "" }, 2: { v: null }, 3: { v: "z" } }
         }));
-        expect(csv).toBe(",,z");
+        expect(csv).toBe("a,,,z");
     });
 
     it("exports the first visible sheet by default and the requested sheet by id", () => {
@@ -342,5 +354,14 @@ describe("renderSpreadsheetToCsv (formatDate returns null)", () => {
             0: { 0: { v: 46118, t: 2, s: { n: { pattern: "yyyy-mm-dd" } } } }
         }));
         expect(csv).toBe("46118");
+    });
+});
+
+describe("rich-text cells", () => {
+    it("exports the text of a cell that has no plain value", () => {
+        const csv = renderSpreadsheetToCsv(workbook({
+            0: { 0: { p: { body: { dataStream: "Caf\u00e9\r\n" } } }, 1: { v: 12.5 } }
+        }));
+        expect(csv).toBe("Caf\u00e9,12.5");
     });
 });

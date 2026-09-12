@@ -55,13 +55,13 @@ describe("note format conversion", () => {
         const original = "Some ==highlighted== text.";
 
         const { content: html } = convertNoteContent("markdown", original, "title");
-        expect(html).toContain('<span style="background-color:hsl(60, 75%, 60%)">highlighted</span>');
+        expect(html).toContain('<span style="background-color:hsl(60, 75%, 60%);">highlighted</span>');
 
         expect(convertNoteContent("html", html, "title").content).toBe(original);
     });
 
     it("preserves a default-yellow highlight applied in the editor across an HTML -> Markdown -> HTML round-trip", () => {
-        const original = '<p>Some <span style="background-color:hsl(60, 75%, 60%)">highlighted</span> text.</p>';
+        const original = '<p>Some <span style="background-color:hsl(60, 75%, 60%);">highlighted</span> text.</p>';
 
         const { content: markdown } = convertNoteContent("html", original, "title");
         expect(markdown).toBe("Some ==highlighted== text.");
@@ -72,9 +72,9 @@ describe("note format conversion", () => {
     it("preserves a non-default colour exactly, rather than repainting it the highlight yellow", () => {
         // `==…==` carries no colour, so these keep their own markup in the Markdown form.
         for (const original of [
-            '<p>Some <span style="background-color:rgb(0, 255, 0)">green</span> text.</p>',
-            '<p>Some <span style="color:#ff0000">red</span> text.</p>',
-            '<p>Some <span style="color:#ffffff;background-color:#000000">inverted</span> text.</p>'
+            '<p>Some <span style="background-color:rgb(0, 255, 0);">green</span> text.</p>',
+            '<p>Some <span style="color:#ff0000;">red</span> text.</p>',
+            '<p>Some <span style="color:#ffffff;background-color:#000000;">inverted</span> text.</p>'
         ]) {
             const { content: markdown } = convertNoteContent("html", original, "title");
             expect(convertNoteContent("markdown", markdown, "title").content).toBe(original);

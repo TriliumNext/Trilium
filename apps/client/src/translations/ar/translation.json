@@ -403,13 +403,7 @@
     "open_all_confirm_many": "",
     "open_all_confirm_other": "",
     "expand_tooltip": "يوسّع العناصر الفرعية المباشرة لهذه المجموعة (مستوى واحد فقط). لمزيد من الخيارات، اضغط السهم الموجود على اليمين.",
-    "open_all_in_tabs_tooltip": "فتح جميع النتائج في علامات تبويب جديدة",
-    "open_all_too_zero": "book_properties.open_all_too",
-    "open_all_too_one": "book_properties.open_all_too",
-    "open_all_too_two": "book_properties.open_all_too",
-    "open_all_too_few": "book_properties.open_all_too",
-    "open_all_too_many": "book_properties.open_all_too",
-    "open_all_too_other": "book_properties.open_all_too"
+    "open_all_in_tabs_tooltip": "فتح جميع النتائج في علامات تبويب جديدة"
   },
   "file_properties": {
     "download": "تنزيل",
@@ -582,7 +576,6 @@
     "preview": "معاينة",
     "custom_fonts": "استخدام خطوط مخصصة",
     "apply_changes": "إعادة التحميل لتطبيق التغييرات",
-    "not_all_fonts_available": "قد لا تكون جميع الخطوط المدرجة متوفرة على نظامك",
     "monospace_font_description": "يُستخدم لملاحظات الكود وكتل الكود.",
     "size_relative_to_general": "الحجم يعتمد نسبيًا على حجم الخط العام"
   },
@@ -1752,7 +1745,6 @@
     "delete-note": "حذف الملاحظة...",
     "archive-note": "ارشفة الملاحظة",
     "unarchive-note": "الغاء ارشفة الملاحظة",
-    "move-to": "نقل الى",
     "insert-above": "ادراج اعلاه",
     "insert-below": "ادراج ادناه",
     "delete-column": "حذف العمود",
@@ -1762,7 +1754,6 @@
     "add-column-placeholder": "ادخل اسم العمود...",
     "remove-from-board": "ازالة من اللوحة",
     "edit-note-title": "انقر لتعديل عنوان الملاحظة",
-    "edit-column-title": "انقر لتعديل عنوان العمود",
     "delete-column-confirmation": "هل أنت متأكد أنك تريد حذف هذا العمود؟ سيتم أيضًا حذف السمة المقابلة في الملاحظات الموجودة ضمن هذا العمود.",
     "column-already-exists": "هذا العمود موجود بالفعل على اللوحة."
   },
@@ -1910,7 +1901,6 @@
     "manual_erasing_description": "تنفيذ الحذف يدويًا، مع تجاهل المهلة الزمنية المذكورة أعلاه."
   },
   "ws": {
-    "sync-check-failed": "فشل التحقق من المزامنة!",
     "lost-websocket-connection-title": "تم فقدان الاتصال بالخادم",
     "lost-websocket-connection-message": "تحقق من إعدادات الخادم العكسي (Reverse Proxy) لديك (مثل Nginx أو Apache HTTP Server) للتأكد من أن اتصالات WebSocket مسموح بها بشكل صحيح وغير محجوبة.",
     "consistency-checks-failed": "فشل التحقق من الاتساق! راجع السجلات للتفاصيل.",
@@ -2164,8 +2154,6 @@
     "unmute": "إلغاء كتم الصوت (M)",
     "playback-speed": "سرعة التشغيل",
     "exit-picture-in-picture": "الخروج من وضع الصورة داخل الصورة",
-    "fullscreen": "ملء الشاشة (F)",
-    "exit-fullscreen": "الخروج من وضع ملء الشاشة",
     "zoom-to-fit": "التكبير لملء الشاشة",
     "zoom-reset": "إعادة تعيين التكبير إلى وضع الملء",
     "unsupported-format": "معاينة الوسائط غير متاحة لهذا التنسيق: {{mime}}"
@@ -2461,58 +2449,6 @@
     "children_count_many": "{{count}} ملاحظة",
     "children_count_other": "{{count}} ملاحظة"
   },
-  "setup": {
-    "next": "التالي",
-    "title": "الاعداد",
-    "button-back": "رجوع",
-    "create-new-document-options-empty": "فارغ",
-    "server-password": "كلمة المرور",
-    "language": "لغة",
-    "continue": "استمر",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "new-document": "قاعدة معرفة جديدة",
-    "sync-in-progress-title": "المزامنة قيد التنفيذ",
-    "sync-step-connecting": "‎جارٍ الاتصال بالخادم",
-    "sync-step-finalizing": "جارٍ إعداد الخيارات",
-    "create-new-document-options-with-demo": "مع محتوى تجريبي",
-    "sync-illustration-desktop-app": "تطبيق سطح المكتب الخاص بك",
-    "sync-from-desktop-waiting": "في انتظار الاتصال...",
-    "server-host": "‎عنوان خادم Trilium",
-    "proxy-server": "خادم وكيل (اختياري)",
-    "heading": "ابدأ مع Trilium",
-    "sync-from-desktop": "ربط تطبيق سطح المكتب",
-    "init-in-progress": "جارٍ تهيئة المستند",
-    "create-new-document-title": "جارٍ تجهيز قاعدة المعرفة الخاصة بك",
-    "sync-failed": "فشل المزامنة: {{message}}",
-    "your-ip-addresses": "عناوين هذا الجهاز",
-    "button-finish-setup": "إنهاء الإعداد",
-    "sync-step-syncing": "جارٍ مزامنة البيانات",
-    "sync-illustration-this-device": "هذا الجهاز",
-    "sync-illustration-server": "الخادم الخاص بك",
-    "advanced-options": "خيارات متقدمة",
-    "dismiss-error": "تجاهل الخطأ",
-    "sync-from-server": "الاتصال بخادم موجود",
-    "create-new-document-options-with-demo-description": "‍استكشاف Trilium Notes بمحتوى تجريبي.",
-    "wrong-password": "كلمة مرور غير صحيحة. يرجى المحاولة مرة أخرى.",
-    "redirecting": "سيتم توجيهك إلى التطبيق قريبًا",
-    "sync-from-desktop-step3": "انقر على فئة المزامنة في شجرة الملاحظات.",
-    "sync-from-desktop-warning": "تأكد من أن كلا الجهازين على نفس الشبكة.",
-    "new-document-description": "ابدأ بقاعدة معرفة نظيفة وابدأ فورًا.",
-    "sync-from-server-page-description": "أدخل تفاصيل الخادم أدناه للاتصال بمساحة العمل الحالية لديك.",
-    "sync-in-progress-description": "تم توصيل جهازك الآن وبدأت العناصر بالمزامنة.",
-    "sync-from-desktop-step5": "انقر على زر \"اختبار المزامنة\" للتحقق من نجاح الاتصال.",
-    "sync-from-desktop-step4": "قم بتغيير عنوان خادم النسخة للإشارة إلى أحد العناوين الموجودة على اليمين، ثم انقر على حفظ.",
-    "sync-from-desktop-description": "لديك فقط تطبيق Trilium Notes على سطح المكتب يعمل على جهاز آخر. سيقوم هذا الجهاز بمزامنة بياناته من تطبيق سطح المكتب ذلك.",
-    "sync-from-server-description": "لديك خادم Trilium Notes يعمل في مكان آخر (سواء كان مستضافًا ذاتيًا أو على السحابة). سيقوم هذا الجهاز بمزامنة بياناته من ذلك الخادم.",
-    "sync-in-progress-banner": "قد يستغرق هذا بعض الوقت حسب حجم ملاحظاتك. يُرجى عدم الانتقال إلى تطبيق آخر حتى تكتمل المزامنة.",
-    "create-new-document-options-title": "كيف ترغب في البدء؟",
-    "create-new-document-description": "هذا سيستغرق لحظات فقط.",
-    "sync-from-desktop-step2": "من قائمة Trilium Notes، انقر على \"الخيارات\".",
-    "sync-from-desktop-step1": "افتح نسخة سطح المكتب من Trilium Notes.",
-    "proxy-instruction": "إذا تركت إعدادات الوكيل فارغة، سيتم استخدام وكيل النظام.",
-    "create-new-document-options-empty-description": "ابدأ بقاعدة معرفة فارغة. يمكنك استيراد الملاحظات التجريبية لاحقًا."
-  },
   "calendar_view": {
     "delete_note": "جار حذف الملاحظة..."
   },
@@ -2657,7 +2593,6 @@
   },
   "server": {
     "unknown_http_error_title": "خطأ في الاتصال مع الخادم",
-    "traefik_blocks_requests": "إذا كنت تستخدم الخادم العكسي Traefik، فقد تم إدخال تغيير غير متوافق يؤثر على الاتصال مع الخادم.",
     "unknown_http_error_content": "رمز الحالة: {{statusCode}}\nالرابط: {{method}} {{url}}\nالرسالة: {{message}}"
   },
   "tab_history_navigation_buttons": {

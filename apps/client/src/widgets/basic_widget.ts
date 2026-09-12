@@ -5,7 +5,7 @@ import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import toastService, { showErrorForScriptNote } from "../services/toast.js";
 import { randomString } from "../services/utils.js";
-import { renderReactWidget } from "./react/react_utils.jsx";
+import { disposeReactWidget, renderReactWidgetAtElement } from "./react/react_utils.jsx";
 
 export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedComponent<T> {
     protected attrs: Record<string, string>;
@@ -275,6 +275,11 @@ export function wrapReactWidgets<T extends TypedComponent<any>>(components: (T |
 export class ReactWrappedWidget extends BasicWidget {
 
     private el: VNode;
+    /**
+     * The Preact root. Kept because `$widget` is only the rendered children, which have since been
+     * moved into the widget tree -- unmounting needs the container they were rendered into.
+     */
+    private container?: DocumentFragment;
 
     constructor(el: VNode) {
         super();
@@ -282,7 +287,20 @@ export class ReactWrappedWidget extends BasicWidget {
     }
 
     doRender() {
-        this.$widget = renderReactWidget(this, this.el);
+        this.container = new DocumentFragment();
+        this.$widget = renderReactWidgetAtElement(this, this.el, this.container).children();
+    }
+
+    /**
+     * Called when the widget is taken out of the tree (a closed split, an unmounted `useWidget`).
+     * Without this the Preact tree stays mounted for the lifetime of the page: no effect cleanup
+     * runs, and it keeps holding the DOM it rendered.
+     */
+    cleanup() {
+        if (this.container) {
+            disposeReactWidget(this.container);
+            this.container = undefined;
+        }
     }
 
 }

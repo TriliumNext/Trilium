@@ -3,19 +3,30 @@ import BuildHelper from "../../../scripts/build-utils";
 const build = new BuildHelper("apps/server");
 
 async function main() {
-    await build.buildBackend([ "src/main.ts", "src/docker_healthcheck.ts" ])
+    // ESM so dynamic-import boundaries split into chunks/ that only load on first use; the
+    // image worker below is spawned by its .cjs path and stays CJS.
+    await build.buildBackend([ "src/main.ts" ], { format: "esm" });
     // Its own call so it lands beside the bundle rather than under a `services/` path: the pool
     // looks for it next to whatever is running, and desktop builds it the same way.
     await build.buildBackend([ "src/services/image_worker.ts" ]);
 
     // Copy assets
     build.copy("src/assets", "assets/");
+    // The healthcheck docker runs; the Dockerfiles point at it inside the image.
+    build.copy("docker_healthcheck.sh", "docker_healthcheck.sh");
     // schema.sql lives in trilium-core but is loaded at server startup. The
-    // bundled main.cjs can't `require.resolve("@triliumnext/core/...")` in
+    // bundled main.mjs can't `require.resolve("@triliumnext/core/...")` in
     // Docker (no workspace symlinks in the image), so we copy the file
     // alongside the server's own assets and read it via RESOURCE_DIR at
     // runtime. See main.ts.
     build.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
+    // Same story for the LLM skill sheets: core owns them, the server reads them
+    // from RESOURCE_DIR at runtime. See core_assets.ts.
+    build.copy("/packages/trilium-core/src/assets/llm/skills", "assets/llm/skills/");
+    // PDFium rasterizes scanned PDF pages for OCR. Its own loader resolves the wasm relative to
+    // `import.meta.url`, which in a split bundle is a hash-named file under chunks/, so the bytes
+    // are handed to it explicitly from here instead. See pdf_renderer.ts.
+    build.copy("/node_modules/@hyzyla/pdfium/dist/pdfium.wasm", "assets/pdfium.wasm");
     build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 

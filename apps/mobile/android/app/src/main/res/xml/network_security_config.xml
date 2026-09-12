@@ -3,5 +3,12 @@
     <!-- Allow cleartext (plain HTTP) traffic to any host.
          Trilium users commonly self-host sync servers on LAN IPs or
          personal domains without TLS. -->
-    <base-config cleartextTrafficPermitted="true" />
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- Trust the pre-installed system Certificate Authorities (CAs) -->
+            <certificates src="system" />
+            <!-- Trust custom/self-signed CAs manually installed by the user on the device -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
 </network-security-config>

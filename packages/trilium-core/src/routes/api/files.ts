@@ -101,17 +101,33 @@ function updateAttachment(req: FileRequest<{ attachmentId: string }>) {
  * Converts an office document note/attachment to an embeddable HTML fragment for the
  * inline preview shown by the client. The returned HTML is unsanitized — the client
  * sanitizes it before injecting it into the DOM.
+ *
+ * The fragment is sent as the response body rather than wrapped in a JSON object: a
+ * spreadsheet preview runs to megabytes, and an envelope would escape every attribute
+ * quote and make the client parse the whole document before it can use it.
+ *
+ * `?trim=1` answers with the corner of a workbook instead of the whole of it, for a caller
+ * showing a card rather than the document.
  */
 async function getNoteOfficePreview(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
-    return { html: await convertOfficeToHtml(note.getContent(), note.mime) };
+    return await convertOfficeToHtml(note.getContent(), note.mime, { trim: isTrimmed(req) });
 }
 
 async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>) {
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
 
-    return { html: await convertOfficeToHtml(attachment.getContent(), attachment.mime) };
+    return await convertOfficeToHtml(attachment.getContent(), attachment.mime, { trim: isTrimmed(req) });
+}
+
+/**
+ * Whether the caller asked for the corner of the document rather than all of it, which a note
+ * list does for every card it shows. The answer varies with the query, and so does the URL, so a
+ * trimmed preview and a whole one never share a cache entry.
+ */
+function isTrimmed(req: Request): boolean {
+    return req.query.trim === "1";
 }
 
 function openPartialInt(noteOrAttachment: BNote | BAttachment, req: Request, res: Response) {

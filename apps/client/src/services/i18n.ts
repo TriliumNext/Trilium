@@ -1,4 +1,4 @@
-import { type Locale, LOCALE_IDS, LOCALES, setDayjsLocale } from "@triliumnext/commons";
+import { getEnglishName, type Locale, LOCALE_IDS, LOCALES, setDayjsLocale } from "@triliumnext/commons";
 import i18next from "i18next";
 import i18nextHttpBackend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
@@ -8,12 +8,34 @@ import { initReactI18next } from "react-i18next";
  */
 export const translationsInitializedPromise = $.Deferred();
 
-export async function initLocale(locale: LOCALE_IDS = "en") {
+/** Every string in the app proper: 200-300 KB depending on the language. */
+const APP_NAMESPACE = "translation";
+
+/**
+ * The screens shown before the app itself — the setup wizard, the login page and the password
+ * reset. Kept apart from the app catalogue because the wizard changes language on the spot, and
+ * re-reading the whole thing to retitle one step costs seconds on a phone; these three pages need
+ * about 11 KB of it between them.
+ */
+const ENTRY_NAMESPACE = "entry";
+
+/**
+ * @param scope which catalogue the page reads: `entry` for the pages shown before the app is
+ *              available, `app` for the app itself — which reads both, since shared widgets such as
+ *              the credentials form use `login.*` keys that live in the entry catalogue.
+ */
+export async function initLocale(locale: LOCALE_IDS = "en", scope: "app" | "entry" = "app") {
+    const entryOnly = scope === "entry";
 
     i18next.use(initReactI18next);
     await i18next.use(i18nextHttpBackend).init({
         lng: locale,
         fallbackLng: "en",
+        ns: entryOnly ? [ ENTRY_NAMESPACE ] : [ APP_NAMESPACE, ENTRY_NAMESPACE ],
+        defaultNS: entryOnly ? ENTRY_NAMESPACE : APP_NAMESPACE,
+        // Resolving through the entry catalogue on a miss keeps every call site writing
+        // `t("login.password")` without having to know which of the two holds it.
+        fallbackNS: ENTRY_NAMESPACE,
         backend: {
             loadPath: `${window.glob.assetPath}/translations/{{lng}}/{{ns}}.json`
         },
@@ -62,33 +84,3 @@ function withEnglishName(locale: Locale, englishNames: Intl.DisplayNames): strin
         : locale.name;
 }
 
-/**
- * The English name of a locale, or `null` when there is none worth showing: the English entries are
- * named in English already, and anything `Intl` does not recognize has nothing to offer.
- */
-function getEnglishName(localeId: string, englishNames: Intl.DisplayNames): string | null {
-    const tag = ENGLISH_NAME_TAGS[localeId] ?? localeId.replaceAll("_", "-");
-
-    // Covers `en_rtl` too, which is not even a well-formed tag — `Intl` would throw on it.
-    if (tag === "en" || tag.startsWith("en-")) return null;
-
-    try {
-        return englishNames.of(tag) ?? null;
-    } catch {
-        // A malformed tag is a RangeError rather than an empty result.
-        return null;
-    }
-}
-
-/**
- * Locale ids that are not BCP-47 tags, mapped to one.
- *
- * The Chinese pair deliberately resolves through the script subtags rather than the regions
- * `normalizeLocale` (in `utils/formatters`) maps them to: `zh-Hans` reads as "Simplified Chinese",
- * whereas `zh-CN` would say "Chinese (China)" — the wrong distinction for entries differing by
- * script.
- */
-const ENGLISH_NAME_TAGS: Record<string, string> = {
-    cn: "zh-Hans",
-    tw: "zh-Hant"
-};

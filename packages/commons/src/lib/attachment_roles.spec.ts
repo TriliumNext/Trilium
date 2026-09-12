@@ -130,7 +130,8 @@ describe("attachmentIcon", () => {
         // The point of routing both through one table: a PDF is a PDF however it got here.
         for (const [ type, mime ] of [ [ "file", "application/pdf" ], [ "file", "video/mp4" ], [ "image", "image/gif" ] ] as const) {
             expect(attachmentIcon(type, mime), mime).toBe(getNoteIcon({
-                noteId: "abc123", type, mime, iconClass: undefined, workspaceIconClass: undefined, isFolder: () => false
+                noteId: "abc123", type, mime, iconClass: undefined, workspaceIconClass: undefined,
+                isFolder: () => false, getLabelValue: () => null
             }));
         }
     });

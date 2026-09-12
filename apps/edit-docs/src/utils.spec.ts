@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { rewriteHelpLinks } from "./utils.js";
+import { normalizeLineEndings, rewriteHelpLinks } from "./utils.js";
 
 // utils.ts bootstraps Electron at module load (registers the `trilium-app://` scheme and
 // pulls in the desktop window service, whose resource_dir lookup calls process.exit in a
 // non-Electron test runner). Stub those side-effectful imports so the pure helpers below
-// (rewriteHelpLinks) can be imported in isolation.
+// (rewriteHelpLinks, normalizeLineEndings) can be imported in isolation.
 vi.mock("electron", () => ({ default: { app: {}, protocol: { registerSchemesAsPrivileged: () => {} } } }));
 vi.mock("@triliumnext/desktop/src/protocol.js", () => ({ registerTriliumAppScheme: () => {}, setupTriliumAppProtocol: () => {} }));
 vi.mock("@triliumnext/desktop/src/services/window.js", () => ({ default: {}, setupWindowing: () => {} }));
@@ -36,8 +36,66 @@ describe("rewriteHelpLinks", () => {
         expect(result).toContain("#root/_hidden/_options/_optionsCodeNotes");
     });
 
+    it("reduces the note path the editor writes to the target ID alone", () => {
+        // What a link created in the editor looks like: a full path whose intermediate IDs exist
+        // only in the docs instance. An import rewrites the same link to `#root/<noteId>`, so
+        // without this the exported HTML alternated between the two forms.
+        const input = [
+            `<a class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/R9pX4DGra2Vt">Sharing</a>`,
+            `<a class="reference-link" href="#root/jdjRLhLV3TtI/YjerxU7Aii8X">Troubleshooting</a>`
+        ].join(" ");
+        const expected = [
+            `<a class="reference-link" href="#root/_help_R9pX4DGra2Vt">Sharing</a>`,
+            `<a class="reference-link" href="#root/_help_YjerxU7Aii8X">Troubleshooting</a>`
+        ].join(" ");
+        expect(rewriteHelpLinks(input)).toBe(expected);
+    });
+
+    it("reduces a path whose target is already prefixed, as a previously exported link is", () => {
+        const input = `<a href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_hrZ1D00cLbal">Internal links</a>`;
+        expect(rewriteHelpLinks(input)).toBe(`<a href="#root/_help_hrZ1D00cLbal">Internal links</a>`);
+    });
+
+    it("keeps a query suffix on the link it rewrites", () => {
+        const input = `<a href="#root/pOsGYCXsbNQG/R9pX4DGra2Vt?viewMode=source">Sharing</a>`;
+        expect(rewriteHelpLinks(input)).toBe(`<a href="#root/_help_R9pX4DGra2Vt?viewMode=source">Sharing</a>`);
+    });
+
     it("is idempotent for already-prefixed help links", () => {
         const input = `<a href="#root/_help_iPIMuisry3hd">Text</a>`;
         expect(rewriteHelpLinks(input)).toBe(input);
+    });
+});
+
+describe("normalizeLineEndings", () => {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    it("rewrites CRLF to LF and keeps a lone CR, LF and trailing CR", () => {
+        const input = encoder.encode("# Title\r\n\r\nA line.\nAnother\rline.\r");
+        expect(decoder.decode(normalizeLineEndings(input))).toBe("# Title\n\nA line.\nAnother\rline.\r");
+    });
+
+    it("keeps multi-byte characters intact", () => {
+        const input = encoder.encode("Ștergere\r\nnotițe 😀\r\n");
+        expect(decoder.decode(normalizeLineEndings(input))).toBe("Ștergere\nnotițe 😀\n");
+    });
+
+    it("returns the same content when there is no CRLF to rewrite", () => {
+        const input = encoder.encode("Already normalized.\n");
+        expect(normalizeLineEndings(input)).toBe(input);
+    });
+
+    it("leaves binary content untouched", () => {
+        // A PNG header, whose byte 4 is the NUL that marks the content as binary, followed by
+        // pixel data that happens to contain a CRLF pair.
+        const input = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x0d, 0x0a, 0xff]);
+        expect(normalizeLineEndings(input)).toBe(input);
+    });
+
+    it("normalizes content whose NUL sits past the 8000-byte detection window", () => {
+        const prefix = "a".repeat(8000);
+        const input = encoder.encode(`${prefix}\r\n\0`);
+        expect(decoder.decode(normalizeLineEndings(input))).toBe(`${prefix}\n\0`);
     });
 });

@@ -10,7 +10,7 @@
     "build-scripts": "esrun scripts/build.ts -- --module=scripts",
     "build-styles": "esrun scripts/build.ts -- --module=styles",
     "dist": "esrun scripts/build.ts -- --minify",
-    "test": "esrun src/scripts/test.ts"
+    "test": "vitest run"
   },
   "exports": {
     "./templates/*": "./src/templates/*",
@@ -26,15 +26,17 @@
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "fuse.js": "7.5.0",
-    "katex": "0.18.1",
-    "mermaid": "11.16.1"
+    "katex": "0.18.7",
+    "mermaid": "11.17.2"
   },
   "devDependencies": {
     "@digitak/esrun": "3.2.26",
     "@triliumnext/ckeditor5": "workspace:*",
     "dotenv": "17.4.2",
-    "esbuild": "0.28.1",
-    "highlight.js": "11.11.1",
-    "typescript": "6.0.3"
+    "esbuild": "0.28.2",
+    "highlight.js": "11.12.0",
+    "sass": "1.104.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.0"
   }
 }

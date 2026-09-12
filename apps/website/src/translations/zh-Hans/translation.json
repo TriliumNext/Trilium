@@ -198,7 +198,7 @@
     "download_helper_desktop_macos": {
         "title_x64": "适用于英特尔处理器的 macOS",
         "title_arm64": "适用于 Apple Silicon 的 macOS",
-        "description_x64": "适用于运行 macOS Monterey 或更高版本的基于英特尔处理器的 Mac。",
+        "description_x64": "适用于运行 macOS Ventura 或更高版本的基于英特尔处理器的 Mac。",
         "description_arm64": "适用于搭载苹果自研芯片的 Mac 电脑，例如配备 M1 和 M2 芯片的机型。",
         "quick_start": "通过 Homebrew 安装：",
         "download_dmg": "下载安装程序 (.dmg)",

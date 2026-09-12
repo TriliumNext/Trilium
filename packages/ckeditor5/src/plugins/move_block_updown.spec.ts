@@ -1,4 +1,5 @@
 import {
+    _getModelData as getModelData,
     _setModelData as setModelData,
     ClassicEditor,
     Essentials,
@@ -21,6 +22,17 @@ function getBlockText(editor: ClassicEditor, index: number): string {
     const textNode = (el as ModelElement).getChild(0);
     if (!textNode || !textNode.is("$text")) { return ""; }
     return (textNode as ModelText).data;
+}
+
+/** Returns the start and end offsets of the document selection. */
+function selectedOffsets(editor: ClassicEditor): [number, number] {
+    const selection = editor.model.document.selection;
+    return [selection.getFirstPosition()?.offset ?? -1, selection.getLastPosition()?.offset ?? -1];
+}
+
+/** Returns the element the document selection starts in. */
+function selectionParent(editor: ClassicEditor) {
+    return editor.model.document.selection.getFirstPosition()?.parent;
 }
 
 describe("MoveBlockUpDownPlugin", () => {
@@ -252,7 +264,7 @@ describe("MoveBlockUpDownPlugin", () => {
         expect(getBlockText(editor, 0)).toBe("Only");
     });
 
-    it("preserves selection offset within block after moving up", () => {
+    it("preserves the selected range within the block after moving up", () => {
         setModelData(editor.model,
             "<paragraph>First</paragraph>" +
             "<paragraph>Se{co}nd</paragraph>"
@@ -261,14 +273,11 @@ describe("MoveBlockUpDownPlugin", () => {
         editor.execute("moveBlockUp");
 
         expect(getBlockText(editor, 0)).toBe("Second");
-        // Selection should be non-null and within the moved block
-        const selection = editor.model.document.selection;
-        const firstPos = selection.getFirstPosition();
-        expect(firstPos).toBeTruthy();
-        expect(firstPos?.parent.is("element") && (firstPos?.parent as ModelElement).name).toBe("paragraph");
+        expect(selectedOffsets(editor)).toEqual([2, 4]);
+        expect(selectionParent(editor)).toBe(editor.model.document.getRoot()?.getChild(0));
     });
 
-    it("preserves selection offset within block after moving down", () => {
+    it("preserves the selected range within the block after moving down", () => {
         setModelData(editor.model,
             "<paragraph>Fi{rs}t</paragraph>" +
             "<paragraph>Second</paragraph>"
@@ -277,16 +286,13 @@ describe("MoveBlockUpDownPlugin", () => {
         editor.execute("moveBlockDown");
 
         expect(getBlockText(editor, 1)).toBe("First");
-        const selection = editor.model.document.selection;
-        const firstPos = selection.getFirstPosition();
-        expect(firstPos).toBeTruthy();
+        expect(selectedOffsets(editor)).toEqual([2, 4]);
+        expect(selectionParent(editor)).toBe(editor.model.document.getRoot()?.getChild(1));
     });
 
-    it("moves an object (widget) element up — exercises getSelectedElement() and else selection-restore branch", () => {
+    it("moves an object (widget) element up and keeps it selected", () => {
         // With a testBox selected (isObject: true), getSelectedBlocks() returns []
-        // and the code falls back to getSelectedElement(). The selection restoration
-        // takes the else-branch because the selection offset (element index) exceeds
-        // the object's maxOffset (0, no children).
+        // and the code falls back to getSelectedElement().
         setModelData(editor.model,
             "<paragraph>First</paragraph>" +
             "[<testBox></testBox>]"
@@ -301,9 +307,10 @@ describe("MoveBlockUpDownPlugin", () => {
         expect(c0?.is("element") && (c0 as ModelElement).name).toBe("testBox");
         const c1 = root.getChild(1);
         expect(c1?.is("element") && (c1 as ModelElement).name).toBe("paragraph");
+        expect(editor.model.document.selection.getSelectedElement()).toBe(c0);
     });
 
-    it("moves an object (widget) element down — exercises getSelectedElement() and else selection-restore branch", () => {
+    it("moves an object (widget) element down and keeps it selected", () => {
         setModelData(editor.model,
             "[<testBox></testBox>]" +
             "<paragraph>Last</paragraph>"
@@ -317,6 +324,7 @@ describe("MoveBlockUpDownPlugin", () => {
         expect(c0?.is("element") && (c0 as ModelElement).name).toBe("paragraph");
         const c1 = root.getChild(1);
         expect(c1?.is("element") && (c1 as ModelElement).name).toBe("testBox");
+        expect(editor.model.document.selection.getSelectedElement()).toBe(c1);
     });
 
     it("does not move an object element up when it is already the first block", () => {
@@ -467,6 +475,27 @@ describe("MoveBlockUpDownPlugin with collapsible summary element", () => {
         expect(c0?.is("element") && (c0 as ModelElement).name).toBe("paragraph");
         const c1 = root.getChild(1);
         expect(c1?.is("element") && (c1 as ModelElement).name).toBe("details");
+    });
+
+    it("keeps a mid-title caret in the summary so repeated moves keep moving the collapsible", () => {
+        // #11081: the caret used to be restored by offset against the <details> the
+        // summary resolves to, whose offsets count child blocks — so a caret five
+        // characters into the title landed on the sixth child, i.e. in the body. Every
+        // further keystroke then moved that body block instead of the collapsible.
+        setModelData(editor.model,
+            "<paragraph>row1</paragraph>" +
+            "<details><summary>Squar[]e of Fame</summary><paragraph>b1</paragraph>" +
+            "<paragraph>b2</paragraph><paragraph>b3</paragraph><paragraph>b4</paragraph>" +
+            "<paragraph>b5</paragraph></details>" +
+            "<paragraph>row2</paragraph>"
+        );
+
+        editor.execute("moveBlockDown");
+        editor.execute("moveBlockDown");
+
+        const data = getModelData(editor.model);
+        expect(data).toContain("<summary>Squar[]e of Fame</summary>");
+        expect(data.indexOf("<details>")).toBeGreaterThan(data.indexOf("<paragraph>row2</paragraph>"));
     });
 
     it("deduplicates adjacent resolved blocks when multiple summaries in the same details are selected", () => {

@@ -1,10 +1,12 @@
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type DelayedVisibilityPhase, useDelayedVisibility, useImperativeSearchHighlighlighting, useStaticTooltip, useTooltip } from "./hooks";
+import { buildNote } from "../../test/easy-froca";
+import { type DelayedVisibilityPhase, useDelayedVisibility, useImperativeSearchHighlighlighting, useNoteLabelBoolean, useStaticTooltip, useTooltip } from "./hooks";
 
 /**
  * mark.js delegating to the real implementation, so marking still works, while recording the calls
@@ -21,6 +23,10 @@ vi.mock("mark.js", async (importOriginal) => {
 
             constructor(ctx: unknown) {
                 this.inner = new actual.default(ctx);
+            }
+
+            mark(...args: unknown[]) {
+                return this.inner.mark(...args);
             }
 
             markRegExp(...args: unknown[]) {
@@ -170,6 +176,153 @@ describe("useStaticTooltip", () => {
         await act(async () => { trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
         expect(document.querySelector(".tooltip"), "gone with the press").toBeNull();
     });
+
+    // Module-level (not recreated per render) on purpose, as the icon picker's `ICON_TOOLTIP_CONFIG`
+    // is: the container effect never re-runs when the virtualized grid re-keys a cell, so the
+    // MutationObserver #10680's fix installs has to survive across that re-render on its own — a
+    // config recreated inline, like TooltipHarness above, would re-run the effect and mask exactly
+    // what this test checks.
+    const DELEGATED_CONFIG = {
+        selector: "span",
+        animation: false,
+        title() {
+            return this.getAttribute("title") || "";
+        }
+    } satisfies Partial<Tooltip.Options>;
+
+    function DelegatedTooltipHarness({ generation }: { generation: number }) {
+        const ref = useRef<HTMLDivElement>(null);
+        useStaticTooltip(ref, DELEGATED_CONFIG);
+        return (
+            <div ref={ref}>
+                <span key={generation} title="smile" />
+            </div>
+        );
+    }
+
+    it("removes an orphaned popup when a delegated tooltip's hovered child is removed without a mouseleave (#10680)", async () => {
+        await act(async () => render(<DelegatedTooltipHarness generation={1} />, container));
+
+        const span = container.querySelector("span");
+        expect(span).not.toBeNull();
+
+        // A synthetic mouseenter does not reliably reach Bootstrap's own delegated listener under
+        // happy-dom, so the per-span instance is created directly instead — the fix only depends on
+        // showing it firing `inserted.bs.tooltip` on the span, which then bubbles to the container
+        // exactly as it would from Bootstrap's own delegated hover handling.
+        act(() => {
+            if (span) {
+                Tooltip.getOrCreateInstance(span, {
+                    animation: false,
+                    title() {
+                        return this.getAttribute("title") || "";
+                    }
+                }).show();
+            }
+        });
+        expect(document.querySelector(".tooltip"), "shown before the remount").not.toBeNull();
+
+        // Replace the hovered span with a fresh one — a keyed remount, like the icon picker's grid
+        // re-keying its cells on every keystroke in its search box — without ever firing mouseleave.
+        await act(async () => render(<DelegatedTooltipHarness generation={2} />, container));
+
+        // The MutationObserver callback runs as a microtask; give it a turn to fire.
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+
+        expect(document.querySelector(".tooltip"), "gone once the observer sees the removal").toBeNull();
+    });
+
+    it("stops tracking a delegated tooltip that was put away normally, and leaves its instance alone", async () => {
+        const observe = vi.spyOn(MutationObserver.prototype, "observe");
+        const disconnect = vi.spyOn(MutationObserver.prototype, "disconnect");
+        await act(async () => render(<DelegatedTooltipHarness generation={1} />, container));
+
+        const span = container.querySelector("span");
+        expect(span).not.toBeNull();
+        // The container is watched only while a popup is up, not from the moment it mounts.
+        expect(observe, "not observing before anything is shown").not.toHaveBeenCalled();
+
+        let instance: Tooltip | undefined;
+        act(() => {
+            if (span) {
+                instance = Tooltip.getOrCreateInstance(span, {
+                    animation: false,
+                    title() {
+                        return this.getAttribute("title") || "";
+                    }
+                });
+                instance.show();
+            }
+        });
+        expect(document.querySelector(".tooltip"), "shown").not.toBeNull();
+        expect(observe, "observing once a popup is shown").toHaveBeenCalledTimes(1);
+
+        // An ordinary mouseleave-driven hide fires `hidden.bs.tooltip`, which must untrack the
+        // span — otherwise the observer below would dispose an instance Bootstrap still owns.
+        disconnect.mockClear();
+        act(() => instance?.hide());
+        expect(document.querySelector(".tooltip"), "hidden the normal way").toBeNull();
+        expect(disconnect, "observer let go once nothing is shown").toHaveBeenCalled();
+        observe.mockRestore();
+        disconnect.mockRestore();
+
+        await act(async () => render(<DelegatedTooltipHarness generation={2} />, container));
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+
+        expect(span && Tooltip.getInstance(span), "instance untouched by the observer").not.toBeNull();
+    });
+
+    it("leaves a shown delegated tooltip standing when the mutation removed something else", async () => {
+        await act(async () => render(<DelegatedTooltipHarness generation={1} />, container));
+
+        const span = container.querySelector("span");
+        expect(span).not.toBeNull();
+        act(() => {
+            if (span) {
+                Tooltip.getOrCreateInstance(span, {
+                    animation: false,
+                    title() {
+                        return this.getAttribute("title") || "";
+                    }
+                }).show();
+            }
+        });
+        expect(document.querySelector(".tooltip"), "shown").not.toBeNull();
+
+        // Add and remove an unrelated sibling — the observer fires, but the hovered span is
+        // still connected, so its tooltip must stay up.
+        await act(async () => {
+            const bystander = document.createElement("i");
+            span?.parentElement?.appendChild(bystander);
+            bystander.remove();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(document.querySelector(".tooltip"), "still shown after an unrelated mutation").not.toBeNull();
+    });
+
+    it("removes the popup by its aria-describedby link when the instance is already gone", async () => {
+        await act(async () => render(<DelegatedTooltipHarness generation={1} />, container));
+
+        const span = container.querySelector("span");
+        expect(span).not.toBeNull();
+
+        // Simulate a popup whose Tooltip instance has already been torn down on its own: no
+        // instance on the span, just the shown-state markers Bootstrap leaves while a popup is up.
+        const strayPopup = document.createElement("div");
+        strayPopup.id = "stray-popup-10680";
+        strayPopup.className = "tooltip";
+        document.body.appendChild(strayPopup);
+        act(() => {
+            span?.setAttribute("aria-describedby", strayPopup.id);
+            span?.dispatchEvent(new Event("inserted.bs.tooltip", { bubbles: true }));
+        });
+
+        await act(async () => render(<DelegatedTooltipHarness generation={2} />, container));
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+
+        expect(document.getElementById(strayPopup.id), "stray popup swept by its id").toBeNull();
+    });
 });
 
 describe("useTooltip", () => {
@@ -227,28 +380,60 @@ describe("useTooltip", () => {
 
 describe("useImperativeSearchHighlighlighting", () => {
     let container: HTMLElement;
-    let highlight: ((el: HTMLElement | null | undefined) => void) | undefined;
-
-    function Probe({ tokens }: { tokens: string[] | null | undefined }) {
-        highlight = useImperativeSearchHighlighlighting(tokens);
-        return null;
-    }
+    let target: HTMLElement;
+    let liveHighlight: ((el: HTMLElement | null | undefined) => void) | undefined;
 
     beforeEach(() => {
         container = document.createElement("div");
         document.body.appendChild(container);
+        target = document.createElement("div");
+        document.body.appendChild(target);
     });
 
     afterEach(() => {
         render(null, container);
         container.remove();
-        highlight = undefined;
+        target.remove();
+        liveHighlight = undefined;
     });
 
-    async function mount(tokens: string[] | null | undefined) {
-        await act(async () => render(<Probe tokens={tokens} />, container));
+    function Probe({ tokens, onReady }: {
+        tokens: (string | HighlightedTokenInfo)[] | null | undefined;
+        onReady: (fn: (el: HTMLElement | null | undefined) => void) => void;
+    }) {
+        const highlight = useImperativeSearchHighlighlighting(tokens);
+        onReady(highlight);
+        return null;
     }
 
+    /** Mounts a fresh hook instance (so each call gets its own `Mark` instance) and applies it to `target`. */
+    function highlight(tokens: (string | HighlightedTokenInfo)[] | null | undefined, html: string) {
+        target.innerHTML = html;
+        render(null, container);
+        let highlightFn: ((el: HTMLElement | null | undefined) => void) | undefined;
+        act(() => {
+            render(<Probe tokens={tokens} onReady={(fn) => { highlightFn = fn; }} />, container);
+        });
+        highlightFn?.(target);
+        return target;
+    }
+
+    function markedTexts(el: HTMLElement) {
+        return Array.from(el.querySelectorAll("span.ck-find-result")).map((mark) => mark.textContent);
+    }
+
+    /**
+     * Re-renders the *same* hook instance with new tokens, unlike {@link highlight}, which remounts.
+     * Keeping the instance alive is the point: its `Mark` has to survive into the next call for the
+     * clear-on-empty behaviour to be observable at all.
+     */
+    async function remount(tokens: (string | HighlightedTokenInfo)[] | null | undefined) {
+        await act(async () => {
+            render(<Probe tokens={tokens} onReady={(fn) => { liveHighlight = fn; }} />, container);
+        });
+    }
+
+    /** A detached element to highlight into, so it outlives a {@link remount}. */
     function content(html: string): HTMLElement {
         const el = document.createElement("div");
         el.innerHTML = html;
@@ -256,15 +441,14 @@ describe("useImperativeSearchHighlighlighting", () => {
         return el;
     }
 
-    it("highlights matches and opens the collapsed <details> that contains them", async () => {
-        await mount([ "needle" ]);
-        const target = content("<details><summary>t</summary><p>a needle here</p></details>");
+    it("wraps a diacritic match when searching a plain, unaccented token (#10616)", () => {
+        const el = highlight(["ktory"], "<p>Aký ktorý</p>");
+        expect(markedTexts(el)).toEqual(["ktorý"]);
+    });
 
-        highlight?.(target);
-
-        expect(target.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
-        expect(target.querySelector("details")?.open).toBe(true);
-        target.remove();
+    it("wraps a CJK substring match inside a larger word", () => {
+        const el = highlight(["笔记"], "<p>我的笔记本</p>");
+        expect(markedTexts(el)).toEqual(["笔记"]);
     });
 
     it("clears previous highlights once the tokens are cleared", async () => {
@@ -274,49 +458,102 @@ describe("useImperativeSearchHighlighlighting", () => {
         // The removal itself is asserted through mark.js rather than the DOM: its `unmark()` is a
         // no-op under happy-dom (it removes nothing even from a fresh instance), so only the call
         // can be observed here.
-        await mount([ "needle" ]);
-        const target = content("<p>a needle here</p>");
-        highlight?.(target);
-        expect(target.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
+        await remount([ "needle" ]);
+        const el = content("<p>a needle here</p>");
+        liveHighlight?.(el);
+        expect(el.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
         markSpies.unmark.mockClear();
 
-        await mount(null);
-        highlight?.(target);
+        await remount(null);
+        liveHighlight?.(el);
 
         expect(markSpies.unmark).toHaveBeenCalled();
-        target.remove();
+        el.remove();
     });
 
     it("does not touch an element that was never highlighted", async () => {
-        await mount(null);
-        const target = content("<p>a needle here</p>");
+        await remount(null);
+        const el = content("<p>a needle here</p>");
         markSpies.unmark.mockClear();
 
-        highlight?.(target);
+        liveHighlight?.(el);
 
         expect(markSpies.unmark).not.toHaveBeenCalled();
-        expect(target.innerHTML).toBe("<p>a needle here</p>");
-        target.remove();
+        expect(el.innerHTML).toBe("<p>a needle here</p>");
+        el.remove();
     });
 
-    it("leaves a collapsed block closed when it holds no match", async () => {
-        await mount([ "needle" ]);
-        const target = content("<details><summary>t</summary><p>nothing relevant</p></details>");
-
-        highlight?.(target);
-
-        expect(target.querySelector("details")?.open).toBe(false);
-        target.remove();
+    it("wraps every match of a regex-typed token (#5332)", () => {
+        const el = highlight([{ token: "ba.", type: "regex" }], "<p>foo bar baz qux</p>");
+        expect(markedTexts(el)).toEqual(["bar", "baz"]);
     });
 
-    it("does nothing without tokens", async () => {
-        await mount([]);
-        const target = content("<details><summary>t</summary><p>needle</p></details>");
+    it("skips an invalid regex token without throwing", () => {
+        expect(() => highlight([{ token: "(unterminated", type: "regex" }], "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+    });
 
-        highlight?.(target);
+    it("still highlights when given legacy string[] input", () => {
+        const el = highlight(["bar"], "<p>foo bar baz</p>");
+        expect(markedTexts(el)).toEqual(["bar"]);
+    });
 
-        expect(target.querySelectorAll(".ck-find-result").length).toBe(0);
+    it("is a no-op for null or undefined tokens", () => {
+        expect(() => highlight(null, "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+
+        expect(() => highlight(undefined, "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+
+        highlight([], "<details><summary>t</summary><p>needle</p></details>");
+        expect(markedTexts(target)).toEqual([]);
         expect(target.querySelector("details")?.open).toBe(false);
-        target.remove();
+    });
+
+    it("highlights matches and opens the collapsed <details> that contains them", () => {
+        const el = highlight(["needle"], "<details><summary>t</summary><p>a needle here</p></details>");
+        expect(markedTexts(el)).toEqual(["needle"]);
+        expect(el.querySelector("details")?.open).toBe(true);
+    });
+
+    it("leaves a collapsed block closed when it holds no match", () => {
+        const el = highlight(["needle"], "<details><summary>t</summary><p>nothing relevant</p></details>");
+        expect(markedTexts(el)).toEqual([]);
+        expect(el.querySelector("details")?.open).toBe(false);
+    });
+});
+
+describe("useNoteLabelBoolean", () => {
+    let container: HTMLElement | undefined;
+
+    afterEach(() => {
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    /**
+     * The render that mounts a consumer has already read the label, so forcing another one after it
+     * draws everything twice for a value that has not changed. A board draws this once a card.
+     */
+    it("draws a consumer once for a label that has not changed", async () => {
+        const note = buildNote({ title: "Card", "#archived": "true" });
+        const draws: boolean[] = [];
+
+        function Consumer() {
+            const [ archived ] = useNoteLabelBoolean(note, "archived");
+            draws.push(archived);
+            return <span>{String(archived)}</span>;
+        }
+
+        container = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            render(<Consumer />, container as HTMLElement);
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+
+        expect(draws).toEqual([ true ]);
     });
 });

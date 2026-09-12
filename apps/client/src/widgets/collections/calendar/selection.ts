@@ -62,5 +62,8 @@ export function narrowAnchorRect(rect: DOMRect, point: AnchorPoint | null): DOMR
 }
 
 /** How wide a piece may be and still be stood beside: the width of the widest card the calendar
- *  anchors — the event popover's 380px, the ghost's own being narrower (see their CSS). */
-const MAX_ANCHOR_WIDTH = 380;
+ *  anchors — the event popover's 480px, the ghost's own being narrower (see their CSS). The
+ *  popover's full width rather than the lesser one a narrow window leaves it: a piece that wide on
+ *  a window that narrow fills it, and the card is then placed by the viewport whatever anchor it is
+ *  handed. */
+const MAX_ANCHOR_WIDTH = 480;

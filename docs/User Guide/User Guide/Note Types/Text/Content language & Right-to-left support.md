@@ -6,6 +6,7 @@ The content language determines:
 *   The spell-checking of the note, when in a browser. The desktop installation has a dedicated spellchecking section.
 *   Whether the text is displayed from right-to-left, for languages such as Arabic, Hebrew, etc.
 *   How typed quotes are [automatically replaced](Automatic%20replacements.md) (e.g. English uses `“text”`, whereas some languages use `«text»`).
+*   Which languages are offered by the <a class="reference-link" href="In-editor%20AI%20assistant.md">In-editor AI assistant</a> for translation.
 
 ## Setting the language of a single note
 

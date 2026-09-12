@@ -1,6 +1,8 @@
 {
   "about": {
-    "data_directory": "Diretório de dados:"
+    "data_directory": "Diretório de dados:",
+    "version_label": "Versão:",
+    "contributors_label": "Contribuidores:"
   },
   "toast": {
     "critical-error": {
@@ -1065,7 +1067,6 @@
     "note_tree_font": "Fonte da Árvore de Notas",
     "note_detail_font": "Fonte Padrão da Nota",
     "monospace_font": "Fonte Monospace (código)",
-    "not_all_fonts_available": "Nem todas as fontes listadas podem estar disponíveis no seu sistema.",
     "generic-fonts": "Fontes genéricas",
     "sans-serif-system-fonts": "Fontes sem serifa de sistema",
     "serif-system-fonts": "Fontes serifadas de sistema",
@@ -1605,7 +1606,6 @@
     "sync_warning": "Está a passar uma função síncrona para `api.runAsyncOnBackendWithManualTransactionHandling()`,\\nquando deveria usar `api.runOnBackend()` no lugar."
   },
   "ws": {
-    "sync-check-failed": "A verificação de sincronização falhou!",
     "consistency-checks-failed": "A verificação de consistência falhou! Veja os logs para pormenores.",
     "encountered-error": "Encontrado o erro \"{{message}}\", verifique o console.",
     "lost-websocket-connection-title": "Perdida conexão com o servidor",
@@ -1826,7 +1826,6 @@
     "delete_row": "Apagar linha"
   },
   "board_view": {
-    "move-to": "Mover para",
     "insert-above": "Inserir acima",
     "insert-below": "Inserir abaixo",
     "delete-column": "Apagar coluna",
@@ -1840,7 +1839,6 @@
     "add-column-placeholder": "Inserir nome da coluna...",
     "edit-note-title": "Clicar para editar o titulo da nota",
     "unarchive-note": "Remover nota do arquivo",
-    "edit-column-title": "Click para editar titulo da coluna",
     "column-already-exists": "Esta coluna já existe no quadro."
   },
   "command_palette": {
@@ -1927,8 +1925,7 @@
   },
   "server": {
     "unknown_http_error_title": "Erro na comunicação com servidor",
-    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMessagem: {{message}}",
-    "traefik_blocks_requests": "Se está a usar o Traefik, este introduz uma alteração que afecta a comunicação com o servidor."
+    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMessagem: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Ir para a nota anterior",

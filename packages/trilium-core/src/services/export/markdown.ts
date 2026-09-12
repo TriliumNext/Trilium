@@ -323,9 +323,10 @@ function buildLinkPreviewFilter(): Rule {
  * verbatim as well so its content is never dropped.
  *
  * The Trilium-only `trilium-collapsible` styling hook is dropped from the
- * exported <details> (any user-added classes are kept). It is not needed to
- * round-trip: the importer upcasts <details> by tag name and the collapsible
- * plugin re-stamps the class on the next save.
+ * exported <details> (any user-added classes are kept), so the Markdown stays
+ * portable. `normalizeCollapsibles()` in `services/import/markdown.ts` puts the
+ * class and the collapsed whitespace back, so the cycle returns the note
+ * unchanged.
  */
 function buildDetailsFilter(): Rule {
     // Block containers whose children are themselves blocks. Inline-content

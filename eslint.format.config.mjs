@@ -30,7 +30,24 @@ export default defineConfig(
         "**/out-tsc",
         "apps/edit-docs/demo/*",
         "docs/*",
-        "apps/web-clipper/lib/*"
+        "apps/web-clipper/lib/*",
+        // Build output that is gitignored but sits outside a `dist`, so it would otherwise be
+        // linted. `cap sync` copies the whole standalone bundle into the native projects, which
+        // adds ~165 MB of minified JS and makes ESLint run out of memory.
+        "apps/mobile/android/**",
+        "apps/mobile/ios/**",
+        "apps/*/out/**",
+        "apps/web-clipper/.output/**",
+        "site/**",
+        "**/test-output/**",
+        "apps/web-clipper/.wxt/**",
+        // Vendored third-party code. `--fix` must never touch these: the pdf.js viewer is
+        // re-vendored verbatim from an upstream release, and `update-viewer.ts` locates our
+        // patches by matching upstream markup.
+        "packages/pdfjs-viewer/viewer/**",
+        "packages/splitjs/test/lib/**",
+        // A worktree here is a full second copy of the repository.
+        ".claude/worktrees/**"
     ]),
 
     {

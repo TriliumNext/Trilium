@@ -31,35 +31,51 @@ database, and `skipVerifier: true` is a recovery path for a container whose veri
 
 ## Writing a container
 
-The payload digest is only known once the payload has been written, so the caller supplies
-`patchHeader` to write it into the header afterwards.
+Everything only knowable once the payload has been written, the digest and the length it came to,
+goes in a trailer after it. Nothing is written back to, so a container is produced in one forward
+pass and the destination need not be seekable.
 
 ```ts
 import { createReadStream, createWriteStream } from "node:fs";
-import { open, rename, stat } from "node:fs/promises";
+import { rename, stat } from "node:fs/promises";
 import { writeBackupContainer } from "@triliumnext/backup-container";
 
 await writeBackupContainer(createReadStream(source), createWriteStream(partial), {
     compress: true,
     passphrase,                          // omit to leave the container unencrypted
-    plaintextSize: (await stat(source)).size,
-    patchHeader: async (offset, data) => {
-        const handle = await open(partial, "r+");
-        try {
-            await handle.write(data, 0, data.length, offset);
-            await handle.sync();
-        } finally {
-            await handle.close();
-        }
-    }
+    plaintextSize: (await stat(source)).size
 });
 
 await rename(partial, destination);      // rename last, so a partial file never looks finished
 ```
 
-Write to a temporary name and rename on success. Do not hand the payload stream a `FileHandle` opened
-with `autoClose: false` and patch through that same handle: its `close()` then waits forever on a
-stream that never emits `close`.
+Write to a temporary name and rename on success.
+
+## Describing a container without opening it
+
+What a container is, is stated in the clear, so a listing can be built from the first
+`FIXED_HEADER_BYTES` bytes of each file: no passphrase, no payload, nothing to decompress.
+
+```ts
+import { FIXED_HEADER_BYTES, getInfo } from "@triliumnext/backup-container";
+
+const info = getInfo(head);              // ArrayBuffer, Uint8Array, Buffer or any view
+```
+
+It never throws, so one foreign or damaged file among a hundred costs the listing a row rather than
+the listing, and it answers in three parts:
+
+| Answer | Means |
+| --- | --- |
+| `{ isValid: false }` | Not a container: the magic is not there |
+| `{ isValid: true, isSupported: false, version }` | One of ours, past what this build implements |
+| `{ isValid: true, isSupported: true, … }` | Readable, and described below |
+
+The fields exist only in the third case, because a version whose layout this module does not
+implement is one whose flags and sizes it would only be guessing at: `size` is the database inside
+before compression, or 0 where the writer did not record it; `creationTimestamp` is when the backup
+was taken, in milliseconds since the Unix epoch, or 0 where it was not recorded; `isCompressed` and
+`isEncrypted` are the flags.
 
 ## Using it in a browser
 
@@ -83,10 +99,9 @@ Three platform limits are worth knowing. WebCrypto's `subtle` interface only exi
 contexts (HTTPS, localhost, workers of either), so encrypted containers cannot be handled on a page
 served over plain HTTP. `CompressionStream` takes no compression level, so `compressionLevel` is
 ignored and the platform default applies; the header normalisation keeps the output canonical
-regardless. And `patchHeader` still needs random access to the finished bytes, which OPFS provides
-(`write` with `at`) but a streamed download does not, so writing a container means staging it
-somewhere seekable first. Key derivation is pure JavaScript here and takes seconds rather than
-milliseconds at the default cost; run it in a worker and say so in the UI.
+regardless. And key derivation is pure JavaScript here and takes seconds rather than milliseconds at
+the default cost; run it in a worker and say so in the UI. Writing needs nothing seekable, so a
+container may be streamed straight into a download.
 
 ## Reporting progress
 
@@ -143,13 +158,13 @@ The ones worth handling by name:
 | `passphrase-required` | The container is encrypted and no passphrase was given |
 | `wrong-passphrase-or-damaged-header` | The verifier tag did not match. A wrong passphrase, or a damaged header, and the two cannot be told apart from the tag alone |
 | `damaged-payload` | A frame failed authentication, or a compressed payload could not be decoded |
-| `digest-mismatch` | The payload does not match the digest recorded in the header, i.e. bit rot |
+| `digest-mismatch` | The payload does not match the digest recorded in the trailer, i.e. bit rot |
 | `truncated` | The file ends before the container does |
 | `trailing-data` | Bytes follow the final frame |
 | `not-a-database` | The unwrapped payload is not a SQLite database |
 | `output-too-large` | Output hit the ceiling, which is how a crafted compressed payload is stopped |
 | `unsupported-version` | Written by a newer Trilium |
-| `invalid-options` | The caller's options are unusable, e.g. a missing `patchHeader` |
+| `invalid-options` | The caller's options are unusable, e.g. a negative `plaintextSize` |
 
 The full set is the `BackupContainerErrorReason` union.
 

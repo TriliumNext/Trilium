@@ -23,7 +23,7 @@ the companion skills rather than duplicating them:
 - **`ckeditor5-plugin-development`** — its `references/review-checklist.md` (architecture, schema,
   conversion, commands, UI, a11y) and `references/conventions.md` (naming, imports, JSDoc, TS).
 - **`ckeditor5-testing`** — its review checklist and patterns for the test side (Vitest, browser-mode
-  vs. `@vitest/browser-webdriverio` browser mode, real `ClassicEditor.create`).
+  vs. `@vitest/browser-playwright` browser mode, real `ClassicEditor.create`).
 
 Use those for "does this follow the conventions"; use this skill for **how to drive the review**
 and **what subtle things tend to be wrong**.
@@ -79,8 +79,8 @@ plugin; sanity-checking your own feature before opening a PR. For *writing* the 
    `no-legacy-imports`) and `stylelint-config-ckeditor5` — a diff that breaks them fails lint.
 5. **Run the tests for the affected package.** Use Vitest via
    `pnpm --filter @triliumnext/ckeditor5 test` (or `...-math`); the two run sequentially because
-   each spins up headless Chrome. Both use **`@vitest/browser-webdriverio` browser mode** (NOT
-   Playwright) and gate `src/**` at **100% coverage**. Coverage ≠ correctness: confirm
+   each spins up headless Chromium. Both use **`@vitest/browser-playwright` browser mode** and
+   gate `src/**` at **100% coverage**. Coverage ≠ correctness: confirm
    the *change itself* is tested, not just that lines are hit. A bug fix with no new/changed test is
    a red flag even when coverage stays green.
 6. **Observe behavior.** Attach the CKEditor Inspector (model / view / schema / commands), then:

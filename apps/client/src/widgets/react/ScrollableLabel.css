@@ -1,0 +1,17 @@
+/*
+ * One line of text, swiped along where it does not fit. The edges it continues past are faded by
+ * `useScrollFade`, which paints the mask and holds the classes.
+ */
+.scrollable-label {
+    overflow-x: auto;
+    /* The swipe belongs to the label: without this it carries on into whatever the label sits in once
+       the line reaches its end, which on a phone is the page or the gesture that changes tabs. */
+    overscroll-behavior-inline: contain;
+    white-space: nowrap;
+    /* No room for a bar under a single line, and nothing for it to say that the fades do not. */
+    scrollbar-width: none;
+}
+
+.scrollable-label::-webkit-scrollbar {
+    display: none;
+}

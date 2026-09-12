@@ -1,0 +1,14 @@
+/* Under the search bar, in the same corner: where that bar stands, its own height, and as much air
+   again — read from the bar's own top, which on mobile is below the attribution (see index.css). */
+.geo-map-container .geo-result-navigator {
+    --overlay-group-inset-top: calc(
+        var(--geo-map-search-top) + var(--geo-map-toolbar-height) + var(--geo-map-inset));
+}
+
+/* The count is read rather than pressed for its own sake, so it keeps a readout's room rather than
+   an icon button's width. */
+.geo-map-container .geo-result-navigator .geo-result-position {
+    min-width: 0;
+    padding-inline: 10px;
+    font-variant-numeric: tabular-nums;
+}

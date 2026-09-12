@@ -7,7 +7,7 @@ import { copyText, copyTextWithToast } from "./clipboard_ext.js";
 import { t } from "./i18n.js";
 import mime_types from "./mime_types.js";
 import options from "./options.js";
-import { getEffectiveThemeStyle } from "./theme.js";
+import { getEffectiveThemeStyle, onEffectiveThemeStyleChange } from "./theme.js";
 import { isShare } from "./utils.js";
 
 let highlightingLoaded = false;
@@ -20,14 +20,14 @@ function getEffectiveCodeBlockTheme(): string {
     return String(options.get("codeBlockTheme"));
 }
 
-// Re-apply the highlight.js theme when the OS color scheme changes, so that
+// Re-apply the highlight.js theme when the effective color scheme changes, so that
 // "match app appearance" reacts in real time.
 let colorSchemeListenerRegistered = false;
 export function ensureColorSchemeListener() {
     if (colorSchemeListenerRegistered) return;
     colorSchemeListenerRegistered = true;
 
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    onEffectiveThemeStyleChange(() => {
         if (highlightingLoaded && options.get("codeBlockThemeMatchesApp") === "true") {
             loadHighlightingTheme(getEffectiveCodeBlockTheme());
         }

@@ -76,6 +76,9 @@ export default function HelpDialog() {
                     <ul>
                         <KeyboardShortcut commands="editNoteTitle" description={t("help.editNoteTitle")} />
                         <FixedKeyboardShortcut keys={["Ctrl+K"]} description={t("help.createEditLink")} />
+                        {/* The editor's own, like the link above it: registered by the AI assistant
+                            plugin rather than by a keyboard action, so it is not configurable. */}
+                        <FixedKeyboardShortcut keys={["Ctrl+Shift+K"]} description={t("help.openAiAssistant")} />
                         <KeyboardShortcut commands="addLinkToText" description={t("help.createInternalLink")} />
                         <KeyboardShortcut commands="followLinkUnderCursor" description={t("help.followLink")} />
                         <KeyboardShortcut commands="insertDateTimeToText" description={t("help.insertDateTime")} />

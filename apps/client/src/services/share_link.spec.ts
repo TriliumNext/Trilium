@@ -35,4 +35,20 @@ describe("buildShareLink", () => {
         setGlob({ httpBaseUrl: "http://127.0.0.1:37742" });
         expect(buildShareLink("", undefined)).toBe("http://127.0.0.1:37742/share/");
     });
+
+    it("percent-encodes a shareId carrying characters that are not path-safe", () => {
+        // A shareAlias is free-form text, so it can hold spaces, quotes, separators and anything
+        // else a title can. Each branch must produce one path segment the /share/:shareId route
+        // decodes back to the alias.
+        const shareId = `my alias"/?x`;
+        const encoded = "my%20alias%22%2F%3Fx";
+        const syncServerHost = "https://notes.example.com";
+
+        setGlob({ httpBaseUrl: "http://127.0.0.1:37742" });
+        expect(buildShareLink(shareId, syncServerHost)).toBe(`${syncServerHost}/share/${encoded}`);
+        expect(buildShareLink(shareId, undefined)).toBe(`http://127.0.0.1:37742/share/${encoded}`);
+
+        setGlob({});
+        expect(buildShareLink(shareId, null)).toBe(`http://localhost:3000/share/${encoded}`);
+    });
 });

@@ -57,6 +57,38 @@ describe("recovery_codes", () => {
         expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
     });
 
+    it("matches a code without spending it, for the setup wizard that cannot spend one", () => {
+        // The wizard runs against a database that is attached but not migrated, with becca
+        // unloaded, so the write that consuming needs would land as a duplicate option row — and a
+        // code spent there would still read as unspent everywhere else in a sync cluster. It trades
+        // the single use for being able to ask at all. See `setup_auth` in core.
+        cls.init(() => {
+            recoveryCodes.setRecoveryCodes([ CODE_A, CODE_B ].join(","));
+        });
+
+        expect(recoveryCodes.matchesRecoveryCode(CODE_A)).toBe(true);
+        // Still both there, and still answerable: the same code twice over is the price.
+        expect(recoveryCodes.getRecoveryCodes()).toEqual([ CODE_A, CODE_B ]);
+        expect(recoveryCodes.matchesRecoveryCode(CODE_A)).toBe(true);
+
+        expect(recoveryCodes.matchesRecoveryCode(CODE_B)).toBe(true);
+        expect(recoveryCodes.matchesRecoveryCode("CCCCCCCCCCCCCCCCCCCCCC==")).toBe(false);
+        // Refused on shape before anything is decrypted, exactly as the consuming check does.
+        expect(recoveryCodes.matchesRecoveryCode("too-short")).toBe(false);
+    });
+
+    it("answers the same way however many times the shape check is run", () => {
+        // The pattern is shared between the two checks now. Held in a variable with the `g` flag it
+        // would remember where it last matched and answer correctly only every other call.
+        cls.init(() => {
+            recoveryCodes.setRecoveryCodes([ CODE_A, CODE_B ].join(","));
+        });
+
+        for (let attempt = 0; attempt < 4; attempt++) {
+            expect(recoveryCodes.matchesRecoveryCode(CODE_B)).toBe(true);
+        }
+    });
+
     it("rejects codes failing the format regex without consuming a code", () => {
         cls.init(() => {
             recoveryCodes.setRecoveryCodes([ CODE_A, CODE_B ].join(","));

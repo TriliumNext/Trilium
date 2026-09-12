@@ -1,6 +1,9 @@
 import { DateSelectInfo, EventApi } from "fullcalendar";
 
 import FNote from "../../../entities/fnote";
+import attributes from "../../../services/attributes";
+import froca from "../../../services/froca";
+import { AttributeRow, BranchRow } from "../../../services/load_results";
 
 export function parseStartEndDateFromEvent(e: DateSelectInfo | EventApi) {
     const startDate = formatDateToLocalISO(e.start);
@@ -57,6 +60,57 @@ export function formatTimeToLocalISO(date: Date | null | undefined) {
     return localDate.toISOString()
         .split("T")[1]
         .substring(0, 5);
+}
+
+/**
+ * Whether an attribute change reaches any of the notes the calendar draws, and so asks for the
+ * events to be built again.
+ *
+ * A label written on the note itself is the plain case, and the only one this used to answer. But
+ * everything the event builder reads — the colour, the icon, the dates, the promoted attributes —
+ * it reads through inheritance (`getLabelValue`), so the same value can just as well come from an
+ * inheritable label on an ancestor or from a template, neither of which is one of the drawn notes.
+ * A `#color` moved onto the collection note itself changed every chip's colouring and refreshed
+ * nothing.
+ *
+ * Rows naming a drawn note outright are answered by a set lookup, and only the rest are put to
+ * {@link attributes.isAffecting}, which walks the very inheritance the builder reads through.
+ */
+export function isAttributeChangeAffecting(attributeRows: AttributeRow[], noteIds: Iterable<string>) {
+    const drawnNoteIds = new Set(noteIds);
+
+    return attributeRows.some((row) => {
+        if (row.noteId && drawnNoteIds.has(row.noteId)) {
+            return true;
+        }
+
+        for (const noteId of drawnNoteIds) {
+            if (attributes.isAffecting(row, froca.getNoteFromCache(noteId))) {
+                return true;
+            }
+        }
+
+        return false;
+    });
+}
+
+/**
+ * Whether a note has been filed somewhere a calendar root draws from, and so asks for the events to
+ * be built again — a day note made by a click on an empty day, a note dropped under one afterwards,
+ * or either of them taken away.
+ *
+ * Asked of the branches rather than of the ids because a root builds its events from the calendar
+ * note and the range it is showing, not from a list: the day note just made is in no list yet, and
+ * the list the collection keeps is a refresh behind at this point anyway. Anywhere within the
+ * journal counts, a day note being reachable only through the year and month notes above it —
+ * whichever of the three the reload happens to name, the branch of the outermost new one hangs off
+ * something already known.
+ */
+export function isBranchChangeAffecting(branchRows: BranchRow[], rootNoteId: string, noteIds: Iterable<string>) {
+    const drawnNoteIds = new Set(noteIds);
+
+    return branchRows.some(({ parentNoteId }) =>
+        parentNoteId === rootNoteId || (!!parentNoteId && drawnNoteIds.has(parentNoteId)));
 }
 
 /** The labels the calendar draws an event by, each of which a note may rename for itself via the

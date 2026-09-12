@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildNote } from "../test/easy-froca";
 import froca from "./froca";
+import noteAttributeCache from "./note_attribute_cache.js";
 import server from "./server.js";
 import ws from "./ws.js";
 
@@ -20,10 +21,17 @@ const h = vi.hoisted(() => {
         protectedAvailable: { value: false },
         triggerEvent: vi.fn(),
         triggerCommand: vi.fn(),
-        showMessage: vi.fn()
+        showMessage: vi.fn(),
+        cloneNoteToParentNote: vi.fn(async (..._args: unknown[]) => {})
     };
 });
-const { tabManager, protectedAvailable, triggerEvent, triggerCommand, showMessage } = h;
+const { tabManager, protectedAvailable, triggerEvent, triggerCommand, showMessage, cloneNoteToParentNote } = h;
+
+vi.mock("./branches.js", () => ({
+    default: {
+        cloneNoteToParentNote: (...args: unknown[]) => h.cloneNoteToParentNote(...args)
+    }
+}));
 
 vi.mock("../components/app_context.js", () => ({
     default: {
@@ -205,20 +213,55 @@ describe("createNote", () => {
         );
     });
 
-    it("disables saveSelection when the active context note type is not text", async () => {
+    it("saves the selection of the editor it was handed, whatever the active context shows", async () => {
+        // The editor handing us the selection belongs to a split / the quick editor / an embedded
+        // pane, so the active context is a different note of a different type entirely (#9890).
         setActiveContext(true);
-        tabManager.activeNoteType = "code";
+        tabManager.activeNoteType = "book";
         const removeSelection = vi.fn();
         const textEditor = {
-            getSelectedHtml: vi.fn(() => "<h1>x</h1>"),
+            getSelectedHtml: vi.fn(() => "<h1>Heading</h1><p>body</p>"),
             removeSelection
         } as any;
 
         await noteCreateService.createNote("root", { saveSelection: true, textEditor });
 
-        // selection parsing was skipped, so getSelectedHtml/removeSelection untouched
-        expect(textEditor.getSelectedHtml).not.toHaveBeenCalled();
+        expect(server.post).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ title: "Heading", content: "<p>body</p>" }),
+            undefined
+        );
+        expect(removeSelection).toHaveBeenCalled();
+    });
+
+    it("creates a plain empty note without touching the source when there is nothing selected", async () => {
+        setActiveContext(true);
+        const removeSelection = vi.fn();
+        const textEditor = {
+            getSelectedHtml: vi.fn(() => ""),
+            removeSelection
+        } as any;
+
+        await noteCreateService.createNote("root", { saveSelection: true, textEditor });
+
+        expect(server.post).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ title: undefined, content: "" }),
+            undefined
+        );
         expect(removeSelection).not.toHaveBeenCalled();
+    });
+
+    it("does not attempt to save a selection when no text editor was passed", async () => {
+        setActiveContext(true);
+
+        await noteCreateService.createNote("root", { saveSelection: true, title: "Plain" });
+
+        expect(server.post).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ title: "Plain", content: "" }),
+            undefined
+        );
     });
 
     it("honors an explicit target and targetBranchId in the URL", async () => {
@@ -229,6 +272,33 @@ describe("createNote", () => {
             expect.anything(),
             undefined
         );
+    });
+});
+
+describe("createTemplateNote", () => {
+    /**
+     * A template is a note carrying `#template`, and it is opened in a popup rather than in the
+     * tab: what asked for one is usually a dialog the reader is still standing in.
+     */
+    it("makes a note carrying the label under the given one, and opens it in a popup", async () => {
+        const result = await noteCreateService.createTemplateNote("board1", "New card template");
+
+        expect(server.post).toHaveBeenCalledWith(
+            expect.stringContaining("notes/board1/children"),
+            expect.objectContaining({
+                title: "New card template",
+                type: "text",
+                attributes: [
+                    { type: "label", name: "template", value: "", isInheritable: false }
+                ]
+            }),
+            undefined
+        );
+        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", {
+            noteIdOrPath: NOTE_ID,
+            showNoteTypeSwitcher: true
+        });
+        expect(result).toBe(childNote);
     });
 });
 
@@ -285,6 +355,97 @@ describe("chooseNoteType", () => {
         const payload = { success: true, noteType: "render" };
         triggerCommand.mockImplementation((_name: string, data: any) => data.callback(payload));
         await expect(noteCreateService.chooseNoteType()).resolves.toEqual(payload);
+    });
+
+    describe("template default parent", () => {
+        // Templates whose ~template:newNoteDefaultParent points at notes reachable from root, so
+        // that they have note paths.
+        const root = buildNote({
+            id: "root",
+            title: "root",
+            children: [
+                { id: "people", title: "People" },
+                { id: "advisors", title: "Advisors" },
+                { id: "person-tpl", title: "Person", "#template": "", "~template:newNoteDefaultParent": "people" },
+                { id: "multi-tpl", title: "Multi", "#template": "", "~template:newNoteDefaultParent": ["people", "advisors"] },
+                { id: "tpl-folder", title: "Templates", "~template:newNoteDefaultParent(inheritable)": "advisors", children: [
+                    { id: "inheriting-tpl", title: "Inheriting", "#template": "" },
+                    { id: "overriding-tpl", title: "Overriding", "#template": "", "~template:newNoteDefaultParent": "people" }
+                ] },
+                { id: "derived-tpl", title: "Derived", "#template": "", "~template": "person-tpl" },
+                { id: "derived2-tpl", title: "Derived from folder", "#template": "", "~template": "inheriting-tpl" },
+                { id: "plain-tpl", title: "Plain", "#template": "" }
+            ]
+        });
+        expect(root.noteId).toBe("root");
+
+        function choose(response: Record<string, unknown>) {
+            triggerCommand.mockImplementation((_name: string, data: any) => data.callback(response));
+            return noteCreateService.chooseNoteType();
+        }
+
+        it("routes a template without an explicit parent into the template's default parent", async () => {
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "person-tpl" }))
+                .resolves.toEqual({
+                    success: true, noteType: "text", templateNoteId: "person-tpl",
+                    notePath: "root/people", cloneToNoteIds: []
+                });
+        });
+
+        it("reports every default parent: the first as the note path, the rest as clone targets", async () => {
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "multi-tpl" }))
+                .resolves.toMatchObject({ notePath: "root/people", cloneToNoteIds: ["advisors"] });
+        });
+
+        it("ignores a destination flowing through ~template, whatever its inheritable flag", async () => {
+            // easy-froca seeds owned attributes into the attribute cache, which would mask template
+            // inheritance; recomputing resolves it the way the application does.
+            noteAttributeCache.invalidate();
+
+            // derived-tpl's base owns the relation without the flag; derived2-tpl's base sits in a
+            // folder whose relation is inheritable, so the flag arrives intact and only the
+            // owner-is-an-ancestor check tells the two inheritance paths apart.
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "derived-tpl" }))
+                .resolves.toEqual({ success: true, noteType: "text", templateNoteId: "derived-tpl" });
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "derived2-tpl" }))
+                .resolves.toEqual({ success: true, noteType: "text", templateNoteId: "derived2-tpl" });
+        });
+
+        it("uses an inherited default parent, unless the template owns one, which replaces it", async () => {
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "inheriting-tpl" }))
+                .resolves.toMatchObject({ notePath: "root/advisors", cloneToNoteIds: [] });
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "overriding-tpl" }))
+                .resolves.toMatchObject({ notePath: "root/people", cloneToNoteIds: [] });
+        });
+
+        it("keeps a parent the user picked over the template's default parent", async () => {
+            await expect(choose({
+                success: true, noteType: "text", templateNoteId: "person-tpl", notePath: "root/elsewhere"
+            })).resolves.toMatchObject({ notePath: "root/elsewhere" });
+        });
+
+        it("leaves the path unset without a template or without a default parent on it", async () => {
+            await expect(choose({ success: true, noteType: "text" }))
+                .resolves.toEqual({ success: true, noteType: "text" });
+            await expect(choose({ success: true, noteType: "text", templateNoteId: "plain-tpl" }))
+                .resolves.not.toHaveProperty("notePath", expect.any(String));
+        });
+
+        it("creates the note in the first default parent and clones it into the others through createNoteWithTypePrompt", async () => {
+            setActiveContext(true);
+            triggerCommand.mockImplementation((_name: string, data: any) => {
+                data.callback({ success: true, noteType: "text", templateNoteId: "multi-tpl" });
+            });
+
+            await noteCreateService.createNoteWithTypePrompt("fallback-parent", {});
+
+            expect(server.post).toHaveBeenCalledWith(
+                `notes/people/children?target=into&targetBranchId=`,
+                expect.objectContaining({ templateNoteId: "multi-tpl" }),
+                undefined
+            );
+            expect(cloneNoteToParentNote).toHaveBeenCalledExactlyOnceWith(NOTE_ID, "advisors");
+        });
     });
 });
 

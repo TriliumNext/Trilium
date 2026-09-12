@@ -69,6 +69,10 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     applyLinkEmbeds($renderedContent[0]);
     await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
     await formatCodeBlocks($renderedContent);
+
+    if (options.trim) {
+        $renderedContent.find("style").remove();
+    }
 }
 
 async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<string>, expandNested: boolean) {
@@ -139,17 +143,22 @@ function replaceIncludesWithReferenceLinks(contentEl: HTMLElement) {
 
 /** Rewrite the code block from <pre><code> to <div> in order not to apply a codeblock style to it. */
 export async function rewriteMermaidDiagramsInContainer(container: HTMLDivElement) {
-    const mermaidBlocks = container.querySelectorAll('pre:has(code[class="language-mermaid"])');
-    if (!mermaidBlocks.length) return;
-    const nodes: HTMLElement[] = [];
+    const candidates = container.querySelectorAll("pre:has(code)");
+    if (!candidates.length) return;
 
-    for (const mermaidBlock of mermaidBlocks) {
+    for (const mermaidBlock of candidates) {
+        const code = mermaidBlock.querySelector("code");
+        /* v8 ignore next -- defensive: the `:has(code)` selector guarantees a `<code>` child */
+        if (!code) continue;
+
+        if (!/(?:^|\s)language-mermaid(?:\s|$)/.test(code.className)) {
+            continue;
+        }
+
         const div = document.createElement("div");
         div.classList.add("mermaid-diagram");
-        /* v8 ignore next -- defensive fallback: the `:has(code[...])` selector guarantees a `<code>` child whose innerHTML is always a string */
-        div.innerHTML = mermaidBlock.querySelector("code")?.innerHTML ?? "";
+        div.textContent = code.textContent;
         mermaidBlock.replaceWith(div);
-        nodes.push(div);
     }
 }
 

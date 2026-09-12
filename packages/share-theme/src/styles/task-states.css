@@ -72,6 +72,8 @@ html.theme-dark [data-trilium-task-state] {
 .ck-content.ck-content .todo-list li .todo-list__label input[type="checkbox"] {
     position: absolute;
     top: calc((1lh - var(--ck-content-todo-list-checkmark-size)) / 2);
+    inset-inline-start: -25px;
+    inset-inline-end: auto;
     /* `1lh` must resolve against the text's line height, not the UA form-control
        font, and the UA's 3px checkbox margins would offset the absolute position. */
     margin: 0;

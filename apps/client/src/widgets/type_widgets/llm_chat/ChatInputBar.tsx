@@ -1,6 +1,6 @@
 import "./ChatInputBar.css";
 
-import { AttributeEditor as CKEditorAttributeEditor, CHAT_INPUT_PLUGINS, type CKTextEditor, type MentionFeed } from "@triliumnext/ckeditor5";
+import type { AttributeEditor as CKEditorAttributeEditor, CKTextEditor, MentionFeed } from "@triliumnext/ckeditor5";
 import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
@@ -24,24 +24,21 @@ import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { shortModelName } from "./model_name.js";
 import { SafeImage } from "./retry_image.js";
 import { useChatAttachments } from "./useChatAttachments.js";
-import { type ModelOption, resolveSelectedModel, type UseLlmChatReturn } from "./useLlmChat.js";
+import { type ModelOption, resolveSelectedModel } from "../../../services/llm_providers.js";
+import { type UseLlmChatReturn } from "./useLlmChat.js";
 
 const READ_ONLY_LOCK = "llm-chat-streaming";
 
 const mentionFeeds: MentionFeed[] = [
     {
         marker: "@",
-        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText),
+        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText, false),
         itemRenderer: (rawItem) => {
             const item = rawItem as Suggestion;
             const itemElement = document.createElement("button");
 
             const iconElement = document.createElement("span");
-            let iconClass = item.icon ?? "bx bx-note";
-            if (item.action === "create-note") {
-                iconClass = "bx bx-plus";
-            }
-            iconElement.className = iconClass;
+            iconElement.className = item.icon ?? "bx bx-note";
 
             itemElement.append(iconElement, document.createTextNode(" "));
             const titleContainer = document.createElement("span");
@@ -57,6 +54,12 @@ const mentionFeeds: MentionFeed[] = [
 /** Format token count with thousands separators */
 function formatTokenCount(tokens: number): string {
     return tokens.toLocaleString();
+}
+
+/** The pieces of the editor package this bar needs, once it has been fetched. */
+interface ChatEditorModule {
+    editor: typeof CKEditorAttributeEditor;
+    plugins: typeof import("@triliumnext/ckeditor5")["CHAT_INPUT_PLUGINS"];
 }
 
 interface ChatInputBarProps {
@@ -100,6 +103,21 @@ export default function ChatInputBar({
     const editorApiRef = useRef<CKEditorApi>();
     const editorInstanceRef = useRef<CKTextEditor>();
     const [ uiLanguage ] = useTriliumOption("locale");
+    // CKEditor is the heaviest module the client has, and importing it statically here put it
+    // on the startup critical path: the right panel mounts SidebarChat, which pulls this bar,
+    // which pulled the editor — and its math plugin, and mathlive — before the app finished
+    // rendering. Fetching it on mount keeps that chain off boot. Nothing waits that did not
+    // wait already: the wrapper builds the editor from an effect after its own dynamic import.
+    const [ ckEditor, setCkEditor ] = useState<ChatEditorModule>();
+    useEffect(() => {
+        let cancelled = false;
+        void import("@triliumnext/ckeditor5").then(({ AttributeEditor, CHAT_INPUT_PLUGINS }) => {
+            if (!cancelled) {
+                setCkEditor({ editor: AttributeEditor, plugins: CHAT_INPUT_PLUGINS });
+            }
+        });
+        return () => { cancelled = true; };
+    }, []);
     // Always-fresh submit handler for the editor's enter listener.
     const submitRef = useRef<(e: Event) => void>(() => {});
 
@@ -296,83 +314,89 @@ export default function ChatInputBar({
                         ))}
                     </div>
                 )}
-                <CKEditor
-                    apiRef={editorApiRef}
-                    className="llm-chat-input"
-                    editor={CKEditorAttributeEditor}
-                    config={{
-                    // Markdown autoformatting (block quotes, code fences, lists, links) without a toolbar.
-                        extraPlugins: CHAT_INPUT_PLUGINS,
-                        toolbar: { items: [] },
-                        placeholder: t("llm_chat.placeholder"),
-                        mention: { feeds: mentionFeeds },
-                        licenseKey: "GPL"
-                    }}
-                    // The strings the box shows of its own — the link balloon it raises on Ctrl+K —
-                    // in the language the rest of Trilium is read in; the dictionary is fetched for
-                    // it before the editor is raised.
-                    uiLanguage={uiLanguage as DISPLAYABLE_LOCALE_IDS}
-                    onChange={(html) => {
-                        chat.setInput(editorHtmlToMarkdown(html ?? ""));
-                    }}
-                    onInitialized={(editor) => {
-                        editorInstanceRef.current = editor;
-                        const insertNewBlock = () => {
-                            insertNewBlockCommand(editor);
-                            editor.editing.view.scrollToTheSelection();
-                        };
-                        editor.editing.view.document.on(
-                            "enter",
-                            (event, data) => {
-                            // Inside a code block, don't submit — let CodeBlock turn Enter/Shift+Enter
-                            // into newlines, so multi-line snippets can be typed.
-                                if (isSelectionInCodeBlock(editor)) return;
-                                // Shift+Enter builds blocks — a new list item / paragraph, or exiting an empty
-                                // list item / code-block line — so lists and blocks can be built while plain
-                                // Enter submits. Normally handled by the keydown keystroke below; this is a
-                                // fallback for the rare case where the keystroke doesn't cancel the event.
-                                if (data.isSoft) {
+                {!ckEditor ? (
+                    // Holds the input's place for the moment the editor package is in flight, so
+                    // the bar does not resize under the user.
+                    <div className="llm-chat-input" />
+                ) : (
+                    <CKEditor
+                        apiRef={editorApiRef}
+                        className="llm-chat-input"
+                        editor={ckEditor.editor}
+                        config={{
+                        // Markdown autoformatting (block quotes, code fences, lists, links) without a toolbar.
+                            extraPlugins: ckEditor.plugins,
+                            toolbar: { items: [] },
+                            placeholder: t("llm_chat.placeholder"),
+                            mention: { feeds: mentionFeeds },
+                            licenseKey: "GPL"
+                        }}
+                        // The strings the box shows of its own — the link balloon it raises on Ctrl+K —
+                        // in the language the rest of Trilium is read in; the dictionary is fetched for
+                        // it before the editor is raised.
+                        uiLanguage={uiLanguage as DISPLAYABLE_LOCALE_IDS}
+                        onChange={(html) => {
+                            chat.setInput(editorHtmlToMarkdown(html ?? ""));
+                        }}
+                        onInitialized={(editor) => {
+                            editorInstanceRef.current = editor;
+                            const insertNewBlock = () => {
+                                insertNewBlockCommand(editor);
+                                editor.editing.view.scrollToTheSelection();
+                            };
+                            editor.editing.view.document.on(
+                                "enter",
+                                (event, data) => {
+                                // Inside a code block, don't submit — let CodeBlock turn Enter/Shift+Enter
+                                // into newlines, so multi-line snippets can be typed.
+                                    if (isSelectionInCodeBlock(editor)) return;
+                                    // Shift+Enter builds blocks — a new list item / paragraph, or exiting an empty
+                                    // list item / code-block line — so lists and blocks can be built while plain
+                                    // Enter submits. Normally handled by the keydown keystroke below; this is a
+                                    // fallback for the rare case where the keystroke doesn't cancel the event.
+                                    if (data.isSoft) {
+                                        event.stop();
+                                        data.preventDefault();
+                                        insertNewBlock();
+                                        return;
+                                    }
+                                    // Plain Enter submits.
                                     event.stop();
                                     data.preventDefault();
-                                    insertNewBlock();
-                                    return;
-                                }
-                                // Plain Enter submits.
-                                event.stop();
-                                data.preventDefault();
-                                submitRef.current(new Event("submit"));
-                            },
-                            { priority: "high" }
-                        );
-                        // Shift/Ctrl/Alt+Enter all insert a new block. Bind them on keydown via keystrokes
-                        // rather than the `enter` view event: modified Enter combos don't fire that event, and
-                        // — crucially for Shift+Enter — CodeBlock consumes the `enter` event in its own context
-                        // (and stops it) before our handler runs, so intercepting on keydown is the only way to
-                        // let Shift+Enter leave a code block from its empty last line.
-                        editor.keystrokes.set("Shift+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
-                        editor.keystrokes.set("Ctrl+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
-                        editor.keystrokes.set("Alt+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
-                        // Backspace at the very start of a list item leaves the list (outdent → paragraph)
-                        // instead of CKEditor's default, which merges the item into the previous one as a
-                        // bullet-less continuation block — confusing in a simple chat input. The list handles
-                        // this on the `delete` view event (fired from `beforeinput`), so intercepting on the
-                        // earlier `keydown` and cancelling suppresses that event before the list can merge.
-                        editor.keystrokes.set("Backspace", (_keyEvtData, cancel) => {
-                            if (outdentListItemAtStart(editor)) cancel();
-                        });
-                        // Capture pasted images at the DOM layer so CKEditor doesn't
-                        // try to embed them as base64 data URLs inside the editor.
-                        // Go through `pasteHandlerRef` so this one-time registration
-                        // always sees the latest closure (chatNoteId arrives via a
-                        // useEffect in the parent, after first render).
-                        const editable = editor.editing.view.getDomRoot();
-                        editable?.addEventListener(
-                            "paste",
-                            (e) => attachments.pasteHandlerRef.current(e as ClipboardEvent),
-                            { capture: true }
-                        );
-                    }}
-                />
+                                    submitRef.current(new Event("submit"));
+                                },
+                                { priority: "high" }
+                            );
+                            // Shift/Ctrl/Alt+Enter all insert a new block. Bind them on keydown via keystrokes
+                            // rather than the `enter` view event: modified Enter combos don't fire that event, and
+                            // — crucially for Shift+Enter — CodeBlock consumes the `enter` event in its own context
+                            // (and stops it) before our handler runs, so intercepting on keydown is the only way to
+                            // let Shift+Enter leave a code block from its empty last line.
+                            editor.keystrokes.set("Shift+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
+                            editor.keystrokes.set("Ctrl+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
+                            editor.keystrokes.set("Alt+Enter", (_keyEvtData, cancel) => { cancel(); insertNewBlock(); });
+                            // Backspace at the very start of a list item leaves the list (outdent → paragraph)
+                            // instead of CKEditor's default, which merges the item into the previous one as a
+                            // bullet-less continuation block — confusing in a simple chat input. The list handles
+                            // this on the `delete` view event (fired from `beforeinput`), so intercepting on the
+                            // earlier `keydown` and cancelling suppresses that event before the list can merge.
+                            editor.keystrokes.set("Backspace", (_keyEvtData, cancel) => {
+                                if (outdentListItemAtStart(editor)) cancel();
+                            });
+                            // Capture pasted images at the DOM layer so CKEditor doesn't
+                            // try to embed them as base64 data URLs inside the editor.
+                            // Go through `pasteHandlerRef` so this one-time registration
+                            // always sees the latest closure (chatNoteId arrives via a
+                            // useEffect in the parent, after first render).
+                            const editable = editor.editing.view.getDomRoot();
+                            editable?.addEventListener(
+                                "paste",
+                                (e) => attachments.pasteHandlerRef.current(e as ClipboardEvent),
+                                { capture: true }
+                            );
+                        }}
+                    />
+                )}
                 <input
                     ref={attachments.fileInputRef}
                     type="file"

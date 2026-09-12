@@ -12,19 +12,19 @@
     }
 }
 
+/* Pinned by the corner it names (see `placement` on OverlayControlGroup); left here is what it
+   stands above and how it fades. */
 .shortcut-hint-button-group {
-    inset-inline-end: 10px;
     z-index: 2;
     transition: opacity .3s;
-    position: absolute;
-    top: 10px;
 }
 
-/* If the floating buttons are displayed, reposition the button group to avoid overlapping
- * them on the old layout or popup editor. */
+/* If the floating buttons are displayed, the group keeps further from the head of the note so as not
+ * to overlap them on the old layout or popup editor — said as the room it keeps rather than as a
+ * placement of its own, so that where it stands is still the one thing the group itself says. */
 :is(.note-split, .popup-editor-dialog > .modal-dialog > .modal-content > .modal-body):has(
     > .floating-buttons > .floating-buttons-children.temporarily-hidden,
     > .floating-buttons > .floating-buttons-children > .close-floating-buttons:not(:first-child)
 ) .shortcut-hint-button-group {
-    top: 60px;
+    --overlay-group-inset-top: 60px;
 }

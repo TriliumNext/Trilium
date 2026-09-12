@@ -28,6 +28,52 @@ async function readNames(buffer: Uint8Array, encoding?: string): Promise<string[
     return names;
 }
 
+/**
+ * Builds a ZIP whose entry names are raw bytes with the language-encoding flag (general purpose bit 11)
+ * *clear* — what a legacy Windows archiver writes for a non-ASCII name, and the only case the encoding
+ * detection is meant to rescue. fflate always writes UTF-8 and sets that flag, so the names are patched
+ * in afterwards: each replacement must be the same byte length as its ASCII placeholder so every header
+ * offset stays valid (the file name is not covered by the CRC or the recorded sizes). An entry given no
+ * `nameBytes` is left exactly as fflate wrote it, so one archive can mix both conventions.
+ */
+function makeLegacyZip(entries: { placeholder: string; nameBytes?: number[] }[]): Uint8Array {
+    const zip = zipSync(Object.fromEntries(entries.map(({ placeholder }) => [placeholder, strToU8("x")])));
+    const byPlaceholder = new Map(
+        entries.flatMap((e) => (e.nameBytes ? [[e.placeholder, e.nameBytes] as const] : []))
+    );
+    const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
+
+    for (let i = 0; i + 4 <= zip.length; i++) {
+        const signature = view.getUint32(i, true);
+        const isLocalHeader = signature === 0x04034b50;
+        if (!isLocalHeader && signature !== 0x02014b50) {
+            continue;
+        }
+
+        // Field offsets differ between the local file header and the central directory header.
+        const flagsOffset = i + (isLocalHeader ? 6 : 8);
+        const nameLength = view.getUint16(i + (isLocalHeader ? 26 : 28), true);
+        const nameOffset = i + (isLocalHeader ? 30 : 46);
+        const name = String.fromCharCode(...zip.subarray(nameOffset, nameOffset + nameLength));
+        const replacement = byPlaceholder.get(name);
+
+        if (!replacement) {
+            continue;
+        }
+        if (replacement.length !== nameLength) {
+            throw new Error(`Replacement for '${name}' must be ${nameLength} bytes, got ${replacement.length}.`);
+        }
+
+        zip.set(replacement, nameOffset);
+        view.setUint16(flagsOffset, view.getUint16(flagsOffset, true) & ~0x800, true);
+    }
+
+    return zip;
+}
+
+// "啊.txt" as a legacy Chinese-Windows archiver writes it: 0xB0 0xA1 is the GBK encoding of 啊.
+const GBK_NAME_BYTES = [0xb0, 0xa1, 0x2e, 0x74, 0x78, 0x74];
+
 describe("BrowserZipArchive", () => {
     it("appends string and binary entries and sends them to a send()-style destination", async () => {
         const archive = provider.createZipArchive();
@@ -151,24 +197,30 @@ describe("BrowserZipProvider.detectFilenameEncoding", () => {
     });
 
     it("detects GBK when a filename's raw bytes are a valid GBK pair", async () => {
-        // "°¡" round-trips through fflate as char codes 0xB0/0xA1, whose raw bytes
-        // [0xB0, 0xA1] are invalid UTF-8 but a valid GBK character.
-        const zip = makeZip({ "°¡.txt": "x" });
+        // Raw bytes [0xB0, 0xA1] are invalid UTF-8 but a valid GBK character.
+        const zip = makeLegacyZip([{ placeholder: "AB.txt", nameBytes: GBK_NAME_BYTES }]);
         expect(await provider.detectFilenameEncoding(zip)).toBe("gbk");
     });
 
     it("skips a failing candidate and detects a later one", async () => {
-        // "°.txt" → raw bytes [0xB0, 0x2E, ...]: 0x2E is an invalid GBK trail
-        // (so GBK is skipped), but 0xB0 is a valid single-byte Shift_JIS katakana.
-        const zip = makeZip({ "°.txt": "x" });
+        // Raw bytes [0xB0, 0x2E, ...]: 0x2E is an invalid GBK trail (so GBK is skipped),
+        // but 0xB0 is a valid single-byte Shift_JIS katakana.
+        const zip = makeLegacyZip([{ placeholder: "A.txt", nameBytes: [0xb0, 0x2e, 0x74, 0x78, 0x74] }]);
         expect(await provider.detectFilenameEncoding(zip)).toBe("shift_jis");
     });
 
     it("falls back to utf-8 when no candidate encoding matches", async () => {
         // Raw byte 0xFE is invalid UTF-8 and an incomplete/invalid lead byte in
         // every CJK candidate (GBK/Shift_JIS/EUC-KR/Big5), so detection gives up.
-        const zip = makeZip({ [String.fromCharCode(0xfe)]: "x" });
+        const zip = makeLegacyZip([{ placeholder: "A", nameBytes: [0xfe] }]);
         expect(await provider.detectFilenameEncoding(zip)).toBe("utf-8");
+    });
+
+    it("does not mistake a UTF-8-flagged archive for a CJK encoding", async () => {
+        // "°" is one byte in Latin-1 but two in UTF-8. Reading a flagged entry's name back as if its
+        // char codes were raw bytes makes detection see invalid UTF-8, pick GBK, and then mis-decode
+        // every other name in the archive.
+        expect(await provider.detectFilenameEncoding(makeZip({ "40°C.txt": "x" }))).toBe("utf-8");
     });
 
     it("rejects when the archive cannot be read during detection", async () => {
@@ -189,6 +241,31 @@ describe("BrowserZipProvider.detectFilenameEncoding", () => {
         } finally {
             globalThis.TextDecoder = RealTextDecoder;
         }
+    });
+});
+
+describe("BrowserZipProvider UTF-8 filenames", () => {
+    it("preserves a character outside Latin-1 in a UTF-8-flagged entry name", async () => {
+        // An export names its entries after note titles, so a curly apostrophe (U+2019) is routine.
+        // fflate sets the language-encoding flag for such an entry and hands back an already-decoded
+        // string; truncating its char codes to single bytes silently corrupts the name, which then
+        // matches nothing in !!!meta.json and derails the import.
+        const name = "Private Murnahan’s Holotape.html";
+        expect(await readNames(makeZip({ [name]: "x" }))).toEqual([name]);
+    });
+
+    it("keeps UTF-8-flagged names intact even when the archive also needs a legacy encoding", async () => {
+        // A mixed archive: one entry written by a legacy archiver (raw GBK bytes, flag clear) and one
+        // written with the flag set. Detection settles on GBK for the former; the latter must not be
+        // re-decoded through it.
+        const zip = makeLegacyZip([
+            { placeholder: "AB.txt", nameBytes: GBK_NAME_BYTES },
+            { placeholder: "Café.txt" } // no nameBytes: stays as fflate wrote it, flag and all
+        ]);
+        const encoding = await provider.detectFilenameEncoding(zip);
+
+        expect(encoding).toBe("gbk");
+        expect((await readNames(zip, encoding)).sort()).toEqual(["Café.txt", "啊.txt"]);
     });
 });
 

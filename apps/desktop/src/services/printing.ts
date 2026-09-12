@@ -6,7 +6,7 @@ import path from "path";
 
 import { TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
 
-// Preload bundle path — built next to main.cjs in production by
+// Preload bundle path — built next to main.mjs in production by
 // apps/desktop/scripts/build.ts, or compiled in-place by the dev runner
 // (scripts/electron-start.mts) into apps/desktop/src/preload.compiled.cjs.
 // Print windows share the same preload as the main window so the renderer
@@ -19,7 +19,7 @@ let preloadScriptCache: string | undefined;
 function getPreloadScript(): string {
     if (preloadScriptCache === undefined) {
         // Dev: this file lives one directory below the preload bundle.
-        // Prod: this file is bundled into dist/main.cjs alongside preload.cjs
+        // Prod: this file is bundled into dist/main.mjs alongside preload.cjs
         //   (no `..` — keep this synced with apps/desktop/src/services/window.ts).
         /* v8 ignore next 5 -- prod preload arm is cache-once (only the first ternary evaluation counts); covered by the production build, not unit tests */
         preloadScriptCache = path.resolve(

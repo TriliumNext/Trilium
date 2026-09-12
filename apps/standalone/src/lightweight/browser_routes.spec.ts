@@ -1,4 +1,4 @@
-import { routes, sql_init } from "@triliumnext/core";
+import { consistency_checks, getSql, routes, sql_init } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BrowserRouter } from "./browser_router.js";
@@ -26,6 +26,46 @@ describe("registerRoutes (real wiring)", () => {
         registerRoutes(fresh);
         const res = await fresh.dispatch("GET", "http://localhost/api/system-checks");
         expect(parseJson(res.body)).toEqual({ isCpuArchMismatch: false });
+    });
+
+    // The model-selection screen calls this while adding a provider. It is an async
+    // handler in the shared table, so reaching its validation error here proves the
+    // browser router registers and awaits it — a provider name is rejected before the
+    // route reaches for the AI SDK, so no provider is contacted.
+    it("serves the LLM provider-models route", async () => {
+        const res = await router.dispatch("POST", "http://localhost/api/llm-chat/provider-models", {});
+        expect(res.status).toBe(400);
+        expect(text(res.body)).toContain("provider is required");
+    });
+
+    // Streaming is registered here rather than in the shared table, so nothing
+    // else would catch its loss. Rejected for a missing stream id, which the
+    // handler checks before starting anything — no completion is begun.
+    it("serves the LLM stream routes, which only this runtime has", async () => {
+        const start = await router.dispatch("POST", "http://localhost/api/llm-chat/stream-start", {});
+        expect(start.status).toBe(400);
+        expect(text(start.body)).toContain("streamId is required");
+
+        // Aborting an id that is not running is a no-op rather than an error, so
+        // reaching a 200 here is what proves the route is wired at all.
+        const abort = await router.dispatch("POST", "http://localhost/api/llm-chat/stream-abort", { streamId: "nope" });
+        expect(abort.status).toBe(200);
+    });
+
+    // Registered here rather than in the shared table, so nothing else would catch their loss. Both
+    // run against the browser's own SQLite: the checks the server offers that need no file.
+    it("serves the maintenance routes, and no compaction", async () => {
+        const integrity = await router.dispatch("GET", "http://localhost/api/database/check-integrity");
+        expect(parseJson(integrity.body)).toEqual({ results: [ { integrity_check: "ok" } ] });
+
+        // Awaited rather than left running: the response arriving is what says the checks are over.
+        const consistency = vi.spyOn(consistency_checks, "runOnDemandChecks").mockResolvedValue(undefined);
+        expect((await router.dispatch("POST", "http://localhost/api/database/find-and-fix-consistency-issues", {})).status).toBe(200);
+        expect(consistency).toHaveBeenCalledWith(true);
+
+        // Compacting rebuilds through a temporary store this build keeps in memory, so it is left
+        // to the platforms that have somewhere to put it.
+        expect((await router.dispatch("POST", "http://localhost/api/database/vacuum-database", {})).status).toBe(404);
     });
 
     it("serves the compatibility dummy routes", async () => {
@@ -121,7 +161,7 @@ describe("route wrapper branches (via controlled handlers)", () => {
     function buildRouter(): BrowserRouter {
         vi.spyOn(routes, "buildSharedApiRoutes").mockImplementation((received: RouteCtx) => {
             ctx = received;
-            const { route, asyncRoute, apiRoute, asyncApiRoute, apiResultHandler } = received;
+            const { route, asyncRoute, asyncRouteWithoutTransaction, apiRoute, asyncApiRoute, apiResultHandler } = received;
 
             apiRoute("get", "/t/api", (req: { originalUrl: string }) => ({ url: req.originalUrl }));
             asyncApiRoute("get", "/t/asyncapi", () => ({ ok: true }));
@@ -143,6 +183,7 @@ describe("route wrapper branches (via controlled handlers)", () => {
             asyncRoute("get", "/t/async-obj", [], async () => ({ z: 9 }), apiResultHandler);
             asyncRoute("get", "/t/async-res", [], async (_req: unknown, res: MockRes) => { res.send("async-body"); });
             asyncRoute("get", "/t/async-noresult", [], async () => ({ done: true }));
+            asyncRouteWithoutTransaction("get", "/t/async-no-tx", [], async () => ({ bare: true }), apiResultHandler);
         });
         return createConfiguredRouter();
     }
@@ -165,13 +206,31 @@ describe("route wrapper branches (via controlled handlers)", () => {
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/asyncapi")).body)).toEqual({ ok: true });
     });
 
+    it("leaves the database alone for a route that says it wants no transaction", async () => {
+        // The setup screen's erase closes the database and opens another one. A transaction opened
+        // around it belongs to a connection that is gone by the time it would be committed, and
+        // SQLite answers "cannot rollback - no transaction is active".
+        const router = buildRouter();
+        const transactional = vi.spyOn(getSql(), "transactionalAsync");
+
+        expect(parseJson((await router.dispatch("GET", "http://localhost/t/async-no-tx")).body))
+            .toEqual({ bare: true });
+        expect(transactional).not.toHaveBeenCalled();
+
+        // The ordinary async route is unchanged: it still gets one.
+        await router.dispatch("GET", "http://localhost/t/async-obj");
+        expect(transactional).toHaveBeenCalled();
+    });
+
     it("formats route() results through apiResultHandler (object, tuple, undefined)", async () => {
         const router = buildRouter();
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/r-obj")).body)).toEqual({ a: 1 });
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/r-tuple")).body)).toEqual({ created: true });
 
+        // apiResultHandler turns undefined into "", which goes out as an empty body — what the
+        // server's send() does with the same value, rather than a JSON-quoted empty string.
         const undefRes = await router.dispatch("GET", "http://localhost/t/r-undef");
-        expect(text(undefRes.body)).toBe('""');
+        expect(text(undefRes.body)).toBe("");
     });
 
     it("returns a plain route() result when no result handler is supplied", async () => {
@@ -213,7 +272,7 @@ describe("route wrapper branches (via controlled handlers)", () => {
     it("provides no-op middleware and an init guard", async () => {
         buildRouter();
         // No-op middleware stubs do nothing and never throw.
-        for (const mw of [ctx.checkApiAuth, ctx.checkApiAuthOrElectron, ctx.checkCredentials, ctx.loginRateLimiter, ctx.uploadMiddlewareWithErrorHandling, ctx.importMiddlewareWithErrorHandling, ctx.csrfMiddleware]) {
+        for (const mw of [ctx.checkApiAuth, ctx.checkApiAuthOrElectron, ctx.checkSetupAuth, ctx.checkCredentials, ctx.loginRateLimiter, ctx.uploadMiddlewareWithErrorHandling, ctx.importMiddlewareWithErrorHandling, ctx.csrfMiddleware]) {
             expect(() => (mw as () => void)()).not.toThrow();
         }
         // checkAppNotInitialized throws while the DB is initialized...

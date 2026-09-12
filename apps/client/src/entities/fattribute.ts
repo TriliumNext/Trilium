@@ -102,7 +102,7 @@ class FAttribute {
     }
 }
 
-const DEFINITION_PREFIXES = [ "label:", "relation:" ];
+export const DEFINITION_PREFIXES = [ "label:", "relation:" ];
 
 /**
  * A definition needs an attribute name after its prefix: `#label:` on its own defines nothing, so it

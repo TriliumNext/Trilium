@@ -41,4 +41,9 @@ export default class StandalonePlatformProvider implements PlatformProvider {
     getEnv(key: string): string | undefined {
         return this.envMap[key];
     }
+
+    /** The browser owns the storage the database lives in, and gives out no path to it. */
+    getDatabasePath(): null {
+        return null;
+    }
 }

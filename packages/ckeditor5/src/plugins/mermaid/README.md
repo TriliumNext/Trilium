@@ -7,12 +7,20 @@ or both side by side. Load the `Mermaid` glue plugin; it pulls in `MermaidEditin
 | File | Role |
 |---|---|
 | `mermaid.ts` | Glue plugin; also declares the `ckeditor5` module augmentation and the global mermaid types |
-| `mermaid_editing.ts` | Schema, conversion, and the renderer (`_renderMermaid`) |
+| `mermaid_editing.ts` | Schema, conversion, and the renderer (`renderMermaid`) |
 | `mermaid_ui.ts` | The insert split button with its template dropdown, the mode buttons, the info button |
 | `mermaid_toolbar.ts` | Registers the balloon toolbar shown when a diagram is selected |
 | `insert_mermaid_command.ts` | `insertMermaid` — inserts a blank or pre-filled diagram |
 | `mermaid_{preview,source_view,split_view}_command.ts` | Switch the widget's `displayMode` |
 | `utils.ts` | `debounce` for the source textarea, `checkIsOn` for button state |
+
+## The display mode is part of the content
+
+A diagram round-trips as `<pre spellcheck="false"><code class="language-mermaid">…</code></pre>`, with
+the picked mode persisted on the `<code>` as `data-trilium-display-mode` — the same treatment
+collapsed list items get with `data-trilium-collapsed`. The default (`split`) is left out, so a
+diagram nobody switched keeps producing exactly the content it did before; a missing or unknown
+value upcasts back to `split`.
 
 ## The mermaid library is not a dependency
 
@@ -26,9 +34,11 @@ mermaid: {
 }
 ```
 
-`_renderMermaid` calls `lazyLoad` once, memoises the promise, and calls `initialize()` on the
+`renderMermaid` calls `lazyLoad` once, memoises the promise, and calls `initialize()` on the
 resolved instance. Renders are generation-stamped so a slow render that has been superseded cannot
-overwrite a newer one, and a failed render shows the error message in place.
+overwrite a newer one, and a failed render shows the error message in place. It is public because
+the widget is not the only diagram on screen: the AI assistant renders the `language-mermaid` blocks
+of a finished response through it, so its review shows what committing will produce.
 
 ## Provenance
 

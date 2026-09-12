@@ -496,12 +496,13 @@ describe("buildTriliumSlashCommands", () => {
     let editor: ClassicEditor;
 
     /** Records `execute()` calls and serves plugin lookups, standing in for the *target* editor. */
-    function makeFakeEditor() {
+    function makeFakeEditor(commands: Record<string, unknown> = {}) {
         const pluginInstances = new Map<unknown, unknown>();
         const executeSpy = vi.fn();
         const fake = {
             execute: executeSpy,
-            plugins: { get: (key: unknown) => pluginInstances.get(key) }
+            plugins: { get: (key: unknown) => pluginInstances.get(key) },
+            commands: { get: (name: string) => commands[name] }
         } as unknown as Editor;
         return { fake, executeSpy, pluginInstances };
     }
@@ -552,6 +553,20 @@ describe("buildTriliumSlashCommands", () => {
         definition(id).execute?.(fake);
 
         expect(executeSpy).toHaveBeenCalledWith("alignment", { value });
+    });
+
+    it("finds the collapsible block under the names other editors give it", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+
+        // "collapse" earns its place among the aliases: the title starts with "collapsi", so
+        // a fully typed "collapse" matches neither its prefix nor a substring of it.
+        for (const query of [
+            "details", "fold", "toggle", "collapse", "expand", "accordion", "spoiler",
+            "summary", "disclosure", "hide"
+        ]) {
+            expect(matchSlashCommands(definitions, query).map((entry) => entry.id))
+                .toContain("collapsible");
+        }
     });
 
     it("defines one entry per admonition type, each applying its own type", () => {
@@ -618,6 +633,107 @@ describe("buildTriliumSlashCommands", () => {
         const ids = buildTriliumSlashCommands(editor).map((entry) => entry.id);
         expect(ids).toContain("mermaid");
         expect(ids.filter((id) => id.startsWith("mermaid-sample-"))).toEqual([]);
+    });
+
+    describe("AI quick actions", () => {
+        /** The assistant requires one; nothing here renders a response, so identity will do. */
+        const sanitizeHtml = (html: string) => html;
+        const GROUPS = [
+            {
+                id: "edit",
+                label: "Edit or review",
+                actions: [
+                    { id: "fixTypos", label: "Fix typos", prompt: "Fix all mistakes." },
+                    { id: "makeShorter", label: "Make shorter", prompt: "Shorten it." }
+                ]
+            },
+            {
+                id: "translate",
+                label: "Translate",
+                // A label that only reads as a command together with its group heading, which is
+                // why the host composes one.
+                actions: [ { id: "german", label: "German", commandLabel: "Translate to German", prompt: "Translate the content to German." } ]
+            }
+        ];
+
+        /**
+         * The palette only asks the editor whether the assistant is loaded and what it configured,
+         * so a stub keeps this spec off the plugin itself — the entries are the palette's own
+         * contribution, and the assistant has its own tests for what running one does.
+         */
+        function withAssistantLoaded(quickActions = GROUPS) {
+            editor.config.set("aiAssistant", { quickActions, sanitizeHtml });
+            const hasPlugin = editor.plugins.has.bind(editor.plugins);
+            vi.spyOn(editor.plugins, "has").mockImplementation(
+                (key) => key === "AiAssistantUI" || hasPlugin(key)
+            );
+            // Answering `has` is not enough: the palette reads the list off the plugin rather than
+            // off the config, which only seeded it. Every other key falls through to the real
+            // collection, which the rest of `buildTriliumSlashCommands` still asks about.
+            const getPlugin = editor.plugins.get.bind(editor.plugins);
+            vi.spyOn(editor.plugins, "get").mockImplementation(
+                ((key: unknown) => (key === "AiAssistantUI" ? { quickActions } : getPlugin(key as string))) as never
+            );
+        }
+
+        function aiEntries() {
+            return buildTriliumSlashCommands(editor).filter((entry) => entry.id.startsWith("ai-") && entry.id !== "ai-assistant");
+        }
+
+        // The prefix marks them out in a palette of insert-a-thing entries, and `commandLabel`
+        // wins over the bare label the menu shows under a group heading.
+        it("prefixes each configured action and says what it applies to", () => {
+            withAssistantLoaded();
+
+            expect(aiEntries().map((entry) => ({ id: entry.id, title: entry.title, description: entry.description }))).toEqual([
+                { id: "ai-fixTypos", title: "AI: Fix typos", description: "Applies to the current paragraph." },
+                { id: "ai-makeShorter", title: "AI: Make shorter", description: "Applies to the current paragraph." },
+                { id: "ai-german", title: "AI: Translate to German", description: "Applies to the current paragraph." }
+            ]);
+        });
+
+        it("answers to /ai through the prefix, and to its group's name through an alias", () => {
+            withAssistantLoaded();
+
+            expect(matchSlashCommands(aiEntries(), "ai").map((entry) => entry.id))
+                .toEqual([ "ai-fixTypos", "ai-makeShorter", "ai-german" ]);
+            // "Edit or review" is nowhere in "AI: Fix typos", so the group has to come along.
+            expect(matchSlashCommands(aiEntries(), "edit or").map((entry) => entry.id))
+                .toEqual([ "ai-fixTypos", "ai-makeShorter" ]);
+        });
+
+        it("hands the picked action to the assistant", () => {
+            withAssistantLoaded();
+            const { fake, pluginInstances } = makeFakeEditor();
+            const runQuickAction = vi.fn();
+            pluginInstances.set("AiAssistantUI", { runQuickAction });
+
+            aiEntries()[0].execute?.(fake);
+
+            expect(runQuickAction).toHaveBeenCalledWith(GROUPS[0].actions[0]);
+        });
+
+        it("is offered only while the assistant command is enabled", () => {
+            withAssistantLoaded();
+            const entry = aiEntries()[0];
+
+            expect(isSlashCommandEnabled(makeFakeEditor({ aiAssistant: { isEnabled: true } }).fake, entry)).toBe(true);
+            expect(isSlashCommandEnabled(makeFakeEditor({ aiAssistant: { isEnabled: false } }).fake, entry)).toBe(false);
+            // No LLM provider configured at all: the command is never registered.
+            expect(isSlashCommandEnabled(makeFakeEditor().fake, entry)).toBe(false);
+        });
+
+        it("contributes nothing when the assistant is not loaded", () => {
+            editor.config.set("aiAssistant", { quickActions: GROUPS, sanitizeHtml });
+
+            expect(aiEntries()).toEqual([]);
+        });
+
+        it("contributes nothing when the host configured no actions", () => {
+            withAssistantLoaded([]);
+
+            expect(aiEntries()).toEqual([]);
+        });
     });
 
     // The reason these moved out of the host: the host translator only ever resolved Trilium's own

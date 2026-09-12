@@ -1,3 +1,5 @@
+import type { LlmStreamChunk } from "./llm_api.js";
+
 export interface EntityChange {
     id?: number | null;
     noteId?: string;
@@ -164,6 +166,16 @@ export type WebSocketMessage = AllTaskDefinitions | {
     type: "sync-pull-in-progress" | "sync-push-in-progress" | "sync-finished" | "sync-failed";
     lastSyncedPush: number;
 } | {
+    /**
+     * Syncing stopped because the content hashes of these sectors kept differing from the sync
+     * server's even after re-syncing them: the two databases hold data sync cannot reconcile. Unlike
+     * every other sync failure this one does not resolve itself by retrying, so it is surfaced to
+     * the user instead of only being logged.
+     */
+    type: "sync-hash-check-failed";
+    /** The diverged sectors, each as `entityName/sector` (e.g. `blobs/9`). */
+    sectors: string[];
+} | {
     type: "consistency-checks-failed"
 } | {
     /**
@@ -181,4 +193,23 @@ export type WebSocketMessage = AllTaskDefinitions | {
      * value carried no stack.
      */
     stack?: string;
+} | {
+    /**
+     * One chunk of an LLM chat completion, for runtimes that cannot carry the Server-Sent Events the
+     * `llm-chat/stream` route replies with — the standalone build answers a request with a single
+     * buffered body, so its chunks ride this channel instead. `streamId` is minted by the client
+     * before it asks for the completion, and is what lets the tab that asked pick its own chunks out
+     * of a channel every tab receives.
+     */
+    type: "llm-stream";
+    streamId: string;
+    chunk: LlmStreamChunk;
+} | {
+    /**
+     * Marks the end of an {@link WebSocketMessage} `llm-stream` sequence, whether it ended in a `done`
+     * chunk, an error or an abort. It is deliberately not a `done` chunk: an errored stream must not
+     * finalize the assistant message, and the last chunk alone cannot say which case it was.
+     */
+    type: "llm-stream-end";
+    streamId: string;
 }

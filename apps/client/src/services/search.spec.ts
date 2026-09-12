@@ -32,6 +32,18 @@ describe("search service", () => {
         expect(notes.map((n) => n.noteId)).toEqual([noteA.noteId, noteB.noteId]);
     });
 
+    it("searchInSubtree scopes the query to the ancestor and asks for tokens", async () => {
+        const response = { searchResultNoteIds: ["id1"], highlightedTokens: [], error: null };
+        const get = vi.fn(async () => response);
+        server.get = get as typeof server.get;
+
+        const result = await searchService.searchInSubtree("#done & task", "board1");
+
+        expect(get).toHaveBeenCalledWith(
+            `search/${encodeURIComponent("#done & task")}?ancestorNoteId=board1&includeTokens=true`);
+        expect(result).toBe(response);
+    });
+
     it("searchForNotes returns an empty array when no ids match", async () => {
         server.get = vi.fn(async () => []) as typeof server.get;
 

@@ -92,34 +92,57 @@ body.experimental-feature-new-layout #right-pane-host.peek > .right-pane-peek-sp
     min-width: 0;
 }
 
-/* Pin/close controls, shown whenever the pane is open (pin only in peek mode). */
-body.experimental-feature-new-layout #right-pane .right-pane-actions {
-    --icon-button-size: 24px;
-
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 80px;
-    height: var(--right-pane-header-height);
-    z-index: 1;
-    display: flex;
-    gap: 2px;
-    align-items: center;
-    justify-content: flex-end;
-}
-
 body.experimental-feature-new-layout #right-pane {
-    position: relative;
     display: flex;
     flex-direction: column;
-    /* The scrolling belongs to the shown tab's body rather than to the pane, which would carry the tab
-       strip (and the actions overlaying it) off the top with it. */
+    /* The scrolling belongs to the shown tab's body rather than to the pane, which would carry the
+       header row off the top with it. */
     overflow: hidden;
 
     &.right-pane-mode-peek {
         background: var(--right-pane-peek-background);
         backdrop-filter: var(--right-pane-peek-backdrop-filter);
         border-radius: var(--right-pane-peek-border-radius);
+    }
+
+    /* The pane's header row: the tab strip and the pin/close actions laid out together, so a narrow
+       pane shrinks the strip instead of sliding it under the buttons. */
+    .right-pane-header {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        height: var(--right-pane-header-height);
+        border-bottom: 1px solid var(--main-border-color);
+
+        /* Counterweight to `.right-pane-actions` at the other end: both sides flex alike, so the
+           strip centres on the pane rather than in the space the actions leave over. */
+        &::before {
+            content: "";
+            flex: 1 1 0;
+        }
+
+        > .right-pane-tabs {
+            /* Overrides the `flex-shrink: 0` the strip carries for hosts that give it a row of its
+               own (see TabStrip.css): here the strip is what gives way — scrolling within itself —
+               once both of its flanks are at their minimum. */
+            flex: 0 1 auto;
+            min-width: 0;
+            align-self: stretch;
+        }
+
+        /* Pin/close controls, shown whenever the pane is open (pin only in peek mode). */
+        > .right-pane-actions {
+            --icon-button-size: 24px;
+
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            justify-content: flex-end;
+            flex: 1 1 0;
+            /* The flexible share is given up before the buttons are: they stay whole and pressable
+               at any pane width. */
+            min-width: max-content;
+        }
     }
 
     .card {
@@ -205,8 +228,7 @@ body.experimental-feature-new-layout #right-pane {
         overflow-y: auto;
     }
 
-    /* The strip is what the pane's actions overlay, so the cards no longer make room for them (the
-       first card's header used to be what they sat over); it sits right under the strip's border. */
+    /* The first card sits right under the header row's border, which separates them already. */
     .right-pane-tab-body > .card:first-child .card-header {
         padding-top: 0;
     }

@@ -1,5 +1,6 @@
 import { t } from "./i18n.js";
-import utils, { isShare } from "./utils.js";
+import { getSetupAuthToken } from "./setup_auth.js";
+import utils, { isShare, openInAppHelpFromUrl } from "./utils.js";
 import ValidationError from "./validation_error.js";
 
 type Headers = Record<string, string | null | undefined>;
@@ -26,7 +27,10 @@ async function getHeaders(headers?: Headers) {
         "trilium-component-id": glob.componentId,
         "trilium-local-now-datetime": utils.localNowDateTime(),
         "trilium-hoisted-note-id": activeNoteContext ? activeNoteContext.hoistedNoteId : null,
-        "x-csrf-token": glob.csrfToken
+        "x-csrf-token": glob.csrfToken,
+        // What unlocks the setup wizard where a knowledge base is sitting behind it. Null on every
+        // other page, and dropped below along with every other header that has no value.
+        "trilium-setup-auth": getSetupAuthToken()
     };
 
     for (const headerName in headers) {
@@ -316,10 +320,15 @@ async function reportError(method: string, url: string, statusCode: number, resp
     } else {
         if (statusCode === 400 && (url.includes("%23") || url.includes("%2F"))) {
             toastService.showPersistent({
-                id: "trafik-blocked",
+                id: "reverse-proxy-blocked",
                 icon: "bx bx-unlink",
-                title: t("server.unknown_http_error_title"),
-                message: t("server.traefik_blocks_requests")
+                title: t("server.reverse_proxy_blocked_title"),
+                message: t("server.reverse_proxy_blocked_message"),
+                buttons: [ {
+                    text: t("active_content_badges.menu_docs"),
+                    // The Traefik page of the User Guide, which documents the fix.
+                    onClick: () => openInAppHelpFromUrl("5ERVJb9s4FRD")
+                } ]
             });
         } else {
             toastService.showErrorTitleAndMessage(

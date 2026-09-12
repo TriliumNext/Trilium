@@ -25,9 +25,9 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "happy-dom": "20.11.1",
+    "happy-dom": "20.14.0",
     "turndown": "7.2.4",
     "turnish": "1.12.2",
-    "vitest": "4.1.10"
+    "vitest": "5.0.0"
   }
 }

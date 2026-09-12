@@ -3,6 +3,7 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import { KATEX_MACROS, trimIndentation } from "@triliumnext/commons";
+import DOMPurify from "dompurify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttachment from "../entities/fattachment";
@@ -245,6 +246,23 @@ describe("Text content renderer", () => {
         await expect(renderText(note, $(contentEl))).resolves.toBeUndefined();
         expect(contentEl.querySelector("a.reference-link")).not.toBeNull();
     });
+
+    it("removes non-leading style tags from trimmed markdown previews", async () => {
+        const note = buildNote({ title: "Imported Markdown note" });
+        const markdownHtml = DOMPurify.sanitize(`
+            <p>Preview text</p>
+            <style>li { margin-bottom: 8pt; }</style>
+        `);
+        const $renderedContent = $("<div>").append(
+            $("<div class=\"ck-content\">").html(markdownHtml)
+        );
+        expect($renderedContent[0].querySelector("style")).not.toBeNull();
+
+        await postProcessRichContent(note, $renderedContent, { trim: true });
+
+        expect($renderedContent[0].querySelector("style")).toBeNull();
+        expect($renderedContent[0].textContent).toContain("Preview text");
+    });
 });
 
 describe("Nested include notes (single-level display vs recursive print)", () => {
@@ -462,14 +480,14 @@ describe("rewriteMermaidDiagramsInContainer", () => {
         await rewriteMermaidDiagramsInContainer(container);
         const div = container.querySelector("div.mermaid-diagram");
         expect(div).not.toBeNull();
-        expect(div?.innerHTML).toContain("graph TD;");
+        expect(div?.textContent).toContain("graph TD;");
         expect(container.querySelector("pre")).toBeNull();
     });
 
     it("uses an empty body when the code element is missing", async () => {
         const container = document.createElement("div");
-        // A <pre> matched by :has(code[...]) but where querySelector("code") returns
-        // the matched code (with no inner content) -> innerHTML falls back to "".
+        // A <pre> matched by :has(code) whose <code> has no inner content, so the
+        // rewritten div ends up with an empty body.
         container.innerHTML = `<pre><code class="language-mermaid"></code></pre>`;
         await rewriteMermaidDiagramsInContainer(container);
         const div = container.querySelector("div.mermaid-diagram");

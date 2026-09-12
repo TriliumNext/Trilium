@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import * as cls from "./context.js";
+import {
+    enterSetupMode,
+    hasExistingData,
+    isSetupRequested,
+    leaveSetupMode
+} from "./setup_mode.js";
 import { getSql } from "./sql/index.js";
 import sqlInit from "./sql_init.js";
 
@@ -118,6 +124,34 @@ describe("createDatabaseForSync on a virgin database", () => {
             /*sql*/`SELECT entityName, entityId FROM entity_changes WHERE isSynced = 1`
         );
         expect(staged).toEqual([]);
+    });
+});
+
+/**
+ * The instance that reaches `createInitialDatabase` through the wizard rather than on a first run.
+ *
+ * It was sent there by a `setup.json` marker, and until that is answered it goes on reporting that
+ * it has nothing to open — which is the whole point of setup mode, and is what keeps the database
+ * closed and every uninitialized-only guard in force. This path does not go through
+ * `setDbAsInitialized`, where every other path answers the marker, so it has to answer it itself.
+ * Left standing, the window that opens next comes up as the wizard all over again.
+ */
+describe("creating a document for an instance that was sent to the setup wizard", () => {
+    it("leaves setup mode, so the instance stops answering as one with nothing to open", async () => {
+        wipeToVirginDatabase();
+        enterSetupMode({ lang: "en" });
+
+        try {
+            expect(sqlInit.isDbInitialized()).toBe(false);
+
+            await cls.init(() => sqlInit.createInitialDatabase(true, "en"));
+
+            expect(isSetupRequested()).toBe(false);
+            expect(hasExistingData()).toBe(false);
+            expect(sqlInit.isDbInitialized()).toBe(true);
+        } finally {
+            leaveSetupMode();
+        }
     });
 });
 

@@ -101,6 +101,10 @@ export default class RootCommandExecutor extends Component {
         await appContext.tabManager.openTabWithNoteWithHoisting("_backendLog", { activate: true });
     }
 
+    async showSpaceUsageCommand() {
+        await appContext.tabManager.openTabWithNoteWithHoisting("_spaceUsage", { activate: true });
+    }
+
     async showHelpCommand() {
         await this.showAndHoistSubtree("_help");
     }

@@ -21,6 +21,16 @@
     backdrop-filter: var(--dropdown-backdrop-filter, blur(10px));
 }
 
+/* Frosting suits a card standing over a canvas, not a panel grown to cover one: there is little
+   left to see through it, and a surface that size reads as smeared rather than glassy. The opaque
+   menu colour is the one the theme falls back to wherever the blur cannot be had (see the
+   `body.background-effects` rules in theme-next/base.css); the themes that state no such colour
+   have an opaque menu colour to begin with. */
+.tn-overlay-panel.maximized {
+    background: var(--menu-background-color-no-backdrop, var(--menu-background-color));
+    backdrop-filter: none;
+}
+
 /*
  * The head of the panel: a strip of tabs or a heading of one line, and beside either of them the
  * button that sends the panel away. Only the placing of that button is this row's business — what

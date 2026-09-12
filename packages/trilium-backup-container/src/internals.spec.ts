@@ -6,7 +6,7 @@ import { nodeBackend } from "./backend-node.js";
 import { deriveContainerKey } from "./backend.js";
 import { ByteReader } from "./byte-reader.js";
 import { BackupContainerError, isBackupContainerError } from "./errors.js";
-import { FRAME_SIZE, HEADER_BYTES_PLAIN } from "./format.js";
+import { FRAME_SIZE, HEADER_BYTES_PLAIN, TRAILER_BYTES } from "./format.js";
 import {
     fakeDatabase,
     failureOf,
@@ -93,19 +93,18 @@ describe("compressed payload damage", () => {
     it("reports a broken gzip stream as a damaged payload, not as a digest mismatch", async () => {
         const written = await writeToBuffer(fakeDatabase(50_000), { compress: true });
 
-        // Corrupt the deflate data, then repair the digest so the failure can only come from zlib.
+        // Corrupt the deflate data, then repair the trailer's digest over it, so the failure can
+        // only come from zlib.
         const damaged = flipByte(written.bytes, HEADER_BYTES_PLAIN + 30);
-        createHash("sha256").update(damaged.subarray(HEADER_BYTES_PLAIN)).digest().copy(
-            damaged,
-            HEADER_BYTES_PLAIN - 32
-        );
+        createHash("sha256").update(damaged.subarray(HEADER_BYTES_PLAIN, -TRAILER_BYTES)).digest()
+            .copy(damaged, damaged.length - TRAILER_BYTES);
 
         expect(await failureOf(damaged)).toBe("damaged-payload");
     });
 
     it("surfaces a digest mismatch through the decompressor untranslated", async () => {
         const written = await writeToBuffer(fakeDatabase(50_000), { compress: true });
-        const damaged = flipByte(written.bytes, HEADER_BYTES_PLAIN - 5);   // inside the digest
+        const damaged = flipByte(written.bytes, written.bytes.length - TRAILER_BYTES + 5);   // in the digest
 
         expect(await failureOf(damaged)).toBe("digest-mismatch");
     });
@@ -122,3 +121,60 @@ describe("compressed payload damage", () => {
         expect(reason).toMatch(/no reason: Error: EIO/);
     });
 });
+
+describe("the node zlib plumbing", () => {
+    it("tears the stream down when the source it is fed fails partway", async () => {
+        let sourceClosed = false;
+        const poisoned = (async function* (): AsyncGenerator<Uint8Array> {
+            try {
+                yield fakeDatabase(1024);
+                // Not a byte chunk at all, which zlib refuses mid-write.
+                yield {} as unknown as Uint8Array;
+            } finally {
+                sourceClosed = true;
+            }
+        })();
+
+        const failure = await collect(nodeBackend.gzip(poisoned, 6)).catch((thrown) => thrown);
+
+        // Untranslated: a compressor that was handed nonsense is not a damaged payload.
+        expect(failure).toBeInstanceOf(Error);
+        expect(isBackupContainerError(failure)).toBe(false);
+        // The half that reads has to end too, or a failed backup leaves the database being read.
+        expect(sourceClosed).toBe(true);
+    });
+
+    it("stops feeding a stream the reader has walked away from", async () => {
+        let sourceClosed = false;
+        const source = (async function* (): AsyncGenerator<Uint8Array> {
+            try {
+                // More than the stream will buffer, so the writing half is still mid-flight when
+                // the reader leaves rather than already done.
+                for (let sent = 0; sent < 32; sent++) {
+                    yield fakeDatabase(256 * 1024);
+                }
+            } finally {
+                sourceClosed = true;
+            }
+        })();
+
+        for await (const chunk of nodeBackend.gzip(source, 6)) {
+            expect(chunk.length).toBeGreaterThan(0);
+            break;
+        }
+
+        // A reader is entitled to take one chunk and go. What must not happen is the database
+        // going on being read into a stream that was torn down behind it.
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(sourceClosed).toBe(true);
+    });
+});
+
+async function collect(source: AsyncIterable<Uint8Array>): Promise<Buffer> {
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of source) {
+        chunks.push(chunk);
+    }
+
+    return Buffer.concat(chunks);
+}

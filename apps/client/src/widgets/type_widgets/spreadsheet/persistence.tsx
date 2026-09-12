@@ -307,6 +307,9 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
             lifecycleDisposable?.dispose();
         };
     }, [ apiRef ]);
+
+    // Returned so the export can flush a pending save before the backend reads the note's content.
+    return spacedUpdate;
 }
 
 /**

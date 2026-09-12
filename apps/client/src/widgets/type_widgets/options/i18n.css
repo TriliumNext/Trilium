@@ -1,0 +1,4 @@
+/* `!important` because CheckboxList zeroes its bottom margin inline. */
+.i18n-content-languages ul {
+    margin-block: 1em !important;
+}

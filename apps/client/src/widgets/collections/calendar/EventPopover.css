@@ -1,8 +1,22 @@
 .calendar-event-popover {
-    width: 380px;
-    /* A fixed-width card as tall as its event needs, up to what the viewport can spare; what it
-       holds scrolls within it (see the body below). */
+    /* Held to the window: Popper shifts a card too wide for the room into the viewport rather than
+       narrowing it, so an unclamped width would hang off the edge.
+       Must agree with `MAX_ANCHOR_WIDTH` in selection.ts. */
+    width: min(480px, calc(100vw - 4rem));
+    /* As tall as the event needs; what it holds scrolls within it (see the body below). */
     max-height: min(640px, 85vh);
+
+    /* The same card grown to the window (see the maximize in EventDetails); it takes its height
+       from the insets in `.maximized` in Popover.css, so the anchored ceiling is given up here. */
+    &.maximized {
+        width: min(var(--preferred-max-content-width, 900px), calc(100vw - 4rem));
+        max-height: none;
+
+        /* The card is now taller than the event, so the column has to take up the difference. */
+        .calendar-event-popover-inner {
+            flex: 1;
+        }
+    }
 
     .calendar-event-popover-inner {
         display: flex;

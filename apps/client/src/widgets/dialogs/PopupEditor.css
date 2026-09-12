@@ -10,6 +10,8 @@ body.popup-editor-stacked .popup-editor-dialog { z-index: 1100; }
 body.popup-editor-stacked .ck-clipboard-drop-target-line { z-index: 1101; }
 .modal-backdrop.popup-editor-backdrop { z-index: 1099; }
 
+body.popup-editor-open .ck.ck-dialog-overlay.ck-dialog-behind-popup-editor { z-index: 997; }
+
 body.desktop .modal.popup-editor-dialog .modal-dialog {
     max-width: 75vw;
     border-bottom-left-radius: var(--bs-modal-border-radius);
@@ -35,13 +37,22 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     font-size: 1.1em;
 }
 
-/* The note-title header (icon + editable title) is shared with the tree popup and the calendar's
-   event sheet, which reuse the same TitleRow; keep the selectors together so the dialogs stay
-   pixel-identical. This file is loaded wherever the app is: the quick editor keeps itself in the
-   DOM and so is never lazily loaded (see layout_commons.tsx). */
+/* Pinned to the foot of the dialog rather than following the content, which has no room set
+   aside for it. Anchored to `.modal-content`, which Bootstrap positions. */
+.modal.popup-editor-dialog .note-type-switcher {
+    position: absolute;
+    inset-block: auto 12px;
+    inset-inline: 12px;
+}
+
+/* The note-title header (icon + editable title) is shared with the tree popup, the calendar's event
+   sheet and the geo map's marker sheet, which reuse the same TitleRow; keep the selectors together
+   so the dialogs stay pixel-identical. This file is loaded wherever the app is: the quick editor
+   keeps itself in the DOM and so is never lazily loaded (see layout_commons.tsx). */
 .modal.popup-editor-dialog .modal-header .title-row,
 .modal.tree-popup-editor-dialog .modal-header .title-row,
-.modal.calendar-event-sheet .modal-header .title-row {
+.modal.calendar-event-sheet .modal-header .title-row,
+.modal.geo-detail-sheet .modal-header .title-row {
     flex-grow: 1;
     display: flex;
     align-items: center;
@@ -56,7 +67,8 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 
 .modal.popup-editor-dialog .modal-header .note-title-widget,
 .modal.tree-popup-editor-dialog .modal-header .note-title-widget,
-.modal.calendar-event-sheet .modal-header .note-title-widget {
+.modal.calendar-event-sheet .modal-header .note-title-widget,
+.modal.geo-detail-sheet .modal-header .note-title-widget {
     display: flex;
     align-items: center;
 }
@@ -86,14 +98,17 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 .modal.tree-popup-editor-dialog .title-row,
 .modal.tree-popup-editor-dialog .note-icon-widget,
 .modal.calendar-event-sheet .title-row,
-.modal.calendar-event-sheet .note-icon-widget {
+.modal.calendar-event-sheet .note-icon-widget,
+.modal.geo-detail-sheet .title-row,
+.modal.geo-detail-sheet .note-icon-widget {
     height: 32px;
     min-height: unset;
 }
 
 :root div.modal.popup-editor-dialog div.note-title-widget,
 :root div.modal.tree-popup-editor-dialog div.note-title-widget,
-:root div.modal.calendar-event-sheet div.note-title-widget {
+:root div.modal.calendar-event-sheet div.note-title-widget,
+:root div.modal.geo-detail-sheet div.note-title-widget {
     --note-title-padding-inline: 8px;
 }
 
@@ -102,7 +117,9 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 .modal.tree-popup-editor-dialog .note-icon-widget button.note-icon,
 .modal.tree-popup-editor-dialog .note-title-widget input.note-title,
 .modal.calendar-event-sheet .note-icon-widget button.note-icon,
-.modal.calendar-event-sheet .note-title-widget input.note-title {
+.modal.calendar-event-sheet .note-title-widget input.note-title,
+.modal.geo-detail-sheet .note-icon-widget button.note-icon,
+.modal.geo-detail-sheet .note-title-widget input.note-title {
     font-size: 1em;
 }
 

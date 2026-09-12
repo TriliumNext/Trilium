@@ -233,6 +233,11 @@ describe("AttributeList", () => {
 
         expect(container.querySelectorAll(".attribute-row")).toHaveLength(0);
         expect(container.querySelector(".no-items")).not.toBeNull();
+
+        // Adding takes the placeholder's place: there is a row again, draft though it still is.
+        act(() => container.querySelector<HTMLElement>(".attribute-add-row")?.click());
+        expect(container.querySelectorAll(".attribute-row")).toHaveLength(1);
+        expect(container.querySelector(".no-items")).toBeNull();
     });
 
     it("leaves what Trilium wrote for itself out of a release build, and gives it its own card in a development one", () => {
@@ -410,6 +415,12 @@ describe("AttributeList", () => {
         const editor = container.querySelector<HTMLElement>(".attribute-creation-editor");
         expect(editor?.querySelector(".attribute-creation-value input")).not.toBeNull();
         expect(editor?.querySelector(".note-autocomplete-stub")).toBeNull();
+
+        // ...in a row at the foot of the list, where the press that opened it was — and not where
+        // the sort would file a name it does not have yet, above the ones Trilium reads for itself.
+        const ownedCard = container.querySelector("#attributes");
+        expect(namesIn(ownedCard ?? container)).toEqual([ "author", "cssClass", "template", "" ]);
+        expect([ ...(ownedCard?.querySelectorAll(".attribute-row") ?? []) ].at(-1)?.contains(editor ?? null)).toBe(true);
 
         // ...until the `~` the attributes editor spells relations with is typed at the name's head:
         // the prefix is spent on the switch, the name keeping only what follows it.

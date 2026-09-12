@@ -1,6 +1,6 @@
 import "./NoteTypeSwitcher.css";
 
-import { NoteType } from "@triliumnext/commons";
+import { NoteType, type TemplatesResponse } from "@triliumnext/commons";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
@@ -16,9 +16,6 @@ import { useNoteProperty, useNoteSavedData, useTriliumEvent } from "../react/hoo
 import { onWheelHorizontalScroll } from "../widget_utils";
 
 const SWITCHER_PINNED_NOTE_TYPES = new Set<NoteType>([ "text", "code", "book", "canvas" ]);
-const supportedNoteTypes = new Set<NoteType>([
-    "text", "code"
-]);
 
 export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
     const blob = useNoteSavedData(note?.noteId);
@@ -41,7 +38,9 @@ export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
     const currentNoteTypeData = useMemo(() => NOTE_TYPES.find(t => t.type === currentNoteType), [ currentNoteType ]);
     const { builtinTemplates, collectionTemplates } = useBuiltinTemplates();
 
-    return (currentNoteType && supportedNoteTypes.has(currentNoteType) && !note?.isTriliumSqlite() && !note?.isMarkdown() && !note?.isIconPack() &&
+    // Code notes fill the pane with their editor and carry no inline title, so the switcher has
+    // nowhere to sit above them.
+    return (currentNoteType === "text" &&
         <div
             className="note-type-switcher"
             onWheel={onWheelHorizontalScroll}
@@ -104,7 +103,7 @@ export function TemplateNoteTypes({ noteId, builtinTemplates }: { noteId: string
     const [ userTemplates, setUserTemplates ] = useState<FNote[]>([]);
 
     async function refreshTemplates() {
-        const templateNoteIds = await server.get<string[]>("search-templates");
+        const { templateNoteIds } = await server.get<TemplatesResponse>("search-templates");
         const templateNotes = await froca.getNotes(templateNoteIds);
         setUserTemplates(templateNotes);
     }

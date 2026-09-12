@@ -15,7 +15,9 @@ describe("narrowAnchorRect", () => {
     it("leaves a piece that can be stood beside as it stands", () => {
         expect(narrowAnchorRect(chip, { x: 720, y: 205 })).toBe(chip);
         // Right up to the width of the widest card, which still leaves the grid's own room.
-        expect(narrowAnchorRect(new DOMRect(700, 200, 380, 20), { x: 720, y: 205 })).toEqual(new DOMRect(700, 200, 380, 20));
+        expect(narrowAnchorRect(new DOMRect(700, 200, 480, 20), { x: 720, y: 205 })).toEqual(new DOMRect(700, 200, 480, 20));
+        // A hair over it is narrowed, the card no longer having room to stand beside the piece.
+        expect(narrowAnchorRect(new DOMRect(700, 200, 481, 20), { x: 720, y: 205 })).toEqual(new DOMRect(720, 200, 0, 20));
     });
 
     it("narrows a piece too wide to be stood beside to the press within it", () => {

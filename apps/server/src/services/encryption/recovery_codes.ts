@@ -4,6 +4,15 @@ import crypto from 'crypto';
 import sql from '../sql.js';
 import { constantTimeCompare } from '../utils.js';
 
+/**
+ * What a recovery code looks like: 22 characters and the base64 padding.
+ *
+ * Deliberately without the `g` flag the inline copies of this pattern carried. A `g` regex kept in a
+ * variable remembers where it last matched, so `test` on a shared one answers correctly only every
+ * other call.
+ */
+const RECOVERY_CODE_SHAPE = /^.{22}==$/;
+
 function isRecoveryCodeSet() {
     return optionService.getOptionBool('encryptedRecoveryCodes');
 }
@@ -64,9 +73,29 @@ function removeRecoveryCode(usedCode: string) {
     setRecoveryCodes(oldCodes.toString());
 }
 
+/**
+ * Whether `recoveryCodeGuess` is one of the codes, leaving it where it is.
+ *
+ * The consuming check below is the one login uses, and the one to reach for by default. This exists
+ * for the setup wizard, which runs against a database that is attached but not migrated, with becca
+ * unloaded: `setOption` there would create a duplicate row rather than update one, and a code spent
+ * in that state would still read as unspent everywhere else in a sync cluster. So the wizard trades
+ * the single use for being able to check at all — see `setup_auth` in core.
+ */
+function matchesRecoveryCode(recoveryCodeGuess: string) {
+    if (!RECOVERY_CODE_SHAPE.test(recoveryCodeGuess)) {
+        return false;
+    }
+
+    // Every code is compared even once one has matched, so the time taken says nothing about which.
+    return getRecoveryCodes().reduce(
+        (matched, recoveryCode) => constantTimeCompare(recoveryCodeGuess, recoveryCode) || matched,
+        false
+    );
+}
+
 function verifyRecoveryCode(recoveryCodeGuess: string) {
-    const recoveryCodeRegex = RegExp(/^.{22}==$/gm);
-    if (!recoveryCodeRegex.test(recoveryCodeGuess)) {
+    if (!RECOVERY_CODE_SHAPE.test(recoveryCodeGuess)) {
         return false;
     }
 
@@ -96,6 +125,7 @@ export default {
     createRecoveryCodes,
     clearRecoveryCodes,
     getRecoveryCodes,
+    matchesRecoveryCode,
     verifyRecoveryCode,
     isRecoveryCodeSet
 };

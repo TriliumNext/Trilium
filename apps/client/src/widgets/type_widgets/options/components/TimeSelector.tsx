@@ -36,15 +36,22 @@ export default function TimeSelector({ id, name, includedTimeScales, optionValue
         return values;
     }, [ includedTimeScales ]);
 
-    const [ value, setValue ] = useTriliumOption(optionValueId);
-    const [ scale, setScale ] = useTriliumOption(optionTimeScaleId);
+    const [ storedValue, setValue ] = useTriliumOption(optionValueId);
+    const [ storedScale, setScale ] = useTriliumOption(optionTimeScaleId);
     const [ displayedTime, setDisplayedTime ] = useState("");
+
+    // An option that has never been written answers with an empty string, which is no duration at
+    // all — and `convertTime` rightly refuses one. Read as zero seconds instead, so a row whose
+    // option is missing still draws and the first edit stores something real, rather than the whole
+    // page going down over a setting nobody has touched yet.
+    const seconds = toWholeNumber(storedValue, 0);
+    const scale = String(toWholeNumber(storedScale, 1, 1));
 
     // React to changes in scale and value.
     useEffect(() => {
-        const newTime = convertTime(parseInt(value, 10), scale).toDisplay();
+        const newTime = convertTime(seconds, scale).toDisplay();
         setDisplayedTime(String(newTime));
-    }, [ value, scale ]);
+    }, [ seconds, scale ]);
 
     return (
         <div class="d-flex gap-2">
@@ -58,13 +65,18 @@ export default function TimeSelector({ id, name, includedTimeScales, optionValue
                         return false;
                     }
 
-                    let time = parseInt(value, 10);
+                    const time = parseInt(value, 10);
                     const minimumSecondsOrDefault = (minimumSeconds ?? 0);
-                    const newTime = convertTime(time, scale).toOption();
+                    // Converted only once there is a figure to convert: `convertTime` refuses
+                    // anything else, so a check made past it could never be reached.
+                    const newTime = Number.isNaN(time) ? null : convertTime(time, scale).toOption();
 
-                    if (Number.isNaN(time) || newTime < (minimumSecondsOrDefault)) {
+                    // Held up to the floor rather than merely complained about: the figure is
+                    // stored in seconds, so that is what the floor is applied to.
+                    if (newTime === null || newTime < minimumSecondsOrDefault) {
                         toast.showError(t("time_selector.minimum_input", { minimumSeconds: minimumSecondsOrDefault }));
-                        time = minimumSecondsOrDefault;
+                        setValue(minimumSecondsOrDefault);
+                        return;
                     }
 
                     setValue(newTime);
@@ -79,6 +91,22 @@ export default function TimeSelector({ id, name, includedTimeScales, optionValue
             />
         </div>
     )
+}
+
+/**
+ * Reads a stored option as a whole number, falling back where it holds nothing usable — an option
+ * never written, or one carrying something that is not a figure at all.
+ *
+ * @param minimum the least the value may be; anything under it takes the fallback too.
+ */
+function toWholeNumber(stored: string, fallback: number, minimum?: number) {
+    const parsed = parseInt(stored, 10);
+
+    if (!Number.isFinite(parsed) || (minimum !== undefined && parsed < minimum)) {
+        return fallback;
+    }
+
+    return parsed;
 }
 
 function convertTime(value: number, timeScale: string | number) {

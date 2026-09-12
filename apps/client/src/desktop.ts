@@ -11,26 +11,38 @@ import { t } from "./services/i18n.js";
 import { syncNativeWindowWithTheme } from "./services/native_window.js";
 import noteAutocompleteService from "./services/note_autocomplete.js";
 import noteTooltipService from "./services/note_tooltip.js";
-import { setBackgroundEffectsSuspended } from "./services/theme.js";
+import { onEffectiveThemeStyleChange, setBackgroundEffectsSuspended } from "./services/theme.js";
 import toastService from "./services/toast.js";
 import utils from "./services/utils.js";
+import { preloadCommonNoteTypes } from "./widgets/note_types.js";
 
 await appContext.earlyInit();
 
-bundleService.getWidgetBundlesByParent().then(async (widgetBundles) => {
+/**
+ * Resolves once the layout is rendered and froca has the note tree. index.ts keeps the splash up
+ * until then, so the bundle, layout and tree requests below are not made behind a blank page. A
+ * failed start still resolves it: the toast that reports the failure has to become visible.
+ */
+export const ready = bundleService.getWidgetBundlesByParent().then(async (widgetBundles) => {
     // A dynamic import is required for layouts since they initialize components which require translations.
     const DesktopLayout = (await import("./layouts/desktop_layout.js")).default;
 
     appContext.setLayout(new DesktopLayout(widgetBundles));
-    appContext.start().then(reportFullRenderStartupMetric).catch((e) => {
+    try {
+        await appContext.start();
+    } catch (e) {
         toastService.showPersistent({
             id: "critical-error",
             title: t("toast.critical-error.title"),
             icon: "alert",
-            message: t("toast.critical-error.message", { message: e.message })
+            message: t("toast.critical-error.message", { message: e instanceof Error ? e.message : String(e) })
         });
         console.error("Critical error occured", e);
-    });
+        return;
+    }
+
+    reportFullRenderStartupMetric();
+    preloadCommonNoteTypes();
 });
 
 glob.setupGlobs();
@@ -65,7 +77,7 @@ function initOnElectron() {
 
     // With an "auto" theme the effective colors of background effects and the native title bar
     // follow the OS color scheme.
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncNativeWindowWithTheme);
+    onEffectiveThemeStyleChange(() => syncNativeWindowWithTheme());
 
     // Clear navigation history on frontend refresh.
     api.navigation.clearNavigationHistory();

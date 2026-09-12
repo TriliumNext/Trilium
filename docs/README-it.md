@@ -25,6 +25,9 @@ Trilium Notes è un'applicazione per appunti ad organizzazione gerarchica,
 studiata per la costruzione di archivi di conoscenza personali di grandi
 dimensioni.
 
+Cerchi "Trillium Notes"? La grafia ufficiale del progetto è "Trilium Notes", con
+una sola `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Scarica
@@ -117,7 +120,7 @@ La nostra documentazione è disponibile in diversi formati:
 * Tema scuro integrato
   (https://docs.triliumnotes.org/user-guide/concepts/themes), supporto per temi
   utente
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   e [Importazione ed esportazione
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) per
@@ -222,22 +225,23 @@ sincronizzazione deve corrispondere tra Trilium e TriliumDroid.
 
 #### Pocket Trilium
 
-If you want a full-featured native Android app, check out [Pocket
-Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
-instance on your phone, supports full offline use, and allows you to sync with
-your server.
+Se desideri un'app Android nativa con tutte le funzionalità, dai un'occhiata a
+[Pocket Trilium](https://github.com/Nriver/pocket-trilium). Esegue un'istanza
+completa di Trilium sul tuo telefono, supporta l'utilizzo completamente offline
+e ti permette di sincronizzarti con il tuo server.
 
 #### Trinote
 
-If you want a native iOS app, you can use
-[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
-client for your self-hosted Trilium / TriliumNext server. It lets you browse and
-organize your note tree, search for notes on the server, read and edit all note
-types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
-available and editable offline. Here's the
-[repo](https://github.com/StephenArg/Trinote) if you're interested in
-contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
-server if you have any feedback or suggestions you want to discuss.
+Se desideri un'app nativa per iOS, puoi utilizzare
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), un client open
+source per il tuo server Trilium / TriliumNext self-hosted. Ti permette di
+sfogliare e organizzare la tua struttura ad albero delle note, cercare note sul
+server, leggere e modificare tutti i tipi di note (testo, codice, mappa mentale,
+foglio di calcolo, mappa geografica, tela, ecc.) e mantiene le note disponibili
+e modificabili anche offline. Ecco il
+[repo](https://github.com/StephenArg/Trinote) se sei interessato a contribuire e
+ecco il server [discord](https://discord.com/invite/ghjJG56EUS) se hai commenti
+o suggerimenti di cui vorresti discutere.
 
 ### Server
 
@@ -354,12 +358,14 @@ collegamenti presenti nella precedente sezione "Discuti con noi".
   colorazione della sintassi.
 * [Tabler Icons](https://tabler.io/icons) per le icone della barra delle
   applicazioni.
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+*   Le icone delle applicazioni presenti nella finestra di dialogo di
+    importazione provengono da:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) per
         OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+    *   [Font Awesome](https://fontawesome.com/) per Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) per Anytype.
+*  Le icone dei fornitori di corsi LLM provengono da [Lobe
+   Icons](https://lobehub.com/icons).
 
 Trilium non sarebbe possibile senza le tecnologie che lo supportano:
 

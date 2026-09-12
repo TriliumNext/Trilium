@@ -21,10 +21,11 @@ import {
 
 /**
  * The real `ExecutionContext` is installed by `initializeCore` (run once in the
- * server spec `setup.ts`). It is backed by `cls-hooked`: each `init()` runs the
- * callback in a fresh namespace store, so state written inside one `init()`
- * block is isolated from other blocks — which keeps these tests independent
- * without needing `becca.reset()` or DB access.
+ * server spec `setup.ts`). Sibling `init()` scopes are isolated from one another
+ * on both runtimes, which keeps these tests independent without needing
+ * `becca.reset()` or DB access. Nesting is where the two implementations differ,
+ * so it is covered per runtime in `apps/server/src/cls_provider.spec.ts` and
+ * `apps/standalone/src/lightweight/cls_provider.spec.ts`, not here.
  */
 
 function makeEntityChange(id: string): EntityChange {
@@ -59,7 +60,7 @@ describe("context", () => {
 
             const seen = init(() => get<string>("isolationKey"));
 
-            // cls-hooked starts a fresh store per init(), so the value set in
+            // Sibling scopes start independent, so the value set in
             // the previous scope must not leak into this one.
             expect(seen).toBeUndefined();
         });

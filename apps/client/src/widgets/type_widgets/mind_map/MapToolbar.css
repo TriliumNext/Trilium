@@ -7,12 +7,12 @@
  * MindMap.css.
  */
 
-/* What is done with the view stands at the foot of the map, out of the way of its root. The control
-   group brings no place of its own the way the shared bar does, so it is pinned here. */
+/* What is done with the view stands at the foot of the map, out of the way of its root — pinned
+   there by the corner the group names (see `placement` on OverlayControlGroup), which is handed the
+   map's own room to keep so that it clears whatever a screen of its own keeps for itself. */
 .mind-map-container .mind-map-view-toolbar {
-    position: absolute;
-    bottom: var(--mind-map-inset-bottom);
-    inset-inline-end: var(--mind-map-inset);
+    --overlay-group-inset: var(--mind-map-inset);
+    --overlay-group-inset-bottom: var(--mind-map-inset-bottom);
 }
 
 /* The way the map is laid out stands in the corner opposite, where Mind Elixir kept it. */

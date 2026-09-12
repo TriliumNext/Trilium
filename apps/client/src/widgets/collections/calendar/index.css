@@ -31,10 +31,22 @@
     height: 100%;
 }
 
-/* Stacked beneath the title, the chip's own container being a column wherever these are shown at
-   all (see hasRoomForAttributes). Kept narrow so the overflow below has something to bite on. */
+/* Stacked beneath the title. Kept narrow so the overflow below has something to bite on. */
 .calendar-view .calendar-event-attributes {
     min-width: 0;
+}
+
+/* A month cell's chip is a row, so the title is fallen beneath rather than followed down: the
+   chip's own container is asked to wrap (see eventInnerClass) and the attributes claim a whole
+   line of it. The inline padding is the one the row's title wears — Forma states it on the title
+   rather than on the container — so that the two read as one column of text. */
+.calendar-view .calendar-event-inner-wrapped {
+    flex-wrap: wrap;
+
+    > .calendar-event-attributes {
+        flex-basis: 100%;
+        padding-inline: 4px;
+    }
 }
 
 .calendar-container .promoted-attribute {
@@ -52,6 +64,15 @@
             font-size: 1.2em;
             text-align: center;
         }
+    }
+
+    /* The end the view switcher stands at is the one asked to give where the bar is short: it holds
+       a row that folds into a menu when it no longer fits (see CollapseOnOverflow), which is a
+       better answer than either half of what happens otherwise — a flex item keeps its content's
+       width unless told it may not, so the bar would grow past the pane rather than hand the
+       switcher less, and the switcher would never learn that it was short. */
+    .right-container {
+        min-width: 0;
     }
 
     @media (max-width: 991px) {

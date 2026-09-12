@@ -96,6 +96,46 @@ describe("HtmlExportProvider", () => {
             expect(rewriteFn.mock.calls[0][1]).toBe(noteMeta);
         });
 
+        it("keeps the space after an inline tag that the pretty-printer wraps inside of", () => {
+            const { provider } = buildProvider({ zipExportOptions: { skipHtmlTemplate: true } });
+            const noteMeta: NoteMeta = { format: "html", notePath: ["root", "leaf"] };
+            // Long enough that the 70-column wrap lands inside the third <code> tag.
+            const content = "<p>When given a value, it will sort by other criteria instead: a comma-separated "
+                + "list of levels, each <code spellcheck=\"false\">title</code>, "
+                + "<code spellcheck=\"false\">dateCreated</code>, "
+                + "<code spellcheck=\"false\">dateModified</code> or the name of a label on the child notes.</p>";
+
+            const result = provider.prepareContent("Sorting", content, noteMeta) as string;
+
+            expect(result).not.toMatch(/<\/code>[A-Za-z]/);
+            expect(result.replace(/\s+/g, " ")).toContain("</code> or the name of a label");
+        });
+
+        it("wraps identically however long the href was before rewriteFn shortened it", () => {
+            // Both forms are written by Trilium for the same link: the editor stores a full note
+            // path, an import stores a bare ID. rewriteFn collapses each to the same target, so
+            // the exported file must not differ.
+            const wrapFor = (href: string) => {
+                const { provider } = buildProvider({
+                    zipExportOptions: { skipHtmlTemplate: true },
+                    rewriteFn: (content) => content.replace(/href="[^"]*"/g, 'href="#root/_help_eIg8jdvaoNNd"')
+                });
+                const content = "<p>To search the whole database while hoisted, use the full "
+                    + `<a class="reference-link" href="${href}">Search</a> and leave `
+                    + "<em>Ancestor</em> field empty.</p>";
+                return provider.prepareContent("Quick search", content, {
+                    format: "html",
+                    notePath: ["root", "leaf"]
+                }) as string;
+            };
+
+            const fromImport = wrapFor("#root/eIg8jdvaoNNd");
+            const fromEditor = wrapFor("#root/pOsGYCXsbNQG/BFs8mudNFgCS/BCkXAVs63Ttv/eIg8jdvaoNNd");
+
+            expect(fromEditor).toBe(fromImport);
+            expect(fromImport).toContain('href="#root/_help_eIg8jdvaoNNd"');
+        });
+
         it("uses a bare style.css path for a top-level note (notePath length 1)", () => {
             const { provider } = buildProvider();
             const result = provider.prepareContent("T", "<p>x</p>", {

@@ -72,7 +72,6 @@ export default function NoteActionsCustom(props: NoteActionsCustomProps) {
             ref={containerRef}
             className="note-actions-custom"
         >
-            <AddChildButton {...innerProps} />
             <RunActiveNoteButton {...innerProps } />
             <SwitchSplitOrientationButton {...innerProps} />
             <DisplayModeSwitcher {...innerProps} />
@@ -316,16 +315,6 @@ function InAppHelpButton({ note }: NoteActionsCustomInnerProps) {
     );
 }
 
-function AddChildButton({ parentComponent, noteType, ntxId, isReadOnly }: NoteActionsCustomInnerProps) {
-    if (noteType === "relationMap") {
-        return <NoteAction
-            icon="bx bx-folder-plus"
-            text={t("relation_map_buttons.create_child_note_title")}
-            onClick={() => parentComponent.triggerEvent("relationMapCreateChildNote", { ntxId })}
-            disabled={isReadOnly}
-        />;
-    }
-}
 //#endregion
 
 function NoteAction({ text, active, ...props }: Pick<ActionButtonProps, "text" | "icon" | "disabled" | "triggerCommand" | "active"> & {

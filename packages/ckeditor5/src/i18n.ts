@@ -88,6 +88,10 @@ const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, LocaleMapping | null> = {
         languageCode: "ru",
         coreTranslation: () => import("ckeditor5/translations/ru.js"),
     },
+    tr: {
+        languageCode: "tr",
+        coreTranslation: () => import("ckeditor5/translations/tr.js"),
+    },
 };
 
 /**

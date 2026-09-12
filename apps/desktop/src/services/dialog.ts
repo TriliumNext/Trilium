@@ -29,4 +29,20 @@ export function setupDialogHandlers() {
 
         return { status: "selected", path: filePaths[0] };
     });
+
+    electron.ipcMain.handle("dialog-confirm-start-over", async (): Promise<boolean> => {
+        // Cancel is both the default and what Escape picks: the other button leads to a screen from
+        // which the knowledge base can be replaced, and nobody arrives here by accident twice.
+        const { response } = await electron.dialog.showMessageBox({
+            type: "warning",
+            buttons: [ t("start-over-dialog.cancel"), t("start-over-dialog.confirm") ],
+            defaultId: 0,
+            cancelId: 0,
+            title: t("start-over-dialog.title"),
+            message: t("start-over-dialog.message"),
+            detail: t("start-over-dialog.detail")
+        });
+
+        return response === 1;
+    });
 }

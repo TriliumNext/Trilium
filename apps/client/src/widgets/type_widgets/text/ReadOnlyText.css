@@ -47,8 +47,7 @@ body.heading-style-underline .note-detail-readonly-text-content {
 }
 
 .note-detail-readonly-text {
-    padding-inline-start: 24px;
-    padding-top: 10px;
+    padding: 1px var(--content-margin-inline) 0 var(--content-margin-inline);
     font-family: var(--detail-font-family);
     min-height: 50px;
     position: relative;
@@ -90,5 +89,5 @@ body.mobile .note-detail-readonly-text {
 }
 
 .note-detail-readonly-text-content code.copyable-inline-code:hover {
-    background-color: var(--accented-background-color);
+    background-color: var(--inline-code-hover-background-color);
 }

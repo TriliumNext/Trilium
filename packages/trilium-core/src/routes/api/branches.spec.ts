@@ -24,6 +24,23 @@ function getBranchRow(branchId: string): BranchRow | null {
     );
 }
 
+function noteExists(noteId: string): boolean {
+    return getSql().getRowOrNull("SELECT noteId FROM notes WHERE noteId = ?", [ noteId ]) !== null;
+}
+
+/**
+ * Counts the entity changes flagged `isErased` for the given ids. The client reloads itself as soon
+ * as one of these reaches it (`froca_updater.processNoteChange`), so a batch that raises the count
+ * before its last request kills the requests that were still to come.
+ */
+function erasedEntityChangeCount(entityIds: string[]): number {
+    const placeholders = entityIds.map(() => "?").join(", ");
+    return getSql().getValue<number>(
+        `SELECT COUNT(1) FROM entity_changes WHERE isErased = 1 AND entityId IN (${placeholders})`,
+        entityIds
+    ) ?? 0;
+}
+
 describe("Branches API (core)", () => {
     beforeAll(() => {
         api = CoreApiTester.build();
@@ -263,6 +280,33 @@ describe("Branches API (core)", () => {
             // erasing removes the note row entirely
             const noteRow = getSql().getRowOrNull("SELECT noteId FROM notes WHERE noteId = ?", [ noteId ]);
             expect(noteRow).toBeNull();
+        });
+
+        it("holds a multi-branch erase back until the last request of the task group", async () => {
+            const first = await createTextNote(api, { title: "Batch erase 1" });
+            const second = await createTextNote(api, { title: "Batch erase 2" });
+            const taskId = "test-branch-erase-batch";
+
+            const firstRes = await api.delete(`/api/branches/${first.branchId}`, {
+                query: { taskId, last: "false", eraseNotes: "true" }
+            });
+            expect(firstRes.status).toBe(200);
+
+            // Both notes are soft-deleted at this point, but nothing is erased: the client is still
+            // sending the rest of the batch, and an erase here would reload it out from under them.
+            expect(noteExists(first.noteId)).toBe(true);
+            expect(erasedEntityChangeCount([ first.noteId, second.noteId ])).toBe(0);
+            expect(getBranchRow(first.branchId)?.isDeleted).toBe(1);
+
+            const secondRes = await api.delete(`/api/branches/${second.branchId}`, {
+                query: { taskId, last: "true", eraseNotes: "true" }
+            });
+            expect(secondRes.status).toBe(200);
+
+            // The last request erases everything the group deleted, in one go.
+            expect(noteExists(first.noteId)).toBe(false);
+            expect(noteExists(second.noteId)).toBe(false);
+            expect(erasedEntityChangeCount([ first.noteId, second.noteId ])).toBe(2);
         });
     });
 });

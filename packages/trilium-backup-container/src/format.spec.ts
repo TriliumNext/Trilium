@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import { BackupContainerError } from "./errors.js";
 import {
     authenticatedHeaderEnd,
+    containerSize,
     type ContainerHeader,
     decodeFixedHeader,
     decodeHeader,
+    decodeTrailer,
     DEFAULT_MAX_HEADER_BYTES,
-    digestOffset,
     encodeHeader,
+    encodeTrailer,
     FIXED_HEADER_BYTES,
     HEADER_BYTES_ENCRYPTED,
     HEADER_BYTES_PLAIN,
@@ -16,19 +18,22 @@ import {
     nonceFor,
     SQLITE_MAGIC,
     scryptMemoryBytes,
+    TRAILER_BYTES,
     validateScryptParams,
     validateSqliteHeader
 } from "./format.js";
 
+const TIMESTAMP = 1_700_000_000_000;
+
 function plainHeader(overrides: Partial<ContainerHeader> = {}): ContainerHeader {
     return {
         version: 1,
+        timestamp: TIMESTAMP,
         compressed: true,
         encrypted: false,
         plaintextSize: 4096,
         headerLength: HEADER_BYTES_PLAIN,
         encryption: null,
-        digest: Buffer.alloc(32, 7),
         ...overrides
     };
 }
@@ -36,6 +41,7 @@ function plainHeader(overrides: Partial<ContainerHeader> = {}): ContainerHeader 
 function encryptedHeader(): ContainerHeader {
     return {
         version: 1,
+        timestamp: TIMESTAMP,
         compressed: false,
         encrypted: true,
         plaintextSize: 123456789,
@@ -48,8 +54,7 @@ function encryptedHeader(): ContainerHeader {
             salt: Buffer.alloc(16, 1),
             noncePrefix: Buffer.alloc(8, 2),
             verifierTag: Buffer.alloc(16, 3)
-        },
-        digest: Buffer.alloc(32, 4)
+        }
     };
 }
 
@@ -57,36 +62,36 @@ describe("header layout", () => {
     it("round-trips an unencrypted header and matches the documented offsets", () => {
         const bytes = Buffer.from(encodeHeader(plainHeader()));
 
-        expect(bytes).toHaveLength(64);
+        expect(bytes).toHaveLength(40);
         expect(bytes.subarray(0, 20).toString("ascii")).toBe("Trilium Notes Backup");
         expect(bytes.readUInt8(20)).toBe(1);
-        expect(bytes.readUInt8(21)).toBe(0b01);
-        expect(bytes.readUInt16LE(22)).toBe(64);
-        expect(bytes.readBigUInt64LE(24)).toBe(4096n);
-        expect(digestOffset(64)).toBe(32);
+        expect(bytes.readBigUInt64LE(21)).toBe(BigInt(TIMESTAMP));
+        expect(bytes.readUInt8(29)).toBe(0b01);
+        expect(bytes.readUInt16LE(30)).toBe(40);
+        expect(bytes.readBigUInt64LE(32)).toBe(4096n);
 
         const decoded = decodeHeader(bytes, DEFAULT_MAX_HEADER_BYTES);
         expect(decoded).toMatchObject({
             version: 1,
+            timestamp: TIMESTAMP,
             compressed: true,
             encrypted: false,
             plaintextSize: 4096
         });
         expect(decoded.encryption).toBeNull();
-        expect(Buffer.from(decoded.digest).equals(Buffer.alloc(32, 7))).toBe(true);
     });
 
-    it("round-trips an encrypted header, with the tag and digest as the last two fields", () => {
+    it("round-trips an encrypted header, with the verifier tag as its last field", () => {
         const header = encryptedHeader();
         const bytes = Buffer.from(encodeHeader(header));
 
-        expect(bytes).toHaveLength(108);
-        expect(bytes.readUInt8(21)).toBe(0b10);
-        expect(bytes.readUInt8(32)).toBe(KDF_SCRYPT);
-        const params = [ bytes.readUInt8(33), bytes.readUInt8(34), bytes.readUInt8(35) ];
+        expect(bytes).toHaveLength(84);
+        expect(bytes.readUInt8(29)).toBe(0b10);
+        expect(bytes.readUInt8(40)).toBe(KDF_SCRYPT);
+        const params = [ bytes.readUInt8(41), bytes.readUInt8(42), bytes.readUInt8(43) ];
         expect(params).toEqual([ 17, 8, 1 ]);
-        expect(authenticatedHeaderEnd(108)).toBe(60);
-        expect(digestOffset(108)).toBe(76);
+        // Everything up to the tag is authenticated, the timestamp with it.
+        expect(authenticatedHeaderEnd(84)).toBe(68);
 
         const decoded = decodeHeader(bytes, DEFAULT_MAX_HEADER_BYTES);
         expect(decoded.encryption).toMatchObject({ kdfId: KDF_SCRYPT, log2N: 17, r: 8, p: 1 });
@@ -97,13 +102,53 @@ describe("header layout", () => {
         expect(decoded.plaintextSize).toBe(123456789);
     });
 
-    it("treats an unrepresentable plaintext size as unknown, so it can never widen a bound", () => {
+    it("treats an unrepresentable plaintext size or timestamp as unknown", () => {
+        // Neither may widen a bound or be shown as a date, so both read as "not stated".
         const bytes = Buffer.from(encodeHeader(plainHeader()));
-        bytes.writeBigUInt64LE(2n ** 63n, 24);
+        bytes.writeBigUInt64LE(2n ** 63n, 32);
+        bytes.writeBigUInt64LE(2n ** 63n, 21);
 
-        expect(decodeHeader(bytes, DEFAULT_MAX_HEADER_BYTES).plaintextSize).toBe(0);
+        const decoded = decodeHeader(bytes, DEFAULT_MAX_HEADER_BYTES);
+        expect(decoded.plaintextSize).toBe(0);
+        expect(decoded.timestamp).toBe(0);
+    });
+});
+
+describe("trailer", () => {
+    it("round-trips the digest and the length the payload came to", () => {
+        const digest = Buffer.alloc(32, 9);
+        const bytes = Buffer.from(encodeTrailer({ digest, plaintextSize: 987654321 }));
+
+        expect(bytes).toHaveLength(TRAILER_BYTES);
+        expect(bytes).toHaveLength(40);
+
+        const decoded = decodeTrailer(bytes);
+        expect(Buffer.from(decoded.digest)).toEqual(digest);
+        expect(decoded.plaintextSize).toBe(987654321);
     });
 
+    it("refuses anything that is not exactly a trailer, which is what a short file leaves", () => {
+        expect(() => decodeTrailer(Buffer.alloc(TRAILER_BYTES - 1)))
+            .toThrow(expect.objectContaining({ reason: "truncated" }) as Error);
+    });
+});
+
+describe("derived container size", () => {
+    it("counts the header, the payload and the trailer", () => {
+        expect(containerSize(4096, false)).toBe(HEADER_BYTES_PLAIN + 4096 + TRAILER_BYTES);
+    });
+
+    it("counts every frame's length field and tag when encrypted, the empty final one included", () => {
+        // An exact multiple of the frame size still ends with an empty final frame.
+        const oneFrame = 1_048_576;
+        expect(containerSize(oneFrame, true))
+            .toBe(HEADER_BYTES_ENCRYPTED + oneFrame + 2 * 20 + TRAILER_BYTES);
+        expect(containerSize(oneFrame + 1, true))
+            .toBe(HEADER_BYTES_ENCRYPTED + oneFrame + 1 + 2 * 20 + TRAILER_BYTES);
+    });
+});
+
+describe("nonces", () => {
     it("builds a distinct 12-byte nonce per counter", () => {
         const prefix = Buffer.alloc(8, 9);
 
@@ -132,12 +177,12 @@ describe("fixed header validation", () => {
         [ "a newer version", (bytes: Buffer) => bytes.writeUInt8(2, 20), "unsupported-version" ],
         [
             "a reserved flag bit",
-            (bytes: Buffer) => bytes.writeUInt8(0b100, 21),
+            (bytes: Buffer) => bytes.writeUInt8(0b100, 29),
             "unsupported-flags"
         ],
         [
             "a header length that does not match the flags",
-            (bytes: Buffer) => bytes.writeUInt16LE(65, 22),
+            (bytes: Buffer) => bytes.writeUInt16LE(41, 30),
             "invalid-header-length"
         ]
     ])("rejects %s", (_label, mutate, reason) => {
@@ -145,7 +190,7 @@ describe("fixed header validation", () => {
     });
 
     it("rejects a header above the ceiling before anything else", () => {
-        expect(decode((bytes) => bytes.writeUInt16LE(4000, 22), 128)).toThrow(
+        expect(decode((bytes) => bytes.writeUInt16LE(4000, 30), 128)).toThrow(
             expect.objectContaining({ reason: "invalid-header-length" }) as Error
         );
     });
@@ -153,17 +198,17 @@ describe("fixed header validation", () => {
     it("accepts the exact length each flag combination requires", () => {
         const lengthOf = (header: ContainerHeader) =>
             decodeFixedHeader(
-                encodeHeader(header).subarray(0, 32),
+                encodeHeader(header).subarray(0, FIXED_HEADER_BYTES),
                 DEFAULT_MAX_HEADER_BYTES
             ).headerLength;
 
-        expect(lengthOf(plainHeader())).toBe(64);
-        expect(lengthOf(encryptedHeader())).toBe(108);
+        expect(lengthOf(plainHeader())).toBe(HEADER_BYTES_PLAIN);
+        expect(lengthOf(encryptedHeader())).toBe(HEADER_BYTES_ENCRYPTED);
     });
 
     it("rejects a KDF id it does not implement", () => {
         const bytes = Buffer.from(encodeHeader(encryptedHeader()));
-        bytes.writeUInt8(2, 32);
+        bytes.writeUInt8(2, 40);
 
         expect(() => decodeHeader(bytes, DEFAULT_MAX_HEADER_BYTES)).toThrow(
             expect.objectContaining({ reason: "unsupported-kdf" }) as Error

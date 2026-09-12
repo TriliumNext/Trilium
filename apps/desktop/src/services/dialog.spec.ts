@@ -5,13 +5,17 @@ const electronMock = vi.hoisted(() => ({
     handlers: new Map<string, (...args: unknown[]) => unknown>(),
     handle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => electronMock.handlers.set(channel, handler)),
     showOpenDialog: vi.fn<(...args: unknown[]) => Promise<{ canceled: boolean; filePaths: string[] }>>(),
+    showMessageBox: vi.fn<(...args: unknown[]) => Promise<{ response: number }>>(),
     getFocusedWindow: vi.fn<() => object | null>(() => ({}))
 }));
 
 vi.mock("electron", () => ({
     default: {
         ipcMain: { handle: electronMock.handle },
-        dialog: { showOpenDialog: electronMock.showOpenDialog },
+        dialog: {
+            showOpenDialog: electronMock.showOpenDialog,
+            showMessageBox: electronMock.showMessageBox
+        },
         BrowserWindow: { getFocusedWindow: electronMock.getFocusedWindow }
     }
 }));
@@ -63,5 +67,37 @@ describe("desktop native directory picker", () => {
 
         expect(await pickDirectory()).toEqual({ status: "cancelled" });
         expect(electronMock.showOpenDialog).not.toHaveBeenCalled();
+    });
+});
+
+describe("the native confirmation before starting over", () => {
+    const confirmStartOver = () =>
+        electronMock.handlers.get("dialog-confirm-start-over")?.({}) as Promise<boolean>;
+
+    beforeEach(() => {
+        electronMock.handlers.clear();
+        vi.clearAllMocks();
+        setupDialogHandlers();
+    });
+
+    it("only agrees when the second button is the one that was pressed", async () => {
+        electronMock.showMessageBox.mockResolvedValue({ response: 1 });
+        expect(await confirmStartOver()).toBe(true);
+
+        electronMock.showMessageBox.mockResolvedValue({ response: 0 });
+        expect(await confirmStartOver()).toBe(false);
+    });
+
+    it("defaults to cancelling, and offers no way to stop being asked", async () => {
+        // A note script can pop this dialog; what it must never be able to do is get past it, or
+        // wear the user down until they stop seeing it.
+        electronMock.showMessageBox.mockResolvedValue({ response: 0 });
+        await confirmStartOver();
+
+        const [ options ] = electronMock.showMessageBox.mock.calls[0] as [ {
+            type: string; defaultId: number; cancelId: number; checkboxLabel?: string;
+        } ];
+        expect(options).toMatchObject({ type: "warning", defaultId: 0, cancelId: 0 });
+        expect(options.checkboxLabel).toBeUndefined();
     });
 });

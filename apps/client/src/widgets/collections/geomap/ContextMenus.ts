@@ -171,7 +171,7 @@ function buildGeoLocationItem(e: GeoMouseEvent) {
     return [
         {
             title: formatLocation(coordinates),
-            uiIcon: "bx bx-current-location",
+            uiIcon: "bx bx-crosshair",
             handler: () => copyTextWithToast(formatLocation(coordinates, 15))
         },
         {

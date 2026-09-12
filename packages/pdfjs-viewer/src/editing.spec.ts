@@ -15,6 +15,7 @@ function buildManager(overrides: Partial<AnnotationEditorUIManagerLike> = {}): A
     return {
         getMode: () => INK_MODE,
         getActive: () => null,
+        hasSelection: false,
         unselectAll: vi.fn(),
         ...overrides
     };
@@ -55,6 +56,17 @@ describe("commitPendingAnnotationEdits", () => {
         const whileTyping = buildManager({ getActive: () => ({ isInEditMode: () => true }) });
         commitPendingAnnotationEdits(false, whileTyping);
         expect(whileTyping.unselectAll).not.toHaveBeenCalled();
+    });
+
+    it("leaves a selected annotation alone", () => {
+        // pdf.js only sets an *active* editor when one enters edit mode, so a selection made by
+        // clicking reaches this with getActive() === null. Committing it would call unselectAll(),
+        // which hides the floating toolbar the colour picker lives in — a second after the user
+        // opened it (#11059). There is nothing to commit either way: a selected annotation is
+        // already in annotationStorage; only an uncommitted drawing session needs the call.
+        const withSelection = buildManager({ hasSelection: true });
+        commitPendingAnnotationEdits(false, withSelection);
+        expect(withSelection.unselectAll).not.toHaveBeenCalled();
     });
 
     it("never lets a commit failure propagate into the save", () => {

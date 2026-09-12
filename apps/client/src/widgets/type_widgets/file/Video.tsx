@@ -6,6 +6,7 @@ import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hoo
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
+import { useFullscreen } from "../../react/hooks";
 import NoItems from "../../react/NoItems";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import MediaFileActions from "./MediaFileActions";
@@ -336,30 +337,20 @@ function PictureInPictureButton({ videoRef }: { videoRef: RefObject<HTMLVideoEle
 }
 
 function FullscreenButton({ targetRef }: { targetRef: RefObject<HTMLElement> }) {
-    const [isFullscreen, setIsFullscreen] = useState(false);
-
+    // `useFullscreen` follows an element rather than a ref, a ref being filled after the render that
+    // asked for it and causing none of its own — so the wrapper is put into state once it is there.
+    const [ target, setTarget ] = useState<HTMLElement | null>(null);
     useEffect(() => {
-        const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
-        document.addEventListener("fullscreenchange", onFullscreenChange);
-        return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
-    }, []);
+        setTarget(targetRef.current);
+    }, [ targetRef ]);
 
-    const toggleFullscreen = () => {
-        const target = targetRef.current;
-        if (!target) return;
-
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
-        } else {
-            target.requestFullscreen();
-        }
-    };
+    const [ isFullscreen, toggleFullscreen ] = useFullscreen(target);
 
     return (
         <ActionButton
             icon={isFullscreen ? "bx bx-exit-fullscreen" : "bx bx-fullscreen"}
-            text={isFullscreen ? t("media.exit-fullscreen") : t("media.fullscreen")}
-            onClick={toggleFullscreen}
+            text={isFullscreen ? t("common.exit_fullscreen") : t("common.fullscreen")}
+            onClick={() => void toggleFullscreen()}
         />
     );
 }

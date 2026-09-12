@@ -1,6 +1,6 @@
 import { t } from "../../../../services/i18n";
+import { OptionCardSection } from "../../../react/Card";
 import SegmentedChoice, { SegmentedChoiceOption } from "../../../react/SegmentedChoice";
-import OptionsRow from "./OptionsRow";
 
 type ThemeMode = "app" | "fixed";
 
@@ -16,13 +16,13 @@ export default function ThemeModeSelector({ matchesApp, onMatchesAppChange }: Th
     ];
 
     return (
-        <OptionsRow name="theme-mode" label={t("code_theme.theme_mode")}>
+        <OptionCardSection name="theme-mode" label={t("code_theme.theme_mode")}>
             <SegmentedChoice
                 options={modes}
                 currentValue={matchesApp ? "app" : "fixed"}
                 onChange={(mode) => onMatchesAppChange(mode === "app")}
                 collapseOnMobile
             />
-        </OptionsRow>
+        </OptionCardSection>
     );
 }

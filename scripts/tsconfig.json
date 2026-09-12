@@ -13,8 +13,13 @@
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo"
   },
   "include": [
-    "scripts/*.ts",
-    "packages/commons/src/lib/i18n.ts"
+    "**/*.ts",
+    "**/*.mts",
+    "../packages/commons/src/lib/i18n.ts",
+    "../apps/website/src/locales.ts"
+  ],
+  "exclude": [
+    "dist"
   ],
   "references": []
 }

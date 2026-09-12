@@ -19,7 +19,13 @@ function renderInto(vnode: preact.ComponentChild) {
     return container;
 }
 
-const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+/**
+ * Long enough for the error banner to be on screen, not just decided on.
+ *
+ * `SetupPage` reveals it from an effect, and Preact runs effects on a frame rather than a microtask,
+ * so a bare `setTimeout(0)` lands before the banner has rendered — sometimes.
+ */
+const flush = () => new Promise((resolve) => setTimeout(resolve, 25));
 
 function mockFetch(resp: { ok?: boolean; status?: number; json?: () => Promise<unknown> } | "reject") {
     const fn = resp === "reject"
@@ -37,13 +43,15 @@ afterEach(() => {
 
 describe("PasswordLogin", () => {
     function setup(totpEnabled = false) {
-        const onError = vi.fn();
-        const c = renderInto(<PasswordLogin illustration={null} totpEnabled={totpEnabled} error={null} errorId={0} onError={onError} />);
+        const c = renderInto(<PasswordLogin illustration={null} totpEnabled={totpEnabled} initialError={null} />);
         const form = c.querySelector("form");
         const password = c.querySelector('input[name="password"]') as HTMLInputElement;
         const totp = c.querySelector('input[name="totpToken"]') as HTMLInputElement | null;
         const submit = () => form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-        return { onError, password, totp, submit };
+        // Asserted on the banner the user actually reads rather than on a callback: the form owns
+        // reporting its own failures now, so that is where the outcome shows up.
+        const shownError = () => c.querySelector(".page-error")?.textContent ?? "";
+        return { shownError, password, totp, submit };
     }
 
     it("posts the password read from the DOM (autofill-safe) and navigates on success", async () => {
@@ -76,54 +84,54 @@ describe("PasswordLogin", () => {
 
     it("reports an incorrect password on 401 {factor:'password'}", async () => {
         mockFetch({ ok: false, status: 401, json: async () => ({ factor: "password" }) });
-        const { onError, password, submit } = setup();
+        const { shownError, password, submit } = setup();
         password.value = "wrong";
         submit();
         await flush();
-        expect(onError).toHaveBeenCalledWith("login.incorrect-password");
+        expect(shownError()).toContain("login.incorrect-password");
     });
 
     it("reports a bad TOTP for a 6-digit second factor", async () => {
         mockFetch({ ok: false, status: 401, json: async () => ({ factor: "totp" }) });
-        const { onError, password, totp, submit } = setup(true);
+        const { shownError, password, totp, submit } = setup(true);
         password.value = "secret";
         if (totp) totp.value = "123456";
         submit();
         await flush();
-        expect(onError).toHaveBeenCalledWith("login.incorrect-totp");
+        expect(shownError()).toContain("login.incorrect-totp");
     });
 
     it("reports a bad recovery code when the second factor has recovery-code shape", async () => {
         mockFetch({ ok: false, status: 401, json: async () => ({ factor: "totp" }) });
-        const { onError, password, totp, submit } = setup(true);
+        const { shownError, password, totp, submit } = setup(true);
         password.value = "secret";
         if (totp) totp.value = "abcdefghijklmnopqrstuv=="; // 22 chars + "=="
         submit();
         await flush();
-        expect(onError).toHaveBeenCalledWith("login.incorrect-recovery-code");
+        expect(shownError()).toContain("login.incorrect-recovery-code");
     });
 
     it("reports rate limiting on 429 rather than a credential error", async () => {
         mockFetch({ ok: false, status: 429 });
-        const { onError, password, submit } = setup();
+        const { shownError, password, submit } = setup();
         password.value = "secret";
         submit();
         await flush();
-        expect(onError).toHaveBeenCalledWith("login.too-many-attempts");
+        expect(shownError()).toContain("login.too-many-attempts");
     });
 
     it("reports a connection error when fetch rejects (network failure)", async () => {
         mockFetch("reject");
-        const { onError, password, submit } = setup();
+        const { shownError, password, submit } = setup();
         password.value = "secret";
         submit();
         await flush();
-        expect(onError).toHaveBeenCalledWith("login.connection-error");
+        expect(shownError()).toContain("login.connection-error");
     });
 
     it("disables the submit button while a request is in flight", async () => {
         globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => {})) as typeof fetch; // never resolves
-        const c = renderInto(<PasswordLogin illustration={null} totpEnabled={false} error={null} errorId={0} onError={vi.fn()} />);
+        const c = renderInto(<PasswordLogin illustration={null} totpEnabled={false} initialError={null} />);
         const button = c.querySelector('button[type="submit"]') as HTMLButtonElement;
         const password = c.querySelector('input[name="password"]') as HTMLInputElement;
         expect(button.disabled).toBe(false);

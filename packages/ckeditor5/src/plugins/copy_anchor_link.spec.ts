@@ -2,14 +2,14 @@ import { _setModelData as setModelData, Bold, Bookmark, ClassicEditor, Essential
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
-import { installGlobMock, mockClipboard } from "../../test/globals-test-kit.js";
+import { installGlobMock } from "../../test/globals-test-kit.js";
 import CopyAnchorLinkButton from "./copy_anchor_link.js";
 
 describe("CopyAnchorLinkButton", () => {
     let editor: ClassicEditor;
     let getActiveContextNote: ReturnType<typeof vi.fn>;
     let getReferenceLinkTitleSync: ReturnType<typeof vi.fn>;
-    let clipboardWrite: ReturnType<typeof vi.fn>;
+    let copyHtml: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
         getActiveContextNote = vi.fn(() => ({ noteId: "noteAbc" }));
@@ -19,10 +19,11 @@ describe("CopyAnchorLinkButton", () => {
             getReferenceLinkTitleSync
         });
 
-        clipboardWrite = vi.fn(() => Promise.resolve());
-        mockClipboard({ write: clipboardWrite });
+        copyHtml = vi.fn();
 
-        editor = await createTestEditor([Essentials, Paragraph, Bold, Bookmark, CopyAnchorLinkButton]);
+        editor = await createTestEditor([Essentials, Paragraph, Bold, Bookmark, CopyAnchorLinkButton], {
+            clipboard: { copy: vi.fn(), copyHtml }
+        });
     });
 
     function getButton() {
@@ -39,24 +40,18 @@ describe("CopyAnchorLinkButton", () => {
 
         getButton().fire("execute");
 
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc?bookmark=my%20anchor");
-        expect(clipboardWrite).toHaveBeenCalledTimes(1);
-
-        const items = clipboardWrite.mock.calls[0]?.[0] as ClipboardItem[];
-        expect(items).toHaveLength(1);
-        const item = items[0];
-        expect(item?.types).toEqual(expect.arrayContaining(["text/html", "text/plain"]));
+        const href = "#root/noteAbc?bookmark=my%20anchor";
+        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith(href);
+        expect(copyHtml).toHaveBeenCalledWith(`<a class="reference-link" href="${href}">Some title</a>`, href);
     });
 
-    it("escapes HTML special characters in the generated link", async () => {
+    it("escapes HTML special characters in the generated link", () => {
         getReferenceLinkTitleSync.mockReturnValue("a<b>&\"c");
         setModelData(editor.model, "<paragraph>[<bookmark bookmarkId=\"anchor\"></bookmark>]</paragraph>");
 
         getButton().fire("execute");
 
-        const items = clipboardWrite.mock.calls[0]?.[0] as ClipboardItem[];
-        const htmlBlob = await items[0]?.getType("text/html");
-        const html = await htmlBlob?.text();
+        const html = copyHtml.mock.calls[0]?.[0] as string;
         expect(html).toContain("&lt;b&gt;");
         expect(html).toContain("&amp;");
         expect(html).toContain("&quot;");
@@ -69,7 +64,7 @@ describe("CopyAnchorLinkButton", () => {
         getButton().fire("execute");
 
         expect(getActiveContextNote).not.toHaveBeenCalled();
-        expect(clipboardWrite).not.toHaveBeenCalled();
+        expect(copyHtml).not.toHaveBeenCalled();
     });
 
     it("does nothing when there is no selected element", () => {
@@ -78,7 +73,7 @@ describe("CopyAnchorLinkButton", () => {
         getButton().fire("execute");
 
         expect(getActiveContextNote).not.toHaveBeenCalled();
-        expect(clipboardWrite).not.toHaveBeenCalled();
+        expect(copyHtml).not.toHaveBeenCalled();
     });
 
     it("does nothing when there is no active context note", () => {
@@ -88,6 +83,15 @@ describe("CopyAnchorLinkButton", () => {
         getButton().fire("execute");
 
         expect(getReferenceLinkTitleSync).not.toHaveBeenCalled();
-        expect(clipboardWrite).not.toHaveBeenCalled();
+        expect(copyHtml).not.toHaveBeenCalled();
+    });
+
+    it("does not throw when the host configures no clipboard bridge", async () => {
+        // `navigator.clipboard` is undefined outside secure contexts (Trilium over plain HTTP), so
+        // the button must never reach for it — with no host callback it is simply a no-op (#10723).
+        editor = await createTestEditor([Essentials, Paragraph, Bold, Bookmark, CopyAnchorLinkButton]);
+        setModelData(editor.model, "<paragraph>[<bookmark bookmarkId=\"anchor\"></bookmark>]</paragraph>");
+
+        expect(() => getButton().fire("execute")).not.toThrow();
     });
 });

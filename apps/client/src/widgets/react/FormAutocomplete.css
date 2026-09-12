@@ -44,3 +44,18 @@
     color: var(--active-item-text-color);
     background-color: var(--active-item-background-color);
 }
+
+/* A heading over the entries below it, not one of them (see `isHeading`). */
+.form-autocomplete-dropdown .form-autocomplete-heading {
+    padding: 8px 8px 2px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.55;
+    cursor: default;
+}
+
+.form-autocomplete-dropdown .form-autocomplete-heading:first-child {
+    padding-top: 2px;
+}

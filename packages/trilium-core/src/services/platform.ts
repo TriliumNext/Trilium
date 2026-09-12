@@ -10,6 +10,12 @@ export interface PlatformProvider {
     readonly isWindows: boolean;
     readonly isLinux: boolean;
     /**
+     * Where the database file is, for the platforms whose database is a file the user can reach.
+     * Null where it is not — the browser build keeps it in storage the browser owns, which has no
+     * path to give — and absent where a platform does not answer at all.
+     */
+    getDatabasePath?(): string | null;
+    /**
      * Lets a platform decide whether an HTTP-server startup error should be
      * swallowed (logged-only) rather than treated as fatal. The desktop uses
      * this to tolerate `EADDRINUSE` when launched with `--new-window` or as a

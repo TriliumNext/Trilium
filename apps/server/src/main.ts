@@ -9,7 +9,7 @@ import { t } from "i18next";
 import path from "path";
 
 import ServerBackupService from "./backup_provider.js";
-import ClsHookedExecutionContext from "./cls_provider.js";
+import AsyncLocalStorageExecutionContext from "./cls_provider.js";
 import { loadCoreSchema } from "./core_assets.js";
 import NodejsCryptoProvider from "./crypto_provider.js";
 import NodejsInAppHelpProvider from "./in_app_help_provider.js";
@@ -19,6 +19,7 @@ import dataDirs from "./services/data_dir.js";
 import port from "./services/port.js";
 import NodeRequestProvider from "./services/request.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
+import { consumeSetupMarker, setupPlatform } from "./services/setup_marker.js";
 import WebSocketMessagingProvider from "./services/ws_messaging_provider.js";
 import BetterSqlite3Provider from "./sql_provider.js";
 import NodejsZipProvider from "./zip_provider.js";
@@ -74,7 +75,7 @@ async function startApplication() {
         zip: new NodejsZipProvider(),
         zipExportProviderFactory: (await import("./services/export/zip/factory.js")).serverZipExportProviderFactory,
         request: new NodeRequestProvider(),
-        executionContext: new ClsHookedExecutionContext(),
+        executionContext: new AsyncLocalStorageExecutionContext(),
         messaging: new WebSocketMessagingProvider(),
         schema: loadCoreSchema(),
         platform: new ServerPlatformProvider(),
@@ -88,6 +89,9 @@ async function startApplication() {
         backup: new ServerBackupService(options),
         image: (await import("./services/image_provider.js")).serverImageProvider,
         config,
+        // Read before core exists, because what it says is whether to open the database at all.
+        setupMarker: consumeSetupMarker(),
+        setupPlatform,
         extraAppInfo: {
             nodeVersion: process.version,
             dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)

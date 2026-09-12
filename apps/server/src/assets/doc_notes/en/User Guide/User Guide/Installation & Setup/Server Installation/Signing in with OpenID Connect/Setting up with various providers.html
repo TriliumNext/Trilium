@@ -10,15 +10,13 @@
   <li>
     <p>Generate a client secret:</p><pre><code class="language-text-x-trilium-auto">authelia crypto hash generate pbkdf2 --variant sha512 --random --random.length 72 --random.charset rfc3986
 </code></pre>
-    <p><code spellcheck="false">Random Password</code> goes to Trilium, <code spellcheck="false">Digest</code> (the
-      <code
-      spellcheck="false">$pbkdf2-sha512$…</code>string) goes to Authelia.</p>
+    <p><code spellcheck="false">Random Password</code> goes to Trilium, <code spellcheck="false">Digest</code> (the <code
+      spellcheck="false">$pbkdf2-sha512$…</code> string) goes to Authelia.</p>
   </li>
   <li>
     <p>Add a client under <code spellcheck="false">identity_providers.oidc.clients</code> in
-      Authelia's <code spellcheck="false">configuration.yml</code>, replacing
-      <code
-      spellcheck="false">&lt;server&gt;</code>with the URL of your Trilium instance:</p><pre><code class="language-text-x-yaml">identity_providers:
+      Authelia's <code spellcheck="false">configuration.yml</code>, replacing <code
+      spellcheck="false">&lt;server&gt;</code> with the URL of your Trilium instance:</p><pre><code class="language-text-x-yaml">identity_providers:
   oidc:
     clients:
       - client_id: 'trilium'
@@ -67,11 +65,10 @@ oauthIssuerName=Authelia</code></pre>
     should be near the end).</li>
   <li>Save the application and copy the <em>Application ID</em> and <em>Secret</em>.</li>
 </ol>
-<p>Adjust <code spellcheck="false">config.ini</code> as follows, replacing
-  <code
-  spellcheck="false">&lt;ApplicationId&gt;</code>and <code spellcheck="false">&lt;Secret&gt;</code> with
-    the values from the last step as well as the <code spellcheck="false">&lt;server&gt;</code> with
-    a URL to your Trilium instance.</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
+<p>Adjust <code spellcheck="false">config.ini</code> as follows, replacing <code
+  spellcheck="false">&lt;ApplicationId&gt;</code> and <code spellcheck="false">&lt;Secret&gt;</code> with
+  the values from the last step as well as the <code spellcheck="false">&lt;server&gt;</code> with
+  a URL to your Trilium instance.</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
 oauthBaseUrl=https://&lt;server&gt;
 oauthClientId=&lt;ApplicationId&gt;
 oauthClientSecret=&lt;Secret&gt;
@@ -80,10 +77,9 @@ oauthIssuerName=GitLab
 oauthClientAuthMethod=client_secret_post
 </code></pre>
 <aside class="admonition important">
-  <p>If you are using a self-hosted instance of GitLab, make sure to also update
-    <code
+  <p>If you are using a self-hosted instance of GitLab, make sure to also update <code
     spellcheck="false">oauthIssuerBaseUrl</code>, and keep the <code spellcheck="false">oauthClientAuthMethod</code> line
-      above.</p>
+    above.</p>
   <p>GitLab's token endpoint does not decode credentials sent via HTTP Basic,
     so without <code spellcheck="false">oauthClientAuthMethod</code>, sign-in
     fails with a <code spellcheck="false">server responded with a challenge in the WWW-Authenticate HTTP Header</code> error.
@@ -93,10 +89,10 @@ oauthClientAuthMethod=client_secret_post
 <h2>Kanidm</h2>
 <ol>
   <li>
-    <p>Create the client, add the redirect URL and grant the scopes, replacing
-      <code
-      spellcheck="false">&lt;server&gt;</code>with the URL of your Trilium instance and <code spellcheck="false">&lt;group&gt;</code> with
-        an existing Kanidm group whose members may sign in:</p><pre><code class="language-text-x-trilium-auto">kanidm system oauth2 create trilium "Trilium" "https://&lt;server&gt;"
+    <p>Create the client, add the redirect URL and grant the scopes, replacing <code
+      spellcheck="false">&lt;server&gt;</code> with the URL of your Trilium instance
+      and <code spellcheck="false">&lt;group&gt;</code> with an existing Kanidm
+      group whose members may sign in:</p><pre><code class="language-text-x-trilium-auto">kanidm system oauth2 create trilium "Trilium" "https://&lt;server&gt;"
 kanidm system oauth2 add-redirect-url trilium "https://&lt;server&gt;/callback"
 kanidm system oauth2 update-scope-map trilium &lt;group&gt; openid profile email</code></pre>
     <p>The <code spellcheck="false">openid</code> scope is mandatory; without it
@@ -106,10 +102,10 @@ kanidm system oauth2 update-scope-map trilium &lt;group&gt; openid profile email
     <p>Read the client secret:</p><pre><code class="language-text-x-trilium-auto">kanidm system oauth2 show-basic-secret trilium</code></pre>
   </li>
 </ol>
-<p>Adjust <code spellcheck="false">config.ini</code> as follows, replacing
-  <code
-  spellcheck="false">&lt;idm&gt;</code>with the URL of your Kanidm instance and <code spellcheck="false">&lt;BasicSecret&gt;</code> with
-    the value from step 2:</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
+<p>Adjust <code spellcheck="false">config.ini</code> as follows, replacing <code
+  spellcheck="false">&lt;idm&gt;</code> with the URL of your Kanidm instance
+  and <code spellcheck="false">&lt;BasicSecret&gt;</code> with the value from
+  step 2:</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
 oauthBaseUrl=https://&lt;server&gt;
 oauthClientId=trilium
 oauthClientSecret=&lt;BasicSecret&gt;
@@ -168,11 +164,10 @@ oauthIssuerName=Pocket ID</code></pre>
   <li>In <em>Authorized redirect URIs</em>, set &nbsp;<code spellcheck="false">https://&lt;server&gt;/callback</code>.</li>
   <li>Press <em>Create</em> and copy <em>Client ID</em> and <em>Client secret</em>.</li>
 </ol>
-<p>Adjust <code spellcheck="false">config.ini</code> as follows, replacing
-  <code
-  spellcheck="false">&lt;ClientID&gt;</code>and <code spellcheck="false">&lt;ClientSecret&gt;</code> with
-    the values from the last step as well as the <code spellcheck="false">&lt;server&gt;</code> with
-    a URL to your Trilium instance.</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
+<p>Adjust <code spellcheck="false">config.ini</code> as follows, replacing <code
+  spellcheck="false">&lt;ClientID&gt;</code> and <code spellcheck="false">&lt;ClientSecret&gt;</code> with
+  the values from the last step as well as the <code spellcheck="false">&lt;server&gt;</code> with
+  a URL to your Trilium instance.</p><pre><code class="language-text-x-trilium-auto">[MultiFactorAuthentication]
 oauthBaseUrl=https://&lt;server&gt;
 oauthClientId=&lt;ClientID&gt;
 oauthClientSecret=&lt;ClientSecret&gt;</code></pre>

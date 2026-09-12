@@ -17,7 +17,7 @@ buildSync({
     external: ["electron"]
 });
 
-const LD_LIBRARY_PATH = isNixOS() && getNixLdLibraryPath();
+const LD_LIBRARY_PATH = isNixOS() ? getNixLdLibraryPath() : undefined;
 
 const args = process.argv.slice(2);
 execSync(`${getElectronPath()} ${args.join(" ")} --no-sandbox`, {

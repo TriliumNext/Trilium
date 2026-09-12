@@ -2,6 +2,7 @@ import {
     EraseExcessRevisionsOptions,
     SpaceUsageBucket,
     SpaceUsageContent,
+    SpaceUsageCounts,
     SpaceUsageDeletedNotes,
     SpaceUsageNoteResponse,
     SpaceUsageOverviewResponse,
@@ -104,6 +105,27 @@ function buildOverview({ includeRevisions, limit }: { includeRevisions: boolean,
         deletedNotes: collectDeletedNotes(),
         unusedAttachments: collectUnusedAttachments(),
         total: bucketOf(ranked)
+    };
+}
+
+/**
+ * What the knowledge base holds, counted without measuring any of it.
+ *
+ * Cheap enough to answer a page that merely states the figures — a walk of the tree becca already
+ * holds plus one query over the attachment rows — where the overview above reads every blob in the
+ * database. What counts as visible is the canonical forest all the same, so this and the space usage
+ * pages never disagree about how many notes there are: the hidden subtree stays out, and a bookmark,
+ * being a clone into it, stays in.
+ */
+export function getContentCounts(): SpaceUsageCounts {
+    const visibleNoteIds = new Set(buildForestFromBecca().userNoteIds);
+    const ownerIds = getSql().getColumn<string>("SELECT ownerId FROM attachments WHERE isDeleted = 0");
+
+    return {
+        noteCount: visibleNoteIds.size,
+        // An owner is either a note or a revision, and a revision ID matches no note, so the
+        // attachments belonging to history drop out of the count on their own.
+        attachmentCount: ownerIds.filter((ownerId) => visibleNoteIds.has(ownerId)).length
     };
 }
 

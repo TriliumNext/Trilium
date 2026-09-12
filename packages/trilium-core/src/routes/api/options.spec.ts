@@ -1,3 +1,4 @@
+import type { UserFont } from "@triliumnext/commons";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import * as i18n from "../../services/i18n";
@@ -13,6 +14,18 @@ let api: CoreApiTester;
 
 function getOptionValue(name: string): string | null {
     return getSql().getValue<string | null>("SELECT value FROM options WHERE name = ?", [name]);
+}
+
+/** Creates a file note carrying a `#customFont` label and returns its note ID. */
+async function createFontNote(title: string): Promise<string> {
+    const created = await api.post<{ note: { noteId: string } }>("/api/notes/root/children?target=into", {
+        body: { title, type: "file", mime: "font/woff2", content: "wOF2" }
+    });
+    const { noteId } = created.body.note;
+    await api.put(`/api/notes/${noteId}/set-attribute`, {
+        body: { type: "label", name: "customFont", value: "" }
+    });
+    return noteId;
 }
 
 /** Creates a code note carrying a `#run` label and returns its note ID. */
@@ -187,5 +200,18 @@ describe("Options API (core)", () => {
         expect(withValueEntry?.val).toBe("my-theme");
         // "Theme B!!" -> non-alphanumerics replaced with "-"
         expect(noValueEntry?.val).toBe("theme-b--");
+    });
+
+    it("returns each font note by id, named by its title", async () => {
+        const noteId = await createFontNote("Iosevka");
+
+        const res = await api.get<UserFont[]>("/api/options/user-fonts");
+        expect(res.status).toBe(200);
+
+        // The id an option points at, the name the picker offers it under, and the version the
+        // request for its bytes carries.
+        const entry = res.body.find((font) => font.noteId === noteId);
+        expect(entry?.title).toBe("Iosevka");
+        expect(entry?.blobId).toBeTruthy();
     });
 });

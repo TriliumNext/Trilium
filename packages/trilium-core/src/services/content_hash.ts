@@ -5,9 +5,10 @@ import { hash } from "./utils/index.js";
 
 type SectorHash = Record<string, string>;
 
-interface FailedCheck {
+export interface FailedCheck {
     entityName: string;
-    sector: string[1];
+    /** Single character: the first character of the entity ID the sector groups by. */
+    sector: string;
 }
 
 /**

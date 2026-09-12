@@ -476,6 +476,43 @@ describe("Notion importer — integration", () => {
         expect(undated?.utcDateCreated.startsWith("2024-01-02")).toBe(false);
     });
 
+    it("reads a page's timestamps from the <time> element's datetime attribute", async () => {
+        const id = "2c6c5eca1b8b80f7b9eaf4f396b755dc";
+        // A non-English export renders the visible text in its own locale, which `new Date()` parses only
+        // when the month name opens with its English abbreviation ("mars" does, "juillet" doesn't). The
+        // datetime attribute carries the same instant as ISO 8601, so read that instead.
+        const propertyTable =
+            `<table class="properties"><tbody>` +
+            `<tr class="property-row property-row-created_time"><th>Date de création</th><td><time datetime="2020-07-14T10:10">14 juillet 2020 10:10</time></td></tr>` +
+            `<tr class="property-row property-row-last_edited_time"><th>Date de modification</th><td><time datetime="2023-12-30T14:26">30 décembre 2023 14:26</time></td></tr>` +
+            `</tbody></table>`;
+        const importRoot = await importNotion({
+            "Houmous 2c6c5eca1b8b80f7b9eaf4f396b755dc.html":
+                `<html><head><title>Houmous</title></head><body><div id="${id}">${propertyTable}<div class="page-body"><p>x</p></div></div></body></html>`
+        });
+
+        // Notion's timestamps carry no offset, so they are local wall-clock; assert the local columns to
+        // keep the expectation independent of the runner's timezone.
+        const note = importRoot.getChildNotes().find((n) => n.title === "Houmous");
+        expect(note?.dateCreated?.startsWith("2020-07-14 10:10:00")).toBe(true);
+        expect(note?.dateModified?.startsWith("2023-12-30 14:26:00")).toBe(true);
+    });
+
+    it("falls back to the visible text when a timestamp's <time> element carries no datetime attribute", async () => {
+        const id = "2c6c5eca1b8b80f7b9eaf4f396b755dc";
+        const propertyTable =
+            `<table class="properties"><tbody>` +
+            `<tr class="property-row property-row-created_time"><th>Created</th><td><time>January 2, 2024 3:04 AM</time></td></tr>` +
+            `</tbody></table>`;
+        const importRoot = await importNotion({
+            "TextOnly 2c6c5eca1b8b80f7b9eaf4f396b755dc.html":
+                `<html><head><title>TextOnly</title></head><body><div id="${id}">${propertyTable}<div class="page-body"><p>x</p></div></div></body></html>`
+        });
+
+        const note = importRoot.getChildNotes().find((n) => n.title === "TextOnly");
+        expect(note?.dateCreated?.startsWith("2024-01-02 03:04:00")).toBe(true);
+    });
+
     it("imports a page's text property as a Trilium label", async () => {
         const id = "2c6c5eca1b8b80f7b9eaf4f396b755dc";
         // Real Notion markup: the <th> leads with an icon span (no text) before the column name.
@@ -792,6 +829,42 @@ describe("Notion importer — integration", () => {
         const row = db?.getChildNotes().find((n) => n.title === "Row");
         // Local datetime-local format; "7:00 PM" → 19:00 (parse-local + format-local is timezone-independent).
         expect(row?.getOwnedLabelValue("date")).toBe("2026-06-23T19:00");
+    });
+
+    it("reads a dated column from the <time> element's datetime attribute", async () => {
+        const dbId = "388c5eca1b8b8078a20fd18330d81306";
+        const rowId = "388c5eca1b8b80929a78da7c68154bd7";
+        // "juin" is unparseable to `new Date()`, so the value has to come from the datetime attribute.
+        const props = `<table class="properties"><tbody><tr class="property-row property-row-date"><th><span class="icon property-icon"><img src="x.svg"/></span>Date</th><td><time datetime="2026-06-23T19:00">23 juin 2026 19:00</time></td></tr></tbody></table>`;
+        const importRoot = await importNotion({
+            "DB 388c5eca1b8b8078a20fd18330d81306.html":
+                `<html><head><title>DB</title></head><body><div id="${dbId}"><div class="page-body"></div></div></body></html>`,
+            "DB/Row 388c5eca1b8b80929a78da7c68154bd7.html":
+                `<html><head><title>Row</title></head><body><div id="${rowId}">${props}<div class="page-body"><p>x</p></div></div></body></html>`
+        });
+
+        const db = importRoot.getChildNotes().find((n) => n.title === "DB");
+        expect(db?.getOwnedLabel("label:date")?.value).toBe("promoted,single,datetime,alias=Date");
+        const row = db?.getChildNotes().find((n) => n.title === "Row");
+        expect(row?.getOwnedLabelValue("date")).toBe("2026-06-23T19:00");
+    });
+
+    it("keeps a time-less dated column on its own day, whatever the runner's timezone", async () => {
+        const dbId = "388c5eca1b8b8078a20fd18330d81306";
+        const rowId = "388c5eca1b8b80929a78da7c68154bd7";
+        // A bare `YYYY-MM-DD` is UTC to `new Date()` but local to the label, which would shift the day west
+        // of Greenwich.
+        const props = `<table class="properties"><tbody><tr class="property-row property-row-date"><th><span class="icon property-icon"><img src="x.svg"/></span>Date</th><td><time datetime="2026-06-24">24 juin 2026</time></td></tr></tbody></table>`;
+        const importRoot = await importNotion({
+            "DB 388c5eca1b8b8078a20fd18330d81306.html":
+                `<html><head><title>DB</title></head><body><div id="${dbId}"><div class="page-body"></div></div></body></html>`,
+            "DB/Row 388c5eca1b8b80929a78da7c68154bd7.html":
+                `<html><head><title>Row</title></head><body><div id="${rowId}">${props}<div class="page-body"><p>x</p></div></div></body></html>`
+        });
+
+        const db = importRoot.getChildNotes().find((n) => n.title === "DB");
+        const row = db?.getChildNotes().find((n) => n.title === "Row");
+        expect(row?.getOwnedLabelValue("date")).toBe("2026-06-24");
     });
 
     it("splits a timeless date range into separate start and end date columns", async () => {

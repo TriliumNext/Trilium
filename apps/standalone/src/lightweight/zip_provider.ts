@@ -64,9 +64,7 @@ class BrowserZipArchive implements ZipArchive {
 export default class BrowserZipProvider implements ZipProvider {
     async detectFilenameEncoding(source: ZipSource): Promise<string> {
         const buffer = requireBuffer(source);
-        // fflate decodes filenames as CP437/Latin-1 (preserving raw bytes).
-        // We recover raw bytes and detect the encoding.
-        const rawSamples = await this.#collectRawFilenameSamples(buffer);
+        const rawSamples = collectRawFilenameSamples(buffer);
         if (rawSamples.length === 0) {
             return "utf-8";
         }
@@ -88,13 +86,17 @@ export default class BrowserZipProvider implements ZipProvider {
     ): Promise<void> {
         const buffer = requireBuffer(source);
         return new Promise<void>((res, rej) => {
+            // Read inside the executor so a malformed archive rejects rather than throwing
+            // synchronously, matching how an unzip() failure surfaces.
+            const fileNames = readCentralDirectory(buffer);
+
             unzip(buffer, async (err, files) => {
                 if (err) { rej(err); return; }
 
                 try {
                     for (const [fileName, data] of Object.entries(files)) {
                         await processEntry(
-                            { fileName: decodeZipFileName(fileName, filenameEncoding) },
+                            { fileName: decodeZipFileName(fileName, fileNames.get(fileName), filenameEncoding) },
                             () => Promise.resolve(data)
                         );
                     }
@@ -105,62 +107,154 @@ export default class BrowserZipProvider implements ZipProvider {
             });
         });
     }
-
-    /**
-     * Does a first pass over the ZIP to collect raw filename bytes
-     * from entries that aren't valid UTF-8.
-     */
-    #collectRawFilenameSamples(buffer: Uint8Array): Promise<Uint8Array[]> {
-        return new Promise<Uint8Array[]>((res, rej) => {
-            unzip(buffer, (err, files) => {
-                if (err) { rej(err); return; }
-
-                const samples: Uint8Array[] = [];
-                const utf8 = new TextDecoder("utf-8", { fatal: true });
-                for (const fileName of Object.keys(files)) {
-                    const bytes = recoverRawBytes(fileName);
-                    try {
-                        utf8.decode(bytes);
-                    } catch {
-                        samples.push(bytes);
-                    }
-                }
-                res(samples);
-            });
-        });
-    }
 }
 
-/** Recover original raw bytes from fflate's CP437/Latin-1 decoded string. */
-function recoverRawBytes(name: string): Uint8Array {
-    const bytes = new Uint8Array(name.length);
-    for (let i = 0; i < name.length; i++) {
-        bytes[i] = name.charCodeAt(i) & 0xff;
-    }
-    return bytes;
+/** What an entry's name actually is on disk, as opposed to what fflate made of it. */
+interface FileNameInfo {
+    /** The name exactly as stored, undecoded. */
+    rawBytes: Uint8Array;
+    /** Whether the language encoding flag (general purpose bit 11) is set, i.e. the archive declares UTF-8. */
+    isUtf8Flagged: boolean;
 }
 
 /**
- * fflate decodes ZIP entry filenames as CP437/Latin-1 unless the language
- * encoding flag (general purpose bit 11) is set, but many real-world archives
- * write UTF-8 or other encodings without setting that flag.
- * Recover the original raw bytes and re-decode with the detected encoding.
+ * Collects the raw name bytes of every entry whose encoding is genuinely unknown: the archive did not
+ * flag it as UTF-8 and it does not decode as UTF-8 either.
+ *
+ * A flagged entry is excluded even when its bytes look unusual. Its encoding is already declared, so it
+ * needs no rescuing — and sampling it would let one such name drag every *other* name in the archive
+ * through the wrong decoder.
  */
-function decodeZipFileName(name: string, encoding?: string): string {
-    const bytes = recoverRawBytes(name);
+function collectRawFilenameSamples(buffer: Uint8Array): Uint8Array[] {
+    const utf8 = new TextDecoder("utf-8", { fatal: true });
+    const samples: Uint8Array[] = [];
+
+    for (const { rawBytes, isUtf8Flagged } of readCentralDirectory(buffer).values()) {
+        if (isUtf8Flagged) {
+            continue;
+        }
+        try {
+            utf8.decode(rawBytes);
+        } catch {
+            samples.push(rawBytes);
+        }
+    }
+
+    return samples;
+}
+
+/**
+ * Resolves an entry's name from what fflate decoded plus what the archive actually recorded.
+ *
+ * fflate hands names back already decoded, choosing UTF-8 or Latin-1 by the language encoding flag —
+ * which it never exposes. A flagged name is therefore already correct and is passed through untouched;
+ * re-deriving bytes from it would truncate every character above U+00FF (a curly apostrophe in a note
+ * title becoming a control character, and the entry then matching nothing in `!!!meta.json`).
+ *
+ * Only an unflagged name is ambiguous — many real-world archives write UTF-8, or a legacy codepage,
+ * without setting the flag — so those are re-decoded from their raw bytes with the detected encoding.
+ */
+function decodeZipFileName(name: string, info: FileNameInfo | undefined, encoding?: string): string {
+    // A name missing from the central directory (a duplicate entry, say) keeps fflate's reading.
+    if (!info || info.isUtf8Flagged) {
+        return name;
+    }
+
     try {
-        return new TextDecoder(encoding || "utf-8", { fatal: true }).decode(bytes);
+        return new TextDecoder(encoding || "utf-8", { fatal: true }).decode(info.rawBytes);
     } catch {
         if (encoding && encoding !== "utf-8") {
             // Encoding detection was wrong for this entry, try UTF-8
             try {
-                return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+                return new TextDecoder("utf-8", { fatal: true }).decode(info.rawBytes);
             } catch {
                 return name;
             }
         }
         return name;
     }
+}
+
+const CENTRAL_HEADER_SIGNATURE = 0x02014b50;
+const END_OF_CENTRAL_DIRECTORY_SIGNATURE = 0x06054b50;
+const CENTRAL_HEADER_LENGTH = 46;
+const END_OF_CENTRAL_DIRECTORY_LENGTH = 22;
+/** General purpose bit 11: the file name and comment are UTF-8. */
+const UTF8_FLAG = 0x800;
+
+/**
+ * Reads the archive's central directory for the two facts fflate discards — each entry's raw name bytes
+ * and its language encoding flag — keyed by the string fflate produces for that entry, which is the only
+ * handle the callers have on it.
+ *
+ * This also replaces what used to be a second full `unzip()` pass done purely to sample file names: the
+ * central directory carries them verbatim, so no entry has to be inflated to read one.
+ */
+function readCentralDirectory(buffer: Uint8Array): Map<string, FileNameInfo> {
+    const entries = new Map<string, FileNameInfo>();
+    if (buffer.byteLength < END_OF_CENTRAL_DIRECTORY_LENGTH) {
+        throw new Error("Truncated ZIP: no end-of-central-directory record.");
+    }
+
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+    // The end-of-central-directory record is last, but a trailing comment of up to 64 KiB may follow it.
+    let eocd = -1;
+    const earliest = Math.max(0, buffer.byteLength - END_OF_CENTRAL_DIRECTORY_LENGTH - 0xffff);
+    for (let i = buffer.byteLength - END_OF_CENTRAL_DIRECTORY_LENGTH; i >= earliest; i--) {
+        if (view.getUint32(i, true) === END_OF_CENTRAL_DIRECTORY_SIGNATURE) {
+            eocd = i;
+            break;
+        }
+    }
+    if (eocd < 0) {
+        throw new Error("Truncated ZIP: no end-of-central-directory record.");
+    }
+
+    // Walk the directory by header rather than by the recorded entry count, which saturates at 65535
+    // (and is then only recoverable from a ZIP64 record). A ZIP64 offset saturates to 0xFFFFFFFF, which
+    // lands past `end` and simply yields no entries — every name then keeps fflate's own decoding.
+    let offset = view.getUint32(eocd + 16, true);
+    const end = Math.min(buffer.byteLength, offset + view.getUint32(eocd + 12, true));
+
+    while (offset + CENTRAL_HEADER_LENGTH <= end && view.getUint32(offset, true) === CENTRAL_HEADER_SIGNATURE) {
+        const isUtf8Flagged = !!(view.getUint16(offset + 8, true) & UTF8_FLAG);
+        const nameLength = view.getUint16(offset + 28, true);
+        const extraLength = view.getUint16(offset + 30, true);
+        const commentLength = view.getUint16(offset + 32, true);
+        const nameStart = offset + CENTRAL_HEADER_LENGTH;
+
+        if (nameStart + nameLength > end) {
+            break;
+        }
+
+        const rawBytes = buffer.subarray(nameStart, nameStart + nameLength);
+        entries.set(decodeAsFflateDoes(rawBytes, isUtf8Flagged), { rawBytes, isUtf8Flagged });
+
+        offset = nameStart + nameLength + extraLength + commentLength;
+    }
+
+    return entries;
+}
+
+/**
+ * Reproduces the string fflate hands back for an entry, so a central directory record can be matched to
+ * it: UTF-8 when the archive flags the name as such, otherwise one character per byte.
+ *
+ * The Latin-1 branch cannot use `TextDecoder`, whose "latin1"/"iso-8859-1" labels are aliases of
+ * windows-1252 and so map 0x80-0x9F to different code points than the plain byte-to-char widening
+ * fflate performs.
+ */
+function decodeAsFflateDoes(rawBytes: Uint8Array, isUtf8Flagged: boolean): string {
+    if (isUtf8Flagged) {
+        return new TextDecoder("utf-8").decode(rawBytes);
+    }
+
+    let name = "";
+    for (const byte of rawBytes) {
+        name += String.fromCharCode(byte);
+    }
+    return name;
 }
 
 /** Common CJK encodings to try when filenames aren't valid UTF-8. */

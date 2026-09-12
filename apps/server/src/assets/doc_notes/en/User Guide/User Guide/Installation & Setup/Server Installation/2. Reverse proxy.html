@@ -18,10 +18,9 @@
 <p>Regardless of the proxy you choose, make sure of the following:</p>
 <ul>
   <li><strong>Forward the WebSocket upgrade.</strong> Trilium uses a WebSocket
-    for synchronization and live UI updates. Your proxy must pass the
-    <code
-    spellcheck="false">Upgrade</code>and <code spellcheck="false">Connection</code> headers through,
-      otherwise the client will appear to load but never receive updates.</li>
+    for synchronization and live UI updates. Your proxy must pass the <code
+    spellcheck="false">Upgrade</code> and <code spellcheck="false">Connection</code> headers
+    through, otherwise the client will appear to load but never receive updates.</li>
   <li><strong>Configure the trusted proxy.</strong> So that Trilium sees the
     real client IP (for rate limiting, logging, and secure cookies) rather
     than the proxy's address. See&nbsp;<a class="reference-link" href="#root/_help_LLzSMXACKhUs">Trusted proxy</a>.</li>
@@ -43,8 +42,8 @@ error: Unexpected token '&lt;', "&lt;!doctype "... is not valid JSON
 <ul>
   <li><strong>Preferred, use Trilium's built-in authentication.</strong> Don't
     gate Trilium at the proxy at all. Trilium can authenticate the web interface
-    itself, including via <a href="#root/_help_x1lQNKQBqLcA">OpenID Connect</a>. This
-    leaves the sync endpoints free to authenticate the way they're designed
+    itself, including via <a href="#root/_help_x1lQNKQBqLcA">OpenID Connect</a>.
+    This leaves the sync endpoints free to authenticate the way they're designed
     to.</li>
   <li><strong>Exempt the sync endpoints from the proxy's authentication.</strong> If
     you must keep auth at the proxy, exclude these paths from the forward-auth

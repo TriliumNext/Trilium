@@ -1,4 +1,4 @@
-import { _setModelData as setModelData, ClassicEditor, Code, Essentials, Paragraph, WidgetToolbarRepository } from "ckeditor5";
+import { _setModelData as setModelData, ClassicEditor, Code, Essentials, Link, Paragraph, WidgetToolbarRepository } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
@@ -14,7 +14,7 @@ describe("InlineCodeToolbar", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        editor = await createTestEditor([Essentials, Paragraph, Code, CopyToClipboardButton, InlineCodeToolbar]);
+        editor = await createTestEditor([Essentials, Paragraph, Code, Link, CopyToClipboardButton, InlineCodeToolbar]);
     });
 
     it("loads the plugin successfully", () => {
@@ -58,6 +58,25 @@ describe("InlineCodeToolbar", () => {
 
             const related = getInlineCodeDefinition()?.getRelatedElement(editor.editing.view.document.selection);
             expect(related).toBeNull();
+        });
+
+        // A linked <code> would put this toolbar and the link balloon in the same stack, and the
+        // caret move that dismisses both crashes ContextualBalloon (ckeditor/ckeditor5#11762).
+        it("returns null when the inline code is inside a link, whichever way the two nest", () => {
+            const def = getInlineCodeDefinition();
+
+            setModelData(editor.model, "<paragraph><$text code=\"true\" linkHref=\"https://example.com\">hel[]lo</$text></paragraph>");
+            expect(def?.getRelatedElement(editor.editing.view.document.selection)).toBeNull();
+
+            setModelData(editor.model, "<paragraph><$text linkHref=\"https://example.com\">a</$text><$text code=\"true\" linkHref=\"https://example.com\">co[]de</$text></paragraph>");
+            expect(def?.getRelatedElement(editor.editing.view.document.selection)).toBeNull();
+        });
+
+        it("still returns the <code> element for a link elsewhere in the same paragraph", () => {
+            setModelData(editor.model, "<paragraph><$text linkHref=\"https://example.com\">link</$text><$text code=\"true\">co[]de</$text></paragraph>");
+
+            const related = getInlineCodeDefinition()?.getRelatedElement(editor.editing.view.document.selection);
+            expect(related?.is("attributeElement", "code")).toBe(true);
         });
 
         it("returns null when the selection has no first position (null guard)", () => {

@@ -7,6 +7,12 @@ const LOG_ALL_QUERIES = false;
 // smaller values can result in better performance due to better usage of statement cache
 const PARAM_LIMIT = 100;
 
+/**
+ * The output shapes a prepared statement can return: rows as objects, rows as arrays (`raw`), or the
+ * first column alone (`pluck`). Each sticks to the statement once set, so a reader always names one.
+ */
+type StatementMode = "row" | "raw" | "pluck";
+
 export interface SqlServiceParams {
     provider: DatabaseProvider;
     onTransactionRollback: () => void;
@@ -54,6 +60,12 @@ export class SqlService {
     detachConnection() {
         if (!this.dbConnection.detach) {
             throw new Error("Database provider does not support detaching.");
+        }
+        // Nothing to let go of: the database was erased before this, which is what the setup screen
+        // does when the user asks for it, and a restore that follows would otherwise fail here on a
+        // connection that is already gone.
+        if (this.dbConnection.isAttached?.() === false) {
+            return;
         }
         if (this.dbConnection.inTransaction) {
             throw new Error("Cannot detach the database in the middle of a transaction.");
@@ -127,18 +139,32 @@ export class SqlService {
     /**
      * For the given SQL query, returns a prepared statement. For the same query (string comparison), the same statement is returned.
      *
+     * The statement carries its output mode, and the mode sticks to it: a `pluck()` or `raw()` set for
+     * one read stays set for every later read of the same query. Since the statement is shared — by
+     * this cache, and again by the browser provider's own — a read never inherits a mode. Every reader
+     * states the shape it wants through {@link applyMode()} instead.
+     *
      * @param sql the SQL query for which to return a prepared statement.
-     * @param isRaw indicates whether `.raw()` is going to be called on the prepared statement in order to return the raw rows (e.g. via {@link getRawRows()}). The reason is that the raw state is preserved in the saved statement and would break non-raw calls for the same query.
      * @returns the corresponding {@link Statement}.
      */
-    stmt(sql: string, isRaw?: boolean) {
-        const key = (isRaw ? `raw/${sql}` : sql);
-
-        if (!(key in this.statementCache)) {
-            this.statementCache[key] = this.dbConnection.prepare(sql);
+    stmt(sql: string) {
+        if (!(sql in this.statementCache)) {
+            this.statementCache[sql] = this.dbConnection.prepare(sql);
         }
 
-        return this.statementCache[key];
+        return this.statementCache[sql];
+    }
+
+    /**
+     * Puts a statement into the output mode a reader wants, turning the other modes off.
+     *
+     * Only for statements that return data: better-sqlite3 rejects both calls on one that does not.
+     */
+    private applyMode(statement: Statement, mode: StatementMode): Statement {
+        statement.raw(mode === "raw");
+        statement.pluck(mode === "pluck");
+
+        return statement;
     }
 
     /**
@@ -149,7 +175,7 @@ export class SqlService {
      * @returns - map of column name to column value
      */
     getRow<T>(query: string, params: Params = []): T {
-        return this.wrap(query, (s) => s.get(params)) as T;
+        return this.wrap(query, (s) => s.get(params), "row") as T;
     }
 
     getRowOrNull<T>(query: string, params: Params = []): T | null {
@@ -169,7 +195,7 @@ export class SqlService {
      * @returns single value
      */
     getValue<T>(query: string, params: Params = []): T {
-        return this.wrap(query, (s) => s.pluck().get(params)) as T;
+        return this.wrap(query, (s) => s.get(params), "pluck") as T;
     }
 
     getManyRows<T>(query: string, params: Params): T[] {
@@ -192,7 +218,7 @@ export class SqlService {
 
             const statement = curParams.length === PARAM_LIMIT ? this.stmt(curQuery) : this.dbConnection.prepare(curQuery);
 
-            const subResults = statement.all(curParamsObj);
+            const subResults = this.applyMode(statement, "row").all(curParamsObj);
             results = results.concat(subResults);
         }
 
@@ -207,11 +233,11 @@ export class SqlService {
      * @returns - array of all rows, each row is a map of column name to column value
      */
     getRows<T>(query: string, params: Params = []): T[] {
-        return this.wrap(query, (s) => s.all(params)) as T[];
+        return this.wrap(query, (s) => s.all(params), "row") as T[];
     }
 
     getRawRows<T extends {} | unknown[]>(query: string, params: Params = []): T[] {
-        return (this.wrap(query, (s) => s.raw().all(params), true) as T[]) || [];
+        return (this.wrap(query, (s) => s.all(params), "raw") as T[]) || [];
     }
 
     iterateRows<T>(query: string, params: Params = []): IterableIterator<T> {
@@ -219,7 +245,7 @@ export class SqlService {
             console.log(query);
         }
 
-        return this.stmt(query).iterate(params) as IterableIterator<T>;
+        return this.applyMode(this.stmt(query), "row").iterate(params) as IterableIterator<T>;
     }
 
     /**
@@ -248,7 +274,7 @@ export class SqlService {
      * @returns array of first column of all returned rows
      */
     getColumn<T>(query: string, params: Params = []): T[] {
-        return this.wrap(query, (s) => s.pluck().all(params)) as T[];
+        return this.wrap(query, (s) => s.all(params), "pluck") as T[];
     }
 
     /**
@@ -301,9 +327,10 @@ export class SqlService {
     }
 
     /**
-     * @param isRaw indicates whether `.raw()` is going to be called on the prepared statement in order to return the raw rows (e.g. via {@link getRawRows()}). The reason is that the raw state is preserved in the saved statement and would break non-raw calls for the same query.
+     * @param mode the output shape `func` reads the statement in. Omitted for a statement that returns
+     * no data, which cannot be put into a mode at all. See {@link stmt()} for why a reader names one.
      */
-    wrap(query: string, func: (statement: Statement) => unknown, isRaw?: boolean): unknown {
+    wrap(query: string, func: (statement: Statement) => unknown, mode?: StatementMode): unknown {
         const startTimestamp = Date.now();
         let result;
 
@@ -312,7 +339,9 @@ export class SqlService {
         }
 
         try {
-            result = func(this.stmt(query, isRaw));
+            const statement = this.stmt(query);
+
+            result = func(mode ? this.applyMode(statement, mode) : statement);
         } catch (e: any) {
             if (e.message.includes("The database connection is not open")) {
                 // this often happens on killing the app which puts these alerts in front of user

@@ -37,6 +37,18 @@ export interface PopoverProps {
      *  press itself still lands where it fell — dismissal must not swallow it, or pressing the
      *  thing the popover stands beside would take two tries. */
     onDismiss?(): void;
+    /**
+     * Lets go of the anchor: the panel keeps its place in the body and is left to the stylesheet to
+     * put where it likes — a card grown to fill the window (see the `.maximized` rules in
+     * Popover.css), rather than one standing beside something.
+     *
+     * A state of this popover and not a surface of its own, which is the whole of the point: what
+     * the card holds — a note's editor, mid-edit — stays mounted across the change, where a dialog
+     * raised in its place would tear it down and build it again with whatever was typed still
+     * unsaved. Popper is not merely stopped but taken down, its `applyStyles` giving back the
+     * inline placement it wrote (see the effect below) so the stylesheet has the field to itself.
+     */
+    maximized?: boolean;
     children: ComponentChildren;
 }
 
@@ -46,7 +58,7 @@ export interface PopoverProps {
  * container clips it and no containment root flattens its frosting (see the Dropdown notes in
  * CLAUDE.md); positioned by Popper, which also keeps it in place while ancestors scroll.
  */
-export default function Popover({ getAnchorRect, placement, updateKey, className, keepOpenSelector, onDismiss, children }: PopoverProps) {
+export default function Popover({ getAnchorRect, placement, updateKey, className, keepOpenSelector, onDismiss, maximized, children }: PopoverProps) {
     const elRef = useRef<HTMLDivElement>(null);
     const arrowRef = useRef<HTMLDivElement>(null);
     const popperRef = useRef<Instance>();
@@ -58,7 +70,11 @@ export default function Popover({ getAnchorRect, placement, updateKey, className
 
     useEffect(() => {
         const el = elRef.current;
-        if (!el) return;
+        // A maximized card is placed by the stylesheet rather than beside anything, so it is given
+        // no popper at all. Tearing down the one it had is what hands its placement back: Popper's
+        // `applyStyles` remembers the inline styles it found and restores them as it is destroyed,
+        // which the cleanup below runs on the way into this state.
+        if (!el || maximized) return;
 
         const anchor: VirtualElement = { getBoundingClientRect: () => getRectRef.current() };
         const popper = createPopper(anchor, el, {
@@ -89,7 +105,7 @@ export default function Popover({ getAnchorRect, placement, updateKey, className
             popperRef.current = undefined;
             popper.destroy();
         };
-    }, [ placement ]);
+    }, [ placement, maximized ]);
 
     useEffect(() => {
         void popperRef.current?.update();
@@ -122,13 +138,21 @@ export default function Popover({ getAnchorRect, placement, updateKey, className
     }, [ onDismiss, keepOpenSelector ]);
 
     return createPortal(
-        <div ref={elRef} className={clsx("tn-popover", className)}>
-            {/* What the popover is pointing at, drawn by Popper against whichever side it ended up
-                on (see the placements in Popover.css). First in the panel so its static position is
-                the panel's own corner, which is what Popper's offset is reckoned from. */}
-            <div ref={arrowRef} className="tn-popover-arrow" />
-            {children}
-        </div>,
+        <>
+            {/* What dims the page behind a maximized card — its sibling rather than its child, for
+                the reason given in Popover.css. Drawn before it, so it stands behind it whatever
+                the two are given to stand at. */}
+            {maximized && <div className="tn-popover-backdrop" />}
+
+            <div ref={elRef} className={clsx("tn-popover", maximized && "maximized", className)}>
+                {/* What the popover is pointing at, drawn by Popper against whichever side it ended
+                    up on (see the placements in Popover.css). First in the panel so its static
+                    position is the panel's own corner, which is what Popper's offset is reckoned
+                    from. */}
+                <div ref={arrowRef} className="tn-popover-arrow" />
+                {children}
+            </div>
+        </>,
         document.body
     );
 }

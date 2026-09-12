@@ -106,6 +106,10 @@ function lex(str: string) {
             } else if (["#", "~"].includes(currentWord) && chr === "!") {
                 currentWord += chr;
                 continue;
+            } else if (currentWord === "~" && (chr === "=" || chr === "*")) {
+                // ~= and ~* are fuzzy-match operators, not a relation prefix followed by an operator
+                currentWord += chr;
+                continue;
             } else if (chr === " ") {
                 finishWord(i - 1);
                 continue;
@@ -122,7 +126,9 @@ function lex(str: string) {
             }
         }
 
-        if (chr === ",") {
+        // Commas are stripped as fulltext noise, but not inside quotes — a quoted operand
+        // (e.g. #geolocation="48.8583,2.2945") must keep the exact value the user stored.
+        if (chr === "," && !quotes) {
             continue;
         }
 

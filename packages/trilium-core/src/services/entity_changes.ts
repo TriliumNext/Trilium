@@ -24,6 +24,29 @@ function putEntityChangeWithForcedChange(origEntityChange: EntityChange) {
     putEntityChange(ec);
 }
 
+/**
+ * Re-queues an existing entity change so the next sync sends it to the rest of the cluster again.
+ *
+ * Beyond forcing a new change ID, this takes ownership of the row, and that is the point of it. A
+ * change carries the instance ID of wherever it came from, and both directions of the protocol use
+ * that to avoid echoing a change back to its origin: `pushChanges` skips changes stamped with the
+ * sync server's ID, and a server serving `/api/sync/changed` skips the ones stamped with the
+ * requesting client's. Either filter assumes the other side still holds what it once sent.
+ *
+ * A sector re-queue happens exactly when that assumption has already failed — the two sides disagree
+ * about the sector's contents, e.g. because the server purged a blob that briefly looked unreferenced
+ * while a push was still arriving, or because a peer was restored from an older backup. Keeping the
+ * original stamp would mean the only instance still holding the data refuses to send it, so the
+ * re-queue would produce a change nobody transmits and the sector could never converge. Stamping the
+ * local instance makes the row transmissible again; a receiver that turns out to have it already
+ * applies it as a no-op, since the hashes match.
+ */
+function requeueEntityChange(origEntityChange: EntityChange) {
+    const ec = { ...origEntityChange, changeId: null, instanceId: null };
+
+    putEntityChange(ec);
+}
+
 function putEntityChange(origEntityChange: EntityChange) {
     const ec = { ...origEntityChange };
 
@@ -44,6 +67,34 @@ function putEntityChange(origEntityChange: EntityChange) {
     }
 
     cls.putEntityChange(ec);
+}
+
+/**
+ * Re-records a blob's entity change from what is stored on it now, leaving the blob itself alone.
+ *
+ * A blob is identified by a hash of its content, so it is normally recorded once, when it is written,
+ * and never again. Its text representation is not part of that identity and is filled in afterwards —
+ * by OCR, or by carrying the text across a change of protection — which leaves the recorded hash
+ * describing a row that no longer matches, and sync comparing against something that was never stored.
+ */
+function putBlobEntityChange(blobId: string) {
+    const blob = getSql().getRowOrNull<Pick<BlobRow, "blobId" | "content" | "utcDateModified" | "textRepresentation">>(
+        /*sql*/`SELECT blobId, content, textRepresentation, utcDateModified FROM blobs WHERE blobId = ?`,
+        [blobId]
+    );
+
+    if (!blob) {
+        return;
+    }
+
+    putEntityChange({
+        entityName: "blobs",
+        entityId: blobId,
+        hash: blobService.calculateContentHash(blob),
+        isErased: false,
+        utcDateChanged: blob.utcDateModified,
+        isSynced: true // blobs are always synced
+    } as EntityChange);
 }
 
 function putNoteReorderingEntityChange(parentNoteId: string, componentId?: string) {
@@ -86,7 +137,7 @@ function addEntityChangesForSector(entityName: string, sector: string) {
         }
 
         for (const ec of entityChanges) {
-            putEntityChangeWithForcedChange(ec);
+            requeueEntityChange(ec);
         }
     });
 
@@ -106,7 +157,7 @@ function addEntityChangesForDependingEntity(sector: string, tableName: string, p
     );
 
     for (const ec of dependingEntityChanges) {
-        putEntityChangeWithForcedChange(ec);
+        requeueEntityChange(ec);
     }
 
     return dependingEntityChanges.length;
@@ -199,6 +250,7 @@ function recalculateMaxEntityChangeId() {
 }
 
 export default {
+    putBlobEntityChange,
     putNoteReorderingEntityChange,
     putEntityChangeForOtherInstances,
     putEntityChangeWithForcedChange,

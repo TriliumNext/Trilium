@@ -217,6 +217,8 @@ describe("DetailPane", () => {
         notes: FNote[]; placing: boolean; isReadOnly: boolean; initialSelection?: PaneSelection;
     }) {
         const [ selection, setSelection ] = useState<PaneSelection | null>(initialSelection ?? null);
+        // Held here for the same reason, the map view owning whether the pane stands over it.
+        const [ maximized, setMaximized ] = useState(false);
         return <DetailPane
             notes={notes}
             parentNote={froca.notes["root"] ?? buildNote({ id: "root", title: "root" })}
@@ -225,6 +227,8 @@ describe("DetailPane", () => {
             selection={selection}
             onSelect={setSelection}
             onRelocate={onRelocate}
+            maximized={maximized}
+            onMaximizedChange={setMaximized}
         />;
     }
 
@@ -466,6 +470,29 @@ describe("DetailPane", () => {
         } ]);
     });
 
+    /** The two frames are the same width for a track that crosses no seam, give or take what
+     *  floating point does to them, and the raw one is the one that reads west of Greenwich. */
+    it("frames a track in the western hemisphere where it stands", async () => {
+        buildNote({ id: "root", title: "root", children: [ { id: "hikewest", title: "A ride", mime: GPX_MIME } ] });
+        const note = froca.notes["hikewest"];
+        const map = fakeMap();
+        map.addSource(trackSourceId(note.noteId), {
+            type: "FeatureCollection",
+            features: [
+                { type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: [ [ [ -80.3, 25.7 ], [ -80.1, 25.9 ] ] ] } }
+            ]
+        });
+        await mount([ note ], map);
+
+        map.setUnderPointer([ trackFeature(note) ]);
+        await act(async () => map.click());
+        await settle();
+
+        expect(map.fitted).toHaveLength(1);
+        const { bounds } = map.fitted[0] as { bounds: [ [ number, number ], [ number, number ] ] };
+        expect(bounds).toEqual([ [ -80.3, 25.7 ], [ -80.1, 25.9 ] ]);
+    });
+
     /**
      * A track that crosses the antimeridian holds points on either side of the ±180° seam — 179.9°
      * and -179.9° are a stroll apart on the ground. Read as raw minimum and maximum, they stand a
@@ -593,6 +620,16 @@ describe("DetailPane", () => {
 
         // Half of what the pane reaches into the map: its width plus the gap it stands off by.
         expect(map.eased).toEqual([ { center: [ 2, 1 ], offset: [ -200, 0 ] } ]);
+    });
+
+    it("stands the marker at the zoom the selection names", async () => {
+        const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
+        const map = fakeMap();
+
+        await mount([ note ], map, false, false, { noteId: note.noteId, zoom: 15 });
+        await settle();
+
+        expect(map.eased).toEqual([ { center: [ 2, 1 ], offset: [ -200, 0 ], zoom: 15 } ]);
     });
 
     /** An embedded map may be narrower than the pane, leaving nowhere to move to. */
@@ -761,33 +798,80 @@ describe("DetailPane", () => {
         });
 
         /**
-         * The maximize in the header: the pane grown into the quick editor, which takes the pane's
-         * place rather than standing over it — the quick editor opened on the path the menu's own
-         * entry would open, and the pane standing down having told its editors to save (see
-         * MaximizeToQuickEditAction).
+         * The maximize in the header grows the pane over the map rather than handing the note to the
+         * quick editor, which has none of what the pane offers — the place under the title, the ways
+         * of moving the marker or taking it off the map. Growing the surface would have shrunk what
+         * could be done in it.
+         *
+         * What is pinned here above all is that the note's editor is the very same element on the
+         * other side of it: the pane is restyled where it stands, so nothing it holds is torn down
+         * and nothing has to be saved and read back to grow it. A pane replaced by a larger one
+         * would lose whatever had been typed and not yet saved.
          */
-        it("maximizes into the quick editor, the pane standing down behind it", async () => {
+        it("grows over the map without rebuilding what it holds, and comes back down again", async () => {
             const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
             const map = fakeMap();
-
-            const notePath = "root/places/somewhere";
-            const bestNotePath = vi.spyOn(note, "getBestNotePathString").mockReturnValue(notePath);
             const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined as never);
 
             try {
                 await openPaneFor(note, map);
+                const editorEl = pane()?.querySelector(".note-detail-stub");
+                expect(editorEl).toBeTruthy();
 
-                await act(async () => {
+                const maximize = () => act(async () => {
                     pane()?.querySelector<HTMLButtonElement>(".tn-overlay-panel-header-actions button.tn-embedded-note-maximize")?.click();
                 });
 
-                expect(triggerCommand).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: notePath });
-                expect(editorAskedToSave).toHaveBeenCalled();
-                expect(pane()).toBeNull();
+                const body = () => pane()?.querySelector(".geo-detail-pane-body");
+                expect(body()?.classList.contains("tn-embedded-note-pane-wide")).toBe(false);
+
+                await maximize();
+                expect(pane()?.classList.contains("maximized")).toBe(true);
+                // Having a note's width, what it holds is laid out for one: the promoted fields
+                // stand side by side as the quick editor shows them, rather than one to a line
+                // (see `tn-embedded-note-pane-wide` in EmbeddedNotePane.css).
+                expect(body()?.classList.contains("tn-embedded-note-pane-wide")).toBe(true);
+                // The same editor, never having been away.
+                expect(pane()?.querySelector(".note-detail-stub")).toBe(editorEl);
+                // Neither a hand-over to another surface nor a dismissal: the pane is still up, and
+                // nothing was asked to save because nothing is closing.
+                expect(triggerCommand).not.toHaveBeenCalledWith("openInPopup", expect.anything());
+                expect(editorAskedToSave).not.toHaveBeenCalled();
+
+                await maximize();
+                expect(pane()?.classList.contains("maximized")).toBe(false);
+                expect(pane()?.querySelector(".note-detail-stub")).toBe(editorEl);
             } finally {
-                bestNotePath.mockRestore();
                 triggerCommand.mockRestore();
             }
+        });
+
+        /**
+         * The camera waits out a pane that covers the map rather than aiming into it: there is
+         * nowhere left to hold the marker clear of, and a move made behind the pane would be a move
+         * to somewhere nobody can see — seen all the same, the map sliding while the pane is still
+         * growing over it. It is the coming back down that is worth framing for.
+         */
+        it("leaves the camera alone while it covers the map, and frames again as it comes down", async () => {
+            const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
+            const map = fakeMap();
+            await openPaneFor(note, map);
+
+            const maximize = () => act(async () => {
+                pane()?.querySelector<HTMLButtonElement>(".tn-overlay-panel-header-actions button.tn-embedded-note-maximize")?.click();
+            });
+
+            await maximize();
+            // Nothing moved for the growing.
+            expect(map.eased).toEqual([ { center: [ 2, 1 ], offset: [ -200, 0 ] } ]);
+
+            await maximize();
+            // And the marker is framed clear of the pane again as it comes back down, rather than
+            // left wherever it was until something else happens to move the camera.
+            expect(map.eased).toEqual([
+                { center: [ 2, 1 ], offset: [ -200, 0 ] },
+                { center: [ 2, 1 ], offset: [ -200, 0 ] }
+            ]);
         });
 
         /**
@@ -1243,5 +1327,62 @@ describe("DetailPane", () => {
 
         expect(onMouseDown).not.toHaveBeenCalled();
         expect(onKeyDown).not.toHaveBeenCalled();
+    });
+
+    /*
+     * A phone shows the marker as a dialog over the whole screen rather than as a pane beside the
+     * map (see MarkerSheet). A pane holding a whole note takes most of the screen there whatever is
+     * done to it, so the maximize that would give it the rest has nothing left to give — and the
+     * camera, which holds a marker clear of the pane, has no uncovered half to hold it in.
+     */
+    describe("on a phone", () => {
+        beforeEach(() => { window.glob.device = "mobile"; });
+        afterEach(() => { window.glob.device = "desktop"; });
+
+        async function openSheetFor(note: FNote, map: ReturnType<typeof fakeMap>) {
+            await mount([ note ], map);
+            map.setUnderPointer([ markerFeature(note, [ 2, 1 ]) ]);
+            await act(async () => map.click());
+            // The dialog goes up first and reads its note out of the context after, so what it
+            // holds is drawn a turn later than the pane's is.
+            await act(async () => {});
+        }
+
+        const sheet = () => document.querySelector(".modal.geo-detail-sheet");
+
+        it("shows the marker as a dialog rather than as a pane over the map", async () => {
+            const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
+            await openSheetFor(note, fakeMap());
+
+            expect(pane()).toBeNull();
+            expect(sheet()).toBeTruthy();
+            // The same contents either way: the note, and what may be done with the marker.
+            expect(sheet()?.querySelector(".note-detail-stub")).toBeTruthy();
+            expect(sheet()?.querySelector(".geo-detail-pane-location")).toBeTruthy();
+        });
+
+        it("offers no maximize, the dialog already having the screen", async () => {
+            const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
+            await openSheetFor(note, fakeMap());
+
+            expect(document.querySelector(".tn-embedded-note-maximize")).toBeNull();
+        });
+
+        /* Tinted by the marker's own colour as the pane is, the dialog being the same note shown
+           another way (see the `.geo-detail-sheet.with-hue` rules in theme-next-{light,dark}.css). */
+        it("carries the marker's own colour", async () => {
+            const note = buildNote({ title: "Somewhere", "#geolocation": "1,2", "#color": "#ff0000" });
+            await openSheetFor(note, fakeMap());
+
+            expect(sheet()?.className).toContain(note.getColorClass());
+        });
+
+        it("leaves the camera alone, there being no pane to hold the marker clear of", async () => {
+            const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
+            const map = fakeMap();
+            await openSheetFor(note, map);
+
+            expect(map.eased).toEqual([]);
+        });
     });
 });

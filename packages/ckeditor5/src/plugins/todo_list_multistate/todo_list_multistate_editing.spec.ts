@@ -32,6 +32,17 @@ function getBlock(editor: ClassicEditor, index: number): ModelElement {
     return child;
 }
 
+function todoList(...items: string[]): string {
+    return `<ul class="todo-list">${items.join("")}</ul>`;
+}
+
+/** A saved todo item, in the shape the data downcast produces. */
+function todoItem(text: string, state?: string, nested?: string): string {
+    const stateAttribute = state ? ` data-trilium-task-state="${state}"` : "";
+    return `<li${stateAttribute}><label class="todo-list__label"><input type="checkbox">`
+        + `<span class="todo-list__label__description">${text}</span></label>${nested ?? ""}</li>`;
+}
+
 function pressCtrlShiftEnter(editor: ClassicEditor): void {
     editor.keystrokes.press({
         keyCode: keyCodes.enter,
@@ -169,6 +180,36 @@ describe("TodoListMultistateEditing", () => {
             // An anchor value must not become a model state attribute.
             editor.setData('<ul class="todo-list"><li data-trilium-task-state="done"><label class="todo-list__label"><input type="checkbox"><span class="todo-list__label__description">B</span></label></li></ul>');
             expect(getBlock(editor, 0).hasAttribute(TASK_STATE_ATTRIBUTE)).toBe(false);
+        });
+
+        it("leaves a checkbox that belongs to no todo item alone", () => {
+            // The converter listens for every `<input>` in the incoming data, so it meets
+            // checkboxes that upstream never marked as a todo item: one in a plain list, and one
+            // loose in a paragraph, whose block is not even an element by the time it is asked.
+            editor.setData('<ul><li data-trilium-task-state="doing">Plain<input type="checkbox"></li></ul>'
+                + '<p><input type="checkbox" data-trilium-task-state="doing">Loose</p>');
+
+            for (let index = 0; index < (editor.model.document.getRoot()?.childCount ?? 0); index++) {
+                expect(getBlock(editor, index).hasAttribute(TASK_STATE_ATTRIBUTE)).toBe(false);
+            }
+            expect(editor.getData()).not.toContain("data-trilium-task-state");
+        });
+
+        it("upcasts a state onto its own item only, never onto nested or sibling items", () => {
+            // The list model is flat, so a nested item is a sibling block covered by the
+            // parent <li>'s converted range. The state must not spread across it.
+            editor.setData(todoList(
+                todoItem("Parent", "doing", todoList(todoItem("Child"), todoItem("Sibling", "review"))),
+                todoItem("After")));
+
+            expect(getBlock(editor, 0).getAttribute(TASK_STATE_ATTRIBUTE)).toBe("doing");
+            expect(getBlock(editor, 1).hasAttribute(TASK_STATE_ATTRIBUTE)).toBe(false);
+            expect(getBlock(editor, 2).getAttribute(TASK_STATE_ATTRIBUTE)).toBe("review");
+            expect(getBlock(editor, 3).hasAttribute(TASK_STATE_ATTRIBUTE)).toBe(false);
+
+            // A reload therefore round-trips the content unchanged, rather than persisting
+            // the parent's state onto its children.
+            expect(editor.getData().match(/data-trilium-task-state/g)).toHaveLength(2);
         });
 
         it("cycles through active (non-hidden) states with Ctrl+Shift+Enter", () => {

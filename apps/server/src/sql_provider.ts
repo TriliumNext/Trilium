@@ -52,6 +52,10 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
         this.dbConnection = undefined;
     }
 
+    isAttached() {
+        return this.dbConnection !== undefined;
+    }
+
     async backup(destinationFile: string) {
         try {
             unlinkSync(destinationFile);

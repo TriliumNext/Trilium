@@ -1,12 +1,16 @@
 import {
     FIXED_HEADER_BYTES,
-    peekBackupContainer,
+    getInfo,
     writeBackupContainer
 } from "@triliumnext/backup-container";
-import type { DatabaseBackup } from "@triliumnext/commons";
+import type {
+    DatabaseBackup,
+    SetupBackupSettings,
+    SetupExistingBackup
+} from "@triliumnext/commons";
 import { BackupOptionsService, BackupService, getLog, sync_mutex as syncMutexService, utils as coreUtils, ws } from "@triliumnext/core";
+import type { Response } from "express";
 import fs from "fs";
-import fsp from "fs/promises";
 import { t } from "i18next";
 import path from "path";
 
@@ -31,6 +35,13 @@ export interface ServerBackupConfig {
      * desktop application, which is the only one with an OS keyring to keep a passphrase in.
      */
     getPassphrase?: () => Promise<string | null>;
+    /**
+     * Stores the backup passphrase, or lets go of the stored one when given `null`. Set alongside
+     * {@link getPassphrase}, and used by the restore rather than by any screen: unset, an instance
+     * simply has nowhere to keep a passphrase, and there is nothing for a restore to bring up to
+     * date.
+     */
+    setPassphrase?: (passphrase: string | null) => Promise<void>;
 }
 
 /** How a backup is to be written, once the options and the passphrase have both had their say. */
@@ -103,6 +114,34 @@ export default class ServerBackupService extends BackupService {
         });
     }
 
+    /**
+     * Writes the backup the setup screen asked for, and says what was written.
+     *
+     * The name is used as it stands, spaces and all, because the screen shows it to the user and
+     * the user then goes looking for it in a file manager. It is safe to use that way because it
+     * has already been reduced to a single file name on its way in, which is what keeps a name
+     * arriving over a request from naming somewhere else entirely.
+     */
+    override async backupAs(
+        settings: SetupBackupSettings,
+        onProgress?: (fraction: number) => void
+    ): Promise<SetupExistingBackup> {
+        const filePath = await syncMutexService.doExclusively(async () => {
+            const format = await this.resolveFormat(settings);
+            const directory = (format.keepLocal ? null : this.getCustomBackupDir()) ?? getDefaultBackupDir();
+
+            return await writeBackup(directory, settings.name, format, "default", onProgress);
+        });
+        const stat = fs.statSync(filePath);
+
+        return {
+            fileName: path.basename(filePath),
+            filePath,
+            directoryPath: path.dirname(filePath),
+            fileSize: stat.size
+        };
+    }
+
     override async getBackupContent(filePath: string): Promise<Uint8Array | null> {
         const resolvedPath = this.resolveBackupPath(filePath);
 
@@ -117,6 +156,24 @@ export default class ServerBackupService extends BackupService {
      * path use this directly rather than {@link getBackupContent}, which reads the whole file into
      * memory — no use at all for a backup measured in gigabytes.
      */
+    override sendBackup(filePath: string, res: Response): boolean {
+        const resolved = this.resolveBackupPath(filePath);
+        if (!resolved) {
+            return false;
+        }
+
+        res.setHeader("Content-Type", "application/octet-stream");
+        res.setHeader("Content-Disposition", `attachment; filename="${path.basename(resolved)}"`);
+        res.setHeader("Content-Length", String(fs.statSync(resolved).size));
+        // Committed before a single byte of the body: the desktop serves the renderer through a
+        // protocol bridge that only streams once headers are flushed, and buffers everything
+        // otherwise. A backup is exactly the response that must not be buffered.
+        res.flushHeaders();
+        fs.createReadStream(resolved).pipe(res);
+
+        return true;
+    }
+
     resolveBackupPath(filePath: string): string | null {
         const resolvedPath = path.resolve(filePath);
 
@@ -127,20 +184,51 @@ export default class ServerBackupService extends BackupService {
         return fs.existsSync(resolvedPath) ? resolvedPath : null;
     }
 
+    /** Whether there is a passphrase to be had, without letting the caller learn what it is. */
+    override async hasStoredPassphrase(): Promise<boolean> {
+        return !!(await this.config.getPassphrase?.());
+    }
+
     /**
-     * Settles what the backup is written as. Compression alone needs nothing but the option;
-     * encryption also needs a passphrase, and where that cannot be read the backup falls back to
-     * being unencrypted and local rather than not being taken at all.
+     * Takes on the passphrase a restored backup was locked with, or lets go of the stored one when
+     * the backup brought none.
+     *
+     * The passphrase is not kept in the database, so a restore replaces every option that says how
+     * this instance backs up while leaving the password those options are carried out with. What is
+     * left is an instance encrypting its backups with the password of a database that is no longer
+     * here, saying nothing about it, and producing backups the user cannot open.
      */
-    private async resolveFormat(): Promise<BackupFormat> {
+    async adoptPassphrase(passphrase: string | null): Promise<void> {
+        await this.config.setPassphrase?.(passphrase);
+    }
+
+    /**
+     * Settles what the backup is written as, from what the user asked for where they were asked at
+     * all, and from the instance's own options where they were not.
+     *
+     * Compression needs nothing but the answer. Encryption also needs a passphrase, and where the
+     * stored one was asked for and cannot be read the backup falls back to being unencrypted and
+     * local rather than not being taken at all.
+     *
+     * @param settings what the setup screen asked for; absent for the scheduled backups, which run
+     *                 with nobody there to ask.
+     */
+    private async resolveFormat(settings?: SetupBackupSettings): Promise<BackupFormat> {
         // Read leniently: the pre-migration backup runs before the options added by newer versions
         // exist.
         const isEnabled = (name: "backupEnableCompression" | "backupEnableEncryption") =>
             this.options.getOptionOrNull(name) === "true";
 
-        const compress = isEnabled("backupEnableCompression");
-        if (!isEnabled("backupEnableEncryption")) {
-            return { compress, passphrase: null, keepLocal: false };
+        const compress = settings?.compress ?? isEnabled("backupEnableCompression");
+
+        // A backup someone asked for carries the password they typed while asking. Wanting the
+        // stored one instead is a request rather than a value, since the passphrase is kept where
+        // the interface that asked cannot read it.
+        const useStored = settings
+            ? settings.useStoredPassphrase
+            : isEnabled("backupEnableEncryption");
+        if (!useStored) {
+            return { compress, passphrase: settings?.passphrase || null, keepLocal: false };
         }
 
         const passphrase = (await this.config.getPassphrase?.()) ?? null;
@@ -211,7 +299,9 @@ function listBackupsIn(directory: string): DatabaseBackup[] {
     return fileNames
         // The extension check excludes intermediate files (e.g. *.db-journal, *.part) created while
         // a backup is in progress.
-        .filter((fileName) => fileName.includes("backup")
+        // Case-insensitively: the backup the setup screen takes before replacing a database is named
+        // for a person reading a directory listing, and starts with a capital.
+        .filter((fileName) => fileName.toLowerCase().includes("backup")
             && (fileName.endsWith(DATABASE_EXTENSION) || fileName.endsWith(CONTAINER_EXTENSION)))
         .flatMap((fileName) => {
             const filePath = path.resolve(directory, fileName);
@@ -235,7 +325,8 @@ function listBackupsIn(directory: string): DatabaseBackup[] {
  * the shape it was written in, whatever the settings have since become.
  *
  * Only the fixed header is read, so this costs a few dozen bytes per file and never needs the
- * passphrase. A file whose header does not parse is listed as a plain one rather than not at all.
+ * passphrase. A file that is not a container this build can open is still listed, saying why: it is
+ * sitting in the backup directory being counted as a backup, and the user is relying on it.
  */
 function describeContainer(filePath: string, fileName: string): Partial<DatabaseBackup> {
     if (!fileName.endsWith(CONTAINER_EXTENSION)) {
@@ -243,11 +334,13 @@ function describeContainer(filePath: string, fileName: string): Partial<Database
     }
 
     const head = Buffer.alloc(FIXED_HEADER_BYTES);
+    let read: number;
     let descriptor: number | undefined;
     try {
         descriptor = fs.openSync(filePath, "r");
-        fs.readSync(descriptor, head, 0, head.length, 0);
+        read = fs.readSync(descriptor, head, 0, head.length, 0);
     } catch {
+        // Nothing was learned, which is not the same as having learned the file is no good.
         return {};
     } finally {
         if (descriptor !== undefined) {
@@ -255,16 +348,21 @@ function describeContainer(filePath: string, fileName: string): Partial<Database
         }
     }
 
-    const info = peekBackupContainer(head);
-    if (!info) {
-        return {};
+    // Only what the file actually held, so a file too short to have a header is judged on that
+    // rather than on the zeroes the buffer came with.
+    const info = getInfo(head.subarray(0, read));
+    if (!info.isValid) {
+        return { unreadable: "invalid" };
+    }
+    if (!info.isSupported) {
+        return { unreadable: "unsupported-version" };
     }
 
     return {
-        compressed: info.compressed,
-        encrypted: info.encrypted,
+        compressed: info.isCompressed,
+        encrypted: info.isEncrypted,
         // Recorded as 0 when the writer did not know it, which reads the same as "not stated".
-        plaintextSize: info.plaintextSize > 0 ? info.plaintextSize : undefined
+        plaintextSize: info.size > 0 ? info.size : undefined
     };
 }
 
@@ -272,7 +370,8 @@ async function writeBackup(
     directory: string,
     baseName: string,
     format: BackupFormat,
-    location: "default" | "custom"
+    location: "default" | "custom",
+    onProgress?: (fraction: number) => void
 ): Promise<string> {
     const isContainer = format.compress || format.passphrase !== null;
     const fileName = `${baseName}${isContainer ? CONTAINER_EXTENSION : DATABASE_EXTENSION}`;
@@ -283,10 +382,12 @@ async function writeBackup(
     getLog().info("Creating backup...");
     try {
         if (isContainer) {
-            await writeContainer(backupFile, baseName, format);
+            await writeContainer(backupFile, baseName, format, onProgress);
         } else {
+            // A plain copy has nothing to report along the way, only that it is over.
             await sql.copyDatabase(backupFile);
         }
+        onProgress?.(1);
     } catch (e) {
         // Whatever was written before the failure is not a usable backup, and would otherwise be
         // listed and offered for download as if it were one.
@@ -314,7 +415,8 @@ async function writeBackup(
 async function writeContainer(
     backupFile: string,
     baseName: string,
-    format: BackupFormat
+    format: BackupFormat,
+    onProgress?: (fraction: number) => void
 ): Promise<void> {
     const snapshot = path.resolve(dataDir.TMP_DIR, `${baseName}.snapshot.db`);
     const partial = `${backupFile}.part`;
@@ -326,16 +428,7 @@ async function writeContainer(
             compress: format.compress,
             passphrase: format.passphrase ?? undefined,
             plaintextSize: fs.statSync(snapshot).size,
-            // The digest is only known once the payload is written, so it is patched in afterwards.
-            patchHeader: async (offset, data) => {
-                const handle = await fsp.open(partial, "r+");
-                try {
-                    await handle.write(data, 0, data.length, offset);
-                    await handle.sync();
-                } finally {
-                    await handle.close();
-                }
-            }
+            onProgress
         });
 
         // Renamed last, so a half-written container is never mistaken for a finished one.

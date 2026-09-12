@@ -116,6 +116,7 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     totpEncryptionSalt: string;
     totpEncryptedSecret: string;
     totpVerificationHash: string;
+    totpLastUsedStep: number;
     encryptedRecoveryCodes: boolean;
     recoveryCodeInitialVector: string;
     recoveryCodeSecurityKey: string;
@@ -267,6 +268,17 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteContentHintsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
+    /**
+     * Whether the editor preserves the HTML tags it has no editing feature of its own for — the
+     * ones named by `allowedHtmlTags`, carried through CKEditor's General HTML Support.
+     *
+     * Off by default: GHS renders such a tag as an opaque blob that is awkward to navigate and, for
+     * an unknown element, invisible while editing (#10989). The price of leaving it off is that
+     * those tags are dropped from a note the first time it is edited and saved. The server-side
+     * sanitizer reads the same `allowedHtmlTags` list and keeps accepting them on import either way,
+     * so an imported note shows them correctly until it is edited.
+     */
+    textNoteHtmlSupportEnabled: boolean;
     /** Whether copying note content embeds internal images as data: URIs so they paste into external apps (internal paste stays reference-based). Hidden kill-switch. */
     clipboardImageEmbedEnabled: boolean;
     backgroundEffects: boolean;
@@ -285,6 +297,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     searchEnableFuzzyMatching: boolean;
     /** Whether fuzzy matching is enabled for autocomplete (typing in search bar). Disabled by default for faster response. */
     searchAutocompleteFuzzy: boolean;
+    /** Number of search results shown per page on the full-search results view. */
+    searchResultsPageSize: number;
 
     // Share settings
     redirectBareDomain: boolean;
@@ -301,6 +315,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     aiEnabled: boolean;
     /** JSON array of configured LLM providers with their API keys */
     llmProviders: string;
+    /** The model the text editor's AI assistant runs on, as JSON `{ providerId, provider, model }`; empty to follow the first configured provider's default. */
+    aiAssistantModel: string;
     /** Whether the MCP (Model Context Protocol) server endpoint is enabled. */
     mcpEnabled: boolean;
 

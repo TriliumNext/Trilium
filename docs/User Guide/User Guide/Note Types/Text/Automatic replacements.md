@@ -7,10 +7,10 @@ These replacements are not applied inside code blocks or inline code, and pasted
 
 Once an automatic replacement takes place, it can be undone by:
 
-*   Pressing <kbd spellcheck="false">Backspace</kbd> immediately after a replacement undoes it and restores what you typed.
-    *   Note that this consumes the undo, so a further <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">Z</kbd> might delete your typed text.
-    *   Pressing <kbd spellcheck="false">Space</kbd> or changing the cursor position disables this functionality.
-*   Pressing <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">Z</kbd>, which works even after pressing space.
+*   Pressing <kbd>Backspace</kbd> immediately after a replacement undoes it and restores what you typed.
+    *   Note that this consumes the undo, so a further <kbd>Ctrl</kbd>+<kbd>Z</kbd> might delete your typed text.
+    *   Pressing <kbd>Space</kbd> or changing the cursor position disables this functionality.
+*   Pressing <kbd>Ctrl</kbd>+<kbd>Z</kbd>, which works even after pressing space.
 
 Each group can be turned off in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text notes_ → _Automatic replacements_.
 

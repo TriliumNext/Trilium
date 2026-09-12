@@ -108,6 +108,45 @@ A widget can be placed in one of the following sections of the applications:
 
 To position the widget somewhere else, just change the value passed to `get parentWidget()` for legacy widgets or the `parent` field for Preact. Do note that some positions such as `note-detail-pane` and `right-pane` have special requirements that need to be accounted for (see the table above).
 
+## Multiple widgets in a single note
+
+A widget note usually returns one widget, but it can also return an array of them. This is useful when several widgets share code or state, since they can all live in the same note instead of being split across notes that need a shared module.
+
+Each widget of the array is registered on its own, so they can have different parents and positions. A widget that is missing its `parentWidget` (or `parent` for Preact) is reported as an error without affecting the other widgets of the note.
+
+### Legacy version (jQuery)
+
+```
+class TreeWidget extends api.BasicWidget {
+    get parentWidget() { return "left-pane"; }
+    doRender() { this.$widget = $("<span>Left pane</span>"); }
+}
+
+class SidebarWidget extends api.BasicWidget {
+    get parentWidget() { return "right-pane"; }
+    doRender() { this.$widget = $("<span>Right pane</span>"); }
+}
+
+module.exports = [ new TreeWidget(), new SidebarWidget() ];
+```
+
+### Preact version
+
+```
+import { defineWidget } from "trilium:preact";
+
+export default [
+    defineWidget({
+        parent: "left-pane",
+        render: () => <span>Left pane from Preact.</span>
+    }),
+    defineWidget({
+        parent: "right-pane",
+        render: () => <span>Right pane from Preact.</span>
+    })
+];
+```
+
 ## Launch bar widgets
 
 Launch bar widgets are similar to _Custom widgets_ but are specific to the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>. See <a class="reference-link" href="Launch%20Bar%20Widgets.md">Launch Bar Widgets</a> for more information.

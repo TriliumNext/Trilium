@@ -40,7 +40,8 @@ test("User can change language from settings", async ({ page, context }) => {
     await app.goToSettings();
     await app.goToSettingsPage("_optionsLocalization");
 
-    const languageCombobox = app.dropdown(app.optionsDialogContent.locator(".options-section .dropdown").first());
+    // Named rather than counted: the option's `name` prefixes the id of the control it labels.
+    const languageCombobox = app.dropdown(app.optionsDialogContent.locator(".dropdown:has(> button[id^='language-'])"));
     const restartButton = app.optionsDialogContent.locator("button[name=restart-app-button]");
 
     // Check that the default value (English) is set.

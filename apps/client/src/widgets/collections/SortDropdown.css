@@ -1,0 +1,6 @@
+.dropdown.sort-dropdown > button {
+    /* Parts the direction the order runs from the order it names. */
+    > .tn-icon {
+        margin-inline-end: 8px;
+    }
+}

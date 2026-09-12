@@ -67,6 +67,13 @@ describe("CutToNotePlugin", () => {
         expect(html).not.toContain("data-list-item-id");
     });
 
+    it("returns an empty string from getSelectedHtml when nothing is selected", () => {
+        // What the host takes as "there is nothing to cut here" before it creates a sub-note (#9890).
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+
+        expect(editor.getSelectedHtml()).toBe("");
+    });
+
     it("removeSelection deletes the selection, inserts a paragraph and saves the note", async () => {
         setModelData(editor.model, "<paragraph>foo[bar]baz</paragraph>");
 

@@ -1,5 +1,6 @@
 import type { Locale } from "./i18n.js";
 import { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType, OptionRow, RevisionSource } from "./rows.js";
+import type { SetupTargetScreen } from "./setup_marker.js";
 
 type Response = {
     success: true,
@@ -109,6 +110,36 @@ export interface DatabaseCheckIntegrityResponse {
 }
 
 /**
+ * How much the knowledge base holds, counted rather than measured: the two figures the Database
+ * page states, produced without the pass over every blob that the space usage pages take.
+ *
+ * The hidden subtree is left out of both — launchers, options and the like are the application's
+ * own furniture, not anything the user put there.
+ */
+export interface SpaceUsageCounts {
+    /** Live notes reachable outside the hidden subtree. */
+    noteCount: number;
+    /** Attachments those notes own; the ones belonging to revisions are history, and left out. */
+    attachmentCount: number;
+}
+
+/** What the database is: where it lives, when it began, what it holds and how large it has grown. */
+export interface DatabaseInfoResponse extends SpaceUsageCounts {
+    /**
+     * Absolute path of the database file, its name included. Null where the database is not a file
+     * the user can reach: the browser build keeps it in storage the browser owns, which has no path.
+     */
+    filePath: string | null;
+    /** When the root note was created, standing in for when the knowledge base itself was. */
+    utcDateCreated: string;
+    /**
+     * What the database occupies now, free pages included — the same figure the compaction estimate
+     * reports, so the two never disagree about how large the file is.
+     */
+    sizeBytes: number;
+}
+
+/**
  * What rebuilding the database file gave back, measured either side of the vacuum. Erasing content
  * does not shrink the file — the pages it frees stay allocated on the freelist — so this difference
  * is the only figure that says what the disk actually got back.
@@ -185,6 +216,14 @@ export interface DatabaseBackup {
      * for a plain copy, where the file size already says it.
      */
     plaintextSize?: number;
+    /**
+     * Why the file cannot be restored from, where its own header says as much. Absent for a plain
+     * copy and for a container this build can open.
+     *
+     * Worth a listing telling the user about: a file that has been sitting in the backup directory
+     * for months, being counted as a backup, is one they are relying on.
+     */
+    unreadable?: "invalid" | "unsupported-version";
 }
 
 export interface ExistingBackupsResponse {
@@ -293,6 +332,59 @@ export interface NoteSizeResponse {
 export interface SubtreeSizeResponse {
     subTreeNoteCount: number;
     subTreeSize: number;
+}
+
+/**
+ * A single token to highlight in search results, tagged with how it should be
+ * matched. `plain` tokens are matched literally (case-insensitively); `regex`
+ * tokens (produced by the `%=` operator) are compiled to a regular expression.
+ */
+export interface HighlightedTokenInfo {
+    token: string;
+    /**
+     * `plain` is matched literally and `regex` (from `%=`) as a regular expression. `fuzzy` is a
+     * word the search accepted in place of one the user typed, matched literally but rendered in a
+     * muted style so an approximate hit does not read as an exact one.
+     */
+    type: "plain" | "regex" | "fuzzy";
+}
+
+/** Response for `GET /api/search/:searchString?includeTokens=true`. */
+export interface SearchWithTokensResponse {
+    searchResultNoteIds: string[];
+    highlightedTokens: HighlightedTokenInfo[];
+    error: string | null;
+}
+
+/** Request body for `POST /api/search-note/:noteId/result-details` (max 100 noteIds). */
+export interface SearchResultDetailsRequest {
+    noteIds: string[];
+}
+
+/**
+ * Per-note snippet + highlight details for one search result, built lazily for a
+ * page of results. Snippet fields are absent when there is nothing to show (e.g.
+ * protected notes without a session, or script-based searches).
+ */
+export interface SearchResultDetails {
+    noteId: string;
+    notePath: string;
+    noteTitle: string;
+    notePathTitle: string;
+    highlightedNotePathTitle?: string;
+    contentSnippet?: string;
+    highlightedContentSnippet?: string;
+    attributeSnippet?: string;
+    highlightedAttributeSnippet?: string;
+    icon: string;
+}
+
+/** Response for `POST /api/search-note/:noteId/result-details`. */
+export interface SearchResultDetailsResponse {
+    /** Requested-order details; requested ids not in the result set are omitted. */
+    results: SearchResultDetails[];
+    highlightedTokenInfos: HighlightedTokenInfo[];
+    error: string | null;
 }
 
 /**
@@ -701,6 +793,39 @@ export type SimilarNoteResponse = SimilarNote[];
 
 export type SaveSearchNoteResponse = CloneResponse;
 
+/**
+ * Which rule decided where a quickly captured note goes. `dayNote` carries no note ID, because
+ * the day note is created at capture time.
+ */
+export type InboxTargetKind = "inbox" | "workspaceInbox" | "workspaceRoot" | "dayNote" | "root";
+
+/** Where `POST /api/notes/:id/children` would put a note captured into the inbox. */
+export interface InboxTargetResponse {
+    kind: InboxTargetKind;
+    noteId?: string;
+    title?: string;
+}
+
+/** A font file note carrying `#customFont`, as the font picker in the options lists it. */
+export interface UserFont {
+    noteId: string;
+    /** The name the font is offered under: the note's own title. */
+    title: string;
+    /** Versions the request for the font's bytes, so a replaced file is not served from the cache. */
+    blobId: string;
+}
+
+export interface TemplatesResponse {
+    /** The IDs of the user-defined templates, i.e. the notes labelled with `#template`. */
+    templateNoteIds: string[];
+    /**
+     * The IDs of the templates that were created recently enough to be marked as new in the UI.
+     * Unlike {@link templateNoteIds} this also covers the built-in templates, which live in the
+     * hidden subtree and are thus not part of the search results.
+     */
+    newTemplateNoteIds: string[];
+}
+
 export interface CloneResponse {
     success: boolean;
     message?: string;
@@ -844,6 +969,35 @@ export type BootstrapDefinition = {
      */
     syncInProgress?: boolean;
     /**
+     * Whether there is still a knowledge base behind the setup screen.
+     *
+     * Only meaningful while `dbInitialized` is `false`. It is `true` when setup was asked for by a
+     * running instance through a `setup.json` marker and the user has not yet picked a path that
+     * replaces the database, which means there is something to offer a backup of and somewhere to
+     * go back to. A first run never has one, and neither does a wizard that has got past that point.
+     */
+    hasExistingData?: boolean;
+    /**
+     * Whether the setup screen has to be unlocked with the instance's own password before it will
+     * do anything.
+     *
+     * Only meaningful while `dbInitialized` is `false`, and only ever `true` where there is a
+     * knowledge base behind the wizard and a password that guarded it. See `setup_auth` in core.
+     */
+    setupAuthRequired?: boolean;
+    /**
+     * Whether that unlock asks for a second factor as well as the password.
+     *
+     * Only ever `true` alongside `setupAuthRequired`. Says that one is wanted and nothing else: not
+     * which kind, and nothing about the answer.
+     */
+    setupSecondFactorRequired?: boolean;
+    /**
+     * The screen the wizard should open on, from the marker that asked for setup. Only meaningful
+     * while `dbInitialized` is `false`, and absent for a first run, which starts at the language step.
+     */
+    setupTargetScreen?: SetupTargetScreen;
+    /**
      * Whether a password has been set yet. `false` only in the pre-auth window
      * after the database is initialized but before the user has set a password,
      * which the client uses to render the set-password screen. Omitted (treated
@@ -951,6 +1105,18 @@ export interface SetupStatusResponse {
     syncVersion: number;
     schemaExists: boolean;
     isInitialized?: boolean;
+    /**
+     * Whether there is still a knowledge base behind the wizard.
+     *
+     * The same answer the bootstrap gave when the page loaded, asked again: the paths that replace a
+     * knowledge base erase it on the server, so a page that has been sitting here since before one
+     * of them ran would otherwise go on offering a way back to something that is gone.
+     */
+    hasExistingData?: boolean;
+    /** Whether the wizard has to be unlocked before it will act on that knowledge base. */
+    authRequired?: boolean;
+    /** Whether that unlock asks for a second factor as well as the password. */
+    secondFactorRequired?: boolean;
     /** The operation setup is busy with, or `null` when it is free. */
     setupOperation?: SetupOperation | null;
     /** Kept from a failed sync attempt so the wizard can prefill the form; pre-initialization only. */

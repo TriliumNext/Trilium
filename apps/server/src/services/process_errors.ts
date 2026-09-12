@@ -41,7 +41,7 @@ let appReady = false;
  * Deferred work — a `setTimeout` callback, a floating promise — has no request to fail and no caller to
  * catch it, so without this a single throw from a background task takes the whole application down: the
  * server process dies, and Electron replaces the desktop app with a modal stack trace against minified
- * `main.cjs` offsets (see #10823). That is a wildly disproportionate outcome for work whose failure is
+ * `main.mjs` offsets (see #10823). That is a wildly disproportionate outcome for work whose failure is
  * usually inconsequential, and it costs the user whatever unsaved state they had.
  *
  * Crashing therefore has to be a decision rather than the default, which is what {@link markAppReady}

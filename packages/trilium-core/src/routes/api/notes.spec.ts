@@ -44,6 +44,31 @@ describe("Notes API (core)", () => {
             });
         });
 
+        it("returns the timestamps of several notes at once, skipping the ones it cannot find", async () => {
+            const note = await createTextNote(api, { title: "Bulk metadata" });
+
+            const res = await api.post<Record<string, { utcDateCreated: string }>>(
+                "/api/notes/metadata",
+                { body: { noteIds: [ "root", note.noteId, "missingNote123" ] } });
+
+            expect(res.status).toBe(200);
+            expect(Object.keys(res.body).sort()).toEqual([ note.noteId, "root" ].sort());
+            expect(res.body[note.noteId]).toMatchObject({
+                dateCreated: expect.any(String),
+                utcDateCreated: expect.any(String),
+                dateModified: expect.any(String),
+                utcDateModified: expect.any(String)
+            });
+        });
+
+        it("400s a bulk metadata request whose noteIds are not a list of strings", async () => {
+            expect((await api.post("/api/notes/metadata", { body: {} })).status).toBe(400);
+            expect((await api.post("/api/notes/metadata", { body: { noteIds: "root" } })).status)
+                .toBe(400);
+            expect((await api.post("/api/notes/metadata", { body: { noteIds: [ 1 ] } })).status)
+                .toBe(400);
+        });
+
         it("returns the note blob", async () => {
             const res = await api.get<{ blobId: string; content: string }>("/api/notes/root/blob");
             expect(res.status).toBe(200);
@@ -72,6 +97,45 @@ describe("Notes API (core)", () => {
             expect(res.body.note.noteId).toBeTruthy();
             expect(res.body.note.title).toBe("Created via API");
             expect(res.body.branch.parentNoteId).toBe("root");
+        });
+
+        // What "cut selection into sub-note" does: the new note is handed HTML carrying the source
+        // note's pictures, and the source then drops them from its own content, scheduling those
+        // attachments for erasure. The new note has to end up owning copies, not pointing at them.
+        it("copies a foreign attachment referenced by the content it is created with", async () => {
+            const source = await createTextNote(api, { content: "<p>source</p>" });
+            const save = await api.post(`/api/notes/${source.noteId}/attachments`, {
+                body: { role: "image", mime: "image/png", title: "picture.png", content: "picture bytes" }
+            });
+            expect(save.status).toBe(204);
+
+            const [ original ] = (await api.get<{ attachmentId: string }[]>(
+                `/api/notes/${source.noteId}/attachments`
+            )).body;
+
+            const created = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                {
+                    body: {
+                        title: "Cut selection",
+                        type: "text",
+                        content: `<p><img src="api/attachments/${original.attachmentId}/image/picture.png"></p>`
+                    }
+                }
+            );
+            expect(created.status).toBe(200);
+            const { noteId } = created.body.note;
+
+            const copies = await api.get<{ attachmentId: string; ownerId: string; title: string }[]>(
+                `/api/notes/${noteId}/attachments`
+            );
+            expect(copies.body).toHaveLength(1);
+            expect(copies.body[0].ownerId).toBe(noteId);
+            expect(copies.body[0].attachmentId).not.toBe(original.attachmentId);
+
+            const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
+            expect(blob.body.content).toContain(`api/attachments/${copies.body[0].attachmentId}/image/`);
+            expect(blob.body.content).not.toContain(original.attachmentId);
         });
 
         it("400s when the target query param is invalid", async () => {
@@ -226,6 +290,30 @@ describe("Notes API (core)", () => {
             expect(del.status).toBe(204);
             // Erasing removes the row entirely rather than just flagging it deleted.
             expect(noteIsDeleted(noteId)).toBeNull();
+        });
+
+        it("holds a multi-note erase back until the last request of the task group", async () => {
+            const first = await createTextNote(api, { title: "Batch erase note 1" });
+            const second = await createTextNote(api, { title: "Batch erase note 2" });
+            const taskId = "test-note-erase-batch";
+
+            const firstRes = await api.delete(`/api/notes/${first.noteId}`, {
+                query: { taskId, last: "false", eraseNotes: "true" }
+            });
+            expect(firstRes.status).toBe(204);
+
+            // Soft-deleted, but not erased: the client is still sending the rest of the batch, and
+            // an erase here would reload it out from under them.
+            expect(noteIsDeleted(first.noteId)).toBe(1);
+
+            const secondRes = await api.delete(`/api/notes/${second.noteId}`, {
+                query: { taskId, last: "true", eraseNotes: "true" }
+            });
+            expect(secondRes.status).toBe(204);
+
+            // The last request erases everything the group deleted, in one go.
+            expect(noteIsDeleted(first.noteId)).toBeNull();
+            expect(noteIsDeleted(second.noteId)).toBeNull();
         });
     });
 

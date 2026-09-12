@@ -24,22 +24,30 @@ Setting up authentication with OpenID connect is a two-step process:
     | Client ID\* | `oauthClientId` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID` | The client ID from your provider configuration. |
     | Client Secret\* | `oauthClientSecret` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET` | The client secret from your provider configuration. |
     | Client auth method | `oauthClientAuthMethod` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD` | Token-endpoint auth method: `client_secret_basic` or `client_secret_post`. Empty auto-detects.  Only needed if sign-in fails with a `WWW-Authenticate` or `invalid_client` error. |
-    | ID token algorithm | `oauthIdTokenSigningAlg` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG` | <span style="color:rgb(32,32,32)">The algorithm your provider signs ID tokens with, e.g.</span> `RS256`<span style="color:rgb(32,32,32)">,</span> `EdDSA`<span style="color:rgb(32,32,32)">,</span> `ES256`<span style="color:rgb(32,32,32)">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span> `unexpected JWT alg` <span style="color:rgb(32,32,32)">error.</span> |
+    | ID token algorithm | `oauthIdTokenSigningAlg` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG` | <span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span> `RS256`<span style="color:rgb(32,32,32);">,</span> `EdDSA`<span style="color:rgb(32,32,32);">,</span> `ES256`<span style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span> `unexpected JWT alg` <span style="color:rgb(32,32,32);">error.</span> |
     
     Asterisk (\*) marks a required field
 3.  The default OAuth issuer is Google. To use other services such as Authentik or Auth0, you can configure the settings via `oauthIssuerBaseUrl`, `oauthIssuerName`, and `oauthIssuerIcon` in the `config.ini` file. Alternatively, these values can be set using environment variables:
     
     | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
     | --- | --- | --- | --- |
-    | Issuer base URL | `oauthIssuerBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | Either the issuer itself (`https://auth.example.com`) or a full discovery URL (`https://auth.example.com/.well-known/openid-configuration`).  <br>  <br>A URL containing `/.well-known/` is used as-is<span style="color:rgb(32,32,32)">, which is convenient when your provider hands you a discovery URL to copy. A trailing slash may be included or omitted; Trilium matches whichever spelling the provider advertises.</span>  <br>  <br>Use the full form when your provider advertises an issuer that differs from the path serving its discovery document, such as Authentik in "global" issuer mode. |
+    | Issuer base URL | `oauthIssuerBaseUrl` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | Either the issuer itself (`https://auth.example.com`) or a full discovery URL (`https://auth.example.com/.well-known/openid-configuration`).  <br>  <br>A URL containing `/.well-known/` is used as-is<span style="color:rgb(32,32,32);">, which is convenient when your provider hands you a discovery URL to copy. A trailing slash may be included or omitted; Trilium matches whichever spelling the provider advertises.</span>  <br>  <br>Use the full form when your provider advertises an issuer that differs from the path serving its discovery document, such as Authentik in "global" issuer mode. |
     | Issuer name | `oauthIssuerName` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME` | The name of your authentication provider, used for reference on the login screen and in settings. Default is “Google”. |
     | Issuer icon | `oauthIssuerIcon` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | Optionally, the URL to a logo of the provider. By default it will try to obtain the favicon from the website, so it's optional. |
     
     All the fields here are optional, since the default OAuth issuer is Google.
-4.  Restart the server so that the changes are applied.
+4.  Optionally, tune the following advanced settings. All are optional and have sensible defaults:
+    
+    | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
+    | --- | --- | --- | --- |
+    | HTTP timeout | `oauthHttpTimeout` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT` | Timeout in milliseconds for the provider HTTP requests (discovery, token exchange, userinfo). Defaults to `30000` (30s). Raise this if your provider cold-starts slowly and you are occasionally asked to sign in twice. Minimum accepted value is `500`. |
+    | Scopes | `oauthScope` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE` | Space-separated list of OIDC scopes requested at login. Defaults to `openid profile email`. `openid` is required and is prepended automatically if you omit it. |
+    
+    The OIDC session lifetime is automatically bound to Trilium's own session cookie lifetime (the `cookieMaxAge` setting in the `[Session]` section, 21 days by default), so a single sign-in stays valid for as long as your Trilium session does rather than expiring early on the OIDC library's shorter internal defaults.
+5.  Restart the server so that the changes are applied.
 
 > [!NOTE]
-> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`, `TRILIUM_OAUTH_CLIENT_AUTH_METHOD`, `TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG` .
+> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`, `TRILIUM_OAUTH_HTTP_TIMEOUT`, `TRILIUM_OAUTH_SCOPE`, `TRILIUM_OAUTH_CLIENT_AUTH_METHOD`, `TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG`.
 
 ## Connecting to the authentication provider
 

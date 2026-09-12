@@ -3,7 +3,6 @@ import type { BackendApi as PublicBackendApi, ScriptBNote as PublicScriptBNote }
 import type { Request, Response } from "express";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import Becca from "../becca/becca-interface";
-import * as cheerio from "cheerio";
 import * as htmlParser from "node-html-parser";
 import xml2js from "xml2js";
 import branchService from "./branches";
@@ -152,14 +151,13 @@ export interface Api {
     xml2js: typeof xml2js;
 
     /**
-     * cheerio library for HTML parsing and manipulation. See {@link https://cheerio.js.org} for documentation
-     * @deprecated cheerio will be removed in a future version. Use api.htmlParser (node-html-parser) instead.
+     * @deprecated cheerio was deprecated in v0.103.0 and has now been removed.
+     * Use api.htmlParser (node-html-parser) instead.
      */
-    cheerio: typeof cheerio;
+    cheerio: undefined;
 
     /**
-     * node-html-parser library for HTML parsing. See {@link https://github.com/piotr-nicol/node-html-parser} for documentation.
-     * This is the recommended replacement for cheerio.
+     * node-html-parser library for HTML parsing. See {@link https://github.com/taoqf/node-fast-html-parser} for documentation.
      */
     htmlParser: typeof htmlParser;
 
@@ -510,9 +508,16 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
         get: axiosError,
         apply: axiosError
     }) as unknown as undefined;
+    // Throw when cheerio is used (removed in favor of node-html-parser, which core already uses)
+    const cheerioError = () => {
+        throw new Error("api.cheerio was deprecated since v0.103.0 and has been removed. Please update your script to use api.htmlParser (node-html-parser) instead.");
+    };
+    this.cheerio = new Proxy(cheerioError, {
+        get: cheerioError,
+        apply: cheerioError
+    }) as unknown as undefined;
     this.dayjs = dayjs;
     this.xml2js = xml2js;
-    this.cheerio = cheerio;
     this.htmlParser = htmlParser;
     this.getInstanceName = () => (config.General ? config.General.instanceName : null);
     this.getNote = (noteId) => becca.getNote(noteId);

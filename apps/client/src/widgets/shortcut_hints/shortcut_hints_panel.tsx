@@ -78,12 +78,10 @@ export default function ShortcutHintsPanel() {
         return null;
     }
 
-    // Anchored: position the dropdown under the anchor, right edges aligned. The rect is a genuinely
-    // dynamic value, so it belongs in an inline style rather than CSS.
+    // Anchored: position the dropdown beside the anchor, right edges aligned. The rect is a
+    // genuinely dynamic value, so it belongs in an inline style rather than CSS.
     const anchorRect = state.anchor?.getBoundingClientRect();
-    const style = anchorRect
-        ? { top: `${anchorRect.bottom + ANCHOR_GAP}px`, right: `${Math.max(ANCHOR_GAP, window.innerWidth - anchorRect.right)}px`, bottom: "auto" }
-        : undefined;
+    const style = anchorRect ? anchoredStyle(anchorRect) : undefined;
 
     // Portal to <body> so no transformed / contained / overflow-clipped ancestor breaks the fixed
     // positioning or hides it behind content.
@@ -99,6 +97,23 @@ export default function ShortcutHintsPanel() {
         </div>,
         document.body
     );
+}
+
+/**
+ * Where an anchored panel stands: under the anchor, or over it where there is more room that way.
+ *
+ * Which side it takes is read off the room around the anchor rather than told to it, so a button
+ * pinned to the foot of what it sits over drops its panel upwards instead of off the window. The
+ * side not used is cleared, the corner placement the stylesheet gives otherwise being the one that
+ * would fight it.
+ */
+function anchoredStyle(anchor: DOMRect) {
+    const right = `${Math.max(ANCHOR_GAP, window.innerWidth - anchor.right)}px`;
+    const opensUp = window.innerHeight - anchor.bottom < anchor.top;
+
+    return opensUp
+        ? { bottom: `${window.innerHeight - anchor.top + ANCHOR_GAP}px`, top: "auto", right }
+        : { top: `${anchor.bottom + ANCHOR_GAP}px`, bottom: "auto", right };
 }
 
 export function ShortcutHintsSections({ sections }: { sections: ShortcutHintSection[] }) {

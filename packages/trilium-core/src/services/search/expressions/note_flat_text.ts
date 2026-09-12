@@ -3,7 +3,7 @@ import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import NoteSet from "../note_set.js";
 import type SearchContext from "../search_context.js";
-import { fuzzyMatchWordWithResult, normalizeSearchText } from "../utils/text_utils.js";
+import { fuzzyMatchWordWithResult, getAutoMaxEditDistance, normalizeSearchText } from "../utils/text_utils.js";
 import Expression from "./expression.js";
 
 class NoteFlatTextExp extends Expression {
@@ -226,8 +226,9 @@ class NoteFlatTextExp extends Expression {
             return true;
         }
 
-        // Fuzzy fallback only if enabled and for tokens >= 4 characters
-        if (searchContext?.enableFuzzyMatching && token.length >= 4) {
+        // Fuzzy fallback only if enabled and the token is long enough to allow any
+        // edit distance under the length-scaled (AUTO) rule (i.e. >= 3 characters).
+        if (searchContext?.enableFuzzyMatching && getAutoMaxEditDistance(token.length) > 0) {
             const matchedWord = fuzzyMatchWordWithResult(token, text);
             if (matchedWord) {
                 // Track the fuzzy matched word for highlighting

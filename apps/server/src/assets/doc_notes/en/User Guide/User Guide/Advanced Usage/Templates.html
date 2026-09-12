@@ -3,8 +3,8 @@
   main effects:</p>
 <ol>
   <li><strong>Attribute Inheritance</strong>: All attributes from the template
-    note are <a href="#root/_help_bwZpz2ajCEwO">inherited</a> by the instance notes.
-    Even attributes with <code spellcheck="false">#isInheritable=false</code> are
+    note are <a href="#root/_help_bwZpz2ajCEwO">inherited</a> by the instance
+    notes. Even attributes with <code spellcheck="false">#isInheritable=false</code> are
     inherited by the instance notes, although only inheritable attributes are
     further inherited by the children of the instance notes.</li>
   <li><strong>Content Duplication</strong>: The content of the template note
@@ -32,24 +32,23 @@
   all attributes from the template are inherited.</p>
 <p>To create an instance note through the UI:</p>
 <p>
-  <img src="Templates_template-create-instance-note.png"
-  alt="show child note templates">
+  <img src="Templates_template-create-instance-note.png" alt="show child note templates">
 </p>
-<p>For the template to appear in the menu, the template note must have the
-  <code
-  spellcheck="false">#template</code>label. Do not confuse this with the <code spellcheck="false">~template</code> relation,
-    which links the instance note to the template note. If you use <a href="#root/_help_9sRHySam5fXb">workspaces</a>,
-    you can also mark templates with <code spellcheck="false">#workspaceTemplate</code> to
-    display them only in the workspace.</p>
+<p>For the template to appear in the menu, the template note must have the <code
+  spellcheck="false">#template</code> label. Do not confuse this with the <code
+  spellcheck="false">~template</code> relation, which links the instance note
+  to the template note. If you use <a href="#root/_help_9sRHySam5fXb">workspaces</a>,
+  you can also mark templates with <code spellcheck="false">#workspaceTemplate</code> to
+  display them only in the workspace.</p>
 <p>Templates can also be added or changed after note creation by creating
   a <code spellcheck="false">~template</code> relation pointing to the desired
   template note.&nbsp;</p>
 <p>To specify a template for child notes, you can use a <code spellcheck="false">~child:template</code> relation
   pointing to the appropriate template note. There is no limit to the depth
-  of the hierarchy — you can use <code spellcheck="false">~child:child:template</code>,
-  <code
+  of the hierarchy — you can use <code spellcheck="false">~child:child:template</code>, <code
   spellcheck="false">~child:child:child:template</code>, and so on.</p>
-<aside class="admonition important">
+<aside
+class="admonition important">
   <p>Changing the template hierarchy after the parent note is created will
     not retroactively apply to newly created child notes.
     <br>For example, if you initially use <code spellcheck="false">~child:template</code> and
@@ -57,16 +56,44 @@
     will not automatically apply the new template to the grandchild notes.
     Only the structure present at the time of note creation is considered.</p>
 </aside>
+<h2>Default parent for new notes</h2>
+<p>A template can gather the notes created from it in one place, instead
+  of having them land wherever they happen to be created. To do so, add a <code
+  spellcheck="false">~template:newNoteDefaultParent</code> relation to the
+  template note, pointing at the note that should hold the instances, for
+  example a <em>Person</em> template pointing to a <em>People</em> note.</p>
+<p>Adding the relation several times places the new note in every target,
+  as&nbsp;<a class="reference-link" href="#root/_help_IakOLONlIfGI">Cloning Notes</a>.
+  The relation can also be inherited (e.g. from a folder holding several
+  templates), in which case a relation owned by the template itself replaces
+  the inherited one. The default parent is only inherited from the template's
+  ancestors in the tree: a template created from another template does not
+  adopt that template's default parent.</p>
+<p>The default parent is used whenever a note is created from the template
+  through the <em>Choose note type</em> dialog:</p>
+<ul>
+  <li>Via <code spellcheck="false">@</code>-completion in a&nbsp;<a class="reference-link"
+    href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note</li>
+  <li>Via the <em>Create note</em> or <em>Create child note</em> options of the
+    note search (new tab or&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>),
+    but only if the default/empty location is set.</li>
+</ul>
+<p>Creating an instance note from the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;context
+  menu (<em>Insert child note</em>, <em>Insert note after</em>) still creates
+  it at the chosen place.</p>
+<p>Unlike the&nbsp;<a class="reference-link" href="#root/_help_S0Fos78ZfcY7">Note Inbox</a>,
+  which holds quickly captured notes until they are sorted, the default parent
+  is meant as the instances' permanent location.</p>
 <h2>Regarding note types</h2>
 <p>By default, newly created notes are&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes.
   If a parent note defines a <code spellcheck="false">child:template</code> pointing
   to a template of a different type (e.g. a Code note), the behavior depends
   on how the new note is created:</p>
 <ul>
-  <li>If no note type is explicitly chosen (e.g. the + button in the&nbsp;
-    <a
-    class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>), the template is applied and the new note takes the type
-      and content of the template.</li>
+  <li>If no note type is explicitly chosen (e.g. the + button in the&nbsp;<a
+    class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>),
+    the template is applied and the new note takes the type and content of
+    the template.</li>
   <li>If a note type is explicitly selected (e.g.&nbsp;<a class="reference-link"
     href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;→ <em>Insert note after</em> / <em>Insert child note</em>):
     <ul>
@@ -79,14 +106,13 @@
 <p>Selecting a specific template from the creation menu always takes precedence
   over <code spellcheck="false">child:template</code>.</p>
 <h2>Additional Notes</h2>
-<p>From a visual perspective, templates can define <code spellcheck="false">#iconClass</code> and
-  <code
-  spellcheck="false">#cssClass</code>attributes, allowing all instance notes (e.g., books)
-    to display a specific icon and CSS style.</p>
+<p>From a visual perspective, templates can define <code spellcheck="false">#iconClass</code> and <code
+  spellcheck="false">#cssClass</code> attributes, allowing all instance notes
+  (e.g., books) to display a specific icon and CSS style.</p>
 <p>Explore the concept further in the&nbsp;<a class="reference-link" href="#root/_help_6tZeKvSHEUiB">Demo Notes</a>,
-  including examples like the&nbsp;<a class="reference-link" href="#root/_help_iRwzGnHPzonm">Relation Map</a>,&nbsp;
-  <a
-  class="reference-link" href="#root/_help_xYjQUYhpbUEW">Task Manager</a>, and&nbsp;<a class="reference-link" href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</p>
+  including examples like the&nbsp;<a class="reference-link" href="#root/_help_iRwzGnHPzonm">Relation Map</a>,&nbsp;<a
+  class="reference-link" href="#root/_help_xYjQUYhpbUEW">Task Manager</a>,
+  and&nbsp;<a class="reference-link" href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</p>
 <p>Additionally, see&nbsp;<a class="reference-link" href="#root/_help_47ZrP6FNuoG8">Default Note Title</a>&nbsp;for
   creating title templates. Note templates and title templates can be combined
   by creating a <code spellcheck="false">#titleTemplate</code> for a template

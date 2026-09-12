@@ -27,7 +27,6 @@ node_modules
 npm-debug.log
 yarn-error.log
 testem.log
-startup-metrics.log
 /typings
 
 # System Files
@@ -38,6 +37,7 @@ vite.config.*.timestamp*
 vitest.config.*.timestamp*
 test-output
 .vitest-reports
+.vitest
 __screenshots__
 .vitest-attachments
 

@@ -67,39 +67,38 @@ describe("isClipboardEmpty", () => {
 });
 
 describe("copy", () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    let $link: JQuery<HTMLElement>;
+
+    /** Replace `navigator.clipboard`, which happy-dom exposes as a getter-only property. */
+    function setClipboard(value: unknown) {
+        Object.defineProperty(navigator, "clipboard", { configurable: true, get: () => value });
+    }
+
+    beforeEach(() => {
+        $link = $("<a>").attr("href", "ref").text("Child link");
+        linkService.createLink = vi.fn(async () => $link) as typeof linkService.createLink;
+    });
+
     afterEach(() => {
-        delete (window as any).electronApi;
+        vi.restoreAllMocks();
         delete (globalThis as any).ClipboardItem;
+        if (originalClipboard) {
+            Object.defineProperty(navigator, "clipboard", originalClipboard);
+        }
     });
 
-    it("sets copy mode and toasts on a non-Electron platform", async () => {
-        const { childBranchId } = buildParentWithChild();
-        expect(utils.isElectron()).toBe(false);
-
-        await clipboard.copy([childBranchId]);
-
-        expect(clipboard.isClipboardEmpty()).toBe(false);
-        expect(toastService.showMessage).toHaveBeenCalledTimes(1);
-    });
-
-    it("writes reference links to the system clipboard on Electron", async () => {
+    it("sets copy mode and writes reference links to the system clipboard", async () => {
         const { parent, childBranchId, childNoteId } = buildParentWithChild();
-
-        (window as any).electronApi = {};
         const writeSpy = vi.fn(async (..._args: any[]) => {});
-        // happy-dom exposes `navigator.clipboard` as a getter-only property, so define our own.
-        Object.defineProperty(navigator, "clipboard", {
-            configurable: true,
-            get: () => ({ write: writeSpy })
-        });
+        setClipboard({ write: writeSpy });
         (globalThis as any).ClipboardItem = class {
             constructor(public readonly data: Record<string, unknown>) {}
         };
 
-        const link = $("<a>").attr("href", "ref").text("Child link");
-        linkService.createLink = vi.fn(async () => link) as typeof linkService.createLink;
-
         await clipboard.copy([childBranchId]);
+
+        expect(clipboard.isClipboardEmpty()).toBe(false);
 
         // The link key is `${branch.parentNoteId}/${branch.noteId}` with the reference-link option.
         expect(linkService.createLink).toHaveBeenCalledTimes(1);
@@ -112,13 +111,46 @@ describe("copy", () => {
         // The html slot carries the link's outerHTML; the plain slot carries its text.
         const htmlBlob = items[0].data["text/html"] as Blob;
         const plainBlob = items[0].data["text/plain"] as Blob;
-        expect(htmlBlob).toBeInstanceOf(Blob);
-        expect(plainBlob).toBeInstanceOf(Blob);
         expect(htmlBlob.type).toBe("text/html");
         expect(plainBlob.type).toBe("text/plain");
-        expect(await htmlBlob.text()).toBe(link[0].outerHTML);
+        expect(await htmlBlob.text()).toBe($link[0].outerHTML);
         expect(await plainBlob.text()).toBe("Child link");
 
+        expect(toastService.showMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("falls back to the copy event when the asynchronous Clipboard API is unavailable", async () => {
+        const { childBranchId } = buildParentWithChild();
+        // No `navigator.clipboard` at all, as when Trilium is served over plain HTTP on a LAN (#10723).
+        setClipboard(undefined);
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(true);
+
+        await clipboard.copy([childBranchId]);
+
+        expect(copyHtmlToClipboard).toHaveBeenCalledWith($link[0].outerHTML, "Child link");
+        expect(clipboard.isClipboardEmpty()).toBe(false);
+        expect(toastService.showMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("still copies onto Trilium's own clipboard when the system clipboard refuses the links", async () => {
+        const { childBranchId } = buildParentWithChild();
+        setClipboard(undefined);
+        vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(false);
+
+        await clipboard.copy([childBranchId]);
+
+        // The notes stay pasteable within the tree, so the toast reports the partial success.
+        expect(clipboard.isClipboardEmpty()).toBe(false);
+        expect(toastService.showMessage).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(toastService.showMessage).mock.calls[0].slice(1)).toEqual([5000, "bx bx-error"]);
+    });
+
+    it("skips the system clipboard when there is nothing to copy", async () => {
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard");
+
+        await clipboard.copy([]);
+
+        expect(copyHtmlToClipboard).not.toHaveBeenCalled();
         expect(toastService.showMessage).toHaveBeenCalledTimes(1);
     });
 });
@@ -152,7 +184,7 @@ describe("pasteAfter", () => {
         } as any;
 
         // "missing-branch" is dropped by isClipboardEmpty()'s filter before the clone loop runs.
-        clipboard.copy([childBranchId, "missing-branch", orphanBranchId]);
+        await clipboard.copy([childBranchId, "missing-branch", orphanBranchId]);
         vi.clearAllMocks();
 
         await clipboard.pasteAfter("target-branch");
@@ -193,7 +225,7 @@ describe("pasteInto", () => {
             getNote: async () => null
         } as any;
 
-        clipboard.copy([childBranchId, "missing-branch", orphanBranchId]);
+        await clipboard.copy([childBranchId, "missing-branch", orphanBranchId]);
         vi.clearAllMocks();
 
         await clipboard.pasteInto("parent-branch");

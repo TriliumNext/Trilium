@@ -1,10 +1,8 @@
-/* Previous/next sibling navigation pinned to the top-left corner of the viewport. */
+/* Previous/next sibling navigation, pinned by the corner it names (see `placement` on
+   OverlayControlGroup); left here is the size of its arrows and what it stands above. */
 .sibling-navigator {
     --overlay-button-icon-size: 20px;
 
-    position: absolute;
-    bottom: 10px;
-    inset-inline-start: 10px;
     z-index: 1;
 
     .sibling-navigator-index {

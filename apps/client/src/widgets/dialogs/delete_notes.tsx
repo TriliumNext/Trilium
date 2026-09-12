@@ -104,6 +104,7 @@ export default function DeleteNotesDialog() {
             className="delete-notes-dialog"
             size="lg"
             title={t("delete_notes.title")}
+            zIndex={2000}
             onShown={() => okButtonRef.current?.focus()}
             onHidden={() => {
                 opts.callback?.({ proceed: false });
@@ -120,6 +121,7 @@ export default function DeleteNotesDialog() {
                     }} />
             </>}
             show={shown}
+            stackable
         >
             <Card>
                 <CardSection>

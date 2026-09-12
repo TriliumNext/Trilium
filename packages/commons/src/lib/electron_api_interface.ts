@@ -78,13 +78,16 @@ export interface ElectronWindowApi {
     /**
      * Customizes the Windows and Linux native title bar overlay (the area containing the
      * minimize / maximize / close buttons). `height` also controls their vertical placement,
-     * since the buttons are centred within the overlay.
+     * since the buttons are centred within the overlay. It is given in device-independent
+     * pixels, which the page zoom does not scale — see {@link setWindowButtonPosition}.
      */
     setTitleBarOverlay(options: { color: string; symbolColor: string; height?: number }): void;
 
     /**
-     * Repositions the macOS traffic-light window buttons.
-     * Coordinates are in CSS pixels relative to the window's top-left corner.
+     * Repositions the macOS traffic-light window buttons. Coordinates are relative to the
+     * window's top-left corner and given in device-independent pixels: the buttons are drawn by
+     * the system rather than by the page, so unlike the surrounding chrome they are unaffected by
+     * the page zoom factor and callers have to scale the offsets themselves.
      */
     setWindowButtonPosition(position: { x: number; y: number }): void;
 
@@ -122,12 +125,6 @@ export interface ElectronWindowApi {
 
     /** Closes the current window. */
     closeWindow(): void;
-
-    /**
-     * Opens a new top-level Trilium window navigated to the given hash route.
-     * @param extraWindowHash The URL hash fragment (without the leading `#`) for the new window.
-     */
-    createExtraWindow(extraWindowHash: string): void;
 
     /** Synchronously returns whether the window is pinned above all others. */
     isAlwaysOnTop(): boolean;
@@ -271,10 +268,28 @@ export interface ElectronShellApi {
     openPath(path: string): Promise<string>;
 
     /**
+     * Shows a local file in the OS file manager, with the file itself selected,
+     * via `electron.shell.showItemInFolder`. For pointing at a file the user is
+     * not meant to open — the database, whose reader is Trilium itself.
+     *
+     * **Security:** the same sandbox as {@link openPath}, with the database
+     * file added as a root of its own, since `TRILIUM_DOCUMENT_PATH` may put it
+     * outside the data directory. Revealing is the milder act of the two, the
+     * file being selected rather than launched, but a path the renderer names
+     * is still a path the renderer must not be free to choose.
+     *
+     * Nothing is reported back: the OS is asked to bring a window forward, and
+     * whether it did is not something Electron answers.
+     */
+    showItemInFolder(path: string): void;
+
+    /**
      * Opens a `file://` URL with its default OS handler. Exists as a separate
-     * channel from {@link openExternal} because Electron's `shell.openExternal`
-     * mishandles Unicode characters in `file:` URLs on Windows; converting to
-     * a filesystem path and calling `shell.openPath` works correctly.
+     * channel from {@link openExternal} because neither Electron API opens every
+     * target correctly on Windows: `shell.openExternal` mishandles Unicode
+     * characters in `file:` URLs, while `shell.openPath` opens a directory with
+     * the Explorer-specific `explore` verb, bypassing the user's file manager.
+     * The main process picks between them per target.
      *
      * **Security:** the URL must use the `file:` scheme and must have an
      * empty hostname. UNC paths (`file://attacker.example/share/x`) are
@@ -685,6 +700,16 @@ export interface ElectronDialogApi {
      * before any path comes back.
      */
     pickDirectory(opts?: { defaultPath?: string }): Promise<NativeDirectoryPickResult>;
+
+    /**
+     * Prompts a native message box before the application restarts into the setup screen, where the
+     * user may replace or erase their knowledge base.
+     *
+     * An OS dialog rather than one of the application's own, for the reason the security toggles use
+     * one: a note script can reach every dialog the app draws for itself, and this one guards the
+     * path to losing everything. It is never suppressible, so there is no "don't ask again" here.
+     */
+    confirmStartOver(): Promise<boolean>;
 }
 
 /**

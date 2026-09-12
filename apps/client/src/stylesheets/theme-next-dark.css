@@ -140,6 +140,7 @@
     --quick-search-focus-color: white;
     --quick-search-result-content-background: #0000004d;
     --quick-search-result-highlight-color: #a4d995;
+    --quick-search-result-fuzzy-highlight-color: #efb075;
 
     --left-pane-collapsed-border-color: #0009;
     --left-pane-background-color: #1f1f1f;
@@ -191,7 +192,7 @@
 
     --right-pane-heading-color: gray;
     --right-pane-peek-background: #303030dc;
-    
+
     --peek-pane-backdrop-color: #00000032;
     --peek-pane-shadow-color: #000000a8;
 
@@ -221,6 +222,7 @@
 
     --badge-temporaraily-editable-background-color: #297331;
     --badge-read-only-background-color: #af4340;
+    --badge-office-preview-background-color: #3f5470;
     --badge-share-background-color: #4d4d4d;
     --badge-snippet-background-color: #4d4d4d;
     --badge-clipped-note-background-color: #295773;
@@ -293,6 +295,10 @@
     --card-border-color: transparent;
     --card-box-shadow: none;
 
+    --inline-code-background-color: rgba(255, 255, 255, 0.08);
+    --inline-code-border-color: rgba(255, 255, 255, 0.14);
+    --inline-code-hover-background-color: rgba(255, 255, 255, 0.15);
+
     --calendar-color: var(--menu-text-color);
     --calendar-weekday-labels-color: var(--muted-text-color);
     --calendar-day-hover-color: var(--hover-item-text-color);
@@ -312,8 +318,10 @@
     --tooltip-kbd-background: #ffffff32;
     --tooltip-kbd-border: #00000060;
 
-    --note-tooltip-background-color: #3d3d3d;
-    
+    /* Translucent, as the app's other tooltips are: the theme frosts every tooltip
+       (`--tooltip-backdrop-filter`), and an opaque colour here is a blur with nothing behind it. */
+    --note-tooltip-background-color: #3d3d3dd9;
+
     --help-background-color: var(--menu-background-color);
     --help-card-background: var(--card-background-color);
     --help-card-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
@@ -336,6 +344,7 @@
     --note-list-view-large-icon-color: var(--note-icon-color);
     --note-list-view-search-result-highlight-background: transparent;
     --note-list-view-search-result-highlight-color: var(--quick-search-result-highlight-color);
+    --note-list-view-search-result-fuzzy-highlight-color: var(--quick-search-result-fuzzy-highlight-color);
     --note-list-view-content-background: rgba(0, 0, 0, .2);
     --note-list-view-content-search-result-highlight-background: var(--quick-search-result-highlight-color);
     --note-list-view-content-search-result-highlight-color: black;
@@ -356,7 +365,61 @@
     --task-checkbox-done-hover-color: #41b441;
     --task-checkbox-unknown-state-color: #e95d5d;
     --task-checkbox-glyph-color: white;
-    
+
+    --space-usage-treemap-cell-background: var(--accented-background-color);
+    --space-usage-treemap-cell-icon-color: var(--muted-text-color);
+    --space-usage-treemap-cell-hover-color: var(--main-text-color);
+    --space-usage-treemap-cell-selected-color: var(--main-text-color);
+
+    --space-usage-treemap-cell-saturation: 35%;
+    --space-usage-treemap-cell-lightness: 40%;
+
+    --space-usage-treemap-icon-saturation: 60%;
+    --space-usage-treemap-icon-lightness: 70%;
+
+    --space-usage-treemap-hover-saturation: 60%;
+    --space-usage-treemap-hover-lightness: 70%;
+
+    --space-usage-treemap-selected-saturation: 70%;
+    --space-usage-treemap-selected-lightness: 70%;
+
+    --space-usage-body-color: #a7c0d3;
+    --space-usage-attachments-color: #dec7a7;
+    --space-usage-revisions-color: #61d177;
+    --space-usage-revisions-stripe-color: #000000;
+
+    --space-usage-donut-track-color: var(--main-border-color);
+    --space-usage-donut-segment-color: var(--accented-background-color);
+    --space-usage-donut-segment-hover-color: var(--input-focus-outline-color);
+    --space-usage-donut-segment-selected-color: var(--main-text-color);
+
+    --space-usage-donut-segment-saturation: 55%;
+    --space-usage-donut-segment-lightness: 60%;
+
+    --space-usage-donut-hover-saturation: 90%;
+    --space-usage-donut-hover-lightness: 80%;
+
+    --board-limit-exceeded-background: #e57373;
+    --board-limit-exceeded-outline: #e5737380;
+    --board-column-background: #3b3b3b;
+    --board-column-background-saturation: 14%;
+    --board-column-background-lightness: 23%;
+
+    --board-item-background-saturation: 21%;
+    --board-item-background-lightness: 32%;
+
+    --board-item-hover-background-saturation: 25%;
+    --board-item-hover-background-lightness: 35%;
+
+    --board-drop-hint-background-saturation: 20%;
+    --board-drop-hint-background-lightness: 45%;
+    --board-drop-hint-color: #ffffffc9;
+
+    --board-focus-outline-saturation: 60%;
+    --board-focus-outline-lightness: 70%;
+
+    --space-usage-donut-selected-saturation: 90%;
+    --space-usage-donut-selected-lightness: 80%;
 }
 
 /*
@@ -393,7 +456,11 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
     border-color: var(--muted-text-color) !important;
 }
 
-.quick-edit-dialog-wrapper.with-hue {
+/* A calendar event and a map marker shown as a sheet are the same thing the quick editor is — a
+   whole note over whatever raised it — so they are tinted by the same colours. */
+.quick-edit-dialog-wrapper.with-hue,
+.calendar-event-sheet.with-hue,
+.geo-detail-sheet.with-hue {
     --modal-background-color: hsl(var(--custom-color-hue), 8.8%, 11.2%);
     --modal-border-color: hsl(var(--custom-color-hue), 9.4%, 25.1%);
     --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 13.2%, 20.8%);
@@ -417,9 +484,13 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 .note-split.with-hue,
 .quick-edit-dialog-wrapper.with-hue,
 .geo-detail-pane.with-hue,
+.calendar-event-popover.with-hue,
+.calendar-event-sheet.with-hue,
+.geo-detail-sheet.with-hue,
 .nested-note-list-item.with-hue,
 .note-book-card.with-hue .note-book-header,
-.ck-template-icon.with-hue {
+.ck-template-icon.with-hue,
+.board-column h3 {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 15.8%, 30.9%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 100%, 76.5%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 28.3%, 36.7%);
@@ -436,7 +507,32 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 }
 
 .note-tooltip.with-hue {
-    --tooltip-background-color: hsl(var(--custom-color-hue), 8.8%, 24%);
+    --tooltip-background-color: hsl(var(--custom-color-hue), 8.8%, 24%, 0.85);
+}
+
+/*
+ * The surfaces that show a note over something else and frost what they stand on: the calendar's
+ * event card beside its chip, the geo map's marker pane over the map. Unlike the sheets and the
+ * tooltip, their tint is stated with the alpha the plain surface already carries — an opaque tint
+ * would leave the blur nothing to show through, which is the whole of what they are dressed as.
+ *
+ * Grown to cover what they stand on, both give the frosting up and take the same tint opaque; so
+ * does one whose blur cannot be had at all (background effects, or a reader who turned them off),
+ * all of them reading the no-backdrop colour.
+ */
+.calendar-event-popover.with-hue,
+.geo-detail-pane.with-hue {
+    --menu-background-color: hsl(var(--custom-color-hue), 15%, 14%, 0.85);
+    --menu-background-color-no-backdrop: hsl(var(--custom-color-hue), 12%, 11.2%);
+    --dropdown-border-color: hsl(var(--custom-color-hue), 12%, 26%);
+    --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 13.2%, 20.8%);
+}
+
+/* A reader who turned backdrop effects off, which these must answer here rather than by the swap
+   made on the body above: that swap is resolved where it is stated, so what reaches the surface is
+   the plain opaque colour and not the tinted one the surface states on itself. */
+body.backdrop-effects-disabled :is(.calendar-event-popover, .geo-detail-pane).with-hue {
+    --menu-background-color: var(--menu-background-color-no-backdrop);
 }
 
 [data-trilium-task-state] {

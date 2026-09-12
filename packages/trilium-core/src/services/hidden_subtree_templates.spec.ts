@@ -39,6 +39,7 @@ describe("buildHiddenSubtreeTemplates", () => {
             "_template_text_snippet",
             "_template_markdown_snippet",
             "_template_code_snippet",
+            "_template_ai_quick_action",
             "_template_list_view",
             "_template_grid_view",
             "_template_calendar",

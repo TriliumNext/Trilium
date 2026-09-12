@@ -175,6 +175,67 @@ describe("Special notes API (core)", () => {
         });
     });
 
+
+    // Driven through the route table rather than the handlers, so registration
+    // and the limit query-param parsing are both covered.
+    describe("LLM chats", () => {
+        interface RecentChat {
+            noteId: string;
+            title: string;
+            dateModified: string;
+        }
+
+        it("creates a chat, then returns it as the most recent one", async () => {
+            const created = await api.post<NotePojo>("/api/special-notes/llm-chat");
+            expect(created.status).toBe(200);
+            expect(created.body.type).toBe("llmChat");
+
+            const recent = await api.get<NotePojo | null>("/api/special-notes/most-recent-llm-chat");
+            expect(recent.status).toBe(200);
+            expect(recent.body?.noteId).toBe(created.body.noteId);
+        });
+
+        it("get-or-create returns the existing chat rather than a new one", async () => {
+            const existing = await api.get<NotePojo>("/api/special-notes/most-recent-llm-chat");
+            const res = await api.get<NotePojo>("/api/special-notes/get-or-create-llm-chat");
+            expect(res.status).toBe(200);
+            expect(res.body.noteId).toBe(existing.body.noteId);
+        });
+
+        it("lists recent chats, honouring the limit and defaulting it when absent", async () => {
+            await api.post<NotePojo>("/api/special-notes/llm-chat");
+
+            const limited = await api.get<RecentChat[]>("/api/special-notes/recent-llm-chats", {
+                query: { limit: "1" }
+            });
+            expect(limited.status).toBe(200);
+            expect(limited.body).toHaveLength(1);
+            expect(limited.body[0]).toEqual(expect.objectContaining({
+                noteId: expect.any(String),
+                title: expect.any(String)
+            }));
+
+            // No limit, and a non-numeric one, both fall back to the default of 10.
+            for (const query of [undefined, { limit: "not-a-number" }]) {
+                const res = await api.get<RecentChat[]>("/api/special-notes/recent-llm-chats", { query });
+                expect(res.status).toBe(200);
+                expect(res.body.length).toBeGreaterThan(0);
+                expect(res.body.length).toBeLessThanOrEqual(10);
+            }
+        });
+
+        it("saves a chat out of the hidden subtree", async () => {
+            const created = await api.post<NotePojo>("/api/special-notes/llm-chat");
+
+            const saved = await api.post<CloneResponse>("/api/special-notes/save-llm-chat", {
+                body: { llmChatNoteId: created.body.noteId }
+            });
+            expect(saved.status).toBe(200);
+            expect(saved.body.success).toBe(true);
+            expect(saved.body.branchId).toBeTruthy();
+        });
+    });
+
     describe("launchers", () => {
         it("creates a launcher under a parent and resets it", async () => {
             const created = await api.post<{ success: boolean; note: NotePojo }>(

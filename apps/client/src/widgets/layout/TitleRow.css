@@ -1,10 +1,3 @@
-/*
- * The title row sized as chrome rather than as a note's heading.
- *
- * It is written for the head of a note split — 50px tall, title at 180%, and `display: flex` coming
- * from the split rather than from the row itself, so anywhere else its children stack. Gathered here
- * so each narrow header (the quick editor's, the geo map's pane) need not work it out again.
- */
 .title-row.tn-title-row-compact {
     display: flex;
     align-items: center;
@@ -19,15 +12,19 @@
         margin-inline-start: 0;
     }
 
-    /* The title takes what the icon leaves, as it does in a split (see note_title.css); all that is
-       wanted here is a row for it to do that in. */
+    .note-icon-widget.note-icon-widget {
+        margin-inline-end: 8px;
+    }
+
     .note-title-widget {
         display: flex;
         align-items: center;
-        --note-title-padding-inline: 8px;
     }
 
-    /* Both are sized in the heading's terms — the title at 180% of it — and neither is a heading. */
+    .note-title-widget.note-title-widget {
+        --note-title-padding-inline: 0;
+    }
+
     .note-icon-widget button.note-icon,
     .note-title-widget input.note-title {
         font-size: 1em;

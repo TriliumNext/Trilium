@@ -96,7 +96,17 @@
     "toggle-ribbon-tab-note-paths": "Mostra/Nascondi i percorsi della nota",
     "toggle-ribbon-tab-similar-notes": "Mostra/Nascondi le note simili",
     "save-named-revision": "Salva Revisione con Nome",
-    "toggle-archived-notes": "Attiva/disattiva la visualizzazione delle note archiviate"
+    "toggle-archived-notes": "Attiva/disattiva la visualizzazione delle note archiviate",
+    "show-deleted-notes": "Mostra le note eliminate",
+    "show-shortcut-hints": "Mostra suggerimenti sui collegamenti",
+    "peek-right-pane": "Anteprima del riquadro destro",
+    "show-space-usage": "Mostra l'utilizzo dello spazio",
+    "create-new-split": "Crea una nuova suddivisione",
+    "close-active-split": "Chiudi la divisione attiva",
+    "move-split-left": "Sposta a sinistra",
+    "move-split-right": "Sposta la divisione a destra",
+    "focus-split-left": "Focus spostato a sinistra",
+    "focus-split-right": "Focus diviso a destra"
   },
   "hidden-subtree": {
     "options-title": "Opzioni",
@@ -106,7 +116,7 @@
     "code-notes-title": "Note di codice",
     "images-title": "Media",
     "spellcheck-title": "Controllo ortografico",
-    "password-title": "Password",
+    "password-title": "Password e autenticazione",
     "multi-factor-authentication-title": "Autenticazione a più fattori",
     "etapi-title": "ETAPI",
     "backup-title": "Backup",
@@ -166,7 +176,13 @@
     "task-state-attr-is-completed": "Si considera completato",
     "task-state-attr-color": "Colore",
     "task-state-attr-is-hidden": "Nascosto dall'elenco",
-    "security-title": "Sicurezza"
+    "security-title": "Sicurezza",
+    "deleted-notes-title": "Note eliminate",
+    "color-scheme-switcher-title": "Selettore della combinazione di colori",
+    "content-manager-title": "Responsabile dei contenuti",
+    "desktop-title": "Desktop",
+    "space-usage-title": "Utilizzo dello spazio",
+    "database-title": "Database"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -178,7 +194,8 @@
     "reading-log-failed": "La lettura del file di log del backend '{{ fileName }}' è fallita."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "Questo tipo di nota non può essere visualizzato."
+    "note-cannot-be-displayed": "Questo tipo di nota non può essere visualizzato.",
+    "included-note-requires-credentials": "Questa nota allegata è protetta da password e non può essere visualizzata qui."
   },
   "pdf": {
     "export_filter": "Documento PDF (*.pdf)",
@@ -217,7 +234,8 @@
     "expand": "Espandi",
     "toggle-navigation": "Attiva/disattiva la navigazione",
     "toggle-toc": "Mostra/Nascondi sommario",
-    "logo-alt": "Logo"
+    "logo-alt": "Logo",
+    "login": "Login"
   },
   "keyboard_actions": {
     "back-in-note-history": "Naviga alla nota precedente della cronologia",
@@ -286,22 +304,35 @@
     "toggle-classic-editor-toolbar": "Mostra/Nascondi il pannello della formattazione per l'editor con la barra degli strumenti fissa",
     "unhoist": "Rimuovi qualsiasi ancoraggio",
     "save-named-revision": "Salva una revisione con nome della nota attiva",
-    "toggle-archived-notes": "Mostra/nascondi le note archiviate nell'albero delle note"
+    "toggle-archived-notes": "Mostra/nascondi le note archiviate nell'albero delle note",
+    "show-deleted-notes": "Visualizza la finestra di dialogo \"Note eliminate\"",
+    "show-shortcut-hints": "Mostra le scorciatoie da tastiera per il widget attivo",
+    "peek-right-pane": "Visualizza il riquadro destro come un pannello temporaneo che si sovrappone al contenuto e si chiude quando perde il focus",
+    "show-space-usage": "Apri la pagina \"Utilizzo dello spazio\"",
+    "create-new-split": "Apri una nuova finestra divisa vuota a destra di quella attiva",
+    "close-active-split": "Chiudi la finestra divisa attiva, lasciando aperte le altre finestre divise della scheda",
+    "focus-split-left": "Sposta il focus sulla divisione a sinistra di quella attiva",
+    "focus-split-right": "Sposta il focus sulla divisione a destra di quella attiva",
+    "split-view": "Visualizzazione divisa",
+    "move-split-left": "Scambia la divisione attiva con quella alla sua sinistra, in modo che la nota si sposti e il focus la segua",
+    "move-split-right": "Scambia la divisione attiva con quella alla sua destra, in modo che la nota si sposti e il focus la segua"
   },
   "login": {
     "title": "Accedi",
     "heading": "Trilium",
-    "incorrect-totp": "Il codice TOTP è errato. Riprovare.",
-    "incorrect-password": "Le credenziali sono errate. Riprovare.",
+    "incorrect-totp": "Il codice TOTP è errato. Per favore riprova.",
+    "incorrect-password": "La password non è corretta. Riprova.",
     "password": "Password",
     "remember-me": "Ricordami",
     "button": "Accedi",
-    "sign_in_with_sso": "Accedi con {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Accedi con {{ ssoIssuerName }}",
+    "sso-wrong-account": "Questo account non è quello collegato a questa istanza di Trilium. Accedi con l'account collegato.",
+    "sso-not-enrolled": "L'accesso singolo (single sign-on) non è ancora attivo. Accedi prima con la tua password, poi collega il tuo account dalle impostazioni."
   },
   "set_password": {
     "title": "Imposta password",
     "heading": "Imposta password",
-    "description": "Prima di poter usare Trilium dal web, occorre impostare una password. Questa password sarà necessaria per accedere.",
+    "description": "Prima di poter iniziare a utilizzare Trilium via web, è necessario impostare una password. Questa password servirà poi per accedere.",
     "password": "Password",
     "password-confirmation": "Conferma della password",
     "button": "Imposta password"
@@ -378,7 +409,8 @@
     "background": "Contesto",
     "markdown-snippet": "Snippet Markdown",
     "code-snippet": "Codice Snippet",
-    "dashboard": "Pannello di controllo"
+    "dashboard": "Pannello di controllo",
+    "ai-quick-action": "Azione rapida AI"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Database non inizializzato, seguire le istruzioni a schermo.",
@@ -414,6 +446,102 @@
     "backend-scripting": "Esecuzione di script sul backend",
     "backend-scripting-warning": "Gli script di backend dispongono di pieno accesso al server, compreso il file system e la rete.",
     "sql-console": "Console SQL",
-    "sql-console-warning": "La console SQL consente di eseguire query SQL arbitrarie sul database."
+    "sql-console-warning": "La console SQL consente di eseguire query SQL arbitrarie sul database.",
+    "lan-access": "accesso alla rete",
+    "lan-access-warning": "L'app e le note condivise saranno accessibili tramite la rete, ovvero raggiungibili da un browser su questo computer e da altri dispositivi sulla rete locale."
+  },
+  "note_conversion": {
+    "revision_before_markdown": "Prima della conversione in Markdown",
+    "revision_before_text": "Prima della conversione in nota di testo"
+  },
+  "onenote_import": {
+    "root-title": "Importazione da OneNote",
+    "failed-page-placeholder": "Impossibile importare questa pagina da OneNote. Errore: {{error}}",
+    "failed-section-placeholder": "Impossibile importare questa sezione da OneNote, quindi è stata creata vuota. Errore: {{error}}",
+    "protected-section-error": "Questa sezione è protetta da password. Rimuovi la password in OneNote, quindi importala di nuovo.",
+    "protected-section-placeholder": "Questa sezione è protetta da password, quindi le sue pagine non sono state importate ed è stata creata vuota. Per importarla, apri la sezione in OneNote, rimuovi la protezione tramite password (clicca con il pulsante destro del mouse sulla sezione &rarr; Protezione con password &rarr; Rimuovi password), quindi esegui nuovamente l'importazione.",
+    "report": {
+      "row-pages": "Pagine importate correttamente",
+      "row-notebooks": "Notebook importati",
+      "row-sections": "Sezioni importate",
+      "row-duration": "Durata totale dell'importazione",
+      "row-images": "Immagini",
+      "row-attachments": "File allegati",
+      "row-ink": "Pagine con scritte a mano o disegni",
+      "row-links": "Collegamenti tra pagine",
+      "row-throttling": "Tempo limitato da Microsoft Graph",
+      "value-links": "{{resolved}} risolto, {{unresolved}} punta al di fuori della selezione importata",
+      "value-throttling_one": "{{- wait}} ({{count}} richieste limitate)",
+      "value-throttling_many": "{{- wait}} ({{count}} richiesta limitata)",
+      "value-throttling_other": "{{- wait}} ({{count}} richieste limitate)",
+      "skipped-sections-title": "Sezioni che non è stato possibile importare",
+      "skipped-sections-section": "Sezione",
+      "skipped-sections-notebook": "Computer",
+      "skipped-sections-error": "Errore",
+      "failed-pages-title": "Pagine che non è stato possibile importare",
+      "failed-pages-page": "Pagina",
+      "failed-pages-section": "Sezione",
+      "failed-pages-error": "Errore",
+      "failed-resources-title": "Immagini e allegati mancanti",
+      "failed-resources-item_one": "{{- pageLink}}: Impossibile scaricare la risorsa {{count}}",
+      "failed-resources-item_many": "{{- pageLink}}: Impossibile scaricare le {{count}} risorse",
+      "failed-resources-item_other": "{{- pageLink}}: Impossibile scaricare le {{count}} risorse"
+    }
+  },
+  "notion_import": {
+    "root-title": "Importazione del concetto",
+    "markdown-export-unsupported": "Sembra un'esportazione di Notion in formato \"Markdown e CSV\", che Trilium non è in grado di importare. Si prega di riesportare l'area di lavoro di Notion utilizzando il formato \"HTML\" e importare quello.",
+    "subpage-folders-disabled": "Questa esportazione da Notion è stata creata senza l'opzione \"Crea cartelle per le sottopagine\", pertanto la gerarchia delle pagine non può essere ricostruita. Si prega di riesportare il file da Notion con l'opzione \"Crea cartelle per le sottopagine\" abilitata e di importare il file risultante."
+  },
+  "keep_import": {
+    "root-title": "Importazione da Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Importazione di qualsiasi tipo",
+    "protobuf-export-unsupported": "Sembra un'esportazione Anytype \"Protobuf\", che Trilium non è in grado di importare. Si prega di riesportare lo spazio Anytype utilizzando il formato \"Any-Block\" con l'opzione \"JSON\" selezionata e di importare quest'ultimo.",
+    "markdown-export-unsupported": "Sembra un'esportazione Anytype in formato \"Markdown\", che Trilium non è in grado di importare. Si prega di riesportare lo spazio Anytype utilizzando il formato \"Any-Block\" con l'opzione \"JSON\" selezionata e di importare quest'ultimo."
+  },
+  "obsidian_import": {
+    "root-title": "Importazione di ossidiana"
+  },
+  "export": {
+    "zip_filter": "Archivio ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "Il file selezionato è scaduto o non valido. Seleziona nuovamente il file."
+  },
+  "restore": {
+    "pick_backup_title": "Scegli un backup da ripristinare",
+    "backup_filter": "Backup Trilium (*.db, *.tnbackup)",
+    "any_file_filter": "Tutti i file"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Backup del database non riuscito: impossibile scrivere in {{- location}}. Verrà eseguito il backup nella posizione predefinita.",
+    "passphrase_unavailable": "Impossibile leggere la password di backup, pertanto questo backup non è crittografato. È stato salvato nella posizione predefinita anziché in quella scelta."
+  },
+  "dialog": {
+    "select_directory": "Seleziona la cartella"
+  },
+  "backup-password-dialog": {
+    "cancel": "Cancellare",
+    "set-title": "Impostare la password di backup?",
+    "set-message": "I backup futuri saranno crittografati con questa password.",
+    "set-detail": "Trilium non può più mostrare questa password, quindi conservane una copia in un luogo sicuro: senza di essa, non sarà possibile ripristinare il backup.\n\nSe non ti aspettavi che ti venisse richiesta, annulla l'operazione: potrebbe essere stata richiesta da una nota o da uno script.",
+    "set-confirm": "Imposta password",
+    "clear-title": "Hai dimenticato la password di backup?",
+    "clear-message": "I backup non saranno più crittografati.",
+    "clear-detail": "I backup già creati mantengono la password con cui sono stati effettuati e possono essere ripristinati utilizzandola.\n\nSe non ti aspettavi questa richiesta, annullala: potrebbe essere stata richiesta da una nota o da uno script.",
+    "clear-confirm": "Password dimenticata"
+  },
+  "setup-window": {
+    "getting-started": "Guida introduttiva - Trilium Notes",
+    "start-over": "Ricomincia da capo - Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "Ricomincia da capo",
+    "message": "Riavviare Trilium e tornare alla schermata di configurazione?",
+    "detail": "Ti verrà prima proposto di eseguire un backup della tua attuale base di conoscenza. Nulla verrà eliminato finché non deciderai di creare una nuova base di conoscenza, ripristinare un backup o eseguire la sincronizzazione da un altro dispositivo.\n\nNon procedere se uno script o una nota che non conosci ti ha invitato a farlo.",
+    "cancel": "Annulla",
+    "confirm": "Riavvia e ricomincia da capo"
   }
 }

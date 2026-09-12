@@ -2,11 +2,6 @@
  * CKEDITOR
  */
 
- :root {
-    --ck-font-face: var(--main-font-family);
-    --ck-input-label-height: 1.5em;
- }
-
 /*
  * Toolbar
  */
@@ -59,9 +54,6 @@
     --ck-color-button-default-hover-background: var(--block-toolbar-button-hover-surface);
     --ck-color-button-on-hover-background: var(--block-toolbar-button-hover-surface);
     --ck-color-button-on-color: var(--ck-editor-toolbar-button-on-color);
-    translate: -40% 0;
-    min-width: 0;
-    padding: 0;
     z-index: 1600;
 }
 
@@ -146,6 +138,24 @@
     --ck-editor-popup-padding: var(--menu-padding-size);
 }
 
+/* Submenu panel */
+:root .ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
+    --ck-editor-popup-padding: var(--menu-padding-size);
+
+    backdrop-filter: var(--dropdown-backdrop-filter);
+}
+
+body.background-effects .ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
+    --menu-background-color: var(--menu-background-color-no-backdrop);
+
+    backdrop-filter: none;
+}
+
+/* Submenu arrow */
+:root .ck.ck-button.ck-dropdown-menu-list__nested-menu__button > .ck-dropdown-menu-list__nested-menu__button__arrow {
+    color: var(--menu-item-arrow-color);
+}
+
 /* Dropdown panel containing a toolbar */
 :root .ck.ck-dropdown__panel:has(>.ck-toolbar) {
     --ck-editor-popup-padding: calc(var(--menu-padding-size) - var(--ck-spacing-small));
@@ -192,8 +202,18 @@
     min-width: 10em;
 }
 
+/* Menu list item, in a menu with submenus */
+:root .ck.ck-dropdown-menu-list {
+    --ck-color-button-default-hover-background: var(--hover-item-background-color);
+    --ck-color-list-button-hover-background: var(--hover-item-background-color);
+    --ck-color-list-button-on-background: var(--hover-item-background-color);
+    --ck-color-list-button-on-background-focus: var(--hover-item-background-color);
+    --ck-color-list-button-on-text: var(--hover-item-text-color);
+}
+
 /* Item with icon */
-:root .ck.ck-button_with-text svg:first-child {
+:root .ck.ck-button_with-text svg:first-child,
+:root .ck.ck-button_with-text > .ck-ai-action-icon {
     color: var(--menu-item-icon-color);
 }
 
@@ -226,6 +246,7 @@
 
 /* Separator */
 :root .ck .ck-list__separator {
+    flex-shrink: 0;
     margin: .5em 0;
     margin-inline-start: calc(0px - var(--ck-editor-popup-padding));
     width: calc(100% + (var(--ck-editor-popup-padding) * 2));
@@ -471,7 +492,7 @@ div.ck-template-form .ck-template-form__text-part {
 
 div.ck-template-form .ck-template-form__text-part mark {
     --ck-color-highlight-background: transparent;
-    
+
     color: var(--quick-search-result-highlight-color);
     text-decoration: underline;
     font-weight: bold;
@@ -577,6 +598,15 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 :root input.ck.ck-input-text[readonly="true"] {
     cursor: not-allowed;
     background: var(--input-background-color);
+}
+
+/* AI assistant composer */
+
+:root .ck-ai-assistant-form__prompt-row input.ck.ck-input-text,
+:root .ck-ai-assistant-form__prompt-row input.ck.ck-input-text:not([readonly="true"]):hover,
+:root .ck-ai-assistant-form__prompt-row input.ck.ck-input-text:not([readonly="true"]):focus {
+    outline: none;
+    background: transparent;
 }
 
 /* Forms */
@@ -780,15 +810,6 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     height: 0;
     border: thin solid var(--main-border-color);
     opacity: 1;
-}
-
-@media (screen) {
-    .ck-content p code {
-        border: 1px solid var(--card-border-color);
-        box-shadow: var(--card-box-shadow);
-        border-radius: 6px;
-        background-color: var(--card-background-color);
-    }
 }
 
 .ck-content:not(.word-wrap) pre code {

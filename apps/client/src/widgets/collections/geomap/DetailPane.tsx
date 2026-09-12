@@ -1,26 +1,29 @@
 import "./DetailPane.css";
 
 import clsx from "clsx";
-import type { GeoJSONSource, MapGeoJSONFeature, Map as MapLibreGLMap, MapMouseEvent, MapSourceDataEvent } from "maplibre-gl";
+import type { EaseToOptions, GeoJSONSource, MapGeoJSONFeature, Map as MapLibreGLMap, MapMouseEvent, MapSourceDataEvent } from "maplibre-gl";
 import { useCallback, useContext, useEffect, useMemo, useRef } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import { copyTextWithToast } from "../../../services/clipboard_ext";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
-import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeToQuickEditAction, NoteColorAction, OpenNoteActions, SelectTitleOnFirstOpen, useEmbeddedNoteContext, useFollowLinksWithin } from "../../EmbeddedNotePane";
+import { isMobile } from "../../../services/utils";
+import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeAction, NoteColorAction, OpenNoteActions, SelectTitleOnFirstOpen, useEmbeddedNoteContext, useFollowLinksWithin } from "../../EmbeddedNotePane";
 import TitleRow from "../../layout/TitleRow";
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
 import { useLegacyComponentElement, useNoteColorClass, useNoteLabel, useStaticTooltip } from "../../react/hooks";
+import Modal from "../../react/Modal";
 import OverlayPanel, { OverlayPanelBody } from "../../react/OverlayPanel";
 import { removeFromMap } from "./api";
+import { type Bounds, boundsOf } from "./coordinates";
 import { GPX_MIME, trackHitLayers, trackSourceId } from "./GpxTrack";
 import { ParentMap } from "./map";
 import { formatLocation, LOCATION_ATTRIBUTE, MARKER_LAYER, parseLocation } from "./Markers";
 import { shapeHitLayers } from "./ShapeLayer";
-import { boundsOfPoints, type GeoBounds, geoShapeBounds, parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
+import { geoShapeBounds, parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
 
 /**
  * Which marker the pane stands for, and why it came to be selected.
@@ -36,6 +39,9 @@ export interface PaneSelection {
     isNew?: boolean;
     /** What of the note the click named, where it named more than the note. See {@link PaneFocus}. */
     focus?: PaneFocus;
+    /** The zoom to stand the marker at. Absent for a marker clicked on the map, which keeps the
+     *  current zoom. */
+    zoom?: number;
 }
 
 /**
@@ -56,7 +62,7 @@ export type PaneFocus =
  * pane outside it would leave the screen. It reads as a dock because the map keeps out of its way
  * (see {@link paneOffset}).
  */
-export default function DetailPane({ notes, parentNote, placing, isReadOnly, selection, onSelect, onRelocate }: {
+export default function DetailPane({ notes, parentNote, placing, isReadOnly, selection, onSelect, onRelocate, maximized, onMaximizedChange }: {
     notes: FNote[];
     /** The map's own note, which is how the tree is told what the map holds a note by. */
     parentNote: FNote;
@@ -70,6 +76,15 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
     onSelect: (selection: PaneSelection | null) => void;
     /** Arms this map for the selected marker to be put somewhere else, the next click being where. */
     onRelocate: (noteId: string) => void;
+    /**
+     * The pane has been grown to cover the map (see {@link MaximizeAction} in the header below).
+     * Owned by the map view rather than by the pane for the reason the selection is: the map places
+     * what it draws around the pane, and a pane covering the whole of it leaves nothing to place
+     * around — the marker previews have nowhere to stand clear to (see Tooltips), and the camera
+     * has no uncovered half to aim into (see the easing effect below).
+     */
+    maximized: boolean;
+    onMaximizedChange: (maximized: boolean) => void;
 }) {
     const map = useContext(ParentMap);
     const note = notes.find((note) => note.noteId === selection?.noteId);
@@ -118,6 +133,15 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
         return true;
     }, [ notes, onSelect ]);
 
+    // The pane comes back up beside the map rather than over it, however it was left: the state
+    // outlives the pane, being the map's (see the props), where a card that is taken down and built
+    // again would have forgotten by itself. Switching from one marker to another keeps it — the room
+    // was asked for, not the marker it was asked on — which is why this waits on the pane going down
+    // rather than on the note changing.
+    useEffect(() => {
+        if (!selection) onMaximizedChange(false);
+    }, [ selection, onMaximizedChange ]);
+
     // The pane closes once its note is no longer on the map. "Remove from map" only clears the
     // label that put it there, so a note that is gone is not the only case. See standsOnMap().
     useEffect(() => {
@@ -163,6 +187,15 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
     // — the whole file, or only what the click named where it named more (see PaneFocus).
     useEffect(() => {
         if (!map || !note) return;
+        // Nothing is aimed at behind a surface that covers the map: the camera would be moving to a
+        // place nobody can see, and the move is seen — the map slides while the pane is still
+        // growing over it. Waiting instead is what makes the dependency below worth having, the
+        // pane coming back down being the moment the marker is worth framing again.
+        //
+        // A phone shows the marker as a dialog over the whole screen rather than as a pane beside
+        // the map (see MarkerSheet), so there is never a half of the map to hold it clear of: the
+        // camera has nothing to do there at all, and what it did was pan the map behind a sheet.
+        if (maximized || isMobile()) return;
 
         // A shape is measured off its own label, which holds every point the map draws from and
         // holds them at once, so there is no source to wait for as a track's file needs.
@@ -219,15 +252,24 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
         const coordinates = parseLocation(location);
         if (!coordinates) return;
 
-        map.easeTo({ center: coordinates, offset: paneOffset(map) });
+        const aim: EaseToOptions = { center: coordinates, offset: paneOffset(map) };
+        if (selection?.zoom !== undefined) {
+            aim.zoom = selection.zoom;
+        }
+        map.easeTo(aim);
         // The focus is depended on by identity, which a click renews even on the same note: every
         // click is a fresh ask, and re-clicking what is already open brings it back into view.
-    }, [ map, note?.noteId, location, shapeValue, selection?.focus ]);
+        //
+        // Growing and shrinking the pane are asks of the same kind, the room the camera is aiming
+        // into being what changed: a pane put back down brings its marker clear of it again, rather
+        // than leaving it under the pane until something else happens to move the camera.
+    }, [ map, note?.noteId, location, shapeValue, selection?.focus, selection?.zoom, maximized ]);
 
     // Bound only while something is selected, so the map's other Escape — giving up on placing a
-    // marker (see index.tsx) — stands alone when nothing is.
+    // marker (see index.tsx) — stands alone when nothing is. A phone's dialog answers the key
+    // itself (see MarkerSheet), and two answers to one press would close it twice over.
     useEffect(() => {
-        if (!selection) return;
+        if (!selection || isMobile()) return;
 
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
@@ -250,7 +292,18 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
         // EmbeddedNotePane) — the map would otherwise rebind to the marker's note, tear the map
         // down and take the WebGL context with it.
         <EmbeddedNoteScope component={paneComponent} noteContext={noteContext}>
-            <MarkerDetails note={note} parentNote={parentNote} isReadOnly={isReadOnly} onClose={closePane} onRelocate={relocate} onFollowLink={followLink} />
+            {isMobile() ? (
+                <MarkerSheet
+                    note={note} parentNote={parentNote} isReadOnly={isReadOnly}
+                    onClose={closePane} onRelocate={relocate} onFollowLink={followLink}
+                />
+            ) : (
+                <MarkerDetails
+                    note={note} parentNote={parentNote} isReadOnly={isReadOnly}
+                    maximized={maximized} onMaximizedChange={onMaximizedChange}
+                    onClose={closePane} onRelocate={relocate} onFollowLink={followLink}
+                />
+            )}
             {selection?.isNew && <SelectTitleOnFirstOpen />}
         </EmbeddedNoteScope>
     );
@@ -332,27 +385,29 @@ function featureFocus(feature: MapGeoJSONFeature): PaneFocus | undefined {
  * its flags stand on its line, and another journey's ground — or a waypoint hung off in a third
  * place — is exactly what focusing one track is meant to leave out of frame.
  *
- * {@link boundsOfPoints} measures the corners, as it does for a drawn shape, so a track crossing
- * the antimeridian frames the crossing rather than the world.
+ * The seam at ±180° is {@link boundsOf}'s to deal with, which the points are yielded to as they are
+ * read: a long ride holds thousands of them.
  */
-async function trackBounds(map: MapLibreGLMap, noteId: string, track?: number): Promise<GeoBounds | null> {
+async function trackBounds(map: MapLibreGLMap, noteId: string, track?: number): Promise<Bounds | null> {
     const data = await map.getSource<GeoJSONSource>(trackSourceId(noteId))?.getData();
     if (!data || data.type !== "FeatureCollection") return null;
+    const { features } = data;
 
-    const points: number[][] = [];
-    for (const { geometry, properties } of data.features) {
-        if (track !== undefined && properties?.track !== track) continue;
+    function* points() {
+        for (const { geometry, properties } of features) {
+            if (track !== undefined && properties?.track !== track) continue;
 
-        if (geometry.type === "Point") {
-            points.push(geometry.coordinates);
-        } else if (geometry.type === "MultiLineString") {
-            for (const line of geometry.coordinates) {
-                points.push(...line);
+            if (geometry.type === "Point") {
+                yield geometry.coordinates;
+            } else if (geometry.type === "MultiLineString") {
+                for (const line of geometry.coordinates) {
+                    yield* line;
+                }
             }
         }
     }
 
-    return boundsOfPoints(points);
+    return boundsOf(points());
 }
 
 /**
@@ -377,10 +432,12 @@ function fitPadding(map: MapLibreGLMap) {
 }
 
 /** The pane itself, for a marker there is one to draw. */
-function MarkerDetails({ note, parentNote, isReadOnly, onClose, onRelocate, onFollowLink }: {
+function MarkerDetails({ note, parentNote, isReadOnly, maximized, onMaximizedChange, onClose, onRelocate, onFollowLink }: {
     note: FNote;
     parentNote: FNote;
     isReadOnly: boolean;
+    maximized: boolean;
+    onMaximizedChange(maximized: boolean): void;
     onClose(): void;
     onRelocate(): void;
     /** Offered a link's note; answers whether the map took the navigation over. */
@@ -411,30 +468,103 @@ function MarkerDetails({ note, parentNote, isReadOnly, onClose, onRelocate, onFo
             containerRef={paneRef}
             className={clsx("geo-detail-pane", colorClass)}
             header={<TitleRow compact />}
-            headerActions={<MaximizeToQuickEditAction note={note} onClose={onClose} />}
+            maximized={maximized}
+            headerActions={
+                <MaximizeAction
+                    icon={maximized ? "bx bx-collapse-alt" : "bx bx-expand-alt"}
+                    text={maximized ? t("geo-map.restore-details") : t("geo-map.expand-details")}
+                    onClick={() => onMaximizedChange(!maximized)}
+                />
+            }
             close={{ text: t("geo-map.close-details"), onClick: onClose }}
         >
-            <OverlayPanelBody className="geo-detail-pane-body tn-embedded-note-pane">
-                <MarkerLocation note={note} />
-
-                <MarkerActions note={note} parentNote={parentNote} isReadOnly={isReadOnly} onRelocate={onRelocate} />
-
-                {/* Whatever fields the note's own definitions ask for, ahead of the note as the quick
-                    editor puts them — a marker is often a note whose type says less about it than
-                    its fields do. Nothing at all is shown for a note that promotes none.
-
-                    Neither the location nor the geometry is among them: promoted, each is a field of
-                    raw digits beside a map that already draws it, and a marker is moved rather than
-                    retyped. */}
-                <PromotedAttributes omit={[ LOCATION_ATTRIBUTE, SHAPE_ATTRIBUTE ]} />
-
-                {/* The note itself, drawn by whichever widget its type calls for — the same one the
-                    quick editor mounts, so a marker is written in exactly as it is anywhere else.
-                    No toolbar stands beside it: the pane asks for the floating one, which the editor
-                    carries with it (see the view scope below). */}
-                <NoteDetail />
+            {/* Grown over the map, the pane has a note's width, so what it holds is laid out for one
+                (see `tn-embedded-note-pane-wide` in EmbeddedNotePane.css). */}
+            <OverlayPanelBody className={clsx("geo-detail-pane-body tn-embedded-note-pane", maximized && "tn-embedded-note-pane-wide")}>
+                <MarkerContents note={note} parentNote={parentNote} isReadOnly={isReadOnly} onRelocate={onRelocate} />
             </OverlayPanelBody>
         </OverlayPanel>
+    );
+}
+
+/**
+ * The marker as a phone shows it: the sheet the app raises its dialogs as, rather than a pane laid
+ * over the map. A pane holding a whole note takes most of a phone's screen whatever is done to it,
+ * so one drawn over the map leaves the map neither readable nor reachable — and the maximize that
+ * would give it the rest of the screen has nothing left to give. The note is shown as a note
+ * instead, and the map is left alone behind it (see the camera above).
+ *
+ * Dressed as the quick editor and the calendar's own sheet are, those being the app's ways of
+ * showing a whole note over whatever raised it (see the shared rules in PopupEditor.css).
+ *
+ * `show` is not a state because every way out of this dialog is also a way out of the selection:
+ * what answers `onHidden` clears it, and the sheet goes with it. Bootstrap is told to hide as the
+ * element leaves the tree, so nothing is left dimming the page behind it (see Modal).
+ */
+function MarkerSheet({ note, parentNote, isReadOnly, onClose, onRelocate, onFollowLink }: {
+    note: FNote;
+    parentNote: FNote;
+    isReadOnly: boolean;
+    onClose(): void;
+    onRelocate(): void;
+    onFollowLink(noteId: string): boolean;
+}) {
+    // Marked on the dialog rather than on its body, so that what heads it — the note's own title
+    // row, handed to the dialog — is inside the marked element too (see the pane above).
+    const modalRef = useRef<HTMLDivElement>(null);
+    useLegacyComponentElement(modalRef);
+    useFollowLinksWithin(modalRef, onFollowLink);
+
+    // Tinted by the marker's own colour as the pane over the map is, and by the same means the
+    // quick editor is (see the `.with-hue` rules in theme-next-{light,dark}.css) — a sheet being
+    // opaque, it takes the dialog's colours rather than the pane's.
+    const colorClass = useNoteColorClass(note);
+
+    return (
+        <Modal
+            className={clsx("geo-detail-sheet", colorClass)}
+            size="lg"
+            title={<TitleRow />}
+            modalRef={modalRef}
+            show
+            onHidden={onClose}
+        >
+            <div className="geo-detail-pane-body tn-embedded-note-pane">
+                <MarkerContents note={note} parentNote={parentNote} isReadOnly={isReadOnly} onRelocate={onRelocate} />
+            </div>
+        </Modal>
+    );
+}
+
+/** What is shown of the marker, under whatever heads it. Shared by the pane and the sheet, which
+ *  differ only in what they put around this and how they are dismissed. */
+function MarkerContents({ note, parentNote, isReadOnly, onRelocate }: {
+    note: FNote;
+    parentNote: FNote;
+    isReadOnly: boolean;
+    onRelocate(): void;
+}) {
+    return (
+        <>
+            <MarkerLocation note={note} />
+
+            <MarkerActions note={note} parentNote={parentNote} isReadOnly={isReadOnly} onRelocate={onRelocate} />
+
+            {/* Whatever fields the note's own definitions ask for, ahead of the note as the quick
+                editor puts them — a marker is often a note whose type says less about it than
+                its fields do. Nothing at all is shown for a note that promotes none.
+
+                Neither the location nor the geometry is among them: promoted, each is a field of
+                raw digits beside a map that already draws it, and a marker is moved rather than
+                retyped. */}
+            <PromotedAttributes omit={[ LOCATION_ATTRIBUTE, SHAPE_ATTRIBUTE ]} />
+
+            {/* The note itself, drawn by whichever widget its type calls for — the same one the
+                quick editor mounts, so a marker is written in exactly as it is anywhere else.
+                No toolbar stands beside it: the pane asks for the floating one, which the editor
+                carries with it (see the view scope above). */}
+            <NoteDetail />
+        </>
     );
 }
 
@@ -525,7 +655,7 @@ function MarkerLocation({ note }: { note: FNote }) {
  * pane does: the hook binds on mount and does not look again, and there is a render before the
  * location has been read in which there is no button to bind to.
  */
-function LocationButton({ coordinates }: { coordinates: [number, number] }) {
+export function LocationButton({ coordinates }: { coordinates: [number, number] }) {
     const buttonRef = useRef<HTMLButtonElement>(null);
 
     // The app's own tooltip rather than the browser's, as the buttons under it wear (see
@@ -543,7 +673,7 @@ function LocationButton({ coordinates }: { coordinates: [number, number] }) {
             className="geo-detail-pane-location"
             onClick={() => copyTextWithToast(formatLocation(coordinates, FULL_PRECISION))}
         >
-            <span className="bx bx-current-location" />
+            <span className="bx bx-crosshair" />
             {formatLocation(coordinates)}
         </button>
     );

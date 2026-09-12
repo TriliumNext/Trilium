@@ -72,7 +72,8 @@ import PromotedAttributes, { buildPromotedCells, PromotedAttributesContent, useP
 // A text field offers the values other notes hold under its name through the Algolia plugin, which
 // is not loaded here; a stub that chains like jQuery does keeps the field's setup on its feet.
 type PluggedIn = { autocomplete(...args: unknown[]): PluggedIn };
-($.fn as unknown as PluggedIn).autocomplete = function (this: PluggedIn) { return this; };
+const autocompleteMock = vi.fn(function (this: PluggedIn) { return this; });
+($.fn as unknown as PluggedIn).autocomplete = autocompleteMock;
 
 // The fields reach the server through these three; every suite stands them down, and the ones
 // asserting on what was written reach for these same handles.
@@ -576,6 +577,20 @@ describe("PromotedAttributesContent rendering", () => {
         serverGetMock.mockClear();
         await renderCells(note, [ buildCell(note, { definition: { labelType: "number" }, uniqueId: "num" }) ]);
         expect(serverGetMock).not.toHaveBeenCalled();
+    });
+
+    it("binds the suggestion list only where there is something to suggest", async () => {
+        serverGetMock.mockResolvedValueOnce([ "one", "two" ]);
+        await renderCells(note, [ buildCell(note, { name: "tags", definition: { labelType: "text" } }) ]);
+        expect(autocompleteMock).toHaveBeenCalled();
+
+        autocompleteMock.mockClear();
+        await renderCells(note, [ buildCell(note, { name: "flag", definition: { labelType: "boolean" }, uniqueId: "flag" }) ]);
+        expect(autocompleteMock).not.toHaveBeenCalled();
+
+        // A text field whose name nothing else holds a value under is bound no more than a flag is.
+        await renderCells(note, [ buildCell(note, { name: "fresh", definition: { labelType: "text" }, uniqueId: "fresh" }) ]);
+        expect(autocompleteMock).not.toHaveBeenCalled();
     });
 });
 

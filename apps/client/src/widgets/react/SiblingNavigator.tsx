@@ -1,7 +1,7 @@
 import "./SiblingNavigator.css";
 
 import type { RefObject } from "preact";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
@@ -9,7 +9,8 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewScope } from "../../services/link";
 import type LoadResults from "../../services/load_results";
-import { useStaticTooltip, useTriliumEvent } from "./hooks";
+import { useTriliumEvent } from "./hooks";
+import OverlayControlGroup, { OverlayControlButton } from "./OverlayControlGroup";
 import { codeToSiblingDirection, getParentFromNotePath, getSiblingNavigation, isInteractiveTarget, isTextEntryTarget, sameRoleAttachments } from "./sibling_navigation";
 
 const NO_KEYS: readonly string[] = [];
@@ -73,9 +74,6 @@ export interface SiblingNavigationProvider {
  * from the caller-provided i18n keys. Renders nothing when there is no sibling to move between.
  */
 export default function SiblingNavigator({ note, noteContext, viewScope, siblingType, previousTooltipI18nKey, nextTooltipI18nKey, keyboardTarget, extraPreviousKeys = NO_KEYS, extraNextKeys = NO_KEYS }: SiblingNavigatorProps) {
-    const previousRef = useRef<HTMLButtonElement>(null);
-    const nextRef = useRef<HTMLButtonElement>(null);
-
     // Viewing a single attachment → cycle the note's attachments; otherwise its note siblings.
     const provider = viewScope?.attachmentId
         ? attachmentSiblingProvider(note, noteContext, viewScope)
@@ -83,40 +81,28 @@ export default function SiblingNavigator({ note, noteContext, viewScope, sibling
     const navigation = useSiblingNavigation(provider);
     useSiblingKeyboard(navigation, noteContext, keyboardTarget, extraPreviousKeys, extraNextKeys);
 
-    const previousText = navigation ? t(previousTooltipI18nKey, { title: navigation.previousTitle }) : "";
-    const nextText = navigation ? t(nextTooltipI18nKey, { title: navigation.nextTitle }) : "";
-    // Memoize so the bootstrap tooltip is only recreated when the target's name actually changes.
-    const previousConfig = useMemo(() => ({ title: previousText, placement: "top" as const }), [ previousText ]);
-    const nextConfig = useMemo(() => ({ title: nextText, placement: "top" as const }), [ nextText ]);
-    useStaticTooltip(previousRef, previousConfig);
-    useStaticTooltip(nextRef, nextConfig);
-
     if (!navigation) return null;
 
     return (
-        <div className="sibling-navigator tn-overlay-control-group">
-            <button
-                ref={previousRef}
-                type="button"
-                className="tn-overlay-icon-button bx bx-chevron-left"
-                aria-label={previousText}
+        <OverlayControlGroup className="sibling-navigator" placement="bottom-start">
+            <OverlayControlButton
+                title={t(previousTooltipI18nKey, { title: navigation.previousTitle })}
+                icon="bx-chevron-left"
                 onClick={() => navigation.navigatePrevious()}
             />
 
-            <button
-                className="sibling-navigator-index tn-overlay-text-button"
-                disabled>
-                {navigation.index}/{navigation.total}
-            </button>
-            
-            <button
-                ref={nextRef}
-                type="button"
-                className="tn-overlay-icon-button bx bx-chevron-right"
-                aria-label={nextText}
+            <OverlayControlButton
+                text={`${navigation.index}/${navigation.total}`}
+                className="sibling-navigator-index"
+                disabled
+            />
+
+            <OverlayControlButton
+                title={t(nextTooltipI18nKey, { title: navigation.nextTitle })}
+                icon="bx-chevron-right"
                 onClick={() => navigation.navigateNext()}
             />
-        </div>
+        </OverlayControlGroup>
     );
 }
 

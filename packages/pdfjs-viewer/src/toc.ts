@@ -10,7 +10,9 @@ export async function extractAndSendToc() {
         if (!outline || outline.length === 0) {
             window.parent.postMessage({
                 type: "pdfjs-viewer-toc",
-                data: null
+                data: null,
+                ntxId: window.TRILIUM_NTX_ID,
+                noteId: window.TRILIUM_NOTE_ID
             } satisfies PdfViewerTocMessage, window.location.origin);
             return;
         }
@@ -25,12 +27,16 @@ export async function extractAndSendToc() {
 
         window.parent.postMessage({
             type: "pdfjs-viewer-toc",
-            data: toc
+            data: toc,
+            ntxId: window.TRILIUM_NTX_ID,
+            noteId: window.TRILIUM_NOTE_ID
         } satisfies PdfViewerTocMessage, window.location.origin);
     } catch (error) {
         window.parent.postMessage({
             type: "pdfjs-viewer-toc",
-            data: null
+            data: null,
+            ntxId: window.TRILIUM_NTX_ID,
+            noteId: window.TRILIUM_NOTE_ID
         } satisfies PdfViewerTocMessage, window.location.origin);
     }
 }
@@ -164,7 +170,9 @@ export function setupActiveHeadingTracking() {
             lastActiveHeading = activeHeadingId;
             window.parent.postMessage({
                 type: "pdfjs-viewer-active-heading",
-                headingId: activeHeadingId
+                headingId: activeHeadingId,
+                ntxId: window.TRILIUM_NTX_ID,
+                noteId: window.TRILIUM_NOTE_ID
             } satisfies PdfViewerActiveHeadingMessage, window.location.origin);
         }
     }

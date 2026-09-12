@@ -3,7 +3,7 @@ import { Dropdown, Tooltip } from "bootstrap";
 import appContext from "../components/app_context.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
-import linkService from "../services/link.js";
+import linkService, { calculateHash, type ViewScope } from "../services/link.js";
 import server from "../services/server.js";
 import shortcutService, { isIMEComposing } from "../services/shortcuts.js";
 import utils, { handleRightToLeftPlacement } from "../services/utils.js";
@@ -99,12 +99,24 @@ const TPL = /*html*/`
         text-overflow: ellipsis;
     }
 
-    /* Search result highlighting */
+    /* Search result highlighting: point at the same highlight vars the snippet cards
+       (SearchResultsList.css / ListOrGridView.css) use, falling back to the pre-existing
+       colors if a theme hasn't defined them. */
     .quick-search .search-result-title b,
     .quick-search .search-result-content b,
     .quick-search .search-result-attributes b {
-        color: var(--admonition-warning-accent-color);
+        background: var(--note-list-view-search-result-highlight-background, transparent);
+        color: var(--note-list-view-search-result-highlight-color, var(--admonition-warning-accent-color));
+        font-weight: 600;
         text-decoration: underline;
+    }
+
+    .quick-search .search-result-title b.search-fuzzy-match,
+    .quick-search .search-result-content b.search-fuzzy-match,
+    .quick-search .search-result-attributes b.search-fuzzy-match {
+        color: var(--quick-search-result-fuzzy-highlight-color, #e47b19);
+        font-weight: 400;
+        text-decoration: underline dotted;
     }
 
     .quick-search .dropdown-divider {
@@ -144,6 +156,8 @@ interface QuickSearchResponse {
         highlightedAttributeSnippet?: string;
         icon: string;
     }>;
+    /** Plain search tokens the server highlighted; consumed by jump-to-match producers. */
+    highlightedTokens?: string[];
     error: string;
 }
 
@@ -158,6 +172,10 @@ export default class QuickSearchWidget extends BasicWidget {
     private allSearchResultNoteIds: string[] = [];
     private currentDisplayedCount: number = 0;
     private isLoadingMore: boolean = false;
+
+    // Attached to each result link so the opened note jumps to the first match; undefined when the
+    // last search highlighted nothing, which keeps the links at a plain `#notePath`.
+    private lastResultViewScope: ViewScope | undefined;
 
     doRender() {
         this.$widget = $(TPL);
@@ -243,7 +261,9 @@ export default class QuickSearchWidget extends BasicWidget {
                 ${t("quick-search.searching")}
             </span>`);
 
-        const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
+        const { searchResultNoteIds, searchResults, highlightedTokens, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
+
+        this.lastResultViewScope = highlightedTokens?.length ? { searchTerms: highlightedTokens } : undefined;
 
         if (error) {
             const tooltip = new Tooltip(this.$searchString[0], {
@@ -292,7 +312,10 @@ export default class QuickSearchWidget extends BasicWidget {
             for (const result of resultsToDisplay) {
                 if (!result.notePath) continue;
 
-                const $item = $(`<a class="dropdown-item" tabindex="0" href="#${result.notePath}">`);
+                // Set the href with .attr() rather than interpolating it into the HTML string, so
+                // the query separators are not parsed as HTML entities.
+                const $item = $(`<a class="dropdown-item" tabindex="0">`);
+                $item.attr("href", calculateHash({ notePath: result.notePath, viewScope: this.lastResultViewScope }));
 
                 // Build the display HTML with content snippet below the title
                 let itemHtml = `<div class="quick-search-item">
@@ -337,7 +360,7 @@ export default class QuickSearchWidget extends BasicWidget {
             const noteIdsToDisplay = this.allSearchResultNoteIds.slice(startIndex, endIndex);
 
             for (const note of await froca.getNotes(noteIdsToDisplay)) {
-                const $link = await linkService.createLink(note.noteId, { showNotePath: true, showNoteIcon: true });
+                const $link = await linkService.createLink(note.noteId, { showNotePath: true, showNoteIcon: true, viewScope: this.lastResultViewScope });
                 $link.addClass("dropdown-item");
                 $link.attr("tabIndex", "0");
                 $link.on("click auxclick", (e) => {

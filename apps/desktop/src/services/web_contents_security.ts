@@ -21,14 +21,25 @@ import { isTriliumAppShellUrl, TRILIUM_APP_HOST, TRILIUM_APP_SCHEME } from "./tr
  * web preferences the embedder requested.
  */
 
+/** What the window-open policy needs from `window.ts`. */
+export interface WebContentsSecurityOptions {
+    /**
+     * Constructor options for the extra window a `window.open` call from an app
+     * window creates. Must include `webPreferences.preload`: a child window
+     * inherits only the security-related preferences of its opener.
+     */
+    extraWindowOptions(): Electron.BrowserWindowConstructorOptions;
+}
+
 /**
  * Registers a main-process hook that applies a uniform security policy to
  * every WebContents the app ever creates (main, extra, setup and print
  * windows as well as `<webview>` guests):
  *
  * - vets every `<webview>` before it attaches,
- * - denies all window-open requests, routing allowlisted URLs to the OS
- *   browser instead,
+ * - answers window-open requests: the app shell's own root URL becomes an
+ *   extra window in the opener's renderer process, every other URL is denied
+ *   and, if allowlisted, routed to the OS browser instead,
  * - blocks navigation away from the app shell,
  * - installs deny-by-default permission handlers on both the app session and
  *   the dedicated `<webview>` guest session.
@@ -41,7 +52,7 @@ import { isTriliumAppShellUrl, TRILIUM_APP_HOST, TRILIUM_APP_SCHEME } from "./tr
  *
  * Call once during startup, before any window is created.
  */
-export function setupWebContentsSecurity() {
+export function setupWebContentsSecurity(options: WebContentsSecurityOptions) {
     electron.app.on("web-contents-created", (_event, webContents) => {
         webContents.on("will-attach-webview", (attachEvent, webPreferences, params) => {
             // Depending on the Electron version the `partition` attribute
@@ -54,7 +65,7 @@ export function setupWebContentsSecurity() {
             }
         });
 
-        installWindowOpenPolicy(webContents);
+        installWindowOpenPolicy(webContents, options.extraWindowOptions);
         installNavigationGuard(webContents);
     });
 
@@ -125,9 +136,8 @@ export function hardenWebviewPreferences(webPreferences: Electron.WebPreferences
 
 /**
  * Permission allowlists per session kind. Unset handlers make Electron GRANT
- * every request, so anything not listed here (camera, microphone, geolocation,
- * notifications, MIDI, HID, serial, USB, pointer lock, clipboard read, …) is
- * denied.
+ * every request, so anything not listed here (camera, microphone, MIDI, HID,
+ * serial, USB, pointer lock, clipboard read, …) is denied.
  *
  * - `app`: the default session — the Trilium renderer itself. It legitimately
  *   writes to the clipboard (copy note content/links), toggles fullscreen
@@ -138,6 +148,21 @@ export function hardenWebviewPreferences(webPreferences: Electron.WebPreferences
  *   main-process `electronApi.clipboard.readText()` bridge, so the sensitive
  *   `clipboard-read` permission never has to be granted to the whole session
  *   (which would also expose it to embedded remote iframes).
+ *   `fileSystem` covers the File System Access API, which bundled third-party
+ *   editors call directly rather than through `electronApi` — the Excalidraw
+ *   canvas reaches `showOpenFilePicker()` / `showSaveFilePicker()` via
+ *   `browser-fs-access` to insert an image or export a drawing. Chromium only
+ *   hands out a handle for a file the user picked in an OS dialog, so the grant
+ *   cannot reach anything the user did not choose.
+ *   `local-fonts` lets the appearance settings offer the fonts installed on
+ *   this device (see `listSystemFonts`); Chromium routes it through the
+ *   *check* handler rather than the request handler, so granting it here is
+ *   what keeps the picker from falling back to the stock list.
+ *   `geolocation` lets the geo map's locate button ask where this device is
+ *   (see `useGeolocate` in the client). Chromium prompts for nothing
+ *   of its own in Electron, so this grant is the only gate; the origin check
+ *   below keeps it from remote embeds, and MapLibre probes the *check*
+ *   handler before it enables the button at all.
  * - `guest`: the `<webview>` partition hosting arbitrary remote pages from
  *   Web View notes. Fullscreen only (embedded video players) — a remote page
  *   must not show OS notifications that appear to come from Trilium.
@@ -148,7 +173,7 @@ export function hardenWebviewPreferences(webPreferences: Electron.WebPreferences
  * the default session. Fullscreen is the exception — granted for any origin.
  */
 const PERMISSION_ALLOWLIST = {
-    app: new Set(["clipboard-sanitized-write", "fullscreen", "notifications"]),
+    app: new Set(["clipboard-sanitized-write", "fileSystem", "fullscreen", "geolocation", "local-fonts", "notifications"]),
     guest: new Set(["fullscreen"])
 } as const;
 
@@ -185,10 +210,12 @@ export function isPermissionAllowedForOrigin(kind: SessionKind, permission: stri
 
 /**
  * Decides whether a renderer-initiated navigation (link click, drag & drop,
- * meta refresh) may proceed. Only the app shell itself is allowed: the
- * `trilium-app://app` origin (the sole host ever served — see the loadURL
- * call sites), and only at the root path. Anything deeper is in-page SPA
- * routing (which `will-navigate` does not fire for) or hostile.
+ * meta refresh) can proceed, and which `window.open` URLs become extra
+ * windows. Only the app shell itself is allowed: the `trilium-app://app`
+ * origin (the sole host ever served — see the loadURL call sites), and only
+ * at the root path; the query string (`?extraWindow=1`) and the hash are not
+ * part of the check. Anything deeper is in-page SPA routing (which
+ * `will-navigate` does not fire for) or hostile.
  *
  * `localhost` was previously allowed too, from the era when the desktop
  * renderer was served over `http://127.0.0.1:<port>`. The custom-protocol
@@ -200,26 +227,48 @@ export function isNavigationAllowed(targetUrl: string): boolean {
     const parsedUrl = url.parse(targetUrl);
 
     const isAppShell = parsedUrl.protocol === `${TRILIUM_APP_SCHEME}:` && parsedUrl.hostname === TRILIUM_APP_HOST;
-    return isAppShell && (!parsedUrl.path || parsedUrl.path === "/" || parsedUrl.path === "/?");
+    return isAppShell && (!parsedUrl.pathname || parsedUrl.pathname === "/");
 }
 
 /**
- * Denies every window-open request (`window.open`, `target=_blank`). For app
- * windows the URL is routed to the OS browser instead, after passing the same
- * scheme allowlist as the open-external IPC channel — a link in note content
- * is just as attacker-controllable as an IPC payload, so Follina-class
- * (`ms-msdt:`) and credential-leak (`smb:`) URLs must not bypass it here.
+ * Decides every window-open request (`window.open`, `target=_blank`).
+ *
+ * The app shell's root URL, which `isNavigationAllowed` accepts, is how the
+ * client opens an extra window. It is allowed: Chromium creates a
+ * `window.open` child in the opener's renderer process, so the new window
+ * skips the process launch and reuses the scripts the opener has already
+ * compiled. `overrideBrowserWindowOptions` takes precedence over the call's
+ * `features` string, so a page cannot loosen `webPreferences` through it, and
+ * `outlivesOpener` keeps the child open after its opener closes, like a
+ * window the main process created.
+ *
+ * Every other URL is denied. For app windows it is routed to the OS browser
+ * instead, after passing the same scheme allowlist as the open-external IPC
+ * channel: a link in note content is as attacker-controllable as an IPC
+ * payload, so Follina-class (`ms-msdt:`) and credential-leak (`smb:`) URLs
+ * must not bypass it here.
  *
  * `<webview>` guests are denied without the external dispatch: the tag never
- * sets `allowpopups`, so popups are already impossible there — this keeps it
- * that way even if a future Electron version changes the default, and stops
- * remote pages from triggering OS protocol handlers.
+ * sets `allowpopups`, so popups are already impossible there. This keeps it
+ * that way if a future Electron version changes the default, and stops remote
+ * pages from triggering OS protocol handlers.
  */
-function installWindowOpenPolicy(webContents: Electron.WebContents) {
+function installWindowOpenPolicy(
+    webContents: Electron.WebContents,
+    extraWindowOptions: () => Electron.BrowserWindowConstructorOptions
+) {
     webContents.setWindowOpenHandler((details) => {
         if (webContents.getType() === "webview") {
             getLog().error(`Blocked window.open from <webview> guest for URL: ${details.url}`);
             return { action: "deny" };
+        }
+
+        if (isNavigationAllowed(details.url)) {
+            return {
+                action: "allow",
+                outlivesOpener: true,
+                overrideBrowserWindowOptions: extraWindowOptions()
+            };
         }
 
         async function openExternal() {

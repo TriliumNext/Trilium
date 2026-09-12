@@ -41,6 +41,7 @@ import noteIcon from "../../icons/note.svg?raw";
 import internalLinkIcon from "../../icons/trilium.svg?raw";
 import { ADMONITION_TYPE_NAMES, type AdmonitionType } from "../admonition/admonition_command.js";
 import { getAdmonitionTitle } from "../admonition/admonition_ui.js";
+import aiIcon from "../ai_assistant/theme/icons/ai.svg?raw";
 import { COMMAND_NAME as INCLUDE_NOTE_COMMAND } from "../includenote.js";
 import { COMMAND_NAME as INSERT_DATE_TIME_COMMAND } from "../insert_date_time.js";
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
@@ -317,10 +318,21 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
         ...buildAdmonitionSlashCommands(editor),
         ...buildMermaidSlashCommands(editor),
         {
+            id: "ai-assistant",
+            title: t("AI assistant"),
+            description: t("Ask AI to rewrite the selection or generate new content."),
+            aliases: [ "ask ai", "assistant" ],
+            icon: aiIcon,
+            commandName: "aiAssistant"
+        },
+        {
             id: "collapsible",
             title: t("Collapsible block"),
             description: t("Insert a toggleable section that hides/shows content on click."),
-            aliases: [ "details", "fold", "toggle" ],
+            aliases: [
+                "details", "fold", "toggle", "collapse", "expand", "accordion", "spoiler",
+                "summary", "disclosure", "hide"
+            ],
             icon: collapsibleIcon,
             commandName: "collapsible"
         },
@@ -387,8 +399,50 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
                 // state for balloon positioning.
                 setTimeout(() => (target.plugins.get(BookmarkUI) as unknown as { _showFormView(): void })._showFormView(), 0);
             }
-        }
+        },
+        ...buildAiQuickActionSlashCommands(editor)
     ];
+}
+
+/**
+ * One entry per AI quick action the host configured ("Fix typos", "Translate to Romanian", …) —
+ * the same presets the toolbar's AI entry hangs off its arrow, reachable by name instead of by
+ * hunting through a menu.
+ *
+ * The `AI:` prefix keeps a palette full of insert-a-thing entries readable: without it "Summarize"
+ * sits among "Summary" and "Table" as if it inserted something, and there is no other cue that a
+ * dozen of these hand the paragraph to a language model. It doubles as the query that reaches the
+ * whole set, since `/ai` then matches every one of them by title.
+ *
+ * Only that prefix goes through `editor.t()`. The action's own wording arrives from the host
+ * already translated — it is the host that composes "Translate to Romanian" out of a group and a
+ * language, so it is the host that has to word it.
+ *
+ * The palette is typed at a collapsed caret, which is why a quick action run this way falls back
+ * to the caret's block — see `AiAssistantUI#runQuickAction`, and the description saying so.
+ * Enablement therefore only asks whether the feature is available at all: the pending `/query` is
+ * itself text in that block, so a content check here would answer "yes" no matter what.
+ */
+function buildAiQuickActionSlashCommands(editor: Editor): SlashCommandDefinition[] {
+    if (!editor.plugins.has("AiAssistantUI")) {
+        return [];
+    }
+
+    const t = editor.locale.t;
+
+    // The plugin's list rather than the config's: the config only seeded it, and the content
+    // languages behind Translate can be changed from inside the editor.
+    return editor.plugins.get("AiAssistantUI").quickActions.flatMap((group) =>
+        group.actions.map((action) => ({
+            id: `ai-${action.id}`,
+            title: t("AI: %0", action.commandLabel ?? action.label),
+            description: t("Applies to the current paragraph."),
+            aliases: [ group.label ],
+            icon: aiIcon,
+            isEnabled: (target: Editor) => target.commands.get("aiAssistant")?.isEnabled ?? false,
+            execute: (target: Editor) => target.plugins.get("AiAssistantUI").runQuickAction(action)
+        }))
+    );
 }
 
 // Replaces CKEditor's built-in `bulletedList`/`numberedList`/`todoList` slash commands (removed via

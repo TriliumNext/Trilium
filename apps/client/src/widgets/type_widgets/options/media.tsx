@@ -19,7 +19,7 @@ import {
     ResizeImageSection
 } from "../../dialogs/image_compression/image_compression_sections";
 import Button from "../../react/Button";
-import { Card, CardOption } from "../../react/Card";
+import { Card, OptionCardSection } from "../../react/Card";
 import FormToggle from "../../react/FormToggle";
 import HelpButton from "../../react/HelpButton";
 import { useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../../react/hooks";
@@ -66,37 +66,35 @@ function ImageSettings() {
     };
 
     return (
-        <div className="options-section media-images">
-            <Card heading={t("images.images_section_title")}>
-                <CardOption
-                    name="download-images-automatically"
-                    label={t("images.download_images_automatically")}
-                    description={t("images.download_images_description")}
-                >
-                    <FormToggle
-                        currentValue={downloadImagesAutomatically}
-                        onChange={setDownloadImagesAutomatically}
-                    />
-                </CardOption>
+        <Card className="media-images" heading={t("images.images_section_title")}>
+            <OptionCardSection
+                name="download-images-automatically"
+                label={t("images.download_images_automatically")}
+                description={t("images.download_images_description")}
+            >
+                <FormToggle
+                    currentValue={downloadImagesAutomatically}
+                    onChange={setDownloadImagesAutomatically}
+                />
+            </OptionCardSection>
 
-                {/* Not the tool's own "Compress images": that is something the user does to images
-                    already stored, where this is a standing instruction about every image still to
-                    arrive. Saying which is which is the whole of the label. */}
-                <CardOption
-                    name="compress-images"
-                    label={t("images.automatic_image_compression")}
-                    description={t("images.enable_image_compression_description")}
-                    subSectionsVisible={compressImages}
-                    subSections={[
-                        <ResizeImageSection key="resize" {...sectionProps} />,
-                        <JpegHandlingSection key="jpeg" {...sectionProps} />,
-                        <PngHandlingSection key="png" {...sectionProps} />
-                    ]}
-                >
-                    <FormToggle currentValue={compressImages} onChange={setCompressImages} />
-                </CardOption>
-            </Card>
-        </div>
+            {/* Not the tool's own "Compress images": that is something the user does to images
+                already stored, where this is a standing instruction about every image still to
+                arrive. Saying which is which is the whole of the label. */}
+            <OptionCardSection
+                name="compress-images"
+                label={t("images.automatic_image_compression")}
+                description={t("images.enable_image_compression_description")}
+                subSectionsVisible={compressImages}
+                subSections={[
+                    <ResizeImageSection key="resize" {...sectionProps} />,
+                    <JpegHandlingSection key="jpeg" {...sectionProps} />,
+                    <PngHandlingSection key="png" {...sectionProps} />
+                ]}
+            >
+                <FormToggle currentValue={compressImages} onChange={setCompressImages} />
+            </OptionCardSection>
+        </Card>
     );
 }
 
@@ -147,36 +145,34 @@ function OcrSettings() {
 
     return (
         <>
-            <div className="options-section media-ocr">
-                <Card
-                    heading={t("images.ocr_section_title")}
-                    actions={<HelpButton helpPage="TiQbQDgP8L5t" />}
+            <Card className="media-ocr"
+                heading={t("images.ocr_section_title")}
+                actions={<HelpButton helpPage="TiQbQDgP8L5t" />}
+            >
+                <OptionCardSection
+                    name="ocr-auto-process"
+                    label={t("images.ocr_auto_process")}
+                    description={t("images.ocr_auto_process_description")}
                 >
-                    <CardOption
-                        name="ocr-auto-process"
-                        label={t("images.ocr_auto_process")}
-                        description={t("images.ocr_auto_process_description")}
-                    >
-                        <FormToggle currentValue={ocrAutoProcess} onChange={setOcrAutoProcess} />
-                    </CardOption>
+                    <FormToggle currentValue={ocrAutoProcess} onChange={setOcrAutoProcess} />
+                </OptionCardSection>
 
-                    <CardOption
-                        name="ocr-min-confidence"
-                        label={`${t("images.ocr_min_confidence")} (${confidence}%)`}
-                        description={t("images.ocr_confidence_description")}
-                    >
-                        <Slider
-                            min={0} max={100} step={5}
-                            value={confidence}
-                            onChange={(value) => setOcrMinConfidence(String(value / 100))}
-                        />
-                    </CardOption>
+                <OptionCardSection
+                    name="ocr-min-confidence"
+                    label={`${t("images.ocr_min_confidence")} (${confidence}%)`}
+                    description={t("images.ocr_confidence_description")}
+                >
+                    <Slider
+                        min={0} max={100} step={5}
+                        value={confidence}
+                        onChange={(value) => setOcrMinConfidence(String(value / 100))}
+                    />
+                </OptionCardSection>
 
-                    {/* Running OCR needs the engine the server holds; a standalone client only ever
-                        reads text extracted elsewhere and synced to it. */}
-                    {!isStandalone && <BatchProcessing />}
-                </Card>
-            </div>
+                {/* Running OCR needs the engine the server holds; a standalone client only ever
+                    reads text extracted elsewhere and synced to it. */}
+                {!isStandalone && <BatchProcessing />}
+            </Card>
 
             <RelatedSettings items={[
                 {
@@ -243,7 +239,7 @@ function BatchProcessing() {
     const isRunning = progress?.inProgress ?? false;
 
     return (
-        <CardOption
+        <OptionCardSection
             className="media-batch-ocr"
             label={t("images.batch_ocr_title")}
             description={t("images.batch_ocr_description")}
@@ -267,6 +263,6 @@ function BatchProcessing() {
                     onClick={startBatch}
                 />
             )}
-        </CardOption>
+        </OptionCardSection>
     );
 }

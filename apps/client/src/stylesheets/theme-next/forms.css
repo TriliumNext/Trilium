@@ -6,7 +6,9 @@ button.btn.btn-primary,
 button.btn.btn-secondary,
 button.btn.btn-sm:not(.select-button),
 button.btn.btn-success,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text {
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text,
+.ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text,
+button.ck.ck-button.ck-ai-assistant-form__icon-action {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -27,7 +29,9 @@ button.btn.btn-primary:hover,
 button.btn.btn-secondary:hover,
 button.btn.btn-sm:not(.select-button):hover,
 button.btn.btn-success:hover,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):hover {
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):hover,
+.ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):hover,
+button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):hover {
     background: var(--cmd-button-hover-background-color);
     color: var(--cmd-button-hover-text-color);
 }
@@ -36,7 +40,9 @@ button.btn.btn-primary:active,
 button.btn.btn-secondary:active,
 button.btn.btn-sm:not(.select-button):active,
 button.btn.btn-success:active,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):active {
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):active,
+.ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):active,
+button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):active {
     opacity: 0.85;
     box-shadow: unset;
     background: var(--cmd-button-background-color) !important;
@@ -48,7 +54,9 @@ button.btn.btn-primary:disabled,
 button.btn.btn-secondary:disabled,
 button.btn.btn-sm:not(.select-button):disabled,
 button.btn.btn-success:disabled,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text.ck-disabled {
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text.ck-disabled,
+.ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text.ck-disabled,
+button.ck.ck-button.ck-ai-assistant-form__icon-action.ck-disabled {
     opacity: var(--cmd-button-disabled-opacity);
 }
 
@@ -57,8 +65,15 @@ button.btn.btn-secondary:focus-visible,
 button.btn.btn-sm:not(.select-button):focus-visible,
 button.btn.btn-success:focus-visible,
 button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):focus-visible,
+.ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):focus-visible,
+button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):focus-visible,
 .tn-focusable-button:focus-visible {
     outline: 2px solid var(--input-focus-outline-color);
+}
+
+button.ck.ck-button.ck-ai-assistant-form__icon-action {
+    min-width: unset;
+    padding: 4px;
 }
 
 /* Button's icon. The text spacing is a margin rather than padding on purpose: transforms rotate the
@@ -129,6 +144,14 @@ button.tn-low-profile:hover {
 
 .btn-group .tn-tool-button + .tn-tool-button {
     margin-inline-start: 4px !important;
+}
+
+/* An action that takes something away, marked as such the way destructive menu items are. Given as
+   the button's own colors rather than as a `color`, which the rules above and the hover one below
+   would both out-specify. */
+:root .icon-action.destructive-action-icon {
+    --icon-button-color: var(--dropdown-item-icon-destructive-color);
+    --icon-button-hover-color: var(--dropdown-item-icon-destructive-color);
 }
 
 /* The "x" icon button */
@@ -207,6 +230,38 @@ button.tn-low-profile:hover {
     }
 }
 
+:root .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes {
+    gap: 4px;
+    border-radius: 8px;
+    background: var(--button-group-background-color);
+    padding: 4px;
+
+    button.ck.ck-button {
+        min-width: unset;
+        margin: 0;
+        box-shadow: unset;
+        border-radius: 8px;
+        background: transparent;
+        border-color: transparent;
+
+        &:hover:not(.ck-on) {
+            background: var(--hover-item-background-color);
+            color: var(--hover-item-text-color);
+        }
+
+        &.ck-on, &.ck-on:hover {
+            background: var(--button-group-active-button-background-color);
+            color: var(--button-group-active-button-color);
+
+            box-shadow: 1px 1px 1px var(--button-group-active-button-shadow-color);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--input-focus-outline-color);
+        }
+    }
+}
+
 /*
  * Selectable cards (import/export pickers) — mirror the button-group look: borderless, a recessed
  * group background, and a raised "selected" chip with a subtle shadow. The base component styling
@@ -232,82 +287,6 @@ button.tn-low-profile:hover {
     background: var(--button-group-active-button-background-color);
     color: var(--button-group-active-button-color);
     box-shadow: 1px 1px 1px var(--button-group-active-button-shadow-color);
-}
-
-/*
- * Overlay buttons
- */
-
-:where(.tn-overlay-control-group) {
-    display: flex;
-    align-items: stretch;
-    gap: 0px;
-    border-radius: var(--overlay-button-border-radius);
-    border-right: 1px solid var(--overlay-button-shadow-color);
-    border-bottom: 1px solid var(--overlay-button-shadow-color);
-
-    :where(button) {
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        border: none;
-        margin: 0;
-        backdrop-filter: var(--overlay-button-backdrop-filter);
-        background-color: var(--overlay-button-background);
-        color: var(--overlay-button-color);
-
-        &:not(:disabled):hover {
-            background-color: var(--opaque-icon-button-hover-background-color);
-            color: var(--opaque-icon-button-hover-color);
-        }
-
-        /* A button standing for a choice in force is shown held down — the geo map's + while the
-           map is armed for a placement. Held through a hover as well, so that pointing at the one
-           already chosen does not lower it. */
-        &.active,
-        &.active:not(:disabled):hover {
-            background-color: var(--active-item-background-color);
-            color: var(--active-item-text-color);
-        }
-
-        &.tn-overlay-icon-button {
-            height: var(--overlay-button-height);
-            width: 32px;
-            font-size: var(--overlay-button-icon-size);
-
-            &:active {
-                font-size: calc(var(--overlay-button-icon-size) * .85);
-            }
-        }
-
-        &.tn-overlay-text-button {
-            height: var(--overlay-button-height);
-            min-width: 50px;
-            font-size: var(--overlay-button-text-size);
-        }
-
-        &:first-child {
-            --_start-border-radius: var(--overlay-button-border-radius);
-        }
-
-        &:last-child {
-            --_end-border-radius: var(--overlay-button-border-radius);
-        }
-
-        /* Reboot sets `button { border-radius: 0 }` (specificity 0,0,1), so the rounding must live on
-           these end selectors (0,1,0) to out-specify it; middle buttons keep Reboot's square corners. */
-        &:first-child,
-        &:last-child {
-            border-radius: var(--_start-border-radius, 0) var(--_end-border-radius, 0) var(--_end-border-radius, 0) var(--_start-border-radius, 0);
-        }
-
-        /* A button that would do nothing says as much rather than merely failing to answer. */
-        &:disabled {
-            opacity: .4;
-            pointer-events: none;
-        }
-
-    }
 }
 
 /*

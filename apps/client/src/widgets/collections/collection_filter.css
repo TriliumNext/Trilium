@@ -1,0 +1,147 @@
+/* Painted from the quick search box's own variables, so the two boxes stay in step under a theme
+   that styles it; the fallbacks cover the themes that define none of them. */
+:where(:root) {
+    --collection-filter-color:
+        var(--quick-search-color, var(--muted-text-color));
+    --collection-filter-background:
+        var(--quick-search-background, var(--accented-background-color));
+    --collection-filter-hover-background:
+        var(--quick-search-hover-background, var(--accented-background-color));
+    --collection-filter-focus-color:
+        var(--quick-search-focus-color, var(--main-text-color));
+    --collection-filter-focus-background:
+        var(--quick-search-focus-background, var(--main-background-color));
+    --collection-filter-focus-border-color:
+        var(--quick-search-focus-border, var(--main-border-color));
+    --collection-filter-button-hover-background:
+        var(--left-pane-item-action-button-hover-background, var(--main-border-color));
+    --collection-filter-clear-background:
+        var(--dropdown-item-icon-destructive-color, #de4027);
+    --collection-filter-clear-hover-background: color-mix(
+        in srgb, var(--collection-filter-clear-background) 85%, black);
+    --collection-filter-clear-color: white;
+    --collection-filter-active-border-color: var(--main-text-color);
+    --collection-filter-error-color: #c73a35;
+    --collection-filter-error-background: var(--main-background-color);
+    --collection-filter-error-border-color: var(--main-border-color);
+}
+
+.collection-filter {
+    /* The buttons sit over the trailing end of the box, so the input reserves room for them in its
+       own padding rather than standing beside them. */
+    --collection-filter-button-size: 22px;
+    --collection-filter-button-inset: 4px;
+    --collection-filter-button-gap: 2px;
+
+    display: inline-block;
+    position: relative;
+    width: clamp(138px, 20vw, 250px);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: var(--collection-filter-background);
+    color: var(--collection-filter-color);
+    transition: background-color 200ms ease-in;
+
+    &:hover {
+        background: var(--collection-filter-hover-background);
+        transition: background-color 75ms ease-out;
+    }
+
+    &:focus-within {
+        border-color: var(--collection-filter-focus-border-color);
+        background: var(--collection-filter-focus-background);
+        color: var(--collection-filter-focus-color);
+        transition: background-color 100ms ease-out;
+    }
+
+    &.active {
+        border-color: var(--collection-filter-active-border-color);
+    }
+
+    > input.form-control {
+        width: 100%;
+        box-shadow: none;
+        border: 0;
+        padding: 6px 10px;
+        padding-inline-end: calc(
+            var(--collection-filter-button-size) + 2 * var(--collection-filter-button-inset));
+        background: transparent;
+        color: inherit;
+        font-size: inherit;
+
+        &::placeholder {
+            color: var(--collection-filter-color);
+        }
+    }
+
+    &:has(.collection-filter-clear) > input.form-control {
+        padding-inline-end: calc(
+            2 * var(--collection-filter-button-size) + 2 * var(--collection-filter-button-inset)
+            + var(--collection-filter-button-gap));
+    }
+
+    .collection-filter-buttons {
+        display: flex;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        inset-inline-end: var(--collection-filter-button-inset);
+        gap: var(--collection-filter-button-gap);
+        align-items: center;
+    }
+
+    button {
+        display: flex;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        width: var(--collection-filter-button-size);
+        height: var(--collection-filter-button-size);
+        border: 0;
+        border-radius: 50%;
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 1.1em;
+        line-height: 1;
+        transition: background-color 100ms ease-out;
+
+        /* The colour is restated because Bootstrap's own `.btn:hover` would otherwise take it. */
+        &:hover {
+            background: var(--collection-filter-button-hover-background);
+            color: inherit;
+        }
+
+        &:active {
+            transform: scale(0.85);
+        }
+    }
+
+    .collection-filter-clear {
+        background: var(--collection-filter-clear-background);
+        color: var(--collection-filter-clear-color);
+
+        &:hover {
+            background: var(--collection-filter-clear-hover-background);
+            color: var(--collection-filter-clear-color);
+        }
+    }
+
+    .collection-filter-error {
+        display: block;
+        position: absolute;
+        top: calc(100% + 4px);
+        inset-inline-end: 0;
+        z-index: 100;
+        max-width: 60vw;
+        border: 1px solid var(--collection-filter-error-border-color);
+        border-radius: 4px;
+        padding: 2px 8px;
+        background: var(--collection-filter-error-background);
+        color: var(--collection-filter-error-color);
+        font-size: 0.9em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

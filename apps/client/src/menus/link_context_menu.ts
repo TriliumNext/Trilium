@@ -17,15 +17,40 @@ function openContextMenu(notePath: string, e: ContextMenuEvent, viewScope: ViewS
 }
 
 function getItems(e: ContextMenuEvent | GeoMouseEvent): MenuItem<CommandNames>[] {
+    return [ ...getOpenItems(e), getQuickEditItem() ];
+}
+
+/** The places the note can be opened in, without the quick edit popup. */
+function getOpenItems(e: ContextMenuEvent | GeoMouseEvent): MenuItem<CommandNames>[] {
     const ntxId = getNtxId(e);
     const isMobileSplitOpen = isMobile() && appContext.tabManager.getNoteContextById(ntxId).getMainContext().getSubContexts().length > 1;
 
     return [
         { title: t("link_context_menu.open_note_in_new_tab"), command: "openNoteInNewTab", uiIcon: "bx bx-link-external" },
         { title: !isMobileSplitOpen ? t("link_context_menu.open_note_in_new_split") : t("link_context_menu.open_note_in_other_split"), command: "openNoteInNewSplit", uiIcon: "bx bx-dock-right" },
-        { title: t("link_context_menu.open_note_in_new_window"), command: "openNoteInNewWindow", uiIcon: "bx bx-window-open" },
-        { title: t("link_context_menu.open_note_in_popup"), command: "openNoteInPopup", uiIcon: "bx bx-edit" }
+        { title: t("link_context_menu.open_note_in_new_window"), command: "openNoteInNewWindow", uiIcon: "bx bx-window-open" }
     ];
+}
+
+/** Opens the note in a popup over the current one. */
+function getQuickEditItem(): MenuItem<CommandNames> {
+    return { title: t("link_context_menu.open_note_in_popup"), command: "openNoteInPopup", uiIcon: "bx bx-edit" };
+}
+
+/**
+ * The same places, folded into one submenu, for a menu that lists entries of its own beside them.
+ *
+ * The items keep their commands, so `handleLinkContextMenuItem` handles them from a submenu as it
+ * does from the top level. The entry carries the first of those commands itself, so that picking it
+ * opens a new tab without going into the submenu for the place it is opened in most often.
+ */
+function getOpenNoteItem(e: ContextMenuEvent | GeoMouseEvent): MenuItem<CommandNames> {
+    return {
+        title: t("link_context_menu.open_note"),
+        uiIcon: "bx bx-link-external",
+        command: "openNoteInNewTab",
+        items: getOpenItems(e)
+    };
 }
 
 function handleLinkContextMenuItem(command: string | undefined, e: ContextMenuEvent | GeoMouseEvent, notePath: string, viewScope = {}, hoistedNoteId: string | null = null) {
@@ -72,6 +97,8 @@ function getNtxId(e: ContextMenuEvent | GeoMouseEvent) {
 
 export default {
     getItems,
+    getQuickEditItem,
+    getOpenNoteItem,
     handleLinkContextMenuItem,
     openContextMenu
 };

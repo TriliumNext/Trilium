@@ -1,15 +1,19 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
+import blobService from "./blob.js";
 import { disableEntityEvents, getContext } from "./context.js";
 import { getLog } from "./log.js";
 import noteService, { prepareTitle, saveLinks } from "./notes.js";
 import optionService from "./options.js";
+import protectedSessionService from "./protected_session.js";
 import { fakeRequestProvider } from "../test/request_provider.js";
 import { initRequest } from "./request.js";
 import { getSql } from "./sql/index.js";
+import TaskContext from "./task_context.js";
+import { encodeUtf8 } from "./utils/binary.js";
 
 /**
  * The pure link-extraction helpers (findBookmarks, findLlmChatLinks) and the
@@ -40,6 +44,70 @@ function createNote(parentNoteId: string, overrides: Partial<Parameters<typeof n
         })
     );
 }
+
+describe("OCR text across (un)protection", () => {
+    const PROTECTED_KEY = encodeUtf8("0123456789abcdef"); // exactly 16 bytes
+
+    /** The text as it is stored on the blob right now, without decrypting it. */
+    function storedText(blobId: string | undefined) {
+        return getSql().getValue<string | null>("SELECT textRepresentation FROM blobs WHERE blobId = ?", [blobId ?? ""]);
+    }
+
+    function setStoredText(blobId: string | undefined, text: string) {
+        getSql().execute("UPDATE blobs SET textRepresentation = ? WHERE blobId = ?", [text, blobId ?? ""]);
+    }
+
+    function protect(note: BNote, value: boolean) {
+        getContext().init(() =>
+            noteService.protectNoteRecursively(note, value, false, new TaskContext("spec-protect", "protectNotes", { protect: value }))
+        );
+    }
+
+    afterEach(() => protectedSessionService.resetDataKey());
+
+    it("carries a note's extracted text onto the blob the re-save produces, encrypting it", () => {
+        const { note } = createNote("root", { title: "spec-ocr-carry", content: "image-bytes-carry", type: "image", mime: "image/png" });
+        setStoredText(note.blobId, "text read out of the picture");
+        const unprotectedBlobId = note.blobId;
+
+        protectedSessionService.setDataKey(PROTECTED_KEY);
+        protect(note, true);
+
+        // A new blob, since protection is part of a blob's identity — and the text came with it.
+        expect(note.blobId).not.toBe(unprotectedBlobId);
+        expect(storedText(note.blobId)).not.toBe("text read out of the picture");
+        expect(blobService.decryptTextRepresentation(storedText(note.blobId), true)).toBe("text read out of the picture");
+
+        // And back again, readable without a key once the note no longer needs one.
+        protect(note, false);
+        expect(storedText(note.blobId)).toBe("text read out of the picture");
+    });
+
+    it("carries an attachment's extracted text too", () => {
+        const { note } = createNote("root", { title: "spec-ocr-carry-attachment" });
+        const attachment = getContext().init(() =>
+            note.saveAttachment({ role: "image", mime: "image/png", title: "scan.png", content: "attachment-bytes-carry" })
+        );
+        setStoredText(attachment.blobId, "text read out of the attachment");
+
+        protectedSessionService.setDataKey(PROTECTED_KEY);
+        protect(note, true);
+
+        const protectedAttachment = becca.getAttachmentOrThrow(attachment.attachmentId);
+        expect(protectedAttachment.isProtected).toBe(true);
+        expect(blobService.decryptTextRepresentation(storedText(protectedAttachment.blobId), true))
+            .toBe("text read out of the attachment");
+    });
+
+    it("leaves a note that never had extracted text without any", () => {
+        const { note } = createNote("root", { title: "spec-ocr-carry-none", content: "image-bytes-none", type: "image", mime: "image/png" });
+
+        protectedSessionService.setDataKey(PROTECTED_KEY);
+        protect(note, true);
+
+        expect(storedText(note.blobId)).toBeNull();
+    });
+});
 
 describe("notes service (real DB)", () => {
     beforeAll(() => {

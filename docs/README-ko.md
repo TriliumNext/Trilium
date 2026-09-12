@@ -23,6 +23,8 @@
 
 Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 오픈 소스 크로스 플랫폼 계층형 노트 작성 애플리케이션입니다.
 
+"Trillium Notes"를 찾고 계신가요? 이 프로젝트의 공식 표기는 `l`이 하나인 "Trilium Notes"입니다.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ 다운로드
@@ -98,7 +100,7 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
   프런트엔드](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
 * 기본 제공 [다크 테마](https://docs.triliumnotes.org/user-guide/concepts/themes) 및 사용자
   테마 지원
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   및 [Markdown 가져오기 및
   내보내기](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * 웹 콘텐츠를 간편하게 저장하는 [웹
@@ -300,12 +302,14 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei)는 캔버스의 초기 구현에 기여했습니다.
 * [antoniotejada](https://github.com/nriver)는 최초의 구문 강조 위젯을 만들었습니다.
 * [Tabler Icons](https://tabler.io/icons)는 시스템 트레이 아이콘을 제공합니다.
-*   The application icons in the import dialog are from:
+*   가져오기 대화 상자에 사용된 애플리케이션 아이콘의 출처:
     *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
-        OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+        OneNote, Google Keep, Evernote. → OneNote, Google Keep, Evernote에는
+        [Material Design Icons](https://pictogrammers.com/library/mdi/)을 사용합니다.
+    *   Notion, Obsidian에는 [Font Awesome](https://fontawesome.com/)을 사용합니다.
+    *   Anytype에는 [SVGicons.com](https://svgicons.com/icon/187676/anytype)을
+        사용합니다.
+*  LLM 제공업체 아이콘은 [Lobe Icons](https://lobehub.com/icons)에서 가져왔습니다.
 
 Trilium은 다음 기반 기술이 있었기에 만들어질 수 있었습니다:
 

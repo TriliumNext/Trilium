@@ -172,14 +172,6 @@ describe("preload script", () => {
             expect(ipcRendererSent).toContainEqual({ channel: "close-window", args: [] });
         });
 
-        it("createExtraWindow sends correct IPC message", () => {
-            win().createExtraWindow("#root/abc123");
-            expect(ipcRendererSent).toContainEqual({
-                channel: "create-extra-window",
-                args: [{ extraWindowHash: "#root/abc123" }]
-            });
-        });
-
         it("isAlwaysOnTop uses sendSync", () => {
             ipcRendererSyncResults.set("is-always-on-top:undefined", true);
             expect(win().isAlwaysOnTop()).toBe(true);
@@ -304,6 +296,14 @@ describe("preload script", () => {
             await shell().openPath("/tmp/test.txt");
             expect(ipcRendererInvoked).toContainEqual({
                 channel: "open-path",
+                args: ["/tmp/test.txt"]
+            });
+        });
+
+        it("showItemInFolder sends correct IPC message", () => {
+            shell().showItemInFolder("/tmp/test.txt");
+            expect(ipcRendererSent).toContainEqual({
+                channel: "show-item-in-folder",
                 args: ["/tmp/test.txt"]
             });
         });
@@ -697,6 +697,11 @@ describe("preload script", () => {
         it("pickDirectory may be called without a starting location", async () => {
             await dialog().pickDirectory();
             expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-pick-directory", args: [undefined] });
+        });
+
+        it("confirmStartOver invokes its IPC channel, passing nothing it could steer", async () => {
+            await dialog().confirmStartOver();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "dialog-confirm-start-over", args: [] });
         });
     });
 

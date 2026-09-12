@@ -1,4 +1,4 @@
-import { attributes, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
+import { attributes, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
 
 import config from "./config.js";
@@ -108,10 +108,39 @@ export function refreshAuth() {
     noAuthentication = (config.General && config.General.noAuthentication === true);
 }
 
+/**
+ * Whether an uninitialized instance may let this request through unauthenticated.
+ *
+ * The bypass below exists because an instance with no database has nobody to authenticate and
+ * nothing worth protecting. An instance sitting in the setup wizard with a knowledge base behind it
+ * has both: the database is attached, and every route that reaches it through SQL rather than
+ * through becca works exactly as it would on a running instance. Taking a backup of it and
+ * downloading that backup are two such routes.
+ *
+ * So for the length of that window the bypass is conditional on the wizard's own token instead of
+ * being granted outright. The exemptions are the ones `checkSetupAuth` makes, for the same reasons.
+ */
+function mayPassAsUninitialized(req: Request): boolean {
+    if (sqlInit.isDbInitialized()) {
+        return false;
+    }
+    if (!isSetupAuthRequired() || isInternalElectronRequest(req) || noAuthentication) {
+        return true;
+    }
+
+    return isSetupAuthorized(readSetupAuthToken(req));
+}
+
+function readSetupAuthToken(req: Request): string | undefined {
+    const token = req.headers["trilium-setup-auth"];
+
+    return typeof token === "string" ? token : undefined;
+}
+
 // for electron things which need network stuff
 //  currently, we're doing that for file upload because handling form data seems to be difficult
 function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction) {
-    if (!sqlInit.isDbInitialized()) {
+    if (mayPassAsUninitialized(req)) {
         return next();
     }
 
@@ -124,7 +153,7 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
 }
 
 function checkApiAuth(req: Request, res: Response, next: NextFunction) {
-    if (!sqlInit.isDbInitialized()) {
+    if (mayPassAsUninitialized(req)) {
         return next();
     }
 
@@ -175,6 +204,31 @@ function checkAppNotInitialized(req: Request, res: Response, next: NextFunction)
     } else {
         next();
     }
+}
+
+/**
+ * Guards the setup routes that could replace or erase a knowledge base sitting behind the wizard.
+ *
+ * The rest of the authentication in this file stands down while the database is uninitialized, which
+ * is exactly what an instance in setup mode reports, so nothing else here covers these routes. See
+ * `setup_auth` in core for why the session cannot be used and what is used instead.
+ *
+ * Three ways past it, all of them cases where there is nothing to guard against: an instance with no
+ * knowledge base behind the wizard, which is the ordinary first run; the desktop's own renderer,
+ * which reaches the server over the custom protocol and is the application itself; and an instance
+ * configured for no authentication, which has already said it trusts whoever can reach it.
+ */
+function checkSetupAuth(req: Request, res: Response, next: NextFunction) {
+    if (!isSetupAuthRequired() || isInternalElectronRequest(req) || noAuthentication) {
+        return next();
+    }
+
+    if (!isSetupAuthorized(readSetupAuthToken(req))) {
+        reject(req, res, "The existing knowledge base has not been unlocked.");
+        return;
+    }
+
+    next();
 }
 
 function checkEtapiToken(req: Request, res: Response, next: NextFunction) {
@@ -246,7 +300,7 @@ export async function verifyLoginCredentials(password: string, totpToken: string
 }
 
 function verifyTOTP(submittedTotpToken: string) {
-    if (totp.validateTOTP(submittedTotpToken)) {
+    if (totp.verifyTOTP(submittedTotpToken)) {
         return true;
     }
 
@@ -260,6 +314,7 @@ export default {
     checkPasswordSet,
     checkPasswordNotSet,
     checkAppNotInitialized,
+    checkSetupAuth,
     checkApiAuthOrElectron,
     checkEtapiToken,
     checkCredentials

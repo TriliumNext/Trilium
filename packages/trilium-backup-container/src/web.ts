@@ -34,7 +34,12 @@ export {
     FRAME_SIZE,
     SCRYPT_BOUNDS,
     SCRYPT_DEFAULTS,
-    type ScryptParams
+    type ScryptParams,
+    containerSize,
+    type ContainerTrailer,
+    decodeTrailer,
+    encodeTrailer,
+    TRAILER_BYTES
 } from "./format.js";
 export {
     DEFAULT_PROGRESS_INTERVAL_MS,
@@ -42,15 +47,16 @@ export {
     type ProgressOptions
 } from "./progress.js";
 export {
-    type BackupContainerInfo,
+    type BackupContainerSummary,
+    type ContainerHead,
     DEFAULT_MAX_OUTPUT_BYTES,
-    peekBackupContainer,
+    getInfo,
     type ReadBackupContainerOptions,
-    type ReadBackupContainerResult
+    type ReadBackupContainerResult,
+    type SupportedBackupContainer
 } from "./read.js";
 export { readBackupContainer, writeBackupContainer } from "./web-streams.js";
 export {
-    type PatchHeader,
     type WriteBackupContainerOptions,
     type WriteBackupContainerResult
 } from "./write.js";

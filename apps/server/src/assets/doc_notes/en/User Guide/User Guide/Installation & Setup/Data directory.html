@@ -46,9 +46,9 @@
 </ol>
 <h4>Linux</h4><pre><code class="language-text-x-trilium-auto">export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data</code></pre>
 <h4>Mac OS X</h4>
-<p>You need to create a <code spellcheck="false">.plist</code> file under
-  <code
-  spellcheck="false">~/Library/LaunchAgents</code>to load it properly each login.</p>
+<p>You need to create a <code spellcheck="false">.plist</code> file under <code
+  spellcheck="false">~/Library/LaunchAgents</code> to load it properly each
+  login.</p>
 <p>To load it manually, you need to use <code spellcheck="false">launchctl setenv TRILIUM_DATA_DIR &lt;yourpath&gt;</code>
 </p>
 <p>Here is a pre-defined template, where you just need to add your path to:</p><pre><code class="language-text-x-trilium-auto">        Label
@@ -77,12 +77,11 @@
   (e.g. <code spellcheck="false">%APPDATA%</code> on Windows), which may be
   undesirable in corporate environments with roaming profiles or when running
   in portable mode.</p>
-<p>To keep Electron data out of the system's roaming profile, set the
-  <code
-  spellcheck="false">TRILIUM_ELECTRON_DATA_DIR</code>environment variable to an explicit path.
-    The <code spellcheck="false">trilium-portable</code> script does this automatically,
-    pointing it to <code spellcheck="false">trilium-electron-data/</code> next
-    to the application.</p>
+<p>To keep Electron data out of the system's roaming profile, set the <code
+  spellcheck="false">TRILIUM_ELECTRON_DATA_DIR</code> environment variable
+  to an explicit path. The <code spellcheck="false">trilium-portable</code> script
+  does this automatically, pointing it to <code spellcheck="false">trilium-electron-data/</code> next
+  to the application.</p>
 <h2>Fine-grained directory/path location</h2>
 <p>Apart from the data directory, some of the subdirectories of it can be
   moved elsewhere by changing an environment variable:</p>

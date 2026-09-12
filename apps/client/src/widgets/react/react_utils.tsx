@@ -47,7 +47,12 @@ export function renderReactWidgetAtElement(parentComponent: Component | null, el
     return $(container) as JQuery<HTMLElement>;
 }
 
-export function disposeReactWidget(container: Element) {
+/**
+ * Unmounts the tree rendered into `container`, running every effect cleanup and releasing the DOM
+ * the vnodes still point at. `container` has to be the element the tree was rendered *into* -- for a
+ * widget built by `renderReactWidget()` that is the fragment, not the `$widget` it returned.
+ */
+export function disposeReactWidget(container: Element | DocumentFragment) {
     render(null, container);
 }
 

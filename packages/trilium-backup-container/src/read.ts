@@ -10,10 +10,12 @@ import { BackupContainerError } from "./errors.js";
 import {
     authenticatedHeaderEnd,
     type ContainerHeader,
+    type ContainerTrailer,
     DEFAULT_MAX_HEADER_BYTES,
     DEFAULT_MAX_KDF_MEMORY_BYTES,
     decodeFixedHeader,
     decodeHeader,
+    decodeTrailer,
     encodeHeader,
     type EncryptionHeader,
     FIXED_HEADER_BYTES,
@@ -24,6 +26,7 @@ import {
     nonceFor,
     SQLITE_HEADER_BYTES,
     TAG_BYTES,
+    TRAILER_BYTES,
     validateScryptParams,
     validateSqliteHeader,
     VERIFIER_COUNTER
@@ -57,40 +60,105 @@ export interface ReadBackupContainerOptions extends ProgressOptions {
     requireSqliteHeader?: boolean;
 }
 
-/** What a container says about itself, before any of its payload is read. */
-export interface BackupContainerInfo {
+/** The head of a container, however the caller happens to be holding it. */
+export type ContainerHead = ArrayBuffer | ArrayBufferView;
+
+/**
+ * What a container says about itself, before any of its payload is read.
+ *
+ * Three answers rather than two, because "not a backup" and "a backup this build is too old to
+ * open" call for entirely different things to be said to the user, and the fields below only exist
+ * for the third: a version whose layout this module does not implement is one whose flags and sizes
+ * it would only be guessing at.
+ */
+export type BackupContainerSummary =
+    /** Not a container at all: whatever else this file is, it did not come from here. */
+    | { isValid: false }
+    /** One of ours, but past what this module implements: nothing beyond the version is known. */
+    | { isValid: true; isSupported: false; version: number }
+    | SupportedBackupContainer;
+
+/** A container this module can act on, which is the only case any of these fields is known in. */
+export interface SupportedBackupContainer {
+    isValid: true;
+    isSupported: true;
     version: number;
-    compressed: boolean;
-    encrypted: boolean;
-    /** Size of the wrapped database before compression, or 0 when the writer did not record it. */
-    plaintextSize: number;
+    /**
+     * Size of the database inside, before compression, or 0 where the writer did not record it. Not
+     * the size of the file, which is this plus the wrapping and, once compressed, less than this by
+     * an amount nothing states in advance.
+     */
+    size: number;
+    /** When the backup was taken, in milliseconds since the Unix epoch, or 0 when not recorded. */
+    creationTimestamp: number;
+    isCompressed: boolean;
+    isEncrypted: boolean;
 }
 
 /**
  * Identifies a container from its first {@link FIXED_HEADER_BYTES} bytes, without touching the
  * payload and without the passphrase: what a container is, is stated in the clear.
  *
- * Returns `null` for anything this reader does not recognise, so that listing a directory of
- * backups is never derailed by one damaged or foreign file.
+ * Built for listing a directory of them, so it is O(1) over a view of what it is given, copies
+ * nothing, and never throws: one damaged or foreign file among a hundred costs the listing a row,
+ * not the listing.
+ *
+ * @param head at least {@link FIXED_HEADER_BYTES} bytes from offset 0 of the file. Anything longer
+ *             is fine and nothing past those bytes is read, so a caller holding the whole file may
+ *             pass it as it stands.
+ * @param maxHeaderBytes ceiling above which a header is not worth describing.
  */
-export function peekBackupContainer(
-    head: Uint8Array,
+export function getInfo(
+    head: ContainerHead,
     maxHeaderBytes: number = DEFAULT_MAX_HEADER_BYTES
-): BackupContainerInfo | null {
-    if (head.length < FIXED_HEADER_BYTES) {
-        return null;
+): BackupContainerSummary {
+    const bytes = asBytes(head);
+
+    // Settled here rather than by catching what the decoder throws, because this is the rejection
+    // that happens in bulk: a folder of backups is also a folder of everything else the user keeps
+    // there, and each of those should cost a comparison rather than an exception.
+    const isContainer = bytes.length >= FIXED_HEADER_BYTES
+        && bytesEqual(bytes.subarray(0, MAGIC.length), MAGIC);
+    if (!isContainer) {
+        return { isValid: false };
     }
 
+    // Past the magic, so this field is where the format has always promised to keep it, which is
+    // the one thing that stays true of a version written after this module.
+    const version = bytes[MAGIC.length];
+
     try {
-        const { version, compressed, encrypted, plaintextSize } = decodeFixedHeader(
-            head.subarray(0, FIXED_HEADER_BYTES),
+        const { timestamp, compressed, encrypted, plaintextSize } = decodeFixedHeader(
+            bytes.subarray(0, FIXED_HEADER_BYTES),
             maxHeaderBytes
         );
 
-        return { version, compressed, encrypted, plaintextSize };
+        return {
+            isValid: true,
+            isSupported: true,
+            version,
+            size: plaintextSize,
+            creationTimestamp: timestamp,
+            isCompressed: compressed,
+            isEncrypted: encrypted
+        };
     } catch {
-        return null;
+        // Every remaining way the head can be refused says the same thing to a listing: ours, and
+        // not for this build to open. A version it does not implement and a header that does not
+        // measure what this version requires are both answered by pointing at the version.
+        return { isValid: true, isSupported: false, version };
     }
+}
+
+/** Views whatever the caller holds as bytes, copying none of them. */
+function asBytes(head: ContainerHead): Uint8Array {
+    if (head instanceof Uint8Array) {
+        return head;
+    }
+
+    return ArrayBuffer.isView(head)
+        ? new Uint8Array(head.buffer, head.byteOffset, head.byteLength)
+        : new Uint8Array(head);
 }
 
 export interface ReadBackupContainerResult {
@@ -163,9 +231,10 @@ export async function readContainer(
     const progress = createProgressReporter(header.plaintextSize, options);
     const guard = new OutputGuard(ceiling, options.requireSqliteHeader !== false, progress);
 
+    const found: FoundTrailer = { trailer: null };
     const payload = header.encryption && key !== null
-        ? readFrames(reader, header, header.encryption, key, backend)
-        : readPlainPayload(reader, header, backend);
+        ? readFrames(reader, header, header.encryption, key, backend, found)
+        : readPlainPayload(reader, backend, found);
 
     const unwrapped = header.compressed ? backend.gunzip(payload) : payload;
     for await (const chunk of unwrapped) {
@@ -175,10 +244,29 @@ export async function readContainer(
     guard.finish();
     await output.end();
 
-    if (header.plaintextSize > 0 && guard.bytesWritten !== header.plaintextSize) {
+    // The payload readers always leave one behind or throw, so this is a guard on their contract
+    // rather than on the file.
+    const trailer = found.trailer;
+    /* v8 ignore next 3 -- no input reaches it: both readers end by decoding a trailer, which either
+       assigns this or throws `truncated` itself. It stands so a reader added later cannot return
+       having quietly skipped the digest. */
+    if (!trailer) {
+        throw new BackupContainerError("truncated", "The container ended without a trailer.");
+    }
+
+    // The trailer's size is the authoritative one, counted as the payload was written rather than
+    // promised in advance, and it is what an unencrypted container leans on to notice truncation.
+    if (guard.bytesWritten !== trailer.plaintextSize) {
         throw new BackupContainerError(
             "size-mismatch",
-            `Output is ${guard.bytesWritten} bytes, header records ${header.plaintextSize}.`
+            `Output is ${guard.bytesWritten} bytes, the container records ${trailer.plaintextSize}.`
+        );
+    }
+    // Both stated the size, and they disagree: whichever is wrong, the file is not intact.
+    if (header.plaintextSize > 0 && header.plaintextSize !== trailer.plaintextSize) {
+        throw new BackupContainerError(
+            "size-mismatch",
+            `Header records ${header.plaintextSize} bytes, the trailer ${trailer.plaintextSize}.`
         );
     }
 
@@ -323,7 +411,8 @@ async function* readFrames(
     header: ContainerHeader,
     encryption: EncryptionHeader,
     key: unknown,
-    backend: ContainerBackend
+    backend: ContainerBackend,
+    found: FoundTrailer
 ): AsyncGenerator<Uint8Array> {
     const aad = aadOf(header);
     const hash = backend.createSha256();
@@ -371,34 +460,61 @@ async function* readFrames(
         counter++;
     }
 
+    // The frames say where they end, so the trailer is simply what follows the final one.
+    found.trailer = decodeTrailer(await reader.readExactly(TRAILER_BYTES));
+
     if (!(await reader.atEof())) {
         throw new BackupContainerError(
             "trailing-data",
-            `Bytes follow the final frame at offset ${reader.consumed}.`
+            `Bytes follow the trailer at offset ${reader.consumed}.`
         );
     }
 
-    verifyDigest(hash.digest(), header.digest);
+    verifyDigest(hash.digest(), found.trailer.digest);
 }
 
-/** Yields the payload of an unencrypted container, which runs to end of file. */
+/**
+ * Yields the payload of an unencrypted container, which runs to the trailer.
+ *
+ * Nothing announces where that is, so the last {@link TRAILER_BYTES} bytes are held back as they go
+ * past and whatever is still held when the input ends is the trailer. That keeps the reader
+ * forward-only: it never has to know the file's length, let alone seek to it, which is what lets the
+ * same code read a file, a download and a stream that is still arriving.
+ */
 async function* readPlainPayload(
     reader: ByteReader,
-    header: ContainerHeader,
-    backend: ContainerBackend
+    backend: ContainerBackend,
+    found: FoundTrailer
 ): AsyncGenerator<Uint8Array> {
     const hash = backend.createSha256();
+    let held = EMPTY;
 
     for (;;) {
         const chunk = await reader.readUpTo(FRAME_SIZE);
         if (chunk.length === 0) {
             break;
         }
-        hash.update(chunk);
-        yield chunk;
+
+        const pending = held.length === 0 ? chunk : concatBytes(held, chunk);
+        if (pending.length <= TRAILER_BYTES) {
+            // Copied, since it has to outlive the reader's own view of these bytes.
+            held = pending.slice();
+            continue;
+        }
+
+        const payload = pending.subarray(0, pending.length - TRAILER_BYTES);
+        held = pending.slice(pending.length - TRAILER_BYTES);
+        hash.update(payload);
+        yield payload;
     }
 
-    verifyDigest(hash.digest(), header.digest);
+    found.trailer = decodeTrailer(held);
+    verifyDigest(hash.digest(), found.trailer.digest);
+}
+
+/** Where a payload reader leaves the trailer it consumed, for the caller that checks it. */
+interface FoundTrailer {
+    trailer: ContainerTrailer | null;
 }
 
 function verifyDigest(actual: Uint8Array, expected: Uint8Array): void {

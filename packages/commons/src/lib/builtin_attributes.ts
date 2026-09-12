@@ -89,6 +89,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "appThemeBase", valueType: "select", selectOptions: [
         "next", "next-light", "next-dark"
     ] },
+    // Offers a font file note in the font picker, under the note's own title.
+    { type: "label", name: "customFont", valueType: "boolean" },
     { type: "label", name: "hidePromotedAttributes", valueType: "boolean" },
     { type: "label", name: "readOnly", valueType: "boolean" },
     { type: "label", name: "autoReadOnlyDisabled", valueType: "boolean" },
@@ -183,6 +185,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "snippetDescription", valueType: "text", hasUserValue: true },
     { type: "label", name: "textSnippet", valueType: "boolean" },
     { type: "label", name: "textSnippetDescription", valueType: "text", hasUserValue: true },
+    // Offers the note's content as an instruction in the text editor's AI assistant menu.
+    { type: "label", name: "aiQuickAction", valueType: "boolean" },
     // Forces the table of contents open or shut; without the label the heading count decides.
     { type: "label", name: "toc", valueType: "select", selectOptions: [ "show", "hide" ] },
     { type: "label", name: "color", valueType: "color" },
@@ -264,6 +268,15 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "isHidden", valueType: "boolean" },
     { type: "label", name: "maxNestingDepth", valueType: "number", hasUserValue: true },
     { type: "label", name: "includeArchived", valueType: "boolean", hasUserValue: true },
+    { type: "label", name: "enableInboxColumn", valueType: "boolean", hasUserValue: true },
+    // Carried by a card that stands in for another note: opening it navigates there instead.
+    { type: "relation", name: "boardCardRedirectTo" },
+    // How wide the board draws its columns. Absent for the narrow default.
+    { type: "label", name: "boardCardWidth", valueType: "select", hasUserValue: true,
+        selectOptions: [ "narrow", "medium", "wide" ] },
+    // The order a board offers for its columns, which its properties apply to every column at once.
+    { type: "label", name: "sortColumns", valueType: "text", hasUserValue: true },
+    { type: "label", name: "sortColumnsDescending", valueType: "boolean", hasUserValue: true },
     // FullCalendar's own view names, which is what the calendar hands back when the view is switched.
     { type: "label", name: "calendar:view", valueType: "select", hasUserValue: true, selectOptions: [
         "timeGridDay", "timeGridWeek", "dayGridMonth", "multiMonthYear", "listMonth"
@@ -304,7 +317,8 @@ const BUILTIN_ATTRIBUTES = [
     // Reveal.js' own stock themes, which is what the presentation bundles; anything else falls back
     // to `white`.
     { type: "label", name: "presentation:theme", valueType: "select", hasUserValue: true, selectOptions: [
-        "black", "white", "beige", "serif", "simple", "solarized", "moon", "dracula", "sky", "blood"
+        "black", "black-contrast", "white", "white-contrast", "beige", "serif", "simple",
+        "solarized", "moon", "dracula", "sky", "blood", "league", "night"
     ] },
     { type: "label", name: "slide:background", valueType: "text", hasUserValue: true },
 
@@ -339,6 +353,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "relation", name: "runOnAttributeCreation", isDangerous: true },
     { type: "relation", name: "runOnAttributeChange", isDangerous: true },
     { type: "relation", name: "template" },
+    // Set on a template: where a note created from it goes when no parent is picked explicitly.
+    { type: "relation", name: "template:newNoteDefaultParent" },
     { type: "relation", name: "inherit" },
     // Set on a journal root, to be applied as `~template` on each note the period generates.
     { type: "relation", name: "dateTemplate" },

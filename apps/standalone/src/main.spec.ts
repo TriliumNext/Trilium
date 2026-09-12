@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
     attachServiceWorkerBridge: vi.fn(),
     registerNativeHttpHandler: vi.fn(),
     restoreBackup: vi.fn(),
+    downloadDatabase: vi.fn(),
     announceLeadership: vi.fn(),
     capacitorHttpHandler: vi.fn()
 }));
@@ -18,6 +19,7 @@ vi.mock("./local-bridge.js", () => ({
     attachServiceWorkerBridge: mocks.attachServiceWorkerBridge,
     registerNativeHttpHandler: mocks.registerNativeHttpHandler,
     restoreBackup: mocks.restoreBackup,
+    downloadDatabase: mocks.downloadDatabase,
     announceLeadership: mocks.announceLeadership
 }));
 vi.mock("./leader_election.js", () => ({
@@ -113,6 +115,44 @@ describe("bootstrap", () => {
         await vi.waitFor(() => expect(sw.register).toHaveBeenCalledWith("./sw.js", { scope: "/" }));
         expect(reloadSpy).not.toHaveBeenCalled();
         expect(document.body.innerHTML).toBe("");
+    });
+
+    it("reports progress on the splash while the SW installs", async () => {
+        document.body.innerHTML = `
+            <div id="splash">
+                <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+                <div id="splash-status"></div>
+            </div>`;
+        const sw: ServiceWorkerLike = {
+            controller: null, register: vi.fn(), ready: Promise.resolve()
+        };
+        sw.register.mockImplementation(async () => { sw.controller = {}; });
+        setServiceWorker(sw);
+        await runBootstrap();
+        await vi.waitFor(() => expect(sw.register).toHaveBeenCalled());
+        expect(document.getElementById("splash-status")?.textContent)
+            .toBe("Setting up offline support…");
+        // Nine weighted phases, the first of which covers 1/20 of the bar.
+        const fill = document.querySelector<HTMLElement>(".splash-bar-fill");
+        expect(fill?.style.width).toBe("5%");
+    });
+
+    it("lets the worker's phases through after the client reports its own", async () => {
+        document.body.innerHTML = `
+            <div id="splash">
+                <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+                <div id="splash-status"></div>
+            </div>`;
+        setServiceWorker({ controller: {}, register: vi.fn(), ready: Promise.resolve() });
+        await runBootstrap();
+        const { reportSplashPhase } = await import("../../client/src/services/splash.js");
+
+        // On a warm start the client reaches its own "bootstrap" phase while the worker is still
+        // opening the database. That phase is not in the standalone sequence, so the worker's
+        // later steps are still shown rather than being swallowed by the monotonic guard.
+        reportSplashPhase("bootstrap");
+        reportSplashPhase("core");
+        expect(document.getElementById("splash-status")?.textContent).toBe("Loading Trilium…");
     });
 
     it("reloads the page when the SW installs but does not take control", async () => {

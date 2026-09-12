@@ -1,4 +1,4 @@
-import { _getViewData as getViewData, _setModelData as setModelData, ClassicEditor, Essentials, LinkEditing, Paragraph } from "ckeditor5";
+import { _getModelData as getModelData, _getViewData as getViewData, _setModelData as setModelData, ClassicEditor, Essentials, LinkEditing, Paragraph } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
@@ -59,6 +59,88 @@ describe("ReferenceLink", () => {
 
         expect(getReferenceLinkTitle).not.toHaveBeenCalled();
         expect(findReference(editor)).toBeUndefined();
+    });
+
+    describe("anchored insertion during the title fetch (#10663)", () => {
+        let resolveTitle: () => void = () => {};
+
+        beforeEach(() => {
+            getReferenceLinkTitle.mockImplementation(
+                () =>
+                    new Promise<void>((resolve) => {
+                        resolveTitle = resolve;
+                    })
+            );
+        });
+
+        it("inserts at the position captured at execute time even when typing continues during the fetch", async () => {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+
+            editor.execute("referenceLink", { href: "#root/noteAbc" });
+
+            // Simulate the user continuing to type while the title fetch is still pending.
+            editor.execute("insertText", { text: " BBB" });
+
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            const data = getModelData(editor.model, { withoutSelection: true });
+            expect(data).toBe('<paragraph>foo<reference href="#root/noteAbc"></reference> BBB</paragraph>');
+
+            // The caret must stay where typing left it, not get yanked back onto the reference.
+            const selection = editor.model.document.selection;
+            const reference = findReference(editor);
+            expect(reference).toBeDefined();
+            if (!reference) {
+                return;
+            }
+            const afterReference = editor.model.createPositionAfter(reference);
+            expect(selection.getFirstPosition()?.isEqual(afterReference)).toBe(false);
+        });
+
+        it("puts the caret after the link when the selection has not moved during the fetch", async () => {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+
+            editor.execute("referenceLink", { href: "#root/noteAbc" });
+
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            const reference = findReference(editor);
+            expect(reference).toBeDefined();
+            if (!reference) {
+                return;
+            }
+
+            const selection = editor.model.document.selection;
+            expect(selection.isCollapsed).toBe(true);
+            const afterReference = editor.model.createPositionAfter(reference);
+            expect(selection.getFirstPosition()?.isEqual(afterReference)).toBe(true);
+        });
+
+        it("does not insert when the picked context was deleted during the fetch", async () => {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+
+            editor.execute("referenceLink", { href: "#root/noteAbc" });
+
+            const root = editor.model.document.getRoot();
+            expect(root).toBeDefined();
+            if (root) {
+                editor.model.change((writer) => {
+                    for (const child of Array.from(root.getChildren())) {
+                        writer.remove(child);
+                    }
+                });
+            }
+
+            resolveTitle();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(findReference(editor)).toBeUndefined();
+        });
     });
 
     it("is enabled where text is allowed and disabled where it is not", () => {

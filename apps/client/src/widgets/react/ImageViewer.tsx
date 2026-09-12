@@ -9,8 +9,9 @@ import type { ShortcutHintDefinition } from "../../services/shortcut_hints";
 import { isMobile } from "../../services/utils";
 import ShortcutHintButton from "../shortcut_hints/shortcut_hint_button";
 import ContentErrorMessage from "./ContentErrorMessage";
-import { useContextualShortcutHints, useStaticTooltip } from "./hooks";
+import { useContextualShortcutHints } from "./hooks";
 import { useImageViewerKeyboard } from "./image_viewer_keyboard";
+import OverlayControlGroup, { OverlayControlButton } from "./OverlayControlGroup";
 
 interface ImageViewerProps {
     src: string;
@@ -85,9 +86,6 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
     const imgRef = useRef<HTMLImageElement>(null);
     const rootRef = useRef<HTMLDivElement>(null);
     const zoomRef = useRef<ReactZoomPanPinchRef>(null);
-    const zoomOutRef = useRef<HTMLButtonElement>(null);
-    const zoomLevelRef = useRef<HTMLButtonElement>(null);
-    const zoomInRef = useRef<HTMLButtonElement>(null);
 
     // Keep our own ref to drive keyboard control, while still forwarding to the caller's apiRef.
     const setZoomRef = useCallback((instance: ReactZoomPanPinchRef | null) => {
@@ -147,9 +145,6 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
 
     useImageViewerKeyboard(zoomRef, rootRef);
     useContextualShortcutHints(IMAGE_VIEWER_HINTS);
-    useStaticTooltip(zoomOutRef, { title: t("image_buttons.zoom_out"), placement: "top" });
-    useStaticTooltip(zoomLevelRef, { title: t("image_buttons.reset_zoom"), placement: "top" });
-    useStaticTooltip(zoomInRef, { title: t("image_buttons.zoom_in"), placement: "top" });
 
     const wrapperClass = [
         "image-viewer-viewport",
@@ -190,35 +185,27 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
             )}
 
             {!isMobile() && loaded && (
-                <ShortcutHintButton className="image-viewer-hint-button" />
+                <ShortcutHintButton />
             )}
 
             {!isMobile() && loaded && (
-                <div className="image-viewer-controls tn-overlay-control-group">
-                    <button
-                        ref={zoomOutRef}
-                        type="button"
-                        className="tn-overlay-icon-button bx bx-minus-circle"
-                        aria-label={t("image_buttons.zoom_out")}
+                <OverlayControlGroup className="image-viewer-controls" placement="bottom-end">
+                    <OverlayControlButton
+                        title={t("image_buttons.zoom_out")}
+                        icon="bx-minus-circle"
                         onClick={() => zoomRef.current?.zoomOut(BUTTON_ZOOM_STEP)}
                     />
-                    <button
-                        ref={zoomLevelRef}
-                        type="button"
-                        className="tn-overlay-text-button image-viewer-zoom-level"
-                        aria-label={t("image_buttons.reset_zoom")}
+                    <OverlayControlButton
+                        title={t("image_buttons.reset_zoom")}
+                        text={`${zoomPercent}%`}
                         onClick={() => zoomRef.current?.resetTransform()}
-                    >
-                        {zoomPercent}%
-                    </button>
-                    <button
-                        ref={zoomInRef}
-                        type="button"
-                        className="tn-overlay-icon-button bx bx-plus-circle"
-                        aria-label={t("image_buttons.zoom_in")}
+                    />
+                    <OverlayControlButton
+                        title={t("image_buttons.zoom_in")}
+                        icon="bx-plus-circle"
                         onClick={() => zoomRef.current?.zoomIn(BUTTON_ZOOM_STEP)}
                     />
-                </div>
+                </OverlayControlGroup>
             )}
         </div>
     );

@@ -1,0 +1,12 @@
+.other-html-tags {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 12px;
+}
+
+.allowed-html-tags {
+    width: 100%;
+    height: 150px;
+    font-family: var(--monospace-font-family);
+}

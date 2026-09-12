@@ -107,13 +107,13 @@ export default class App {
         await autocomplete.clear();
         await autocomplete.pressSequentially(noteTitle);
 
-        // The second suggestion is the best candidate; the first is "Create a
-        // new note". Asserting on the suggestion itself (instead of the parent
+        // The best candidate follows the two creation suggestions ("Create note" and
+        // "Create child note"). Asserting on the suggestion itself (instead of the parent
         // `.note-detail-empty-results`, which also contains the recent-notes
         // list) ensures the dropdown actually opened.
         const suggestionSelector = this.currentNoteSplit
             .locator(".note-detail-empty-results .aa-suggestion")
-            .nth(1);
+            .nth(2);
         await expect(suggestionSelector).toContainText(noteTitle);
         await suggestionSelector.click();
     }
@@ -235,7 +235,12 @@ export default class App {
         const locator = _locator as DropdownLocator;
         locator.selectOptionByText = async (text: string) => {
             await locator.locator(".dropdown-toggle").click();
-            await locator.locator(".dropdown-item", { hasText: text }).click();
+            // The menu is not always a child of the dropdown it belongs to: one opened inside a
+            // card is carried out to the body, the card being a container and so a backdrop root
+            // that would otherwise flatten its blur. Found by being the open one instead.
+            await this.page.locator(".dropdown-menu.show")
+                .locator(".dropdown-item", { hasText: text })
+                .click();
         };
         return locator;
     }

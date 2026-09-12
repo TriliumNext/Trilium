@@ -48,7 +48,9 @@
     "scripting-error": "腳本筆記執行失敗",
     "unhandled-error": {
       "title": "背景任務執行失敗",
-      "details-button": "查看詳情…"
+      "details-button": "查看詳情…",
+      "details-intro": "應用程式仍在運行，您的筆記未受影響。如果這種情況持續發生，請考慮在 GitHub 上報告，並貼上以下資訊。",
+      "details-title": "技術資訊"
     }
   },
   "add_link": {
@@ -61,7 +63,9 @@
     "link_title": "連結標題",
     "button_add_link": "新增連結",
     "anchor": "錨點（可選）",
-    "anchor_none": "無（連結至筆記）"
+    "anchor_none": "無（連結至筆記）",
+    "edit_link": "編輯連結",
+    "button_edit_link": "儲存連結"
   },
   "branch_prefix": {
     "edit_branch_prefix": "編輯分支前綴",
@@ -107,8 +111,12 @@
     "cancel": "取消",
     "ok": "確定",
     "are_you_sure_remove_note": "確定要從關聯圖中移除筆記 \"{{title}}\" ？ ",
-    "if_you_dont_check": "如果不勾選此項，筆記將僅從關聯圖中移除。",
-    "also_delete_note": "同時刪除筆記"
+    "if_you_dont_check": "便條本身被保留；只是它在這裡的位置被移除了。",
+    "also_delete_note": "同時刪除筆記",
+    "delete_note_keeps_note_one": "這個便條有 {{count}} 個其他複本，因此便條本身被保留。",
+    "delete_note_keeps_note_other": "",
+    "delete_note_deletes_note": "這是該註解在樹中的唯一位置，因此註解本身將被刪除。這可以在最近的更動中復原。",
+    "delete_note_deletes_clones": "該註解將從它出現的所有 {{places}} 處被刪除。此操作可以在最近的更改中還原。"
   },
   "delete_notes": {
     "delete_all_clones_description": "同時刪除所有克隆（可以在最近修改中撤消）",
@@ -212,7 +220,8 @@
     "newTabNoteLink": "在新分頁開啟筆記連結",
     "newTabWithActivationNoteLink": "在新分頁開啟並切換至筆記連結",
     "editShortcuts": "編輯鍵盤快捷鍵",
-    "toggleArchivedNotes": "顯示/隱藏已歸檔的筆記"
+    "toggleArchivedNotes": "顯示/隱藏已歸檔的筆記",
+    "openAiAssistant": "在選取上打開 AI 助手"
   },
   "import": {
     "importIntoNote": "匯入至筆記",
@@ -222,7 +231,7 @@
     "safeImport": "安全匯入",
     "explodeArchivesTooltip": "根據 <code>.zip</code>、<code>.enex</code> 及 <code>.opml</code> 壓縮檔中的檔案建立筆記。若此功能關閉，則壓縮檔將以原始狀態附加。",
     "explodeArchives": "讀取<code>.zip</code>、<code>.enex</code>和<code>.opml</code>封存文件的內容。",
-    "shrinkImagesTooltip": "調整圖片大小並進行最佳化以節省空間，此過程可能會略微降低畫質。此功能不適用於帶有元資料的 <code>.zip</code> 匯入檔案，因這些檔案被視為已進行最佳化。",
+    "shrinkImagesTooltip": "減小導入圖片的大小，這可能會略微降低其品質。不適用於包含 Trilium 元資料的 <code>.zip</code> 導入，其圖片被假定已經壓縮過。",
     "shrinkImages": "壓縮圖片",
     "textImportedAsText": "如果元數據不明確，將HTML、Markdown和TXT匯入為文字筆記",
     "codeImportedAsCode": "如果詮釋資料不明確，將識別的程式碼檔案（例如<code>.json</code>）匯入為程式碼筆記",
@@ -242,12 +251,14 @@
     "import_from": "從…匯入",
     "cardName": "檔案及其他格式",
     "cardDescription": "ZIP、ENEX、OPML、Markdown、HTML、圖片等",
-    "shrinkImagesProviderTooltip": "調整圖片大小並進行最佳化以節省空間，此過程可能會略微降低畫質。",
+    "shrinkImagesProviderTooltip": "減小導入影像的尺寸，這可能會略微降低其品質。",
     "spreadsheetImportedAsSpreadsheet": "將 CSV 和 Excel 檔案匯入為可編輯的試算表，而非單純的檔案",
     "starting": "正在匯入……",
     "in-progress-with-total": "已匯入 {{progress}}/{{total}} 則筆記",
     "extracting": "已提取 {{progress}}/{{total}} 項內容",
-    "processing": "已處理 {{progress}}/{{total}} 則筆記"
+    "processing": "已處理 {{progress}}/{{total}} 則筆記",
+    "throttled": "服務正在對請求進行速率限制；導入正在等待訪問恢復…",
+    "throttled-with-total": "已匯入 {{progress}} 筆，共 {{total}} 筆筆記 — 服務正在限制請求，正在等待重新獲取存取權…"
   },
   "include_note": {
     "dialog_title": "內嵌筆記",
@@ -321,8 +332,8 @@
     "deleted_notes_title": "已刪除的筆記",
     "more_actions": "更多操作",
     "deleted_notes_settings": "已刪除的筆記設定",
-    "no_deleted_notes_message": "無已刪除的筆記。",
-    "undelete_failed": "無法還原該筆記——該筆記可能已被永久刪除，或其父級項目已不存在。",
+    "no_deleted_notes_message": "沒有可顯示的已刪除筆記。",
+    "undelete_failed": "無法還原該筆記——該筆記可能已被永久刪除。",
     "title_with_ancestor": "{{- title}} - {{- ancestorTitle}}",
     "no_deleted_notes_erasure_hint": "已刪除的筆記會在 {{- duration}} 之後才會被永久刪除。",
     "confirm_undelete_to_default_location": "此筆記的父筆記已不存在，因此無法還原至原始位置。是否要將其還原至新筆記的預設位置？",
@@ -350,21 +361,21 @@
     "choose_files": "選擇檔案",
     "files_will_be_uploaded": "檔案將作為附件上傳至 {{noteTitle}}",
     "options": "選項",
-    "shrink_images": "縮小圖片",
+    "shrink_images": "壓縮相片",
     "upload": "上傳",
-    "tooltip": "如果您勾選此選項，Trilium 將嘗試透過縮放和最佳化來縮小上傳的圖片，這可能會影響圖片的觀看品質。如果未勾選，則將不進行修改直接上傳圖片。"
+    "tooltip": "降低上傳圖片的大小，這可能會稍微降低品質。取消選取時，圖片會以原樣上傳。"
   },
   "attribute_detail": {
     "close_button_title": "取消修改並關閉",
     "name": "名稱",
     "value": "值",
-    "target_note_title": "關聯是來源筆記和目標筆記之間的命名連接。",
+    "target_note_title": "此關聯所指向的筆記。",
     "target_note": "目標筆記",
-    "promoted_title": "升級屬性在筆記上突出顯示。",
+    "promoted_title": "顯示為所有擁有此屬性的筆記上的可編輯欄位。",
     "promoted": "升級",
-    "promoted_alias": "別名",
-    "multiplicity_title": "多重性定義了可以新增的含有相同名稱的屬性的數量 - 最多為 1 或多於 1。",
-    "multiplicity": "多重性",
+    "promoted_alias": "顯示名稱",
+    "multiplicity_title": "允許筆記多次擁有此屬性。",
+    "multiplicity": "多個數值",
     "single_value": "單值",
     "multi_value": "多重值",
     "label_type": "類型",
@@ -375,18 +386,18 @@
     "date_time": "日期和時間",
     "time": "時間",
     "url": "網址",
-    "precision_title": "值設定界面中浮點數後的位數。",
+    "precision_title": "小數點後最多位數。",
     "precision": "精度",
     "digits": "位數",
-    "inverse_relation_title": "可選設定，定義此關聯與哪個關聯相反。例如：父級 - 子級是彼此的反向關聯。",
+    "inverse_relation_title": "指向相反方向的關聯，例如父級對應的子級。可選。",
     "inverse_relation": "反向關聯",
-    "inheritable_title": "可繼承屬性將被繼承至此樹下的所有後代。",
+    "inheritable_title": "套用於此筆記及其在樹下的所有後代。",
     "inheritable": "可繼承",
     "delete": "刪除",
     "related_notes_title": "含有此標籤的其他筆記",
     "more_notes": "更多筆記",
-    "label": "標籤內容",
-    "relation": "關聯內容",
+    "label": "標籤",
+    "relation": "關聯",
     "disable_versioning": "禁用自動版本控制。適用於例如大型但不重要的筆記 - 例如用於腳本編寫的大型JS庫",
     "calendar_root": "標記應用作為每日筆記的根。只應標記一個筆記。",
     "archived": "含有此標籤的筆記預設在搜尋結果中不可見（也適用於跳轉至、新增連結對話方塊等）。",
@@ -395,7 +406,7 @@
     "run_on_instance": "定義應在哪個 Trilium 實例上運行。預設為所有實例。",
     "run_at_hour": "應在哪個小時運行。應與<code>#run=hourly</code>一起使用。可以多次定義，以便一天內運行多次。",
     "disable_inclusion": "含有此標籤的腳本不會包含在父腳本執行中。",
-    "sorted": "依標題字母順序保持子筆記排序",
+    "sorted": "依標題字母順序保持子筆記排序。",
     "sort_direction": "ASC（預設）或 DESC",
     "sort_folders_first": "資料夾（含有子筆記的筆記）應排在頂部",
     "top": "在其父級中保留給定筆記在頂部（僅適用於排序的父級）",
@@ -471,7 +482,17 @@
     "color_type": "顏色",
     "textarea": "多行文字",
     "print_scale": "匯出為 PDF 時，調整渲染內容的縮放比例。數值範圍為 0.1（10%）至 2（200%），預設值為 1（100%）。",
-    "print_margins": "在匯出為 PDF 時，設定頁面邊距。請使用 <code>default</code>、<code>none</code>、<code>minimum</code>，或自訂值，或以 <code>top,right,bottom,left</code> 的形式以毫米為單位指定。"
+    "print_margins": "在匯出為 PDF 時，設定頁面邊距。請使用 <code>default</code>、<code>none</code>、<code>minimum</code>，或自訂值，或以 <code>top,right,bottom,left</code> 的形式以毫米為單位指定。",
+    "email": "電郵",
+    "phone": "電話",
+    "select_type": "選擇",
+    "select_options": "選項",
+    "select_options_title": "此欄位提供的選項，依此順序排列。",
+    "select_options_placeholder": "輸入選項並按 Enter",
+    "add_option": "新增此選項",
+    "remove_option": "移除此選項",
+    "save_and_close_button": "儲存並關閉",
+    "definition": "屬性定義"
   },
   "attribute_editor": {
     "help_text_body1": "要新增標籤，只需輸入例如 <code>#rock</code> 或者如果您還想新增值，則例如 <code>#year = 2020</code>",
@@ -1190,7 +1211,6 @@
     "note_tree_font": "筆記樹字型",
     "note_detail_font": "文件字型",
     "monospace_font": "等寬字型",
-    "not_all_fonts_available": "並非所有列出的字型都在您的系統上可用",
     "generic-fonts": "通用字型",
     "sans-serif-system-fonts": "無襯線系統字型",
     "serif-system-fonts": "襯線系統字型",
@@ -1763,7 +1783,6 @@
     "sync_warning": "您正在將一個同步函數傳遞給 `api.runAsyncOnBackendWithManualTransactionHandling()`，\\n而您可能應該使用 `api.runOnBackend()`。"
   },
   "ws": {
-    "sync-check-failed": "同步檢查失敗！",
     "consistency-checks-failed": "一致性檢查失敗！請查看日誌以了解詳細資訊。",
     "encountered-error": "遇到錯誤 \"{{message}}\"，請查看控制台。",
     "lost-websocket-connection-title": "與伺服器的連線中斷",
@@ -2095,7 +2114,6 @@
   },
   "board_view": {
     "delete-note": "刪除筆記…",
-    "move-to": "移動至",
     "insert-above": "在上方插入",
     "insert-below": "在下方插入",
     "delete-column": "刪除行",
@@ -2108,7 +2126,6 @@
     "new-item-placeholder": "輸入筆記標題…",
     "add-column-placeholder": "輸入行名…",
     "edit-note-title": "點擊以編輯筆記標題",
-    "edit-column-title": "點擊以編輯行標題",
     "column-already-exists": "此列已在看板上。"
   },
   "command_palette": {
@@ -2208,8 +2225,7 @@
   },
   "server": {
     "unknown_http_error_title": "與伺服器通訊錯誤",
-    "unknown_http_error_content": "狀態碼：{{statusCode}}\n網址：{{method}} {{url}}\n訊息：{{message}}",
-    "traefik_blocks_requests": "若您正在使用 Traefik 反向代理，該代理已引入一項重大變更影響與伺服器的通訊。"
+    "unknown_http_error_content": "狀態碼：{{statusCode}}\n網址：{{method}} {{url}}\n訊息：{{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "返回前一筆記",
@@ -2367,8 +2383,6 @@
     "rotate": "旋轉",
     "picture-in-picture": "畫中畫",
     "exit-picture-in-picture": "退出畫中畫",
-    "fullscreen": "全螢幕 (F)",
-    "exit-fullscreen": "退出全螢幕",
     "unsupported-format": "此檔案格式不支援媒體預覽：\n{{mime}}",
     "zoom-to-fit": "放大至填滿畫面",
     "zoom-reset": "重設放大至填滿畫面",
@@ -2677,7 +2691,8 @@
     "drop_or_browse_single": "將檔案拖曳至此處，或點擊瀏覽並選擇",
     "drop_or_browse_multiple": "將檔案拖曳至此處，或點擊瀏覽並選擇",
     "browse_single": "點擊以選擇檔案",
-    "browse_multiple": "點擊以選擇多個檔案"
+    "browse_multiple": "點擊以選擇多個檔案",
+    "remove_file": "刪除檔案"
   },
   "import_provider": {
     "choose_provider": "請從上方選擇要匯入的服務。"
@@ -2688,7 +2703,7 @@
     "connect_description": "請使用您的 Microsoft 帳戶登入，以匯入您的 OneNote 筆記本。",
     "connect": "使用 Microsoft 帳戶登入",
     "section_heading": "Microsoft OneNote",
-    "checking": "正在檢查 OneNote 連線……",
+    "checking": "正在連接到 OneNote…",
     "connecting": "正在等待登入完成……",
     "connected_as": "已以 {{name}} 身分登入",
     "disconnect": "中斷連結",
@@ -2698,7 +2713,15 @@
     "select_sections_hint": "OneNote 並未將原始順序包含在匯入資料中，因此章節和群組會依照建立日期進行排序，其排序方式可能與在 OneNote 中的顯示順序不符。",
     "import": "匯入所選內容",
     "attach_source": "附上原始 HTML（除錯）",
-    "attach_source_hint": "將每頁未經修改的 OneNote HTML 儲存為匯入筆記的附件，以便與轉換後的結果進行比對。"
+    "attach_source_hint": "將每頁未經修改的 OneNote HTML 儲存為匯入筆記的附件，以便與轉換後的結果進行比對。",
+    "device_instructions": "打開 Microsoft 登入頁面並輸入此代碼：",
+    "device_open_page": "開啟登入頁面",
+    "device_cancel": "取消登入",
+    "refresh": "重新整理",
+    "load_retry": "再試一次",
+    "no_notebooks_hint": "此帳戶本身的 OneDrive 所儲存的筆記本才會列出。他人與你分享的筆記本，或是儲存在 SharePoint 或 Teams 網站上的筆記本，均無法匯入。",
+    "import_count_one": "匯入 {{count}} 個分頁",
+    "import_count_other": ""
   },
   "notion_import": {
     "name": "Notion",

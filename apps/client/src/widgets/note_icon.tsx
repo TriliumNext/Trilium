@@ -28,22 +28,27 @@ export default function NoteIcon() {
     const iconLabels = note ? getIconLabels(note) : [];
 
     return (
-        <IconPickerButton
-            icon={icon ?? "bx bx-empty"}
-            title={t("note_icon.change_note_icon")}
-            disabled={isDisabled}
-            onSelect={(picked) => {
-                if (!note) return;
-                const attributeToSet = note.hasOwnedLabel("workspace") ? "workspaceIconClass" : "iconClass";
-                attributes.setLabel(note.noteId, attributeToSet, picked);
-            }}
-            // Nothing to reset while the note wears the icon its type gives it.
-            onReset={iconLabels.length ? () => {
-                for (const label of iconLabels) {
-                    attributes.removeAttributeById(label.noteId, label.attributeId);
-                }
-            } : undefined}
-        />
+        // ReactWrappedWidget moves this root out of its render container. Keep it stable so a keyed
+        // picker replacement is inserted into the live layout rather than the detached container.
+        <div className="note-icon-root">
+            <IconPickerButton
+                key={note?.noteId}
+                icon={icon ?? "bx bx-empty"}
+                title={t("note_icon.change_note_icon")}
+                disabled={isDisabled}
+                onSelect={(picked) => {
+                    if (!note) return;
+                    const attributeToSet = note.hasOwnedLabel("workspace") ? "workspaceIconClass" : "iconClass";
+                    attributes.setLabel(note.noteId, attributeToSet, picked);
+                }}
+                // Nothing to reset while the note wears the icon its type gives it.
+                onReset={iconLabels.length ? () => {
+                    for (const label of iconLabels) {
+                        attributes.removeAttributeById(label.noteId, label.attributeId);
+                    }
+                } : undefined}
+            />
+        </div>
     );
 }
 

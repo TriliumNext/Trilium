@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.104.1",
+  "version": "0.105.0",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -32,7 +32,7 @@
     "electron:start": "pnpm desktop:start",
     "electron:start-prod": "pnpm desktop:start-prod",
     "chore:ci-update-nightly-version": "tsx ./scripts/update-nightly-version.ts",
-    "chore:generate-openapi": "tsx ./scripts/generate-openapi.ts",
+    "chore:release-notes-body": "node --experimental-strip-types ./scripts/release-notes-body.mts",
     "chore:update-build-info": "tsx ./scripts/update-build-info.ts",
     "chore:update-flake-electron": "tsx ./scripts/update-flake-electron.ts",
     "chore:update-version": "tsx ./scripts/update-version.ts",
@@ -57,30 +57,32 @@
   "devDependencies": {
     "@fast-csv/parse": "5.0.7",
     "@stylistic/eslint-plugin": "5.10.0",
-    "@playwright/test": "1.62.1",
+    "@playwright/test": "1.63.0",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/node": "24.13.3",
-    "@vitest/browser-webdriverio": "4.1.10",
-    "@vitest/coverage-v8": "4.1.10",
-    "@vitest/ui": "4.1.10",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "@vitest/browser-playwright": "5.0.0",
+    "@vitest/coverage-v8": "5.0.0",
+    "@vitest/ui": "5.0.0",
     "cross-env": "10.1.0",
     "dpdm": "4.3.0",
-    "esbuild": "0.28.1",
-    "eslint": "10.8.0",
+    "esbuild": "0.28.2",
+    "eslint": "10.10.0",
     "eslint-config-preact": "2.0.0",
     "eslint-plugin-playwright": "2.11.0",
     "eslint-plugin-simple-import-sort": "14.0.0",
-    "happy-dom": "20.11.1",
+    "happy-dom": "20.14.0",
     "http-server": "14.1.1",
     "jiti": "2.7.0",
-    "js-yaml": "5.2.3",
+    "js-yaml": "5.4.1",
+    "playwright": "1.63.0",
     "tslib": "2.8.1",
-    "tsx": "4.23.5",
+    "tsx": "4.23.13",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.66.0",
-    "vite": "8.2.0",
-    "vitest": "4.1.10"
+    "typescript-eslint": "8.70.0",
+    "vite": "8.2.2",
+    "vitest": "5.0.0"
   },
   "license": "AGPL-3.0-only",
   "author": {
@@ -96,5 +98,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@11.20.0"
+  "packageManager": "pnpm@12.4.0"
 }

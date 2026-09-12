@@ -221,4 +221,81 @@ describe( 'renderEquation', () => {
 			expect( warn ).toHaveBeenCalledWith( expect.stringContaining( 'math-tex-typesetting-missing' ) );
 		} );
 	} );
+
+	/**
+	 * Every path that shows the equation source rather than typesetting it has to show it as
+	 * *text*. The source reaches us as text in the first place — `math_editing` upcasts it from a
+	 * text node's `data` — so markup inside it is markup the note escaped, and writing it back as
+	 * HTML is what un-escapes it. That is a live XSS sink, not a theoretical one: the note's
+	 * sanitizer saw inert text and passed it, and this is the code that turns it back into
+	 * elements.
+	 *
+	 * The lazy-load arm matters most, because Trilium reaches it on every first render: the client
+	 * configures `engine: 'katex'` with a `lazyLoad` that assigns `window.katex`, so until that
+	 * loader resolves the katex arm is skipped and this one runs.
+	 */
+	describe( 'an equation source carrying markup', () => {
+		const PAYLOAD = '<img src=x onerror="window.__mathXssFired = true">';
+
+		/** Whatever the path did with the source, it must not have become an element. */
+		function expectShownAsText( host: HTMLElement, expected: string ): void {
+			expect( host.querySelector( 'img' ) ).toBeNull();
+			expect( host.textContent ).toBe( expected );
+		}
+
+		it( 'shows it as text while the loader is still in flight', async () => {
+			globals.katex = undefined;
+			// Held open so the assertion lands in the window the placeholder is on screen for —
+			// once the loader resolves, katex overwrites it and the evidence is gone.
+			let release = (): void => undefined;
+			const lazyLoad = vi.fn( () => new Promise<void>( resolve => {
+				release = () => {
+					globals.katex = katex;
+					resolve();
+				};
+			} ) );
+
+			const rendering = renderEquation( PAYLOAD, element, 'katex', lazyLoad );
+			await vi.waitFor( () => expect( lazyLoad ).toHaveBeenCalled() );
+
+			expectShownAsText( element, PAYLOAD );
+
+			release();
+			await rendering;
+		} );
+
+		it( 'shows it as text when the loader rejects', async () => {
+			globals.katex = undefined;
+			vi.spyOn( console, 'error' ).mockImplementation( () => undefined );
+
+			await renderEquation( PAYLOAD, element, 'katex', () => Promise.reject( new Error( 'boom' ) ) );
+
+			expectShownAsText( element, PAYLOAD );
+		} );
+
+		it( 'shows it as text when there is no loader at all', async () => {
+			globals.katex = undefined;
+			vi.spyOn( console, 'warn' ).mockImplementation( () => undefined );
+
+			await renderEquation( PAYLOAD, element, 'katex' );
+
+			expectShownAsText( element, PAYLOAD );
+		} );
+
+		it( 'hands it to MathJax 2 as text, inline and display alike', async () => {
+			const Queue = vi.fn();
+			globals.MathJax = { Hub: { Queue } } as unknown as MathJax2;
+
+			await renderEquation( PAYLOAD, element, 'mathjax' );
+			await vi.waitFor( () => expect( Queue ).toHaveBeenCalled() );
+			expectShownAsText( element, `\\(${ PAYLOAD }\\)` );
+
+			element.innerHTML = '';
+			Queue.mockClear();
+
+			await renderEquation( PAYLOAD, element, 'mathjax', undefined, true );
+			await vi.waitFor( () => expect( Queue ).toHaveBeenCalled() );
+			expectShownAsText( element, `\\[${ PAYLOAD }\\]` );
+		} );
+	} );
 } );

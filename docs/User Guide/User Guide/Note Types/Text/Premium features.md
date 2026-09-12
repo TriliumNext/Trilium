@@ -1,13 +1,17 @@
 # Premium features
-The text editor we are using for <a class="reference-link" href="../Text.md">Text</a> notes is called CKEditor and it's a commercial product. The core components are open-source, however they [offer quite a few features](https://ckeditor.com/docs/trial/latest/index.html) that require a commercial license in order to be used.
+The text editor we are using is called <a class="reference-link" href="../../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a> which has an open-source core, but it's also a commercial product which offers [premium features](https://ckeditor.com/docs/trial/latest/index.html).
 
-We have reached out to the CKEditor team in order to obtain a license in order to have some of these extra features and they have agreed, based on a signed agreement.
+Prior to v0.105.0, Trilium used the following premium features as part of a signed agreement between the CKEditor and the Trilium team:
 
-> [!NOTE]
-> Since v0.105.0, all premium features were replaced with plugins written specifically for for Trilium, from scratch and under an AGPL license.
-> 
-> The premium features used to be:
-> 
-> *   <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>
-> *   <a class="reference-link" href="Text%20Snippets.md">Text Snippets</a>
-> *   <a class="reference-link" href="Format%20Painter.md">Format Painter</a>
+*   <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>
+*   <a class="reference-link" href="Text%20Snippets.md">Text Snippets</a>
+*   <a class="reference-link" href="Format%20Painter.md">Format Painter</a>
+
+Starting with v0.105.0, those features have been completely rewritten as custom CKEditor plugins, licensed under AGPL-3.0.
+
+## Lookalikes
+
+There are some premium CK features that look like Trilium's built-in functionality but they are completely different:
+
+*   <a class="reference-link" href="In-editor%20AI%20assistant.md">In-editor AI assistant</a>
+*   <a class="reference-link" href="Math%20Equations.md">Math Equations</a> which uses a third-party plugin that has been adapted for Trilium.

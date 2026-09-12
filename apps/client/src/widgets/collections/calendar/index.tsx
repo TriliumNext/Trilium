@@ -14,7 +14,6 @@ import { Calendar as FullCalendar, DateClickInfo, DateSelectInfo, EventChangeInf
 import { RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import contextMenu from "../../../menus/context_menu";
 import date_notes from "../../../services/date_notes";
@@ -25,6 +24,7 @@ import { isMobile } from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import Button, { ButtonGroup } from "../../react/Button";
+import CollapseOnOverflow from "../../react/CollapseOnOverflow";
 import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
 import { useNoteLabel, useNoteLabelBoolean, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
@@ -37,7 +37,7 @@ import GhostPopover from "./GhostPopover";
 import { openCalendarContextMenu } from "./context_menu";
 import { CalendarSelection, EventDraft } from "./selection";
 import { buildEvents, buildEventsForCalendar } from "./event_builder";
-import { formatDateToLocalISO, formatTimeToLocalISO, isValidDuration, parseDurationSeconds, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
+import { formatDateToLocalISO, formatTimeToLocalISO, isAttributeChangeAffecting, isBranchChangeAffecting, isValidDuration, parseDurationSeconds, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 interface CalendarViewData {
 
@@ -112,6 +112,7 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
     pt: () => import("fullcalendar/locales/pt"),
     pl: () => import("fullcalendar/locales/pl"),
     "pt_br": () => import("fullcalendar/locales/pt-br"),
+    tr: () => import("fullcalendar/locales/tr"),
     uk: () => import("fullcalendar/locales/uk"),
     en: null,
     "en-GB": () => import("fullcalendar/locales/en-gb"),
@@ -145,12 +146,12 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     // Worked out once and handed to both the grid and the tap that makes an event of one of its
     // slots (see draftFromDateClick), so that the two cannot come to disagree on a slot's length.
     const effectiveSlotDuration = isValidDuration(slotDuration) ? slotDuration : DEFAULT_SLOT_DURATION;
-    const eventBuilder = useMemo(() => {
-        if (!isCalendarRoot) {
-            return async () => await buildEvents(noteIds);
-        }
-        return async (e: EventSourceFuncInfo) => await buildEventsForCalendar(note, e);
-    }, [isCalendarRoot, noteIds]);
+    // Memoized apart, and each on only what it reads: FullCalendar knows a source by the identity
+    // of the function, and a new one empties the grid before it fetches.
+    const rootEventBuilder = useMemo(() =>
+        async (e: EventSourceFuncInfo) => await buildEventsForCalendar(note, e), [note]);
+    const collectionEventBuilder = useMemo(() => async () => await buildEvents(noteIds), [noteIds]);
+    const eventBuilder = isCalendarRoot ? rootEventBuilder : collectionEventBuilder;
 
     const plugins = usePlugins(isEditable, isCalendarRoot);
     const locale = useLocale();
@@ -169,9 +170,9 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
         return true;
     }, []);
 
-    const { eventContent, eventDidMount } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface);
+    const { eventContent, eventDidMount, eventInnerClass } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface);
     const editingProps = useEditing(note, isEditable, isCalendarRoot, parentComponent?.componentId,
-        (draft, anchor) => setSelection({ draft, anchor }), effectiveSlotDuration);
+        setSelection, effectiveSlotDuration);
 
     /**
      * Turns the standing ghost into the note: created only now, at the commit, and — where the
@@ -289,15 +290,35 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
         const api = calendarRef.current;
         if (!api) return;
 
-        // Subnote attribute change.
-        if (loadResults.getAttributeRows(parentComponent?.componentId).some((a) => noteIds.includes(a.noteId ?? ""))) {
+        // Attribute change on a note the calendar draws — written on the note itself, or inherited
+        // from an ancestor or a template, which is just as much a change to the chip (see
+        // isAttributeChangeAffecting).
+        //
+        // The notes asked about are the collection's own plus whatever chips stand on the grid: a
+        // calendar root draws day notes and their children, which are in no `noteIds` at all, and
+        // so answered nothing here.
+        const drawnNoteIds = new Set(noteIds);
+        for (const event of api.getEvents()) {
+            const noteId = event.extendedProps.noteId;
+            if (noteId) drawnNoteIds.add(String(noteId));
+        }
+
+        // A note filed anywhere in the journal may be a chip on a calendar root, which draws its
+        // day notes and their children rather than a list of ids (see isBranchChangeAffecting).
+        // Only for a root: a collection's own source is built from the ids, so it is renewed as
+        // they are, and asking here as well would fetch the same events twice.
+        const isFilingAffecting = isCalendarRoot
+            && isBranchChangeAffecting(loadResults.getBranchRows(), note.noteId, drawnNoteIds);
+
+        if (isFilingAffecting
+            || isAttributeChangeAffecting(loadResults.getAttributeRows(parentComponent?.componentId), drawnNoteIds)) {
             // Defer execution after the load results are processed so that the event builder has the updated data to work with.
             setTimeout(() => api.refetchEvents(), 0);
             return; // early return since we'll refresh the events anyway
         }
 
         // Title change.
-        for (const noteId of loadResults.getNoteIds().filter(noteId => noteIds.includes(noteId))) {
+        for (const noteId of loadResults.getNoteIds().filter(noteId => drawnNoteIds.has(noteId))) {
             const event = api.getEventById(noteId);
             const note = froca.getNoteFromCache(noteId);
             if (!event || !note) continue;
@@ -312,7 +333,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
 
     return (plugins &&
         <div className="calendar-view" ref={containerRef} tabIndex={100}>
-            <CalendarCollectionProperties note={note} calendarRef={calendarRef} />
+            <CalendarCollectionProperties note={note} calendarRef={calendarRef} containerRef={containerRef} />
             <Calendar
                 events={eventBuilder}
                 calendarRef={calendarRef}
@@ -356,6 +377,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                         && "calendar-event-selected no-tooltip-preview"
                 )}
                 eventContent={eventContent}
+                eventInnerClass={eventInnerClass}
                 eventDidMount={eventDidMount}
                 viewDidMount={({ view }) => {
                     if (initialView.current !== view.type) {
@@ -391,9 +413,10 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     );
 }
 
-function CalendarCollectionProperties({ note, calendarRef }: {
+function CalendarCollectionProperties({ note, calendarRef, containerRef }: {
     note: FNote;
     calendarRef: RefObject<FullCalendar>;
+    containerRef: RefObject<HTMLDivElement>;
 }) {
     const { title, viewType: currentViewType } = useOnDatesSet(calendarRef);
     const currentViewData = CALENDAR_VIEWS.find(v => calendarRef.current && v.type === currentViewType);
@@ -408,10 +431,12 @@ function CalendarCollectionProperties({ note, calendarRef }: {
                 <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} onClick={() => calendarRef.current?.next()} />
                 <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
                 <PinDateButton note={note} calendarRef={calendarRef} />
-                {isMobileLocal && <MobileCalendarViewSwitcher calendarRef={calendarRef} />}
+                {/* On a phone the switcher is a menu whatever the width, and stands with the date
+                    rather than on a right-hand end the wrapped bar no longer has. */}
+                {isMobileLocal && <CalendarViewSwitcher calendarRef={calendarRef} containerRef={containerRef} />}
             </>}
             rightChildren={<>
-                {!isMobileLocal && <DesktopCalendarViewSwitcher calendarRef={calendarRef} />}
+                {!isMobileLocal && <CalendarViewSwitcher calendarRef={calendarRef} containerRef={containerRef} />}
             </>}
         />
     );
@@ -442,42 +467,49 @@ function PinDateButton({ note, calendarRef }: {
     );
 }
 
-function DesktopCalendarViewSwitcher({ calendarRef }: { calendarRef: RefObject<FullCalendar> }) {
-    const { viewType: currentViewType } = useOnDatesSet(calendarRef);
-
-    return (
-        <>
-            <ButtonGroup>
-                {CALENDAR_VIEWS.map(viewData => (
-                    <Button
-                        key={viewData.type}
-                        text={viewData.name}
-                        className={currentViewType === viewData.type ? "active" : ""}
-                        onClick={() => calendarRef.current?.changeView(viewData.type)}
-                    />
-                ))}
-            </ButtonGroup>
-        </>
-    );
-}
-
-function MobileCalendarViewSwitcher({ calendarRef }: { calendarRef: RefObject<FullCalendar> }) {
+/**
+ * The choice of view, as a row of buttons where the bar has the width for one and as a menu where it
+ * has not — five names beside the date and its buttons outgrow a split pane long before they outgrow
+ * a screen, which is why the fold is decided by the view's own width rather than by the device.
+ */
+function CalendarViewSwitcher({ calendarRef, containerRef }: {
+    calendarRef: RefObject<FullCalendar>;
+    /** The view's own element, whose width the row of buttons is weighed against. */
+    containerRef: RefObject<HTMLDivElement>;
+}) {
     const { viewType: currentViewType } = useOnDatesSet(calendarRef);
     const currentViewTypeData = CALENDAR_VIEWS.find(view => view.type === currentViewType);
 
     return (
-        <Dropdown
-            text={currentViewTypeData?.name}
-        >
-            {CALENDAR_VIEWS.map(viewData => (
-                <FormListItem
-                    key={viewData.type}
-                    selected={currentViewType === viewData.type}
-                    icon={viewData.icon}
-                    onClick={() => calendarRef.current?.changeView(viewData.type)}
-                >{viewData.name}</FormListItem>
-            ))}
-        </Dropdown>
+        <CollapseOnOverflow container={containerRef} alwaysCollapsed={isMobile()}>
+            {(collapsed) => (collapsed
+                ? (
+                    // A handful of views, so the menu never scrolls and can be frosted the way that
+                    // survives being opened inside the note's own content (see noDropdownListStyle).
+                    <Dropdown text={currentViewTypeData?.name} noDropdownListStyle>
+                        {CALENDAR_VIEWS.map(viewData => (
+                            <FormListItem
+                                key={viewData.type}
+                                selected={currentViewType === viewData.type}
+                                icon={viewData.icon}
+                                onClick={() => calendarRef.current?.changeView(viewData.type)}
+                            >{viewData.name}</FormListItem>
+                        ))}
+                    </Dropdown>
+                )
+                : (
+                    <ButtonGroup>
+                        {CALENDAR_VIEWS.map(viewData => (
+                            <Button
+                                key={viewData.type}
+                                text={viewData.name}
+                                className={currentViewType === viewData.type ? "active" : ""}
+                                onClick={() => calendarRef.current?.changeView(viewData.type)}
+                            />
+                        ))}
+                    </ButtonGroup>
+                ))}
+        </CollapseOnOverflow>
     );
 }
 
@@ -525,7 +557,8 @@ function useLocale() {
 }
 
 function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, componentId: string | undefined,
-    onDraft: (draft: EventDraft, anchor: { x: number; y: number } | null) => void,
+    /** What the view's surfaces are to stand for from now on (see {@link CalendarSelection}). */
+    onSelect: (selection: CalendarSelection) => void,
     /** The length of one of the grid's slots, which is how long a tapped event lasts. */
     slotDuration: string) {
     const onCalendarSelection = useCallback((e: DateSelectInfo) => {
@@ -538,11 +571,11 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, c
         // nothing. The range keeps its shading meanwhile, standing on the grid for the event to be;
         // the view lets it go when the draft resolves. Where the drag ended anchors the ghost
         // beside it (see ghostAnchorRect), which a sheet has no use for.
-        onDraft(
-            { startDate, endDate, startTime, endTime },
-            e.jsEvent ? { x: e.jsEvent.clientX, y: e.jsEvent.clientY } : null
-        );
-    }, [ onDraft ]);
+        onSelect({
+            draft: { startDate, endDate, startTime, endTime },
+            anchor: e.jsEvent ? { x: e.jsEvent.clientX, y: e.jsEvent.clientY } : null
+        });
+    }, [ onSelect ]);
 
     const onEventChange = useCallback(async (e: EventChangeInfo) => {
         // Only process actual date/time changes, not other property changes (e.g., title via setProp).
@@ -566,19 +599,31 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, c
      * drag asks for a long press before it selects anything (`selectLongPressDelay`), so a tap
      * selects no range and nothing would open at all — the tap stands for a draft instead, which
      * costs nothing if it was a mistake.
+     *
+     * The day's note opens into the view's own event surface — the popover beside the day pressed,
+     * or a sheet where there is no beside — rather than the quick editor it used to be handed to.
+     * A day note is an event of this calendar like any other, and a click on the chip it will have
+     * from now on opens exactly that surface: the note just made and the note come back to are then
+     * the same thing to look at, and neither covers the grid the reader is working down.
      */
     const onDateClick = useCallback(async (e: DateClickInfo) => {
         if (isCalendarRoot) {
             const eventNote = await date_notes.getDayNote(e.dateStr, note.noteId);
             if (eventNote) {
-                appContext.triggerCommand("openInPopup", { noteIdOrPath: eventNote.noteId });
+                // Where the press fell, which is the anchor of last resort until the chip for the
+                // day appears on the grid — a day note made only now has nothing on the grid yet
+                // to stand beside (see eventAnchorRect in EventPopover).
+                onSelect({
+                    noteId: eventNote.noteId,
+                    anchor: { x: e.jsEvent.clientX, y: e.jsEvent.clientY }
+                });
             }
             return;
         }
 
         const draft = draftFromDateClick(e, slotDuration);
-        if (draft) onDraft(draft, null);
-    }, [ note, isCalendarRoot, onDraft, slotDuration ]);
+        if (draft) onSelect({ draft, anchor: null });
+    }, [ note, isCalendarRoot, onSelect, slotDuration ]);
 
     return {
         select: onCalendarSelection,
@@ -642,7 +687,7 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
                     {iconClass && <span className={`calendar-event-icon ${iconClass}`} />}
                     {e.event.title}
                 </div>
-                {!!promotedAttributes?.length && hasRoomForAttributes(e) && (
+                {!!promotedAttributes?.length && roomForAttributes(e) && (
                     <div className="calendar-event-attributes">
                         {(promotedAttributes as Array<[string, string]>).map(([name, value], i) => (
                             <div className="promoted-attribute" key={`${name}-${i}`}>
@@ -692,18 +737,52 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
         // belongs to the event sheet, which offers what the menu offers and more (see onEventClick).
         e.el.addEventListener("contextmenu", onContextMenu);
     }, [ dismissSurface ]);
-    return { eventContent, eventDidMount };
+    return { eventContent, eventDidMount, eventInnerClass };
 }
 
 /**
- * Whether a chip has the room to say anything beyond its title.
+ * Whether a chip has the room to say anything beyond its title, and how that room is come by.
  *
- * Only a timed event on a time grid stacks its content, and only where it is tall enough to. A row
- * event — a month cell's chip, an all-day band — is one centred line however wide it gets, so
- * attributes put there crowd the title along it rather than fall beneath it.
+ * A chip drawn as a row — a month cell's, and an all-day band's, which is the very same row drawn
+ * above a time grid — is one centred line however wide it gets, so attributes put there would
+ * crowd the title along it. The row is asked to wrap instead and they take a line of their own
+ * beneath the title (see eventInnerClass), which is where they stood before v7.
+ *
+ * However narrow the cell: a phone's month is seven columns of some fifty pixels, and the fields
+ * asked for are wanted there as much as anywhere — read a few characters to the line, as they were
+ * before v7, rather than not at all.
+ *
+ * A timed event on a time grid is a column already, wherever it is tall enough to be one, and its
+ * attributes follow the title down it with nothing further asked of the chip.
+ *
+ * Which leaves a year's chips and a list's, both of them one line with nothing to spare.
  */
-function hasRoomForAttributes(e: EventDisplayInfo) {
-    return e.view.type.startsWith("timeGrid") && !e.event.allDay && !e.isShort;
+export function roomForAttributes(e: EventDisplayInfo): "stacked" | "wrapped" | null {
+    const isTimeGrid = e.view.type.startsWith("timeGrid");
+
+    // An all-day event is the only kind the band above a time grid draws (see AllDaySplitter): a
+    // timed one is sliced into the columns below, however many days it runs.
+    if (e.view.type === "dayGridMonth" || (isTimeGrid && e.event.allDay)) {
+        return "wrapped";
+    }
+
+    if (isTimeGrid) {
+        return !e.isShort ? "stacked" : null;
+    }
+
+    return null;
+}
+
+/**
+ * Turns the chip's inner — Forma's, and a row wherever this says anything at all — into something
+ * the attributes can fall beneath: a row that wraps, of which they claim a whole line (see
+ * index.css). Said as a class on the inner rather than drawn in eventContent because wrapping is
+ * the container's to declare and the container is the theme's, not ours.
+ */
+export function eventInnerClass(e: EventDisplayInfo) {
+    const { promotedAttributes } = e.event.extendedProps;
+    return clsx(!!promotedAttributes?.length && roomForAttributes(e) === "wrapped"
+        && "calendar-event-inner-wrapped");
 }
 
 function useOnDatesSet(calendarRef: RefObject<FullCalendar>) {

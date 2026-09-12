@@ -18,7 +18,8 @@
     "branch_prefix_saved": "Префікс гілки збережено.",
     "edit_branch_prefix_multiple": "Редагувати префікс гілки для {{count}} гілок",
     "branch_prefix_saved_multiple": "Префікс гілки збережено для {{count}} гілок.",
-    "affected_branches": "Уражені гілки ({{count}}):"
+    "affected_branches": "Уражені гілки ({{count}}):",
+    "cancel": "Скасувати"
   },
   "about": {
     "data_directory": "Каталог даних:",
@@ -59,7 +60,8 @@
   },
   "modal": {
     "help_title": "Показати більше інформації про це вікно",
-    "close": "Закрити"
+    "close": "Закрити",
+    "cancel": "Скасувати"
   },
   "toast": {
     "critical-error": {
@@ -191,7 +193,8 @@
     "broken_relations_to_be_deleted": "Наступні зв'язки будуть розірвані та видалені ({{ relationCount}})",
     "cancel": "Скасувати",
     "title": "Видалити нотатки",
-    "delete": "Видалити"
+    "delete": "Видалити",
+    "erase_notes_label": "Видалити назавжди"
   },
   "export": {
     "export_note_title": "Експорт нотатки",
@@ -302,7 +305,8 @@
     "no_changes_message": "Поки що жодних змін...",
     "undelete_link": "відновити",
     "confirm_undelete": "Ви хочете відновити цю нотатку та її піднотатки?",
-    "deleted_notes_title": "Видалені нотатки"
+    "deleted_notes_title": "Видалені нотатки",
+    "no_deleted_notes_erasure_hint": "Видалені нотатки зберігаються протягом {{- duration}}, перед тим як будуть видалені назавжди."
   },
   "include_note": {
     "dialog_title": "Включити нотатку",
@@ -1154,7 +1158,6 @@
     "note_tree_font": "Шрифт Дерева нотатки",
     "note_detail_font": "Шрифт деталей нотатки",
     "monospace_font": "Monospace (кодовий) шрифт",
-    "not_all_fonts_available": "Не всі перелічені шрифти можуть бути доступні у вашій системі.",
     "generic-fonts": "Загальні шрифти",
     "sans-serif-system-fonts": "Системні шрифти Sans-serif",
     "serif-system-fonts": "Системні шрифти Serif",
@@ -1253,7 +1256,8 @@
     "set_password_heading": "Встановити Пароль",
     "set_password": "Встановити Пароль",
     "password_mismatch": "Нові паролі не однакові.",
-    "password_changed_success": "Пароль змінено. Trilium буде перезавантажено після натискання кнопки OK."
+    "password_changed_success": "Пароль змінено. Trilium буде перезавантажено після натискання кнопки OK.",
+    "cancel": "Скасувати"
   },
   "zoom_factor": {
     "title": "Коефіцієнт масштабування (лише для ПК)",
@@ -1488,7 +1492,6 @@
     "sync_warning": "Ви передаєте синхронну функцію до `api.runAsyncOnBackendWithManualTransactionHandling()`,\\nхоча, ймовірно, вам слід використовувати `api.runOnBackend()` замість цього."
   },
   "ws": {
-    "sync-check-failed": "Перевірка синхронізації не вдалася!",
     "consistency-checks-failed": "Перевірка узгодженості не вдалася! Див. logs для отримання інформації.",
     "encountered-error": "Виникла помилка \"{{message}}\", перевірте консоль.",
     "lost-websocket-connection-title": "Втрачено з'єднання із сервером",
@@ -1541,7 +1544,8 @@
   "geo-map": {
     "create-child-note-title": "Створіть нову дочірню нотатку та додайте її до карти",
     "create-child-note-instruction": "Клацніть на карті, щоб створити нову нотатку в цьому місці, або натисніть Escape, щоб закрити.",
-    "unable-to-load-map": "Не вдалося завантажити карту."
+    "unable-to-load-map": "Не вдалося завантажити карту.",
+    "add-marker-cancel": "Скасувати"
   },
   "geo-map-context": {
     "open-location": "Відкрити місцезнаходження",
@@ -1814,7 +1818,6 @@
   },
   "board_view": {
     "delete-note": "Видалити нотатку...",
-    "move-to": "Перемістити до",
     "insert-above": "Вставити вище",
     "insert-below": "Вставити нижче",
     "delete-column": "Видалити стовпець",
@@ -1826,8 +1829,7 @@
     "unarchive-note": "Розархівувати нотатку",
     "new-item-placeholder": "Введіть заголовок нотатки...",
     "add-column-placeholder": "Введіть назву стовпця...",
-    "edit-note-title": "Натисніть, щоб редагувати заголовок нотатки",
-    "edit-column-title": "Натисніть, щоб редагувати заголовок стовпця"
+    "edit-note-title": "Натисніть, щоб редагувати заголовок нотатки"
   },
   "command_palette": {
     "tree-action-name": "Дерево: {{name}}",
@@ -1965,5 +1967,12 @@
   },
   "calendar_view": {
     "delete_note": "Видалити нотатку..."
+  },
+  "common": {
+    "cancel": "Скасувати"
+  },
+  "space_usage": {
+    "compress_cancel": "Скасувати",
+    "cleanup_cancel": "Скасувати"
   }
 }

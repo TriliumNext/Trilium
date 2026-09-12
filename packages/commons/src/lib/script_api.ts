@@ -17,6 +17,21 @@
  */
 
 /** A label or relation attached to a note. */
+/** One thing a picker offers, as `pickSingleItem` takes and answers with. */
+export interface PickerItem {
+    key: string;
+    caption: string;
+    /** An icon class, `bx` prefix included. */
+    icon?: string;
+}
+
+/** A run of picker items under a heading of their own. */
+export interface PickerItemGroup {
+    key: string;
+    groupHeader: string;
+    items: PickerItem[];
+}
+
 export interface ScriptAttribute {
     attributeId: string;
     type: "label" | "relation";
@@ -577,6 +592,20 @@ export interface FrontendApi {
     showPromptDialog(props: { title?: string; message?: string; defaultValue?: string }): Promise<string | null>;
 
     /**
+     * Show a dialog for picking one item out of many, grouped and searchable.
+     *
+     * `items` are either the items themselves or groups of them, never the two mixed. Named for the
+     * one thing it does now: picking several at once will be a method of its own beside this.
+     *
+     * @returns promise resolving to the item picked, or null where the user backed out.
+     */
+    pickSingleItem(props: {
+        title?: string;
+        items: PickerItem[] | PickerItemGroup[];
+        placeholder?: string;
+    }): Promise<PickerItem | null>;
+
+    /**
      * Create a note link (jQuery object) for given note.
      *
      * @param {string} notePath (or noteId)
@@ -1119,13 +1148,7 @@ export interface BackendApi {
      */
     xml2js: unknown;
     /**
-     * cheerio library for HTML parsing and manipulation. See {@link https://cheerio.js.org} for documentation
-     * @deprecated cheerio will be removed in a future version. Use api.htmlParser (node-html-parser) instead.
-     */
-    cheerio: unknown;
-    /**
-     * node-html-parser library for HTML parsing. See {@link https://github.com/piotr-nicol/node-html-parser} for documentation.
-     * This is the recommended replacement for cheerio.
+     * node-html-parser library for HTML parsing. See {@link https://github.com/taoqf/node-fast-html-parser} for documentation.
      */
     htmlParser: unknown;
 

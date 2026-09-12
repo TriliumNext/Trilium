@@ -1,0 +1,74 @@
+.page.existing-data,
+.page.existing-data-backed-up {
+    .existing-data-warning {
+        margin-top: 16px;
+    }
+}
+
+
+/* Set apart from the question, which now stands on its own without a paragraph between them. */
+.page.existing-data .existing-data-choices {
+    margin-top: 3em;
+}
+
+.page.existing-data .existing-data-choices .tn-card-section {
+    padding-block: 12px;
+}
+
+/* The answer that leaves nothing to go back to, in the colour the rest of the app gives an action
+   that cannot be taken back. Nothing is erased by choosing it — what it costs is the copy. */
+.page.existing-data .existing-data-destructive .tn-radio {
+    color: var(--dropdown-item-icon-destructive-color);
+}
+
+/* The wait while a backup is written, centred under the icon like the restore's own steps. */
+.page.existing-data-backing-up .existing-data-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+    margin-block: 3em;
+
+    .existing-data-progress-message {
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+    }
+
+    .existing-data-progress-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+        /* Wide enough to read as a measure of the whole write, never wider than the page. */
+        width: min(100%, 27.5em);
+
+        progress {
+            flex: 1;
+        }
+
+        span {
+            min-width: 3em;
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+            opacity: 0.7;
+        }
+    }
+}
+
+.page.existing-data-backed-up {
+    /* A name and a path have no spaces to break at, and both are shown in full: they may not be
+       readable anywhere else once the database holding the custom backup location is gone. */
+    .existing-data-file-name,
+    .existing-data-path {
+        overflow-wrap: anywhere;
+        text-align: right;
+    }
+
+    .existing-data-path-link {
+        cursor: pointer;
+    }
+
+    .existing-data-actions {
+        justify-content: center;
+    }
+}

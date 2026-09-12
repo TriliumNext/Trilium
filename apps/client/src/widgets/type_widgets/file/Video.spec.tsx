@@ -294,6 +294,18 @@ describe("VideoPreview", () => {
             expect(document.exitFullscreen).toHaveBeenCalled();
         });
 
+        it("leaves the button alone while something else has the screen", async () => {
+            renderPlayer();
+
+            // A map or another player in the split beside this one, which this button has no say
+            // over: it went on offering fullscreen, not the way out of someone else's.
+            setFullscreenElement(document.createElement("div"));
+            await act(async () => { document.dispatchEvent(new Event("fullscreenchange")); });
+
+            expect(container.querySelector(".bx-fullscreen")).not.toBeNull();
+            expect(container.querySelector(".bx-exit-fullscreen")).toBeNull();
+        });
+
         it("offers picture-in-picture only where the browser supports it", async () => {
             renderPlayer();
             // happy-dom has no PiP, matching Firefox: the button is left out entirely.

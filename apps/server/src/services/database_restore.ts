@@ -1,8 +1,8 @@
 import {
     type BackupContainerErrorReason,
     FIXED_HEADER_BYTES,
+    getInfo,
     isBackupContainerError,
-    peekBackupContainer,
     type ProgressCallback,
     readBackupContainer
 } from "@triliumnext/backup-container";
@@ -10,14 +10,17 @@ import {
     cls,
     type DatabaseRejection,
     events as eventService,
+    getBackup,
     getLog,
     getSql,
+    leaveSetupMode,
     sql_init as sqlInit,
     utils as coreUtils
 } from "@triliumnext/core";
 import fs from "fs";
 import path from "path";
 
+import type ServerBackupService from "../backup_provider.js";
 import config from "./config.js";
 import dataDir from "./data_dir.js";
 import { validateDatabaseFile } from "./database_validation.js";
@@ -74,17 +77,37 @@ function withoutPaths(text: string): string {
     let scrubbed = text;
 
     // Longest first, so a path inside the data directory is not reduced to the data directory and a
-    // leftover fragment of itself.
+    // leftover fragment of itself. Each is scrubbed both as configured and as resolved, since an
+    // error quotes back whichever form the call that failed was given.
     for (const [ directory, name ] of [
         [ dataDir.DOCUMENT_PATH, "<database>" ],
         [ dataDir.TMP_DIR, "<temporary files>" ],
         [ dataDir.BACKUP_DIR, "<backup location>" ],
         [ dataDir.TRILIUM_DATA_DIR, "<data directory>" ]
     ] as const) {
-        scrubbed = coreUtils.replaceAll(scrubbed, directory, name);
+        for (const form of pathForms(directory)) {
+            scrubbed = coreUtils.replaceAll(scrubbed, form, name);
+        }
     }
 
     return scrubbed;
+}
+
+/**
+ * The spellings of a configured location that could turn up in an error, longest first.
+ *
+ * A data directory may be configured relatively — `TRILIUM_DATA_DIR=data` is what the development
+ * scripts use — so the resolved form is what a filesystem error names, while our own calls pass the
+ * configured one. A bare word is dropped: replacing "data" as a substring turns every "database" in
+ * a sentence into "<data directory>base".
+ */
+function pathForms(directory: string): string[] {
+    const resolved = path.resolve(directory);
+    const looksLikePath = directory.includes(path.sep) || directory.includes("/");
+
+    return resolved === directory || !looksLikePath
+        ? [ resolved ]
+        : [ resolved, directory ].sort((a, b) => b.length - a.length);
 }
 
 /**
@@ -231,9 +254,22 @@ export function getRestoreProgress(): RestoreProgress | null {
 export async function restoreDatabase(request: RestoreRequest): Promise<void> {
     const startedAt = Date.now();
 
+    // Refused against a live database, and said here rather than left to the route that calls it.
+    // Every other way of replacing a database refuses on its own account too — `createInitialDatabase`
+    // and `createDatabaseForSync` both do — and this was the one that did not, which made
+    // `checkAppNotInitialized` the single thing standing between a running instance and a restore
+    // over the top of it. The standalone build has had the same check on its own restore all along.
+    if (sqlInit.isDbInitialized()) {
+        throw new RestoreFailure("restore-refused", "This instance already has a database; a restore only runs from the setup screen.");
+    }
+
     // The name is left out on purpose: it is the user's, and everything worth knowing about the file
     // is stated below in terms that are not.
     logRestore(`starting, from ${request.consumable ? "a backup this instance was given" : "a backup already on this device"}`);
+
+    // Read here rather than taken from the staging that follows, which consumes a backup this
+    // instance was given: by the time the restore has finished there may be no file left to ask.
+    const wasEncrypted = readBackupFormat(request.path)?.encrypted ?? false;
 
     // Announced through `report` like every other step, so that a log can be read by looking for the
     // steps alone and the first one is not the exception that is missing.
@@ -262,6 +298,8 @@ export async function restoreDatabase(request: RestoreRequest): Promise<void> {
             await openRestoredDatabase(validation.needsMigration);
         });
 
+        await adoptBackupPassphrase(request, wasEncrypted);
+
         report("done");
         logRestore(`finished in ${describeElapsed(startedAt)}`);
     } catch (e) {
@@ -286,6 +324,39 @@ export async function restoreDatabase(request: RestoreRequest): Promise<void> {
         // a directory that would not delete used to bury the reason the restore actually failed —
         // and with it the client's only way of telling a wrong passphrase from a broken backup.
         removeQuietly(stagingDirectory(), { recursive: true });
+    }
+}
+
+/**
+ * Brings the stored backup passphrase into line with the database that has just been restored.
+ *
+ * The passphrase lives outside the database — an OS keyring on the desktop, nowhere at all
+ * elsewhere — so it is the one thing about how this instance backs up that a restore does not
+ * replace. Left alone, an instance restored from someone else's backup goes on encrypting with the
+ * password of the database it used to hold: the backups look fine, and the password the user
+ * expects does not open them.
+ *
+ * Never allowed to fail the restore. The database is already in place and open by this point, and a
+ * keyring that would not answer is not a reason to tell the user their restore did not work.
+ *
+ * @param wasEncrypted whether the backup was locked, which is what decides there is a password here
+ *                     worth taking on at all.
+ */
+export async function adoptBackupPassphrase(
+    request: RestoreRequest,
+    wasEncrypted: boolean
+): Promise<void> {
+    // A backup with no lock on it brings no password to take on, and the stored one is not an
+    // answer: it was the previous database's.
+    const passphrase = wasEncrypted ? request.passphrase ?? null : null;
+
+    try {
+        await (getBackup() as ServerBackupService).adoptPassphrase(passphrase);
+        logRestore(passphrase
+            ? "the backup password is now the one that opened this backup"
+            : "let go of the backup password, which belonged to the previous database");
+    } catch (e) {
+        logRestoreError(`the backup password could not be brought up to date: ${messageOf(e)}`);
     }
 }
 
@@ -395,9 +466,12 @@ export function readBackupFormat(filePath: string): BackupFormat | null {
         }
     }
 
-    const container = peekBackupContainer(head);
+    const container = getInfo(head);
+    // A version this build cannot open is left to the reader to refuse, which it does by name; here
+    // it is only ever a file this path has no way to unwrap.
+    const readable = container.isValid && container.isSupported;
 
-    return { container: !!container, encrypted: container?.encrypted ?? false };
+    return { container: readable, encrypted: readable && container.isEncrypted };
 }
 
 /**
@@ -532,6 +606,10 @@ async function openRestoredDatabase(needsMigration: boolean): Promise<void> {
     logRestore(needsMigration
         ? "opening the restored database, which is being migrated first and may take a while"
         : "opening the restored database");
+
+    // Whatever asked this instance into setup has had its answer, and until this is said the
+    // instance keeps reporting that it has nothing to open, which is what `initDbConnection` checks.
+    leaveSetupMode();
 
     try {
         await sqlInit.initDbConnection();

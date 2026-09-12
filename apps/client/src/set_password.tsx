@@ -16,7 +16,7 @@ import OptionsRow from "./widgets/type_widgets/options/components/OptionsRow";
 const MIN_PASSWORD_LENGTH = 4;
 
 async function main() {
-    await initLocale((window.glob.currentLocale?.id ?? "en") as LOCALE_IDS);
+    await initLocale((window.glob.currentLocale?.id ?? "en") as LOCALE_IDS, "entry");
 
     const bodyWrapper = document.createElement("div");
     bodyWrapper.classList.add("setup-outer-wrapper");
@@ -84,7 +84,6 @@ export function App() {
     );
 }
 
-// Skip the bootstrap render under test, where the component is imported directly.
-if (import.meta.env.MODE !== "test") {
-    void main();
-}
+// index.ts holds the splash up until the page has rendered. The render under test imports
+// the component directly, so it skips this one.
+export const ready = import.meta.env.MODE !== "test" ? main() : Promise.resolve();

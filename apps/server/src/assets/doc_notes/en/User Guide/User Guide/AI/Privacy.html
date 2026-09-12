@@ -2,8 +2,9 @@
   the integration, adding a provider or opening a chat transmits nothing
   on its own, the one exception is that listing a provider's models sends
   your API key to that provider, so the list can be fetched.</p>
-<p>Once you send a message, what leaves your machine depends on the provider
-  you chose and on which context options are enabled.</p>
+<p>Once you send a message or run the&nbsp;<a class="reference-link" href="#root/_help_VRoP0g1uHHc2">In-editor AI assistant</a>,
+  what leaves your machine depends on the provider you chose and on which
+  context options are enabled.</p>
 <h2>Where your notes go</h2>
 <figure class="table">
   <table>
@@ -36,6 +37,12 @@
 <p>This is the reason the provider list is grouped this way, and why Trilium
   pre-selects nothing: the choice of where your notes travel is made explicitly,
   by you, before anything is sent.</p>
+<aside class="admonition note">
+  <p>The&nbsp;<a class="reference-link" href="#root/_help_VRoP0g1uHHc2">In-editor AI assistant</a>&nbsp;has
+    a model selection of its own, so it maybe answered by a different provider
+    than the one in the chat. The row at the bottom of the assistant's menu
+    always names the one being used.</p>
+</aside>
 <h2>What is actually sent</h2>
 <ul>
   <li><strong>Always, with every message</strong>
@@ -70,12 +77,37 @@
   <li><strong>Your search query</strong>, when web search is enabled, the model's
     search terms reach the provider's own search infrastructure.</li>
 </ul>
+<h2>The in-editor AI assistant</h2>
+<p>A run of the&nbsp;<a class="reference-link" href="#root/_help_VRoP0g1uHHc2">In-editor AI assistant</a>&nbsp;sends
+  a different set than a chat message. For quick actions, it sends it the
+  moment you pick an action, there is no send button to reconsider at. For
+  the free-form <em>Ask AI</em>, there is a dedicated send button and model
+  selector.</p>
+<ul>
+  <li><strong>The passage you selected</strong>, or the paragraph the cursor
+    is in when you pick a quick action without selecting anything.</li>
+  <li><strong>Up to 1500 characters of the note on each side of that passage</strong>,
+    as plain text. The assistant is told this is context only and must not
+    be rewritten, but it is sent regardless of whether you selected it: a run
+    on a single sentence still transmits the paragraphs around it.</li>
+  <li><strong>Where the note sits</strong>: its title and the titles of its
+    parents, as a breadcrumb.</li>
+  <li><strong>Trilium's writing-assistant instructions</strong>, which describe
+    the formatting it may produce.</li>
+  <li><strong>Earlier turns of the same exchange</strong>, once you follow up
+    on a response.</li>
+</ul>
+<p>No note metadata block is sent, web search is never enabled, and the assistant
+  has no note tools so it can read nothing beyond the text listed above.</p>
 <h2>Protected notes</h2>
 <p>While your <a href="#root/_help_bwg0e8ewQMak">protected session</a> is locked,
-  protected notes send neither title nor content. <strong>While it is unlocked they are treated like any other note</strong> —
-  a note the model reads through a tool is sent to the provider in full.
-  If you keep sensitive material in protected notes, be aware that unlocking
+  protected notes send neither title nor content. <strong>While it is unlocked they are treated like any other note,</strong> a
+  note the model reads through a tool is sent to the provider in full. If
+  you keep sensitive material in protected notes, be aware that unlocking
   them removes that boundary for the duration of the session.</p>
+<p>The same applies to the&nbsp;<a class="reference-link" href="#root/_help_VRoP0g1uHHc2">In-editor AI assistant</a>:
+  it works on whatever is open in the editor, so running it inside an unlocked
+  protected note sends that note's text like any other.</p>
 <h2>What you control</h2>
 <ul>
   <li><strong>Which provider</strong>: the single decision that determines whether
@@ -85,6 +117,9 @@
     type.</li>
   <li><strong>The current note:</strong> the file icon in the sidebar chat.</li>
   <li><strong>Web search:</strong> also in the model selector.</li>
+  <li><strong>The editor assistant</strong>: it has no per-run toggles. What
+    you control is whether you run it, what you select before you do and which
+    model answers.</li>
 </ul>
 <p>With note access and note context both off, the provider receives only
   the words you typed.</p>
@@ -98,10 +133,10 @@
 <h2>Telemetry &amp; security</h2>
 <p>Trilium itself collects no telemetry from the AI integration.</p>
 <p>Your API key is stored in your database, sent only to the provider it
-  belongs to, and is write-only through the options API so that a malevolent&nbsp;
-  <a
-  class="reference-link" href="#root/_help_CdNpE2pqjmI6">Scripting</a>&nbsp;cannot access it. If you have backend or SQL console
-    access enabled, a malevolent script <strong>could potentially exfiltrate your API keys</strong>.</p>
+  belongs to, and is write-only through the options API so that a malevolent&nbsp;<a
+  class="reference-link" href="#root/_help_CdNpE2pqjmI6">Scripting</a>&nbsp;cannot
+  access it. If you have backend or SQL console access enabled, a malevolent
+  script <strong>could potentially exfiltrate your API keys</strong>.</p>
 <p>The built-in MCP server is off by default. When enabled, every request
   must carry an ETAPI token, which grants the same full read and write access
   to your notes as the REST API; treat one like a password. On desktop it

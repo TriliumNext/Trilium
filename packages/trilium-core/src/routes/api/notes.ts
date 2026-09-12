@@ -104,6 +104,63 @@ function getNoteMetadata(req: Request<{ noteId: string }>) {
     } satisfies MetadataResponse;
 }
 
+/**
+ * @swagger
+ * /api/notes/metadata:
+ *   post:
+ *     summary: Retrieve the timestamps of several notes at once
+ *     operationId: notes-metadata-bulk
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               noteIds:
+ *                 type: array
+ *                 items:
+ *                   $ref: "#/components/schemas/NoteId"
+ *     responses:
+ *       '200':
+ *         description: The timestamps of each note found, keyed by note ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               additionalProperties:
+ *                 $ref: "#/components/schemas/Timestamps"
+ *     security:
+ *       - session: []
+ *     tags: ["data"]
+ */
+function getNotesMetadata(req: Request) {
+    const { noteIds } = req.body as { noteIds?: unknown };
+    if (!Array.isArray(noteIds) || noteIds.some((noteId) => typeof noteId !== "string")) {
+        throw new ValidationError("Expected 'noteIds' to be an array of note IDs.");
+    }
+
+    const metadata: Record<string, MetadataResponse> = {};
+
+    for (const noteId of noteIds as string[]) {
+        // Unknown notes are skipped rather than refused: a caller asks about the notes it holds,
+        // and one of them can be deleted before the request lands.
+        const note = becca.notes[noteId];
+        if (!note) {
+            continue;
+        }
+
+        metadata[noteId] = {
+            dateCreated: note.dateCreated,
+            utcDateCreated: note.utcDateCreated,
+            dateModified: note.dateModified,
+            utcDateModified: note.utcDateModified
+        };
+    }
+
+    return metadata;
+}
+
 function createNote(req: Request) {
     const params = Object.assign({}, req.body); // clone
     params.parentNoteId = req.params.parentNoteId;
@@ -120,6 +177,18 @@ function createNote(req: Request) {
     }
 
     const { note, branch } = noteService.createNewNoteWithTarget(target, String(targetBranchId), params);
+
+    // Content handed to us at creation gets the same pass a save gives it — `createNewNote`
+    // deliberately does none of it itself, so every caller taking content from outside runs it (see
+    // `import/single.ts`). Without it, content that came from another note keeps pointing at that
+    // note's attachments: "cut selection into sub-note" hands the new note the selected HTML,
+    // picture URLs and all, and then removes the selection from the source, which schedules the very
+    // attachments the sub-note shows for erasure. The copying step lives here, in the same
+    // transaction (`scanForLinks` runs before this promise's first await), so the note is right
+    // before the response leaves.
+    if (typeof params.content === "string" && params.content) {
+        void noteService.asyncPostProcessContent(note, params.content);
+    }
 
     return {
         note,
@@ -190,10 +259,11 @@ function deleteNote(req: Request<{ noteId: string }>) {
     note.deleteNote(deleteId, taskContext);
 
     if (eraseNotes) {
-        eraseService.eraseNotesWithDeleteId(deleteId);
+        taskContext.scheduleErase(deleteId);
     }
 
     if (last) {
+        eraseService.eraseNotesWithDeleteIds(taskContext.takeScheduledErases());
         taskContext.taskSucceeded(null);
     }
 }
@@ -393,6 +463,7 @@ export default {
     getNote,
     getNoteBlob,
     getNoteMetadata,
+    getNotesMetadata,
     updateNoteData,
     deleteNote,
     undeleteNote,

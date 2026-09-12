@@ -650,7 +650,10 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             content = processStringOrBuffer(content);
         }
 
-        const noteTitle = getNoteTitle(filePath, taskContext.data?.replaceUnderscoresWithSpaces || false, noteMeta);
+        // A plain archive carries no metadata, so the detected mime stands in for it: getNoteTitle
+        // reads the mime to drop the extension of the types that record their format in the note's
+        // own mime (video, audio, fonts), which single-file import already does.
+        const noteTitle = getNoteTitle(filePath, taskContext.data?.replaceUnderscoresWithSpaces || false, noteMeta ?? { mime });
 
         // Generic Markdown (not a Trilium export, which carries its attributes in !!!meta.json) may begin
         // with a YAML front matter block; lift it into labels and strip it before the body is rendered.

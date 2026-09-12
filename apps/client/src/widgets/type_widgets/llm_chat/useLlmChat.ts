@@ -3,8 +3,7 @@ import { RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { streamChatCompletion } from "../../../services/llm_chat.js";
-import { formatModelCost } from "../../../services/llm_model_cost.js";
-import options from "../../../services/options.js";
+import { type ModelOption, type ModelProviderGroup, readSelectedModels, resolveSelectedModel } from "../../../services/llm_providers.js";
 import { randomString } from "../../../services/utils.js";
 import { useTriliumEvent } from "../../react/hooks.js";
 import { estimateTokens, quantizeDraftTokens } from "./chat_context_usage.js";
@@ -73,43 +72,6 @@ function flattenToApiContent(content: string | ContentBlock[]): string | LlmMess
 function stripQuoteSourcesFromApiContent(content: string | LlmMessagePart[]): string | LlmMessagePart[] {
     if (typeof content === "string") return stripQuoteSources(content);
     return content.map(part => (part.type === "text" ? { ...part, text: stripQuoteSources(part.text) } : part));
-}
-
-export interface ModelOption extends LlmModelInfo {
-    costDescription?: string;
-}
-
-/**
- * Resolve the active model from the available list. Several providers can expose
- * the same model ID (e.g. an Anthropic API key and a Claude subscription, or two
- * OpenAI-compatible endpoints), so the recorded provider type/config id narrow
- * the match; when they're absent (chats saved before they existed) we fall back
- * to the first ID match. Returns undefined when nothing matches — e.g. a saved
- * model ID that has since been deselected — which callers treat as "no model".
- */
-export function resolveSelectedModel(
-    availableModels: ModelOption[],
-    selectedModel: string,
-    selectedProvider: string | undefined,
-    selectedProviderId: string | undefined
-): ModelOption | undefined {
-    if (!selectedModel) return undefined;
-    return availableModels.find(m =>
-        m.id === selectedModel
-        && (!selectedProvider || m.provider === selectedProvider)
-        && (!selectedProviderId || m.providerId === selectedProviderId));
-}
-
-/** A configured provider and the models the user selected for it (possibly none). */
-export interface ModelProviderGroup {
-    /** Provider config id — stable group key. */
-    id: string;
-    /** User-given provider name, shown as the group header. */
-    name: string;
-    /** Provider type (e.g. "openai"). */
-    provider: string;
-    /** Selected models for this provider; empty for configs migrated from before selection existed. */
-    models: ModelOption[];
 }
 
 export interface LlmChatOptions {
@@ -998,37 +960,3 @@ export function useLlmChat(
     };
 }
 
-/** Minimal shape of a provider config as stored in the `llmProviders` option. */
-interface StoredProviderConfig {
-    id: string;
-    name: string;
-    provider: string;
-    selectedModels?: LlmModelInfo[];
-}
-
-/**
- * Read the user's selected models per configured provider. Returns:
- * - `groups`: one entry per configured provider (in config order), each with its
- *   selected models — the group is kept even when it has none, so a provider
- *   migrated from before selection existed still shows up with an empty group.
- * - `models`: the flattened list across all groups (for default selection and
- *   the active-model lookup).
- * - `hasProvider`: whether any provider is configured at all.
- */
-function readSelectedModels(): { models: ModelOption[]; groups: ModelProviderGroup[]; hasProvider: boolean } {
-    const configs = (options.getJson("llmProviders") as StoredProviderConfig[] | null) ?? [];
-    const groups: ModelProviderGroup[] = configs.map(config => ({
-        id: config.id,
-        name: config.name,
-        provider: config.provider,
-        models: (config.selectedModels ?? []).map(model => ({
-            ...model,
-            provider: config.provider,
-            providerId: config.id,
-            providerName: config.name,
-            costDescription: formatModelCost(model)
-        }))
-    }));
-    const models = groups.flatMap(g => g.models);
-    return { models, groups, hasProvider: configs.length > 0 };
-}

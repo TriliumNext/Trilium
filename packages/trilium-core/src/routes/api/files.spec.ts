@@ -125,6 +125,83 @@ describe("Files API (core)", () => {
     });
 
     /**
+     * An SVG served inline is a document, and a document runs its scripts in Trilium's origin. The
+     * `/open` routes carry no Content-Disposition, so they are the sink; `/download` is marked
+     * `attachment` and must hand back the stored bytes untouched.
+     */
+    describe("SVG serving", () => {
+        const MALICIOUS_SVG = `<svg xmlns="http://www.w3.org/2000/svg"><script>alert(document.domain)</script><rect width="10" height="10" onload="alert(1)"/></svg>`;
+
+        async function createSvgNote(mime: string, type = "file"): Promise<string> {
+            const res = await api.post<{ note: { noteId: string } }>("/api/notes/root/children?target=into", {
+                body: { title: "invoice.svg", type, mime, content: MALICIOUS_SVG }
+            });
+            expect(res.status).toBe(200);
+            return res.body.note.noteId;
+        }
+
+        it("strips scripts and event handlers from an SVG file note opened inline", async () => {
+            // The shape a crafted `!!!meta.json` produces: type `file`, so no import-time
+            // sanitization runs, with an SVG mime that makes the client open it as a document.
+            const noteId = await createSvgNote("image/svg+xml");
+
+            const res = await api.get<string>(`/api/notes/${noteId}/open`);
+            expect(res.status).toBe(200);
+            expect(res.body).not.toContain("<script");
+            expect(res.body).not.toContain("onload=");
+            expect(res.body).toContain("<rect");
+            expect(res.headers["Content-Security-Policy"]).toBeTruthy();
+            expect(res.headers["X-Content-Type-Options"]).toBe("nosniff");
+            expect(res.headers["Content-Disposition"]).toBeUndefined();
+        });
+
+        it("sanitizes an image note opened inline, and the unregistered `image/svg` spelling too", async () => {
+            // An ordinary `.svg` upload lands as an image note, whose ribbon has the same Open
+            // button — the sink is reachable without an import at all.
+            for (const mime of [ "image/svg+xml", "image/svg" ]) {
+                const noteId = await createSvgNote(mime, "image");
+
+                const res = await api.get<string>(`/api/notes/${noteId}/open`);
+                expect(res.status, mime).toBe(200);
+                expect(res.body, mime).not.toContain("<script");
+                expect(res.headers["Content-Security-Policy"], mime).toBeTruthy();
+            }
+        });
+
+        it("sanitizes an SVG attachment opened inline", async () => {
+            const { noteId } = await createTextNote(api, { title: "Has SVG" });
+            const save = await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "image", mime: "image/svg+xml", title: "logo.svg", content: MALICIOUS_SVG }
+            });
+            expect(save.status).toBe(204);
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            const { attachmentId } = list.body[0];
+
+            const res = await api.get<string>(`/api/attachments/${attachmentId}/open`);
+            expect(res.status).toBe(200);
+            expect(res.body).not.toContain("<script");
+            expect(res.headers["Content-Security-Policy"]).toBeTruthy();
+        });
+
+        it("leaves a downloaded SVG byte-for-byte and does not touch non-SVG content", async () => {
+            // A download is saved, never rendered, so the user's file has to arrive as it was stored.
+            const svgNoteId = await createSvgNote("image/svg+xml");
+            const download = await api.get<string>(`/api/notes/${svgNoteId}/download`);
+            expect(download.status).toBe(200);
+            expect(download.body).toBe(MALICIOUS_SVG);
+            expect(download.headers["Content-Disposition"]).toBeTruthy();
+            expect(download.headers["Content-Security-Policy"]).toBeUndefined();
+
+            // A non-SVG mime keeps the plain path, scripts and all.
+            const plainId = await createSvgNote("text/plain");
+            const plain = await api.get<string>(`/api/notes/${plainId}/open`);
+            expect(plain.status).toBe(200);
+            expect(plain.body).toContain("<script>");
+            expect(plain.headers["Content-Security-Policy"]).toBeUndefined();
+        });
+    });
+
+    /**
      * Writing a file back over a note or an attachment: "upload new revision" on a file note, the
      * PDF viewer saving its annotations, and replacing an attachment's file. The upload arrives as
      * `req.file` — multipart parsed by multer on the server, by the router itself in standalone.
@@ -284,12 +361,12 @@ describe("Files API (core)", () => {
         it("converts an RTF file note to an embeddable HTML fragment", async () => {
             const noteId = await createRtfNote();
 
-            const res = await api.get<{ html: string }>(`/api/notes/${noteId}/office-preview`);
+            const res = await api.get<string>(`/api/notes/${noteId}/office-preview`);
             expect(res.status).toBe(200);
-            expect(res.body.html).toContain("Hello");
-            expect(res.body.html).toContain("World");
+            expect(res.body).toContain("Hello");
+            expect(res.body).toContain("World");
             // fragment mode — no full standalone document wrapper
-            expect(res.body.html).not.toContain("<html");
+            expect(res.body).not.toContain("<html");
         });
 
         it("converts an RTF attachment to an embeddable HTML fragment", async () => {
@@ -300,9 +377,27 @@ describe("Files API (core)", () => {
             expect(save.status).toBe(204);
             const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
 
-            const res = await api.get<{ html: string }>(`/api/attachments/${list.body[0].attachmentId}/office-preview`);
+            const res = await api.get<string>(`/api/attachments/${list.body[0].attachmentId}/office-preview`);
             expect(res.status).toBe(200);
-            expect(res.body.html).toContain("Hello");
+            expect(res.body).toContain("Hello");
+        });
+
+        it("answers with the corner of a workbook when the caller asks to trim it", async () => {
+            const wb = new ExcelJS.Workbook();
+            const sheet = wb.addWorksheet("Data");
+            for (let row = 1; row <= 60; row++) {
+                for (let col = 1; col <= 40; col++) sheet.getCell(row, col).value = `r${row}c${col}`;
+            }
+            const noteId = await createXlsxNote(Buffer.from(await wb.xlsx.writeBuffer()));
+
+            const whole = await api.get<string>(`/api/notes/${noteId}/office-preview`);
+            const corner = await api.get<string>(`/api/notes/${noteId}/office-preview?trim=1`);
+
+            expect(corner.status).toBe(200);
+            expect((corner.body.match(/<td/g) ?? []).length).toBe(20 * 15);
+            expect(corner.body).toContain("r1c1");
+            expect(corner.body).not.toContain("r60c40");
+            expect(corner.body.length).toBeLessThan(whole.body.length / 5);
         });
 
         it("rejects an unsupported MIME type with 400", async () => {
@@ -330,16 +425,16 @@ describe("Files API (core)", () => {
 
             const noteId = await createXlsxNote(xlsxBuffer);
 
-            const res = await api.get<{ html: string }>(`/api/notes/${noteId}/office-preview`);
+            const res = await api.get<string>(`/api/notes/${noteId}/office-preview`);
             expect(res.status).toBe(200);
-            expect(res.body.html).toContain("Merged header");
+            expect(res.body).toContain("Merged header");
             // Native-renderer features officeparser's grid lacks: merged cells,
             // number formatting (numfmt) and inline borders...
-            expect(res.body.html).toContain('colspan="2"');
-            expect(res.body.html).toContain("1,234.50");
-            expect(res.body.html).toContain("border");
+            expect(res.body).toContain('colspan="2"');
+            expect(res.body).toContain("1,234.50");
+            expect(res.body).toContain("border");
             // ...and none of officeparser's class-styled A/B/C header chrome.
-            expect(res.body.html).not.toContain("excel-col-header");
+            expect(res.body).not.toContain("excel-col-header");
         });
     });
 });

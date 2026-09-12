@@ -1,11 +1,10 @@
 import {
     BackupDatabaseNowResponse,
     CompactionEstimateResponse,
-    DatabaseCheckIntegrityResponse,
     ExistingAnonymizedDatabasesResponse,
     VacuumDatabaseResponse
 } from "@triliumnext/commons";
-import { becca_loader, consistency_checks as consistencyChecksService, getBackup, getLog, utils, ValidationError } from "@triliumnext/core";
+import { becca_loader, checkIntegrity, consistency_checks as consistencyChecksService, getBackup, getDatabaseSizeBytes, getLog, getReclaimableBytes, utils, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import fs, { readFileSync } from "fs";
 import path from "path";
@@ -29,7 +28,7 @@ function vacuumDatabase() {
     // Timed from here, the two readings included: they are a pragma query each, and what the log is
     // answering for is how long the whole thing held the database.
     const startedAt = Date.now();
-    const sizeBefore = databaseBytes();
+    const sizeBefore = getDatabaseSizeBytes();
 
     // Announced before the rebuild starts, not only once it ends: this holds the process for minutes
     // on a large database, and if it is killed or the machine goes down in the meantime, this line
@@ -37,7 +36,7 @@ function vacuumDatabase() {
     getLog().info(`Compacting the database (${utils.formatSize(sizeBefore)}). This may take several minutes.`);
 
     sql.execute("VACUUM");
-    const sizeAfter = databaseBytes();
+    const sizeAfter = getDatabaseSizeBytes();
 
     getLog().info(`Compacted the database from ${utils.formatSize(sizeBefore)}`
         + ` to ${utils.formatSize(sizeAfter)} in ${Date.now() - startedAt} ms.`);
@@ -52,26 +51,9 @@ function vacuumDatabase() {
  */
 function getCompactionEstimate() {
     return {
-        reclaimableBytes: reclaimableBytes(),
-        databaseBytes: databaseBytes()
+        reclaimableBytes: getReclaimableBytes(),
+        databaseBytes: getDatabaseSizeBytes()
     } satisfies CompactionEstimateResponse;
-}
-
-/**
- * The database's own view of its size: every page it has allocated, the free ones included. Read
- * through pragma functions rather than the file itself, so there is no path to resolve and no race
- * with the filesystem — and it is exactly the figure a vacuum moves.
- *
- * Covers the main database alone; in WAL mode the `-wal` sidecar is not part of it.
- */
-function databaseBytes(): number {
-    return sql.getValue<number>("SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()");
-}
-
-/** Pages already free inside the file. A floor, not a promise: a rebuild also recovers the slack
- *  left inside pages that are still in use, which no count of whole pages can see. */
-function reclaimableBytes(): number {
-    return sql.getValue<number>("SELECT freelist_count * page_size FROM pragma_freelist_count(), pragma_page_size()");
 }
 
 function findAndFixConsistencyIssues() {
@@ -99,14 +81,22 @@ async function anonymize(req: Request) {
     return await anonymizationService.createAnonymizedCopy(req.params.type);
 }
 
-function checkIntegrity() {
-    const results = sql.getRows<{ integrity_check: string }>("PRAGMA integrity_check");
+/**
+ * Removes one anonymized copy, named by the path the listing gave out.
+ *
+ * Confined to the directory those copies are written to, exactly as the download of one is: the path
+ * arrives from the client, and what follows it is an unguarded file deletion. A file already gone is
+ * not an error — the listing is a moment old by the time it is acted on, and the caller asked for it
+ * to be absent, which it is.
+ */
+function deleteAnonymizedDatabase(req: Request) {
+    const filePath = resolveInsideDirectory(String(req.query.filePath ?? ""), dataDir.ANONYMIZED_DB_DIR);
 
-    getLog().info(`Integrity check result: ${JSON.stringify(results)}`);
+    if (!filePath) {
+        throw new ValidationError("Not an anonymized database.");
+    }
 
-    return {
-        results
-    } satisfies DatabaseCheckIntegrityResponse;
+    fs.rmSync(filePath, { force: true });
 }
 
 function downloadBackup(req: Request, res: Response) {
@@ -126,10 +116,22 @@ export default {
     rebuildIntegrationTestDatabase,
     getExistingAnonymizedDatabases,
     anonymize,
+    deleteAnonymizedDatabase,
     checkIntegrity,
     downloadBackup,
     downloadAnonymizedDatabase
 };
+
+/**
+ * The path resolved, or null where it does not land inside the directory it has to be in. Every
+ * route acting on a file the client named goes through here: the paths come from a listing this
+ * server gave out, but nothing about the request says so.
+ */
+function resolveInsideDirectory(filePath: string, allowedDir: string): string | null {
+    const resolvedPath = path.resolve(filePath);
+
+    return resolvedPath.startsWith(path.resolve(allowedDir) + path.sep) ? resolvedPath : null;
+}
 
 function downloadDatabaseFile(req: Request, res: Response, allowedDir: string, notFoundMessage: string) {
     const filePath = req.query.filePath as string;
@@ -138,8 +140,8 @@ function downloadDatabaseFile(req: Request, res: Response, allowedDir: string, n
         return;
     }
 
-    const resolvedPath = path.resolve(filePath);
-    if (!resolvedPath.startsWith(path.resolve(allowedDir) + path.sep)) {
+    const resolvedPath = resolveInsideDirectory(filePath, allowedDir);
+    if (!resolvedPath) {
         res.status(403).send("Access denied");
         return;
     }

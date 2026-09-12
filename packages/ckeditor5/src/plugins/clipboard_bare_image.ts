@@ -125,14 +125,18 @@ export function isBareImageHtml(html: string): boolean {
         return false;
     }
 
-    // An image the editor can already resolve is left to the normal path: a `data:`/`blob:` payload
-    // carries its own bytes, and Trilium's own marker means this came from a Trilium copy, where
-    // the reference beside it is the point (see the ClipboardImageEmbed plugin).
+    // An image the editor can already resolve is left to the normal path: Trilium's own marker means
+    // this came from a Trilium copy, where the reference beside the payload is the point (see the
+    // ClipboardImageEmbed plugin).
     if (image.hasAttribute(TRILIUM_SRC_ATTRIBUTE)) {
         return false;
     }
 
     const src = image.getAttribute("src") ?? "";
 
-    return !src.startsWith("data:") && !src.startsWith("blob:");
+    // A `data:` URI carries its own bytes. A `blob:` one only resolves inside the document that
+    // minted it: ours is fine, but another application's — Element Desktop copies its pictures as
+    // `blob:vector://vector/…` — is dead the moment it leaves that renderer, which makes it exactly
+    // the kind of unreachable source this plugin exists to replace.
+    return !src.startsWith("data:") && !src.startsWith(`blob:${window.location.origin}/`);
 }

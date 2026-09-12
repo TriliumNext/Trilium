@@ -69,6 +69,7 @@ describe("FormPasswordWithConfirmation", () => {
         expect(password.type).toBe("password");
         expect(confirmation.type).toBe("password");
     });
+
 });
 
 function renderFields() {

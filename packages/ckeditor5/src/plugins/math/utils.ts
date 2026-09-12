@@ -144,7 +144,11 @@ export async function renderEquation(
 		if ( lazyLoad != null ) {
 			try {
 				window.CKEDITOR_MATH_LAZY_LOAD ??= lazyLoad();
-				element.innerHTML = equation;
+				// `textContent`, here and in the two arms below: the source arrives as text —
+				// `MathEditing` upcasts it from a text node's `data` — so any markup in it is
+				// markup the note had escaped, and writing it back as HTML is what un-escapes it.
+				// The sanitizer that cleared the note saw inert text and had nothing to strip.
+				element.textContent = equation;
 				await window.CKEDITOR_MATH_LAZY_LOAD;
 				await renderEquation(
 					equation,
@@ -158,13 +162,13 @@ export async function renderEquation(
 					katexRenderOptions
 				);
 			} catch ( err ) {
-				element.innerHTML = equation;
+				element.textContent = equation;
 				console.error(
 					`math-tex-typesetting-lazy-load-failed: Lazy load failed: ${ String( err ) }`
 				);
 			}
 		} else {
-			element.innerHTML = equation;
+			element.textContent = equation;
 			console.warn(
 				`math-tex-typesetting-missing: Missing the mathematical typesetting engine (${ String( engine ) }) for tex.`
 			);
@@ -271,10 +275,12 @@ function renderMathJax3( equation: string, element: HTMLElement, display: boolea
 
 function renderMathJax2( equation: string, element: HTMLElement, display?: boolean ) {
 	if ( isMathJaxVersion2( MathJax ) ) {
+		// Text rather than HTML, as in the fallback arms above — and what MathJax 2 wants either
+		// way, since `Typeset` scans text nodes for the delimiters.
 		if ( display ) {
-			element.innerHTML = '\\[' + equation + '\\]';
+			element.textContent = '\\[' + equation + '\\]';
 		} else {
-			element.innerHTML = '\\(' + equation + '\\)';
+			element.textContent = '\\(' + equation + '\\)';
 		}
 		// eslint-disable-next-line
 		MathJax.Hub.Queue(['Typeset', MathJax.Hub, element]);

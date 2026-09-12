@@ -74,15 +74,21 @@ const EDGE_PADDING = 8;
  * on click for the same reason (see note_tooltip.ts). Without this, a preview whose marker was
  * clicked stood exactly where the pane then opened, and one still on its way landed on top of it.
  */
-export default function Tooltips({ selectedNoteId }: {
+export default function Tooltips({ selectedNoteId, paneMaximized }: {
     /** The note the detail pane stands for, or `null` while the pane is down and every marker
      *  previews. See the selection in DetailPane. */
     selectedNoteId: string | null;
+    /** The pane has been grown over the map, which leaves no room a preview could be shown in. See
+     *  the maximized pane in DetailPane. */
+    paneMaximized: boolean;
 }) {
     const map = useContext(ParentMap);
 
     useEffect(() => {
-        if (!map) return;
+        // Nothing previews while the pane covers the map: there is no room left for a preview to be
+        // slid into, and the markers it would preview are behind the pane. Gated here rather than
+        // at the placing, so a preview already up is taken down with the handlers as the pane grows.
+        if (!map || paneMaximized) return;
 
         const tooltip = new Popup({
             closeButton: false,
@@ -232,7 +238,7 @@ export default function Tooltips({ selectedNoteId }: {
         // Depending on the selection makes every change of it a dismissal in itself, which covers
         // the selections no click announces: a note created onto the map is opened into the pane
         // by the code that created it (see index.tsx).
-    }, [ map, selectedNoteId ]);
+    }, [ map, selectedNoteId, paneMaximized ]);
 
     return null;
 }

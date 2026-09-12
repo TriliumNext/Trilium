@@ -338,10 +338,17 @@ class ConsistencyChecks {
         );
 
         this.findAndFixIssues(
+            // The unary '+' on branches.isDeleted makes that term non-indexable, which is
+            // deliberate: without ANALYZE statistics the planner otherwise picks
+            // IDX_branches_isDeleted_utcDateModified for the inner loop of this join. That index
+            // has a single distinct value across nearly every branch, so the join degenerates
+            // into a scan of all branches per note (~486M iterations on a 20k-note database,
+            // measured at 95s, which blocks the Electron main process). Suppressing it forces
+            // IDX_branches_noteId_parentNoteId and the same query runs in ~0.1s.
             `
             SELECT DISTINCT notes.noteId
             FROM notes
-            LEFT JOIN branches ON notes.noteId = branches.noteId AND branches.isDeleted = 0
+            LEFT JOIN branches ON notes.noteId = branches.noteId AND +branches.isDeleted = 0
             WHERE notes.isDeleted = 0
             AND branches.branchId IS NULL
         `,

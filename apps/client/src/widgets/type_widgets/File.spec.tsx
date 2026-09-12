@@ -18,6 +18,7 @@ vi.mock("../react/ActionButton", () => ({ default: () => <button class="code-blo
 // the module graph; the markers let FileTypeWidget's mime routing be asserted without rendering them.
 vi.mock("../react/hooks", () => ({ useNoteBlob: vi.fn(() => null) }));
 vi.mock("./file/MediaPreview", () => ({ default: () => <div class="media-preview-stub" /> }));
+vi.mock("./file/FontPreview", () => ({ default: () => <div class="font-preview-stub" /> }));
 vi.mock("./file/Office", () => ({ default: () => <div class="office-preview-stub" /> }));
 vi.mock("./file/Pdf", () => ({ default: () => <div class="pdf-preview-stub" /> }));
 
@@ -56,7 +57,7 @@ describe("FileTypeWidget", () => {
         expect(applySingleBlockSyntaxHighlight.mock.calls[0][1]).toBe("text-xml");
     });
 
-    it("routes non-text blobs by mime: PDF, media, and a no-preview fallback", () => {
+    it("routes non-text blobs by mime: PDF, media, fonts, and a no-preview fallback", () => {
         // mockReturnValue outlives clearAllMocks, so drop the previous test's text blob explicitly.
         vi.mocked(useNoteBlob).mockReturnValue(null);
 
@@ -68,6 +69,13 @@ describe("FileTypeWidget", () => {
         expect(container.querySelector(".media-preview-stub")).not.toBeNull();
         mount("audio/mpeg");
         expect(container.querySelector(".media-preview-stub")).not.toBeNull();
+
+        mount("font/woff2");
+        expect(container.querySelector(".font-preview-stub")).not.toBeNull();
+        // EOT is a font the engine will not load, so it keeps the fallback.
+        mount("application/vnd.ms-fontobject");
+        expect(container.querySelector(".font-preview-stub")).toBeNull();
+        expect(container.querySelector(".alert")).not.toBeNull();
 
         mount("application/octet-stream");
         expect(container.querySelector(".media-preview-stub")).toBeNull();

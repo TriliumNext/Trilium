@@ -26,6 +26,12 @@ interface IsolatedFrameProps {
  * Provide the frame's own styling via {@link IsolatedFrameProps.css}; theme values can be forwarded
  * with {@link IsolatedFrameProps.cssVars}. Because the document has no base URL, any URLs referenced
  * from that CSS must be absolute.
+ *
+ * They must also not point at the backend: an `about:blank` document is not controlled by a service
+ * worker and inherits none of the host document's request interceptors, so in standalone (and on
+ * iOS/Capacitor) an `/api/...` subresource never reaches the local backend — it hits the network and
+ * comes back as the SPA fallback HTML. Fetch such content from the host document and reference it
+ * here as a `blob:` URL instead (see `loadIconPackFont`).
  */
 export default function IsolatedFrame({ className, title, css, cssVars, bodyClassName, children }: IsolatedFrameProps) {
     const iframeRef = useRef<HTMLIFrameElement>(null);

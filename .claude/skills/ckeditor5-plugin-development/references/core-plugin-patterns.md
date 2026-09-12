@@ -201,6 +201,53 @@ conversion.for( 'dataDowncast' ).elementToElement( {
 manipulation (innerHTML, listeners). `registerRawContentMatcher` preserves inner HTML through upcast
 instead of converting it. Selection can't enter a raw element.
 
+## Sanitizing untrusted HTML (CKEditor ships none)
+
+CKEditor deliberately provides **no** sanitizer — it takes one from the integrator. Two facts to
+know before designing a feature that renders untrusted HTML:
+
+- `htmlEmbed`'s built-in `sanitizeHtml` is a **pass-through** that only logs
+  `html-embed-provide-sanitize-function`. Relying on the default means no sanitization at all.
+- A **top-level** `config.sanitizeHtml` is rejected outright: the `Editor` constructor throws
+  `editor-config-sanitizehtml-not-supported`. The callback must live under the feature's own
+  config namespace.
+
+So the idiom is a host-supplied callback, keyed by feature — **required, with no fallback**:
+
+```ts
+// upstream: config.htmlEmbed.sanitizeHtml → ( html ) => ( { html, hasChanged } )
+// Trilium:  config.aiAssistant.sanitizeHtml → ( html ) => html
+//   packages/ckeditor5/src/plugins/ai_assistant/ai_assistant_config.ts
+export type AiSanitizeFunction = ( html: string ) => string;
+
+// required in the config interface (the AI assistant's only non-optional field), so a host
+// that forgets it fails to compile — and crashes rather than rendering unsanitized output
+private _sanitize( html: string ): string {
+	const sanitize = this.editor.config.get( 'aiAssistant' )?.sanitizeHtml;
+	if ( !sanitize ) {
+		throw new CKEditorError( 'ai-assistant-sanitize-html-required', { pluginName: 'AiAssistantUI' } );
+	}
+	return sanitize( html );
+}
+```
+
+In Trilium the host passes the app's DOMPurify pass — `sanitizeNoteContentHtml` from
+`apps/client/src/services/sanitize_content.ts`, wired in
+`apps/client/src/widgets/type_widgets/text/config.ts`. That is the same sanitizer used for note
+content, so it already covers what hand-rolled strip lists miss (namespaced `xlink:href`, SVG
+animation elements, `data:` URIs on non-images). Tests pass their own double (`html => html`).
+
+Do **not** hand-roll a tag/attribute deny-list, and do not add DOMPurify to `packages/ckeditor5`
+(the host already owns one). Do not keep a built-in strip "as a fallback" either: it silently
+becomes the real defence whenever a host forgets to configure one, and it reads as safe in review.
+Throwing is the correct behaviour — a missing sanitizer is a misconfiguration, not a runtime
+condition to degrade around.
+
+Note the editor's **data pipeline** is not a sanitizer either: `editor.data.toModel(...)` drops what
+the schema can't represent, which is a correctness filter, not a security boundary — and General
+HTML Support widens it. Anything reaching a raw `innerHTML` (previews, balloons, `createRawElement`
+render callbacks) needs the configured sanitizer.
+
 ## Clipboard pipeline
 
 Intercept paste/copy/drop via the clipboard pipeline events rather than raw DOM:

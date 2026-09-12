@@ -18,6 +18,7 @@ import revisionsApiRoute from "./api/revisions";
 import relationMapApiRoute from "./api/relation-map";
 import recentChangesApiRoute from "./api/recent_changes";
 import deletedNotesApiRoute from "./api/deleted_notes";
+import boardRoute from "./api/board";
 import bulkActionRoute from "./api/bulk_action";
 import searchRoute from "./api/search";
 import specialNotesRoute from "./api/special_notes";
@@ -32,11 +33,14 @@ import exportRoute from "./api/export";
 import scriptRoute from "./api/script";
 import backendLogRoute from "./api/backend_log";
 import backupRoute from "./api/backup";
+import databaseInfoRoute from "./api/database_info";
 import passwordApiRoute from "./api/password";
 import loginApiRoute from "./api/login";
 import fontsRoute from "./api/fonts";
 import ocrRoute from "./api/ocr";
 import linkEmbedRoute from "./api/link_embed";
+import spreadsheetRoute from "./api/spreadsheet";
+import llmRoute from "./api/llm";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -48,12 +52,30 @@ const GET = "get",
 interface SharedApiRoutesContext {
     route: any;
     asyncRoute: any;
+    /**
+     * Like `asyncRoute`, minus the transaction, on every platform.
+     *
+     * `asyncRoute` is transactional in the browser and not on the server, which is fine for handlers
+     * that only read or write rows. It is not fine for the handful that close the database and open
+     * another one: the transaction they started belongs to a connection that is gone by the time it
+     * would be committed, and SQLite says so.
+     */
+    asyncRouteWithoutTransaction: any;
     apiRoute: any;
     asyncApiRoute: any;
     checkApiAuth: any;
     apiResultHandler: any;
     checkApiAuthOrElectron: any;
     checkAppNotInitialized: any;
+    /**
+     * Refuses a setup route where the wizard has a knowledge base behind it and has not been
+     * unlocked with that knowledge base's password.
+     *
+     * Supplied by the platform rather than shared, because what may skip it is: the desktop's own
+     * renderer arrives over a custom protocol and is trusted, an instance configured for no
+     * authentication has nothing to check against, and a browser-only build is served to no one.
+     */
+    checkSetupAuth: any;
     loginRateLimiter: any;
     checkCredentials: any;
     uploadMiddlewareWithErrorHandling: any;
@@ -61,7 +83,7 @@ interface SharedApiRoutesContext {
     csrfMiddleware: any;
 }
 
-export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
+export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTransaction, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkSetupAuth, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
     apiRoute(GET, '/api/tree', treeApiRoute.getTree);
     apiRoute(PST, '/api/tree/load', treeApiRoute.load);
 
@@ -70,12 +92,14 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     asyncApiRoute(PUT, "/api/options/:name/:value", optionsApiRoute.updateOption);
     asyncApiRoute(PUT, "/api/options", optionsApiRoute.updateOptions);
     apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
+    apiRoute(GET, "/api/options/user-fonts", optionsApiRoute.getUserFonts);
 
     apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
     apiRoute(PST, "/api/notes/:noteId/convert-format", notesApiRoute.convertNoteFormat);
     apiRoute(GET, "/api/notes/:noteId", notesApiRoute.getNote);
     apiRoute(GET, "/api/notes/:noteId/blob", notesApiRoute.getNoteBlob);
     apiRoute(GET, "/api/notes/:noteId/metadata", notesApiRoute.getNoteMetadata);
+    apiRoute(PST, "/api/notes/metadata", notesApiRoute.getNotesMetadata);
     apiRoute(PUT, "/api/notes/:noteId/data", notesApiRoute.updateNoteData);
     apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
     apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
@@ -149,14 +173,49 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     // signature, and a query string ends up in every access log along the way.
     asyncApiRoute(PST, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
 
+    asyncRoute(GET, "/api/spreadsheet/:noteId/xlsx", [checkApiAuthOrElectron], spreadsheetRoute.exportXlsx);
+
     // group of the services below are meant to be executed from the outside
     // Not transactional: a status read needs no transaction, and one is unopenable during the moment
     // a restore has the database detached — which is exactly when the wizard is polling hardest.
     asyncRoute(GET, "/api/setup/status", [], setupApiRoute.getStatus, apiResultHandler);
-    asyncRoute(PST, "/api/setup/new-document", [checkAppNotInitialized], setupApiRoute.setupNewDocument, apiResultHandler);
-    asyncRoute(PST, "/api/setup/sync-from-server", [checkAppNotInitialized], setupApiRoute.setupSyncFromServer, apiResultHandler);
+    // The password of the knowledge base the wizard is standing over, which is what unlocks every
+    // route below that could replace it. Rate limited like the application's own login.
+    asyncRoute(PST, "/api/setup/auth", [checkAppNotInitialized, loginRateLimiter], setupApiRoute.authenticate, apiResultHandler);
+    // Both erase the knowledge base the wizard was booted away from before they create anything, so
+    // neither may be wrapped in a transaction: erasing closes the connection such a transaction
+    // would belong to, and the browser then has nothing left to commit it against. Each creates its
+    // database inside transactions of its own, which is what the erasure has to stay outside of.
+    asyncRouteWithoutTransaction(PST, "/api/setup/new-document", [checkAppNotInitialized, checkSetupAuth], setupApiRoute.setupNewDocument, apiResultHandler);
+    asyncRouteWithoutTransaction(PST, "/api/setup/sync-from-server", [checkAppNotInitialized, checkSetupAuth], setupApiRoute.setupSyncFromServer, apiResultHandler);
     route(GET, "/api/setup/sync-seed", [loginRateLimiter, checkCredentials], setupApiRoute.getSyncSeed, apiResultHandler);
+    // Pushed by the other device rather than asked for here, so it cannot carry a token of ours.
+    // Refused from inside instead, while there is a knowledge base to lose: see `saveSyncSeed`.
     asyncRoute(PST, "/api/setup/sync-seed", [checkAppNotInitialized], setupApiRoute.saveSyncSeed, apiResultHandler);
+    // The setup routes that belong to a running instance rather than to one without a database:
+    // this is how the app asks the next start to be the wizard, and how it takes the request back.
+    // Authenticated like the rest of the running app, which is what keeps a passer-by from sending
+    // somebody else's instance to a screen that can erase it.
+    //
+    // `checkSetupAuth` as well, spelled out rather than taken from `asyncApiRoute`, because the
+    // session check above stands down on an instance that reports itself uninitialized — which is
+    // exactly what an instance sitting in the wizard does. Without it these three are the one part
+    // of the wizard a passer-by could still reach, to re-arm a start-over or to call off one the
+    // owner is waiting to act on.
+    asyncRoute(PST, "/api/setup/boot", [checkApiAuth, checkSetupAuth, csrfMiddleware], setupApiRoute.bootToSetup, apiResultHandler);
+    asyncRoute(GET, "/api/setup/boot", [checkApiAuth, checkSetupAuth, csrfMiddleware], setupApiRoute.isBootToSetupRequested, apiResultHandler);
+    asyncRoute(DEL, "/api/setup/boot", [checkApiAuth, checkSetupAuth, csrfMiddleware], setupApiRoute.cancelBootToSetup, apiResultHandler);
+
+    // What becomes of the database the wizard was booted away from. Guarded like the rest of setup,
+    // and refused again inside on an instance that has no such database. Not transactional: the
+    // backup runs for minutes, and keeping the database reopens it.
+    // Without a transaction, on every platform: the backup runs for minutes with the database in
+    // use, and erasing or keeping it closes the connection any transaction would belong to.
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/backup", [checkAppNotInitialized, checkSetupAuth], setupApiRoute.backUpExisting, apiResultHandler);
+    asyncRouteWithoutTransaction(GET, "/api/setup/existing/backup-defaults", [checkAppNotInitialized, checkSetupAuth], setupApiRoute.existingBackupDefaults, apiResultHandler);
+    asyncRouteWithoutTransaction(GET, "/api/setup/existing/status", [checkAppNotInitialized, checkSetupAuth], setupApiRoute.existingBackupStatus, apiResultHandler);
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/delete", [checkAppNotInitialized, checkSetupAuth], setupApiRoute.deleteExisting, apiResultHandler);
+    asyncRouteWithoutTransaction(PST, "/api/setup/existing/keep", [checkAppNotInitialized, checkSetupAuth], setupApiRoute.keepExisting, apiResultHandler);
 
     asyncApiRoute(PST, "/api/sync/test", syncApiRoute.testSync);
     asyncApiRoute(PST, "/api/sync/now", syncApiRoute.syncNow);
@@ -178,10 +237,17 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
 
     apiRoute(GET, "/api/quick-search/:searchString", searchRoute.quickSearch);
     apiRoute(GET, "/api/search-note/:noteId", searchRoute.searchFromNote);
+    apiRoute(PST, "/api/search-note/:noteId/result-details", searchRoute.getSearchResultDetails);
     apiRoute(PST, "/api/search-and-execute-note/:noteId", searchRoute.searchAndExecute);
     apiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
     apiRoute(GET, "/api/search/:searchString", searchRoute.search);
     apiRoute(GET, "/api/search-templates", searchRoute.searchTemplates);
+
+    // Streaming a chat is not here — it has no single form every runtime can serve.
+    // The server and the desktop app answer `/api/llm-chat/stream` with Server-Sent
+    // Events; standalone, whose bridge cannot hold a response open, registers
+    // `llmRoute.startChatStream` itself. See `apps/standalone`'s browser_routes.ts.
+    asyncApiRoute(PST, "/api/llm-chat/provider-models", llmRoute.getProviderModels);
 
     apiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);
     apiRoute(GET, "/api/autocomplete/notesCount", autocompleteApiRoute.getNotesCount);
@@ -192,6 +258,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     apiRoute(PUT, "/api/notes/:noteId/clone-after/:afterBranchId", cloningApiRoute.cloneNoteAfter);
 
     asyncApiRoute(GET, "/api/special-notes/inbox/:date", specialNotesRoute.getInboxNote);
+    apiRoute(GET, "/api/special-notes/inbox-target", specialNotesRoute.getInboxTarget);
     asyncApiRoute(GET, "/api/special-notes/days/:date", specialNotesRoute.getDayNote);
     asyncApiRoute(GET, "/api/special-notes/week-first-day/:date", specialNotesRoute.getWeekFirstDayNote);
     asyncApiRoute(GET, "/api/special-notes/weeks/:week", specialNotesRoute.getWeekNote);
@@ -206,6 +273,11 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     apiRoute(PST, "/api/special-notes/launchers/:noteId/reset", specialNotesRoute.resetLauncher);
     apiRoute(PST, "/api/special-notes/launchers/:parentNoteId/:launcherType", specialNotesRoute.createLauncher);
     apiRoute(PUT, "/api/special-notes/api-script-launcher", specialNotesRoute.createOrUpdateScriptLauncherFromApi);
+    apiRoute(PST, "/api/special-notes/llm-chat", specialNotesRoute.createLlmChat);
+    apiRoute(GET, "/api/special-notes/most-recent-llm-chat", specialNotesRoute.getMostRecentLlmChat);
+    apiRoute(GET, "/api/special-notes/get-or-create-llm-chat", specialNotesRoute.getOrCreateLlmChat);
+    apiRoute(GET, "/api/special-notes/recent-llm-chats", specialNotesRoute.getRecentLlmChats);
+    apiRoute(PST, "/api/special-notes/save-llm-chat", specialNotesRoute.saveLlmChat);
 
     apiRoute(PST, "/api/note-map/:noteId/tree", noteMapRoute.getTreeMap);
     apiRoute(PST, "/api/note-map/:noteId/link", noteMapRoute.getLinkMap);
@@ -227,11 +299,15 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     apiRoute(GET, "/api/sql/schema", sqlRoute.getSchema);
     apiRoute(PST, "/api/sql/execute/:noteId", sqlRoute.execute);
 
+    apiRoute(PUT, "/api/notes/:noteId/board/rename-column", boardRoute.renameColumn);
+
     apiRoute(PST, "/api/bulk-action/execute", bulkActionRoute.execute);
     apiRoute(PST, "/api/bulk-action/affected-notes", bulkActionRoute.getAffectedNoteCount);
 
     apiRoute(GET, "/api/app-info", appInfoRoute.getAppInfo);
     asyncApiRoute(GET, "/api/backend-log", backendLogRoute.getBackendLog);
+
+    apiRoute(GET, "/api/database/info", databaseInfoRoute.getDatabaseInfo);
 
     // Backup routes
     asyncApiRoute(GET, "/api/database/backups", backupRoute.getExistingBackups);

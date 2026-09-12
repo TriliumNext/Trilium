@@ -1,4 +1,5 @@
 import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
+import clsx from "clsx";
 import { ComponentChildren, HTMLAttributes } from "preact";
 import { createPortal, CSSProperties, HTMLProps } from "preact/compat";
 import { MutableRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -52,8 +53,9 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
      *
      * Use this when an ancestor establishes a containment/backdrop root (e.g. `container-type`,
      * `transform`, `filter`) which would otherwise flatten the menu's `backdrop-filter` blur into a
-     * flat tint. The menu is wrapped in a `<div class={className}>` so any CSS scoped under that
-     * class keeps applying even though the menu no longer lives inside the toggle's wrapper.
+     * flat tint. The menu is wrapped in a `<div class="tn-dropdown-portal {className}">` so any CSS
+     * scoped under that class keeps applying even though the menu no longer lives inside the
+     * toggle's wrapper, and so the menu outranks whatever stacking context it was lifted out of.
      */
     portalToBody?: boolean;
     /**
@@ -68,9 +70,19 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
      * above the whole modal, would otherwise dim the menu through.
      */
     mobileBottomSheet?: boolean;
+    /**
+     * Dim the page behind the menu on any screen, for a menu that is a task of its own rather than
+     * a list of actions: the icon picker, which holds a search field and a grid of a thousand
+     * icons.
+     *
+     * Drawn inside the same portal as the menu, immediately before it, so what covers what is a
+     * matter of document order and one z-index rather than of two scales meeting. Needs
+     * {@link portalToBody} for that, and does nothing without it.
+     */
+    backdrop?: boolean;
 }
 
-export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop: mobileBackdropProp, portalToBody: portalToBodyProp, mobileBottomSheet }: DropdownProps) {
+export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop: mobileBackdropProp, portalToBody: portalToBodyProp, mobileBottomSheet, backdrop }: DropdownProps) {
     // The sheet is three things at once — placed by the app's own rule, dimming what is behind it,
     // and lifted out of whatever opened it — so it is asked for as one thing and unpacked here.
     const bottomSheet = !!mobileBottomSheet && isMobile();
@@ -231,13 +243,21 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
         // attribute into the tooltip and drops it, so the browser's own doesn't double up with ours.
         <div ref={containerRef} class={`dropdown ${className ?? ""}`} style={{ display: "flex" }} title={title}>
             <button
-                className={`${iconAction ? "icon-action" : "btn"} ${!noSelectButtonStyle ? "select-button" : ""} ${buttonClassName ?? ""} ${!hideToggleArrow ? "dropdown-toggle" : ""}`}
+                // `buttonClassName` updates rewrite the class list.
+                // `shown` keeps Bootstrap's marker on later renders.
+                className={clsx(
+                    iconAction ? "icon-action" : "btn",
+                    !noSelectButtonStyle && "select-button",
+                    buttonClassName,
+                    !hideToggleArrow && "dropdown-toggle",
+                    shown && "show"
+                )}
                 ref={triggerRef}
                 type="button"
                 data-bs-toggle="dropdown"
                 data-bs-display={ isStatic ? "static" : undefined }
                 aria-haspopup="true"
-                aria-expanded="false"
+                aria-expanded={shown}
                 id={id ?? ariaId}
                 disabled={disabled}
                 // Mount the portaled menu just before it can open: any interaction that leads to a
@@ -256,9 +276,15 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
             {portalToBody
                 // Keep the `className` scope on the portaled wrapper so CSS scoped under it (e.g.
                 // `.note-icon-widget .icon-list`) still applies even though the menu now lives in body.
+                // `tn-dropdown-portal` beside it carries the z-index a menu needs out here (style.css).
                 // Only mount it while needed (see `menuMounted`) so closed pickers don't each leave an
                 // empty menu wrapper in the body.
-                ? (menuMounted && createPortal(<div class={className ?? ""}>{menu}</div>, document.body))
+                ? (menuMounted && createPortal((
+                    <div class={`tn-dropdown-portal ${className ?? ""}`}>
+                        {backdrop && shown && <div class="tn-dropdown-backdrop" />}
+                        {menu}
+                    </div>
+                ), document.body))
                 : menu}
         </div>
     );

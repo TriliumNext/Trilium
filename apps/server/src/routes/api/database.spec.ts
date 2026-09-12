@@ -154,4 +154,27 @@ describe("Database API", () => {
             }
         });
     });
+
+    describe("deleteAnonymizedDatabase", () => {
+        it("removes a copy, and takes a second attempt at a gone one for done", () => {
+            const filePath = path.join(dataDir.ANONYMIZED_DB_DIR, "anonymized-full-spec.db");
+            fs.mkdirSync(dataDir.ANONYMIZED_DB_DIR, { recursive: true });
+            fs.writeFileSync(filePath, "anonymized-bytes");
+
+            databaseRoute.deleteAnonymizedDatabase({ query: { filePath } } as unknown as Request);
+            expect(fs.existsSync(filePath)).toBe(false);
+
+            // The listing the path came from is a moment old by the time it is acted on, and what
+            // the caller asked for has happened either way.
+            expect(() => databaseRoute.deleteAnonymizedDatabase({ query: { filePath } } as unknown as Request))
+                .not.toThrow();
+        });
+
+        it("refuses a path outside the anonymized-db directory, backups included", () => {
+            for (const filePath of [ path.join(dataDir.BACKUP_DIR, "backup-now.db"), dataDir.DOCUMENT_PATH, "" ]) {
+                expect(() => databaseRoute.deleteAnonymizedDatabase({ query: { filePath } } as unknown as Request))
+                    .toThrow(ValidationError);
+            }
+        });
+    });
 });

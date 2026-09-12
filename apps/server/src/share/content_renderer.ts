@@ -38,6 +38,14 @@ const HIGHLIGHT_MAX_LINE_COUNT = 500;
 const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
 
 /**
+ * The base a web view's rooted source is resolved against, to tell a path that stays on this site
+ * from one that only looks rooted at it. `.invalid` is reserved and resolves nowhere, so a source
+ * that reaches this origin can only have done so by staying relative. See {@link isFramableSource}.
+ */
+const SAME_SITE_BASE = "https://web-view.invalid/";
+const SAME_SITE_ORIGIN = new URL(SAME_SITE_BASE).origin;
+
+/**
  * Represents the output of the content renderer.
  */
 export interface Result {
@@ -117,7 +125,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
     });
 }
 
-export function renderNoteContent(note: SNote) {
+export function renderNoteContent(note: SNote, canAccessInclude?: CanAccessInclude) {
     const subRoot = getSharedSubTreeRoot(note);
 
     const ancestors: string[] = [];
@@ -161,6 +169,7 @@ export function renderNoteContent(note: SNote) {
         logoUrl,
         ancestors,
         isStatic: false,
+        canAccessInclude,
         faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
         iconPackCss: [
             ...iconPacks.map(p => iconPackService.generateCss(p, p.builtin
@@ -183,6 +192,7 @@ interface RenderArgs {
     logoUrl: string;
     ancestors: string[];
     isStatic: boolean;
+    canAccessInclude?: CanAccessInclude;
     faviconUrl: string;
     iconPackCss: string;
     iconPackSupportedPrefixes: string[];
@@ -199,7 +209,10 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     }
 
     // Static export preserves full include-note nesting; the live share view renders only the first level.
-    const { header, content, isEmpty } = getContent(note, { expandNestedIncludes: renderArgs.isStatic });
+    const { header, content, isEmpty } = getContent(note, {
+        expandNestedIncludes: renderArgs.isStatic,
+        canAccessInclude: renderArgs.canAccessInclude
+    });
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
     const opts = {
         note,
@@ -278,6 +291,14 @@ export function readTemplate(path: string) {
     return templateString;
 }
 
+/**
+ * Decides whether the caller is allowed to read a note that an include pulls in. The share routes
+ * pass their `shareCredentials` check here so that an include cannot hand out a note the same
+ * caller would be refused on a direct request. Omitted by the static export, whose caller is the
+ * already-authenticated instance owner.
+ */
+export type CanAccessInclude = (note: SNote) => boolean;
+
 export interface ShareRenderOptions {
     /**
      * Keep expanding include-note sections recursively at every depth. Used for static export, which
@@ -290,6 +311,8 @@ export interface ShareRenderOptions {
     includesAsReferenceLinks?: boolean;
     /** Internal: note IDs already rendered on the current include path, used as a recursion cycle guard. */
     seenNoteIds?: Set<string>;
+    /** See {@link CanAccessInclude}. When omitted, every included note is expanded. */
+    canAccessInclude?: CanAccessInclude;
 }
 
 export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}) {
@@ -340,7 +363,7 @@ function renderIndex(result: Result) {
     for (const childNote of rootNote.getChildNotes()) {
         const isExternalLink = childNote.hasLabel("shareExternalLink");
         const rawHref = childNote.getLabelValue("shareExternalLink") ?? "";
-        const href = isExternalLink ? escapeHtml(sanitize.sanitizeUrl(rawHref)) : `./${childNote.shareId}`;
+        const href = escapeHtml(isExternalLink ? sanitize.sanitizeUrl(rawHref) : `./${childNote.shareId}`);
         const target = isExternalLink ? `target="_blank" rel="noopener noreferrer"` : "";
         result.content += `<li><a class="${childNote.type}" href="${href}" ${target}>${childNote.escapedTitle}</a></li>`;
     }
@@ -459,6 +482,14 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         const includedNote = shaca.getNote(noteId);
         if (!includedNote) continue;
 
+        // An include must not disclose what a direct request for the same note would refuse: a note
+        // carrying `shareCredentials` the caller has not presented becomes a placeholder, and its
+        // title is withheld too, since an included note need not appear in the visible share tree.
+        if (options.canAccessInclude && !options.canAccessInclude(includedNote)) {
+            includeNoteEl.replaceWith(...parse(`<p class="include-note-forbidden">${escapeHtml(t("content_renderer.included-note-requires-credentials"))}</p>`, parseOpts).childNodes);
+            continue;
+        }
+
         // Deeper-than-first-level includes (and any cycle in the recursive path) degrade to a
         // reference link that the link-processing passes below resolve to the shared note.
         if (options.includesAsReferenceLinks || seenNoteIds.has(noteId)) {
@@ -467,8 +498,8 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         }
 
         const includedResult = getContent(includedNote, options.expandNestedIncludes
-            ? { expandNestedIncludes: true, seenNoteIds: new Set(seenNoteIds) }
-            : { includesAsReferenceLinks: true, seenNoteIds: new Set(seenNoteIds) });
+            ? { expandNestedIncludes: true, seenNoteIds: new Set(seenNoteIds), canAccessInclude: options.canAccessInclude }
+            : { includesAsReferenceLinks: true, seenNoteIds: new Set(seenNoteIds), canAccessInclude: options.canAccessInclude });
         if (typeof includedResult.content !== "string") continue;
 
         const includedDocument = parse(includedResult.content, parseOpts).childNodes;
@@ -713,11 +744,6 @@ function renderSpreadsheet(result: Result) {
 /**
  * Renders a web view note as the frame that embeds its source.
  *
- * Only an absolute http(s) URL is framed, which is the source a web view is documented to take and
- * the only one its setup form will write. Any other value reaches the label by another route — a
- * hand-edited attribute, an import, ETAPI, a sync — and is either not framable at all or points at
- * this very server, which `allow-same-origin` would then not isolate from the page framing it.
- *
  * The frame is built as an element rather than assembled as a string: `setAttribute()` escapes the
  * value it is handed, so the source is placed as a value and can only ever be read back as one.
  */
@@ -725,8 +751,8 @@ function renderWebView(note: SNote | BNote, result: Result) {
     const url = note.getLabelValue("webViewSrc");
     if (!url) return;
 
-    if (!isHttpUrl(url)) {
-        getLog().error(`Web view of shared note '${note.noteId}' not rendered: '${url}' is not an absolute http(s) URL.`);
+    if (!isFramableSource(url)) {
+        getLog().error(`Web view of shared note '${note.noteId}' not rendered: '${url}' is neither an absolute http(s) URL nor a path on this site.`);
         return;
     }
 
@@ -738,6 +764,37 @@ function renderWebView(note: SNote | BNote, result: Result) {
     // embedding it; only dropping allow-same-origin would isolate it.
     frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups");
     result.content = frame.toString();
+}
+
+/**
+ * True when a web view's source is one the share page may frame: an absolute http(s) URL, or a path
+ * rooted at the site serving the page.
+ *
+ * Those two are what a web view is documented to take — the setup form writes the first, and the
+ * user guide's API reference pages carry the second to reach the Redoc and TypeDoc output the docs
+ * build writes beside them. Any other value reaches the label by another route — a hand-edited
+ * attribute, an import, ETAPI, a sync — and is either not framable at all or leaves the site while
+ * looking rooted at it.
+ *
+ * A rooted path is resolved against a base no source can name, so anything that reaches a different
+ * origin is rejected however it spelled the authority: `sanitizeUrl()` passes `//example.com` and
+ * `/\example.com` through untouched, and the URL parser folds a backslash, and strips a tab, into
+ * the second slash that starts one.
+ */
+function isFramableSource(url: string): boolean {
+    if (isHttpUrl(url)) {
+        return true;
+    }
+
+    if (!url.startsWith("/")) {
+        return false;
+    }
+
+    try {
+        return new URL(url, SAME_SITE_BASE).origin === SAME_SITE_ORIGIN;
+    } catch {
+        return false;
+    }
 }
 
 

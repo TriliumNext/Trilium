@@ -49,6 +49,17 @@ Follow the existing files in the package you touch; don't add or strip headers w
   `ck-toolbar__group_collapsed` (single underscore); key-value `ck-dropdown-menu_theme_lark`.
   IDs follow the same rules with `ck-` prefix. CSS vars inside `.ck-content` must be
   `--ck-content-*` (`ck-content-variable-name`).
+- **Theme CSS is global — scope every selector.** Vite injects `packages/ckeditor5/src/theme/*.css`
+  app-wide the first time any text note renders (including the geo map's detail pane mounting
+  `NoteDetail` on a text note). There is no scoping boundary, and `!important` there beats even
+  Popper's inline styles on Bootstrap tooltips and popovers. A selector that is not anchored to
+  `.ck`, `ML__` or `data-ml-*` silently restyles unrelated UI everywhere — and only *after* an
+  editor has mounted, which presents as a "works until you open X" bug in a feature that has
+  nothing to do with the editor. Real case: `[role="tooltip"] { position: fixed !important }` in
+  `math_form.css` collapsed the geomap marker preview (a MapLibre popup wrapping the app tooltip)
+  to a 0×0 box, and read as a MapLibre/Firefox positioning bug. When debugging that symptom, dump
+  `getComputedStyle` on the broken element and scan stylesheets with `el.matches(rule.selectorText)`
+  — pay particular attention to bare tag and attribute selectors.
 
 ## Imports & modules
 

@@ -68,4 +68,20 @@ describe("Fonts API", () => {
             expect(body).toContain(v);
         }
     });
+
+    it("names one of the user's own fonts by the family its file is registered under", () => {
+        cls.init(() => {
+            optionService.setOption("overrideThemeFonts", "true");
+            optionService.setOption("mainFontFamily", "customFont:abc123XYZ");
+            // A reference to no note Trilium could have minted is left as it stands rather than
+            // built into a declaration.
+            optionService.setOption("treeFontFamily", "customFont:not a note id");
+            optionService.setOption("detailFontFamily", "Arial");
+        });
+
+        const { body } = getCss();
+        expect(body).toContain('--main-font-family: "trilium-font-abc123XYZ";');
+        expect(body).toContain("--tree-font-family: customFont:not a note id;");
+        expect(body).toContain("--detail-font-family: Arial;");
+    });
 });

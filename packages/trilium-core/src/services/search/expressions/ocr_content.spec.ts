@@ -1,13 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
+import blobService from "../../blob.js";
 import { getContext } from "../../context.js";
 import noteService from "../../notes.js";
+import protectedSessionService from "../../protected_session.js";
 import { getSql } from "../../sql/index.js";
+import { encodeUtf8 } from "../../utils/binary.js";
 import NoteSet from "../note_set.js";
 import SearchContext from "../search_context.js";
 import OCRContentExpression from "./ocr_content.js";
+
+const PROTECTED_KEY = encodeUtf8("0123456789abcdef"); // exactly 16 bytes
 
 let counter = 0;
 
@@ -60,6 +65,28 @@ function createNoteWithOcrAttachment(ocrText: string): BNote {
     );
 
     setTextRepresentationForBlob(attachment.blobId!, ocrText);
+
+    return note;
+}
+
+/**
+ * As {@link createNoteWithOcrText}, for a note the query has to decrypt: the row is flagged protected
+ * and the text is stored encrypted, the way the OCR service stores it. Needs an open session.
+ */
+function createProtectedNoteWithOcrText(ocrText: string): BNote {
+    const note = createNoteWithOcrText(blobService.encryptTextRepresentation(ocrText, true));
+
+    getSql().execute("UPDATE notes SET isProtected = 1 WHERE noteId = ?", [note.noteId]);
+    note.isProtected = true;
+
+    return note;
+}
+
+/** The attachment counterpart: only the attachment row is flagged, which is what the query reads. */
+function createProtectedNoteWithOcrAttachment(ocrText: string): BNote {
+    const note = createNoteWithOcrAttachment(blobService.encryptTextRepresentation(ocrText, true));
+
+    getSql().execute("UPDATE attachments SET isProtected = 1 WHERE ownerId = ?", [note.noteId]);
 
     return note;
 }
@@ -198,5 +225,47 @@ describe("OCRContentExpression (real DB)", () => {
     it("renders a readable toString with the joined tokens", () => {
         const exp = new OCRContentExpression(["foo", "bar"]);
         expect(exp.toString()).toBe("OCRContent('foo', 'bar')");
+    });
+
+    describe("protected notes", () => {
+        beforeEach(() => protectedSessionService.setDataKey(PROTECTED_KEY));
+        afterEach(() => protectedSessionService.resetDataKey());
+
+        it("matches encrypted text on a note and on an attachment, with the same semantics as the query", () => {
+            const note = createProtectedNoteWithOcrText("Protected invoice total");
+            const viaAttachment = createProtectedNoteWithOcrAttachment("Protected scanned receipt");
+
+            expect(execute(new OCRContentExpression(["invoice"])).hasNote(note)).toBe(true);
+            expect(execute(new OCRContentExpression(["receipt"])).hasNote(viaAttachment)).toBe(true);
+
+            // Case-insensitive, as SQLite's LIKE is for the unprotected ones.
+            expect(execute(new OCRContentExpression(["INVOICE"])).hasNote(note)).toBe(true);
+
+            // And every token still has to be there.
+            expect(execute(new OCRContentExpression(["invoice", "receipt"])).hasNote(note)).toBe(false);
+        });
+
+        it("finds protected and unprotected notes in one search", () => {
+            const openly = createNoteWithOcrText("shared marker openly stored");
+            const encrypted = createProtectedNoteWithOcrText("shared marker under lock");
+
+            const result = execute(new OCRContentExpression(["marker"]));
+
+            expect(result.hasNote(openly)).toBe(true);
+            expect(result.hasNote(encrypted)).toBe(true);
+        });
+
+        it("cannot match a protected note once the session is closed", () => {
+            const note = createProtectedNoteWithOcrText("Protected passport number");
+
+            protectedSessionService.resetDataKey();
+
+            // Neither by the text it was made from, nor by anything in the stored ciphertext.
+            expect(execute(new OCRContentExpression(["passport"])).hasNote(note)).toBe(false);
+
+            const stored = getSql().getValue<string>(
+                "SELECT textRepresentation FROM blobs WHERE blobId = ?", [note.blobId ?? ""]);
+            expect(execute(new OCRContentExpression([stored.slice(0, 12)])).hasNote(note)).toBe(false);
+        });
     });
 });

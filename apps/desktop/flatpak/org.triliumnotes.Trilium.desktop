@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Trilium Notes
+Comment=Build your personal knowledge base with Trilium Notes
+Keywords=Trillium;
+Exec=trilium %U
+Icon=org.triliumnotes.Trilium
+Type=Application
+StartupNotify=true
+StartupWMClass=Trilium Notes
+Categories=Office;Utility;

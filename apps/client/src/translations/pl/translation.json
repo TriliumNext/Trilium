@@ -219,7 +219,6 @@
     "hide_child_notes": "Ukryj notatki podrzędne w derzwie"
   },
   "board_view": {
-    "move-to": "Przenieś do",
     "insert-above": "Wstaw powyżej",
     "insert-below": "Wstaw poniżej",
     "delete-column": "Usuń kolumnę",
@@ -229,7 +228,6 @@
     "add-column": "Dodaj kolumnę",
     "add-column-placeholder": "Wprowadź nazwę kolumny...",
     "edit-note-title": "Kliknij, aby edytować tytuł notatki",
-    "edit-column-title": "Kliknij, aby edytować tytuł kolumny",
     "delete-note": "Usuń notatkę...",
     "remove-from-board": "Usuń z tablicy",
     "archive-note": "Archiwizuj notatkę",
@@ -1338,7 +1336,6 @@
     "note_tree_font": "Czcionka drzewa notatek",
     "note_detail_font": "Czcionka szczegółów notatki",
     "monospace_font": "Czcionka o stałej szerokości (kod)",
-    "not_all_fonts_available": "Nie wszystkie wymienione czcionki mogą być dostępne w twoim systemie.",
     "generic-fonts": "Czcionki ogólne",
     "sans-serif-system-fonts": "Systemowe czcionki bezszeryfowe",
     "serif-system-fonts": "Systemowe czcionki szeryfowe",
@@ -1888,7 +1885,6 @@
     "sync_warning": "Przekazujesz funkcję synchroniczną do `api.runAsyncOnBackendWithManualTransactionHandling()`,\\npodczas gdy prawdopodobnie powinieneś użyć `api.runOnBackend()`."
   },
   "ws": {
-    "sync-check-failed": "Sprawdzanie synchronizacji nie powiodło się!",
     "consistency-checks-failed": "Sprawdzanie spójności nie powiodło się! Zobacz logi po szczegóły.",
     "encountered-error": "Napotkano błąd \"{{message}}\", sprawdź konsolę.",
     "lost-websocket-connection-title": "Utracono połączenie z serwerem",
@@ -1987,8 +1983,7 @@
   },
   "server": {
     "unknown_http_error_title": "Błąd komunikacji z serwerem",
-    "unknown_http_error_content": "Kod statusu: {{statusCode}}\nURL: {{method}} {{url}}\nWiadomość: {{message}}",
-    "traefik_blocks_requests": "Jeśli używasz odwrotnego proxy Traefik, wprowadziło ono zmianę łamiącą kompatybilność, która wpływa na komunikację z serwerem."
+    "unknown_http_error_content": "Kod statusu: {{statusCode}}\nURL: {{method}} {{url}}\nWiadomość: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Wróć do poprzedniej notatki",
@@ -2132,10 +2127,8 @@
     "more_info": "Dowiedz się więcej"
   },
   "media": {
-    "fullscreen": "Pełny ekran (F)",
     "mute": "Wycisz (M)",
     "unmute": "Wyłącz wyciszenie (M)",
-    "exit-fullscreen": "Wyłącz pełny ekran",
     "rotate": "Obróć",
     "picture-in-picture": "Obraz w obrazie",
     "pause": "Zatrzymaj (Space)",

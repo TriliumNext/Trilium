@@ -23,9 +23,9 @@ import SidebarHelp from "./SidebarHelp";
  * pane keeps its controls in its header, and a map this small has little room to stand buttons over.
  * The map reads the same option, so the two stay of one mind without being told.
  *
- * It grows, sharing the room the tab's lists leave over with the backlinks below them and taking all
- * of it where they are collapsed — a map is worth whatever height it is given, and there is no height
- * at which it is finished being read. Where it stops is in NoteMap.css.
+ * It is the one card of the tab that grows, taking whatever room the lists below it leave over — a
+ * map is worth whatever height it is given, and there is no height at which it is finished being
+ * read, which is true of none of the lists. Where it stops being squeezed is in NoteMap.css.
  */
 export default function NoteMap() {
     const { notePath } = useActiveNoteContext();

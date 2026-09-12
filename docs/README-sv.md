@@ -24,6 +24,9 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 Trilium Notes är fritt med öppen källkod, plattformsoberoende hierarkisk
 antecknings app med fokus på att bygga en stor personlig kunskapsbas.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## Ladda ner
@@ -112,7 +115,7 @@ Vår dokumentation är tillgänglig i flera format:
 * Built-in [dark
   theme](https://docs.triliumnotes.org/user-guide/concepts/themes), support for
   user themes
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   and [Markdown import &
   export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for

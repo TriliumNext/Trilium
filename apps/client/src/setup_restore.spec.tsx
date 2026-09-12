@@ -7,6 +7,8 @@ vi.mock("./services/i18n", () => ({
     t: (key: string, values?: Record<string, unknown>) => [ key, ...Object.values(values ?? {}) ].join(" ")
 }));
 
+import en from "./translations/en/entry.json";
+
 const serverMock = vi.hoisted(() => ({
     // The default serves what transitively imported modules ask for as they load (keyboard_actions
     // fetches its shortcut list on import); the routing installed in beforeEach overrides it.
@@ -15,10 +17,19 @@ const serverMock = vi.hoisted(() => ({
 }));
 vi.mock("./services/server", () => ({ default: serverMock }));
 
-const uploadMock = vi.hoisted(() => ({ uploadInChunks: vi.fn() }));
+const uploadMock = vi.hoisted(() => ({
+    uploadInChunks: vi.fn(),
+    // Stands in for the real one, which the screen tests failures against: mocking the module whole
+    // would otherwise leave it undefined.
+    ChunkedUploadError: class ChunkedUploadError extends Error {
+        constructor(message: string, readonly status: number) {
+            super(message);
+        }
+    }
+}));
 vi.mock("./services/chunked_upload", () => uploadMock);
 
-import RestoreFromBackup from "./setup_restore";
+import RestoreFromBackup, { stageLabel } from "./setup_restore";
 
 const BACKUPS = [
     { fileName: "backup-daily.db", filePath: "/data/backup/backup-daily.db", mtime: "2026-08-01T10:00:00Z", fileSize: 2048, encrypted: false },
@@ -31,7 +42,10 @@ let restore: { stage: string; fraction?: number; error?: string; reason?: string
 function renderRestore(props: Partial<{ onBack: () => void; onRestored: () => void }> = {}) {
     container = document.createElement("div");
     document.body.appendChild(container);
-    render(<RestoreFromBackup onBack={props.onBack ?? vi.fn()} onRestored={props.onRestored ?? vi.fn()} />, container);
+    // `onBack` is omitted only when the caller says so: passing it undefined is the case where
+    // nothing led here, which is the whole point of some of the tests below.
+    const onBack = "onBack" in props ? props.onBack : vi.fn();
+    render(<RestoreFromBackup onBack={onBack} onRestored={props.onRestored ?? vi.fn()} />, container);
 
     return container;
 }
@@ -276,6 +290,27 @@ describe("going back", () => {
         expect(onBack).toHaveBeenCalled();
     });
 
+    it("offers no way back from the first step where nothing led here", async () => {
+        // The wizard opened at this screen, so the step it would return to was never shown.
+        renderRestore({ onBack: undefined });
+        await flushEffects();
+
+        expect(container.querySelector(".back-button")).toBeNull();
+    });
+
+    it("still goes back a step within the restore, wherever the restore was entered from", async () => {
+        renderRestore({ onBack: undefined });
+        await flushEffects();
+        backupRow("backup-weekly.tnbackup")?.click();
+        await flushEffects();
+        expect(container.querySelector("input[type=password]")).toBeTruthy();
+
+        goBack();
+        await flushEffects();
+
+        expect(container.querySelector(".restore-choose-file")).toBeTruthy();
+    });
+
     it("returns to the backups from the password prompt, rather than out of the flow", async () => {
         const onBack = vi.fn();
         renderRestore({ onBack });
@@ -404,6 +439,33 @@ describe("uploading a backup", () => {
         expect(container.querySelector("input[type=password]")).toBeTruthy();
     });
 
+    it("says it is waiting on the connection, in place of a rate that has stopped meaning anything", async () => {
+        let report: (progress: unknown) => void = () => {};
+        uploadMock.uploadInChunks.mockImplementation(async ({ onProgress }: { onProgress: (p: unknown) => void }) => {
+            report = onProgress;
+            report({ sentBytes: 1024, totalBytes: 4096, fraction: 0.25, bytesPerSecond: 512, reconnecting: false });
+
+            return new Promise(() => {});
+        });
+        renderRestore();
+        await flushEffects();
+        await chooseFile(new File([ "database bytes" ], "backup.db"));
+
+        report({ sentBytes: 1024, totalBytes: 4096, fraction: 0.25, bytesPerSecond: 512, reconnecting: true });
+        await flushEffects();
+
+        expect(container.querySelector(".restore-upload-reconnecting")?.textContent)
+            .toContain("setup.restore-upload-reconnecting");
+        expect(container.querySelector(".restore-upload-speed")).toBeFalsy();
+        // Still on the upload rather than thrown back to the picker: waiting is not failing.
+        expect(container.querySelector("progress")).toBeTruthy();
+
+        report({ sentBytes: 2048, totalBytes: 4096, fraction: 0.5, bytesPerSecond: 512, reconnecting: false });
+        await flushEffects();
+
+        expect(container.querySelector(".restore-upload-reconnecting")).toBeFalsy();
+    });
+
     it("goes back to the picker with the reason when the upload fails", async () => {
         uploadMock.uploadInChunks.mockRejectedValue(new Error("the disk is full"));
         renderRestore();
@@ -414,6 +476,20 @@ describe("uploading a backup", () => {
         expect(container.querySelector(".restore-error-headline")?.textContent).toBe("setup.restore-error-upload-failed");
         expect(container.querySelector(".restore-error-detail")?.textContent).toBe("the disk is full");
         expect(container.querySelector(".restore-file-input")).toBeTruthy();
+    });
+
+    it("says an upload the server no longer holds has to be started again, not retried", async () => {
+        uploadMock.uploadInChunks.mockRejectedValue(
+            new uploadMock.ChunkedUploadError("The server restarted, so the upload it was holding is gone.", 410)
+        );
+        renderRestore();
+        await flushEffects();
+
+        await chooseFile(new File([ "database bytes" ], "backup.db"));
+
+        expect(container.querySelector(".restore-error-headline")?.textContent).toBe("setup.restore-error-upload-interrupted");
+        expect(container.querySelector(".restore-error-detail")?.textContent)
+            .toBe("The server restarted, so the upload it was holding is gone.");
     });
 });
 
@@ -598,5 +674,33 @@ describe("following the restore", () => {
         restore = { stage: "failed", reason: "database-too-old", error: "version 200" };
         await nextPoll();
         expect(headline()).toBe("setup.restore-error-too-old");
+    });
+});
+
+describe("what the restore calls the stage it is at", () => {
+    // Every stage either restore reports: the server's, and the browser-only one which is alone in
+    // reporting the two that end it.
+    const stages = [ "staging", "validating", "swapping", "migrating", "done", "failed" ];
+
+    it("has a sentence for every stage a restore can report", () => {
+        // t() is mocked to hand back the key, so what a label comes back as is the key it looked
+        // up: it has to be one the catalogue actually defines, or the user is shown the key itself.
+        for (const stage of stages) {
+            const label = stageLabel(stage);
+            if (!label) {
+                continue;
+            }
+
+            const [ namespace, key ] = label.split(".");
+            expect(namespace).toBe("setup");
+            expect(en.setup).toHaveProperty(key);
+        }
+    });
+
+    it("says what happens next once it is done, rather than naming a finished step", () => {
+        // The frame between the last step and the reload, and the one the user watches hardest.
+        expect(stageLabel("done")).toBe("setup.redirecting");
+        // Nothing is said about a failure here: the screen replacing this one says it properly.
+        expect(stageLabel("failed")).toBe("");
     });
 });

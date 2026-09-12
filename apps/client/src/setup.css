@@ -55,46 +55,76 @@ body.setup {
                 body.desktop & {
                     gap: 0.75rem;
                 }
+            }
 
-                .setup-option-card {
-                    padding: .75em 1.5em;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
+            .setup-option-card {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: .75em 1.5em;
+                cursor: pointer;
 
-                    &.disabled {
-                        cursor: not-allowed;
-                        opacity: 0.5;
-                        background-color: transparent;
-                        border-color: var(--main-border-color)
+                &.disabled {
+                    cursor: not-allowed;
+                    opacity: 0.5;
+                    background-color: transparent;
+                    border-color: var(--main-border-color)
+                }
+
+                &:not(.disabled):hover {
+                    background-color: var(--card-background-hover-color);
+                    filter: contrast(105%);
+                    transition: background-color .2s ease-out;
+                }
+
+                .tn-icon {
+                    font-size: 2.5em;
+                    color: var(--muted-text-color);
+                    /* A box of its own rather than whatever width the glyph happens to have, so
+                       every title and description in the list starts on the same line however
+                       large the icon beside it is drawn. One em at this size is 2.5em of the card,
+                       which is the measure the quieter card below matches itself to. */
+                    width: 1em;
+                    flex-shrink: 0;
+                    text-align: center;
+                }
+
+                h3 {
+                    margin-bottom: 4px;
+                    font-size: 1.15em;
+                    font-weight: normal;
+
+                    body.desktop & {
+                        font-size: 1.3em;
                     }
+                }
 
-                    &:not(.disabled):hover {
-                        background-color: var(--card-background-hover-color);
-                        filter: contrast(105%);
-                        transition: background-color .2s ease-out;
-                    }
+                p:last-of-type {
+                    margin-bottom: 0;
+                    font-size: .85em;
+                    color: var(--muted-text-color);
+                }
+            }
 
-                    .tn-icon {
-                        font-size: 2.5em;
-                        color: var(--muted-text-color);
-                    }
+            /* Apart from the four below, which all replace the knowledge base, and quieter than
+               them: this is the one that changes nothing. */
+            .setup-keep-card {
+                margin-bottom: 0.5rem;
+                background-color: transparent;
 
-                    h3 {
-                        margin-bottom: 4px;
-                        font-size: 1.15em;
-                        font-weight: normal;
+                .tn-icon {
+                    font-size: 1.75em;
+                    /* Drawn smaller, but taking the same room: 2.5em of the card, written in this
+                       icon's own units. Without it the smaller glyph pulls its title left and the
+                       item stops lining up with the four below. */
+                    width: calc(2.5em / 1.75);
+                }
 
-                        body.desktop & {
-                            font-size: 1.3em;
-                        }
-                    }
+                h3 {
+                    font-size: 1em;
 
-                    p:last-of-type {
-                        margin-bottom: 0;
-                        font-size: .85em;
-                        color: var(--muted-text-color);
+                    body.desktop & {
+                        font-size: 1.05em;
                     }
                 }
             }
@@ -111,10 +141,21 @@ body.setup {
             overflow: auto;
 
             >.back-button {
-                position: absolute;
+                /* `.page` scrolls (not `.setup-container`), so sticky is required here, not
+                   absolute, to stay in flow and follow the scroll. */
+                position: sticky;
                 top: calc(1em + env(safe-area-inset-top));
                 inset-inline-start: 1em;
+                align-self: flex-start;
+                z-index: 1;
                 color: var(--muted-text-color);
+                /* Sticky content still scrolls in underneath; an opaque fill stops it showing
+                   through, same technique `.page > footer` below already uses. */
+                background: var(--main-background-color);
+
+                body.background-effects & {
+                    background: transparent;
+                }
 
                 body.desktop & {
                     inset-inline-start: 2em;
@@ -381,8 +422,18 @@ body.setup .bx-spin {
 .page.sync-from-desktop {
     .card-columns {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         gap: 1.5rem;
+
+        @media (min-width: 700px) {
+            flex-direction: row;
+
+            /* `container-type: inline-size` on `.tn-card` (Card.css) zeroes a flex item's
+               own width contribution; give this card an explicit share of the row. */
+            > :first-child {
+                flex: 1;
+            }
+        }
     }
 
     .sync-from-desktop-waiting {

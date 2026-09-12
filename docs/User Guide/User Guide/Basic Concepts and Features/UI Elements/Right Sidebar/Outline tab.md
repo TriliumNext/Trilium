@@ -18,6 +18,7 @@ The following note types are supported:
 ### Interaction
 
 *   Clicking on a heading will scroll the document to the position of the heading.
+*   As the document is scrolled, the heading being read is highlighted and the list scrolls to keep it in view. If that heading is hidden inside a collapsed section, the collapsed heading is highlighted instead.
 *   Pressing the close button will dismiss the table of contents but it can be shown again from the <a class="reference-link" href="../Floating%20buttons.md">Floating buttons</a> section.
 
 ### Configuration

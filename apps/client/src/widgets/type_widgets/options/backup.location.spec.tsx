@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({
     customDir: ""
 }));
 
-// Partial-mock so sibling components (e.g. `useUniqueName` in OptionsRow) keep their real implementation.
+// Partial-mock so sibling components (e.g. `useUniqueName` in OptionCardSection) keep their real
+// implementation.
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../react/hooks")>()),
     useTriliumOption: () => [mocks.customDir, mocks.setCustomDir]

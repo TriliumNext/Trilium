@@ -2,11 +2,23 @@ import type { CompletionContext } from "@codemirror/autocomplete";
 import { markdown } from "@codemirror/lang-markdown";
 import { ensureSyntaxTree } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
+import type VanillaCodeMirror from "@triliumnext/codemirror";
 import type { MimeType } from "@triliumnext/commons";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { h, render } from "preact";
+import { act } from "preact/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type FNote from "../../../entities/fnote";
 import mime_types from "../../../services/mime_types.js";
-import { buildCodeFenceOptions, buildTaskItemInsert, codeFenceCompletionSource, isClosingFence, parseCodeFencePrefix } from "./completions.js";
+import type { TypeWidgetProps } from "../type_widget";
+import { buildCodeFenceOptions, buildTaskItemInsert, codeFenceCompletionSource, isClosingFence, parseCodeFencePrefix, useSlashCommands } from "./completions.js";
+
+// The hook's two asynchronous sources of menu entries, stubbed so mounting it needs no server.
+vi.mock("../code/snippets", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../code/snippets")>(),
+    useCodeSnippets: () => ({ current: [] })
+}));
+vi.mock("../../../services/task_states", () => ({ getTaskStateDefinitions: () => Promise.resolve([]) }));
 
 describe("buildTaskItemInsert", () => {
     it("prepends a bullet when not already in a list item", () => {
@@ -135,5 +147,49 @@ describe("codeFenceCompletionSource", () => {
     it("returns null on a valid opener when no languages are enabled", () => {
         withLanguages(); // none enabled → no options
         expect(codeFenceCompletionSource(context("```", 3))).toBeNull();
+    });
+});
+
+describe("useSlashCommands", () => {
+    let container: HTMLElement;
+
+    beforeEach(() => {
+        container = document.createElement("div");
+        document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+        render(null, container);
+        container.remove();
+    });
+
+    /** Mounts the hook against an editor that only records what it is asked to register. */
+    function mount() {
+        const setCompletionSource = vi.fn();
+        const editorView = { setCompletionSource } as unknown as VanillaCodeMirror;
+
+        function Probe() {
+            useSlashCommands({} as TypeWidgetProps["parentComponent"], editorView, {} as FNote);
+            return null;
+        }
+
+        act(() => render(h(Probe, {}), container));
+        return setCompletionSource;
+    }
+
+    it("contributes both sources to the editor's shared aggregate", () => {
+        const setCompletionSource = mount();
+
+        expect(setCompletionSource.mock.calls.map(([ name ]) => name)).toEqual([ "slashCommands", "markdownCodeFence" ]);
+        for (const [ , source ] of setCompletionSource.mock.calls) expect(source).toBeTypeOf("function");
+    });
+
+    it("withdraws both sources on unmount, so a later editor does not inherit them", () => {
+        const setCompletionSource = mount();
+        setCompletionSource.mockClear();
+
+        act(() => render(null, container));
+
+        expect(setCompletionSource.mock.calls).toEqual([ [ "slashCommands", null ], [ "markdownCodeFence", null ] ]);
     });
 });

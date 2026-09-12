@@ -11,7 +11,11 @@ import mime_types from "../../../services/mime_types";
 import { useStaticTooltip, useTriliumOptionJson } from "../../react/hooks";
 import CheckboxList from "./components/CheckboxList";
 
-type MimeTypeWithDisabled = MimeType & { disabled?: boolean };
+/**
+ * Plain text is applied whatever the option holds (see `mime_types`, which ORs it in), so its entry
+ * carries both halves of that: it cannot be cleared, and it reads as on regardless.
+ */
+type MimeTypeWithState = MimeType & { disabled?: boolean; alwaysOn?: boolean };
 
 /**
  * Lives in its own module (rather than in `code_notes.tsx`) because it is also rendered by the
@@ -56,15 +60,15 @@ export function CodeMimeTypesList() {
     const groupedMimeTypes: Record<string, MimeType[]> = useMemo(() => {
         mime_types.loadMimeTypes();
 
-        const ungroupedMimeTypes = Array.from(mime_types.getMimeTypes()) as MimeTypeWithDisabled[];
+        const ungroupedMimeTypes = Array.from(mime_types.getMimeTypes()) as MimeTypeWithState[];
         const plainTextMimeType = ungroupedMimeTypes.shift();
         const result: Record<string, MimeType[]> = {};
         ungroupedMimeTypes.sort((a, b) => a.title.localeCompare(b.title));
 
         if (plainTextMimeType) {
             result[""] = [ plainTextMimeType ];
-            plainTextMimeType.enabled = true;
             plainTextMimeType.disabled = true;
+            plainTextMimeType.alwaysOn = true;
         }
 
         for (const mimeType of ungroupedMimeTypes) {
@@ -85,8 +89,9 @@ export function CodeMimeTypesList() {
                 <section>
                     { initial && <h5>{initial}</h5> }
                     <CheckboxList
-                        values={mimeTypes as MimeTypeWithDisabled[]}
-                        keyProperty="mime" titleProperty="title" disabledProperty="disabled"
+                        values={mimeTypes as MimeTypeWithState[]}
+                        keyProperty="mime" titleProperty="title"
+                        disabledProperty="disabled" alwaysOnProperty="alwaysOn"
                         currentValue={codeNotesMimeTypes} onChange={setCodeNotesMimeTypes}
                         columnWidth="inherit"
                     />

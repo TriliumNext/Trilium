@@ -188,9 +188,9 @@ pnpm --filter @triliumnext/ckeditor5-<feature> lint        # eslint-config-ckedi
 pnpm --filter @triliumnext/ckeditor5-<feature> stylelint   # theme CSS
 ```
 
-Tests run in a real headless Chrome that webdriverio downloads. Where that build cannot run — NixOS
-being the case in point — set `CHROME_BIN` and `CHROMEDRIVER_PATH` to a matching system pair, which
-`nix develop` already exports; don't start a driver by hand.
+Tests run in a real headless Chromium that Playwright downloads (`pnpm exec playwright install
+chromium`). Where that build cannot run — NixOS being the case in point — set `CHROME_BIN` to a
+system browser, which `nix develop` already exports.
 
 For test setup, model/view assertions, and command/UI test patterns, use the separate
 **`ckeditor5-testing`** skill.

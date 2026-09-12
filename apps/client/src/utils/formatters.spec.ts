@@ -102,6 +102,29 @@ describe("formatters", () => {
         expect(() => formatDateTime(new Date(), "none", "none")).toThrow("Incorrect state.");
     });
 
+    it("follows a locale change rather than reusing the formatter memoized for the previous one", () => {
+        // Formatters are cached to keep collection views from rebuilding one per row. The cache is
+        // keyed on locale as well as style precisely so this keeps working: keyed on style alone, it
+        // would go on rendering the first locale's pattern after the setting changed.
+        const date = new Date(Date.UTC(2026, 0, 25, 13, 30));
+
+        options.set("formattingLocale", "en-US");
+        const american = formatDateTime(date, "short", "none");
+
+        options.set("formattingLocale", "de");
+        const german = formatDateTime(date, "short", "none");
+
+        // Compared against a formatter built on the spot, so the assertion tracks whatever patterns
+        // the environment's ICU actually carries.
+        expect(american).toBe(new Intl.DateTimeFormat("en-US", { dateStyle: "short" }).format(date));
+        expect(german).toBe(new Intl.DateTimeFormat("de", { dateStyle: "short" }).format(date));
+        expect(german).not.toBe(american);
+
+        // Back again: the first entry has to still be right, not overwritten by the second locale.
+        options.set("formattingLocale", "en-US");
+        expect(formatDateTime(date, "short", "none")).toBe(american);
+    });
+
     describe("formatDateNumeric", () => {
         // Every locale the user can actually pick as a formatting locale, which is the set that
         // declares an electronLocale (see the options page).

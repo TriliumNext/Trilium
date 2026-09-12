@@ -28,10 +28,11 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath, cloneButton 
     cloneButton?: boolean;
 }) {
     const parentComponent = useContext(ParentComponent);
-    // What holds the list in the new layout — the sidebar's card, the mobile note menu's modal — is
-    // titled for the paths already, so the line saying the note is placed in them is left to the
-    // ribbon's tab, which carries no title of its own. A note placed nowhere still says so wherever
-    // it is shown: the list is then empty, and nothing else would account for it.
+    // What holds the list in the new layout — the sidebar's card, the mobile note menu's modal, the
+    // badge the status bar's dropdown hangs off — names the paths already, so the line saying the note
+    // is placed in them is left to the ribbon's tab, which carries no title of its own. A note placed
+    // nowhere still says so wherever it is shown: the list is then empty, and nothing else would
+    // account for it.
     const intro = sortedNotePaths?.length
         ? (isExperimentalFeatureEnabled("new-layout") ? null : t("note_paths.intro_placed"))
         : t("note_paths.intro_not_placed");

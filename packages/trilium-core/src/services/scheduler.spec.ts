@@ -29,10 +29,15 @@ const HOUR = 3600 * SECOND;
  * startScheduler() registers all its timers inside `sqlInit.dbReady.then(...)`.
  * Awaiting the (already-resolved) dbReady promise lets those then-callbacks run
  * first, so the timers exist before we advance the fake clock.
+ *
+ * Several microtasks rather than one: the hidden-subtree callback reconciles the
+ * language before it runs, and each `await` inside it costs another turn.
  */
 async function settleDbReady() {
     await sqlInit.dbReady;
-    await Promise.resolve();
+    for (let i = 0; i < 5; i++) {
+        await Promise.resolve();
+    }
 }
 
 function buildBackendScript() {
@@ -95,7 +100,7 @@ describe("scheduler", () => {
         startScheduler();
         await settleDbReady();
 
-        // DB was already initialized → hidden subtree is checked immediately via dbReady.
+        // The hidden subtree is checked as soon as there is a database, via dbReady.
         expect(checkHiddenSubtree).toHaveBeenCalledTimes(1);
 
         await vi.advanceTimersByTimeAsync(10 * SECOND);
@@ -111,15 +116,21 @@ describe("scheduler", () => {
         expect(getNotesWithLabel).toHaveBeenCalledWith("run", "daily");
     });
 
-    it("checks the hidden subtree only via the periodic maintenance interval when the DB is not yet initialized", async () => {
+    it("still checks the hidden subtree where the database was opened after the scheduler started", async () => {
+        // Which is every path through the setup wizard: the instance has nothing to open when this
+        // runs, and the database it goes on to open — restored from a backup, or pulled from a sync
+        // server — was written by an older version that knows nothing of whatever has been added to
+        // the subtree since. Asking whether the database was initialized at the moment the scheduler
+        // started answered for the wrong moment, and left those instances unchecked until a restart.
         isDbInitialized.mockReturnValue(false);
 
         startScheduler();
         await settleDbReady();
-        expect(checkHiddenSubtree).not.toHaveBeenCalled();
+
+        expect(checkHiddenSubtree).toHaveBeenCalledTimes(1);
 
         await vi.advanceTimersByTimeAsync(7 * HOUR);
-        expect(checkHiddenSubtree).toHaveBeenCalledTimes(1);
+        expect(checkHiddenSubtree).toHaveBeenCalledTimes(2);
     });
 
     it("does not schedule script timers when backend scripting is disabled, but still runs maintenance", async () => {

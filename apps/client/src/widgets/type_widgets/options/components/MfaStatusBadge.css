@@ -1,10 +1,3 @@
-/* Section-title layout: the title text with its status badge inline just after it. */
-.mfa-status-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
-
 /* The badge itself: a colored outline whose hue is driven by --color per tone. */
 .mfa-status-badge.active {
     --color: var(--admonition-tip-accent-color, #40c025);

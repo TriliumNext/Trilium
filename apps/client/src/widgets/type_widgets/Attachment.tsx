@@ -31,7 +31,7 @@ import Dropdown from "../react/Dropdown";
 import FormFileUpload from "../react/FormFileUpload";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
-import { useTriliumEvent } from "../react/hooks";
+import { useAttachments, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import ImageViewer from "../react/ImageViewer";
 import NoItems from "../react/NoItems";
@@ -126,24 +126,6 @@ function SystemAttachments({ attachments }: { attachments: FAttachment[] }) {
             {everExpanded && <AttachmentGrid attachments={attachments} />}
         </ExternallyControlledCollapsible>
     );
-}
-
-export function useAttachments(note: FNote) {
-    const [ attachments, setAttachments ] = useState<FAttachment[]>([]);
-
-    function refresh() {
-        note.getAttachments().then(attachments => setAttachments(Array.from(attachments)));
-    }
-
-    useEffect(refresh, [ note ]);
-
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (loadResults.getAttachmentRows().some((att) => att.attachmentId && att.ownerId === note.noteId)) {
-            refresh();
-        }
-    });
-
-    return attachments;
 }
 
 function AttachmentListHeader({ noteId }: { noteId: string }) {

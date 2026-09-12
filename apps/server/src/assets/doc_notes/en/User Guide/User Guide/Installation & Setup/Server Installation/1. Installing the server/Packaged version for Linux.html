@@ -19,10 +19,10 @@
 <p>The problem with above steps is that once you close the SSH connection,
   the Trilium process is terminated. To avoid that, you have two options:</p>
 <ul>
-  <li>Kill it (with e.g. <kbd>Ctrl</kbd> + <kbd>C</kbd>) and run again like this:
-    <code
-    spellcheck="false">nohup ./trilium.sh &amp;</code>. (nohup keeps the process running in the
-      background, <code spellcheck="false">&amp;</code> runs it in the background)</li>
+  <li>Kill it (with e.g. <kbd>Ctrl</kbd> + <kbd>C</kbd>) and run again like this: <code
+    spellcheck="false">nohup ./trilium.sh &amp;</code>. (nohup keeps the process
+    running in the background, <code spellcheck="false">&amp;</code> runs it
+    in the background)</li>
   <li>Configure systemd to automatically run Trilium in the background on every
     boot</li>
 </ul>
@@ -165,5 +165,5 @@ echo "Cleanup complete. Trilium updated to $LATEST_VERSION."</code></pre>
 <p>If you get an error like this, you need to either upgrade your glibc (typically
   by upgrading to up-to-date distribution version) or use some other <a href="#root/_help_WOcw2SLH6tbX">server installation</a> method.</p>
 <h2>TLS</h2>
-<p>Don't forget to <a href="#root/_help_l2VkvOwUNfZj">configure TLS</a>, which is
-  required for secure usage!</p>
+<p>Don't forget to <a href="#root/_help_l2VkvOwUNfZj">configure TLS</a>, which
+  is required for secure usage!</p>

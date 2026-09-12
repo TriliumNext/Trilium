@@ -25,6 +25,9 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 مبني على كتابة الملاحظات بالتفرعات الشجرية مع التركيز على بناء قاعدة بيانات
 معرفية ضخمة.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⬇️ التنزيل
@@ -118,7 +121,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 * [الوضع الداكن](https://docs.triliumnotes.org/user-guide/concepts/themes)
   المدمج، ودعم سمات المستخدم
 * [إيفيرنوت
-  (Evernote)](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  (Evernote)](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   و[استيراد وتصدير ملفات
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [أداة قص الويب](https://docs.triliumnotes.org/user-guide/setup/web-clipper)

@@ -7,14 +7,12 @@
   <li>Import a file such as an image or a font into Trilium by drag &amp; drop.</li>
   <li>Select the file and go to the <em>Owned Attributes</em> section.</li>
   <li>Add the label <code spellcheck="false">#customResourceProvider=hello</code>.</li>
-  <li>To test if it is working, use a browser to navigate to <code spellcheck="false">&lt;protocol&gt;://&lt;host&gt;/custom/hello</code> (where
-    <code
-    spellcheck="false">&lt;protocol&gt;</code>is either <code spellcheck="false">http</code> or
-      <code
-      spellcheck="false">https</code>based on your setup, and <code spellcheck="false">&lt;host&gt;</code> is
-        the host or IP to your Trilium server instance). If you are running the
-        TriliumNext application without a server, use <code spellcheck="false">http://localhost:37840</code> as
-        the base URL.</li>
+  <li>To test if it is working, use a browser to navigate to <code spellcheck="false">&lt;protocol&gt;://&lt;host&gt;/custom/hello</code> (where <code
+    spellcheck="false">&lt;protocol&gt;</code> is either <code spellcheck="false">http</code> or <code
+    spellcheck="false">https</code> based on your setup, and <code spellcheck="false">&lt;host&gt;</code> is
+    the host or IP to your Trilium server instance). If you are running the
+    TriliumNext application without a server, use <code spellcheck="false">http://localhost:37840</code> as
+    the base URL.</li>
   <li>If everything went well, at the previous step the browser should have
     downloaded the file uploaded in the first step.</li>
 </ol>
@@ -24,8 +22,7 @@
     would be accessible via <code spellcheck="false">&lt;host&gt;/custom/fonts/Roboto.ttf</code>.</li>
   <li>As a more advanced use case, a regular expression to match multiple routes,
     such as <code spellcheck="false">hello/.*</code> which will be accessible
-    via <code spellcheck="false">/custom/hello/1</code>, <code spellcheck="false">/custom/hello/2</code>,
-    <code
+    via <code spellcheck="false">/custom/hello/1</code>, <code spellcheck="false">/custom/hello/2</code>, <code
     spellcheck="false">/custom/hello/world</code>, etc.</li>
 </ul>
 <h2>Using it in a theme</h2>

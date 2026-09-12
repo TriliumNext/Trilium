@@ -6,6 +6,7 @@ import options from "./options.js";
 import { fakeRequestProvider } from "../test/request_provider.js";
 import { type ExecOpts, initRequest, type RequestProvider } from "./request.js";
 import setupService from "./setup.js";
+import { enterSetupMode, initSetupPlatform, leaveSetupMode } from "./setup_mode.js";
 import sqlInit from "./sql_init.js";
 import syncService from "./sync.js";
 
@@ -111,6 +112,77 @@ describe("setup service", () => {
 
             const result = await setupService.setupSyncFromSyncServer("http://srv", "", "pw");
             expect(result).toEqual({ result: "failure", error: "network down" });
+        });
+
+        describe("with a knowledge base still behind the wizard", () => {
+            /** Records whether the erasure happened, and whether the schema was built before it. */
+            function watchTheErasure() {
+                const erased = { removeDatabase: false, beforeCreate: false };
+
+                initSetupPlatform({
+                    writeMarker: async () => {},
+                    hasMarker: async () => false,
+                    removeMarker: async () => {},
+                    removeDatabase: async () => { erased.removeDatabase = true; }
+                });
+                enterSetupMode({ lang: "en" });
+
+                vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+                vi.spyOn(sqlInit, "createDatabaseForSync").mockImplementation(async () => {
+                    erased.beforeCreate = erased.removeDatabase;
+                });
+                vi.spyOn(syncService, "sync").mockResolvedValue({ success: true });
+
+                return erased;
+            }
+
+            afterEach(() => leaveSetupMode());
+
+            it("keeps it when the server cannot be reached", async () => {
+                // A mistyped host, a proxy that is not there, a machine that is off. Every one of
+                // them is something the user goes back and corrects — which they can only do if
+                // what they were correcting it for is still there.
+                const erased = watchTheErasure();
+                execImpl = async () => {
+                    throw new Error("network down");
+                };
+
+                await expect(setupService.setupSyncFromSyncServer("http://srv", "", "pw"))
+                    .resolves.toMatchObject({ result: "failure" });
+                expect(erased.removeDatabase).toBe(false);
+            });
+
+            it("keeps it when the password is refused", async () => {
+                const erased = watchTheErasure();
+                execImpl = async () => {
+                    throw new Error("Incorrect password");
+                };
+
+                await expect(setupService.setupSyncFromSyncServer("http://srv", "", "wrong"))
+                    .resolves.toMatchObject({ result: "failure" });
+                expect(erased.removeDatabase).toBe(false);
+            });
+
+            it("keeps it when the server speaks a different sync version", async () => {
+                const erased = watchTheErasure();
+                execImpl = async () => ({ syncVersion: appInfo.syncVersion + 5, options: [] });
+
+                await expect(setupService.setupSyncFromSyncServer("http://srv", "", "pw"))
+                    .resolves.toMatchObject({ result: "failure" });
+                expect(erased.removeDatabase).toBe(false);
+            });
+
+            it("erases it only once the server has answered, and before the schema is built", async () => {
+                // The schema is created by wiping whatever is in the way, so the erasure cannot come
+                // after it either: there is exactly one place it belongs.
+                const erased = watchTheErasure();
+                execImpl = async () => ({ syncVersion: appInfo.syncVersion, options: [] });
+
+                await expect(setupService.setupSyncFromSyncServer("http://srv", "", "pw"))
+                    .resolves.toEqual({ result: "success" });
+                expect(erased.removeDatabase).toBe(true);
+                expect(erased.beforeCreate).toBe(true);
+            });
         });
     });
 

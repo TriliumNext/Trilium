@@ -1,0 +1,15 @@
+diff --git a/lib/html.js b/lib/html.js
+index 455c1ae8e1d23cb57bf71c0421d5a7430e86c3f4..8de8b08a283eea8e115c3e1545a6e8e9d77bbe06 100644
+--- a/lib/html.js
++++ b/lib/html.js
+@@ -227,8 +227,8 @@ function style_html(html_source, options) {
+ 
+       var tag_complete = content.join('');
+       var tag_index;
+-      if (tag_complete.indexOf(' ') != -1) { //if there's whitespace, thats where the tag name ends
+-        tag_index = tag_complete.indexOf(' ');
++      if (tag_complete.search(/\s/) != -1) { //if there's whitespace, thats where the tag name ends
++        tag_index = tag_complete.search(/\s/);
+       }
+       else { //otherwise go with the tag ending
+         tag_index = tag_complete.indexOf('>');

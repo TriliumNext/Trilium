@@ -1,0 +1,71 @@
+/*
+ * The chosen mark, named along the foot of the screen. Two rows of text with the size beside them:
+ * where the note is, what it is called, and how much it takes.
+ *
+ * Sticky rather than fixed, and the last thing on the page, so at the end of the scroll it settles
+ * below the map instead of over it. The page leaves the map room for it besides (see index.css).
+ */
+.space-usage-selection {
+    display: grid;
+    position: sticky;
+    bottom: 0;
+    /* With the map, which lifts a chosen cell to 2, and under the toolbar's own 10. */
+    z-index: 3;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    /* Two rows of text plus the box around them, held whether or not both rows are filled: the strip
+       is always on screen and the map is given room for exactly this much, so its height must not
+       follow what is in it. Both rows state their own leading (1.2) precisely so this can be added
+       up: 0.75em and 1.2em of text come to 2.34em, and the box adds the name's 4px lead, the 16px
+       padding and the rule. Themes set the page's leading themselves, which is why the rows do not
+       inherit it here. */
+    min-height: calc(2.34em + 21px);
+    border-top: 1px solid var(--main-border-color);
+    background: var(--main-background-color);
+    padding-block: 8px;
+}
+
+/* What to do, while nothing has been tapped: the strip is the map's legend on a touch screen, and it
+   has to say so before it can be used. Set against both rows, which is what holds the height. */
+.space-usage-selection-hint {
+    grid-row: 1 / span 2;
+    grid-column: 1 / span 2;
+    color: var(--muted-text-color);
+    text-align: center;
+}
+
+.space-usage-selection-actionable {
+    cursor: pointer;
+}
+
+/* Where the note sits, as its ancestors' names: the end of it is what says which of several
+   like-named notes this is, so it is swiped to rather than cut off (see ScrollableLabel). */
+.space-usage-selection-path {
+    grid-row: 1;
+    grid-column: 1;
+    color: var(--muted-text-color);
+    font-size: 0.75em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+/* The note itself, so it is the line the eye lands on. */
+.space-usage-selection-name {
+    grid-row: 2;
+    grid-column: 1;
+    margin-block-start: 4px;
+    font-size: 1.2em;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+/* Set against both rows, being what the whole strip is about. */
+.space-usage-selection-size {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    margin-inline-start: 12px;
+    font-weight: 600;
+    letter-spacing: .4pt;
+    white-space: nowrap;
+}

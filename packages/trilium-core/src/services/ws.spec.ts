@@ -158,6 +158,7 @@ describe("ws service (real DB)", () => {
         ws.syncPullInProgress();
         ws.syncFinished();
         ws.syncFailed();
+        ws.syncHashCheckFailed(["blobs/9"]);
         ws.reloadFrontend("because");
 
         const types = sentAll.map((m) => m.type);
@@ -166,10 +167,12 @@ describe("ws service (real DB)", () => {
             "sync-pull-in-progress",
             "sync-finished",
             "sync-failed",
+            "sync-hash-check-failed",
             "reload-frontend"
         ]));
         const pull = sentAll.find((m) => m.type === "sync-pull-in-progress");
         expect(pull).toMatchObject({ lastSyncedPush: 42 });
+        expect(sentAll.find((m) => m.type === "sync-hash-check-failed")).toMatchObject({ sectors: ["blobs/9"] });
     });
 
     it("sends a ping frontend-update when there are no pending entity changes", () => {

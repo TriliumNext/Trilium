@@ -6,7 +6,7 @@ import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
 import { t } from "../services/i18n";
 import { buildShareLink } from "../services/share_link";
-import { isElectron } from "../services/utils";
+import { escapeHtml, isElectron } from "../services/utils";
 import HelpButton from "./react/HelpButton";
 import { useNoteContext, useTriliumEvent, useTriliumOption } from "./react/hooks";
 import InfoBar from "./react/InfoBar";
@@ -43,7 +43,7 @@ export function useShareInfo(note: FNote | null | undefined) {
 
         const link = buildShareLink(getShareId(note), syncServerHost);
 
-        setLink(`<a href="${link}" class="external tn-link">${link}</a>`);
+        setLink(buildShareLinkHtml(link));
         setLinkHref(link);
     }
 
@@ -61,6 +61,12 @@ export function useShareInfo(note: FNote | null | undefined) {
         linkHref,
         isSharedExternally: !isElectron() || !!syncServerHost    // on server we can't reliably detect if the note is shared locally or available publicly.
     };
+}
+
+export function buildShareLinkHtml(link: string) {
+    const escapedLink = escapeHtml(link);
+
+    return `<a href="${escapedLink}" class="external tn-link">${escapedLink}</a>`;
 }
 
 function getShareId(note: FNote) {

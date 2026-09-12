@@ -109,9 +109,9 @@ describe("keepAdditions", () => {
     });
 
     /**
-     * A style named by URL is fetched by MapLibre, so we never see what is in it and cannot tell its
-     * sources from a child's. Carrying nothing leaves the markers to be added again on `style.load`,
-     * which is what happened before any of this.
+     * The map has loaded no style of its own yet, so there is nothing to tell a child's additions
+     * apart from. Carrying nothing leaves the markers to be added again on `style.load`, which is
+     * what happened before any of this.
      */
     it("carries nothing when the style it is switching from is not known", () => {
         const transformed = keepAdditions(undefined)(withMarkers(applied), next);

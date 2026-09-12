@@ -81,15 +81,17 @@ describe("reserving setup for a backup that is coming", () => {
         expect(getRunningSetupOperation()).toBe(null);
     });
 
-    it("keeps the reservation when a second upload is refused in favour of the first", async () => {
+    it("keeps the reservation when a second upload takes the place of the first", async () => {
+        const replaced = await beginBackupUpload(beginRequest(8));
+
+        // The newest attempt wins, since a user who is being refused because of an upload of their
+        // own that is already lost has nothing else they can do on this screen.
         const { uploadId } = await beginBackupUpload(beginRequest(8));
 
-        // Only one at a time, so this one is turned away — and must leave the running one's
-        // reservation exactly where it found it.
-        await expect(beginBackupUpload(beginRequest(8))).rejects.toThrow(/already in progress/);
-
+        // The reservation the replaced upload was standing on must not go with it: it is the same
+        // reservation the one replacing it now stands on.
         expect(getRunningSetupOperation()).toBe("restore-backup");
-        // Still the one that was accepted, and still receiving.
+        await expect(backupUpload.chunk(chunkRequest(replaced.uploadId, 0, Buffer.alloc(4)))).rejects.toThrow(/took over/);
         await expect(backupUpload.chunk(chunkRequest(uploadId, 0, Buffer.alloc(4)))).resolves.toBeTruthy();
     });
 

@@ -2,7 +2,7 @@ import debounce from "@triliumnext/client/src/services/debounce.js";
 import type { AdvancedExportOptions, ExportFormat, NoteMeta, NoteMetaFile } from "@triliumnext/core";
 import { cls } from "@triliumnext/core";
 
-import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler } from "./help_meta_generator.js";
+import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler, stripAppVersion } from "./help_meta_generator.js";
 import fs from "fs/promises";
 import { load } from "js-yaml";
 import path from "path";
@@ -246,7 +246,7 @@ async function cleanUpMeta(outputPath: string, minify: boolean) {
         const standaloneMetaPath = path.resolve(__dirname, "../../standalone/src/assets/help_meta.json");
         await fs.writeFile(standaloneMetaPath, JSON.stringify(standaloneSubtree));
     } else {
-        await fs.writeFile(metaPath, JSON.stringify(meta, null, 4));
+        await fs.writeFile(metaPath, JSON.stringify(stripAppVersion(meta), null, 4));
     }
 
 }

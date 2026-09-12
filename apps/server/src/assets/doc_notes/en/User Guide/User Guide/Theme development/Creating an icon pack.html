@@ -1,7 +1,6 @@
 <aside class="admonition note">
   <p>This page explains, step‑by‑step, how to create a custom icon pack. For
-    a general description of how to use already existing icon packs, see&nbsp;
-    <a
+    a general description of how to use already existing icon packs, see&nbsp;<a
     class="reference-link" href="#root/_help_gOKqSJgXLcIj">Icon Packs</a>.</p>
 </aside>
 <p>First read the quick flow to get the overall steps. After that there is
@@ -19,7 +18,8 @@
     be <code spellcheck="false">font/woff2</code>, <code spellcheck="false">font/woff</code>,
     or <code spellcheck="false">font/ttf</code> and role <code spellcheck="false">file</code>).</li>
   <li>Add the label <code spellcheck="false">#iconPack=&lt;prefix&gt;</code> to
-    the note (prefix: alphanumeric, hyphen, underscore only).</li>
+    the note (prefix: letters, digits, hyphen, underscore and non-ASCII characters
+    only).</li>
   <li>Refresh the client and verify the icon pack appears in the icon selector.</li>
 </ol>
 <h2>Verify the icon set</h2>
@@ -97,19 +97,26 @@
 <aside class="admonition note">
   <ul>
     <li>You can supply glyph as the escaped <code spellcheck="false">\uXXXX</code> sequence
-      or as the actual UTF‑8 character.</li>
+      or as the actual UTF‑8 character. The CSS form (<code spellcheck="false">\ea3f</code>,
+      as written in a stylesheet's <code spellcheck="false">content</code>) is
+      accepted too, so glyphs copied out of the font's own CSS work as they stand.</li>
     <li>It is also possible to use the unescaped glyph inside the JSON. It will
       appear strange (e.g. ), but it will be rendered properly regardless.</li>
     <li>The manifest keys (e.g. <code spellcheck="false">ph-acorn</code>) should
       match the class names used by the font (prefix + name is a common pattern).</li>
+    <li>Like the prefix, a manifest key becomes a CSS class name, so it can contain
+      only letters, digits, hyphens, underscores and non-ASCII characters. Punctuation
+      and whitespace (e.g. <code spellcheck="false">ph.acorn</code> or <code spellcheck="false">ph acorn</code>)
+      are not usable as class names; icons with such a key are skipped and an
+      error is logged in <a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>,
+      while the rest of the pack still loads.</li>
   </ul>
 </aside>
 <h2>Concrete example: Phosphor Icons</h2>
-<p><a href="https://phosphoricons.com/">Phosphor Icons</a> provide a
-  <code
-  spellcheck="false">selection.json</code>that includes <code spellcheck="false">properties.code</code> (the
-    codepoint) and <code spellcheck="false">properties.name</code> (the icon
-    name). The goal: convert that into Trilium's manifest.</p>
+<p><a href="https://phosphoricons.com/">Phosphor Icons</a> provide a <code
+  spellcheck="false">selection.json</code> that includes <code spellcheck="false">properties.code</code> (the
+  codepoint) and <code spellcheck="false">properties.name</code> (the icon
+  name). The goal: convert that into Trilium's manifest.</p>
 <p>Sample <code spellcheck="false">selection.json</code> excerpt:</p><pre><code class="language-text-x-trilium-auto">{
   "icons": [
     {
@@ -177,7 +184,10 @@ processIconPack("light");</code></pre>
   </p>
   <p>The Unicode escape syntax is different in CSS (<code spellcheck="false">"\ea3f"</code>)
     when compared to JSON (<code spellcheck="false">"\uea3f"</code>). Notice
-    how the JSON escape is <code spellcheck="false">\u</code> and not <code spellcheck="false">\</code>.</p>
+    how the JSON escape is <code spellcheck="false">\u</code> and not <code spellcheck="false">\</code>.
+    Both forms are accepted: keep the CSS escape by writing the backslash itself
+    as <code spellcheck="false">"\\ea3f"</code> in the JSON, or convert it to
+    the JSON escape <code spellcheck="false">"\uea3f"</code>.</p>
   <p>As a more compact alternative, provide the un-escaped character directly,
     as UTF-8 is supported.</p>
 </aside>
@@ -196,9 +206,10 @@ processIconPack("light");</code></pre>
   since it also matches the prefix set in the original CSS. So in this case
   it would be <code spellcheck="false">#iconPack=ph</code>.</p>
 <aside class="admonition important">
-  <p>The prefix must consist of only alphanumeric characters, hyphens and underscore.
-    If the prefix doesn't match these constraints, the icon pack will be ignored
-    and an error will be logged in&nbsp;<a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>.</p>
+  <p>The prefix must consist of only letters, digits, hyphens, underscores
+    and non-ASCII characters. If the prefix doesn't match these constraints,
+    the icon pack will be ignored and an error will be logged in&nbsp;<a class="reference-link"
+    href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>.</p>
 </aside>
 <h2>Creating the Trilium icon pack note</h2>
 <ol>
@@ -208,22 +219,20 @@ processIconPack("light");</code></pre>
     pack as displayed in the list of icons.</li>
   <li>Copy and paste the manifest generated in the previous step as the content
     of this note.</li>
-  <li>Go to the <a href="#root/_help_0vhv7lsOLy82">note attachment</a> and upload the
-    font file (in <code spellcheck="false">.woff2</code>, <code spellcheck="false">.woff</code>,
-    <code
+  <li>Go to the <a href="#root/_help_0vhv7lsOLy82">note attachment</a> and upload
+    the font file (in <code spellcheck="false">.woff2</code>, <code spellcheck="false">.woff</code>, <code
     spellcheck="false">.ttf</code>) format.
-      <ol>
-        <li>Trilium identifies the font to use from attachments via the MIME type,
-          make sure the MIME type is displayed correctly after uploading the attachment
-          (for example <code spellcheck="false">font/woff2</code>).</li>
-        <li>Make sure the <code spellcheck="false">role</code> appears as <code spellcheck="false">file</code>,
-          otherwise the font will not be identified.</li>
-        <li>Multiple attachments are supported, but only one font will actually be
-          used in Trilium's order of preference: <code spellcheck="false">.woff2</code>,
-          <code
-          spellcheck="false">.woff</code>, <code spellcheck="false">.ttf</code>. As such, there's not
-            much reason to upload more than one font per icon pack.</li>
-      </ol>
+    <ol>
+      <li>Trilium identifies the font to use from attachments via the MIME type,
+        make sure the MIME type is displayed correctly after uploading the attachment
+        (for example <code spellcheck="false">font/woff2</code>).</li>
+      <li>Make sure the <code spellcheck="false">role</code> appears as <code spellcheck="false">file</code>,
+        otherwise the font will not be identified.</li>
+      <li>Multiple attachments are supported, but only one font will actually be
+        used in Trilium's order of preference: <code spellcheck="false">.woff2</code>, <code
+        spellcheck="false">.woff</code>, <code spellcheck="false">.ttf</code>. As
+        such, there's not much reason to upload more than one font per icon pack.</li>
+    </ol>
   </li>
   <li>Add label: <code spellcheck="false">#iconPack=&lt;prefix&gt;</code> (for
     Phosphor example: <code spellcheck="false">#iconPack=ph</code>).</li>
@@ -260,6 +269,9 @@ processIconPack("light");</code></pre>
   <li>Make sure the prefix is unique and not already taken by some other icon
     pack. When there are two icon packs with the same prefix, only one is used.
     The server logs will indicate if this situation occurs.</li>
-  <li>Make sure the prefix consists only of alphanumeric characters, hyphens
-    and underscore.</li>
+  <li>Make sure the prefix consists only of letters, digits, hyphens, underscores
+    and non-ASCII characters.</li>
+  <li>If the pack loads but individual icons are missing, check the logs for <code
+    spellcheck="false">Skipping icon '&lt;key&gt;' of icon pack</code> — that
+    key uses characters outside the allowed set and needs renaming in the manifest.</li>
 </ul>

@@ -6,6 +6,8 @@ import froca from "../../../services/froca";
 import link from "../../../services/link";
 import linkEmbedService, { type EmbedMetadata } from "../../../services/link_embed";
 import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import type { AiNoteLocation } from "./ai_assistant_stream";
+import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
 import { buildConfig, BuildEditorOptions } from "./config";
 
 export type BoxSize = "small" | "medium" | "full" | "expandable";
@@ -21,12 +23,30 @@ export interface CKEditorApi {
     addImage(noteId: string): Promise<void>;
 }
 
+/**
+ * The `EventInfo` CKEditor hands to every listener as its *first* argument. Listeners on
+ * `show:warning` receive `(evt, data)` in that order — getting it backwards throws inside the
+ * event handler, which the watchdog reports as an editor crash (see #10859).
+ */
+export interface NotificationEventInfo {
+    stop(): void;
+}
+
+/** The payload of `Notification#show:warning`, as built by `Notification#_showNotification`. */
+export interface NotificationEventData {
+    /** The notification text. `Notification#showWarning` takes it as its first argument. */
+    message: string;
+    type: "success" | "info" | "warning";
+    /** Empty string when the caller did not supply one. */
+    title: string;
+}
+
 interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "className" | "tabIndex"> {
     contentLanguage: string | null | undefined;
     isClassicEditor?: boolean;
     watchdogRef: RefObject<EditorWatchdog>;
     watchdogConfig?: WatchdogConfig;
-    onNotificationWarning?: (evt: any, data: any) => void;
+    onNotificationWarning?: (evt: NotificationEventInfo, data: NotificationEventData) => void;
     onWatchdogStateChange?: (watchdog: EditorWatchdog) => void;
     onChange: () => void;
     /** Called upon whenever a new CKEditor instance is initialized, whether it's the first initialization, after a crash or after a config change that requires it (e.g. content language). */
@@ -69,8 +89,35 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     // Which language a note with no `#language` of its own is written in, and so which quotes it
     // gets. The UI locale it can fall back to is already covered by `uiLanguage` above.
     const [ defaultContentLanguage ] = useTriliumOption("defaultContentLanguage");
+    // Rebuild triggers as well: `buildHtmlSupportConfig()` reads both at editor-creation time, and
+    // GHS turns its allow-list into schema definitions and converters when `DataSchema`/`DataFilter`
+    // register at init, so there is nothing for a live editor to re-read. The raw JSON string for
+    // the tag list, for the same by-value reason as `customReplacements` above.
+    const [ htmlSupportEnabled ] = useTriliumOptionBool("textNoteHtmlSupportEnabled");
+    const [ allowedHtmlTags ] = useTriliumOption("allowedHtmlTags");
+    // Whether the AI assistant is offered at all, which `buildConfig()` settles at creation time:
+    // it decides both the transport the command gates on and whether the toolbars carry the
+    // assistant's entries, neither of which a live editor can be told about afterwards. Switching
+    // the AI features off has to take the button away there and then, not at the next rebuild.
+    // The provider list is a rebuild trigger for the same reason — configuring the first one (or
+    // removing the last) is what makes the feature usable.
+    const [ aiEnabled ] = useTriliumOptionBool("aiEnabled");
+    const [ llmProviders ] = useTriliumOption("llmProviders");
+    // Deliberately *not* a rebuild trigger — pushed into the live editor by the effect below
+    // instead. The enabled content languages fill the assistant's Translate submenu, which now
+    // offers the row that edits them, so the change is made from inside the editor and several
+    // times over while the modal is open; the custom actions are notes, written and revised in the
+    // editor itself. A rebuild for either would cost the caret and the undo history of the note
+    // being written.
+    const quickActions = useAiQuickActions();
+    const menuFooter = useAiMenuFooter();
     const [ editor, setEditor ] = useState<CKTextEditor>();
-    const { parentComponent, ntxId, note } = useNoteContext();
+    const { parentComponent, ntxId, note, notePath } = useNoteContext();
+    // Which note the assistant says a run is writing into. Kept in a ref for the same reason the
+    // snippets are: switching notes reuses the editor rather than rebuilding it, so a captured
+    // note would name whichever one happened to be open when the editor was built.
+    const noteLocationRef = useRef<AiNoteLocation | null>(null);
+    noteLocationRef.current = note ? { title: note.title, notePath } : null;
 
     useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
 
@@ -235,7 +282,8 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                     isClassicEditor: !!isClassicEditor,
                     uiLanguage: uiLanguage as DISPLAYABLE_LOCALE_IDS,
                     contentLanguage: contentLanguage ?? null,
-                    templates: templatesRef.current
+                    templates: templatesRef.current,
+                    getNoteLocation: () => noteLocationRef.current
                 });
 
                 if (isStale) {
@@ -297,7 +345,8 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     }, [
         contentLanguage, uiLanguage, isClassicEditor, multilineToolbar,
         doubleQuoteStyle, singleQuoteStyle, punctuationReplacements, mathReplacements, symbolReplacements,
-        customReplacements, defaultContentLanguage
+        customReplacements, defaultContentLanguage, htmlSupportEnabled, allowedHtmlTags,
+        aiEnabled, llmProviders
     ]);
 
     // Push snippet ("template") definitions into the live editor instead of rebuilding it. The premium
@@ -309,6 +358,23 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
             editor.plugins.get("TriliumSnippets").updateDefinitions(templates);
         }
     }, [ editor, templates ]);
+
+    // Likewise for the AI quick actions: enabling a content language or writing a `#aiQuickAction`
+    // note shows up in the menu without the note being edited losing its undo history.
+    useEffect(() => {
+        if (!editor) return;
+        if (editor.plugins.has("AiAssistantUI")) {
+            editor.plugins.get("AiAssistantUI").updateQuickActions(quickActions);
+        }
+    }, [ editor, quickActions ]);
+
+    // Likewise for the row naming the model a run speaks to, which restates itself once picked.
+    useEffect(() => {
+        if (!editor) return;
+        if (editor.plugins.has("AiAssistantUI")) {
+            editor.plugins.get("AiAssistantUI").updateMenuFooter(menuFooter);
+        }
+    }, [ editor, menuFooter ]);
 
 
     // React to notification warning callback.

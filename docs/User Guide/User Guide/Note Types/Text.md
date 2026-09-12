@@ -62,14 +62,14 @@ Here's a list of various features supported by text notes:
         </tr>
         <tr>
             <td><a class="reference-link" href="Text/Insert%20buttons.md">Insert buttons</a></td>
-            <td><ul><li>Symbols</li><li><a class="reference-link" href="Text/Math%20Equations.md">Math Equations</a></li><li>Mermaid diagrams</li><li>Horizontal ruler</li><li>Page break</li></ul></td>
+            <td><ul><li>Symbols</li><li><a class="reference-link" href="Text/Math%20Equations.md">[missing note]</a></li><li>Mermaid diagrams</li><li>Horizontal ruler</li><li>Page break</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Other%20features.md">Other features</a></td>
+            <td><a class="reference-link" href="Text/Other%20features.md">[missing note]</a></td>
             <td><ul><li>Indentation<ul><li>Markdown import</li></ul></li><li><a class="reference-link" href="Text/Cut%20to%20subnote.md">Cut to subnote</a></li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Premium%20features.md">Premium features</a></td>
+            <td><a class="reference-link" href="Text/Premium%20features.md">[missing note]</a></td>
             <td><ul><li><a class="reference-link" href="Text/Slash%20Commands.md">Slash Commands</a></li><li><a class="reference-link" href="../Advanced%20Usage/Templates.md">Templates</a></li><li><a class="reference-link" href="Text/Format%20Painter.md">Format Painter</a></li></ul></td>
         </tr>
     </tbody>
@@ -81,7 +81,7 @@ Text notes are usually opened in edit mode. However, they may open in read-only 
 
 ## Keyboard shortcuts
 
-There are numerous keyboard shortcuts to format the text without having to use the mouse. For a reference of all the key combinations, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md">[missing note]</a>. In addition, see <a class="reference-link" href="Text/Markdown-like%20formatting.md">Markdown-like formatting</a> as an alternative to the keyboard shortcuts.
+There are numerous keyboard shortcuts to format the text without having to use the mouse. For a reference of all the key combinations, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md">Keyboard Shortcuts</a>. In addition, see <a class="reference-link" href="Text/Markdown-like%20formatting.md">Markdown-like formatting</a> as an alternative to the keyboard shortcuts.
 
 ## Content width
 

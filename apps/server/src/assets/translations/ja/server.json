@@ -69,7 +69,15 @@
     "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする",
     "peek-right-pane": "右ペインを、コンテンツの上にフローティング表示し、フォーカスが外れると閉じる一時的なパネルとしてプレビューします",
     "show-deleted-notes": "\"削除されたノート\" ダイアログを表示",
-    "show-shortcut-hints": "フォーカスされているウィジェットのキーボードショートカットを表示"
+    "show-shortcut-hints": "フォーカスされているウィジェットのキーボードショートカットを表示",
+    "show-space-usage": "\"スペース使用状況\" ページを開く",
+    "create-new-split": "アクティブな画面の右側に、新しい空の分割画面を開く",
+    "close-active-split": "アクティブな分割画面を閉じる（タブ内の他の分割画面は開いたままにする）",
+    "focus-split-left": "アクティブな分割画面の左側の分割画面にフォーカスを移動する",
+    "focus-split-right": "アクティブな分割画面の右側の分割画面にフォーカスを移動する",
+    "split-view": "画面分割",
+    "move-split-left": "アクティブな分割画面を左側の分割画面と入れ替える（ノートが移動し、フォーカスもそれに追従する）",
+    "move-split-right": "アクティブな分割画面を右側の分割画面と入れ替える（ノートが移動し、フォーカスもそれに追従する）"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -171,17 +179,24 @@
     "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え",
     "peek-right-pane": "右ペインをピーク表示",
     "show-deleted-notes": "削除されたノートを表示",
-    "show-shortcut-hints": "ショートカットのヒントを表示"
+    "show-shortcut-hints": "ショートカットのヒントを表示",
+    "show-space-usage": "スペース使用状況を表示",
+    "create-new-split": "新しい分割画面を作成",
+    "close-active-split": "アクティブな分割画面を閉じる",
+    "move-split-left": "分割画面を左へ移動",
+    "move-split-right": "分割画面を右へ移動",
+    "focus-split-left": "左側の分割画面にフォーカスを移動",
+    "focus-split-right": "右側の分割画面にフォーカスを移動"
   },
   "login": {
     "title": "ログイン",
     "heading": "Trilium ログイン",
-    "incorrect-totp": "TOTPが正しくありません。もう一度お試しください。",
+    "incorrect-totp": "TOTP が正しくありません。もう一度お試しください。",
     "incorrect-password": "パスワードが間違っています。もう一度お試しください。",
     "password": "パスワード",
     "button": "ログイン",
     "remember-me": "ログイン状態を保持する",
-    "sign_in_with_sso": "{{ ssoIssuerName }}でログイン",
+    "sign_in_with_sso": "{{ ssoIssuerName }} でサインイン",
     "sso-wrong-account": "そのアカウントは、この Trilium インスタンスに連携されていません。連携済みのアカウントでサインインしてください。",
     "sso-not-enrolled": "シングルサインオンはまだ設定されていません。まずはパスワードでサインインし、その後、設定からアカウントを連携させてください。"
   },
@@ -296,7 +311,9 @@
     "desktop-title": "デスクトップ",
     "deleted-notes-title": "削除されたノート",
     "color-scheme-switcher-title": "配色の切り替え",
-    "content-manager-title": "コンテンツマネージャー"
+    "content-manager-title": "コンテンツマネージャー",
+    "database-title": "データベース",
+    "space-usage-title": "スペース使用状況"
   },
   "notes": {
     "new-note": "新しいノート",
@@ -308,7 +325,8 @@
     "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。"
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "このノートタイプは表示できません。"
+    "note-cannot-be-displayed": "このノートタイプは表示できません。",
+    "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",
@@ -370,7 +388,7 @@
     "board_status_done": "完了",
     "geo-map": "ジオマップ",
     "geolocation": "ジオロケーション",
-    "built-in-templates": "内蔵のテンプレート",
+    "built-in-templates": "組み込みテンプレート",
     "board_status_todo": "未完了",
     "presentation": "プレゼンテーション",
     "presentation_slide": "プレゼンテーションスライド",
@@ -379,7 +397,8 @@
     "background": "背景",
     "markdown-snippet": "マークダウンスニペット",
     "code-snippet": "コードスニペット",
-    "dashboard": "ダッシュボード"
+    "dashboard": "ダッシュボード",
+    "ai-quick-action": "AI クイックアクション"
   },
   "share_404": {
     "title": "該当なし",
@@ -509,5 +528,16 @@
     "pick_backup_title": "復元するバックアップを選択",
     "backup_filter": "Trilium バックアップ (*.db, *.tnbackup)",
     "any_file_filter": "すべてのファイル"
+  },
+  "setup-window": {
+    "getting-started": "はじめに - Trilium Notes",
+    "start-over": "最初からやり直す - Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "最初からやり直す",
+    "message": "Trilium を再起動してセットアップ画面に戻りますか？",
+    "detail": "まず現在のナレッジベースのバックアップを作成するよう案内されます。新しいナレッジベースの作成、バックアップの復元、別デバイスからの同期を選ぶまでは、何も削除されません。\n\nスクリプトや見覚えのないノートから指示された場合は、続行しないでください。",
+    "cancel": "キャンセル",
+    "confirm": "再起動して最初からやり直す"
   }
 }

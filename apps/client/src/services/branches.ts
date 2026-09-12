@@ -1,4 +1,5 @@
 import appContext from "../components/app_context.js";
+import type FBranch from "../entities/fbranch.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
 import froca from "./froca.js";
 import hoistedNoteService from "./hoisted_note.js";
@@ -120,7 +121,7 @@ async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = f
 
     if (moveToParent) {
         try {
-            await activateParentNotePath(branchIdsToDelete);
+            await activateNeighbouringNotePath(branchIdsToDelete, deleteAllClones);
         } catch (e) {
             console.error(e);
         }
@@ -152,7 +153,13 @@ async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = f
     return true;
 }
 
-async function activateParentNotePath(branchIdsToDelete: string[]) {
+/**
+ * Moves the active tab off a note that the deletion is about to remove from its path. The
+ * destination is the nearest sibling that survives the deletion (the next one, else the previous
+ * one), so the tree keeps its scroll position and the user stays where they were working; the
+ * parent is the fallback when no sibling survives.
+ */
+async function activateNeighbouringNotePath(branchIdsToDelete: string[], deleteAllClones = false) {
     const activeContext = appContext.tabManager.getActiveContext();
     const activeNotePath = activeContext?.notePathArray ?? [];
 
@@ -168,13 +175,61 @@ async function activateParentNotePath(branchIdsToDelete: string[]) {
         }
     }
 
-    // Navigate to the parent of the highest deleted ancestor
-    if (earliestIndex < activeNotePath.length) {
-        const parentPath = activeNotePath.slice(0, earliestIndex);
-        if (parentPath.length > 0) {
-            await activeContext?.setNote(parentPath.join("/"));
-        }
+    if (earliestIndex >= activeNotePath.length) {
+        return;
     }
+
+    const parentPath = activeNotePath.slice(0, earliestIndex);
+    if (parentPath.length === 0) {
+        return;
+    }
+
+    const siblingNoteId = findSurvivingSibling(
+        parentPath[parentPath.length - 1],
+        activeNotePath[earliestIndex],
+        branchIdsToDelete,
+        deleteAllClones
+    );
+    const targetPath = siblingNoteId ? [ ...parentPath, siblingNoteId ] : parentPath;
+    await activeContext?.setNote(targetPath.join("/"));
+}
+
+/**
+ * Finds the child of `parentNoteId` closest to `noteId` that is still there once the given branches
+ * are deleted: the next sibling, else the previous one. Archived siblings are skipped, since the
+ * tree can be set to hide them.
+ */
+function findSurvivingSibling(
+    parentNoteId: string,
+    noteId: string,
+    branchIdsToDelete: string[],
+    deleteAllClones: boolean
+) {
+    const parentNote = froca.getNoteFromCache(parentNoteId);
+    if (!parentNote) {
+        return null;
+    }
+
+    const siblingBranches = parentNote.getChildBranches();
+    const index = siblingBranches.findIndex((branch) => branch.noteId === noteId);
+    if (index === -1) {
+        return null;
+    }
+
+    // Deleting all clones removes every branch of the deleted notes, not only the selected ones.
+    const deletedNoteIds = new Set(
+        branchIdsToDelete.map((branchId) => froca.getBranch(branchId)?.noteId)
+    );
+    const survives = (branch: FBranch) =>
+        !branchIdsToDelete.includes(branch.branchId)
+        && !(deleteAllClones && deletedNoteIds.has(branch.noteId))
+        && !froca.getNoteFromCache(branch.noteId)?.isArchived;
+
+    const candidates = [
+        ...siblingBranches.slice(index + 1),
+        ...siblingBranches.slice(0, index).reverse()
+    ];
+    return candidates.find(survives)?.noteId ?? null;
 }
 
 async function moveNodeUpInHierarchy(node: Fancytree.FancytreeNode) {

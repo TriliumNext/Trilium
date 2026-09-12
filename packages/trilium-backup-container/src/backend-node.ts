@@ -1,6 +1,15 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, scrypt } from "node:crypto";
+import {
+    type BinaryLike,
+    createCipheriv,
+    createDecipheriv,
+    createHash,
+    randomBytes,
+    scrypt,
+    type ScryptOptions
+} from "node:crypto";
 import { once } from "node:events";
 import type { Duplex } from "node:stream";
+import { promisify } from "node:util";
 import { createGunzip, createGzip } from "node:zlib";
 
 import type { ByteSource, ContainerBackend } from "./backend.js";
@@ -30,28 +39,15 @@ export const nodeBackend: ContainerBackend = {
         };
     },
 
-    deriveKey(passphrase, salt, params, maxMemoryBytes) {
-        const options = {
+    // Async, which is what makes both of scrypt's failure modes one thing to the caller: it refuses
+    // impossible parameters by throwing where it is called and reports everything else through the
+    // callback, and an async function turns the first of those into a rejection like the second.
+    async deriveKey(passphrase, salt, params, maxMemoryBytes) {
+        return scryptAsync(passphrase, salt, KEY_BYTES, {
             N: 2 ** params.log2N,
             r: params.r,
             p: params.p,
             maxmem: maxMemoryBytes
-        };
-
-        return new Promise((resolve, reject) => {
-            // scrypt rejects impossible parameters synchronously and everything else through the
-            // callback.
-            try {
-                scrypt(
-                    passphrase,
-                    salt,
-                    KEY_BYTES,
-                    options,
-                    (error, key) => (error ? reject(error) : resolve(key))
-                );
-            } catch (error) {
-                reject(error);
-            }
         });
     },
 
@@ -85,6 +81,9 @@ export const nodeBackend: ContainerBackend = {
     }
 
 };
+
+/** Spelled out because `scrypt` is overloaded, and `promisify` picks the wrong one on its own. */
+const scryptAsync = promisify<BinaryLike, BinaryLike, number, ScryptOptions, Buffer>(scrypt);
 
 /**
  * Runs a byte source through a zlib stream, yielding what comes out the other side.

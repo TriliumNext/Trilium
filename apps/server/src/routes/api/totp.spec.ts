@@ -4,11 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGenerateKey, mockValidate } = vi.hoisted(() => ({
     mockGenerateKey: vi.fn<(opts: { issuer: string; user: string }) => { secret: string; url: string }>(),
-    mockValidate: vi.fn<(args: { passcode: string; secret: string }) => boolean>()
+    mockValidate: vi.fn<typeof import("time2fa").Hotp.validate>()
 }));
 
-vi.mock("time2fa", () => ({
-    Totp: { generateKey: mockGenerateKey, validate: mockValidate }
+vi.mock("time2fa", async (importOriginal) => ({
+    ...await importOriginal<typeof import("time2fa")>(),
+    Totp: { generateKey: mockGenerateKey },
+    Hotp: { validate: mockValidate }
 }));
 
 import recoveryCodes from "../../services/encryption/recovery_codes.js";
@@ -46,7 +48,8 @@ describe("TOTP API", () => {
             { success: boolean; recoveryCodes?: string[] };
         expect(result.success).toBe(true);
         expect(result.recoveryCodes).toHaveLength(8);
-        expect(mockValidate).toHaveBeenCalledWith({ passcode: "000000", secret: SECRET });
+        expect(mockValidate).toHaveBeenCalledWith(
+            { passcode: "000000", secret: SECRET, counter: expect.any(Number) }, expect.anything());
         // Verifying alone must neither enable TOTP nor store the recovery codes.
         expect(totpRoute.getTOTPStatus().set).toBe(false);
         expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);

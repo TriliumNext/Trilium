@@ -24,6 +24,8 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 Trilium Notes
 は、大規模な個人知識ベースの構築に重点を置いた、無料かつオープンソースのクロスプラットフォームの階層型ノート作成アプリケーションです。
 
+"Trillium Notes" をお探しですか？このプロジェクトの正式な綴りは "Trilium Notes" で、`l` が 1 つです。
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ ダウンロード
@@ -94,7 +96,7 @@ Trilium Notes
   [モバイルフロントエンド](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
 * 組み込みの
   [ダークテーマ](https://docs.triliumnotes.org/user-guide/concepts/themes)、ユーザーテーマのサポート
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   と
   [マークダウンのインポートとエクスポート](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) で
@@ -185,7 +187,7 @@ Trilium のインスタンスを完全に動作させることができ、完全
 
 iOS ネイティブアプリをお探しなら、[Trinote](https://apps.apple.com/us/app/trinote/id6761228249)
 が利用可能です。これは、セルフホスト型の Trilium または TriliumNext
-サーバー向けのオープンソースクライアントです。ノートツリーの閲覧・整理、サーバー上のノート検索、あらゆる種類のノート（テキスト、コード、マインドマップ、スプレッドシート、ジオマップ、キャンバスなど）の読み書きが可能なほか、オフラインでもノートの閲覧や編集が行えます。開発への貢献にご興味がある方はこちらの[リポジトリ](https://github.com/StephenArg/Trinote)を、フィードバックや提案について話し合いたい方はこちらの
+サーバー向けのオープンソースクライアントです。ノートツリーの閲覧・整理、サーバー上のノート検索、あらゆるタイプのノート（テキスト、コード、マインドマップ、スプレッドシート、ジオマップ、キャンバスなど）の読み書きが可能なほか、オフラインでもノートの閲覧や編集が行えます。開発への貢献にご興味がある方はこちらの[リポジトリ](https://github.com/StephenArg/Trinote)を、フィードバックや提案について話し合いたい方はこちらの
 [Discord](https://discord.com/invite/ghjJG56EUS) サーバーをご覧ください。
 
 ### サーバー
@@ -292,12 +294,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei) Canvasへのオリジナルな取り組み。
 * [antoniotejada](https://github.com/nriver) オリジナルの構文ハイライトウィジェット。
 * [Tabler Icons](https://tabler.io/icons) システムトレイアイコン。
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
-        OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+*   インポートダイアログ内のアプリケーションアイコンは以下から取得されています:
+    *   OneNote, Google Keep, Evernote には[Material Design
+        Icons](https://pictogrammers.com/library/mdi/)。
+    *   Notion, Obsidian には [Font Awesome](https://fontawesome.com/) 。
+    *   Anytype には [SVGicons.com](https://svgicons.com/icon/187676/anytype)。
+*  LLM プロバイダーのアイコンは [Lobe Icons](https://lobehub.com/icons) を使用。
 
 Trilium は、その基盤となる技術なしには実現できませんでした:
 

@@ -10,13 +10,15 @@ import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "pre
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
+import { consumeBookmark } from "../../../services/bookmark_jump";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
 import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
+import { consumeSearchTerms } from "../../../services/search_jump";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { isContentRightToLeft } from "../../../utils/formatters";
-import { useNoteBlob, useNoteLabel, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useNoteBlob, useNoteLabel, useSearchTermsConsumer, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { TypeWidgetProps } from "../type_widget";
 import { applyReferenceLinks } from "./read_only_helper";
@@ -36,15 +38,18 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
     const { isRtl } = useNoteLanguage(note);
     const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
 
-    // Scroll to bookmark anchor if navigated with ?bookmark=...
+    // Scroll to bookmark anchor if navigated with ?bookmark=... The blob gate skips the mount run,
+    // which fires against an empty container while the content is still loading.
     useEffect(() => {
-        const viewScope = noteContext?.viewScope;
-        if (!viewScope?.bookmark || !readOnlyContentRef.current) return;
-
-        const el = readOnlyContentRef.current.querySelector(`[id="${CSS.escape(viewScope.bookmark)}"]`);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        viewScope.bookmark = undefined;
+        if (!blob) return;
+        consumeBookmark(readOnlyContentRef.current, noteContext?.viewScope);
     }, [blob]);
+
+    // Jump to the first search match when navigated from search results.
+    useEffect(() => {
+        if (blob) consumeSearchTerms(noteContext, ntxId);
+    }, [blob]);
+    useSearchTermsConsumer(note, noteContext, ntxId);
 
     return (
         <>

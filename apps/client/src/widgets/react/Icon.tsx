@@ -5,7 +5,8 @@ import { useRef } from "preact/hooks";
 import { isMobile } from "../../services/utils";
 import { useStaticTooltip } from "./hooks";
 
-interface IconProps extends Pick<HTMLAttributes<HTMLSpanElement>, "className" | "onClick" | "title" | "style"> {
+interface IconProps extends Pick<HTMLAttributes<HTMLSpanElement>,
+    "className" | "onClick" | "title" | "style" | "role" | "aria-label"> {
     icon?: string;
     className?: string;
 }

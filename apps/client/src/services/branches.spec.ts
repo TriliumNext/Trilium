@@ -240,7 +240,7 @@ describe("deleteNotes", () => {
         expect(firstArg).toContain("eraseNotes=false");
         expect(firstArg).toContain("last=false");
         expect(secondArg).toContain("last=true");
-        // navigated to the parent path ("root")
+        // root has no children registered here, so the parent path ("root") is the fallback
         expect(setNote).toHaveBeenCalledWith("root");
     });
 
@@ -282,7 +282,8 @@ describe("deleteNotes", () => {
 
         const result = await branches.deleteNotes(["delBranch4"], false, false);
         expect(result).toBe(true);
-        // getActiveContext only used by activateParentNotePath, which is skipped
+        // With moveToParent off, the active tab is left alone: the collection views that pass it
+        // delete a child of the note they show, so there is nothing to navigate away from.
         expect(getActiveContext).not.toHaveBeenCalled();
     });
 
@@ -306,7 +307,90 @@ describe("deleteNotes", () => {
     });
 });
 
-describe("activateParentNotePath (via deleteNotes navigation)", () => {
+describe("activateNeighbouringNotePath (via deleteNotes navigation)", () => {
+    /** Confirms the delete dialog with the given options and captures where the tab navigates. */
+    function confirmDeletion(notePathArray: string[], deleteAllClones = false) {
+        const setNote = vi.fn(async () => {});
+        appContext.tabManager = {
+            getActiveContext: () => ({ notePathArray, setNote })
+        } as any;
+        appContext.triggerCommand = vi.fn((_name: any, data: any) => {
+            data.callback({ proceed: true, deleteAllClones, eraseNotes: false });
+        }) as any;
+        return setNote;
+    }
+
+    it("activates the next sibling, or the previous one for the last note", async () => {
+        const parent = buildNote({ title: "P", children: [
+            { id: "sibA", title: "A" },
+            { id: "sibB", title: "B" },
+            { id: "sibC", title: "C" },
+            { id: "sibD", title: "D" }
+        ] });
+        const p = parent.noteId;
+
+        let setNote = confirmDeletion(["root", p, "sibB"]);
+        await branches.deleteNotes([`${p}_sibB`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/sibC`);
+
+        setNote = confirmDeletion(["root", p, "sibD"]);
+        await branches.deleteNotes([`${p}_sibD`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/sibC`);
+
+        // The deleted note is an ancestor of the active one: its own siblings are what count.
+        buildNote({ id: "grandchild", title: "G" });
+        setNote = confirmDeletion(["root", p, "sibA", "grandchild"]);
+        await branches.deleteNotes([`${p}_sibA`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/sibB`);
+    });
+
+    it("skips removed and archived siblings, falling back to the parent", async () => {
+        const parent = buildNote({ title: "P2", children: [
+            { id: "arcA", title: "A", "#archived": "" },
+            { id: "selB", title: "B" },
+            { id: "selC", title: "C" }
+        ] });
+        const p = parent.noteId;
+
+        // B and C are both selected, A is archived: nothing survives, so the parent is the target.
+        let setNote = confirmDeletion(["root", p, "selB"]);
+        await branches.deleteNotes([`${p}_selB`, `${p}_selC`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}`);
+
+        // Only B is selected, so C survives.
+        setNote = confirmDeletion(["root", p, "selB"]);
+        await branches.deleteNotes([`${p}_selB`]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/selC`);
+    });
+
+    it("treats a clone of a deleted note as gone only when all clones are deleted", async () => {
+        // X hangs both under P3 (right after B) and under Q; only its Q branch is selected.
+        const parent = buildNote({ title: "P3", children: [
+            { id: "clB", title: "B" }, { id: "clX", title: "X" }, { id: "clC", title: "C" }
+        ] });
+        const other = buildNote({ title: "Q" });
+        const p = parent.noteId;
+        makeBranch("Q_clX", "clX", other.noteId);
+        other.addChild("clX", "Q_clX", false);
+        froca.getNoteFromCache("clX")?.addParent(other.noteId, "Q_clX", false);
+
+        let setNote = confirmDeletion(["root", p, "clB"], false);
+        await branches.deleteNotes([`${p}_clB`, "Q_clX"]);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/clX`);
+
+        setNote = confirmDeletion(["root", p, "clB"], true);
+        await branches.deleteNotes([`${p}_clB`, "Q_clX"], true);
+        expect(setNote).toHaveBeenCalledWith(`root/${p}/clC`);
+    });
+
+    it("falls back to the parent when its children are not loaded in froca", async () => {
+        const note = buildNote({ title: "Lonely" });
+        makeBranch("lonelyBranch", note.noteId, "root");
+        const setNote = confirmDeletion(["root", note.noteId]);
+        await branches.deleteNotes(["lonelyBranch"]);
+        expect(setNote).toHaveBeenCalledWith("root");
+    });
+
     it("does not navigate when the deleted note is not on the active path", async () => {
         const note = buildNote({ title: "Off" });
         makeBranch("offBranch", note.noteId, "root");
@@ -347,8 +431,9 @@ describe("activateParentNotePath (via deleteNotes navigation)", () => {
             getActiveContext: () => ({ notePathArray: undefined, setNote })
         } as any;
         appContext.triggerCommand = vi.fn((_name: any, data: any) => {
-            // Remove the branch after filtering but before navigation, so activateParentNotePath's
-            // `froca.getBranch(...)` returns undefined and the `if (branch)` false arm is taken.
+            // Remove the branch after filtering but before navigation, so that
+            // activateNeighbouringNotePath's `froca.getBranch(...)` returns undefined and the
+            // `if (branch)` false arm is taken.
             delete froca.branches["ancBranch"];
             data.callback({ proceed: true, deleteAllClones: false, eraseNotes: false });
         }) as any;

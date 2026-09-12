@@ -9,8 +9,7 @@
 
 @font-face {
     font-family: "Inter";
-    src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.woff2) format("woff2-variations"),
-         url(../../fonts/Inter/Inter-VariableFont_opsz,wght.ttf) format("truetype-variations");
+    src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.woff2) format("woff2-variations");
     font-weight: 100 900;
     font-style: normal;
     font-display: swap;
@@ -119,7 +118,7 @@
     /* Tooltips */
     --tooltip-border-radius: 6px;
     --tooltip-padding: 2px 8px 4px 8px;
-    --tooltip-box-shadow: 
+    --tooltip-box-shadow:
         -1px -1px 2px var(--tooltip-shadow-color),
         2px 2px 8px var(--tooltip-shadow-color);
     --tooltip-backdrop-filter: blur(5px);
@@ -440,7 +439,7 @@ body.mobile .dropdown-menu {
     --dropdown-menu-padding-vertical: 0.7em;
     --dropdown-menu-padding-horizontal: 1em;
     --hover-item-background-color: var(--card-background-color);
-    font-size: 1em !important;
+    font-size: 1rem !important;
     backdrop-filter: var(--dropdown-backdrop-filter);
     position: relative;
 
@@ -647,13 +646,13 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     --tooltip-background-color: var(--note-tooltip-background-color);
     --tooltip-foreground-color: var(--main-text-color);
     --tooltip-box-shadow: var(--note-tooltip-box-shadow);
-    
+
     > .tooltip-inner {
         outline: 1px solid var(--main-border-color);
         border-radius: 12px;
         min-height: 120px;
     }
-    
+
     .rendered-content {
         font-size: .8em;
     }

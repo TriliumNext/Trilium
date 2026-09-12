@@ -4,8 +4,8 @@
  * Unlike the HTML renderer, this is a near-lossless mapping: Univer's cell model mirrors
  * OOXML, so number formats pass through verbatim, the border-style enum maps almost 1:1 to
  * Excel's, and fonts/fills/alignment/merges map directly. Data-validation rules (dropdown lists,
- * numeric/date/text bounds) invert their import counterparts. The heavy lifting (zip + XML) is
- * delegated to `exceljs`.
+ * numeric/date/text bounds) invert their import counterparts, and a cell's hyperlink becomes an
+ * Excel hyperlink. The heavy lifting (zip + XML) is delegated to `exceljs`.
  *
  * The workbook type subset, sheet selection, and style resolution live in the shared
  * `workbook_model` reader; this module only owns the Univer→OOXML translation.
@@ -18,6 +18,7 @@ import "./exceljs_augmentation.js";
 import {
     BorderStyle,
     type DataValidationRule,
+    getCellDocumentSegments,
     getDataValidations,
     getFloatingDrawings,
     getVisibleSheets,
@@ -363,38 +364,65 @@ function applyRows(ws: ExcelJS.Worksheet, sheet: IWorksheetData): void {
     }
 }
 
+/**
+ * The font of Excel's built-in Hyperlink cell style. Excel stores a link's appearance in the cell
+ * when the link is inserted rather than deriving it on open, so a file written from outside Excel
+ * has to carry it: without this a linked cell is clickable but looks like plain text.
+ */
+const HYPERLINK_FONT: Partial<ExcelJS.Font> = { color: { argb: "FF0563C1" }, underline: true };
+
 function writeCell(target: ExcelJS.Cell, cell: ICellData | undefined, styles: Record<string, IStyleData | null>): void {
     if (!cell) return;
 
-    setCellValue(target, cell);
-
+    const isHyperlink = setCellValue(target, cell);
     const style = resolveCellStyle(cell.s, styles);
-    if (!style) return;
 
-    if (style.n?.pattern) target.numFmt = style.n.pattern;
+    if (style) {
+        if (style.n?.pattern) target.numFmt = style.n.pattern;
 
-    const font = buildFont(style);
-    if (font) target.font = font;
+        const font = buildFont(style);
+        if (font) target.font = font;
 
-    const fill = buildFill(style);
-    if (fill) target.fill = fill;
+        const fill = buildFill(style);
+        if (fill) target.fill = fill;
 
-    const alignment = buildAlignment(style);
-    if (alignment) target.alignment = alignment;
+        const alignment = buildAlignment(style);
+        if (alignment) target.alignment = alignment;
 
-    const border = buildBorder(style.bd);
-    if (border) target.border = border;
+        const border = buildBorder(style.bd);
+        if (border) target.border = border;
+    }
+
+    if (isHyperlink) target.font = { ...target.font, ...HYPERLINK_FONT };
 }
 
-function setCellValue(target: ExcelJS.Cell, cell: ICellData): void {
+/** Writes the cell's value, reporting whether it became an Excel hyperlink. */
+function setCellValue(target: ExcelJS.Cell, cell: ICellData): boolean {
     if (cell.f) {
         // Univer stores formulas with a leading "="; exceljs wants it stripped, plus the
         // cached result so the value shows without a recalc.
         target.value = { formula: cell.f.replace(/^=/, ""), result: cell.v ?? undefined } as ExcelJS.CellFormulaValue;
-        return;
+        return false;
     }
-    if (cell.v == null) return;
+
+    // A rich-text cell (a link, mixed formatting) can carry its text only in `p`.
+    const segments = getCellDocumentSegments(cell);
+    const text = segments.map((segment) => segment.text).join("");
+
+    // Excel holds at most one hyperlink per cell, so a document with several linked runs exports
+    // the first target over the whole cell. A number keeps its own value and format instead.
+    const url = isFiniteNumber(cell.v) ? undefined : segments.find((segment) => segment.url)?.url;
+    if (url) {
+        target.value = { text, hyperlink: url } as ExcelJS.CellHyperlinkValue;
+        return true;
+    }
+
+    if (cell.v == null || cell.v === "") {
+        if (text) target.value = text;
+        return false;
+    }
     target.value = cell.v;
+    return false;
 }
 
 function buildFont(style: IStyleData): Partial<ExcelJS.Font> | null {

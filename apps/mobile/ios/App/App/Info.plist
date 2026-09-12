@@ -51,6 +51,10 @@
 	<array>
 		<string>localhost</string>
 	</array>
+	<!-- Shown in the system prompt when the geo map's locate button first asks for a
+	     position. iOS refuses the Geolocation API outright when this key is missing. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Trilium shows where you are on a geo map.</string>
 	<!-- App Transport Security: Trilium users self-host the sync server,
 	     often on LAN IPs, *.local, or personal domains without HTTPS.
 	     iOS blocks plain http:// by default — allow it so users can

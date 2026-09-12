@@ -1,40 +1,35 @@
-/* The shortcuts page feeds its controls into its OptionsPageHeader: the conflicts badge and reset
-   buttons on the title row, the filter/search box on the full-width row beneath. The sticky bar,
+/* The shortcuts page feeds its controls into its OptionsPageHeader: the conflicts badge on the title
+   row, the filter box and the page's actions on the full-width row beneath. The sticky bar,
    background and bottom border come from the header itself. */
-.shortcut-header-buttons {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    justify-content: flex-end;
-    /* Keep the reset buttons clear of the dialog's window buttons (top-right). */
+
+/* Prominent danger badge flagging that conflicts exist; click to filter to them. Kept clear of the
+   dialog's own window buttons, which share the title row with it. */
+.shortcut-conflicts-badge {
+    --color: var(--icon-button-danger-color, #d9534f);
+    flex: 0 0 auto;
     margin-inline-end: 3em;
+}
 
-    /* Prominent danger badge flagging that conflicts exist; click to filter to them. Pushed to the
-       leading edge of the row, away from the buttons. */
-    .shortcut-conflicts-badge {
-        flex: 0 0 auto;
-        margin-inline-end: auto;
-        --color: var(--icon-button-danger-color, #d9534f);
-    }
-
-    /* While the conflicts filter is active, fill the outline badge solid. */
-    .shortcut-conflicts-badge.active {
-        background-color: var(--color);
-        color: white;
-    }
+/* While the conflicts filter is active, fill the outline badge solid. */
+.shortcut-conflicts-badge.active {
+    background-color: var(--color);
+    color: white;
 }
 
 .shortcut-header-filter {
+    /* The row measures itself, standing outside the cards and out of reach of their container. */
+    container-type: inline-size;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5em;
 
-    /* The search box grows so the filter button sits at the trailing edge. */
+    /* The search box grows so the filter button and the actions after it sit at the trailing edge. */
     > :first-child {
         flex: 1;
     }
 
-    .dropdown {
+    > .dropdown {
         flex: 0 0 auto;
     }
 
@@ -44,7 +39,35 @@
     }
 }
 
+/* The page's own actions, held as one item so they travel together when the row breaks. */
+.shortcut-header-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.5em;
+
+    > .btn {
+        white-space: nowrap;
+    }
+}
+
+/* Too little room for one line: the filter keeps the first with its button, and the actions take
+   the second, sharing it evenly between them. */
+@container (max-width: 500px) {
+    .shortcut-header-actions {
+        flex-basis: 100%;
+
+        > .btn {
+            flex: 1;
+        }
+    }
+}
+
+/* The cards are grouped one level in, out of reach of the page's own stacking rule. */
 .shortcuts-options-section {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+
     .shortcut-modified-indicator {
         display: inline-block;
         width: 0.5em;
@@ -57,10 +80,13 @@
 
     .shortcut-editor {
         display: flex;
+        /* Overrides the card option's no-shrink rule: a wrapping set of chips gives way instead. */
+        flex-shrink: 1;
         flex-wrap: wrap;
         align-items: center;
         justify-content: flex-end;
         gap: 0.4em;
+        min-width: 0;
     }
 
     /* Reserve the revert button's slot (matching its .icon-action width) so the add button to its
@@ -150,7 +176,7 @@
             transition: opacity 0.15s ease;
         }
 
-        .option-row:hover .shortcut-recorder,
+        .tn-card-option:hover .shortcut-recorder,
         .shortcut-recorder:focus,
         .shortcut-recorder.recording {
             opacity: 1;
@@ -158,21 +184,17 @@
         }
     }
 
-    /* On mobile, stack each row so the shortcut editor sits underneath the action label.
-       OptionsRow keeps these rows inline because they contain .icon-action buttons. */
-    body.mobile & {
-        .option-row {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 8px;
-        }
-
-        .option-row-input {
-            width: 100%;
-        }
-
+    /* The card stacks the row at this width on its own, so the chips read from the leading edge
+       rather than staying pushed against the trailing one. */
+    @container (max-width: 500px) {
         .shortcut-editor {
             justify-content: flex-start;
+        }
+
+        /* Read from the leading edge, the recorder stands after however many chips the row holds,
+           so there is no column left for the empty slot to hold open — only a hole before it. */
+        .shortcut-revert-slot:empty {
+            display: none;
         }
     }
 }

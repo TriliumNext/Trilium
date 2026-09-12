@@ -183,6 +183,53 @@ describe("calculateHash", () => {
     });
 });
 
+describe("searchTerms view scope round-trip", () => {
+    it("omits the searchTerms param when the array is empty or undefined", () => {
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: [] } } as any)).toBe("#root/aaaaaaaaaaaa");
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: {} } as any)).toBe("#root/aaaaaaaaaaaa");
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa" } as any)).toBe("#root/aaaaaaaaaaaa");
+    });
+
+    it("emits a searchTerms param when non-empty", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello"] } } as any);
+        expect(hash).toContain("searchTerms=");
+    });
+
+    it("round-trips a single search term", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello"] } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["hello"]);
+    });
+
+    it("round-trips multiple search terms, preserving order", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello", "world", "foo"] } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["hello", "world", "foo"]);
+    });
+
+    it("round-trips tokens containing commas, percent signs, quotes and unicode", () => {
+        const terms = ["a,b", "100% done", 'she said "hi"', "héllo wörld 日本語"];
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: terms } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(terms);
+    });
+
+    it("drops malformed encoded search-term entries instead of throwing", () => {
+        // Hand-craft a hash whose decoded searchTerms value is "good,%E0%A4%A" -- a well-formed
+        // token followed by a truncated (invalid) percent-encoding sequence.
+        const hash = `#root/aaaaaaaaaaaa?searchTerms=${encodeURIComponent("good,%E0%A4%A")}`;
+        expect(() => parseNavigationStateFromUrl(hash)).not.toThrow();
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["good"]);
+    });
+
+    it("does not touch the legacy #?searchString= branch", () => {
+        const output = parseNavigationStateFromUrl("#?searchString=hello&searchTerms=world");
+        // searchString short-circuits to its own dedicated return before viewScope is even considered
+        expect(output).toStrictEqual({ searchString: "hello" });
+    });
+});
+
 describe("calculateExtraWindowUrl", () => {
     it("marks the window as extra and appends the target hash", () => {
         const url = calculateExtraWindowUrl({ notePath: "root/abc123" }, new URL("http://localhost:8080/"));
@@ -220,6 +267,101 @@ describe("calculateExtraWindowUrl", () => {
     it("omits the hash when there is no target, as when opening a blank window", () => {
         const url = calculateExtraWindowUrl({ notePath: "", hoistedNoteId: "root" }, new URL("http://localhost:8080/"));
         expect(url).toBe("http://localhost:8080/?extraWindow=1");
+    });
+});
+
+describe("split panes in the hash", () => {
+    const A = "root/aaaaaaaaaaaa";
+    const B = "root/bbbbbbbbbbbb";
+    const C = "root/cccccccccccc";
+
+    /** Wraps a bare hash in the address a detached window boots from. */
+    const asExtraWindowUrl = (hash: string) => `http://localhost:8080/?extraWindow=1${hash}`;
+
+    it("round-trips a tab's panes, keeping their order, hoisting and view scope", () => {
+        const hash = calculateHash({
+            notePath: A,
+            splits: [
+                { notePath: B, viewScope: { viewMode: "source" } },
+                { notePath: C, hoistedNoteId: "h1" }
+            ],
+            activeSplit: 1
+        });
+
+        // each pane is a hash body of its own, comma-joined and encoded as a single parameter
+        expect(hash).toBe(
+            `#${A}?splits=root%2Fbbbbbbbbbbbb%3FviewMode%3Dsource%2Croot%2Fcccccccccccc%3FhoistedNoteId%3Dh1&activeSplit=1`
+        );
+
+        expect(parseNavigationStateFromUrl(asExtraWindowUrl(hash))).toMatchObject({
+            notePath: A,
+            activeSplit: 1,
+            splits: [
+                { notePath: B, hoistedNoteId: null, viewScope: { viewMode: "source" } },
+                { notePath: C, hoistedNoteId: "h1", viewScope: { viewMode: "default" } }
+            ]
+        });
+    });
+
+    it("honours splits only when booting a detached window", () => {
+        // The same parser backs every link click inside a note. Were splits read there, any note —
+        // including an imported or synced one — could rearrange the panes of the window reading it.
+        const hash = calculateHash({ notePath: A, splits: [{ notePath: B }] });
+
+        expect(parseNavigationStateFromUrl(`http://localhost:8080/${hash}`)).toMatchObject({
+            notePath: A,
+            splits: null
+        });
+    });
+
+    it("keeps the layout of a tab whose first pane held no note", () => {
+        const hash = calculateHash({ notePath: null, splits: [{ notePath: B }] });
+
+        expect(hash).toBe("#?splits=root%2Fbbbbbbbbbbbb");
+        expect(parseNavigationStateFromUrl(asExtraWindowUrl(hash))).toMatchObject({
+            notePath: "",
+            noteId: null,
+            splits: [{ notePath: B }]
+        });
+
+        // without splits an empty note path still means "nothing to navigate to"
+        expect(parseNavigationStateFromUrl(asExtraWindowUrl("#"))).toStrictEqual({});
+    });
+
+    it("keeps empty panes, drops malformed ones and caps how many it will open", () => {
+        const parse = (splits: string) =>
+            parseNavigationStateFromUrl(asExtraWindowUrl(`#${A}?splits=${splits}`));
+
+        // an empty entry is a pane that held no note — kept, so the pane count survives
+        expect(parse(encodeURIComponent(`${B},,${C}`))).toMatchObject({
+            splits: [{ notePath: B }, { notePath: null }, { notePath: C }]
+        });
+
+        // a hand-written address shouldn't be able to open a pane on garbage, nor hundreds of them
+        expect(parse(encodeURIComponent(`${B},zz,${C}`))).toMatchObject({
+            splits: [{ notePath: B }, { notePath: C }]
+        });
+        expect(parse(encodeURIComponent(Array(20).fill(B).join(",")))).toMatchObject({
+            splits: Array(8).fill({ notePath: B })
+        });
+    });
+
+    it("shrugs off an active index that is not a number, and a parameter carrying no value", () => {
+        // Both reach the parser straight off the address bar, where anything at all may be typed.
+        expect(parseNavigationStateFromUrl(
+            asExtraWindowUrl(`#${A}?splits=${encodeURIComponent(B)}&activeSplit=whichever`)
+        )).toMatchObject({ activeSplit: 0, splits: [{ notePath: B }] });
+
+        // `popup` is a flag, so it is written bare — there is no `=` to split on.
+        expect(parseNavigationStateFromUrl(`#${A}?popup`)).toMatchObject({ openInPopup: true });
+    });
+
+    it("ignores parameters that describe a window rather than a pane", () => {
+        const nested = encodeURIComponent(`${B}?ntxId=n1&splits=${encodeURIComponent(C)}`);
+        const parsed = parseNavigationStateFromUrl(asExtraWindowUrl(`#${A}?splits=${nested}`));
+
+        expect(parsed).toMatchObject({ splits: [{ notePath: B, viewScope: { viewMode: "default" } }] });
+        expect((parsed as any).splits[0]).not.toHaveProperty("ntxId");
     });
 });
 

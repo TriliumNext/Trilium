@@ -1,0 +1,101 @@
+<h2>Using different fonts</h2>
+<p>Trilium comes by default with its own font (<em>Inter</em>), but the font
+  can be adjusted in&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Appearance</em>,
+  by checking <em>Use different fonts</em> in the <em>Fonts</em> section.</p>
+<p>The font can be personalized for the following areas of the application:</p>
+<ul>
+  <li>Interface text, for most of the UI (menus, toolbars, dialogs).</li>
+  <li><a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</li>
+  <li>Document text, for the actual content of the notes (especially for&nbsp;<a
+    class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes).</li>
+  <li>Monospace text, e.g. for&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;notes
+    and&nbsp;<a class="reference-link" href="#root/_help_QxEyIjRBizuC">Code blocks</a>.</li>
+</ul>
+<p>Each area also has its own <em>Size</em>. The note tree and document sizes
+  are relative to the interface size, so changing the interface size moves
+  them along with it.</p>
+<p>The list of fonts contains the following items:</p>
+<ul>
+  <li><strong>Generic fonts</strong>
+    <ul>
+      <li><em>Theme defined</em> which uses the font that is embedded with the current <a
+        href="#root/_help_Wy267RK4M69c">theme</a>. For example on the default modern
+        theme, the font is <em>Inter</em>. This does not require the font to be
+        installed.</li>
+      <li><em>System default</em> which uses a combination of fonts that works best
+        for the <a href="#root/_help_poXkQfguuA0U">desktop app</a>. For example
+        on Windows it will use <em>Segoe UI</em>.</li>
+      <li>Generic font selections for fonts with serifs (e.g. <em>Times New Roman</em>-like),
+        no serifs and monospace.</li>
+    </ul>
+  </li>
+  <li><strong>Web fonts</strong> which appear on the&nbsp;<a class="reference-link"
+    href="#root/_help_WOcw2SLH6tbX">Server Installation</a>, which is a predefined
+    list of fonts and grouped into Sans-serif, serif, monospace and handwriting.
+    The fonts that are not supported by your system (i.e. not installed) are
+    not displayed.</li>
+  <li><strong>System fonts</strong> which appear on the&nbsp;<a class="reference-link"
+    href="#root/_help_poXkQfguuA0U">Desktop Installation</a>. Unlike the server
+    fonts which are predefined, the system fonts are listed from your operating
+    system.</li>
+  <li><strong>Custom fonts</strong>, allowing any font to be used provided it's
+    imported into Trilium. See the section below for more information.</li>
+</ul>
+<p>Font changes take effect after a reload; the section offers a <em>Reload to apply changes</em> button
+  once something has been changed.</p>
+<h2>Custom fonts</h2>
+<p>A font file imported into Trilium can be used by the application itself,
+  without writing any CSS.</p>
+<h3>Adding a font</h3>
+<ol>
+  <li>Import the font file, by dragging it into the&nbsp;<a class="reference-link"
+    href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;or through <em>Import into note</em>.
+    TrueType (<code spellcheck="false">.ttf</code>), OpenType (<code spellcheck="false">.otf</code>)
+    and Web Open Font Format (<code spellcheck="false">.woff</code>, <code spellcheck="false">.woff2</code>)
+    files are recognized; the note takes the font's name without its extension
+    and is marked with a font icon (an “A” icon).</li>
+  <li>Select the resulting note where a preview of a font will be displayed:
+    a specimen line to type your own text into, a slider for its size, a preview
+    in multiple sizes, and the Latin character set.</li>
+  <li>Turn on <em>In font picker</em> above the specimen.</li>
+  <li>In&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Appearance</em> → <em>Fonts</em>,
+    the font is now offered under <em>Custom fonts</em>, ahead of the built-in
+    families, and can be set for any of the four areas.</li>
+</ol>
+<aside class="admonition note">
+  <p>Embedded OpenType (<code spellcheck="false">.eot</code>) files and TrueType
+    collections (<code spellcheck="false">.ttc</code>) cannot be drawn by the
+    browser, so they are treated as ordinary files: no preview, and no entry
+    in the picker.</p>
+</aside>
+<h3>How custom fonts behave</h3>
+<ul>
+  <li>Each entry is named after its note, so renaming the note renames the entry.
+    The setting refers to the note itself rather than to its name, and keeps
+    working across a rename.</li>
+  <li>The font file is an ordinary note, so&nbsp;<a class="reference-link" href="#root/_help_cbkrhQjrkKrh">Synchronization</a>&nbsp;carries
+    it to your other devices. The choice of font is not synced: appearance
+    settings are deliberately kept per-device, so on another device the font
+    is already there and only needs to be selected again.</li>
+  <li>A font kept in a <a href="#root/_help_bwg0e8ewQMak">protected note</a> can
+    only be previewed and used while the protected session is open.</li>
+</ul>
+<p>For theme authors, a font can also be embedded in a theme's CSS through&nbsp;<a
+  class="reference-link" href="#root/_help_d3fAXQ2diepH">Custom Resource Providers</a>,
+  which is the route to take when the font should come with the theme rather
+  than be chosen in the settings.</p>
+<h3>Downloading from Google Fonts</h3>
+<p>A large selection of fonts can be easily retrieved from Google Fonts,
+  as follows:</p>
+<ol>
+  <li>Go to <a href="https://fonts.google.com">https://fonts.google.com</a>.</li>
+  <li>Search for a desired font.</li>
+  <li>Press <em>Get font</em> in the top right.</li>
+  <li>Check that the list of fonts on the left side corresponds to your selection.</li>
+  <li>Press <em>Download all</em>.</li>
+  <li>In the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+    create a note where to store the new fonts.</li>
+  <li>In the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+    drag-and-drop the .zip file directly onto the newly created note and follow
+    the steps from the previous section.</li>
+</ol>

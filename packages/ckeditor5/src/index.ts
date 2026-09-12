@@ -16,6 +16,8 @@ export type { SlashCommandConfig, SlashCommandDefinition } from "./plugins/menti
 export type { TriliumMentionFeed } from "./plugins/mention/types.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
 export type { SnippetDefinition } from "./plugins/snippets/snippetsconfig.js";
+export { default as TriliumAiAssistant } from "./plugins/ai_assistant/ai_assistant.js";
+export type { AiAssistantConfig, AiCompletionRequest, AiCompletionUsage, AiConversationTurn, AiDiffFunction, AiDiffResult, AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, AiReviewView, AiSanitizeFunction, AiStreamCallback, AiStreamFunction, AiSurroundings } from "./plugins/ai_assistant/ai_assistant_config.js";
 export { default as getCkLocale, registerCkTranslations } from "./i18n.js";
 export { MESSAGE_KEY_PREFIX, MESSAGE_OVERRIDES, slugify } from "./messages.js";
 export * from "./utils.js";
@@ -87,6 +89,13 @@ declare module "ckeditor5" {
         },
         clipboard?: {
             copy(text: string): void;
+            /**
+             * Copies rich HTML, with `plainText` as the plain-text alternative. Provided by the host
+             * because `navigator.clipboard.write()` only exists in secure contexts, and Trilium is
+             * routinely served over plain HTTP on a LAN — the host falls back to a copy-event
+             * handler there.
+             */
+            copyHtml?(html: string, plainText: string): void;
         },
         clipboardImageEmbed?: ClipboardImageEmbedConfig
     }

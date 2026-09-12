@@ -117,5 +117,5 @@ integration items at the end are specific to this monorepo.
       `ClassicEditor` (Decoupled), `PopupEditor` (Balloon + `BlockToolbar`).
 - [ ] Block widgets enforce structural invariants with `registerPostFixer` (admonition,
       collapsible) rather than relying on command-side cleanup.
-- [ ] **Tests use the right environment**: happy-dom for unit/model logic; WebdriverIO
+- [ ] **Tests use the right environment**: happy-dom for unit/model logic; Playwright
       (browser) only where real DOM/layout is required.

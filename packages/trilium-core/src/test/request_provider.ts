@@ -7,15 +7,27 @@
  * reaches one of them should do — it has wandered somewhere it did not mean to go.
  */
 
-import type { FetchedResource, FetchResourceOpts, ExecOpts, RequestProvider } from "../services/request.js";
+import { type FetchApiOpts, type FetchedResource, type FetchResourceOpts, type ExecOpts, initRequest, type RequestProvider } from "../services/request.js";
 
 export function fakeRequestProvider(overrides: Partial<RequestProvider> = {}): RequestProvider {
     return {
         exec: <T,>(_opts: ExecOpts): Promise<T> => unstubbed("exec"),
         getImage: (_imageUrl: string): Promise<ArrayBuffer> => unstubbed("getImage"),
         fetchResource: (_url: string, _opts: FetchResourceOpts): Promise<FetchedResource> => unstubbed("fetchResource"),
+        fetchApi: (_url: string, _init: RequestInit, _opts: FetchApiOpts): Promise<Response> => unstubbed("fetchApi"),
         ...overrides
     };
+}
+
+/**
+ * Installs a provider whose {@link RequestProvider.fetchApi} is whatever `fetch` is global at the
+ * moment it is called — for the specs that stub that global and assert against the stub.
+ *
+ * Read late, on purpose: `vi.stubGlobal("fetch", …)` in a `beforeEach` replaces the global after
+ * this has run, and a provider that captured it at install time would go on calling the real one.
+ */
+export function installGlobalFetchAsApiTransport(): void {
+    initRequest(fakeRequestProvider({ fetchApi: (url, init) => fetch(url, init) }));
 }
 
 function unstubbed(method: string): never {

@@ -1,13 +1,15 @@
 // Side-effect import: declares the `math` key on EditorConfig used by the editor configs below.
 import './math.js';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { MathJax2 } from './typings_external.js';
 import {
 	extractDelimiters,
 	hasDelimiters,
 	isMathJaxVersion2,
-	isMathJaxVersion3
+	isMathJaxVersion3,
+	renderEquation
 } from './utils.js';
 
 describe( 'utils: delimiter helpers', () => {
@@ -70,5 +72,44 @@ describe( 'utils: MathJax version detection', () => {
 		expect( isMathJaxVersion2( null ) ).toBe( false );
 		expect( isMathJaxVersion2( 'Hub' ) ).toBe( false );
 		expect( isMathJaxVersion2( {} ) ).toBe( false );
+	} );
+} );
+
+describe( 'utils: rendering through MathJax 2', () => {
+	/** What MathJax 2 is, as far as the renderer is concerned: a Hub with a queue. */
+	function installMathJax2() {
+		const queue = vi.fn();
+		globalThis.MathJax = { Hub: { Queue: queue } } as unknown as MathJax2;
+		return queue;
+	}
+
+	afterEach( () => {
+		globalThis.MathJax = undefined;
+	} );
+
+	it( 'hands the equation to the Hub as delimited text, display and inline alike', async () => {
+		const queue = installMathJax2();
+		const element = document.createElement( 'span' );
+
+		// Text rather than markup: MathJax 2 typesets by scanning text nodes for the delimiters.
+		await renderEquation( 'x^2', element, 'mathjax', undefined, true );
+		await vi.waitFor( () => expect( element.textContent ).toBe( '\\[x^2\\]' ) );
+
+		await renderEquation( 'x^2', element, 'mathjax', undefined, false );
+		await vi.waitFor( () => expect( element.textContent ).toBe( '\\(x^2\\)' ) );
+
+		expect( queue ).toHaveBeenCalledWith( [ 'Typeset', expect.anything(), element ] );
+	} );
+
+	it( 'leaves the element alone where MathJax never arrived', async () => {
+		const element = document.createElement( 'span' );
+		element.textContent = 'untouched';
+
+		// The renderer falls through to MathJax 2 whenever MathJax is not version 3, this build
+		// included, so it has to answer for finding nothing there at all.
+		await renderEquation( 'x^2', element, 'mathjax' );
+		await new Promise( resolve => window.setTimeout( resolve ) );
+
+		expect( element.textContent ).toBe( 'untouched' );
 	} );
 } );

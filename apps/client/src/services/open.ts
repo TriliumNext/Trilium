@@ -156,6 +156,22 @@ async function openDirectory(directory: string) {
     }
 }
 
+/**
+ * Shows a file in the file manager, selected, rather than opening it — which is what to do with a
+ * file the user has no reader for. The database is the one such file Trilium points at.
+ *
+ * Nothing comes back, so nothing can be reported: the OS is asked to bring a window forward, and
+ * whether it did is not something Electron answers.
+ */
+function revealFile(filePath: string) {
+    if (!utils.isElectron()) {
+        console.error("Not running in an Electron environment.");
+        return;
+    }
+
+    window.electronApi?.shell.showItemInFolder(filePath);
+}
+
 /** Reported to the user, not only the console: a silent failure reads as the link doing nothing at all. */
 function reportDirectoryFailure(directory: string, reason: string) {
     console.error("Failed to open directory:", directory, reason);
@@ -173,5 +189,6 @@ export default {
     openNoteCustom,
     openAttachmentCustom,
     openNoteOnServer,
-    openDirectory
+    openDirectory,
+    revealFile
 };

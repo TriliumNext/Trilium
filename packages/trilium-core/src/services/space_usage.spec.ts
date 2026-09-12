@@ -1,7 +1,16 @@
 import { SpaceUsageSizes } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
-import { buildCanonicalForest, buildNotePath, collectSubtreeNoteIds, computeSubtreeTotals } from "./space_usage.js";
+import {
+    buildCanonicalForest,
+    buildNotePath,
+    collectSubtreeNoteIds,
+    computeSubtreeTotals,
+    DEFAULT_OVERVIEW_LIMIT,
+    getContentCounts,
+    getOverview
+} from "./space_usage.js";
+import { getSql } from "./sql/index.js";
 
 /** Builds a forest from a plain parent → ordered children map; extras model orphan roots. */
 function forestOf(edges: Record<string, string[]>, extraNoteIds: string[] = []) {
@@ -159,5 +168,40 @@ describe("buildNotePath", () => {
         const forest = forestOf({ root: [] }, [ "lost" ]);
 
         expect(buildNotePath(forest.parentByNoteId, "lost")).toEqual([ "lost" ]);
+    });
+});
+
+describe("getContentCounts", () => {
+    /** A row rather than an entity: the count is taken off the table, and nothing else is needed. */
+    function insertAttachment(attachmentId: string, ownerId: string) {
+        getSql().execute(`
+            INSERT INTO attachments (attachmentId, ownerId, role, mime, title, isDeleted, dateModified, utcDateModified)
+            VALUES (?, ?, 'file', 'text/plain', 'spec attachment', 0, '2026-01-01 00:00:00.000+00:00', '2026-01-01 00:00:00.000Z')`,
+        [ attachmentId, ownerId ]);
+    }
+
+    it("counts the notes the overview counts, so the two never state different figures", () => {
+        const overview = getOverview({ includeRevisions: false, limit: DEFAULT_OVERVIEW_LIMIT });
+
+        expect(getContentCounts().noteCount).toBe(overview.total.noteCount);
+        // The equality above only means something where the two differ: every database carries a
+        // hidden subtree, and none of it is the user's doing.
+        expect(overview.hiddenNotes.noteCount).toBeGreaterThan(0);
+    });
+
+    it("counts the attachments notes own, leaving out history and the hidden subtree", () => {
+        const before = getContentCounts().attachmentCount;
+
+        insertAttachment("spec_att_note", "root");
+        insertAttachment("spec_att_hidden", "_hidden");
+        // No note carries this ID, which is what an attachment owned by a revision looks like here.
+        insertAttachment("spec_att_revision", "spec_revision_owner");
+
+        try {
+            expect(getContentCounts().attachmentCount).toBe(before + 1);
+        } finally {
+            getSql().execute(
+                "DELETE FROM attachments WHERE attachmentId IN ('spec_att_note', 'spec_att_hidden', 'spec_att_revision')");
+        }
     });
 });

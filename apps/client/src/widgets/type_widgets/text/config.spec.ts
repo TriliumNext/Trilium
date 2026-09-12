@@ -1,4 +1,5 @@
-import { DISPLAYABLE_LOCALE_IDS, IMAGE_MIMES, LOCALES } from "@triliumnext/commons";
+import type { EditorConfig } from "@triliumnext/ckeditor5";
+import { DISPLAYABLE_LOCALE_IDS, IMAGE_MIMES, LOCALES, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import imageService from "../../../services/image.js";
@@ -7,7 +8,10 @@ import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlig
 import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
 
 // Mutable option values, reset before each test (see `beforeEach`).
-const optionsState = vi.hoisted(() => ({ map: {} as Record<string, string | undefined> }));
+const optionsState = vi.hoisted(() => ({
+    map: {} as Record<string, string | undefined>,
+    json: {} as Record<string, unknown>
+}));
 // Toggles whether the editor advertises raw-image clipboard support.
 const imageState = vi.hoisted(() => ({ copySupported: false }));
 
@@ -19,7 +23,11 @@ const catalogState = vi.hoisted(() => ({
     bundle: undefined as Record<string, unknown> | undefined,
     entries: {} as Record<string, string>
 }));
-vi.mock("../../../services/i18n.js", () => ({ t: (key: string) => catalogState.entries[key] ?? key }));
+vi.mock("../../../services/i18n.js", () => ({
+    t: (key: string) => catalogState.entries[key] ?? key,
+    // Read while the AI assistant's Translate submenu is built, which every config goes through.
+    getAvailableLocales: () => []
+}));
 vi.mock("i18next", () => ({
     default: {
         // i18next binds `getResourceBundle` in `init()`, so it is absent until the app has booted —
@@ -44,7 +52,11 @@ vi.mock("../../../services/options.js", () => ({
             if (name === "codeNotesMimeTypes") {
                 return ["text/javascript", "application/javascript;env=frontend", "application/javascript;env=backend", "text/css"];
             }
+            if (name in optionsState.json) return optionsState.json[name];
             return [];
+        },
+        is(name: string) {
+            return optionsState.map[name] === "true";
         }
     }
 }));
@@ -124,6 +136,7 @@ async function buildDynamicConfig(overrides: Partial<BuildEditorOptions> = {}) {
 
 beforeEach(() => {
     optionsState.map = {};
+    optionsState.json = {};
     imageState.copySupported = false;
     catalogState.bundle = undefined;
     catalogState.entries = {};
@@ -215,6 +228,88 @@ describe("CK config", () => {
             ?.katexRenderOptions?.macros;
         // Without this mapping, MathLive's \differentialD renders as raw error text (issue #9523).
         expect(macros?.["\\differentialD"]).toBe("\\mathrm{d}");
+    });
+});
+
+describe("CK config - HTML support", () => {
+    // The feature ships off, so everything below the first two tests describes what an install that
+    // has opted back in gets.
+    beforeEach(() => {
+        optionsState.map.textNoteHtmlSupportEnabled = "true";
+    });
+
+    it("keeps GHS out of the way until the user opts in", async () => {
+        optionsState.map.textNoteHtmlSupportEnabled = "false";
+        optionsState.map.allowedHtmlTags = JSON.stringify(SANITIZER_DEFAULT_ALLOWED_TAGS);
+
+        const config = await buildConfig(baseOpts());
+
+        // The allow-list is emptied rather than narrowed: GHS decides per element, so there is no
+        // subset of the option that still means anything once the feature is off. The tag list goes
+        // on governing what the server-side sanitizer accepts on import.
+        expect(config.htmlSupport?.allow).toEqual([]);
+    });
+
+    it("treats an unset option as off, the way the shipped default is", async () => {
+        // An install predating the option has no row for it, and must not silently run with GHS on.
+        delete optionsState.map.textNoteHtmlSupportEnabled;
+        optionsState.map.allowedHtmlTags = JSON.stringify(SANITIZER_DEFAULT_ALLOWED_TAGS);
+
+        const config = await buildConfig(baseOpts());
+
+        expect(config.htmlSupport?.allow).toEqual([]);
+    });
+
+    it("names every allowed tag rather than handing GHS bare strings", async () => {
+        optionsState.map.allowedHtmlTags = JSON.stringify(["p", "section", "en-media"]);
+
+        const config = await buildConfig(baseOpts());
+
+        // The shape is the whole point: `DataFilter#loadAllowedConfig` falls back to a
+        // match-everything pattern for an entry with no `name`, so a list of plain strings allowed
+        // every element — including the `$customElement` catch-all, which round-tripped unknown tags
+        // as opaque blobs that were invisible and un-navigable in the editing view (#10989).
+        expect(config.htmlSupport?.allow).toEqual([
+            { name: "p", attributes: true, classes: true, styles: true },
+            { name: "section", attributes: true, classes: true, styles: true },
+            { name: "en-media", attributes: true, classes: true, styles: true }
+        ]);
+        // Nothing is disallowed outright; the allow-list alone decides.
+        expect(config.htmlSupport?.disallow).toBeUndefined();
+    });
+
+    it("allows nothing beyond the natively supported elements when the list is empty", async () => {
+        const config = await buildConfig(baseOpts());
+
+        expect(config.htmlSupport?.allow).toEqual([]);
+    });
+
+    it("withholds div from the editor even when the option allows it", async () => {
+        // GHS gives div a dual content model — a paragraph impostor around inline content, an
+        // affordance-less container around a block — which is what strands the caret in a wrapped
+        // code block. Unwrapping it is the point; the sanitizer reads the same option and is
+        // deliberately left accepting div on import.
+        optionsState.map.allowedHtmlTags = JSON.stringify(["div", "p", "section"]);
+
+        const config = await buildConfig(baseOpts());
+
+        expect(config.htmlSupport?.allow).toEqual([
+            { name: "p", attributes: true, classes: true, styles: true },
+            { name: "section", attributes: true, classes: true, styles: true }
+        ]);
+    });
+
+    it("withholds div from the shipped default list too", async () => {
+        // The default is what nearly every install runs with, so the filter has to bite there
+        // rather than only on a hand-edited list.
+        optionsState.map.allowedHtmlTags = JSON.stringify(SANITIZER_DEFAULT_ALLOWED_TAGS);
+
+        const config = await buildConfig(baseOpts());
+
+        const names = (config.htmlSupport?.allow ?? []).map((pattern) => (pattern as { name: string }).name);
+        expect(names).not.toContain("div");
+        // Everything else the default list names still comes through.
+        expect(names).toEqual(SANITIZER_DEFAULT_ALLOWED_TAGS.filter((tag) => tag !== "div"));
     });
 });
 
@@ -495,6 +590,34 @@ describe("CK config - mention feed", () => {
         expect(createItem.querySelector("b")).toBeNull();
     });
 });
+
+describe("CK config - AI assistant", () => {
+    const PROVIDER = [{ id: "cfg-openai", provider: "openai", selectedModels: [{ id: "gpt-5" }] }];
+
+    // The two halves are settled together: without a transport the command can never be enabled,
+    // so the button would only ever be there to be greyed out.
+    it("offers the assistant only once the feature is on and a provider is configured", async () => {
+        const off = await buildConfig(baseOpts());
+        expect(off.aiAssistant?.stream).toBeUndefined();
+        expect(toolbarItems(off)).not.toContain("aiAssistant");
+
+        // The master switch off, but a provider still stored — what disabling it actually leaves.
+        optionsState.json["llmProviders"] = PROVIDER;
+        const noSwitch = await buildConfig(baseOpts());
+        expect(noSwitch.aiAssistant?.stream).toBeUndefined();
+        expect(toolbarItems(noSwitch)).not.toContain("aiAssistant");
+
+        optionsState.map["aiEnabled"] = "true";
+        const on = await buildConfig(baseOpts());
+        expect(on.aiAssistant?.stream).toBeDefined();
+        expect(toolbarItems(on)).toContain("aiAssistant");
+    });
+});
+
+/** The built toolbar's own items, whichever of the two shapes CKEditor accepts it took. */
+function toolbarItems(config: EditorConfig): unknown[] {
+    return Array.isArray(config.toolbar) ? config.toolbar : (config.toolbar?.items ?? []);
+}
 
 describe("CK config - disabled plugins", () => {
     it("removes the emoji and slash-command plugins based on their option toggles", async () => {

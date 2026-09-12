@@ -3,6 +3,7 @@
     --ck-color-button-default-background: transparent;
     --ck-color-button-default-disabled-background: transparent;
     min-height: 39px;
+    flex-shrink: 0;
 }
 
 .classic-toolbar-widget .ck.ck-toolbar {

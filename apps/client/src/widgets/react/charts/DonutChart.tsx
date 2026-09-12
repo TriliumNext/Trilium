@@ -12,6 +12,13 @@ export interface DonutSegment<T = unknown> {
     /** Tooltip text, shown in the chart's own cursor-following tooltip while the segment is hovered. */
     tooltip?: string;
     /**
+     * The mark's plain name, for whatever names it away from the chart: a selection strip, a legend,
+     * an accessible name. The {@link tooltip} is this name with its figure worked into a sentence,
+     * which is why the two are not the same string. Left unset by a mark standing for several things
+     * at once, which has no one name to give.
+     */
+    label?: string;
+    /**
      * Categorical tint (0–359), mixed into the theme surface exactly like the treemap cells.
      * Absent = the plain surface color, unless a {@link className} paints its own.
      */
@@ -40,9 +47,15 @@ export interface DonutRing<T = unknown> {
 
 interface DonutChartProps<T> {
     rings: DonutRing<T>[];
+    /**
+     * The segment drawn as the chosen one, by {@link DonutSegment.id}, which is why those must be
+     * unique across the chart's rings rather than only within one. For a consumer that keeps a
+     * selection rather than leaving identity to the hover, as a touch screen has to.
+     */
+    selectedSegmentId?: string;
     className?: string;
     /**
-     * SVG paint servers (gradients, patterns) for segments whose class points `--donut-segment-color`
+     * SVG paint servers (gradients, patterns) for segments whose class points `--space-usage-donut-segment-color`
      * at one: a stroke can only reference them through `url(#id)`, so they must live in this chart's
      * own `<defs>`.
      */
@@ -67,7 +80,7 @@ const SEGMENT_GAP = 3;
  * the element: a dashed circle's extent is the whole ring, so an anchored tooltip would hover far
  * from the segment it describes.
  */
-export default function DonutChart<T>({ rings, className, defs, children }: DonutChartProps<T>) {
+export default function DonutChart<T>({ rings, selectedSegmentId, className, defs, children }: DonutChartProps<T>) {
     const half = DONUT_VIEW_SIZE / 2;
     const { containerRef, containerProps, showTooltip, hideTooltip, tooltipNode } = useChartTooltip<HTMLDivElement>();
 
@@ -83,6 +96,7 @@ export default function DonutChart<T>({ rings, className, defs, children }: Donu
                         <Ring
                             key={ring.id}
                             ring={ring}
+                            selectedSegmentId={selectedSegmentId}
                             onSegmentHover={(segment, event) => segment && event
                                 ? showTooltip(segment.tooltip, event)
                                 : hideTooltip()}
@@ -96,8 +110,9 @@ export default function DonutChart<T>({ rings, className, defs, children }: Donu
     );
 }
 
-function Ring<T>({ ring, onSegmentHover }: {
+function Ring<T>({ ring, selectedSegmentId, onSegmentHover }: {
     ring: DonutRing<T>,
+    selectedSegmentId?: string,
     onSegmentHover: (segment: DonutSegment<T> | null, event?: { clientX: number, clientY: number }) => void
 }) {
     const circumference = 2 * Math.PI * ring.radius;
@@ -123,6 +138,7 @@ function Ring<T>({ ring, onSegmentHover }: {
                             "donut-segment",
                             segment.hue !== undefined && "donut-colored",
                             ring.onSegmentClick && "donut-clickable",
+                            segment.id === selectedSegmentId && "donut-segment-selected",
                             segment.className
                         )}
                         r={ring.radius}

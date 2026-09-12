@@ -1,4 +1,4 @@
-import { FileRepository, Plugin, type FileLoader, type UploadAdapter } from "ckeditor5";
+import { FileRepository, Plugin, type FileLoader, type LocaleTranslate, type UploadAdapter } from "ckeditor5";
 
 export default class UploadimagePlugin extends Plugin {
 	static get requires() {
@@ -10,22 +10,25 @@ export default class UploadimagePlugin extends Plugin {
 	}
 
 	init() {
-		this.editor.plugins.get('FileRepository').createUploadAdapter = loader => new Adapter(loader);
+		const t = this.editor.t;
+		this.editor.plugins.get('FileRepository').createUploadAdapter = loader => new Adapter(loader, t);
 	}
 }
 
 class Adapter implements UploadAdapter {
     private loader: FileLoader;
+    private t: LocaleTranslate;
     private xhr?: XMLHttpRequest;
 
 	/**
 	 * Creates a new adapter instance.
 	 */
-	constructor(loader: FileLoader) {
+	constructor(loader: FileLoader, t: LocaleTranslate) {
 		/**
 		 * FileLoader instance to use during the upload.
 		 */
 		this.loader = loader;
+		this.t = t;
 	}
 
 	/**
@@ -100,7 +103,8 @@ class Adapter implements UploadAdapter {
             return;
         }
 
-		const genericError = 'Cannot upload file:' + ` ${file.name}.`;
+		const t = this.t;
+		const genericError = t('Cannot upload file:') + ` ${file.name}.`;
 
 		xhr.addEventListener('error', () => reject(genericError));
 		xhr.addEventListener('abort', () => reject());
@@ -108,7 +112,7 @@ class Adapter implements UploadAdapter {
 			const response = xhr.response;
 
 			if (!response || !response.uploaded) {
-				return reject(response && response.error && response.error.message ? response.error.message : genericError);
+				return reject(`${genericError} ${describeUploadFailure(t, xhr.status, response)}`.trim());
 			}
 
 			resolve({
@@ -145,4 +149,34 @@ class Adapter implements UploadAdapter {
             this.xhr?.send(data);
         }
 	}
+}
+
+/**
+ * Explains why an upload the server answered did not produce an attachment.
+ *
+ * The response is parsed as JSON, so anything that rejects the request before it reaches Trilium —
+ * a reverse proxy enforcing its own body-size limit, most commonly — leaves nothing to quote and
+ * only the status code says what happened. Reporting it beats the bare "cannot upload" that used
+ * to be the only thing such a failure produced (#10859).
+ *
+ * @param status the HTTP status of the response.
+ * @param response the parsed response body, `null` when it was not JSON.
+ * @returns a sentence to append to the generic error, or an empty string when there is nothing to
+ *          add.
+ */
+function describeUploadFailure(t: LocaleTranslate, status: number, response: { error?: { message?: string } } | null): string {
+	const serverMessage = response?.error?.message;
+	if (serverMessage) {
+		return serverMessage;
+	}
+
+	if (status === 413) {
+		return t('The file is too large to be uploaded (HTTP 413). If Trilium is behind a reverse proxy, raise its request body size limit.');
+	}
+
+	if (status) {
+		return t('The server responded with HTTP %0.', String(status));
+	}
+
+	return '';
 }

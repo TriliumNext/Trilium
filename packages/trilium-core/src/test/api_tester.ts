@@ -58,6 +58,8 @@ export interface TestResponse<T = unknown> {
     status: number;
     headers: Record<string, string>;
     body: T;
+    /** The file a handler asked Express to send rather than write itself, if it did. */
+    sentFile?: string;
 }
 
 export interface RequestOptions {
@@ -148,6 +150,8 @@ class MockResponse extends Writable {
     statusCode = 200;
     headers: Record<string, string> = {};
 
+    sentFile?: string;
+
     private chunks: Buffer[] = [];
     private sendBody: unknown;
     private hasSendBody = false;
@@ -157,6 +161,16 @@ class MockResponse extends Writable {
     setHeader(name: string, value: string) { this.headers[name] = value; return this; }
     removeHeader(name: string) { delete this.headers[name]; return this; }
     send(body: unknown) { this.used = true; this.hasSendBody = true; this.sendBody = body; return this; }
+    /**
+     * Express sends the file itself from here, so nothing passes through this object. Recorded
+     * rather than read, which is the whole point of a handler choosing this over `send`.
+     */
+    download(filePath: string, fileName?: string) {
+        this.used = true;
+        this.sentFile = filePath;
+        this.headers["Content-Disposition"] = `attachment; filename="${fileName ?? filePath}"`;
+        return this;
+    }
     json(body: unknown) { return this.send(body); }
     sendStatus(code: number) { this.used = true; this.statusCode = code; return this; }
 
@@ -173,7 +187,7 @@ class MockResponse extends Writable {
         } else if (this.hasSendBody) {
             body = normalizeResponseBody(this.sendBody);
         }
-        return { status: this.statusCode, headers: this.headers, body };
+        return { status: this.statusCode, headers: this.headers, body, sentFile: this.sentFile };
     }
 
 }
@@ -201,14 +215,19 @@ export class CoreApiTester {
     private registerAll() {
         const apiRoute = (method: HttpMethod, path: string, handler: Handler) =>
             this.add(method, path, async (req) => {
-                const result = await getContext().init(() =>
-                    getSql().transactional(() => handler(req)));
+                const result = await getContext().init(() => {
+                    seedContext(req);
+                    return getSql().transactional(() => handler(req));
+                });
                 return formatApiResult(result);
             });
 
         const asyncApiRoute = (method: HttpMethod, path: string, handler: Handler) =>
             this.add(method, path, async (req) => {
-                const result = await getContext().init(async () => await handler(req));
+                const result = await getContext().init(async () => {
+                    seedContext(req);
+                    return await handler(req);
+                });
                 return formatApiResult(result);
             });
 
@@ -224,8 +243,14 @@ export class CoreApiTester {
                     const mockRes = createMockResponse();
                     const invoke = () => handler(req, mockRes);
                     const result = transactional
-                        ? await getContext().init(() => getSql().transactional(invoke))
-                        : await getContext().init(async () => await invoke());
+                        ? await getContext().init(() => {
+                            seedContext(req);
+                            return getSql().transactional(invoke);
+                        })
+                        : await getContext().init(async () => {
+                            seedContext(req);
+                            return await invoke();
+                        });
 
                     if (mockRes.used) {
                         return mockRes.snapshot();
@@ -250,12 +275,14 @@ export class CoreApiTester {
         routes.buildSharedApiRoutes({
             route: buildRoute(true),
             asyncRoute: buildRoute(false),
+            asyncRouteWithoutTransaction: buildRoute(false),
             apiRoute,
             asyncApiRoute,
             apiResultHandler,
             checkApiAuth: noop,
             checkApiAuthOrElectron: noop,
             checkAppNotInitialized: noop,
+            checkSetupAuth: noop,
             checkCredentials: noop,
             loginRateLimiter: noop,
             uploadMiddlewareWithErrorHandling: noop,
@@ -346,4 +373,16 @@ export class CoreApiTester {
         return this.request<T>("delete", path, opts);
     }
 
+}
+
+/**
+ * Seeds the execution context from the `trilium-*` request headers, the way both real adapters do
+ * (`route_api.ts` on Express, `browser_routes.ts` in standalone). Routes that read the hoisted note
+ * through `cls.getHoistedNoteId()` need this to see anything other than "root".
+ */
+function seedContext(req: ApiRequest) {
+    const ctx = getContext();
+    ctx.set("componentId", req.get("trilium-component-id"));
+    ctx.set("localNowDateTime", req.get("trilium-local-now-datetime"));
+    ctx.set("hoistedNoteId", req.get("trilium-hoisted-note-id") || "root");
 }

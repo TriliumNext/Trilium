@@ -21,14 +21,14 @@ describe("openInWindowCommand", () => {
         expect(String(url)).toMatch(/#root\/abc123$/);
     });
 
-    it("hands only the hash to Electron, which builds the URL itself", async () => {
-        const createExtraWindow = vi.fn();
-        window.electronApi = { window: { createExtraWindow } } as unknown as ElectronApi;
-        const open = vi.spyOn(window, "open");
+    it("uses window.open on desktop too; the main process adopts the child", async () => {
+        window.electronApi = {} as unknown as ElectronApi;
+        const open = vi.spyOn(window, "open").mockReturnValue(null);
 
         await entrypoints.openInWindowCommand({ notePath: "root/abc123", hoistedNoteId: "root" });
 
-        expect(createExtraWindow).toHaveBeenCalledWith("#root/abc123");
-        expect(open).not.toHaveBeenCalled();
+        const [url] = open.mock.calls[0];
+        expect(String(url)).toMatch(/[?&]extraWindow=1/);
+        expect(String(url)).toMatch(/#root\/abc123$/);
     });
 });

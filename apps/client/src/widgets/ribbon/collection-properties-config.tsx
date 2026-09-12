@@ -101,15 +101,21 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                             .map(buildMapLayer)
                     },
                     {
+                        title: t("book_properties_config.vector_auto"),
+                        items: Object.entries(MAP_LAYERS)
+                            .filter(([_, layer]) => layer.type === "vector" && "styleDark" in layer)
+                            .map(buildMapLayer)
+                    },
+                    {
                         title: t("book_properties_config.vector_light"),
                         items: Object.entries(MAP_LAYERS)
-                            .filter(([_, layer]) => layer.type === "vector" && !layer.isDarkTheme)
+                            .filter(([_, layer]) => layer.type === "vector" && !layer.isDarkTheme && !("styleDark" in layer))
                             .map(buildMapLayer)
                     },
                     {
                         title: t("book_properties_config.vector_dark"),
                         items: Object.entries(MAP_LAYERS)
-                            .filter(([_, layer]) => layer.type === "vector" && layer.isDarkTheme)
+                            .filter(([_, layer]) => layer.type === "vector" && layer.isDarkTheme && !("styleDark" in layer))
                             .map(buildMapLayer)
                     }
                 ]
@@ -148,12 +154,20 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
         ]
     },
     board: {
-        properties: []
+        properties: [
+            {
+                label: t("book_properties_config.board-inbox-column"),
+                type: "checkbox",
+                icon: "bx bx-inbox",
+                helpTooltip: t("book_properties_config.board-inbox-column-help"),
+                bindToLabel: "enableInboxColumn"
+            }
+        ]
     },
     presentation: {
         properties: [
             {
-                label: "Theme",
+                label: t("book_properties_config.presentation-theme"),
                 type: "combobox",
                 icon: "bx bx-palette",
                 bindToLabel: "presentation:theme",

@@ -38,7 +38,7 @@
     },
     "devDependencies": {
         "@rollup/plugin-buble": "1.0.3",
-        "happy-dom": "20.11.1",
-        "vitest": "4.1.10"
+        "happy-dom": "20.14.0",
+        "vitest": "5.0.0"
     }
 }

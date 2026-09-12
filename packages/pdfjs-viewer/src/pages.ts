@@ -15,7 +15,9 @@ export function setupPdfPages() {
     app.eventBus.on("pagechanging", (evt: any) => {
         window.parent.postMessage({
             type: "pdfjs-viewer-current-page",
-            currentPage: evt.pageNumber
+            currentPage: evt.pageNumber,
+            ntxId: window.TRILIUM_NTX_ID,
+            noteId: window.TRILIUM_NOTE_ID
         } satisfies PdfViewerCurrentPageMessage, window.location.origin);
     });
 
@@ -41,7 +43,9 @@ function sendPageInfo() {
     window.parent.postMessage({
         type: "pdfjs-viewer-page-info",
         totalPages: app.pdfDocument.numPages,
-        currentPage: app.pdfViewer.currentPageNumber
+        currentPage: app.pdfViewer.currentPageNumber,
+        ntxId: window.TRILIUM_NTX_ID,
+        noteId: window.TRILIUM_NOTE_ID
     } satisfies PdfViewerPageInfoMessage, window.location.origin);
 }
 
@@ -74,7 +78,9 @@ async function generateThumbnail(pageNumber: number) {
         window.parent.postMessage({
             type: "pdfjs-viewer-thumbnail",
             pageNumber,
-            dataUrl
+            dataUrl,
+            ntxId: window.TRILIUM_NTX_ID,
+            noteId: window.TRILIUM_NOTE_ID
         } satisfies PdfViewerThumbnailMessage, window.location.origin);
     } catch (error) {
         console.error(`Error generating thumbnail for page %d:`, pageNumber, error);

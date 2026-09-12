@@ -38,12 +38,12 @@ describe("CKEditor config", () => {
         // fixed-vs-floating parity check.
         const FIXED_ONLY_ITEMS = new Set(["undo", "redo"]);
 
-        const classicToolbarConfig = buildClassicToolbar(false);
+        const classicToolbarConfig = buildClassicToolbar(false, true);
         const classicToolbarItems = new Set(
             traverseItems(classicToolbarConfig.toolbar).filter((item) => !FIXED_ONLY_ITEMS.has(item))
         );
 
-        const floatingToolbarConfig = buildFloatingToolbar();
+        const floatingToolbarConfig = buildFloatingToolbar(true);
         const floatingToolbarItems = traverseItems(floatingToolbarConfig.toolbar);
         const floatingBlockToolbarItems = traverseItems({ items: floatingToolbarConfig.blockToolbar });
         const floatingToolbarAllItems = new Set([ ...floatingToolbarItems, ...floatingBlockToolbarItems ]);
@@ -55,8 +55,29 @@ describe("CKEditor config", () => {
 
 describe("buildClassicToolbar", () => {
     it("reflects the multiline flag via shouldNotGroupWhenFull", () => {
-        expect(buildClassicToolbar(false).toolbar.shouldNotGroupWhenFull).toBe(false);
-        expect(buildClassicToolbar(true).toolbar.shouldNotGroupWhenFull).toBe(true);
+        expect(buildClassicToolbar(false, true).toolbar.shouldNotGroupWhenFull).toBe(false);
+        expect(buildClassicToolbar(true, true).toolbar.shouldNotGroupWhenFull).toBe(true);
+    });
+});
+
+/**
+ * An assistant that is switched off (or has no provider configured) has no transport, so its
+ * command can never be enabled — the entries are left out rather than shown permanently disabled.
+ */
+describe("the AI assistant's entries", () => {
+    it("are dropped from every toolbar when the assistant is unavailable", () => {
+        expect(buildClassicToolbar(false, false).toolbar.items).not.toContain("aiAssistant");
+        expect(buildMobileToolbar(false).toolbar.items).not.toContain("aiAssistant");
+
+        const floating = buildFloatingToolbar(false);
+        expect(floating.toolbar.items).not.toContain("aiAssistant");
+        expect(floating.blockToolbar).not.toContain("aiAssistant");
+    });
+
+    // The assistant heads the block toolbar, so it takes the separator behind it along.
+    it("leave the block toolbar opening on an item rather than on a separator", () => {
+        expect(buildFloatingToolbar(true).blockToolbar.slice(0, 3)).toStrictEqual([ "aiAssistant", "|", "heading" ]);
+        expect(buildFloatingToolbar(false).blockToolbar[0]).toBe("heading");
     });
 });
 
@@ -70,13 +91,13 @@ describe("group labels", () => {
     }
 
     it("translates every group label, on both the classic and the floating toolbar", () => {
-        expect(groupLabels(buildClassicToolbar(false).toolbar.items)).toStrictEqual([
+        expect(groupLabels(buildClassicToolbar(false, true).toolbar.items)).toStrictEqual([
             "text-editor.toolbar-groups.text-formatting",
             "text-editor.toolbar-groups.insert",
             "text-editor.toolbar-groups.alignment"
         ]);
 
-        const floating = buildFloatingToolbar();
+        const floating = buildFloatingToolbar(true);
         expect(groupLabels(floating.toolbar.items)).toStrictEqual([ "text-editor.toolbar-groups.text-formatting" ]);
         expect(groupLabels(floating.blockToolbar)).toStrictEqual([
             "text-editor.toolbar-groups.insert",
@@ -87,7 +108,7 @@ describe("group labels", () => {
 
 describe("buildMobileToolbar", () => {
     it("flattens nested toolbar groups into a single flat item list", () => {
-        const mobile = buildMobileToolbar();
+        const mobile = buildMobileToolbar(true);
 
         // Items nested inside group objects (text-formatting, alignment, ...) are hoisted up.
         expect(mobile.toolbar.items).toContain("underline");
@@ -110,23 +131,23 @@ describe("buildToolbarConfig dispatch", () => {
 
     it("returns the flattened mobile toolbar on a mobile device", () => {
         setDevice("mobile");
-        const config = buildToolbarConfig(true);
+        const config = buildToolbarConfig(true, true);
         expect(config.toolbar.items.every((item) => typeof item === "string")).toBe(true);
     });
 
     it("returns the multiline classic toolbar when on desktop and the option is enabled", () => {
         optionsState.values["textNoteEditorMultilineToolbar"] = "true";
-        const config = buildToolbarConfig(true) as ReturnType<typeof buildClassicToolbar>;
+        const config = buildToolbarConfig(true, true) as ReturnType<typeof buildClassicToolbar>;
         expect(config.toolbar.shouldNotGroupWhenFull).toBe(true);
     });
 
     it("returns the single-line classic toolbar when the multiline option is not enabled", () => {
-        const config = buildToolbarConfig(true) as ReturnType<typeof buildClassicToolbar>;
+        const config = buildToolbarConfig(true, true) as ReturnType<typeof buildClassicToolbar>;
         expect(config.toolbar.shouldNotGroupWhenFull).toBe(false);
     });
 
     it("returns the floating toolbar (with a block toolbar) when not in classic mode", () => {
-        const config = buildToolbarConfig(false);
+        const config = buildToolbarConfig(false, true);
         expect("blockToolbar" in config).toBe(true);
     });
 });

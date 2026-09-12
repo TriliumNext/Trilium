@@ -1,5 +1,5 @@
 import { DEFAULT_TASK_STATES, DONE_STATE_NAME, isAnchorState, NONE_STATE_NAME, type TaskStateDef } from "@triliumnext/commons";
-import { Command, ListEditing, Plugin, TodoList, type Editor, type ModelElement, type ViewElement } from "ckeditor5";
+import { Command, ListEditing, Plugin, TodoList, type Editor, type EventInfo, type ModelElement, type UpcastConversionApi, type UpcastConversionData, type UpcastElementEvent, type ViewElement } from "ckeditor5";
 
 import { onTodoRowSplit } from "../todo_list_uncheck_on_enter.js";
 import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
@@ -161,17 +161,12 @@ export default class TodoListMultistateEditing extends Plugin {
             }
         });
 
-        editor.conversion.for("upcast").attributeToAttribute({
-            view: {key: "data-trilium-task-state"},
-            model: {
-                key: TASK_STATE_ATTRIBUTE,
-                value: (viewElement: ViewElement) => {
-                    const value = viewElement.getAttribute("data-trilium-task-state");
-                    return typeof value === "string" && value !== "" && !isAnchorState(value)
-                        ? value
-                        : null;
-                }
-            }
+        // The state is stored on the `<li>` but upcast from that item's checkbox; see
+        // {@link upcastTaskState} for why the obvious `attributeToAttribute` on the `<li>`
+        // is wrong. Registered at "low" so upstream's `todoItemInputConverter` has already
+        // marked the block as a todo item.
+        editor.conversion.for("upcast").add((dispatcher) => {
+            dispatcher.on<UpcastElementEvent>("element:input", upcastTaskState, {priority: "low"});
         });
 
         if (hintsEnabled) {
@@ -473,6 +468,57 @@ export default class TodoListMultistateEditing extends Plugin {
         ) ?? null;
     }
 
+}
+
+/**
+ * Upcast `data-trilium-task-state` onto the model block of the todo item that owns the
+ * converted checkbox.
+ *
+ * Anchoring on the checkbox rather than declaring `attributeToAttribute` on the `<li>` is
+ * what keeps a state on its own item. That helper applies the model attribute to every
+ * top-level node of the `<li>`'s converted range, and the list model is *flat*: a nested
+ * item is a sibling block, not a descendant. A parent's range therefore covers its whole
+ * subtree, so every nested item without a state of its own inherited the parent's, and
+ * because that is a real model attribute, the item-scoped downcast wrote it straight back
+ * into the saved content. `modelCursor.parent` at the checkbox is, by construction, the
+ * one block that item produced; upstream upcasts `todoListChecked` the same way.
+ */
+function upcastTaskState(
+    _evt: EventInfo,
+    data: UpcastConversionData<ViewElement>,
+    conversionApi: UpcastConversionApi
+): void {
+    const block = data.modelCursor.parent;
+    // `todoItemInputConverter` runs first and is what marks the block as a todo item.
+    if (!block.is("element") || block.getAttribute("listType") !== "todo") {
+        return;
+    }
+    const listItem = findListItemAncestor(data.viewItem);
+    /* v8 ignore next 3 -- the block above is a todo item only because upstream made one out of the
+       `<li>` this very checkbox sits in, so by here there is always one to find */
+    if (!listItem) {
+        return;
+    }
+    const value = listItem.getAttribute("data-trilium-task-state");
+    if (typeof value !== "string" || value === "" || isAnchorState(value)) {
+        return;
+    }
+    // Consumed so General HTML Support doesn't also carry it as a raw `<li>` attribute.
+    conversionApi.consumable.consume(listItem, {attributes: "data-trilium-task-state"});
+    conversionApi.writer.setAttribute(TASK_STATE_ATTRIBUTE, value, block);
+}
+
+/** Nearest `<li>` ancestor in the view, mirroring {@link readTaskState}'s DOM walk. */
+function findListItemAncestor(viewElement: ViewElement): ViewElement | null {
+    let ancestor = viewElement.parent;
+    while (ancestor && ancestor.is("element")) {
+        if (ancestor.is("element", "li")) {
+            return ancestor;
+        }
+        ancestor = ancestor.parent;
+    }
+    /* v8 ignore next -- only ever called from a checkbox inside a todo item's own `<li>` */
+    return null;
 }
 
 /**

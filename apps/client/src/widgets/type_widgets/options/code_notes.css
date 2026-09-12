@@ -1,16 +1,8 @@
-.note-detail-content-widget-content.options {
-    /* #region Code Preview */
-    .options-section.code-block-appearance .options-section-card {
-        overflow: hidden;
-
-        .option-row:nth-last-child(2) {
-            border-bottom: 0;
-        }
-
-        .note-detail-readonly-code-content {
-            border-top: solid 1px var(--main-border-color);
-            margin: 0 calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) !important;
-        }
-    }
-    /* #endregion */
+/* The frame a code block has inside a note (theme-next/notes/text.css). */
+.code-note-preview .note-detail-readonly-code-content {
+    margin: 0;
+    border-radius: 6px;
+    box-shadow: var(--code-block-box-shadow);
+    height: 200px;
+    overflow: hidden;
 }

@@ -23,50 +23,51 @@ pnpm --filter @triliumnext/ckeditor5 test
 Or, from the package directory: `vitest run`. Add `-t "name"` to filter by test name, or a
 filename substring to filter by file.
 
-### Supplying the browser and driver
+### Supplying the browser
 
-webdriverio downloads a Chrome for Testing build and a matching chromedriver into `/tmp` on first
-run. Where those cannot execute — NixOS, where they are linked against libraries no store path
-provides and abort on a missing `libxcb.so.1` — two variables hand it a system pair instead:
+Playwright downloads its own Chromium into a per-user cache (`~/.cache/ms-playwright`,
+`%LOCALAPPDATA%\ms-playwright` on Windows). Install it once with
+`pnpm exec playwright install chromium`; CI does this in the test step.
+
+Where that build cannot execute — NixOS, where it is linked against libraries no store path
+provides and aborts on a missing `libxcb.so.1` — `CHROME_BIN` hands Playwright a system browser
+instead:
 
 | Variable | Read by | Effect |
 |---|---|---|
-| `CHROMEDRIVER_PATH` | webdriverio (`@wdio/utils` `startWebDriver`) | Spawns that driver on a free port instead of downloading one. |
-| `CHROME_BIN` | `packages/ckeditor5/vitest.config.ts` | Passed as `goog:chromeOptions.binary`; `setupPuppeteerBrowser` returns early for a string `binary`, so no browser is downloaded either. |
+| `CHROME_BIN` | `packages/ckeditor5/vitest.config.ts` | Passed to the provider as `launchOptions.executablePath`, so Playwright launches that binary rather than its own download. |
 
 ```bash
-CHROME_BIN=/path/to/chromium CHROMEDRIVER_PATH=/path/to/chromedriver \
-    pnpm --filter @triliumnext/ckeditor5 test
+CHROME_BIN=/path/to/chromium pnpm --filter @triliumnext/ckeditor5 test
 ```
 
-The versions must match at least in their major. `nix develop` exports both from `pkgs.chromium`
-and `pkgs.chromedriver` (same nixpkgs revision, so they agree), which is why the plain command works
-inside the dev shell. Starting a chromedriver by hand and writing a local config that connects to
-its port does work, but it is strictly more setup — reach for the variables.
+`nix develop` exports it from `pkgs.chromium`, which is why the plain command works inside the dev
+shell. There is no separate driver to supply — Playwright speaks CDP to the browser directly, which
+is what retired the old `CHROMEDRIVER_PATH` pairing.
 
 A failing browser test writes a PNG into a gitignored `__screenshots__` directory next to the spec.
 Clean those up when done.
 
 ## The config shape
 
-Both packages run **WebdriverIO browser mode**: real headless Chrome via
-`@vitest/browser-webdriverio` (**not** Playwright), with real DOM and layout, gating `src/**`
-coverage at 100%. Trilium previously ran some plugins on happy-dom; no CKEditor package does now.
+Both packages run **Playwright browser mode**: real headless Chromium via
+`@vitest/browser-playwright`, with real DOM and layout, gating `src/**` coverage at 100%. Trilium
+previously ran some plugins on happy-dom; no CKEditor package does now.
 
 ```ts
 import { defineConfig } from 'vitest/config';
 import svg from 'vite-plugin-svgo';
-import { webdriverio } from '@vitest/browser-webdriverio';
+import { playwright } from '@vitest/browser-playwright';
 
 export default defineConfig( {
 	plugins: [ svg() ],
 	test: {
 		browser: {
 			enabled: true,
-			provider: webdriverio(),
+			provider: playwright(),
 			headless: true,
 			ui: false,
-			instances: [ { browser: 'chrome' } ]
+			instances: [ { browser: 'chromium' } ]
 		},
 		include: [ 'src/**/*.spec.ts' ],       // math instead uses [ 'tests/**/*.[jt]s' ]
 		setupFiles: [ './test/setup.ts' ],     // aggregate only — wires the editor-kit teardown
@@ -117,6 +118,47 @@ coverage: {
 
 `reporter: ['text', 'lcov']` + that `reportsDirectory` are what the `analyzing-coverage`
 analyzer (`lcov.info`) and Codecov consume — keep them when adding coverage to a package.
+
+## When the session never starts
+
+Two failure modes look like a broken suite but are environmental.
+
+### "Executable doesn't exist at …/ms-playwright/chromium-NNNN"
+
+Playwright resolves a browser build keyed to its own version, so the cache is empty on a fresh
+checkout and goes stale whenever the pinned `playwright` moves to a build that was never downloaded.
+Both cases raise this at session start.
+
+```bash
+pnpm exec playwright install chromium
+```
+
+Run it from the repo root so the pinned `playwright` resolves. Where the downloaded build cannot
+execute at all, supply a system browser through `CHROME_BIN` instead — see **Supplying the
+browser** above.
+
+### The run hangs at `[vite] [optimizer] bundling dependencies...`
+
+In a fresh git worktree the browser-mode suite reliably stalls there and never runs a test,
+eventually reporting "Browser connection was closed" or "no tests" — even after clearing
+`node_modules/.vite` and killing stray browsers. The cold Vite dep-optimize for the very large
+CKEditor dep set does not complete (it may be contending with the editor's own Vitest extension
+workers). The same spec runs in seconds from the **main checkout**, where that cache is warm.
+
+So validate browser-mode specs from the main checkout: copy the new `*.ts` + `*.spec.ts` into
+`<main>/packages/ckeditor5/src/plugins/`, run them there (add
+`--coverage.enabled --coverage.include='<file>'` to check the 100 % gate against just that file),
+then delete the temporary copies. A spec that imports the plugin directly does not need the
+`plugins.ts` / toolbar wiring to be present in main. Client (`apps/client`) happy-dom tests are
+unaffected — this is browser-mode only.
+
+### After an aborted run
+
+Killed runs leave **orphaned headless Chrome** processes (`--test-type=webdriver`, a `scoped_dir`
+user-data directory) holding resources. Kill those, and only those — never the user's interactive
+Chrome, and never the editor's Vitest extension workers or its Vite dev server. Also don't pipe
+vitest through `Select-Object -Last N`: it buffers everything until exit, so you lose all progress
+output.
 
 ## Debugging
 

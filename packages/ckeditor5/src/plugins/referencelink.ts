@@ -1,4 +1,4 @@
-import { Command, ModelElement, LinkEditing, Plugin, toWidget, viewToModelPositionOutsideModelElement, Widget } from "ckeditor5";
+import { Command, ModelElement, ModelLivePosition, LinkEditing, Plugin, toWidget, viewToModelPositionOutsideModelElement, Widget } from "ckeditor5";
 
 export default class ReferenceLink extends Plugin {
 	static get requires() {
@@ -15,17 +15,41 @@ class ReferenceLinkCommand extends Command {
 
 		const editor = this.editor;
 
+		const selectionPosition = editor.model.document.selection.getFirstPosition();
+		if (!selectionPosition) {
+			return;
+		}
+
+		// Fetching the title can be a network round trip (froca cache miss), and the
+		// user keeps typing while we wait. Anchor the insertion at the position
+		// captured here rather than wherever the caret ends up at resolve time (#10663).
+		const insertionPosition = ModelLivePosition.fromPosition(selectionPosition, 'toPrevious');
+
 		// make sure the referenced note is in cache before adding the reference element
 		glob.getReferenceLinkTitle(href).then(() => {
+			if (insertionPosition.root.rootName === '$graveyard') {
+				// The context the user picked in was deleted while the title loaded.
+				return;
+			}
+
+			const currentSelection = editor.model.document.selection;
+			const selectionUntouched = currentSelection.isCollapsed
+				&& (currentSelection.getFirstPosition()?.isEqual(insertionPosition) ?? false);
+
 			editor.model.change(writer => {
 				const placeholder = writer.createElement('reference', {href});
 
 				// ... and insert it into the document.
-				editor.model.insertContent(placeholder);
+				editor.model.insertContent(placeholder, insertionPosition);
 
-				// Put the selection on the inserted element.
-				writer.setSelection(placeholder, 'after');
+				// Put the selection on the inserted element, but only if the user hasn't
+				// moved on while we were waiting for the title.
+				if (selectionUntouched) {
+					writer.setSelection(placeholder, 'after');
+				}
 			});
+		}).finally(() => {
+			insertionPosition.detach();
 		});
 	}
 

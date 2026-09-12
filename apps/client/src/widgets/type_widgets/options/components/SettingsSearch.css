@@ -1,0 +1,28 @@
+/* Layout-neutral, like the navigation it sits above: where it goes is the container's business. */
+.settings-search {
+    position: relative;
+
+    .settings-search-icon,
+    .settings-search-clear {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .settings-search-icon {
+        inset-inline-start: 8px;
+        color: var(--muted-text-color);
+        pointer-events: none;
+    }
+
+    /* Room kept for the icon and the button standing over the two ends of the field. */
+    .settings-search-input {
+        padding-inline: 30px 36px;
+    }
+
+    .settings-search-clear {
+        --icon-button-size: 24px;
+
+        inset-inline-end: 8px;
+    }
+}

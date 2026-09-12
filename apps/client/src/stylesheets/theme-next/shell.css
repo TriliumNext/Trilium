@@ -177,8 +177,27 @@ body.layout-horizontal > .horizontal {
     align-items: center;
 }
 
-body[dir=ltr] #launcher-container {
-    scrollbar-gutter: stable both-edges;
+/* Thin launcher-rail scrollbar; the padding below (set from the JS-measured
+ * `--launcher-scrollbar-size`) offsets its width so it never shifts the centred buttons. */
+#launcher-container {
+    --scrollbar-thickness: 4px;
+    --scrollbar-thumb-thickness: 4px;
+    --scrollbar-thumb-hover-thickness: 4px;
+    scrollbar-width: thin;
+}
+
+/* Style the base pseudo (forms.css styles only :vertical) so WebKit shows a persistent bar
+ * instead of an auto-hiding overlay. */
+#launcher-container::-webkit-scrollbar {
+    width: var(--scrollbar-thickness);
+    height: var(--scrollbar-thickness);
+}
+
+@supports (-webkit-box-reflect: below) {
+    /* Let ::-webkit-scrollbar win over scrollbar-width on WebKit (mirrors forms.css's :root reset). */
+    #launcher-container {
+        scrollbar-width: unset;
+    }
 }
 
 #launcher-pane.vertical {
@@ -205,6 +224,7 @@ body[dir=ltr] #launcher-container {
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+    padding-inline-start: var(--launcher-scrollbar-size, 0px);
 }
 
 #launcher-pane.horizontal {
@@ -230,6 +250,7 @@ body[dir=ltr] #launcher-container {
     height: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    padding-block-start: var(--launcher-scrollbar-size, 0px);
 }
 
 @media (max-width: 991px) {
@@ -1483,8 +1504,6 @@ body.experimental-feature-new-layout #center-pane .note-split > div.alert {
 
 /* The promoted attributes section */
 div.promoted-attributes-container {
-    /* The cards are sized by the container query below instead of wrapping. */
-    flex-wrap: nowrap;
     margin-inline-end: 10%;
     padding: 6px 0;
     gap: 8px;
@@ -1520,8 +1539,7 @@ div.promoted-attribute-cell {
 }
 
 /* A promoted attribute card (boolean attribute) */
-div.promoted-attribute-cell:has(input[type="checkbox"]):not(:has(.multiplicity > span)) {
-    /* Checbox attribute, without multiplicity */
+div.promoted-attribute-cell:has(input[type="checkbox"]) {
     padding-inline-end: var(--pa-card-padding-inline-start);
 }
 
@@ -1581,29 +1599,18 @@ div.promoted-attribute-cell span.open-external-link-button {
 }
 
 div.promoted-attribute-cell .tn-checkbox {
-    --box-label-gap: 0;
+    --box-label-gap: 0px;
 
-    height: 1cap;
+    height: 1em;
+    vertical-align: calc((1cap - 1em) / 2);
+}
+
+div.promoted-attribute-cell .tn-checkbox > input[type="checkbox"] {
+    width: var(--box-size) !important;
 }
 
 div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type {
-    margin-inline-end: 1.5em;
-}
-
-/* The element containing the "new attribute" and "remove this attribute button" */
-div.promoted-attribute-cell .multiplicity:has(span) {
-    --icon-button-size: 24px;
-
-    margin-inline-start: 8px;
-    margin-inline-end: calc(var(--pa-card-padding-inline-start) - var(--pa-card-padding-inline-end));
-    font-size: 0; /* Prevent whitespaces creating a gap between buttons */
-    display: flex;
-}
-
-div.promoted-attribute-cell .multiplicity:has(span) span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin-inline-end: 0.5em;
 }
 
 div.promoted-attribute-cell.promoted-attribute-label-color {

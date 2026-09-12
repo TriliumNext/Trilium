@@ -15,8 +15,14 @@
     font-weight: bold;
 }
 
+/*
+ * Tall enough to pick from, and never taller than the screen. The menu is placed by Popper, which
+ * keeps it in view by moving it, and can only do that while it is smaller than the view; a grid of
+ * a fixed height hung off a button near an edge is what runs past one. The subtraction leaves room
+ * for the search row above the grid, the menu's own padding, and the button it hangs from.
+ */
 .icon-picker .icon-list {
-    height: 500px;
+    height: clamp(12rem, 100vh - 8rem, 500px);
     overflow: auto;
 }
 

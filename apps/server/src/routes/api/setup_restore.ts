@@ -16,11 +16,12 @@ import {
  * The setup screen's way back from a backup: list what is already on disk, take a file that is not,
  * and restore whichever the user picks.
  *
- * Every endpoint here is reachable without authentication, because before the database exists there
- * is nobody to authenticate — the same footing the rest of the setup wizard stands on. What that
- * costs is bounded deliberately: one upload at a time, a ceiling on its size, a session that expires,
- * and a path from the listing that is checked against the backup directories rather than taken at
- * its word.
+ * Every endpoint here is reachable without authentication on a first run, because before a database
+ * exists there is nobody to authenticate — the same footing the rest of the setup wizard stands on.
+ * What that costs is bounded deliberately: one upload at a time, a ceiling on its size, a session
+ * that expires, and a path from the listing that is checked against the backup directories rather
+ * than taken at its word. Where a knowledge base IS sitting behind the wizard there is somebody to
+ * authenticate, and `checkSetupAuth` asks for them: a restore replaces that database.
  *
  * @module
  */

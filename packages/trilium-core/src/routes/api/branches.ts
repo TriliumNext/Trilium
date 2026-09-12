@@ -246,13 +246,14 @@ function deleteBranch(req: Request<{ branchId: string }>) {
     if (eraseNotes) {
         // erase automatically means deleting all clones + note itself
         branch.getNote().deleteNote(deleteId, taskContext);
-        eraseService.eraseNotesWithDeleteId(deleteId);
+        taskContext.scheduleErase(deleteId);
         noteDeleted = true;
     } else {
         noteDeleted = branch.deleteBranch(deleteId, taskContext);
     }
 
     if (last) {
+        eraseService.eraseNotesWithDeleteIds(taskContext.takeScheduledErases());
         taskContext.taskSucceeded(null);
     }
 

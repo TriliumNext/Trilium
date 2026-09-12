@@ -20,6 +20,7 @@ import utils from "../services/utils.js";
 import { buildNote } from "../test/easy-froca";
 import froca from "./froca.js";
 import renderDefault, { render, renderIfJsx } from "./render.js";
+import { RENDER_SCOPE_CLASS } from "./render_css_scope.js";
 import server from "./server.js";
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -110,6 +111,29 @@ describe("render", () => {
         expect(noteArg).not.toBe(target);
         // Third arg is the jQuery-wrapped container that was appended to $el.
         expect((containerArg as JQuery<HTMLElement>)[0]).toBe($container[0]);
+    });
+
+    it("scopes the note's own stylesheet to its container so it cannot restyle the app", async () => {
+        server.postWithSilentInternalServerError = vi.fn(async () => ({
+            script: "",
+            html: "<style>body { max-width: 980px } @keyframes spin { from { opacity: 0 } }</style><p>hi</p>",
+            noteId: "scriptNote",
+            allNoteIds: []
+        })) as typeof server.postWithSilentInternalServerError;
+        const target = buildNote({ title: "Target" });
+        const note = buildNote({ title: "Host", "~renderNote": target.noteId });
+        const $el = $("<div>");
+
+        await render(note, $el);
+
+        const $container = $el.children();
+        expect($container.hasClass(RENDER_SCOPE_CLASS)).toBe(true);
+        const css = $container.find("style").text();
+        expect(css).toContain(`@scope (.${RENDER_SCOPE_CLASS})`);
+        expect(css).toContain(":scope { max-width: 980px }");
+        expect(css).not.toMatch(/(^|\s)body\s*\{/);
+        // Named at-rules are document-global either way, so they stay outside the wrapper.
+        expect(css.indexOf("@keyframes")).toBeLessThan(css.indexOf("@scope"));
     });
 
     it("loops over every renderNote relation: one container + bundle fetch + execution per target", async () => {

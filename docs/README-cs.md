@@ -24,6 +24,9 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 Trilium Notes je open-source, cross-platform aplikace pro hierarchiální psaní
 poznámek.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Stáhnout
@@ -115,7 +118,7 @@ Naše dokumenatce je dostupná ve vícero formátech:
 * Vestavěný [tmavý
   motiv](https://docs.triliumnotes.org/user-guide/concepts/themes), podpora
   uživatelských motivů
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   a [import & export
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Webový výstřižek](https://docs.triliumnotes.org/user-guide/setup/web-clipper)

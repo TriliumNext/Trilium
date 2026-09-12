@@ -206,7 +206,8 @@
     "color-scheme-switcher-title": "Selector de esquema de color",
     "content-manager-title": "Gestor de contenido",
     "desktop-title": "Escritorio",
-    "security-title": "Seguridad"
+    "security-title": "Seguridad",
+    "database-title": "Base de datos"
   },
   "notes": {
     "new-note": "Nueva nota",
@@ -490,5 +491,39 @@
     "sql-console-warning": "La consola SQL permite ejecutar consultas SQL arbitrarias contra la base de datos.",
     "lan-access": "acceso de red",
     "lan-access-warning": "La aplicación y sus notas compartidas se servirán por la red: accesibles desde un navegador en este equipo y desde otros dispositivos de su red local."
+  },
+  "restore": {
+    "pick_backup_title": "Elija una copia de seguridad para restaurar",
+    "backup_filter": "Copia de seguridad de Trilium (*.db, *.tnbackup)",
+    "any_file_filter": "Todos los archivos"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Error en la copia de seguridad de la base de datos: no se puede escribir en {{- location}}. Se está haciendo la copia en la ubicación predeterminada.",
+    "passphrase_unavailable": "No se pudo leer la contraseña de copia de seguridad, por lo que esta copia no está cifrada. Se ha guardado en la ubicación predeterminada en lugar de la elegida."
+  },
+  "dialog": {
+    "select_directory": "Seleccionar carpeta"
+  },
+  "backup-password-dialog": {
+    "cancel": "Cancelar",
+    "set-title": "¿Establecer la contraseña de copia de seguridad?",
+    "set-message": "Las futuras copias de seguridad se cifrarán con esta contraseña.",
+    "set-detail": "Trilium no puede volver a mostrar esta contraseña, así que conserve una copia en un lugar seguro: sin ella no se puede restaurar una copia de seguridad.\n\nSi no esperaba que se le preguntara, cancele: una nota o un script pueden haberlo solicitado.",
+    "set-confirm": "Establecer contraseña",
+    "clear-title": "¿Olvidar la contraseña de copia de seguridad?",
+    "clear-message": "Las copias de seguridad ya no se cifrarán.",
+    "clear-detail": "Las copias de seguridad ya escritas conservan la contraseña con la que se crearon, y aún se pueden restaurar con ella.\n\nSi no esperaba que se le preguntara, cancele: una nota o un script pueden haberlo solicitado.",
+    "clear-confirm": "Olvidar contraseña"
+  },
+  "setup-window": {
+    "getting-started": "Empezar - Trilium Notes",
+    "start-over": "Empezar de nuevo - Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "Empezar de nuevo",
+    "message": "¿Reiniciar Trilium y volver a la pantalla de configuración?",
+    "detail": "Primero se le ofrecerá una copia de seguridad de su base de conocimientos actual. No se elimina nada hasta que elija crear una nueva base de conocimientos, restaurar una copia de seguridad o sincronizar desde otro dispositivo.\n\nNo continúe si se lo ha pedido un script o una nota desconocida.",
+    "cancel": "Cancelar",
+    "confirm": "Reiniciar y empezar de nuevo"
   }
 }

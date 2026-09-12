@@ -210,6 +210,21 @@ describe("TaskContext", () => {
         });
     });
 
+    describe("scheduled erases", () => {
+        it("accumulates deleteIds across a task group and hands them over exactly once", () => {
+            const context = TaskContext.getInstance("erase-batch-1", "deleteNotes", null);
+
+            expect(context.takeScheduledErases()).toEqual([]);
+
+            context.scheduleErase("del-1");
+            context.scheduleErase("del-2");
+
+            expect(context.takeScheduledErases()).toEqual([ "del-1", "del-2" ]);
+            // Taking them clears the list, so a later request of the same group re-erases nothing.
+            expect(context.takeScheduledErases()).toEqual([]);
+        });
+    });
+
     describe("getInstance", () => {
         it("creates a single cached context per task id and reuses it on later lookups", () => {
             const first = TaskContext.getInstance("singleton-1", "importNotes", { safeImport: true });

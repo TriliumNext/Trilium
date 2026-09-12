@@ -147,26 +147,58 @@ interface IconPackFont {
     format: string;
 }
 
-/** Resolves the best font attachment on the note to an absolute download URL, mirroring the server's selection. */
+/** Resolves the best font attachment on the note to a `blob:` URL usable from the isolated frame. */
 function useIconPackFont(note: FNote): IconPackFont | null {
     const [ font, setFont ] = useState<IconPackFont | null>(null);
     useEffect(() => {
         let cancelled = false;
-        note.getAttachmentsByRole("file").then((attachments) => {
-            if (cancelled) return;
-            const best = Object.keys(FONT_MIME_TO_FORMAT)
-                .map((mime) => attachments.find((attachment) => attachment.mime === mime))
-                .find(Boolean);
-            // Resolve against the host document's base URL since the isolated frame has none.
-            setFont(best
-                ? { url: new URL(`api/attachments/download/${best.attachmentId}`, document.baseURI).href, format: FONT_MIME_TO_FORMAT[best.mime] }
-                : null);
-        }).catch(() => {
-            if (!cancelled) setFont(null);
-        });
-        return () => { cancelled = true; };
+        let objectUrl: string | null = null;
+        loadIconPackFont(note)
+            .then((loaded) => {
+                if (cancelled) {
+                    if (loaded) URL.revokeObjectURL(loaded.url);
+                    return;
+                }
+                objectUrl = loaded?.url ?? null;
+                setFont(loaded);
+            })
+            .catch(() => {
+                if (!cancelled) setFont(null);
+            });
+        return () => {
+            cancelled = true;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
     }, [ note ]);
     return font;
+}
+
+/**
+ * Picks the best font attachment on the note (mirroring the server's order of preference), downloads
+ * it and hands back a `blob:` URL for its bytes.
+ *
+ * The bytes are fetched here, from the host document, rather than being referenced by their API URL
+ * from the preview's `@font-face`: the preview lives in a `src`-less iframe, whose `about:blank`
+ * document is *not* controlled by a service worker and carries none of the host's request
+ * interceptors. In standalone that means such a request never reaches the SQLite worker — it goes
+ * to the real network, where the SPA fallback answers a font request with `index.html`, and the
+ * browser reports "Failed to decode downloaded font". The same holds on iOS/Capacitor, whose
+ * fetch/stylesheet interceptors are likewise installed on the host document only. A `blob:` URL
+ * needs no such routing, so it works on every platform.
+ */
+export async function loadIconPackFont(note: FNote): Promise<IconPackFont | null> {
+    const attachments = await note.getAttachmentsByRole("file");
+    const best = Object.keys(FONT_MIME_TO_FORMAT)
+        .map((mime) => attachments.find((attachment) => attachment.mime === mime))
+        .find(Boolean);
+    if (!best) return null;
+
+    // Resolve against the host document's base URL, which also covers Electron's `trilium-app://`.
+    const downloadUrl = new URL(`api/attachments/download/${best.attachmentId}`, document.baseURI).href;
+    const response = await fetch(downloadUrl);
+    if (!response.ok) return null;
+
+    return { url: URL.createObjectURL(await response.blob()), format: FONT_MIME_TO_FORMAT[best.mime] };
 }
 
 const PREVIEW_FONT_FAMILY = "tn-icon-pack-preview";

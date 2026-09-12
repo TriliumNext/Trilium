@@ -90,7 +90,8 @@ async function isTokenValid(req: Request, res: Response, next: NextFunction) {
                 message: "Token is valid",
                 user: userStatus,
             };
-        } catch {
+        } catch (err) {
+            getLog().info(`OIDC token validation failed: ${err instanceof Error ? err.message : String(err)}`);
             return {
                 success: false,
                 message: "Token is not valid",
@@ -170,7 +171,21 @@ function generateOAuthConfig(
         idTokenSigningAlg,
         authorizationParams: {
             response_type: "code",
-            scope: "openid profile email",
+            scope: config.MultiFactorAuthentication.oauthScope,
+        },
+        // Override the library's default 5000 ms timeout for discovery / token-exchange / userinfo requests.
+        // Cold-start IdP responses (e.g. a scaled-to-zero provider) routinely exceed 5s and manifest as a
+        // spurious "login twice" failure; the default is raised to 30s and is configurable via oauthHttpTimeout.
+        httpTimeout: config.MultiFactorAuthentication.oauthHttpTimeout,
+        // Match the OIDC appSession cookie lifetime to Trilium's own trilium.sid cookie. The library defaults
+        // (24h rolling, 7d absolute) silently capped the effective Trilium session at 7 days when SSO was on.
+        // Both bounds are set to cookieMaxAge (seconds; default 21d): rollingDuration is required when
+        // rolling: true, and keeping absoluteDuration as a hard cap follows OWASP / Auth0 guidance that every
+        // session should have an upper bound regardless of activity.
+        session: {
+            rolling: true,
+            rollingDuration: config.Session.cookieMaxAge,
+            absoluteDuration: config.Session.cookieMaxAge,
         },
         routes: { ...OIDC_ROUTES },
         // Only enable RP-Initiated Logout when the provider actually advertises an end_session_endpoint
@@ -313,7 +328,11 @@ export function createReactiveOidcMiddleware(deps: Partial<ReactiveOidcDeps> = {
                 // only evaluated the first time OAuth is actually used, never on a server that runs with
                 // OAuth unselected. The sole static reference to the package is the erased `Session` type
                 // import, so the bundler keeps it out of the eager-init graph (see scripts/build-utils.ts).
-                const authFactory = buildAuth ?? (await import("express-openid-connect")).auth;
+                // `express-openid-connect` is CommonJS, and the ESM split build emits it as a chunk
+                // whose only export is `default`, so reading `.auth` off the namespace yields
+                // undefined. Go through the interop.
+                const oidc = await import("express-openid-connect");
+                const authFactory = buildAuth ?? (oidc.default ?? oidc).auth;
                 const { endSessionSupported, issuerBaseUrl, idTokenSigningAlg, metadataAvailable } = await probe();
                 const built = authFactory(buildOAuthConfig(endSessionSupported, issuerBaseUrl, idTokenSigningAlg));
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
-import { renderOfficeToHtml } from "../../../services/office_renderer";
+import { type OfficePreview, renderOfficeToHtml } from "../../../services/office_renderer";
 import Alert from "../../react/Alert";
 import LoadingSpinner from "../../react/LoadingSpinner";
 
@@ -13,17 +13,17 @@ import LoadingSpinner from "../../react/LoadingSpinner";
  * affordances).
  */
 export default function OfficePreview({ note }: { note: FNote }) {
-    const [html, setHtml] = useState<string | null>(null);
+    const [preview, setPreview] = useState<OfficePreview | null>(null);
     const [failed, setFailed] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
-        setHtml(null);
+        setPreview(null);
         setFailed(false);
 
         renderOfficeToHtml("notes", note.noteId)
             .then((result) => {
-                if (!cancelled) setHtml(result);
+                if (!cancelled) setPreview(result);
             })
             .catch((e) => {
                 console.warn("Failed to render office document preview:", e);
@@ -43,7 +43,7 @@ export default function OfficePreview({ note }: { note: FNote }) {
         );
     }
 
-    if (html === null) {
+    if (preview === null) {
         return (
             <div class="office-preview-loading">
                 <LoadingSpinner />
@@ -52,5 +52,12 @@ export default function OfficePreview({ note }: { note: FNote }) {
         );
     }
 
-    return <div class="ck-content office-preview-body selectable-text" dangerouslySetInnerHTML={{ __html: html }} />;
+    return (
+        <>
+            {/* A spreadsheet's cell styling, which the sanitizer strips out of the markup. Rendered
+                as an element with a text child rather than parsed, and unmounted with the preview. */}
+            {preview.css && <style>{preview.css}</style>}
+            <div class="ck-content office-preview-body selectable-text" dangerouslySetInnerHTML={{ __html: preview.html }} />
+        </>
+    );
 }

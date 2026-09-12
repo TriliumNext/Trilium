@@ -100,17 +100,3 @@
         font-size: .85em;
     }
 }
-
-/* The placeholder for a note nothing points at stands in the list as an item of it, so that it is
-   held by whichever container the list is given (see BacklinksList in FloatingButtonsDefinitions).
-   The card it stands in within the sidebar takes the height the tab leaves over, and the placeholder
-   is handed that height down the chain — it is the card's whole answer, not the first row of a list
-   that isn't there. */
-#right-pane .tn-backlinks-widget:has(.backlinks-empty),
-#right-pane .tn-backlinks-widget .backlinks-items:has(.backlinks-empty),
-#right-pane .backlinks-empty {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    min-height: 0;
-}

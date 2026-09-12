@@ -61,7 +61,8 @@ function parsePerfFromLines(lines: string[]): PerfEntry[] {
                     if (packagesMatch) {
                         file = `pkg:${packagesMatch[1]}/${fileName}`;
                     }
-                } else if (file.includes('.cache/vite/deps/')) {
+                } else if (/\.cache\/vite[^/]*\/deps\//.test(file)) {
+                    // Each dev instance keeps its own cache dir (`.cache/vite-<port>`).
                     const depsMatch = file.match(/deps\/([^?]+)/);
                     if (depsMatch) {
                         file = `deps:${depsMatch[1]}`;

@@ -79,6 +79,24 @@ export default function buildHiddenSubtreeTemplates() {
                 ]
             },
             {
+                // A text note rather than a code one: the content is an instruction written in
+                // prose, and the editor is where the user already is when they think of it.
+                id: "_template_ai_quick_action",
+                type: "text",
+                title: t("hidden_subtree_templates.ai-quick-action"),
+                icon: "bx-bot",
+                attributes: [
+                    {
+                        name: "template",
+                        type: "label"
+                    },
+                    {
+                        name: "aiQuickAction",
+                        type: "label"
+                    }
+                ]
+            },
+            {
                 id: "_template_list_view",
                 type: "book",
                 title: t("hidden_subtree_templates.list-view"),

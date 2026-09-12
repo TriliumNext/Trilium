@@ -15,7 +15,8 @@ import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { isMobile } from "../../services/utils";
-import { AttributeDetail, AttributeDetailOpts, AttributeForm, AttrType, DEFINITION_TYPES, getAttrType, RELATION_DEFINITION_TYPE } from "../attribute_widgets/attribute_detail";
+import { AttributeDetail, AttributeDetailOpts, AttributeForm, AttrType, DEFINITION_TYPES, getAttrType } from "../attribute_widgets/attribute_detail";
+import { RELATION_DEFINITION_TYPE } from "../attribute_widgets/attribute_types";
 import { ColorChip, renderLabelValue } from "../attribute_widgets/label_value_display";
 import ActionButton from "../react/ActionButton";
 import { FormListItem } from "../react/FormList";
@@ -328,6 +329,12 @@ export default function AttributeList() {
             />
         )
     } : undefined;
+    // A draft still being created keeps the place it was added in — the foot of the list, next to the
+    // row that opened it — instead of the one its name will file it under: nameless, it is not a name
+    // Trilium reads for itself, so the sort has nothing to go on and would hoist the editor above the
+    // system rows, away from the press that opened it. It settles into place once the name is saved.
+    const creationRow = activeCreation && sections.owned.find((entry) => entry.attribute === activeCreation);
+    const ownedRows = creationRow ? sections.owned.filter((entry) => entry !== creationRow) : sections.owned;
     const rowProps = {
         note,
         activeAttribute: detail?.attribute,
@@ -389,11 +396,15 @@ export default function AttributeList() {
                         the two lists of plain attributes reading as one ledger. The definitions keep
                         prose order: their "value" is a summary of settings, not a value. */}
                     <div class="attribute-list-panel align-values-end" ref={containerRef} onClick={commit}>
-                        {sections.owned.length > 0 ? (
-                            <AttributeRowList rows={sections.owned} {...rowProps} />
-                        ) : (
+                        {ownedRows.length > 0 ? (
+                            <AttributeRowList rows={ownedRows} {...rowProps} />
+                        ) : !creationRow && (
                             <NoItems icon="bx bx-hash" text={t("attribute_list_panel.no_attributes")} />
                         )}
+
+                        {/* The draft under creation, kept last (see above) and so out of the split the
+                            list above draws between the note's own names and Trilium's. */}
+                        {creationRow && <AttributeRowList rows={[ creationRow ]} {...rowProps} />}
 
                         {/* Only on a desktop: a phone adds from the header, page flow and all. */}
                         {!IS_MOBILE && note && (

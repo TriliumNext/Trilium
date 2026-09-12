@@ -66,7 +66,10 @@
     "clone-notes-to": "Clonează notițele selectate",
     "move-notes-to": "Mută notițele selectate",
     "find-in-text": "Afișează/ascunde panoul de căutare",
-    "save-named-revision": "Salvează o revizie cu nume a notiței active"
+    "save-named-revision": "Salvează o revizie cu nume a notiței active",
+    "show-deleted-notes": "Afișează fereastra „Notițe șterse”",
+    "show-shortcut-hints": "Afișează scurtăturile de tastatură pentru widget-ul focalizat",
+    "peek-right-pane": "Afișează temporar panoul din dreapta ca un panou care plutește peste conținut și se închide când pierde focalizarea"
   },
   "login": {
     "button": "Autentifică",
@@ -76,7 +79,9 @@
     "remember-me": "Ține-mă minte",
     "title": "Autentificare",
     "incorrect-totp": "TOTP-ul este incorect. Încercați din nou.",
-    "sign_in_with_sso": "Autentificare cu {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Autentificare cu {{ ssoIssuerName }}",
+    "sso-wrong-account": "Acest cont nu este cel asociat acestei instanțe Trilium. Autentificați-vă cu contul asociat.",
+    "sso-not-enrolled": "Autentificarea unică nu este încă configurată. Autentificați-vă mai întâi cu parola, apoi asociați-vă contul din setări."
   },
   "set_password": {
     "title": "Setare parolă",
@@ -195,7 +200,12 @@
     "custom-dictionary-title": "Dicționar personalizat",
     "security-title": "Securitate",
     "llm-title": "AI / LLM",
-    "sidebar-chat-title": "Chat AI"
+    "sidebar-chat-title": "Chat AI",
+    "deleted-notes-title": "Notițe șterse",
+    "color-scheme-switcher-title": "Comutator schemă de culori",
+    "content-manager-title": "Manager de conținut",
+    "desktop-title": "Desktop",
+    "database-title": "Bază de date"
   },
   "notes": {
     "new-note": "Notiță nouă",
@@ -333,7 +343,10 @@
     "copy-without-formatting": "Copiază fără formatare",
     "force-save-revision": "Forțează salvarea unei revizii",
     "command-palette": "Paleta de comenzi",
-    "save-named-revision": "Salvează revizie cu nume"
+    "save-named-revision": "Salvează revizie cu nume",
+    "show-deleted-notes": "Afișează notițele șterse",
+    "show-shortcut-hints": "Afișează scurtăturile de tastatură",
+    "peek-right-pane": "Afișează temporar panoul din dreapta"
   },
   "weekdayNumber": "Săptămâna {weekNumber}",
   "quarterNumber": "Trimestrul {quarterNumber}",
@@ -347,7 +360,8 @@
     "expand": "Expandează",
     "toggle-navigation": "Comută navigarea",
     "toggle-toc": "Comută cuprinsul",
-    "logo-alt": "Logo"
+    "logo-alt": "Logo",
+    "login": "Autentificare"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Fragment de text",
@@ -375,7 +389,10 @@
     "presentation_slide": "Slide de prezentare",
     "presentation_slide_first": "Primul slide",
     "presentation_slide_second": "Al doilea slide",
-    "background": "Fundal"
+    "background": "Fundal",
+    "markdown-snippet": "Fragment Markdown",
+    "code-snippet": "Fragment de cod",
+    "dashboard": "Panou de bord"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Baza de date nu este inițializată, urmați instrucțiunile de pe ecran.",
@@ -411,6 +428,102 @@
     "backend-scripting": "Execuția scripturilor backend",
     "backend-scripting-warning": "Scripturile backend au acces complet la server, inclusiv la sistemul de fișiere și la rețea.",
     "sql-console": "Consolă SQL",
-    "sql-console-warning": "Consola SQL permite executarea de interogări SQL arbitrare asupra bazei de date."
+    "sql-console-warning": "Consola SQL permite executarea de interogări SQL arbitrare asupra bazei de date.",
+    "lan-access": "Acces din rețea",
+    "lan-access-warning": "Aplicația și notițele partajate vor fi servite prin rețea — accesibile dintr-un browser de pe acest calculator și de pe alte dispozitive din rețeaua locală."
+  },
+  "note_conversion": {
+    "revision_before_markdown": "Înainte de conversia în Markdown",
+    "revision_before_text": "Înainte de conversia în notiță text"
+  },
+  "onenote_import": {
+    "root-title": "Import OneNote",
+    "failed-page-placeholder": "Această pagină nu a putut fi importată din OneNote. Eroare: {{error}}",
+    "failed-section-placeholder": "Această secțiune nu a putut fi importată din OneNote, așa că a fost creată goală. Eroare: {{error}}",
+    "protected-section-error": "Această secțiune este protejată cu parolă. Eliminați parola în OneNote, apoi importați-o din nou.",
+    "protected-section-placeholder": "Această secțiune este protejată cu parolă, așa că paginile ei nu au putut fi importate și a fost creată goală. Pentru a o importa, deschideți secțiunea în OneNote, eliminați protecția cu parolă (clic dreapta pe secțiune &rarr; Password Protection &rarr; Remove Password), apoi rulați importul din nou.",
+    "report": {
+      "row-pages": "Pagini importate cu succes",
+      "row-notebooks": "Blocnotesuri importate",
+      "row-sections": "Secțiuni importate",
+      "row-duration": "Durata totală a importului",
+      "row-images": "Imagini",
+      "row-attachments": "Fișiere atașate",
+      "row-ink": "Pagini cu scris de mână sau desene",
+      "row-links": "Legături între pagini",
+      "row-throttling": "Timp de așteptare impus de Microsoft Graph",
+      "value-links": "{{resolved}} rezolvate, {{unresolved}} indicând în afara selecției importate",
+      "value-throttling_one": "{{- wait}} ({{count}} cerere limitată)",
+      "value-throttling_few": "{{- wait}} ({{count}} cereri limitate)",
+      "value-throttling_other": "{{- wait}} ({{count}} de cereri limitate)",
+      "skipped-sections-title": "Secțiuni care nu au putut fi importate",
+      "skipped-sections-section": "Secțiune",
+      "skipped-sections-notebook": "Blocnotes",
+      "skipped-sections-error": "Eroare",
+      "failed-pages-title": "Pagini care nu au putut fi importate",
+      "failed-pages-page": "Pagină",
+      "failed-pages-section": "Secțiune",
+      "failed-pages-error": "Eroare",
+      "failed-resources-title": "Imagini și atașamente lipsă",
+      "failed-resources-item_one": "{{- pageLink}}: {{count}} resursă nu a putut fi descărcată",
+      "failed-resources-item_few": "{{- pageLink}}: {{count}} resurse nu au putut fi descărcate",
+      "failed-resources-item_other": "{{- pageLink}}: {{count}} de resurse nu au putut fi descărcate"
+    }
+  },
+  "notion_import": {
+    "root-title": "Import Notion",
+    "markdown-export-unsupported": "Acesta pare a fi un export Notion „Markdown & CSV”, pe care Trilium nu îl poate importa. Vă rugăm să reexportați spațiul de lucru Notion folosind formatul „HTML” și să importați acel fișier.",
+    "subpage-folders-disabled": "Acest export Notion a fost creat fără opțiunea „Create folders for subpages”, așa că ierarhia paginilor nu poate fi reconstruită. Vă rugăm să reexportați din Notion cu opțiunea „Create folders for subpages” activată și să importați acel fișier."
+  },
+  "keep_import": {
+    "root-title": "Import Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Import Anytype",
+    "protobuf-export-unsupported": "Acesta pare a fi un export Anytype „Protobuf”, pe care Trilium nu îl poate importa. Vă rugăm să reexportați spațiul Anytype folosind formatul „Any-Block” cu „JSON” selectat și să importați acel fișier.",
+    "markdown-export-unsupported": "Acesta pare a fi un export Anytype „Markdown”, pe care Trilium nu îl poate importa. Vă rugăm să reexportați spațiul Anytype folosind formatul „Any-Block” cu „JSON” selectat și să importați acel fișier."
+  },
+  "obsidian_import": {
+    "root-title": "Import Obsidian"
+  },
+  "export": {
+    "zip_filter": "Arhivă ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "Selecția fișierului a expirat sau este invalidă. Vă rugăm să alegeți fișierul din nou."
+  },
+  "restore": {
+    "pick_backup_title": "Alegeți o copie de siguranță pentru restaurare",
+    "backup_filter": "Copie de siguranță Trilium (*.db, *.tnbackup)",
+    "any_file_filter": "Toate fișierele"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Copia de siguranță a bazei de date a eșuat: nu s-a putut scrie în {{- location}}. Se creează copia în locația implicită.",
+    "passphrase_unavailable": "Parola copiilor de siguranță nu a putut fi citită, așa că această copie nu este criptată. A fost salvată în locația implicită, în locul celei alese."
+  },
+  "dialog": {
+    "select_directory": "Selectați folderul"
+  },
+  "backup-password-dialog": {
+    "cancel": "Anulează",
+    "set-title": "Setați parola pentru copiile de siguranță?",
+    "set-message": "Copiile de siguranță viitoare vor fi criptate cu această parolă.",
+    "set-detail": "Trilium nu poate afișa din nou această parolă, așa că păstrați o copie într-un loc sigur: fără ea, o copie de siguranță nu poate fi restaurată.\n\nDacă nu vă așteptați să fiți întrebat, anulați — este posibil ca o notiță sau un script să fi solicitat acest lucru.",
+    "set-confirm": "Setează parola",
+    "clear-title": "Uitați parola pentru copiile de siguranță?",
+    "clear-message": "Copiile de siguranță nu vor mai fi criptate.",
+    "clear-detail": "Copiile de siguranță deja create păstrează parola cu care au fost făcute și pot fi restaurate în continuare cu ea.\n\nDacă nu vă așteptați să fiți întrebat, anulați — este posibil ca o notiță sau un script să fi solicitat acest lucru.",
+    "clear-confirm": "Uită parola"
+  },
+  "setup-window": {
+    "getting-started": "Primii pași - Trilium Notes",
+    "start-over": "Reia de la început - Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "Reia de la început",
+    "message": "Reporniți Trilium și reveniți la ecranul de configurare?",
+    "detail": "Vi se va oferi mai întâi o copie de siguranță a bazei de cunoștințe actuale. Nimic nu este șters până când nu alegeți să creați o bază de cunoștințe nouă, să restaurați o copie de siguranță sau să sincronizați de pe alt dispozitiv.\n\nNu continuați dacă un script sau o notiță necunoscută v-a solicitat acest lucru.",
+    "cancel": "Anulează",
+    "confirm": "Repornește și reia de la început"
   }
 }

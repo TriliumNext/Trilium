@@ -84,6 +84,36 @@ describe( 'MermaidEditing', () => {
 						'<mermaid displayMode="split" source=""></mermaid>'
 					);
 				} );
+
+				it( 'restores the persisted display mode', () => {
+					for ( const mode of [ 'source', 'preview' ] ) {
+						editor.setData(
+							'<pre spellcheck="false">' +
+								`<code class="language-mermaid" data-trilium-display-mode="${ mode }">flowchart TB</code>` +
+							'</pre>'
+						);
+
+						expect( getModelData( model, { withoutSelection: true } ) ).to.equal(
+							`<mermaid displayMode="${ mode }" source="flowchart TB"></mermaid>`
+						);
+					}
+				} );
+
+				it( 'falls back to the split mode for a missing or unknown display mode', () => {
+					// A diagram saved before the mode was persisted, and one carrying a mode this
+					// version has no widget state for (hand-edited or imported content).
+					for ( const attribute of [ '', ' data-trilium-display-mode="nonsense"' ] ) {
+						editor.setData(
+							'<pre spellcheck="false">' +
+								`<code class="language-mermaid"${ attribute }>flowchart TB</code>` +
+							'</pre>'
+						);
+
+						expect( getModelData( model, { withoutSelection: true } ) ).to.equal(
+							'<mermaid displayMode="split" source="flowchart TB"></mermaid>'
+						);
+					}
+				} );
 			} );
 
 			describe( 'data downcast', () => {
@@ -114,6 +144,48 @@ describe( 'MermaidEditing', () => {
 						'<pre spellcheck="false">' +
 							'<code class="language-mermaid"></code>' +
 						'</pre>'
+					);
+				} );
+
+				it( 'persists a non-default display mode, and only that', () => {
+					// The default (split) stays out of the data so untouched diagrams keep
+					// producing the very same content.
+					setModelData( editor.model, '<mermaid displayMode="split" source="flowchart TB"></mermaid>' );
+
+					expect( editor.getData() ).to.equal(
+						'<pre spellcheck="false"><code class="language-mermaid">flowchart TB</code></pre>'
+					);
+
+					for ( const mode of [ 'source', 'preview' ] ) {
+						setModelData( editor.model, `<mermaid displayMode="${ mode }" source="flowchart TB"></mermaid>` );
+
+						expect( editor.getData() ).to.equal(
+							'<pre spellcheck="false">' +
+								`<code class="language-mermaid" data-trilium-display-mode="${ mode }">flowchart TB</code>` +
+							'</pre>'
+						);
+					}
+				} );
+
+				it( 'round-trips the mode a display-mode command switched to', () => {
+					editor.setData(
+						'<pre spellcheck="false">' +
+							'<code class="language-mermaid">flowchart TB</code>' +
+						'</pre>'
+					);
+
+					editor.execute( 'mermaidPreviewCommand' );
+
+					expect( editor.getData() ).to.equal(
+						'<pre spellcheck="false">' +
+							'<code class="language-mermaid" data-trilium-display-mode="preview">flowchart TB</code>' +
+						'</pre>'
+					);
+
+					editor.setData( editor.getData() );
+
+					expect( getModelData( model, { withoutSelection: true } ) ).to.equal(
+						'<mermaid displayMode="preview" source="flowchart TB"></mermaid>'
 					);
 				} );
 			} );
@@ -223,7 +295,7 @@ describe( 'MermaidEditing', () => {
 					let renderMermaidStub: MockInstance;
 
 					beforeEach( () => {
-						renderMermaidStub = vi.spyOn( editor.plugins.get( 'MermaidEditing' ) as unknown as MermaidEditing, '_renderMermaid' );
+						renderMermaidStub = vi.spyOn( editor.plugins.get( 'MermaidEditing' ) as unknown as MermaidEditing, 'renderMermaid' );
 
 						// Using editor.setData() instead of setModelData helper because of #11365.
 						editor.setData(

@@ -6,7 +6,7 @@ if (!process.env.TRILIUM_RESOURCE_DIR) {
 process.env.NODE_ENV = "development";
 
 import { BackupService, getContext, initializeCore, type ImageProvider } from "@triliumnext/core";
-import ClsHookedExecutionContext from "@triliumnext/server/src/cls_provider.js";
+import AsyncLocalStorageExecutionContext from "@triliumnext/server/src/cls_provider.js";
 import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
 import ServerPlatformProvider from "@triliumnext/server/src/platform_provider.js";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
@@ -77,7 +77,7 @@ async function initializeBuildEnvironment() {
         crypto: new NodejsCryptoProvider(),
         zip: new NodejsZipProvider(),
         zipExportProviderFactory: serverZipExportProviderFactory,
-        executionContext: new ClsHookedExecutionContext(),
+        executionContext: new AsyncLocalStorageExecutionContext(),
         platform: new ServerPlatformProvider(),
         schema: readFileSync(require.resolve("@triliumnext/core/src/assets/schema.sql"), "utf-8"),
         translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslations,

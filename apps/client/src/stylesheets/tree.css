@@ -30,7 +30,7 @@ span.fancytree-node.fancytree-hide {
 .fancytree-node {
     display: flex;
     align-items: center;
-    height: 38px;
+    height: 2.4em;
     padding: 4px;
     border: 1px solid transparent;
     border-radius: 5px;
@@ -276,14 +276,52 @@ span.fancytree-node:hover .add-note-button {
     width: 100px;
     /* marker is by default position: relative which doesn't make sense */
     position: absolute !important;
-    /* heaving a height helps with positioning since the algorithm calculating "top" takes it into account */
-    height: 19px;
+    /* dnd5 anchors the marker by its own vertical centre (`my: "left center"`) on the target
+       title's top or bottom edge, so any height offsets the line by half of it. At zero the
+       centre is the edge, which holds whatever height a row or its font takes. */
+    height: 0;
 }
 
+/*
+ * Both hit modes name the same place to drop into, so both draw on the boundary between the two
+ * rows: the title above's bottom edge moves down to reach it, the title below's top edge moves up.
+ * The distance is measured per row by publishDropMarkerShift() in note_tree.ts.
+ */
 #fancytree-drop-marker.fancytree-drop-after {
-    border-bottom: 1px solid var(--muted-text-color);
+    --drop-marker-shift: var(--tree-drop-marker-shift, 0px);
 }
 
 #fancytree-drop-marker.fancytree-drop-before {
-    border-top: 1px solid var(--muted-text-color);
+    --drop-marker-shift: calc(-1 * var(--tree-drop-marker-shift, 0px));
+}
+
+/*
+ * The line, and the ring capping the end it is measured from. Both are drawn by pseudo-elements so
+ * the marker's own box stays at zero height: dnd5 positions that box, and a border on it would
+ * carry the line half its thickness off the edge.
+ */
+#fancytree-drop-marker.fancytree-drop-after::before,
+#fancytree-drop-marker.fancytree-drop-before::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: calc(-1px + var(--drop-marker-shift, 0px));
+    height: 2px;
+    border-radius: 1px;
+    background: var(--muted-text-color);
+}
+
+#fancytree-drop-marker.fancytree-drop-after::after,
+#fancytree-drop-marker.fancytree-drop-before::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: -2px;
+    top: calc(-4px + var(--drop-marker-shift, 0px));
+    box-sizing: border-box;
+    width: 8px;
+    height: 8px;
+    border: 2px solid var(--muted-text-color);
+    border-radius: 50%;
+    /* Hollow, so the row beneath reads through it rather than being covered by a dot. */
+    background: var(--main-background-color);
 }

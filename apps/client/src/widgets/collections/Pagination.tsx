@@ -122,33 +122,69 @@ function createSegment(start: number, length: number, currentPage: number, setPa
     return children;
 }
 
-/**
- * @param pageSizeOverride page size to use instead of the note's `#pageSize` label, for callers that
- *                         list notes which aren't the children of a collection the user can label.
- */
-export function usePagination(note: FNote, noteIds: string[], pageSizeOverride?: number): PaginationContext {
+interface PaginationOptions {
+    /**
+     * Page size to use *instead of* the note's `#pageSize` label, for callers that list notes which
+     * aren't the children of a collection the user can label.
+     */
+    pageSizeOverride?: number;
+    /**
+     * Page size to fall back to when the note carries no `#pageSize` label (e.g. the synced
+     * `searchResultsPageSize` option). An explicit label always wins over this.
+     */
+    defaultPageSize?: number;
+}
+
+export function usePagination(
+    note: FNote,
+    noteIds: string[],
+    { pageSizeOverride, defaultPageSize = 20 }: PaginationOptions = {}
+): PaginationContext {
     const [ page, setPage ] = useState(1);
     const [ pageNotes, setPageNotes ] = useState<FNote[]>();
 
-    // Parse page size.
+    // Parse page size. An explicit override wins outright; otherwise a `#pageSize` label wins over
+    // the caller-supplied default, and 20 stands in when none of them yields a usable positive size.
     const [ labelPageSize ] = useNoteLabelInt(note, "pageSize");
-    const pageSize = pageSizeOverride ?? labelPageSize;
+    const pageSize = pageSizeOverride ?? (labelPageSize && labelPageSize > 0 ? labelPageSize : defaultPageSize);
     const normalizedPageSize = (pageSize && pageSize > 0 ? pageSize : 20);
 
     // Calculate start/end index.
-    const startIdx = (page - 1) * normalizedPageSize;
-    const endIdx = startIdx + normalizedPageSize;
     const pageCount = Math.ceil(noteIds.length / normalizedPageSize);
+    // A growing page size, or a shrinking result set, can leave `page` past the last page. Clamp
+    // here rather than waiting for the effect below: callers slice with the page this returns, so
+    // an out-of-range value renders the previous result set's notes in the list and grid views,
+    // and nothing at all in the search cards, which re-derive their own slice from it.
+    const effectivePage = pageCount > 0 ? Math.min(page, pageCount) : page;
+    const startIdx = (effectivePage - 1) * normalizedPageSize;
+    const endIdx = startIdx + normalizedPageSize;
+
+    // Catch the state up to what is being rendered, so the pager and `setPage` callers agree.
+    useEffect(() => {
+        if (pageCount > 0 && page > pageCount) {
+            setPage(pageCount);
+        }
+    }, [ page, pageCount ]);
 
     // Obtain notes within the range.
     const pageNoteIds = noteIds.slice(startIdx, Math.min(endIdx, noteIds.length));
 
     useEffect(() => {
-        froca.getNotes(pageNoteIds).then(setPageNotes);
-    }, [ note, noteIds, page, pageSize ]);
+        // Overlapping loads (rapid page flips, a shrinking result set) can resolve out of order;
+        // the cleanup flag makes sure a superseded load can no longer overwrite the current page.
+        let cancelled = false;
+        froca.getNotes(pageNoteIds).then((notes) => {
+            if (!cancelled) {
+                setPageNotes(notes);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [ note, noteIds, effectivePage, normalizedPageSize ]);
 
     return {
-        page, setPage, pageNotes, pageCount,
+        page: effectivePage, setPage, pageNotes, pageCount,
         pageSize: normalizedPageSize,
         totalNotes: noteIds.length
     };

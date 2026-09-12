@@ -1,0 +1,8 @@
+/* The notice sits above the cards it precedes, so the gap belongs under it. */
+.admonition.start-over-pending {
+    margin-bottom: 16px;
+
+    p:last-of-type {
+        margin-bottom: 12px;
+    }
+}

@@ -17,29 +17,40 @@ let testCounter = 0;
  * same in-memory database.
  */
 function simulatePartialSync() {
-    const sql = getSql();
     testCounter++;
     const missingParentNoteId = `MISSING_PAR_${testCounter}`;
     const testNoteId = `PARTIAL_NOTE${testCounter}`;
     const branchId = `orphan_br_${testCounter}`;
 
-    sql.execute(`
-        INSERT INTO notes (noteId, title, type, mime, isProtected, isDeleted, deleteId, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified)
-        VALUES (?, 'Test Note', 'text', 'text/html', 0, 0, NULL,
-            (SELECT blobId FROM notes WHERE noteId = 'root'),
-            '2026-01-01 00:00:00', '2026-01-01 00:00:00', '2026-01-01 00:00:00Z', '2026-01-01 00:00:00Z')
-    `, [testNoteId]);
-
-    sql.execute(`
-        INSERT INTO branches (branchId, noteId, parentNoteId, notePosition, prefix, isExpanded, isDeleted, utcDateModified)
-        VALUES (?, ?, ?, 999, NULL, 0, 0, '2026-01-01 00:00:00Z')
-    `, [branchId, testNoteId, missingParentNoteId]);
+    insertNote(testNoteId);
+    insertBranch(branchId, testNoteId, missingParentNoteId, 0);
 
     // Reload Becca so it sees the raw-SQL-inserted entities,
     // just like what happens after sync_update applies pulled changes.
     becca_loader.reload("simulate partial sync");
 
     return { missingParentNoteId, testNoteId, branchId };
+}
+
+function insertNote(noteId: string) {
+    getSql().execute(`
+        INSERT INTO notes (noteId, title, type, mime, isProtected, isDeleted, deleteId, blobId,
+            dateCreated, dateModified, utcDateCreated, utcDateModified)
+        VALUES (?, 'Test Note', 'text', 'text/html', 0, 0, NULL,
+            (SELECT blobId FROM notes WHERE noteId = 'root'),
+            '2026-01-01 00:00:00', '2026-01-01 00:00:00',
+            '2026-01-01 00:00:00Z', '2026-01-01 00:00:00Z')
+    `, [noteId]);
+
+    return noteId;
+}
+
+function insertBranch(branchId: string, noteId: string, parentNoteId: string, isDeleted: number) {
+    getSql().execute(`
+        INSERT INTO branches (branchId, noteId, parentNoteId, notePosition, prefix, isExpanded,
+            isDeleted, utcDateModified)
+        VALUES (?, ?, ?, 999, NULL, 0, ?, '2026-01-01 00:00:00Z')
+    `, [branchId, noteId, parentNoteId, isDeleted]);
 }
 
 function setOption(name: string, value: string) {
@@ -137,6 +148,45 @@ describe("Consistency checks during partial sync", () => {
                 [testNoteId]
             );
             expect(recoveryBranch).toBeTruthy();
+        });
+    });
+});
+
+describe("Notes without a usable branch", () => {
+
+    it("should recover notes with no branch and notes whose branches are all deleted", async () => {
+        await getContext().init(async () => {
+            setOption("syncServerHost", "");
+
+            const sql = getSql();
+            const branchless = insertNote("BRANCHLESS");
+            const onlyDeleted = insertNote("ONLY_DELETED");
+            const stillLinked = insertNote("STILL_LINKED");
+
+            // A deleted branch must not count as a parent, so this note needs recovering too.
+            insertBranch("del_br", onlyDeleted, "root", 1);
+            // A note keeping one live branch beside a deleted one is fine and must be left alone.
+            insertBranch("dead_br", stillLinked, "root", 1);
+            insertBranch("live_br", stillLinked, "root", 0);
+
+            becca_loader.reload("branchless note test");
+
+            await consistency_checks.runOnDemandChecks(true);
+
+            const recoveredFor = (noteId: string) => sql.getValue(`
+                SELECT branchId FROM branches
+                WHERE noteId = ? AND parentNoteId = 'root' AND prefix = 'recovered' AND isDeleted = 0
+            `, [noteId]);
+
+            expect(recoveredFor(branchless)).toBeTruthy();
+            expect(recoveredFor(onlyDeleted)).toBeTruthy();
+            expect(recoveredFor(stillLinked)).toBeFalsy();
+
+            // The pre-existing live branch is the one that kept stillLinked out of the result set.
+            const liveBranch = sql.getValue(
+                "SELECT branchId FROM branches WHERE branchId = 'live_br' AND isDeleted = 0"
+            );
+            expect(liveBranch).toBe("live_br");
         });
     });
 });

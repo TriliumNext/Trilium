@@ -17,8 +17,9 @@ them on a real macOS build.
 
 `preview.png` (stable) and `preview-dev.png` (nightly) are faithful mocks of the assembled Finder window:
 the real app icon (`icon.icns` / `icon-dev.icns`) and the real macOS Applications-folder icon composited at
-the same `contents` coordinates the DMG uses, under a reconstructed Finder title bar, with the captions
-Finder draws. On macOS the icons are rendered from their `.icns` via `sips` (pixel-perfect); off macOS it
+the same `contents` coordinates the DMG uses, under a reconstructed Finder title bar carrying the real
+volume icon (`../dmg-icon/volume.icns` — the drive, which is what Finder titles the window with, *not* the
+app icon), with the captions Finder draws. On macOS the icons are rendered from their `.icns` via `sips` (pixel-perfect); off macOS it
 falls back to the flat logo and a drawn folder so the script still runs anywhere. They are **reference
 only** — appdmg never uses them (it only reads `background.png`/`@2x`). Kept reproducible from source so
 they aren't mystery images; regenerate with `pnpm --filter desktop generate-dmg-preview`.

@@ -1,10 +1,10 @@
 <figure class="image">
-  <img style="aspect-ratio:987/725;" src="Search_image.png"
-  width="987" height="725">
+  <img style="aspect-ratio:987/725;" src="Search_image.png" width="987"
+  height="725">
 </figure>
 <p>Note search enables you to find notes by searching for text in the title,
-  content, or <a href="#root/_help_zEY4DaJG4YT5">attributes</a> of the notes. You
-  also have the option to save your searches, which will create a special
+  content, or <a href="#root/_help_zEY4DaJG4YT5">attributes</a> of the notes.
+  You also have the option to save your searches, which will create a special
   search note which is visible on your navigation tree and contains the search
   results as sub-items.</p>
 <h2>Accessing the search</h2>
@@ -90,9 +90,9 @@
   </li>
   <li>Debug
     <ol>
-      <li>This will print additional information in the server log (see&nbsp;
-        <a
-        class="reference-link" href="#root/_help_qzNzp9LYQyPT">Error logs</a>), regarding how the search expression was parsed.</li>
+      <li>This will print additional information in the server log (see&nbsp;<a
+        class="reference-link" href="#root/_help_qzNzp9LYQyPT">Error logs</a>),
+        regarding how the search expression was parsed.</li>
       <li>This function is especially useful after understanding the search functionality
         in detail, in order to determine why a complex search query is not working
         as expected.</li>
@@ -107,8 +107,8 @@
         action multiple times (i.e. in order to be able to apply multiple labels
         to notes).</li>
       <li>The actions given are the same as the ones in&nbsp;<a class="reference-link"
-        href="#root/_help_ivYnonVFBxbQ">Bulk Actions</a>, which is an alternative for
-        operating directly with notes within the&nbsp;<a class="reference-link"
+        href="#root/_help_ivYnonVFBxbQ">Bulk Actions</a>, which is an alternative
+        for operating directly with notes within the&nbsp;<a class="reference-link"
         href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</li>
       <li>After defining the actions, first press <em>Search</em> to check the matched
         notes and then press <em>Search &amp; Execute actions</em> to trigger the
@@ -116,6 +116,588 @@
     </ol>
   </li>
 </ol>
+<h2>Viewing search results</h2>
+<p>Results appear below the search pane as a list of <strong>snippet cards</strong>.
+  Each card shows the note title and a short excerpt of the text that matched.</p>
+<p>The search will also highlight the words from the title or content that
+  matched:</p>
+<ul>
+  <li>With a solid underlined green for a direct match;</li>
+  <li>With a dotted underline orange for a partial match (matched by the fuzzy
+    search).</li>
+</ul>
+<p>In addition:&nbsp;</p>
+<ul>
+  <li>The <strong>total number of results</strong> is always shown, so you can
+    immediately tell how broad a query is.</li>
+  <li>A <strong>page-size selector</strong> lets you choose how many results to
+    display per page. Your choice is remembered and synced across your devices
+    (stored in the <code spellcheck="false">searchResultsPageSize</code> option),
+    so you do not have to reset it on every device.</li>
+  <li><strong>Clicking a result</strong> opens the note and jumps straight to
+    the first match. The in-note find bar opens pre-filled with your search
+    terms, so you can step through the remaining matches with the find controls.</li>
+  <li>If a match is inside a <strong>collapsed section</strong> (for example a
+    folded heading), that section is expanded automatically so the match is
+    visible.</li>
+</ul>
+<h2>How search matches your text</h2>
+<p>The single most common source of confusion is that the <code spellcheck="false">=</code> sign
+  means two <em>different</em> things depending on where it appears. Read this
+  section once and the rest of search becomes predictable.</p>
+<p>There are three matching modes:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Mode</th>
+        <th>How you trigger it</th>
+        <th>What it matches</th>
+        <th>Substring?</th>
+        <th>Fuzzy (typos)?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Default</strong>
+        </td>
+        <td>type words with no prefix</td>
+        <td>whole words <em>and</em> substrings, anywhere in title, content or attributes,
+          relevance-ranked</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><strong>Exact full-text</strong>
+        </td>
+        <td>a leading <code spellcheck="false">=</code> (e.g. <code spellcheck="false">=sync</code>)</td>
+        <td>the exact whole word or phrase, ignoring surrounding punctuation</td>
+        <td>No</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td><strong>Attribute / property equality</strong>
+        </td>
+        <td><code spellcheck="false">=</code> inside a <code spellcheck="false">#label=value</code> or <code
+          spellcheck="false">note.property=value</code> clause</td>
+        <td>the <em>entire</em> attribute or property value, exactly</td>
+        <td>No</td>
+        <td>No</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>Every example below is backed 1:1 by an automated test, so the documentation
+  cannot drift from the engine.</p>
+<h3>Default matching (no prefix)</h3>
+<p><strong>Rule:</strong> typing words with no prefix finds notes that contain
+  those words anywhere in the title, content or attributes, as whole words
+  or as substrings. The closest matches are ranked first.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">sync</code>
+        </td>
+        <td><code spellcheck="false">please sync the folders</code>
+        </td>
+        <td>Yes (ranked higher)</td>
+        <td>contains the exact word <code spellcheck="false">sync</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">sync</code>
+        </td>
+        <td><code spellcheck="false">synchronize the database now</code>
+        </td>
+        <td>Yes (ranked lower)</td>
+        <td><code spellcheck="false">sync</code> is a substring of <code spellcheck="false">synchronize</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Exact match with the <code spellcheck="false">=</code> prefix</h3>
+<p><strong>Rule:</strong> a leading <code spellcheck="false">=</code> switches
+  the full-text search to exact matching. It finds the whole word or phrase
+  only, ignoring surrounding punctuation, with <strong>no</strong> substring
+  and <strong>no</strong> fuzzy matching. Use it when a normal search returns
+  too many near-matches.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">=sync</code>
+        </td>
+        <td><code spellcheck="false">see (sync) mode</code>
+        </td>
+        <td>Yes</td>
+        <td><code spellcheck="false">(sync)</code> is the whole word <code spellcheck="false">sync</code>;
+          punctuation is ignored</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">=sync</code>
+        </td>
+        <td><code spellcheck="false">in sync, then continue</code>
+        </td>
+        <td>Yes</td>
+        <td><code spellcheck="false">sync,</code> is the whole word <code spellcheck="false">sync</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">=sync</code>
+        </td>
+        <td><code spellcheck="false">he said "sync" out loud</code>
+        </td>
+        <td>Yes</td>
+        <td><code spellcheck="false">"sync"</code> is the whole word <code spellcheck="false">sync</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">=sync</code>
+        </td>
+        <td><code spellcheck="false">synchronize the database now</code>
+        </td>
+        <td>No</td>
+        <td><code spellcheck="false">=</code> never matches substrings</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">=sync</code>
+        </td>
+        <td><code spellcheck="false">please send the file</code>
+        </td>
+        <td>No</td>
+        <td><code spellcheck="false">=</code> never matches typos / fuzzy</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>To match an exact <strong>phrase</strong>, quote it after the <code spellcheck="false">=</code> (single,
+  double or backtick quotes all work). The phrase must appear as consecutive
+  words, but punctuation between or around them is ignored:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note (title or content)</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">="project plan"</code>
+        </td>
+        <td>title <code spellcheck="false">Project Plan</code>
+        </td>
+        <td>Yes</td>
+        <td>the title is exactly the phrase</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">="project plan"</code>
+        </td>
+        <td><code spellcheck="false">the (project plan) is ready to share</code>
+        </td>
+        <td>Yes</td>
+        <td>the consecutive phrase appears; punctuation is ignored</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">="project plan"</code>
+        </td>
+        <td><code spellcheck="false">the plan for this project is late</code>
+        </td>
+        <td>No</td>
+        <td>the words are present but not consecutive</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Attribute and property equality (<code spellcheck="false">=</code>, <code spellcheck="false">!=</code>)</h3>
+<p><strong>Rule:</strong> when <code spellcheck="false">=</code> compares an
+  attribute or property, as in <code spellcheck="false">#label=value</code> or <code
+  spellcheck="false">note.title=value</code>, it is <strong>strict full-value equality</strong>:
+  the <em>whole</em> value must equal what you typed, ignoring case and diacritics.
+  This is <strong>not</strong> word matching. <code spellcheck="false">!=</code> inverts
+  it.</p>
+<p>The examples below assume four notes: <em>Austria</em> (<code spellcheck="false">#capital=Vienna</code>), <em>Somewhere</em> (<code
+  spellcheck="false">#capital=Vienna Austria</code>), <em>Czech Republic</em> (<code
+  spellcheck="false">#capital=Prague</code>) and <em>Switzerland</em> (<code
+  spellcheck="false">#capital=Zürich</code>).</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example label value</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">#capital=Vienna</code>
+        </td>
+        <td><code spellcheck="false">Vienna</code>
+        </td>
+        <td>Yes</td>
+        <td>the whole value equals <code spellcheck="false">Vienna</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">#capital=Vienna</code>
+        </td>
+        <td><code spellcheck="false">Vienna Austria</code>
+        </td>
+        <td>No</td>
+        <td>the whole value is <code spellcheck="false">Vienna Austria</code>, not <code
+          spellcheck="false">Vienna</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">#capital="Vienna Austria"</code>
+        </td>
+        <td><code spellcheck="false">Vienna Austria</code>
+        </td>
+        <td>Yes</td>
+        <td>quote a multi-word value to match it in full</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">#capital=Zurich</code>
+        </td>
+        <td><code spellcheck="false">Zürich</code>
+        </td>
+        <td>Yes</td>
+        <td>equality ignores diacritics</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">#capital!=Vienna</code>
+        </td>
+        <td><code spellcheck="false">Prague</code>
+        </td>
+        <td>Yes</td>
+        <td><code spellcheck="false">!=</code> matches every value that is not <code
+          spellcheck="false">Vienna</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">#capital!=Vienna</code>
+        </td>
+        <td><code spellcheck="false">Vienna</code>
+        </td>
+        <td>No</td>
+        <td><code spellcheck="false">!=</code> excludes the exact value</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<blockquote>
+  <p><strong>Quick search relaxes this.</strong> The <a href="#root/_help_Ms1nauBra7gq">Quick search</a> bar
+    and autocomplete treat an attribute <code spellcheck="false">=</code> as
+    "contains", so <code spellcheck="false">#capital=Vienna</code> typed there
+    also matches <code spellcheck="false">Vienna Austria</code>. The strict
+    full-value equality described here applies only in the full Search.</p>
+</blockquote>
+<h3>Fuzzy operators (<code spellcheck="false">~=</code> and <code spellcheck="false">~*</code>)</h3>
+<p><strong>Rule:</strong> the fuzzy operators tolerate typos. <code spellcheck="false">~=</code> (fuzzy-equals)
+  matches a value that is a close whole-word variant of your term. <code spellcheck="false">~*</code> (fuzzy-contains)
+  matches when your term appears anywhere inside the value, either as a fragment
+  or as a near-miss. Both work on note properties such as <code spellcheck="false">note.title</code> and <code
+  spellcheck="false">note.content</code>, and on labels (<code spellcheck="false">#label</code>).
+  Fuzzy operators require at least 3 characters.</p>
+<p>The examples assume a note titled <code spellcheck="false">Books</code> carrying
+  the label <code spellcheck="false">#author=Tolkien</code>, and a note whose
+  content is <code spellcheck="false">learn programming today</code>.</p>
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example value</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">note.title ~= boks</code>
+        </td>
+        <td>title <code spellcheck="false">Books</code>
+        </td>
+        <td>Yes</td>
+        <td>one edit away from <code spellcheck="false">books</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">#author ~= tolkein</code>
+        </td>
+        <td>author <code spellcheck="false">Tolkien</code>
+        </td>
+        <td>Yes</td>
+        <td><code spellcheck="false">tolkein</code> is a typo of <code spellcheck="false">tolkien</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">note.content ~* progr</code>
+        </td>
+        <td><code spellcheck="false">learn programming today</code>
+        </td>
+        <td>Yes</td>
+        <td><code spellcheck="false">progr</code> is a fragment of <code spellcheck="false">programming</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">note.content ~* programing</code>
+        </td>
+        <td><code spellcheck="false">learn programming today</code>
+        </td>
+        <td>Yes</td>
+        <td><code spellcheck="false">programing</code> is one edit from <code spellcheck="false">programming</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Fuzzy tolerance (AUTO)</h3>
+<p><strong>Rule:</strong> how many typos are tolerated depends on the <strong>length</strong> of
+  your search term (the "AUTO" scheme popularized by Elasticsearch). Short
+  terms must match almost exactly to avoid noise; longer terms tolerate more.</p>
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Term length</th>
+        <th>Edits allowed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1–2 characters</td>
+        <td>0 (exact only)</td>
+      </tr>
+      <tr>
+        <td>3–5 characters</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>6+ characters</td>
+        <td>2</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Term length</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">cat</code>
+        </td>
+        <td>3</td>
+        <td><code spellcheck="false">a bright red car</code>
+        </td>
+        <td>Yes</td>
+        <td>1 edit is within budget for 3–5 character terms</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">ceck</code>
+        </td>
+        <td>4</td>
+        <td><code spellcheck="false">the latest tech trends</code>
+        </td>
+        <td>No</td>
+        <td><code spellcheck="false">ceck</code>→<code spellcheck="false">tech</code> needs
+          2 edits; only 1 is allowed at this length</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">combinef</code>
+        </td>
+        <td>8</td>
+        <td><code spellcheck="false">the values were combined together</code>
+        </td>
+        <td>Yes</td>
+        <td><code spellcheck="false">combinef</code>→<code spellcheck="false">combined</code> is
+          1 edit; up to 2 are allowed at 6+ characters</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Relevance ranking</h3>
+<p><strong>Rule:</strong> results are ordered by <em>how well</em> they match,
+  not merely whether they match. Exact whole-word and phrase matches rank
+  above substring and fuzzy matches, and a note where your words appear as
+  a consecutive phrase outranks one where they are scattered.</p>
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Ranked higher</th>
+        <th>Ranked lower</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">sync</code>
+        </td>
+        <td><code spellcheck="false">please sync the folders</code>
+        </td>
+        <td><code spellcheck="false">synchronize the database now</code>
+        </td>
+        <td>exact word beats substring</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">you and me</code>
+        </td>
+        <td><code spellcheck="false">I like you and me as a phrase</code>
+        </td>
+        <td><code spellcheck="false">the menu is here and you know it</code>
+        </td>
+        <td>consecutive phrase beats scattered words</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>What is searchable</h3>
+<p>A search looks at more than the visible body text. All of the following
+  are indexed and searchable:</p>
+<ul>
+  <li>note titles,</li>
+  <li>note body content,</li>
+  <li>labels and relations (<a href="#root/_help_zEY4DaJG4YT5">attributes</a>),</li>
+  <li>link URLs and the titles/descriptions of link previews,</li>
+  <li>the titles of notes that a note reference-links to.</li>
+</ul>
+<p>The last point is the least obvious: if a note's only content is a reference
+  link to another note, searching for that other note's <strong>title</strong> still
+  finds the linking note.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Setup</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">special topic</code>
+        </td>
+        <td>a note whose only content is a reference link to a note titled <code spellcheck="false">Special Topic</code>
+        </td>
+        <td>Yes, and the linked target ranks first</td>
+        <td>the target's title is indexed into the linking note's searchable text</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">special</code>
+        </td>
+        <td>the same note (only a reference link to <code spellcheck="false">Special Topic</code>)</td>
+        <td>Yes, one word from the target's title is enough</td>
+        <td>the indexed title is normalized just like body text, so even one lowercased
+          word matches</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">zurich</code>
+        </td>
+        <td>a note whose only content is a reference link to a note titled <code spellcheck="false">Zürich</code>
+        </td>
+        <td>Yes</td>
+        <td>the indexed title has its accents normalized, so the plain form matches
+          the accented title</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Diacritics</h3>
+<p><strong>Rule:</strong> accents are normalized on both sides, so an accented
+  word and its plain form match each other.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">ktory</code>
+        </td>
+        <td><code spellcheck="false">slovo ktorý znamena nieco</code>
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">ktorý</code>
+        </td>
+        <td><code spellcheck="false">the word ktory appears here</code>
+        </td>
+        <td>Yes</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Regular expressions (<code spellcheck="false">%=</code>)</h3>
+<p><strong>Rule:</strong> the <code spellcheck="false">%=</code> operator matches
+  a property or label value against a regular expression.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">note.content %= 'colou?r'</code>
+        </td>
+        <td><code spellcheck="false">my favorite color of all</code>
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">note.content %= 'colou?r'</code>
+        </td>
+        <td><code spellcheck="false">my favourite colour of all</code>
+        </td>
+        <td>Yes</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <h3>Simple Note Search Examples</h3>
 <ul>
   <li><code spellcheck="false">rings tolkien</code>: Full-text search to find
@@ -133,11 +715,10 @@
   <li><code spellcheck="false">#book #publicationYear = 1954</code>: Find notes
     with the "book" label and "publicationYear" set to 1954.</li>
   <li><code spellcheck="false">#genre *=* fan</code>: Find notes with the "genre"
-    label containing the substring "fan". Additional operators include
-    <code
-    spellcheck="false">*=*</code>for "contains", <code spellcheck="false">=*</code> for "starts
-      with", <code spellcheck="false">*=</code> for "ends with", and <code spellcheck="false">!=</code> for
-      "is not equal to".</li>
+    label containing the substring "fan". Additional operators include <code
+    spellcheck="false">*=*</code> for "contains", <code spellcheck="false">=*</code> for
+    "starts with", <code spellcheck="false">*=</code> for "ends with", and <code
+    spellcheck="false">!=</code> for "is not equal to".</li>
   <li><code spellcheck="false">#book #publicationYear &gt;= 1950 #publicationYear &lt; 1960</code>:
     Use numeric operators to find all books published in the 1950s.</li>
   <li><code spellcheck="false">#dateNote &gt;= TODAY-30</code>: Find notes with
@@ -150,28 +731,6 @@
     been available since Trilium 0.52.</li>
   <li><code spellcheck="false">note.content %= '\\d{2}:\\d{2} (PM|AM)'</code>:
     Find notes that mention a time. Backslashes in a regex must be escaped.</li>
-</ul>
-<h3>Fuzzy Search</h3>
-<p>Trilium supports fuzzy search operators that find results with typos or
-  spelling variations:</p>
-<ul>
-  <li><code spellcheck="false">#title ~= trilim</code>: Fuzzy exact match -
-    finds notes with titles like "Trilium" even if you typed "trilim" (with
-    typo)</li>
-  <li><code spellcheck="false">#content ~* progra</code>: Fuzzy contains match
-    - finds notes containing words like "program", "programmer", "programming"
-    even with slight misspellings</li>
-  <li><code spellcheck="false">note.content ~* develpment</code>: Will find
-    notes containing "development" despite the typo</li>
-</ul>
-<p><strong>Important notes about fuzzy search:</strong>
-</p>
-<ul>
-  <li>Fuzzy search requires at least 3 characters in the search term</li>
-  <li>Maximum edit distance is 2 characters (number of character changes needed)</li>
-  <li>Diacritics are normalized (e.g., "café" matches "cafe")</li>
-  <li>Fuzzy matches work best for finding content with minor typos or spelling
-    variations</li>
 </ul>
 <h3>Advanced Use Cases</h3>
 <ul>
@@ -215,28 +774,19 @@
     notes with a child named "sub-note".</li>
 </ul>
 <h3>Search with Note Properties</h3>
-<p>Notes have properties that can be used in searches, such as <code spellcheck="false">noteId</code>,
-  <code
-  spellcheck="false">dateModified</code>, <code spellcheck="false">dateCreated</code>,
-    <code
-    spellcheck="false">isProtected</code>, <code spellcheck="false">type</code>, <code spellcheck="false">title</code>,
-      <code
-      spellcheck="false">text</code>, <code spellcheck="false">content</code>, <code spellcheck="false">rawContent</code>,
-        <code
-        spellcheck="false">ownedLabelCount</code>, <code spellcheck="false">labelCount</code>,
-          <code
-          spellcheck="false">ownedRelationCount</code>, <code spellcheck="false">relationCount</code>,
-            <code
-            spellcheck="false">ownedRelationCountIncludingLinks</code>, <code spellcheck="false">relationCountIncludingLinks</code>,
-              <code
-              spellcheck="false">ownedAttributeCount</code>, <code spellcheck="false">attributeCount</code>,
-                <code
-                spellcheck="false">targetRelationCount</code>, <code spellcheck="false">targetRelationCountIncludingLinks</code>,
-                  <code
-                  spellcheck="false">parentCount</code>, <code spellcheck="false">childrenCount</code>,
-                    <code
-                    spellcheck="false">isArchived</code>, <code spellcheck="false">contentSize</code>, <code spellcheck="false">noteSize</code>,
-                      and <code spellcheck="false">revisionCount</code>.</p>
+<p>Notes have properties that can be used in searches, such as <code spellcheck="false">noteId</code>, <code
+  spellcheck="false">dateModified</code>, <code spellcheck="false">dateCreated</code>, <code
+  spellcheck="false">isProtected</code>, <code spellcheck="false">type</code>, <code
+  spellcheck="false">title</code>, <code spellcheck="false">text</code>, <code
+  spellcheck="false">content</code>, <code spellcheck="false">rawContent</code>, <code
+  spellcheck="false">ownedLabelCount</code>, <code spellcheck="false">labelCount</code>, <code
+  spellcheck="false">ownedRelationCount</code>, <code spellcheck="false">relationCount</code>, <code
+  spellcheck="false">ownedRelationCountIncludingLinks</code>, <code spellcheck="false">relationCountIncludingLinks</code>, <code
+  spellcheck="false">ownedAttributeCount</code>, <code spellcheck="false">attributeCount</code>, <code
+  spellcheck="false">targetRelationCount</code>, <code spellcheck="false">targetRelationCountIncludingLinks</code>, <code
+  spellcheck="false">parentCount</code>, <code spellcheck="false">childrenCount</code>, <code
+  spellcheck="false">isArchived</code>, <code spellcheck="false">contentSize</code>, <code
+  spellcheck="false">noteSize</code>, and <code spellcheck="false">revisionCount</code>.</p>
 <p>These properties can be accessed via the <code spellcheck="false">note.</code> prefix,
   e.g., <code spellcheck="false">note.type = code AND note.mime = 'application/json'</code>.</p>
 <h3>Order by and Limit</h3><pre><code class="language-text-x-trilium-auto">#author=Tolkien orderBy #publicationDate desc, note.title limit 10</code></pre>
@@ -250,7 +800,7 @@
   <li>Limit the results to the first 10 notes.</li>
 </ol>
 <h3>Negation</h3>
-<p>Some queries can only be expressed with negation:</p><pre><code class="language-text-x-trilium-auto">#book AND not(note.ancestor.title = 'Tolkien')</code></pre>
+<p>Some queries can only be expressed with negation:</p><pre><code class="language-text-x-trilium-auto">#book AND not(note.ancestors.title = 'Tolkien')</code></pre>
 <p>This query finds all book notes not in the "Tolkien" subtree.</p>
 <h2>Progressive Search Strategy</h2>
 <p>Trilium uses a progressive search strategy that performs exact matching
@@ -344,7 +894,8 @@
         <td><code spellcheck="false">MAX_EDIT_DISTANCE</code>
         </td>
         <td>2</td>
-        <td>Maximum character changes allowed</td>
+        <td>Ceiling on character changes, reached only by 6+ character terms; shorter
+          terms allow fewer. See the <em>Fuzzy tolerance (AUTO)</em> section above</td>
       </tr>
       <tr>
         <td><code spellcheck="false">RESULT_SUFFICIENCY_THRESHOLD</code>

@@ -1775,7 +1775,8 @@ class BNote extends AbstractBeccaEntity<BNote> {
             mime: this.mime,
             iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
             workspaceIconClass: undefined,
-            isFolder: this.isFolder.bind(this)
+            isFolder: this.isFolder.bind(this),
+            getLabelValue: this.getLabelValue.bind(this)
         });
 
         return `tn-icon ${icon}`;

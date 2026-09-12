@@ -31,26 +31,46 @@
         # with an attribute error instead of falling through to the pinned binary below.
         electronFromNixpkgs = pkgs."electron_${lib.versions.major electronVersion}" or null;
 
-        # nixpkgs lags behind the Electron version pinned in apps/desktop/package.json
-        # (electron_43 is still 43.1.0), and its source build cannot be bumped without
+        # nixpkgs lags behind the Electron version pinned in apps/desktop/package.json —
+        # often by a whole major — and its source build cannot be bumped without
         # upstream's Chromium dependency hashes. Build the exact pinned version from
         # Electron's official binary release instead, reusing the nixpkgs builder.
         #
         # Don't refresh these by hand — `pnpm chore:update-flake-electron` rewrites both
         # bindings from the release's SHASUMS256.txt, and the update-nix-flake workflow
         # opens a PR whenever apps/desktop/package.json moves ahead of the pin.
-        pinnedElectronVersion = "43.3.0";
+        pinnedElectronVersion = "44.3.0";
         pinnedElectronHashes = {
-          x86_64-linux = "f4987e9f045e46b117f0805d6ba4dc524e2abb2c2e33660f175bb39564bd3dae";
-          armv7l-linux = "d808208eb3179d1d33ac0269b5aada5d5a689cb9758098cb2d6e3576efaa306e";
-          aarch64-linux = "3e89a62c345d8171bf54f77df5b3d8216c492847eed00ae59cadd78d6f5535f7";
-          x86_64-darwin = "7347bbd5fb529eea64f9c2d148bb1c19222d98946ff234ffe27953a1bbcb9dae";
-          aarch64-darwin = "ee939d1564d83d61032b3b3cb23af4e46005a4900c91f0695f7ed793f0ce6e83";
-          headers = "13x2jbm1kdcnmv9lga8ba1imksjc2ahvb91ar3j3cl49w6q6qc0d";
+          x86_64-linux = "8b49b9efdd73c0f467edc3c1cd5678392c384ccf224f34ff54179f736e2f384b";
+          aarch64-linux = "c11fde221c08e9bffdb3336579f09bd934a009862f509af5033616876741be24";
+          aarch64-darwin = "49b91ef265c603c8888500f807484b63816069c30f87ba2b403e7c87f0f45035";
+          headers = "0pns4rylzr1a330cjmmcgyvdh19glhrgp2723gpi08xq027anrh8";
         };
         mkElectronBin = pkgs.callPackage (
           pkgs.path + "/pkgs/development/tools/electron/binary/generic.nix"
         ) { };
+
+        # The nixpkgs Linux builder rewrites the rpath of Electron's ANGLE libraries with
+        # an unguarded `patchelf ... lib*GL*`. Electron 44 links ANGLE into the main binary
+        # and ships no libEGL.so/libGLESv2.so, so the glob expands to nothing and patchelf
+        # exits with "missing filename". Let that one command tolerate an empty match; it
+        # still patches the libraries on releases that do ship them.
+        angleLibGlob = "$out/libexec/electron/lib*GL*";
+        tolerateMissingAngleLibs =
+          drv:
+          drv.overrideAttrs (prev: {
+            postFixup = lib.throwIf (!lib.hasInfix angleLibGlob prev.postFixup) ''
+              The nixpkgs Electron builder no longer runs patchelf over ${angleLibGlob};
+              drop tolerateMissingAngleLibs from flake.nix.
+            '' (builtins.replaceStrings [ angleLibGlob ] [ "${angleLibGlob} || true" ] prev.postFixup);
+          });
+
+        # Guarded on Linux because only that branch of the builder defines postFixup.
+        pinnedElectron =
+          let
+            bin = mkElectronBin pinnedElectronVersion pinnedElectronHashes;
+          in
+          if stdenv.hostPlatform.isLinux then tolerateMissingAngleLibs bin else bin;
 
         electron =
           if electronFromNixpkgs != null && electronFromNixpkgs.version == electronVersion then
@@ -59,7 +79,7 @@
             lib.throwIf (pinnedElectronVersion != electronVersion) ''
               flake.nix pins Electron ${pinnedElectronVersion}, but apps/desktop/package.json wants ${electronVersion}.
               Refresh pinnedElectronVersion/pinnedElectronHashes in flake.nix, or drop the override if nixpkgs ships ${electronVersion}.
-            '' (mkElectronBin pinnedElectronVersion pinnedElectronHashes);
+            '' pinnedElectron;
 
         nodejs = pkgs.nodejs_24;
         # pnpm creates an overly long PATH env variable for child processes.
@@ -100,7 +120,7 @@
           makeBinaryWrapper
           makeDesktopItem
           makeShellWrapper
-removeReferencesTo
+          removeReferencesTo
           stdenv
           wrapGAppsHook3
           xcodebuild
@@ -196,7 +216,7 @@ removeReferencesTo
 
             extraNativeBuildInputs =
               [
-nodejs.python
+                nodejs.python
                 removeReferencesTo
               ]
               ++ lib.optionals (app == "desktop" || app == "edit-docs") [
@@ -293,7 +313,7 @@ nodejs.python
               --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
               --set-default ELECTRON_IS_DEV 0 \
               --set TRILIUM_RESOURCE_DIR $out/opt/trilium \
-              --add-flags $out/opt/trilium/main.cjs
+              --add-flags $out/opt/trilium/main.mjs
           '';
         };
 
@@ -319,7 +339,7 @@ nodejs.python
             mkdir -p $out/{bin,opt/trilium-server}
             cp --archive apps/server/dist/* $out/opt/trilium-server
             makeWrapper ${lib.getExe nodejs} $out/bin/trilium-server \
-              --add-flags $out/opt/trilium-server/main.cjs
+              --add-flags $out/opt/trilium-server/main.mjs
           '';
         };
 
@@ -394,18 +414,16 @@ nodejs.python
             pnpm
             electron
             nodejs.python
-            # For the browser-mode tests (packages/ckeditor5). The Chrome and chromedriver
-            # webdriverio downloads for itself are dynamically linked against libraries no NixOS
-            # system provides, so they die on a missing libxcb.so.1; these come from the same
-            # nixpkgs revision, so their versions match.
+            # For the browser-mode tests (packages/ckeditor5). The Chromium Playwright downloads
+            # for itself is dynamically linked against libraries no NixOS system provides, so it
+            # dies on a missing libxcb.so.1.
             pkgs.chromium
-            pkgs.chromedriver
           ];
 
-          # Read by packages/ckeditor5/vitest.config.ts and by webdriverio itself, respectively.
-          # Without them webdriverio downloads its own pair and the suite cannot start.
+          # Read by packages/ckeditor5/vitest.config.ts and passed to Playwright as
+          # `launchOptions.executablePath`. Without it Playwright launches its own Chromium and the
+          # suite cannot start.
           CHROME_BIN = "${pkgs.chromium}/bin/chromium";
-          CHROMEDRIVER_PATH = "${pkgs.chromedriver}/bin/chromedriver";
         };
       }
     );

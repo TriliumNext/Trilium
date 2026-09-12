@@ -281,10 +281,72 @@ describe("chunked upload: starting and ending a session", () => {
         await expect(upload.begin(beginRequest(8))).resolves.toBeTruthy();
     });
 
-    it("answers for an upload it has never heard of", async () => {
+    it("answers for an upload id it never issued, which is no upload of its that has ended", async () => {
         const { upload } = uploadService();
 
-        await expect(upload.status(sessionRequest("nosuchupload"))).rejects.toThrow(/No such upload/);
+        await expect(upload.status(sessionRequest("nosuchupload"))).rejects.toMatchObject({ statusCode: 410 });
+    });
+});
+
+describe("chunked upload: an upload that is no longer there", () => {
+    it("lets a new upload take the place of one that is in the way, where it is configured to", async () => {
+        const { upload } = uploadService({ whenAtCapacity: "supersede" });
+        const abandoned = await upload.begin(beginRequest(8));
+        await upload.chunk(chunkRequest(abandoned.uploadId, 0, Buffer.alloc(4)));
+
+        const started = await upload.begin(beginRequest(8));
+
+        expect(started.uploadId).not.toBe(abandoned.uploadId);
+        expect(upload.activeSessions()).toBe(1);
+        expect(fs.existsSync(partialPath(tempRoot, abandoned.uploadId))).toBe(false);
+    });
+
+    it("tells the upload that was replaced what became of it, rather than letting it read a timeout into it", async () => {
+        const { upload } = uploadService({ whenAtCapacity: "supersede" });
+        const replaced = await upload.begin(beginRequest(8));
+        await upload.begin(beginRequest(8));
+
+        await expect(upload.chunk(chunkRequest(replaced.uploadId, 0, Buffer.alloc(4)))).rejects.toMatchObject({
+            message: expect.stringContaining("Another upload took over"),
+            statusCode: 410
+        });
+    });
+
+    it("keeps a running upload when the request that would have replaced it is malformed", async () => {
+        const { upload } = uploadService({ whenAtCapacity: "supersede", maxTotalBytes: 100 });
+        const running = await upload.begin(beginRequest(8));
+
+        await expect(upload.begin(beginRequest(101))).rejects.toThrow(/above the limit/);
+        await expect(upload.begin(beginRequest(undefined))).rejects.toThrow(/positive integer/);
+
+        await expect(upload.chunk(chunkRequest(running.uploadId, 0, Buffer.alloc(4)))).resolves.toBeTruthy();
+    });
+
+    it("recognises an upload id from the process that ran before it, which has no session to match it", async () => {
+        // Two services stand in for two runs of the server: sessions live in memory, so an id from
+        // one is meaningless to the other, and the client holding it should be told so rather than
+        // told its upload expired.
+        const before = uploadService().upload;
+        const after = uploadService().upload;
+        const { uploadId } = await before.begin(beginRequest(8));
+
+        await expect(after.status(sessionRequest(uploadId))).rejects.toMatchObject({
+            message: expect.stringContaining("The server restarted"),
+            statusCode: 410
+        });
+    });
+
+    it("answers a `finish` that is asked again with what it answered the first time", async () => {
+        // The file is complete and the answer to it was lost on the way back. Sending the whole
+        // upload a second time is the only other way out of that, and it is hours long.
+        const { upload, completed } = uploadService();
+        const { uploadId } = await upload.begin(beginRequest(4));
+        await upload.chunk(chunkRequest(uploadId, 0, Buffer.alloc(4)));
+
+        const assembledPath = await upload.finish(sessionRequest(uploadId));
+
+        await expect(upload.finish(sessionRequest(uploadId))).resolves.toBe(assembledPath);
+        expect(completed).toHaveLength(1);
     });
 });
 

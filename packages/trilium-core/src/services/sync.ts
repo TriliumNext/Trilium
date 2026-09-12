@@ -4,7 +4,7 @@ import becca from "../becca/becca.js";
 import appInfo from "./app_info.js";
 import * as cls from "./context.js";
 import consistency_checks from "./consistency_checks.js";
-import contentHashService from "./content_hash.js";
+import contentHashService, { type FailedCheck } from "./content_hash.js";
 import dateUtils from "./utils/date.js";
 import entityChangesService from "./entity_changes.js";
 import { getLog } from "./log.js";
@@ -29,6 +29,37 @@ let proxyToggle = true;
 let outstandingPullCount = 0;
 let totalPullCount: number | null = null;
 let lastSyncError: string | null = null;
+
+/**
+ * How many times the same `(entityName, sector)` pair may fail the content-hash check within a
+ * single sync run before the divergence is treated as unresolvable.
+ *
+ * A failed check re-queues the sector on both sides, and one further round is all it takes for that
+ * to have its effect: everything either side holds for the sector is pushed and pulled again before
+ * the hashes are compared. The third attempt is slack for a check that raced a concurrent edit (the
+ * outstanding-push/pull guards close most, but not all, of that window). Past that, re-queuing the
+ * same sector can only produce the same mismatch — the two databases hold something sync is unable
+ * to reconcile (a blob erased on one side only, an entity the other side keeps rejecting as older,
+ * …) — and retrying it forever is what turned this into an endlessly spinning sync.
+ */
+export const MAX_SECTOR_RESYNC_ATTEMPTS = 3;
+
+/**
+ * Hard cap on the number of login/push/pull/check rounds a single sync run may take. Every repeated
+ * round is meant to be making progress — draining outstanding pulls or pushes, or re-queuing a
+ * diverged sector — so reaching this many rounds means something is cycling without converging.
+ * Bailing out reports it as a sync error rather than looping inside `sync()` forever; the sync
+ * timer starts a fresh run a minute later regardless.
+ */
+export const MAX_SYNC_ROUNDS = 50;
+
+/**
+ * The diverged sectors of the most recent unresolvable-divergence notification, so the same toast
+ * isn't raised for the rest of the session: sync retries every minute and a divergence sync cannot
+ * fix keeps failing every time. Cleared once a sync converges, so a divergence that returns later
+ * is reported again.
+ */
+let notifiedDivergedSectors: string | null = null;
 
 interface CheckResponse {
     maxEntityChangeId: number;
@@ -63,8 +94,21 @@ async function sync() {
             lastSyncError = null;
 
             let continueSync = false;
+            let rounds = 0;
+            // Attempts per `entityName:sector`, and the sectors that exhausted them. Both are
+            // per-run: a fresh sync run gets to try the whole repair sequence again.
+            const sectorAttempts = new Map<string, number>();
+            const unresolvableChecks: FailedCheck[] = [];
 
             do {
+                if (++rounds > MAX_SYNC_ROUNDS) {
+                    return reportSyncFailure(
+                        `Sync did not converge after ${MAX_SYNC_ROUNDS} rounds, giving up for now. `
+                        + `See the preceding log entries for what each round was still waiting on.`,
+                        "NOT_CONVERGING"
+                    );
+                }
+
                 const syncContext = await login();
 
                 await pushChanges(syncContext);
@@ -75,8 +119,19 @@ async function sync() {
 
                 await syncFinished(syncContext);
 
-                continueSync = await checkContentHash(syncContext);
+                const check = await checkContentHash(syncContext, sectorAttempts);
+
+                unresolvableChecks.push(...check.unresolvable);
+                continueSync = check.continueSync;
             } while (continueSync);
+
+            if (unresolvableChecks.length > 0) {
+                // Deliberately before setDbAsInitialized()/syncFinished(): this run did not
+                // converge, so it must not be reported (nor recorded) as a completed sync.
+                return reportUnresolvableDivergence(unresolvableChecks);
+            }
+
+            notifiedDivergedSectors = null;
 
             // A converged sync (everything pushed, everything pulled, content hashes verified)
             // is what makes an initial sync-from-server database usable. setup.triggerSync()
@@ -142,6 +197,47 @@ async function sync() {
  */
 function redactUrlHosts(message: string) {
     return message.replace(/(https?:\/\/)[^/\s]+/gi, "$1[redacted]");
+}
+
+/**
+ * Ends a sync run that cannot make progress: records the reason the same way a thrown sync error
+ * would (log + `lastSyncError` + a failed sync status), but without the proxy toggle, since nothing
+ * here points at the connection.
+ */
+function reportSyncFailure(message: string, errorCode: string) {
+    getLog().error(message);
+
+    lastSyncError = message;
+
+    ws.syncFailed();
+
+    return { success: false, errorCode, message };
+}
+
+/**
+ * Reports sectors whose content hash kept diverging after {@link MAX_SECTOR_RESYNC_ATTEMPTS}
+ * re-syncs. This is a state a user has to act on (the databases hold irreconcilable data, typically
+ * repaired by a consistency check or a full re-sync of the client), so on top of the recorded sync
+ * error it raises a toast — once per set of sectors, see {@link notifiedDivergedSectors}.
+ */
+function reportUnresolvableDivergence(failedChecks: FailedCheck[]) {
+    const sectors = failedChecks.map(({ entityName, sector }) => `${entityName}/${sector}`);
+    const result = reportSyncFailure(
+        `Content hash mismatch in ${sectors.join(", ")} could not be resolved by re-syncing the sector(s) `
+        + `${MAX_SECTOR_RESYNC_ATTEMPTS} times. The local database and the sync server hold data that sync `
+        + `cannot reconcile, so syncing stopped instead of retrying indefinitely.`,
+        "CONTENT_HASH_MISMATCH"
+    );
+
+    const notificationKey = sectors.join(",");
+
+    if (notifiedDivergedSectors !== notificationKey) {
+        notifiedDivergedSectors = notificationKey;
+
+        ws.syncHashCheckFailed(sectors);
+    }
+
+    return result;
 }
 
 /**
@@ -436,7 +532,16 @@ async function syncFinished(syncContext: SyncContext) {
     await syncRequest(syncContext, "POST", "/api/sync/finished");
 }
 
-async function checkContentHash(syncContext: SyncContext) {
+/**
+ * Compares the local content hashes against the sync server's and re-queues the sectors that
+ * differ, so the next round of the sync loop exchanges them again.
+ *
+ * `sectorAttempts` counts, across the rounds of one sync run, how often each sector has been found
+ * diverged; a sector that used up {@link MAX_SECTOR_RESYNC_ATTEMPTS} is not re-queued again and is
+ * returned in `unresolvable` instead (exactly once — its counter keeps rising while other sectors
+ * are still being repaired). `continueSync` reports whether another round can achieve anything.
+ */
+async function checkContentHash(syncContext: SyncContext, sectorAttempts: Map<string, number>): Promise<{ continueSync: boolean; unresolvable: FailedCheck[] }> {
     const resp = await syncRequest<CheckResponse>(syncContext, "GET", "/api/sync/check");
     if (!resp) {
         throw new Error("Got no response.");
@@ -448,7 +553,7 @@ async function checkContentHash(syncContext: SyncContext) {
     if (lastSyncedPullId < resp.maxEntityChangeId) {
         log.info(`There are some outstanding pulls (${lastSyncedPullId} vs. ${resp.maxEntityChangeId}), skipping content check.`);
 
-        return true;
+        return { continueSync: true, unresolvable: [] };
     }
 
     const notPushedSyncs = getSql().getValue("SELECT EXISTS(SELECT 1 FROM entity_changes WHERE isSynced = 1 AND id > ?)", [getLastSyncedPush()]);
@@ -456,25 +561,43 @@ async function checkContentHash(syncContext: SyncContext) {
     if (notPushedSyncs) {
         log.info(`There's ${notPushedSyncs} outstanding pushes, skipping content check.`);
 
-        return true;
+        return { continueSync: true, unresolvable: [] };
     }
 
-    const failedChecks = contentHashService.checkContentHashes(resp.entityHashes);
+    const retryable: FailedCheck[] = [];
+    const unresolvable: FailedCheck[] = [];
 
-    if (failedChecks.length > 0) {
+    for (const failedCheck of contentHashService.checkContentHashes(resp.entityHashes)) {
+        const key = `${failedCheck.entityName}:${failedCheck.sector}`;
+        const attempts = (sectorAttempts.get(key) ?? 0) + 1;
+
+        sectorAttempts.set(key, attempts);
+
+        if (attempts < MAX_SECTOR_RESYNC_ATTEMPTS) {
+            retryable.push(failedCheck);
+        } else if (attempts === MAX_SECTOR_RESYNC_ATTEMPTS) {
+            log.error(`Content hash check for ${failedCheck.entityName} sector ${failedCheck.sector} still fails after ${attempts} attempts, giving up on re-syncing it.`);
+
+            unresolvable.push(failedCheck);
+        }
+    }
+
+    if (retryable.length > 0) {
         // before re-queuing sectors, make sure the entity changes are correct
         consistency_checks.runEntityChangesChecks();
 
         await syncRequest(syncContext, "POST", `/api/sync/check-entity-changes`);
     }
 
-    for (const { entityName, sector } of failedChecks) {
+    for (const { entityName, sector } of retryable) {
         entityChangesService.addEntityChangesForSector(entityName, sector);
 
         await syncRequest(syncContext, "POST", `/api/sync/queue-sector/${entityName}/${sector}`);
     }
 
-    return failedChecks.length > 0;
+    // Sectors that are out of attempts are reported, not retried, so they must not keep the loop
+    // running — only sectors that were actually re-queued can be fixed by another round.
+    return { continueSync: retryable.length > 0, unresolvable };
 }
 
 const PAGE_SIZE = 1000000;

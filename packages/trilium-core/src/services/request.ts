@@ -64,6 +64,31 @@ export interface RequestProvider {
      * necessity — see the note on each.
      */
     fetchResource(url: string, opts: FetchResourceOpts): Promise<FetchedResource>;
+    /**
+     * Calls an API endpoint whose address came from configuration — the LLM providers' base URL
+     * being the one that exists today — and hands back the response still open.
+     *
+     * Distinct from {@link fetchResource} in the two things calling an API needs and reading a page
+     * never did: a request of one's own, with a method and headers and a body, and an answer nobody
+     * buffers. A completion streams for as long as the model takes, so there is no ceiling to put on
+     * it and nothing here may hold it whole.
+     *
+     * The address still has to be vetted — a base URL is a free-text field, and a server that
+     * fetches whatever it is pointed at is a server that will fetch a cloud metadata endpoint. How
+     * hard, and against which ranges, is the implementation's to decide; see the note on each.
+     */
+    fetchApi(url: string, init: RequestInit, opts: FetchApiOpts): Promise<Response>;
+}
+
+/** What an API call needs vetting for, beyond the address itself. */
+export interface FetchApiOpts {
+    /**
+     * Whether the destination may sit on a private network. True for an endpoint the operator
+     * configured — a model server on this machine or this LAN is the ordinary case, and refusing
+     * it would leave the local providers with nothing to talk to. Never true for an address that
+     * arrived in note content.
+     */
+    allowPrivateNetwork: boolean;
 }
 
 let requestProvider: RequestProvider | null = null;
@@ -92,6 +117,9 @@ export default {
     },
     fetchResource(url: string, opts: FetchResourceOpts): Promise<FetchedResource> {
         return getRequestProvider().fetchResource(url, opts);
+    },
+    fetchApi(url: string, init: RequestInit, opts: FetchApiOpts): Promise<Response> {
+        return getRequestProvider().fetchApi(url, init, opts);
     }
 };
 

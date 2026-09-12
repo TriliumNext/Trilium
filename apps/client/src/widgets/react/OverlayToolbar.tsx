@@ -1,5 +1,6 @@
 import "./OverlayToolbar.css";
 
+import clsx from "clsx";
 import { type ComponentChildren, createContext } from "preact";
 import { useContext } from "preact/hooks";
 
@@ -36,19 +37,19 @@ export default function OverlayToolbar({ className, titlePosition, children }: O
 }
 
 /**
- * A button on such a bar, dressed as the buttons floating over a rendered diagram are (see
- * SplitEditor's `PreviewButton`).
+ * A button on such a bar, dressed as the buttons floating over a relation map are (see
+ * {@link RelationMap}).
  *
  * Its tooltip opens the way the bar it stands on says, so that a bar at the foot of a canvas does not
  * open its tooltips off the bottom edge — overridable per button where one of them is placed
  * differently from its neighbours.
  */
-export function OverlayToolbarButton({ titlePosition, ...props }: ActionButtonProps) {
+export function OverlayToolbarButton({ titlePosition, className, ...props }: ActionButtonProps) {
     const barDirection = useContext(TooltipDirection);
 
     return <ActionButton
         {...props}
-        className="tn-tool-button"
+        className={clsx("tn-tool-button", className)}
         noIconActionClass
         titlePosition={titlePosition ?? barDirection}
     />;

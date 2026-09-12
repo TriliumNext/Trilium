@@ -18,6 +18,7 @@
     .ext-badge {
         &.temporarily-editable-badge {--color: var(--badge-temporaraily-editable-background-color)}
         &.read-only-badge {--color: var(--badge-read-only-background-color);}
+        &.office-preview-badge {--color: var(--badge-office-preview-background-color);}
         &.share-badge {--color: var(--badge-share-background-color);}
         &.clipped-note-badge {--color: var(--badge-clipped-note-background-color);}
         &.doc-url-badge {--color: var(--badge-doc-url-background-color);}
@@ -59,12 +60,6 @@
         .switch-button {
             --switch-track-height: 8px;
             --switch-track-width: 30px;
-        }
-    }
-
-    .dropdown-badge {
-        &.dropdown-backlinks-badge .dropdown-menu {
-            min-width: 500px;
         }
     }
 }

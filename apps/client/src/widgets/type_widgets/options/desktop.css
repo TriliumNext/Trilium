@@ -1,0 +1,32 @@
+/* Overrides the card option's no-shrink rule: a wrapping set of chips gives way instead. */
+.tn-card-option > .search-engine-templates {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.search-engine-templates {
+    --badge-radius: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    align-items: center;
+    gap: 8px;
+}
+
+.search-engine-templates .ext-badge {
+    --color: var(--input-background-color);
+    color: var(--main-text-color);
+    font-size: 0.85em;
+}
+
+.search-engine-templates .ext-badge.selected {
+    --color: var(--accented-background-color);
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
+}
+
+/* A name is a word or two. Not said of the URL below it, which is stacked and uses its whole line. */
+.desktop-search-name input {
+    width: auto;
+    max-width: 100%;
+}

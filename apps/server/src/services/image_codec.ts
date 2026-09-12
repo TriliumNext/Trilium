@@ -20,6 +20,8 @@ import isSvg from "is-svg";
 import { Jimp } from "jimp";
 import * as UPNG from "upng-js";
 
+import { asBuffer } from "./binary.js";
+
 /**
  * Where a line the codec wants written goes. Dropped by default, since nothing here needs it.
  *
@@ -208,18 +210,6 @@ export function decodeCostOf({ width, height }: InspectedImage): number | null {
  */
 export function decodeImage(buffer: Uint8Array, budgetMb: number = DECODE_MEMORY_MB) {
     return Jimp.fromBuffer(asBuffer(buffer), { "image/jpeg": { maxMemoryUsageInMB: budgetMb } });
-}
-
-/**
- * The same bytes as a `Buffer`, over the same memory.
- *
- * `Buffer.from(uint8Array)` duplicates what it is given, and the libraries below each want one —
- * so an image was being copied whole several times on its way through, for readers that only ever
- * read. On a run over a tree that is a second copy of every photograph in it, allocated and thrown
- * away again, which costs more in collection than the copying does outright.
- */
-export function asBuffer(bytes: Uint8Array): Buffer {
-    return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 }
 
 /** What {@link decodeImage} hands back, for the helpers that work on a decoded image. */

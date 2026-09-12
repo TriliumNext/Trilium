@@ -10,20 +10,25 @@
 }
 
 .geo-map-container .geo-detail-pane {
-    /* Room at the foot for the bar of buttons, which stands in this same corner: its own height and
-       as much air again. Standing clear of it rather than moving it aside — the mind map's panel
-       reckons its foot the same way. */
-    --detail-pane-foot: calc(var(--geo-map-inset) + var(--geo-map-toolbar-height) + var(--geo-map-inset));
-
     position: absolute;
     /* A fixed height rather than one sized to its contents, which would be a different pane for
-       every marker. What it holds scrolls within it (see OverlayPanel.css). */
-    top: var(--geo-map-inset);
-    bottom: var(--detail-pane-foot);
-    inset-inline-end: var(--geo-map-inset);
+       every marker. What it holds scrolls within it (see OverlayPanel.css). It stands clear of the
+       bar of buttons in this same corner rather than moving it aside — the mind map's panel reckons
+       its foot the same way. */
+    top: var(--geo-map-inset-top);
+    bottom: var(--geo-map-foot);
+    inset-inline-end: var(--geo-map-inset-end);
     width: var(--geo-detail-pane-width);
-    /* An embedded map may be narrower than the pane would like to be. */
-    max-width: calc(100% - 2 * var(--geo-map-inset));
+    /* An embedded map may be narrower than the pane would like to be — and in fullscreen the sides
+       are not equally free, so each is taken off by its own name rather than one of them twice. */
+    max-width: calc(100% - var(--geo-map-inset-start) - var(--geo-map-inset-end));
+
+    /* Grown over the map (see the maximize in MarkerDetails). Only the width gives: the pane
+       already stands the height of the map. What the map places around the pane is suppressed
+       while it is grown rather than recomputed — see `maximized` in DetailPane.tsx. */
+    &.maximized {
+        width: calc(100% - var(--geo-map-inset-start) - var(--geo-map-inset-end));
+    }
     /* Clear of MapLibre's own control corners, which sit at 2 (see MapToolbar.css). */
     z-index: 3;
 }
@@ -71,7 +76,9 @@
  * to press: it is a line of text that happens to answer to a click, so it stands on no plate of its
  * own until it is aimed at.
  */
-.geo-map-container .geo-detail-pane .geo-detail-pane-location {
+.geo-map-container .geo-detail-pane .geo-detail-pane-location,
+.geo-map-container .geo-place-panel .geo-detail-pane-location,
+.modal.geo-detail-sheet .geo-detail-pane-location {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -92,3 +99,18 @@
     }
 }
 
+.modal.geo-detail-sheet .modal-dialog {
+    max-height: var(--tn-modal-max-height);
+    height: 100%;
+}
+
+.modal.geo-detail-sheet .modal-content {
+    overflow: hidden;
+}
+
+.modal.geo-detail-sheet .modal-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: auto;
+}

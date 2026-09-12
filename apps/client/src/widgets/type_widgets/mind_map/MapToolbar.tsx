@@ -5,7 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { useFullscreen, useStaticTooltip } from "../../react/hooks";
+import { useFullscreen } from "../../react/hooks";
+import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton } from "../../react/OverlayControlGroup";
 import OverlayToolbar, { OverlayToolbarButton } from "../../react/OverlayToolbar";
 import { centerMapOn, type MapPoint, readMapCenter, stepZoom } from "./viewport";
 
@@ -21,8 +22,8 @@ interface MapToolbarProps {
  * {@link DirectionToolbar}) — which are left out entirely (`toolBar: false`, see MindMap.tsx). They
  * were dressed in neither Trilium's buttons nor Trilium's colors, standing on a surface of their own
  * beside the node panel they share the map with. Everything they did is done here, over the same
- * instance, on the control group the image viewer's zoom buttons stand on
- * (`tn-overlay-control-group`, see {@link ImageViewer}), as the geo map's controls are. The readout
+ * instance, on the {@link OverlayControlGroup} the image viewer's zoom buttons stand on (see
+ * {@link ImageViewer}), as the geo map's controls are. The readout
  * between the steps says the scale the way the image viewer says it — a hundred being the map drawn
  * at its own size — and pressed, takes the map back there, as the image viewer's does: unlike a geo
  * map, a mind map has a natural size to be reset to.
@@ -36,92 +37,50 @@ export default function MapToolbar({ mind }: MapToolbarProps) {
     const isFocused = useMapFocus(mind);
     const [ isFullscreen, toggleFullscreen ] = useMapFullscreen(mind);
 
-    const exitFocusRef = useRef<HTMLButtonElement>(null);
-    const zoomOutRef = useRef<HTMLButtonElement>(null);
-    const zoomLevelRef = useRef<HTMLButtonElement>(null);
-    const zoomInRef = useRef<HTMLButtonElement>(null);
-    const centerRef = useRef<HTMLButtonElement>(null);
-    const fullscreenRef = useRef<HTMLButtonElement>(null);
-
-    // The group stands at the foot of the map, so its tooltips open away from that edge, where
-    // they would otherwise fall off.
-    useStaticTooltip(exitFocusRef, { title: t("mind-map.cancelFocus"), placement: "top" });
-    useStaticTooltip(zoomOutRef, { title: t("mind-map.zoom-out"), placement: "top" });
-    useStaticTooltip(zoomLevelRef, { title: t("mind-map.reset-zoom"), placement: "top" });
-    useStaticTooltip(zoomInRef, { title: t("mind-map.zoom-in"), placement: "top" });
-    useStaticTooltip(centerRef, { title: t("mind-map.center-map"), placement: "top" });
-    useStaticTooltip(fullscreenRef, {
-        title: isFullscreen ? t("mind-map.exit-fullscreen") : t("mind-map.fullscreen"),
-        placement: "top"
-    });
-
     const limits = { sensitivity: mind.scaleSensitivity, min: mind.scaleMin, max: mind.scaleMax };
     const zoomedIn = stepZoom(scale, 1, limits);
     const zoomedOut = stepZoom(scale, -1, limits);
 
     return (
-        <div
-            className="mind-map-view-toolbar tn-overlay-control-group"
-            /* Keep a press on the controls from reaching the canvas underneath, which would
-               otherwise take it for the start of a drag or a selection. */
-            onMouseDown={(e) => e.stopPropagation()}
-        >
+        <OverlayControlGroup className="mind-map-view-toolbar" placement="bottom-end" overCanvas>
             {/* Leaving focus mode is about the map rather than about any one node, so it stands
                 here rather than in the menu a node is right-clicked for — which is where Mind
                 Elixir kept it, offered on every node whether the map was narrowed or not. It is
                 only here while there is something to leave, the map otherwise showing all it has. */}
             {isFocused && (
-                <button
-                    ref={exitFocusRef}
-                    type="button"
-                    className="tn-overlay-icon-button bx bx-exit"
-                    aria-label={t("mind-map.cancelFocus")}
+                <OverlayControlButton
+                    title={t("mind-map.cancelFocus")}
+                    icon="bx-exit"
                     onClick={() => mind.cancelFocus()}
                 />
             )}
 
             {!isMobile() && <>
-                <button
-                    ref={zoomOutRef}
-                    type="button"
-                    className="tn-overlay-icon-button bx bx-minus-circle"
-                    aria-label={t("mind-map.zoom-out")}
+                <OverlayControlButton
+                    title={t("mind-map.zoom-out")}
+                    icon="bx-minus-circle"
                     disabled={zoomedOut === null}
                     onClick={() => zoomedOut !== null && mind.scale(zoomedOut)}
                 />
-                <button
-                    ref={zoomLevelRef}
-                    type="button"
-                    className="tn-overlay-text-button mind-map-zoom-level"
-                    aria-label={t("mind-map.reset-zoom")}
+                <OverlayControlButton
+                    title={t("mind-map.reset-zoom")}
+                    text={`${Math.round(scale * 100)}%`}
                     onClick={() => mind.scale(1)}
-                >
-                    {Math.round(scale * 100)}%
-                </button>
-                <button
-                    ref={zoomInRef}
-                    type="button"
-                    className="tn-overlay-icon-button bx bx-plus-circle"
-                    aria-label={t("mind-map.zoom-in")}
+                />
+                <OverlayControlButton
+                    title={t("mind-map.zoom-in")}
+                    icon="bx-plus-circle"
                     disabled={zoomedIn === null}
                     onClick={() => zoomedIn !== null && mind.scale(zoomedIn)}
                 />
             </>}
-            <button
-                ref={centerRef}
-                type="button"
-                className="tn-overlay-icon-button bx bx-current-location"
-                aria-label={t("mind-map.center-map")}
+            <OverlayControlButton
+                title={t("mind-map.center-map")}
+                icon="bx-current-location"
                 onClick={() => mind.toCenter()}
             />
-            <button
-                ref={fullscreenRef}
-                type="button"
-                className={`tn-overlay-icon-button bx ${isFullscreen ? "bx-exit-fullscreen" : "bx-fullscreen"}`}
-                aria-label={isFullscreen ? t("mind-map.exit-fullscreen") : t("mind-map.fullscreen")}
-                onClick={toggleFullscreen}
-            />
-        </div>
+            <OverlayFullscreenButton isFullscreen={isFullscreen} onToggle={toggleFullscreen} />
+        </OverlayControlGroup>
     );
 }
 

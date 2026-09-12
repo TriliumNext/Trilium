@@ -11,7 +11,7 @@
     },
     "role_brief_history": {
       "lead-dev": "Elian Doran은 2024년 Zadam이 프로젝트에서 물러난 뒤 만들어진 커뮤니티 포크인 TriliumNext를 창립했습니다. 이후 Zadam이 기존 저장소를 TriliumNext 팀에 이전하면서 두 프로젝트는 다시 하나로 통합되었습니다.",
-      "original-dev": "2017년 12월 25일, Zadam은 Trilium의 첫 번째 베타 버전을 공개했습니다. 이름은 꽃 이름과 달리 ‘l’을 하나만 사용합니다. 기존 노트 관리 도구에 만족하지 못했던 그는 강력한 자체 호스팅형 계층식 지식 베이스를 만들었고, 이 프로젝트는 GitHub에서 22,000개가 넘는 스타를 받았습니다. 2024년에는 개인 일정이 바빠지면서 프로젝트를 유지보수 모드로 전환했습니다."
+      "original-dev": "2017년 12월 25일, Zadam은 Trilium(꽃 이름인 Trillium과 달리 'l'을 하나만 써서 표기)의 첫 번째 베타 버전을 공개했습니다. 기존 노트 정리 프로그램에 만족하지 못했던 그는 강력한 자체 호스팅 계층형 지식 베이스를 개발했고, 이 프로젝트는 GitHub에서 22,000개 이상의 스타를 받았습니다. 2024년에는 일상이 바빠지면서 프로젝트를 유지보수 모드로 전환했습니다."
     },
     "contributor_full_list": "전체 커뮤니티 보기",
     "channel": {
@@ -43,13 +43,13 @@
     "widget-render-error": {
       "title": "사용자 정의 React 위젯을 렌더링하는 데 실패했습니다"
     },
-    "widget-missing-parent": "사용자 정의 위젯에 필수 속성 '{{property}}'가 정의되어 있지 않습니다.\n\n이 스크립트를 UI 요소 없이 실행하려면 '#run=frontendStartup'을 대신 사용하십시오.",
+    "widget-missing-parent": "사용자 정의 위젯에 필수 속성 '{{property}}'가 정의되어 있지 않습니다.\n\n이 스크립트를 UI 요소 없이 실행하려면 '#run=frontendStartup'을 대신 사용하세요.",
     "open-script-note": "스크립트 노트 열기",
     "scripting-error": "스크립트 노트 실행 실패",
     "unhandled-error": {
       "title": "백그라운드 작업에 실패했습니다",
       "details-button": "자세히 보기...",
-      "details-intro": "애플리케이션은 계속 실행 중이며 노트에는 영향이 없습니다. 이 문제가 계속 발생하면 아래 정보를 붙여 넣어 GitHub에 신고해 주세요.",
+      "details-intro": "애플리케이션은 계속 실행 중이며 노트에는 영향을 주지 않습니다. 이 문제가 계속 발생하면 아래 정보를 붙여넣어 GitHub에 신고해 주세요.",
       "details-title": "기술 정보"
     }
   },
@@ -59,7 +59,7 @@
     "search_note": "이름으로 노트 검색하기",
     "help_on_links": "링크 관련 도움말",
     "link_title_mirrors": "링크 제목은 노트의 현재 제목을 반영합니다",
-    "link_title_arbitrary": "링크 제목은 임의로 변경될 수 있습니다",
+    "link_title_arbitrary": "링크 제목을 자유롭게 변경할 수 있습니다",
     "link_title": "링크 제목",
     "button_add_link": "링크 추가",
     "anchor": "앵커(선택)",
@@ -83,11 +83,11 @@
   "bulk_actions": {
     "bulk_actions": "대량 작업",
     "affected_notes": "영향을 받는 노트",
-    "include_descendants": "선택한 노트의 자손 포함",
+    "include_descendants": "선택한 노트의 하위 노트 포함",
     "available_actions": "사용 가능한 작업",
     "chosen_actions": "선택한 작업",
     "execute_bulk_actions": "대량 작업 실행",
-    "bulk_actions_executed": "대량 액션들이 성공적으로 실행되었습니다.",
+    "bulk_actions_executed": "대량 작업이 성공적으로 실행되었습니다.",
     "none_yet": "아직 없습니다... 위에 있는 가능한 작업 중 하나를 클릭하여 작업을 추가하세요.",
     "labels": "라벨",
     "relations": "관계",
@@ -115,7 +115,8 @@
     "formatting-locale-auto": "애플리케이션 언어 기준",
     "default-content-language": "기본 콘텐츠 언어",
     "default-content-language-description": "노트의 기본 속성에서 별도로 언어를 지정하지 않은 경우, 노트 작성에 사용할 언어입니다. 오른쪽에서 왼쪽으로 쓰는 언어의 정렬 방식과 입력 시 사용되는 따옴표 종류 등에 영향을 줍니다.",
-    "default-content-language-auto": "애플리케이션 언어에 따라 설정"
+    "default-content-language-auto": "애플리케이션 언어에 따라 설정",
+    "dates-title": "날짜 및 캘린더"
   },
   "clone_to": {
     "clone_notes_to": "노트를 복제할 위치...",
@@ -132,11 +133,11 @@
   "confirm": {
     "confirmation": "확인",
     "cancel": "취소",
-    "ok": "OK",
+    "ok": "확인",
     "are_you_sure_remove_note": "관계 맵에서 \"{{title}}\" 노트를 정말로 제거하시겠습니까? ",
-    "if_you_dont_check": "노트 자체는 유지되며, 여기에서의 위치만 제거됩니다.",
+    "if_you_dont_check": "노트 자체는 유지되며, 이 위치에서의 연결만 제거됩니다.",
     "also_delete_note": "노트를 함께 삭제",
-    "delete_note_deletes_note": "트리에서 이 노트가 있는 유일한 위치이므로 노트 자체가 삭제됩니다. 최근 변경 사항에서 되돌릴 수 있습니다.",
+    "delete_note_deletes_note": "이 노트는 트리의 해당 위치에만 존재하므로, 노트 자체가 삭제됩니다. 최근 변경 사항에서 되돌릴 수 있습니다.",
     "delete_note_deletes_clones": "이 노트가 표시되는 {{places}}곳 모두에서 노트가 삭제됩니다. 최근 변경 사항에서 되돌릴 수 있습니다.",
     "delete_note_keeps_note_other": "노트에 다른 복제본이 {{count}}개 있으므로 노트 자체는 유지됩니다."
   },
@@ -150,8 +151,8 @@
     "close": "닫기",
     "delete_all_clones_description": "모든 복제본 삭제(최근 변경 사항에서 되돌릴 수 있습니다)",
     "title": "노트 삭제",
-    "clones_label": "복제",
-    "delete_clones_description_other": "다른 복제본 {{count}}개도 함께 삭제합니다. 최근 변경 사항에서 되돌릴 수 있습니다.",
+    "clones_label": "복제본",
+    "delete_clones_description_other": "다른 복제본 {{count}}개도 함께 삭제합니다. 최근 변경 사항에서 실행 취소할 수 있습니다.",
     "erase_notes_label": "영구적으로 삭제",
     "table_note_with_relation": "관계가 설정된 노트",
     "table_relation": "관계",
@@ -162,7 +163,7 @@
     "export_note_title": "노트 내보내기",
     "export_type_single": "이 노트만 (하위 노트 제외)",
     "export": "내보내기",
-    "choose_export_type": "먼저 내보내기 유형을 선택하세요",
+    "choose_export_type": "먼저 내보내기 유형을 선택해 주세요",
     "export_finished_successfully": "내보내기를 성공적으로 완료했습니다.",
     "format_pdf": "PDF - 인쇄 또는 공유용",
     "close": "닫기",
@@ -179,13 +180,13 @@
     "format_share_description": "shared-notes 테마를 사용한 게시용 정적 사이트",
     "recommended": "추천",
     "result_subtree_html": "텍스트 노트가 HTML로 저장되는 ZIP 아카이브입니다. 코드, 이미지 및 기타 파일은 원래 형식을 유지합니다.",
-    "result_subtree_markdown": "텍스트가 Markdown으로 저장되는 ZIP 아카이브입니다. 코드, 이미지 및 기타 파일은 원본 형식을 유지합니다.",
+    "result_subtree_markdown": "텍스트 노트가 Markdown으로 저장되는 ZIP 아카이브입니다. 코드, 이미지 및 기타 파일은 원본 형식을 유지합니다.",
     "result_share": "shared-notes 테마를 사용하는 게시 가능한 정적 웹사이트가 포함된 ZIP 아카이브입니다.",
     "result_opml": "노트 제목과 텍스트를 포함하는 단일 OPML 개요 파일입니다. 이미지, 코드 파일 및 첨부 파일은 포함하지 않습니다.",
     "result_single_html": "단일 HTML 파일입니다. 이미지와 첨부 파일이 내장되어 있습니다.",
     "result_single_markdown": "단일 Markdown(.md) 파일입니다.",
     "preparing_export": "내보내기 준비 중…",
-    "export_in_progress_with_total": "총 {{totalCount}}개 중 {{progressCount}}개 노트 내보내는 중"
+    "export_in_progress_with_total": "총 {{totalCount}}개 중 {{progressCount}}개 노트를 내보냈습니다"
   },
   "help": {
     "title": "치트 시트",
@@ -197,7 +198,7 @@
     "goBackForwards": "히스토리에서 뒤로/앞으로 이동",
     "showJumpToNoteDialog": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"노트로 이동\" 대화 상자</a> 표시",
     "scrollToActiveNote": "활성화된 노트로 스크롤 이동",
-    "collapseWholeTree": "모든 노트 트리를 접기",
+    "collapseWholeTree": "전체 노트 트리 접기",
     "collapseSubTree": "하위 트리 접기",
     "tabShortcuts": "탭 단축키",
     "onlyInDesktop": "데스크톱에서만(Electron 빌드)",
@@ -212,24 +213,24 @@
     "moveNoteUpDown": "노트 목록에서 노트 위/아래 이동",
     "selectAllNotes": "현재 레벨의 모든 노트 선택",
     "selectNote": "노트 선택",
-    "deleteNotes": "노트/하위트리 삭제",
+    "deleteNotes": "노트/하위 트리 삭제",
     "editingNotes": "노트 편집",
     "createEditLink": "외부 링크 생성/편집",
     "createInternalLink": "내부 링크 생성",
-    "followLink": "커서아래 링크 따라가기",
+    "followLink": "커서 아래의 링크로 이동",
     "insertDateTime": "커서 위치에 현재 날짜와 시간 삽입",
     "toggleArchivedNotes": "보관된 노트 표시/숨기기",
-    "newTabNoteLink": "노트 링크를 새 탭에서 엽니다",
-    "newTabWithActivationNoteLink": "노트에 대한 링크가 열리고 새 탭에서 노트가 활성화됩니다",
+    "newTabNoteLink": "노트 링크를 새 탭에서 열기",
+    "newTabWithActivationNoteLink": "노트 링크를 새 탭에서 열고 활성화",
     "createNoteAfter": "활성 노트 뒤에 새 노트 만들기",
     "editBranchPrefix": "활성 노트 복제본의 <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">접두사</a> 편집",
     "moveNoteUpHierarchy": "노트를 계층 구조에서 위로 이동",
-    "multiSelectNote": "다중 선택 노트 위/아래",
+    "multiSelectNote": "위/아래 노트 다중 선택",
     "copyNotes": "활성 노트(또는 현재 선택 항목)를 클립보드에 복사합니다(사용 목적: <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">복제</a>)",
-    "cutNotes": "현재 노트(또는 현재 선택 항목)를 클립보드로 잘라냅니다 (노트 이동에 사용됨)",
-    "pasteNotes": "노트를 활성 노트의 하위 노트로 붙여넣습니다. 클립보드에 복사한 노트는 복제되고, 잘라낸 노트는 이동됩니다",
+    "cutNotes": "현재 노트(또는 현재 선택 항목)를 클립보드로 잘라내기(노트 이동에 사용)",
+    "pasteNotes": "노트를 활성 노트의 하위 노트로 붙여넣기(복사한 노트는 복제, 잘라낸 노트는 이동)",
     "editNoteTitle": "트리 창에서는 노트 제목으로 포커스가 이동합니다. 노트 제목에서 Enter 키를 누르면 텍스트 편집기로 포커스가 이동합니다. <kbd>Ctrl+.</kbd> 키를 누르면 편집기에서 트리 창으로 돌아갑니다.",
-    "jumpToTreePane": "트리 창으로 이동하여 활성 노트로 스크롤합니다",
+    "jumpToTreePane": "트리 창으로 이동하여 활성 노트로 스크롤",
     "markdownAutoformat": "Markdown과 유사한 자동 서식 지정",
     "headings": "제목을 만들려면 <code>##</code>, <code>###</code>, <code>####</code> 등을 입력한 뒤 공백을 넣습니다",
     "bulletList": "<code>*</code> 또는 <code>-</code> 뒤에 공백을 입력하면 글머리 기호 목록이 됩니다",
@@ -240,8 +241,9 @@
     "showDevTools": "개발자 도구 표시",
     "showSQLConsole": "SQL 콘솔 표시",
     "other": "기타",
-    "quickSearch": "빠른 검색 입력에 집중",
-    "inPageSearch": "페이지 내 검색"
+    "quickSearch": "빠른 검색 입력창으로 포커스 이동",
+    "inPageSearch": "페이지 내 검색",
+    "openAiAssistant": "선택한 내용으로 AI 어시스턴트 열기"
   },
   "import": {
     "importIntoNote": "노트로 가져오기",
@@ -273,11 +275,11 @@
     },
     "starting": "가져오는 중…",
     "in-progress": "노트 {{progress}}개 가져옴",
-    "in-progress-with-total": "전체 {{total}}개 중 노트 {{progress}}개 가져옴",
-    "extracting": "전체 {{total}}개 중 항목 {{progress}}개 추출함",
-    "processing": "전체 {{total}}개 중 노트 {{progress}}개 처리함",
+    "in-progress-with-total": "총 {{total}}개 중 {{progress}}개 노트를 가져왔습니다",
+    "extracting": "총 {{total}}개 중 {{progress}}개 항목 추출함",
+    "processing": "총 {{total}}개 중 {{progress}}개 노트 처리함",
     "throttled": "서비스가 요청 속도를 제한하고 있습니다. 접근이 재개될 때까지 가져오기를 대기합니다…",
-    "throttled-with-total": "노트 {{total}}개 중 {{progress}}개를 가져왔습니다. 서비스가 요청 속도를 제한하고 있어 접근이 재개될 때까지 대기합니다…",
+    "throttled-with-total": "총 {{total}}개 중 {{progress}}개 노트를 가져왔습니다. 서비스가 요청 속도를 제한하고 있어 접근이 재개될 때까지 대기합니다…",
     "successful": "가져오기가 성공적으로 완료되었습니다."
   },
   "file_upload": {
@@ -364,11 +366,11 @@
   "info": {
     "modalTitle": "정보 메시지",
     "closeButton": "닫기",
-    "okButton": "OK",
+    "okButton": "확인",
     "copy_to_clipboard": "클립보드에 복사"
   },
   "jump_to_note": {
-    "search_placeholder": "이름이나 유형으로 노트를 검색하세요. > 명령으로...",
+    "search_placeholder": "노트 이름으로 검색하거나 >를 입력하여 명령 사용...",
     "search_button": "전체 텍스트 검색"
   },
   "markdown_editor": {
@@ -376,7 +378,7 @@
   },
   "markdown_import": {
     "dialog_title": "Markdown 가져오기",
-    "modal_body_text": "브라우저 샌드박스 제한으로 인해 JavaScript에서 클립보드의 내용을 직접 읽을 수 없습니다. 가져올 Markdown을 아래 텍스트 영역에 붙여넣고 가져오기 버튼을 클릭하세요",
+    "modal_body_text": "브라우저 샌드박스 제한으로 인해 JavaScript에서 클립보드 내용을 직접 읽을 수 없습니다. 가져올 Markdown을 아래 텍스트 영역에 붙여넣은 뒤 가져오기 버튼을 클릭하세요",
     "import_button": "가져오기",
     "import_success": "Markdown 콘텐츠를 문서로 가져왔습니다."
   },
@@ -470,7 +472,7 @@
     "diff_off_hint": "노트 내용을 보려면 클릭",
     "diff_not_available": "Diff는 이용할 수 없습니다.",
     "diff_identical": "이 수정본은 현재 노트 내용과 동일합니다.",
-    "confirm_restore": "이 수정본을 복원하시겠습니까? 현재 노트의 제목과 콘텐츠를 이 수정본으로 덮어씁니다.",
+    "confirm_restore": "이 수정본을 복원하시겠습니까? 현재 노트의 제목과 내용을 이 수정본으로 덮어씁니다.",
     "delete_button": "삭제",
     "confirm_delete": "이 수정본을 삭제하시겠습니까?",
     "revisions_deleted": "노트 수정본이 삭제되었습니다.",
@@ -643,7 +645,7 @@
     "run_on_note_creation": "백엔드에서 노트가 생성될 때 실행됩니다. 특정 하위 트리에서 생성되는 모든 노트에 스크립트를 실행하려면 이 관계를 하위 트리의 루트 노트에 만들고 상속 가능하게 설정합니다. 그러면 하위 트리 안의 어느 깊이에서 새 노트가 생성되어도 스크립트가 실행됩니다.",
     "run_on_child_note_creation": "이 관계가 정의된 노트 아래에서 새 노트가 생성될 때 실행됩니다.",
     "run_on_note_title_change": "노트 제목이 변경되면 실행됩니다(노트 생성도 포함).",
-    "run_on_note_content_change": "노트 콘텐츠가 변경될 때 실행됩니다. 노트를 만들 때도 실행됩니다.",
+    "run_on_note_content_change": "노트 내용이 변경될 때 실행됩니다. 노트를 만들 때도 실행됩니다.",
     "run_on_note_change": "노트가 변경될 때 실행됩니다(노트 생성 포함). 내용 변경은 포함되지 않습니다.",
     "run_on_note_deletion": "노트가 삭제될 때 실행됩니다.",
     "run_on_branch_creation": "브랜치가 생성될 때 실행됩니다. 브랜치는 상위 노트와 하위 노트를 연결하며, 노트를 복제하거나 이동할 때 생성됩니다.",
@@ -651,7 +653,7 @@
     "run_on_branch_deletion": "브랜치가 삭제될 때 실행됩니다. 브랜치는 상위 노트와 하위 노트를 연결하며, 노트를 이동하면 이전 브랜치가 삭제됩니다.",
     "run_on_attribute_creation": "이 관계를 정의하는 노트에 새로운 속성이 생성될 때 실행됩니다.",
     "run_on_attribute_change": "이 관계를 정의한 노트의 속성이 변경될 때 실행됩니다. 속성이 삭제될 때도 실행됩니다.",
-    "relation_template": "상위-하위 관계가 없어도 노트의 속성을 상속합니다. 인스턴스 노트의 콘텐츠와 하위 트리가 비어 있으면 이 노트의 콘텐츠와 하위 트리를 추가합니다. 자세한 내용은 문서를 참고합니다.",
+    "relation_template": "상위-하위 관계가 없어도 노트의 속성을 상속합니다. 인스턴스 노트의 내용과 하위 트리가 비어 있으면 이 노트의 내용과 하위 트리를 추가합니다. 자세한 내용은 문서를 참고합니다.",
     "inherit": "상위-하위 관계가 없어도 노트의 속성을 상속합니다. 비슷한 개념은 템플릿 관계와 문서의 속성 상속 설명을 참고합니다.",
     "render_note": "\"render HTML note\" 유형의 노트를 렌더링할 코드 노트(HTML 또는 스크립트)를 이 관계의 대상으로 지정합니다.",
     "widget_relation": "이 관계의 대상 노트를 사이드바 위젯으로 실행하고 렌더링합니다.",
@@ -731,7 +733,7 @@
     "order_by": "저장된 검색 결과를 정렬할 기준입니다. 예: <code>relevancy</code> 또는 라벨 이름.",
     "order_direction": "저장된 검색 결과의 정렬 방향을 지정합니다. <code>asc</code> 또는 <code>desc</code> 값을 사용할 수 있습니다.",
     "limit": "저장된 검색에서 반환할 최대 결과 수입니다.",
-    "fast_search": "노트 콘텐츠를 제외하고 제목과 속성만 검색합니다. 대규모 데이터베이스에서 훨씬 빠릅니다.",
+    "fast_search": "노트 내용을 제외하고 제목과 속성만 검색합니다. 대규모 데이터베이스에서 훨씬 빠릅니다.",
     "include_archived_notes": "저장된 검색 결과에 기본적으로 제외되는 보관된 노트를 포함합니다.",
     "debug": "저장된 검색 결과가 일치하는 이유를 확인할 수 있도록 쿼리 해석 과정을 기록합니다.",
     "launcher_type": "실행 메뉴를 눌렀을 때 수행할 동작입니다. <code>note</code>, <code>script</code>, <code>command</code>, <code>customWidget</code> 또는 <code>spacer</code> 중에서 지정합니다.",
@@ -786,7 +788,7 @@
     "internal_link": "이 노트에서 다른 노트로 연결되는 링크로, Trilium이 최신 상태로 유지하여 백링크와 노트 맵을 그릴 수 있게 합니다.",
     "image_link": "이 노트에 삽입된 이미지이며 Trilium이 최신 상태로 유지합니다.",
     "relation_map_link": "이 관계 맵에 배치된 노트이며 Trilium이 최신 상태로 유지합니다.",
-    "include_note_link": "이 노트의 콘텐츠에 포함된 노트이며 Trilium이 최신 상태로 유지합니다.",
+    "include_note_link": "이 노트의 내용에 포함된 노트이며 Trilium이 최신 상태로 유지합니다.",
     "date_template": "캘린더 루트에 설정합니다. 이 관계가 가리키는 노트는 해당 루트 아래에 생성되는 각 일간 노트에 <code>~template</code> 관계로 적용됩니다.",
     "week_template": "캘린더 루트에 설정합니다. 이 관계가 가리키는 노트는 해당 루트 아래에 생성되는 각 주간 노트에 <code>~template</code> 관계로 적용됩니다.",
     "month_template": "캘린더 루트에 설정합니다. 이 관계가 가리키는 노트는 해당 루트 아래에 생성되는 각 월간 노트에 <code>~template</code> 관계로 적용됩니다.",
@@ -801,7 +803,14 @@
     "share_open_graph_image_relation": "공유 페이지의 <code>og:image</code> 로 사용할 이미지 노트입니다. 이미지 주소를 지정하려면 같은 이름의 레이블을 대신 설정합니다.",
     "share_html": "해당 노트의 <code>#shareHtmlLocation</code> 설정에 따라 공유 페이지에 삽입할 HTML 노트입니다. 이 노트는 공유된 하위 트리 안에 있어야 합니다.",
     "map_dark_style": "<code>map:style</code> 에 지정된 사용자 지정 스타일이 어두운 스타일임을 지리 지도에 알려, 그 위에 표시되는 마커 제목을 밝게 그리도록 합니다. 컬렉션 속성에서 제공하는 스타일은 자체적으로 이를 나타내므로 이러한 레이블이 필요하지 않습니다.",
-    "map_cluster": "서로 가까이 표시되는 마커를 하나의 숫자 원으로 묶으며, 클릭하면 펼쳐집니다."
+    "map_cluster": "서로 가까이 표시되는 마커를 하나의 숫자 원으로 묶으며, 클릭하면 펼쳐집니다.",
+    "ai_quick_action": "이 노트를 텍스트 편집기의 AI 어시스턴트 메뉴에 지시문으로 제공합니다. 제목은 작업 이름이 되고, 내용은 프롬프트가 됩니다.",
+    "template_new_note_default_parent": "템플릿 노트에 설정합니다. 템플릿에서 생성된 노트(예: @ 자동 완성 사용)는 다른 위치를 명시적으로 선택하지 않는 한 대상 노트 아래에 배치됩니다.",
+    "custom_font": "Trilium 옵션의 글꼴 선택기에 표시할 글꼴 파일을 지정합니다. 노트 자체 제목 아래에 표시됩니다.",
+    "enable_inbox_column": "보드 컬렉션에서 받은 편지함 열을 표시합니다. 이 열에는 보드 열에 할당되지 않은 모든 하위 노트가 나열됩니다.",
+    "sort_columns": "보드 컬렉션에서 열이 카드를 정렬하는 순서를 지정합니다. 열에 별도의 정렬 순서가 지정되지 않은 경우 이 설정을 따릅니다. <code>title</code>, <code>creationDate</code> 또는 <code>attr:</code> 뒤에 승격된 속성의 이름을 사용할 수 있습니다.",
+    "sort_columns_descending": "보드 컬렉션에서는 <code>#sortColumns</code> 설정의 정렬 순서를 반대로 적용합니다.",
+    "board_card_redirect_to": "보드 카드에서 카드를 열면 카드 자체가 아니라 이 카드가 가리키는 노트로 이동합니다."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
@@ -1054,7 +1063,9 @@
       "times": "회",
       "custom_rule": "규칙",
       "custom_hint": "위 필드보다 더 세부적으로 설정할 수 있는 iCalendar 반복 규칙(RRULE)입니다. 비우면 반복이 중지됩니다."
-    }
+    },
+    "expand_details": "일정을 창에 맞게 확장",
+    "restore_details": "일정을 캘린더의 원래 위치로 되돌리기"
   },
   "close_pane_button": {
     "close_this_pane": "이 창 닫기"
@@ -1073,13 +1084,18 @@
   },
   "options": {
     "title": "옵션",
-    "back": "모든 옵션으로 돌아가기"
+    "back": "모든 옵션으로 돌아가기",
+    "search_placeholder": "검색 설정",
+    "search_clear": "검색 지우기",
+    "search_title": "옵션 검색",
+    "search_hint": "모든 설정 페이지에서 검색할 키워드를 입력하세요.",
+    "search_no_results": "찾으시는 설정과 일치하는 항목이 없습니다."
   },
   "global_menu": {
     "menu": "메뉴",
     "options": "옵션",
     "open_new_window": "새 창 열기",
-    "switch_to_mobile_version": "모바일 버전으로의 전환",
+    "switch_to_mobile_version": "모바일 버전으로 전환",
     "switch_to_desktop_version": "데스크톱 버전으로 전환",
     "zoom": "줌",
     "toggle_fullscreen": "전체 화면 토글",
@@ -1105,7 +1121,8 @@
     "toggle-zen-mode": "젠 모드",
     "new-version-available": "새로운 업데이트 제공 가능",
     "download-update": "버전 {{latestVersion}} 받기",
-    "search_notes": "노트 검색"
+    "search_notes": "노트 검색",
+    "show_space_usage": "공간 사용량 표시"
   },
   "zen_mode": {
     "button_exit": "젠 모드 종료"
@@ -1207,7 +1224,8 @@
     "create_child_note_title": "하위 노트를 만들어 맵에 추가",
     "reset_pan_zoom_title": "팬과 확대/축소를 초기 좌표와 배율로 재설정",
     "zoom_in_title": "확대",
-    "zoom_out_title": "축소"
+    "zoom_out_title": "축소",
+    "create_child_note_text": "노트 추가"
   },
   "image_buttons": {
     "zoom_in": "확대",
@@ -1254,7 +1272,7 @@
     "error_cannot_get_branch_id": "노트 경로 '{{notePath}}'의 branchId를 가져올 수 없습니다",
     "error_unrecognized_command": "인식되지 않은 명령 {{command}}",
     "backlinks": "백링크",
-    "content_language_switcher": "내용 언어: {{language}}"
+    "content_language_switcher": "콘텐츠 언어: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "노트 아이콘 변경",
@@ -1298,7 +1316,8 @@
     "hide_child_notes": "트리에서 하위 노트 숨기기",
     "open_all_in_tabs": "모두 열기",
     "open_all_in_tabs_tooltip": "새 탭에서 모든 결과를 열기",
-    "open_all_confirm_other": "노트 {{count}}개를 새 탭에서 엽니다. 계속하시겠습니까?"
+    "open_all_confirm_other": "노트 {{count}}개를 새 탭에서 엽니다. 계속하시겠습니까?",
+    "open_all_limit_exceeded": "한 번에 열 수 있는 노트가 너무 많습니다({{count}}). 최대 {{max}}개까지 열 수 있으므로 먼저 결과 범위를 좁혀보세요."
   },
   "edited_notes": {
     "no_edited_notes_found": "아직 이날 편집한 노트가 없습니다...",
@@ -1341,7 +1360,7 @@
     "type": "유형",
     "mime": "MIME 유형",
     "note_size": "노트 크기",
-    "note_size_info": "노트 크기는 이 노트에 필요한 저장 공간의 대략적인 추정치입니다. 노트 콘텐츠와 노트 수정본의 콘텐츠를 함께 계산합니다.",
+    "note_size_info": "노트 크기는 이 노트에 필요한 저장 공간의 대략적인 추정치입니다. 노트 내용과 노트 수정본의 내용을 함께 계산합니다.",
     "calculate": "계산",
     "subtree_size_other": "(하위 트리 크기: 노트 {{count}}개에 {{size}})",
     "title": "노트 정보",
@@ -1389,7 +1408,15 @@
     "remove_value": "이 값 제거",
     "select_values_placeholder": "옵션을 선택하거나 새로 만드세요",
     "values_placeholder": "값을 입력하고 Enter 키를 누르세요",
-    "add_value": "이 값 추가"
+    "add_value": "이 값 추가",
+    "create_attribute": "새 속성 생성",
+    "edit_attribute": "이 속성 편집",
+    "delete_attribute": "이 속성 삭제",
+    "shown_on_items": "항목에 표시",
+    "hidden_from_items": "항목에서 숨김",
+    "delete_confirmation": "이 컬렉션의 모든 노트에서 <strong>{{name}}</strong> 및 해당 값을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "label_name": "라벨: {{name}}",
+    "relation_name": "관계: {{name}}"
   },
   "script_executor": {
     "query": "쿼리",
@@ -1463,8 +1490,8 @@
     "date_created": "생성일",
     "date_modified": "마지막 수정일",
     "content_size": "노트 내용 크기",
-    "content_and_attachments_size": "첨부 파일을 포함한 콘텐츠 크기 노트",
-    "content_and_attachments_and_revisions_size": "첨부 파일 및 수정본 포함 콘텐츠 크기 노트",
+    "content_and_attachments_size": "첨부 파일을 포함한 노트 내용 크기",
+    "content_and_attachments_and_revisions_size": "첨부 파일 및 수정본을 포함한 노트 내용 크기",
     "revision_count": "수정본 수",
     "children_count": "하위 노트 수",
     "parent_count": "복제 개체 수",
@@ -1539,12 +1566,13 @@
   "editable_text": {
     "placeholder": "여기에 노트의 내용을 입력하세요...",
     "editor_crashed_title": "텍스트 편집기가 크래시 났습니다",
-    "editor_crashed_content": "콘텐츠는 성공적으로 복구되었지만, 최근 변경 사항 중 일부는 저장되지 않았을 수 있습니다.",
-    "editor_crashed_details_button": "자세한 내용을 보기...",
+    "editor_crashed_content": "내용은 성공적으로 복구되었지만, 최근 변경 사항 중 일부는 저장되지 않았을 수 있습니다.",
+    "editor_crashed_details_button": "자세히 보기...",
     "editor_crashed_details_intro": "이 오류가 여러 번 발생한다면, 아래 정보를 붙여넣어 GitHub에 신고하는 것을 고려해 보세요.",
     "editor_crashed_details_title": "기술 정보",
     "auto-detect-language": "자동 탐지",
-    "keeps-crashing": "편집 구성 요소가 계속 비정상 종료됩니다. Trilium을 다시 시작하세요. 문제가 계속되면 버그 보고서 작성을 고려하세요."
+    "keeps-crashing": "편집 구성 요소가 계속 비정상 종료됩니다. Trilium을 다시 시작하세요. 문제가 계속되면 버그 보고서 작성을 고려하세요.",
+    "nothing_selected_to_cut": "먼저 하위 노트로 분리할 텍스트를 선택하세요."
   },
   "empty": {
     "open_note_instruction": "아래 입력란에 노트 제목을 입력하거나 트리에서 노트를 선택하여 엽니다.",
@@ -1552,7 +1580,7 @@
     "enter_workspace": "여기서 작업 공간 {{title}}"
   },
   "blob_stub": {
-    "not_synced": "이 노트의 콘텐츠가 너무 커서 이 기기에 동기화할 수 없습니다. 대신 동기화 서버에서 열 수 있습니다.",
+    "not_synced": "이 노트의 내용이 너무 커서 이 기기에 동기화할 수 없습니다. 대신 동기화 서버에서 열 수 있습니다.",
     "open_on_server": "서버에서 열기"
   },
   "file": {
@@ -1580,8 +1608,6 @@
     "rotate": "회전",
     "picture-in-picture": "화면 속 화면",
     "exit-picture-in-picture": "출구 그림 속 영상",
-    "fullscreen": "전체 화면",
-    "exit-fullscreen": "전체 화면 종료",
     "unsupported-format": "이 파일 형식에서는 미디어 미리보기가 제공되지 않습니다:\n{{mime}}",
     "zoom-to-fit": "화면에 맞게 확대",
     "zoom-reset": "화면에 맞게 초기화",
@@ -1662,21 +1688,22 @@
     "title": "데이터베이스 익명화",
     "description": "개인 데이터를 노출하지 않고 문제를 디버깅할 때 개발자와 공유할 수 있도록 데이터베이스의 익명화된 사본을 만듭니다.",
     "full_anonymization": "완전 익명화",
-    "full_anonymization_description": "모든 노트 콘텐츠를 제거하고 구조와 민감하지 않은 메타데이터만 남긴 데이터베이스 사본을 만듭니다. 문제를 디버깅할 때 온라인으로 안전하게 공유할 수 있습니다.",
+    "full_anonymization_description": "모든 노트 내용을 제거하고 구조와 민감하지 않은 메타데이터만 남긴 데이터베이스 사본을 만듭니다. 문제를 디버깅할 때 온라인으로 안전하게 공유할 수 있습니다.",
     "save_fully_anonymized_database": "사본 만들기",
     "light_anonymization": "가벼운 익명화",
     "light_anonymization_description": "노트 내용은 제거된 복사본을 생성하지만, 제목, 속성, 커스텀 스크립트/위젯은 그대로 남습니다. 디버깅에 더 많은 맥락을 제공합니다.",
     "choose_anonymization": "완전 익명화 데이터베이스를 제공할지 약간 익명화할지 스스로 결정할 수 있습니다. 완전히 익명화된 데이터베이스도 매우 유용하지만, 경우에 따라 약간 익명화된 데이터베이스가 버그 식별과 수정 과정을 가속화할 수 있습니다.",
     "save_lightly_anonymized_database": "사본 만들기",
     "existing_anonymized_databases": "기존 익명화 데이터베이스",
-    "anonymized_databases_location": "익명화된 데이터베이스는 {{- anonymizedFolder}}에 저장됩니다.",
+    "anonymized_databases_location": "익명화된 데이터베이스 저장 경로 <Folder/>.",
     "download": "다운로드",
     "creating_fully_anonymized_database": "완전히 익명화된 데이터베이스를 만드는 중...",
     "creating_lightly_anonymized_database": "부분 익명화된 데이터베이스를 만드는 중...",
     "error_creating_anonymized_database": "익명 데이터베이스를 만들 수 없었고, 자세한 내용은 백엔드 로그를 확인해 보세요",
     "successfully_created_fully_anonymized_database": "{{anonymizedFilePath}}년에 완전히 익명화된 데이터베이스를 만들었습니다",
     "successfully_created_lightly_anonymized_database": "{{anonymizedFilePath}}년에 약간 익명화된 데이터베이스를 만들었습니다",
-    "no_anonymized_database_yet": "아직 익명화된 데이터베이스는 없습니다."
+    "no_anonymized_database_yet": "아직 익명화된 데이터베이스는 없습니다.",
+    "delete_confirmation": "익명화된 데이터베이스 {{fileName}}을(를) 삭제하시겠습니까? 원본 데이터베이스에는 영향을 주지 않습니다."
   },
   "database_integrity_check": {
     "title": "데이터베이스 무결성 검사",
@@ -1702,7 +1729,30 @@
     "failed": "동기화 실패: {{message}}"
   },
   "database": {
-    "title": "데이터베이스"
+    "title": "데이터베이스",
+    "start_over_description": "새 빈 데이터베이스로 전환하거나, 새 서버와 동기화를 다시 시작하거나, 백업을 복원합니다. 기존 데이터를 삭제하기 전에 데이터를 백업하라는 메시지가 표시됩니다.",
+    "start_over": "처음부터 다시 시작",
+    "start_over_confirm": "Trilium이 설정 화면으로 돌아갑니다. 여기에서 새 지식 베이스를 만들거나, 백업을 복원하거나, 다른 기기에서 동기화할 수 있습니다. 먼저 현재 데이터의 백업을 제공하며, 이 중 하나를 선택하기 전까지는 아무것도 삭제되지 않습니다. 계속하시겠습니까?",
+    "start_over_pending": "다음에 서버를 다시 시작하면 설정 화면이 표시됩니다. 준비가 되면 서버를 다시 시작하세요. 현재 상태를 그대로 유지하려면 아래에서 취소하세요.",
+    "start_over_cancel": "처음부터 다시 시작 취소",
+    "info": "데이터베이스 정보",
+    "info_location": "위치",
+    "info_location_opfs": "브라우저의 오리진 전용 파일 시스템(OPFS)",
+    "info_created": "최초 생성일",
+    "info_content": "콘텐츠",
+    "info_size": "크기",
+    "info_backup": "백업",
+    "info_no_backup": "아직 백업이 없습니다",
+    "maintenance": "유지 관리",
+    "analyze_space_usage": "공간 사용량 분석",
+    "analyze_space_usage_description": "어떤 노트가 가장 많은 공간을 차지하는지 확인하고, 노트의 용량을 더 명확하게 파악합니다.",
+    "analyze_space_usage_button": "분석",
+    "cleanup": "데이터베이스 정리",
+    "cleanup_description": "삭제된 노트와 첨부 파일을 지우고, 수정본 스냅샷을 정리하고 이미지를 압축하여 데이터베이스 용량을 줄입니다.",
+    "related_backup": "백업",
+    "related_backup_description": "데이터베이스 백업을 만들거나 복원하고, 자동 백업을 관리합니다.",
+    "info_notes_other": "{{count}} 노트",
+    "info_attachments_other": "첨부파일 {{count}}개"
   },
   "vacuum_database": {
     "title": "데이터베이스 압축",
@@ -1717,14 +1767,14 @@
     "title": "실험적 옵션",
     "disclaimer": "이러한 선택지는 실험적이며 불안정성을 초래할 수 있습니다. 조심해서 사용하세요.",
     "new_layout_name": "새 레이아웃",
-    "new_layout_description": "더 현대적인 외관과 향상된 사용성을 위해 새로운 레이아웃을 시도해 보세요. 향후 출시 시 큰 변화가 있을 수 있습니다.",
+    "new_layout_description": "더 현대적인 디자인과 향상된 사용성을 위해 새로운 레이아웃을 사용해 보세요. 향후 릴리스에서 크게 변경될 수 있습니다.",
     "llm_name": "AI / LLM 채팅",
     "llm_description": "AI 채팅 사이드바와 대형 언어 모델이 지원하는 LLM 채팅 노트를 활성화하세요."
   },
   "fonts": {
     "theme_defined": "테마 지정",
     "fonts": "글꼴",
-    "custom_fonts": "사용자 지정 글꼴 사용",
+    "custom_fonts": "다른 글꼴 사용",
     "main_font": "인터페이스 텍스트",
     "font_family": "글꼴 계열",
     "size": "크기",
@@ -1734,22 +1784,32 @@
     "monospace_font": "고정폭 텍스트",
     "monospace_font_description": "코드 노트 및 코드 블록에 사용됩니다",
     "size_relative_to_general": "크기는 일반적인 글꼴 크기에 상대적입니다",
-    "not_all_fonts_available": "모든 나열된 글꼴이 시스템에서 사용 가능할 수는 없습니다",
     "apply_changes": "변경 사항을 적용하려면 다시 불러오기",
     "generic-fonts": "일반 글꼴",
-    "sans-serif-system-fonts": "산세리프 시스템 폰트",
-    "serif-system-fonts": "세리프 시스템 글꼴",
-    "monospace-system-fonts": "고정폭 시스템 글꼴",
-    "handwriting-system-fonts": "필기 시스템 폰트",
+    "sans-serif-system-fonts": "산세리프 글꼴",
+    "serif-system-fonts": "세리프 글꼴",
+    "monospace-system-fonts": "고정폭 글꼴",
+    "handwriting-system-fonts": "손글씨 글꼴",
     "serif": "세리프",
     "sans-serif": "산세리프",
     "monospace": "고정폭",
     "system-default": "시스템 기본 설정",
     "monospace_ligatures": "프로그래밍 합자",
-    "monospace_ligatures_description": "고정폭 글꼴에서 지원하는 경우, !=와 -> 같은 문자 조합을 하나의 기호(≠, →)로 표시합니다. 텍스트 자체는 변경되지 않습니다."
+    "monospace_ligatures_description": "고정폭 글꼴에서 지원하는 경우, !=와 -> 같은 문자 조합을 하나의 기호(≠, →)로 표시합니다. 텍스트 자체는 변경되지 않습니다.",
+    "custom_fonts_description": "테마의 글꼴을 대체합니다. Trilium에 업로드한 글꼴은 해당 글꼴의 노트에서 추가할 수 있습니다.",
+    "user-fonts": "사용자 지정 글꼴",
+    "main_font_short": "인터페이스",
+    "note_tree_font_short": "노트 트리",
+    "note_detail_font_short": "문서",
+    "monospace_font_short": "고정폭",
+    "proportional-system-fonts": "비례폭 글꼴",
+    "search_placeholder": "글꼴 검색",
+    "no_fonts_found": "찾으시는 글꼴과 일치하는 항목이 없습니다.",
+    "document_preview_heading": "퍼플 하트 삽목",
+    "document_preview_body": "마디 아래에서 줄기 4개를 잘라 창가의 물에 꽂아 두었으며, 첫 뿌리가 나타난 것은 <strong>9일 후</strong>. <em>직사광선</em> 아래에서는 색을 유지하고 그늘에서는 녹색으로 옅어집니다."
   },
   "max_content_width": {
-    "title": "내용 폭",
+    "title": "콘텐츠 폭",
     "default_description": "Trilium은 넓은 화면에서 읽기 쉽도록 기본적으로 최대 콘텐츠 너비를 제한합니다.",
     "max_width_label": "최대 콘텐츠 폭",
     "max_width_unit": "픽셀",
@@ -1773,7 +1833,7 @@
     "triliumnext": "시스템 색상 체계를 따르세요",
     "triliumnext-light": "밝게",
     "triliumnext-dark": "어둡게",
-    "modern_themes": "현대",
+    "modern_themes": "모던",
     "legacy_themes": "레거시",
     "custom_themes": "사용자 지정",
     "recommended": "추천",
@@ -2030,7 +2090,14 @@
     "encryption_not_enabled": "백업 비밀번호는 저장되었지만 암호화를 켤 수 없습니다. 암호화를 켜기 전까지 백업은 암호화되지 않습니다.",
     "compressed": "압축됨",
     "encrypted": "암호화됨",
-    "backups_summary_other": "백업 {{count}}개, 가장 최근 백업은 {{age}} 전입니다."
+    "backups_summary_other": "백업 {{count}}개, 가장 최근 백업은 {{age}} 전",
+    "restore_backup": "백업 복원",
+    "standalone_heading": "Trilium 데이터 백업",
+    "standalone_description": "여기에서 Trilium 지식 베이스의 백업을 다운로드하거나 기존 백업을 복원할 수 있습니다.",
+    "create_and_download": "백업 다운로드",
+    "upload_and_restore": "백업 복원",
+    "restart_for_backup": "Trilium에서 노트를 백업하려면 다시 시작해야 합니다. 백업이 완료되는 즉시 노트로 돌아갈 수 있습니다.\n\n지금 다시 시작하시겠습니까?",
+    "restart_for_restore": "복원 절차를 시작하기 전에 Trilium을 다시 시작해야 합니다. 복원 절차가 시작되면 기존 데이터를 덮어쓰기 전에 백업할지 묻는 메시지가 표시되므로 데이터가 손실되지 않습니다.\n\n지금 다시 시작하시겠습니까?"
   },
   "etapi": {
     "description": "ETAPI는 UI 없이 Trilium 인스턴스에 프로그래밍적으로 접근할 수 있는 REST API입니다.",
@@ -2236,14 +2303,14 @@
     "title": "맞춤법 검사",
     "description": "이 옵션들은 데스크톱 빌드에만 적용되며, 브라우저는 자체 맞춤법 검사를 사용합니다.",
     "enable": "맞춤법 확인",
-    "disabled_placeholder": "맞춤법 검사는 꺼져 있습니다. 언어 선택과 맞춤 사전을 관리할 수 있도록 활성화하세요.",
     "language_code_label": "맞춤법 검사 언어",
     "custom_dictionary_title": "맞춤 사전",
     "custom_dictionary_description": "사전에 추가된 단어는 모든 기기에서 동기화됩니다.",
     "custom_dictionary_edit": "맞춤 단어",
     "custom_dictionary_edit_description": "맞춤법 검사기에서 표시되어서는 안 되는 단어 목록을 편집하세요. 변경 사항은 재시작 후에 확인할 수 있습니다.",
     "custom_dictionary_open": "사전 편집",
-    "related_description": "맞춤법 검사 언어와 맞춤 사전을 설정하세요."
+    "related_description": "맞춤법 검사 언어와 맞춤 사전을 설정하세요.",
+    "enable_description": "입력하는 동안 맞춤법이 틀린 단어에 밑줄을 표시하고, 마우스 오른쪽 버튼 메뉴에서 수정 제안을 제공합니다."
   },
   "sync_2": {
     "config_title": "동기화 서버",
@@ -2294,8 +2361,8 @@
     "open-in-a-new-window": "새 창에서 열기",
     "insert-note-after": "뒤에 노트 삽입",
     "insert-child-note": "하위 노트 삽입",
-    "archive": "아카이브",
-    "unarchive": "언아카이브",
+    "archive": "보관",
+    "unarchive": "보관 해제",
     "delete": "삭제",
     "search-in-subtree": "하위 트리에서 검색",
     "hoist-note": "이 노트를 루트로 보기",
@@ -2362,7 +2429,9 @@
     "task-list": "작업 목록",
     "new-feature": "신규",
     "collections": "컬렉션",
-    "spreadsheet": "스프레드시트"
+    "spreadsheet": "스프레드시트",
+    "note-types": "노트 유형",
+    "built-in-templates": "기본 제공 템플릿"
   },
   "protect_note": {
     "toggle-on": "노트 보호",
@@ -2534,9 +2603,9 @@
     "window-on-top": "창을 항상 위에 표시"
   },
   "note_detail": {
-    "content_load_error": "노트 콘텐츠를 불러올 수 없습니다.",
+    "content_load_error": "노트 내용을 불러올 수 없습니다.",
     "content_load_retry": "다시 시도",
-    "content_load_stalled": "아직 노트 콘텐츠를 불러오는 중…",
+    "content_load_stalled": "아직 노트 내용을 불러오는 중…",
     "could_not_find_typewidget": "'{{type}}' 유형의 typeWidget을 찾을 수 없습니다",
     "printing": "인쇄 중...",
     "printing_pdf": "인쇄 미리보기 준비 중...",
@@ -2561,7 +2630,10 @@
   "search_result": {
     "no_notes_found": "주어진 검색 매개변수에 대한 노트는 발견되지 않았습니다.",
     "search_not_executed": "아직 수색은 실행되지 않았습니다.",
-    "search_now": "지금 검색"
+    "search_now": "지금 검색",
+    "result_count_other": "{{count}}개 결과",
+    "page_size": "페이지당",
+    "snippet_unavailable": "미리보기를 사용할 수 없습니다."
   },
   "sql_result": {
     "not_executed": "쿼리는 아직 실행되지 않았습니다.",
@@ -2615,7 +2687,8 @@
     "cut": "노트를 클립보드로 잘라냈습니다.",
     "copied": "노트는 클립보드에 복사되었습니다.",
     "copy_failed": "권한 문제로 인해 클립보드에 복사할 수 없습니다.",
-    "copy_success": "클립보드에 복사했습니다."
+    "copy_success": "클립보드에 복사했습니다.",
+    "copied_without_links": "노트가 클립보드에 복사되었지만, 노트 링크를 시스템 클립보드에 넣을 수 없습니다."
   },
   "entrypoints": {
     "note-revision-created": "노트 수정이 생성되었습니다.",
@@ -2641,11 +2714,12 @@
     "backend_scripting_disabled_more_info": "추가 정보"
   },
   "ws": {
-    "sync-check-failed": "동기화 검사 실패!",
     "consistency-checks-failed": "일관성 검사 실패! 자세한 내용은 로그를 참조하세요.",
     "encountered-error": "\"{{message}}\" 오류가 발생했는데, 콘솔을 확인해 보세요.",
     "lost-websocket-connection-title": "서버 연결이 끊겼습니다",
-    "lost-websocket-connection-message": "역프록시(예: nginx나 Apache) 설정도 확인해서 WebSocket 연결이 제대로 허용되고 차단되지 않았는지 확인하세요."
+    "lost-websocket-connection-message": "역프록시(예: nginx나 Apache) 설정도 확인해서 WebSocket 연결이 제대로 허용되고 차단되지 않았는지 확인하세요.",
+    "sync-hash-check-failed-title": "동기화 중지됨",
+    "sync-hash-check-failed": "이 데이터베이스와 동기화 서버에 다시 동기화해도 일치시킬 수 없는 데이터가 있습니다({{- sectors}}).\n\n이 문제가 해결될 때까지 동기화는 계속 실패합니다. 자세한 내용은 로그를 확인하세요."
   },
   "hoisted_note": {
     "confirm_unhoisting": "\"{{requestedNote}}\" 노트는 현재 루트로 보는 \"{{hoistedNote}}\" 노트의 하위 트리 밖에 있습니다. 접근하려면 루트 보기를 해제해야 합니다. 계속하시겠습니까?"
@@ -2730,24 +2804,29 @@
     "open_note_in_new_split": "새 분할 창에서 노트 열기",
     "open_note_in_other_split": "다른 분할 창에서 노트 열기",
     "open_note_in_new_window": "새 창에서 노트 열기",
-    "open_note_in_popup": "빠른 편집"
+    "open_note_in_popup": "빠른 편집",
+    "open_note": "노트 열기"
   },
   "electron_integration": {
     "desktop-application": "데스크톱 애플리케이션",
     "native-title-bar": "기본 제목 표시줄",
     "native-title-bar-description": "Windows와 macOS에서는 기본 제목 표시줄을 끄면 애플리케이션이 더 간결해 보입니다. Linux에서는 기본 제목 표시줄을 켜야 시스템의 나머지 부분과 더 자연스럽게 통합됩니다.",
     "background-effects": "배경 효과 활성화",
-    "background-effects-description": "앱 창의 배경을 흐리게 처리하여 깊이감 있고 현대적인 모양을 만듭니다. ‘기본 제목 표시줄’을 꺼야 합니다.",
+    "background-effects-description": "앱 창에 흐릿하고 세련된 배경 효과를 추가하여 깊이감과 현대적인 느낌을 줍니다. \"기본 제목 표시줄\"은 비활성화되어 있어야 합니다.",
     "restart-app-button": "변경 사항을 확인하려면 애플리케이션을 재시작하세요",
     "zoom-factor": "줌 팩터"
   },
   "note_autocomplete": {
     "search-for": "\"{{term}}\" 검색",
-    "create-note": "하위 노트 \"{{term}}\" 생성 및 링크",
+    "create-note": "노트 \"{{term}}\" 생성",
     "insert-external-link": "\"{{term}}\" 외부 링크 삽입",
     "clear-text-field": "입력 내용 지우기",
     "show-recent-notes": "최근 노트 표시",
-    "full-text-search": "전체 텍스트 검색"
+    "full-text-search": "전체 텍스트 검색",
+    "create-note-into": "{{parentTitle}}에 노트 \"{{term}}\" 생성",
+    "create-note-into-day-note": "오늘의 데일리 노트에 \"{{term}}\" 노트 생성",
+    "create-note-into-root": "최상위에 \"{{term}}\" 노트 생성",
+    "create-child-note": "자식 노트 \"{{term}}\" 생성"
   },
   "note_tooltip": {
     "note-has-been-deleted": "노트는 삭제되었습니다.",
@@ -2763,8 +2842,6 @@
     "webgl-unavailable": "WebGL을 사용할 수 없어 이 지도를 표시할 수 없습니다. 하드웨어 가속이 활성화되어 있고 그래픽 드라이버가 최신 상태인지 확인하세요.",
     "zoom-in": "확대",
     "zoom-out": "축소",
-    "fullscreen": "전체 화면",
-    "exit-fullscreen": "전체 화면 종료",
     "create-child-note-cancel": "노트 추가 취소",
     "add-marker": "마커 추가",
     "add-marker-cancel": "취소",
@@ -2773,7 +2850,31 @@
     "exit-3d": "지도를 다시 평면으로 보기",
     "close-details": "닫기",
     "marker-color": "마커 색상",
-    "copy-coordinates": "좌표 복사"
+    "copy-coordinates": "좌표 복사",
+    "expand-details": "노트를 맵에 맞게 확장",
+    "restore-details": "노트를 맵 옆으로 되돌리기",
+    "search": "검색",
+    "search-placeholder": "장소 검색",
+    "search-online": "온라인에서 \"{{- query}}\" 검색",
+    "searching-online": "온라인 검색 중…",
+    "no-places-found": "장소를 찾을 수 없습니다",
+    "search-failed": "장소를 검색할 수 없습니다",
+    "results-nearby": "주변 지역",
+    "results-far": "멀리 떨어진 지역",
+    "add-place-as-marker": "마커로 추가",
+    "previous-result": "이전 결과",
+    "next-result": "다음 결과",
+    "result-position": "총 {{total}}개 중 {{index}}번째 결과, 클릭하여 해당 결과로 돌아가기",
+    "results-on-map": "이 지도에서",
+    "go-to-coordinates": "{{- coordinates}}(으)로 이동",
+    "locate": "현재 위치 표시",
+    "locate-waiting": "현재 위치 찾는 중…",
+    "locate-following": "현재 위치 추적 중지",
+    "locate-return": "현재 위치로 돌아가기",
+    "locate-error": "현재 위치를 찾을 수 없습니다. 찾기를 중지하려면 다시 누르세요.",
+    "locate-unavailable": "현재 위치를 사용할 수 없습니다",
+    "location-denied": "위치 접근이 거부되었습니다. 지도에 현재 위치를 표시하려면 브라우저 또는 시스템 설정에서 Trilium의 위치 접근을 허용하세요.",
+    "location-unavailable": "현재 위치를 확인할 수 없습니다."
   },
   "geo-map-context": {
     "open-location": "위치 열기",
@@ -2883,9 +2984,7 @@
     "sort_by_title": "제목",
     "sort_by_date_created": "생성일",
     "no_items": "활성 콘텐츠는 발견되지 않았습니다.",
-    "no_items_hint": "스크립트, 테마, 템플릿, 스니펫이 여기에 나열됩니다.",
-    "section_active_content": "활성 콘텐츠 및 템플릿",
-    "section_space_usage": "공간 사용량"
+    "no_items_hint": "스크립트, 테마, 템플릿, 스니펫이 여기에 나열됩니다."
   },
   "space_usage": {
     "loading": "공간 사용량 측정...",
@@ -2987,7 +3086,13 @@
     "compress_result_none": "압축할 이미지가 없습니다.",
     "compress_result_stopped": "이미지 {{total}}개 중 {{done}}개를 처리한 후 중지했으며, 크기를 {{before}}에서 {{after}}로 줄였습니다.",
     "compress_result_stopped_no_gain": "이미지 {{total}}개 중 {{done}}개를 처리한 후 중지했으며, 어느 이미지도 크기를 더 줄일 수 없었습니다.",
-    "compress_result_stopped_none": "이미지를 처리하기 전에 중지했습니다."
+    "compress_result_stopped_none": "이미지를 처리하기 전에 중지했습니다.",
+    "status_notes": "노트",
+    "status_total": "합계",
+    "status_attachments": "첨부 파일",
+    "status_deleted_items": "삭제된 항목",
+    "selection_hint": "항목을 탭하여 세부 정보 보기",
+    "show_selection_details": "선택 항목 세부 정보 표시"
   },
   "note_language": {
     "not_set": "설정된 언어 없음",
@@ -3017,7 +3122,10 @@
   },
   "svg": {
     "export_to_png": "이 다이어그램은 PNG로 내보낼 수 없었습니다.",
-    "export_to_svg": "다이어그램을 SVG로 내보낼 수 없습니다."
+    "export_to_svg": "다이어그램을 SVG로 내보낼 수 없습니다.",
+    "zoom_in": "확대",
+    "zoom_out": "축소",
+    "reset_zoom": "확대/축소 초기화"
   },
   "code_theme": {
     "title": "외형",
@@ -3046,10 +3154,12 @@
     "note_completion_description": "노트 링크는 '@'를 입력한 뒤에 노트 제목을 입력하면 생성할 수 있습니다.",
     "slash_commands_enabled": "슬래시 명령",
     "slash_commands_description": "줄 바꿈이나 제목 삽입과 같은 편집 명령은 '/'를 입력하면 토글할 수 있습니다.",
-    "content_hints_enabled": "내용 힌트",
+    "content_hints_enabled": "콘텐츠 힌트",
     "content_hints_description": "에디터 하단 모서리에 캐릿이나 포인터 아래 요소와 어떻게 상호작용하는지 설명하는 짧은 힌트를 표시하세요.",
     "auto_link_previews_enabled": "자동 생성 링크 미리보기",
-    "auto_link_previews_description": "감지한 링크를 웹페이지의 제목, 설명 및 이미지를 보여 주는 미리보기로 자동 변환합니다. 도구 모음에서 직접 삽입한 미리보기에는 이 설정이 적용되지 않습니다."
+    "auto_link_previews_description": "감지한 링크를 웹페이지의 제목, 설명 및 이미지를 보여 주는 미리보기로 자동 변환합니다. 도구 모음에서 직접 삽입한 미리보기에는 이 설정이 적용되지 않습니다.",
+    "html_support_enabled": "지원되지 않는 HTML 태그 유지",
+    "html_support_description": "편집기 자체에서 지원하지 않는 HTML 태그를 유지합니다. 해당 태그 목록은 옵션 → 기타 → HTML 가져오기 태그에서 확인할 수 있습니다. 이러한 태그는 직접 편집할 수 없는 블록으로 표시되며, 인식되지 않는 태그는 편집 중에 전혀 보이지 않을 수도 있습니다. 이 옵션을 끄면 해당 태그는 노트를 처음 편집하고 저장할 때 제거되며, 가져오기에는 이 설정의 영향을 받지 않습니다."
   },
   "table_view": {
     "new-row": "새 행",
@@ -3081,7 +3191,11 @@
     "vector_dark": "벡터(어둡게)",
     "show-scale": "축척 표시",
     "show-labels": "마커 이름 표시",
-    "cluster-markers": "가까운 마커 그룹화"
+    "cluster-markers": "가까운 마커 그룹화",
+    "presentation-theme": "테마",
+    "board-inbox-column": "받은 편지함 열 표시",
+    "board-inbox-column-help": "열에 할당되지 않은 하위 노트를 나열하는 받은 편지함 열을 표시합니다.",
+    "vector_auto": "벡터(자동)"
   },
   "table_context_menu": {
     "delete_row": "행 삭제"
@@ -3089,22 +3203,118 @@
   "board_view": {
     "delete-note": "노트 삭제...",
     "remove-from-board": "보드에서 제거",
-    "archive-note": "아카이브 노트",
-    "unarchive-note": "언아카이브 노트",
-    "move-to": "이동",
-    "insert-above": "위에 삽입",
-    "insert-below": "아래에 삽입",
-    "delete-column": "열 삭제",
+    "archive-note": "노트 보관",
+    "unarchive-note": "노트 보관 해제",
+    "insert-above": "위에 새 항목 삽입",
+    "insert-below": "아래에 새 항목 삽입",
+    "delete-column": "열 삭제...",
     "delete-column-confirmation": "이 열을 삭제하시겠습니까? 이 열 아래의 노트에서도 해당 속성이 삭제됩니다.",
     "new-item": "새 항목",
     "new-item-placeholder": "노트 제목을 입력하세요...",
     "add-column": "열 추가",
     "add-column-placeholder": "열 이름을 입력하세요...",
     "edit-note-title": "노트 제목 편집 클릭",
-    "edit-column-title": "칼럼 제목 편집 클릭",
     "column-already-exists": "이 칼럼은 이미 게시판에 존재합니다.",
     "column-definition-save-error": "열은 보드에 저장했지만 상태 속성에는 저장하지 못했습니다.",
-    "status-alias": "상태"
+    "status-alias": "상태",
+    "archive-column": "열 보관",
+    "unarchive-column": "열 보관 해제",
+    "archived-badge": "보관됨",
+    "add-new-item": "새 노트 추가",
+    "add-existing-item": "기존 노트 추가...",
+    "add-existing-item-title": "기존 노트를 보드에 추가",
+    "add-existing-item-ok": "열에 추가",
+    "add-new-column": "새 열 추가",
+    "add-column-before": "앞에",
+    "add-column-after": "뒤에",
+    "new-column": "새 열",
+    "existing-item-conflict": "이 노트는 이미 “{{label}}” 기준으로 그룹화된 다른 보드에 속해 있습니다. 여기에 추가하면 원래 보드에서도 다른 열로 이동합니다. 그래도 추가하시겠습니까?",
+    "rename-column": "열 이름 변경",
+    "change-column-icon": "열 아이콘 변경",
+    "column-menu": "열 메뉴",
+    "save-error": "변경 사항을 저장할 수 없습니다.",
+    "status-header": "상태",
+    "duplicate-item": "복제",
+    "move-column": "열 이동",
+    "move-column-first": "첫 번째 열로",
+    "move-column-after": "{{column}} 뒤로",
+    "hints": {
+      "navigation": "탐색",
+      "navigate_items": "항목 간 이동",
+      "navigate_columns": "열 간 이동",
+      "first_last_item": "열의 첫 번째 / 마지막 항목",
+      "editing": "편집",
+      "insert_item": "아래 / 위에 항목 삽입",
+      "insert_column": "뒤 / 앞에 열 삽입",
+      "open_item": "항목 열기",
+      "rename": "항목 또는 열 이름 변경",
+      "remove_item": "보드에서 항목 제거",
+      "delete_item": "노트 삭제",
+      "remove_column": "열 제거(선택한 열 머리글에서)",
+      "moving": "이동",
+      "move_item": "항목을 위 / 아래로 이동",
+      "move_within": "열의 맨 위 / 맨 아래로 이동",
+      "move_across": "이전 / 다음 열로 이동",
+      "move_to_end_column": "첫 번째 / 마지막 열로 이동",
+      "move_column": "열을 왼쪽 / 오른쪽으로 이동",
+      "move_column_to_edge": "열을 맨 왼쪽 / 맨 오른쪽으로 이동",
+      "selection": "선택",
+      "select_column": "열의 모든 항목 선택",
+      "clear_selection": "선택 해제"
+    },
+    "inbox": "받은 편지함",
+    "inherited-column": "이 카드는 템플릿 또는 상위 노트에서 열을 상속받으며, 해당 위치에서 변경할 수 있습니다.",
+    "inbox-nested": "중첩된 노트 포함",
+    "inbox-remove": "받은 편지함 열 제거",
+    "card-count-over-limit": "이 열에 설정된 노트 수 제한을 초과했습니다!",
+    "set-limit": "제한 설정...",
+    "set-limit-ok": "제한 설정",
+    "limit-capacity": "열 용량 초과 시 경고",
+    "limit-count": "열의 최대 노트 수",
+    "card-count_other": "{{count}}개 항목",
+    "card-count-with-archived_other": "활성 항목 {{count}}개, 보관된 항목 {{archived}}개",
+    "collapse-column": "열 접기",
+    "edit-title": "제목 및 아이콘 편집",
+    "move-to-top": "맨 위로 이동",
+    "create-new-note": "노트 생성",
+    "create-new-column": "열 생성",
+    "create-hold-hint": "오른쪽 클릭하거나 길게 눌러 더 많은 옵션을 확인하세요.",
+    "create-at-top": "맨 위에 생성",
+    "create-at-bottom": "맨 아래에 생성",
+    "create-column-at-start": "맨 앞에 열 생성",
+    "create-column-at-end": "맨 끝에 열 생성",
+    "keep-column-collapsed": "열을 접은 상태로 유지",
+    "collapse-hint": "두 번 클릭하여 접기",
+    "more-columns": "더 많은 상태…",
+    "collapse-all-columns": "모든 열 접기",
+    "expand-all-columns": "모든 열 펼치기",
+    "show-inbox-column": "받은 편지함 열 표시",
+    "show-archived-notes": "보관된 카드/열 표시",
+    "more-templates": "더 많은 템플릿…",
+    "card-template": "카드 템플릿 선택",
+    "change-note-icon": "아이콘 변경",
+    "general": "일반",
+    "show-archived": "보관된 카드 및 열 표시",
+    "properties": "보드 속성",
+    "properties-title": "보드 속성",
+    "card-templates": "카드 템플릿",
+    "card-templates-hint": "새 보드 카드를 만들 때 사용할 노트 유형과 노트 템플릿을 선택하세요.",
+    "promoted-attributes": "카드 속성",
+    "promoted-attributes-hint": "카드에 표시할 속성을 선택하고, 표시될 순서대로 드래그하여 정렬하세요.",
+    "new-template-name": "새 카드 템플릿",
+    "filter-placeholder": "보드 필터링...",
+    "card-outside-filter": "이 카드는 현재 필터링 범위를 벗어났습니다",
+    "insert-new": "새 항목 삽입",
+    "group-by": "카드 그룹화 기준",
+    "grouping-already-defined": "\"{{- name}}\" 항목은 이 보드에 이미 정의되어 있습니다. 이 항목으로 그룹화하려면 목록에서 선택하세요.",
+    "sort": "정렬",
+    "sort-manually": "수동",
+    "sort-board-default": "보드 기본값",
+    "sorted-no-reorder": "정렬된 열에서는 카드 순서를 변경할 수 없습니다.",
+    "default-card-order": "기본 카드 정렬 순서",
+    "default-card-order-description": "특정 열에 별도의 정렬 옵션을 지정하지 않은 경우, 각 열에서 카드가 정렬되는 방식입니다.",
+    "reset-column-sorting": "모든 열의 정렬 옵션을 기본값으로 재설정",
+    "reset-column-sorting-confirm": "현재 보기의 모든 열에 대한 정렬 옵션을 기본값으로 재설정하시겠습니까?"
   },
   "dashboard_view": {
     "refresh-widget": "새로 고침",
@@ -3199,9 +3409,7 @@
   },
   "settings": {
     "related_settings": "관련 설정",
-    "related_actions": "관련 작업",
-    "related_space_usage": "데이터베이스의 공간 사용량 분석",
-    "related_space_usage_description": "어떤 노트, 수정본, 첨부 파일이 공간을 가장 많이 차지하는지 확인하고 정리하세요."
+    "related_actions": "관련 작업"
   },
   "settings_appearance": {
     "related_code_blocks": "텍스트 노트 내 코드 블록의 색상 체계",
@@ -3235,7 +3443,8 @@
   "server": {
     "unknown_http_error_title": "서버와의 통신 오류",
     "unknown_http_error_content": "상태 코드: {{statusCode}}\nURL: {{method}} {{url}}\n메시지: {{message}}",
-    "traefik_blocks_requests": "Traefik 리버스 프록시를 사용 중이라면, 서버와의 통신에 영향을 주는 결정적인 변경이 발생했습니다."
+    "reverse_proxy_blocked_title": "리버스 프록시에 의해 차단된 요청",
+    "reverse_proxy_blocked_message": "일부 요청이 Trilium에 도달하기 전에 거부되었습니다(HTTP 400). URL의 퍼센트 인코딩된 문자를 차단하는 리버스 프록시가 원인일 가능성이 높습니다.\n\nTraefik 3.6.4~3.6.6 버전에서는 기본적으로 이러한 동작이 발생합니다. Traefik 3.6.7 이상으로 업그레이드하거나 설정에서 인코딩된 문자를 허용하세요."
   },
   "tab_history_navigation_buttons": {
     "go-back": "이전 노트로 돌아가기",
@@ -3275,7 +3484,9 @@
     "save_status_error": "저장 실패",
     "save_status_saving_tooltip": "변화가 지켜지고 있습니다.",
     "save_status_unsaved_tooltip": "저장하지 않은 변경 사항이 있습니다. 잠시 후 자동으로 저장됩니다.",
-    "save_status_error_tooltip": "노트를 저장하는 과정에서 오류가 발생했습니다. 가능하다면 노트 내용을 다른 곳에 복사해서 애플리케이션을 다시 불러오세요."
+    "save_status_error_tooltip": "노트를 저장하는 과정에서 오류가 발생했습니다. 가능하다면 노트 내용을 다른 곳에 복사해서 애플리케이션을 다시 불러오세요.",
+    "office_preview": "미리보기",
+    "office_preview_description": "이 문서는 읽기 전용 미리보기로 표시되므로 여기에서 편집할 수 없습니다.\n\n변경하려면 파일을 다운로드하여 외부 애플리케이션에서 편집한 후 새 수정본으로 다시 업로드하세요."
   },
   "status_bar": {
     "language_title": "콘텐츠 언어 변경",
@@ -3303,7 +3514,8 @@
     "tab_width_style_tabs": "탭"
   },
   "attributes_panel": {
-    "title": "노트 속성"
+    "title": "노트 속성",
+    "edit_in_sidebar": "사이드바에서 편집"
   },
   "right_pane": {
     "empty_message": "이 노트에 표시할 내용이 없습니다",
@@ -3318,7 +3530,7 @@
     "tab_attributes": "속성",
     "tab_chat": "AI 채팅",
     "tab_widgets": "위젯",
-    "backlinks": "이 노트를 참조하는 노트",
+    "backlinks": "백링크",
     "tab_connections": "연결 관계"
   },
   "print_preview": {
@@ -3358,7 +3570,11 @@
     "pages_other": "페이지 {{count}}개",
     "pages_alt": "페이지 {{pageNumber}}",
     "pages_loading": "로딩 중...",
-    "annotations_other": "주석 {{count}}개"
+    "annotations_other": "주석 {{count}}개",
+    "annotation_drawing": "{{pageNumber}}페이지에 그리기",
+    "annotation_highlight": "{{pageNumber}}페이지에 강조 표시",
+    "annotation_note": "{{pageNumber}}페이지에 노트",
+    "annotation_text_box": "{{pageNumber}}페이지에 텍스트 상자"
   },
   "platform_indicator": {
     "available_on": "{{platform}}에서 이용 가능"
@@ -3437,120 +3653,6 @@
     "sample_swimlane": "스윔레인",
     "sample_railroad": "철도"
   },
-  "login": {
-    "heading": "Trilium 노트에 로그인하기",
-    "password": "비밀번호",
-    "totp-token": "일회성 비밀번호 또는 복구 코드",
-    "button": "로그인",
-    "remember-me": "로그인 상태 유지",
-    "incorrect-password": "비밀번호가 올바르지 않습니다. 다시 시도해 주세요.",
-    "incorrect-totp": "일회용 비밀번호가 올바르지 않습니다. 다시 시도해 주세요.",
-    "incorrect-recovery-code": "복구 코드가 잘못되었거나 이미 사용된 경우입니다.",
-    "too-many-attempts": "로그인 시도가 너무 많습니다. 몇 분 후 다시 시도하세요.",
-    "connection-error": "서버에 연결하지 못했습니다. 연결 상태를 확인하고 다시 시도하세요.",
-    "sign_in_with_sso": "{{ssoIssuerName}} 로 로그인",
-    "sso-wrong-account": "이 Trilium 인스턴스에 연결된 계정이 아닙니다. 연결된 계정으로 로그인하세요.",
-    "sso-not-enrolled": "통합 로그인이 아직 설정되지 않았습니다. 먼저 비밀번호로 로그인한 다음 설정에서 계정을 연결하세요.",
-    "sso-connection-failed": "인증 제공자와 연결할 수 없었습니다. 다시 시도하거나 서버 로그를 확인해 보세요."
-  },
-  "set_password": {
-    "heading": "비밀번호 설정",
-    "description": "웹에서 Trilium을 사용하려면 먼저 비밀번호를 설정해야 합니다. 이후 이 비밀번호로 로그인합니다.",
-    "password": "비밀번호",
-    "password-confirmation": "비밀번호 확인",
-    "button": "비밀번호 설정",
-    "password-too-short": "비밀번호는 최소 {{length}}자 이상이어야 합니다.",
-    "passwords-dont-match": "입력된 비밀번호가 일치하지 않습니다."
-  },
-  "setup": {
-    "heading": "Trilium 시작하기",
-    "new-document": "새 지식 베이스",
-    "new-document-description": "빈 지식 베이스에서 바로 시작합니다.",
-    "sync-from-desktop": "데스크톱 앱 연결",
-    "sync-from-desktop-description": "다른 기기에서는 Trilium 데스크톱 앱만 실행 중입니다. 이 기기는 해당 데스크톱 앱에서 데이터를 동기화합니다.",
-    "sync-from-server": "기존 서버에 연결",
-    "sync-from-server-description": "다른 곳(셀프 호스팅 또는 클라우드)에서 Trilium 서버가 실행 중입니다. 이 장치는 그 서버에서 데이터를 동기화합니다.",
-    "next": "다음",
-    "init-in-progress": "문서 초기화 진행 중",
-    "redirecting": "잠시 후 애플리케이션으로 이동합니다.",
-    "title": "설정",
-    "sync-from-server-page-description": "아래에 서버 정보를 입력해 기존 작업 공간을 연결하세요.",
-    "sync-in-progress-title": "동기화 진행 중",
-    "sync-in-progress-description": "기기가 연결되었으며 항목을 동기화하는 중입니다.",
-    "sync-in-progress-banner": "노트 크기에 따라 시간이 좀 걸릴 수 있습니다. 동기화가 완료될 때까지 다른 애플리케이션으로 전환하지 마세요.",
-    "button-back": "뒤로",
-    "button-finish-setup": "설정 완료",
-    "sync-step-connecting": "서버 연결",
-    "sync-step-syncing": "데이터 동기화",
-    "sync-step-finalizing": "옵션 설정",
-    "create-new-document-options-title": "어떻게 시작할래?",
-    "create-new-document-options-with-demo": "데모 콘텐츠 포함",
-    "create-new-document-options-with-demo-description": "예시 콘텐츠와 함께 Trilium을 탐색해 보세요.",
-    "create-new-document-options-empty": "비어 있음",
-    "create-new-document-options-empty-description": "백지 지식 베이스에서 시작하세요. 데모 노트는 나중에 가져올 수 있습니다.",
-    "create-new-document-title": "지식 기반 준비",
-    "create-new-document-description": "금방 끝날 거야.",
-    "sync-illustration-this-device": "이 장치",
-    "sync-illustration-desktop-app": "데스크톱 앱",
-    "sync-illustration-server": "내 서버",
-    "sync-from-desktop-step1": "데스크톱 인스턴스인 Trilium Notes를 열어보세요.",
-    "sync-from-desktop-step2": "Trilium 메뉴에서 옵션을 클릭하세요.",
-    "sync-from-desktop-step3": "노트 트리에서 동기화 카테고리를 클릭하세요.",
-    "sync-from-desktop-step4": "서버 인스턴스 주소를 오른쪽 주소 중 하나로 변경한 후 저장을 클릭하세요.",
-    "sync-from-desktop-step5": "\"테스트 동기화\" 버튼을 클릭하여 연결 성공 여부를 확인하세요.",
-    "sync-from-desktop-warning": "두 기기가 같은 네트워크에 연결되어 있는지 확인하세요.",
-    "sync-from-desktop-waiting": "연결을 기다리며...",
-    "sync-from-desktop-unreachable-title": "이 장치는 다른 기기에서 접근할 수 없습니다",
-    "sync-from-desktop-unreachable-description": "동기화하려면 다른 데스크톱이 네트워크를 통해 이 데스크톱에 연결해야 합니다. 보안을 위해 이 데스크톱 앱은 현재 이 컴퓨터에서 들어오는 연결만 허용하므로 다른 데스크톱에서 접근할 수 없습니다. 아래에서 네트워크 접근을 허용하면 Trilium이 다시 시작되어 설정을 적용합니다.",
-    "sync-from-desktop-allow-access": "네트워크 접근 허용 및 재시작",
-    "advanced-options": "고급 옵션",
-    "sync-failed": "동기화 실패: {{- message}}",
-    "sync-failed-title": "동기화 실패",
-    "sync-failed-description": "초기 동기화는 완료되지 못했습니다. 다시 시도하거나 서버 주소와 자격 증명을 다시 확인할 수 있습니다.",
-    "sync-failed-admonition-title": "마지막 동기화 시도는 실패했습니다",
-    "sync-failed-hint": "서버 주소가 잘못되었거나 프록시가 연결을 방해하거나 서버에 일시적으로 접근할 수 없을 때 발생할 수 있습니다.",
-    "button-retry": "다시 시도",
-    "server-host": "Trilium 서버 주소",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "server-password": "비밀번호",
-    "proxy-server": "프록시 서버 (선택 사항)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "proxy-instruction": "프록시 설정을 비워두면 시스템 프록시가 사용됩니다.",
-    "dismiss-error": "오류 닫기",
-    "wrong-password": "비밀번호가 틀렸습니다. 다시 시도해 주세요.",
-    "language": "언어",
-    "continue": "계속",
-    "your-ip-addresses": "이 장치의 주소",
-    "restore-from-backup": "백업에서 복원",
-    "restore-from-backup-description": "백업 파일에서 복원한 기존 지식 베이스를 계속 사용합니다.",
-    "restore-from-backup-page-description": "복원할 백업 파일을 선택하세요.",
-    "restore-existing-backups": "기존 백업",
-    "restore-looking-for-backups": "백업을 찾는 중...",
-    "restore-choose-file": "백업 파일 선택",
-    "restore-choose-file-description": "기기에서 데이터베이스 백업 파일(.db, .tnbackup)을 선택하세요",
-    "restore-uploading": "백업을 업로드하는 중...",
-    "restore-uploaded-so-far": "{{total}} 중 {{sent}}",
-    "restore-upload-speed": "{{speed}}/초",
-    "restore-error-unusable": "지원되지 않거나 손상된 Trilium 백업입니다.",
-    "restore-error-too-new": "이 백업은 더 최신 버전의 Trilium에서 생성되었습니다. Trilium을 업데이트한 후 다시 시도하세요.",
-    "restore-error-too-old": "이 백업은 복원하기에 너무 오래된 버전의 Trilium에서 생성되었습니다.",
-    "restore-error-unfinished": "이 백업은 설정이 완료되지 않은 상태에서 생성되어 복원할 내용이 없습니다.",
-    "restore-error-swap-failed": "데이터베이스를 교체하지 못했습니다. 이전 데이터베이스가 원래 상태로 복원되었습니다.",
-    "restore-error-would-not-open": "복원된 데이터베이스를 열 수 없습니다. 이전 데이터베이스가 원래 상태로 복원되었습니다.",
-    "restore-error-refused": "다른 설정 단계가 이미 진행 중입니다.",
-    "restore-error-could-not-start": "복원을 시작할 수 없습니다.",
-    "restore-error-upload-failed": "백업을 업로드할 수 없습니다.",
-    "restore-passphrase": "암호화 비밀번호",
-    "restore-passphrase-description": "이 백업은 암호화되어 있습니다. 이 백업을 생성할 때 사용한 비밀번호를 입력하세요.",
-    "restore-wrong-passphrase": "입력한 비밀번호로는 이 백업을 열 수 없습니다. 다시 시도하세요.",
-    "restore-continue": "복원",
-    "restore-stage-staging": "백업 준비 중",
-    "restore-stage-validating": "데이터베이스 확인 중",
-    "restore-stage-swapping": "데이터베이스 적용 중",
-    "restore-stage-migrating": "데이터베이스 여는 중",
-    "restore-do-not-close": "이 창을 닫지 마세요.",
-    "restore-error-already-initialized": "이 인스턴스에는 이미 지식 베이스가 있으므로 그 위에 복원할 수 없습니다. 페이지를 새로고침하세요."
-  },
   "mind-map": {
     "addChild": "하위 노트 추가",
     "addParent": "상위 노트 추가",
@@ -3609,8 +3711,6 @@
     "zoom-in": "확대",
     "zoom-out": "축소",
     "center-map": "지도를 중앙에 맞추기",
-    "fullscreen": "전체 화면",
-    "exit-fullscreen": "전체 화면 종료",
     "direction-left": "왼쪽으로 가지 펼치기",
     "direction-right": "오른쪽으로 가지 펼치기",
     "direction-side": "양쪽으로 가지 펼치기",
@@ -3618,8 +3718,6 @@
     "direction-down": "아래쪽으로 분기"
   },
   "llm": {
-    "disabled_placeholder": "AI 기능이 꺼져 있습니다. 제공업체와 MCP를 설정하려면 AI 기능을 활성화하세요.",
-    "not_available_in_standalone": "AI/LLM 기능은 Trilium의 독립 실행형 버전에서는 제공되지 않는데, LLM 제공업체가 브라우저에서 직접 접근을 허용하지 않기 때문입니다.",
     "feature_not_enabled": "설정 → 고급 → 실험 기능에서 LLM 실험 기능을 활성화하여 AI 통합을 활용하세요.",
     "add_provider": "공급자 추가",
     "add_provider_title": "AI 공급자 추가",
@@ -3700,7 +3798,7 @@
       "web_search": "웹 검색",
       "note_in_parent": "<Note/> in <Parent/>",
       "get_attachment": "첨부 파일 가져오기",
-      "get_attachment_content": "첨부 파일 읽기",
+      "get_attachment_content": "첨부 파일 내용 읽기",
       "rename_note": "노트 이름 변경",
       "delete_note": "노트 삭제",
       "move_note": "노트 이동",
@@ -3708,11 +3806,19 @@
       "search_icons": "아이콘 검색",
       "search_help": "사용자 가이드 검색",
       "get_help_toc": "사용자 가이드 콘텐츠 보기"
-    }
+    },
+    "provider_unavailable_standalone": "브라우저 버전에서는 사용할 수 없습니다. 이 제공업체는 컴퓨터에서 별도의 프로그램을 실행하는 방식으로 작동하며, 여기에는 해당 프로그램을 실행할 컴퓨터가 없습니다.",
+    "mcp_unavailable_standalone": "브라우저 버전에서는 사용할 수 없습니다. 어시스턴트는 네트워크를 통해 Trilium에 연결해야 하지만, 이 빌드는 이 페이지 안에서만 실행되므로 어시스턴트에 제공할 연결 주소가 없습니다.",
+    "enabled": "AI 기능",
+    "enabled_description": "아래에서 설정한 제공업체를 사용하여 AI 채팅 사이드바와 LLM 채팅 노트를 추가합니다.",
+    "provider_desc_copilot_agent": "Trilium이 실행 중인 컴퓨터에 GitHub Copilot CLI가 필요합니다.",
+    "copilot_agent_description": "GitHub Copilot CLI를 통해 GitHub Copilot 구독을 사용하므로 API 키가 필요하지 않습니다. Copilot CLI는 Trilium이 실행 중인 컴퓨터(셀프 호스팅의 경우 서버, 데스크톱의 경우 이 컴퓨터)에 설치되어 있어야 합니다. 해당 컴퓨터에서 \"copilot login\"을 한 번 실행하여 로그인하세요 — 다른 편집기에서 이미 Copilot에 로그인되어 있다면 자동으로 재사용됩니다."
   },
   "common": {
     "save": "저장",
-    "cancel": "취소"
+    "cancel": "취소",
+    "fullscreen": "전체 화면",
+    "exit_fullscreen": "전체 화면 종료"
   },
   "spreadsheet": {
     "read-only": "이 노트는 읽기 전용입니다.",
@@ -3749,7 +3855,7 @@
       "create-a-numbered-list": "번호 매기기 목록 만들기",
       "create-a-to-do-list": "할 일 목록 만들기",
       "display": "표시",
-      "display-the-content-of-another-note-in-this-note": "여기에 다른 노트의 내용을 표시합니다. 노트",
+      "display-the-content-of-another-note-in-this-note": "이 노트에 다른 노트의 내용을 표시합니다",
       "download-image": "이미지 다운로드",
       "drag-to-reposition-the-collapsible-block": "접이식 블록을 이동하려면 드래그",
       "edit-task-states": "작업 상태 편집",
@@ -3806,8 +3912,8 @@
       "full": "전체",
       "import-markdown-from-the-clipboard": "클립보드에서 Markdown 가져오기",
       "important": "중요",
-      "include-note": "노트 삽입",
-      "include-note-widget": "노트 삽입 위젯",
+      "include-note": "노트 포함",
+      "include-note-widget": "노트 포함 위젯",
       "increase-the-indentation-of-the-current-block": "현재 블록의 들여쓰기를 늘립니다.",
       "indent": "들여쓰기",
       "insert-a-block-of-preformatted-code": "서식이 지정된 코드 블록을 삽입합니다.",
@@ -3856,7 +3962,25 @@
       "to-do-list": "할 일 목록",
       "turn-the-current-block-into-a-heading": "현재 블록을 제목으로 변경합니다.",
       "turn-the-current-block-into-a-paragraph": "현재 블록을 문단으로 변경합니다.",
-      "warning": "경고"
+      "warning": "경고",
+      "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "파일이 너무 커서 업로드할 수 없습니다(HTTP 413). Trilium이 리버스 프록시 뒤에 있는 경우 요청 본문 크기 제한을 늘리세요.",
+      "the-server-responded-with-http-0": "서버가 HTTP %0(으)로 응답했습니다.",
+      "ai-0": "AI: %0",
+      "ai-assistant": "AI 어시스턴트",
+      "applies-to-the-current-paragraph": "현재 문단에 적용됩니다.",
+      "ask-ai": "AI에게 묻기…",
+      "ask-ai-to": "AI에게 요청하기…",
+      "ask-ai-to-rewrite-the-selection-or-generate-new-content": "AI에게 선택한 내용을 다시 쓰거나 새 내용을 생성하도록 요청합니다.",
+      "changes": "변경 사항",
+      "describe-a-change-then-press-enter": "원하는 변경 내용을 설명한 뒤 Enter를 누르세요",
+      "insert-below": "아래에 삽입",
+      "looks-good-already-nothing-to-change": "이미 좋아 보입니다 — 변경할 내용이 없습니다.",
+      "result": "결과",
+      "send": "보내기",
+      "stop": "중지",
+      "tokens": "토큰",
+      "try-again": "다시 시도",
+      "working": "처리 중…"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -3882,9 +4006,7 @@
     "note_paths_what": "하나의 노트가 노트 트리의 여러 위치에 동시에 있을 수 있으며, 각각의 위치가 여기에 경로로 표시됩니다.",
     "note_paths_cloning": "새 위치를 추가하는 것을 복제라고 합니다. 실제로 내용이 복사되는 것은 아니므로, 한 경로에서 수정한 내용은 모든 경로에 동일하게 반영됩니다. 또한 경로 하나를 제거해도 노트는 다른 경로에 그대로 남아 있습니다.",
     "backlinks_what": "본문 링크 또는 이 노트를 대상으로 하는 관계를 통해, 이 노트를 참조하는 노트들입니다.",
-    "backlinks_listing": "텍스트 링크는 주변 문맥과 함께 표시되고, 관계는 이 노트를 참조할 때 사용한 이름과 함께 표시됩니다. 이 화면에서는 편집할 수 없으며, 링크를 만든 노트에서 해당 링크를 삭제하면 여기에서도 사라집니다.",
-    "similar_notes_what": "서로 직접 연결되어 있지는 않지만, 이 노트와 관련 있어 보이는 노트들입니다.",
-    "similar_notes_how": "노트의 내용과 속성·관계, 그리고 생성된 시점의 근접성을 바탕으로 유사도를 판단합니다."
+    "backlinks_listing": "텍스트 링크는 주변 문맥과 함께 표시되고, 관계는 이 노트를 참조할 때 사용한 이름과 함께 표시됩니다. 이 화면에서는 편집할 수 없으며, 링크를 만든 노트에서 해당 링크를 삭제하면 여기에서도 사라집니다."
   },
   "compress-images": "이미지 압축",
   "compress-image": "이미지 압축",
@@ -3938,7 +4060,10 @@
     "maximize": "빠른 편집으로 열기"
   },
   "database_file_list": {
-    "size_on_disk": "디스크에서 {{size}}"
+    "size_on_disk": "디스크에서 {{size}}",
+    "invalid_backup": "유효하지 않은 백업 파일",
+    "unsupported_version": "지원하지 않는 백업 파일 형식 버전",
+    "delete": "삭제"
   },
   "password_with_confirmation": {
     "password": "비밀번호",
@@ -3966,5 +4091,95 @@
     "custom_to_placeholder": "바꿀 내용",
     "custom_add": "바꾸기 추가",
     "custom_remove": "바꾸기 제거"
+  },
+  "ai_assistant": {
+    "title": "AI 어시스턴트",
+    "action_ask": "AI에게 묻기…",
+    "group_edit": "편집 및 검토",
+    "group_generate": "생성",
+    "group_adjust": "조정",
+    "group_tone": "어조 변경",
+    "group_reformat": "형식 변경",
+    "group_translate": "번역",
+    "group_custom": "사용자 지정",
+    "model": "모델: {{model}}",
+    "command_make_shorter": "짧게 줄이기",
+    "command_make_longer": "길게 늘리기",
+    "command_simplify": "표현 단순화",
+    "command_tone": "어조 변경: {{tone}}",
+    "command_bullet_list": "글머리 기호 목록으로 변경",
+    "command_table": "표로 변경",
+    "command_diagram": "다이어그램으로 변경",
+    "command_callout": "콜아웃으로 변경",
+    "command_collapsible": "접이식 섹션으로 변경",
+    "command_action_items": "실행 항목 추출",
+    "command_translate": "번역: {{language}}",
+    "action_fix_typos": "오타 수정",
+    "action_improve_writing": "글 다듬기",
+    "action_summarize": "요약",
+    "action_explain": "설명",
+    "action_continue": "이어서 쓰기",
+    "adjust_shorter": "짧게",
+    "adjust_longer": "길게",
+    "adjust_simpler": "간단하게",
+    "tone_professional": "전문적",
+    "tone_casual": "캐주얼",
+    "tone_direct": "직설적",
+    "tone_friendly": "친근함",
+    "tone_confident": "당당함",
+    "reformat_bullet_list": "글머리 기호 목록",
+    "reformat_table": "표",
+    "reformat_diagram": "다이어그램",
+    "reformat_callout": "콜아웃",
+    "reformat_collapsible": "접이식 섹션",
+    "reformat_action_items": "실행 항목"
+  },
+  "note_picker": {
+    "title": "노트 선택",
+    "label": "노트",
+    "ok": "선택"
+  },
+  "font_preview": {
+    "pangram": "다람쥐 헌 쳇바퀴에 타고파",
+    "specimen_placeholder": "미리 볼 텍스트를 입력하세요…",
+    "size": "미리보기 크기",
+    "size_pixels": "{{size}} px",
+    "in_picker": "글꼴 선택기에 표시",
+    "offer_in_picker": "이 글꼴을 화면 설정에서 사용할 수 있도록 표시",
+    "remove_from_picker": "이 글꼴을 화면 설정에서 더 이상 표시하지 않기"
+  },
+  "template_selection": {
+    "add-existing": "기존 템플릿 추가",
+    "add-title": "템플릿 추가",
+    "create": "새 템플릿 생성",
+    "new-name": "새 템플릿",
+    "menu": "템플릿 메뉴",
+    "remove": "목록에서 제거"
+  },
+  "item_picker": {
+    "title": "항목 선택",
+    "search": "검색…",
+    "nothing-found": "입력한 내용과 일치하는 항목이 없습니다."
+  },
+  "sortable_card": {
+    "reorder": "드래그하여 순서 변경"
+  },
+  "collection_filter": {
+    "placeholder": "필터링...",
+    "clear": "필터 지우기",
+    "fetch-error": "필터를 실행할 수 없습니다.",
+    "submit": "필터 적용"
+  },
+  "attribute_menu": {
+    "attributes": "속성",
+    "not-set": "설정 안 함"
+  },
+  "sorting": {
+    "default": "기본값",
+    "none": "없음",
+    "title": "제목",
+    "creation-date": "생성 날짜 및 시간",
+    "ascending": "오름차순",
+    "descending": "내림차순"
   }
 }

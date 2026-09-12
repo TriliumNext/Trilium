@@ -1,24 +1,28 @@
-import { useMemo } from "preact/hooks";
-import { getAvailableLocales, t } from "../../../services/i18n";
-import FormSelect from "../../react/FormSelect";
-import OptionsPageHeader from "./components/OptionsPageHeader";
-import OptionsRow from "./components/OptionsRow";
-import OptionsSection from "./components/OptionsSection";
-import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
+import "./i18n.css";
+
 import type { Locale } from "@triliumnext/commons";
-import { isElectron, restartDesktopApp } from "../../../services/utils";
-import FormText from "../../react/FormText";
-import Button from "../../react/Button";
+import { useMemo } from "preact/hooks";
+
+import { getAvailableLocales, t } from "../../../services/i18n";
+import { isElectron } from "../../../services/utils";
+import { Card, CardSection, OptionCardSection } from "../../react/Card";
+import FormSelect from "../../react/FormSelect";
+import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
 import CheckboxList from "./components/CheckboxList";
-import RelatedSettings from "./components/RelatedSettings";
 import { LocaleSelector } from "./components/LocaleSelector";
+import OptionsPageHeader from "./components/OptionsPageHeader";
+import RelatedSettings from "./components/RelatedSettings";
+import RestartAction from "./components/RestartAction";
 
 export default function InternationalizationOptions() {
     return (
         <>
             <OptionsPageHeader />
             <LocalizationOptions />
+            <DateSettings />
             <ContentLanguages />
+            {/* Both cards above only take effect once the app has started again. */}
+            <RestartAction text={t("electron_integration.restart-app-button")} />
             {isElectron() && (
                 <RelatedSettings items={[
                     {
@@ -32,6 +36,7 @@ export default function InternationalizationOptions() {
     );
 }
 
+/** The languages the app is read in, written in, and formats its figures and dates by. */
 function LocalizationOptions() {
     const { uiLocales, formattingLocales: contentLocales, writingLocales } = useMemo<{ uiLocales: Locale[], formattingLocales: Locale[], writingLocales: Locale[] }>(() => {
         const allLocales = getAvailableLocales();
@@ -59,16 +64,21 @@ function LocalizationOptions() {
     const [ defaultContentLanguage, setDefaultContentLanguage ] = useTriliumOption("defaultContentLanguage");
 
     return (
-        <OptionsSection title={t("i18n.title")}>
-            <OptionsRow name="language" label={t("i18n.language")}>
+        <Card heading={t("i18n.title")}>
+            <OptionCardSection name="language" label={t("i18n.language")}>
                 <LocaleSelector locales={uiLocales} currentValue={locale} onChange={setLocale} />
-            </OptionsRow>
+            </OptionCardSection>
 
-            {<OptionsRow name="formatting-locale" label={t("i18n.formatting-locale")}>
-                <LocaleSelector locales={contentLocales} currentValue={formattingLocale} onChange={setFormattingLocale} defaultLocale={{ id: "", name: t("i18n.formatting-locale-auto") }} />
-            </OptionsRow>}
+            <OptionCardSection name="formatting-locale" label={t("i18n.formatting-locale")}>
+                <LocaleSelector
+                    locales={contentLocales}
+                    currentValue={formattingLocale}
+                    onChange={setFormattingLocale}
+                    defaultLocale={{ id: "", name: t("i18n.formatting-locale-auto") }}
+                />
+            </OptionCardSection>
 
-            <OptionsRow
+            <OptionCardSection
                 name="default-content-language"
                 label={t("i18n.default-content-language")}
                 description={t("i18n.default-content-language-description")}
@@ -79,21 +89,24 @@ function LocalizationOptions() {
                     onChange={setDefaultContentLanguage}
                     defaultLocale={{ id: "", name: t("i18n.default-content-language-auto") }}
                 />
-            </OptionsRow>
-
-            <DateSettings />
-        </OptionsSection>
+            </OptionCardSection>
+        </Card>
     )
 }
 
+/**
+ * Where a week starts and which one counts as the first of the year — conventions the calendar and
+ * week notes are numbered by, rather than languages, which is why they stand apart from the card
+ * above.
+ */
 function DateSettings() {
     const [ firstDayOfWeek, setFirstDayOfWeek ] = useTriliumOption("firstDayOfWeek");
     const [ firstWeekOfYear, setFirstWeekOfYear ] = useTriliumOption("firstWeekOfYear");
     const [ minDaysInFirstWeek, setMinDaysInFirstWeek ] = useTriliumOption("minDaysInFirstWeek");
 
     return (
-        <>
-            <OptionsRow name="first-day-of-week" label={t("i18n.first-day-of-the-week")}>
+        <Card heading={t("i18n.dates-title")}>
+            <OptionCardSection name="first-day-of-week" label={t("i18n.first-day-of-the-week")}>
                 <FormSelect
                     name="first-day-of-week"
                     currentValue={firstDayOfWeek}
@@ -110,9 +123,13 @@ function DateSettings() {
                         { value: "7", label: t("i18n.sunday") },
                     ]}
                 />
-            </OptionsRow>
+            </OptionCardSection>
 
-            <OptionsRow name="first-week-of-year" label={t("i18n.first-week-of-the-year")} description={t("i18n.first-week-warning")}>
+            <OptionCardSection
+                name="first-week-of-year"
+                label={t("i18n.first-week-of-the-year")}
+                description={t("i18n.first-week-warning")}
+            >
                 <FormSelect
                     name="first-week-of-year"
                     currentValue={firstWeekOfYear}
@@ -125,36 +142,32 @@ function DateSettings() {
                         { value: "2", label: t("i18n.first-week-has-minimum-days") }
                     ]}
                 />
-            </OptionsRow>
+            </OptionCardSection>
 
-            {firstWeekOfYear === "2" && <OptionsRow name="min-days-in-first-week" label={t("i18n.min-days-in-first-week")}>
-                <FormSelect
-                    keyProperty="days"
-                    currentValue={minDaysInFirstWeek} onChange={setMinDaysInFirstWeek}
-                    values={Array.from(
-                        { length: 7 },
-                        (_, i) => ({ days: String(i + 1) }))} />
-            </OptionsRow>}
-
-            <OptionsRow name="restart" centered>
-                <Button
-                    name="restart-app-button"
-                    text={t("electron_integration.restart-app-button")}
-                    size="micro"
-                    onClick={restartDesktopApp}
-                />
-            </OptionsRow>
-        </>
+            {firstWeekOfYear === "2" && (
+                <OptionCardSection name="min-days-in-first-week" label={t("i18n.min-days-in-first-week")}>
+                    <FormSelect
+                        keyProperty="days"
+                        currentValue={minDaysInFirstWeek} onChange={setMinDaysInFirstWeek}
+                        values={Array.from(
+                            { length: 7 },
+                            (_, i) => ({ days: String(i + 1) }))} />
+                </OptionCardSection>
+            )}
+        </Card>
     )
 }
 
 function ContentLanguages() {
     return (
-        <OptionsSection title={t("content_language.title")}>
-            <FormText>{t("content_language.description")}</FormText>
-
-            <ContentLanguagesList />
-        </OptionsSection>
+        <Card
+            heading={t("content_language.title")}
+            description={t("content_language.description")}
+        >
+            <CardSection className="i18n-content-languages">
+                <ContentLanguagesList />
+            </CardSection>
+        </Card>
     );
 }
 
@@ -171,3 +184,4 @@ export function ContentLanguagesList() {
         />
     );
 }
+

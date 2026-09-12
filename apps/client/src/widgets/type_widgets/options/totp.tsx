@@ -14,6 +14,7 @@ import toast from "../../../services/toast";
 import utils from "../../../services/utils";
 import Admonition from "../../react/Admonition";
 import Button from "../../react/Button";
+import { Card, OptionCardSection } from "../../react/Card";
 import FormCheckbox from "../../react/FormCheckbox";
 import FormGroup from "../../react/FormGroup";
 import FormText from "../../react/FormText";
@@ -22,8 +23,6 @@ import { useStaticTooltip } from "../../react/hooks";
 import Modal from "../../react/Modal";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import MfaStatusBadge from "./components/MfaStatusBadge";
-import { OptionsRowWithButton } from "./components/OptionsRow";
-import OptionsSection from "./components/OptionsSection";
 
 /**
  * TOTP (authenticator-app) two-factor settings. Owns the recovery-codes state and the enrollment /
@@ -105,16 +104,13 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
 
     // Status badge mirroring the OpenID card: TOTP is either enabled (a secret is set) or off.
     const totpEnabled = totpStatus?.set ?? false;
-    const totpTitle = (
-        <span className="mfa-status-title">
-            {t("multi_factor_authentication.totp_section_title")}
-            <MfaStatusBadge
-                tone={totpEnabled ? "active" : "inactive"}
-                text={totpEnabled
-                    ? t("multi_factor_authentication.totp_status_active")
-                    : t("multi_factor_authentication.totp_status_inactive")}
-            />
-        </span>
+    const totpBadge = (
+        <MfaStatusBadge
+            tone={totpEnabled ? "active" : "inactive"}
+            text={totpEnabled
+                ? t("multi_factor_authentication.totp_status_active")
+                : t("multi_factor_authentication.totp_status_inactive")}
+        />
     );
 
     return (<>
@@ -123,20 +119,25 @@ export function TotpSettings({ totpStatus, refreshTotpStatus }: {
             by the recovery-codes panel; recovery codes are part of TOTP and never exist without it. */}
         {totpStatus?.set
             ? <TotpRecoveryKeys
-                title={totpTitle}
+                badge={totpBadge}
                 status={recoveryStatus}
                 onRegenerate={regenerateRecoveryCodes}
                 onRemoveTotp={removeTotp}
             />
-            : <OptionsSection title={totpTitle}>
-                <OptionsRowWithButton
+            : <Card heading={t("multi_factor_authentication.totp_section_title")} actions={totpBadge}>
+                <OptionCardSection
                     label={t("multi_factor_authentication.totp_setup_label")}
                     description={t("multi_factor_authentication.totp_setup_description")}
-                    icon="bx-plus"
-                    buttonText={t("multi_factor_authentication.totp_setup_button")}
-                    onClick={() => setShowEnroll(true)}
-                />
-            </OptionsSection>}
+                >
+                    <Button
+                        name="totp-setup-button"
+                        icon="bx-plus"
+                        text={t("multi_factor_authentication.totp_setup_button")}
+                        size="micro"
+                        onClick={() => setShowEnroll(true)}
+                    />
+                </OptionCardSection>
+            </Card>}
 
         {createPortal(
             <TotpEnrollmentModal
@@ -493,8 +494,9 @@ function downloadRecoveryCodes(codes: string[]) {
  * remove-TOTP action. The codes themselves are only ever shown once — in a modal right after
  * enrollment or regeneration (see {@link RecoveryCodesModal}).
  */
-function TotpRecoveryKeys({ title, status, onRegenerate, onRemoveTotp }: {
-    title: ComponentChildren,
+function TotpRecoveryKeys({ badge, status, onRegenerate, onRemoveTotp }: {
+    /** The card's status badge, built by the caller since both of its states share one. */
+    badge: ComponentChildren,
     status?: string[],
     onRegenerate: () => void,
     onRemoveTotp: () => void
@@ -502,8 +504,8 @@ function TotpRecoveryKeys({ title, status, onRegenerate, onRemoveTotp }: {
     const remaining = status?.filter(isUnusedRecoveryCode).length ?? 0;
 
     return (
-        <OptionsSection title={title}>
-            <OptionsRowWithButton
+        <Card heading={t("multi_factor_authentication.totp_section_title")} actions={badge}>
+            <OptionCardSection
                 label={
                     <span className="recovery-codes-title">
                         {t("multi_factor_authentication.recovery_keys_label")}
@@ -513,20 +515,30 @@ function TotpRecoveryKeys({ title, status, onRegenerate, onRemoveTotp }: {
                 description={status && status.length > 0
                     ? t("multi_factor_authentication.recovery_keys_remaining", { remaining, total: status.length })
                     : t("multi_factor_authentication.recovery_keys_no_key_set")}
-                icon="bx-refresh"
-                buttonText={t("multi_factor_authentication.recovery_keys_regenerate")}
-                onClick={onRegenerate}
-            />
+            >
+                <Button
+                    name="regenerate-recovery-keys-button"
+                    icon="bx-refresh"
+                    text={t("multi_factor_authentication.recovery_keys_regenerate")}
+                    size="micro"
+                    onClick={onRegenerate}
+                />
+            </OptionCardSection>
 
-            <OptionsRowWithButton
+            <OptionCardSection
                 label={t("multi_factor_authentication.totp_remove_label")}
                 description={t("multi_factor_authentication.totp_remove_description")}
-                icon="bx-trash"
-                buttonClassName="totp-remove-button"
-                buttonText={t("multi_factor_authentication.totp_remove_button")}
-                onClick={onRemoveTotp}
-            />
-        </OptionsSection>
+            >
+                <Button
+                    name="totp-remove-button"
+                    className="totp-remove-button"
+                    icon="bx-trash"
+                    text={t("multi_factor_authentication.totp_remove_button")}
+                    size="micro"
+                    onClick={onRemoveTotp}
+                />
+            </OptionCardSection>
+        </Card>
     );
 }
 

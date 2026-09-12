@@ -2,10 +2,15 @@ import type { TextRepresentationResponse } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../../becca/becca.js";
+import blobService from "../../services/blob.js";
 import * as cls from "../../services/context.js";
+import protectedSessionService from "../../services/protected_session.js";
 import { getSql } from "../../services/sql/index.js";
+import { encodeUtf8 } from "../../services/utils/binary.js";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
+
+const PROTECTED_KEY = encodeUtf8("0123456789abcdef"); // exactly 16 bytes
 
 /**
  * Drives the shared OCR read routes through {@link CoreApiTester} (no Express), so this spec runs
@@ -54,6 +59,27 @@ describe("OCR text API (core)", () => {
 
         const res = await api.get<TextRepresentationResponse>(`/api/ocr/attachments/${attachmentId}/text`);
         expect(res.body).toEqual({ success: true, text: "text on the scan", hasOcr: true });
+    });
+
+    it("decrypts a protected note's text, and withholds it when the session is closed", async () => {
+        const { noteId } = await createTextNote(api, { content: "<p>a protected scan</p>" });
+        const note = becca.getNoteOrThrow(noteId);
+        note.isProtected = true;
+
+        protectedSessionService.setDataKey(PROTECTED_KEY);
+        try {
+            // Stored the way the OCR service stores it, so this covers both halves of the round trip.
+            storeOcrText(note.blobId, blobService.encryptTextRepresentation("secret scanned text", true));
+
+            const unlocked = await api.get<TextRepresentationResponse>(`/api/ocr/notes/${noteId}/text`);
+            expect(unlocked.body).toEqual({ success: true, text: "secret scanned text", hasOcr: true });
+        } finally {
+            protectedSessionService.resetDataKey();
+        }
+
+        // Locked again: the stored ciphertext must not reach the client in place of the text.
+        const locked = await api.get<TextRepresentationResponse>(`/api/ocr/notes/${noteId}/text`);
+        expect(locked.body).toEqual({ success: true, text: "", hasOcr: false });
     });
 
     it("404s for a missing note or attachment", async () => {

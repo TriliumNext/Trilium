@@ -14,8 +14,8 @@ import { ParentComponent } from "../react/react_utils";
 export const CollapsibleWidgets = createContext(true);
 
 /**
- * A request to expand one widget of the pane, raised by an entry point aimed at it (the status bar's
- * note paths badge) so that it doesn't land on a widget the user has collapsed. The counter tells
+ * A request to expand one widget of the pane, raised by an entry point aimed at it (the note map's
+ * keyboard action) so that it doesn't land on a widget the user has collapsed. The counter tells
  * repeated requests apart, so the widget opens again after having been collapsed in between.
  */
 export interface ExpandWidgetRequest {
@@ -38,10 +38,9 @@ interface RightPanelWidgetProps {
      * keeping to the height of the content. Use for the one widget a tab is really about — a note's own
      * attributes, its table of contents, the chat — so that the rest keep to their content around it.
      *
-     * Two of them in a tab share the leftover height between them, each keeping its own floor — the
-     * connections tab's map and backlinks, a PDF's outline and its pages. Ask for it once more than
-     * that and none of them is left with room worth having. It lapses while the widget is collapsed,
-     * so the others move up to fill the room.
+     * Two of them in a tab share the leftover height between them, each keeping its own floor — a
+     * PDF's outline and its pages. Ask for it once more than that and none of them is left with room
+     * worth having. It lapses while the widget is collapsed, so the others move up to fill the room.
      */
     grow?: boolean;
     /**

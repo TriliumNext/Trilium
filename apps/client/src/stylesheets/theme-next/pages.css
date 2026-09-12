@@ -154,8 +154,18 @@ body.experimental-feature-new-layout .note-detail-content-widget-content.options
     padding-inline: 25px;
 }
 
+/* Every top-level block of an options page is a section of it; only the header spans the full pane. */
+.note-detail-content-widget-content.options > *:not(.options-page-header) {
+    margin-bottom: 26px;
+}
+
+body.desktop .note-detail-content-widget-content.options > *:not(.options-page-header) {
+    max-width: var(--options-card-max-width);
+    margin-inline: auto;
+}
+
 .options-section:not(.tn-no-card) {
-    margin-bottom: 26px !important;
+    margin-bottom: 26px;
 }
 
 body.desktop .options-section:not(.tn-no-card) {
@@ -232,8 +242,7 @@ body.desktop .options-section:not(.tn-no-card) {
     color: var(--root-background);
 }
 
-.options-section-card p:last-of-type:not(:first-of-type),
-.options-section-card .existing-anonymized-databases {
+.options-section-card p:last-of-type:not(:first-of-type) {
     margin-bottom: 0;
 }
 
@@ -269,15 +278,6 @@ body.desktop .options-section:not(.tn-no-card) {
 .note-detail-content-widget-content:has(.shortcuts-options-section) {
     /* Allow the cards to extend on the full width of the parent */
     --options-card-max-width: 100%;
-
-    /* Remove the top margin of the first item */
-    --options-first-item-top-margin: 0;
-}
-
-/* ETAPI */
-
-.etapi-options-section div {
-    height: auto !important;
 }
 
 /* BACKUP */

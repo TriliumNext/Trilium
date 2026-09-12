@@ -23,7 +23,6 @@ import etapiTokensApiRoutes from "./api/etapi_tokens.js";
 import filesRoute from "./api/files.js";
 // API routes
 import llmChatRoute from "./api/llm_chat.js";
-import llmSpecialNotesRoute from "./api/llm_special_notes.js";
 import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
 import ocrRoute from "./api/ocr.js";
@@ -63,15 +62,17 @@ function register(app: express.Application) {
 
     // Restoring a backup, which only the setup screen offers: `checkAppNotInitialized` is what keeps
     // it from ever running against a live database, since before the database exists there is no
-    // session to authenticate against and the whole wizard stands unauthenticated. None of these may
-    // be transactional — the swap detaches the database, which a wrapping transaction would be in the
+    // session to authenticate against and the whole wizard stands unauthenticated. Where a knowledge
+    // base is sitting behind the wizard there IS something to authenticate against, and
+    // `checkSetupAuth` asks for it — a restore replaces that database. None of these may be
+    // transactional — the swap detaches the database, which a wrapping transaction would be in the
     // middle of.
-    asyncRoute(PST, "/api/setup/restore/upload/begin", [auth.checkAppNotInitialized], setupRestoreRoute.beginUpload, apiResultHandler);
-    asyncRoute(PST, "/api/setup/restore/upload/:uploadId/chunk", [auth.checkAppNotInitialized], setupRestoreRoute.uploadChunk, apiResultHandler);
-    asyncRoute(GET, "/api/setup/restore/upload/:uploadId", [auth.checkAppNotInitialized], setupRestoreRoute.uploadStatus, apiResultHandler);
-    asyncRoute(PST, "/api/setup/restore/upload/:uploadId/finish", [auth.checkAppNotInitialized], setupRestoreRoute.finishUpload, apiResultHandler);
-    asyncRoute(DEL, "/api/setup/restore/upload/:uploadId", [auth.checkAppNotInitialized], setupRestoreRoute.abortUpload, apiResultHandler);
-    asyncRoute(PST, "/api/setup/restore/start", [auth.checkAppNotInitialized], setupRestoreRoute.start, apiResultHandler);
+    asyncRoute(PST, "/api/setup/restore/upload/begin", [auth.checkAppNotInitialized, auth.checkSetupAuth], setupRestoreRoute.beginUpload, apiResultHandler);
+    asyncRoute(PST, "/api/setup/restore/upload/:uploadId/chunk", [auth.checkAppNotInitialized, auth.checkSetupAuth], setupRestoreRoute.uploadChunk, apiResultHandler);
+    asyncRoute(GET, "/api/setup/restore/upload/:uploadId", [auth.checkAppNotInitialized, auth.checkSetupAuth], setupRestoreRoute.uploadStatus, apiResultHandler);
+    asyncRoute(PST, "/api/setup/restore/upload/:uploadId/finish", [auth.checkAppNotInitialized, auth.checkSetupAuth], setupRestoreRoute.finishUpload, apiResultHandler);
+    asyncRoute(DEL, "/api/setup/restore/upload/:uploadId", [auth.checkAppNotInitialized, auth.checkSetupAuth], setupRestoreRoute.abortUpload, apiResultHandler);
+    asyncRoute(PST, "/api/setup/restore/start", [auth.checkAppNotInitialized, auth.checkSetupAuth], setupRestoreRoute.start, apiResultHandler);
     // Readable throughout, including once the restore has succeeded: that is how the screen learns it
     // is over and the application can be opened.
     asyncRoute(GET, "/api/setup/restore/status", [], setupRestoreRoute.status, apiResultHandler);
@@ -96,12 +97,15 @@ function register(app: express.Application) {
     routes.buildSharedApiRoutes({
         route,
         asyncRoute,
+        // The server's asyncRoute never opened a transaction to begin with.
+        asyncRouteWithoutTransaction: asyncRoute,
         apiRoute,
         asyncApiRoute,
         apiResultHandler,
         checkApiAuth: auth.checkApiAuth,
         checkApiAuthOrElectron: auth.checkApiAuthOrElectron,
         checkAppNotInitialized: auth.checkAppNotInitialized,
+        checkSetupAuth: auth.checkSetupAuth,
         checkCredentials: auth.checkCredentials,
         loginRateLimiter,
         uploadMiddlewareWithErrorHandling,
@@ -139,14 +143,10 @@ function register(app: express.Application) {
     route(PST, "/api/clipper/open/:noteId", clipperMiddleware, clipperRoute.openNote, apiResultHandler);
     asyncRoute(GET, "/api/clipper/notes-by-url/:noteUrl", clipperMiddleware, clipperRoute.findNotesByUrl, apiResultHandler);
 
-    apiRoute(PST, "/api/special-notes/llm-chat", llmSpecialNotesRoute.createLlmChat);
-    apiRoute(GET, "/api/special-notes/most-recent-llm-chat", llmSpecialNotesRoute.getMostRecentLlmChat);
-    apiRoute(GET, "/api/special-notes/get-or-create-llm-chat", llmSpecialNotesRoute.getOrCreateLlmChat);
-    apiRoute(GET, "/api/special-notes/recent-llm-chats", llmSpecialNotesRoute.getRecentLlmChats);
-    apiRoute(PST, "/api/special-notes/save-llm-chat", llmSpecialNotesRoute.saveLlmChat);
     asyncRoute(PST, "/api/database/anonymize/:type", [auth.checkApiAuthOrElectron, csrfMiddleware], databaseRoute.anonymize, apiResultHandler);
     apiRoute(GET, "/api/database/anonymized-databases", databaseRoute.getExistingAnonymizedDatabases);
     route(GET, "/api/database/anonymized/download", [auth.checkApiAuthOrElectron], databaseRoute.downloadAnonymizedDatabase);
+    apiRoute(DEL, "/api/database/anonymized", databaseRoute.deleteAnonymizedDatabase);
 
     if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {
         asyncRoute(PST, "/api/database/rebuild/", [auth.checkApiAuthOrElectron], databaseRoute.rebuildIntegrationTestDatabase, apiResultHandler);
@@ -163,7 +163,6 @@ function register(app: express.Application) {
 
     // LLM chat endpoints
     asyncRoute(PST, "/api/llm-chat/stream", [auth.checkApiAuthOrElectron, csrfMiddleware], llmChatRoute.streamChat, null);
-    asyncApiRoute(PST, "/api/llm-chat/provider-models", llmChatRoute.getProviderModels);
 
     // no CSRF since this is called from android app
     asyncRoute(PST, "/api/sender/login", [loginRateLimiter], loginApiRoute.token, apiResultHandler);

@@ -1,4 +1,4 @@
-import type { ExecOpts, FetchedResource, FetchResourceOpts, RequestProvider } from "@triliumnext/core";
+import type { ExecOpts, FetchApiOpts, FetchedResource, FetchResourceOpts, RequestProvider } from "@triliumnext/core";
 import { validateFetchableUrl } from "@triliumnext/core/src/services/request.js";
 
 /**
@@ -210,6 +210,23 @@ export default class BridgedRequestProvider implements RequestProvider {
             contentType: (msg.headers?.["content-type"] ?? "").split(";")[0].trim().toLowerCase(),
             bytes: Uint8Array.from(binary, (c) => c.charCodeAt(0))
         };
+    }
+
+    /**
+     * Calls a configured API endpoint with the WebView's own `fetch`, deliberately going around
+     * the bridge this provider exists to offer.
+     *
+     * The bridge answers once, with the whole body in hand, and a chat completion is a stream that
+     * is read as it arrives — put through here it would surface all at once, at the end, which for
+     * the one caller of this is the difference between a chat and a long silence. Where CORS is the
+     * problem the bridge solves, that is not the problem here either: the LLM endpoints are called
+     * from browsers by design and answer accordingly.
+     *
+     * `allowPrivateNetwork` is unread for the same reason as in the sibling provider — see the note
+     * there.
+     */
+    async fetchApi(url: string, init: RequestInit, _opts: FetchApiOpts): Promise<Response> {
+        return await fetch(validateFetchableUrl(url).toString(), init);
     }
 }
 

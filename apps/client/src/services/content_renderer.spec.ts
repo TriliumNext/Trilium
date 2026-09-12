@@ -62,7 +62,7 @@ vi.mock("./mermaid.js", () => ({
 
 // isOfficeMimeType comes (unmocked) from @triliumnext/commons; only the server
 // round-trip is stubbed out.
-const renderOfficeToHtml = vi.fn(async (..._args: any[]) => `<div class="office-doc">converted</div>`);
+const renderOfficeToHtml = vi.fn(async (..._args: any[]) => ({ css: "", html: `<div class="office-doc">converted</div>` }));
 vi.mock("./office_renderer.js", () => ({
     renderOfficeToHtml: (...a: any[]) => renderOfficeToHtml(...a)
 }));
@@ -73,8 +73,12 @@ vi.mock("mermaid", () => ({
     default: { mermaidAPI: { initialize: (...a: any[]) => mermaidInitialize(...a), render: (...a: any[]) => mermaidRender(...a) } }
 }));
 
-const pdfViewerComponent = vi.fn(() => null);
-vi.mock("../widgets/type_widgets/file/PdfViewer", () => ({ default: pdfViewerComponent }));
+const pdfViewerComponent = vi.fn((_props: any) => null);
+// Only the component is stubbed: the URL the viewer is handed is the assertion below (#8877).
+vi.mock("../widgets/type_widgets/file/PdfViewer", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../widgets/type_widgets/file/PdfViewer")>()),
+    default: pdfViewerComponent
+}));
 
 const webViewComponent = vi.fn((_props: any): VNode<any> => h("span", { class: "mock-webview-marker" }));
 vi.mock("../widgets/type_widgets/WebView", () => ({ default: webViewComponent }));
@@ -291,6 +295,14 @@ describe("getRenderedContent file rendering", () => {
         const { type, $renderedContent } = await getRenderedContent(note);
         expect(type).toBe("pdf");
         expect(pdfViewerComponent).toHaveBeenCalled();
+        // Root-relative, never `../../api/...`: a path climbing out of /pdfjs/web is rejected by
+        // proxies that filter traversal, before the request reaches Trilium (#8877).
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].pdfUrl).toBe(`/api/notes/${note.noteId}/open`);
+
+        const att = buildAttachment({ role: "file", mime: "application/pdf" });
+        await getRenderedContent(att);
+        expect(pdfViewerComponent.mock.calls.at(-1)?.[0].pdfUrl).toBe(`/api/attachments/${att.attachmentId}/open`);
+
         expect($renderedContent.find(".file-download").length).toBe(1);
         const $open = $renderedContent.find(".file-open");
         expect($open.length).toBe(1);
@@ -394,12 +406,28 @@ describe("getRenderedContent office rendering", () => {
         note.mime = DOCX;
         const { type, $renderedContent } = await getRenderedContent(note);
         expect(type).toBe("office");
-        expect(renderOfficeToHtml).toHaveBeenCalledWith("notes", note.noteId);
+        expect(renderOfficeToHtml).toHaveBeenCalledWith("notes", note.noteId, { trim: undefined });
         // the padded body sits inside a dedicated, unpadded scroll host
         expect($renderedContent.find(".office-preview-scroll > .office-preview-body").html()).toContain("converted");
         // the file remains downloadable / openable
         expect($renderedContent.find(".file-download").length).toBe(1);
         expect($renderedContent.find(".file-open").length).toBe(1);
+    });
+
+    it("attaches a spreadsheet's stylesheet inside the preview body, as an element", async () => {
+        renderOfficeToHtml.mockResolvedValueOnce({
+            css: ".spreadsheet-table .sst-1{font-weight:bold}",
+            html: '<table class="spreadsheet-table"><td class="sst-1">x</td></table>'
+        });
+        const note = buildNote({ title: "Book", type: "file" });
+        note.mime = DOCX;
+
+        const { $renderedContent } = await getRenderedContent(note);
+
+        const $style = $renderedContent.find(".office-preview-body > style");
+        expect($style.length).toBe(1);
+        // Set as text, so the rules are never parsed as markup on the way in.
+        expect($style.text()).toBe(".spreadsheet-table .sst-1{font-weight:bold}");
     });
 
     it("shows an admonition (and drops the preview body) when conversion fails", async () => {
@@ -424,7 +452,7 @@ describe("getRenderedContent office rendering", () => {
         const att = buildAttachment({ role: "file", mime: "application/vnd.oasis.opendocument.spreadsheet" });
         const { type, $renderedContent } = await getRenderedContent(att);
         expect(type).toBe("office");
-        expect(renderOfficeToHtml).toHaveBeenCalledWith("attachments", att.attachmentId);
+        expect(renderOfficeToHtml).toHaveBeenCalledWith("attachments", att.attachmentId, { trim: undefined });
         expect($renderedContent.find(".file-footer").length).toBe(0);
     });
 });

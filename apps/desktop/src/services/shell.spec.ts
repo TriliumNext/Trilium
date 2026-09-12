@@ -205,6 +205,28 @@ describe("validateOpenPath", () => {
         });
     });
 
+    describe("a file as a root of its own (the database, wherever it is kept)", () => {
+        let documentPath: string;
+
+        beforeAll(() => {
+            documentPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "trilium-open-path-db-")), "document.db");
+            fs.writeFileSync(documentPath, "");
+        });
+
+        afterAll(() => fs.rmSync(path.dirname(documentPath), { recursive: true, force: true }));
+
+        it("accepts that exact file, and nothing else beside it", () => {
+            expect(validateOpenPath(documentPath, dataDir, tmpDir, null, documentPath))
+                .toBe(path.resolve(documentPath));
+
+            // Naming a file as a root widens the sandbox by one path, not by the directory it is in.
+            const sibling = path.join(path.dirname(documentPath), "document.db-wal");
+            fs.writeFileSync(sibling, "");
+            expect(() => validateOpenPath(sibling, dataDir, tmpDir, null, documentPath))
+                .toThrow(/outside data dir/);
+        });
+    });
+
     it("accepts files under the data directory", () => {
         expect(validateOpenPath(dataFile, dataDir, tmpDir)).toBe(path.resolve(dataFile));
     });

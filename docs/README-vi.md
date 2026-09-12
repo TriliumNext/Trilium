@@ -24,6 +24,9 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 Trilium Notes là một ứng dụng ghi chú phân cấp miễn phí, mã nguồn mở, đa nền
 tảng tập trung vào việc xây dựng cơ sở tri thức cá nhân lớn.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Tải xuống
@@ -118,7 +121,7 @@ Tài liệu của chúng tôi có sẵn ở nhiều định dạng:
   tối](https://docs.triliumnotes.org/user-guide/concepts/themes), hỗ trợ giao
   diện do người dùng tùy chỉnh
 * Hỗ trợ nhập, xuất cho
-  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   và
   [Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) để

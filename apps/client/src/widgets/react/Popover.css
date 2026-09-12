@@ -12,6 +12,9 @@
 
     /* Above the note split's own layers; menus and dialogs stand higher still. */
     z-index: 998;
+    /* Popper writes this too, but gives it back as it is destroyed; without it here the panel
+       falls into the page's flow for a frame on the way back from being maximized. */
+    position: fixed;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -21,6 +24,43 @@
     border-radius: 8px;
     box-shadow: 0 2px 8px #0003;
     backdrop-filter: var(--dropdown-backdrop-filter, blur(10px));
+}
+
+/* The card let go of its anchor and grown to the window (see `maximized` in Popover.tsx). Popper
+   takes the placement attribute off as it is destroyed, so its absence is what says the inline
+   placement has been given back and the stylesheet may place the card itself. */
+.tn-popover.maximized:not([data-popper-placement]) {
+    position: fixed;
+    inset-block: 5vh;
+    inset-inline: 0;
+    margin-inline: auto;
+    max-width: calc(100vw - 4rem);
+}
+
+.tn-popover.maximized > .tn-popover-arrow {
+    display: none;
+}
+
+/* Frosting suits a card standing beside something, not one grown to fill the window: there is
+   little left to see through it, and a surface that size reads as smeared rather than glassy. The
+   opaque menu colour is the one the theme falls back to wherever the blur cannot be had (see the
+   `body.background-effects` rules in theme-next/base.css); the themes that state no such colour
+   have an opaque menu colour to begin with. */
+.tn-popover.maximized {
+    background: var(--menu-background-color-no-backdrop, var(--menu-background-color));
+    backdrop-filter: none;
+}
+
+/* The card's sibling rather than its child: `backdrop-filter` above makes the card the containing
+   block for anything fixed within it. */
+.tn-popover-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 997;
+    /* Each theme states the colour opaque and leaves the dimming to `.modal-backdrop.show`, which
+       is Bootstrap's and not in play here. */
+    background: var(--modal-backdrop-color, #000);
+    opacity: 0.5;
 }
 
 /*

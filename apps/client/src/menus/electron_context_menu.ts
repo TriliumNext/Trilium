@@ -7,6 +7,7 @@ import options from "../services/options.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
 import contextMenu, { type MenuItem } from "./context_menu.js";
+import { buildAiActionsMenuItem, getTextEditorAtSelection } from "./text_editor_context_menu.js";
 
 function setupContextMenu() {
     const eApi = window.electronApi;
@@ -15,11 +16,16 @@ function setupContextMenu() {
     const isMac = window.glob.platform === "darwin";
     const platformModifier = isMac ? "Meta" : "Ctrl";
 
-    api.onContextMenu((params) => {
+    api.onContextMenu(async (params) => {
         const { editFlags } = params;
         const hasText = params.selectionText.trim().length > 0;
 
         const items: MenuItem<CommandNames>[] = [];
+
+        // Resolved before the menu is built rather than lazily in a handler: the rows it produces
+        // depend on how the editor answers, and `isEditable` keeps the lookup off every click that
+        // lands somewhere a completion could not be committed anyway (a read-only note, the tree).
+        const aiActions = params.isEditable ? await buildAiActionsMenuItem() : null;
 
         if (params.misspelledWord) {
             for (const suggestion of params.dictionarySuggestions) {
@@ -38,6 +44,10 @@ function setupContextMenu() {
             });
 
             items.push({ kind: "separator" });
+        }
+
+        if (aiActions) {
+            items.push(aiActions, { kind: "separator" });
         }
 
         if (params.isEditable) {
@@ -182,26 +192,9 @@ function setupContextMenu() {
  * dialogs, plain inputs) we fall back to cloning the DOM range.
  */
 export async function getSelectedHtmlForMarkdown(): Promise<string> {
-    const note = appContext.tabManager.getActiveContextNote();
-
-    if (note?.type === "text") {
-        try {
-            const editor = await appContext.tabManager.getActiveContext()?.getTextEditor();
-            const domRoot = editor?.editing.view.getDomRoot();
-            const anchorNode = window.getSelection()?.anchorNode;
-
-            // Only trust the editor's model selection when the live DOM selection is
-            // actually inside the editor; otherwise a stale editor selection would win
-            // over what the user right-clicked (e.g. selected text in a dialog).
-            if (editor && domRoot && anchorNode && domRoot.contains(anchorNode)) {
-                const selectedHtml = editor.getSelectedHtml();
-                if (selectedHtml) return selectedHtml;
-            }
-        } catch (error) {
-            // Editor not ready or the request timed out — fall through to the DOM clone.
-            console.error("Failed to read selection from the text editor:", error);
-        }
-    }
+    const editor = await getTextEditorAtSelection();
+    const selectedHtml = editor?.getSelectedHtml();
+    if (selectedHtml) return selectedHtml;
 
     const selection = window.getSelection();
     if (!selection || !selection.rangeCount) return "";

@@ -13,6 +13,15 @@ const SLACK_HTML = `<html>
 </body>
 </html>`;
 
+/**
+ * What Element Desktop puts on the clipboard: a blob URL minted inside its own renderer, which
+ * resolves to nothing anywhere else.
+ */
+const ELEMENT_HTML = `<img src="blob:vector://vector/91743433-1e35-4caf-bf27-a23a1b234e1d" alt="image.png"/>`;
+
+/** A blob URL minted by this document — what an upload still in flight leaves behind. */
+const OWN_BLOB_HTML = `<img src="blob:${window.location.origin}/91743433-1e35-4caf-bf27-a23a1b234e1d">`;
+
 /** A mixed selection — text, a mention and a picture — which carries no file to fall back on. */
 const GOOGLE_CHAT_HTML = `<html>
 <body>
@@ -67,9 +76,14 @@ describe("ClipboardBareImage", () => {
         it("leaves images the editor can already resolve to the normal paste path", () => {
             // Self-contained bytes: nothing to gain by preferring the file.
             expect(isBareImageHtml(`<img src="data:image/png;base64,AAAA">`)).toBe(false);
-            expect(isBareImageHtml(`<img src="blob:http://localhost/abc">`)).toBe(false);
+            // A blob URL of our own still resolves — it names an object this document holds.
+            expect(isBareImageHtml(OWN_BLOB_HTML)).toBe(false);
             // Copied out of Trilium, where the reference beside the payload is the whole point.
             expect(isBareImageHtml(`<img src="data:image/png;base64,AAAA" ${TRILIUM_SRC_ATTRIBUTE}="api/images/n1/p.png">`)).toBe(false);
+        });
+
+        it("accepts another application's blob URL, which resolves nowhere but there", () => {
+            expect(isBareImageHtml(ELEMENT_HTML)).toBe(true);
         });
 
         it("accepts an image with no src at all, since the file is then the only thing to go on", () => {
@@ -151,6 +165,15 @@ describe("ClipboardBareImage", () => {
             expect(createLoader).toHaveBeenCalledTimes(1);
             expect(createLoader).toHaveBeenCalledWith(file);
             // The HTML — and its unreachable URL — never gets inserted.
+            expect(reachedRestOfPipeline).not.toHaveBeenCalled();
+        });
+
+        it("uploads the clipboard file when the HTML names another application's blob URL", () => {
+            const file = imageFile();
+
+            const { reachedRestOfPipeline } = paste(ELEMENT_HTML, [file]);
+
+            expect(createLoader).toHaveBeenCalledWith(file);
             expect(reachedRestOfPipeline).not.toHaveBeenCalled();
         });
 

@@ -21,6 +21,16 @@
 .ck-mermaid__preview {
 	display: flex;
 	justify-content: center;
+	align-items: flex-start;
+	overflow-x: auto;
+	min-width: 0;
+}
+
+/* Keep the SVG's intrinsic size so wide flowcharts stay readable; the
+   preview pane scrolls horizontally instead of squashing into a thin strip. */
+.ck-mermaid__preview svg {
+	flex-shrink: 0;
+	max-width: none;
 }
 
 /* Preview error state */

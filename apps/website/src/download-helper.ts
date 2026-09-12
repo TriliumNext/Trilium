@@ -195,17 +195,72 @@ export function buildDownloadUrl(t: TFunction<"translation", undefined>, app: Ap
 export async function getArchitecture(): Promise<Architecture | null> {
     if (typeof window === "undefined") return null;
 
-    if (navigator.userAgentData) {
+    if (getPlatform() === "macos") {
+        return getMacArchitecture();
+    }
+
+    return await getArchitectureFromClientHints()
+        ?? getArchitectureFromUserAgent()
+        ?? "x64";
+}
+
+/**
+ * macOS never reveals the architecture through the user agent: Safari and Firefox hardcode
+ * "Intel Mac OS X" on Apple Silicon as well, and even Chromium reports "x86" when the browser itself
+ * is being translated by Rosetta. The GPU name describes the actual machine, which is what the
+ * download has to match, so it takes precedence over both.
+ */
+async function getMacArchitecture(): Promise<Architecture> {
+    return getArchitectureFromGpu()
+        ?? await getArchitectureFromClientHints()
+        // Apple stopped selling Intel Macs in 2023, so a Mac we cannot identify (WebGL blocked for
+        // fingerprinting reasons, a virtualised GPU) is far more likely to be Apple Silicon. Guessing
+        // that way round is also the safer failure: the x64 build merely runs through Rosetta on
+        // Apple Silicon, whereas the arm64 build does not start at all on an Intel Mac.
+        ?? "arm64";
+}
+
+/**
+ * Reads the architecture off the GPU name via WebGL, the only signal exposed to every macOS browser
+ * that distinguishes an Apple Silicon Mac from an Intel one.
+ *
+ * Apple Silicon renders as `Apple GPU` (Safari), `Apple M1 Pro` or
+ * `ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)` (Chromium, Firefox), whereas
+ * Intel Macs name their Intel, AMD or NVIDIA GPU instead. Anything else (a paravirtualised GPU, no
+ * WebGL at all) is inconclusive rather than Intel.
+ */
+function getArchitectureFromGpu(): Architecture | null {
+    try {
+        const gl = document.createElement("canvas").getContext("webgl");
+        if (!gl) return null;
+
+        const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+        const renderer = String(gl.getParameter(debugInfo ? debugInfo.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+        if (/\bapple\s+(gpu|m\d)/i.test(renderer)) return "arm64";
+        if (/\b(intel|amd|radeon|nvidia|geforce)\b/i.test(renderer)) return "x64";
+        return null;
+    } catch {
+        // WebGL can be unavailable or blocked for fingerprinting reasons.
+        return null;
+    }
+}
+
+async function getArchitectureFromClientHints(): Promise<Architecture | null> {
+    if (!navigator.userAgentData) return null;
+
+    try {
         const { architecture } = await navigator.userAgentData.getHighEntropyValues(["architecture"]);
-        return architecture?.startsWith("arm") ? "arm64" : "x64";
+        if (!architecture) return null;
+        return architecture.startsWith("arm") ? "arm64" : "x64";
+    } catch {
+        // Permissions policy may reject high entropy values.
+        return null;
     }
+}
 
+function getArchitectureFromUserAgent(): Architecture | null {
     const userAgent = navigator.userAgent.toLowerCase();
-    if (userAgent.includes('arm64') || userAgent.includes('aarch64')) {
-        return 'arm64';
-    }
-
-    return "x64";
+    return (userAgent.includes("arm64") || userAgent.includes("aarch64")) ? "arm64" : null;
 }
 
 export function getPlatform(): Platform | null {

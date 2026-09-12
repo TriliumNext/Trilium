@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    boundsOfPoints, circleRing, closeRing, type GeoShape, geoShapeBounds, parseGeoShape,
-    polygonFromRing, ringCenter, serializeGeoShape
+    circleRing, closeRing, type GeoShape, geoShapeBounds, parseGeoShape, polygonFromRing,
+    ringCenter, serializeGeoShape
 } from "./shapes";
 
 describe("serializeGeoShape", () => {
@@ -126,14 +126,19 @@ describe("rings", () => {
     });
 });
 
+/** How the box itself is measured is `boundsOf`'s own business (see coordinates.spec); what these
+ *  pin down is which points of a shape are handed to it. */
 describe("bounds", () => {
-    it("boxes a line and a polygon by their own points, and answers nothing for none", () => {
+    it("boxes a line and a polygon by their own points", () => {
         expect(geoShapeBounds({
             type: "line",
             coordinates: [ [ 24.13, 45.79 ], [ 24.16, 45.96 ], [ 24.08, 45.89 ] ]
         })).toEqual([ [ 24.08, 45.79 ], [ 24.16, 45.96 ] ]);
 
-        expect(boundsOfPoints([])).toBeNull();
+        expect(geoShapeBounds({
+            type: "polygon",
+            coordinates: [ [ 24.13, 45.79 ], [ 24.16, 45.96 ], [ 24.08, 45.89 ] ]
+        })).toEqual([ [ 24.08, 45.79 ], [ 24.16, 45.96 ] ]);
     });
 
     /** A circle is stored as a centre and a radius, so the box has to cover the radius. */
@@ -150,20 +155,12 @@ describe("bounds", () => {
         expect(east - west).toBeGreaterThan(north - south);
     });
 
-    /**
-     * Longitude wraps. Points either side of ±180° sit metres apart on the ground but span nearly
-     * the world when measured raw, so the same longitudes are measured again with the seam at 0°
-     * and the narrower box wins.
-     */
+    /** A shape reaches `boundsOf` whole, so one drawn across the seam is framed at the crossing. */
     it("frames a shape crossing the antimeridian rather than the world", () => {
         expect(geoShapeBounds({
             type: "polygon",
             coordinates: [ [ 179.9, -16.5 ], [ -179.9, -16.5 ], [ -179.95, -16.6 ] ]
         })).toEqual([ [ 179.9, -16.6 ], [ 180.1, -16.5 ] ]);
-
-        // A shape that really spans half the earth stays wide in both frames.
-        expect(boundsOfPoints([ [ -120, 10 ], [ 0, 20 ], [ 120, 30 ] ]))
-            .toEqual([ [ -120, 10 ], [ 120, 30 ] ]);
     });
 });
 

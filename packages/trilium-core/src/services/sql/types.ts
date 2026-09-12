@@ -37,6 +37,14 @@ export interface DatabaseProvider {
      * Optional - only implemented where the database is a file that can be replaced underneath.
      */
     detach?(): void;
+    /**
+     * Whether there is a connection at all. Answers `false` between a {@link detach} and the
+     * `loadFrom*` that follows it, which is a window a restore runs inside and an erased database
+     * never leaves.
+     *
+     * Optional, and treated as "attached" where a provider does not answer.
+     */
+    isAttached?(): boolean;
     prepare(query: string): Statement;
     transaction<T>(func: (statement: Statement) => T): Transaction;
     get inTransaction(): boolean;

@@ -111,8 +111,13 @@
     "cancel": "Cancelar",
     "ok": "Aceptar",
     "are_you_sure_remove_note": "¿Está seguro que desea eliminar la nota \"{{title}}\" del mapa de relaciones? ",
-    "if_you_dont_check": "Si no marca esto, la nota solo se eliminará del mapa de relaciones.",
-    "also_delete_note": "También eliminar la nota"
+    "if_you_dont_check": "La nota en sí se conserva; solo se elimina su lugar aquí.",
+    "also_delete_note": "También eliminar la nota",
+    "delete_note_keeps_note_one": "La nota tiene {{count}} clon más, por lo que la nota en sí se conserva.",
+    "delete_note_keeps_note_many": "La nota tiene {{count}} clones más, por lo que la nota en sí se conserva.",
+    "delete_note_keeps_note_other": "",
+    "delete_note_deletes_note": "Este es el único lugar de la nota en el árbol, por lo que la nota en sí se eliminará. Se puede deshacer en los cambios recientes.",
+    "delete_note_deletes_clones": "La nota se eliminará de los {{places}} lugares en los que aparece. Se puede deshacer en los cambios recientes."
   },
   "delete_notes": {
     "close": "Cerrar",
@@ -125,7 +130,7 @@
     "cancel": "Cancelar",
     "title": "Eliminar notas",
     "clones_label": "Clones",
-    "delete_clones_description_one": "Eliminar también {{count}} clon adicional. Se puede deshacer en los cambios recientes.",
+    "delete_clones_description_one": "Eliminar también el otro clon. Se puede deshacer en los cambios recientes.",
     "delete_clones_description_many": "Eliminar también {{count}} clones adicionales. Se puede deshacer en los cambios recientes.",
     "delete_clones_description_other": "Eliminar también {{count}} clones adicionales. Se puede deshacer en los cambios recientes.",
     "erase_notes_label": "Borrar permanentemente",
@@ -217,7 +222,8 @@
     "inPageSearch": "búsqueda en la página",
     "title": "Hoja de ayuda",
     "editShortcuts": "Editar atajos de teclado",
-    "toggleArchivedNotes": "mostrar/ocultar notas archivadas"
+    "toggleArchivedNotes": "mostrar/ocultar notas archivadas",
+    "openAiAssistant": "abre el asistente de IA sobre la selección"
   },
   "import": {
     "importIntoNote": "Importar a nota",
@@ -626,7 +632,8 @@
     "share_open_graph_image_relation": "Una nota de imagen servida como <code>og:image</code> de la página compartida. Establezca en su lugar la etiqueta del mismo nombre para apuntar a una dirección.",
     "share_html": "Una nota HTML inyectada en la página compartida, donde indique <code>#shareHtmlLocation</code> en esa nota. Debe situarse dentro del subárbol compartido.",
     "map_dark_style": "Indica a un mapa geográfico que el estilo personalizado dado en <code>map:style</code> es oscuro, para que los títulos de los marcadores se dibujen claros sobre él. Los estilos ofrecidos en las propiedades de la colección ya lo indican por sí mismos y no necesitan esa etiqueta.",
-    "map_cluster": "Agrupa los marcadores dibujados cerca unos de otros en una sola burbuja numerada, que se abre al hacer clic."
+    "map_cluster": "Agrupa los marcadores dibujados cerca unos de otros en una sola burbuja numerada, que se abre al hacer clic.",
+    "ai_quick_action": "Ofrece esta nota como una instrucción en el menú del asistente de IA del editor de texto. El título nombra la acción, el contenido es el mensaje."
   },
   "attribute_editor": {
     "help_text_body1": "Para agregar una etiqueta, simplemente escriba, por ejemplo. <code>#rock</code> o si desea agregar también valor, p.e. <code>#año = 2020</code>",
@@ -802,7 +809,43 @@
     "day_previous": "Día anterior",
     "day_next": "Día siguiente",
     "pin_date": "Fijar la fecha actual para que el calendario siempre se abra en este intervalo en lugar de hoy",
-    "unpin_date": "Desfijar la fecha para que el calendario se abra de nuevo en la fecha de hoy"
+    "unpin_date": "Desfijar la fecha para que el calendario se abra de nuevo en la fecha de hoy",
+    "close_details": "Cerrar detalles del evento",
+    "expand_details": "Expandir el evento para llenar la ventana",
+    "restore_details": "Devolver el evento junto a su lugar en el calendario",
+    "dates": {
+      "all_day": "Todo el día",
+      "date": "Fecha",
+      "start_date": "Fecha de inicio",
+      "end_date": "Fecha de fin",
+      "time": "Hora",
+      "start_time": "Hora de inicio",
+      "end_time": "Hora de fin"
+    },
+    "recurrence": {
+      "repeats": "Se repite",
+      "frequency": "Frecuencia",
+      "none": "Ninguna",
+      "does_not_repeat": "No se repite",
+      "daily": "Diariamente",
+      "weekly": "Semanalmente",
+      "monthly": "Mensualmente",
+      "yearly": "Anualmente",
+      "custom": "Personalizado",
+      "repeat_every": "Repetir cada",
+      "unit_days": "días",
+      "unit_weeks": "semanas",
+      "unit_months": "meses",
+      "unit_years": "años",
+      "on_days": "Los días",
+      "ends": "Termina",
+      "never": "Nunca",
+      "until": "En la fecha",
+      "count": "Después de",
+      "times": "veces",
+      "custom_rule": "Regla",
+      "custom_hint": "Una regla de recurrencia iCalendar (RRULE) que expresa más de lo que permiten los campos anteriores. Al borrarla se detiene la repetición."
+    }
   },
   "close_pane_button": {
     "close_this_pane": "Cerrar este panel"
@@ -951,7 +994,8 @@
     "create_child_note_title": "Crear una subnota y agregarla al mapa",
     "reset_pan_zoom_title": "Restablecer la panorámica y el zoom a las coordenadas y ampliación iniciales",
     "zoom_in_title": "Acercar",
-    "zoom_out_title": "Alejar"
+    "zoom_out_title": "Alejar",
+    "create_child_note_text": "Agregar nota"
   },
   "zpetne_odkazy": {
     "relation": "relación",
@@ -1015,9 +1059,7 @@
     "open_all_confirm_one": "Esto abrirá {{count}} nota en una nueva pestaña. ¿Continuar?",
     "open_all_confirm_many": "Esto abrirá {{count}} notas en nuevas pestañas. ¿Continuar?",
     "open_all_confirm_other": "Esto abrirá {{count}} notas en nuevas pestañas. ¿Continuar?",
-    "open_all_too_one": "",
-    "open_all_too_many": "Demasiadas notas para abrir a la vez ({{count}}). El máximo es {{max}}; intente acotar los resultados primero.",
-    "open_all_too_other": "",
+    "open_all_limit_exceeded": "Demasiadas notas para abrir a la vez ({{count}}). El máximo es {{max}}; intente acotar los resultados primero.",
     "dashboard": "Panel"
   },
   "edited_notes": {
@@ -1258,7 +1300,8 @@
     "editor_crashed_details_button": "Ver más detalles...",
     "editor_crashed_details_intro": "Si experimenta este error varias veces, considere informarlo en GitHub adjuntando la siguiente información.",
     "editor_crashed_details_title": "Información técnica",
-    "keeps-crashing": "El componente de edición sigue fallando. Por favor, intente reiniciar Trilium. Si el problema persiste, considere crear un informe de fallos."
+    "keeps-crashing": "El componente de edición sigue fallando. Por favor, intente reiniciar Trilium. Si el problema persiste, considere crear un informe de fallos.",
+    "nothing_selected_to_cut": "Seleccione primero algo de texto para cortarlo en una subnota."
   },
   "empty": {
     "open_note_instruction": "Abra una nota escribiendo el título de la nota en la entrada a continuación o elija una nota en el árbol.",
@@ -1325,8 +1368,9 @@
     "successfully_created_lightly_anonymized_database": "Se creó una base de datos ligeramente anónima en {{anonymizedFilePath}}",
     "no_anonymized_database_yet": "Aún no hay base de datos anónima.",
     "description": "Crear una copia anónima de su base de datos para compartir con los desarrolladores cuando depuren problemas, sin exponer datos personales.",
-    "anonymized_databases_location": "Las bases de datos anonimizadas se almacenan en {{- anonymizedFolder}}.",
-    "download": "Descargar"
+    "anonymized_databases_location": "Las bases de datos anonimizada se almacenan en <Folder/>.",
+    "download": "Descargar",
+    "delete_confirmation": "¿Eliminar la base de datos anonimizada {{fileName}}? La base de datos original no se ve afectada."
   },
   "database_integrity_check": {
     "title": "Verificación de integridad de la base de datos",
@@ -1369,7 +1413,6 @@
     "note_tree_font": "Texto del árbol de notas",
     "note_detail_font": "Texto del documento",
     "monospace_font": "Texto monoespacio",
-    "not_all_fonts_available": "Es posible que no todas las fuentes enumeradas estén disponibles en su sistema",
     "generic-fonts": "Fuentes genéricas",
     "sans-serif-system-fonts": "Fuentes Sans-serif del sistema",
     "serif-system-fonts": "Fuentes Serif del sistema",
@@ -1383,7 +1426,9 @@
     "preview": "Vista previa",
     "monospace_font_description": "Utilizado para notas de código y bloques de código",
     "size_relative_to_general": "El tamaño es relativo al tamaño de la fuente general",
-    "apply_changes": "Recargar para aplicar cambios"
+    "apply_changes": "Recargar para aplicar cambios",
+    "monospace_ligatures": "Ligaduras de programación",
+    "monospace_ligatures_description": "Representa pares de caracteres como != y -> como símbolos únicos (≠, →), si la fuente monoespaciada lo admite. El texto en sí no cambia."
   },
   "max_content_width": {
     "title": "Ancho del contenido",
@@ -1610,7 +1655,10 @@
     "thursday": "Jueves",
     "friday": "Viernes",
     "saturday": "Sábado",
-    "formatting-locale-auto": "Basado en el idioma de la aplicación"
+    "formatting-locale-auto": "Basado en el idioma de la aplicación",
+    "default-content-language": "Idioma de contenido predeterminado",
+    "default-content-language-description": "El idioma en el que se escriben las notas salvo que se defina uno en la propia nota, en la sección Propiedades básicas. Afecta a funciones como la alineación de derecha a izquierda y las comillas que produce al escribir.",
+    "default-content-language-auto": "Según el idioma de la aplicación"
   },
   "backup": {
     "automatic_backup": "Copia de seguridad automática",
@@ -1628,7 +1676,41 @@
     "download": "Descargar",
     "title": "Respaldo",
     "automatic_backups_title": "Copias de seguridad automáticas",
-    "automatic_backups_description": "Trilium puede hacer copias de seguridad de la base de datos automáticamente. Se recomienda mantener las copias de seguridad activadas, pero esto puede ralentizar el arranque de la aplicación con bases de datos grandes o dispositivos de almacenamiento lentos."
+    "automatic_backups_description": "Trilium puede hacer copias de seguridad de la base de datos automáticamente. Se recomienda mantener las copias de seguridad activadas, pero esto puede ralentizar el arranque de la aplicación con bases de datos grandes o dispositivos de almacenamiento lentos.",
+    "location_title": "Ubicación de las copias de seguridad",
+    "saved_in": "Las copias de seguridad se guardan en",
+    "select_location": "Seleccionar ubicación",
+    "select_location_desktop_only": "Elegir la ubicación de las copias de seguridad solo está disponible en la aplicación de escritorio.",
+    "reset_location": "Restablecer al valor predeterminado",
+    "reset_location_confirmation": "¿Desea restablecer la ubicación de las copias de seguridad de la base de datos al valor predeterminado?",
+    "default_location": "Ubicación predeterminada",
+    "restore_backup": "Restaurar una copia de seguridad",
+    "backups_summary_one": "{{count}} copia de seguridad; la más reciente hace {{age}}.",
+    "backups_summary_many": "{{count}} copias de seguridad; la más reciente hace {{age}}.",
+    "backups_summary_other": "",
+    "standalone_heading": "Haga una copia de seguridad de sus datos de Trilium",
+    "standalone_description": "Aquí puede descargar una copia de seguridad de su base de conocimientos de Trilium, o restaurar una existente.",
+    "create_and_download": "Descargar copia de seguridad",
+    "upload_and_restore": "Restaurar copia de seguridad",
+    "restart_for_backup": "Trilium debe reiniciarse para hacer una copia de seguridad de sus notas. Podrá volver a ellas en cuanto termine.\n\n¿Reiniciar ahora?",
+    "restart_for_restore": "Trilium debe reiniciarse antes del proceso de restauración. Una vez iniciado, se le pedirá que haga una copia de seguridad de sus datos existentes antes de sobrescribirlos, para que no se pierda nada.\n\n¿Reiniciar ahora?",
+    "options_title": "Opciones de copia de seguridad",
+    "enable_compression": "Habilitar compresión",
+    "enable_compression_description": "Hace cada copia de seguridad más pequeña, a costa de algo de tiempo al escribirla.",
+    "enable_encryption": "Habilitar cifrado",
+    "enable_encryption_description": "Protege cada copia de seguridad con una contraseña suya, para que nadie más pueda leerla. Conviene activarlo cuando las copias se escriben en una carpeta sincronizada o compartida.",
+    "no_keyring": "No hay un llavero disponible en su sistema. Eso significa que la contraseña no puede almacenarse de forma segura, por lo que el cifrado de copias de seguridad no está disponible.",
+    "turn_on_encryption": "Activar cifrado",
+    "change_password": "Cambiar contraseña",
+    "password_modal_title": "Contraseña de copia de seguridad",
+    "password_modal_description": "Conserve una copia de esta contraseña en un lugar seguro. Trilium no puede mostrarla de nuevo, y sin ella no se puede restaurar una copia de seguridad.",
+    "save_password": "Guardar contraseña",
+    "password_stored": "Se ha guardado la contraseña de copia de seguridad.",
+    "password_not_stored": "No se pudo guardar la contraseña de copia de seguridad.",
+    "encryption_not_disabled": "Se eliminó la contraseña de copia de seguridad, pero no se pudo desactivar el cifrado. Las copias no se cifrarán hasta que vuelva a activar el cifrado.",
+    "encryption_not_enabled": "Se guardó la contraseña de copia de seguridad, pero no se pudo activar el cifrado. Las copias no se cifrarán hasta que lo active.",
+    "compressed": "Comprimida",
+    "encrypted": "Cifrada"
   },
   "etapi": {
     "description": "ETAPI es una REST API que se utiliza para acceder a la instancia de Trilium mediante programación, sin interfaz de usuario.",
@@ -1807,7 +1889,7 @@
     "custom_dictionary_edit_description": "Edita la lista de palabras que no deben ser marcadas por el corrector ortográfico. Los cambios serán visibles después de un reinicio.",
     "custom_dictionary_open": "Editar diccionario",
     "related_description": "Configurar idiomas del corrector ortográfico y diccionario personalizado.",
-    "disabled_placeholder": "La corrección ortográfica está desactivada. Habilítela para elegir idiomas y gestionar el diccionario personalizado."
+    "enable_description": "Subraya las palabras mal escritas mientras escribe, con correcciones en el menú contextual."
   },
   "sync_2": {
     "config_title": "Sincronizar servidor",
@@ -2110,11 +2192,12 @@
     "backend_scripting_disabled_more_info": "Más información"
   },
   "ws": {
-    "sync-check-failed": "¡La comprobación de sincronización falló!",
     "consistency-checks-failed": "¡Las comprobaciones de consistencia fallaron! Vea los registros para más detalles.",
     "encountered-error": "Error encontrado \"{{message}}\", compruebe la consola.",
     "lost-websocket-connection-title": "Se ha perdido la conexión con el servidor",
-    "lost-websocket-connection-message": "Compruebe la configuración de su proxy inverso (por ejemplo, nginx o Apache) para asegurarse de que las conexiones WebSocket están correctamente permitidas y no están bloqueadas."
+    "lost-websocket-connection-message": "Compruebe la configuración de su proxy inverso (por ejemplo, nginx o Apache) para asegurarse de que las conexiones WebSocket están correctamente permitidas y no están bloqueadas.",
+    "sync-hash-check-failed-title": "Sincronización detenida",
+    "sync-hash-check-failed": "Esta base de datos y el servidor de sincronización contienen datos que no se pudieron reconciliar al resincronizarlos ({{- sectors}}).\n\nLa sincronización seguirá fallando hasta que se resuelva. Consulte los registros para más detalles."
   },
   "hoisted_note": {
     "confirm_unhoisting": "La nota requerida '{{requestedNote}}' está fuera del subárbol de la nota anclada '{{hoistedNote}}' y debe desanclarla para acceder a la nota. ¿Desea proceder con el desanclaje?"
@@ -2220,14 +2303,26 @@
     "webgl-unavailable": "No se puede dibujar este mapa porque WebGL no está disponible. Compruebe que la aceleración por hardware esté habilitada y que los controladores gráficos estén actualizados.",
     "zoom-in": "Acercar",
     "zoom-out": "Alejar",
-    "fullscreen": "Pantalla completa",
-    "exit-fullscreen": "Salir de pantalla completa"
+    "expand-details": "Expandir la nota para llenar el mapa",
+    "restore-details": "Devolver la nota junto al mapa",
+    "create-child-note-cancel": "Cancelar la adición de la nota",
+    "add-marker": "Añadir marcador",
+    "add-marker-cancel": "Cancelar",
+    "add-gpx-track": "Añadir una traza GPS desde un archivo GPX",
+    "enter-3d": "Inclinar a una vista 3D\nMantenga pulsado Ctrl y arrastre para inclinar el mapa libremente",
+    "exit-3d": "Volver a dejar el mapa plano",
+    "close-details": "Cerrar",
+    "marker-color": "Color del marcador",
+    "copy-coordinates": "Copiar coordenadas"
   },
   "geo-map-context": {
     "open-location": "Abrir ubicación",
     "remove-from-map": "Eliminar del mapa",
     "add-note": "Agregar un marcador en esta ubicación",
-    "move-marker": "Mover a otra ubicación"
+    "move-marker": "Mover a otra ubicación",
+    "remove-from-map-confirmation": "¿Está seguro de que desea quitar la nota «{{title}}» del mapa?",
+    "delete-note": "Eliminar nota",
+    "delete-note-confirmation": "¿Está seguro de que desea eliminar la nota «{{title}}»? Una traza se dibuja desde su propia nota, por lo que no se puede quitar del mapa por sí sola."
   },
   "help-button": {
     "title": "Abrir la página de ayuda relevante"
@@ -2266,11 +2361,12 @@
   "note_language": {
     "not_set": "Idioma no establecido",
     "configure-languages": "Configurar idiomas...",
-    "help-on-languages": "Ayuda en idiomas de contenido..."
+    "help-on-languages": "Ayuda en idiomas de contenido...",
+    "not_set_with_default": "Ningún idioma definido — {{- language}}"
   },
   "content_language": {
     "title": "Idiomas de contenido",
-    "description": "Seleccione uno o más idiomas que deben aparecer en la selección del idioma en la sección Propiedades Básicas de una nota de texto de solo lectura o editable. Esto permitirá características tales como corrección ortográfica, soporte de derecha a izquierda y extracción de texto (OCR)."
+    "description": "Seleccione uno o más idiomas que deben aparecer en la selección de idioma de la sección Propiedades básicas de una nota de texto de solo lectura o editable. Esto permitirá funciones como la corrección ortográfica, la escritura de derecha a izquierda, las comillas y la extracción de texto (OCR)."
   },
   "switch_layout_button": {
     "title_vertical": "Mover el panel de edición hacia abajo",
@@ -2323,7 +2419,6 @@
   },
   "board_view": {
     "delete-note": "Eliminar nota...",
-    "move-to": "Mover a",
     "insert-above": "Insertar arriba",
     "insert-below": "Insertar abajo",
     "delete-column": "Eliminar columna",
@@ -2335,7 +2430,6 @@
     "new-item-placeholder": "Ingresar título de la nota...",
     "add-column-placeholder": "Ingresar título de la columna...",
     "edit-note-title": "Haga clic para editar el título de la nota",
-    "edit-column-title": "Haga clic para editar el título de la columna",
     "remove-from-board": "Eliminar del tablero",
     "column-already-exists": "Esta columna ya existe en el tablero.",
     "column-definition-save-error": "Las columnas se guardaron en el tablero, pero no se pudieron guardar en el atributo de estado.",
@@ -2378,7 +2472,9 @@
     "content_hints_enabled": "Sugerencias de contenido",
     "content_hints_description": "Mostrar sugerencias breves en la esquina inferior del editor que explican cómo interactuar con el elemento bajo el cursor o el puntero.",
     "auto_link_previews_enabled": "Generar vistas previas de enlaces automáticamente",
-    "auto_link_previews_description": "Convertir automáticamente un enlace detectado en una vista previa que muestra el título, la descripción y la imagen de la página web. Insertar una vista previa desde la barra de herramientas siempre funciona, independientemente de este ajuste."
+    "auto_link_previews_description": "Convertir automáticamente un enlace detectado en una vista previa que muestra el título, la descripción y la imagen de la página web. Insertar una vista previa desde la barra de herramientas siempre funciona, independientemente de este ajuste.",
+    "html_support_enabled": "Conservar etiquetas HTML no admitidas",
+    "html_support_description": "Conserva las etiquetas HTML para las que el editor no tiene función propia, según la lista de Opciones → Otros → Etiquetas de importación HTML. Aparecen como bloques que no se pueden editar directamente, y una etiqueta no reconocida puede no ser visible al editar. Si está desactivado, esas etiquetas se eliminan de una nota la primera vez que se edita y se guarda; la importación no se ve afectada en ningún caso."
   },
   "command_palette": {
     "tree-action-name": "Árbol:{{name}}",
@@ -2431,9 +2527,7 @@
   },
   "settings": {
     "related_settings": "Configuración relacionada",
-    "related_actions": "Acciones relacionadas",
-    "related_space_usage": "Analizar el uso de espacio en la base de datos",
-    "related_space_usage_description": "Vea qué notas, revisiones y archivos adjuntos ocupan más espacio, y recupérelo."
+    "related_actions": "Acciones relacionadas"
   },
   "settings_appearance": {
     "related_code_blocks": "Esquema de colores para bloques de código en notas de texto",
@@ -2477,7 +2571,13 @@
     "minutes_other": "{{count}} minutos",
     "hours_one": "{{count}} hora",
     "hours_many": "{{count}} horas",
-    "hours_other": "{{count}} horas"
+    "hours_other": "{{count}} horas",
+    "event_color": "Color del evento",
+    "remove_from_calendar": "Quitar del calendario",
+    "remove_from_calendar_confirmation": "¿Está seguro de que desea quitar el evento «{{title}}» del calendario?",
+    "new_event": "Nuevo evento",
+    "draft_title_placeholder": "Añadir un título",
+    "create_event": "Crear"
   },
   "note-color": {
     "clear-color": "Borrar color de nota",
@@ -2553,8 +2653,7 @@
   },
   "server": {
     "unknown_http_error_title": "Error de comunicación con el servidor",
-    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMensaje: {{message}}",
-    "traefik_blocks_requests": "Si está usando el proxy inverso Traefik, este introdujo un cambio que afecta la comunicación con el servidor."
+    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMensaje: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Volver a la nota anterior",
@@ -2685,8 +2784,6 @@
     "rotate": "Rotar",
     "picture-in-picture": "Imagen en imagen",
     "exit-picture-in-picture": "Salir del modo imagen en imagen",
-    "fullscreen": "Pantalla completa (F)",
-    "exit-fullscreen": "Salir de la pantalla completa",
     "unsupported-format": "La vista previa del medio no está disponible para este formato de archivo:\n{{mime}}",
     "zoom-to-fit": "Acercamiento para llenar",
     "zoom-reset": "Reiniciar acercamiento para llenar",
@@ -2807,7 +2904,14 @@
     "diff_identical": "Esta revisión es idéntica al contenido actual de la nota."
   },
   "database": {
-    "title": "Base de datos"
+    "title": "Base de datos",
+    "start_over_description": "Pasar a una base de datos nueva en blanco, volver a sincronizar con un servidor nuevo o restaurar una copia de seguridad. Se le pedirá que haga una copia de seguridad de sus datos antes de descartar los existentes.",
+    "start_over": "Empezar de nuevo",
+    "start_over_confirm": "Trilium volverá a la pantalla de configuración, donde podrá iniciar una nueva base de conocimientos, restaurar una copia de seguridad o sincronizar desde otro dispositivo. Primero se le ofrecerá una copia de seguridad de sus datos actuales, y no se elimina nada hasta que elija una de esas opciones. ¿Continuar?",
+    "start_over_pending": "La pantalla de configuración aparecerá la próxima vez que se reinicie este servidor. Reinicie el servidor cuando esté listo, o cancele a continuación para dejarlo todo como está.",
+    "start_over_cancel": "Cancelar empezar de nuevo",
+    "info": "Información de la base de datos",
+    "info_location": "Ubicación"
   },
   "revisions_snapshot": {
     "title": "Revisiones de nota"
@@ -3029,11 +3133,11 @@
     "zoom-in": "Acercar",
     "zoom-out": "Alejar",
     "center-map": "Centrar el mapa",
-    "fullscreen": "Pantalla completa",
-    "exit-fullscreen": "Salir de pantalla completa",
     "direction-left": "Ramas hacia la izquierda",
     "direction-right": "Ramas hacia la derecha",
-    "direction-side": "Ramas hacia ambos lados"
+    "direction-side": "Ramas hacia ambos lados",
+    "reset-zoom": "Restablecer zoom",
+    "direction-down": "Ramas hacia abajo"
   },
   "llm": {
     "feature_not_enabled": "Active la función experimental LLM en Ajustes → Avanzado → Funciones experimentales para usar integraciones de IA.",
@@ -3080,8 +3184,6 @@
       "search_help": "Buscar en la guía del usuario",
       "get_help_toc": "Obtener el índice de la guía del usuario"
     },
-    "disabled_placeholder": "Las funciones de IA están desactivadas. Habilítelas para configurar proveedores y MCP.",
-    "not_available_in_standalone": "Las funciones de IA/LLM no están disponibles en la versión autónoma de Trilium, ya que los proveedores de LLM no permiten el acceso directo desde un navegador.",
     "edit_provider_title": "Editar {{- name}}",
     "edit_provider": "Editar",
     "save": "Guardar",
@@ -3128,7 +3230,13 @@
     "mcp_config_description": "Cree un token en Opciones → ETAPI y, a continuación, añada lo siguiente a la configuración MCP de su asistente, sustituyendo el marcador de posición por su token:",
     "mcp_config_token_placeholder": "su-token-etapi",
     "mcp_config_cli_description": "Claude Code también puede configurarse desde la línea de comandos:",
-    "mcp_config_warning": "Un token otorga acceso completo de lectura y escritura a todas sus notas, así que considérelo como una contraseña. Si se conecta desde otro dispositivo, prefiera HTTPS: un token enviado por HTTP sin cifrar puede interceptarse."
+    "mcp_config_warning": "Un token otorga acceso completo de lectura y escritura a todas sus notas, así que considérelo como una contraseña. Si se conecta desde otro dispositivo, prefiera HTTPS: un token enviado por HTTP sin cifrar puede interceptarse.",
+    "enabled": "Funciones de IA",
+    "enabled_description": "Añade la barra lateral de chat de IA y las notas de chat LLM, usando los proveedores configurados a continuación.",
+    "provider_desc_copilot_agent": "Requiere la CLI de GitHub Copilot en la máquina que ejecuta Trilium.",
+    "provider_unavailable_standalone": "No disponible en la versión de navegador: este proveedor funciona ejecutando un programa aparte en la máquina, y aquí no hay máquina en la que ejecutarlo.",
+    "copilot_agent_description": "Usa su suscripción de GitHub Copilot a través de la CLI de GitHub Copilot, por lo que no se necesita clave de API. La CLI de Copilot debe estar instalada en la máquina que ejecuta Trilium (el servidor si es autoalojado, o este equipo en escritorio); inicie sesión una vez ejecutando «copilot login» allí: un inicio de sesión de Copilot existente desde otro editor se reutiliza automáticamente.",
+    "mcp_unavailable_standalone": "No disponible en la versión de navegador: los asistentes se conectarían a Trilium por la red, pero esta compilación no tiene una dirección que darles, ya que se ejecuta por completo dentro de esta página."
   },
   "common": {
     "save": "Guardar",
@@ -3140,22 +3248,6 @@
     "export-csv": "Exportar a CSV (.csv)",
     "export-failed": "Error al exportar la hoja de cálculo a Excel.",
     "export-csv-failed": "Error al exportar la hoja de cálculo a CSV."
-  },
-  "login": {
-    "incorrect-password": "La contraseña es incorrecta. Por favor, inténtelo de nuevo.",
-    "sso-wrong-account": "Esa cuenta no es la vinculada a esta instancia de Trilium. Inicie sesión con la cuenta vinculada.",
-    "sso-not-enrolled": "El inicio de sesión único aún no está configurado. Inicie sesión primero con su contraseña y, a continuación, vincule su cuenta desde la configuración.",
-    "heading": "Iniciar sesión en Trilium Notes",
-    "password": "Contraseña",
-    "totp-token": "Contraseña de un solo uso o código de recuperación",
-    "button": "Iniciar sesión",
-    "remember-me": "Recordarme",
-    "incorrect-totp": "La contraseña de un solo uso es incorrecta. Por favor, inténtelo de nuevo.",
-    "incorrect-recovery-code": "El código de recuperación es incorrecto o ya se ha utilizado.",
-    "too-many-attempts": "Demasiados intentos de inicio de sesión. Por favor, espere unos minutos e inténtelo de nuevo.",
-    "connection-error": "No se pudo contactar con el servidor. Compruebe su conexión e inténtelo de nuevo.",
-    "sign_in_with_sso": "Iniciar sesión con {{ssoIssuerName}}",
-    "sso-connection-failed": "No se pudo contactar con el proveedor de autenticación. Inténtelo de nuevo o consulte los registros del servidor para más detalles."
   },
   "file_upload": {
     "drop_or_browse_single": "Arrastre y suelte un archivo aquí, o haga clic para examinar",
@@ -3271,7 +3363,12 @@
   },
   "options": {
     "title": "Opciones",
-    "back": "Volver a todas las opciones"
+    "back": "Volver a todas las opciones",
+    "search_placeholder": "Configuración de búsqueda",
+    "search_clear": "Borrar la búsqueda",
+    "search_title": "Búsqueda de opciones",
+    "search_hint": "Escribe una palabra clave para buscar en todas las páginas de configuración.",
+    "search_no_results": "Ninguna configuración coincide con lo que estás buscando."
   },
   "image_buttons": {
     "zoom_in": "Acercar",
@@ -3462,9 +3559,7 @@
     "sort_by_title": "Título",
     "sort_by_date_created": "Fecha de creación",
     "no_items": "No se encontró contenido activo.",
-    "no_items_hint": "Los scripts, temas, plantillas y fragmentos que cree aparecerán aquí.",
-    "section_active_content": "Contenido activo y plantillas",
-    "section_space_usage": "Uso de espacio"
+    "no_items_hint": "Los scripts, temas, plantillas y fragmentos que cree aparecerán aquí."
   },
   "dashboard_view": {
     "refresh-widget": "Actualizar",
@@ -3481,75 +3576,6 @@
     "type_text": "Texto",
     "type_code": "Código",
     "tooltip": "Un trozo reutilizable de texto o código, pensado para insertarse en el editor (desde el menú de fragmentos de la barra de herramientas, o mediante un comando con barra)."
-  },
-  "set_password": {
-    "heading": "Establecer contraseña",
-    "description": "Antes de poder usar Trilium desde la web, debe establecer una contraseña. A continuación, utilizará esta contraseña para iniciar sesión.",
-    "password": "Contraseña",
-    "password-confirmation": "Confirmación de contraseña",
-    "button": "Establecer contraseña",
-    "password-too-short": "La contraseña debe tener al menos {{length}} caracteres.",
-    "passwords-dont-match": "Las contraseñas introducidas no coinciden."
-  },
-  "setup": {
-    "heading": "Empezar con Trilium",
-    "new-document": "Nueva base de conocimientos",
-    "new-document-description": "Comience con una base de conocimientos limpia y empiece de inmediato.",
-    "sync-from-desktop": "Conectar una aplicación de escritorio",
-    "sync-from-desktop-description": "Solo tiene una aplicación de escritorio de Trilium en otro dispositivo. Este dispositivo sincronizará sus datos desde esa aplicación de escritorio.",
-    "sync-from-server": "Conectar a un servidor existente",
-    "sync-from-server-description": "Tiene un servidor de Trilium en otro lugar (autoalojado o en la nube). Este dispositivo sincronizará sus datos desde ese servidor.",
-    "next": "Siguiente",
-    "init-in-progress": "Inicialización del documento en curso",
-    "redirecting": "En breve será redirigido a la aplicación.",
-    "title": "Configuración",
-    "sync-from-server-page-description": "Introduzca a continuación los datos de su servidor para conectar su espacio de trabajo existente.",
-    "sync-in-progress-title": "Sincronización en curso",
-    "sync-in-progress-description": "Su dispositivo ya está conectado y se están sincronizando los elementos.",
-    "sync-in-progress-banner": "Esto puede tardar un tiempo según el tamaño de sus notas. Por favor, no cambie a otra aplicación hasta que la sincronización haya finalizado.",
-    "button-back": "Atrás",
-    "button-finish-setup": "Finalizar configuración",
-    "sync-step-connecting": "Conectando al servidor",
-    "sync-step-syncing": "Sincronizando datos",
-    "sync-step-finalizing": "Configurando opciones",
-    "create-new-document-options-title": "¿Cómo desea comenzar?",
-    "create-new-document-options-with-demo": "Con contenido de demostración",
-    "create-new-document-options-with-demo-description": "Explore Trilium con contenido de ejemplo.",
-    "create-new-document-options-empty": "Vacía",
-    "create-new-document-options-empty-description": "Comience con una base de conocimientos en blanco. Puede importar notas de demostración más adelante.",
-    "create-new-document-title": "Preparando su base de conocimientos",
-    "create-new-document-description": "Esto solo tomará un momento.",
-    "sync-illustration-this-device": "Este dispositivo",
-    "sync-illustration-desktop-app": "Su aplicación de escritorio",
-    "sync-illustration-server": "Su servidor",
-    "sync-from-desktop-step1": "Abra su instancia de escritorio de Trilium Notes.",
-    "sync-from-desktop-step2": "En el menú de Trilium, haga clic en Opciones.",
-    "sync-from-desktop-step3": "Haga clic en la categoría Sincronización en el árbol de notas.",
-    "sync-from-desktop-step4": "Cambie la dirección de la instancia del servidor para que apunte a una de las direcciones de la derecha y haga clic en Guardar.",
-    "sync-from-desktop-step5": "Haga clic en el botón «Probar sincronización» para verificar que la conexión es correcta.",
-    "sync-from-desktop-warning": "Asegúrese de que ambos dispositivos estén en la misma red.",
-    "sync-from-desktop-waiting": "Esperando conexión...",
-    "sync-from-desktop-unreachable-title": "Otros dispositivos no pueden alcanzar este dispositivo",
-    "sync-from-desktop-unreachable-description": "Para sincronizar, el otro escritorio debe conectarse a este a través de la red. Por seguridad, esta aplicación de escritorio solo acepta conexiones desde este equipo, por lo que el otro escritorio aún no puede alcanzarlo. Permita el acceso de red a continuación: Trilium se reiniciará para aplicarlo.",
-    "sync-from-desktop-allow-access": "Permitir acceso de red y reiniciar",
-    "advanced-options": "Opciones avanzadas",
-    "sync-failed": "Error al sincronizar: {{- message}}",
-    "sync-failed-title": "Error de sincronización",
-    "sync-failed-description": "No se pudo completar la sincronización inicial. Puede reintentarlo o volver atrás para comprobar la dirección del servidor y las credenciales.",
-    "sync-failed-admonition-title": "El último intento de sincronización falló",
-    "sync-failed-hint": "Puede deberse a una dirección de servidor incorrecta, a un proxy que interfiere con la conexión o a que el servidor esté temporalmente inaccesible.",
-    "button-retry": "Reintentar",
-    "server-host": "Dirección del servidor de Trilium",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "server-password": "Contraseña",
-    "proxy-server": "Servidor proxy (opcional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "proxy-instruction": "Si deja la configuración del proxy en blanco, se usará el proxy del sistema.",
-    "dismiss-error": "Descartar error",
-    "wrong-password": "Contraseña incorrecta. Por favor, inténtelo de nuevo.",
-    "language": "Idioma",
-    "continue": "Continuar",
-    "your-ip-addresses": "Direcciones de este dispositivo"
   },
   "text-editor": {
     "task-state-dropped-title": "Estados de tarea no válidos",
@@ -3688,7 +3714,9 @@
       "to-do-list": "Lista de tareas",
       "turn-the-current-block-into-a-heading": "Convertir el bloque actual en un encabezado.",
       "turn-the-current-block-into-a-paragraph": "Convertir el bloque actual en un párrafo.",
-      "warning": "Advertencia"
+      "warning": "Advertencia",
+      "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "El archivo es demasiado grande para subirse (HTTP 413). Si Trilium está detrás de un proxy inverso, aumente el límite de tamaño del cuerpo de la petición.",
+      "the-server-responded-with-http-0": "El servidor respondió con HTTP %0."
     },
     "toolbar-groups": {
       "text-formatting": "Formato de texto",
@@ -3878,9 +3906,7 @@
     "note_paths_what": "Una nota puede situarse en más de un lugar del árbol de notas a la vez, y cada uno de esos lugares se enumera aquí como una ruta.",
     "note_paths_cloning": "Añadir un lugar se llama clonar: no se copia nada, de modo que una edición hecha en una ruta se refleja en todas, y al quitar una ruta la nota permanece en las demás.",
     "backlinks_what": "Las notas que apuntan a esta, ya sea mediante un enlace en su texto o mediante una relación que la nombra.",
-    "backlinks_listing": "Un enlace de texto se enumera con el pasaje que lo rodea; una relación, con el nombre por el que apunta. Este lado del enlace no es editable: desaparece cuando la nota que lo creó elimina el enlace.",
-    "similar_notes_what": "Notas que parecen relacionadas con esta aunque nada las enlace.",
-    "similar_notes_how": "La similitud se calcula a partir del contenido de las notas, de los atributos y relaciones que llevan, y de lo próximas que estuvieron al crearse."
+    "backlinks_listing": "Un enlace de texto se enumera con el pasaje que lo rodea; una relación, con el nombre por el que apunta. Este lado del enlace no es editable: desaparece cuando la nota que lo creó elimina el enlace."
   },
   "attachment_roles": {
     "favicon": "Icono del sitio",
@@ -3899,5 +3925,74 @@
     "clear-color": "Quitar color",
     "set-color": "Establecer color",
     "set-custom-color": "Establecer color personalizado"
+  },
+  "gpx_preview": {
+    "distance": "Distancia",
+    "duration": "Duración",
+    "avg_speed": "Vel. media",
+    "elevation_gain": "Desnivel positivo",
+    "elevation_loss": "Desnivel negativo",
+    "max_elevation": "Elevación máx.",
+    "points": "Puntos",
+    "segments": "Segmentos",
+    "tracks": "Trazas",
+    "routes": "Rutas",
+    "waypoints": "Puntos de ruta",
+    "waypoints_with_count": "Puntos de ruta ({{count}})",
+    "tracks_with_count": "Trazas ({{count}})",
+    "routes_with_count": "Rutas ({{count}})",
+    "journeys_with_count": "Trazas y rutas ({{count}})",
+    "unnamed": "(sin nombre)",
+    "recorded_on": "Registrado el",
+    "map_hint": "Coloque esta nota en una colección de mapa geográfico para ver la traza dibujada en un mapa.",
+    "elevation_profile": "Perfil de elevación",
+    "duration_minutes": "{{minutes}} min",
+    "duration_hours_minutes": "{{hours}} h {{minutes}} min",
+    "unit_m": "{{value}} m",
+    "unit_km": "{{value}} km",
+    "unit_mi": "{{value}} mi",
+    "unit_ft": "{{value}} ft",
+    "unit_kmh": "{{value}} km/h",
+    "unit_mph": "{{value}} mph"
+  },
+  "database_file_list": {
+    "size_on_disk": "{{size}} en disco",
+    "invalid_backup": "Archivo de copia de seguridad no válido",
+    "unsupported_version": "Versión de formato de copia de seguridad no admitida"
+  },
+  "password_with_confirmation": {
+    "password": "Contraseña",
+    "repeat_password": "Repetir contraseña",
+    "mismatch": "Las contraseñas no coinciden."
+  },
+  "open": {
+    "directory_failed": "No se pudo abrir {{- directory}}: {{- reason}}"
+  },
+  "embedded_note": {
+    "open-note": "Abrir nota",
+    "more-ways-to-open": "Más formas de abrir",
+    "maximize": "Abrir en edición rápida"
+  },
+  "automatic_replacements": {
+    "title": "Sustituciones automáticas",
+    "description": "Ciertas secuencias de caracteres se sustituyen por el símbolo tipográfico que representan al escribirlas. Las sustituciones no se aplican dentro de bloques de código ni de código en línea, y el texto pegado no se ve afectado.",
+    "double_quotes": "Comillas dobles",
+    "double_quotes_description": "Los caracteres por los que se sustituye una comilla recta \". Según el idioma del contenido, en inglés se usa “quote”, en alemán „quote“ y en francés « quote »; al elegir un par se aplica a todas las notas, independientemente de su idioma.",
+    "single_quotes": "Comillas simples",
+    "single_quotes_description": "Lo mismo para una comilla recta ', que la mayoría de las convenciones reserva para una cita anidada dentro de otra.",
+    "quotes_auto": "Según el idioma del contenido de la nota",
+    "quotes_off": "Desactivado",
+    "punctuation": "Puntuación",
+    "punctuation_description": "Sustituye ... por puntos suspensivos (…), y -- y --- rodeados de espacios por una raya corta (–) y una raya larga (—).",
+    "math": "Símbolos matemáticos",
+    "math_description": "Sustituye fracciones como 1/2 por ½, y los operadores <=, >=, !=, <- y -> por ≤, ≥, ≠, ← y →.",
+    "symbols": "Copyright y marca registrada",
+    "symbols_description": "Sustituye (c), (r) y (tm) por ©, ® y ™.",
+    "custom": "Sustituciones personalizadas",
+    "custom_description": "Se aplican cuando el texto se escribe como palabra completa y va seguido de un espacio, de modo que no afectan a palabras más largas que empiecen igual.",
+    "custom_from_placeholder": "Texto a sustituir",
+    "custom_to_placeholder": "Sustitución",
+    "custom_add": "Añadir sustitución",
+    "custom_remove": "Quitar sustitución"
   }
 }

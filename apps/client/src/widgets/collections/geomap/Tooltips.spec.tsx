@@ -84,7 +84,7 @@ const { FakePopup, PREVIEW_WIDTH } = vi.hoisted(() => {
     return { FakePopup, PREVIEW_WIDTH, PREVIEW_HEIGHT };
 });
 
-vi.mock("maplibre-gl", () => ({ Popup: FakePopup }));
+vi.mock("maplibre-gl", () => ({ Popup: FakePopup, setWorkerUrl: vi.fn() }));
 
 /**
  * A map that delegates events — per layer or map-wide — and answers the questions the placement
@@ -173,12 +173,13 @@ describe("Tooltips", () => {
     });
 
     /** Mounts — or, called again, re-renders — the component. `selectedNoteId` is the marker the
-     *  detail pane stands for, as the map view passes it down. */
-    function mount(map: ReturnType<typeof fakeMap>, selectedNoteId: string | null = null) {
+     *  detail pane stands for and `paneMaximized` whether that pane covers the map, as the map view
+     *  passes the two of them down. */
+    function mount(map: ReturnType<typeof fakeMap>, selectedNoteId: string | null = null, paneMaximized = false) {
         return act(async () => {
             render(
                 <ParentMap.Provider value={map as never}>
-                    <Tooltips selectedNoteId={selectedNoteId} />
+                    <Tooltips selectedNoteId={selectedNoteId} paneMaximized={paneMaximized} />
                 </ParentMap.Provider>,
                 container as HTMLElement
             );
@@ -354,6 +355,33 @@ describe("Tooltips", () => {
         expect(popup?.options.anchor).toBe("bottom");
         // Slid left until its right edge stands its air short of the pane, not merely of the map.
         expect(popup?.options.offset).toEqual([ (1200 - 8 - 400) - PREVIEW_WIDTH / 2 - 1000, -(MARKER_HEIGHT + 8) ]);
+    });
+
+    /**
+     * A pane grown over the map leaves nowhere for a preview to be slid to, and the markers it would
+     * preview are behind it. Nothing is shown at all rather than shown somewhere out of sight — and
+     * a preview already up is taken down as the pane grows, rather than left standing over it.
+     */
+    it("shows nothing at all while the detail pane covers the map", async () => {
+        const selected = buildNote({ title: "Open in the pane", "#geolocation": "5,6" });
+        const note = buildNote({ title: "Somewhere", "#geolocation": "1,2" });
+        const map = fakeMap({ width: 1200, point: { x: 1000, y: 300 } });
+        await mount(map, selected.noteId);
+
+        map.hover(note);
+        await advance(500);
+        expect(shownPreview()).toContain("Body of Somewhere");
+
+        // The pane grows over the map with the preview still up.
+        await mount(map, selected.noteId, true);
+        expect(shownPreview()).toBeUndefined();
+
+        // And nothing the pointer does while it is grown brings one back.
+        renderTooltip.mockClear();
+        map.hover(note);
+        await advance(500);
+        expect(shownPreview()).toBeUndefined();
+        expect(renderTooltip).not.toHaveBeenCalled();
     });
 
     it("centres on the pin where the map is too narrow to slide within", async () => {

@@ -109,6 +109,24 @@ describe("formatSize", () => {
         expect(formatSize(5 * 1024 * 1024)).toBe("5 MiB");
         expect(formatSize(3 * 1024 * 1024 * 1024)).toBe("3 GiB");
     });
+
+    it("stays in the largest unit it knows rather than running off the end of them", () => {
+        // Past the last unit this used to name it "undefined", since it indexed straight into the
+        // list with whatever power of 1024 the size came to.
+        expect(formatSize(3 * 1024 ** 4)).toBe("3 TiB");
+        expect(formatSize(5 * 1024 ** 5)).toBe("5120 TiB");
+    });
+
+    it("keeps the places it is given, trailing zeros and all", () => {
+        // For a counter that is still climbing: dropping the zero shortens the text on every other
+        // update, and the line shifts about while it is being read.
+        expect(formatSize(1.5 * 1024 ** 3, 2)).toBe("1.50 GiB");
+        expect(formatSize(1.55 * 1024 ** 3, 2)).toBe("1.55 GiB");
+        expect(formatSize(2 * 1024 ** 3, 2)).toBe("2.00 GiB");
+        expect(formatSize(10 * 1024 ** 2, 1)).toBe("10.0 MiB");
+        // Nothing below a byte to show, however many places were asked for.
+        expect(formatSize(512, 2)).toBe("512 B");
+    });
 });
 
 describe("formatDateTime / date helpers", () => {

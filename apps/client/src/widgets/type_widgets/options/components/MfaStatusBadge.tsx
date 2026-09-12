@@ -14,7 +14,8 @@ const TONE_ICON: Record<MfaStatusTone, string> = {
 /**
  * Status badge shared by the sign-in method cards (OpenID Connect, TOTP): a colored outline whose hue
  * and icon are driven by `tone` — green when the method is active, amber when it's configured but not
- * yet bound, muted when it's off. Wrap it in a `.mfa-status-title` span to sit inline after a section title.
+ * yet bound, muted when it's off. Pass it as a card's `actions`, where it sits at the far end of the
+ * heading line.
  */
 export default function MfaStatusBadge({ tone, text }: { tone: MfaStatusTone, text: string }) {
     return <Badge className={`mfa-status-badge ${tone}`} icon={TONE_ICON[tone]} text={text} outline />;

@@ -272,20 +272,48 @@ export const OTHER_WAYS_TO_OPEN = [
 ] as const;
 
 /**
+ * The button a pane is grown by, whatever growing means to the host: the quick editor for a pane
+ * that has no larger form of its own (see {@link MaximizeToQuickEditAction}), or the pane's own
+ * larger form where it has one — the calendar's event card, which grows in place so that what is
+ * being edited within it is never torn down (see EventPopover).
+ *
+ * Stands beside the header's X and is dressed as its neighbour is (see EmbeddedNotePane.css). Named
+ * by the host, there being no one word for it: what it does is the host's to say, and a card that
+ * can be put back down again says something different from one that hands over to another surface.
+ */
+export function MaximizeAction({ text, icon, onClick }: {
+    text: string;
+    /** The stock expand, unless the host has a way back and wants the arrows the other way about. */
+    icon?: string;
+    onClick(): void;
+}) {
+    return (
+        <ActionButton
+            className="tn-embedded-note-maximize"
+            icon={icon ?? "bx bx-expand-alt"}
+            text={text}
+            onClick={onClick}
+        />
+    );
+}
+
+/**
  * The pane grown into the quick editor: the same note in the larger surface, taking the pane's
  * place rather than standing over it — opened first and closed after, as the quick editor's own
  * maximize hands over to a tab. Which is what earns it the place in the header that the quick-edit
  * menu entry is denied in the row (see {@link OTHER_WAYS_TO_OPEN}): a maximize replaces the pane
  * instead of putting a modal back over it, the close giving whatever is being edited the chance to
- * save. Stands beside the header's X, and is dressed as its neighbour is (see EmbeddedNotePane.css).
+ * save.
+ *
+ * For a pane with no larger form of its own — the geo map's, whose note has nothing of the map
+ * about it to be carried into a bigger card. A pane that has one grows into that instead, and keeps
+ * what is peculiar to it.
  *
  * A path rather than an id, as the menu passes one, so the two roads into the quick editor agree.
  */
 export function MaximizeToQuickEditAction({ note, onClose }: { note: FNote; onClose(): void }) {
     return (
-        <ActionButton
-            className="tn-embedded-note-maximize"
-            icon="bx bx-expand-alt"
+        <MaximizeAction
             text={t("embedded_note.maximize")}
             onClick={() => {
                 const notePath = note.getBestNotePathString(appContext.tabManager.getActiveContext()?.hoistedNoteId);

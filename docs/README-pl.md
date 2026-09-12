@@ -25,6 +25,9 @@ Trilium Notes to darmowa i otwartoźródłowa, wieloplatformowa aplikacja do
 tworzenia notatek hierarchicznych, skupiona na budowaniu dużych osobistych baz
 wiedzy.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Pobieranie
@@ -118,7 +121,7 @@ Nasza dokumentacja jest dostępna w wielu formatach:
 * Wbudowany [ciemny
   motyw](https://docs.triliumnotes.org/user-guide/concepts/themes) i wsparcie
   dla motywów użytkownika
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   oraz [import i eksport
   Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) do

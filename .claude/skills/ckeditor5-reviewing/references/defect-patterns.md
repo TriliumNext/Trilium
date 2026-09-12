@@ -125,6 +125,21 @@ group covers the monorepo wiring/convention defects. For the idiomatic "how it s
 - Why: focus stays on the button; the user can't keep typing.
 - Fix: call `editor.editing.view.focus()` after executing.
 
+**Untrusted HTML reaching `innerHTML` without the host's sanitizer.**
+- Spot: `innerHTML =` / `createRawElement` render callbacks / preview elements fed by model output,
+  clipboard, or any non-editor source — sanitized by a hand-written tag or attribute deny-list, or
+  not at all.
+- Why: CKEditor ships no sanitizer (`htmlEmbed`'s default only warns and passes through), and a
+  hand-rolled strip list misses namespaced URL attributes (`xlink:href`), SVG animation elements
+  and `data:` URIs. Passing through `editor.data.toModel()` is *not* a substitute — the schema is a
+  correctness filter, not a security boundary.
+- Fix: take the sanitizer from the feature's config namespace (never top-level — the editor throws
+  `editor-config-sanitizehtml-not-supported`), make the config field **required** and throw a
+  `CKEditorError` when it is absent, and have `apps/client` pass `sanitizeNoteContentHtml` from
+  `services/sanitize_content.ts`. A built-in "fallback" strip is itself the defect — it becomes the
+  real defence whenever a host forgets to configure one. See the plugin-development skill,
+  `references/core-plugin-patterns.md` → "Sanitizing untrusted HTML".
+
 **Views created without `locale`; missing a11y.**
 - Spot: `new ButtonView()` with no `locale`; no `label` when `withText` is false; keystrokes not in
   `accessibility.addKeystrokeInfos`.
@@ -189,6 +204,23 @@ variants, all of which render fine in English and are never translated anywhere:
 - Fix: test the change itself; assert on stringified model/view; cover collapsed + ranged +
   schema-disallowed; tear down. Tests are **Vitest** with real `ClassicEditor.create` and helpers
   from `ckeditor5`; run them via `pnpm --filter @triliumnext/ckeditor5 test`.
+
+**Coverage that certifies a bug instead of catching it.** The aggregate is gated at 100 %, so the
+incentive is to make a line *covered*, not correct — and a review that trusts the number misses
+what the number is hiding.
+- Spot: a `/* v8 ignore */` over a block described as unreachable; a spec asserting `.toThrow()`
+  on the plugin's own happy path; a spec that re-implements the helper it claims to test instead of
+  calling it; a spec whose only assertions are shape (`expect(arr).toHaveLength(3)`) and which never
+  names the behavior under test; a module whose sole consumer is its own spec.
+- Why: each of these has happened in-tree. An `inputTransformation` handler registered on
+  `Clipboard` instead of `ClipboardPipeline` — so it never fires in production — carried a
+  `v8 ignore` comment *documenting* it as unreachable while its spec asserted `.toThrow()`, locking
+  in a triple bug (wrong event, wrong payload field, an upcast that never matched). A leveled
+  logger's ignore comment covered the one branch that does run, leaving two permanent no-ops. A
+  view class stayed alive only because its spec imported it.
+- Fix: read every `v8 ignore` and every `.toThrow()` as a claim to verify. An ignore comment must
+  justify why the path *cannot* be reached, not record that it currently isn't; a `.toThrow()` must
+  test a documented error contract, not observed brokenness. Dead code gets deleted, not covered.
 
 ## Trilium integration
 
@@ -262,8 +294,8 @@ nothing loads it, no button shows, or lint/license/localization is off.
   expected to suppress native behaviour; an assertion made immediately after an event the browser
   dispatches asynchronously (`<details>` `toggle`, for one); or `preventDefault` used as proof
   that a handler ran when a CKEditor plugin also calls it.
-- Why: both CKEditor packages run in **real headless Chrome** (`@vitest/browser-webdriverio`, NOT
-  Playwright). Tests ported from the old happy-dom setup relied on stubbed layout and synchronous
+- Why: both CKEditor packages run in **real headless Chromium** (`@vitest/browser-playwright`).
+  Tests ported from the old happy-dom setup relied on stubbed layout and synchronous
   events, and pass or fail for the wrong reasons here.
 - Fix: make synthetic events cancelable, await the real event before asserting, and prove a handler
   ran by spying on `editor.execute` or asserting the model.

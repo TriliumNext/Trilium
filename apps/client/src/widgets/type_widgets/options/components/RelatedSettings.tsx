@@ -1,8 +1,7 @@
 import appContext from "../../../../components/app_context";
 import { t } from "../../../../services/i18n";
+import { Card, OptionCardSection } from "../../../react/Card";
 import type { OptionPages } from "../../ContentWidget";
-import { OptionsRowLink } from "./OptionsRow";
-import OptionsSection from "./OptionsSection";
 
 interface RelatedSettingsItem {
     title: string;
@@ -35,11 +34,11 @@ export default function RelatedSettings({ items, title }: RelatedSettingsProps) 
     }
 
     return (
-        <OptionsSection title={title ?? t("settings.related_settings")}>
+        <Card heading={title ?? t("settings.related_settings")}>
             {filteredItems.map((item) => {
                 const { targetPage, targetNoteId, onClick } = item;
                 return (
-                    <OptionsRowLink
+                    <OptionCardSection
                         key={targetPage ?? targetNoteId}
                         label={item.title}
                         description={item.description}
@@ -47,7 +46,7 @@ export default function RelatedSettings({ items, title }: RelatedSettingsProps) 
                             ? `#root/_hidden/${targetNoteId}`
                             : `#root/_hidden/_options/${targetPage}`}
                         noContainedNavigation={!!targetNoteId || !!onClick}
-                        onClick={onClick ?? (targetNoteId
+                        onAction={onClick ?? (targetNoteId
                             ? (e) => {
                                 // Hidden-subtree config notes open hoisted, in a tree-sidebar popup.
                                 // stopPropagation keeps the global `a` click handler
@@ -60,6 +59,6 @@ export default function RelatedSettings({ items, title }: RelatedSettingsProps) 
                     />
                 );
             })}
-        </OptionsSection>
+        </Card>
     );
 }

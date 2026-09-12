@@ -6,7 +6,7 @@ import { ComponentChildren, ComponentProps } from "preact";
 import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context.js";
-import { isDefinitionName } from "../../entities/fattribute.js";
+import { DEFINITION_PREFIXES, isDefinitionName } from "../../entities/fattribute.js";
 import contextMenu, { MenuItem } from "../../menus/context_menu.js";
 import type { Attribute } from "../../services/attribute_parser.js";
 import { getBuiltinLabelSelectOptions, getBuiltinLabelValueType, isBuiltinAttribute } from "../../services/attributes.js";
@@ -32,6 +32,7 @@ import NoteLink, { NewNoteLink } from "../react/NoteLink.jsx";
 import { disposeReactWidget, ParentComponent, renderReactWidgetAtElement } from "../react/react_utils.jsx";
 import OptionsRow, { OptionsRowWithToggle } from "../type_widgets/options/components/OptionsRow.jsx";
 import { ATTR_HELP, AttrHelpEntry } from "./attr_help.js";
+import { DEFINITION_TYPE_ICONS, RELATION_DEFINITION_TYPE } from "./attribute_types.js";
 import LabelValueInput, { getTypedInputForLabel } from "./label_value_input.js";
 import ValuesInput from "./values_input.jsx";
 
@@ -48,6 +49,21 @@ export interface AttributeDetailOpts {
      */
     parent?: HTMLElement;
     hideMultiplicity?: boolean;
+    /**
+     * Leaves out the inheritable and promoted toggles. For a host that sets both itself, such as a
+     * collection whose attributes are all inheritable and promoted.
+     */
+    hideInheritance?: boolean;
+    /**
+     * Leaves out the kind dropdown, holding the definition to the kind it was opened on. For a host
+     * that can only use one, such as a board grouping by a select.
+     */
+    hideType?: boolean;
+    /**
+     * Leaves out the rows the chosen kind adds, such as the precision of a number or the options of a
+     * select. For a host that fills them in itself, such as a board whose columns are the options.
+     */
+    hideTypeOptions?: boolean;
     /**
      * Places the popup beside this element instead of at `x`/`y`. For hosts whose attributes are shown
      * far from the note attributes pane the coordinates are otherwise resolved against, e.g. the
@@ -326,6 +342,9 @@ export function isSameShow(previous: AttributeDetailOpts | null, next: Attribute
     return !next.focus
         && previous.isOwned === next.isOwned
         && previous.hideMultiplicity === next.hideMultiplicity
+        && previous.hideInheritance === next.hideInheritance
+        && previous.hideType === next.hideType
+        && previous.hideTypeOptions === next.hideTypeOptions
         && previous.attribute.noteId === next.attribute.noteId
         && previous.attribute.type === next.attribute.type
         && previous.attribute.name === next.attribute.name
@@ -361,7 +380,11 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
     const [ attrType, setAttrType ] = useState(initialAttrType);
     // Definitions describe the attribute they define, so they complete against its own type.
     const nameType = attrType === "relation" || attrType === "relation-definition" ? "relation" : "label";
-    const suggestAttributeNames = useCallback((query: string) => fetchAttributeNames(nameType, query), [ nameType ]);
+    // ...and under its bare name, which is what the box holds for them (see fetchDefinitionNames).
+    const isDefinitionType = isDefinition(attrType);
+    const suggestAttributeNames = useCallback((query: string) => isDefinitionType
+        ? fetchDefinitionNames(nameType, query)
+        : fetchAttributeNames(nameType, query), [ nameType, isDefinitionType ]);
     const renderNameSuggestion = useCallback(
         (suggestion: string) => <AttributeNameSuggestion type={nameType} name={suggestion} />, [ nameType ]);
     // Whatever a relation is the inverse of is itself a relation.
@@ -587,7 +610,7 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
 
                 {/* No description: the values name themselves, and what they do to the field is plain
                     enough once one is picked. */}
-                {isDefinition(attrType) && (
+                {isDefinition(attrType) && !opts.hideType && (
                     <OptionsRow name="attr-label-type" label={t("attribute_detail.label_type")}>
                         <FormDropdownList
                             className="attr-input-label-type"
@@ -608,7 +631,8 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "label-definition" && definition.labelType === "number" && (
+                {attrType === "label-definition" && definition.labelType === "number"
+                    && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-number-precision"
                         label={t("attribute_detail.precision")}
@@ -628,7 +652,8 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "label-definition" && definition.labelType === "select" && (
+                {attrType === "label-definition" && definition.labelType === "select"
+                    && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-select-options"
                         label={t("attribute_detail.select_options")}
@@ -649,7 +674,7 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "relation-definition" && (
+                {attrType === "relation-definition" && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-inverse-relation"
                         label={t("attribute_detail.inverse_relation")}
@@ -695,20 +720,22 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     />
                 )}
 
-                <OptionsRowWithToggle
-                    name="attr-inheritable"
-                    label={t("attribute_detail.inheritable")}
-                    description={t("attribute_detail.inheritable_title")}
-                    currentValue={isInheritable}
-                    disabled={!isOwned}
-                    onChange={(checked) => {
-                        setIsInheritable(checked);
-                        attribute.isInheritable = checked;
-                        onAttributesChanged?.(allAttributes ?? []);
-                    }}
-                />
+                {!opts.hideInheritance && (
+                    <OptionsRowWithToggle
+                        name="attr-inheritable"
+                        label={t("attribute_detail.inheritable")}
+                        description={t("attribute_detail.inheritable_title")}
+                        currentValue={isInheritable}
+                        disabled={!isOwned}
+                        onChange={(checked) => {
+                            setIsInheritable(checked);
+                            attribute.isInheritable = checked;
+                            onAttributesChanged?.(allAttributes ?? []);
+                        }}
+                    />
+                )}
 
-                {isDefinition(attrType) && (
+                {isDefinition(attrType) && !opts.hideInheritance && (
                     <OptionsRowWithToggle
                         name="attr-promoted"
                         label={t("attribute_detail.promoted")}
@@ -812,23 +839,21 @@ const TARGET_NOTE_OPTS = { allowCreatingNotes: true };
  * The value standing for a definition that points at a note rather than holding a value of its own.
  * Not a label type: it is what the definition is named after, `relation:foo` rather than `label:foo`.
  */
-export const RELATION_DEFINITION_TYPE = "relation";
-
 /** Exported so that hosts listing definitions can name their label type as the popup does. */
 export const LABEL_TYPES = [
-    { value: "text", title: t("attribute_detail.text"), icon: "bx bx-text" },
-    { value: "textarea", title: t("attribute_detail.textarea"), icon: "bx bx-align-left" },
-    { value: "number", title: t("attribute_detail.number"), icon: "bx bx-hash" },
-    { value: "boolean", title: t("attribute_detail.boolean"), icon: "bx bx-toggle-left" },
-    { value: "select", title: t("attribute_detail.select_type"), icon: "bx bx-list-ul" },
-    { value: "date", title: t("attribute_detail.date"), icon: "bx bx-calendar" },
-    { value: "datetime", title: t("attribute_detail.date_time"), icon: "bx bx-calendar-event" },
-    { value: "time", title: t("attribute_detail.time"), icon: "bx bx-time" },
-    { value: "url", title: t("attribute_detail.url"), icon: "bx bx-link" },
-    { value: "email", title: t("attribute_detail.email"), icon: "bx bx-envelope" },
-    { value: "phone", title: t("attribute_detail.phone"), icon: "bx bx-phone" },
-    { value: "color", title: t("attribute_detail.color_type"), icon: "bx bx-palette" }
-];
+    { value: "text", title: t("attribute_detail.text") },
+    { value: "textarea", title: t("attribute_detail.textarea") },
+    { value: "number", title: t("attribute_detail.number") },
+    { value: "boolean", title: t("attribute_detail.boolean") },
+    { value: "select", title: t("attribute_detail.select_type") },
+    { value: "date", title: t("attribute_detail.date") },
+    { value: "datetime", title: t("attribute_detail.date_time") },
+    { value: "time", title: t("attribute_detail.time") },
+    { value: "url", title: t("attribute_detail.url") },
+    { value: "email", title: t("attribute_detail.email") },
+    { value: "phone", title: t("attribute_detail.phone") },
+    { value: "color", title: t("attribute_detail.color_type") }
+].map((type) => ({ ...type, icon: DEFINITION_TYPE_ICONS[type.value] }));
 
 /**
  * What a definition can set its field up to hold, the note it can point at instead included. The last
@@ -842,13 +867,54 @@ export const DEFINITION_TYPES: { value: string; title: string; icon: string; sta
     {
         value: RELATION_DEFINITION_TYPE,
         title: t("attribute_detail.relation_type"),
-        icon: "bx bx-transfer",
+        icon: DEFINITION_TYPE_ICONS[RELATION_DEFINITION_TYPE],
         startsGroup: true
     }
 ];
 
 export function fetchAttributeNames(type: "label" | "relation", query: string) {
     return server.get<string[]>(`attribute-names/?type=${type}&query=${encodeURIComponent(query)}`);
+}
+
+/**
+ * The names a definition's name box completes against, which are bare as the box is: a definition is
+ * stored under the name of what it defines (`label:foo`), so offering that name as it stands would
+ * prefix it a second time, into `label:label:foo`.
+ *
+ * What is offered is therefore the names of the kind being defined — the labels a definition would
+ * promote, the relations it would type — together with whatever is already defined the same way
+ * elsewhere, stripped of its prefix. Definitions of the other kind are left out: their names belong
+ * to attributes this one cannot define.
+ */
+export async function fetchDefinitionNames(kind: "label" | "relation", query: string) {
+    const [ ownNames, definitionNames ] = await Promise.all([
+        fetchAttributeNames(kind, query),
+        // Whatever it defines, a definition is itself a label — so a relation's definitions are found
+        // in the label list alone, which for that kind has to be asked for on top of its own names.
+        kind === "relation" ? fetchAttributeNames("label", query) : undefined
+    ]);
+
+    const prefix = `${kind}:`;
+    // A name reached both ways — `priority` in use as a label and defined as `label:priority` — is
+    // offered once.
+    const names = new Set<string>();
+
+    for (const name of ownNames) {
+        // A prefixed name here is a definition, which the loop below takes bare; the bare prefix on
+        // its own is an ordinary label by name, but naming a definition after it would only produce
+        // another bare prefix, `label:label:`.
+        if (!DEFINITION_PREFIXES.some((definitionPrefix) => name.startsWith(definitionPrefix))) {
+            names.add(name);
+        }
+    }
+
+    for (const name of definitionNames ?? ownNames) {
+        if (isDefinitionName(name) && name.startsWith(prefix)) {
+            names.add(name.substring(prefix.length));
+        }
+    }
+
+    return [ ...names ];
 }
 
 function isDefinition(attrType: AttrType) {

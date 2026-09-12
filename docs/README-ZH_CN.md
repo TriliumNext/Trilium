@@ -22,6 +22,8 @@
 
 Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序，专注于建立大型个人知识库。
 
+在找「Trillium Notes」吗？项目的规范拼写是「Trilium Notes」，只有一个 `l`。
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ 下载
@@ -78,7 +80,7 @@ Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序
 * 即使笔记数量超过 10 万条，在易用性和性能方面仍能良好扩展
 * 为智能手机和平板电脑触控优化的[移动前端](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
 * 内置[暗色主题](https://docs.triliumnotes.org/user-guide/concepts/themes)，支持用户主题
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/import-from-apps/evernote.html)
   导入以及 [Markdown
   导入与导出](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * 用于快速保存网页内容的 [Web
@@ -263,12 +265,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei) 因其在 Canvas 方面的原创工作。
 * [antoniotejada](https://github.com/nriver) 原始语法高亮小部件的作者。
 * [Tabler Icons](https://tabler.io/icons) 用于系统托盘图标。
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
-        OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+*   导入对话框中的应用程序图标来自：
+    *   适用于 OneNote、Google Keep 和 Evernote 的 [Material Design
+        Icons](https://pictogrammers.com/library/mdi/) 。
+    *   适用于 Notion 和 Obsidian 的 [Font Awesome](https://fontawesome.com/)。
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) 适用于 Anytype。
+*  LLM 提供商的图标来自 [Lobe Icons](https://lobehub.com/icons)。
 
 Trilium 的诞生离不开其背后的技术支持：
 

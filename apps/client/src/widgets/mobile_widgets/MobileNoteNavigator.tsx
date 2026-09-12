@@ -161,6 +161,7 @@ export default function MobileNoteNavigator() {
         const direction = directionRef.current;
         directionRef.current = null;
         if (!direction || !bodyRef.current) return;
+        if (document.body.classList.contains("motion-disabled")) return;
         const offset = direction === "forward" ? "60%" : "-60%";
         bodyRef.current.animate(
             [

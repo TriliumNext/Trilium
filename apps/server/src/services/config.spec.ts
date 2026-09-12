@@ -140,6 +140,8 @@ describe("Config Service", () => {
             process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL = "https://issuer.standard.com";
             process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME = "Standard Auth";
             process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON = "standard-icon.png";
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT = "45000";
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "openid profile email offline_access";
 
             let { default: config } = await import("./config.js");
 
@@ -149,6 +151,8 @@ describe("Config Service", () => {
             expect(config.MultiFactorAuthentication.oauthIssuerBaseUrl).toBe("https://issuer.standard.com");
             expect(config.MultiFactorAuthentication.oauthIssuerName).toBe("Standard Auth");
             expect(config.MultiFactorAuthentication.oauthIssuerIcon).toBe("standard-icon.png");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(45000);
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email offline_access");
 
             // Clear and test with alias naming
             Object.keys(process.env).forEach(key => {
@@ -163,7 +167,9 @@ describe("Config Service", () => {
             process.env.TRILIUM_OAUTH_ISSUER_BASE_URL = "https://issuer.alias.com";
             process.env.TRILIUM_OAUTH_ISSUER_NAME = "Alias Auth";
             process.env.TRILIUM_OAUTH_ISSUER_ICON = "alias-icon.png";
-            
+            process.env.TRILIUM_OAUTH_HTTP_TIMEOUT = "15000";
+            process.env.TRILIUM_OAUTH_SCOPE = "openid email";
+
             vi.resetModules();
             config = (await import("./config.js")).default;
 
@@ -173,6 +179,33 @@ describe("Config Service", () => {
             expect(config.MultiFactorAuthentication.oauthIssuerBaseUrl).toBe("https://issuer.alias.com");
             expect(config.MultiFactorAuthentication.oauthIssuerName).toBe("Alias Auth");
             expect(config.MultiFactorAuthentication.oauthIssuerIcon).toBe("alias-icon.png");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(15000);
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid email");
+        });
+
+        it("should apply oauthHttpTimeout and oauthScope transformers (defaults, bounds, openid prefix)", async () => {
+            // Timeout below the express-openid-connect minimum (500) falls back to the 30000 default.
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT = "100";
+            // Scope missing the mandatory 'openid' token gets it prepended.
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "profile email offline_access";
+
+            let { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(30000);
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email offline_access");
+
+            // Non-numeric timeout and blank scope both fall back to their defaults.
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT = "not-a-number";
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "   ";
+            vi.resetModules();
+            config = (await import("./config.js")).default;
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(30000);
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email");
+
+            // Internal whitespace is normalized to single spaces even when 'openid' is already present.
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "openid   profile\t email";
+            vi.resetModules();
+            config = (await import("./config.js")).default;
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email");
         });
 
         it("should handle all Sync environment variables correctly", async () => {

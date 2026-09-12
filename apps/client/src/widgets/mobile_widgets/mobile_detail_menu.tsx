@@ -7,7 +7,7 @@ import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import server from "../../services/server";
-import { BacklinksList, useBacklinkCount } from "../FloatingButtonsDefinitions";
+import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import { getLocaleName, NoteInfoContent } from "../layout/StatusBar";
 import ActionButton from "../react/ActionButton";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../react/FormList";
@@ -153,15 +153,13 @@ interface WithModal {
 function BacklinksModal({ note, modalShown, setModalShown }: { note: FNote | null | undefined } & WithModal) {
     return (
         <Modal
-            className="backlinks-modal tn-backlinks-widget"
+            className="backlinks-modal"
             size="md"
             title={t("mobile_detail_menu.backlinks")}
             show={modalShown}
             onHidden={() => setModalShown(false)}
         >
-            <ul className="backlinks-items">
-                {note && <BacklinksList note={note} />}
-            </ul>
+            {note && <BacklinksWidget note={note} />}
         </Modal>
     );
 }

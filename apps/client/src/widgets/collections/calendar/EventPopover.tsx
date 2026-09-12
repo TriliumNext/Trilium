@@ -1,16 +1,17 @@
 import "./EventPopover.css";
 
+import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeToQuickEditAction, NoteColorAction, OpenNoteActions, useEmbeddedNoteContext, useFollowLinksWithin } from "../../EmbeddedNotePane";
+import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeAction, NoteColorAction, OpenNoteActions, useEmbeddedNoteContext, useFollowLinksWithin } from "../../EmbeddedNotePane";
 import TitleRow from "../../layout/TitleRow";
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
-import { useLegacyComponentElement, useNote } from "../../react/hooks";
+import { useLegacyComponentElement, useNote, useNoteColorClass } from "../../react/hooks";
 import Modal from "../../react/Modal";
 import Popover from "../../react/Popover";
 import { removeFromCalendar } from "./api";
@@ -56,6 +57,17 @@ export default function EventPopover({ noteId, anchor, container, parentNote, is
     const { noteContext, component } = useEmbeddedNoteContext(note ?? undefined, POPOVER_NTX_ID);
 
     /**
+     * Whether the card has been grown to the window (see the maximize in {@link EventDetails}, and
+     * `maximized` in Popover for what it does to the card). A state of the standing card and not a
+     * surface of its own, so that growing it neither saves nor reloads anything: the note's editor
+     * is the same editor either side of it, mid-edit and all.
+     *
+     * Kept across a switch from one event to another, a reader who asked for the room being taken
+     * to have meant the asking rather than the event they happened to ask it on.
+     */
+    const [ maximized, setMaximized ] = useState(false);
+
+    /**
      * Lets the surface go, having given whatever is being edited in it the chance to save — the
      * geo pane's bargain (see its closePane): announced first, while the editors are still
      * mounted, and not waited on. Every way out leads through here.
@@ -83,6 +95,8 @@ export default function EventPopover({ noteId, anchor, container, parentNote, is
                     updateKey={noteId}
                     parentNote={parentNote}
                     isEditable={isEditable}
+                    maximized={maximized}
+                    setMaximized={setMaximized}
                     onClose={close}
                     onFollowLink={onFollowLink}
                 />
@@ -91,16 +105,27 @@ export default function EventPopover({ noteId, anchor, container, parentNote, is
     );
 }
 
-/** The event beside its chip, as a desktop shows it. */
-function EventPopoverShell({ note, anchorRect, updateKey, parentNote, isEditable, onClose, onFollowLink }: {
+/** The event beside its chip, as a desktop shows it — or grown to the window, which is the same
+ *  card and the same standing editors (see {@link maximized} in Popover). */
+function EventPopoverShell({ note, anchorRect, updateKey, parentNote, isEditable, maximized, setMaximized, onClose, onFollowLink }: {
     note: FNote;
     anchorRect(): DOMRect;
     updateKey: string;
     parentNote: FNote;
     isEditable: boolean;
+    maximized: boolean;
+    setMaximized(maximized: boolean): void;
     onClose(): void;
     onFollowLink(noteId: string): boolean;
 }) {
+    // The event's own colour — the one its chip is drawn in — which the card is tinted by (see the
+    // `.calendar-event-popover.with-hue` rules in theme-next-{light,dark}.css). Only the hue is
+    // taken and only where the note states one, so an uncoloured event keeps the plain card.
+    const colorClass = useNoteColorClass(note);
+
+    // Escape closes the card whether it stands beside its chip or fills the window, as a press
+    // outside it does and as every dialog in the app answers the key. Being grown is a way the card
+    // is drawn rather than a mode to be let out of, and the maximize is its own way back down.
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") onClose();
@@ -111,7 +136,7 @@ function EventPopoverShell({ note, anchorRect, updateKey, parentNote, isEditable
 
     return (
         <Popover
-            className="calendar-event-popover"
+            className={clsx("calendar-event-popover", colorClass)}
             placement={glob.isRtl ? "left-start" : "right-start"}
             getAnchorRect={anchorRect}
             updateKey={updateKey}
@@ -121,9 +146,14 @@ function EventPopoverShell({ note, anchorRect, updateKey, parentNote, isEditable
             // Named by the attribute eventDidMount stamps on every chip rather than by a
             // FullCalendar class: v7 emits hashed class names, so `.fc-event` no longer exists.
             keepOpenSelector="[data-event-note-id]"
+            maximized={maximized}
             onDismiss={onClose}
         >
-            <EventDetails note={note} parentNote={parentNote} isEditable={isEditable} onClose={onClose} onFollowLink={onFollowLink} />
+            <EventDetails
+                note={note} parentNote={parentNote} isEditable={isEditable}
+                maximized={maximized} setMaximized={setMaximized}
+                onClose={onClose} onFollowLink={onFollowLink}
+            />
         </Popover>
     );
 }
@@ -152,6 +182,11 @@ function EventSheet({ note, parentNote, isEditable, onClose, onFollowLink }: {
     const modalRef = useRef<HTMLDivElement>(null);
     useLegacyComponentElement(modalRef);
 
+    // Tinted by the event's own colour as the card beside a chip is, and by the same means the
+    // quick editor is (see the `.with-hue` rules in theme-next-{light,dark}.css) — a sheet being
+    // opaque, it takes the dialog's colours rather than the card's.
+    const colorClass = useNoteColorClass(note);
+
     // A link to another event switches the sheet, the calendar behind it turning to the event's
     // date for when the sheet comes down (see the shared hook).
     useFollowLinksWithin(modalRef, onFollowLink);
@@ -167,7 +202,7 @@ function EventSheet({ note, parentNote, isEditable, onClose, onFollowLink }: {
 
     return (
         <Modal
-            className="calendar-event-sheet"
+            className={clsx("calendar-event-sheet", colorClass)}
             size="lg"
             title={<TitleRow />}
             modalRef={modalRef}
@@ -188,10 +223,12 @@ function EventSheet({ note, parentNote, isEditable, onClose, onFollowLink }: {
 const POPOVER_NTX_ID = "_calendar-event-popover";
 
 /** The popover's contents: what heads it, and the event under that. */
-function EventDetails({ note, parentNote, isEditable, onClose, onFollowLink }: {
+function EventDetails({ note, parentNote, isEditable, maximized, setMaximized, onClose, onFollowLink }: {
     note: FNote;
     parentNote: FNote;
     isEditable: boolean;
+    maximized: boolean;
+    setMaximized(maximized: boolean): void;
     onClose(): void;
     onFollowLink(noteId: string): boolean;
 }) {
@@ -210,7 +247,11 @@ function EventDetails({ note, parentNote, isEditable, onClose, onFollowLink }: {
             <div className="calendar-event-popover-header">
                 <TitleRow compact />
                 {/* A sheet is offered no maximize: it already has the whole screen to grow into. */}
-                <MaximizeToQuickEditAction note={note} onClose={onClose} />
+                <MaximizeAction
+                    icon={maximized ? "bx bx-collapse-alt" : "bx bx-expand-alt"}
+                    text={maximized ? t("calendar.restore_details") : t("calendar.expand_details")}
+                    onClick={() => setMaximized(!maximized)}
+                />
                 <ActionButton
                     icon="bx bx-x"
                     text={t("calendar.close_details")}
@@ -218,7 +259,7 @@ function EventDetails({ note, parentNote, isEditable, onClose, onFollowLink }: {
                 />
             </div>
 
-            <EventDetailsBody note={note} parentNote={parentNote} isEditable={isEditable} onClose={onClose} />
+            <EventDetailsBody note={note} parentNote={parentNote} isEditable={isEditable} maximized={maximized} onClose={onClose} />
         </div>
     );
 }
@@ -228,10 +269,14 @@ function EventDetails({ note, parentNote, isEditable, onClose, onFollowLink }: {
  * promoted attributes and the note. Shared by the two shells, which differ only in what they put
  * around this and how they are dismissed.
  */
-function EventDetailsBody({ note, parentNote, isEditable, onClose }: {
+function EventDetailsBody({ note, parentNote, isEditable, maximized, onClose }: {
     note: FNote;
     parentNote: FNote;
     isEditable: boolean;
+    /** The card fills the window, so what it holds is laid out for a note's width rather than a
+     *  card's (see `tn-embedded-note-pane-wide` in EmbeddedNotePane.css). Never a sheet's, which is
+     *  a phone's whole screen and still only one field wide. */
+    maximized?: boolean;
     onClose(): void;
 }) {
     // The labels the body's own fields already speak for, so the promoted grid does not repeat
@@ -240,7 +285,7 @@ function EventDetailsBody({ note, parentNote, isEditable, onClose }: {
     const eventLabels = useEventLabelOmissions(note);
 
     return (
-        <div className="calendar-event-popover-body tn-embedded-note-pane">
+        <div className={clsx("calendar-event-popover-body tn-embedded-note-pane", maximized && "tn-embedded-note-pane-wide")}>
                 {/* What can be done with the event: the ways of opening its note (see
                     OpenNoteActions), then the ways of changing it — left out rather than disabled
                     where the calendar may not be edited, as the geo pane leaves them out. */}

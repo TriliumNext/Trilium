@@ -4,6 +4,7 @@ import appContext from "./components/app_context.js";
 import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
 import glob from "./services/glob.js";
 import noteAutocompleteService from "./services/note_autocomplete.js";
+import { preloadCommonNoteTypes } from "./widgets/note_types.js";
 
 glob.setupGlobs();
 
@@ -17,4 +18,6 @@ setupClipboardImageEmbed();
 const MobileLayout = (await import("./layouts/mobile_layout.js")).default;
 
 appContext.setLayout(new MobileLayout());
-appContext.start();
+
+/** Resolves once the layout is rendered and froca has the note tree; see desktop.ts. */
+export const ready = appContext.start().then(preloadCommonNoteTypes);

@@ -4,20 +4,21 @@ import {
     BackupDatabaseNowResponse,
     BackupPassphraseStatus,
     DatabaseBackup,
-    dayjs,
     ExistingBackupsResponse
 } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { describeDatabaseFormat } from "../../../services/database_files";
+import { isBackupDownloadSupported } from "../../../services/backup_download";
+import { describeDatabaseFormat, summarizeBackups } from "../../../services/database_files";
 import dialogService from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import options from "../../../services/options";
 import server from "../../../services/server";
+import { bootToSetup, canBootToSetup } from "../../../services/setup_mode";
 import toast from "../../../services/toast";
 import { isElectron } from "../../../services/utils";
 import Button from "../../react/Button";
-import { Card, CardOption, CardSection } from "../../react/Card";
+import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import DirectoryLink from "../../react/DirectoryLink";
 import FormPasswordWithConfirmation from "../../react/FormPasswordWithConfirmation";
 import FormText from "../../react/FormText";
@@ -25,10 +26,18 @@ import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import Modal from "../../react/Modal";
+import SetupForm from "../helpers/SetupForm";
 import DatabaseFileList from "./components/DatabaseFileList";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 
 export default function BackupSettings() {
+    // Standalone keeps no backups anywhere: its one backup is a manual download, streamed straight
+    // off the live database, so the page reduces to that action and the way back in.
+    return isBackupDownloadSupported() ? <StandaloneBackupSettings /> : <StoredBackupSettings />;
+}
+
+/** The page everywhere backups are kept as files: the server, the desktop. */
+function StoredBackupSettings() {
     const [backups, setBackups] = useState<DatabaseBackup[]>([]);
     const [backupFolderPath, setBackupFolderPath] = useState<string | null>(null);
 
@@ -52,8 +61,91 @@ export default function BackupSettings() {
             <BackupConfiguration />
             {/* Desktop only: the passphrase needs an OS keyring to live in, which only the desktop has. */}
             {isElectron() && <BackupOptions />}
+
+            <BackupActions refreshCallback={refreshBackups} />
         </>
     );
+}
+
+/**
+ * The whole backup page on the standalone platform: the summary says how backups work there, the
+ * same "Backup now" button as everywhere else hands one to the browser as a download, and restore
+ * boots to the setup screen the way it does on the other platforms. There is no list, location,
+ * schedule or format to configure, because nothing is ever stored.
+ */
+function StandaloneBackupSettings() {
+    return (
+        <>
+            <OptionsPageHeader />
+            <StandaloneBackupSection />
+        </>
+    );
+}
+
+/**
+ * The whole of what the standalone platform offers: back up, and restore.
+ *
+ * A page rather than a row of buttons, because there is nothing else on it: no list of backups, no
+ * location and no schedule, since nothing is ever stored. Both actions leave for the setup screen,
+ * which is where the database can be held still long enough to be copied or replaced.
+ */
+export function StandaloneBackupSection() {
+    return (
+        <div className="standalone-backup">
+            <SetupForm icon="bx bx-data">
+                <h3>{t("backup.standalone_heading")}</h3>
+                <p>{t("backup.standalone_description")}</p>
+
+                {canBootToSetup() && (
+                    <div className="standalone-backup-actions">
+                        <Button
+                            name="backup-database-now-button"
+                            text={t("backup.create_and_download")}
+                            kind="primary"
+                            onClick={() => void backUpInSetup()}
+                        />
+
+                        <Button
+                            name="restore-backup-button"
+                            text={t("backup.upload_and_restore")}
+                            onClick={() => void restoreInSetup()}
+                        />
+                    </div>
+                )}
+            </SetupForm>
+        </div>
+    );
+}
+
+/**
+ * Restarts into the setup screen, where the backup is actually taken.
+ *
+ * A backup is streamed off the live database over minutes, and a page of it read after a write
+ * would not match the pages read before: the copy has to come from a database nothing is touching.
+ * Only setup mode gives that — the database is open, but becca, sync and migrations are all held
+ * back — so the backup is taken there and the instance comes straight back here.
+ */
+async function backUpInSetup() {
+    if (!await dialogService.confirm(t("backup.restart_for_backup"))) {
+        return;
+    }
+
+    await bootToSetup({ targetScreen: "backup-database" });
+}
+
+/**
+ * Restarts into the setup screen, which is where a backup can replace the database.
+ *
+ * Asked about on every platform that can restart itself, because the restart is the surprising part
+ * and because what follows it reads as destructive until the user knows they will be offered a copy
+ * of what is about to be replaced.
+ */
+async function restoreInSetup() {
+    if (!await dialogService.confirm(t("backup.restart_for_restore"))) {
+        return;
+    }
+
+    await bootToSetup({ targetScreen: "restore-backup" });
 }
 
 interface BackupStatusProps {
@@ -66,57 +158,92 @@ interface BackupStatusProps {
  * of the page's own header rather than of the list below it: the list card answers for what it
  * holds, which is not the same as what the page is for.
  */
-function BackupStatus({ backups, refreshCallback }: BackupStatusProps) {
-    const [backupInProgress, setBackupInProgress] = useState(false);
+export function BackupStatus({ backups, refreshCallback }: BackupStatusProps) {
+    const { backUpNow, backupInProgress } = useBackupNow(refreshCallback);
 
     return (
         <div className="backup-status">
             <span className="backup-status-summary">{summarizeBackups(backups)}</span>
+
+            {/* Offered only where the app can start itself again, which is what a restore needs:
+                it happens in the setup screen, with this database closed. */}
+            {canBootToSetup() && (
+                <Button
+                    name="restore-backup-button"
+                    text={t("backup.restore_backup")}
+                    size="micro"
+                    onClick={() => void restoreInSetup()}
+                />
+            )}
 
             <Button
                 name="backup-database-now-button"
                 text={t("backup.backup_now")}
                 size="micro"
                 disabled={backupInProgress}
-                onClick={async () => {
-                    setBackupInProgress(true);
-                    try {
-                        const { backupFile } = await server.post<BackupDatabaseNowResponse>(
-                            "database/backup-database"
-                        );
-
-                        toast.showMessage(
-                            t("backup.database_backed_up_to", { backupFilePath: backupFile }),
-                            10000
-                        );
-                        refreshCallback();
-                    } finally {
-                        setBackupInProgress(false);
-                    }
-                }}
+                onClick={backUpNow}
             />
         </div>
     );
 }
 
 /**
- * How many backups there are and how long ago the last one was made — the two things the list
- * itself only answers by being read through. Nothing is said while there are none: the list
- * stands empty right below, which states it more plainly than a sentence could.
+ * Taking a backup there and then, held apart from the button so that the settings search can offer
+ * the same command without a second copy of what it does.
  */
-function summarizeBackups(backups: DatabaseBackup[]) {
-    if (!backups.length) {
-        return null;
-    }
+function useBackupNow(refreshCallback: () => void) {
+    const [ backupInProgress, setBackupInProgress ] = useState(false);
 
-    const mostRecent = backups.reduce((latest, backup) => (
-        backup.mtime > latest.mtime ? backup : latest
-    ));
+    const backUpNow = useCallback(async () => {
+        setBackupInProgress(true);
+        try {
+            const { backupFile } = await server.post<BackupDatabaseNowResponse>(
+                "database/backup-database"
+            );
 
-    return t("backup.backups_summary", {
-        count: backups.length,
-        age: dayjs(mostRecent.mtime).fromNow(true)
-    });
+            toast.showMessage(
+                t("backup.database_backed_up_to", { backupFilePath: backupFile }),
+                10000
+            );
+            refreshCallback();
+        } finally {
+            setBackupInProgress(false);
+        }
+    }, [ refreshCallback ]);
+
+    return { backUpNow, backupInProgress };
+}
+
+/**
+ * The page's own commands, which live in its header and so are out of the search's reach. Offered
+ * here as the settings they stand beside are, operated where they are found.
+ */
+function BackupActions({ refreshCallback }: { refreshCallback: () => void }) {
+    const { backUpNow, backupInProgress } = useBackupNow(refreshCallback);
+
+    return (
+        <Card filterOnly heading={t("settings.related_actions")}>
+            <OptionCardSection label={t("backup.backup_now")}>
+                <Button
+                    text={t("backup.backup_now")}
+                    disabled={backupInProgress}
+                    onClick={backUpNow}
+                />
+            </OptionCardSection>
+
+            {canBootToSetup() && (
+                <OptionCardSection
+                    label={t("backup.restore_backup")}
+                    description={t("backup.restart_for_restore")}
+                >
+                    <Button
+                        text={t("backup.restore_backup")}
+                        onClick={() => void restoreInSetup()}
+                    />
+                </OptionCardSection>
+            )}
+        </Card>
+    );
 }
 
 export function BackupConfiguration() {
@@ -125,33 +252,31 @@ export function BackupConfiguration() {
     const [monthlyBackupEnabled, setMonthlyBackupEnabled] = useTriliumOptionBool("monthlyBackupEnabled");
 
     return (
-        <div className="options-section backup-configuration">
-            <Card
-                heading={t("backup.automatic_backups_title")}
-                description={t("backup.automatic_backups_description")}
-            >
-                <CardOption name="daily-backup-enabled" label={t("backup.enable_daily_backup")}>
-                    <FormToggle
-                        currentValue={dailyBackupEnabled}
-                        onChange={setDailyBackupEnabled}
-                    />
-                </CardOption>
+        <Card className="backup-configuration"
+            heading={t("backup.automatic_backups_title")}
+            description={t("backup.automatic_backups_description")}
+        >
+            <OptionCardSection name="daily-backup-enabled" label={t("backup.enable_daily_backup")}>
+                <FormToggle
+                    currentValue={dailyBackupEnabled}
+                    onChange={setDailyBackupEnabled}
+                />
+            </OptionCardSection>
 
-                <CardOption name="weekly-backup-enabled" label={t("backup.enable_weekly_backup")}>
-                    <FormToggle
-                        currentValue={weeklyBackupEnabled}
-                        onChange={setWeeklyBackupEnabled}
-                    />
-                </CardOption>
+            <OptionCardSection name="weekly-backup-enabled" label={t("backup.enable_weekly_backup")}>
+                <FormToggle
+                    currentValue={weeklyBackupEnabled}
+                    onChange={setWeeklyBackupEnabled}
+                />
+            </OptionCardSection>
 
-                <CardOption name="monthly-backup-enabled" label={t("backup.enable_monthly_backup")}>
-                    <FormToggle
-                        currentValue={monthlyBackupEnabled}
-                        onChange={setMonthlyBackupEnabled}
-                    />
-                </CardOption>
-            </Card>
-        </div>
+            <OptionCardSection name="monthly-backup-enabled" label={t("backup.enable_monthly_backup")}>
+                <FormToggle
+                    currentValue={monthlyBackupEnabled}
+                    onChange={setMonthlyBackupEnabled}
+                />
+            </OptionCardSection>
+        </Card>
     );
 }
 
@@ -183,36 +308,34 @@ export function BackupLocation({ backupFolderPath, refreshCallback }: { backupFo
     }
 
     return (
-        <div className="options-section backup-location">
-            <Card heading={t("backup.location_title")}>
-                <CardSection>
-                    <Icon icon="bx bx-folder" className="backup-location-icon" />
+        <Card className="backup-location" heading={t("backup.location_title")}>
+            <CardSection>
+                <Icon icon="bx bx-folder" className="backup-location-icon" />
 
-                    <div className="backup-location-label">{t("backup.saved_in")}</div>
-                    <div className="backup-location-path"><DirectoryLink directory={backupFolderPath} /></div>
+                <div className="backup-location-label">{t("backup.saved_in")}</div>
+                <div className="backup-location-path"><DirectoryLink directory={backupFolderPath} /></div>
 
-                    <div className="backup-location-actions">
+                <div className="backup-location-actions">
+                    <Button
+                        name="select-backup-location-button"
+                        text={t("backup.select_location")}
+                        size="micro"
+                        disabled={!canSelect}
+                        disabledTooltip={t("backup.select_location_desktop_only")}
+                        onClick={selectLocation}
+                    />
+
+                    {customDir && (
                         <Button
-                            name="select-backup-location-button"
-                            text={t("backup.select_location")}
+                            name="reset-backup-location-button"
+                            text={t("backup.reset_location")}
                             size="micro"
-                            disabled={!canSelect}
-                            disabledTooltip={t("backup.select_location_desktop_only")}
-                            onClick={selectLocation}
+                            onClick={resetToDefault}
                         />
-
-                        {customDir && (
-                            <Button
-                                name="reset-backup-location-button"
-                                text={t("backup.reset_location")}
-                                size="micro"
-                                onClick={resetToDefault}
-                            />
-                        )}
-                    </div>
-                </CardSection>
-            </Card>
-        </div>
+                    )}
+                </div>
+            </CardSection>
+        </Card>
     );
 }
 
@@ -288,16 +411,16 @@ export function BackupOptions() {
     }
 
     return (
-        <div className="options-section backup-options">
+        <>
             <Card heading={t("backup.options_title")}>
-                <CardOption
+                <OptionCardSection
                     label={t("backup.enable_encryption")}
                     description={passphrase.available
                         ? t("backup.enable_encryption_description")
                         : t("backup.no_keyring")}
                 >
                     {passphrase.set ? (
-                        <>
+                        <span className="tn-card-option-actions">
                             <Button
                                 name="change-backup-password-button"
                                 text={t("backup.change_password")}
@@ -308,7 +431,7 @@ export function BackupOptions() {
                                 currentValue={encryptionEnabled}
                                 onChange={(enabled) => enabled ? setEncryptionEnabled(true) : disableEncryption()}
                             />
-                        </>
+                        </span>
                     ) : (
                         <Button
                             name="turn-on-backup-encryption-button"
@@ -318,9 +441,9 @@ export function BackupOptions() {
                             onClick={() => setPasswordModalShown(true)}
                         />
                     )}
-                </CardOption>
+                </OptionCardSection>
 
-                <CardOption
+                <OptionCardSection
                     name="backup-compression-enabled"
                     label={t("backup.enable_compression")}
                     description={t("backup.enable_compression_description")}
@@ -329,7 +452,7 @@ export function BackupOptions() {
                         currentValue={compressionEnabled}
                         onChange={setCompressionEnabled}
                     />
-                </CardOption>
+                </OptionCardSection>
             </Card>
 
             <BackupPasswordModal
@@ -337,7 +460,7 @@ export function BackupOptions() {
                 onHidden={() => setPasswordModalShown(false)}
                 onSave={storePassword}
             />
-        </div>
+        </>
     );
 }
 

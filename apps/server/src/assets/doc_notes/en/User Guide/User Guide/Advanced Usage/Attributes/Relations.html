@@ -1,16 +1,16 @@
-<p>A relation is similar to a <a href="#root/_help_HI6GBBIduIgv">label</a>, but
-  instead of having a text value it refers to another note.</p>
+<p>A relation is similar to a <a href="#root/_help_HI6GBBIduIgv">label</a>,
+  but instead of having a text value it refers to another note.</p>
 <h2>Common use cases</h2>
 <ul>
   <li><strong>Metadata Relationships for personal use</strong>: For example,
     linking a book note to an author note.
     <br>This can be combined with&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;to
     make their display more user-friendly.</li>
-  <li><strong>Configuration</strong>: For configuring some notes such as&nbsp;
-    <a
-    class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>, or configuring&nbsp;<a class="reference-link" href="#root/_help_R9pX4DGra2Vt">Sharing</a>&nbsp;or&nbsp;
-      <a
-      class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;(see the list below).</li>
+  <li><strong>Configuration</strong>: For configuring some notes such as&nbsp;<a
+    class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>,
+    or configuring&nbsp;<a class="reference-link" href="#root/_help_R9pX4DGra2Vt">Sharing</a>&nbsp;or&nbsp;<a
+    class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;(see
+    the list below).</li>
   <li><strong>Scripting</strong>: Attaching scripts to events or conditions
     related to the note.</li>
 </ul>
@@ -46,14 +46,12 @@
       <li>Type the title of the note to point to and press <kbd>Enter</kbd> to confirm
         (or click the desired note).</li>
       <li>Alternatively copy a note from the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and
-        paste it after the <code spellcheck="false">=</code> sign (without the
-        <code
+        paste it after the <code spellcheck="false">=</code> sign (without the <code
         spellcheck="false">@</code> , in this case).</li>
     </ul>
   </li>
   <li>To create an inheritable relation, follow the same steps as previously
-    described but instead of <code spellcheck="false">~myRelation</code> write
-    <code
+    described but instead of <code spellcheck="false">~myRelation</code> write <code
     spellcheck="false">~myRelation(inheritable)</code>.</li>
 </ul>
 <h2>Predefined relations</h2>
@@ -82,6 +80,14 @@ class="table">
           documentation for details.</td>
       </tr>
       <tr>
+        <td><code spellcheck="false">template:newNoteDefaultParent</code>
+        </td>
+        <td>set on a template note, points to the note under which notes created from
+          the template are placed when no other location is picked; when set several
+          times, the note is cloned into every target. See <a class="reference-link"
+          href="#root/_help_KC1HB96bqqHX">Templates</a>.</td>
+      </tr>
+      <tr>
         <td><code spellcheck="false">inherit</code>
         </td>
         <td>note's attributes will be inherited even without a parent-child relationship.
@@ -106,9 +112,8 @@ class="table">
         <td><code spellcheck="false">shareCss</code>
         </td>
         <td>CSS note which will be injected into the share page. CSS note must be
-          in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code> and
-          <code
-          spellcheck="false">shareOmitDefaultCss</code>as well.</td>
+          in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code> and <code
+          spellcheck="false">shareOmitDefaultCss</code> as well.</td>
       </tr>
       <tr>
         <td><code spellcheck="false">shareJs</code>
@@ -127,8 +132,7 @@ class="table">
         <td><code spellcheck="false">shareTemplate</code>
         </td>
         <td>Embedded JavaScript note that will be used as the template for displaying
-          the shared note. Falls back to the default template. Consider using
-          <code
+          the shared note. Falls back to the default template. Consider using <code
           spellcheck="false">shareHiddenFromTree</code>.</td>
       </tr>
       <tr>
@@ -140,4 +144,4 @@ class="table">
       </tr>
     </tbody>
   </table>
-  </figure>
+</figure>

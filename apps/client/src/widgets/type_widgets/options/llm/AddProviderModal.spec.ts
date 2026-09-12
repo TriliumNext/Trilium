@@ -2,90 +2,118 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../../services/i18n", () => ({ t: (key: string) => key }));
 
-import { prefilledBaseUrl, PROVIDER_TYPES } from "./AddProviderModal";
+import {
+    isConnectionValid,
+    isValidBaseUrl,
+    prefilledBaseUrl,
+    PROVIDER_TYPES,
+    type ProviderType
+} from "./AddProviderModal";
 
-/** Card ids are persisted in the llmProviders option, so they double as an API. */
-const SELF_HOSTED = ["ollama", "lmstudio", "openai-compatible"];
+const provider = (id: string) => PROVIDER_TYPES.find((type) => type.id === id);
 
-describe("AddProviderModal provider cards", () => {
-    it("prefills an endpoint for self-hosted providers only", () => {
-        // The port is the one detail a self-hosted user must get right, and it
-        // differs per runtime — whereas prefilling a vendor endpoint would store
-        // a redundant override on every provider the user adds.
-        expect(prefilledBaseUrl("ollama")).toBe("http://localhost:11434");
-        expect(prefilledBaseUrl("lmstudio")).toBe("http://localhost:1234/v1");
+describe("isValidBaseUrl", () => {
+    it("accepts an empty field, which means the provider's own default stands", () => {
+        expect(isValidBaseUrl("")).toBe(true);
+    });
+
+    it("accepts what can actually be reached over the wire, and nothing else", () => {
+        expect(isValidBaseUrl("https://api.openai.com/v1")).toBe(true);
+        expect(isValidBaseUrl("http://localhost:11434")).toBe(true);
+
+        // Parses as a URL, but not one the app could ever request.
+        expect(isValidBaseUrl("ftp://example.com")).toBe(false);
+        expect(isValidBaseUrl("file:///etc/passwd")).toBe(false);
+        // Not a URL at all — a host with no scheme is the usual slip.
+        expect(isValidBaseUrl("localhost:11434")).toBe(false);
+        expect(isValidBaseUrl("not a url")).toBe(false);
+    });
+});
+
+describe("isConnectionValid", () => {
+    const withModes = (apiKey: ProviderType["apiKey"], baseUrl: ProviderType["baseUrl"]) =>
+        ({ apiKey, baseUrl } as ProviderType);
+
+    it("wants a key from a provider that requires one, and counts blank as none", () => {
+        const vendor = withModes("required", "advanced");
+
+        expect(isConnectionValid(vendor, "", "")).toBe(false);
+        expect(isConnectionValid(vendor, "   ", "")).toBe(false);
+        expect(isConnectionValid(vendor, "sk-abc", "")).toBe(true);
+    });
+
+    it("treats a required key as the default, for a provider that says nothing about it", () => {
+        expect(isConnectionValid(undefined, "", "")).toBe(false);
+        expect(isConnectionValid(undefined, "sk-abc", "")).toBe(true);
+    });
+
+    it("wants an endpoint from a provider that has no default of its own", () => {
+        const selfHosted = withModes("optional", "required");
+
+        expect(isConnectionValid(selfHosted, "", "")).toBe(false);
+        expect(isConnectionValid(selfHosted, "", "http://localhost:11434")).toBe(true);
+        // A key is welcome but not required — a proxy in front of the endpoint may want one.
+        expect(isConnectionValid(selfHosted, "sk-abc", "http://localhost:11434")).toBe(true);
+    });
+
+    it("refuses a malformed endpoint even where the field is only an override", () => {
+        const vendor = withModes("required", "advanced");
+
+        expect(isConnectionValid(vendor, "sk-abc", "localhost:11434")).toBe(false);
+        expect(isConnectionValid(vendor, "sk-abc", "https://proxy.example.com")).toBe(true);
+    });
+
+    it("asks for nothing from a provider that authenticates elsewhere", () => {
+        // Claude Code and the like: the subscription is signed in through its own program.
+        expect(isConnectionValid(withModes("none", "none"), "", "")).toBe(true);
+        // Even a field left in a mess cannot hold it up, there being no field.
+        expect(isConnectionValid(withModes("none", "none"), "", "not a url")).toBe(true);
+    });
+});
+
+describe("prefilledBaseUrl", () => {
+    it("fills in an endpoint only where the port is the user's to get right", () => {
+        // Self-hosted runtimes differ by port per install, so the default is written in.
+        expect(prefilledBaseUrl("ollama")).toBe(provider("ollama")?.defaultBaseUrl);
+        // A vendor's endpoint is a hint only, so an unedited field stores no override.
         expect(prefilledBaseUrl("openai")).toBe("");
-        expect(prefilledBaseUrl("anthropic")).toBe("");
-        expect(prefilledBaseUrl("claude-agent")).toBe("");
-        // The generic card has no single sensible endpoint to guess.
-        expect(prefilledBaseUrl("openai-compatible")).toBe("");
-        expect(prefilledBaseUrl("unknown")).toBe("");
+        expect(prefilledBaseUrl("no-such-provider")).toBe("");
     });
+});
 
-    it("declares an endpoint and a setup hint for every self-hosted card", () => {
-        for (const id of SELF_HOSTED) {
-            const card = PROVIDER_TYPES.find(p => p.id === id);
-            expect(card, `missing card: ${id}`).toBeDefined();
-            expect(card?.baseUrl).toBe("required");
-            expect(card?.setupHintKey).toBeTruthy();
-            expect(card?.defaultBaseUrl).toBeTruthy();
+describe("the provider list", () => {
+    it("gives every provider what a card needs to be drawn", () => {
+        for (const type of PROVIDER_TYPES) {
+            expect(type.id, `${type.id} has an id`).toBeTruthy();
+            expect(type.name, `${type.id} has a name`).toBeTruthy();
+            expect(type.iconUrl, `${type.id} has an icon`).toBeTruthy();
         }
     });
 
-    it("sorts every card into a section by how it is billed and where it runs", () => {
-        // Groups follow the user guide's taxonomy — metered API keys, a fixed-fee
-        // subscription reused from elsewhere, self-hosted — plus a custom-endpoint
-        // section, which exists because that card also reaches *hosted* services
-        // (OpenRouter, Groq) and so can claim neither free use nor locality.
-        expect(PROVIDER_TYPES.filter(p => p.group === "cloud").map(p => p.id))
-            .toEqual(["anthropic", "openai", "google", "deepseek"]);
-        expect(PROVIDER_TYPES.filter(p => p.group === "subscription").map(p => p.id))
-            .toEqual(["claude-agent"]);
-        expect(PROVIDER_TYPES.filter(p => p.group === "local").map(p => p.id))
-            .toEqual(["ollama", "lmstudio"]);
-        expect(PROVIDER_TYPES.filter(p => p.group === "custom").map(p => p.id))
-            .toEqual(["openai-compatible"]);
-        // Every card lands in exactly one section.
-        expect(PROVIDER_TYPES.filter(p => p.group === undefined)).toEqual([]);
-    });
-
-    it("keeps the endpoint-driven cards together regardless of section", () => {
-        // `group` and `baseUrl` are independent fields: splitting the custom
-        // endpoint out of "local" must not stop it asking for a URL.
-        expect(PROVIDER_TYPES.filter(p => p.baseUrl === "required").map(p => p.id)).toEqual(SELF_HOSTED);
-    });
-
-    it("bills every subscription provider through an existing account rather than a key", () => {
-        for (const card of PROVIDER_TYPES.filter(p => p.group === "subscription")) {
-            expect(card.apiKey, `${card.id} should not ask for an API key`).toBe("none");
+    it("gives every provider an endpoint, bar the ones that are not reached over one", () => {
+        for (const type of PROVIDER_TYPES) {
+            // A subscription provider is driven through its own program, so there is no address to
+            // offer and its card asks for none.
+            const expected = type.baseUrl === "none" ? "" : expect.stringMatching(/^https?:\/\//);
+            expect(type.defaultBaseUrl, `${type.id}'s endpoint`).toEqual(expected);
         }
     });
 
-    it("keeps vendor cards on a required key and an advanced endpoint override", () => {
-        for (const id of ["anthropic", "openai", "google", "deepseek"]) {
-            const card = PROVIDER_TYPES.find(p => p.id === id);
-            // Both default, so neither is set explicitly.
-            expect(card?.apiKey ?? "required").toBe("required");
-            expect(card?.baseUrl ?? "advanced").toBe("advanced");
+    it("keeps the ids apart, since the stored config is keyed by them", () => {
+        const ids = PROVIDER_TYPES.map((type) => type.id);
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it("files every provider under a section the list actually renders", () => {
+        const groups = new Set([ "cloud", "subscription", "local", "custom" ]);
+        for (const type of PROVIDER_TYPES) {
+            expect(groups, `${type.id} is filed somewhere`).toContain(type.group);
         }
     });
 
-    it("asks for no key from local runtimes and an optional one from arbitrary endpoints", () => {
-        const byId = new Map(PROVIDER_TYPES.map(p => [p.id, p]));
-        expect(byId.get("ollama")?.apiKey).toBe("none");
-        expect(byId.get("lmstudio")?.apiKey).toBe("none");
-        // A generic endpoint may sit behind an authenticating proxy (vLLM, LiteLLM).
-        expect(byId.get("openai-compatible")?.apiKey).toBe("optional");
-        // Subscription auth belongs to Claude Code itself.
-        expect(byId.get("claude-agent")?.apiKey).toBe("none");
-        expect(byId.get("claude-agent")?.baseUrl).toBe("none");
-    });
-
-    it("gives every card a logo", () => {
-        // SelectableCard is only passed `iconUrl`, so a card without one renders
-        // with an empty icon slot rather than falling back to anything.
-        for (const card of PROVIDER_TYPES) {
-            expect(card.iconUrl, `no icon for ${card.id}`).toBeTruthy();
+    it("prefills only the providers that run on the user's own machine", () => {
+        for (const type of PROVIDER_TYPES.filter((candidate) => candidate.prefillBaseUrl)) {
+            expect(type.baseUrl, `${type.id} asks for its endpoint`).toBe("required");
         }
     });
 });

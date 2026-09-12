@@ -1,5 +1,5 @@
 import { readBackupContainer } from "@triliumnext/backup-container";
-import type { OptionNames } from "@triliumnext/commons";
+import type { OptionNames, SetupBackupSettings } from "@triliumnext/commons";
 import { getLog, getSql, ws } from "@triliumnext/core";
 import fs from "fs";
 import os from "os";
@@ -56,6 +56,25 @@ function optionsWith(customDbBackupDir: string | null, extraOptions: OptionOverr
 
 function backupNamesIn(directory: string) {
     return fs.existsSync(directory) ? fs.readdirSync(directory).sort() : [];
+}
+
+/** Unwraps a container back to the bytes the stub database was made of. */
+async function unwrapContainer(filePath: string, passphrase?: string) {
+    const chunks: Buffer[] = [];
+    const sink = new Writable({
+        write(chunk: Buffer, _encoding, callback) {
+            chunks.push(Buffer.from(chunk));
+            callback();
+        }
+    });
+
+    await readBackupContainer(Readable.from([ fs.readFileSync(filePath) ]), sink, {
+        passphrase,
+        // The stub standing in for the online backup is not a real database.
+        requireSqliteHeader: false
+    });
+
+    return Buffer.concat(chunks).toString();
 }
 
 beforeEach(() => {
@@ -125,25 +144,6 @@ describe("ServerBackupService: backup format", () => {
     const PASSPHRASE = "correct horse battery staple";
     const withPassphrase: Partial<ServerBackupConfig> = { getPassphrase: async () => PASSPHRASE };
 
-    /** Unwraps a container back to the bytes the stub database was made of. */
-    async function unwrap(filePath: string, passphrase?: string) {
-        const chunks: Buffer[] = [];
-        const sink = new Writable({
-            write(chunk: Buffer, _encoding, callback) {
-                chunks.push(Buffer.from(chunk));
-                callback();
-            }
-        });
-
-        await readBackupContainer(Readable.from([ fs.readFileSync(filePath) ]), sink, {
-            passphrase,
-            // The stub standing in for the online backup is not a real database.
-            requireSqliteHeader: false
-        });
-
-        return Buffer.concat(chunks).toString();
-    }
-
     it("writes a plain database when neither compression nor encryption is on", async () => {
         const backupFile = await desktopService(CUSTOM_DIR).backupNow("now");
 
@@ -157,7 +157,7 @@ describe("ServerBackupService: backup format", () => {
         const backupFile = await service.backupNow("now");
 
         expect(backupFile).toBe(path.join(CUSTOM_DIR, "backup-now.tnbackup"));
-        expect(await unwrap(backupFile)).toBe("db-bytes");
+        expect(await unwrapContainer(backupFile)).toBe("db-bytes");
     });
 
     it("writes an encrypted container, which only the passphrase opens", async () => {
@@ -170,8 +170,8 @@ describe("ServerBackupService: backup format", () => {
         const backupFile = await service.backupNow("now");
 
         expect(backupFile).toBe(path.join(CUSTOM_DIR, "backup-now.tnbackup"));
-        expect(await unwrap(backupFile, PASSPHRASE)).toBe("db-bytes");
-        await expect(unwrap(backupFile, "wrong"))
+        expect(await unwrapContainer(backupFile, PASSPHRASE)).toBe("db-bytes");
+        await expect(unwrapContainer(backupFile, "wrong"))
             .rejects.toMatchObject({ reason: "wrong-passphrase-or-damaged-header" });
     });
 
@@ -184,7 +184,7 @@ describe("ServerBackupService: backup format", () => {
 
         const backupFile = await service.backupNow("now");
 
-        expect(await unwrap(backupFile, PASSPHRASE)).toBe("db-bytes");
+        expect(await unwrapContainer(backupFile, PASSPHRASE)).toBe("db-bytes");
     });
 
     it("keeps one file per backup name, whichever format it was last written in", async () => {
@@ -257,7 +257,7 @@ describe("ServerBackupService: backup format", () => {
         expect(byName.get("backup-plain.db")).not.toHaveProperty("plaintextSize");
     });
 
-    it("lists a container it cannot make sense of, rather than dropping it", async () => {
+    it("lists a container it cannot make sense of, saying so rather than dropping it", async () => {
         fs.mkdirSync(DEFAULT_DIR, { recursive: true });
         fs.writeFileSync(
             path.join(DEFAULT_DIR, "backup-damaged.tnbackup"),
@@ -266,9 +266,126 @@ describe("ServerBackupService: backup format", () => {
 
         const backups = await desktopService("").getExistingBackups();
 
+        // Listed, because a file sitting in the backup directory is one the user is relying on,
+        // and saying it is no good is the whole point of listing it.
         expect(backups.map((b) => b.fileName)).toEqual([ "backup-damaged.tnbackup" ]);
+        expect(backups[0]).toMatchObject({ unreadable: "invalid" });
         expect(backups[0]).not.toHaveProperty("compressed");
         expect(backups[0]).not.toHaveProperty("encrypted");
+    });
+
+    it("tells a backup from a newer Trilium apart from one that is not a backup", async () => {
+        fs.mkdirSync(DEFAULT_DIR, { recursive: true });
+
+        const compressing = desktopService("", { backupEnableCompression: "true" });
+        const newer = fs.readFileSync(await compressing.backupNow("daily"));
+        // The version byte, straight after the magic. Everything else about the file is intact,
+        // which is exactly the case that must not read as damaged.
+        newer.writeUInt8(2, 20);
+        fs.writeFileSync(path.join(DEFAULT_DIR, "backup-newer.tnbackup"), newer);
+
+        const byName = new Map(
+            (await desktopService("").getExistingBackups()).map((b) => [ b.fileName, b ])
+        );
+
+        expect(byName.get("backup-newer.tnbackup")).toMatchObject({
+            unreadable: "unsupported-version"
+        });
+        expect(byName.get("backup-daily.tnbackup")).not.toHaveProperty("unreadable");
+    });
+});
+
+describe("ServerBackupService.backupAs: the backup the setup screen asked for", () => {
+    const PASSPHRASE = "correct horse battery staple";
+    const withPassphrase: Partial<ServerBackupConfig> = { getPassphrase: async () => PASSPHRASE };
+
+    /** What the screen sends, with the plainest backup there is as the starting point. */
+    function asked(overrides: Partial<SetupBackupSettings> = {}): SetupBackupSettings {
+        return {
+            name: "Before the import",
+            passphrase: "",
+            useStoredPassphrase: false,
+            compress: false,
+            ...overrides
+        };
+    }
+
+    it("writes it under the name the user gave it, spaces and all", async () => {
+        const written = await desktopService(CUSTOM_DIR).backupAs(asked());
+
+        // A plain database copy rather than a container, which is what nothing asked for looks like.
+        expect(written.fileName).toBe("Before the import.db");
+        expect(written.directoryPath).toBe(CUSTOM_DIR);
+    });
+
+    it("locks it with the password typed on the screen, over anything the instance is set up for", async () => {
+        // Encryption is off in the options, and there is a stored passphrase that is not this one:
+        // what the user typed while asking is what the backup is written with.
+        const service = desktopService(CUSTOM_DIR, {}, withPassphrase);
+
+        const written = await service.backupAs(asked({ passphrase: "typed-here" }));
+
+        expect(written.fileName).toBe("Before the import.tnbackup");
+        expect(await unwrapContainer(written.filePath, "typed-here")).toBe("db-bytes");
+        await expect(unwrapContainer(written.filePath, PASSPHRASE))
+            .rejects.toMatchObject({ reason: "wrong-passphrase-or-damaged-header" });
+    });
+
+    it("locks it with the stored passphrase where that is what was asked for", async () => {
+        // The one the screen cannot show and so cannot have sent: asking for it is the only way.
+        const service = desktopService(CUSTOM_DIR, {}, withPassphrase);
+
+        const written = await service.backupAs(asked({ useStoredPassphrase: true, passphrase: "ignored" }));
+
+        expect(written.fileName).toBe("Before the import.tnbackup");
+        expect(await unwrapContainer(written.filePath, PASSPHRASE)).toBe("db-bytes");
+    });
+
+    it("leaves it unlocked where the user cleared the password, however the instance backs up", async () => {
+        const service = desktopService(
+            CUSTOM_DIR,
+            { backupEnableEncryption: "true", backupEnableCompression: "true" },
+            withPassphrase
+        );
+
+        const written = await service.backupAs(asked());
+
+        // Neither locked nor wrapped, so not a container at all: a plain database copy.
+        expect(written.fileName).toBe("Before the import.db");
+    });
+
+    it("compresses because the screen said so, not because the option says so", async () => {
+        const compressed = await desktopService(CUSTOM_DIR).backupAs(asked({ compress: true }));
+        expect(compressed.fileName).toBe("Before the import.tnbackup");
+        expect(await unwrapContainer(compressed.filePath)).toBe("db-bytes");
+
+        const plain = await desktopService(CUSTOM_DIR, { backupEnableCompression: "true" })
+            .backupAs(asked({ name: "Plain" }));
+        expect(plain.fileName).toBe("Plain.db");
+    });
+
+    it("falls back to an unencrypted local copy where the stored passphrase turns out to be unreadable", async () => {
+        // Only reachable if the keyring fails between the screen being told there is a passphrase
+        // and the backup asking for it. A backup is still worth more than no backup.
+        const service = desktopService(CUSTOM_DIR, {}, { getPassphrase: async () => null });
+
+        const written = await service.backupAs(asked({ useStoredPassphrase: true }));
+
+        // Unlocked, and so kept out of the chosen directory: that one is typically a synced folder,
+        // which is the very thing encryption was turned on to keep a readable database out of.
+        expect(written.fileName).toBe("Before the import.db");
+        expect(written.directoryPath).toBe(DEFAULT_DIR);
+        expect(ws.sendMessageToAllClients).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "toast", message: expect.stringContaining("not encrypted") })
+        );
+    });
+
+    it("says whether there is a stored passphrase, which is all the screen is allowed to learn", async () => {
+        await expect(desktopService("", {}, withPassphrase).hasStoredPassphrase()).resolves.toBe(true);
+        await expect(desktopService("", {}, { getPassphrase: async () => null }).hasStoredPassphrase())
+            .resolves.toBe(false);
+        // A build with no keyring behind it at all, which is every server deployment.
+        await expect(desktopService("").hasStoredPassphrase()).resolves.toBe(false);
     });
 });
 
@@ -507,5 +624,76 @@ describe("ServerBackupService.getBackupContent", () => {
 
     it("returns null for a missing file inside the backup directory", async () => {
         expect(await desktopService("").getBackupContent(path.join(DEFAULT_DIR, "backup-absent.db"))).toBeNull();
+    });
+});
+
+describe("ServerBackupService: sending a backup for download", () => {
+    /** Collects what was written to it, and records the moment the headers were committed. */
+    function fakeResponse() {
+        const headers: Record<string, string> = {};
+        const chunks: Buffer[] = [];
+        let flushedAfter: number | null = null;
+
+        const res = new Writable({
+            write(chunk: Buffer, _encoding, callback) {
+                chunks.push(Buffer.from(chunk));
+                callback();
+            }
+        }) as Writable & {
+            setHeader(name: string, value: string): void;
+            flushHeaders(): void;
+        };
+        res.setHeader = (name, value) => { headers[name] = value; };
+        res.flushHeaders = () => { flushedAfter = chunks.length; };
+
+        return { res, headers, chunks, flushed: () => flushedAfter };
+    }
+
+    async function written(res: Writable): Promise<void> {
+        await new Promise((resolve) => res.on("finish", resolve));
+    }
+
+    it("streams it with its headers committed first, so nothing downstream buffers it whole", async () => {
+        const filePath = path.join(CUSTOM_DIR, "Backup 2026-08-07 10-32-21.tnbackup");
+        fs.mkdirSync(CUSTOM_DIR, { recursive: true });
+        fs.writeFileSync(filePath, "backup-bytes");
+        const { res, headers, chunks, flushed } = fakeResponse();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the express Response surface this uses.
+        expect(desktopService(CUSTOM_DIR).sendBackup?.(filePath, res as any)).toBe(true);
+        await written(res);
+
+        expect(Buffer.concat(chunks).toString()).toBe("backup-bytes");
+        expect(headers["Content-Disposition"])
+            .toBe('attachment; filename="Backup 2026-08-07 10-32-21.tnbackup"');
+        expect(headers["Content-Length"]).toBe("12");
+        // Before any of the body: the desktop's protocol bridge streams only once headers are
+        // flushed, and buffers a multi-gigabyte backup whole otherwise.
+        expect(flushed()).toBe(0);
+    });
+
+    it("refuses anything that is not an existing backup, rather than sending a file", () => {
+        const { res } = fakeResponse();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- as above.
+        expect(desktopService(CUSTOM_DIR).sendBackup?.("/etc/passwd", res as any)).toBe(false);
+    });
+});
+
+describe("ServerBackupService.adoptPassphrase", () => {
+    it("hands the password to wherever this platform keeps one, and clears it on null", async () => {
+        const stored: (string | null)[] = [];
+        const service = desktopService("", {}, { setPassphrase: async (p) => void stored.push(p) });
+
+        await service.adoptPassphrase("the restored database's password");
+        await service.adoptPassphrase(null);
+
+        expect(stored).toEqual([ "the restored database's password", null ]);
+    });
+
+    it("does nothing where there is nowhere to keep one, rather than failing the restore", async () => {
+        // The server has no keyring, so it has no stored passphrase for a restore to bring up to
+        // date; the restore calls this the same way regardless of the platform it is running on.
+        await expect(serverService(null).adoptPassphrase("a password")).resolves.toBeUndefined();
     });
 });

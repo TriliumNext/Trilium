@@ -1,8 +1,15 @@
 import { becca, becca_easy_mocking } from "@triliumnext/core";
+import { registerDocNoteHtmlReader } from "@triliumnext/core/src/services/llm/tools/helpers.js";
+import type { ToolDefinition } from "@triliumnext/core/src/services/llm/tools/tool_registry.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getDocNoteHtml } from "./doc_notes.js";
 import { helpTools, resetHelpIndex } from "./help_tools.js";
-import type { ToolDefinition } from "./tool_registry.js";
+
+// Doc-note HTML reaches core through a host-registered reader — the server's is
+// filesystem-backed. Registering it here mirrors what services/llm/index.ts
+// does in production.
+registerDocNoteHtmlReader(getDocNoteHtml);
 
 const { buildNote } = becca_easy_mocking;
 

@@ -7,6 +7,7 @@ import { buildNote } from "../test/easy-froca";
 // and swap behaviour per test without re-mocking.
 const toast = vi.hoisted(() => ({
     showError: vi.fn(),
+    showErrorTitleAndMessage: vi.fn(),
     showMessage: vi.fn(),
     showPersistent: vi.fn(),
     closePersistent: vi.fn()
@@ -84,9 +85,11 @@ describe("dispatchMessage", () => {
         await ws.dispatchMessage({ type: "reload-frontend", reason: "x" } as WebSocketMessage);
         expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("reload"));
 
-        await ws.dispatchMessage({ type: "sync-hash-check-failed" } as any);
+        await ws.dispatchMessage({ type: "sync-hash-check-failed", sectors: ["blobs/9"] } as any);
+        expect(toast.showErrorTitleAndMessage).toHaveBeenCalledTimes(1);
+
         await ws.dispatchMessage({ type: "consistency-checks-failed" } as any);
-        expect(toast.showError).toHaveBeenCalledTimes(2);
+        expect(toast.showError).toHaveBeenCalledTimes(1);
 
         await ws.dispatchMessage({ type: "api-log-messages", noteId: "n1", messages: ["a"] } as any);
         expect(appCtx.triggerEvent).toHaveBeenCalledWith("apiLogMessages", { noteId: "n1", messages: ["a"] });

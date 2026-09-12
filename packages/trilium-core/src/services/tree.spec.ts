@@ -7,6 +7,27 @@ import tree from "./tree.js";
 import {buildNote} from "../test/becca_easy_mocking.js";
 import { getContext } from "./context.js";
 
+vi.mock("./sql.js", () => {
+    return {
+        default: {
+            transactional: (cb: Function) => {
+                cb();
+            },
+            execute: () => {},
+            replace: () => {},
+            getMap: () => {}
+        }
+    };
+});
+
+vi.mock("./sql_init.js", () => {
+    const mock = {
+        initializeDb: () => {},
+        dbReady: Promise.resolve()
+    };
+    return { default: mock, ...mock };
+});
+
 describe("Tree", () => {
     let rootNote!: NoteBuilder;
 
@@ -25,27 +46,6 @@ describe("Tree", () => {
             noteId: "root",
             parentNoteId: "none",
             notePosition: 10
-        });
-
-        vi.mock("./sql.js", () => {
-            return {
-                default: {
-                    transactional: (cb: Function) => {
-                        cb();
-                    },
-                    execute: () => {},
-                    replace: () => {},
-                    getMap: () => {}
-                }
-            };
-        });
-
-        vi.mock("./sql_init.js", () => {
-            const mock = {
-                initializeDb: () => {},
-                dbReady: Promise.resolve()
-            };
-            return { default: mock, ...mock };
         });
     });
     it("sorts notes by title (base case)", () => {

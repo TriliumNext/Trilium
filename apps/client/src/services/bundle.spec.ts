@@ -292,6 +292,71 @@ describe("getWidgetBundlesByParent (default export)", () => {
         expect(result.getLegacyWidgets("left-pane")).toEqual([]);
     });
 
+    it("registers every widget when a bundle returns an array", async () => {
+        const id = buildNote({ title: "Multi-widget note" }).noteId;
+        const bundle: Bundle = {
+            script: `return [
+                { parentWidget: "left-pane" },
+                { type: "preact-widget", parent: "right-pane", render: () => null },
+                null
+            ];`,
+            html: "",
+            noteId: id,
+            allNoteIds: [id]
+        };
+        server.get = vi.fn(async (url: string) => {
+            if (url === "script/widgets") return [bundle];
+            return [];
+        }) as unknown as typeof server.get;
+
+        const result = await bundleService.getWidgetBundlesByParent();
+        const legacy = result.getLegacyWidgets("left-pane");
+        const preact = result.getPreactWidgets("right-pane");
+        expect(legacy).toHaveLength(1);
+        expect(preact).toHaveLength(1);
+        // Every widget of the note is tagged with the note it came from, and the falsy entry is dropped.
+        expect((legacy[0] as any)._noteId).toBe(id);
+        expect(preact[0]._noteId).toBe(id);
+    });
+
+    it("reports the parentless widget of an array without dropping its siblings", async () => {
+        const id = buildNote({ title: "Partly broken widget note" }).noteId;
+        const errorSpy = vi.spyOn(toast, "showErrorForScriptNote").mockReturnValue(undefined);
+        const bundle: Bundle = {
+            script: `return [{ parentWidget: "left-pane" }, { render: () => null }];`,
+            html: "",
+            noteId: id,
+            allNoteIds: [id]
+        };
+        server.get = vi.fn(async (url: string) => {
+            if (url === "script/widgets") return [bundle];
+            return [];
+        }) as unknown as typeof server.get;
+
+        const result = await bundleService.getWidgetBundlesByParent();
+        expect(result.getLegacyWidgets("left-pane")).toHaveLength(1);
+        expect(errorSpy).toHaveBeenCalledTimes(1);
+        expect(errorSpy.mock.calls[0][0]).toBe(id);
+        errorSpy.mockRestore();
+    });
+
+    it("ignores a bundle that returns an empty array", async () => {
+        const id = buildNote({ title: "No widgets note" }).noteId;
+        const bundle: Bundle = {
+            script: `return [];`,
+            html: "",
+            noteId: id,
+            allNoteIds: [id]
+        };
+        server.get = vi.fn(async (url: string) => {
+            if (url === "script/widgets") return [bundle];
+            return [];
+        }) as unknown as typeof server.get;
+
+        const result = await bundleService.getWidgetBundlesByParent();
+        expect(result.getLegacyWidgets("left-pane")).toEqual([]);
+    });
+
     it("reports a per-bundle error when executing a single bundle throws", async () => {
         const id = buildNote({ title: "Bad widget note" }).noteId;
         const errorSpy = vi.spyOn(toast, "showErrorForScriptNote").mockReturnValue(undefined);

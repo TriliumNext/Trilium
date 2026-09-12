@@ -1,14 +1,17 @@
 import { writeBackupContainer } from "@triliumnext/backup-container";
-import { app_info as appInfo, getLog, getSql } from "@triliumnext/core";
+// `sql_init` from core rather than the server's own re-export, which copies the function references
+// onto a fresh object: a spy on that one would not be seen by `database_restore`.
+import { app_info as appInfo, getBackup, getLog, getSql, sql_init as sqlInit } from "@triliumnext/core";
 import Database from "better-sqlite3";
 import fs from "fs";
-import fsp from "fs/promises";
 import os from "os";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type ServerBackupService from "../backup_provider.js";
 import dataDir from "./data_dir.js";
 import {
+    adoptBackupPassphrase,
     exchangeDatabaseFiles,
     getRestoreProgress,
     logRestore,
@@ -19,6 +22,7 @@ import {
     reportRestoreFailure,
     restoreDatabase,
     RestoreFailure,
+    type RestoreRequest,
     stageBackup
 } from "./database_restore.js";
 
@@ -28,6 +32,9 @@ let counter = 0;
 beforeEach(() => {
     fs.rmSync(tempRoot, { recursive: true, force: true });
     fs.mkdirSync(tempRoot, { recursive: true });
+    // The state a restore actually runs in: the setup screen, with no database of this instance's
+    // own open. `restoreDatabase` refuses anywhere else, and the shared fixture is initialized.
+    vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -57,15 +64,7 @@ async function containerOf(source: string, passphrase?: string, compress = false
     await writeBackupContainer(fs.createReadStream(source), fs.createWriteStream(filePath), {
         compress,
         passphrase,
-        plaintextSize: fs.statSync(source).size,
-        patchHeader: async (offset, data) => {
-            const handle = await fsp.open(filePath, "r+");
-            try {
-                await handle.write(data, 0, data.length, offset);
-            } finally {
-                await handle.close();
-            }
-        }
+        plaintextSize: fs.statSync(source).size
     });
 
     return filePath;
@@ -200,6 +199,18 @@ describe("what the log is told", () => {
         expect(transcript(said)).not.toContain(dataDir.TRILIUM_DATA_DIR);
         expect(said[0]).toContain("<database>");
         expect(said[1]).toContain("<temporary files>");
+    });
+
+    it("leaves ordinary words alone, however the data directory happens to be configured", () => {
+        const said: string[] = [];
+        vi.spyOn(getLog(), "info").mockImplementation((message) => said.push(String(message)));
+
+        // A relatively configured data directory ("TRILIUM_DATA_DIR=data", which the development
+        // scripts use) was replaced as a bare substring, turning every "database" into
+        // "<data directory>base" and making the log read as nonsense.
+        logRestore("detaching the database being replaced");
+
+        expect(said[0]).toContain("detaching the database being replaced");
     });
 
     it("names every step it enters and where it stopped, without naming the backup", async () => {
@@ -420,6 +431,22 @@ describe("recovering from an interrupted restore", () => {
 });
 
 describe("restoring a database", () => {
+    it("refuses outright on an instance that already has a database", async () => {
+        // The route this is reached through is guarded by `checkAppNotInitialized`, and until this
+        // check existed that middleware was the only thing between a running instance and a restore
+        // over the top of it. Every other way of replacing a database refuses on its own account.
+        vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
+        const detach = vi.spyOn(getSql(), "detachConnection").mockImplementation(() => {});
+
+        await expect(restoreDatabase({
+            path: validDatabase(),
+            fileName: "holiday.db",
+            consumable: false
+        })).rejects.toMatchObject({ reason: "restore-refused" });
+
+        expect(detach).not.toHaveBeenCalled();
+    });
+
     it("stops before touching the live database when the backup is not one", async () => {
         const detach = vi.spyOn(getSql(), "detachConnection").mockImplementation(() => {});
 
@@ -474,5 +501,49 @@ describe("restoring a database", () => {
 
         expect(detach).not.toHaveBeenCalled();
         expect(getRestoreProgress()).toMatchObject({ stage: "failed", reason: "database-too-new" });
+    });
+});
+
+describe("the backup password after a restore", () => {
+    /** What the restore reaches for: the desktop's keyring, by way of the backup service. */
+    const backupService = () => getBackup() as ServerBackupService;
+
+    function request(passphrase?: string): RestoreRequest {
+        const fileName = "backup.tnbackup";
+
+        return { path: fileName, fileName, consumable: false, passphrase };
+    }
+
+    it("takes on the password that opened the backup, which is this database's now", async () => {
+        const adopted = vi.spyOn(backupService(), "adoptPassphrase").mockResolvedValue();
+
+        await adoptBackupPassphrase(request("the newer database's password"), true);
+
+        expect(adopted).toHaveBeenCalledWith("the newer database's password");
+    });
+
+    it.each([
+        [ "an unlocked backup", undefined ],
+        [ "a password typed for a backup that turned out not to need one", "typed anyway" ]
+    ])("lets go of the stored password after %s", async (_label, passphrase) => {
+        // The stored one belongs to the database that was here before. Kept, this instance goes on
+        // encrypting with it and writes backups the password the user expects will not open.
+        const adopted = vi.spyOn(backupService(), "adoptPassphrase").mockResolvedValue();
+
+        await adoptBackupPassphrase(request(passphrase), false);
+
+        expect(adopted).toHaveBeenCalledWith(null);
+    });
+
+    it("does not fail a restore that already happened over a keyring that will not answer", async () => {
+        const said: string[] = [];
+        vi.spyOn(getLog(), "error").mockImplementation((message) => said.push(String(message)));
+        vi.spyOn(backupService(), "adoptPassphrase")
+            .mockRejectedValue(new Error("the keyring is locked"));
+
+        // The database is in place and open by this point; there is nothing left to undo and no
+        // honest way to call the restore failed.
+        await expect(adoptBackupPassphrase(request("a password"), true)).resolves.toBeUndefined();
+        expect(said.join("\n")).toContain("the keyring is locked");
     });
 });

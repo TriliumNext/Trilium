@@ -22,6 +22,10 @@
     /* What the control group at the foot comes out at — the room the panel above it has to leave
        for it. The image viewer's controls are the same height, being the same group. */
     --mind-map-toolbar-height: var(--overlay-button-height, 28px);
+
+    .map-container {
+        font-family: var(--main-font-family);
+    }
 }
 
 /* Hosts our own floating UI on top of the map, without interfering with the DOM managed by Mind Elixir. */

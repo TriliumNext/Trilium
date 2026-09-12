@@ -3,6 +3,7 @@ import sanitize from "sanitize-filename";
 
 import packageInfo from "../../../package.json" with { type: "json" };
 import becca from "../../becca/becca.js";
+import type BAttribute from "../../becca/entities/battribute.js";
 import BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import dateUtils from "../utils/date.js";
@@ -137,17 +138,19 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         meta.isExpanded = branch.isExpanded;
         meta.type = note.type;
         meta.mime = note.mime;
-        meta.attributes = note.getOwnedAttributes().map((attribute) => {
-            const attrMeta: AttributeMeta = {
-                type: attribute.type,
-                name: attribute.name,
-                value: attribute.value,
-                isInheritable: attribute.isInheritable,
-                position: attribute.position
-            };
+        meta.attributes = note.getOwnedAttributes()
+            .filter((attribute) => !isRebuiltOnImport(attribute))
+            .map((attribute) => {
+                const attrMeta: AttributeMeta = {
+                    type: attribute.type,
+                    name: attribute.name,
+                    value: attribute.value,
+                    isInheritable: attribute.isInheritable,
+                    position: attribute.position
+                };
 
-            return attrMeta;
-        });
+                return attrMeta;
+            });
 
         taskContext.increaseProgressCount();
 
@@ -512,6 +515,17 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     if ("setHeader" in res) {
         taskContext.taskSucceeded(null);
     }
+}
+
+/**
+ * Whether the importer discards the attribute and rebuilds it from the note's content, which
+ * `saveLinks()` does for `internalLink` and `imageLink`. Exporting those writes a set nothing reads
+ * back, in an order that differs between a note the editor has appended a link to and the same note
+ * derived on import. `includeNoteLink` and `relationMapLink` stay: `services/import/zip.ts` reads
+ * them to remap note ids inside the content it imports.
+ */
+function isRebuiltOnImport(attribute: BAttribute): boolean {
+    return attribute.type === "relation" && ["internalLink", "imageLink"].includes(attribute.name);
 }
 
 /** Counts the notes in a metadata tree — i.e. the number of `saveNote()` calls the content-writing pass will make. */

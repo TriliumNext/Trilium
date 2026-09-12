@@ -62,6 +62,10 @@ async function processNoteOCR(req: Request<{ noteId: string }>): Promise<OCRProc
         return [404, { success: false, message: 'Note not found' }];
     }
 
+    if (!note.isContentAvailable()) {
+        return [400, { success: false, message: 'Note is protected and the protected session is not available' }];
+    }
+
     const result = await ocrService.processNoteOCR(noteId, { language, forceReprocess });
     if (!result) {
         return [400, { success: false, message: 'Note is not an image or has unsupported format' }];
@@ -124,6 +128,10 @@ async function processAttachmentOCR(req: Request<{ attachmentId: string }>): Pro
     const attachment = becca.getAttachment(attachmentId);
     if (!attachment) {
         return [404, { success: false, message: 'Attachment not found' }];
+    }
+
+    if (!attachment.isContentAvailable()) {
+        return [400, { success: false, message: 'Attachment is protected and the protected session is not available' }];
     }
 
     const result = await ocrService.processAttachmentOCR(attachmentId, { language, forceReprocess });

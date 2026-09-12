@@ -116,7 +116,7 @@
     "cancel": "Batal",
     "title": "Hapus catatan",
     "clones_label": "Klon",
-    "delete_clones_description_other": "Hapus juga {{count}} klon lainnya. Dapat dibatalkan di perubahan terbaru.",
+    "delete_clones_description_other": "Hapus juga {{count}} kloning lainnya. Dapat dibatalkan di perubahan terbaru.",
     "erase_notes_label": "Hapus permanen",
     "table_note_with_relation": "Catatan dengan relasi",
     "table_relation": "Relasi",
@@ -223,7 +223,8 @@
     "showSQLConsole": "tampilkan konsol SQL",
     "other": "Lainnya",
     "quickSearch": "fokus ke input pencarian cepat",
-    "inPageSearch": "pencarian dalam halaman"
+    "inPageSearch": "pencarian dalam halaman",
+    "openAiAssistant": "buka asisten AI pada seleksi"
   },
   "import": {
     "importIntoNote": "Impor ke dalam catatan",
@@ -713,7 +714,8 @@
     "share_open_graph_image_relation": "Catatan gambar yang disajikan sebagai <code>og:image</code> pada halaman berbagi. Sebagai alternatif, gunakan label dengan nama yang sama untuk menunjuk ke sebuah alamat.",
     "share_html": "Catatan HTML yang disisipkan ke halaman berbagi pada lokasi yang ditentukan oleh <code>#shareHtmlLocation</code> di catatan tersebut. Catatan harus berada di dalam subpohon yang dibagikan.",
     "map_dark_style": "Memberi tahu peta geo bahwa gaya kustom yang diberikan dalam <code>map:style</code> adalah gaya gelap, sehingga judul penanda digambar dengan warna terang di atasnya. Gaya yang ditawarkan dalam properti koleksi sudah menyatakannya sendiri dan tidak memerlukan label tersebut.",
-    "map_cluster": "Menggabungkan penanda yang digambar berdekatan menjadi satu gelembung bernomor, yang terbuka saat diklik."
+    "map_cluster": "Menggabungkan penanda yang digambar berdekatan menjadi satu gelembung bernomor, yang terbuka saat diklik.",
+    "ai_quick_action": "Menawarkan catatan ini sebagai instruksi di menu asisten AI penyunting teks. Judul menamai tindakan, konten adalah prompt."
   },
   "attribute_editor": {
     "help_text_body1": "Untuk menambahkan label, cukup ketik misalnya <code>#rock</code> atau jika Anda juga ingin menambahkan nilai maka misalnya <code>#year = 2020</code>",
@@ -923,7 +925,9 @@
       "times": "kali",
       "custom_rule": "Aturan",
       "custom_hint": "Aturan perulangan iCalendar (RRULE) yang dapat menyatakan lebih banyak daripada kolom di atas. Mengosongkannya menghentikan perulangan."
-    }
+    },
+    "expand_details": "Perluas acara untuk mengisi jendela",
+    "restore_details": "Kembalikan acara di samping tempatnya di kalender"
   },
   "close_pane_button": {
     "close_this_pane": "Tutup panel ini"
@@ -970,7 +974,8 @@
     "new-version-available": "Pembaruan Baru Tersedia",
     "download-update": "Dapatkan Versi {{latestVersion}}",
     "search_notes": "Cari catatan",
-    "show_deleted_notes": "Tampilkan Catatan yang Dihapus"
+    "show_deleted_notes": "Tampilkan Catatan yang Dihapus",
+    "show_space_usage": "Tampilkan Penggunaan Ruang"
   },
   "zen_mode": {
     "button_exit": "Keluar dari Mode Zen"
@@ -1072,7 +1077,8 @@
     "create_child_note_title": "Buat catatan anak dan tambahkan ke peta",
     "reset_pan_zoom_title": "Setel ulang pan & zoom ke koordinat dan pembesaran awal",
     "zoom_in_title": "Perbesar",
-    "zoom_out_title": "Perkecil"
+    "zoom_out_title": "Perkecil",
+    "create_child_note_text": "Tambahkan catatan"
   },
   "image_buttons": {
     "zoom_in": "Perbesar",
@@ -1135,7 +1141,8 @@
     "open_all_in_tabs": "Buka semua",
     "open_all_in_tabs_tooltip": "Buka semua hasil di tab baru",
     "open_all_confirm_other": "Ini akan membuka {{count}} catatan di tab baru. Lanjutkan?",
-    "dashboard": "Dasbor"
+    "dashboard": "Dasbor",
+    "open_all_limit_exceeded": "Terlalu banyak catatan untuk dibuka sekaligus ({{count}}). Maksimal adalah {{max}}, coba persempit hasil terlebih dahulu."
   },
   "edited_notes": {
     "no_edited_notes_found": "Belum ada catatan yang diedit pada hari ini...",
@@ -1369,7 +1376,8 @@
     "editor_crashed_details_intro": "Jika Anda mengalami kesalahan ini beberapa kali, pertimbangkan untuk melaporkannya di GitHub dengan menempelkan informasi di bawah ini.",
     "editor_crashed_details_title": "Informasi teknis",
     "auto-detect-language": "Terdeteksi otomatis",
-    "keeps-crashing": "Komponen editor terus mengalami crash. Silakan coba mulai ulang Trilium. Jika masalah tetap berlanjut, pertimbangkan untuk membuat laporan bug."
+    "keeps-crashing": "Komponen editor terus mengalami crash. Silakan coba mulai ulang Trilium. Jika masalah tetap berlanjut, pertimbangkan untuk membuat laporan bug.",
+    "nothing_selected_to_cut": "Pilih beberapa teks terlebih dahulu untuk memotongnya menjadi sub-catatan."
   },
   "empty": {
     "open_note_instruction": "Buka catatan dengan mengetik judul catatan ke input di bawah ini atau pilih catatan di tree.",
@@ -1390,8 +1398,6 @@
     "rotate": "Putar",
     "picture-in-picture": "Picture-in-picture",
     "exit-picture-in-picture": "Keluar dari picture-in-picture",
-    "fullscreen": "Layar penuh",
-    "exit-fullscreen": "Keluar dari layar penuh",
     "unsupported-format": "Pratinjau media tidak tersedia untuk format file ini:\n{{mime}}",
     "zoom-to-fit": "Perbesar hingga memenuhi",
     "zoom-reset": "Setel ulang perbesar hingga memenuhi",
@@ -1496,8 +1502,9 @@
     "successfully_created_fully_anonymized_database": "Database yang dianonimkan sepenuhnya berhasil dibuat di {{anonymizedFilePath}}",
     "successfully_created_lightly_anonymized_database": "Database yang dianonimkan secara ringan berhasil dibuat di {{anonymizedFilePath}}",
     "no_anonymized_database_yet": "Belum ada database anonim.",
-    "anonymized_databases_location": "Database yang dianonimkan disimpan di {{- anonymizedFolder}}.",
-    "download": "Unduh"
+    "anonymized_databases_location": "Database teranonimisasi disimpan di <Folder/>.",
+    "download": "Unduh",
+    "delete_confirmation": "Hapus database teranonimisasi {{fileName}}? Database asli tidak terpengaruh."
   },
   "database_integrity_check": {
     "title": "Pemeriksaan Integritas Database",
@@ -1523,7 +1530,30 @@
     "failed": "Sinkronisasi gagal: {{message}}"
   },
   "database": {
-    "title": "Database"
+    "title": "Database",
+    "info": "Info database",
+    "info_location": "Lokasi",
+    "info_location_opfs": "Sistem file privat origin (OPFS) browser",
+    "info_created": "Tanggal pembuatan asli",
+    "info_content": "Konten",
+    "info_notes_other": "{{count}} catatan",
+    "info_attachments_other": "{{count}} lampiran",
+    "info_size": "Ukuran",
+    "info_backup": "Cadangan",
+    "info_no_backup": "Belum ada cadangan",
+    "maintenance": "Pemeliharaan",
+    "analyze_space_usage": "Analisis penggunaan ruang",
+    "analyze_space_usage_description": "Identifikasi catatan mana yang memakan paling banyak ruang, dan dapatkan gambaran yang lebih jelas mengenai ukuran catatan Anda.",
+    "analyze_space_usage_button": "Analisis",
+    "cleanup": "Bersihkan basis data",
+    "cleanup_description": "Hapus catatan dan lampiran yang dihapus, pangkas snapshot revisi, dan kompres gambar agar database tetap ramping.",
+    "start_over_description": "Beralih ke database kosong baru, mulai lagi sinkronisasi dengan server baru, atau pulihkan cadangan. Anda akan diminta untuk mencadangkan data sebelum membuang data yang ada.",
+    "start_over": "Mulai ulang",
+    "start_over_confirm": "Trilium akan kembali ke layar pengaturan, tempat Anda dapat memulai basis pengetahuan baru, memulihkan cadangan, atau menyinkronkan dari perangkat lain. Anda akan ditawari cadangan data Anda saat ini terlebih dahulu, dan tidak ada yang dihapus sampai Anda memilih salah satu dari itu. Lanjutkan?",
+    "start_over_pending": "Layar pengaturan akan muncul saat server ini dimulai ulang berikutnya. Mulai ulang server ketika Anda siap, atau batalkan di bawah untuk membiarkan semuanya seperti adanya.",
+    "start_over_cancel": "Batalkan mulai ulang",
+    "related_backup": "Cadangan",
+    "related_backup_description": "Buat atau pulihkan cadangan database, kelola cadangan otomatis."
   },
   "vacuum_database": {
     "title": "Vacuum Database",
@@ -1555,7 +1585,6 @@
     "monospace_font": "Teks monospace",
     "monospace_font_description": "Digunakan untuk catatan kode dan blok kode",
     "size_relative_to_general": "Ukuran bersifat relatif terhadap ukuran font umum",
-    "not_all_fonts_available": "Tidak semua font yang tercantum mungkin tersedia di sistem Anda",
     "apply_changes": "Muat ulang untuk menerapkan perubahan",
     "generic-fonts": "Font generik",
     "sans-serif-system-fonts": "Font sistem sans-serif",
@@ -1821,7 +1850,8 @@
     "formatting-locale-auto": "Berdasarkan bahasa aplikasi",
     "default-content-language": "Bahasa konten default",
     "default-content-language-description": "Bahasa yang digunakan untuk menulis catatan, kecuali jika bahasa ditetapkan pada catatan itu sendiri di bagian Properti Dasar. Bahasa ini memengaruhi fitur seperti perataan kanan ke kiri dan tanda kutip yang dihasilkan saat mengetik.",
-    "default-content-language-auto": "Berdasarkan bahasa aplikasi"
+    "default-content-language-auto": "Berdasarkan bahasa aplikasi",
+    "dates-title": "Tanggal & kalender"
   },
   "backup": {
     "title": "Cadangan",
@@ -1847,7 +1877,7 @@
     "reset_location": "Atur ulang ke default",
     "reset_location_confirmation": "Apakah Anda ingin mengatur ulang lokasi cadangan database ke default?",
     "default_location": "Lokasi default",
-    "backups_summary_other": "{{count}} cadangan, yang terbaru dibuat {{age}} lalu.",
+    "backups_summary_other": "{{count}} cadangan, yang paling baru dari {{age}} yang lalu",
     "options_title": "Opsi cadangan",
     "enable_compression": "Aktifkan kompresi",
     "enable_compression_description": "Membuat setiap cadangan berukuran lebih kecil, dengan konsekuensi membutuhkan sedikit waktu saat ditulis.",
@@ -1864,7 +1894,14 @@
     "encryption_not_disabled": "Kata sandi cadangan telah dihapus, tetapi enkripsi tidak dapat dinonaktifkan. Cadangan tidak akan dienkripsi sampai Anda mengaktifkan enkripsi kembali.",
     "encryption_not_enabled": "Kata sandi cadangan telah disimpan, tetapi enkripsi tidak dapat diaktifkan. Cadangan tidak akan dienkripsi sampai Anda mengaktifkannya.",
     "compressed": "Dikompresi",
-    "encrypted": "Terenkripsi"
+    "encrypted": "Terenkripsi",
+    "restore_backup": "Pulihkan cadangan",
+    "standalone_heading": "Cadangkan data Trilium Anda",
+    "standalone_description": "Di sini Anda dapat mengunduh cadangan basis pengetahuan Trilium Anda, atau memulihkan cadangan yang ada.",
+    "create_and_download": "Unduh cadangan",
+    "upload_and_restore": "Pulihkan cadangan",
+    "restart_for_backup": "Trilium perlu dimulai ulang untuk mencadangkan catatan Anda. Anda dapat kembali ke catatan Anda segera setelah selesai.\n\nMulai ulang sekarang?",
+    "restart_for_restore": "Trilium perlu dimulai ulang sebelum proses pemulihan. Setelah proses pemulihan dimulai, Anda akan diminta untuk mencadangkan data yang ada sebelum ditimpa, sehingga tidak ada yang hilang.\n\nMulai ulang sekarang?"
   },
   "etapi": {
     "description": "ETAPI adalah REST API yang digunakan untuk mengakses instance Trilium secara terprogram, tanpa UI.",
@@ -2060,7 +2097,7 @@
     "custom_dictionary_edit_description": "Edit daftar kata yang tidak boleh ditandai oleh pemeriksa ejaan. Perubahan akan terlihat setelah restart.",
     "custom_dictionary_open": "Edit kamus",
     "related_description": "Konfigurasikan bahasa pemeriksa ejaan dan kamus kustom.",
-    "disabled_placeholder": "Pemeriksaan ejaan dinonaktifkan. Aktifkan untuk memilih bahasa dan mengelola kamus kustom."
+    "enable_description": "Menggarisbawahi kata yang salah eja saat Anda mengetik, dengan koreksi yang ditawarkan di menu klik kanan."
   },
   "sync_2": {
     "config_title": "Server Sinkronisasi",
@@ -2423,7 +2460,8 @@
     "cut": "Catatan telah dipotong ke clipboard.",
     "copied": "Catatan telah disalin ke clipboard.",
     "copy_failed": "Tidak dapat menyalin ke clipboard karena masalah izin.",
-    "copy_success": "Disalin ke clipboard."
+    "copy_success": "Disalin ke clipboard.",
+    "copied_without_links": "Catatan telah disalin ke papan klip, tetapi tautan catatan tidak dapat ditempatkan pada papan klip sistem."
   },
   "entrypoints": {
     "note-revision-created": "Revisi catatan telah dibuat.",
@@ -2449,11 +2487,12 @@
     "backend_scripting_disabled_more_info": "Info selengkapnya"
   },
   "ws": {
-    "sync-check-failed": "Pemeriksaan sinkronisasi gagal!",
     "consistency-checks-failed": "Pemeriksaan konsistensi gagal! Lihat log untuk detail.",
     "encountered-error": "Terjadi error \"{{message}}\", periksa konsol.",
     "lost-websocket-connection-title": "Koneksi ke server terputus",
-    "lost-websocket-connection-message": "Periksa konfigurasi reverse proxy Anda (misalnya nginx atau Apache) untuk memastikan koneksi WebSocket diizinkan dengan benar dan tidak diblokir."
+    "lost-websocket-connection-message": "Periksa konfigurasi reverse proxy Anda (misalnya nginx atau Apache) untuk memastikan koneksi WebSocket diizinkan dengan benar dan tidak diblokir.",
+    "sync-hash-check-failed-title": "Sinkronisasi berhenti",
+    "sync-hash-check-failed": "Database ini dan server sinkronisasi menyimpan data yang tidak dapat direkonsiliasi dengan menyinkronisasi ulang ({{- sectors}}).\n\nSinkronisasi akan terus gagal sampai ini diselesaikan. Lihat log untuk detailnya."
   },
   "hoisted_note": {
     "confirm_unhoisting": "Catatan yang diminta '{{requestedNote}}' berada di luar subtree catatan yang di-hoist '{{hoistedNote}}' dan Anda harus membatalkan hoist untuk mengakses catatan tersebut. Apakah Anda ingin melanjutkan dengan membatalkan hoist?"
@@ -2574,11 +2613,25 @@
     "zoom-out": "Perkecil",
     "enter-3d": "Miringkan ke tampilan 3D\nTahan Ctrl dan seret untuk memiringkan peta secara bebas",
     "exit-3d": "Ratakkan kembali peta",
-    "fullscreen": "Layar penuh",
-    "exit-fullscreen": "Keluar dari layar penuh",
     "close-details": "Tutup",
     "marker-color": "Warna penanda",
-    "copy-coordinates": "Salin koordinat"
+    "copy-coordinates": "Salin koordinat",
+    "expand-details": "Perluas catatan untuk mengisi peta",
+    "restore-details": "Kembalikan catatan di samping peta",
+    "search": "Cari",
+    "search-placeholder": "Cari tempat",
+    "search-online": "Cari online untuk \"{{- query}}\"",
+    "searching-online": "Mencari online…",
+    "no-places-found": "Tidak ada tempat yang ditemukan",
+    "search-failed": "Tidak dapat mencari tempat",
+    "results-nearby": "Terdekat",
+    "results-far": "Jauh",
+    "add-place-as-marker": "Tambahkan sebagai penanda",
+    "previous-result": "Hasil sebelumnya",
+    "next-result": "Hasil berikutnya",
+    "result-position": "Hasil {{index}} dari {{total}}, klik untuk kembali ke sana",
+    "results-on-map": "Pada peta ini",
+    "go-to-coordinates": "Buka {{- coordinates}}"
   },
   "geo-map-context": {
     "open-location": "Buka lokasi",
@@ -2651,7 +2704,10 @@
   },
   "svg": {
     "export_to_png": "Diagram tidak dapat diekspor ke PNG.",
-    "export_to_svg": "Diagram tidak dapat diekspor ke SVG."
+    "export_to_svg": "Diagram tidak dapat diekspor ke SVG.",
+    "zoom_in": "Perbesar",
+    "zoom_out": "Perkecil",
+    "reset_zoom": "Atur ulang zoom"
   },
   "code_theme": {
     "title": "Tampilan",
@@ -2683,7 +2739,9 @@
     "content_hints_enabled": "Petunjuk konten",
     "content_hints_description": "Tampilkan petunjuk singkat di sudut bawah editor yang menjelaskan cara berinteraksi dengan elemen di bawah kursor atau penunjuk.",
     "auto_link_previews_enabled": "Buat pratinjau tautan secara otomatis",
-    "auto_link_previews_description": "Secara otomatis mengubah tautan yang terdeteksi menjadi pratinjau yang menampilkan judul, deskripsi, dan gambar halaman web. Menyisipkan pratinjau dari toolbar akan selalu berfungsi, apa pun pengaturan ini."
+    "auto_link_previews_description": "Secara otomatis mengubah tautan yang terdeteksi menjadi pratinjau yang menampilkan judul, deskripsi, dan gambar halaman web. Menyisipkan pratinjau dari toolbar akan selalu berfungsi, apa pun pengaturan ini.",
+    "html_support_enabled": "Pertahankan tag HTML yang tidak didukung",
+    "html_support_description": "Simpan tag HTML yang tidak memiliki fitur tersendiri oleh penyunting, seperti yang tercantum di bawah Opsi → Lainnya → Tag impor HTML. Tag tersebut muncul sebagai blok yang tidak dapat diedit secara langsung, dan tag yang tidak dikenali mungkin tidak terlihat sama sekali saat mengedit. Dengan ini dimatikan, tag tersebut dihapus dari catatan saat pertama kali diedit dan disimpan; mengimpor tidak terpengaruh dengan cara apa pun."
   },
   "table_view": {
     "new-row": "Baris baru",
@@ -2725,7 +2783,6 @@
     "remove-from-board": "Hapus dari board",
     "archive-note": "Arsipkan catatan",
     "unarchive-note": "Batalkan arsip catatan",
-    "move-to": "Pindahkan ke",
     "insert-above": "Sisipkan di atas",
     "insert-below": "Sisipkan di bawah",
     "delete-column": "Hapus kolom",
@@ -2735,7 +2792,6 @@
     "add-column": "Tambahkan Kolom",
     "add-column-placeholder": "Masukkan nama kolom...",
     "edit-note-title": "Klik untuk edit judul catatan",
-    "edit-column-title": "Klik untuk edit judul kolom",
     "column-already-exists": "Kolom ini sudah ada di board.",
     "column-definition-save-error": "Kolom telah disimpan pada papan, tetapi tidak dapat disimpan ke atribut status.",
     "status-alias": "Status"
@@ -2823,9 +2879,7 @@
   },
   "settings": {
     "related_settings": "Pengaturan terkait",
-    "related_actions": "Tindakan terkait",
-    "related_space_usage": "Analisis penggunaan ruang dalam basis data",
-    "related_space_usage_description": "Lihat catatan, revisi, dan lampiran yang paling banyak menggunakan ruang, lalu bebaskan ruang tersebut."
+    "related_actions": "Tindakan terkait"
   },
   "settings_appearance": {
     "related_code_blocks": "Skema warna untuk blok kode di catatan teks",
@@ -2859,7 +2913,8 @@
   "server": {
     "unknown_http_error_title": "Kesalahan komunikasi dengan server",
     "unknown_http_error_content": "Kode status: {{statusCode}}\nURL: {{method}} {{url}}\nPesan: {{message}}",
-    "traefik_blocks_requests": "Jika Anda menggunakan reverse proxy Traefik, Traefik telah memperkenalkan perubahan yang bersifat breaking dan memengaruhi komunikasi dengan server."
+    "reverse_proxy_blocked_title": "Permintaan diblokir oleh proksi terbalik",
+    "reverse_proxy_blocked_message": "Beberapa permintaan ditolak (HTTP 400) sebelum mencapai Trilium, kemungkinan besar oleh proksi terbalik yang memblokir karakter terenkripsi persentase dalam URL.\n\nVersi Traefik 3.6.4 hingga 3.6.6 melakukan ini secara default: tingkatkan ke Traefik 3.6.7 atau lebih baru, atau izinkan karakter terenkripsi dalam konfigurasinya."
   },
   "tab_history_navigation_buttons": {
     "go-back": "Kembali ke catatan sebelumnya",
@@ -2927,7 +2982,8 @@
     "tab_width_style_tabs": "Tab"
   },
   "attributes_panel": {
-    "title": "Atribut Catatan"
+    "title": "Atribut Catatan",
+    "edit_in_sidebar": "Edit di bilah sisi"
   },
   "right_pane": {
     "empty_message": "Tidak ada yang ditampilkan untuk catatan ini",
@@ -2982,7 +3038,11 @@
     "pages_other": "{{count}} halaman",
     "pages_alt": "Halaman {{pageNumber}}",
     "pages_loading": "Memuat...",
-    "annotations_other": "{{count}} anotasi"
+    "annotations_other": "{{count}} anotasi",
+    "annotation_drawing": "Menggambar pada halaman {{pageNumber}}",
+    "annotation_highlight": "Sorotan pada halaman {{pageNumber}}",
+    "annotation_note": "Catatan pada halaman {{pageNumber}}",
+    "annotation_text_box": "Kotak teks pada halaman {{pageNumber}}"
   },
   "platform_indicator": {
     "available_on": "Tersedia di {{platform}}"
@@ -3061,95 +3121,6 @@
     "sample_swimlane": "Swimlane",
     "sample_railroad": "Railroad"
   },
-  "setup": {
-    "heading": "Mulai menggunakan Trilium",
-    "new-document": "Basis pengetahuan baru",
-    "new-document-description": "Mulai dengan basis pengetahuan yang bersih dan langsung gunakan.",
-    "sync-from-desktop": "Hubungkan aplikasi desktop",
-    "sync-from-desktop-description": "Anda hanya memiliki aplikasi desktop Trilium yang berjalan di perangkat lain. Perangkat ini akan menyinkronkan datanya dari aplikasi desktop tersebut.",
-    "sync-from-server": "Hubungkan ke server yang sudah ada",
-    "sync-from-server-description": "Anda memiliki server Trilium yang berjalan di tempat lain, baik self-hosted maupun di cloud. Perangkat ini akan menyinkronkan datanya dari server tersebut.",
-    "next": "Berikutnya",
-    "init-in-progress": "Inisialisasi dokumen sedang berlangsung",
-    "redirecting": "Anda akan segera dialihkan ke aplikasi.",
-    "title": "Penyiapan",
-    "sync-from-server-page-description": "Masukkan detail server Anda di bawah ini untuk menghubungkan workspace yang sudah ada.",
-    "sync-in-progress-title": "Sinkronisasi sedang berlangsung",
-    "sync-in-progress-description": "Perangkat Anda sekarang terhubung dan item sedang disinkronkan.",
-    "sync-in-progress-banner": "Ini mungkin memerlukan waktu tergantung pada ukuran catatan Anda. Harap jangan beralih ke aplikasi lain sampai sinkronisasi selesai.",
-    "button-back": "Kembali",
-    "button-finish-setup": "Selesaikan penyiapan",
-    "sync-step-connecting": "Menghubungkan ke server",
-    "sync-step-syncing": "Menyinkronkan data",
-    "sync-step-finalizing": "Menyiapkan opsi",
-    "create-new-document-options-title": "Bagaimana Anda ingin memulai?",
-    "create-new-document-options-with-demo": "Dengan konten demo",
-    "create-new-document-options-with-demo-description": "Jelajahi Trilium dengan konten contoh.",
-    "create-new-document-options-empty": "Kosong",
-    "create-new-document-options-empty-description": "Mulai dengan basis pengetahuan kosong. Anda dapat mengimpor catatan demo nanti.",
-    "create-new-document-title": "Menyiapkan basis pengetahuan Anda",
-    "create-new-document-description": "Ini hanya akan memerlukan sebentar.",
-    "sync-illustration-this-device": "Perangkat ini",
-    "sync-illustration-desktop-app": "Aplikasi desktop Anda",
-    "sync-illustration-server": "Server Anda",
-    "sync-from-desktop-step1": "Buka instance desktop Trilium Notes Anda.",
-    "sync-from-desktop-step2": "Dari Menu Trilium, klik Opsi.",
-    "sync-from-desktop-step3": "Klik kategori Sinkronisasi di pohon catatan.",
-    "sync-from-desktop-step4": "Ubah alamat instance server agar mengarah ke salah satu alamat di sebelah kanan lalu klik Simpan.",
-    "sync-from-desktop-step5": "Klik tombol \"Uji sinkronisasi\" untuk memastikan koneksi berhasil.",
-    "sync-from-desktop-warning": "Pastikan kedua perangkat berada di jaringan yang sama.",
-    "sync-from-desktop-waiting": "Menunggu koneksi...",
-    "advanced-options": "Opsi lanjutan",
-    "sync-failed": "Sinkronisasi gagal: {{- message}}",
-    "server-host": "Alamat server Trilium",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "server-password": "Kata sandi",
-    "proxy-server": "Server proxy (opsional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "proxy-instruction": "Jika Anda membiarkan pengaturan proxy kosong, proxy sistem akan digunakan.",
-    "dismiss-error": "Tutup kesalahan",
-    "wrong-password": "Kata sandi salah. Silakan coba lagi.",
-    "language": "Bahasa",
-    "continue": "Lanjutkan",
-    "your-ip-addresses": "Alamat untuk perangkat ini",
-    "sync-from-desktop-unreachable-title": "Perangkat ini tidak dapat dijangkau oleh perangkat lain",
-    "sync-from-desktop-unreachable-description": "Untuk sinkronisasi, desktop lain harus terhubung ke desktop ini melalui jaringan. Demi keamanan, aplikasi desktop ini hanya menerima koneksi dari komputer ini, sehingga desktop lain tersebut belum dapat menjangkaunya. Izinkan akses jaringan di bawah — Trilium akan restart untuk menerapkannya.",
-    "sync-from-desktop-allow-access": "Izinkan akses jaringan & restart",
-    "sync-failed-title": "Sinkronisasi gagal",
-    "sync-failed-description": "Sinkronisasi awal tidak dapat diselesaikan. Anda dapat mencoba lagi, atau kembali untuk memeriksa alamat server dan kredensial.",
-    "sync-failed-admonition-title": "Percobaan sinkronisasi terakhir gagal",
-    "sync-failed-hint": "Hal ini dapat disebabkan oleh alamat server yang salah, proxy yang mengganggu koneksi, atau server yang untuk sementara tidak dapat dijangkau.",
-    "button-retry": "Coba lagi",
-    "restore-from-backup": "Pulihkan dari cadangan",
-    "restore-from-backup-description": "Lanjutkan menggunakan basis pengetahuan yang sudah ada, yang dipulihkan dari file cadangan.",
-    "restore-from-backup-page-description": "Pilih cadangan yang akan dipulihkan.",
-    "restore-existing-backups": "Cadangan yang ada",
-    "restore-looking-for-backups": "Mencari cadangan...",
-    "restore-choose-file": "Pilih file cadangan",
-    "restore-choose-file-description": "Pilih file cadangan database (.db, .tnbackup) dari perangkat Anda",
-    "restore-uploading": "Mengunggah cadangan...",
-    "restore-uploaded-so-far": "{{sent}} dari {{total}}",
-    "restore-upload-speed": "{{speed}}/dtk",
-    "restore-error-unusable": "Cadangan Trilium tidak didukung atau rusak.",
-    "restore-error-too-new": "Cadangan ini berasal dari versi Trilium yang lebih baru. Perbarui Trilium lalu coba lagi.",
-    "restore-error-too-old": "Cadangan ini berasal dari versi Trilium yang terlalu lama untuk dipulihkan.",
-    "restore-error-unfinished": "Cadangan ini dibuat dari penyiapan yang tidak pernah diselesaikan, sehingga tidak ada yang dapat dipulihkan.",
-    "restore-error-swap-failed": "Database tidak dapat diganti. Database sebelumnya telah dikembalikan ke tempatnya.",
-    "restore-error-would-not-open": "Database yang dipulihkan tidak dapat dibuka. Database sebelumnya telah dikembalikan ke tempatnya.",
-    "restore-error-refused": "Langkah penyiapan lain sudah sedang berjalan.",
-    "restore-error-already-initialized": "Instans ini sudah memiliki basis pengetahuan, sehingga pemulihan tidak dapat dilakukan di atasnya. Muat ulang halaman.",
-    "restore-error-could-not-start": "Pemulihan tidak dapat dimulai.",
-    "restore-error-upload-failed": "Cadangan tidak dapat diunggah.",
-    "restore-passphrase": "Kata sandi enkripsi",
-    "restore-passphrase-description": "Cadangan ini terenkripsi. Masukkan kata sandi yang digunakan untuk membuat cadangan ini.",
-    "restore-wrong-passphrase": "Kata sandi tersebut tidak dapat membuka cadangan ini. Silakan coba lagi.",
-    "restore-continue": "Pulihkan",
-    "restore-stage-staging": "Menyiapkan cadangan",
-    "restore-stage-validating": "Memeriksa database",
-    "restore-stage-swapping": "Menempatkannya",
-    "restore-stage-migrating": "Membuka database",
-    "restore-do-not-close": "Jangan tutup jendela ini."
-  },
   "mind-map": {
     "addChild": "Tambahkan anak",
     "addParent": "Tambahkan induk",
@@ -3209,11 +3180,10 @@
     "zoom-out": "Perkecil",
     "reset-zoom": "Atur ulang zoom",
     "center-map": "Tengahkan peta",
-    "fullscreen": "Layar penuh",
-    "exit-fullscreen": "Keluar dari layar penuh",
     "direction-left": "Cabang di kiri",
     "direction-right": "Cabang di kanan",
-    "direction-side": "Cabang di kedua sisi"
+    "direction-side": "Cabang di kedua sisi",
+    "direction-down": "Bercabang ke bawah"
   },
   "llm": {
     "feature_not_enabled": "Aktifkan fitur eksperimental LLM di Pengaturan → Lanjutan → Fitur eksperimental untuk menggunakan integrasi AI.",
@@ -3263,8 +3233,6 @@
       "search_help": "Cari Panduan Pengguna",
       "get_help_toc": "Ambil isi Panduan Pengguna"
     },
-    "not_available_in_standalone": "Fitur AI/LLM tidak tersedia dalam versi standalone Trilium, karena penyedia LLM tidak mengizinkan akses langsung dari browser.",
-    "disabled_placeholder": "Fitur AI dinonaktifkan. Aktifkan untuk mengonfigurasi provider dan MCP.",
     "edit_provider_title": "Edit {{- name}}",
     "edit_provider": "Edit",
     "save": "Simpan",
@@ -3306,11 +3274,19 @@
     "mcp_config_description": "Buat token melalui Opsi → ETAPI, lalu tambahkan konfigurasi berikut ke konfigurasi MCP asisten Anda, dengan mengganti placeholder menggunakan token Anda:",
     "mcp_config_token_placeholder": "token-etapi-anda",
     "mcp_config_cli_description": "Claude Code juga dapat dikonfigurasi melalui baris perintah:",
-    "mcp_config_warning": "Token memberikan akses baca dan tulis penuh ke seluruh catatan Anda, jadi perlakukan seperti kata sandi. Jika terhubung dari perangkat lain, sebaiknya gunakan HTTPS — token yang dikirim melalui HTTP biasa dapat disadap."
+    "mcp_config_warning": "Token memberikan akses baca dan tulis penuh ke seluruh catatan Anda, jadi perlakukan seperti kata sandi. Jika terhubung dari perangkat lain, sebaiknya gunakan HTTPS — token yang dikirim melalui HTTP biasa dapat disadap.",
+    "enabled": "Fitur AI",
+    "enabled_description": "Menambahkan bilah sisi obrolan AI dan catatan obrolan LLM, menggunakan penyedia yang dikonfigurasi di bawah ini.",
+    "provider_desc_copilot_agent": "Memerlukan GitHub Copilot CLI pada mesin yang menjalankan Trilium.",
+    "provider_unavailable_standalone": "Tidak tersedia di versi browser: penyedia ini bekerja dengan menjalankan program terpisah di mesin, dan tidak ada mesin di sini untuk menjalankannya.",
+    "copilot_agent_description": "Menggunakan langganan GitHub Copilot Anda melalui GitHub Copilot CLI, sehingga tidak diperlukan kunci API. Copilot CLI harus diinstal di mesin yang menjalankan Trilium (server saat hosting mandiri, atau komputer ini di desktop); masuk sekali dengan menjalankan \"copilot login\" di sana — login Copilot yang ada dari penyunting lain digunakan ulang secara otomatis.",
+    "mcp_unavailable_standalone": "Tidak tersedia di versi browser: asisten akan terhubung ke Trilium melalui jaringan, tetapi build ini tidak memiliki alamat untuk diberikan kepada mereka, karena berjalan sepenuhnya di dalam halaman ini."
   },
   "common": {
     "save": "Simpan",
-    "cancel": "Batal"
+    "cancel": "Batal",
+    "fullscreen": "Layar penuh",
+    "exit_fullscreen": "Keluar layar penuh"
   },
   "spreadsheet": {
     "read-only": "Catatan ini hanya-baca.",
@@ -3450,7 +3426,25 @@
       "turn-the-current-block-into-a-heading": "Ubah blok saat ini menjadi judul.",
       "turn-the-current-block-into-a-paragraph": "Ubah blok saat ini menjadi paragraf.",
       "url": "URL",
-      "warning": "Peringatan"
+      "warning": "Peringatan",
+      "ai-0": "AI: %0",
+      "ai-assistant": "Asisten AI",
+      "applies-to-the-current-paragraph": "Berlaku untuk paragraf saat ini.",
+      "ask-ai": "Tanya AI…",
+      "ask-ai-to": "Minta AI untuk…",
+      "ask-ai-to-rewrite-the-selection-or-generate-new-content": "Minta AI untuk menulis ulang seleksi atau menghasilkan konten baru.",
+      "changes": "Perubahan",
+      "describe-a-change-then-press-enter": "Jelaskan perubahan lalu tekan Enter",
+      "insert-below": "Sisipkan di bawah",
+      "looks-good-already-nothing-to-change": "Sudah terlihat bagus — tidak ada yang perlu diubah.",
+      "result": "Hasil",
+      "send": "Kirim",
+      "stop": "Hentikan",
+      "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "File terlalu besar untuk diunggah (HTTP 413). Jika Trilium berada di belakang proxy terbalik, naikkan batas ukuran tubuh permintaan.",
+      "the-server-responded-with-http-0": "Server merespons dengan HTTP %0.",
+      "tokens": "token",
+      "try-again": "Coba lagi",
+      "working": "Bekerja…"
     },
     "task-state-dropped-title": "Status tugas tidak valid",
     "task-state-dropped-message_other": "{{count}} definisi status tugas kustom tidak valid dan diabaikan.",
@@ -3464,7 +3458,12 @@
   },
   "options": {
     "back": "Kembali ke semua opsi",
-    "title": "Opsi"
+    "title": "Opsi",
+    "search_placeholder": "Pengaturan pencarian",
+    "search_clear": "Hapus pencarian",
+    "search_title": "Pencarian opsi",
+    "search_hint": "Ketik kata kunci untuk mencari di seluruh halaman pengaturan.",
+    "search_no_results": "Tidak ada pengaturan yang sesuai dengan yang Anda cari."
   },
   "image_navigation": {
     "previous": "Gambar sebelumnya: {{- title}}",
@@ -3644,9 +3643,7 @@
     "note_paths_what": "Sebuah catatan dapat berada di lebih dari satu lokasi dalam pohon catatan sekaligus, dan setiap lokasi tersebut ditampilkan di sini sebagai sebuah jalur.",
     "note_paths_cloning": "Menambahkan lokasi disebut cloning: tidak ada yang disalin, sehingga perubahan yang dilakukan melalui satu jalur akan muncul di semua jalur lainnya, dan menghapus satu jalur hanya menghilangkan lokasi tersebut tanpa memengaruhi yang lain.",
     "backlinks_what": "Catatan yang menunjuk ke catatan ini, baik melalui tautan di dalam teks maupun melalui relasi yang menamainya.",
-    "backlinks_listing": "Tautan teks ditampilkan bersama potongan teks di sekitarnya, sedangkan relasi ditampilkan bersama nama relasinya. Sisi tautan ini tidak dapat diedit: tautan akan hilang ketika catatan yang membuatnya menghapus tautan tersebut.",
-    "similar_notes_what": "Catatan yang tampak berkaitan dengan catatan ini meskipun tidak ada tautan yang menghubungkannya.",
-    "similar_notes_how": "Kemiripannya ditentukan berdasarkan isi catatan, atribut dan relasi yang dimilikinya, serta seberapa dekat waktu pembuatannya."
+    "backlinks_listing": "Tautan teks ditampilkan bersama potongan teks di sekitarnya, sedangkan relasi ditampilkan bersama nama relasinya. Sisi tautan ini tidak dapat diedit: tautan akan hilang ketika catatan yang membuatnya menghapus tautan tersebut."
   },
   "icon_pack": {
     "preview_title": "Pratinjau paket ikon",
@@ -3747,9 +3744,7 @@
     "sort_by_title": "Judul",
     "sort_by_date_created": "Tanggal pembuatan",
     "no_items": "Tidak ada konten aktif yang ditemukan.",
-    "no_items_hint": "Skrip, tema, templat, dan cuplikan yang Anda buat akan ditampilkan di sini.",
-    "section_active_content": "Konten Aktif & Templat",
-    "section_space_usage": "Penggunaan Ruang"
+    "no_items_hint": "Skrip, tema, templat, dan cuplikan yang Anda buat akan ditampilkan di sini."
   },
   "space_usage": {
     "loading": "Mengukur penggunaan ruang...",
@@ -3851,7 +3846,13 @@
     "compress_result_none": "Tidak ada gambar yang dapat dikompresi.",
     "compress_result_stopped": "Dihentikan setelah {{done}} dari {{total}} gambar diproses, mengurangi ukurannya dari {{before}} menjadi {{after}}.",
     "compress_result_stopped_no_gain": "Dihentikan setelah {{done}} dari {{total}} gambar diproses, dan tidak ada satu pun yang dapat diperkecil lagi.",
-    "compress_result_stopped_none": "Dihentikan sebelum ada gambar yang diproses."
+    "compress_result_stopped_none": "Dihentikan sebelum ada gambar yang diproses.",
+    "status_notes": "Catatan",
+    "status_total": "Total",
+    "status_attachments": "Lampiran",
+    "status_deleted_items": "Item yang dihapus",
+    "selection_hint": "Ketuk item untuk detail",
+    "show_selection_details": "Tampilkan detail pilihan"
   },
   "wizard": {
     "back": "Kembali",
@@ -3861,31 +3862,6 @@
   "contextual_help": {
     "label": "Bantuan: {{- message}}",
     "sheet_label": "Bantuan"
-  },
-  "login": {
-    "heading": "Masuk ke Trilium Notes",
-    "password": "Kata sandi",
-    "totp-token": "Kata sandi sekali pakai atau kode pemulihan",
-    "button": "Masuk",
-    "remember-me": "Ingat saya",
-    "incorrect-password": "Kata sandi salah. Silakan coba lagi.",
-    "incorrect-totp": "Kata sandi sekali pakai salah. Silakan coba lagi.",
-    "incorrect-recovery-code": "Kode pemulihan salah atau sudah pernah digunakan.",
-    "too-many-attempts": "Terlalu banyak percobaan masuk. Harap tunggu beberapa menit lalu coba lagi.",
-    "connection-error": "Tidak dapat terhubung ke server. Periksa koneksi Anda lalu coba lagi.",
-    "sign_in_with_sso": "Masuk dengan {{ssoIssuerName}}",
-    "sso-wrong-account": "Akun tersebut bukan akun yang ditautkan ke instans Trilium ini. Masuklah menggunakan akun yang ditautkan.",
-    "sso-not-enrolled": "Single sign-on belum dikonfigurasi. Masuk terlebih dahulu menggunakan kata sandi Anda, lalu tautkan akun Anda melalui pengaturan.",
-    "sso-connection-failed": "Tidak dapat menghubungi penyedia autentikasi. Coba lagi, atau periksa log server untuk detailnya."
-  },
-  "set_password": {
-    "heading": "Tetapkan kata sandi",
-    "description": "Sebelum Anda dapat mulai menggunakan Trilium melalui web, Anda harus menetapkan kata sandi terlebih dahulu. Kata sandi ini nantinya akan digunakan untuk masuk.",
-    "password": "Kata sandi",
-    "password-confirmation": "Konfirmasi kata sandi",
-    "button": "Tetapkan kata sandi",
-    "password-too-short": "Kata sandi harus terdiri dari minimal {{length}} karakter.",
-    "passwords-dont-match": "Kata sandi yang dimasukkan tidak cocok."
   },
   "gpx_preview": {
     "distance": "Jarak",
@@ -3917,7 +3893,10 @@
     "unit_mph": "{{value}} mph"
   },
   "database_file_list": {
-    "size_on_disk": "{{size}} di disk"
+    "size_on_disk": "{{size}} di disk",
+    "delete": "Hapus",
+    "invalid_backup": "File cadangan tidak valid",
+    "unsupported_version": "Versi format file cadangan tidak didukung"
   },
   "password_with_confirmation": {
     "password": "Kata sandi",
@@ -3965,5 +3944,47 @@
     "clear-color": "Hapus warna",
     "set-color": "Atur warna",
     "set-custom-color": "Atur warna kustom"
+  },
+  "ai_assistant": {
+    "title": "Asisten AI",
+    "action_ask": "Tanya AI…",
+    "group_edit": "Edit atau tinjau",
+    "group_generate": "Hasilkan",
+    "group_adjust": "Sesuaikan",
+    "group_tone": "Ubah nada",
+    "group_reformat": "Ubah format",
+    "group_translate": "Terjemahkan",
+    "group_custom": "Kustom",
+    "model": "Model: {{model}}",
+    "command_make_shorter": "Buat lebih pendek",
+    "command_make_longer": "Buat lebih panjang",
+    "command_simplify": "Sederhanakan bahasa",
+    "command_tone": "Ubah nada menjadi {{tone}}",
+    "command_bullet_list": "Ubah menjadi daftar berpoin",
+    "command_table": "Ubah menjadi tabel",
+    "command_diagram": "Ubah menjadi diagram",
+    "command_callout": "Ubah menjadi callout",
+    "command_collapsible": "Ubah menjadi bagian yang dapat dilipat",
+    "command_action_items": "Ekstrak item tindakan",
+    "command_translate": "Terjemahkan ke {{language}}",
+    "action_fix_typos": "Perbaiki kesalahan ketik",
+    "action_improve_writing": "Perbaiki tulisan",
+    "action_summarize": "Ringkas",
+    "action_explain": "Jelaskan",
+    "action_continue": "Lanjutkan menulis",
+    "adjust_shorter": "Lebih pendek",
+    "adjust_longer": "Lebih panjang",
+    "adjust_simpler": "Lebih sederhana",
+    "tone_professional": "Profesional",
+    "tone_casual": "Santai",
+    "tone_direct": "Langsung",
+    "tone_friendly": "Ramah",
+    "tone_confident": "Percaya diri",
+    "reformat_bullet_list": "Daftar berpoin",
+    "reformat_table": "Tabel",
+    "reformat_diagram": "Diagram",
+    "reformat_callout": "Callout",
+    "reformat_collapsible": "Dapat dilipat",
+    "reformat_action_items": "Item tindakan"
   }
 }

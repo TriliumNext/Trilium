@@ -3,7 +3,6 @@ import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     AnnotationType,
-    extractFromSavedData,
     processAnnotation,
     rgbToHex,
     setupAnnotationLiveUpdates,
@@ -59,12 +58,57 @@ describe("processAnnotation", () => {
         expect(processAnnotation(withAuthor, 1)!.author).toBe("John Doe");
     });
 
-    it("skips non-comment types and empty annotations", () => {
+    it("skips types the sidebar does not list", () => {
         const link = { ...SAMPLE_HIGHLIGHT, annotationType: 2 }; // LINK
         expect(processAnnotation(link, 1)).toBeNull();
 
-        const empty = { ...SAMPLE_HIGHLIGHT, contentsObj: { str: "", dir: "ltr" }, overlaidText: "" };
-        expect(processAnnotation(empty, 1)).toBeNull();
+        const widget = { ...SAMPLE_HIGHLIGHT, annotationType: 20 }; // WIDGET (a form field)
+        expect(processAnnotation(widget, 1)).toBeNull();
+    });
+
+    it("reads a free-text box's own words as its contents", () => {
+        const freeText = {
+            ...SAMPLE_HIGHLIGHT,
+            annotationType: AnnotationType.FREETEXT,
+            contentsObj: { str: "Typed in the box", dir: "ltr" },
+            overlaidText: undefined
+        };
+
+        const result = processAnnotation(freeText, 2)!;
+        expect(result.type).toBe("freetext");
+        expect(result.contents).toBe("Typed in the box");
+        expect(result.highlightedText).toBe("");
+    });
+
+    it("reports a free-hand highlight as a highlight, not as a drawing", () => {
+        // pdf.js stores it as Ink and marks it with /IT; only the pen's own strokes are drawings.
+        const inkHighlight = { ...SAMPLE_HIGHLIGHT, annotationType: AnnotationType.INK, it: "InkHighlight" };
+        expect(processAnnotation(inkHighlight, 1)!.type).toBe("highlight");
+
+        const penStroke = { ...SAMPLE_HIGHLIGHT, annotationType: AnnotationType.INK, it: undefined };
+        expect(processAnnotation(penStroke, 1)!.type).toBe("ink");
+
+        // /IT is shared with other types, where it says nothing about the tool used.
+        const stampedHighlight = { ...SAMPLE_HIGHLIGHT, it: "InkHighlight" };
+        expect(processAnnotation(stampedHighlight, 1)!.type).toBe("highlight");
+    });
+
+    it("keeps an annotation carrying no text at all", () => {
+        // pdf.js writes a free-hand highlight as Ink, which never has contents or overlaidText;
+        // dropping those hid every highlight not drawn over selected text (#11059).
+        const drawing = {
+            ...SAMPLE_HIGHLIGHT,
+            annotationType: AnnotationType.INK,
+            contentsObj: { str: "", dir: "ltr" },
+            overlaidText: null
+        };
+
+        const result = processAnnotation(drawing, 4)!;
+        expect(result).not.toBeNull();
+        expect(result.type).toBe("ink");
+        expect(result.contents).toBe("");
+        expect(result.highlightedText).toBe("");
+        expect(result.pageNumber).toBe(4);
     });
 
     it("keeps annotations with only one of contents or highlightedText", () => {
@@ -101,7 +145,7 @@ describe("extraction from a real document", () => {
 
     afterEach(() => uninstallViewerApp());
 
-    /** The two annotations the fixture expects to surface, in page order. */
+    /** The annotations the fixture expects to surface, in page order. */
     const EXPECTED = [
         expect.objectContaining({
             id: "5R",
@@ -118,16 +162,45 @@ describe("extraction from a real document", () => {
             author: "Bob",
             pageNumber: 1,
             color: "#0000ff"
+        }),
+        expect.objectContaining({
+            id: "17R",
+            type: "highlight",
+            contents: "",
+            highlightedText: "",
+            pageNumber: 2
+        }),
+        expect.objectContaining({
+            id: "18R",
+            type: "ink",
+            contents: "",
+            highlightedText: "",
+            pageNumber: 2,
+            color: "#000000"
+        }),
+        expect.objectContaining({
+            id: "19R",
+            type: "freetext",
+            contents: "Typed in the box",
+            pageNumber: 2
+        }),
+        expect.objectContaining({
+            id: "20R",
+            type: "highlight",
+            contents: "",
+            highlightedText: "",
+            pageNumber: 2,
+            color: "#ffff00"
         })
     ];
 
-    it("walks every page and keeps only the annotations worth showing", async () => {
+    it("walks every page and lists every annotation kind the sidebar shows", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
 
         await setupPdfAnnotations();
 
-        // Page 2 holds a link (wrong type) and a highlight with no comment or highlighted
-        // text; neither should reach the sidebar, and the page loop still has to visit it.
+        // Page 2's link is the only annotation filtered out — the highlight with nothing to
+        // show, the ink drawing and the free-text box all belong in the sidebar (#11059).
         expect(viewer.lastMessageOfType("pdfjs-viewer-annotations").annotations).toEqual(EXPECTED);
     });
 
@@ -142,6 +215,54 @@ describe("extraction from a real document", () => {
 
         const [ highlight ] = viewer.lastMessageOfType("pdfjs-viewer-annotations").annotations;
         expect(highlight).toMatchObject({ id: "5R", color: "#00ff00", contents: "Edited in the viewer" });
+    });
+
+    it("keeps a text box's font colour out of the sidebar's tint", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        // Every stored annotation becomes an editor once a tool is active, so this state is
+        // reached just by pressing a toolbar button. A FreeTextEditor's `color` is the colour of
+        // its *text*, not a fill — taking it would paint the row in the text's colour, and only
+        // while a tool happened to be selected.
+        vi.spyOn(viewer.pdfDocument.annotationStorage, "getEditor").mockImplementation((id: string) =>
+            (id === "19R" ? { color: "#000000" } : null));
+
+        await setupPdfAnnotations();
+
+        const { annotations } = viewer.lastMessageOfType("pdfjs-viewer-annotations");
+        expect(annotations.find((annotation: any) => annotation.id === "19R").color).toBeNull();
+    });
+
+    it("lists annotations that so far exist only in the editor", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        // What pdf.js holds for annotations drawn in this session: keyed by the editor's own id,
+        // with `id` naming the document annotation it came from — null for one that is new.
+        // Until the file is written back these are the only record of them, so a sidebar built
+        // from the document alone stays empty however much the reader annotates (#11059).
+        vi.spyOn(viewer.pdfDocument.annotationStorage, "serializable", "get").mockReturnValue({
+            map: new Map<string, any>([
+                [ "pdfjs_internal_editor_0", { annotationType: 9, id: null, pageIndex: 2, color: [ 255, 255, 152 ] } ],
+                [ "pdfjs_internal_editor_1", { annotationType: 3, id: null, pageIndex: 0, color: [ 0, 0, 0 ], value: "typed words" } ],
+                // An existing annotation being edited: already listed from the document.
+                [ "pdfjs_internal_editor_2", { annotationType: 9, id: "5R", pageIndex: 0, color: [ 0, 255, 0 ] } ],
+                // A signature: a kind the sidebar does not list, so it stays out here as well.
+                [ "pdfjs_internal_editor_3", { annotationType: 13, id: null, pageIndex: 0, isSignature: true } ]
+            ]),
+            hash: "x",
+            transfer: []
+        } as any);
+
+        await setupPdfAnnotations();
+
+        const { annotations } = viewer.lastMessageOfType("pdfjs-viewer-annotations");
+        expect(annotations.filter((annotation: any) => annotation.id.startsWith("pdfjs_internal_editor"))).toEqual([
+            expect.objectContaining({ id: "pdfjs_internal_editor_0", type: "highlight", pageNumber: 3, color: "#ffff98" }),
+            // pdf.js serializes a text box's *font* colour under `color`; the sidebar tints a row with
+            // this field, and a black tint behind a note is not what anyone drew.
+            expect.objectContaining({ id: "pdfjs_internal_editor_1", type: "freetext", contents: "typed words", pageNumber: 1, color: null })
+        ]);
+        // The document's own annotations are still there, and the edited one is not duplicated.
+        expect(annotations.filter((annotation: any) => annotation.id === "5R")).toHaveLength(1);
+        expect(annotations.some((annotation: any) => annotation.id === "pdfjs_internal_editor_3")).toBe(false);
     });
 
     it("removes deleted annotations even when they are adjacent", async () => {
@@ -165,7 +286,7 @@ describe("extraction from a real document", () => {
         await setupPdfAnnotations();
 
         const { annotations } = viewer.lastMessageOfType("pdfjs-viewer-annotations");
-        expect(annotations.map((annotation: any) => annotation.id)).toEqual([ "14R" ]);
+        expect(annotations.map((annotation: any) => annotation.id)).toEqual([ "14R", "17R", "18R", "19R", "20R" ]);
     });
 
     it("reports an empty list when extraction fails", async () => {
@@ -179,56 +300,6 @@ describe("extraction from a real document", () => {
             type: "pdfjs-viewer-annotations",
             annotations: []
         });
-    });
-});
-
-describe("re-extraction from saved bytes", () => {
-    let viewer: InstalledViewer;
-
-    afterEach(() => {
-        delete (globalThis as any).pdfjsLib;
-        uninstallViewerApp();
-    });
-
-    it("reopens freshly saved bytes and tears the temporary document down", async () => {
-        viewer = await installViewerApp(allFeaturesPdf());
-        const saved = await viewer.pdfDocument.saveDocument();
-
-        // The viewer exposes pdf.js on the global; hand it the real module so the temporary
-        // document is opened by the same code path that runs in the browser.
-        const destroy = vi.fn();
-        (globalThis as any).pdfjsLib = {
-            getDocument: (...args: any[]) => {
-                const task = (getDocument as any)(...args);
-                const teardown = task.destroy.bind(task);
-                task.destroy = () => {
-                    destroy();
-                    return teardown();
-                };
-                return task;
-            }
-        };
-
-        await extractFromSavedData(saved);
-
-        // Saving and reopening must not lose the annotations the sidebar is showing.
-        expect(viewer.lastMessageOfType("pdfjs-viewer-annotations").annotations)
-            .toEqual([ expect.objectContaining({ contents: "A remark" }), expect.objectContaining({ contents: "A sticky note" }) ]);
-        // The temporary document owns a worker, so failing to destroy it leaks one per save.
-        expect(destroy).toHaveBeenCalledTimes(1);
-    });
-
-    it("logs and gives up when the saved bytes cannot be reopened", async () => {
-        viewer = await installViewerApp(allFeaturesPdf());
-        const error = vi.spyOn(console, "error").mockImplementation(() => {});
-        (globalThis as any).pdfjsLib = { getDocument };
-
-        // Real pdf.js rejecting real garbage, rather than a stand-in that throws on cue —
-        // which also keeps the loading task real, so the `finally` teardown is exercised.
-        await extractFromSavedData(new Uint8Array([ 1, 2, 3 ]));
-
-        expect(error).toHaveBeenCalled();
-        expect(viewer.messagesOfType("pdfjs-viewer-annotations")).toHaveLength(0);
     });
 });
 
@@ -300,6 +371,36 @@ describe("scrolling to an annotation", () => {
         expect(viewer.scrollRequests).toHaveBeenCalledWith(expect.objectContaining({ behavior: "smooth" }));
     });
 
+    it("ignores a scroll request from another origin", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        await setupPdfAnnotations();
+        renderAnnotation("5R");
+
+        window.dispatchEvent(new MessageEvent("message", {
+            data: { type: "trilium-scroll-to-annotation", annotationId: "5R", pageNumber: 1 },
+            origin: "https://evil.example"
+        }));
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(viewer.scrollRequests).not.toHaveBeenCalled();
+    });
+
+    it("scrolls to an annotation that only exists in the editor", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        await setupPdfAnnotations();
+        // pdf.js gives an editor no data-annotation-id — it is not in the document yet — so the
+        // element carries the editor's own id and that is what the sidebar entry holds.
+        const editorEl = document.createElement("div");
+        editorEl.id = "pdfjs_internal_editor_0";
+        viewer.viewerEl.append(editorEl);
+
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-annotation", annotationId: "pdfjs_internal_editor_0", pageNumber: 1
+        });
+
+        await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalled());
+    });
+
     it("jumps to the page and waits for an annotation that has not rendered yet", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         await setupPdfAnnotations();
@@ -310,6 +411,10 @@ describe("scrolling to an annotation", () => {
         await vi.waitFor(() => expect(window.PDFViewerApplication?.pdfViewer.currentPageNumber).toBe(2));
         expect(viewer.scrollRequests).not.toHaveBeenCalled();
 
+        // Other things render meanwhile; only the annotation itself ends the wait.
+        viewer.viewerEl.append(document.createElement("div"));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(viewer.scrollRequests).not.toHaveBeenCalled();
         // Once pdf.js renders the annotation, the observer picks it up.
         renderAnnotation("14R");
         await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalled());

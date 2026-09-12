@@ -93,8 +93,18 @@ vi.mock("electron", () => ({
 
 const { hardenWebviewPreferences, isNavigationAllowed, isPermissionAllowed, isPermissionAllowedForOrigin, setupWebContentsSecurity, withYouTubeEmbedReferer } = await import("./web_contents_security.js");
 
+/**
+ * Stands in for what `setupWindowing()` supplies: the options an allowed
+ * `window.open` child is built with.
+ */
+const SECURITY_OPTIONS = {
+    extraWindowOptions: () => ({ width: 1000, webPreferences: { preload: "preload.cjs" } })
+};
+
 interface WindowOpenResult {
     action: "allow" | "deny";
+    outlivesOpener?: boolean;
+    overrideBrowserWindowOptions?: Electron.BrowserWindowConstructorOptions;
 }
 
 /**
@@ -234,7 +244,7 @@ describe("setupWebContentsSecurity", () => {
 
     beforeEach(() => {
         resetState();
-        setupWebContentsSecurity();
+        setupWebContentsSecurity(SECURITY_OPTIONS);
     });
 
     /** Simulates a window being created and then a <webview> attaching inside it. */
@@ -290,15 +300,26 @@ describe("isPermissionAllowed", () => {
         expect(isPermissionAllowed("app", "clipboard-sanitized-write")).toBe(true);
         expect(isPermissionAllowed("app", "fullscreen")).toBe(true);
         expect(isPermissionAllowed("app", "notifications")).toBe(true);
+        // The Excalidraw canvas opens and saves files through the File System
+        // Access API instead of `electronApi`.
+        expect(isPermissionAllowed("app", "fileSystem")).toBe(true);
+        // Lets the appearance settings list the fonts installed on this device.
+        expect(isPermissionAllowed("app", "local-fonts")).toBe(true);
 
         // Guest session: only fullscreen (embedded video players). Remote
         // pages must not show OS notifications appearing to come from Trilium.
         expect(isPermissionAllowed("guest", "fullscreen")).toBe(true);
         expect(isPermissionAllowed("guest", "clipboard-sanitized-write")).toBe(false);
         expect(isPermissionAllowed("guest", "notifications")).toBe(false);
+        expect(isPermissionAllowed("guest", "fileSystem")).toBe(false);
+        expect(isPermissionAllowed("guest", "local-fonts")).toBe(false);
+
+        // The geo map's locate button asks where the device is; a remote page does not get to.
+        expect(isPermissionAllowed("app", "geolocation")).toBe(true);
+        expect(isPermissionAllowed("guest", "geolocation")).toBe(false);
 
         // Everything else is denied everywhere.
-        for (const permission of ["media", "geolocation", "midi", "hid", "serial", "usb", "pointerLock", "clipboard-read", "openExternal"]) {
+        for (const permission of ["media", "midi", "hid", "serial", "usb", "pointerLock", "clipboard-read", "openExternal"]) {
             expect(isPermissionAllowed("app", permission)).toBe(false);
             expect(isPermissionAllowed("guest", permission)).toBe(false);
         }
@@ -310,10 +331,17 @@ describe("isPermissionAllowedForOrigin", () => {
         // The app shell itself keeps its grants.
         expect(isPermissionAllowedForOrigin("app", "notifications", "trilium-app://app")).toBe(true);
         expect(isPermissionAllowedForOrigin("app", "clipboard-sanitized-write", "trilium-app://app/some/path")).toBe(true);
+        expect(isPermissionAllowedForOrigin("app", "fileSystem", "trilium-app://app")).toBe(true);
+        expect(isPermissionAllowedForOrigin("app", "geolocation", "trilium-app://app")).toBe(true);
 
         // A remote <iframe> sharing the default session does not.
         expect(isPermissionAllowedForOrigin("app", "notifications", "https://www.youtube-nocookie.com/embed/x")).toBe(false);
         expect(isPermissionAllowedForOrigin("app", "clipboard-sanitized-write", "https://evil.example")).toBe(false);
+        expect(isPermissionAllowedForOrigin("app", "fileSystem", "https://evil.example")).toBe(false);
+        // Where the device is stays the app's to ask; an embed does not learn it.
+        expect(isPermissionAllowedForOrigin("app", "geolocation", "https://evil.example")).toBe(false);
+        // The installed font list is a fingerprinting surface, so an embed does not get to read it.
+        expect(isPermissionAllowedForOrigin("app", "local-fonts", "https://evil.example")).toBe(false);
         // Another host under our own scheme is not the app shell.
         expect(isPermissionAllowedForOrigin("app", "notifications", "trilium-app://evil")).toBe(false);
         // A missing / unparseable origin is treated as untrusted.
@@ -328,7 +356,7 @@ describe("isPermissionAllowedForOrigin", () => {
     });
 
     it("never grants a permission outside the session allowlist, even from the app shell", () => {
-        expect(isPermissionAllowedForOrigin("app", "geolocation", "trilium-app://app")).toBe(false);
+        expect(isPermissionAllowedForOrigin("app", "media", "trilium-app://app")).toBe(false);
         expect(isPermissionAllowedForOrigin("app", "clipboard-read", "trilium-app://app")).toBe(false);
         expect(isPermissionAllowedForOrigin("guest", "notifications", "trilium-app://app")).toBe(false);
     });
@@ -337,7 +365,7 @@ describe("isPermissionAllowedForOrigin", () => {
 describe("permission handlers", () => {
     beforeEach(async () => {
         resetState();
-        setupWebContentsSecurity();
+        setupWebContentsSecurity(SECURITY_OPTIONS);
         // Installation is gated on app.whenReady(); flush the microtask queue.
         await Promise.resolve();
     });
@@ -410,7 +438,9 @@ describe("permission handlers", () => {
 
         expect(appCheck({}, "clipboard-sanitized-write", "trilium-app://app")).toBe(true);
         expect(appCheck({}, "clipboard-sanitized-write", "https://www.youtube-nocookie.com")).toBe(false);
-        expect(appCheck({}, "geolocation", "trilium-app://app")).toBe(false);
+        // MapLibre's locate button asks this before enabling itself (`navigator.permissions.query`).
+        expect(appCheck({}, "geolocation", "trilium-app://app")).toBe(true);
+        expect(appCheck({}, "geolocation", "https://evil.example")).toBe(false);
         // Fullscreen is origin-independent.
         expect(guestCheck({}, "fullscreen", "https://www.youtube-nocookie.com")).toBe(true);
         expect(guestCheck({}, "clipboard-sanitized-write", "https://www.youtube-nocookie.com")).toBe(false);
@@ -439,7 +469,7 @@ describe("withYouTubeEmbedReferer", () => {
 describe("YouTube embed referer header", () => {
     beforeEach(async () => {
         resetState();
-        setupWebContentsSecurity();
+        setupWebContentsSecurity(SECURITY_OPTIONS);
         await Promise.resolve(); // installation is gated on app.whenReady()
     });
 
@@ -461,7 +491,7 @@ describe("YouTube embed referer header", () => {
 describe("window-open policy", () => {
     beforeEach(() => {
         resetState();
-        setupWebContentsSecurity();
+        setupWebContentsSecurity(SECURITY_OPTIONS);
     });
 
     it("denies the popup and opens allowlisted URLs in the OS browser", async () => {
@@ -501,14 +531,44 @@ describe("window-open policy", () => {
         expect(state.errors[0]).toContain("https://bad.example");
     });
 
-    it("denies window.open from webview guests without dispatching to the OS", async () => {
-        const contents = createContents("webview");
+    it("allows the app shell's root URL as an extra window in the opener's process", async () => {
+        const contents = createContents();
 
-        expect(contents.openWindow("https://example.com")).toEqual({ action: "deny" });
+        expect(contents.openWindow("trilium-app://app/?extraWindow=1#root/abc")).toEqual({
+            action: "allow",
+            outlivesOpener: true,
+            overrideBrowserWindowOptions: SECURITY_OPTIONS.extraWindowOptions()
+        });
         await new Promise((r) => setTimeout(r, 0));
 
         expect(state.shellOpenExternal).toEqual([]);
-        expect(state.errors).toHaveLength(1);
+        expect(state.errors).toEqual([]);
+    });
+
+    it("denies app-scheme URLs off the shell root without dispatching to the OS", async () => {
+        const contents = createContents();
+
+        for (const url of ["trilium-app://app/somewhere", "trilium-app://evil/"]) {
+            expect(contents.openWindow(url)).toEqual({ action: "deny" });
+        }
+        await new Promise((r) => setTimeout(r, 0));
+
+        // `trilium-app:` is not an allowlisted external scheme either.
+        expect(state.shellOpenExternal).toEqual([]);
+        expect(state.errors).toHaveLength(2);
+    });
+
+    it("denies window.open from webview guests without dispatching to the OS", async () => {
+        const contents = createContents("webview");
+
+        // Not even the app shell URL: a guest must never spawn a privileged window.
+        expect(contents.openWindow("https://example.com")).toEqual({ action: "deny" });
+        const appUrl = "trilium-app://app/?extraWindow=1";
+        expect(contents.openWindow(appUrl)).toEqual({ action: "deny" });
+        await new Promise((r) => setTimeout(r, 0));
+
+        expect(state.shellOpenExternal).toEqual([]);
+        expect(state.errors).toHaveLength(2);
         expect(state.errors[0]).toContain("https://example.com");
     });
 });
@@ -516,13 +576,15 @@ describe("window-open policy", () => {
 describe("navigation guard", () => {
     beforeEach(() => {
         resetState();
-        setupWebContentsSecurity();
+        setupWebContentsSecurity(SECURITY_OPTIONS);
     });
 
     it("only allows the app shell at its root path", () => {
         expect(isNavigationAllowed("trilium-app://app/")).toBe(true);
         // Root "/?" path is allowed.
         expect(isNavigationAllowed("trilium-app://app/?")).toBe(true);
+        // The extra-window URL: root path with a query string and a hash.
+        expect(isNavigationAllowed("trilium-app://app/?extraWindow=1#root/abc")).toBe(true);
 
         // App shell but non-root path is blocked (in-page SPA routing / hostile).
         expect(isNavigationAllowed("trilium-app://app/somewhere")).toBe(false);

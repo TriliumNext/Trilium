@@ -1,4 +1,4 @@
-import type { ExecOpts, FetchedResource, FetchResourceOpts, RequestProvider } from "@triliumnext/core";
+import type { ExecOpts, FetchApiOpts, FetchedResource, FetchResourceOpts, RequestProvider } from "@triliumnext/core";
 import { readCappedResponse, validateFetchableUrl } from "@triliumnext/core/src/services/request.js";
 
 /**
@@ -124,6 +124,22 @@ export default class FetchRequestProvider implements RequestProvider {
         } finally {
             clearTimeout(timeoutId);
         }
+    }
+
+    /**
+     * Calls a configured API endpoint with the page's own `fetch`, which is as far as this runtime
+     * can go and as far as it needs to.
+     *
+     * The private-address rule the server keeps has no counterpart here, and `allowPrivateNetwork`
+     * is accordingly unread: there is no resolver to ask what a name points at, and nothing to be
+     * protected if there were. The request leaves the user's own browser, over the user's own
+     * network, to a destination that same user configured — the server's rule exists because a
+     * server's network is not the network of everyone who can reach it, which is not this.
+     *
+     * What remains is {@link validateFetchableUrl}, and the same-origin policy behind it.
+     */
+    async fetchApi(url: string, init: RequestInit, _opts: FetchApiOpts): Promise<Response> {
+        return await fetch(validateFetchableUrl(url).toString(), init);
     }
 }
 

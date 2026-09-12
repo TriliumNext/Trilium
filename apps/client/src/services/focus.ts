@@ -22,7 +22,10 @@ export function focusSavedElement() {
             console.log("Could not find CKEditor instance to focus last element");
         }
     } else {
-        $lastFocusedElement.focus();
+        // The user has not moved since the dialog opened, so the focus goes back without the
+        // browser scrolling the element into view. Without `preventScroll`, restoring focus to a
+        // tree node the user has since scrolled away from drags the tree back to it.
+        $lastFocusedElement[0]?.focus({ preventScroll: true });
     }
 
     $lastFocusedElement = null;

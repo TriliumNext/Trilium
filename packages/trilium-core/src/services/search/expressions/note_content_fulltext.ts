@@ -3,14 +3,19 @@ import type { NoteRow } from "@triliumnext/commons";
 import becca from "../../../becca/becca.js";
 import { getLog } from "../../log.js";
 import protectedSessionService from "../../protected_session.js";
+import { classifyContentMatch } from "../match_quality.js";
 import NoteSet from "../note_set.js";
 import type SearchContext from "../search_context.js";
 import {
     FUZZY_SEARCH_CONFIG,
-    fuzzyMatchWord,
+    fuzzyMatchWordWithResult,
+    getAutoMaxEditDistance,
     normalizeSearchText,
+    stripWordPunctuation,
+    tokenizeIntoWords,
     validateAndPreprocessContent,
-    validateFuzzySearchTokens} from "../utils/text_utils.js";
+    validateFuzzySearchTokens,
+    wordsContainPhrase} from "../utils/text_utils.js";
 import Expression from "./expression.js";
 import preprocessContent from "./note_content_fulltext_preprocessor.js";
 import { getSql } from "../../../services/sql/index.js";
@@ -34,6 +39,14 @@ interface ConstructorOpts {
     tokens: string[];
     raw?: boolean;
     flatText?: boolean;
+    /**
+     * When set, a note that fails normal `*=*` matching is retried with fuzzy
+     * matching against its body content (progressive phase 2 only, gated on
+     * {@link SearchContext.enableFuzzyMatching}). Only the default plain-query
+     * content expression built by parse's getFulltext sets this; explicit user
+     * operators never do.
+     */
+    fuzzyFallback?: boolean;
 }
 
 type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProtected">;
@@ -43,8 +56,9 @@ class NoteContentFulltextExp extends Expression {
     tokens: string[];
     private raw: boolean;
     private flatText: boolean;
+    private fuzzyFallback: boolean;
 
-    constructor(operator: string, { tokens, raw, flatText }: ConstructorOpts) {
+    constructor(operator: string, { tokens, raw, flatText, fuzzyFallback }: ConstructorOpts) {
         super();
 
         if (!operator || !tokens || !Array.isArray(tokens)) {
@@ -61,6 +75,7 @@ class NoteContentFulltextExp extends Expression {
         this.tokens = tokens;
         this.raw = !!raw;
         this.flatText = !!flatText;
+        this.fuzzyFallback = !!fuzzyFallback;
     }
 
     execute(inputNoteSet: NoteSet, executionContext: {}, searchContext: SearchContext) {
@@ -75,6 +90,12 @@ class NoteContentFulltextExp extends Expression {
             if (!searchContext.highlightedTokens.includes(token)) {
                 searchContext.highlightedTokens.push(token);
             }
+
+            if (this.operator === "%=") {
+                // Regex operator: tag each token so snippet highlighting matches it
+                // as a RegExp rather than literal text.
+                searchContext.regexTokens.add(token);
+            }
         }
 
         const resultNoteSet = new NoteSet();
@@ -86,7 +107,7 @@ class NoteContentFulltextExp extends Expression {
                 WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet', 'llmChat')
                   AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
-            this.findInText(row, inputNoteSet, resultNoteSet);
+            this.findInText(row, inputNoteSet, resultNoteSet, searchContext);
         }
 
         // For exact match with flatText, also search notes WITHOUT content (they may have matching attributes)
@@ -135,8 +156,10 @@ class NoteContentFulltextExp extends Expression {
      * @returns true if the word is found as an exact match (not substring)
      */
     private exactWordMatch(wordToFind: string, text: string): boolean {
-        const words = text.split(/\s+/);
-        return words.some(word => word === wordToFind);
+        // Strip boundary punctuation from both sides so a content word wrapped in
+        // punctuation (e.g. "(sync)") still matches the bare token ("sync").
+        const needle = stripWordPunctuation(wordToFind);
+        return tokenizeIntoWords(text).some(word => word === needle);
     }
 
     /**
@@ -148,10 +171,11 @@ class NoteContentFulltextExp extends Expression {
         const normalizedToken = normalizeSearchText(token);
         const normalizedContent = normalizeSearchText(content);
 
-        // If token contains spaces, it's a multi-word phrase from quotes
-        // Check for substring match (consecutive phrase)
+        // If token contains spaces, it's a multi-word phrase from quotes. Scan the
+        // tokenized content for a consecutive run so the phrase matches across
+        // boundary punctuation (consistent with containsExactPhrase).
         if (normalizedToken.includes(' ')) {
-            return normalizedContent.includes(normalizedToken);
+            return wordsContainPhrase(tokenizeIntoWords(content), tokenizeIntoWords(normalizedToken));
         }
 
         // For single words, use exact word matching to avoid substring matches
@@ -176,14 +200,19 @@ class NoteContentFulltextExp extends Expression {
             return this.exactWordMatch(phrase, normalizedContent);
         }
 
-        // For multi-word phrases, check if the phrase appears as consecutive words
-        if (normalizedContent.includes(phrase)) {
+        // For multi-word phrases, scan the tokenized content for a consecutive run
+        // of the phrase words. Tokenizing (instead of a raw substring scan) lets a
+        // phrase match across punctuation, newlines and repeated whitespace.
+        const phraseWords = normalizedTokens
+            .map(t => stripWordPunctuation(t))
+            .filter(word => word.length > 0);
+        if (wordsContainPhrase(tokenizeIntoWords(content), phraseWords)) {
             return true;
         }
 
-        // For flatText, also check if the phrase appears in attribute values
-        // Attributes in flatText appear as "#name=value" or "~name=value"
-        // So we need to check for "=phrase" to match attribute values
+        // For flatText, also check if the phrase appears in attribute values.
+        // Attributes in flatText appear as "#name=value" or "~name=value", so this looks for
+        // "=phrase" against the raw string and must stay a raw-string scan.
         if (checkFlatTextAttributes && normalizedContent.includes(`=${phrase}`)) {
             return true;
         }
@@ -191,7 +220,7 @@ class NoteContentFulltextExp extends Expression {
         return false;
     }
 
-    findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
+    findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext) {
         if (!inputNoteSet.hasNoteId(noteId) || !(noteId in becca.notes)) {
             return;
         }
@@ -213,7 +242,7 @@ class NoteContentFulltextExp extends Expression {
             return;
         }
 
-        content = preprocessContent(content, type, mime, this.raw);
+        content = preprocessContent(content, type, mime, this.raw, (id) => becca.notes[id]?.title ?? null);
 
         // Apply content size validation and preprocessing
         const processedContent = validateAndPreprocessContent(content, noteId);
@@ -222,72 +251,150 @@ class NoteContentFulltextExp extends Expression {
         }
         content = processedContent;
 
+        const { matched, negation } = this.matchesContent(content, noteId);
+
+        // A4: progressive phase-2 fuzzy fallback for plain-query body content. Only
+        // runs for notes that failed the cheap match above, and only when this is the
+        // default *=* content expression (fuzzyFallback) with fuzzy matching enabled.
+        const fuzzyMatchedWords = !matched && !negation && this.fuzzyFallback && searchContext.enableFuzzyMatching
+            ? this.allTokensFuzzyMatchContent(content)
+            : null;
+
+        if (matched || fuzzyMatchedWords) {
+            resultNoteSet.add(becca.notes[noteId]);
+
+            if (fuzzyMatchedWords) {
+                searchContext.recordContentMatch(noteId, {
+                    tier: "fuzzy",
+                    matchedTokenCount: new Set(this.tokens.flatMap((token) => tokenizeIntoWords(token))).size,
+                    inOrder: false,
+                    matchedWords: fuzzyMatchedWords
+                });
+            } else if (!negation) {
+                // Record how well the content matched so scoring can rank body matches.
+                // A negation (!=) match means the content does not contain the query, so there is
+                // no positive content match to record for it.
+                this.recordContentMatchQuality(noteId, content, searchContext);
+            }
+        }
+
+        return content;
+    }
+
+    /**
+     * Returns the content words that stood in for each query token when every token
+     * fuzzy-matches (or is a substring of) some word in the content, else null. The returned
+     * words are what the result card highlights, so a fuzzy hit can show why it matched.
+     * Used only by the phase-2 fuzzy fallback; per-word work is bounded by the
+     * length-difference early-skip and AUTO edit distances.
+     */
+    private allTokensFuzzyMatchContent(content: string): string[] | null {
+        const normalizedContent = normalizeSearchText(content);
+        const matchedWords: string[] = [];
+
+        for (const token of this.tokens) {
+            const normalizedToken = normalizeSearchText(token);
+            if (normalizedContent.includes(normalizedToken)) {
+                continue;
+            }
+
+            const matchedWord = this.fuzzyMatchToken(normalizedToken, normalizedContent);
+            if (!matchedWord) {
+                return null;
+            }
+
+            matchedWords.push(matchedWord);
+        }
+
+        return matchedWords;
+    }
+
+    /**
+     * Applies the operator's matching semantics for this note's content and
+     * returns whether it matched and whether the match was a negation (!=).
+     */
+    private matchesContent(content: string, noteId: string): { matched: boolean; negation: boolean } {
         if (this.tokens.length === 1) {
             const [token] = this.tokens;
 
-            let matches = false;
             if (this.operator === "=") {
-                matches = this.containsExactWord(token, content);
+                let matches = this.containsExactWord(token, content);
                 // Also check flatText if enabled (includes attributes)
                 if (!matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
-                    matches = this.containsExactPhrase([token], flatText, true);
+                    matches = this.containsExactPhrase([token], becca.notes[noteId].getFlatText(), true);
                 }
-            } else if (this.operator === "!=") {
-                matches = !this.containsExactWord(token, content);
-                // For negation, check flatText too
-                if (matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
-                    matches = !this.containsExactPhrase([token], flatText, true);
-                }
+                return { matched: matches, negation: false };
             }
 
-            if (
-                matches ||
+            if (this.operator === "!=") {
+                let matches = !this.containsExactWord(token, content);
+                // For negation, check flatText too
+                if (matches && this.flatText) {
+                    matches = !this.containsExactPhrase([token], becca.notes[noteId].getFlatText(), true);
+                }
+                return { matched: matches, negation: true };
+            }
+
+            const matched =
                 (this.operator === "*=" && content.endsWith(token)) ||
                 (this.operator === "=*" && content.startsWith(token)) ||
                 (this.operator === "*=*" && content.includes(token)) ||
                 (this.operator === "%=" && getRegex(token).test(content)) ||
                 (this.operator === "~=" && this.matchesWithFuzzy(content, noteId)) ||
-                (this.operator === "~*" && this.fuzzyMatchToken(normalizeSearchText(token), normalizeSearchText(content)))
-            ) {
-                resultNoteSet.add(becca.notes[noteId]);
-            }
-        } else {
-            // Multi-token matching with fuzzy support and phrase proximity
-            if (this.operator === "~=" || this.operator === "~*") {
-                // Fuzzy phrase matching
-                if (this.matchesWithFuzzy(content, noteId)) {
-                    resultNoteSet.add(becca.notes[noteId]);
-                }
-            } else if (this.operator === "=" || this.operator === "!=") {
-                // Exact phrase matching for = and !=
-                let matches = this.containsExactPhrase(this.tokens, content, false);
+                (this.operator === "~*" && this.fuzzyContainsToken(normalizeSearchText(token), normalizeSearchText(content)));
 
-                // Also check flatText if enabled (includes attributes)
-                if (!matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
-                    matches = this.containsExactPhrase(this.tokens, flatText, true);
-                }
-
-                if ((this.operator === "=" && matches) ||
-                    (this.operator === "!=" && !matches)) {
-                    resultNoteSet.add(becca.notes[noteId]);
-                }
-            } else {
-                // Other operators: check all tokens present (any order)
-                const nonMatchingToken = this.tokens.find(
-                    (token) =>
-                        !this.tokenMatchesContent(token, content, noteId)
-                );
-
-                if (!nonMatchingToken) {
-                    resultNoteSet.add(becca.notes[noteId]);
-                }
-            }
+            return { matched, negation: false };
         }
 
-        return content;
+        // Multi-token matching with fuzzy support and phrase proximity
+        if (this.operator === "~=" || this.operator === "~*") {
+            return { matched: this.matchesWithFuzzy(content, noteId), negation: false };
+        }
+
+        if (this.operator === "=" || this.operator === "!=") {
+            // Exact phrase matching for = and !=
+            let matches = this.containsExactPhrase(this.tokens, content, false);
+            // Also check flatText if enabled (includes attributes)
+            if (!matches && this.flatText) {
+                matches = this.containsExactPhrase(this.tokens, becca.notes[noteId].getFlatText(), true);
+            }
+
+            if (this.operator === "=") {
+                return { matched: matches, negation: false };
+            }
+            return { matched: !matches, negation: true };
+        }
+
+        // Other operators: check all tokens present (any order)
+        const nonMatchingToken = this.tokens.find((token) => !this.tokenMatchesContent(token, content, noteId));
+        return { matched: !nonMatchingToken, negation: false };
+    }
+
+    /**
+     * Classifies how well this note's body content matched the query tokens and
+     * records the result on the search context for scoring. An exact-operator
+     * match that came from flat text (attributes) rather than the body is recorded
+     * at the exact tier directly, since body classification would find nothing.
+     */
+    private recordContentMatchQuality(noteId: string, content: string, searchContext: SearchContext) {
+        const normalizedTokens = this.tokens.flatMap((token) => tokenizeIntoWords(token));
+        if (normalizedTokens.length === 0) {
+            return;
+        }
+
+        let quality = classifyContentMatch(normalizedTokens, tokenizeIntoWords(content));
+
+        if (!quality && this.operator === "=") {
+            quality = {
+                tier: normalizedTokens.length > 1 ? "exact_phrase" : "exact_word",
+                matchedTokenCount: new Set(normalizedTokens).size,
+                inOrder: false
+            };
+        }
+
+        if (quality) {
+            searchContext.recordContentMatch(noteId, quality);
+        }
     }
 
     /**
@@ -324,8 +431,8 @@ class NoteContentFulltextExp extends Expression {
 
             // Single token fuzzy matching
             const token = normalizeSearchText(this.tokens[0]);
-            return this.fuzzyMatchToken(token, normalizedContent) ||
-                   (this.flatText && this.fuzzyMatchToken(token, flatText));
+            return this.fuzzyMatchToken(token, normalizedContent) !== null ||
+                   (this.flatText && this.fuzzyMatchToken(token, flatText) !== null);
         } catch (error) {
             getLog().error(`Error in fuzzy matching for note ${noteId}: ${error}`);
             return false;
@@ -406,12 +513,13 @@ class NoteContentFulltextExp extends Expression {
     }
 
     /**
-     * Performs fuzzy matching for a single token against content
+     * Performs fuzzy matching for a single token against content, returning the content word
+     * it matched so callers can highlight it, or null when nothing matched.
      */
-    private fuzzyMatchToken(token: string, content: string): boolean {
+    private fuzzyMatchToken(token: string, content: string): string | null {
         if (token.length < FUZZY_SEARCH_CONFIG.MIN_FUZZY_TOKEN_LENGTH) {
             // For short tokens, require exact match to avoid too many false positives
-            return content.includes(token);
+            return content.includes(token) ? token : null;
         }
 
         const words = content.split(/\s+/);
@@ -419,15 +527,33 @@ class NoteContentFulltextExp extends Expression {
         // Only limit word processing for truly extreme cases to prevent system instability
         const limitedWords = words.slice(0, FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT);
 
-        return limitedWords.some(word => this.fuzzyMatchSingle(token, word));
+        for (const word of limitedWords) {
+            const matchedWord = this.fuzzyMatchSingle(token, word);
+            if (matchedWord) {
+                return matchedWord;
+            }
+        }
+
+        return null;
     }
 
     /**
-     * Fuzzy matches a single token against a single word
+     * Fuzzy CONTAINS for a single "~*" token: a plain substring (fragment) match
+     * counts (so "progr" matches "programming"), otherwise fall back to per-word
+     * fuzzy matching. Mirrors the substring fallback used by "~=" and keeps "~="
+     * (fuzzy equals, word-level via fuzzyMatchToken) unaffected.
      */
-    private fuzzyMatchSingle(token: string, word: string): boolean {
-        // Use shared optimized fuzzy matching logic
-        return fuzzyMatchWord(token, word, FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE);
+    private fuzzyContainsToken(token: string, content: string): boolean {
+        return content.includes(token) || this.fuzzyMatchToken(token, content) !== null;
+    }
+
+    /**
+     * Fuzzy matches a single token against a single word, returning the word it matched so
+     * callers can highlight it. The edit-distance bound is length-scaled (AUTO), so short
+     * tokens do not produce false positives.
+     */
+    private fuzzyMatchSingle(token: string, word: string): string | null {
+        return fuzzyMatchWordWithResult(token, word, getAutoMaxEditDistance(token.length));
     }
 }
 

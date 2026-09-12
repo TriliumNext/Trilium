@@ -17,6 +17,8 @@ export interface ChooseNoteTypeResponse {
     noteType?: string;
     templateNoteId?: string;
     notePath?: string;
+    /** Extra parents to clone the created note into, from the template's default parents. */
+    cloneToNoteIds?: string[];
 }
 
 export type ChooseNoteTypeCallback = (data: ChooseNoteTypeResponse) => void;

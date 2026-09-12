@@ -1,0 +1,271 @@
+.ck.ck-ai-assistant-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ck-spacing-large);
+    padding: 0 var(--ck-spacing-large) var(--ck-spacing-large) var(--ck-spacing-large);
+    width: min(560px, 90vw);
+    outline: none;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--ck-spacing-medium);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes {
+    display: flex;
+    align-items: center;
+    gap: var(--ck-spacing-tiny);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview-toolbar-end {
+    display: flex;
+    align-items: center;
+    gap: var(--ck-spacing-medium);
+    margin-inline-start: auto;
+}
+
+/* The composer, as the chat's is: one bordered island holding the field and, under it, the row of
+   controls the writing is sent with. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__prompt-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ck-spacing-small);
+    padding: var(--ck-spacing-small);
+    border: 1px solid var(--ck-color-input-border);
+    border-radius: var(--ck-border-radius);
+    background: var(--ck-color-input-background);
+    outline: 2px solid transparent;
+    transition: outline-color 100ms linear;
+}
+
+/* Keyed off the field's own focus rather than `:focus-within`, so reaching the model or the send
+   button does not light the whole island up. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__prompt-row:has(.ck-input_focused) {
+    outline-color: var(--ck-color-focus-border);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__prompt-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--ck-spacing-small);
+}
+
+/* The list scrolls, so it also clips: the panel's inline padding moves onto it, leaving a rule
+   drawn across an item's full width room to reach the panel's edges. */
+.ck.ck-dropdown.ck-ai-assistant-quick-actions .ck-dropdown__panel {
+    padding-inline: 0;
+}
+
+.ck.ck-dropdown.ck-ai-assistant-quick-actions .ck-dropdown__panel > .ck-list {
+    max-height: 60vh;
+    padding-inline: var(--ck-editor-popup-padding, 0px);
+    overflow-x: clip;
+    overflow-y: auto;
+}
+
+/* The island carries the border, the fill and the focus ring, so the field inside carries none. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__prompt-row .ck-input {
+    width: 100%;
+    min-width: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+/* The only thing in the control row allowed to give — everything beside it is a fixed-size button.
+   It keeps the row's start, leaving Send at the end. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__picker {
+    flex-shrink: 1;
+    min-width: 0;
+    margin-inline-end: auto;
+}
+
+/* Smaller than the prompt above it, as the chat's picker is: state to glance at rather than the
+   thing the island is for. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__picker .ck-button {
+    font-size: var(--ck-font-size-small);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__picker .ck-button__label {
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--ck-color-base-border);
+    border-radius: var(--ck-border-radius);
+    padding: var(--ck-spacing-medium);
+    background: var(--ck-color-base-background);
+    white-space: pre-wrap;
+    -webkit-user-select: text;
+    user-select: text;
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__diagram {
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    margin-bottom: var(--ck-spacing-medium);
+
+    svg {
+        flex-shrink: 0;
+        max-width: none;
+    }
+}
+
+/* An empty preview is just a hollow frame — collapse it until there is a run to show. */
+.ck.ck-ai-assistant-form:not(.ck-ai-assistant-form_streaming) .ck-ai-assistant-form__preview:empty {
+    display: none;
+}
+
+/* Between asking and the first chunk there is nothing to render, and a blank dialog reads as an
+   idle one. Stand in three pulsing lines where the response will land. */
+.ck.ck-ai-assistant-form_streaming .ck-ai-assistant-form__preview:empty {
+    min-height: 4.4em;
+    background-image:
+        linear-gradient(var(--ck-color-base-border) 0 0),
+        linear-gradient(var(--ck-color-base-border) 0 0),
+        linear-gradient(var(--ck-color-base-border) 0 0);
+    background-repeat: no-repeat;
+    background-size: 100% 0.8em, 90% 0.8em, 55% 0.8em;
+    background-position: 0 0.2em, 0 1.7em, 0 3.2em;
+    animation: ck-ai-assistant-pending 1.4s ease-in-out infinite;
+}
+
+@keyframes ck-ai-assistant-pending {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ck.ck-ai-assistant-form_streaming .ck-ai-assistant-form__preview:empty {
+        animation: none;
+        opacity: 0.45;
+    }
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__error {
+    color: var(--ck-color-base-error);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ck-spacing-medium);
+    min-height: 6em;
+    border: 1px solid var(--ck-color-base-border);
+    border-radius: var(--ck-border-radius);
+    padding: var(--ck-spacing-large);
+    background: var(--ck-color-base-background);
+    text-align: center;
+    opacity: 0.75;
+
+    & .ck-icon {
+        width: 2em;
+        height: 2em;
+    }
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ck-spacing-medium);
+}
+
+/* The run's model/token/cost line, alongside the retry icon at the end of the preview's strip. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__usage {
+    font-size: var(--ck-font-size-small);
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+/* The inline diff shown by the "Changes" view (htmldiff-js `ins`/`del` markup, the same
+   convention the revisions dialog styles). Colors are self-contained rather than borrowing the
+   client's Bootstrap variables, so the plugin package stays host-agnostic. */
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins {
+    text-decoration: none;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins.diffins,
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins.diffmod {
+    background-color: rgba(63, 185, 80, 0.25);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del {
+    text-decoration: line-through;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del.diffdel,
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del.diffmod {
+    background-color: rgba(248, 81, 73, 0.25);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview .diffblock {
+    display: block;
+    border-inline-start: 3px solid;
+    padding-inline-start: var(--ck-spacing-medium);
+    margin-block: var(--ck-spacing-small);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del.diffblock {
+    border-color: rgba(248, 81, 73, 0.7);
+    text-decoration: none;
+    opacity: 0.7;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins.diffblock {
+    border-color: rgba(63, 185, 80, 0.7);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview .diffblock > :first-child {
+    margin-block-start: 0;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview .diffblock > :last-child {
+    margin-block-end: 0;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins img,
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del img {
+    border: 3px solid;
+    border-radius: 4px;
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins img {
+    border-color: rgba(63, 185, 80, 0.7);
+}
+
+.ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del img {
+    border-color: rgba(248, 81, 73, 0.7);
+    opacity: 0.6;
+}
+
+/* The tint on the note text the assistant was opened on — what "Replace" will hit. */
+.ck-content .ck-ai-assistant-target {
+    background: rgba(148, 112, 219, 0.22);
+}
+
+/* Not scoped to the dropdown: a submenu's panel is appended to the editor's body collection, so it
+   is not inside the toolbar entry's element. */
+.ck.ck-button > .ck-ai-action-icon {
+    flex-shrink: 0;
+    width: 1em;
+    text-align: center;
+    margin-inline-end: var(--ck-spacing-medium);
+    font-size: 1.1em;
+    line-height: 1;
+}

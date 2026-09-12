@@ -55,8 +55,35 @@ function lastWorker(): MockWorker {
 
 afterEach(() => {
     delete (navigator as unknown as NavServiceWorker).serviceWorker;
+    // Download frames pile up across tests otherwise: their removal timers never get to run.
+    document.querySelectorAll("iframe").forEach((frame) => frame.remove());
     document.getElementById("trilium-error-overlay")?.remove();
     vi.restoreAllMocks();
+});
+
+describe("startup progress", () => {
+    it("advances the splash as the worker reports its startup phases", async () => {
+        document.body.innerHTML = `
+            <div id="splash">
+                <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+                <div id="splash-status"></div>
+            </div>`;
+        const bridge = await freshBridge();
+        const { initSplashProgress } = await import("../../client/src/services/splash.js");
+        initSplashProgress([
+            { id: "sqlite", weight: 1, status: "Loading the database engine…" },
+            { id: "core", weight: 1, status: "Loading Trilium…" },
+            { id: "application", weight: 2, status: "Loading the application…" }
+        ]);
+
+        bridge.startLocalServerWorker();
+        lastWorker().onmessage?.({ data: { type: "STARTUP_PROGRESS", phase: "core" } });
+
+        expect(document.getElementById("splash-status")?.textContent).toBe("Loading Trilium…");
+        expect(document.querySelector<HTMLElement>(".splash-bar-fill")?.style.width).toBe("50%");
+
+        document.body.innerHTML = "";
+    });
 });
 
 describe("startLocalServerWorker", () => {
@@ -210,6 +237,37 @@ describe("attachServiceWorkerBridge", () => {
         bridge.attachServiceWorkerBridge();
         expect(() => swHandler?.({ data: { type: "OTHER" } })).not.toThrow();
         expect(() => swHandler?.({ data: { type: "LOCAL_FETCH", id: "1", request: {} }, ports: [] })).not.toThrow();
+    });
+
+    it("relays a backup download's port straight to the worker, transferred", async () => {
+        const bridge = await freshBridge();
+        bridge.attachServiceWorkerBridge();
+
+        const port = { postMessage: vi.fn() };
+        await swHandler?.({ data: { type: "LOCAL_BACKUP_STREAM" }, ports: [port] });
+
+        expect(lastWorker().postMessage)
+            .toHaveBeenCalledWith(expect.objectContaining({ type: "BACKUP_STREAM", port }), [ port ]);
+
+        // Without a port there is nothing to relay, and nothing to trip over either.
+        expect(() => swHandler?.({ data: { type: "LOCAL_BACKUP_STREAM" }, ports: [] })).not.toThrow();
+    });
+
+    it("hands the passphrase to the worker on the relayed message, and only once", async () => {
+        const bridge = await freshBridge();
+        bridge.attachServiceWorkerBridge();
+        void bridge.downloadDatabase("Backup.tnbackup", "123456");
+
+        const port = { postMessage: vi.fn() };
+        await swHandler?.({ data: { type: "LOCAL_BACKUP_STREAM" }, ports: [port] });
+        expect(lastWorker().postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "BACKUP_STREAM", passphrase: "123456" }), [ port ]);
+
+        // A stream that arrives with no download of its own gets no leftover passphrase.
+        const secondPort = { postMessage: vi.fn() };
+        await swHandler?.({ data: { type: "LOCAL_BACKUP_STREAM" }, ports: [secondPort] });
+        expect(lastWorker().postMessage).toHaveBeenLastCalledWith(
+            expect.objectContaining({ type: "BACKUP_STREAM", passphrase: undefined }), [ secondPort ]);
     });
 
     it("replies without a transferable body when the worker omits one", async () => {
@@ -367,6 +425,74 @@ describe("isLocalApiRequest", () => {
     });
 });
 
+describe("backup download keepalive", () => {
+    it("pings the service worker for exactly as long as the worker says a stream runs", async () => {
+        vi.useFakeTimers();
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+        const bridge = await freshBridge();
+        bridge.startLocalServerWorker();
+
+        lastWorker().onmessage?.({ data: { type: "BACKUP_STREAM_ACTIVE", active: true } });
+        await vi.advanceTimersByTimeAsync(25_000);
+        expect(fetchSpy).toHaveBeenCalledWith("/local-backup-ping");
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+        lastWorker().onmessage?.({ data: { type: "BACKUP_STREAM_ACTIVE", active: false } });
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+        vi.useRealTimers();
+    });
+});
+
+describe("downloadDatabase", () => {
+    it("navigates a hidden frame at the download URL, and starts the worker for it", async () => {
+        vi.useFakeTimers();
+        const bridge = await freshBridge();
+
+        void bridge.downloadDatabase("Backup 2026-08-08 10-00-00.db");
+
+        // A frame rather than an anchor: anchor downloads bypass the service worker in Firefox.
+        const frame = document.querySelector("iframe");
+        expect(frame?.hidden).toBe(true);
+        expect(frame?.src).toContain(
+            `/local-backup-download?fileName=${encodeURIComponent("Backup 2026-08-08 10-00-00.db")}`);
+        expect(workerInstances.length).toBe(1);
+
+        // The frame outlives the service worker's whole wait for the stream, then goes.
+        await vi.advanceTimersByTimeAsync(59_000);
+        expect(document.querySelector("iframe")).not.toBeNull();
+        await vi.advanceTimersByTimeAsync(2_000);
+        expect(document.querySelector("iframe")).toBeNull();
+
+        vi.useRealTimers();
+    });
+
+    it("resolves with the outcome the worker reports when the stream ends", async () => {
+        const bridge = await freshBridge();
+        const pending = bridge.downloadDatabase("Backup.tnbackup");
+
+        lastWorker().onmessage?.({ data: { type: "BACKUP_STREAM_ACTIVE", active: true } });
+        lastWorker().onmessage?.({
+            data: { type: "BACKUP_STREAM_ACTIVE", active: false, result: { status: "done" } }
+        });
+
+        expect(await pending).toEqual({ status: "done" });
+    });
+
+    it("resolves as failed when nothing ever picks the download up", async () => {
+        vi.useFakeTimers();
+        const bridge = await freshBridge();
+        const pending = bridge.downloadDatabase("Backup.tnbackup");
+
+        // The chain died silently inside the hidden frame; no worker message ever arrives.
+        await vi.advanceTimersByTimeAsync(46_000);
+
+        expect(await pending).toMatchObject({ status: "failed" });
+        vi.useRealTimers();
+    });
+});
+
 describe("restoreBackup", () => {
     /** The message the bridge sent to the worker to start a restore. */
     function restoreMessage(worker: MockWorker) {
@@ -469,6 +595,33 @@ describe("leadership", () => {
         const followerPort = { postMessage: vi.fn() };
         await swHandler?.({ data: { type: "WHO_IS_LEADER" }, ports: [followerPort] });
         expect(followerPort.postMessage).toHaveBeenCalledWith({ type: "LEADER_REPLY", isLeader: false });
+    });
+
+    it("a follower refuses a backup stream rather than starting a worker for it", async () => {
+        const bridge = await freshBridge();
+        bridge.attachServiceWorkerBridge();
+        leadership.isLeader = false;
+
+        const port = { postMessage: vi.fn() };
+        await swHandler?.({ data: { type: "LOCAL_BACKUP_STREAM" }, ports: [port] });
+
+        expect(workerInstances).toHaveLength(0);
+        // Said on the port, so the download answers 503 instead of hanging on a stream
+        // no worker will ever produce.
+        expect(port.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "error" }));
+    });
+
+    it("a follower refuses to download a backup, since the passphrase never leaves its tab", async () => {
+        const bridge = await freshBridge();
+        leadership.isLeader = false;
+
+        const result = await bridge.downloadDatabase("Backup.tnbackup", "123456");
+
+        expect(result).toMatchObject({ status: "failed" });
+        expect(workerInstances).toHaveLength(0);
+        // Nothing was navigated either: a frame would have downloaded an unencrypted backup.
+        expect(document.querySelector("iframe")).toBeNull();
     });
 
     it("announceLeadership tells the controlling service worker", async () => {

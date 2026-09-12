@@ -1,4 +1,4 @@
-import { isImageAttachmentRole, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { search as searchService, SearchContext, utils } from "@triliumnext/core";
 import type { NextFunction, Request, Response, Router } from "express";
 import safeCompare from "safe-compare";
@@ -230,7 +230,7 @@ function register(router: Router) {
             // explicit `?raw`), and `#shareRaw` is flagged dangerous (see builtin_attributes.ts),
             // so the instance owner is deliberately opting in to serve their own scriptable
             // content. Restricting it would break legitimate self-contained HTML pages.
-            if (note.mime === "image/svg+xml") {
+            if (isSvgMime(note.mime)) {
                 res.setHeader("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
                 res.setHeader("X-Content-Type-Options", "nosniff");
             }
@@ -240,7 +240,7 @@ function register(router: Router) {
             return;
         }
 
-        res.send(renderNoteContent(note));
+        res.send(renderNoteContent(note, (includedNote) => hasCredentialAccess(includedNote, req)));
     }
 
     router.get("/share/", (req, res) => {
@@ -315,7 +315,7 @@ function register(router: Router) {
 
         if (image.type === "image") {
             addNoIndexHeader(image, res);
-            if (image.mime === "image/svg+xml") {
+            if (isSvgMime(image.mime)) {
                 // SVG images require sanitization to prevent stored XSS
                 const content = image.getContent();
                 const svgContent = typeof content === "string" ? content : new TextDecoder().decode(content ?? new Uint8Array());
@@ -352,7 +352,7 @@ function register(router: Router) {
 
         if (isImageAttachmentRole(attachment.role)) {
             addNoIndexHeader(attachment.note, res);
-            if (attachment.mime === "image/svg+xml") {
+            if (isSvgMime(attachment.mime)) {
                 // SVG attachments require sanitization to prevent stored XSS
                 const content = attachment.getContent();
                 const svgContent = typeof content === "string" ? content : new TextDecoder().decode(content ?? new Uint8Array());
@@ -435,23 +435,40 @@ function register(router: Router) {
 
         const searchContext = new SearchContext({ ancestorNoteId });
         const searchResults = searchService.findResultsWithQuery(search, searchContext);
-        const filteredResults = searchResults
-            // Apply the same per-note authorization as the direct content routes:
-            // keep only results the caller may access and that are visible in the tree.
+        const authorizedResults = searchResults
+            // Apply the same per-note authorization as the direct content routes: drop protected
+            // notes (GHSA-xmv9-3v98-7gq8) and keep only results the caller can access that are
+            // visible in the tree.
             .filter((sr) => {
                 const fullNote = shaca.notes[sr.noteId];
 
                 return fullNote
+                    && !fullNote.isProtected
                     && hasCredentialAccess(fullNote, req)
                     && isVisibleInShareTree(ancestorNoteId, sr.notePathArray);
-            })
-            .map((sr) => {
-                const fullNote = shaca.notes[sr.noteId];
-                const startIndex = sr.notePathArray.indexOf(ancestorNoteId);
-                const localPathArray = sr.notePathArray.slice(startIndex + 1).filter((id) => shaca.notes[id]);
-                const pathTitle = localPathArray.map((id) => shaca.notes[id].title).join(" / ");
-                return { id: fullNote.shareId, title: fullNote.title, score: sr.score, path: pathTitle };
             });
+
+        // buildSearchResultDetails() reads each note's content to set contentSnippet and
+        // highlightedContentSnippet, so it runs only on authorized results and only on the first
+        // SNIPPET_LIMIT of them (the share popout renders 5); later results carry no snippet.
+        const SNIPPET_LIMIT = 20;
+        searchService.buildSearchResultDetails(authorizedResults.slice(0, SNIPPET_LIMIT), searchContext);
+
+        const filteredResults = authorizedResults.map((sr) => {
+            const fullNote = shaca.notes[sr.noteId];
+            const startIndex = sr.notePathArray.indexOf(ancestorNoteId);
+            const localPathArray = sr.notePathArray.slice(startIndex + 1).filter((id) => shaca.notes[id]);
+            const pathTitle = localPathArray.map((id) => shaca.notes[id].title).join(" / ");
+            return {
+                id: fullNote.shareId,
+                title: fullNote.title,
+                score: sr.score,
+                path: pathTitle,
+                // Plain-text fallback and the <b>-highlighted variant from the search service.
+                snippet: sr.contentSnippet,
+                highlightedSnippet: sr.highlightedContentSnippet
+            };
+        });
 
         res.json({ results: filteredResults });
     });

@@ -186,6 +186,17 @@ describe("NoteFlatTextExp", () => {
         expect(ctx.highlightedTokens).toContain("austria");
     });
 
+    it("does not fuzzy-match a short token at edit distance 2 (sync !~ Send, #10616)", () => {
+        // "sync" (4 chars) is edit distance 2 from "send"; under length-scaled
+        // fuzzy matching a 4-char token only tolerates a single edit, so the
+        // title "Send" must NOT be matched by the token "sync".
+        const send = note("Send");
+        rootNote.child(send);
+
+        const ctx = searchContext({ enableFuzzyMatching: true });
+        expect(execute(new NoteFlatTextExp(["sync"]), ctx).result.notes).toHaveLength(0);
+    });
+
     describe("getNotePath", () => {
         it("throws when the taken path is empty", () => {
             const austria = note("Austria");

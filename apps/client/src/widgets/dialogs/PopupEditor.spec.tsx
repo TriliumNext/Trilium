@@ -108,6 +108,9 @@ vi.mock("../FloatingButtonsDefinitions", () => ({
 vi.mock("../PromotedAttributes", () => ({ default: () => null }));
 vi.mock("../ReadOnlyNoteInfoBar", () => ({ default: () => null }));
 vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
+vi.mock("../layout/NoteTypeSwitcher", () => ({
+    default: () => <div className="note-type-switcher-stub" />
+}));
 vi.mock("../ribbon/components/StandaloneRibbonAdapter", () => ({ default: () => null }));
 vi.mock("../ribbon/FormattingToolbar", () => ({ default: () => null, showFormattingToolbar: () => false }));
 vi.mock("../type_widgets/text/mobile_editor_toolbar", () => ({ default: () => <div className="mobile-toolbar-stub" /> }));
@@ -133,7 +136,9 @@ function fakeNote(labels: string[] = [], isOptions = false) {
 let container: HTMLDivElement;
 let parent: Component;
 
-async function openPopup(data: { noteIdOrPath: string, viewScope?: ViewScope }) {
+async function openPopup(
+    data: { noteIdOrPath: string, viewScope?: ViewScope, showNoteTypeSwitcher?: boolean }
+) {
     await act(async () => {
         await parent.handleEvent("openInPopup", data as never);
     });
@@ -364,6 +369,36 @@ describe("PopupEditor", () => {
         expect(document.body.classList.contains("popup-editor-open")).toBe(false);
     });
 
+    /**
+     * The popup is held low on purpose, so the editor's panels and the menus its pickers open float
+     * over it. A dialog declaring a layer of its own would cover it, so that dialog gives way for
+     * as long as the popup is up, and is put back exactly as it was found.
+     */
+    it("puts a dialog it stands over underneath it, and back afterwards", async () => {
+        const underlying = document.body.appendChild(document.createElement("div"));
+        underlying.className = "modal show";
+        underlying.style.zIndex = "2000";
+        document.body.appendChild(document.createElement("div")).className = "modal-backdrop";
+
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(underlying.style.zIndex).toBe("1090");
+
+        await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
+        expect(underlying.style.zIndex).toBe("2000");
+    });
+
+    /** One standing below it already is left where it is: nothing about it covers the popup. */
+    it("leaves a dialog below its own layer alone", async () => {
+        const underlying = document.body.appendChild(document.createElement("div"));
+        underlying.className = "modal show";
+        underlying.style.zIndex = "1055";
+        document.body.appendChild(document.createElement("div")).className = "modal-backdrop";
+
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        expect(underlying.style.zIndex).toBe("1055");
+    });
+
     it("raises its own backdrop when it opens over another dialog", async () => {
         const underlying = document.body.appendChild(document.createElement("div"));
         underlying.className = "modal show";
@@ -385,6 +420,22 @@ describe("PopupEditor", () => {
         expect(document.body.classList.contains("popup-editor-stacked")).toBe(true);
 
         underlying.remove();
+    });
+
+    /**
+     * The switcher offers the note types a note can still become, which only the caller knows is
+     * wanted: a template opened to be written is, an attachment or a note map is not.
+     */
+    it("offers the note type switcher only where the caller asked for it", async () => {
+        await openPopup({ noteIdOrPath: "n1" });
+        expect(container.querySelector(".note-type-switcher-stub")).toBeNull();
+
+        await openPopup({ noteIdOrPath: "n1", showNoteTypeSwitcher: true });
+        expect(container.querySelector(".note-type-switcher-stub")).not.toBeNull();
+
+        // And gone again for the next note opened without it.
+        await openPopup({ noteIdOrPath: "n1" });
+        expect(container.querySelector(".note-type-switcher-stub")).toBeNull();
     });
 
     it("gives mobile its own toolbar and hides the buttons that make no sense in a popup", async () => {

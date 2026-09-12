@@ -1,6 +1,6 @@
 <figure class="image">
-  <img style="aspect-ratio:1120/763;" src="Presentation_image.png"
-  width="1120" height="763">
+  <img style="aspect-ratio:1120/763;" src="Presentation_image.png" width="1120"
+  height="763">
 </figure>
 <p>The Presentation view allows the creation of slideshows directly from
   within Trilium.</p>
@@ -56,8 +56,8 @@
     scheme.</li>
 </ul>
 <figure class="image image-style-align-right image_resized" style="width:55.57%;">
-  <img style="aspect-ratio:890/569;" src="1_Presentation_image.png"
-  width="890" height="569">
+  <img style="aspect-ratio:890/569;" src="1_Presentation_image.png" width="890"
+  height="569">
 </figure>
 <p>All direct children of the collection will be laid out horizontally. If
   a direct child also has children, those children will be placed as vertical
@@ -90,16 +90,15 @@
     looking for the <em>Theme</em> option.</li>
   <li>It's currently not possible to create custom themes, although it is planned.</li>
   <li>Note that it is note possible to alter the CSS via&nbsp;<a class="reference-link"
-    href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>&nbsp;because the slides
-    are rendered isolated (in a shadow DOM).</li>
+    href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>&nbsp;because the
+    slides are rendered isolated (in a shadow DOM).</li>
 </ul>
 <p>At slide level:</p>
 <ul>
-  <li>It's possible to adjust the background color of a slide by using the
-    <a
-    href="#root/_help_OFXdgB2nNk1F">predefined promoted attribute</a>for the color or manually setting
-      <code
-      spellcheck="false">#slide:background</code>to a hex color.</li>
+  <li>It's possible to adjust the background color of a slide by using the <a
+    href="#root/_help_OFXdgB2nNk1F">predefined promoted attribute</a> for the
+    color or manually setting <code spellcheck="false">#slide:background</code> to
+    a hex color.</li>
   <li>More complex backgrounds can be achieved via gradients. There's no UI
     for it; it has to be set via <code spellcheck="false">#slide:background</code> to
     a CSS gradient definition such as: <code spellcheck="false">linear-gradient(to bottom, #283b95, #17b2c3)</code>.</li>
@@ -110,29 +109,29 @@
     and background colors) and font size. Code blocks and tables also work.</li>
   <li>Try using more than just text notes, the presentation uses the same mechanism
     as <a href="#root/_help_R9pX4DGra2Vt">shared notes</a> and&nbsp;<a class="reference-link"
-    href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;so it should be able to display&nbsp;
-    <a
-    class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>,&nbsp;<a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>&nbsp;and&nbsp;
-      <a
-      class="reference-link" href="#root/_help_gBbsAeiuUxI5">Mind Map</a>&nbsp;in full-screen (without the interactivity).
-        <ul>
-          <li>
-            <p>Consider using a transparent background for&nbsp;<a class="reference-link"
-              href="#root/_help_grjYqerjn243">Canvas</a>, if the slides have a custom background
-              (go to the hamburger menu in the Canvas, press the button select a custom
-              color and write <code spellcheck="false">transparent</code>).</p>
-          </li>
-          <li>
-            <p>For&nbsp;<a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>,
-              some of them have a predefined background which can be changed via the
-              frontmatter. For example, for XY-charts:</p><pre><code class="language-text-x-trilium-auto">---
+    href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;so it should be able
+    to display&nbsp;<a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>,&nbsp;<a
+    class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>&nbsp;and&nbsp;<a
+    class="reference-link" href="#root/_help_gBbsAeiuUxI5">Mind Map</a>&nbsp;in
+    full-screen (without the interactivity).
+    <ul>
+      <li>
+        <p>Consider using a transparent background for&nbsp;<a class="reference-link"
+          href="#root/_help_grjYqerjn243">Canvas</a>, if the slides have a custom
+          background (go to the hamburger menu in the Canvas, press the button select
+          a custom color and write <code spellcheck="false">transparent</code>).</p>
+      </li>
+      <li>
+        <p>For&nbsp;<a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>,
+          some of them have a predefined background which can be changed via the
+          frontmatter. For example, for XY-charts:</p><pre><code class="language-text-x-trilium-auto">---
 config:
     themeVariables:
         xyChart:
             backgroundColor: transparent
 ---</code></pre>
-          </li>
-        </ul>
+      </li>
+    </ul>
   </li>
 </ul>
 <h2>Under the hood</h2>

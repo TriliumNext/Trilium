@@ -145,7 +145,7 @@ describe("dialog service", () => {
         });
     });
 
-    describe("lifting dialogs above a stacked popup", () => {
+    describe("lifting a dialog above what is already open", () => {
         afterEach(() => {
             document.body.className = "";
             document.body.innerHTML = "";
@@ -202,13 +202,48 @@ describe("dialog service", () => {
             expect(backdrop.style.zIndex).toBe("1109");
         });
 
-        it("does not lift when no popup is stacked", async () => {
-            openStackedPopup("999"); // popup present but body lacks the -stacked class (non-stacked case)
+        it("does not lift over something it already stands above", async () => {
+            openStackedPopup("999"); // present, but below the layer a dialog stands on anyway
 
             const $dialog = makeDialog().appendTo(document.body);
             await openDialog($dialog, true);
 
             expect($dialog[0].style.zIndex).toBe("");
+        });
+
+        /**
+         * A dialog opened from another dialog declares the same layer as the one it was opened
+         * from, which leaves the two tied: whichever stands later in the page wins, and that is
+         * not always the one just opened. Its backdrop follows it, so the dialog underneath cannot
+         * be pressed while this one is up.
+         */
+        it("lifts a dialog opened over another that declares the same layer", async () => {
+            const open = document.createElement("div");
+            open.className = "modal show";
+            open.style.zIndex = "2000";
+            document.body.appendChild(open);
+
+            const backdrop = document.createElement("div");
+            backdrop.className = "modal-backdrop";
+            document.body.appendChild(backdrop);
+
+            const $dialog = makeDialog().appendTo(document.body);
+            await openDialog($dialog, false, undefined, 2000);
+
+            expect($dialog[0].style.zIndex).toBe("2010");
+            expect(backdrop.style.zIndex).toBe("2009");
+        });
+
+        it("leaves a dialog that already declares a layer above what is open where it is", async () => {
+            const open = document.createElement("div");
+            open.className = "modal show";
+            open.style.zIndex = "1055";
+            document.body.appendChild(open);
+
+            const $dialog = makeDialog().appendTo(document.body);
+            await openDialog($dialog, false, undefined, 2000);
+
+            expect($dialog[0].style.zIndex).toBe("2000");
         });
 
         it("treats popups without a numeric z-index as layer 0 and excludes the dialog itself from the scan", async () => {
@@ -220,7 +255,9 @@ describe("dialog service", () => {
             const $dialog = makeDialog().addClass("show").appendTo(document.body);
             await openDialog($dialog, true);
 
-            expect($dialog[0].style.zIndex).toBe("10"); // max(0) + 10
+            // Never below the layer a dialog stands on with nothing said about it: what is open
+            // has none of its own to clear, so the standard one is the floor.
+            expect($dialog[0].style.zIndex).toBe("1055");
         });
 
         it("never lifts a self-managed popup dialog, even while another popup is stacked", async () => {

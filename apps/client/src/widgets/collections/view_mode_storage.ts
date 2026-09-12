@@ -12,6 +12,16 @@ export default class ViewModeStorage<T extends object> {
     readonly attachmentName: string;
     /** The serialized content last stored or restored, used to tell our own echoes apart from external changes. */
     private lastKnownContent?: string;
+    /** The write in flight, which the next one is queued behind. See {@link store}. */
+    private lastWrite: Promise<unknown> = Promise.resolve();
+    /**
+     * What this view has written and not yet heard back about, which its own echoes carry.
+     *
+     * `lastKnownContent` alone cannot recognise them: a queued write announces itself while a later
+     * one is still waiting to be sent, so what comes back is what this view wrote a moment ago
+     * rather than what it now holds. See {@link restoreIfChanged}.
+     */
+    private ownWrites = new Set<string>();
 
     constructor(note: FNote, viewType: ViewModeStorageType) {
         this.note = note;
@@ -28,6 +38,10 @@ export default class ViewModeStorage<T extends object> {
      * announces it to every client, each of which then fetches the attachment back to see what
      * changed. Nothing did. Opened in a dozen tabs, a view could raise a dozen such writes and a
      * fetch of each of them per tab, all for a config nobody touched.
+     *
+     * Writes are queued rather than sent as they come. Each one carries the whole config, and two
+     * requests can arrive in either order: the earlier one landing last would put back the config
+     * it was built before, losing whatever the later one added.
      */
     async store(data: T) {
         const content = JSON.stringify(data);
@@ -42,7 +56,23 @@ export default class ViewModeStorage<T extends object> {
             content,
             position: 0
         };
-        await server.post(`notes/${this.note.noteId}/attachments?matchBy=title`, payload);
+
+        this.ownWrites.add(content);
+
+        // Caught before the queue is extended, so a write that fails does not hold back the next
+        // one; the failure is still reported to whoever asked for this write.
+        const url = `notes/${this.note.noteId}/attachments?matchBy=title`;
+        this.lastWrite = this.lastWrite
+            .catch(() => {})
+            .then(() => server.post(url, payload));
+
+        try {
+            await this.lastWrite;
+        } catch (e) {
+            // Nothing was stored, so nothing will echo back.
+            this.ownWrites.delete(content);
+            throw e;
+        }
     }
 
     async restore() {
@@ -58,12 +88,26 @@ export default class ViewModeStorage<T extends object> {
      * Like {@link restore}, but resolves to `undefined` if the stored content matches what was last
      * stored or restored, so that callers only react to genuinely external changes (e.g. the same
      * view opened in another split, or synced from another instance).
+     *
+     * A write of this view's own that a later one has already moved past is also passed over.
+     * Handing it back would take the view to the config it held before that later write, and a
+     * change made from there would be built on it, dropping what the later write carried.
      */
     async restoreIfChanged() {
         const content = await this.fetchContent();
-        if (content === undefined || content === this.lastKnownContent) {
+        if (content === undefined) {
             return undefined;
         }
+
+        if (content === this.lastKnownContent) {
+            this.ownWrites.delete(content);
+            return undefined;
+        }
+
+        if (this.ownWrites.delete(content)) {
+            return undefined;
+        }
+
         this.lastKnownContent = content;
         return JSON.parse(content) as T;
     }

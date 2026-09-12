@@ -1,8 +1,7 @@
 /**
  * Helpers for the Trilium global stubs that several specs install on `globalThis` (the `glob`
- * bridge and `navigator.clipboard`). Each installer registers its own teardown, run after every
- * test by the global `afterEach` in `setup.ts`, so specs no longer need to delete/restore these
- * themselves.
+ * bridge). Each installer registers its own teardown, run after every test by the global
+ * `afterEach` in `setup.ts`, so specs no longer need to delete/restore these themselves.
  *
  * Lives outside `src/`, so it is excluded from both the production build and the 100% coverage
  * gate (see editor-kit.ts).
@@ -35,17 +34,4 @@ export function installGlobMock<T extends object>(glob: T): T {
         delete (globalThis as { glob?: unknown }).glob;
     });
     return glob;
-}
-
-/**
- * Replace `navigator.clipboard` with the given mock for the current test, restoring the original
- * afterwards. Returns the mock for assertion access.
- */
-export function mockClipboard<T extends object>(clipboard: T): T {
-    const original = navigator.clipboard;
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: clipboard });
-    registerTestCleanup(() => {
-        Object.defineProperty(navigator, "clipboard", { configurable: true, value: original });
-    });
-    return clipboard;
 }

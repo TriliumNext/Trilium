@@ -714,6 +714,33 @@ describe("FNote paths & hierarchy", () => {
         expect(leaf.getBestNotePathString()).toContain("sharedLeaf");
     });
 
+    it("keeps a bookmark clone out of the best path while a hidden note is active", () => {
+        // Bookmarking clones the note under `_lbBookmarks`, so its children gain a second path
+        // through `_hidden`. A search activates a search note that lives under `_hidden` as well,
+        // and that shared prefix must not promote the bookmark path over the real one.
+        const root = froca.notes["root"] ?? buildNote({ id: "root", title: "root" });
+        const hidden = froca.notes["_hidden"] ?? buildNote({ id: "_hidden", title: "Hidden" });
+        wireChild(root, hidden);
+
+        let launchBarParent = hidden;
+        for (const id of ["_lbRoot", "_lbVisibleLaunchers", "_lbBookmarks"]) {
+            const launcher = buildNote({ id, title: id });
+            wireChild(launchBarParent, launcher);
+            launchBarParent = launcher;
+        }
+
+        const inbox = buildNote({ id: "bmInbox", title: "Inbox" });
+        wireChild(root, inbox);
+        wireChild(launchBarParent, inbox);
+
+        const leaf = buildNote({ id: "bmLeaf", title: "ThisIsTest" });
+        wireChild(inbox, leaf);
+
+        expect(leaf.getAllNotePaths()).toHaveLength(2);
+        expect(leaf.getBestNotePath("root", "root/_hidden/_search/202609/searchNoteId"))
+            .toEqual(["root", "bmInbox", "bmLeaf"]);
+    });
+
     it("getSortedNotePathRecords orders by archived / hidden / search / length without an active path", () => {
         const leaf = froca.notes["sharedLeaf"];
         expect(leaf).toBeDefined();
@@ -954,6 +981,59 @@ describe("FNote icon, color, folder & css", () => {
         // a note without an iconClass label still produces a default icon
         const noIcon = buildNote({ title: "noIcon" });
         expect(noIcon.getIcon()).toContain("tn-icon");
+    });
+
+    it("draws a note carrying a location as a pin, behind an icon of its own", () => {
+        const here = buildNote({ title: "here", "#geolocation": "48.85,2.36" });
+        expect(here.getIcon()).toBe("tn-icon bx bx-pin");
+
+        const own = buildNote({
+            title: "own", "#geolocation": "48.85,2.36", "#iconClass": "bx bx-store" });
+        expect(own.getIcon()).toBe("tn-icon bx bx-store");
+
+        // Taking a marker off the map empties the label rather than removing it (see moveMarker in
+        // the geo map's api), and a note that stands nowhere is a plain note again.
+        const gone = buildNote({ title: "gone", "#geolocation": "" });
+        expect(gone.getIcon()).toBe("tn-icon bx bx-note");
+    });
+
+    it("answers what a new child would be given, nearest source first", () => {
+        const template = buildNote({ title: "Place", "#iconClass": "bx bx-map" });
+
+        // All three at once: the copy beats the inheritable label, which beats the template.
+        const dressed = buildNote({
+            title: "The map",
+            "#child:iconClass": "bx bx-store",
+            "#iconClass(inheritable)": "bx bx-star",
+            "~child:template": template.noteId
+        });
+        expect(dressed.getLabelValueForNewChild("iconClass")).toBe("bx bx-store");
+
+        const inheritable = buildNote({ title: "map2", "#iconClass(inheritable)": "bx bx-star" });
+        expect(inheritable.getLabelValueForNewChild("iconClass")).toBe("bx bx-star");
+
+        const templated = buildNote({ title: "map3", "~child:template": template.noteId });
+        expect(templated.getLabelValueForNewChild("iconClass")).toBe("bx bx-map");
+
+        // An inheritable `~template` reaches the child down the tree rather than by being copied.
+        const handedDown = buildNote({ title: "map4", "~template(inheritable)": template.noteId });
+        expect(handedDown.getLabelValueForNewChild("iconClass")).toBe("bx bx-map");
+
+        // An icon the map wears itself is the map's, and says nothing about its children.
+        const own = buildNote({ title: "map5", "#iconClass": "bx bx-star" });
+        expect(own.getLabelValueForNewChild("iconClass")).toBeNull();
+        expect(buildNote({ title: "map6" }).getLabelValueForNewChild("iconClass")).toBeNull();
+    });
+
+    it("skips a child template of another type, which core would not apply either", () => {
+        // The type is the caller's explicit choice, so core leaves such a template alone (#3015);
+        // left unsaid, the template is taken to apply.
+        const canvas = buildNote({ title: "Sketch", type: "canvas", "#iconClass": "bx bx-pen" });
+        const map = buildNote({ title: "The map", "~child:template": canvas.noteId });
+
+        expect(map.getLabelValueForNewChild("iconClass", "text")).toBeNull();
+        expect(map.getLabelValueForNewChild("iconClass", "canvas")).toBe("bx bx-pen");
+        expect(map.getLabelValueForNewChild("iconClass")).toBe("bx bx-pen");
     });
 
     it("isFolder reflects subtreeHidden, search type and filtered children", () => {
@@ -1214,6 +1294,14 @@ function makeBlob(content: string | undefined): FBlob {
         dateModified: "2020",
         utcDateModified: "2020"
     });
+}
+
+/** Wires one froca note as a child of another, the way a branch does in the application. */
+function wireChild(parent: FNote, child: FNote) {
+    const branchId = `br-${parent.noteId}-${child.noteId}`;
+    registerBranch(branchId, child.noteId, parent.noteId, 0);
+    parent.addChild(child.noteId, branchId, false);
+    child.addParent(parent.noteId, branchId, false);
 }
 
 function registerBranch(branchId: string, noteId: string, parentNoteId: string, notePosition: number | undefined) {

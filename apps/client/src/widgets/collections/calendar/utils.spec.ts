@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDateToLocalISO, formatTimeToLocalISO, getMonthsInDateRange, offsetDate, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
+import { AttributeRow, BranchRow } from "../../../services/load_results";
+import { buildNote } from "../../../test/easy-froca";
+import { formatDateToLocalISO, formatTimeToLocalISO, getMonthsInDateRange, isAttributeChangeAffecting, isBranchChangeAffecting, offsetDate, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 /**
  * A moment built in the machine's own zone, which is what the calendar hands these functions: a
@@ -122,5 +124,86 @@ describe("getMonthsInDateRange", () => {
         expect(months[0]).toBe("2026-01");
         expect(months[8]).toBe("2026-09");
         expect(months[9]).toBe("2026-10");
+    });
+});
+
+describe("isAttributeChangeAffecting", () => {
+    /** What a reload hands over for one changed attribute; only the owner and the inheritance flag are read. */
+    function changed(noteId: string, name: string, isInheritable = false): AttributeRow {
+        return { attributeId: `${noteId}_${name}`, componentId: "some-component", noteId, type: "label", name, isInheritable };
+    }
+
+    it("answers for a label written on a drawn note itself", () => {
+        const note = buildNote({ id: "own", title: "Event", "#color": "red" });
+
+        expect(isAttributeChangeAffecting([ changed(note.noteId, "color") ], [ note.noteId ])).toBe(true);
+    });
+
+    it("answers for an inheritable label on an ancestor, which is drawn on the chip all the same", () => {
+        const parent = buildNote({
+            id: "inh-parent",
+            title: "Collection",
+            "#color(inheritable)": "red",
+            children: [ { id: "inh-child", title: "Event", "#startDate": "2026-06-05" } ]
+        });
+
+        // The collection note is nowhere in the drawn notes — only its child is.
+        expect(isAttributeChangeAffecting([ changed(parent.noteId, "color", true) ], [ "inh-child" ])).toBe(true);
+    });
+
+    it("answers for a label on a template the drawn note points at", () => {
+        buildNote({ id: "tpl", title: "Template", "#color": "blue" });
+        buildNote({ id: "tpl-instance", title: "Event", "~template": "tpl" });
+
+        expect(isAttributeChangeAffecting([ changed("tpl", "color") ], [ "tpl-instance" ])).toBe(true);
+    });
+
+    it("keeps quiet for an ancestor's label that no child inherits", () => {
+        buildNote({
+            id: "own-parent",
+            title: "Collection",
+            "#color": "red",
+            children: [ { id: "own-child", title: "Event" } ]
+        });
+
+        expect(isAttributeChangeAffecting([ changed("own-parent", "color") ], [ "own-child" ])).toBe(false);
+    });
+
+    it("keeps quiet for a change with nothing to do with the calendar, and for no change at all", () => {
+        buildNote({ id: "elsewhere", title: "Somewhere else", "#color": "green" });
+        buildNote({ id: "drawn", title: "Event" });
+
+        expect(isAttributeChangeAffecting([ changed("elsewhere", "color", true) ], [ "drawn" ])).toBe(false);
+        expect(isAttributeChangeAffecting([], [ "drawn" ])).toBe(false);
+    });
+});
+
+describe("isBranchChangeAffecting", () => {
+    /** What a reload hands over for one branch; only where it puts the note is read. */
+    function filed(parentNoteId: string): BranchRow {
+        return { branchId: `${parentNoteId}_child`, componentId: "some-component", parentNoteId };
+    }
+
+    it("answers for a note filed under the calendar itself, which is where a new year lands", () => {
+        expect(isBranchChangeAffecting([ filed("journal") ], "journal", [])).toBe(true);
+    });
+
+    it("answers for a note filed under one the calendar already knows of", () => {
+        // The day note a click on an empty day makes: filed under a month the calendar knows, and
+        // itself unknown until the events are built again.
+        expect(isBranchChangeAffecting([ filed("month") ], "journal", [ "year", "month" ])).toBe(true);
+    });
+
+    it("answers where only the outermost of several new notes hangs off something known", () => {
+        // A click on a day of a month that has never been opened makes all three at once, and the
+        // day's own parent is as new as the day is.
+        const rows = [ filed("journal"), filed("year"), filed("month") ];
+
+        expect(isBranchChangeAffecting(rows, "journal", [])).toBe(true);
+    });
+
+    it("keeps quiet for a note filed somewhere else entirely, and for no filing at all", () => {
+        expect(isBranchChangeAffecting([ filed("elsewhere") ], "journal", [ "year", "month" ])).toBe(false);
+        expect(isBranchChangeAffecting([], "journal", [ "year" ])).toBe(false);
     });
 });

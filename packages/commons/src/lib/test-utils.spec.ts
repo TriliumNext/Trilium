@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { findDuplicateJsonKeys, findPluralKeyConflicts, sleepFor, trimIndentation } from "./test-utils.js";
+import { findDuplicateJsonKeys, findMalformedPluralGroups, findPluralKeyConflicts, sleepFor, trimIndentation } from "./test-utils.js";
 
 describe("Utils", () => {
     it("trims indentation", () => {
@@ -131,6 +131,56 @@ Hello
             expect(findPluralKeyConflicts("a string")).toEqual([]);
             expect(findPluralKeyConflicts(null)).toEqual([]);
             expect(findPluralKeyConflicts([ { a_other: {} } ])).toEqual([]);
+        });
+    });
+
+    describe("findMalformedPluralGroups", () => {
+        const ENGLISH = [ "one", "other" ];
+
+        it("accepts a complete group, and keys that merely end in a similar word", () => {
+            expect(findMalformedPluralGroups({
+                item_one: "One item",
+                item_other: "{{count}} items",
+                mother: "Mother",
+                brother_in_law: "Brother in law"
+            }, ENGLISH)).toEqual([]);
+        });
+
+        it("reports a key that is not a plural but ends in a plural suffix", () => {
+            expect(findMalformedPluralGroups({
+                open_all_too_many: "Too many notes to open at once."
+            }, ENGLISH)).toEqual([
+                { path: "open_all_too", present: [ "many" ], missing: [ "one", "other" ], unexpected: [ "many" ] }
+            ]);
+        });
+
+        it("reports a group missing one of the forms the language declines", () => {
+            expect(findMalformedPluralGroups({ item_other: "{{count}} items" }, ENGLISH)).toEqual([
+                { path: "item", present: [ "other" ], missing: [ "one" ], unexpected: [] }
+            ]);
+        });
+
+        it("gathers the forms of a group and reports them under the base key at any depth", () => {
+            expect(findMalformedPluralGroups({
+                section: { count_one: "one", count_few: "few", count_many: "many" }
+            }, ENGLISH)).toEqual([
+                { path: "section.count", present: [ "one", "few", "many" ], missing: [ "other" ], unexpected: [ "few", "many" ] }
+            ]);
+        });
+
+        it("follows the categories it is given rather than English's", () => {
+            const russian = { count_one: "one", count_few: "few", count_many: "many", count_other: "other" };
+            expect(findMalformedPluralGroups(russian, [ "one", "few", "many", "other" ])).toEqual([]);
+        });
+
+        it("leaves a form holding something other than a string to findPluralKeyConflicts", () => {
+            expect(findMalformedPluralGroups({ settings_other: { ui: "User interface" } }, ENGLISH)).toEqual([]);
+        });
+
+        it("returns nothing for values that are not objects", () => {
+            expect(findMalformedPluralGroups("a string", ENGLISH)).toEqual([]);
+            expect(findMalformedPluralGroups(null, ENGLISH)).toEqual([]);
+            expect(findMalformedPluralGroups([ { a_other: "a" } ], ENGLISH)).toEqual([]);
         });
     });
 });

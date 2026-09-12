@@ -29,7 +29,7 @@ import dateUtils from "../../utils/date.js";
 import { getZipProvider, type ZipSource } from "../../zip_provider.js";
 import mimeService from "../mime.js";
 import { toAttributeName } from "../collection_utils.js";
-import { applyDatabaseSchemas, applyOwnedProperties, applyRelationProperties, extractProperties, reconcileDateColumns, resolveDatabaseContainers } from "./collection.js";
+import { applyDatabaseSchemas, applyOwnedProperties, applyRelationProperties, extractProperties, notionTimeValue, parseNotionDate, reconcileDateColumns, resolveDatabaseContainers } from "./collection.js";
 import { convertNotionHtml } from "./converter.js";
 import type { LinkTarget, ParsedPage } from "./model.js";
 import { getNotionId, stripNotionId } from "./notion_id.js";
@@ -416,12 +416,9 @@ export function rewriteCollectionIncludes(html: string, resolve: (notionId: stri
  * parsed date is missing/invalid.
  */
 function extractDate(root: HTMLElement, rowClass: string): string | undefined {
-    const text = root.querySelector(`tr.${rowClass} time`)?.textContent?.replace(/@/g, "").trim();
-    if (!text) {
-        return undefined;
-    }
-    const date = new Date(text);
-    return Number.isNaN(date.getTime()) ? undefined : dateUtils.utcDateTimeStr(date);
+    const text = notionTimeValue(root.querySelector(`tr.${rowClass} time`));
+    const date = text ? parseNotionDate(text) : undefined;
+    return date ? dateUtils.utcDateTimeStr(date) : undefined;
 }
 
 export default { importNotion };

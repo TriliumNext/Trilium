@@ -1,5 +1,6 @@
 import { getLocaleById, t } from "../services/i18n";
 import options from "../services/options";
+import type { MeasurementSystem } from "./units";
 
 type DateTimeStyle = "full" | "long" | "medium" | "short" | "none" | undefined;
 
@@ -59,27 +60,14 @@ export function formatDateTime(date: string | Date | number | null | undefined, 
 
     if (timeStyle !== "none" && dateStyle !== "none") {
         // Format the date and time
-        try {
-            const formatter = new Intl.DateTimeFormat(locale, { dateStyle, timeStyle });
-            return formatter.format(parsedDate);
-        } catch (e) {
-            const formatter = new Intl.DateTimeFormat(undefined, { dateStyle, timeStyle });
-            return formatter.format(parsedDate);
-        }
+        return getDateTimeFormatter(locale, `${dateStyle}-${timeStyle}`, { dateStyle, timeStyle }).format(parsedDate);
     } else if (timeStyle === "none" && dateStyle !== "none") {
-        // Format only the date
-        try {
-            return parsedDate.toLocaleDateString(locale, { dateStyle });
-        } catch (e) {
-            return parsedDate.toLocaleDateString(undefined, { dateStyle });
-        }
+        // Format only the date. Equivalent to parsedDate.toLocaleDateString(locale, { dateStyle }):
+        // an explicit dateStyle suppresses the year/month/day defaults that method would apply.
+        return getDateTimeFormatter(locale, `date-${dateStyle}`, { dateStyle }).format(parsedDate);
     } else if (dateStyle === "none" && timeStyle !== "none") {
-        // Format only the time
-        try {
-            return parsedDate.toLocaleTimeString(locale, { timeStyle });
-        } catch (e) {
-            return parsedDate.toLocaleTimeString(undefined, { timeStyle });
-        }
+        // Format only the time; likewise equivalent to parsedDate.toLocaleTimeString(locale, { timeStyle }).
+        return getDateTimeFormatter(locale, `time-${timeStyle}`, { timeStyle }).format(parsedDate);
     }
 
     throw new Error("Incorrect state.");
@@ -113,22 +101,55 @@ export function formatDateNumeric(date: string | Date | number | null | undefine
         formatOptions.minute = "2-digit";
     }
 
-    try {
-        return new Intl.DateTimeFormat(locale, formatOptions).format(parsedDate);
-    } catch (e) {
-        // An unusable locale (e.g. the dev-only "en_rtl", which normalizes to the invalid "en-rtl")
-        // makes the constructor throw; fall back to the environment default.
-        return new Intl.DateTimeFormat(undefined, formatOptions).format(parsedDate);
+    return getDateTimeFormatter(locale, withTime ? "numeric-with-time" : "numeric", formatOptions).format(parsedDate);
+}
+
+/**
+ * Formatters are memoized because building one costs roughly thirty times what using one does --
+ * `Intl.DateTimeFormat` resolves and parses the locale's CLDR data in its constructor, then formats
+ * in microseconds. A dialog formatting a single date never noticed; a collection view formatting one
+ * per row repeated that construction for every row of every redraw, measured at 158ms per 949-card
+ * board redraw against 4.8ms once cached (see `formatters.bench.ts`).
+ *
+ * `variant` names the option set, and the locale is part of the key, so changing the formatting
+ * locale starts filling fresh entries rather than serving stale ones. That bounds the map at the
+ * selectable locales times the handful of variants the callers above ask for.
+ */
+const dateTimeFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+/** Memoized per locale: the hour cycle is a property of the locale, never of the date being shown. */
+const twelveHourLocaleCache = new Map<string, boolean>();
+
+function getDateTimeFormatter(locale: string, variant: string, formatOptions: Intl.DateTimeFormatOptions) {
+    const cacheKey = `${locale}|${variant}`;
+
+    let formatter = dateTimeFormatterCache.get(cacheKey);
+    if (!formatter) {
+        try {
+            formatter = new Intl.DateTimeFormat(locale, formatOptions);
+        } catch {
+            // An unusable locale (e.g. the dev-only "en_rtl", which normalizes to the invalid
+            // "en-rtl") makes the constructor throw; fall back to the environment default. Whether
+            // it throws depends only on the locale, so the fallback caches under the same key.
+            formatter = new Intl.DateTimeFormat(undefined, formatOptions);
+        }
+
+        dateTimeFormatterCache.set(cacheKey, formatter);
     }
+
+    return formatter;
 }
 
 function is12HourLocale(locale: string) {
-    try {
-        return isTwelveHourCycle(new Intl.DateTimeFormat(locale, { hour: "numeric" }));
-    } catch (e) {
-        // Same unusable-locale fallback as the caller, so both agree on which cycle is in play.
-        return isTwelveHourCycle(new Intl.DateTimeFormat(undefined, { hour: "numeric" }));
+    let is12Hour = twelveHourLocaleCache.get(locale);
+    if (is12Hour === undefined) {
+        // Shares the formatter cache, so the probe costs a construction once per locale rather than
+        // one on every formatDateNumeric() call that asks for a time.
+        is12Hour = isTwelveHourCycle(getDateTimeFormatter(locale, "hour-numeric", { hour: "numeric" }));
+        twelveHourLocaleCache.set(locale, is12Hour);
     }
+
+    return is12Hour;
 }
 
 function isTwelveHourCycle(formatter: Intl.DateTimeFormat) {
@@ -201,7 +222,7 @@ export function isContentRightToLeft(noteLanguage: string | null | undefined): b
  * carrying no region is maximized first, which is what makes Trilium's plain `en` -- listed as
  * "English (United States)" -- resolve to `US`; `en-GB` is a separate entry and resolves to `GB`.
  */
-export function getMeasurementSystem(): "metric" | "imperial" {
+export function getMeasurementSystem(): MeasurementSystem {
     // An explicitly chosen formatting locale wins. Failing that the browser's locale is preferred
     // over what getFormattingLocale() would settle on (the UI language), because the UI language
     // says nothing about where the user is -- an English UI is common well outside the US.

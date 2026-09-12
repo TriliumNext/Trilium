@@ -12,6 +12,11 @@ const MAX_OFFICE_PREVIEW_BYTES = 20 * 1024 * 1024;
 
 // MIME of an `.xlsx` upload (Office Open XML spreadsheet), previewed through the native
 // spreadsheet pipeline rather than officeparser.
+export interface OfficePreviewOptions {
+    /** Renders the corner of the first sheet only, for a preview shown in a card or a list. */
+    trim?: boolean;
+}
+
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /**
@@ -24,8 +29,11 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
  * initial standalone bundle.
  *
  * The result is NOT sanitized — the client must sanitize it before injecting into the DOM.
+ *
+ * `trim` reaches the spreadsheet pipeline only; the other formats convert whole, since none of
+ * them turns a page of content into the megabytes a workbook can.
  */
-export async function convertOfficeToHtml(content: string | Uint8Array, mime: string): Promise<string> {
+export async function convertOfficeToHtml(content: string | Uint8Array, mime: string, options: OfficePreviewOptions = {}): Promise<string> {
     if (!isOfficeMimeType(mime)) {
         throw new ValidationError(`MIME type '${mime}' is not a supported office format.`);
     }
@@ -37,7 +45,7 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
 
     if (mime === XLSX_MIME) {
         try {
-            return await convertXlsxToHtml(buffer);
+            return await convertXlsxToHtml(buffer, options);
         } catch {
             // Not a workbook exceljs can read (e.g. a mislabeled or exotic file) —
             // fall through and let officeparser have a go at it.
@@ -68,11 +76,12 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
 
 /**
  * Renders an `.xlsx` workbook through the native spreadsheet pipeline: the same
- * parse-to-Univer-JSON step the importer uses, then the shared/print HTML renderer.
+ * parse-to-Univer-JSON step the importer uses, then the shared/print HTML renderer, which
+ * takes the parsed workbook directly.
  * Dynamically imported so exceljs only loads when an `.xlsx` is actually previewed,
  * keeping it out of the core barrel (and the standalone/browser bundle).
  */
-async function convertXlsxToHtml(buffer: Uint8Array): Promise<string> {
+async function convertXlsxToHtml(buffer: Uint8Array, options: OfficePreviewOptions): Promise<string> {
     const [{ parseXlsxToWorkbook }, { renderSpreadsheetToHtml }] = await Promise.all([
         import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js"),
         import("@triliumnext/commons/src/lib/spreadsheet/render_to_html.js")
@@ -80,7 +89,5 @@ async function convertXlsxToHtml(buffer: Uint8Array): Promise<string> {
 
     const workbook = await parseXlsxToWorkbook(buffer);
 
-    // The renderer consumes the persisted note-content shape, which is the stringified
-    // parse result (see importSpreadsheet in the import service).
-    return renderSpreadsheetToHtml(JSON.stringify(workbook));
+    return renderSpreadsheetToHtml(workbook, options);
 }

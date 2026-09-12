@@ -1,8 +1,8 @@
 import type { HiddenSubtreeItem } from "@triliumnext/commons";
-import type { NoteMeta } from "@triliumnext/core";
+import type { NoteMeta, NoteMetaFile } from "@triliumnext/core";
 import { describe, expect, it } from "vitest";
 
-import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler } from "./help_meta_generator.js";
+import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler, stripAppVersion } from "./help_meta_generator.js";
 
 describe("Help meta generation (server)", () => {
     it("preserves custom folder icon", () => {
@@ -304,5 +304,22 @@ describe("Help meta generation (standalone)", () => {
 
         expect(items).toHaveLength(1);
         expect(items[0].type).toBe("book");
+    });
+});
+
+describe("stripAppVersion", () => {
+    it("drops the version stamp and keeps everything else the docs metadata carries", () => {
+        const meta = {
+            formatVersion: 2,
+            appVersion: "0.105.0",
+            files: [{ noteId: "abc", title: "Note", attributes: [] }]
+        } as unknown as NoteMetaFile;
+
+        const stripped = stripAppVersion(meta);
+
+        expect("appVersion" in stripped).toBe(false);
+        expect(stripped).toStrictEqual({ formatVersion: 2, files: meta.files });
+        // The input is left alone: the minified branch of the export reads the same object.
+        expect(meta.appVersion).toBe("0.105.0");
     });
 });

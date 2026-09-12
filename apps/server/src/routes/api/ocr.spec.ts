@@ -1,6 +1,6 @@
-import { cls, note_service as noteService } from "@triliumnext/core";
+import { becca, cls, note_service as noteService } from "@triliumnext/core";
 import type { Request } from "express";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Only the OCR engine is mocked — becca/sql run against the real in-memory DB.
 const ocrState = vi.hoisted(() => ({
@@ -18,12 +18,16 @@ vi.mock("../../services/ocr/ocr_service.js", () => ({
     }
 }));
 
+import ocrService from "../../services/ocr/ocr_service.js";
+import sql from "../../services/sql.js";
 import ocrRoutes from "./ocr.js";
 
 let noteId: string;
 let attachmentId: string;
 
 describe("OCR API", () => {
+    beforeEach(() => vi.clearAllMocks());
+
     beforeAll(() => {
         cls.init(() => {
             const { note } = noteService.createNewNote({ parentNoteId: "root", title: "OCR note", type: "text", content: "hi" });
@@ -49,6 +53,22 @@ describe("OCR API", () => {
             const result = await ocrRoutes.processNoteOCR({ params: { noteId }, body: { language: "eng" } } as unknown as Request<{ noteId: string }>);
             expect(result).toMatchObject({ success: true, result: { text: "hello" } });
         });
+
+        it("names the locked vault rather than blaming the note's format", async () => {
+            const note = becca.getNoteOrThrow(noteId);
+            note.isProtected = true;
+            // The engine would skip this note, which the route cannot tell from an unsupported one.
+            ocrState.noteResult = null;
+
+            try {
+                const result = await ocrRoutes.processNoteOCR({ params: { noteId }, body: {} } as unknown as Request<{ noteId: string }>);
+
+                expect(result).toEqual([400, { success: false, message: "Note is protected and the protected session is not available" }]);
+                expect(ocrService.processNoteOCR).not.toHaveBeenCalled();
+            } finally {
+                note.isProtected = false;
+            }
+        });
     });
 
     describe("processAttachmentOCR", () => {
@@ -65,6 +85,23 @@ describe("OCR API", () => {
             ocrState.attachmentResult = { text: "ocr" };
             expect(await ocrRoutes.processAttachmentOCR({ params: { attachmentId }, body: {} } as unknown as Request<{ attachmentId: string }>))
                 .toMatchObject({ success: true });
+        });
+
+        it("names the locked vault rather than blaming the attachment's format", async () => {
+            // becca builds an attachment from SQL on every lookup rather than caching it like a note,
+            // so the flag has to be set where the route will read it back from.
+            const setProtected = (value: number) =>
+                sql.execute("UPDATE attachments SET isProtected = ? WHERE attachmentId = ?", [value, attachmentId]);
+
+            setProtected(1);
+            try {
+                const result = await ocrRoutes.processAttachmentOCR({ params: { attachmentId }, body: {} } as unknown as Request<{ attachmentId: string }>);
+
+                expect(result).toEqual([400, { success: false, message: "Attachment is protected and the protected session is not available" }]);
+                expect(ocrService.processAttachmentOCR).not.toHaveBeenCalled();
+            } finally {
+                setProtected(0);
+            }
         });
     });
 

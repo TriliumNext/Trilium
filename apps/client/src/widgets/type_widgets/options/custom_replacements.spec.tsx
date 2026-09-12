@@ -9,7 +9,7 @@ const state = vi.hoisted(() => ({
     watchers: new Set<(newValue: string) => void>()
 }));
 
-// Only `useTriliumOption` is replaced — the rest of the module stays real, so the chips and boxes
+// Only `useTriliumOption` is replaced — the rest of the module stays real, so the segments and boxes
 // this renders keep the hooks they use.
 //
 // The stand-in holds the value in state and re-reads it when the store changes, as the real hook does
@@ -55,9 +55,9 @@ function renderEditor() {
     return container;
 }
 
-/** The replacements as the chips show them, each read as the `from → to` it stands for. */
-const chips = (container: HTMLElement) =>
-    [ ...container.querySelectorAll(".tn-chip > span") ].map((chip) => chip.textContent);
+/** The replacements as the segments show them, each read as the `from → to` it stands for. */
+const pairs = (container: HTMLElement) =>
+    [ ...container.querySelectorAll(".custom-replacement-pair") ].map((pair) => pair.textContent);
 
 /** The two boxes the next pair is typed into. */
 const draftBoxes = (container: HTMLElement) => [ ...container.querySelectorAll("input") ];
@@ -95,11 +95,11 @@ afterEach(() => {
 });
 
 describe("CustomReplacements", () => {
-    it("shows what is held as chips, and offers empty boxes for the next", () => {
+    it("shows what is held as segments, and offers empty boxes for the next", () => {
         state.stored = `[{"from":"TN","to":"Trilium Notes"},{"from":"teh","to":"the"}]`;
         const container = renderEditor();
 
-        expect(chips(container)).toEqual([ "TN → Trilium Notes", "teh → the" ]);
+        expect(pairs(container)).toEqual([ "TN → Trilium Notes", "teh → the" ]);
         expect(draftBoxes(container).map((box) => box.value)).toEqual([ "", "" ]);
     });
 
@@ -109,7 +109,7 @@ describe("CustomReplacements", () => {
         addPair(container, "TN", "Trilium Notes");
 
         expect(stored()).toEqual([ { from: "TN", to: "Trilium Notes" } ]);
-        expect(chips(container)).toEqual([ "TN → Trilium Notes" ]);
+        expect(pairs(container)).toEqual([ "TN → Trilium Notes" ]);
         expect(draftBoxes(container).map((box) => box.value)).toEqual([ "", "" ]);
     });
 
@@ -122,7 +122,7 @@ describe("CustomReplacements", () => {
 
         // Storing it would put an entry in the set that could never fire.
         expect(state.writes).toEqual([]);
-        expect(chips(container)).toEqual([]);
+        expect(pairs(container)).toEqual([]);
     });
 
     it("replaces an entry typed a second time rather than holding both", () => {
@@ -145,15 +145,15 @@ describe("CustomReplacements", () => {
         expect(stored()).toEqual([ { from: "tn", to: "Trilium" } ]);
     });
 
-    it("removes the chip that was pressed, keeping its neighbours", () => {
+    it("removes the pair that was pressed, keeping its neighbours", () => {
         state.stored = `[{"from":"TN","to":"Trilium Notes"},{"from":"teh","to":"the"}]`;
         const container = renderEditor();
 
-        const [ , removeSecond ] = [ ...container.querySelectorAll<HTMLButtonElement>(".tn-chip-remove") ];
+        const [ , removeSecond ] = [ ...container.querySelectorAll<HTMLButtonElement>(".custom-replacement-remove") ];
         act(() => removeSecond.click());
 
         expect(stored()).toEqual([ { from: "TN", to: "Trilium Notes" } ]);
-        expect(chips(container)).toEqual([ "TN → Trilium Notes" ]);
+        expect(pairs(container)).toEqual([ "TN → Trilium Notes" ]);
     });
 
     it("shows a list that arrived from elsewhere without being asked twice", () => {
@@ -164,7 +164,7 @@ describe("CustomReplacements", () => {
 
         act(() => writeStore(`[{"from":"CT","to":"CherryTree"}]`));
 
-        expect(chips(container)).toEqual([ "CT → CherryTree" ]);
+        expect(pairs(container)).toEqual([ "CT → CherryTree" ]);
     });
 
     it("leaves a pair being typed alone when a list arrives", () => {
@@ -176,7 +176,7 @@ describe("CustomReplacements", () => {
 
         act(() => writeStore(`[{"from":"CT","to":"CherryTree"}]`));
 
-        expect(chips(container)).toEqual([ "CT → CherryTree" ]);
+        expect(pairs(container)).toEqual([ "CT → CherryTree" ]);
         expect(draftBoxes(container).map((box) => box.value)).toEqual([ "TN", "Trilium No" ]);
 
         // ...and taking it keeps what arrived rather than replacing it.

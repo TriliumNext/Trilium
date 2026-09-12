@@ -4,8 +4,7 @@
   <li>HTML:
     <ul>
       <li>This is the main format used by Trilium, where standard tags are used
-        to represent basic formatting and layout (e.g. <code spellcheck="false">&lt;strong&gt;</code>,
-        <code
+        to represent basic formatting and layout (e.g. <code spellcheck="false">&lt;strong&gt;</code>, <code
         spellcheck="false">&lt;table&gt;</code>, <code spellcheck="false">&lt;pre&gt;</code>).</li>
       <li>Note that HTML is not a standardized format so some more specific features
         such as admonitions or&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;might
@@ -36,8 +35,8 @@
   an&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>&nbsp;or
   even a&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note).
   The limit is approximately 374 MiB and it's determined by the&nbsp;<a class="reference-link"
-  href="#root/_help_cbkrhQjrkKrh">Synchronization</a>&nbsp;protocol. Attempts to
-  import such large files will be refused.</p>
+  href="#root/_help_cbkrhQjrkKrh">Synchronization</a>&nbsp;protocol. Attempts
+  to import such large files will be refused.</p>
 <p>During large imports or exports, memory consumption might spike but it
   will remain somewhere around the 2 gigabyte mark. Tested with a 2.4 GB
   database with ~21k notes.</p>
@@ -61,48 +60,50 @@
   as a child of your existing root note. This behavior makes sure that the
   import cannot change or overwrite your existing notes.</p>
 <p>You can easily move the notes onto the root using the tree's&nbsp;<a class="reference-link"
-  href="#root/_help_yTjUdsOi4CIE">Multiple selection</a>&nbsp;and delete the redundant
-  root note.</p>
-<table>
-  <thead>
-    <tr>
-      <th scope="col">Before</th>
-      <th scope="col">After</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <ul>
-          <li>root
-            <ul>
-              <li>one</li>
-              <li>two</li>
-            </ul>
-          </li>
-        </ul>
-      </td>
-      <td>
-        <ul>
-          <li>root (existing)
-            <ul>
-              <li>root (from import)
-                <ul>
-                  <li>one</li>
-                  <li>two</li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+  href="#root/_help_yTjUdsOi4CIE">Multiple selection</a>&nbsp;and delete
+  the redundant root note.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Before</th>
+        <th scope="col">After</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <ul>
+            <li>root
+              <ul>
+                <li>one</li>
+                <li>two</li>
+              </ul>
+            </li>
+          </ul>
+        </td>
+        <td>
+          <ul>
+            <li>root (existing)
+              <ul>
+                <li>root (from import)
+                  <ul>
+                    <li>one</li>
+                    <li>two</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <aside class="admonition tip">
-  <p>Instead of exporting full ZIPs (including the root note), consider using
-    <a
-    href="#root/_help_ODY7qQn5m2FT">backups</a>instead. Backups always contain the entire structure, as well
-      as additional information a ZIP export does not have: maintains note IDs,
-      contains the options/tokens and handle&nbsp;<a class="reference-link" href="#root/_help_bwg0e8ewQMak">Protected Notes</a>&nbsp;better.</p>
+  <p>Instead of exporting full ZIPs (including the root note), consider using <a
+    href="#root/_help_ODY7qQn5m2FT">backups</a> instead. Backups always contain
+    the entire structure, as well as additional information a ZIP export does
+    not have: maintains note IDs, contains the options/tokens and handle&nbsp;<a
+    class="reference-link" href="#root/_help_bwg0e8ewQMak">Protected Notes</a>&nbsp;better.</p>
 </aside>

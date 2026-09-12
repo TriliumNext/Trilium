@@ -1,3 +1,5 @@
+import { dayjs } from "@triliumnext/commons";
+
 import { formatDateTime } from "../utils/formatters.js";
 import { t } from "./i18n.js";
 import { formatSize } from "./utils.js";
@@ -14,6 +16,11 @@ export interface DatabaseFile {
      * size — a compressed backup, say. Both are then shown, so the saving is visible.
      */
     plaintextSize?: number;
+    /**
+     * Why the file cannot be restored from, where its own header says as much. Absent for a plain
+     * copy and for a container this build can open.
+     */
+    unreadable?: "invalid" | "unsupported-version";
 }
 
 /**
@@ -54,5 +61,37 @@ export function describeDatabaseFile(file: DatabaseFile): string {
         parts.push(formatSize(file.fileSize));
     }
 
+    // Last, after the two facts that identify which file this is. The date and the size are kept
+    // rather than replaced because they are what tells the user why it is no good: a backup that
+    // stopped halfway is the size of how far it got.
+    if (file.unreadable) {
+        parts.push(file.unreadable === "invalid"
+            ? t("database_file_list.invalid_backup")
+            : t("database_file_list.unsupported_version"));
+    }
+
     return parts.join(" • ");
+}
+
+/**
+ * How many backups there are and how long ago the last one was made — the two things a list of them
+ * only answers by being read through. Nothing is said while there are none: wherever this is shown
+ * the list itself, or the page it links to, states that more plainly than a sentence could.
+ *
+ * Shared by the backup page's own header and by the Database page's summary of it, so that the two
+ * never state the same thing differently.
+ */
+export function summarizeBackups(backups: { mtime: Date }[]): string | null {
+    if (!backups.length) {
+        return null;
+    }
+
+    const mostRecent = backups.reduce((latest, backup) => (
+        backup.mtime > latest.mtime ? backup : latest
+    ));
+
+    return t("backup.backups_summary", {
+        count: backups.length,
+        age: dayjs(mostRecent.mtime).fromNow(true)
+    });
 }

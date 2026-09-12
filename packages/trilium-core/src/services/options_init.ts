@@ -196,7 +196,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "leftPaneVisible", value: "true", isSynced: false },
     { name: "rightPaneWidth", value: "25", isSynced: false },
     { name: "rightPaneVisible", value: "true", isSynced: false },
-    { name: "rightPaneCollapsedItems", value: '["similarNotes"]', isSynced: false },
+    { name: "rightPaneCollapsedItems", value: "[]", isSynced: false },
     { name: "rightPaneSelectedTab", value: "outline", isSynced: false },
     // Synced, unlike the rest of the pane's state: which map to read connections as is a preference
     // rather than where a window happens to be left standing.
@@ -237,6 +237,7 @@ const defaultOptions: DefaultOption[] = [
     // Search settings
     { name: "searchEnableFuzzyMatching", value: "true", isSynced: true },
     { name: "searchAutocompleteFuzzy", value: "false", isSynced: true },
+    { name: "searchResultsPageSize", value: "20", isSynced: true },
 
     { name: "editedNotesOpenInRibbon", value: "true", isSynced: true },
     { name: "mfaMethod", value: "totp", isSynced: false },
@@ -323,6 +324,9 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
     { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
     { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
+    // Off: the tags this carries are the ones the editor has no feature for, and GHS's handling of
+    // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.
+    { name: "textNoteHtmlSupportEnabled", value: "false", isSynced: true },
     { name: "clipboardImageEmbedEnabled", value: "true", isSynced: true },
     { name: "includeNoteDefaultBoxSize", value: "medium", isSynced: true },
 
@@ -361,6 +365,7 @@ const defaultOptions: DefaultOption[] = [
     // Was previously the "llm" experimental feature; inherit the value from there for existing users.
     { name: "aiEnabled", value: (optionsMap) => optionsMap.experimentalFeatures?.includes('"llm"') ? "true" : "false", isSynced: true },
     { name: "llmProviders", value: "[]", isSynced: true },
+    { name: "aiAssistantModel", value: "", isSynced: true },
     { name: "mcpEnabled", value: "false", isSynced: false },
 
     // OCR options

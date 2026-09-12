@@ -44,6 +44,16 @@ function fakeTemplate(noteId: string, labels: string[], title = noteId): FakeNot
     };
 }
 
+/** Stubs `search-templates`, the only endpoint the service talks to. */
+function withTemplates(templateNoteIds: string[] = [], newTemplateNoteIds: string[] = []) {
+    const get = vi.fn(async (url: string) => {
+        if (url === "search-templates") return { templateNoteIds, newTemplateNoteIds };
+        return undefined;
+    });
+    server.get = get as unknown as typeof server.get;
+    return get;
+}
+
 function withTemplatesRoot(children: FakeNote[] | null) {
     const realGetNote = froca.getNote.bind(froca);
     froca.getNote = (async (noteId: string, silent?: boolean) => {
@@ -63,15 +73,91 @@ function withTemplatesRoot(children: FakeNote[] | null) {
     };
 }
 
+describe("getNoteTypeOptions", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        llmFlag.mockReturnValue(false);
+    });
+
+    /**
+     * What anything offering "make a new note of..." picks from: the note types the tree offers,
+     * then the templates the app ships, then the reader's own, each named by an id that outlives
+     * the list it came from.
+     */
+    it("lists the note types the tree offers, then every template", async () => {
+        withTemplates([ "userTemplate" ]);
+        const restore = withTemplatesRoot([
+            fakeTemplate("shipped", [ "template" ], "Shipped"),
+            fakeTemplate("notATemplate", [], "Not a template")
+        ]);
+        const user = buildNote({ id: "userTemplate", title: "Mine", "#template": "" });
+
+        try {
+            const options = await noteTypesService.getNoteTypeOptions();
+
+            const types = options.filter(option => option.group === "type");
+            expect(types.every(option => option.id.startsWith("type:"))).toBe(true);
+            expect(types.some(option => option.id === "type:text:text/html")).toBe(true);
+            expect(types.some(option => option.id.startsWith("type:book"))).toBe(false);
+            expect(types.some(option => option.id.startsWith("type:image"))).toBe(false);
+
+            // A note under `_templates` that carries no `#template` is not one.
+            expect(options.map(option => option.id)).toContain("template:shipped");
+            expect(options.map(option => option.id)).not.toContain("template:notATemplate");
+
+            const mine = options.find(option => option.id === `template:${user.noteId}`);
+            expect(mine?.group).toBe("user");
+            expect(mine?.options).toEqual(expect.objectContaining({ templateNoteId: user.noteId }));
+
+            // A note type is made from its type and mime, which is what `createNote` takes.
+            expect(options.find(option => option.id === "type:canvas:application/json")?.options)
+                .toEqual({ type: "canvas", mime: "application/json" });
+        } finally {
+            restore();
+        }
+    });
+
+    it("offers the chat note type only where that feature is switched on", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([]);
+
+        try {
+            const isOffered = async () => (await noteTypesService.getNoteTypeOptions())
+                .some(option => option.id.startsWith("type:llmChat"));
+
+            expect(await isOffered()).toBe(false);
+            llmFlag.mockReturnValue(true);
+            expect(await isOffered()).toBe(true);
+        } finally {
+            restore();
+        }
+    });
+
+    /** A stored list outlives what it names, and what is gone is left out rather than reported. */
+    it("resolves stored ids in their own order, dropping what no longer exists", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([]);
+
+        try {
+            const available = await noteTypesService.getNoteTypeOptions();
+            const offered = noteTypesService.resolveNoteTypeOptions(
+                [ "type:canvas:application/json", "template:gone", "type:text:text/html" ],
+                available);
+
+            expect(offered.map(option => option.id))
+                .toEqual([ "type:canvas:application/json", "type:text:text/html" ]);
+        } finally {
+            restore();
+        }
+    });
+});
+
 describe("getBlankNoteTypes (via getNoteTypeItems)", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         llmFlag.mockReturnValue(false);
         // Empty templates root and no user templates so we only see blank types.
-        server.get = vi.fn(async (url: string) => {
-            if (url === "search-templates") return [];
-            return undefined;
-        }) as typeof server.get;
+        withTemplates();
     });
 
     it("excludes reserved types, book, and llmChat (when feature disabled), and maps icons/badges", async () => {
@@ -147,17 +233,8 @@ describe("getBuiltInTemplates", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         llmFlag.mockReturnValue(false);
-        server.get = vi.fn(async (url: string) => {
-            if (url === "search-templates") return [];
-            // notes/root returns an object WITHOUT dateCreated: exercises the
-            // `"dateCreated" in rootNoteInfo` false branch AND keeps the module-level
-            // rootCreationDate undefined for the following tests.
-            if (url === "notes/root") return { id: "root" };
-            // A recent built-in template ("tpl-plain") gets the "new" badge; everything
-            // else is old.
-            if (url === "notes/tpl-plain") return { dateCreated: new Date().toISOString() };
-            return { dateCreated: "2000-01-02 00:00:00.000Z" };
-        }) as typeof server.get;
+        // The server reports "tpl-plain" as a new built-in template; everything else is old.
+        withTemplates([], ["tpl-plain"]);
     });
 
     it("warns and returns nothing when the templates root is missing", async () => {
@@ -230,7 +307,7 @@ describe("getBuiltInTemplates", () => {
             expect(plainItem.command).toBe("cmd");
             expect(plainItem.type).toBe("text");
             expect(plainItem.uiIcon).toBe("tn-icon bx-x");
-            // tpl-plain has a recent creation date -> gets the "new" badge.
+            // tpl-plain is reported as new by the server -> gets the "new" badge.
             expect(plainItem.badges).toHaveLength(1);
             expect(plainItem.badges[0].className).toBe("new-note-type-badge");
             // The old collection template is not marked new.
@@ -249,10 +326,7 @@ describe("getUserTemplates", () => {
     });
 
     it("returns nothing when there are no user template notes", async () => {
-        server.get = vi.fn(async (url: string) => {
-            if (url === "search-templates") return [];
-            return undefined;
-        }) as typeof server.get;
+        withTemplates();
         const restore = withTemplatesRoot([]);
         try {
             const items: any[] = await noteTypesService.getNoteTypeItems();
@@ -265,12 +339,8 @@ describe("getUserTemplates", () => {
 
     it("adds a header and one item per user template, mapping note fields", async () => {
         const userTpl = buildNote({ title: "My Template", type: "text" });
-        server.get = vi.fn(async (url: string) => {
-            if (url === "search-templates") return [userTpl.noteId];
-            if (url === "notes/root") throw new Error("no root");
-            // Old creation date -> not "new".
-            return { dateCreated: "2000-01-02 00:00:00.000Z" };
-        }) as typeof server.get;
+        // The template is not among the new ones -> no badge.
+        withTemplates([userTpl.noteId]);
         const restore = withTemplatesRoot([]);
         try {
             const items: any[] = await noteTypesService.getNoteTypeItems("cmd2" as never);
@@ -289,134 +359,51 @@ describe("getUserTemplates", () => {
     });
 });
 
-describe("isNewTemplate (via getUserTemplates)", () => {
+describe("new template badges", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         llmFlag.mockReturnValue(false);
     });
 
-    async function runWithTemplate(noteId: string, getImpl: (url: string) => Promise<unknown>) {
-        const tpl = buildNote({ id: noteId, title: noteId, type: "text" });
-        server.get = vi.fn(getImpl) as typeof server.get;
+    it("badges exactly the templates the server reports as new", async () => {
+        const isNew = buildNote({ id: "tpl-new", title: "New template", type: "text" });
+        const isOld = buildNote({ id: "tpl-old", title: "Old template", type: "text" });
+        const get = withTemplates([isNew.noteId, isOld.noteId], [isNew.noteId]);
         const restore = withTemplatesRoot([]);
         try {
             const items: any[] = await noteTypesService.getNoteTypeItems();
-            return items.find((i) => i.templateNoteId === tpl.noteId);
-        } finally {
-            restore();
-        }
-    }
 
-    // NOTE on ordering: the module caches `rootCreationDate` on the FIRST successful
-    // `notes/root` fetch and never resets it. To keep it `undefined` for the
-    // age-based-branch tests, those tests make `notes/root` throw (a throw is caught,
-    // leaving the date unset). The single test that sets a real root date — the "30s"
-    // test — runs LAST so it cannot pollute the others.
+            const newItem = items.find((i) => i.templateNoteId === isNew.noteId);
+            expect(newItem.badges).toHaveLength(1);
+            expect(newItem.badges[0].className).toBe("new-note-type-badge");
 
-    it("tolerates a failing notes/root fetch (root date stays unknown) and marks a recent template as new", async () => {
-        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-        const recent = new Date().toISOString();
-        // notes/root throws -> caught, rootCreationDate stays undefined; template fetched
-        // with a recent date and no root date -> age check applies -> new badge.
-        const item = await runWithTemplate("isnew-recent-1", async (url) => {
-            if (url === "search-templates") return ["isnew-recent-1"];
-            if (url === "notes/root") throw new Error("boom");
-            return { dateCreated: recent };
-        });
-        expect(item.badges).toHaveLength(1);
-        expect(item.badges[0].className).toBe("new-note-type-badge");
-        expect(errorSpy).toHaveBeenCalled();
-        errorSpy.mockRestore();
-    });
+            const oldItem = items.find((i) => i.templateNoteId === isOld.noteId);
+            expect(oldItem.badges).toBeUndefined();
 
-    it("does not mark an old template as new (age check returns false)", async () => {
-        // root fetch throws -> rootCreationDate undefined -> skips 30s check, reaches age check.
-        const item = await runWithTemplate("isnew-old", async (url) => {
-            if (url === "search-templates") return ["isnew-old"];
-            if (url === "notes/root") throw new Error("no root");
-            return { dateCreated: "1999-06-01 00:00:00.000Z" };
-        });
-        expect(item.badges).toBeUndefined();
-    });
-
-    it("returns no badge when the note fetch fails (creation date stays unknown)", async () => {
-        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-        // Template note fetch throws -> creationDate stays undefined -> returns false (no badge).
-        const item = await runWithTemplate("isnew-nodate", async (url) => {
-            if (url === "search-templates") return ["isnew-nodate"];
-            if (url === "notes/root") throw new Error("no root");
-            throw new Error("note fetch failed");
-        });
-        expect(item.badges).toBeUndefined();
-        expect(errorSpy).toHaveBeenCalled();
-        errorSpy.mockRestore();
-    });
-
-    it("returns no badge when the note response has no dateCreated field", async () => {
-        // notes/<id> returns an object without dateCreated -> creationDate stays
-        // undefined -> returns false. Exercises the `"dateCreated" in noteInfo` false branch.
-        const item = await runWithTemplate("isnew-nofield", async (url) => {
-            if (url === "search-templates") return ["isnew-nofield"];
-            if (url === "notes/root") throw new Error("no root");
-            return { id: "isnew-nofield" };
-        });
-        expect(item.badges).toBeUndefined();
-    });
-
-    it("uses the cached creation date on a second lookup (no second notes/<id> fetch)", async () => {
-        const recent = new Date().toISOString();
-        const getImpl = vi.fn(async (url: string) => {
-            if (url === "search-templates") return ["isnew-cached"];
-            if (url === "notes/root") throw new Error("no root");
-            return { dateCreated: recent };
-        });
-        buildNote({ id: "isnew-cached", title: "isnew-cached", type: "text" });
-        server.get = getImpl as unknown as typeof server.get;
-        const restore = withTemplatesRoot([]);
-        try {
-            await noteTypesService.getNoteTypeItems();
-            const callsAfterFirst = getImpl.mock.calls.filter((c) => c[0] === "notes/isnew-cached").length;
-            await noteTypesService.getNoteTypeItems();
-            const callsAfterSecond = getImpl.mock.calls.filter((c) => c[0] === "notes/isnew-cached").length;
-            // The per-note creation date is cached, so it is fetched at most once.
-            expect(callsAfterFirst).toBe(1);
-            expect(callsAfterSecond).toBe(1);
+            // The badges cost no request of their own: `search-templates` is the only
+            // endpoint hit, no matter how many templates there are.
+            expect(get.mock.calls.map((c) => c[0])).toEqual(["search-templates"]);
         } finally {
             restore();
         }
     });
 
-    // MUST run before the "cached root date" test below: this is the only test that
-    // lets `notes/root` resolve, which permanently caches `rootCreationDate` in the module.
-    it("ignores templates created within 30s of the root note (no new badge)", async () => {
-        const root = new Date();
-        const justAfterRoot = new Date(root.getTime() + 10_000).toISOString();
-        const item = await runWithTemplate("isnew-near-root", async (url) => {
-            if (url === "search-templates") return ["isnew-near-root"];
-            if (url === "notes/root") return { dateCreated: root.toISOString() };
-            return { dateCreated: justAfterRoot };
-        });
-        expect(item.badges).toBeUndefined();
-    });
-
-    // MUST be last: relies on `rootCreationDate` already being cached by the test above.
-    it("does not re-fetch notes/root once the root creation date is cached", async () => {
-        const getImpl = vi.fn(async (url: string) => {
-            if (url === "search-templates") return ["isnew-after-cached"];
-            // notes/root must NOT be requested anymore; if it were, this would throw.
-            if (url === "notes/root") throw new Error("root should not be fetched again");
-            return { dateCreated: "1999-06-01 00:00:00.000Z" };
-        });
-        buildNote({ id: "isnew-after-cached", title: "isnew-after-cached", type: "text" });
-        server.get = getImpl as unknown as typeof server.get;
-        const restore = withTemplatesRoot([]);
+    it("builds several menus from one fetch", async () => {
+        // The tree context menu has two note type submenus. Building them from shared data
+        // must not fetch the templates twice.
+        const get = withTemplates();
+        const restore = withTemplatesRoot([fakeTemplate("tpl-plain", ["template"], "Plain")]);
         try {
-            const items: any[] = await noteTypesService.getNoteTypeItems();
-            const item = items.find((i) => i.templateNoteId === "isnew-after-cached");
-            // Old template -> not new regardless.
-            expect(item.badges).toBeUndefined();
-            // The cached root date means notes/root is never requested.
-            expect(getImpl.mock.calls.some((c) => c[0] === "notes/root")).toBe(false);
+            const data = await noteTypesService.loadNoteTypeData();
+            const first = noteTypesService.buildNoteTypeItems(data, "insertNoteAfter" as never);
+            const second = noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never);
+
+            expect(get.mock.calls.map((c) => c[0])).toEqual(["search-templates"]);
+            // Same items, each bound to its own command.
+            const ids = (items: any[]) => items.map((i) => i.templateNoteId);
+            expect(ids(first)).toEqual(ids(second));
+            expect(first.every((i: any) => !i.type || i.command === "insertNoteAfter")).toBe(true);
+            expect(second.every((i: any) => !i.type || i.command === "insertChildNote")).toBe(true);
         } finally {
             restore();
         }

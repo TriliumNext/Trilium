@@ -12,29 +12,41 @@
         "get_started": "Start",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Zrzut ekranu wersji desktopowej Trilium Notes"
+        "screenshot_alt": "Zrzut ekranu wersji desktopowej Trilium Notes",
+        "tagline_license": "Na licencji AGPL-3.0",
+        "tagline_no_account": "Bez potrzeby zakładania konta",
+        "tagline_cross_platform": "Działa offline"
     },
     "organization_benefits": {
-        "title": "Układ",
+        "title": "Ułóż swoje notatki na swój sposób",
         "note_structure_title": "Struktura notatek",
         "note_structure_description": "Notatki mogą być ułożone w hierarchię. Każda notatka może zawierać w sobie inne, co pozwala umieścić tą samą notatkę w wielu miejscach w hierarchii i nie wymusza to tworzenia dodatkowych folderów.",
-        "attributes_title": "Etykiety i korelacje",
+        "attributes_title": "Etykiety i korelacje notatek",
         "attributes_description": "Porządkuj łatwiej swoje notatki przy użyciu relacji i etykiet, używaj ich jako odnośników w tabelach i tablicach.",
         "hoisting_title": "Przestrzenie robocze i tryb skupienia",
-        "hoisting_description": "Łatwo oddziel swoje personalne notatki od tych z pracy przez grupowanie ich w przestrzenie robocze, które pomogą ci się skupić na danym temacie."
+        "hoisting_description": "Łatwo oddziel swoje personalne notatki od tych z pracy przez grupowanie ich w przestrzenie robocze, które pomogą ci się skupić na danym temacie.",
+        "screenshot_alt": "Drzewo hierarchii notatek w Trilium"
     },
     "productivity_benefits": {
-        "title": "Produktywność i bezpieczeństwo",
+        "title": "Codzienne funkcjonalne narzędzia",
         "revisions_title": "Historia zmian",
         "revisions_content": "Notatki są regularnie zapisywane w tle, pozwala to przeglądać i cofać wprowadzone zmiany. Zapisy można także wykonywać \"na życzenie\".",
         "sync_title": "Synchronizacja",
         "sync_content": "Używaj własnych lub chmurowych instancji do łatwiejszej synchronizacji notatek między wieloma urządzeniami, w tym twoim telefonem używając PWA.",
         "protected_notes_title": "Notatki chronione",
         "protected_notes_content": "Chroń wrażliwe informacje szyfrując notatki i blokując dostęp do nich za pomocą hasła sesji.",
-        "search_title": "Dokładne wyszukiwanie",
-        "search_content": "Albo wyszukaj tekst w notatkach, możesz dostosować zakres szukania do konkretnej notatki albo hierarchii pliku.",
+        "search_title": "Wyszukiwanie i szybka nawigacja",
+        "search_content": "Przejdź do każdej notatki przy użyciu przybliżonego wyszukiwania tytułów albo przeszukaj ich zawartości, nawet zdjęcia i PDF-y przy użyciu OCR.",
         "web_clipper_title": "Web clipper",
-        "web_clipper_content": "Dołączaj strony internetowe albo ich zrzuty i umieszczaj je bezpośrednio w swoich notatkach dzięki rozszerzeniu do przeglądarki."
+        "web_clipper_content": "Dołączaj strony internetowe albo ich zrzuty i umieszczaj je bezpośrednio w swoich notatkach dzięki rozszerzeniu do przeglądarki.",
+        "auth_title": "Bezpieczne logowanie",
+        "auth_content": "Zabezpiecz swoje logowanie na serwer wielostopniowym logowaniem (TOTP) albo zaloguj się przez zewnętrznego dostawce tożsamości OpenID Connect.",
+        "templates_title": "Szablony",
+        "templates_content": "Komponuj szablony notatek przy użyciu predefiniowanych struktur, atrybutów i zawartości, twórz z nich następnie notatki jednym kliknięciem.",
+        "share_title": "Udostępniaj notatki w sieci",
+        "share_content": "Jeżeli masz serwer, publikuj struktury wybranych notatek jako publicznie, tylko do odczytu strony, które każdy może przeglądać bez konta.",
+        "api_title": "REST API",
+        "api_content": "Czytaj, twórz i aktualizuj swoje notatki programowane przez HTTP przez interfejs REST API Trilium, idealne do tworzenia automatyzacji z innymi stronami."
     },
     "note_types": {
         "text_title": "Notatki tekstowe",
@@ -49,7 +61,18 @@
         "mermaid_description": "Twórz diagramy, takie jak schematy blokowe, diagramy klas i sekwencyjne, wykresy Gantta i wiele innych, korzystając z składni Mermaid.",
         "mindmap_title": "Mapy myśli",
         "mindmap_description": "Organizuj wizualnie swoje myśli albo przeprowadź sesję burzy mózgów.",
-        "title": "Wiele sposobów przedstawienia Twoich informacji"
+        "title": "Typy notatek dopasowane do każdej zawartości",
+        "subtitle": "Nie wszystko da się wpasować w akapit. Trilium oferuje całą gamę typów notatek - od długich tekstów i kodu po arkusze, diagramy i mapy myśli, tak byś mógł uchwycić każdą myśl w najbardziej przystępnej formie i układać je dowolnie w twoim drzewie notatek.",
+        "others_label": "I więcej",
+        "notemap_title": "Mapa notatek",
+        "relationmap_title": "Mapa powiązań",
+        "savedsearch_title": "Zapisywanie wyszukiwań",
+        "rendernote_title": "Renderowane notatki",
+        "webview_title": "Podgląd internetowy",
+        "markdown_title": "Markdown",
+        "markdown_description": "Wolisz zwykły tekst? Zapisuj notatki bezpośrednio w Markdownie, zachowując ich mobilność i łatwość przeglądania wersji, jednocześnie wyświetlając tabele, bloki kodu i bogate formatowanie w podglądzie obok siebie.",
+        "spreadsheet_title": "Arkusze",
+        "spreadsheet_description": "W pełni funkcjonalny arkusz kalkulacyjny, z formułami, formatowaniem warunkowym, walidacją danych, sortowaniem i filtrowaniem. Importuj i eksportuj pliki Excel-a (.xlsx) i pliki CSV."
     },
     "collections": {
         "calendar_title": "Kalendarze",
@@ -60,9 +83,12 @@
         "board_description": "Organizuj swoje zadania i postępy projektów w tablicach Kanban z prostym tworzeniem nowych elementów i kolumn, a możliwość graficznego ich przenoszenia ułatwi zmianę statusu i pozwoli zachować porządek.",
         "geomap_title": "Mapy",
         "geomap_description": "Zaplanuj wakacje albo interesujące miejsca bezpośrednio na mapie, używaj personalizowanych pinezek. Dzięki możliwości importu plików GPX możesz wyświetlać przebyte trasy.",
-        "title": "Kolekcje",
+        "title": "Przeglądaj swoje notatki z wszystkich stron",
         "presentation_title": "Prezentacje",
-        "presentation_description": "Zawrzyj informacje w slajdach i zaprezentuj je w pełnoekranowych prezentacjach, które możesz łatwo wyeksportować do plików PDF."
+        "presentation_description": "Zawrzyj informacje w slajdach i zaprezentuj je w pełnoekranowych prezentacjach, które możesz łatwo wyeksportować do plików PDF.",
+        "subtitle": "Kolekcje zapewniają grupie notatek specjalny widok. Wyświetlaj te same notatki jako kalendarz, tabelę, tablicę Kanban, interaktywną mapę i wiele innych, a następnie przełączaj się między układami, gdy tylko zmienią się Twoje potrzeby.",
+        "dashboard_title": "Panel",
+        "dashboard_description": "Ułóż swoje notatki jako przeciągane i skalowalne kafelki na siatce. Notatki staną się dynamicznymi widżetami, wyświetlającymi swoją zawartość w podglądzie; idealne do tworzenia osobistej strony głównej lub przeglądu projektu, gromadząc wszystko w jednym miejscu."
     },
     "faq": {
         "title": "Częste pytania",
@@ -77,11 +103,18 @@
         "network_share_question": "Czy mogę udostępniać moje bazy danych przez dyski sieciowe?",
         "network_share_answer": "Nie, ogólnie przesyłanie baz SQLite przez dyski sieciowe nie jest dobrym pomysłem. Czasami może to zadziałać, ale istnieje szansa, że taka baza danych może zostać uszkodzona przez niedoskonałości blokad plików w sieci.",
         "security_question": "Jak są chronione moje dane?",
-        "security_answer": "Domyślnie notatki nie są szyfrowane i mogą być odczytane bezpośrednio z bazy danych. Kiedy notatka zostanie oznaczona jako zaszyfrowana, to ta notatka szyfrowana jest używając AES-128-CBC."
+        "security_answer": "Domyślnie notatki nie są szyfrowane i mogą być odczytane bezpośrednio z bazy danych. Kiedy notatka zostanie oznaczona jako zaszyfrowana, to ta notatka szyfrowana jest używając AES-128-CBC.",
+        "free_question": "Czy Trilium jest darmowe?",
+        "free_answer": "Tak, kompletnie. Trilium jest darmowe i otwartoźródłowe. Działą na licencji AFPL-3.0, bez płatnych poziomów, kont i innych przyszłych opłat. Używaj za darmo, hostuj sam i modyfikuj jak chcesz.",
+        "cloud_question": "Czy jest wersja hostowana albo chmurowa?",
+        "cloud_answer": "Oficjalnie jeszcze nie, jest to coś co chcielibyśmy zaoferować w przyszłości. Aktualnie Trilium można hostować na własnym serwerze i uruchamiać aplikację pulpitową. Jeśli wolisz nie mieć własnego serwera - zewnętrzni dostawcy tacy jak <0>PikaPods</0> oferują hosting Trilium.",
+        "collaboration_question": "Czy wiele osób może pracować na tej samej notatce?",
+        "collaboration_answer": "Trilium jest zaprojektowane jako aplikacja jednoosobowa. Możesz synchronizować swoje notatki pomiędzy swoimi urządzeniami albo publikować jako strony internetowe tylko do odczytu. Wieloosobowa edycja tej samej notatki nie jest wspierana.",
+        "more_questions": "Masz jeszcze jakieś pytania? <0>Zapytaj społeczności</0>"
     },
     "final_cta": {
-        "title": "Gotowy aby zacząć przygodę z Trilium Notes?",
-        "description": "Zbuduj swoją personalną bazę wiedzy z zaawansowanymi funkcjami i pełną prywatnością.",
+        "title": "Zacznij budować własną bazę wiedzy",
+        "description": "Organizuj wszystko w jednej otwartoźródłowej aplikacji: Hierarchiczne notatki, zaawansowane wyszukiwanie i synchronizacja na prywatny serwer.",
         "get_started": "Start"
     },
     "components": {
@@ -182,7 +215,8 @@
         "get-started": "Start",
         "documentation": "Dokumentacja",
         "support-us": "Wesprzyj nas",
-        "resources": "Zasoby"
+        "resources": "Zasoby",
+        "language": "Język"
     },
     "resources": {
         "title": "Zasoby",
@@ -190,5 +224,64 @@
         "icon_packs_intro": "Rozszerz wybór dostępnych ikon dla swoich notatek, korzystając z pakietu ikon. Więcej informacji na temat pakietów ikon znajdziesz w <DocumentationLink> oficjalnej dokumentacji </DocumentationLink>.",
         "download": "Pobieranie",
         "website": "Strona internetowa"
+    },
+    "section_nav": {
+        "aria_label": "Idź do sekcji",
+        "organization": "Struktura",
+        "productivity": "Funkcjonalności",
+        "note_types": "Typy notatek",
+        "import": "Importuj i eksportuj",
+        "collections": "Kolekcje",
+        "scripting": "Skrypty",
+        "ai_integration": "AI",
+        "faq": "FAQ"
+    },
+    "import": {
+        "onenote_title": "Microsoft OneNote",
+        "notion_title": "Notion",
+        "keep_title": "Google Keep",
+        "evernote_title": "Evernote",
+        "anytype_title": "Anytype",
+        "obsidian_title": "Obsidian",
+        "title": "Otwórz swoje notatki",
+        "subtitle": "Swobodnie przenoś swoje notatki. Przenieś je z innych aplikacji, przekształć je z powrotem na otwarte formaty albo przekształć je na dopracowane dokumenty - jak tylko zechcesz.",
+        "pillar_import_title": "Importuj",
+        "pillar_import_description": "Przenieś twoje notatki, z zachowaniem ich struktury, z innych aplikacji albo zaimportuj pliki w standardach Markdown, HTML i OPML.",
+        "pillar_export_title": "Eksportuj",
+        "pillar_export_description": "Przenieś, w każdym momencie, każdą notatkę lub całe drzewa notatek do otwartego i wspieranego przez inne aplikacje formatu:",
+        "pillar_export_markdown": "Markdown dla czytelnego tekstu",
+        "pillar_export_html": "HTML dla samowystarczalnych stron",
+        "pillar_export_opml": "OPML dla hierarchii",
+        "pillar_pdf_title": "Drukuj do formatu PDF",
+        "pillar_pdf_description": "Przekształć swoje notatki do dopracowanych w stylu książki PDF-ów:",
+        "pillar_pdf_single": "Pojedyncza notatka",
+        "pillar_pdf_subtree": "Cała hierarchia trzymana w kolejności",
+        "pillar_pdf_ready": "Gotowe do druku i udostępniania",
+        "sources_label": "Importuj bezpośrednio z"
+    },
+    "ai_integration": {
+        "title": "AI na twoich warunkach",
+        "subtitle": "Opcjonalnie i na twoich warunkach. Funkcje AI są domyślnie wyłączone: twoje notatki nigdy nie są wysyłane nigdzie, dopóki sam nie włączysz i wybierzesz dostawcy.",
+        "screenshot_alt": "Czat Trilium AI tworzy notatki w Twoim imieniu za pomocą wbudowanych narzędzi",
+        "chat_title": "Czat z Twoimi notatkami",
+        "chat_description": "Zadawaj pytania i twórz podsumowania na wbudowanym czacie na podstawie Twoich notatek.",
+        "tools_title": "AI które współgra z twoimi notatkami",
+        "tools_description": "Pozwól asystentowi wyszukiwać, tworzyć i aktualizować notatki w Twoim imieniu za pomocą zestawu wbudowanych narzędzi.",
+        "providers_title": "Twój dostawca, twoje klucze",
+        "providers_description": "Połącz OpenAI, Anthropic lub Google przy użyciu własnego klucza API albo wskaż Trilium hostowany przez ciebie model OpenAI. Udostępniaj swoje notatki zewnętrznym asystentom przez MCP.",
+        "learn_more": "Dowiedz się więcej"
+    },
+    "scripting": {
+        "title": "Jeśli możesz to sobie wyobrazić, to możesz to napisać",
+        "subtitle": "Trilium nie jest tylko miejscem przechowywania notatek. Pisz, w działającym na twoim serwerze, kod JavaScript. Twórz własne interfejsy, automatyzuj swoją pracę i dostosuj od małych rzeczy po całą aplikację.",
+        "screenshot_alt": "Notatka renderująca wyświetlająca interaktywny analogowy zegar, zbudowany przez skrypt",
+        "widgets_title": "Własne widżety",
+        "widgets_description": "Dodaj własne przyciski, panele i widżety początkowe do interfejsu Trilium używając JavaScriptu.",
+        "backend_title": "Backendowe skrypty i wydarzenia",
+        "backend_description": "Uruchamiaj skrypty na serwerze - o danym czasie, czy reagujące na wydarzenia takie jak tworzenie i zmiana notatki.",
+        "render_title": "Notatka renderująca",
+        "render_description": "Buduj interaktywne tablice i mini aplikacje które renderują się w notatkach, tak jak przedstawiony tu zegar.",
+        "api_title": "Skrypt API",
+        "api_description": "Interfejs API dla notatek, hierarchii, atrybutów i wyszukiwań, Dostępne dla fronednowych i backendowych skryptów."
     }
 }

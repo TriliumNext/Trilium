@@ -1,0 +1,25 @@
+.tn-card.promoted-attributes-card {
+    /* The name takes the free space, pushing the buttons and the toggle to the trailing edge. */
+    .promoted-attribute-name {
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Reads as a note about the row rather than as something to press. */
+    .promoted-attribute-type {
+        flex-shrink: 0;
+        --color: var(--muted-text-color);
+        font-size: 0.8em;
+    }
+
+    .promoted-attribute-edit,
+    .promoted-attribute-delete {
+        flex-shrink: 0;
+    }
+
+    .switch-widget {
+        flex-shrink: 0;
+    }
+}

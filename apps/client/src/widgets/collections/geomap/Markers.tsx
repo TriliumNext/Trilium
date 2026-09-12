@@ -1,4 +1,5 @@
-import { AddLayerObject, type ExpressionSpecification, type GeoJSONSource, type MapGeoJSONFeature, type Map as MapLibreGLMap, type MapMouseEvent } from "maplibre-gl";
+import { GEO_LOCATION_ATTRIBUTE } from "@triliumnext/commons";
+import { AddLayerObject, type CircleLayerSpecification, type ExpressionSpecification, type GeoJSONSource, type MapGeoJSONFeature, type Map as MapLibreGLMap, type MapMouseEvent, type SymbolLayerSpecification } from "maplibre-gl";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -7,9 +8,11 @@ import { getReadableTextColor } from "../../../services/css_class_manager";
 import { renderIconImage } from "../../../services/icon_glyphs";
 import { useTriliumEvent } from "../../react/hooks";
 import { CLUSTER_LAYERS, CLUSTER_SOURCE_OPTIONS, installClusterLayers, UNCLUSTERED_ONLY, useClusterExpansion } from "./clusters";
-import { ParentMap } from "./map";
+import { boundsOf } from "./coordinates";
+import { MapStyleLoaded, ParentMap } from "./map";
+import { NOTE_ZOOM } from "./results";
 
-export const LOCATION_ATTRIBUTE = "geolocation";
+export { GEO_LOCATION_ATTRIBUTE as LOCATION_ATTRIBUTE } from "@triliumnext/commons";
 export const MARKER_LAYER = "points-layer";
 export const MARKER_SOURCE = "points";
 /** The glow put under the selected marker, drawn from the same source beneath the pins. */
@@ -72,7 +75,7 @@ export const LABEL_PAINT = {
         "text-color": "#fff",
         "text-halo-color": "rgba(0, 0, 0, 0.8)"
     }
-};
+} satisfies Record<"light" | "dark", NonNullable<SymbolLayerSpecification["paint"]>>;
 
 /**
  * The title of a marker whose titles are hidden.
@@ -101,10 +104,13 @@ const SELECTED_PIN_SCALE = 1.3;
 const SELECTION_GLOW_PAINT = {
     light: { "circle-color": "rgba(0, 0, 0, 0.35)" },
     dark: { "circle-color": "rgba(255, 255, 255, 0.4)" }
-};
+} satisfies Record<"light" | "dark", NonNullable<CircleLayerSpecification["paint"]>>;
 
 /** The glow's reach in screen pixels, a little wider than the grown pin standing over it. */
 const SELECTION_GLOW_RADIUS = 18;
+
+/** Air left around the notes a map is framed around, so no pin sits on the viewport's edge. */
+const FIT_PADDING = 48;
 
 /**
  * Every note that carries a location, drawn as one symbol layer.
@@ -144,10 +150,11 @@ interface MarkersProps {
 export default function Markers({ notes, hideLabels, isDarkTheme, clustered, placing, opensNotes, selectedNoteId }: MarkersProps) {
     const map = useContext(ParentMap);
     const version = useNoteChangeVersion(notes);
-    // Whether the style has finished loading at least once. Held outside the effects because either
-    // may run after the style has loaded, and one that does has no other way to learn that it did —
-    // `style.load` fires once per style and is long gone.
-    const styleLoaded = useRef(false);
+    // Whether there is a loaded style to add to. Read from the context rather than worked out here:
+    // a raster basemap is handed to MapLibre as an object, which loads it one animation frame later,
+    // and this component's effects run a frame and a macrotask after the map is built — so
+    // `style.load` has already fired by the time a listener could be attached (see MapStyleLoaded).
+    const styleLoaded = useContext(MapStyleLoaded);
     // The markers last built, kept where both effects can reach them: the layer has to be able to
     // fill itself again the moment it is rebuilt, without waiting on a fresh build.
     const markerData = useRef<Awaited<ReturnType<typeof buildMarkerData>>>();
@@ -176,7 +183,7 @@ export default function Markers({ notes, hideLabels, isDarkTheme, clustered, pla
      */
     const install = useCallback(() => {
         const data = markerData.current;
-        if (!map || !data || !styleLoaded.current) return;
+        if (!map || !data || !styleLoaded) return;
         const { features, images } = data;
 
         for (const [ id, image ] of images) {
@@ -265,7 +272,7 @@ export default function Markers({ notes, hideLabels, isDarkTheme, clustered, pla
             type: "FeatureCollection",
             features
         });
-    }, [ map, clustered ]);
+    }, [ map, clustered, styleLoaded ]);
 
     // The layer, which stands for as long as the map does. Neither editing a note nor changing the
     // look of a title comes through here: taking the layer down and putting it back is what made
@@ -273,11 +280,6 @@ export default function Markers({ notes, hideLabels, isDarkTheme, clustered, pla
     // and the markers only returned once all of them had been built again.
     useEffect(() => {
         if (!map) return;
-
-        function onStyleLoad() {
-            styleLoaded.current = true;
-            install();
-        }
 
         // A style belongs to a map, so a map that has been removed has none — and asking a removed
         // map for a layer is not a no-op but a crash, since every such call goes through the style
@@ -291,24 +293,17 @@ export default function Markers({ notes, hideLabels, isDarkTheme, clustered, pla
         }
         map.on("remove", onMapRemove);
 
-        // Listened for before the markers are built, not after. Building them is asynchronous, so
-        // nothing says whether it finishes before or after the style loads, and `style.load` is a
-        // one-shot event: a listener attached after it has fired is never called at all.
-        // `isStyleLoaded()` is no safety net either, since it answers for the tiles as much as for
-        // the style — on a map whose tiles are slow, or refused, it stays false long after the
-        // style itself is ready to be added to. Lose that toss with both and the markers are never
-        // added, which is what used to happen to a map big enough to be worth drawing.
-        map.on("style.load", onStyleLoad);
-        if (map.isStyleLoaded()) {
-            styleLoaded.current = true;
-        }
+        // Every later style load, which takes the source, the layers and the images with it: a style
+        // is a world of its own, and an image is not even part of one. Whether the *first* style has
+        // loaded is `styleLoaded`, which `install` reads.
+        map.on("style.load", install);
 
         // Whatever was last built goes straight back on, so a rebuilt layer is never empty while it
         // waits for a build it does not need.
         install();
 
         return () => {
-            map.off("style.load", onStyleLoad);
+            map.off("style.load", install);
             map.off("remove", onMapRemove);
             if (mapRemoved) return;
 
@@ -350,14 +345,14 @@ export default function Markers({ notes, hideLabels, isDarkTheme, clustered, pla
     useEffect(() => {
         if (!map?.getLayer(MARKER_LAYER)) return;
 
-        map.setLayoutProperty(MARKER_LAYER, "text-field", titleField(hideLabels, selectedNoteId));
-        for (const [ property, value ] of Object.entries(LABEL_PAINT[isDarkTheme ? "dark" : "light"])) {
-            map.setPaintProperty(MARKER_LAYER, property, value);
-        }
+        const labelPaint = LABEL_PAINT[isDarkTheme ? "dark" : "light"];
         // The glow keeps the same bargain the titles do, so it changes sides with them.
-        for (const [ property, value ] of Object.entries(SELECTION_GLOW_PAINT[isDarkTheme ? "dark" : "light"])) {
-            map.setPaintProperty(SELECTION_LAYER, property, value);
-        }
+        const glowPaint = SELECTION_GLOW_PAINT[isDarkTheme ? "dark" : "light"];
+
+        map.setLayoutProperty(MARKER_LAYER, "text-field", titleField(hideLabels, selectedNoteId));
+        map.setPaintProperty(MARKER_LAYER, "text-color", labelPaint["text-color"]);
+        map.setPaintProperty(MARKER_LAYER, "text-halo-color", labelPaint["text-halo-color"]);
+        map.setPaintProperty(SELECTION_LAYER, "circle-color", glowPaint["circle-color"]);
     }, [ map, hideLabels, isDarkTheme, selectedNoteId ]);
 
     // The selected marker, told apart on the standing layers: its pin grown and raised above its
@@ -465,6 +460,57 @@ function useMarkerOpening(map: MapLibreGLMap | null, enabled: boolean) {
 }
 
 /**
+ * Points the camera at the notes a map holds, on a map that has never been positioned.
+ *
+ * A map opened at the stock view stands over an ocean, and its notes are found by panning until
+ * they turn up — which is what a map filled in by a script asks of every reader who opens it.
+ * Framing them is what the reader would do by hand, done once and saved as any other view is.
+ *
+ * Only where `enabled`, which the view above passes as "no view has been saved": where one has, it
+ * is where the reader put the map and is never overruled. Only once per map besides, so a note
+ * gaining a place while the map is open cannot pull the camera off wherever the reader has since
+ * moved it.
+ *
+ * The framing is a camera move like any other, so the `moveend` behind it saves the view — the next
+ * open reads it back rather than working it out again.
+ *
+ * A component rather than an effect in the view above, so the map is read from the context every
+ * other layer reads it from. Nothing is drawn.
+ */
+export function FitToNotes({ notes, enabled }: { notes: FNote[], enabled: boolean }) {
+    const map = useContext(ParentMap);
+    const framed = useRef(false);
+
+    useEffect(() => {
+        if (!map || !enabled || framed.current) return;
+
+        const bounds = boundsOf(locationsOf(notes));
+        if (!bounds) return;
+
+        framed.current = true;
+        // One note draws a box with no width, which fits at whatever zoom the camera can be solved
+        // for — the whole world, in practice. `maxZoom` stands it on its street instead, at the
+        // level the detail pane goes to a marker at.
+        //
+        // Not animated: this is where the map opens, not somewhere it is taken. Flying would show
+        // the stock view first and swoop off it every time a map is opened for the first time.
+        map.fitBounds(bounds, { padding: FIT_PADDING, maxZoom: NOTE_ZOOM, animate: false });
+    }, [ map, notes, enabled ]);
+
+    return null;
+}
+
+/** Every place a map's notes stand, in the `[lng, lat]` a box is drawn from. */
+function* locationsOf(notes: FNote[]) {
+    for (const note of notes) {
+        const location = parseLocation(note.getLabelValue(GEO_LOCATION_ATTRIBUTE));
+        if (location) {
+            yield location;
+        }
+    }
+}
+
+/**
  * A GeoJSON feature per located note, and the pin image each of them asks for.
  *
  * The features are gathered first and the pins drawn afterwards, all at once. Reading the notes is
@@ -479,7 +525,7 @@ async function buildMarkerData(notes: FNote[]) {
     const wanted = new Map<string, { color: string, iconClass: string }>();
 
     for (const note of notes) {
-        const latLng = parseLocation(note.getLabelValue(LOCATION_ATTRIBUTE));
+        const latLng = parseLocation(note.getLabelValue(GEO_LOCATION_ATTRIBUTE));
         if (!latLng) continue;
 
         const color = note.getLabelValue("color") ?? DEFAULT_MARKER_COLOR;

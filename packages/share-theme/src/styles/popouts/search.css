@@ -32,3 +32,31 @@
     font-size: 12px;
     color: var(--text-menu);
 }
+
+.search-result-snippet {
+    font-size: 12px;
+    color: var(--text-menu);
+    margin-top: 2px;
+    /* Clamp to two lines so long matches don't blow up the popout. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    line-height: 1.35;
+}
+
+.search-result-snippet b {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.search-result-item:hover .search-result-snippet {
+    color: var(--text-menu-active);
+}
+
+.search-result-item:hover .search-result-snippet b {
+    color: var(--text-menu-active);
+}

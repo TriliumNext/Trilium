@@ -1,9 +1,9 @@
 import "./EditToolbar.css";
 
-import { useContext, useRef } from "preact/hooks";
+import { useContext } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
-import { useStaticTooltip } from "../../react/hooks";
+import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
 import type { DrawTool } from "./DrawShape";
 import { ParentMap } from "./map";
 
@@ -11,7 +11,7 @@ interface EditToolbarProps {
     /** The map may not be edited, which is every one of these buttons refused at once. */
     isReadOnly: boolean;
     /** The map is armed for the next click to place a new note, which the button wears as held
-     *  down (see the overlay buttons' active styling in theme-next/forms.css). */
+     *  down (see `active` on {@link OverlayControlButton}). */
     placing: boolean;
     /** Arms the map for a note to be placed, or stands it down again — the visible counterpart of
      *  the Escape the instruction toast offers (see index.tsx). */
@@ -33,9 +33,9 @@ const DRAW_TOOLS: { tool: DrawTool; icon: string; title: () => string }[] = [
 ];
 
 /**
- * The editing actions, standing in the middle of the map's foot on a control group of their own
- * (`tn-overlay-control-group`, the surface every group over this map stands on): adding a marker,
- * the drawing tools, and bringing in a GPX track.
+ * The editing actions, standing in the middle of the map's foot on an {@link OverlayControlGroup} of
+ * their own — the surface every group over this map stands on: adding a marker, the drawing tools,
+ * and bringing in a GPX track.
  *
  * A group of its own rather than more buttons on {@link MapToolbar}: that one is the camera — how
  * close in the map is drawn, how much screen it gets — and what changes the map is another kind of
@@ -50,84 +50,44 @@ const DRAW_TOOLS: { tool: DrawTool; icon: string; title: () => string }[] = [
  */
 export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, drawingTool, onToggleDrawing, onAddGpxTrack }: EditToolbarProps) {
     const map = useContext(ParentMap);
-    const addMarkerRef = useRef<HTMLButtonElement>(null);
-    const gpxRef = useRef<HTMLButtonElement>(null);
-
-    // Standing at the foot of the map, the tooltips open away from that edge, where they would
-    // otherwise fall off.
-    useStaticTooltip(addMarkerRef, {
-        title: placing ? t("geo-map.create-child-note-cancel") : t("geo-map.create-child-note-title"),
-        placement: "top"
-    });
-    useStaticTooltip(gpxRef, { title: t("geo-map.add-gpx-track"), placement: "top" });
 
     // No group over a map that could not be drawn (see the WebGL fallback in map.tsx).
     if (!map) return null;
 
     return (
-        <div
-            className="geo-edit-toolbar tn-overlay-control-group"
-            /* Keep a press on the controls from reaching the canvas underneath, which would
-               otherwise take it for the start of a drag. */
-            onMouseDown={(e) => e.stopPropagation()}
-        >
-            <button
-                ref={addMarkerRef}
-                type="button"
-                className={`tn-overlay-text-button geo-add-marker-button ${placing ? "active" : ""}`}
+        <OverlayControlGroup className="geo-edit-toolbar" placement="bottom-center" overCanvas>
+            {/* The pin a note dropped on the map wears (see GEO_MARKER_ICON in commons) — the
+                button shows the very thing it drops, which is also the ghost that will follow the
+                pointer once armed. The words beside it are what names the button; the tooltip says
+                at more length what it does. */}
+            <OverlayControlButton
+                title={placing ? t("geo-map.create-child-note-cancel") : t("geo-map.create-child-note-title")}
+                icon="bx-pin"
+                text={placing ? t("geo-map.add-marker-cancel") : t("geo-map.add-marker")}
+                className="geo-add-marker-button"
+                active={placing}
                 disabled={isReadOnly}
                 onClick={onTogglePlacement}
-            >
-                {/* The pin a note dropped on the map wears (see CHILD_NOTE_ICON in api.ts) — the
-                    button shows the very thing it drops, which is also the ghost that will follow
-                    the pointer once armed. A child rather than a class on the button: the boxicons
-                    class sets the icon font on whatever wears it, and the words beside it are to
-                    stay words. */}
-                <span className="bx bx-pin" aria-hidden="true" />
-                {placing ? t("geo-map.add-marker-cancel") : t("geo-map.add-marker")}
-            </button>
+            />
+            {/* Each tool wears the shape it draws and no words, the pin's name being enough to say
+                what the row is for. An armed tool's tooltip says what a second press does, as the
+                marker button's does. */}
             {DRAW_TOOLS.map(({ tool, icon, title }) => (
-                <DrawToolButton
+                <OverlayControlButton
                     key={tool}
-                    icon={icon}
                     title={drawingTool === tool ? t("geo-map.draw-cancel") : title()}
+                    icon={icon}
                     active={drawingTool === tool}
                     disabled={isReadOnly}
                     onClick={() => onToggleDrawing(tool)}
                 />
             ))}
-            <button
-                ref={gpxRef}
-                type="button"
-                className="tn-overlay-icon-button bx bx-trip"
-                aria-label={t("geo-map.add-gpx-track")}
+            <OverlayControlButton
+                title={t("geo-map.add-gpx-track")}
+                icon="bx-trip"
                 disabled={isReadOnly}
                 onClick={onAddGpxTrack}
             />
-        </div>
+        </OverlayControlGroup>
     );
-}
-
-/**
- * One drawing tool's button — a component apiece rather than markup in the loop above, because
- * each needs a tooltip of its own and a tooltip is a hook on a ref.
- */
-function DrawToolButton({ icon, title, active, disabled, onClick }: {
-    icon: string;
-    title: string;
-    active: boolean;
-    disabled: boolean;
-    onClick: () => void;
-}) {
-    const ref = useRef<HTMLButtonElement>(null);
-    useStaticTooltip(ref, { title, placement: "top" });
-
-    return <button
-        ref={ref}
-        type="button"
-        className={`tn-overlay-icon-button bx ${icon} ${active ? "active" : ""}`}
-        aria-label={title}
-        disabled={disabled}
-        onClick={onClick}
-    />;
 }

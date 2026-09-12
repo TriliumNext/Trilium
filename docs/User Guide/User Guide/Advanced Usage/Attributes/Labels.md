@@ -14,7 +14,7 @@ A label is an [attribute](../Attributes.md) of a note which has a name and optio
 3.  Select _Add new label_ for the relation.
 
 > [!TIP]
-> If you prefer keyboard shortcuts, press <kbd>Alt</kbd>+<kbd>L</kbd> while focused on a note or in the _Owned Attributes_ section to display the visual editor.
+> If you prefer keyboard shortcuts, press Alt+L while focused on a note or in the _Owned Attributes_ section to display the visual editor.
 
 While in the visual editor:
 
@@ -46,7 +46,7 @@ This is a list of labels that Trilium natively supports.
 | `calendarRoot` | Marks the note which should be used as root for <a class="reference-link" href="../Advanced%20Showcases/Day%20Notes.md">Day Notes</a>. Only one should be marked as such. |
 | `archived` | Hides notes from default search results and dialogs. Archived notes can optionally be hidden in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>. |
 | `excludeFromExport` | Excludes this note and its children when exporting. |
-| `run`, `runOnInstance`, `runAtHour` | See <a class="reference-link" href="../../Scripting/Backend%20scripts/Events.md">Events</a>. |
+| `run`, `runOnInstance`, `runAtHour` | See <a class="reference-link" href="../../Scripting/Backend%20scripts/Backend%20Events.md">Backend Events</a>. |
 | `disableInclusion` | Scripts with this label won't be included into parent script execution. |
 | `sorted`, `sortDirection`, `sortFoldersFirst`, `sortNatural`, `sortLocale`, `top`, `bottom` | Manages automatic/permanent sorting. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Sorting%20Notes.md">Sorting Notes</a>. |
 | `hidePromotedAttributes` | Hide <a class="reference-link" href="Promoted%20Attributes.md">Promoted Attributes</a> on this note. Generally useful when defining inherited attributes, but the parent note doesn't need them. |
@@ -55,6 +55,7 @@ This is a list of labels that Trilium natively supports.
 | `appCss` | Marks CSS notes which are loaded into the Trilium application and can thus be used to modify Trilium's looks. See <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> for more info. |
 | `appTheme` | Marks CSS notes which are full Trilium themes and are thus available in Trilium options. See <a class="reference-link" href="../../Theme%20development">Theme development</a> for more information. |
 | `appThemeBase` | Set to `next`, `next-light`, or `next-dark` to use the corresponding TriliumNext theme (auto, light or dark) as the base for a custom theme, instead of the legacy one. See <a class="reference-link" href="../../Theme%20development/Customize%20the%20Next%20theme.md">Customize the Next theme</a> for more information. |
+| `customFont` | Marks a font as selectable in the Options → Appearance font selection. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Personalizing the font</a>. |
 | `cssClass` | Value of this label is then added as CSS class to the node representing given note in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>. This can be useful for advanced theming. Can be used in template notes. |
 | `iconClass` | value of this label is added as a CSS class to the icon on the tree which can help visually distinguish the notes in the tree. Example might be bx bx-home - icons are taken from boxicons. Can be used in template notes. |
 | `pageSize` | Specifies the number of items per page in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a>. |
@@ -69,10 +70,10 @@ This is a list of labels that Trilium natively supports.
 | `bookmarkFolder` | Note with this label will appear in bookmarks as folder (allowing access to its children). See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a> for more information. |
 | `share*` | See the attribute reference in <a class="reference-link" href="../Sharing.md">Sharing</a>. |
 | `displayRelations`, `hideRelations` | Comma delimited names of relations which should be displayed/hidden in a <a class="reference-link" href="../../Note%20Types/Relation%20Map.md">Relation Map</a> (both the note type and the <a class="reference-link" href="../Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a> general functionality). |
-| `titleTemplate` | Default title of notes created as children of this note. This value is evaluated as a JavaScript string and thus can be enriched with dynamic content via the injected `now` and `parentNote` variables.   <br>  <br>See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a> for more info. |
+| `titleTemplate` | Default title of notes created as children of this note. This value is evaluated as a JavaScript string and thus can be enriched with dynamic content via the injected `now` and `parentNote` variables.      <br>  <br>See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a> for more info. |
 | `template` | This note will appear in the selection of available template when creating new note. See <a class="reference-link" href="../Templates.md">Templates</a> for more information. |
 | `toc` | Controls the display of the <a class="reference-link" href="../../Note%20Types/Text/Table%20of%20contents.md">Table of contents</a> for a given note. `#toc` or `#toc=show` to always display the table of contents, `#toc=false` to always hide it. |
-| `color` | defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f    <br>Note: this color may be automatically adjusted when displayed to ensure sufficient contrast with the background. |
+| `color` | defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f       <br>Note: this color may be automatically adjusted when displayed to ensure sufficient contrast with the background. |
 | `keyboardShortcut` | Defines a keyboard shortcut which will immediately jump to this note. Example: 'ctrl+alt+e'. Requires frontend reload for the change to take effect. |
 | `keepCurrentHoisting` | Opening this link won't change hoisting even if the note is not displayable in the current hoisted subtree. |
 | `executeButton` | Title of the button which will execute the current code note |
@@ -98,3 +99,4 @@ This is a list of labels that Trilium natively supports.
 | `clipperInbox` | Overrides the default location where the Web Clipper saves clippings (defaults to the day note). See <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a>. |
 | `similarNotesWidgetDisabled` | Disables the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Similar%20Notes.md">Similar Notes</a> ribbon tab (old layout only) |
 | `docName` , `docUrl` | Used internally for the in-app help. |
+| `aiQuickAction` | Defines a custom prompt to be used for the <a class="reference-link" href="../../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a>'s quick actions. |

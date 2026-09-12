@@ -94,6 +94,77 @@ test("does not ask to confirm leaving after the annotation was saved", async ({ 
     expect(prompted).toBe(false);
 });
 
+test("leaves an annotation the user has selected selected", async ({ page }) => {
+    const viewer = await openHarness(page);
+    await enterHighlightMode(viewer);
+    const box = await pageBox(viewer);
+
+    // Drawing a highlight leaves it selected, which is also the state reached by clicking an
+    // existing one: its floating toolbar — where the colour picker lives — is shown for as
+    // long as it stays selected.
+    await drawStroke(page, box, [[200, 200], [320, 240], [420, 210]]);
+    await viewer.locator(".annotationEditorLayer .highlightEditor").first().waitFor({ state: "visible" });
+    expect(await selectedEditorCount(page)).toBe(1);
+
+    // A save fires a second after the last interaction, which is exactly the gap in which the
+    // user is choosing a colour. Committing pending edits must not take the selection with it
+    // (#11059): a selected annotation is already in annotationStorage, so there is nothing to
+    // commit, and unselecting it tears down the toolbar the user is reaching for.
+    await requestBlob(page, 1);
+    await page.waitForTimeout(300);
+    expect(await selectedEditorCount(page)).toBe(1);
+});
+
+test("picking a tool on an already-annotated document schedules nothing", async ({ page, context }) => {
+    // Produce a document that carries a stored annotation, the way any previously annotated
+    // PDF does.
+    const first = await openHarness(page);
+    await enterInkMode(first);
+    await drawStroke(page, await pageBox(first), [[200, 200], [320, 260]]);
+    await page.waitForTimeout(500);
+    const bytes = await requestBlob(page, 1);
+
+    await context.route("**/sample.pdf", (route) => route.fulfill({
+        body: Buffer.from(bytes),
+        contentType: "application/pdf"
+    }));
+    const reopened = await context.newPage();
+    const viewer = await openHarness(reopened);
+    expect(await modifiedCount(reopened)).toBe(0);
+
+    // Entering an editing mode registers that stored annotation as an editor, which dirties
+    // annotationStorage without changing the document. Reporting it would have the parent
+    // re-serialise and re-upload the whole PDF for a button press (#11059).
+    await enterHighlightMode(viewer);
+    await reopened.waitForTimeout(1200);
+    expect(await modifiedCount(reopened)).toBe(0);
+
+    // The document is still saveable: drawing on it reports as usual.
+    await drawStroke(reopened, await pageBox(viewer), [[200, 400], [320, 440]]);
+    await reopened.waitForTimeout(500);
+    expect(await modifiedCount(reopened)).toBeGreaterThan(0);
+});
+
+test("changing a tool's colour with nothing selected schedules nothing", async ({ page }) => {
+    const viewer = await openHarness(page);
+    await enterHighlightMode(viewer);
+
+    // The highlight tool's parameter toolbar opens with the mode. Its picker sets the colour the
+    // *next* highlight is drawn in — nothing already in the document changes, so there is nothing
+    // to save (#11059).
+    const picker = viewer.locator("#editorHighlightColorPicker");
+    await picker.locator("button").first().click();
+    await picker.locator(".dropdown button").nth(2).click();
+    await page.waitForTimeout(1000);
+
+    expect(await modifiedCount(page)).toBe(0);
+
+    // The new colour still applies, and drawing in it is a change like any other.
+    await drawStroke(page, await pageBox(viewer), [[200, 300], [330, 340]]);
+    await page.waitForTimeout(500);
+    expect(await modifiedCount(page)).toBeGreaterThan(0);
+});
+
 test("annotations survive reopening the saved document", async ({ page, context }) => {
     const viewer = await openHarness(page);
     await enterInkMode(viewer);
@@ -133,6 +204,22 @@ async function openHarness(page: Page): Promise<FrameLocator> {
 async function enterInkMode(viewer: FrameLocator) {
     await viewer.locator("#editorInkButton").click();
     await viewer.locator(".annotationEditorLayer").first().waitFor({ state: "attached" });
+}
+
+async function enterHighlightMode(viewer: FrameLocator) {
+    await viewer.locator("#editorHighlightButton").click();
+    await viewer.locator(".annotationEditorLayer").first().waitFor({ state: "attached" });
+}
+
+/**
+ * How many editors pdf.js currently shows as selected. `selectedEditor` is the class that
+ * carries the floating toolbar, so it stands in for "the user's selection is still there".
+ */
+function selectedEditorCount(page: Page): Promise<number> {
+    const frame = page.frame({ url: /viewer\.html/ });
+    if (!frame) throw new Error("Viewer frame not found");
+
+    return frame.evaluate(() => document.querySelectorAll(".annotationEditorLayer .selectedEditor").length);
 }
 
 async function pageBox(viewer: FrameLocator) {

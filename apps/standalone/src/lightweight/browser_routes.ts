@@ -4,7 +4,8 @@
  */
 
 import { BootstrapDefinition } from '@triliumnext/commons';
-import { entity_changes, getContext, getPlatform, getSharedBootstrapItems, getSql, routes, sql_init } from '@triliumnext/core';
+import { checkIntegrity, consistency_checks, entity_changes, getContext, getPlatform, getSharedBootstrapItems, getSql, routes, sql_init } from '@triliumnext/core';
+import llmRoute from '@triliumnext/core/src/routes/api/llm.js';
 
 import packageJson from '../../package.json' with { type: 'json' };
 import { type BrowserRequest, BrowserRouter } from './browser_router';
@@ -131,7 +132,7 @@ function createRoute(router: BrowserRouter) {
  * transactional() wrapper, which would commit an empty transaction immediately when
  * passed an async callback.
  */
-function createAsyncRoute(router: BrowserRouter) {
+function createAsyncRoute(router: BrowserRouter, { transactional = true } = {}) {
     return (method: HttpMethod, path: string, _middleware: any[], handler: (req: any, res: any) => Promise<unknown>, resultHandler?: ((req: any, res: any, result: unknown) => unknown) | null) => {
         router.register(method, path, (req: BrowserRequest) => {
             // Exclusive: this transaction stays open across awaits, so no other
@@ -140,7 +141,8 @@ function createAsyncRoute(router: BrowserRouter) {
                 setContextFromHeaders(req);
                 const expressLikeReq = toExpressLikeReq(req);
                 const mockRes = createMockExpressResponse();
-                const result = await getSql().transactionalAsync(() => handler(expressLikeReq, mockRes));
+                const run = () => handler(expressLikeReq, mockRes);
+                const result = transactional ? await getSql().transactionalAsync(run) : await run();
 
                 // If the handler used the mock response (e.g. image routes that call res.send()),
                 // return it as a raw response so BrowserRouter doesn't JSON-serialize it.
@@ -279,12 +281,17 @@ export function registerRoutes(router: BrowserRouter): void {
     routes.buildSharedApiRoutes({
         route: createRoute(router),
         asyncRoute: createAsyncRoute(router),
+        asyncRouteWithoutTransaction: createAsyncRoute(router, { transactional: false }),
         apiRoute,
         asyncApiRoute: createApiRoute(router, false),
         apiResultHandler,
         checkApiAuth: noopMiddleware,
         checkApiAuthOrElectron: noopMiddleware,
         checkAppNotInitialized,
+        // Nothing reaches this build but the page it is part of: there is no port, no session and
+        // nobody else who could ask. The wizard's password gate exists for instances served over a
+        // network, which this one never is.
+        checkSetupAuth: noopMiddleware,
         checkCredentials: noopMiddleware,
         loginRateLimiter: noopMiddleware,
         uploadMiddlewareWithErrorHandling: noopMiddleware,
@@ -294,6 +301,33 @@ export function registerRoutes(router: BrowserRouter): void {
         csrfMiddleware: noopMiddleware
     });
     apiRoute('get', '/bootstrap', bootstrapRoute);
+
+    // Streaming a chat, in the only form this runtime can serve it: the request
+    // starts the completion and returns, and the chunks arrive over the
+    // WebSocket-style channel (see core's routes/api/llm.ts). It is registered
+    // here rather than in the shared table because the server and the desktop app
+    // answer `/api/llm-chat/stream` with Server-Sent Events instead — they can
+    // hold a response open, and it delivers the chunks to the one client that
+    // asked rather than broadcasting them to every device signed in.
+    apiRoute('post', '/api/llm-chat/stream-start', llmRoute.startChatStream);
+    apiRoute('post', '/api/llm-chat/stream-abort', llmRoute.abortChatStream);
+
+    // Keeping the database in order, which the server answers from its own routes (see the server's
+    // `routes.ts`). Registered here rather than in the shared table because only two of the three
+    // belong in this runtime: compacting rebuilds the database through the temporary store, which
+    // this build keeps in memory, so it would ask the browser for the size of the database again at
+    // the moment the user is short of room.
+    apiRoute("get", "/api/database/check-integrity", () => checkIntegrity());
+    // Awaited rather than left running, and without a transaction of its own: the checks write as
+    // they go and reload becca at the end, which no other request may be interleaved with. The
+    // server lets its own run on past the response, having no such connection to protect.
+    createAsyncRoute(router, { transactional: false })(
+        "post",
+        "/api/database/find-and-fix-consistency-issues",
+        [],
+        () => consistency_checks.runOnDemandChecks(true),
+        apiResultHandler
+    );
 
     // Dummy routes for compatibility.
     apiRoute("get", "/api/script/widgets", () => []);
@@ -308,6 +342,11 @@ function bootstrapRoute(req: { query: Record<string, string | undefined> }): Boo
     const isDbInitialized = sql_init.isDbInitialized();
     const commonItems = {
         ...getSharedBootstrapItems(assetPath, isDbInitialized),
+        // The setup wizard's password gate exists for instances served over a network. This one is
+        // served to nobody, so asking would be asking for nothing — and `checkSetupAuth` here is a
+        // no-op, which would leave the screen holding out for an answer it never checks.
+        setupAuthRequired: false,
+        setupSecondFactorRequired: false,
         isDev: import.meta.env.DEV,
         isStandalone: true,
         // A window torn off into its own popup carries `?extraWindow`, same as on the server. It has

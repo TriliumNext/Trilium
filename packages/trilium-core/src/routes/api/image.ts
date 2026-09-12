@@ -1,4 +1,4 @@
-import { type ImageCompressionOptions, isAcceptedImageMime, isImageAttachmentRole, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { type ImageCompressionOptions, isAcceptedImageMime, isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import type { Request, Response } from "express";
 import type { File } from "../../services/import/common.js";
 
@@ -12,8 +12,7 @@ import imageService from "../../services/image.js";
 import imageCompressionService from "../../services/image_compression.js";
 import imageInfoService from "../../services/image_info.js";
 import imageInventoryService from "../../services/image_inventory.js";
-import { sanitizeSvg, SVG_CONTENT_SECURITY_POLICY } from "../../services/utils/index.js";
-import { unwrapStringOrBuffer } from "../../services/utils/binary.js";
+import { sendSanitizedSvg } from "../helpers.js";
 
 function returnImageFromNote(req: Request<{ noteId: string }>, res: Response) {
     const image = becca.getNote(req.params.noteId);
@@ -48,7 +47,7 @@ function returnImageInt(image: BNote | BRevision | null, res: Response) {
         res.set("Content-Type", image.mime);
         res.set("Cache-Control", "no-cache, no-store, must-revalidate");
 
-        if (image.mime === "image/svg+xml") {
+        if (isSvgMime(image.mime)) {
             sendSanitizedSvg(res, image.getContent());
         } else {
             res.send(image.getContent());
@@ -105,7 +104,7 @@ function returnAttachedImage(req: Request<{ attachmentId: string }>, res: Respon
     res.set("Content-Type", attachment.mime);
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
 
-    if (attachment.mime === "image/svg+xml") {
+    if (isSvgMime(attachment.mime)) {
         sendSanitizedSvg(res, attachment.getContent());
     } else {
         res.send(attachment.getContent());
@@ -226,11 +225,4 @@ function readCompressionOptions(req: Request): ImageCompressionOptions {
     }
 
     return body as ImageCompressionOptions;
-}
-
-function sendSanitizedSvg(res: Response, content: string | Uint8Array) {
-    const svgString = unwrapStringOrBuffer(content);
-    res.set("Content-Security-Policy", SVG_CONTENT_SECURITY_POLICY);
-    res.set("X-Content-Type-Options", "nosniff");
-    res.send(sanitizeSvg(svgString));
 }

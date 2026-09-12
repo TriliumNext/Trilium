@@ -109,6 +109,39 @@ describe("Modal", () => {
         expect(mocks.hide).toHaveBeenCalled();
     });
 
+    /**
+     * Bootstrap marks a raised dialog with `show`, and Preact writes `className` in full whenever
+     * the prop changes — so a host that says something about its note in the class took its own
+     * dialog off the screen. Picking a colour in the geo map's marker sheet did exactly that: the
+     * note's colour class arrived, `show` left with the old attribute, and what remained was a
+     * backdrop over an empty page.
+     */
+    it("keeps the classes Bootstrap wrote when the host's own change", async () => {
+        await act(async () => {
+            render(<Modal className="test-dialog" size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+
+        const dialog = container.querySelector<HTMLElement>(".test-dialog");
+        expect(dialog).toBeTruthy();
+        // What Bootstrap puts there once it has raised the dialog, it being mocked out here.
+        dialog?.classList.add("show");
+
+        await act(async () => {
+            render(<Modal className="test-dialog with-hue" size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+        expect(dialog?.classList.contains("show")).toBe(true);
+        expect(dialog?.classList.contains("with-hue")).toBe(true);
+        expect(dialog?.classList.contains("modal")).toBe(true);
+
+        // A class the host has stopped asking for goes, so this is not merely never writing again.
+        await act(async () => {
+            render(<Modal className="test-dialog" size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+        expect(dialog?.classList.contains("with-hue")).toBe(false);
+        expect(dialog?.classList.contains("test-dialog")).toBe(true);
+        expect(dialog?.classList.contains("show")).toBe(true);
+    });
+
     it("opens a dialog that starts closed only once it is asked to show", async () => {
         const onHidden = vi.fn();
 
