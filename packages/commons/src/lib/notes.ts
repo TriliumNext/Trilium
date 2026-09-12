@@ -95,20 +95,34 @@ const IMAGE_MIME_MAPPINGS: Record<string, string> = {
     "image/gif": "bx bxs-file-gif",
 };
 
-/** The label a note carries to stand on a geo map, read by {@link getNoteIcon}. */
+/** The labels a note carries to stand on a geo map, read by {@link getNoteIcon}. */
 export const GEO_LOCATION_ATTRIBUTE = "geolocation";
+export const GEO_SHAPE_ATTRIBUTE = "geoShape";
 
 /** The icon a note on a geo map is drawn under where it has none of its own. */
 export const GEO_MARKER_ICON = "bx bx-pin";
 
 /**
+ * The icon a drawn shape is worn under, by the kind its `#geoShape` label names (see the client's
+ * geomap/shapes.ts for the format). An unreadable label falls back to the line's icon, a shape
+ * being a line before it is anything else.
+ */
+export const GEO_SHAPE_ICONS: Record<string, string> = {
+    line: "bx bx-vector",
+    polygon: "bx bx-shape-polygon",
+    circle: "bx bx-shape-circle"
+};
+
+/**
  * The icon a note is drawn under: its own `#iconClass` where it has one, and a default read off
  * what the note is otherwise.
  *
- * A note carrying a non-empty `#geolocation` is drawn as a pin where it has nothing more specific,
- * so the geo map writes no `#iconClass` onto a marker it creates and an icon the map hands down
- * through `#child:iconClass` or a template still applies. `iconClass` stays an argument rather than
- * being read here because the share tree narrows it to the prefixes an icon pack supplies.
+ * A note carrying a non-empty `#geolocation` is drawn as a pin, and one carrying a `#geoShape` as
+ * the shape it draws, where either has nothing more specific. So the geo map writes no `#iconClass`
+ * onto a marker or a shape it creates: an icon the map hands down through `#child:iconClass` or a
+ * template still applies, and redrawing a shape as another kind changes the icon with it rather
+ * than leaving the one it was created under. `iconClass` stays an argument rather than being read
+ * here because the share tree narrows it to the prefixes an icon pack supplies.
  */
 export function getNoteIcon({
     noteId, type, mime, iconClass, workspaceIconClass, isFolder, getLabelValue
@@ -132,10 +146,14 @@ export function getNoteIcon({
     if (noteId === "_share") {
         return "bx bx-share-alt";
     } else if (type === "text") {
-        // A location is written onto a note deliberately, so it outranks the folder icon the note
-        // picks up from having children.
+        // A place on a map is written onto a note deliberately, so it outranks the folder icon the
+        // note picks up from having children.
         if (getLabelValue(GEO_LOCATION_ATTRIBUTE)) {
             return GEO_MARKER_ICON;
+        }
+        const shape = getLabelValue(GEO_SHAPE_ATTRIBUTE);
+        if (shape) {
+            return GEO_SHAPE_ICONS[shape.split(":", 1)[0]] ?? GEO_SHAPE_ICONS.line;
         }
         if (isFolder()) {
             return "bx bx-folder";

@@ -114,12 +114,13 @@ const TWO_SEGMENT_GPX = `<?xml version="1.0" encoding="UTF-8"?>
 /** The note the track belongs to, which every one of its layers is named after. */
 const NOTE_ID = "gpxNoteId1";
 
-/** What the marks are drawn with, under the ids the shared rasterizer files pins by (see Markers). */
-const PIN_COLOR = "purple";
+/** The note's colour: the line is drawn in it and the marks' pins are filled with it, under the ids
+ *  the shared rasterizer files pins by (see Markers). */
+const NOTE_COLOR = "purple";
 const NOTE_ICON = "bx bx-cycling";
-const START_IMAGE = markerImageId(PIN_COLOR, NOTE_ICON);
-const END_IMAGE = markerImageId(PIN_COLOR, "bx bxs-flag-checkered");
-const WAYPOINT_IMAGE = markerImageId(PIN_COLOR, "bx bx-pin");
+const START_IMAGE = markerImageId(NOTE_COLOR, NOTE_ICON);
+const END_IMAGE = markerImageId(NOTE_COLOR, "bx bxs-flag-checkered");
+const WAYPOINT_IMAGE = markerImageId(NOTE_COLOR, "bx bx-pin");
 
 describe("GpxTrack", () => {
     let container: HTMLElement;
@@ -160,8 +161,7 @@ describe("GpxTrack", () => {
                             noteId={NOTE_ID}
                             title="A Sunday ride"
                             gpxXmlString={gpx}
-                            trackColor="red"
-                            pinColor={PIN_COLOR}
+                            color={NOTE_COLOR}
                             iconClass={NOTE_ICON}
                             hideLabels={hideLabels}
                             isDarkTheme={isDarkTheme}
@@ -217,7 +217,7 @@ describe("GpxTrack", () => {
 
         renderTrack({ styleLoaded: true });
 
-        expect(layer("layer")?.paint["line-color"]).toBe("red");
+        expect(layer("layer")?.paint["line-color"]).toBe(NOTE_COLOR);
         expect(trackCoordinates()?.type).toBe("MultiLineString");
     });
 

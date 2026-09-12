@@ -11,7 +11,9 @@
     "auto_read_only_disabled": "text/code notes can be set automatically into read mode when they are too large. You can disable this behaviour on per-note basis by adding this label to the note",
     "workspace_tab_background_color": "CSS colour used in the note tab when hoisted to this note",
     "color": "defines colour of the note in note tree, links etc. Use any valid CSS colour value like 'red' or #a13d5f",
-    "color_type": "Colour"
+    "color_type": "Colour",
+    "calendar_slot_label_interval": "How often the timeslots of a calendar are labelled, as <code>HH:MM:SS</code>. Defaults to an hour.",
+    "slide_background": "The background of a slide, as a colour or as a CSS gradient."
   },
   "mobile_detail_menu": {
     "error_unrecognized_command": "Unrecognised command {{command}}"
@@ -235,5 +237,11 @@
     "bulletList": "<code>*</code> or <code>-</code> followed by space for bullet list",
     "numberedList": "<code>1.</code> or <code>1)</code> followed by space for numbered list",
     "blockQuote": "start a line with <code>></code> followed by space for block quote"
+  },
+  "fonts": {
+    "document_preview_body": "Snipped 4 stems below a node and stood them in water on the sill; the first roots showed after <strong>9 days</strong>. It holds its colour in <em>full sun</em> and fades to green in the shade."
+  },
+  "sidebar_help": {
+    "highlights_configure": "Which formats count is yours to set: bold, italic, underlined, coloured text and text on a background colour can each be listed or left out, from the gear in this card's header. Pressing an entry scrolls the note to it."
   }
 }

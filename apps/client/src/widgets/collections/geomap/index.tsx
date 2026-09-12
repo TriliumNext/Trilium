@@ -13,11 +13,12 @@ import { logError } from "../../../services/ws";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { useCollectionTreeDrag, useColorScheme, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate } from "../../react/hooks";
 import { ViewModeProps } from "../interface";
-import { createNewNote, createNoteForPlace, importGpxTrack, moveMarker } from "./api";
+import { createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker } from "./api";
 import Buildings from "./Buildings";
 import ContextMenus from "./ContextMenus";
 import { pointPlace } from "./coordinates";
 import DetailPane, { PaneSelection } from "./DetailPane";
+import DrawShape, { DrawTool } from "./DrawShape";
 import EditToolbar from "./EditToolbar";
 import GhostPin from "./GhostPin";
 import { GPX_MIME, GpxTrack } from "./GpxTrack";
@@ -32,6 +33,8 @@ import Pois from "./Pois";
 import ResultNavigator from "./ResultNavigator";
 import { NOTE_ZOOM, type SearchResult } from "./results";
 import SearchBox from "./SearchBox";
+import { ShapeLayer } from "./ShapeLayer";
+import { GeoShape, parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
 import Tooltips from "./Tooltips";
 
 /**
@@ -68,15 +71,19 @@ interface MapData {
 
 /**
  * What the next click on the map is for, where it is for anything at all: a new note is to be created
- * there, or the marker of the note named here is to be moved there. `undefined` is a map that is only
- * being looked at, which is every map most of the time.
+ * there, the marker of the note named here is to be moved there, or a line is being drawn point by
+ * point. `undefined` is a map that is only being looked at, which is every map most of the time.
  *
- * The two are one state rather than two because they are alternatives — a click cannot mean both — and
- * because the note being moved has nowhere else to be kept where it could not go missing.
+ * The three are one state rather than three because they are alternatives — a click cannot mean two
+ * of them — and because the note being moved has nowhere else to be kept where it could not go
+ * missing. Drawing differs from the other two in taking many clicks rather than one, which is why
+ * the map's own click handler leaves it alone (see onClick): the clicks belong to the drawing
+ * session (see DrawLine) until it finishes or is stood down.
  */
 type Placement =
     | { mode: "new" }
-    | { mode: "move"; noteId: string };
+    | { mode: "move"; noteId: string }
+    | { mode: "draw"; tool: DrawTool };
 
 export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<MapData>) {
     const { noteContext } = useNoteContext();
@@ -245,6 +252,26 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
         setPlacement((current) => current?.mode === "new" ? undefined : { mode: "new" });
     }, []);
     const startMarkerRelocation = useCallback((noteId: string) => setPlacement({ mode: "move", noteId }), []);
+    const toggleDrawing = useCallback((tool: DrawTool) => {
+        // A press on the armed tool stands the map down; a press on another switches to it, the
+        // way + takes over a map armed to move a marker.
+        setPlacement((current) => current?.mode === "draw" && current.tool === tool ? undefined : { mode: "draw", tool });
+    }, []);
+
+    /**
+     * Makes a note of a finished shape and opens the pane on it, title selected, exactly as a
+     * placed marker is offered for naming (see createNoteAt). Disarming comes first so a failure
+     * to create the note does not leave the map drawing a shape nobody is looking at any more.
+     */
+    const finishShape = useCallback(async (shape: GeoShape) => {
+        setPlacement(undefined);
+
+        const created = await createShapeNote(note, shape);
+        if (!created) return;
+
+        setNotes((current) => current.some((n) => n.noteId === created.noteId) ? current : [ ...current, created ]);
+        selectNote({ noteId: created.noteId, isNew: true });
+    }, [ note, selectNote ]);
 
     /**
      * Creates a note where the click landed and opens the pane on it, title selected, so naming the
@@ -300,11 +327,13 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                     title: t("geo-map.create-child-note-toast-title"),
                     message: t("geo-map.create-child-note-instruction")
                 }
-                : {
-                    icon: "move",
-                    title: t("geo-map.move-marker-toast-title"),
-                    message: t("geo-map.move-marker-instruction")
-                })
+                : placement.mode === "move"
+                    ? {
+                        icon: "move",
+                        title: t("geo-map.move-marker-toast-title"),
+                        message: t("geo-map.move-marker-instruction")
+                    }
+                    : drawingToast(placement.tool))
         });
 
         const globalKeyListener = (e: KeyboardEvent) => {
@@ -321,7 +350,9 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     }, [ placement ]);
 
     const onClick = useCallback(async (e: GeoMouseEvent) => {
-        if (!placement) return;
+        // A drawing session's clicks are its vertices, one by one — not this handler's to spend,
+        // and above all not to disarm on: the session runs until it finishes or is stood down.
+        if (!placement || placement.mode === "draw") return;
 
         // Leaving placement mode closes the instruction toast via the effect's cleanup. The state is
         // cleared first either way, so a failure to write the location does not leave the map armed
@@ -410,18 +441,22 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                     isReadOnly={isReadOnly}
                     placing={placement?.mode === "new"}
                     onTogglePlacement={toggleNotePlacement}
+                    drawingTool={placement?.mode === "draw" ? placement.tool : null}
+                    onToggleDrawing={toggleDrawing}
                     onAddGpxTrack={addGpxTrack}
                 />
                 <Tooltips selectedNoteId={selection?.noteId ?? null} paneMaximized={paneMaximized} />
                 {/* The preview under the pointer while a click is armed to mean a place — the note
                     being moved wearing its own pin, a note to be created wearing the one the map
-                    would give it (see GhostPin). */}
-                {placement && <GhostPin
+                    would give it (see GhostPin). A drawing session previews itself, so no ghost
+                    then. */}
+                {placement && placement.mode !== "draw" && <GhostPin
                     parentNote={note}
                     note={placement.mode === "move"
                         ? notes.find((n) => n.noteId === placement.noteId)
                         : undefined}
                 />}
+                {placement?.mode === "draw" && <DrawShape tool={placement.tool} onFinish={finishShape} />}
                 <DetailPane
                     notes={notes} parentNote={note} placing={!!placement} isReadOnly={isReadOnly}
                     selection={selection} onSelect={selectNote} onRelocate={startMarkerRelocation}
@@ -438,7 +473,8 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                     open the note themselves — the two would otherwise both answer the same click,
                     raising the quick editor over the pane that had just opened behind it. */}
                 <Markers notes={notes} hideLabels={hideLabels} isDarkTheme={layerData.isDarkTheme ?? false} clustered={clustered} placing={!!placement} opensNotes={false} selectedNoteId={selection?.noteId ?? null} />
-                {notes.map(note => <NoteGpxTrackWrapper note={note} hideLabels={hideLabels} isDarkTheme={layerData.isDarkTheme ?? false} />)}
+                {notes.map(note => <NoteGpxTrackWrapper key={note.noteId} note={note} hideLabels={hideLabels} isDarkTheme={layerData.isDarkTheme ?? false} />)}
+                {notes.map(note => <NoteShapeWrapper key={note.noteId} note={note} />)}
                 <FitToNotes notes={notes} enabled={!viewConfig?.view} />
             </Map>}
         </div>
@@ -555,14 +591,65 @@ function NoteGpxTrack({ note, hideLabels, isDarkTheme }: { note: FNote, hideLabe
         noteId={note.noteId}
         title={title}
         gpxXmlString={xmlString}
-        trackColor={color ?? "blue"}
         // The colour and icon rather than anything built from them: the marks are rasterized into
         // the track's own symbol layer through the shared pin rasterizer (see GpxTrack), so the
         // start of a track wears exactly the pin its note would wear as a marker.
-        pinColor={color ?? DEFAULT_MARKER_COLOR}
+        color={color ?? DEFAULT_MARKER_COLOR}
         iconClass={note.getIcon()}
         isDarkTheme={isDarkTheme}
         hideLabels={hideLabels}
     />;
+}
+
+/**
+ * A note's drawn shape, where the note carries one — a shape written into its `#geoShape` label
+ * (see shapes.ts). A label the shape cannot be read from draws nothing, the same nothing a note
+ * with no shape at all draws: the label is user-editable like any other, and a map is no place to
+ * report a parse error.
+ */
+function NoteShapeWrapper({ note }: { note: FNote }) {
+    const [ shapeValue ] = useNoteLabel(note, SHAPE_ATTRIBUTE);
+    const [ color ] = useNoteLabel(note, "color");
+
+    const shape = shapeValue ? parseGeoShape(shapeValue) : null;
+    if (!shape) {
+        return null;
+    }
+
+    return <ShapeLayer
+        noteId={note.noteId}
+        shape={shape}
+        color={color ?? DEFAULT_MARKER_COLOR}
+    />;
+}
+
+/** What the instruction toast says while each tool is armed (see the placement toast above). */
+function drawingToast(tool: DrawTool): { icon: string; title: string; message: string } {
+    switch (tool) {
+        case "line":
+            return {
+                icon: "vector",
+                title: t("geo-map.draw-line-toast-title"),
+                message: t("geo-map.draw-line-instruction")
+            };
+        case "polygon":
+            return {
+                icon: "shape-polygon",
+                title: t("geo-map.draw-polygon-toast-title"),
+                message: t("geo-map.draw-polygon-instruction")
+            };
+        case "rectangle":
+            return {
+                icon: "rectangle",
+                title: t("geo-map.draw-rectangle-toast-title"),
+                message: t("geo-map.draw-rectangle-instruction")
+            };
+        case "circle":
+            return {
+                icon: "shape-circle",
+                title: t("geo-map.draw-circle-toast-title"),
+                message: t("geo-map.draw-circle-instruction")
+            };
+    }
 }
 

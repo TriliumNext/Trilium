@@ -365,6 +365,12 @@ importers:
       temporal-polyfill:
         specifier: 1.0.4
         version: 1.0.4
+      terra-draw:
+        specifier: 1.32.3
+        version: 1.32.3
+      terra-draw-maplibre-gl-adapter:
+        specifier: 1.4.1
+        version: 1.4.1(maplibre-gl@6.8.0)(terra-draw@1.32.3)
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.3
@@ -10855,6 +10861,15 @@ packages:
 
   temporal-utils@1.0.2:
     resolution: {integrity: sha512-1B8Dl4KzrOvsNUlpoWGno2VLQlxroLjDgc5NBjVC9ax9ymdo+ezfyvhyjEMx+IVfhINr6CIG2gcnlP95iRrybQ==}
+
+  terra-draw-maplibre-gl-adapter@1.4.1:
+    resolution: {integrity: sha512-qZ/bc9bVPnyt0keLVTofV8xiTPkdkbO6RzqrfNLe9zH/edW5PsjvJw97m1EksPZeXNJtFxsVbhi12cPaoNiWfg==}
+    peerDependencies:
+      maplibre-gl: '>=4'
+      terra-draw: ^1.0.0
+
+  terra-draw@1.32.3:
+    resolution: {integrity: sha512-pQpwL8winsDW6/DbBgsaZKeMc83D+HqokxR+t1AbrN4U7C4mGgEfCtmRix1/5L4GfkLh1FE7pq44SWt76vK2Bw==}
 
   terser@5.51.2:
     resolution: {integrity: sha512-bWnjSNscmuI+GJze6ZupnHP8G/cTcsJF+bXCeQknk2SHQsgbNJnLrqiH9jZ2W4STPVXH2mDKKRX3iwPhc9Cn/Q==}
@@ -23719,6 +23734,13 @@ snapshots:
   temporal-spec@1.0.1: {}
 
   temporal-utils@1.0.2: {}
+
+  terra-draw-maplibre-gl-adapter@1.4.1(maplibre-gl@6.8.0)(terra-draw@1.32.3):
+    dependencies:
+      maplibre-gl: 6.8.0
+      terra-draw: 1.32.3
+
+  terra-draw@1.32.3: {}
 
   terser@5.51.2:
     dependencies:

@@ -9,6 +9,7 @@ import { deleteNoteOrBranch } from "../../../services/note_deletion";
 import { GPX_MIME } from "./GpxTrack";
 import type { GeoMouseEvent } from "./map";
 import { LOCATION_ATTRIBUTE } from "./Markers";
+import { type GeoShape, serializeGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
 
 /** The type a note put on the map is created as, and so what a template handed to it must match. */
 export const MARKER_NOTE_TYPE: NoteType = "text";
@@ -53,6 +54,10 @@ export async function removeFromMap(note: FNote, mapNote: FNote) {
 
     if (result.isDeleteNoteChecked) {
         await deleteNoteOrBranch(note.noteId, branchId);
+    } else if (note.hasLabel(SHAPE_ATTRIBUTE)) {
+        // A shape is on the map through its geometry rather than a location, so clearing
+        // SHAPE_ATTRIBUTE is what takes it off. The note and its content stay.
+        await attributes.setLabel(note.noteId, SHAPE_ATTRIBUTE, "");
     } else {
         await moveMarker(note.noteId, null);
     }
@@ -155,13 +160,39 @@ async function createNoteAt(
         noteAttributes.push({ type: "label", name: "iconClass", value: icon });
     }
 
+    return createMapNote(parentNote, noteAttributes, title);
+}
+
+/**
+ * Makes a note of a shape drawn on the map, and hands it back for the pane to open on.
+ *
+ * A marker note in every way but the label: the whole shape in `#geoShape` where a marker keeps its
+ * point in `#geolocation` (see shapes.ts). The note is the shape the way a marker note is its pin,
+ * so it is named and iconed by the same rules, and the content stays the user's to write.
+ */
+export async function createShapeNote(parentNote: FNote, shape: GeoShape) {
+    return createMapNote(parentNote, [
+        { type: "label", name: SHAPE_ATTRIBUTE, value: serializeGeoShape(shape) }
+    ]);
+}
+
+/**
+ * Creates a note of the map's own, carrying whatever puts it on the map.
+ *
+ * No title is sent unless the caller has one worth keeping, which leaves the naming where every
+ * other new note's is: the server's, and so a `#titleTemplate` on the map's if it carries one. No
+ * `#iconClass` either, `getNoteIcon` drawing a note by the geo label it carries (see commons), so
+ * an icon the map hands down through `#child:iconClass` or a template still applies.
+ */
+async function createMapNote(
+    parentNote: FNote, attributes: Omit<AttributeRow, "noteId" | "attributeId">[], title?: string) {
     const { note } = await note_create.createNote(parentNote.noteId, {
         title,
         content: "",
         type: MARKER_NOTE_TYPE,
         activate: false,
         isProtected: parentNote.isProtected,
-        attributes: noteAttributes
+        attributes
     });
 
     return note;

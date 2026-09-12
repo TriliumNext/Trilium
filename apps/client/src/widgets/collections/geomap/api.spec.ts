@@ -11,7 +11,9 @@ import dialog from "../../../services/dialog";
 import note_create from "../../../services/note_create";
 import { deleteNoteOrBranch } from "../../../services/note_deletion";
 import { buildNote } from "../../../test/easy-froca";
-import { createNewNote, createNoteForPlace, importGpxTrack, moveMarker, removeFromMap } from "./api";
+import {
+    createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker, removeFromMap
+} from "./api";
 
 vi.mock("../../../services/note_create", () => ({
     default: { createNote: vi.fn(async () => ({ note: { noteId: "created" }, branch: null })) }
@@ -106,6 +108,28 @@ describe("geo map api", () => {
             attributes: expect.arrayContaining([
                 { type: "label", name: "geolocation", value: "45.796,24.147" }
             ])
+        }));
+    });
+
+    it("leaves a drawn shape to be named as a placed marker is, geometry in the label", async () => {
+        const parent = buildNote({ title: "The map" });
+
+        const created = await createShapeNote(parent, {
+            type: "polygon",
+            coordinates: [ [ 2.29, 48.85 ], [ 2.35, 48.86 ], [ 2.3, 48.9 ] ]
+        });
+
+        expect(created).toEqual({ noteId: "created" });
+        expect(createNote).toHaveBeenCalledWith(parent.noteId, expect.objectContaining({
+            type: "text",
+            // Named and iconed by exactly the rules a placed marker is named and iconed by: no
+            // title, so a `#titleTemplate` on the map applies, and no icon, so getNoteIcon draws
+            // the shape the label names and `#child:iconClass` or a template can override it.
+            title: undefined,
+            activate: false,
+            attributes: [
+                { type: "label", name: "geoShape", value: "polygon:48.85,2.29 48.86,2.35 48.9,2.3" }
+            ]
         }));
     });
 

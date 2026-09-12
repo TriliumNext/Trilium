@@ -16,9 +16,12 @@ export interface GpxTrackProps {
     /** What the line is named along its length, and what the start mark wears under its pin. */
     title: string;
     gpxXmlString: string;
-    trackColor?: string;
-    /** What the marks' pins are filled with — the note's own colour, as its marker would wear it. */
-    pinColor: string;
+    /**
+     * The note's own colour, as its marker would wear it: the line is drawn in it and the marks'
+     * pins are filled with it. One colour rather than one per layer, a note having one colour —
+     * the line and its own start pin used to be given different ones and so disagreed.
+     */
+    color: string;
     /** The note's icon, which the start mark wears; the end and the waypoints have icons of their own. */
     iconClass: string;
     /** Whether the map is a dark one, which decides how the names are drawn over it (see Markers). */
@@ -73,7 +76,7 @@ const MARKS_ONLY: FilterSpecification = [ "==", [ "geometry-type" ], "Point" ];
  * the note's own menu (see ContextMenus) — a line three pixels wide being nearly impossible to hit
  * otherwise.
  */
-export function GpxTrack({ noteId, title, gpxXmlString, trackColor, pinColor, iconClass, isDarkTheme, hideLabels }: GpxTrackProps) {
+export function GpxTrack({ noteId, title, gpxXmlString, color, iconClass, isDarkTheme, hideLabels }: GpxTrackProps) {
     const parentMap = useContext(ParentMap);
     const styleLoaded = useContext(MapStyleLoaded);
 
@@ -93,7 +96,7 @@ export function GpxTrack({ noteId, title, gpxXmlString, trackColor, pinColor, ic
 
         const gpxDoc = new DOMParser().parseFromString(gpxXmlString, "application/xml");
         const tracks = readTrackLines(gpxDoc);
-        const marks = readMarks(gpxDoc, tracks, { noteId, title, pinColor, iconClass });
+        const marks = readMarks(gpxDoc, tracks, { noteId, title, color, iconClass });
 
         // The pins the marks stamp, rasterized off this path: the line must not wait on them, so
         // the layers go up in two halves — the line at once, the marks when their images arrive.
@@ -159,7 +162,7 @@ export function GpxTrack({ noteId, title, gpxXmlString, trackColor, pinColor, ic
                                 "line-cap": "round"
                             },
                             paint: {
-                                "line-color": trackColor ?? "blue",
+                                "line-color": color,
                                 "line-width": 3
                             }
                         });
@@ -176,7 +179,7 @@ export function GpxTrack({ noteId, title, gpxXmlString, trackColor, pinColor, ic
                             source: sourceId,
                             filter: LINES_ONLY,
                             paint: {
-                                "line-color": trackColor ?? "blue",
+                                "line-color": color,
                                 "line-opacity": 0,
                                 "line-width": HIT_WIDTH
                             }
@@ -264,7 +267,7 @@ export function GpxTrack({ noteId, title, gpxXmlString, trackColor, pinColor, ic
             }
         }
 
-        buildMarkImages(pinColor, iconClass).then((built) => {
+        buildMarkImages(color, iconClass).then((built) => {
             if (cancelled) return;
             images = built;
             if (styleLoaded) {
@@ -295,7 +298,7 @@ export function GpxTrack({ noteId, title, gpxXmlString, trackColor, pinColor, ic
                 // The map may already have been removed.
             }
         };
-    }, [ parentMap, styleLoaded, noteId, title, gpxXmlString, trackColor, pinColor, iconClass, isDarkTheme, hideLabels ]);
+    }, [ parentMap, styleLoaded, noteId, title, gpxXmlString, color, iconClass, isDarkTheme, hideLabels ]);
 
     return <div />;
 }
@@ -333,8 +336,8 @@ export function trackHitLayers(map: MapLibreGLMap) {
  * crossings, and a pin that will not say which one it is answers only to a click; the ends' pin
  * says the rest.
  */
-function readMarks(gpxDoc: Document, tracks: GpxTrackLines[], { noteId, title, pinColor, iconClass }: {
-    noteId: string; title: string; pinColor: string; iconClass: string;
+function readMarks(gpxDoc: Document, tracks: GpxTrackLines[], { noteId, title, color, iconClass }: {
+    noteId: string; title: string; color: string; iconClass: string;
 }) {
     const marks: GeoJSON.Feature[] = [];
 
@@ -342,7 +345,7 @@ function readMarks(gpxDoc: Document, tracks: GpxTrackLines[], { noteId, title, p
         marks.push({
             type: "Feature",
             geometry: { type: "Point", coordinates },
-            properties: { id: noteId, icon: markerImageId(pinColor, icon), name }
+            properties: { id: noteId, icon: markerImageId(color, icon), name }
         });
     }
 
@@ -374,13 +377,13 @@ function readMarks(gpxDoc: Document, tracks: GpxTrackLines[], { noteId, title, p
  * flags of their own in the note's colour. A pin that cannot be drawn is left out, and its mark
  * stamps nothing rather than keeping the rest from going up.
  */
-async function buildMarkImages(pinColor: string, iconClass: string) {
+async function buildMarkImages(color: string, iconClass: string) {
     const images = new Map<string, HTMLImageElement>();
 
     await Promise.all([ iconClass, END_ICON, WAYPOINT_ICON ].map(async (icon) => {
-        const image = await buildMarkerImage(pinColor, icon);
+        const image = await buildMarkerImage(color, icon);
         if (image) {
-            images.set(markerImageId(pinColor, icon), image);
+            images.set(markerImageId(color, icon), image);
         }
     }));
 

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { GEO_LOCATION_ATTRIBUTE, getImageAttachmentTitle, getMimeIcon, getNoteIcon, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink } from "./notes.js";
+import {
+    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getImageAttachmentTitle, getMimeIcon, getNoteIcon,
+    NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
+} from "./notes.js";
 import { NoteType } from "./rows.js";
 
 function buildArgs(overrides: {
@@ -104,6 +107,27 @@ describe("getNoteIcon", () => {
         expect(getNoteIcon(buildArgs({
             type: "file", mime: "application/gpx+xml", getLabelValue: located()
         }))).toBe("bx bx-trip");
+    });
+
+    it("draws a shape note as the shape its label names, by the same rules as a pin", () => {
+        const drawn = (value: string) =>
+            (name: string) => name === GEO_SHAPE_ATTRIBUTE ? value : null;
+
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("line:48.85,2.29 48.86,2.35") })))
+            .toBe("bx bx-vector");
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("polygon:48.85,2.29 48.9,2.3") })))
+            .toBe("bx bx-shape-polygon");
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("circle:48.85,2.29 500") })))
+            .toBe("bx bx-shape-circle");
+        // Nothing is written onto a shape note either, so the map's own icon still wins — and the
+        // icon follows a shape redrawn as another kind rather than staying what it was created as.
+        expect(getNoteIcon(buildArgs({
+            getLabelValue: drawn("circle:48.85,2.29 500"), iconClass: "bx bx-store"
+        }))).toBe("bx bx-store");
+        // A label nobody can read draws no shape on the map, but the note is still one that carries
+        // a shape; the line's icon is the least it could be.
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("nonsense") }))).toBe("bx bx-vector");
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("") }))).toBe("bx bx-note");
     });
 
     it("returns the note icon for a text note that is not a folder", () => {
