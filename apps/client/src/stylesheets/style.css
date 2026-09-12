@@ -2286,6 +2286,14 @@ button.close:hover {
     display: none;
 }
 
+/* `inline` overrides the icon font's `inline-block`: Chromium allows a line break after an atomic
+ * inline whatever follows it, which strands the icon at the end of a line while the title wraps to
+ * the next. The non-breaking space the markup puts after the icon then holds the two together. */
+.reference-link .tn-icon,
+.note-link-icon {
+    display: inline;
+}
+
 .reference-link .tn-icon {
     position: relative;
     top: 1px;

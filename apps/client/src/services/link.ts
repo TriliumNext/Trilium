@@ -100,9 +100,9 @@ const MAX_SPLIT_PANES_IN_HASH = 8;
 const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark"];
 
 /**
- * Separates a note icon from the title that follows it. The icon renders as an `inline-block`
- * span, so the boundary between it and the title is a soft wrap opportunity: a plain space, or no
- * space at all, lets a line end on the icon and push the title to the next line (#11459).
+ * Separates a note icon from the title that follows it. Paired with the `display: inline` the
+ * stylesheets give these icons, it stops a line from breaking between the two and stranding the
+ * icon at the end of it. A plain space would offer the break the icon no longer does (#11459).
  */
 const NON_BREAKING_SPACE = "\u00a0";
 
@@ -181,7 +181,9 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
         const icon = await getLinkIcon(noteId, viewMode);
 
         if (icon) {
-            $container.append($("<span>").addClass(`bx ${icon}`)).append(NON_BREAKING_SPACE);
+            $container
+                .append($("<span>").addClass(`bx ${icon} note-link-icon`))
+                .append(NON_BREAKING_SPACE);
         }
     }
 

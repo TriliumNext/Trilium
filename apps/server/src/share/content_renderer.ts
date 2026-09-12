@@ -610,9 +610,8 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
  */
 function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
-    // The `&nbsp;` after the icon keeps it on the same line as the title: the icon renders as an
-    // `inline-block` span, so the boundary between it and the title is otherwise a wrap
-    // opportunity.
+    // The `&nbsp;` after the icon pairs with the `display: inline` the share theme gives it, so a
+    // line cannot break between the icon and the title and strand the icon at the end of it.
     const href = linkEl.getAttribute("href") ?? "";
 
     // Handle attachment reference links

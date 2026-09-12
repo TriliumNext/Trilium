@@ -402,8 +402,9 @@ describe("createLink", () => {
         expect($a.hasClass("reference-link")).toBe(true);
         // an icon span is prepended
         expect($el.children("span.bx").length).toBeGreaterThan(0);
-        // a non-breaking space separates the icon from the link, so a line cannot break between
-        // them and leave the icon orphaned at the end of it
+        // the icon carries the class the stylesheet keys its `display: inline` on, and a
+        // non-breaking space separates it from the link, so no line can break between the two
+        expect($el.children("span.bx").hasClass("note-link-icon")).toBe(true);
         expect($el.children("span.bx")[0].nextSibling?.textContent).toBe("\u00a0");
     });
 
@@ -845,8 +846,8 @@ describe("loadReferenceLinkTitle", () => {
         const $iconSpan = $el.children("span").first();
         expect($iconSpan.length).toBe(1);
         expect($iconSpan.hasClass("bx-star")).toBe(true);
-        // and it is followed by a non-breaking space, so the icon cannot be left alone at the end
-        // of a line with the title wrapped onto the next one
+        // and it is followed by a non-breaking space, which with the icon's `display: inline`
+        // keeps the icon from being left alone at the end of a line
         expect($iconSpan[0].nextSibling?.textContent).toBe("\u00a0");
     });
 

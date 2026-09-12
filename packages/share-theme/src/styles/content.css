@@ -56,6 +56,13 @@
     height: auto;
 }
 
+/* `inline` overrides the icon pack's `inline-block`: Chromium allows a line break after an atomic
+ * inline whatever follows it, which strands the icon at the end of a line while the title wraps to
+ * the next. The non-breaking space after the icon then holds the two together. */
+a.reference-link > span > .tn-icon {
+    display: inline;
+}
+
 body:not(.math-loaded) .math-tex {
     visibility: hidden;
 }
