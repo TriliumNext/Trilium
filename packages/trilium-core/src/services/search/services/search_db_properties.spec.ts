@@ -30,9 +30,46 @@ describe("search on database-backed note properties", () => {
                 title: "DbPropsProbe",
                 type: "text",
                 mime: "text/html",
-                content: `<p>${"x".repeat(BODY_LENGTH)}</p>`
+                content: `<p>${"x".repeat(BODY_LENGTH)}</p>`,
+                attributes: [{ type: "label", name: "tcDbProbe", isInheritable: false, position: 0 }]
             })
         );
+    });
+
+    /**
+     * The loader memoizes its results onto the becca notes, so a test that ran any other
+     * db-backed query first would mask exactly the cold-process failure these tests assert.
+     */
+    function resetMemoizedNoteProperties() {
+        const probe = searchService.searchNotes("note.title *=* DbPropsProbe")[0];
+        probe.contentSize = undefined;
+        probe.contentAndAttachmentsSize = undefined;
+        probe.contentAndAttachmentsAndRevisionsSize = undefined;
+        probe.revisionCount = undefined;
+    }
+
+    it("loads the database-backed properties for a pure '#' query", () => {
+        resetMemoizedNoteProperties();
+
+        // Regression (#11131): queries starting with '#' take the pure-expression shortcut,
+        // which used to skip loadNeededInfoFromDatabase() entirely — the comparison then ran
+        // against undefined, and the same query answered differently depending on what had
+        // been searched earlier in the process.
+        expect(searchService.searchNotes("#tcDbProbe note.contentSize >= 0")).toHaveLength(1);
+        expect(searchService.searchNotes(`#tcDbProbe note.contentSize > ${BODY_LENGTH}`)).toHaveLength(1);
+        expect(searchService.searchNotes(`#tcDbProbe note.contentSize > ${BODY_LENGTH * 10}`)).toHaveLength(0);
+    });
+
+    it("counts revisions instead of always reporting zero", () => {
+        const probe = searchService.searchNotes("note.title *=* DbPropsProbe")[0];
+        getContext().init(() => probe.saveRevision());
+
+        resetMemoizedNoteProperties();
+
+        // Regression (#11131): the increment was guarded by the truthiness of a counter that had
+        // just been reset to zero, so revisionCount stayed 0 on every path.
+        expect(searchService.searchNotes("note.title *=* DbPropsProbe AND note.revisionCount >= 1")).toHaveLength(1);
+        expect(searchService.searchNotes("note.title *=* DbPropsProbe AND note.revisionCount = 0")).toHaveLength(0);
     });
 
     it("filters on contentSize instead of silently matching nothing", () => {
