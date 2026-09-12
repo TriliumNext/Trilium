@@ -39,12 +39,18 @@ vi.mock("terra-draw", () => {
         }
     }
 
+    /** A mode, holding the options it was built with so the spec can read them back. */
+    const mode = (name: string) => class {
+        mode = name;
+        constructor(public options?: { drawInteraction?: string }) {}
+    };
+
     return {
         TerraDraw,
-        TerraDrawLineStringMode: class { mode = "linestring"; },
-        TerraDrawPolygonMode: class { mode = "polygon"; },
-        TerraDrawRectangleMode: class { mode = "rectangle"; },
-        TerraDrawCircleMode: class { mode = "circle"; }
+        TerraDrawLineStringMode: mode("linestring"),
+        TerraDrawPolygonMode: mode("polygon"),
+        TerraDrawRectangleMode: mode("rectangle"),
+        TerraDrawCircleMode: mode("circle")
     };
 });
 
@@ -56,6 +62,8 @@ import { TerraDraw } from "terra-draw";
 
 type FakeTerraDraw = InstanceType<typeof TerraDraw> & {
     finish(id: string, action: string, feature: unknown): void;
+    /** The modes the session was built with, each holding the options it was given. */
+    config: { modes: { mode: string; options?: { drawInteraction?: string } }[] };
     started: boolean;
     stopped: boolean;
     modeName: string | null;
@@ -117,6 +125,33 @@ describe("DrawShape", () => {
 
         act(() => render(null, container));
         expect(session.stopped).toBe(true);
+    });
+
+    /**
+     * A circle and a rectangle are two positions, and Terra Draw reads the second one from pointer
+     * movement between two clicks unless told otherwise. A finger makes no such movement, so on a
+     * touchscreen the tap that placed the first position left nothing able to size the shape.
+     * Asking for the drag as well is what lets a finger draw one.
+     */
+    it("lets the two-corner tools be drawn by dragging, which is all a finger can do", () => {
+        for (const tool of [ "circle", "rectangle" ] as const) {
+            instances().length = 0;
+            renderSession(tool);
+
+            const [ builtMode ] = instances()[0].config.modes;
+            expect(builtMode.options?.drawInteraction).toBe("click-move-or-drag");
+            act(() => render(null, container));
+        }
+
+        // The tools that take a position per click are left alone: every tap is already a vertex.
+        for (const tool of [ "line", "polygon" ] as const) {
+            instances().length = 0;
+            renderSession(tool);
+
+            const [ builtMode ] = instances()[0].config.modes;
+            expect(builtMode.options).toBeUndefined();
+            act(() => render(null, container));
+        }
     });
 
     it("waits for a style to draw on, like every layer-adding child of the map", () => {

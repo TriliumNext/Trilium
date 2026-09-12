@@ -69,6 +69,22 @@ export default function DrawShape({ tool, onFinish }: DrawShapeProps) {
     return <div />;
 }
 
+/**
+ * How the two-corner tools are drawn, which is both ways rather than Terra Draw's default of
+ * `click-move` alone.
+ *
+ * A circle and a rectangle are made of two positions, and under `click-move` the second one is
+ * only ever read from pointer movement *between* two clicks. A finger produces no such movement:
+ * it is either down or it is not, and the moves it does make while down are reported as a drag,
+ * which that setting ignores. So on a touchscreen the first tap placed a centre and nothing could
+ * ever size the shape. Allowing the drag as well leaves the mouse exactly as it was and gives
+ * touch the press-and-drag it can actually perform.
+ *
+ * The tools that take a position per click — the line and the polygon — need nothing here: every
+ * tap is a vertex, and movement only previews the next one.
+ */
+const TWO_CORNER_INTERACTION = "click-move-or-drag";
+
 /** The Terra Draw mode a tool draws with — each knows its own name for `setMode`. */
 function buildMode(tool: DrawTool) {
     switch (tool) {
@@ -77,9 +93,9 @@ function buildMode(tool: DrawTool) {
         case "polygon":
             return new TerraDrawPolygonMode();
         case "rectangle":
-            return new TerraDrawRectangleMode();
+            return new TerraDrawRectangleMode({ drawInteraction: TWO_CORNER_INTERACTION });
         case "circle":
-            return new TerraDrawCircleMode();
+            return new TerraDrawCircleMode({ drawInteraction: TWO_CORNER_INTERACTION });
     }
 }
 
