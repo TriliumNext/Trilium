@@ -14,13 +14,6 @@ import { type GeoShape, serializeGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
 /** The type a note put on the map is created as, and so what a template handed to it must match. */
 export const MARKER_NOTE_TYPE: NoteType = "text";
 
-/** The icon a shape note wears, by the kind of shape its label spells. */
-export const SHAPE_NOTE_ICONS = {
-    line: "bx bx-vector",
-    polygon: "bx bx-shape-polygon",
-    circle: "bx bx-shape-circle"
-} as const satisfies Record<GeoShape["type"], string>;
-
 export async function moveMarker(noteId: string, latLng: { lat: number; lng: number } | null) {
     const value = latLng ? [latLng.lat, latLng.lng].join(",") : "";
     await attributes.setLabel(noteId, LOCATION_ATTRIBUTE, value);
@@ -167,37 +160,39 @@ async function createNoteAt(
         noteAttributes.push({ type: "label", name: "iconClass", value: icon });
     }
 
+    return createMapNote(parentNote, noteAttributes, title);
+}
+
+/**
+ * Makes a note of a shape drawn on the map, and hands it back for the pane to open on.
+ *
+ * A marker note in every way but the label: the whole shape in `#geoShape` where a marker keeps its
+ * point in `#geolocation` (see shapes.ts). The note is the shape the way a marker note is its pin,
+ * so it is named and iconed by the same rules, and the content stays the user's to write.
+ */
+export async function createShapeNote(parentNote: FNote, shape: GeoShape) {
+    return createMapNote(parentNote, [
+        { type: "label", name: SHAPE_ATTRIBUTE, value: serializeGeoShape(shape) }
+    ]);
+}
+
+/**
+ * Creates a note of the map's own, carrying whatever puts it on the map.
+ *
+ * No title is sent unless the caller has one worth keeping, which leaves the naming where every
+ * other new note's is: the server's, and so a `#titleTemplate` on the map's if it carries one. No
+ * `#iconClass` either, `getNoteIcon` drawing a note by the geo label it carries (see commons), so
+ * an icon the map hands down through `#child:iconClass` or a template still applies.
+ */
+async function createMapNote(
+    parentNote: FNote, attributes: Omit<AttributeRow, "noteId" | "attributeId">[], title?: string) {
     const { note } = await note_create.createNote(parentNote.noteId, {
         title,
         content: "",
         type: MARKER_NOTE_TYPE,
         activate: false,
         isProtected: parentNote.isProtected,
-        attributes: noteAttributes
-    });
-
-    return note;
-}
-
-/**
- * Makes a note of a shape drawn on the map, and hands it back for the pane to open on.
- *
- * A marker note in every way but the label: an ordinary text note, stock-named for the pane to
- * offer the title for typing over, whose place on the map is written in an attribute — the whole
- * shape in `#geoShape` where a marker keeps its point in `#geolocation` (see shapes.ts). The note
- * is the shape the way a marker note is its pin; the content stays the user's to write.
- */
-export async function createShapeNote(parentNote: FNote, shape: GeoShape) {
-    const { note } = await note_create.createNote(parentNote.noteId, {
-        title: t("relation_map.default_new_note_title"),
-        content: "",
-        type: "text",
-        activate: false,
-        isProtected: parentNote.isProtected,
-        attributes: [
-            { type: "label", name: SHAPE_ATTRIBUTE, value: serializeGeoShape(shape) },
-            { type: "label", name: "iconClass", value: SHAPE_NOTE_ICONS[shape.type] }
-        ]
+        attributes
     });
 
     return note;

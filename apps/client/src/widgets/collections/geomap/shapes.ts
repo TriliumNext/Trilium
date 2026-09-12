@@ -17,8 +17,9 @@
 
 import { type Bounds, boundsOf } from "./coordinates";
 
-/** The label a shape note carries its geometry in. */
-export const SHAPE_ATTRIBUTE = "geoShape";
+/** The label a shape note carries its geometry in. Named in commons because `getNoteIcon` reads it
+ *  to draw a shape note under the shape it draws, as `GEO_LOCATION_ATTRIBUTE` is. */
+export { GEO_SHAPE_ATTRIBUTE as SHAPE_ATTRIBUTE } from "@triliumnext/commons";
 
 /** How many decimal places a coordinate keeps: six is about a tenth of a metre, which is already
  *  more than a hand-placed vertex means. */

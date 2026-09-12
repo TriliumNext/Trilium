@@ -111,7 +111,7 @@ describe("geo map api", () => {
         }));
     });
 
-    it("creates a shape note under the stock name, its geometry in the label and its icon the tool's", async () => {
+    it("leaves a drawn shape to be named as a placed marker is, geometry in the label", async () => {
         const parent = buildNote({ title: "The map" });
 
         const created = await createShapeNote(parent, {
@@ -122,11 +122,14 @@ describe("geo map api", () => {
         expect(created).toEqual({ noteId: "created" });
         expect(createNote).toHaveBeenCalledWith(parent.noteId, expect.objectContaining({
             type: "text",
+            // Named and iconed by exactly the rules a placed marker is named and iconed by: no
+            // title, so a `#titleTemplate` on the map applies, and no icon, so getNoteIcon draws
+            // the shape the label names and `#child:iconClass` or a template can override it.
+            title: undefined,
             activate: false,
-            attributes: expect.arrayContaining([
-                { type: "label", name: "geoShape", value: "polygon:48.85,2.29 48.86,2.35 48.9,2.3" },
-                { type: "label", name: "iconClass", value: "bx bx-shape-polygon" }
-            ])
+            attributes: [
+                { type: "label", name: "geoShape", value: "polygon:48.85,2.29 48.86,2.35 48.9,2.3" }
+            ]
         }));
     });
 
