@@ -8,7 +8,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { GeoShape } from "./shapes";
-import { ShapeLayer, shapeSourceId } from "./ShapeLayer";
+import { shapeHitLayers, ShapeLayer, shapeSourceId } from "./ShapeLayer";
 import { MapStyleLoaded, ParentMap } from "./map";
 
 /**
@@ -50,6 +50,10 @@ function fakeMap() {
         },
         removeLayer(id: string) {
             layers.delete(id);
+        },
+        /** The style's layers in the order they were added, which is how the hit layers are found. */
+        getLayersOrder() {
+            return [ ...layers.keys() ];
         },
 
         /** The style finishing, which is what `style.load` announces. */
@@ -155,6 +159,31 @@ describe("ShapeLayer", () => {
         expect(ring[0]).toEqual(ring[ring.length - 1]);
         expect(map.layers.has(`shape-fill-${NOTE_ID}`)).toBe(true);
         expect(map.layers.has(`shape-stroke-${NOTE_ID}`)).toBe(true);
+    });
+
+    /**
+     * The boundary is drawn 3px wide, too thin to click reliably, so a transparent line far wider
+     * than that takes the pointer hits, as a GPX track's does. An area is clickable across its
+     * inside as well as along its edge.
+     */
+    it("stands a widened transparent line in for the boundary, an area offering its wash as well", () => {
+        map.loadStyle();
+        renderShape(LINE);
+
+        const hit = map.layers.get(`shape-hit-${NOTE_ID}`) as { paint: Record<string, unknown> };
+        // Drawn at zero opacity rather than hidden: MapLibre drops a layer from a query for
+        // `visibility: none` but not for being invisible.
+        expect(hit.paint["line-opacity"]).toBe(0);
+        expect(hit.paint["line-width"]).toBe(20);
+        expect(shapeHitLayers(map as never)).toEqual([ `shape-hit-${NOTE_ID}` ]);
+
+        act(() => render(null, container));
+        // The hit line goes with the rest: a query naming a layer the style has lost returns
+        // nothing at all, for every shape.
+        expect(map.layers.size).toBe(0);
+
+        renderShape(POLYGON);
+        expect(shapeHitLayers(map as never)).toEqual([ `shape-fill-${NOTE_ID}`, `shape-hit-${NOTE_ID}` ]);
     });
 
     it("waits for the style, and is put back when a style switch wipes the map", () => {

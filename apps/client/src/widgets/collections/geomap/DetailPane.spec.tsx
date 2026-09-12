@@ -93,6 +93,8 @@ function fakeMap({ width = MAP_WIDTH, features = [] as unknown[] } = {}) {
     const fitted: unknown[] = [];
     const sources = new Map<string, unknown>();
     let under: unknown[] = features;
+    let underShapes: { properties: { id: string } }[] = [];
+    let shapeLayers: string[] = [];
 
     return {
         /** Every camera move the pane has asked for, which is how it holds a marker clear of itself. */
@@ -108,6 +110,15 @@ function fakeMap({ width = MAP_WIDTH, features = [] as unknown[] } = {}) {
         },
         /** What the next click will land on: a marker's feature, or nothing at all. */
         setUnderPointer(hit: unknown[]) { under = hit; },
+        /**
+         * What the next click lands on among the drawn shapes, which the pane queries separately.
+         * Putting a shape under the pointer also adds its hit layer to the style, which is how
+         * `shapeHitLayers()` finds the shapes to query.
+         */
+        setShapesUnderPointer(hit: { properties: { id: string } }[]) {
+            underShapes = hit;
+            shapeLayers = hit.map((feature) => `shape-hit-${feature.properties.id}`);
+        },
         /** A click on the map, wherever `setUnderPointer` says it landed. */
         click() {
             for (const fn of listeners.get("click") ?? []) fn({ point: { x: 0, y: 0 } });
@@ -121,14 +132,21 @@ function fakeMap({ width = MAP_WIDTH, features = [] as unknown[] } = {}) {
         off(event: string, fnOrLayer: unknown, fn?: () => void) {
             listeners.get(fn ? `${event}:${fnOrLayer}` : event)?.delete((fn ?? fnOrLayer) as Listener);
         },
+        /**
+         * What was hit, in the map's drawing order rather than the order of `layers`, which is how
+         * MapLibre answers and the reason the pane queries twice. The shapes go on last and so draw
+         * above the markers, meaning a query naming both returns the shape first.
+         */
         queryRenderedFeatures(_point: unknown, { layers }: { layers: string[] }) {
-            return layers.includes(MARKER_LAYER) ? under : [];
+            const shapes = shapeLayers.some((id) => layers.includes(id)) ? underShapes : [];
+            return [ ...shapes, ...(layers.includes(MARKER_LAYER) ? under : []) ];
         },
         easeTo(options: unknown) { eased.push(options); },
         fitBounds(bounds: unknown, options: unknown) { fitted.push({ bounds, options }); },
         getContainer: () => ({ clientWidth: width, clientHeight: 800 }),
-        // Asked for by `trackHitLayers`, which reads the current GPX hit layers off the style.
-        getLayersOrder: () => [] as string[]
+        // Read by `trackHitLayers()` and `shapeHitLayers()` to find the layers the tracks and the
+        // shapes currently have in the style.
+        getLayersOrder: () => shapeLayers
     };
 }
 
@@ -142,6 +160,18 @@ function markerFeature(note: FNote, coordinates: [number, number] = [ 2, 1 ]) {
 function trackFeature(note: FNote, track?: number) {
     return { geometry: { type: "MultiLineString", coordinates: [] }, properties: { id: note.noteId, ...(track !== undefined ? { track } : {}) } };
 }
+
+/**
+ * A drawn shape's boundary or fill, as MapLibre reports one that was hit (see ShapeLayer). The
+ * geometry is empty because nothing reads it: a shape's extent comes off its own label, not off the
+ * feature, which is clipped to the tile it was hit in.
+ */
+function shapeFeature(note: FNote) {
+    return { geometry: { type: "Polygon", coordinates: [] }, properties: { id: note.noteId } };
+}
+
+/** A triangular lot, in the label format a shape note carries (see shapes.ts). */
+const LOT_SHAPE = "polygon:45.79,24.13 45.81,24.16 45.89,24.08";
 
 describe("DetailPane", () => {
     let container: HTMLElement | undefined;
@@ -271,6 +301,75 @@ describe("DetailPane", () => {
         expect(map.eased).toEqual([]);
         expect(map.fitted).toEqual([]);
         expect(pane()?.querySelector(".geo-detail-pane-location")).toBeNull();
+    });
+
+    /**
+     * A drawn shape opens the pane as a marker does, which is the point of a shape being a note.
+     * Its extent comes off its own label rather than off the map: the label holds every point at
+     * once, so there is no source to wait for as a track's file needs.
+     */
+    it("stands for a drawn shape that was clicked, and frames it as it frames a track", async () => {
+        // Hung under the root so there is a path to point the note context at.
+        buildNote({ id: "root", title: "root", children: [ { id: "thelot", title: "The lot", "#geoShape": LOT_SHAPE } ] });
+        const note = froca.notes["thelot"];
+        const map = fakeMap();
+        await mount([ note ], map);
+
+        map.setShapesUnderPointer([ shapeFeature(note) ]);
+        await act(async () => map.click());
+        await settle();
+
+        expect(pane()?.querySelector<HTMLInputElement>(".title-row input")?.value).toBe("The lot");
+        // Fitted rather than centred, and never eased: a shape is an extent, not a point.
+        expect(map.eased).toEqual([]);
+        expect(map.fitted).toEqual([ {
+            bounds: [ [ 24.08, 45.79 ], [ 24.16, 45.89 ] ],
+            options: { padding: { top: 60, bottom: 60, left: 60, right: 460 }, maxZoom: 16 }
+        } ]);
+        // No location line, a shape carrying geometry rather than a point.
+        expect(pane()?.querySelector(".geo-detail-pane-location")).toBeNull();
+    });
+
+    /**
+     * An area's fill covers its whole inside and draws above the markers, so one combined query,
+     * answered in drawing order, would return the polygon for every click inside it. The shapes are
+     * therefore queried only where the markers and tracks were missed.
+     */
+    it("gives a marker standing inside a shape the click, not the shape", async () => {
+        buildNote({ id: "root", title: "root", children: [
+            { id: "thewell", title: "The well", "#geolocation": "45.85,24.11" },
+            { id: "surroundinglot", title: "The lot", "#geoShape": LOT_SHAPE }
+        ] });
+        const marker = froca.notes["thewell"];
+        const lot = froca.notes["surroundinglot"];
+        const map = fakeMap();
+        await mount([ marker, lot ], map);
+
+        map.setUnderPointer([ markerFeature(marker) ]);
+        map.setShapesUnderPointer([ shapeFeature(lot) ]);
+        await act(async () => map.click());
+        await settle();
+
+        expect(pane()?.querySelector<HTMLInputElement>(".title-row input")?.value).toBe("The well");
+    });
+
+    /**
+     * Taking a shape off the map only clears its geometry, which leaves a note the map cannot draw.
+     * The pane closes with it, as it does for a cleared location.
+     */
+    it("goes away when its shape is taken off the map", async () => {
+        const note = buildNote({ title: "The lot", "#geoShape": LOT_SHAPE });
+        const map = fakeMap();
+        await mount([ note ], map);
+
+        map.setShapesUnderPointer([ shapeFeature(note) ]);
+        await act(async () => map.click());
+        expect(pane()).toBeTruthy();
+
+        const shapeless = vi.spyOn(note, "getLabelValue").mockReturnValue(null);
+        await mount([ note ], map);
+        expect(pane()).toBeNull();
+        shapeless.mockRestore();
     });
 
     /**
@@ -993,6 +1092,20 @@ describe("DetailPane", () => {
             expect(container?.querySelector(".tn-embedded-note-actions button.bx-log-in")).toBeTruthy();
             expect(moveButton()).toBeNull();
         });
+
+        /** A drawn shape has no marker to move either: moving one means drawing it again. */
+        it("is not offered for a drawn shape, which is where it was drawn", async () => {
+            const note = buildNote({ title: "The lot", "#geoShape": LOT_SHAPE });
+            const map = fakeMap();
+
+            await mount([ note ], map);
+            map.setShapesUnderPointer([ shapeFeature(note) ]);
+            await act(async () => map.click());
+            await settle();
+
+            expect(pane()).toBeTruthy();
+            expect(moveButton()).toBeNull();
+        });
     });
 
     describe("taking the marker off the map", () => {
@@ -1084,6 +1197,31 @@ describe("DetailPane", () => {
                 { noteId: note.noteId, branchId: "root_hikegone" },
                 expect.objectContaining({ mustDeleteNote: true })
             );
+        });
+
+        /**
+         * A shape reaches the map through its geometry rather than a location, so that is the label
+         * cleared, and the note keeps its content. Clearing the location would leave the shape drawn.
+         */
+        it("clears a drawn shape's geometry rather than a location it never had", async () => {
+            const note = buildNote({ title: "The lot", "#geoShape": LOT_SHAPE });
+            const map = fakeMap();
+            const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
+            confirmDelete.mockResolvedValue({ confirmed: true, isDeleteNoteChecked: false });
+
+            try {
+                await mount([ note ], map);
+                map.setShapesUnderPointer([ shapeFeature(note) ]);
+                await act(async () => map.click());
+                await settle();
+
+                await act(async () => { removeButton()?.click(); });
+
+                expect(setLabel).toHaveBeenCalledWith(note.noteId, "geoShape", "");
+                expect(setLabel).not.toHaveBeenCalledWith(note.noteId, "geolocation", "");
+            } finally {
+                setLabel.mockRestore();
+            }
         });
     });
 

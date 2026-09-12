@@ -59,6 +59,10 @@ export async function removeFromMap(note: FNote, mapNote: FNote) {
 
     if (result.isDeleteNoteChecked) {
         await deleteNoteOrBranch(note.noteId, branchId);
+    } else if (note.hasLabel(SHAPE_ATTRIBUTE)) {
+        // A shape is on the map through its geometry rather than a location, so clearing
+        // SHAPE_ATTRIBUTE is what takes it off. The note and its content stay.
+        await attributes.setLabel(note.noteId, SHAPE_ATTRIBUTE, "");
     } else {
         await moveMarker(note.noteId, null);
     }

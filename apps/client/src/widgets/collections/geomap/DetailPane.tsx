@@ -19,6 +19,8 @@ import { removeFromMap } from "./api";
 import { GPX_MIME, trackHitLayers, trackSourceId } from "./GpxTrack";
 import { ParentMap } from "./map";
 import { formatLocation, LOCATION_ATTRIBUTE, MARKER_LAYER, parseLocation } from "./Markers";
+import { shapeHitLayers } from "./ShapeLayer";
+import { boundsOfPoints, type GeoBounds, geoShapeBounds, parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
 
 /**
  * Which marker the pane stands for, and why it came to be selected.
@@ -72,6 +74,10 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
     const map = useContext(ParentMap);
     const note = notes.find((note) => note.noteId === selection?.noteId);
     const [ location ] = useNoteLabel(note, LOCATION_ATTRIBUTE);
+    // Read as a label rather than from the click, so the camera effect below follows an edit to the
+    // geometry the way it follows a marker that moves.
+    const [ shapeValue ] = useNoteLabel(note, SHAPE_ATTRIBUTE);
+    const shape = shapeValue ? parseGeoShape(shapeValue) : null;
     const { noteContext, component: paneComponent } = useEmbeddedNoteContext(note, PANE_NTX_ID);
 
     /**
@@ -106,30 +112,35 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
      */
     const followLink = useCallback((noteId: string) => {
         const target = notes.find((n) => n.noteId === noteId);
-        if (!target || !parseLocation(target.getLabelValue(LOCATION_ATTRIBUTE))) return false;
+        if (!target || !standsOnMap(target)) return false;
 
         onSelect({ noteId });
         return true;
     }, [ notes, onSelect ]);
 
-    // A note no longer on the map takes the pane with it. Its location may merely have been cleared
-    // — which is all "remove from map" does — so the note being gone is not the only case. A GPX
-    // track is on the map by being one: its place is its line, not a location label.
+    // The pane closes once its note is no longer on the map. "Remove from map" only clears the
+    // label that put it there, so a note that is gone is not the only case. See standsOnMap().
     useEffect(() => {
-        if (selection && (!note || (note.mime !== GPX_MIME && !parseLocation(location)))) {
+        if (selection && !(note && standsOnMap(note))) {
             void closePane();
         }
-    }, [ selection, note, location, closePane ]);
+    }, [ selection, note, location, shapeValue, closePane ]);
 
-    // A marker or a GPX track selects, anywhere else clears. Read off the rendered layers rather
-    // than bound to them (`map.on("click", MARKER_LAYER, ...)`) so one handler answers all, with no
-    // ordering to rely on. The markers come ahead of the tracks for the reason the context menu
-    // puts them there: a pin standing on its own line is the smaller target, and the one aimed at.
+    // A marker, a GPX track or a drawn shape selects, anywhere else clears. Read off the rendered
+    // layers rather than bound to them (`map.on("click", MARKER_LAYER, ...)`) so one handler answers
+    // all.
+    //
+    // The shapes are queried separately, and only where the markers and tracks were missed:
+    // queryRenderedFeatures() answers in the map's drawing order rather than in the order of the
+    // `layers` argument, and an area's fill covers its whole inside and is drawn above the markers.
+    // One combined query would therefore return the polygon for every click inside it.
     useEffect(() => {
         if (!map || placing) return;
 
         const onClick = (e: MapMouseEvent) => {
-            const feature = map.queryRenderedFeatures(e.point, { layers: [ MARKER_LAYER, ...trackHitLayers(map) ] })[0];
+            const shapeLayers = shapeHitLayers(map);
+            const feature = map.queryRenderedFeatures(e.point, { layers: [ MARKER_LAYER, ...trackHitLayers(map) ] })[0]
+                ?? (shapeLayers.length > 0 ? map.queryRenderedFeatures(e.point, { layers: shapeLayers })[0] : undefined);
             if (!feature) {
                 void closePane();
                 return;
@@ -147,11 +158,21 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
     // created — is held clear of the pane the same way as one that was clicked; and off the
     // location too, so a marker that has just been put somewhere else is followed there.
     //
-    // A GPX track is not a point but a shape, so it is fitted rather than centred: panned and
-    // zoomed until it stands in the part of the map the pane leaves uncovered — the whole file,
-    // or only what the click named where it named more (see PaneFocus).
+    // A GPX track and a drawn shape are not points but extents, so they are fitted rather than
+    // centred: panned and zoomed until they stand in the part of the map the pane leaves uncovered
+    // — the whole file, or only what the click named where it named more (see PaneFocus).
     useEffect(() => {
         if (!map || !note) return;
+
+        // A shape is measured off its own label, which holds every point the map draws from and
+        // holds them at once, so there is no source to wait for as a track's file needs.
+        if (shape) {
+            const bounds = geoShapeBounds(shape);
+            if (bounds) {
+                map.fitBounds(bounds, { padding: fitPadding(map), maxZoom: FIT_MAX_ZOOM });
+            }
+            return;
+        }
 
         if (note.mime === GPX_MIME) {
             const focus = selection?.focus;
@@ -175,7 +196,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
                 if (done || !bounds) return;
                 done = true;
                 map.off("sourcedata", onSourceData);
-                map.fitBounds(bounds, { padding: trackFitPadding(map), maxZoom: TRACK_FIT_MAX_ZOOM });
+                map.fitBounds(bounds, { padding: fitPadding(map), maxZoom: FIT_MAX_ZOOM });
             };
 
             // A track selected the moment it was brought onto the map has no line yet: its content
@@ -201,7 +222,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
         map.easeTo({ center: coordinates, offset: paneOffset(map) });
         // The focus is depended on by identity, which a click renews even on the same note: every
         // click is a fresh ask, and re-clicking what is already open brings it back into view.
-    }, [ map, note?.noteId, location, selection?.focus ]);
+    }, [ map, note?.noteId, location, shapeValue, selection?.focus ]);
 
     // Bound only while something is selected, so the map's other Escape — giving up on placing a
     // marker (see index.tsx) — stands alone when nothing is.
@@ -265,12 +286,25 @@ function paneOffset(map: MapLibreGLMap): [number, number] {
     return [ glob.isRtl ? shift : -shift, 0 ];
 }
 
-/** Air kept around a fitted track, so its ends stand clear of the pane and the map's own edges. */
-const TRACK_FIT_AIR = 60;
+/** Air kept around a fitted extent, so its edges stand clear of the pane and the map's own edges. */
+const FIT_AIR = 60;
 
-/** How close fitting a track may zoom: a stroll around the block is still shown as a map of the
+/** How close fitting an extent may zoom: a stroll around the block is still shown as a map of the
  *  neighbourhood, not of somebody's garden. */
-const TRACK_FIT_MAX_ZOOM = 16;
+const FIT_MAX_ZOOM = 16;
+
+/**
+ * Whether the note is on this map, which is what keeps the pane open.
+ *
+ * Three kinds of note reach the map three ways: a marker through `LOCATION_ATTRIBUTE`, a drawn
+ * shape through `SHAPE_ATTRIBUTE` (see shapes.ts), and a GPX track through its mime, its line
+ * coming from the note's own file rather than from anything written on it.
+ */
+function standsOnMap(note: FNote) {
+    return note.mime === GPX_MIME
+        || !!parseLocation(note.getLabelValue(LOCATION_ATTRIBUTE))
+        || !!parseGeoShape(note.getLabelValue(SHAPE_ATTRIBUTE) ?? "");
+}
 
 /**
  * What of its note a clicked feature names, beyond the note itself: its own place, for a point (a
@@ -298,64 +332,41 @@ function featureFocus(feature: MapGeoJSONFeature): PaneFocus | undefined {
  * its flags stand on its line, and another journey's ground — or a waypoint hung off in a third
  * place — is exactly what focusing one track is meant to leave out of frame.
  *
- * Longitude is read in two frames at once, because it is a circle wearing a seam: a track across
- * the antimeridian holds points either side of ±180° that are a stroll apart on the ground, and
- * their raw minimum and maximum span nearly the whole world. The same longitudes are therefore
- * also read with the seam moved to 0° — each western value pushed a turn east — and whichever
- * frame drew the narrower box is the one answered. A crossing of one seam is whole in the other
- * frame; only a track truly girdling half the earth stays wide in both, and then wide is the
- * truth. The shifted answer may name longitudes past 180°, which `fitBounds` takes in stride.
+ * {@link boundsOfPoints} measures the corners, as it does for a drawn shape, so a track crossing
+ * the antimeridian frames the crossing rather than the world.
  */
-async function trackBounds(map: MapLibreGLMap, noteId: string, track?: number): Promise<[[number, number], [number, number]] | null> {
+async function trackBounds(map: MapLibreGLMap, noteId: string, track?: number): Promise<GeoBounds | null> {
     const data = await map.getSource<GeoJSONSource>(trackSourceId(noteId))?.getData();
     if (!data || data.type !== "FeatureCollection") return null;
 
-    let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
-    let westShifted = Infinity, eastShifted = -Infinity;
-    const extend = ([ lng, lat ]: number[]) => {
-        west = Math.min(west, lng);
-        south = Math.min(south, lat);
-        east = Math.max(east, lng);
-        north = Math.max(north, lat);
-
-        const shifted = lng < 0 ? lng + 360 : lng;
-        westShifted = Math.min(westShifted, shifted);
-        eastShifted = Math.max(eastShifted, shifted);
-    };
-
+    const points: number[][] = [];
     for (const { geometry, properties } of data.features) {
         if (track !== undefined && properties?.track !== track) continue;
 
         if (geometry.type === "Point") {
-            extend(geometry.coordinates);
+            points.push(geometry.coordinates);
         } else if (geometry.type === "MultiLineString") {
             for (const line of geometry.coordinates) {
-                for (const point of line) {
-                    extend(point);
-                }
+                points.push(...line);
             }
         }
     }
 
-    if (!Number.isFinite(west)) return null;
-
-    return eastShifted - westShifted < east - west
-        ? [ [ westShifted, south ], [ eastShifted, north ] ]
-        : [ [ west, south ], [ east, north ] ];
+    return boundsOfPoints(points);
 }
 
 /**
- * What a fitted track has to keep clear of: the pane on its side of the map, and a rim of air all
- * round, so the line reads as standing in the viewport rather than pinned to its corners.
+ * What a fitted track or shape has to keep clear of: the pane on its side of the map, and a rim of
+ * air all round, so the line reads as standing in the viewport rather than pinned to its corners.
  *
  * The air gives way on a map too small to spare it, and the pane's reach is only counted where
  * there is room left over — the same bargain {@link paneOffset} strikes — since padding wider than
  * the map does not clip the fit but forfeits it: MapLibre cannot solve the camera and leaves it
  * where it stands.
  */
-function trackFitPadding(map: MapLibreGLMap) {
+function fitPadding(map: MapLibreGLMap) {
     const { clientWidth, clientHeight } = map.getContainer();
-    const air = Math.max(0, Math.min(TRACK_FIT_AIR, Math.floor(Math.min(clientWidth, clientHeight) / 4)));
+    const air = Math.max(0, Math.min(FIT_AIR, Math.floor(Math.min(clientWidth, clientHeight) / 4)));
     const padding = { top: air, bottom: air, left: air, right: air };
 
     if (clientWidth > PANE_REACH + 2 * air) {
@@ -412,10 +423,10 @@ function MarkerDetails({ note, parentNote, isReadOnly, onClose, onRelocate, onFo
                     editor puts them — a marker is often a note whose type says less about it than
                     its fields do. Nothing at all is shown for a note that promotes none.
 
-                    The location is not among them, the line above naming it better: promoted, it is
-                    a box of raw digits standing beside a map of the very place it names, and the way
-                    to put a marker somewhere else here is to move it. */}
-                <PromotedAttributes omit={[ LOCATION_ATTRIBUTE ]} />
+                    Neither the location nor the geometry is among them: promoted, each is a field of
+                    raw digits beside a map that already draws it, and a marker is moved rather than
+                    retyped. */}
+                <PromotedAttributes omit={[ LOCATION_ATTRIBUTE, SHAPE_ATTRIBUTE ]} />
 
                 {/* The note itself, drawn by whichever widget its type calls for — the same one the
                     quick editor mounts, so a marker is written in exactly as it is anywhere else.
@@ -436,7 +447,9 @@ const PANE_NTX_ID = "_geo-detail-pane";
  */
 function MarkerActions({ note, parentNote, isReadOnly, onRelocate }: { note: FNote; parentNote: FNote; isReadOnly: boolean; onRelocate(): void }) {
     const [ location ] = useNoteLabel(note, LOCATION_ATTRIBUTE);
+    const [ shapeValue ] = useNoteLabel(note, SHAPE_ATTRIBUTE);
     const latLng = parseLocation(location);
+    const isShape = !!parseGeoShape(shapeValue ?? "");
 
     return (
         <EmbeddedNoteActions>
@@ -457,10 +470,10 @@ function MarkerActions({ note, parentNote, isReadOnly, onRelocate }: { note: FNo
                     shows (see NoteColorPicker). */}
                 <NoteColorAction note={note} title={t("geo-map.marker-color")} />
 
-                {/* A track is offered nothing here: it is on the map by being drawn across it, and
-                    its place is the line its file holds rather than a location that could be
-                    written somewhere else. The right-click menu leaves it out for the same reason. */}
-                {note.mime !== GPX_MIME && <ActionButton
+                {/* Not offered for a track or a drawn shape: neither has a location label to
+                    rewrite, and moving one means drawing it again. The right-click menu leaves it
+                    out for a track for the same reason. */}
+                {note.mime !== GPX_MIME && !isShape && <ActionButton
                     className="geo-detail-pane-move"
                     icon="bx bx-move"
                     text={t("geo-map-context.move-marker")}

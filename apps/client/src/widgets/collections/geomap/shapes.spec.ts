@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { circleRing, closeRing, type GeoShape, parseGeoShape, polygonFromRing, ringCenter, serializeGeoShape } from "./shapes";
+import {
+    boundsOfPoints, circleRing, closeRing, type GeoShape, geoShapeBounds, parseGeoShape,
+    polygonFromRing, ringCenter, serializeGeoShape
+} from "./shapes";
 
 describe("serializeGeoShape", () => {
     it("writes lat,lng pairs behind the kind's prefix, rounded but not padded", () => {
@@ -120,6 +123,47 @@ describe("rings", () => {
         const [ lng, lat ] = ringCenter(ring) ?? [ NaN, NaN ];
         expect(lng).toBeCloseTo(center[0], 4);
         expect(lat).toBeCloseTo(center[1], 4);
+    });
+});
+
+describe("bounds", () => {
+    it("boxes a line and a polygon by their own points, and answers nothing for none", () => {
+        expect(geoShapeBounds({
+            type: "line",
+            coordinates: [ [ 24.13, 45.79 ], [ 24.16, 45.96 ], [ 24.08, 45.89 ] ]
+        })).toEqual([ [ 24.08, 45.79 ], [ 24.16, 45.96 ] ]);
+
+        expect(boundsOfPoints([])).toBeNull();
+    });
+
+    /** A circle is stored as a centre and a radius, so the box has to cover the radius. */
+    it("boxes a circle across the ring its radius walks out", () => {
+        const circle: GeoShape = { type: "circle", center: [ 2.29, 48.85 ], radiusMeters: 1000 };
+        const bounds = geoShapeBounds(circle);
+        const [ [ west, south ], [ east, north ] ] = bounds ?? [ [ NaN, NaN ], [ NaN, NaN ] ];
+
+        // A kilometre spans about 0.018° of latitude, and more of longitude at this latitude. The
+        // centre sits in the middle of both.
+        expect((south + north) / 2).toBeCloseTo(48.85, 4);
+        expect((west + east) / 2).toBeCloseTo(2.29, 4);
+        expect(north - south).toBeCloseTo(0.018, 3);
+        expect(east - west).toBeGreaterThan(north - south);
+    });
+
+    /**
+     * Longitude wraps. Points either side of ±180° sit metres apart on the ground but span nearly
+     * the world when measured raw, so the same longitudes are measured again with the seam at 0°
+     * and the narrower box wins.
+     */
+    it("frames a shape crossing the antimeridian rather than the world", () => {
+        expect(geoShapeBounds({
+            type: "polygon",
+            coordinates: [ [ 179.9, -16.5 ], [ -179.9, -16.5 ], [ -179.95, -16.6 ] ]
+        })).toEqual([ [ 179.9, -16.6 ], [ 180.1, -16.5 ] ]);
+
+        // A shape that really spans half the earth stays wide in both frames.
+        expect(boundsOfPoints([ [ -120, 10 ], [ 0, 20 ], [ 120, 30 ] ]))
+            .toEqual([ [ -120, 10 ], [ 120, 30 ] ]);
     });
 });
 

@@ -174,6 +174,50 @@ export function ringCenter(ring: [number, number][]): [number, number] | null {
     return [ lngSum / ring.length, latSum / ring.length ];
 }
 
+/** `[[west, south], [east, north]]`, the form `fitBounds` takes. */
+export type GeoBounds = [[number, number], [number, number]];
+
+/**
+ * The corners of a shape, which `DetailPane` frames the shape it opens on by. A circle is measured
+ * across {@link circleRing} rather than at its centre, so the box covers the whole radius.
+ */
+export function geoShapeBounds(shape: GeoShape): GeoBounds | null {
+    return boundsOfPoints(shape.type === "circle"
+        ? circleRing(shape.center, shape.radiusMeters)
+        : shape.coordinates);
+}
+
+/**
+ * The box a set of points fits in, or `null` for no points at all.
+ *
+ * Longitude is measured twice because it wraps. Points either side of ±180° sit metres apart on the
+ * ground, but their raw minimum and maximum span nearly the world, so the same longitudes are
+ * measured again with the seam at 0° — each western value moved a turn east — and the narrower of
+ * the two boxes wins. Only a shape that really spans half the earth stays wide in both. The shifted
+ * box can name longitudes past 180°, which `fitBounds` accepts.
+ */
+export function boundsOfPoints(points: Iterable<number[]>): GeoBounds | null {
+    let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
+    let westShifted = Infinity, eastShifted = -Infinity;
+
+    for (const [ lng, lat ] of points) {
+        west = Math.min(west, lng);
+        south = Math.min(south, lat);
+        east = Math.max(east, lng);
+        north = Math.max(north, lat);
+
+        const shifted = lng < 0 ? lng + 360 : lng;
+        westShifted = Math.min(westShifted, shifted);
+        eastShifted = Math.max(eastShifted, shifted);
+    }
+
+    if (!Number.isFinite(west)) return null;
+
+    return eastShifted - westShifted < east - west
+        ? [ [ westShifted, south ], [ eastShifted, north ] ]
+        : [ [ west, south ], [ east, north ] ];
+}
+
 function toRadians(degrees: number): number {
     return (degrees * Math.PI) / 180;
 }
