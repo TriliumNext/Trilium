@@ -267,7 +267,7 @@
     "task-state-doing": "Doing",
     "task-state-done": "Done",
     "task-state-maybe": "Maybe",
-    "task-state-cancelled": "Cancelled",
+    "task-state-cancelled": "Canceled",
     "task-state-attr-state-id": "Identifier (required)",
     "task-state-attr-markdown-symbol": "Markdown symbol",
     "task-state-attr-is-completed": "Counts as completed",

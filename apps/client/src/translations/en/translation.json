@@ -749,7 +749,7 @@
     "calendar_hide_weekends": "Hides Saturday and Sunday from the calendar. Applies whatever its value.",
     "calendar_week_numbers": "Shows the number of the week on the calendar. Applies whatever its value.",
     "calendar_slot_duration": "How long each timeslot of a calendar lasts, as <code>HH:MM:SS</code>. Defaults to 15 minutes.",
-    "calendar_slot_label_interval": "How often the timeslots of a calendar are labelled, as <code>HH:MM:SS</code>. Defaults to an hour.",
+    "calendar_slot_label_interval": "How often the timeslots of a calendar are labeled, as <code>HH:MM:SS</code>. Defaults to an hour.",
     "calendar_title": "Names the attribute an event takes its title from, instead of the note title. Either a label or a relation, written without <code>#</code> or <code>~</code>.",
     "calendar_displayed_attributes": "Comma-delimited attribute names whose values are shown on the event. A relation is shown as the title of the note it points at.",
     "calendar_start_date": "Names the label an event reads its start date from, instead of <code>#startDate</code>. Written without the <code>#</code>.",
@@ -771,7 +771,7 @@
     "map_hide_labels": "Hides the note titles beside the markers on a geo map.",
     "map_cluster": "Gathers markers that are drawn close together into a single numbered bubble, which opens when clicked.",
     "presentation_theme": "Which theme a presentation is shown with.",
-    "slide_background": "The background of a slide, as a colour or as a CSS gradient.",
+    "slide_background": "The background of a slide, as a color or as a CSS gradient.",
     "tab_width": "How many spaces wide one level of indentation is in this code note.",
     "indent_with_tabs": "Indents this code note with tabs rather than spaces.",
     "wrap_lines": "Wraps long lines in this code note instead of scrolling sideways.",
@@ -1457,7 +1457,7 @@
     "attributes_definitions_what": "A definition is the schema behind an attribute name: what kind of value it takes, whether it may be given more than once, and whether it is promoted.",
     "attributes_definitions_promoted": "A promoted attribute is shown on the note itself as a form field rather than being left to this panel. Definitions usually arrive from a template, and each row names the note it lives on.",
     "highlights_what": "The passages this note picks out by their formatting. That is a wider net than it sounds: an ordinary bold or italic sentence counts, not only text you have highlighted.",
-    "highlights_configure": "Which formats count is yours to set: bold, italic, underlined, coloured text and text on a background colour can each be listed or left out, from the gear in this card's header. Pressing an entry scrolls the note to it.",
+    "highlights_configure": "Which formats count is yours to set: bold, italic, underlined, colored text and text on a background color can each be listed or left out, from the gear in this card's header. Pressing an entry scrolls the note to it.",
     "note_map_what": "A map of what this note connects to. The link map draws the internal links and relations going in and out of it; the tree map draws where it sits in the note tree. The switcher in this header chooses between the two.",
     "note_map_interaction": "Hovering a note brings its own connections forward and fades the rest. The expand button opens the same map at the size of the window.",
     "note_paths_what": "A note can sit in more than one place in the note tree at once, and each of those places is listed here as a path.",
@@ -1860,7 +1860,7 @@
     "search_placeholder": "Search fonts",
     "no_fonts_found": "No font matches what you are looking for.",
     "document_preview_heading": "Purple heart cuttings",
-    "document_preview_body": "Snipped 4 stems below a node and stood them in water on the sill; the first roots showed after <strong>9 days</strong>. It holds its colour in <em>full sun</em> and fades to green in the shade."
+    "document_preview_body": "Snipped 4 stems below a node and stood them in water on the sill; the first roots showed after <strong>9 days</strong>. It holds its color in <em>full sun</em> and fades to green in the shade."
   },
   "max_content_width": {
     "title": "Content Width",

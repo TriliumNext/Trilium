@@ -107,5 +107,8 @@
     "toggle-system-tray-icon": "Toggle System Tray Icon",
     "toggle-zen-mode": "Toggle Zen Mode",
     "switch-to-first-tab": "Switch to First Tab"
+  },
+  "hidden-subtree": {
+    "task-state-cancelled": "Cancelled"
   }
 }
