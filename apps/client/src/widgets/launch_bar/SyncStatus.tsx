@@ -1,10 +1,11 @@
 import "./SyncStatus.css";
 
-import { WebSocketMessage } from "@triliumnext/commons";
+import { SyncConfigResponse, WebSocketMessage } from "@triliumnext/commons";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import server from "../../services/server";
 import sync from "../../services/sync";
 import { escapeQuotes } from "../../services/utils";
 import ws, { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
@@ -54,13 +55,31 @@ export default function SyncStatus({ launcherNote }: LauncherNoteProps) {
     const syncState = useSyncStatus();
     const { title, icon, hasChanges } = STATE_MAPPINGS[syncState];
     const spanRef = useRef<HTMLSpanElement>(null);
-    const [ syncServerHost ] = useTriliumOption("syncServerHost");
+    const [ storedSyncServerHost ] = useTriliumOption("syncServerHost");
+    const [ syncServerHost, setSyncServerHost ] = useState<string | null>();
+
+    useEffect(() => {
+        let cancelled = false;
+        setSyncServerHost(undefined);
+        server.get<SyncConfigResponse>("sync/config").then(config => {
+            if (!cancelled) setSyncServerHost(config.syncServerHost);
+        }).catch(() => {
+            if (!cancelled) setSyncServerHost(undefined);
+        });
+        return () => { cancelled = true; };
+    }, [ storedSyncServerHost ]);
+
     useStaticTooltip(spanRef, {
         html: true,
-        title: escapeQuotes(title)
+        title: escapeQuotes(title) + (syncServerHost
+            ? `<p>${t("sync_status.server", { host: syncServerHost, interpolation: { escapeValue: true } })}</p>`
+            : "")
     });
 
-    return (syncServerHost &&
+    const showSyncStatus = syncServerHost !== null && (syncServerHost !== undefined
+        || (storedSyncServerHost && storedSyncServerHost !== "disabled"));
+
+    return (showSyncStatus &&
         <div
             class="sync-status-widget launcher-button"
             onContextMenu={launcherContextMenuHandler(launcherNote)}

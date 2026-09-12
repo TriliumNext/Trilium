@@ -1,6 +1,7 @@
-import type { EntityChange } from "@triliumnext/commons";
+import type { EntityChange, SyncConfigResponse } from "@triliumnext/commons";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { getConfig, initConfig } from "../../services/config";
 import consistencyChecksService from "../../services/consistency_checks";
 import entityChangesService from "../../services/entity_changes";
 import optionService from "../../services/options";
@@ -18,6 +19,13 @@ import { CoreApiTester } from "../../test/api_tester";
  * suites. Network-doing handlers (login/sync) are stubbed via `vi.spyOn`.
  */
 let api: CoreApiTester;
+
+function mockSyncServerHost(syncServerHost: string) {
+    const originalGetOption = optionService.getOption.bind(optionService);
+    return vi.spyOn(optionService, "getOption").mockImplementation((name) =>
+        name === "syncServerHost" ? syncServerHost : originalGetOption(name)
+    );
+}
 
 describe("Sync API (core)", () => {
     beforeAll(() => {
@@ -57,6 +65,102 @@ describe("Sync API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(false);
             expect(res.body.message).toContain("boom");
+        });
+    });
+
+    describe("getConfig (GET /api/sync/config)", () => {
+        it("returns the normalized persisted sync host", async () => {
+            mockSyncServerHost(" https://sync.example.com//path/ ");
+
+            const res = await api.get<SyncConfigResponse>("/api/sync/config");
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ syncServerHost: "https://sync.example.com/path" });
+        });
+
+        it("removes credentials from the displayed sync host", async () => {
+            mockSyncServerHost("https://user:secret@sync.example.com//path/");
+
+            const res = await api.get<SyncConfigResponse>("/api/sync/config");
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ syncServerHost: "https://sync.example.com/path" });
+        });
+
+        it("keeps malformed sync host text for diagnostics", async () => {
+            mockSyncServerHost("not a URL");
+
+            const res = await api.get<SyncConfigResponse>("/api/sync/config");
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ syncServerHost: "not a URL" });
+        });
+
+        it("removes credentials from malformed or schemeless hosts", async () => {
+            const malformed = mockSyncServerHost("https://user:secret@host:99999");
+
+            const invalidUrl = await api.get<SyncConfigResponse>("/api/sync/config");
+            expect(invalidUrl.status).toBe(200);
+            expect(invalidUrl.body).toEqual({ syncServerHost: "https://host:99999" });
+
+            malformed.mockRestore();
+            mockSyncServerHost("user:secret@sync.example.com");
+            const schemeless = await api.get<SyncConfigResponse>("/api/sync/config");
+            expect(schemeless.status).toBe(200);
+            expect(schemeless.body).toEqual({ syncServerHost: "sync.example.com" });
+        });
+
+        it("preserves at signs outside URL credentials", async () => {
+            mockSyncServerHost("https://sync.example.com/path@name?recipient=user@example.com");
+
+            const res = await api.get<SyncConfigResponse>("/api/sync/config");
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ syncServerHost: "https://sync.example.com/path@name?recipient=user@example.com" });
+        });
+
+        it("uses the config override when the persisted host is stale or empty", async () => {
+            const original = getConfig();
+            initConfig({ ...original, Sync: { ...original.Sync, syncServerHost: "https://override.example.com/" } });
+            try {
+                const persistedHost = mockSyncServerHost("https://stale.example.com");
+
+                const stale = await api.get<SyncConfigResponse>("/api/sync/config");
+                expect(stale.status).toBe(200);
+                expect(stale.body).toEqual({ syncServerHost: "https://override.example.com" });
+
+                persistedHost.mockRestore();
+                mockSyncServerHost("");
+                const empty = await api.get<SyncConfigResponse>("/api/sync/config");
+                expect(empty.status).toBe(200);
+                expect(empty.body).toEqual({ syncServerHost: "https://override.example.com" });
+            } finally {
+                initConfig(original);
+            }
+        });
+
+        it("returns null for a disabled config override", async () => {
+            const original = getConfig();
+            initConfig({ ...original, Sync: { ...original.Sync, syncServerHost: "disabled" } });
+            try {
+                mockSyncServerHost("https://persisted.example.com");
+
+                const res = await api.get<SyncConfigResponse>("/api/sync/config");
+                expect(res.status).toBe(200);
+                expect(res.body).toEqual({ syncServerHost: null });
+            } finally {
+                initConfig(original);
+            }
+        });
+
+        it("returns null when the configured host is empty or whitespace", async () => {
+            const emptyHost = mockSyncServerHost("");
+
+            const empty = await api.get<SyncConfigResponse>("/api/sync/config");
+            expect(empty.status).toBe(200);
+            expect(empty.body).toEqual({ syncServerHost: null });
+
+            emptyHost.mockRestore();
+            mockSyncServerHost("   ");
+            const whitespace = await api.get<SyncConfigResponse>("/api/sync/config");
+            expect(whitespace.status).toBe(200);
+            expect(whitespace.body).toEqual({ syncServerHost: null });
         });
     });
 

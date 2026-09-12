@@ -1118,7 +1118,8 @@
     "connected_no_changes": "<p>Connected to the sync server.<br>All changes have been already synced.</p><p>Click to trigger sync.</p>",
     "disconnected_with_changes": "<p>Establishing the connection to the sync server was unsuccessful.<br>There are some outstanding changes yet to be synced.</p><p>Click to trigger sync.</p>",
     "disconnected_no_changes": "<p>Establishing the connection to the sync server was unsuccessful.<br>All known changes have been synced.</p><p>Click to trigger sync.</p>",
-    "in_progress": "Sync with the server is in progress."
+    "in_progress": "Sync with the server is in progress.",
+    "server": "Sync server: {{host}}"
   },
   "left_pane_toggle": {
     "show_panel": "Show panel",

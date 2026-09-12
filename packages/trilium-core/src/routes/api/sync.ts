@@ -1,4 +1,4 @@
-import { type EntityChange, type EntityChangeRecord, SyncTestResponse } from "@triliumnext/commons";
+import { type EntityChange, type EntityChangeRecord, type SyncConfigResponse, SyncTestResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 import { t } from "i18next";
 
@@ -36,6 +36,29 @@ async function testSync(): Promise<SyncTestResponse> {
             message: errMessage
         };
     }
+}
+
+function getConfig(): SyncConfigResponse {
+    const host = syncOptions.isSyncSetup() ? syncOptions.getSyncServerHost() : null;
+
+    if (!host) {
+        return { syncServerHost: null };
+    }
+
+    try {
+        const url = new URL(host);
+        if (url.username || url.password) {
+            url.username = "";
+            url.password = "";
+            return { syncServerHost: utils.normalizeUrl(url.toString()) || null };
+        }
+    } catch {
+        // Preserve invalid addresses for diagnostics while removing embedded credentials below.
+    }
+
+    return {
+        syncServerHost: host.replace(/^((?:[a-z][a-z\d+.-]*:)?\/\/)?[^/?#]*@/i, "$1") || null
+    };
 }
 
 function getStats() {
@@ -388,6 +411,7 @@ function checkEntityChanges() {
 
 export default {
     testSync,
+    getConfig,
     checkSync,
     syncNow,
     fillEntityChanges,

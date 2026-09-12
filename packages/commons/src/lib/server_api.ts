@@ -184,6 +184,11 @@ export interface ExistingAnonymizedDatabasesResponse {
 
 export type SyncTestResponse = Response;
 
+export interface SyncConfigResponse {
+    /** Effective sync server URL without embedded credentials, or null when not configured. */
+    syncServerHost: string | null;
+}
+
 export interface EtapiToken {
     name: string;
     utcDateCreated: string;

@@ -1,9 +1,12 @@
+import supertest from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
     type ApiTestContext,
     bootLoggedInApp,
     createTextNote } from "../../../spec/support/internal_api.js";
+import { refreshAuth } from "../../services/auth.js";
+import config from "../../services/config.js";
 
 /**
  * Thin Express-transport layer for the shared **core** API routes.
@@ -13,8 +16,7 @@ import {
  * This spec only asserts the things that exist *because of Express* and the
  * server middleware — and therefore can't be exercised by the in-process core
  * driver: CSRF enforcement, and that core routes are actually wired into the
- * Express app end to end. (Auth-required can't be asserted here because the test
- * fixture's config.ini sets `noAuthentication=true`.)
+ * Express app end to end.
  */
 let ctx: ApiTestContext;
 
@@ -30,6 +32,19 @@ describe("Core routes over Express", () => {
     it("serves a core GET route end to end once authenticated", async () => {
         const res = await ctx.agent.get("/api/tree").expect(200);
         expect(res.body.notes.some((n: { noteId: string }) => n.noteId === "root")).toBe(true);
+    });
+
+    it("requires authentication to read the effective sync server", async () => {
+        const original = config.General.noAuthentication;
+        config.General.noAuthentication = false;
+        refreshAuth();
+        try {
+            await supertest(ctx.app).get("/api/sync/config").expect(401);
+            await ctx.agent.get("/api/sync/config").expect(200);
+        } finally {
+            config.General.noAuthentication = original;
+            refreshAuth();
+        }
     });
 
     it("runs a core mutating route end to end with a CSRF token", async () => {

@@ -218,6 +218,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncRouteWithoutTransaction(PST, "/api/setup/existing/keep", [checkAppNotInitialized, checkSetupAuth], setupApiRoute.keepExisting, apiResultHandler);
 
     asyncApiRoute(PST, "/api/sync/test", syncApiRoute.testSync);
+    apiRoute(GET, "/api/sync/config", syncApiRoute.getConfig);
     asyncApiRoute(PST, "/api/sync/now", syncApiRoute.syncNow);
     apiRoute(PST, "/api/sync/fill-entity-changes", syncApiRoute.fillEntityChanges);
     apiRoute(PST, "/api/sync/force-full-sync", syncApiRoute.forceFullSync);
