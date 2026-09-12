@@ -1,3 +1,5 @@
+import { parseSortCriteria } from "@triliumnext/commons";
+
 import eventService from "./events.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
 import scriptService from "./script.js";
@@ -193,9 +195,9 @@ function handleMaybeSortingLabel(entity: BAttribute) {
             }
 
             if (
-                sorted.includes(entity.name) || // hacky check if this label is used in the sort
                 entity.name === "top" ||
-                entity.name === "bottom"
+                entity.name === "bottom" ||
+                parseSortCriteria(sorted).some((criterion) => criterion.key === entity.name)
             ) {
                 treeService.sortNotesIfNeeded(parentNote.noteId);
             }

@@ -1,6 +1,7 @@
 "use strict";
 
 import type BNote from "../../../becca/entities/bnote.js";
+import { compareSortValues, isDate, isNumber } from "../../utils/sort_values.js";
 import NoteSet from "../note_set.js";
 import type SearchContext from "../search_context.js";
 import Expression from "./expression.js";
@@ -45,47 +46,13 @@ class OrderByAndLimitExp extends Expression {
 
         notes.sort((a, b) => {
             for (const { valueExtractor, smaller, larger } of this.orderDefinitions) {
-                let valA: string | number | Date | null = valueExtractor.extract(a);
-                let valB: string | number | Date | null = valueExtractor.extract(b);
-
-                if (valA === undefined) {
-                    valA = null;
+                const result = compareSortValues(
+                    valueExtractor.extract(a),
+                    valueExtractor.extract(b)
+                );
+                if (result !== 0) {
+                    return result < 0 ? smaller : larger;
                 }
-
-                if (valB === undefined) {
-                    valB = null;
-                }
-
-                if (valA === null && valB === null) {
-                    // neither has attribute at all
-                    continue;
-                } else if (valB === null) {
-                    return smaller;
-                } else if (valA === null) {
-                    return larger;
-                }
-
-                // if both are dates, then parse them for dates comparison
-                if (typeof valA === "string" && this.isDate(valA) && typeof valB === "string" && this.isDate(valB)) {
-                    valA = new Date(valA);
-                    valB = new Date(valB);
-                }
-
-                // if both are numbers, then parse them for numerical comparison
-                else if (typeof valA === "string" && this.isNumber(valA) && typeof valB === "string" && this.isNumber(valB)) {
-                    valA = parseFloat(valA);
-                    valB = parseFloat(valB);
-                }
-
-                if (!valA && !valB) {
-                    // the attribute value is empty/zero in both notes so continue to the next order definition
-                    continue;
-                } else if (valA < valB) {
-                    return smaller;
-                } else if (valA > valB) {
-                    return larger;
-                }
-                // else the values are equal and continue to next order definition
             }
 
             return 0;
@@ -102,18 +69,11 @@ class OrderByAndLimitExp extends Expression {
     }
 
     isDate(date: number | string) {
-        return !isNaN(new Date(date).getTime());
+        return isDate(date);
     }
 
     isNumber(x: number | string) {
-        if (typeof x === "number") {
-            return true;
-        } else if (typeof x === "string") {
-            // isNaN will return false for blank string
-            return x.trim() !== "" && !isNaN(parseInt(x, 10));
-        } else {
-            return false;
-        }
+        return isNumber(x);
     }
 }
 

@@ -176,4 +176,120 @@ describe("Tree", () => {
             expect(orderedTitles).toStrictEqual(["top", "1", "2", "3", "10", "20", "bottom"]);
         }
     )
+
+    it("sorts by several levels, each with its own direction", () => {
+        const note = buildNote({
+            children: [
+                {title: "c", "#priority": "1", "#area": "home"},
+                {title: "b", "#priority": "2", "#area": "work"},
+                {title: "a", "#priority": "2", "#area": "home"},
+                {title: "d", "#priority": "1", "#area": "work"},
+                {title: "e", "#priority": "1", "#area": "home"}
+            ],
+            "#sorted": "priority desc, area, title desc"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["a", "b", "e", "c", "d"]);
+    });
+
+    it("applies #sortDirection to the levels without their own and to the title tiebreak", () => {
+        const note = buildNote({
+            children: [
+                {title: "a", "#priority": "1", "#area": "home"},
+                {title: "b", "#priority": "2", "#area": "home"},
+                {title: "c", "#priority": "2", "#area": "work"},
+                {title: "d", "#priority": "2", "#area": "work"},
+                {title: "top", "#top": ""},
+                {title: "bottom", "#bottom": ""}
+            ],
+            "#sorted": "priority asc, area",
+            "#sortDirection": "desc"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        // priority ascending as written; area and the title tiebreak follow #sortDirection.
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["top", "a", "d", "c", "b", "bottom"]);
+    });
+
+    it("groups folders last under #sortDirection=desc", () => {
+        const note = buildNote({
+            children: [
+                {title: "a"},
+                {title: "p1", children: [{title: "1.1"}]},
+                {title: "b"},
+                {title: "p2", children: [{title: "2.1"}]}
+            ],
+            "#sorted": "",
+            "#sortDirection": "desc",
+            "#sortFoldersFirst": ""
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["b", "a", "p2", "p1"]);
+    });
+
+    it("orders several #top and #bottom notes by their values, whatever the direction", () => {
+        const note = buildNote({
+            children: [
+                {title: "bottom2", "#bottom": "2"},
+                {title: "top2", "#top": "2"},
+                {title: "b"},
+                {title: "top1", "#top": "1"},
+                {title: "bottom1", "#bottom": "1"},
+                {title: "a"}
+            ],
+            "#sorted": "",
+            "#sortDirection": "desc"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["top1", "top2", "b", "a", "bottom2", "bottom1"]);
+    });
+
+    it("counts a missing label as the largest value; the next level breaks a double miss", () => {
+        const children: Parameters<typeof buildNote>[0]["children"] = [
+            {title: "m", "#order": "z"},
+            {title: "unlabelled", "#area": "b"},
+            {title: "also", "#area": "a"},
+            {title: "a", "#order": "b"}
+        ];
+        for (const [direction, expected] of [
+            ["asc", ["a", "m", "also", "unlabelled"]],
+            ["desc", ["unlabelled", "also", "m", "a"]]
+        ] as const) {
+            const note = buildNote({
+                children, "#sorted": "order, area", "#sortDirection": direction
+            });
+            getContext().init(() => {
+                tree.sortNotesIfNeeded(note.noteId);
+            });
+            expect(note.children.map((child) => child.title)).toStrictEqual([...expected]);
+        }
+    });
+
+    it("compares numbers and dates as such rather than as text", () => {
+        const note = buildNote({
+            children: [
+                {title: "ten", "#priority": "10", "#due": "2026-02-01"},
+                {title: "two", "#priority": "2", "#due": "2026-02-01"},
+                {title: "one", "#priority": "1", "#due": "2026-01-15"},
+                {title: "nine", "#priority": "9", "#due": "2026-01-15"}
+            ],
+            "#sorted": "due, priority desc"
+        });
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        const orderedTitles = note.children.map((child) => child.title);
+        expect(orderedTitles).toStrictEqual(["nine", "one", "ten", "two"]);
+    });
 });

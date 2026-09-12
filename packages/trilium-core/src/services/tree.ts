@@ -1,6 +1,9 @@
 "use strict";
 
+import { parseSortCriteria } from "@triliumnext/commons";
+
 import { getLog } from "./log.js";
+import { compareSortValues } from "./utils/sort_values.js";
 import BBranch from "../becca/entities/bbranch.js";
 import entityChangesService from "./entity_changes.js";
 import becca from "../becca/becca.js";
@@ -77,10 +80,19 @@ function wouldAddingBranchCreateCycle(parentNoteId: string, childNoteId: string)
     return parentAncestorNoteIds.some((parentAncestorNoteId) => childSubtreeNoteIds.has(parentAncestorNoteId));
 }
 
-function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse = false, foldersFirst = false, sortNatural = false, _sortLocale?: string | null) {
-    if (!customSortBy) {
-        customSortBy = "title";
-    }
+/**
+ * Sorts the children of `parentNoteId` by the levels of `sortBy`; `reverse` is the direction of a
+ * level without its own, of the folders grouping and of ties, never of `#top` and `#bottom`.
+ */
+function sortNotes(
+    parentNoteId: string,
+    sortBy: string = "title",
+    reverse = false,
+    foldersFirst = false,
+    sortNatural = false,
+    _sortLocale?: string | null
+) {
+    const criteria = parseSortCriteria(sortBy);
 
     // sortLocale can not be empty string or null value, default value must be set to undefined.
     const sortLocale = _sortLocale || undefined;
@@ -94,84 +106,75 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
 
         const notes = note.getChildNotes();
 
-        function normalize<T>(obj: T | string) {
-            return obj && typeof obj === "string" ? obj.toLowerCase() : obj;
+        function fetchValue(note: BNote, key: string): string | null {
+            let rawValue: string | null;
+
+            if (key === "title") {
+                const branch = note.getParentBranches()
+                    .find((branch) => branch.parentNoteId === parentNoteId);
+                const prefix = branch?.prefix;
+                rawValue = prefix ? `${prefix} - ${note.title}` : note.title;
+            } else {
+                rawValue = key === "dateCreated" || key === "dateModified"
+                    ? note[key] ?? null
+                    : note.getLabelValue(key);
+            }
+
+            return typeof rawValue === "string" ? rawValue.toLowerCase() : rawValue;
+        }
+
+        function compare(a: string, b: string) {
+            if (sortNatural) {
+                return a.localeCompare(b, sortLocale, { numeric: true, sensitivity: "base" });
+            }
+            return a < b ? -1 : a > b ? 1 : 0;
+        }
+
+        // The same rules as a search's orderBy: a child without the label counts as the largest
+        // value, two without it tie, and dates and numbers compare as such rather than as text.
+        function compareLevel(a: BNote, b: BNote, key: string, descending: boolean) {
+            const result = compareSortValues(fetchValue(a, key), fetchValue(b, key), compare);
+            return descending ? -result : result;
         }
 
         notes.sort((a, b) => {
+            const topA = fetchValue(a, "top");
+            const topB = fetchValue(b, "top");
 
-            function fetchValue(note: BNote, key: string) {
-                let rawValue: string | null;
-
-                if (key === "title") {
-                    const branch = note.getParentBranches().find((branch) => branch.parentNoteId === parentNoteId);
-                    const prefix = branch?.prefix;
-                    rawValue = prefix ? `${prefix} - ${note.title}` : note.title;
-                } else {
-                    rawValue = ["dateCreated", "dateModified"].includes(key) ? (note as any)[key] : note.getLabelValue(key);
-                }
-
-                return normalize(rawValue);
+            if (topA !== topB) {
+                if (topA === null) return 1;
+                if (topB === null) return -1;
+                return compare(topA, topB);
             }
 
-            function compare(a: string, b: string) {
-                if (!sortNatural) {
-                    // alphabetical sort
-                    return b === null || b === undefined || a < b ? -1 : 1;
-                } else {
-                    // natural sort
-                    return a.localeCompare(b, sortLocale, { numeric: true, sensitivity: "base" });
-                }
-            }
+            const bottomA = fetchValue(a, "bottom");
+            const bottomB = fetchValue(b, "bottom");
 
-            const topAEl = fetchValue(a, "top");
-            const topBEl = fetchValue(b, "top");
-
-            if (topAEl !== topBEl) {
-                if (topAEl === null) return reverse ? -1 : 1;
-                if (topBEl === null) return reverse ? 1 : -1;
-
-                // since "top" should not be reversible, we'll reverse it once more to nullify this effect
-                return compare(topAEl, topBEl) * (reverse ? -1 : 1);
-            }
-
-            const bottomAEl = fetchValue(a, "bottom");
-            const bottomBEl = fetchValue(b, "bottom");
-
-            if (bottomAEl !== bottomBEl) {
-                if (bottomAEl === null) return reverse ? 1 : -1;
-                if (bottomBEl === null) return reverse ? -1 : 1;
-
-                // since "bottom" should not be reversible, we'll reverse it once more to nullify this effect
-                return compare(bottomBEl, bottomAEl) * (reverse ? -1 : 1);
+            if (bottomA !== bottomB) {
+                if (bottomA === null) return -1;
+                if (bottomB === null) return 1;
+                return compare(bottomB, bottomA);
             }
 
             if (foldersFirst) {
                 const aHasChildren = a.hasChildren();
                 const bHasChildren = b.hasChildren();
 
-                if ((aHasChildren && !bHasChildren) || (!aHasChildren && bHasChildren)) {
-                    // exactly one note of the two is a directory, so the sorting will be done based on this status
-                    return aHasChildren ? -1 : 1;
+                // Folders group first ascending and last descending.
+                if (aHasChildren !== bHasChildren) {
+                    return (aHasChildren ? -1 : 1) * (reverse ? -1 : 1);
                 }
             }
 
-            const customAEl = fetchValue(a, customSortBy) ?? fetchValue(a, "title") as string;
-            const customBEl = fetchValue(b, customSortBy) ?? fetchValue(b, "title")  as string;
-
-            if (customAEl !== customBEl) {
-                return compare(customAEl, customBEl);
+            for (const { key, descending } of criteria) {
+                const result = compareLevel(a, b, key, descending ?? reverse);
+                if (result !== 0) {
+                    return result;
+                }
             }
 
-            const titleAEl = fetchValue(a, "title") as string;
-            const titleBEl = fetchValue(b, "title") as string;
-
-            return compare(titleAEl, titleBEl);
+            return compareLevel(a, b, "title", reverse);
         });
-
-        if (reverse) {
-            notes.reverse();
-        }
 
         let position = 10;
         let someBranchUpdated = false;
