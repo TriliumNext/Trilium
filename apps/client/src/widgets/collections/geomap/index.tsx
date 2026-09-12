@@ -591,11 +591,10 @@ function NoteGpxTrack({ note, hideLabels, isDarkTheme }: { note: FNote, hideLabe
         noteId={note.noteId}
         title={title}
         gpxXmlString={xmlString}
-        trackColor={color ?? "blue"}
         // The colour and icon rather than anything built from them: the marks are rasterized into
         // the track's own symbol layer through the shared pin rasterizer (see GpxTrack), so the
         // start of a track wears exactly the pin its note would wear as a marker.
-        pinColor={color ?? DEFAULT_MARKER_COLOR}
+        color={color ?? DEFAULT_MARKER_COLOR}
         iconClass={note.getIcon()}
         isDarkTheme={isDarkTheme}
         hideLabels={hideLabels}
@@ -620,7 +619,7 @@ function NoteShapeWrapper({ note }: { note: FNote }) {
     return <ShapeLayer
         noteId={note.noteId}
         shape={shape}
-        color={color ?? "blue"}
+        color={color ?? DEFAULT_MARKER_COLOR}
     />;
 }
 
