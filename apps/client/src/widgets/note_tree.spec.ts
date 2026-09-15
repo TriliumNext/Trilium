@@ -53,6 +53,48 @@ describe("fancytree scrollIntoView patch", () => {
     });
 });
 
+describe("fancytree nodeKeydown patch (#11244)", () => {
+    it("does not crash when node.setFocus() returns without updating tree.focusNode", () => {
+        const $tree = $("<div>").appendTo(document.body);
+
+        try {
+            $tree.fancytree({ keyboard: true, source: [{ title: "child", key: "child" }] });
+            const tree: Fancytree.Fancytree = $tree.fancytree("getTree");
+
+            // nodeKeydown()'s null-node fallback assumes tree.focusNode is populated the instant
+            // focusNode.setFocus() returns. Stub setFocus() as a no-op to violate that assumption.
+            const firstChild = { setFocus: vi.fn() } as unknown as Fancytree.FancytreeNode;
+            vi.spyOn(tree, "getFirstChild").mockReturnValue(firstChild);
+            expect(tree.getActiveNode()).toBeNull();
+            expect(tree.focusNode).toBeNull();
+
+            const keydown = $.Event("keydown", { which: 65, key: "a" });
+            expect(() => tree.$container.trigger(keydown)).not.toThrow();
+        } finally {
+            $tree.remove();
+        }
+    });
+
+    it("still propagates an unrelated error from the same code path", () => {
+        const $tree = $("<div>").appendTo(document.body);
+
+        try {
+            $tree.fancytree({ keyboard: true, source: [{ title: "child", key: "child" }] });
+            const tree: Fancytree.Fancytree = $tree.fancytree("getTree");
+
+            vi.spyOn(tree, "getActiveNode").mockImplementation(() => {
+                throw new TypeError("unrelated failure");
+            });
+            expect(tree.focusNode).toBeNull();
+
+            const keydown = $.Event("keydown", { which: 65, key: "a" });
+            expect(() => tree.$container.trigger(keydown)).toThrow("unrelated failure");
+        } finally {
+            $tree.remove();
+        }
+    });
+});
+
 describe("NoteTreeWidget", () => {
     afterEach(() => {
         vi.restoreAllMocks();

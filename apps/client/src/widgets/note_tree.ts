@@ -14,6 +14,7 @@ import type FNote from "../entities/fnote.js";
 import contextMenu from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import branchService from "../services/branches.js";
+import { isTitleFocusPending } from "../services/focus.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import { t } from "../services/i18n.js";
@@ -1530,12 +1531,16 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return;
         }
 
-        if (activeNodeFocused) {
+        // Don't steal focus back from a note-creation's pending title focus. See #11244.
+        const effectiveNtxId = (this.noteContext ?? appContext.tabManager.getActiveContext())?.ntxId;
+        const titleFocusPending = isTitleFocusPending(effectiveNtxId);
+
+        if (activeNodeFocused && !titleFocusPending) {
             // needed by Firefox: https://github.com/zadam/trilium/issues/1865
             this.tree.$container.focus();
         }
 
-        await node.setActive(true, { noEvents: true, noFocus: !activeNodeFocused });
+        await node.setActive(true, { noEvents: true, noFocus: !activeNodeFocused || titleFocusPending });
     }
 
     sortChildren(node: Fancytree.FancytreeNode) {
@@ -2034,3 +2039,33 @@ function patchScrollIntoViewCrash() {
 }
 
 patchScrollIntoViewCrash();
+
+type NodeKeydownFn = (this: Fancytree.Fancytree, ctx: Fancytree.EventData) => unknown;
+
+// jquery.fancytree's nodeKeydown() wrongly assumes this.focusNode is always populated
+// right after calling setFocus() on it. See #11244.
+const NULL_FOCUS_NODE_ERROR = /reading 'debug'/;
+
+function patchNodeKeydownCrash() {
+    const { _FancytreeClass } = $.ui.fancytree as Fancytree.FancytreeStatic & {
+        _FancytreeClass: { prototype: { nodeKeydown: NodeKeydownFn } };
+    };
+    const originalNodeKeydown = _FancytreeClass.prototype.nodeKeydown;
+
+    _FancytreeClass.prototype.nodeKeydown = function (
+        this: Fancytree.Fancytree,
+        ctx: Fancytree.EventData
+    ) {
+        try {
+            return originalNodeKeydown.call(this, ctx);
+        } catch (e) {
+            if (e instanceof TypeError && NULL_FOCUS_NODE_ERROR.test(e.message)) {
+                console.warn("Ignoring fancytree nodeKeydown crash", e);
+                return;
+            }
+            throw e;
+        }
+    };
+}
+
+patchNodeKeydownCrash();
