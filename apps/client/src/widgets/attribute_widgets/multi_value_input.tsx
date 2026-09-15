@@ -11,7 +11,7 @@ interface MultiValueInputProps {
     /** The values held, in the order they are shown. */
     values: readonly string[];
     /** Receives the values as they now stand, whenever one is taken or dropped. */
-    onCommit(values: string[]): void;
+    onCommit(values: string[]): void | Promise<void>;
     /** The options a `select` holds, from the definition that declared it. Ignored by other types. */
     options?: readonly string[];
     /**
@@ -19,6 +19,8 @@ interface MultiValueInputProps {
      * them. Left out, the field picks from the options as they stand.
      */
     onCreateOption?(option: string): void | Promise<void>;
+    /** Provides suggestions for free-form values. */
+    source?(query: string): Promise<string[]>;
     /** Set onto the box, so that a host's own label points at the field. */
     inputId?: string;
     /** Set onto the box, for a host placing its fields in a tab order of its own. */
@@ -37,7 +39,17 @@ interface MultiValueInputProps {
  * Shared by the promoted-attribute grid and the table's own cells, so that the same definition is
  * edited the same way wherever the note is opened.
  */
-export default function MultiValueInput({ labelType, values, onCommit, options, onCreateOption, inputId, tabIndex, disabled }: MultiValueInputProps) {
+export default function MultiValueInput({
+    labelType,
+    values,
+    onCommit,
+    options,
+    onCreateOption,
+    source,
+    inputId,
+    tabIndex,
+    disabled
+}: MultiValueInputProps) {
     if (labelType === "select" || labelType === "boolean") {
         return (
             <SelectValuesInput
@@ -60,6 +72,7 @@ export default function MultiValueInput({ labelType, values, onCommit, options, 
             labelType={labelType}
             values={values}
             placeholder={t("promoted_attributes.values_placeholder")}
+            source={source}
             inputId={inputId}
             tabIndex={tabIndex}
             disabled={disabled}
