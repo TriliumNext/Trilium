@@ -6,5 +6,5 @@ Exec=trilium %U
 Icon=org.triliumnotes.Trilium
 Type=Application
 StartupNotify=true
-StartupWMClass=Trilium Notes
+StartupWMClass=trilium
 Categories=Office;Utility;
