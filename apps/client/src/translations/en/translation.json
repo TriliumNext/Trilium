@@ -1379,7 +1379,12 @@
     "intro_not_placed": "This note is not yet placed into the note tree.",
     "outside_hoisted": "This path is outside of hoisted note and you would have to unhoist.",
     "archived": "Archived",
-    "search": "Search"
+    "search": "Search",
+    "view_list": "List",
+    "view_tree": "Inverse tree",
+    "switch_to_this_path": "Use this path",
+    "collapse_ancestors": "Collapse",
+    "expand_ancestors": "Expand"
   },
   "note_properties": {
     "this_note_was_originally_taken_from": "This note was originally taken from:",
@@ -1463,7 +1468,8 @@
     "note_paths_what": "A note can sit in more than one place in the note tree at once, and each of those places is listed here as a path.",
     "note_paths_cloning": "Adding a place is called cloning: nothing is copied, so an edit made under one path shows under all of them, and removing one path leaves the note under the others.",
     "backlinks_what": "The notes pointing at this one, either through a link in their text or through a relation naming it.",
-    "backlinks_listing": "A text link is listed with the passage around it, a relation with the name it points by. This side of a link is not editable: it goes away when the note that made it drops the link."
+    "backlinks_listing": "A text link is listed with the passage around it, a relation with the name it points by. This side of a link is not editable: it goes away when the note that made it drops the link.",
+    "note_paths_tree": "When a parent is cloned as well, switch to the inverse tree: it starts from this note and fans out toward the roots, so that parent appears once instead of once per copy."
   },
   "abstract_search_option": {
     "remove_this_search_option": "Remove this search option",
