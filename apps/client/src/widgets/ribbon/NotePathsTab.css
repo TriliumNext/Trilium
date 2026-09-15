@@ -102,7 +102,8 @@ body.experimental-feature-new-layout .note-paths-widget {
 }
 
 .note-path-list .path-current a,
-.note-path-node.path-current > .note-path-row a {
+.note-path-node.path-current > .note-path-row a,
+.note-path-node.path-on-active-branch > .note-path-row a {
     font-weight: bold;
 }
 
@@ -120,7 +121,6 @@ body.experimental-feature-new-layout .note-paths-widget {
     list-style: none;
     margin: 0;
     padding: 0;
-    padding-inline-start: 14px;
 }
 
 .note-path-node {
@@ -128,54 +128,25 @@ body.experimental-feature-new-layout .note-paths-widget {
 }
 
 .note-path-row {
-    position: relative;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
-    padding: 4px 8px;
-    border-radius: 4px;
-
-    &:hover {
-        background-color: var(--hover-item-background-color);
-    }
+    padding-block: 2px;
 }
 
-.note-path-node.path-on-active-branch > .note-path-row::before {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    content: "\ee8f";
-    inset-inline-start: -4px;
-    top: 0;
-    bottom: 0;
-    font-family: "boxicons";
-    font-size: .75em;
-    color: var(--menu-item-icon-color);
-}
-
-.note-path-expand {
+.note-path-expand,
+.note-path-switch {
+    --icon-button-size: 22px;
     flex-shrink: 0;
-    font-size: 1em;
+}
+
+.note-path-switch {
+    margin-inline-start: auto;
 }
 
 .note-path-tree-branches {
     list-style: none;
     margin: 0;
-    padding-inline-start: 20px;
-    border-inline-start: 1px dashed var(--main-border-color);
-}
-
-.note-path-switch {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-inline-start: 8px;
-    font-size: .85em;
-    color: var(--muted-text-color);
-
-    a {
-        color: inherit;
-        text-decoration: underline;
-    }
+    padding-inline-start: 16px;
 }
