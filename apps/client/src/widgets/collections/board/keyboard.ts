@@ -118,6 +118,10 @@ export function useBoardKeyboard({
         const pending = pendingFocus.current;
         const container = containerRef.current;
         if (!pending || !container) return;
+        // Nothing is revealed while something is carried: the drag measures the board as it
+        // stands, and a reveal scrolls it out from under the finger. The intent keeps until the
+        // drop, which names what to focus next.
+        if (container.classList.contains("board-dragging")) return;
 
         if (!("noteId" in pending.intent)) {
             // Moving a focused element blurs it, so the header is focused again by name once the
@@ -643,7 +647,9 @@ function reveal(element: HTMLElement) {
     // scroll to where the card stood when they fired.
     window.clearTimeout(pendingReveal);
     pendingReveal = window.setTimeout(() => {
-        if (!element.isConnected) {
+        // Nor scrolled to once something is being carried, for a reveal that fired just before.
+        if (!element.isConnected
+                || element.closest(".board-view-container")?.classList.contains("board-dragging")) {
             return;
         }
 

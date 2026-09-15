@@ -35,6 +35,8 @@ interface ColumnMenuTarget {
     isCollapsed?: boolean;
     /** Whether the title can be edited. False for a collapsed column, rendered as a strip. */
     canRename: boolean;
+    /** Whether the column can be kept collapsed. False while a filter decides what is collapsed. */
+    canKeepCollapsed: boolean;
     /** Whether the inbox also collects notes deeper than the board's direct children. */
     nested?: boolean;
     /** Opens the inline title editor, which F2 also opens. */
@@ -71,7 +73,8 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
         ...(isInbox ? [ {
             title: t("board_view.inbox-nested"),
             uiIcon: "bx bx-subdirectory-right",
-            checked: !!column.nested,
+            // At the trailing edge, so the entry keeps its own icon in front.
+            trailingIcon: column.nested ? "bx bx-check" : undefined,
             handler: () => api.setInboxNested(!column.nested)
         } ] : []),
         {
@@ -94,7 +97,8 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
             },
             {
                 title: t("board_view.add-existing-item"),
-                uiIcon: "bx bx-link",
+                // The same mark the add field wears for this, where it stands for the empty one.
+                uiIcon: "bx bx-folder-open",
                 async handler() {
                     const noteId = await dialog.chooseNote({
                         title: t("board_view.add-existing-item-title"),
@@ -128,13 +132,13 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
                 uiIcon: "bx bx-collapse-horizontal",
                 handler: () => column.onCollapse(true)
             } ]),
-            {
+            ...(column.canKeepCollapsed ? [ {
                 title: t("board_view.keep-column-collapsed"),
                 uiIcon: "bx bx-lock-alt",
                 // At the trailing edge, so the entry keeps its own icon in front.
                 trailingIcon: column.keepCollapsed ? "bx bx-check" : undefined,
                 handler: () => column.onKeepCollapsed(!column.keepCollapsed)
-            },
+            } ] : []),
             {
                 title: t("board_view.sort"),
                 uiIcon: "bx bx-sort-alt-2",
@@ -146,11 +150,12 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
                 handler: column.onSetLimit
             },
             { kind: "separator" },
-            {
+            // The inbox leads the board and `moveColumn` refuses to move it, so it is not offered.
+            ...(isInbox ? [] : [ {
                 title: t("board_view.move-column"),
                 uiIcon: "bx bx-horizontal-left",
                 items: buildMoveColumnItems(api, column)
-            },
+            } ]),
             { kind: "separator" },
             ...(isInbox ? [] : [ column.archived
                 ? {
@@ -403,7 +408,7 @@ export interface NoteMenuTarget {
     notes: FNote[];
     /** The branches those notes have on this board, in the order `notes` lists them. */
     branchIds: string[];
-    /** Refocuses the card after a column change has redrawn it elsewhere. */
+    /** Puts focus on a card by name, once the board has drawn it again. */
     onFocusCard: (noteId: string) => void;
     /** Opens the new-card editor at an index in the column, above or below this card. */
     onInsert: (index: number) => void;
@@ -437,9 +442,19 @@ function buildColumnItems(api: Api, target: NoteMenuTarget): MenuItem<CommandNam
             ? [ { title: t("board_view.archived-badge") } ]
             : undefined,
         handler: () => {
-            // Asked for before the write: the cards are drawn afresh under the column they land
-            // in, so the element the menu was opened from will be gone.
-            target.onFocusCard(target.note.noteId);
+            // Focus stays in the column being emptied, on the card that takes this one's place:
+            // a reader sending cards off one after another would otherwise be carried to
+            // wherever each one landed. Asked for before the write, which draws the board again.
+            if (name !== current) {
+                const going = new Set(target.notes.map((note) => note.noteId));
+                const staying = api.getColumnNoteIds(target.column)
+                    .filter((noteId) => !going.has(noteId));
+                const next = staying[target.index] ?? staying.at(-1);
+                if (next) {
+                    target.onFocusCard(next);
+                }
+            }
+
             return Promise.all(
                 target.notes.map((note) => api.changeColumn(note.noteId, name)));
         }
@@ -491,13 +506,14 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, target: N
         } ] : [
             {
                 title: t("board_view.insert-above"),
-                uiIcon: "bx bx-list-plus",
+                // The list's plus sits at its foot, so the head is the glyph turned over.
+                uiIcon: "bx bx-list-plus bx-flip-vertical",
                 shortcut: "Shift+Enter",
                 handler: () => target.onInsert(index)
             },
             {
                 title: t("board_view.insert-below"),
-                uiIcon: "bx bx-empty",
+                uiIcon: "bx bx-list-plus",
                 shortcut: "Enter",
                 handler: () => target.onInsert(index + 1)
             }

@@ -22,6 +22,12 @@ const TOUCH_DELAY_MS = 400;
 /** How far a finger may stray in that time and still be resting rather than scrolling. */
 const TOUCH_TOLERANCE = 8;
 
+/**
+ * How far a lifted card travels before it counts as carried, which is when what stands over the
+ * board for it goes. A press that ripens and lets go where it was leaves all of that in place.
+ */
+const CARRY_THRESHOLD = 20;
+
 /** How much a carried card shrinks. Written with the movement, a class could not add to it. */
 const DRAG_SCALE = 0.9;
 
@@ -162,6 +168,7 @@ export function useBoardDrag(
             window.clearTimeout(held.dwell);
             scroller.stop();
             container.classList.remove("board-dragging");
+            container.classList.remove("board-carrying");
             held.preview?.remove();
             held.element.style.display = "";
             if (held.frame !== undefined) {
@@ -414,6 +421,7 @@ export function useBoardDrag(
                 lastY: event.clientY,
                 touch: event.pointerType !== "mouse",
                 active: false,
+                carried: false,
                 preview: undefined,
                 measurement: undefined,
                 frame: undefined,
@@ -444,6 +452,12 @@ export function useBoardDrag(
                 // Carried on into the move below, so what is picked up takes its place under the
                 // pointer on the move that picked it up rather than on the one after.
                 activate();
+            }
+
+            const fromLift = Math.hypot(event.clientX - held.startX, event.clientY - held.startY);
+            if (!held.carried && fromLift >= CARRY_THRESHOLD) {
+                held.carried = true;
+                container.classList.add("board-carrying");
             }
 
             // Written in a frame of its own, and only the transform: a move that redrew the board
@@ -484,30 +498,12 @@ export function useBoardDrag(
             const held = gesture.current;
             if (!held || event.pointerId !== held.pointerId) return;
 
-            // A tap is a press that never became a drag: it asks for the menu, the long press that
-            // would have opened one being how a finger picks a card up instead.
-            const tapped = held.touch && !held.active && event.type === "pointerup"
-                && Math.hypot(event.clientX - held.startX, event.clientY - held.startY)
-                    <= TOUCH_TOLERANCE;
+            // A tap is a press that never became a drag, and is left to the click it lands: a
+            // card opens, a strip opens its column, a heading takes the focus. Each carries its
+            // menu on a button, the long press being how a finger picks something up.
             const dragged = held.active && event.type === "pointerup";
-            const target = held.menuTarget;
-            // A tap on a collapsed column opens it: that is what the strip is for, and its menu is
-            // on the button it carries. Everything else answers a tap with its menu, the long
-            // press that would otherwise open one being how a finger picks something up.
-            const opens = target.closest(".board-column")?.classList.contains("collapsed");
 
             close(event.type === "pointercancel");
-
-            if (tapped && !opens) {
-                // The browser follows a tap with mouse events for pages that know nothing of touch,
-                // and they land on the menu this is about to open, right under the finger: the
-                // first of them takes the menu straight back off again. Refused at `touchend`,
-                // which is what the browser makes them from, and which has yet to be sent.
-                justTapped = true;
-                // The click is left out as well, for a browser that sends one regardless.
-                swallowNextClick();
-                askForMenu(target, event.clientX, event.clientY);
-            }
 
             // A mouse drag is followed by a click on whatever the press and the release have in
             // common, which for a card carried anywhere is the board itself. Taken here, so that
@@ -527,16 +523,6 @@ export function useBoardDrag(
             window.setTimeout(
                 () => container.removeEventListener("click", swallow, { capture: true }),
                 COMPATIBILITY_WINDOW_MS);
-        };
-
-        /** Set between a tap and the `touchend` the browser would make mouse events from. */
-        let justTapped = false;
-
-        const onTouchEnd = (event: TouchEvent) => {
-            if (justTapped) {
-                justTapped = false;
-                event.preventDefault();
-            }
         };
 
         const swallow = (event: Event) => {
@@ -576,7 +562,6 @@ export function useBoardDrag(
         container.addEventListener("pointercancel", onPointerUp);
         document.addEventListener("keydown", onKeyDown);
         document.addEventListener("touchmove", onTouchMove, { passive: false });
-        document.addEventListener("touchend", onTouchEnd, { passive: false });
 
         return () => {
             close(true);
@@ -589,7 +574,6 @@ export function useBoardDrag(
             container.removeEventListener("pointercancel", onPointerUp);
             document.removeEventListener("keydown", onKeyDown);
             document.removeEventListener("touchmove", onTouchMove);
-            document.removeEventListener("touchend", onTouchEnd);
             container.removeEventListener("click", swallow, { capture: true });
         };
     }, [ container, disabled ]);
@@ -700,8 +684,8 @@ function endIndex(end: ColumnEnd | undefined, column: ColumnBox) {
     return end === "first" ? 0 : column.count;
 }
 
-/** Asks an element for its menu the way a right click does, at the place the tap landed. */
-function askForMenu(element: HTMLElement, clientX: number, clientY: number) {
+/** Asks an element for its menu the way a right click does, at the place the press landed. */
+export function askForMenu(element: HTMLElement, clientX: number, clientY: number) {
     element.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, clientX, clientY }));
 }
 
@@ -725,7 +709,6 @@ function startCard(
     return {
         kind: "card",
         element,
-        menuTarget: element,
         card: {
             noteId,
             noteIds,
@@ -769,7 +752,6 @@ function startColumn(target: HTMLElement, container: HTMLElement): ColumnSubject
     return {
         kind: "column",
         element,
-        menuTarget: heading,
         column: element.dataset.column ?? "",
         index: columns.indexOf(element),
         target: null
@@ -820,6 +802,9 @@ function lift(held: Gesture, container: HTMLElement) {
     if (held.kind === "card" && hue) {
         preview.classList.add("column-tinted");
         preview.style.setProperty("--board-column-custom-hue", hue);
+    } else if (held.kind === "card" && held.element.closest(".board-column-inbox")) {
+        // The inbox paints its cards itself, and that rule no longer reaches the copy either.
+        preview.classList.add("inbox-surface");
     }
 
     // The card's own colour and its em, read here rather than on every move: both cost a page
@@ -879,8 +864,6 @@ function countPreview(count: number) {
 interface CardSubject {
     kind: "card";
     element: HTMLElement;
-    /** What a tap asks for the menu, which for a column is its heading rather than the column. */
-    menuTarget: HTMLElement;
     card: DraggedCard;
     position: DropPosition | null;
     /** The column the card stands on, if any, which resting there opens. */
@@ -894,7 +877,6 @@ interface CardSubject {
 interface ColumnSubject {
     kind: "column";
     element: HTMLElement;
-    menuTarget: HTMLElement;
     column: string;
     /** Where it stands among the columns, counting them as they are drawn. */
     index: number;
@@ -911,6 +893,8 @@ type Gesture = (CardSubject | ColumnSubject) & {
     lastY: number;
     /** Whether the press has to ripen before it carries anything. */
     touch: boolean;
+    /** Whether what was lifted has travelled `CARRY_THRESHOLD` from where it was picked up. */
+    carried: boolean;
     /** Whether it has, and something is being carried. */
     active: boolean;
     /** The copy that follows the pointer, what it stands for staying where it is. */

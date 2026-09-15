@@ -62,6 +62,19 @@ interface ColumnClaim {
  * taken back from under another leaves the one above it standing, and a column with no claims left
  * has no record at all, whichever of the two failed first.
  */
+/**
+ * The collapse state the board draws while a filter narrows it, in place of the stored flags.
+ *
+ * A column without matches is drawn as a strip so the results are read at a glance, and what the
+ * reader opens or closes meanwhile is held by the board rather than written: clearing the filter
+ * brings the stored state back.
+ */
+export interface VolatileCollapse {
+    isCollapsed(column: string): boolean;
+    /** Opens or closes one column, or every column when given `null`. */
+    setCollapsed(column: string | null, collapsed: boolean): void;
+}
+
 export interface PendingColumnWrites {
     renames: Map<string, string | undefined>;
     claims: Map<string, ColumnClaim[]>;
@@ -129,6 +142,12 @@ export default class BoardApi {
      * one split of several, and the focused one is often the pane the reader came from.
      */
     noteContext: NoteContext | null | undefined;
+
+    /**
+     * Stands in for the stored collapse flags while a filter is on, set by the board on every
+     * render and cleared with the filter. See {@link VolatileCollapse}.
+     */
+    volatileCollapse: VolatileCollapse | undefined;
 
     /** The config as the board last handed it over, against which a fresh one is recognised. */
     private viewConfigSource: BoardViewData | undefined;
@@ -983,11 +1002,20 @@ export default class BoardApi {
 
     /** Whether a column is stored as collapsed, which draws it as a strip without its cards. */
     isColumnCollapsed(column: string) {
+        if (this.volatileCollapse) {
+            return this.volatileCollapse.isCollapsed(column);
+        }
+
         return !!this.storedColumns.find(col => col.value === column)?.collapsed;
     }
 
-    /** Collapses a column to a strip, or opens it again. */
+    /** Collapses a column to a strip, or opens it again. Not written while a filter is on. */
     async setColumnCollapsed(column: string, collapsed: boolean) {
+        if (this.volatileCollapse) {
+            this.volatileCollapse.setCollapsed(column, collapsed);
+            return;
+        }
+
         this.updateColumn(column, { collapsed });
     }
 
@@ -998,6 +1026,11 @@ export default class BoardApi {
      * carry is drawn without ever having been stored, so this is also where it gets an entry.
      */
     async setAllColumnsCollapsed(collapsed: boolean) {
+        if (this.volatileCollapse) {
+            this.volatileCollapse.setCollapsed(null, collapsed);
+            return;
+        }
+
         const stored = new Map(this.storedColumns.map(col => [ col.value, col ]));
         const order = [ ...stored.keys() ];
         for (const derived of this.columns) {
@@ -1019,9 +1052,10 @@ export default class BoardApi {
         }));
     }
 
-    /** Whether a column collapses again once it has been opened. */
+    /** Whether a column collapses again once it has been opened. Never while a filter is on. */
     isColumnKeptCollapsed(column: string) {
-        return !!this.storedColumns.find(col => col.value === column)?.keepCollapsed;
+        return !this.volatileCollapse
+            && !!this.storedColumns.find(col => col.value === column)?.keepCollapsed;
     }
 
     /**
