@@ -14,7 +14,11 @@ import LinkButton from "../react/LinkButton";
 import NoteLink from "../react/NoteLink";
 import { joinElements, ParentComponent } from "../react/react_utils";
 import SegmentedChoice from "../react/SegmentedChoice";
-import { buildInverseNotePathTree, CompressedInverseTreeNode } from "./inverse_note_path_tree";
+import {
+    buildInverseNotePathTree,
+    CompressedInverseTreeNode,
+    inverseTreeBranchId
+} from "./inverse_note_path_tree";
 import { TabContext } from "./ribbon-interface";
 
 export default function NotePathsTab({ note, hoistedNoteId, notePath }: TabContext) {
@@ -41,6 +45,21 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath, cloneButton 
             : null,
         [ showTree, sortedNotePaths, currentNotePath ]
     );
+    // Unfolded branches are keyed by note ids, not by the active clone path: switching placement
+    // rebuilds ancestorPath strings and would remount every row if expand lived on the node.
+    const [ expandedBranches, setExpandedBranches ] = useState<Set<string>>(() => new Set());
+
+    function toggleBranch(branchId: string) {
+        setExpandedBranches((current) => {
+            const next = new Set(current);
+            if (next.has(branchId)) {
+                next.delete(branchId);
+            } else {
+                next.add(branchId);
+            }
+            return next;
+        });
+    }
     // What holds the list in the new layout — the sidebar's card, the mobile note menu's modal, the
     // badge the status bar's dropdown hangs off — names the paths already, so the line saying the note
     // is placed in them is left to the ribbon's tab, which carries no title of its own. A note placed
@@ -70,7 +89,13 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath, cloneButton 
 
             {treeRoot ? (
                 <ul className="note-path-inverse-tree">
-                    <CompressedInverseTreeNodeView node={treeRoot} currentNotePath={currentNotePath} isRoot />
+                    <CompressedInverseTreeNodeView
+                        node={treeRoot}
+                        currentNotePath={currentNotePath}
+                        isRoot
+                        expandedBranches={expandedBranches}
+                        onToggleBranch={toggleBranch}
+                    />
                 </ul>
             ) : (
                 <ul className="note-path-list">
@@ -194,13 +219,24 @@ function NotePath({ currentNotePath, notePathRecord }: { currentNotePath?: strin
     );
 }
 
-function CompressedInverseTreeNodeView({ node, currentNotePath, isRoot = false }: {
+function CompressedInverseTreeNodeView({
+    node,
+    currentNotePath,
+    isRoot = false,
+    expandedBranches,
+    onToggleBranch
+}: {
     node: CompressedInverseTreeNode;
     currentNotePath?: string | null;
     isRoot?: boolean;
+    expandedBranches: Set<string>;
+    onToggleBranch: (branchId: string) => void;
 }) {
-    const [ expanded, setExpanded ] = useState(isRoot);
+    const branchId = inverseTreeBranchId(node);
     const hasChildren = node.children.length > 0;
+    // The first fork is always shown; deeper unfolds are remembered by branch id so a path switch
+    // does not remount them closed.
+    const expanded = isRoot || expandedBranches.has(branchId);
     const { classes, icons } = useMemo(
         () => getInverseTreeNodeStatus(node, currentNotePath),
         [ node, currentNotePath ]
@@ -212,7 +248,7 @@ function CompressedInverseTreeNodeView({ node, currentNotePath, isRoot = false }
     return (
         <li className={clsx("note-path-node", classes)}>
             <div className="note-path-row">
-                {hasChildren && (
+                {hasChildren && !isRoot && (
                     <ActionButton
                         className="note-path-expand"
                         icon={expanded ? "bx bx-chevron-down" : "bx bx-chevron-right"}
@@ -221,14 +257,14 @@ function CompressedInverseTreeNodeView({ node, currentNotePath, isRoot = false }
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setExpanded(!expanded);
+                            onToggleBranch(branchId);
                         }}
                     />
                 )}
 
                 {joinElements(node.segments.map((segment) => (
                     <NoteLink
-                        key={segment.ancestorPath}
+                        key={segment.noteId}
                         notePath={segment.ancestorPath}
                         className={clsx({ basename: segment.isOpenNote })}
                         noPreview
@@ -257,9 +293,11 @@ function CompressedInverseTreeNodeView({ node, currentNotePath, isRoot = false }
                 <ul className="note-path-tree-branches">
                     {node.children.map((child) => (
                         <CompressedInverseTreeNodeView
-                            key={child.segments[0].ancestorPath}
+                            key={inverseTreeBranchId(child)}
                             node={child}
                             currentNotePath={currentNotePath}
+                            expandedBranches={expandedBranches}
+                            onToggleBranch={onToggleBranch}
                         />
                     ))}
                 </ul>
