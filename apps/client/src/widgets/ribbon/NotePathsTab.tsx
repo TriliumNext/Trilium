@@ -3,18 +3,18 @@ import "./NotePathsTab.css";
 import clsx from "clsx";
 import { useContext, useEffect, useMemo, useState } from "preact/hooks";
 
+import { openInCurrentNoteContext } from "../../components/note_context";
 import FNote, { NotePathRecord } from "../../entities/fnote";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { t } from "../../services/i18n";
 import { NOTE_PATH_TITLE_SEPARATOR } from "../../services/tree";
 import ActionButton from "../react/ActionButton";
 import { useTriliumEvent } from "../react/hooks";
-import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import NoteLink from "../react/NoteLink";
 import { joinElements, ParentComponent } from "../react/react_utils";
 import SegmentedChoice from "../react/SegmentedChoice";
-import { buildInverseNotePathTree, InverseNotePathNode } from "./inverse_note_path_tree";
+import { buildInverseNotePathTree, CompressedInverseTreeNode } from "./inverse_note_path_tree";
 import { TabContext } from "./ribbon-interface";
 
 export default function NotePathsTab({ note, hoistedNoteId, notePath }: TabContext) {
@@ -70,7 +70,7 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath, cloneButton 
 
             {treeRoot ? (
                 <ul className="note-path-inverse-tree">
-                    <InverseTreeNodeView node={treeRoot} currentNotePath={currentNotePath} />
+                    <CompressedInverseTreeNodeView node={treeRoot} currentNotePath={currentNotePath} isRoot />
                 </ul>
             ) : (
                 <ul className="note-path-list">
@@ -152,14 +152,11 @@ export function getNotePathStatus(record: NotePathRecord | undefined, isCurrent:
     return { classes, icons };
 }
 
-export function getInverseTreeNodeStatus(node: InverseNotePathNode, currentNotePath?: string | null) {
+export function getInverseTreeNodeStatus(node: CompressedInverseTreeNode, currentNotePath?: string | null) {
     const status = node.record
         ? getNotePathStatus(node.record, node.pathToOpenNote === currentNotePath)
         : { classes: [] as string[], icons: [] as { icon: string, titleKey: NotePathStatusTitleKey }[] };
     const classes = [ ...status.classes ];
-    if (node.isOpenNote && node.pathToOpenNote === currentNotePath && !classes.includes("path-current")) {
-        classes.push("path-current");
-    }
     if (node.isOnActiveTrail) {
         classes.push("path-on-active-branch");
     }
@@ -197,11 +194,12 @@ function NotePath({ currentNotePath, notePathRecord }: { currentNotePath?: strin
     );
 }
 
-function InverseTreeNodeView({ node, currentNotePath }: {
-    node: InverseNotePathNode;
+function CompressedInverseTreeNodeView({ node, currentNotePath, isRoot = false }: {
+    node: CompressedInverseTreeNode;
     currentNotePath?: string | null;
+    isRoot?: boolean;
 }) {
-    const [ expanded, setExpanded ] = useState(true);
+    const [ expanded, setExpanded ] = useState(isRoot);
     const hasChildren = node.children.length > 0;
     const { classes, icons } = useMemo(
         () => getInverseTreeNodeStatus(node, currentNotePath),
@@ -228,21 +226,26 @@ function InverseTreeNodeView({ node, currentNotePath }: {
                     />
                 )}
 
-                <NoteLink
-                    notePath={node.ancestorPath}
-                    className={clsx({ basename: node.isOpenNote })}
-                    noPreview
-                />
+                {joinElements(node.segments.map((segment) => (
+                    <NoteLink
+                        key={segment.ancestorPath}
+                        notePath={segment.ancestorPath}
+                        className={clsx({ basename: segment.isOpenNote })}
+                        noPreview
+                    />
+                )), NOTE_PATH_TITLE_SEPARATOR)}
 
                 {showPathSwitch && (
-                    <span className="note-path-switch">
-                        <Icon icon="bx bx-git-branch" />
-                        <NoteLink
-                            notePath={node.pathToOpenNote}
-                            title={t("note_paths.switch_to_this_path")}
-                            noPreview
-                        />
-                    </span>
+                    <ActionButton
+                        className="note-path-switch"
+                        icon="bx bx-git-branch"
+                        text={t("note_paths.switch_to_this_path")}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openInCurrentNoteContext(e, node.pathToOpenNote);
+                        }}
+                    />
                 )}
 
                 {icons.map(({ icon, titleKey }) => (
@@ -253,8 +256,8 @@ function InverseTreeNodeView({ node, currentNotePath }: {
             {hasChildren && expanded && (
                 <ul className="note-path-tree-branches">
                     {node.children.map((child) => (
-                        <InverseTreeNodeView
-                            key={child.noteId}
+                        <CompressedInverseTreeNodeView
+                            key={child.segments[0].ancestorPath}
                             node={child}
                             currentNotePath={currentNotePath}
                         />
