@@ -489,6 +489,8 @@ function NotePaths({ note, hoistedNoteId, notePath }: StatusBarContext) {
             text={t("status_bar.note_paths", { count })}
             dropdownRef={dropdownRef}
             dropdownContainerClassName="dropdown-note-paths"
+            // The paths widget's list/tree switch lives inside this menu.
+            autoClose="outside"
         >
             <NotePathsWidget sortedNotePaths={sortedNotePaths} currentNotePath={notePath} />
         </StatusBarDropdown>
