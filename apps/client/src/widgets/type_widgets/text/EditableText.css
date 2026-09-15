@@ -12,6 +12,18 @@ body.mobile .note-detail-editable-text {
     padding-inline-start: 4px;
 }
 
+.note-detail-editable-text {
+    .ck-mermaid__preview svg,
+    .ck-math-tex {
+        cursor: zoom-in;
+    }
+
+    /* An included diagram opens its note, so it gets the same cursor as an image. */
+    .include-note-content.type-mermaid svg {
+        cursor: pointer;
+    }
+}
+
 .note-detail-editable-text a:hover {
     cursor: pointer;
 }

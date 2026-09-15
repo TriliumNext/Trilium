@@ -1,0 +1,19 @@
+.modal.content-lightbox {
+    /* The viewer draws its own surface, so it runs to the edges of the dialog. */
+    .modal-body:has(.content-lightbox-viewport) {
+        padding: 0;
+
+        /*
+         * `ZoomPanViewer.css` sizes the viewport at `height: 100%`, which needs a definite height on
+         * an ancestor to resolve against. On mobile the full-page dialog owns the height instead.
+         */
+        body.desktop & {
+            height: 80vh;
+        }
+    }
+
+    /* A text note caps a diagram at the column width; here the viewer decides how large it is. */
+    .content-lightbox-content svg {
+        max-width: none;
+    }
+}

@@ -1,24 +1,12 @@
-/* Focusable wrapper that receives keyboard zoom/pan; fills the available space. */
+/* Hosts the viewer and the error message, which fills it (see ContentErrorMessage). */
 .image-viewer-root {
     position: relative;
     width: 100%;
     height: 100%;
-    outline: none;
 }
 
-/* Pinned by the corner it names (see `placement` on OverlayControlGroup); left here is only what it
-   stands above, which is the image and nothing else. The shortcut-hints button opposite it needs
-   nothing at all — it stands where every one of them does, and brings that with it. */
-.image-viewer-controls {
-    z-index: 1;
-}
-
-/* Make the library's viewport fill the available space so the image fits and pans within it. */
-.image-viewer-viewport.react-transform-wrapper {
-    width: 100%;
-    height: 100%;
-}
-
+/* The image fits itself to the viewport, so the content box takes the whole of it and centers what
+   it holds. */
 .image-viewer-content.react-transform-component {
     width: 100%;
     height: 100%;
@@ -46,15 +34,6 @@
 
 .image-viewer-viewport.img-loading-error {
     background-color: var(--dropdown-item-icon-destructive-color);
-}
-
-/* The the grab cursor only while the image is large enough to pan (zoomed past fit). */
-.image-viewer-viewport.pannable {
-    cursor: grab;
-}
-
-.image-viewer-viewport.pannable.panning {
-    cursor: grabbing;
 }
 
 /* At high zoom, render crisp edges instead of blurred interpolation. */
