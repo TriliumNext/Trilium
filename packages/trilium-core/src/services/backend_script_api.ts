@@ -344,9 +344,10 @@ export interface Api {
     sortNotes(
         parentNoteId: string,
         sortConfig: {
-            /** 'title', 'dateCreated', 'dateModified' or a label name
-             * See {@link https://triliumnext.github.io/Docs/Wiki/sorting.html} for details. */
+            /** The `#sorted` grammar: 'title', 'dateCreated', 'dateModified' or a label name per
+             * level, each optionally followed by 'asc' or 'desc', e.g. 'priority desc, dueDate'. */
             sortBy?: string;
+            /** Descending for levels without their own direction, the folders grouping and ties. */
             reverse?: boolean;
             foldersFirst?: boolean;
         }
