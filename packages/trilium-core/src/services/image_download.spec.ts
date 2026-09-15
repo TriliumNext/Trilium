@@ -257,6 +257,32 @@ describe("downloadImages (real DB)", () => {
         }
     });
 
+    it("keeps the note's dates when it goes back over it", async () => {
+        // An import preserving source dates (ETAPI dateModified) restores
+        // them after its own rewrite; the delayed download arriving later
+        // must not re-stamp them to now.
+        vi.useFakeTimers();
+
+        try {
+            const url = freshUrl();
+            const content = `<p><img src="${url}"></p>`;
+            const note = createNote(content);
+            getContext().init(() => note.setDateCreatedAndModified(
+                "2020-01-02 03:04:05.000Z", "2021-05-06 08:11:12.000Z"));
+
+            withDownloads(true, () => downloadImages(note.noteId, content));
+
+            await vi.advanceTimersByTimeAsync(10_000);
+
+            expect(note.getAttachments()).toHaveLength(1);
+            expect(String(note.getContent())).toContain("api/attachments/");
+            expect(note.utcDateCreated).toBe("2020-01-02 03:04:05.000Z");
+            expect(note.utcDateModified).toBe("2021-05-06 08:11:12.000Z");
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it("asks once for an address that appears twice before the first answer arrives", async () => {
         const note = createNote("<p>x</p>");
         const url = freshUrl();

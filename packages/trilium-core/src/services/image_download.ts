@@ -271,7 +271,17 @@ export function downloadImages(noteId: string, content: string) {
 
                 // update only if the links have not been already fixed.
                 if (updatedContent !== origContent) {
+                    // This is a background cosmetic swap (remote URL -> local
+                    // attachment) for content the reader already saved, not a
+                    // new edit: keep the note's dates so a delayed download
+                    // does not re-stamp them seconds later. That matters for
+                    // imports preserving source dates (ETAPI dateModified),
+                    // whose restore would otherwise be overwritten here.
+                    const prevUtcModified = origNote.utcDateModified;
                     origNote.setContent(updatedContent);
+                    if (prevUtcModified) {
+                        origNote.setDateCreatedAndModified(undefined, prevUtcModified);
+                    }
 
                     void noteService.asyncPostProcessContent(origNote, updatedContent);
 
