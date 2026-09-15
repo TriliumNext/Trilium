@@ -71,9 +71,10 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     const templatesRef = useRef(templates);
     templatesRef.current = templates;
     const [ uiLanguage ] = useTriliumOption("locale");
-    // Read purely as a rebuild trigger: the value is consumed by buildToolbarConfig() via options.get() at
-    // editor-creation time, so the editor must be recreated when it changes.
+    // Read purely as rebuild triggers: config builders consume the values through options.get() at
+    // editor-creation time, so the editor must be recreated when either changes.
     const [ multilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
+    const [ mathFieldEnabled ] = useTriliumOptionBool("mathFieldEnabled");
     // Rebuild triggers for the same reason, and there is no cheaper option for these: CKEditor bakes
     // the transformation list at plugin init — `normalizeTransformations` runs once inside
     // `_enableTransformationWatchers` — so unlike the settings read through a getter (link previews,
@@ -343,7 +344,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         // makes them apply to an already-open note; it costs the cursor position and undo history,
         // which is acceptable for a change made deliberately over in the settings.
     }, [
-        contentLanguage, uiLanguage, isClassicEditor, multilineToolbar,
+        contentLanguage, uiLanguage, isClassicEditor, multilineToolbar, mathFieldEnabled,
         doubleQuoteStyle, singleQuoteStyle, punctuationReplacements, mathReplacements, symbolReplacements,
         customReplacements, defaultContentLanguage, htmlSupportEnabled, allowedHtmlTags,
         aiEnabled, llmProviders

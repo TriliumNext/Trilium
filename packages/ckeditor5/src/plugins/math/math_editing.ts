@@ -19,6 +19,7 @@ export default class MathEditing extends Plugin {
 			className: 'math-tex',
 			forceOutputType: false,
 			enablePreview: true,
+			enableMathField: true,
 			previewClassName: [],
 			popupClassName: [],
 			katexRenderOptions: {}
