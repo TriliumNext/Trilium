@@ -36,7 +36,7 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath, cloneButton 
     cloneButton?: boolean;
 }) {
     const parentComponent = useContext(ParentComponent);
-    const [ view, setView ] = useState<"list" | "tree">("list");
+    const [ view, setView ] = useState<"list" | "tree">("tree");
     const hasMultiplePaths = (sortedNotePaths?.length ?? 0) >= 2;
     const showTree = view === "tree" && hasMultiplePaths;
     const treeRoot = useMemo(
@@ -79,8 +79,8 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath, cloneButton 
                             currentValue={showTree ? "tree" : "list"}
                             onChange={setView}
                             options={[
-                                { value: "list", icon: "bx-list-ul", title: t("note_paths.view_list") },
-                                { value: "tree", icon: "bx-git-merge", title: t("note_paths.view_tree") }
+                                { value: "tree", icon: "bx-git-merge", title: t("note_paths.view_tree") },
+                                { value: "list", icon: "bx-list-ul", title: t("note_paths.view_list") }
                             ]}
                         />
                     )}
