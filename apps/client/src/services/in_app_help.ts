@@ -83,7 +83,7 @@ export const bySidebarSection = {
     notePaths: {
         // Cloning Notes, which is what a second path amounts to.
         helpPage: "IakOLONlIfGI",
-        paragraphs: [ "sidebar_help.note_paths_what", "sidebar_help.note_paths_cloning" ]
+        paragraphs: [ "sidebar_help.note_paths_what", "sidebar_help.note_paths_cloning", "sidebar_help.note_paths_tree" ]
     },
     backlinks: {
         // Backlinks, covering both kinds one can come from.
