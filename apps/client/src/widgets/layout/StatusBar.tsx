@@ -488,7 +488,8 @@ function NotePaths({ note, hoistedNoteId, notePath }: StatusBarContext) {
             text={t("status_bar.note_paths", { count })}
             dropdownRef={dropdownRef}
             dropdownContainerClassName="dropdown-note-paths"
-            // The paths widget's list/tree switch lives inside this menu.
+            // Outside-only so the view switch, expand buttons and path links can be used without
+            // dismissing the menu; click outside still closes it.
             dropdownOptions={{ autoClose: "outside" }}
             noDropdownListStyle
         >
