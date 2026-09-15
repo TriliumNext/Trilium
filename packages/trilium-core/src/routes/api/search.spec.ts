@@ -7,6 +7,7 @@ import { isNewTemplate } from "./search";
 
 let api: CoreApiTester;
 const UNIQUE_TOKEN = "ZzUniqueSearchTokenQwerty";
+const SLASH_TOKEN = "ZzUniqueSearch/TokenQwerty";
 
 async function createSearchNote(searchString: string): Promise<string> {
     const created = await api.post<{ noteId: string }>("/api/special-notes/search-note", {
@@ -24,14 +25,18 @@ function quickSearch(searchString: string, hoistedNoteId?: string) {
 
 describe("Search API (core)", () => {
     let createdNoteId: string;
+    let slashNoteId: string;
 
     beforeAll(async () => {
         api = CoreApiTester.build();
         ({ noteId: createdNoteId } = await createTextNote(api, { title: UNIQUE_TOKEN }));
+        ({ noteId: slashNoteId } = await createTextNote(api, { title: SLASH_TOKEN }));
     });
 
     it("returns matching note ids for a full search", async () => {
-        const res = await api.get<string[]>(`/api/search/${UNIQUE_TOKEN}`);
+        const res = await api.get<string[]>("/api/search", {
+            query: { searchString: UNIQUE_TOKEN }
+        });
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body)).toBe(true);
         expect(res.body).toContain(createdNoteId);
@@ -77,9 +82,18 @@ describe("Search API (core)", () => {
         expect(broken.body.error).toBeTruthy();
     });
 
+    it("accepts slash-bearing full-search queries", async () => {
+        const res = await api.get<string[]>("/api/search", {
+            query: { searchString: SLASH_TOKEN }
+        });
+        expect(res.status).toBe(200);
+        expect(res.body).toContain(slashNoteId);
+    });
+
     it("returns structured quick-search results with snippets", async () => {
         const res = await api.get<{ searchResultNoteIds: string[]; searchResults: unknown[]; highlightedTokens: string[] }>(
-            `/api/quick-search/${UNIQUE_TOKEN}`
+            "/api/quick-search",
+            { query: { searchString: UNIQUE_TOKEN } }
         );
         expect(res.status).toBe(200);
         expect(res.body.searchResultNoteIds).toContain(createdNoteId);
@@ -131,6 +145,46 @@ describe("Search API (core)", () => {
         expect(res.status).toBe(200);
         expect(res.body.searchResultNoteIds).toContain(visible.noteId);
         expect(res.body.searchResultNoteIds).not.toContain(hidden.noteId);
+    });
+
+    it("accepts slash-bearing quick-search queries", async () => {
+        const res = await api.get<{ searchResultNoteIds: string[] }>("/api/quick-search", {
+            query: { searchString: SLASH_TOKEN }
+        });
+        expect(res.status).toBe(200);
+        expect(res.body.searchResultNoteIds).toContain(slashNoteId);
+    });
+
+    it("rejects missing and empty search query parameters", async () => {
+        for (const path of [ "/api/search", "/api/quick-search" ]) {
+            expect((await api.get(path)).status).toBe(400);
+            expect((await api.get(path, { query: { searchString: "" } })).status).toBe(400);
+        }
+    });
+
+    it("keeps path parameters compatible with existing clients", async () => {
+        const legacyFull = await api.get<string[]>(`/api/search/${UNIQUE_TOKEN}`);
+        expect(legacyFull.status).toBe(200);
+        expect(legacyFull.body).toContain(createdNoteId);
+
+        const legacyQuick = await api.get<{ searchResultNoteIds: string[] }>(
+            `/api/quick-search/${UNIQUE_TOKEN}`
+        );
+        expect(legacyQuick.status).toBe(200);
+        expect(legacyQuick.body.searchResultNoteIds).toContain(createdNoteId);
+
+        const full = await api.get<string[]>(`/api/search/${UNIQUE_TOKEN}`, {
+            query: { searchString: "" }
+        });
+        expect(full.status).toBe(200);
+        expect(full.body).toContain(createdNoteId);
+
+        const quick = await api.get<{ searchResultNoteIds: string[] }>(
+            `/api/quick-search/${UNIQUE_TOKEN}`,
+            { query: { searchString: "" } }
+        );
+        expect(quick.status).toBe(200);
+        expect(quick.body.searchResultNoteIds).toContain(createdNoteId);
     });
 
     it("lists template note ids including a freshly-labelled template", async () => {
