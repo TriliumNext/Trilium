@@ -113,7 +113,8 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                 themeStyle,
                 widgetMode,
                 container,
-                iconGlyphs
+                iconGlyphs,
+                mapType
             });
 
             // Interaction
@@ -150,6 +151,9 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     useEffect(() => {
         if (!graphRef.current || !notesAndRelationsRef.current) return;
         graphRef.current.d3Force("link")?.distance(linkDistance);
+        if (mapType === "clone") {
+            graphRef.current.dagLevelDistance(linkDistance);
+        }
         graphRef.current.graphData(notesAndRelationsRef.current);
     }, [ linkDistance, mapType ]);
 
@@ -237,7 +241,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
 }
 
 /**
- * Which of the two maps to draw, and how to ask for the other one.
+ * Which map to draw, and how to ask for another one.
  *
  * The connections tab's map is a lens on whatever note is being read, so which map it draws is the
  * reader's own preference and is kept as an option (see {@link usesReaderPreference}). Everywhere

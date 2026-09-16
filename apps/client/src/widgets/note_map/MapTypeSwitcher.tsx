@@ -16,7 +16,7 @@ interface MapTypeSwitcherProps {
 }
 
 /**
- * The choice between the two maps a note can be drawn as, drawn the way Trilium draws a choice
+ * The choice among the maps a note can be drawn as, drawn the way Trilium draws a choice
  * between several things: a button group, a recessed track with the one on show raised out of it —
  * the same the right pane's tab strip is built from.
  *
@@ -32,6 +32,10 @@ export default function MapTypeSwitcher({ mapType, setMapType, frame, className 
             />
             <MapTypeButton
                 type="tree" icon="bx bx-sitemap" text={t("note-map.button-tree-map")}
+                currentMapType={mapType} setMapType={setMapType} frame={frame}
+            />
+            <MapTypeButton
+                type="clone" icon="bx bx-git-merge" text={t("note-map.button-clone-map")}
                 currentMapType={mapType} setMapType={setMapType} frame={frame}
             />
         </div>

@@ -144,10 +144,10 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     rightPaneCollapsedItems: string;
     rightPaneSelectedTab: string;
     /**
-     * Which map the connections tab draws, `link` or `tree`. A preference of the reader's rather than
-     * a property of any one note: the tab is a lens on whatever note is being read, and a note map
-     * that is a note's own thing — a note map note, a hoisted map — is told which to draw by that
-     * note's own `mapType` label instead.
+     * Which map the connections tab draws: `link`, `tree`, or `clone`. A preference of the reader's
+     * rather than a property of any one note: the tab is a lens on whatever note is being read, and a
+     * note map that is a note's own thing — a note map note, a hoisted map — is told which to draw by
+     * that note's own `mapType` label instead.
      */
     rightPaneNoteMapType: string;
     eraseEntitiesAfterTimeInSeconds: number;

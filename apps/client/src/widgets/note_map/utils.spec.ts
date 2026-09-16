@@ -79,8 +79,9 @@ describe("withAlpha", () => {
 });
 
 describe("toMapType", () => {
-    it("only reads the tree map out of the label, the link map standing for anything else", () => {
+    it("reads the tree and clone maps out of the label, the link map standing for anything else", () => {
         expect(toMapType("tree")).toBe("tree");
+        expect(toMapType("clone")).toBe("clone");
         expect(toMapType("link")).toBe("link");
         expect(toMapType("nonsense")).toBe("link");
         expect(toMapType(null)).toBe("link");
@@ -90,7 +91,7 @@ describe("toMapType", () => {
 
 describe("usesReaderPreference", () => {
     it("is the connections tab's map and the same map expanded, and no other", () => {
-        // Which of the two maps those draw is the reader's own preference; everywhere else it is the
+        // Which map those draw is the reader's own preference; everywhere else it is the
         // note's, asked for through its `mapType` label.
         expect(usesReaderPreference("sidebar")).toBe(true);
         expect(usesReaderPreference("expanded")).toBe(true);

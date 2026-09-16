@@ -237,6 +237,60 @@ function getTreeMap(req: Request<{ noteId: string }>) {
     };
 }
 
+/**
+ * Placements of the map root: every parent path up to `root`, each shared ancestor once.
+ *
+ * Tree map walks children; this walks `getParentNotes()`. A note cloned under two parents is one
+ * node with two incoming edges. `#excludeFromNoteMap` ancestors stay in. Hiding a journal date
+ * would punch a hole in the topology.
+ */
+function getCloneMap(req: Request<{ noteId: string }>) {
+    const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
+    const notesById = new Map<string, BNote>();
+    const links: TreeLink[] = [];
+    const seenEdges = new Set<string>();
+    const visited = new Set<string>();
+
+    function walk(note: BNote) {
+        if (visited.has(note.noteId)) {
+            return;
+        }
+        visited.add(note.noteId);
+        notesById.set(note.noteId, note);
+
+        for (const parent of note.getParentNotes()) {
+            const edgeKey = `${parent.noteId}->${note.noteId}`;
+            if (!seenEdges.has(edgeKey)) {
+                seenEdges.add(edgeKey);
+                links.push({
+                    sourceNoteId: parent.noteId,
+                    targetNoteId: note.noteId
+                });
+            }
+            walk(parent);
+        }
+    }
+
+    walk(mapRootNote);
+
+    const notes: NoteMapNote[] = [];
+    for (const note of notesById.values()) {
+        notes.push([
+            note.noteId,
+            note.getTitleOrProtected(),
+            note.type,
+            note.getLabelValue("color"),
+            note.getIcon()
+        ]);
+    }
+
+    return {
+        notes,
+        noteIdToDescendantCountMap: {},
+        links
+    };
+}
+
 function updateDescendantCountMapForSearch(noteIdToDescendantCountMap: Record<string, number>, relationships: { parentNoteId: string; childNoteId: string }[]) {
     for (const { parentNoteId, childNoteId } of relationships) {
         const parentNote = becca.notes[parentNoteId];
@@ -323,6 +377,7 @@ function getBacklinkCount(req: Request<{ noteId: string }>): BacklinkCountRespon
 export default {
     getLinkMap,
     getTreeMap,
+    getCloneMap,
     getBacklinks,
     getBacklinkCount
 };

@@ -281,6 +281,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
 
     apiRoute(PST, "/api/note-map/:noteId/tree", noteMapRoute.getTreeMap);
     apiRoute(PST, "/api/note-map/:noteId/link", noteMapRoute.getLinkMap);
+    apiRoute(PST, "/api/note-map/:noteId/clone", noteMapRoute.getCloneMap);
     apiRoute(GET, "/api/note-map/:noteId/backlinks", noteMapRoute.getBacklinks);
     apiRoute(GET, "/api/note-map/:noteId/backlink-count", noteMapRoute.getBacklinkCount);
 

@@ -4,10 +4,10 @@
  * rather than a surface of its own, and reads what the card reads.
  */
 export type NoteMapWidgetMode = "ribbon" | "sidebar" | "expanded" | "hoisted" | "type";
-export type MapType = "tree" | "link";
+export type MapType = "tree" | "link" | "clone";
 
 /**
- * Where the connections tab's map is told which of the two to draw.
+ * Where the connections tab's map is told which kind to draw.
  *
  * A preference of the reader's rather than a property of the note being read: the tab is a lens on
  * whatever passes under it, and a map that changed kind as one navigated — because one note out of a
@@ -17,9 +17,9 @@ export type MapType = "tree" | "link";
 export const NOTE_MAP_TYPE_OPTION = "rightPaneNoteMapType";
 
 /**
- * Whether the map takes the reader's own preference of the two ({@link NOTE_MAP_TYPE_OPTION}) rather
- * than what the note it is drawn for asks for. The connections tab and what its expand button opens,
- * which is the same map at the size of the window and is left showing the same one.
+ * Whether the map takes the reader's own preference ({@link NOTE_MAP_TYPE_OPTION}) rather than what
+ * the note it is drawn for asks for. The connections tab and what its expand button opens, which is
+ * the same map at the size of the window and is left showing the same one.
  */
 export function usesReaderPreference(widgetMode: NoteMapWidgetMode) {
     return widgetMode === "sidebar" || widgetMode === "expanded";
@@ -30,9 +30,12 @@ export function isRootedAtCurrentNote(widgetMode: NoteMapWidgetMode) {
     return widgetMode === "ribbon" || widgetMode === "sidebar" || widgetMode === "expanded";
 }
 
-/** The map a note asks to be drawn as through its `mapType` label, the link map standing for anything else. */
+/** The map a note asks to be drawn as through its `mapType` label; anything unknown is the link map. */
 export function toMapType(labelValue: string | null | undefined): MapType {
-    return labelValue === "tree" ? "tree" : "link";
+    if (labelValue === "tree" || labelValue === "clone") {
+        return labelValue;
+    }
+    return "link";
 }
 
 /** How much of the map's box is kept clear around the graph when the view is fitted to it. */

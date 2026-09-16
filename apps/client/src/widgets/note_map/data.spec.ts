@@ -54,6 +54,25 @@ describe("loadNotesAndRelations", () => {
         const treeMap = await loadNotesAndRelations("root", [], [], "tree", true);
         expect(treeMap.nodes.map((node) => node.id)).toEqual([ "root", "linked", "loose" ]);
         expect(treeMap.noteIdToSizeMap).toEqual({ root: 4 + 1 + Math.round(Math.log(4) / Math.log(1.5)), linked: 4 });
+
+        // A clone map also links every note to a parent, so hiding unlinked notes is a no-op, and a
+        // note is drawn the larger the more parents point at it.
+        answerWith({
+            ...response,
+            links: [
+                { key: "1", sourceNoteId: "root", targetNoteId: "linked", name: "" },
+                { key: "2", sourceNoteId: "root", targetNoteId: "loose", name: "" },
+                { key: "3", sourceNoteId: "linked", targetNoteId: "loose", name: "" }
+            ],
+            noteIdToDescendantCountMap: {}
+        });
+        const cloneMap = await loadNotesAndRelations("loose", [], [], "clone", true);
+        expect(cloneMap.nodes.map((node) => node.id)).toEqual([ "root", "linked", "loose" ]);
+        expect(cloneMap.noteIdToSizeMap).toEqual({
+            root: 4,
+            linked: 4 + 1,
+            loose: 4 + Math.min(Math.pow(2, 0.5), 15)
+        });
     });
 });
 

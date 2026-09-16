@@ -303,9 +303,9 @@ const BUILTIN_ATTRIBUTES = [
     // A shape drawn onto a geo map: a kind, a colon, then a `lat,lng` per vertex (see the
     // client's geomap/shapes.ts).
     { type: "label", name: "geoShape", valueType: "text", hasUserValue: true },
-    // Which note map a note map note draws; anything but `tree` is read as `link`.
+    // Which note map a note map note draws; anything but `tree` or `clone` is read as `link`.
     { type: "label", name: "mapType", valueType: "select", hasUserValue: true, selectOptions: [
-        "link", "tree"
+        "link", "tree", "clone"
     ] },
     { type: "label", name: "map:style", valueType: "text", hasUserValue: true },
     // Says of a style Trilium knows nothing about that it is a dark one, which only the style itself

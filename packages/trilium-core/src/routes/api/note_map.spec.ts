@@ -2,6 +2,7 @@ import { NoteMapNote, trimIndentation } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
+import BBranch from "../../becca/entities/bbranch";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 import { buildNote, buildNotes } from "../../test/becca_easy_mocking";
@@ -215,6 +216,61 @@ describe("Note map service (branch coverage)", () => {
         const ids = res.notes.map((n) => n[0]);
         expect(ids).toContain("treeRootExcl");
         expect(ids).toContain("treeChildExcl");
+    });
+
+    it("getCloneMap: merges shared ancestors, keeps excludeFromNoteMap notes, and stops on a cycle", () => {
+        // grand → A → target and grand → B → target: one node for grand, two edges into target.
+        buildNote({
+            id: "cloneGrand",
+            title: "Grand",
+            children: [
+                { id: "cloneA", title: "A", children: [ { id: "cloneTarget", title: "Target" } ] },
+                { id: "cloneB", title: "B" }
+            ]
+        });
+        new BBranch({
+            noteId: "cloneTarget",
+            parentNoteId: "cloneB",
+            branchId: "cloneB_cloneTarget"
+        });
+
+        const diamond = note_map.getCloneMap(req("cloneTarget")) as TreeMapResponse;
+        expect(diamond.notes.map((n) => n[0])).toEqual(
+            expect.arrayContaining([ "cloneTarget", "cloneA", "cloneB", "cloneGrand" ])
+        );
+        expect(diamond.notes.filter((n) => n[0] === "cloneGrand")).toHaveLength(1);
+        expect(diamond.links).toEqual(expect.arrayContaining([
+            { sourceNoteId: "cloneA", targetNoteId: "cloneTarget" },
+            { sourceNoteId: "cloneB", targetNoteId: "cloneTarget" },
+            { sourceNoteId: "cloneGrand", targetNoteId: "cloneA" },
+            { sourceNoteId: "cloneGrand", targetNoteId: "cloneB" }
+        ]));
+        expect(diamond.links).toHaveLength(4);
+
+        // A journal date with `#excludeFromNoteMap` is still the path, so it stays.
+        buildNote({
+            id: "cloneJournal",
+            title: "Journal",
+            "#excludeFromNoteMap": "true",
+            children: [ { id: "cloneDay", title: "Day" } ]
+        });
+        const journal = note_map.getCloneMap(req("cloneDay")) as TreeMapResponse;
+        expect(journal.notes.map((n) => n[0])).toEqual(expect.arrayContaining([ "cloneDay", "cloneJournal" ]));
+        expect(journal.links).toContainEqual({ sourceNoteId: "cloneJournal", targetNoteId: "cloneDay" });
+
+        // A ⇄ B must not walk forever: both notes and both edges, then stop.
+        buildNote({ id: "cloneCycA", title: "A", children: [ { id: "cloneCycB", title: "B" } ] });
+        new BBranch({
+            noteId: "cloneCycA",
+            parentNoteId: "cloneCycB",
+            branchId: "cloneCycB_cloneCycA"
+        });
+        const cyclic = note_map.getCloneMap(req("cloneCycB")) as TreeMapResponse;
+        expect(cyclic.notes.map((n) => n[0])).toEqual(expect.arrayContaining([ "cloneCycA", "cloneCycB" ]));
+        expect(cyclic.links).toEqual(expect.arrayContaining([
+            { sourceNoteId: "cloneCycA", targetNoteId: "cloneCycB" },
+            { sourceNoteId: "cloneCycB", targetNoteId: "cloneCycA" }
+        ]));
     });
 
     it("getLinkMap: includes neighbors, applies includeRelations / excludeRelations filters", () => {
@@ -512,6 +568,24 @@ describe("Note map API (core)", () => {
         expect(Array.isArray(res.body.links)).toBe(true);
     });
 
+    it("returns a clone map of a note cloned under two parents", async () => {
+        const parentA = await createTextNote(api, { title: "Clone parent A" });
+        const parentB = await createTextNote(api, { title: "Clone parent B" });
+        const target = await createTextNote(api, { parentNoteId: parentA.noteId, title: "Clone target" });
+        const cloned = await api.put(`/api/notes/${target.noteId}/clone-to-note/${parentB.noteId}`, { body: {} });
+        expect(cloned.status).toBe(200);
+
+        const res = await api.post<TreeMapResponse>(`/api/note-map/${target.noteId}/clone`, { body: {} });
+        expect(res.status).toBe(200);
+        expect(res.body.notes.map((n) => n[0])).toEqual(
+            expect.arrayContaining([ target.noteId, parentA.noteId, parentB.noteId, "root" ])
+        );
+        expect(res.body.links).toEqual(expect.arrayContaining([
+            { sourceNoteId: parentA.noteId, targetNoteId: target.noteId },
+            { sourceNoteId: parentB.noteId, targetNoteId: target.noteId }
+        ]));
+    });
+
     it("returns backlinks and backlink-count for a linked note", async () => {
         const target = await createTextNote(api, { title: "Backlink target" });
         const source = await createTextNote(api, {
@@ -530,7 +604,10 @@ describe("Note map API (core)", () => {
     });
 
     it("404s for a non-existent map root", async () => {
-        const res = await api.post("/api/note-map/missingNote999/tree", { body: {} });
-        expect(res.status).toBe(404);
+        const tree = await api.post("/api/note-map/missingNote999/tree", { body: {} });
+        expect(tree.status).toBe(404);
+
+        const clone = await api.post("/api/note-map/missingNote999/clone", { body: {} });
+        expect(clone.status).toBe(404);
     });
 });
