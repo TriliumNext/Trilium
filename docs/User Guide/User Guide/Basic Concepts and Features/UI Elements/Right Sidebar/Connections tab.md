@@ -1,7 +1,7 @@
 # Connections tab
 <figure class="image image-style-align-right image_resized" style="width:33.35%;"><img style="aspect-ratio:490/1801;" src="Connections tab_image.png" width="490" height="1801"></figure>
 
-The connections tab groups together all the information about the current note and how it relates to other notes, in four different sections.
+The connections tab groups together all the information about the current note and how it relates to other notes.
 
 > [!NOTE]
 > It's generally best to keep only the desired sections expanded as each of the sections have to retrieve additional data that might not otherwise be needed. While collapsed, the sections do not retrieve any additional data.
@@ -29,6 +29,10 @@ See also:
 The note paths section displays the locations in which the current note is [cloned](../../Notes/Cloning%20Notes.md). Each segment of the note path is clickable, in order to navigate to that note or clone.
 
 A new clone can be created from the top-right button.
+
+## Equivalent notes
+
+Notes linked to the current one by an [equivalence relation](../../../Advanced%20Usage/Attributes/Relations.md) (`~equiv`, or a relation whose definition is marked _Equivalence_) are listed here, grouped by type. Each row has a **name in this class** — `German` vs `English` for a translation type, or whatever distinguishes the members — which you can edit here. That name is `#equivLabel` for `~equiv` and `#equivLabel:<type>` otherwise. The same list is also a status-bar menu: pick a type, then pick a member (the note title is always shown next to the name). Clones (same note, several places in the tree) stay under Note paths; equivalent notes are distinct notes treated as interchangeable under one criterion.
 
 ## Backlinks
 

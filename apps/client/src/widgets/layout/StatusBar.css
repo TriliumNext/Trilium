@@ -47,6 +47,12 @@
                     content: unset;
                 }
             }
+
+            .equivalence-switcher-button .text {
+                max-width: 8em;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
         }
 
         .dropdown {
@@ -76,6 +82,39 @@
             max-width: 500px;
             max-height: 60vh;
             overflow-y: auto;
+        }
+
+        .dropdown-equivalence-switcher {
+            min-width: 280px;
+            max-width: 380px;
+            max-height: 60vh;
+            overflow-y: auto;
+
+            .equivalence-switcher-search {
+                padding: 0.4em 0.75em;
+                position: sticky;
+                top: 0;
+                z-index: 1;
+                background-color: var(--menu-background-color-no-backdrop, var(--menu-background-color));
+            }
+
+            .equivalence-switcher-member {
+                display: flex;
+                align-items: center;
+                gap: 0.5em;
+
+                .equivalence-switcher-title {
+                    min-width: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    color: var(--muted-text-color);
+                }
+            }
+
+            .equivalence-switcher-empty {
+                list-style: none;
+            }
         }
     }
 

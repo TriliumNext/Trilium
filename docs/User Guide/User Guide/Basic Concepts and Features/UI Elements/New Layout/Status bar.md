@@ -10,11 +10,12 @@ On the right side, specific sections will show depending on the type of the curr
 1.  For <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> notes, the language mode of the note is indicated (e.g. JavaScript, plain text), as well as allowing easy switching to another mode.
 2.  For <a class="reference-link" href="../../../Note%20Types/Text.md">Text</a> notes, the content language is displayed and can be changed, thus configuring the spell-check and the right-to-left support.
     1.  Note that this applies to the entire note and not the selection, unlike some text editors.
-3.  If a note is placed in multiple places in the tree (cloned), the number of the note paths will be displayed.
+3.  If the note belongs to an [equivalence class](../../../Advanced%20Usage/Attributes/Relations.md), a menu lists those types. Search or pick a type, then the members — each has a name in that class (empty shows the note title as a placeholder) with the note title always beside it, e.g. `en` next to `Car`. Click a member to open it. The same names are edited in the sidebar's <a class="reference-link" href="../Right%20Sidebar/Connections%20tab.md">Connections tab</a>.
+4.  If a note is placed in multiple places in the tree (cloned), the number of the note paths will be displayed.
     1.  Clicking it will reveal the full list of note paths in the sidebar's <a class="reference-link" href="../Right%20Sidebar/Connections%20tab.md">Connections tab</a>.
-4.  If a note has attachments, their number will be displayed.
+5.  If a note has attachments, their number will be displayed.
     1.  Clicking on it will reveal the list of attachments in a new tab.
-5.  If a note is linked from other text notes (backlinks), the number of backlinks will be displayed.
+6.  If a note is linked from other text notes (backlinks), the number of backlinks will be displayed.
     1.  Clicking on it will show the list of notes that link to this note, as well as an excerpt of where the note is referenced in the sidebar's <a class="reference-link" href="../Right%20Sidebar/Connections%20tab.md">Connections tab</a>.
 
 Regardless of note type, the following items will always be displayed if there is a note:

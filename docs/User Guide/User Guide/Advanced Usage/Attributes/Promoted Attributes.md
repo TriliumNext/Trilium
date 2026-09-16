@@ -101,6 +101,16 @@ Relation definition allows you to specify such "inverse relation" - for the rela
 
 What this does internally is that whenever we save a relation which has defined inverse relation, we check that this inverse relation exists on the relation target note. Similarly, when we delete relation, we also delete inverse relation on the target note.
 
+### Equivalence
+
+A relation definition can also be marked _Equivalence_. Notes linked by that relation then form a class: the link is treated as symmetric (one edge is enough, even if the definition sits on another note) and transitive (adding a third member is one more link to anyone already in the class).
+
+Each relation name is its own type. `~equiv` is the builtin type: always self-inverse, and by default it expands in search and collapses on the link map.
+
+Checking _Equivalence_ also turns on _Expand in search_ and _Collapse in note map_ for that type; you can switch those off on the same definition. A search can still expand every type, name specific types (`#expandEquivalence=translation`), or disable expansion (`#expandEquivalence=none`). A map can override collapse with `#mapCollapseRelation` (`none` turns collapse off for that map).
+
+`#canonical` / `#equivHub` / `#equivLabel` apply to `~equiv`. For a named type use `#canonical:translation`, `#equivHub:translation` and `#equivLabel:translation=German`. The name is what Equivalent notes and the collapsed link map show for that member under that type — it is not shared across types, and ordinary attribute inheritance is **not** shared across the class. Clones remain the way to share one note's attributes.
+
 ## See also
 
 *   The <a class="reference-link" href="../../Collections/Table.md">Table</a> collection makes heavy use of promoted attributes to define the columns of the table, since they already carry the type information. When made inheritable, it's also easy to change those fields when the child notes are opened.

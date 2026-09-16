@@ -23,4 +23,12 @@ export interface SearchParams {
     fuzzyAttributeSearch?: boolean;
     /** When true, skip the two-phase fuzzy fallback and use the single-token fast path. */
     autocomplete?: boolean;
+    /**
+     * When true, expand every known equivalence type. When omitted, types marked `expandSearch`
+     * expand if the `searchExpandEquivalence` option is on. When false, expand nothing unless
+     * {@link equivalenceTypes} is set.
+     */
+    expandEquivalence?: boolean;
+    /** Equivalence relation names to expand; omitted or empty defers to marked types or all. */
+    equivalenceTypes?: string[];
 }

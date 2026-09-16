@@ -909,6 +909,35 @@ export interface NoteMapPostResponse {
     noteIdToDescendantCountMap: Record<string, number>;
 }
 
+/**
+ * Label that names a member inside one equivalence type. `~equiv` uses `#equivLabel`; a named type
+ * uses `#equivLabel:<type>` so the same note can be "German" as a translation and something else
+ * under another type.
+ */
+export function equivLabelName(relationName: string): string {
+    return relationName === "equiv" ? "equivLabel" : `equivLabel:${relationName}`;
+}
+
+/** One member of a typed equivalence class, including the note the listing was asked for. */
+export interface EquivalentNoteMember {
+    noteId: string;
+    title: string;
+    icon: string;
+    /** This member's name in the group's type (`#equivLabel` / `#equivLabel:<type>`). */
+    displayName?: string;
+}
+
+/** Members interchangeable with the asked-for note under one equivalence relation name. */
+export interface EquivalentNotesGroup {
+    relationName: string;
+    canonicalNoteId: string;
+    members: EquivalentNoteMember[];
+}
+
+export interface EquivalentNotesResponse {
+    groups: EquivalentNotesGroup[];
+}
+
 export interface UpdateAttributeResponse {
     attributeId: string;
 }

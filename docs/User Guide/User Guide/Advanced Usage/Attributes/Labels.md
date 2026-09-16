@@ -101,3 +101,8 @@ This is a list of labels that Trilium natively supports.
 | `similarNotesWidgetDisabled` | Disables the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Similar%20Notes.md">Similar Notes</a> ribbon tab (old layout only) |
 | `docName` , `docUrl` | Used internally for the in-app help. |
 | `aiQuickAction` | Defines a custom prompt to be used for the <a class="reference-link" href="../../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a>'s quick actions. |
+| `expandEquivalence` | On a saved search: empty expands every equivalence type; a value names types to expand; `none` disables expansion. See [Search](../../Basic%20Concepts%20and%20Features/Navigation/Search.md) and [Relations](Relations.md). |
+| `canonical` | Display representative of the builtin `~equiv` class. For another type use `canonical:<type>`. |
+| `equivHub` | Star hub of the builtin `~equiv` class, not a member. For another type use `equivHub:<type>`. |
+| `equivLabel` | This member's name in the builtin `~equiv` class (for example `German`). For another type use `equivLabel:<type>`. Edited in [Equivalent notes](../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Connections%20tab.md) and the [status-bar](../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout/Status%20bar.md) menu. |
+| `mapCollapseRelation` | Override which equivalence types this [Note Map](../../Note%20Types/Note%20Map.md) collapses. Repeat once per type. `none` disables collapse. |

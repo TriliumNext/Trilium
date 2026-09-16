@@ -83,8 +83,9 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
         const labelValues = (name: string) => note.getLabels(name).map(l => l.value) ?? [];
         const excludeRelations = labelValues("mapExcludeRelation");
         const includeRelations = labelValues("mapIncludeRelation");
+        const collapseRelations = labelValues("mapCollapseRelation");
         Promise.all([
-            loadNotesAndRelations(mapRootId, excludeRelations, includeRelations, mapType, widgetMode === "sidebar"),
+            loadNotesAndRelations(mapRootId, excludeRelations, includeRelations, mapType, widgetMode === "sidebar", collapseRelations),
             // Awaited alongside the notes rather than after them: a canvas asked to draw from a font
             // it does not have yet says nothing and draws tofu, and the map is painted the moment its
             // data lands. Every pack's font, since which of them the map wears is not known until the

@@ -556,6 +556,15 @@ describe("isBuiltinAttribute", () => {
         expect(isBuiltinAttribute("label", "geolocation")).toBe(true);
         expect(isBuiltinAttribute("label", "map:style")).toBe(true);
         expect(isBuiltinAttribute("label", "excludeFromNoteMap")).toBe(true);
+        expect(isBuiltinAttribute("label", "mapCollapseRelation")).toBe(true);
+    });
+
+    it("recognizes typed-equivalence names", () => {
+        expect(isBuiltinAttribute("label", "expandEquivalence")).toBe(true);
+        expect(isBuiltinAttribute("label", "canonical")).toBe(true);
+        expect(isBuiltinAttribute("label", "equivHub")).toBe(true);
+        expect(isBuiltinAttribute("label", "equivLabel")).toBe(true);
+        expect(isBuiltinAttribute("relation", "equiv")).toBe(true);
     });
 
     it("reports the value type of a built-in label, and nothing for anything else", () => {

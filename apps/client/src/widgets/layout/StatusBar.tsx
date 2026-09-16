@@ -1,6 +1,6 @@
 import "./StatusBar.css";
 
-import { Locale, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
+import { type EquivalentNoteMember, type EquivalentNotesGroup, Locale, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
 import { Dropdown as BootstrapDropdown } from "bootstrap";
 import clsx from "clsx";
 import { type ComponentChildren, RefObject } from "preact";
@@ -21,10 +21,12 @@ import { formatDateTime } from "../../utils/formatters";
 import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import Dropdown, { DropdownProps } from "../react/Dropdown";
 import { FormDropdownDivider, FormListHeader, FormListItem } from "../react/FormList";
+import FormTextBox from "../react/FormTextBox";
 import HelpDropdown from "../react/HelpDropdown";
 import { useActiveNoteContext, useLegacyImperativeHandlers, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useStaticTooltip, useTriliumEvent, useTriliumEvents, useTriliumOptionBool, useTriliumOptionInt, useAttachments } from "../react/hooks";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
+import NoItems from "../react/NoItems";
 import { ParentComponent } from "../react/react_utils";
 import { ContentLanguagesModal, NoteTypeCodeNoteList, NoteTypeOptionsModal, useLanguageSwitcher, useMimeTypes } from "../ribbon/BasicPropertiesTab";
 import AttributeEditor, { AttributeEditorImperativeHandlers } from "../ribbon/components/AttributeEditor";
@@ -33,12 +35,19 @@ import InheritedAttributesTab from "../ribbon/InheritedAttributesTab";
 import { NoteSizeWidget, useNoteMetadata } from "../ribbon/NoteInfoTab";
 import { NotePathsWidget, useSortedNotePaths } from "../ribbon/NotePathsTab";
 import SimilarNotesTab from "../ribbon/SimilarNotesTab";
+import {
+    filterEquivalenceGroups,
+    filterEquivalenceMembers,
+    MemberDisplayName,
+    switcherButtonText,
+    useEquivalentNotes
+} from "../sidebar/EquivalentNotes";
 import type { RightPaneTabId } from "../sidebar/RightPaneTabs";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";
 import Breadcrumb from "./Breadcrumb";
 import { convertIndentation } from "./reindentation";
 
-interface StatusBarContext {
+export interface StatusBarContext {
     note: FNote;
     noteContext: NoteContext;
     viewScope?: ViewScope;
@@ -79,6 +88,7 @@ export default function StatusBar() {
                         <CodeNoteSwitcher {...context} />
                         <TabWidthSwitcher {...context} />
                         <LanguageSwitcher {...context} />
+                        <EquivalenceSwitcher {...context} />
                         {!isHiddenNote && <NotePaths {...context} />}
                         <AttributesButton {...attributesContext} />
                         <AttachmentCount {...context} />
@@ -242,6 +252,159 @@ export function getLocaleName(locale: Locale | null | undefined) {
     return locale.id
         .replace("_", "-")
         .toLocaleUpperCase();
+}
+//#endregion
+
+//#region Equivalence switcher
+function EquivalenceSwitcher({ note, noteContext }: StatusBarContext) {
+    const dropdownRef = useRef<BootstrapDropdown>(null);
+    const groups = useEquivalentNotes(note);
+    const noteId = note.noteId;
+    const [ selectedType, setSelectedType ] = useState<string | null>(null);
+    const [ query, setQuery ] = useState("");
+
+    useEffect(() => {
+        setSelectedType(null);
+        setQuery("");
+    }, [ noteId ]);
+
+    const selectedGroup = groups.find((group) => group.relationName === selectedType)
+        ?? (groups.length === 1 ? groups[0] : undefined);
+    const showingMembers = !!selectedGroup && (groups.length === 1 || selectedType !== null);
+    const filteredGroups = useMemo(() => filterEquivalenceGroups(groups, query), [ groups, query ]);
+    const filteredMembers = useMemo(
+        () => selectedGroup ? filterEquivalenceMembers(selectedGroup.members, query) : [],
+        [ selectedGroup, query ]
+    );
+
+    if (!groups.length) {
+        return null;
+    }
+
+    const buttonGroup = selectedGroup ?? groups[0];
+
+    return (
+        <StatusBarDropdown
+            icon="bx bx-git-merge"
+            title={t("equivalent_notes.title")}
+            buttonClassName="equivalence-switcher-button"
+            text={switcherButtonText(buttonGroup, noteId)}
+            dropdownRef={dropdownRef}
+            dropdownContainerClassName="dropdown-equivalence-switcher"
+            dropdownOptions={{ autoClose: "outside" }}
+            onHidden={() => setQuery("")}
+        >
+            <li
+                className="equivalence-switcher-search"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <FormTextBox
+                    currentValue={query}
+                    placeholder={t("equivalent_notes.search_placeholder")}
+                    aria-label={t("equivalent_notes.search_placeholder")}
+                    onChange={(value) => setQuery(value)}
+                />
+            </li>
+            {selectedGroup && showingMembers
+                ? (
+                    <EquivalenceMemberList
+                        group={selectedGroup}
+                        members={filteredMembers}
+                        currentNoteId={noteId}
+                        showBack={groups.length > 1}
+                        onBack={() => {
+                            setSelectedType(null);
+                            setQuery("");
+                        }}
+                        onOpen={(id) => {
+                            if (id !== noteId) {
+                                dropdownRef.current?.hide();
+                                void noteContext.setNote(id);
+                            }
+                        }}
+                    />
+                )
+                : (
+                    <EquivalenceTypeList
+                        groups={filteredGroups}
+                        onSelect={(relationName) => {
+                            setSelectedType(relationName);
+                        }}
+                    />
+                )}
+        </StatusBarDropdown>
+    );
+}
+
+function EquivalenceTypeList({ groups, onSelect }: {
+    groups: EquivalentNotesGroup[];
+    onSelect: (relationName: string) => void;
+}) {
+    if (!groups.length) {
+        return <li className="equivalence-switcher-empty">
+            <NoItems icon="bx bx-search" text={t("equivalent_notes.no_matches")} size="small" />
+        </li>;
+    }
+
+    return (
+        <>
+            <FormListHeader text={t("equivalent_notes.types")} />
+            {groups.map((group) => (
+                <FormListItem
+                    key={group.relationName}
+                    onClick={() => onSelect(group.relationName)}
+                >{group.relationName}</FormListItem>
+            ))}
+        </>
+    );
+}
+
+function EquivalenceMemberList({ group, members, currentNoteId, showBack, onBack, onOpen }: {
+    group: EquivalentNotesGroup;
+    members: EquivalentNoteMember[];
+    currentNoteId: string;
+    showBack: boolean;
+    onBack: () => void;
+    onOpen: (noteId: string) => void;
+}) {
+    return (
+        <>
+            {showBack && (
+                <FormListItem icon="bx bx-arrow-back" onClick={onBack}>
+                    {t("equivalent_notes.all_types")}
+                </FormListItem>
+            )}
+            <FormListHeader text={group.relationName} />
+            {members.length === 0 && (
+                <li className="equivalence-switcher-empty">
+                    <NoItems icon="bx bx-search" text={t("equivalent_notes.no_matches")} size="small" />
+                </li>
+            )}
+            {members.map((member) => (
+                <FormListItem
+                    key={member.noteId}
+                    className="equivalence-switcher-member"
+                    checked={member.noteId === currentNoteId}
+                    onClick={() => onOpen(member.noteId)}
+                >
+                    <span
+                        className="equivalence-switcher-name"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <MemberDisplayName
+                            noteId={member.noteId}
+                            relationName={group.relationName}
+                            savedDisplayName={member.displayName}
+                            placeholder={member.title}
+                        />
+                    </span>
+                    <span className="equivalence-switcher-title">{member.title}</span>
+                </FormListItem>
+            ))}
+        </>
+    );
 }
 //#endregion
 

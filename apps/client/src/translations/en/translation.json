@@ -792,7 +792,19 @@
     "hoisted_note": "The note to hoist to when a launcher opens its target.",
     "share_logo": "An image note used as the logo of the shared page. It has to sit inside the shared subtree.",
     "share_open_graph_image_relation": "An image note served as the <code>og:image</code> of the shared page. Set the label of the same name instead to point at an address.",
-    "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree."
+    "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree.",
+    "equivalence": "Equivalence",
+    "equivalence_title": "Notes linked by this relation are interchangeable under this criterion. Enabling this sets a self-inverse if none is set, and turns on search expansion and map collapse for this type (you can switch those off below).",
+    "map_collapse_relation": "Override which equivalence types this link map collapses. Repeat once per type. none disables collapse, including types marked Collapse in note map.",
+    "expand_equivalence": "On a search: empty expands every equivalence type; a value names types to expand; none disables expansion.",
+    "canonical": "Display representative of the builtin ~equiv class. For another type use #canonical:translation (etc.).",
+    "equiv_hub": "Star hub of the builtin ~equiv class, not a member. For another type use #equivHub:translation (etc.).",
+    "equiv_relation": "Marks two notes as equivalent under the builtin type. Always self-inverse.",
+    "expand_search": "Expand in search",
+    "expand_search_title": "Hits on a member also return the rest of this class.",
+    "collapse_map": "Collapse in note map",
+    "collapse_map_title": "The link map draws this class as one node. A map can override with #mapCollapseRelation.",
+    "equiv_label": "This member's name in the builtin ~equiv class, shown in Equivalent notes and on the collapsed link map. For another type use #equivLabel:translation=German."
   },
   "attribute_editor": {
     "help_text_body1": "To add label, just type e.g. <code>#rock</code> or if you want to add also value then e.g. <code>#year = 2020</code>",
@@ -1443,7 +1455,9 @@
     "unknown_search_option": "Unknown search option {{searchOptionName}}",
     "search_note_saved": "Search note has been saved into {{- notePathTitle}}",
     "actions_executed": "Actions have been executed.",
-    "view_options": "View options:"
+    "view_options": "View options:",
+    "expand_equivalence": "Expand all equivalent notes",
+    "expand_equivalence_description": "Expand every equivalence type for this search, not only types marked Expand in search. Set the label value to a relation name to expand only that type, or none to disable expansion."
   },
   "similar_notes": {
     "title": "Similar Notes",
@@ -2030,7 +2044,9 @@
     "fuzzy_matching_label": "Typo tolerance in search",
     "fuzzy_matching_description": "Affects quick search and full search. Finds similar words when exact matches are insufficient.",
     "autocomplete_fuzzy_label": "Typo tolerance in autocomplete",
-    "autocomplete_fuzzy_description": "Affects jump-to-note and note selectors. Slower but tolerates typos."
+    "autocomplete_fuzzy_description": "Affects jump-to-note and note selectors. Slower but tolerates typos.",
+    "expand_equivalence_label": "Expand equivalent notes in search",
+    "expand_equivalence_description": "When on, types marked Expand in search (including ~equiv by default) also return class members of each hit. A search can expand every type, name specific types, or set none to disable."
   },
   "search_engine": {
     "title": "Search Engine",
@@ -4301,5 +4317,14 @@
     "creation-date": "Creation date & time",
     "ascending": "Ascending",
     "descending": "Descending"
+  },
+  "equivalent_notes": {
+    "title": "Equivalent notes",
+    "display_name": "Name in this class",
+    "display_name_placeholder": "e.g. German",
+    "search_placeholder": "Search",
+    "types": "Equivalence types",
+    "all_types": "All types",
+    "no_matches": "No matching types or notes"
   }
 }

@@ -25,6 +25,16 @@ export interface DefinitionObject {
     selectOptions?: string[];
     promotedAlias?: string;
     inverseRelation?: string;
+    /**
+     * When set on a relation definition, notes linked by that relation form an equivalence
+     * class (symmetric + transitive). Search and the note map can treat members as interchangeable
+     * under this criterion. Independent of promotion.
+     */
+    isEquivalence?: boolean;
+    /** Search unions hits with this type's class. Only written on relation definitions. */
+    expandSearch?: boolean;
+    /** The link map collapses this type's class into one node. Only written on relation definitions. */
+    collapseMap?: boolean;
 }
 
 /**
@@ -66,6 +76,12 @@ function parse(value: string): DefinitionObject {
             // one is written by `serialize`. Definitions reaching us from an import, ETAPI or a
             // hand-typed attribute are not otherwise guaranteed to hold a usable name.
             defObj.inverseRelation = filterAttributeName(parameterValue(token) ?? "");
+        } else if (token === "equivalence") {
+            defObj.isEquivalence = true;
+        } else if (token === "expandSearch") {
+            defObj.expandSearch = true;
+        } else if (token === "collapseMap") {
+            defObj.collapseMap = true;
         } else {
             console.log("Unrecognized attribute definition token:", token);
         }
@@ -115,6 +131,16 @@ function serialize(definition: DefinitionObject, valueType: "label" | "relation"
         }
     } else if (definition.inverseRelation?.trim()) {
         props.push(`inverse=${filterAttributeName(definition.inverseRelation)}`);
+    }
+
+    if (valueType === "relation" && definition.isEquivalence) {
+        props.push("equivalence");
+        if (definition.expandSearch) {
+            props.push("expandSearch");
+        }
+        if (definition.collapseMap) {
+            props.push("collapseMap");
+        }
     }
 
     return props.join(",");

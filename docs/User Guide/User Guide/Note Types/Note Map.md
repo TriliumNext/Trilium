@@ -23,4 +23,5 @@ The note map can be customized using the following <a class="reference-link" hr
 | --- | --- |
 | `#mapIncludeRelation` | Comma-delimited relation names to include from the note map. |
 | `#mapExcludeRelation` | Comma-delimited relation names to exclude from the note map. |
+| `#mapCollapseRelation` | Override which [equivalence](../Advanced%20Usage/Attributes/Relations.md) types the link map collapses. Repeat once per type. Types marked _Collapse in note map_ collapse by default; `none` disables collapse on this map. |
 | `#mapRootNoteId` | The ID of the note the map roots from, or `hoisted`. See the root note section above for more information. |

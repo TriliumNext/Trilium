@@ -19,6 +19,11 @@ import lex from "./lex.js";
 import parse from "./parse.js";
 import type { SearchParams, TokenStructure } from "./types.js";
 import { getSql } from "../../sql/index.js";
+import {
+    getIndependentClassMembers,
+    isAllowedExpandedHit,
+    resolveTypesToExpand
+} from "../../equivalence.js";
 
 /** Cap on marker wraps per snippet field per token, bounding pathological regex patterns. */
 const MAX_HIGHLIGHT_WRAPS = 50;
@@ -105,12 +110,28 @@ function searchFromNoteWithContext(note: BNote): {
         orderDirection: note.getLabelValue("orderDirection") || undefined,
         limit: parseInt(note.getLabelValue("limit") || "0", 10),
         debug: note.hasLabel("debug"),
-        fuzzyAttributeSearch: false
+        fuzzyAttributeSearch: false,
+        ...searchEquivalenceParams(note)
     });
 
     const searchResults = findResultsWithQuery(searchString, searchContext);
 
     return { searchResults, searchContext, error: searchContext.getError() };
+}
+
+function searchEquivalenceParams(note: BNote): Pick<SearchParams, "expandEquivalence" | "equivalenceTypes"> {
+    const labels = note.getLabels("expandEquivalence");
+    if (labels.some((label) => label.value === "none")) {
+        return { expandEquivalence: false };
+    }
+    const listed = labels.map((label) => label.value).filter((value) => value);
+    if (listed.length > 0) {
+        return { expandEquivalence: true, equivalenceTypes: listed };
+    }
+    if (note.hasLabel("expandEquivalence")) {
+        return { expandEquivalence: true };
+    }
+    return {};
 }
 
 function searchFromRelation(note: BNote, relationName: string) {
@@ -352,6 +373,10 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
         res.computeScore(searchContext.fulltextQuery, searchContext.highlightedTokens, enableFuzzyMatching, searchContext.contentMatches.get(res.noteId));
     }
 
+    if (searchContext.expandEquivalence) {
+        expandSearchResultsByEquivalence(searchResults, searchContext);
+    }
+
     // Restore original fuzzy setting
     searchContext.enableFuzzyMatching = originalFuzzyMatching;
 
@@ -374,6 +399,57 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
     }
 
     return searchResults;
+}
+
+/**
+ * After the filter pass, union each hit with its per-type equivalence class. Notes that already
+ * matched keep their own score; pulled-in members get a capped expansion score. Types are not
+ * composed: Auto ≡translation Car ≡entity Vehicle does not pull Vehicle in for a hit on Auto.
+ */
+function expandSearchResultsByEquivalence(searchResults: SearchResult[], searchContext: SearchContext) {
+    const types = resolveTypesToExpand({
+        enabled: searchContext.expandEquivalence,
+        expandAll: searchContext.expandAllEquivalenceTypes,
+        requestedTypes: searchContext.equivalenceTypes
+    });
+    if (types.length === 0) {
+        return;
+    }
+
+    const existingIds = new Set(searchResults.map((result) => result.noteId));
+    const bestSourceScore = new Map<string, number>();
+
+    for (const result of searchResults) {
+        for (const memberId of getIndependentClassMembers(result.noteId, types)) {
+            if (existingIds.has(memberId)) {
+                continue;
+            }
+            const previous = bestSourceScore.get(memberId);
+            if (previous === undefined || result.score > previous) {
+                bestSourceScore.set(memberId, result.score);
+            }
+        }
+    }
+
+    for (const [memberId, sourceScore] of bestSourceScore) {
+        const note = becca.notes[memberId];
+        if (!note) {
+            continue;
+        }
+        if (!isAllowedExpandedHit(note, searchContext)) {
+            continue;
+        }
+
+        const notePathArray = note.getBestNotePath();
+        if (!notePathArray) {
+            continue;
+        }
+
+        const expanded = new SearchResult(notePathArray);
+        expanded.applyEquivalenceExpansionScore(sourceScore);
+        searchResults.push(expanded);
+        existingIds.add(memberId);
+    }
 }
 
 function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: SearchResult[]): SearchResult[] {

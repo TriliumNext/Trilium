@@ -103,6 +103,42 @@ describe("handlers", () => {
     });
 
     describe("ENTITY_CHANGED (attributes)", () => {
+        it("creates a self-inverse ~equiv on the target without a relation definition", () => {
+            const source = buildNote({ id: "eqSrc" });
+            const target = buildNote({ id: "eqTgt" });
+            const rel = addAttribute("eqSrc", "relation", "equiv", "eqTgt");
+            const created: BAttribute[] = [];
+            vi.spyOn(BAttribute.prototype, "save").mockImplementation(function (this: BAttribute) {
+                created.push(this);
+                return this;
+            });
+
+            eventService.emit(eventService.ENTITY_CHANGED, { entityName: "attributes", entity: rel });
+
+            expect(created.some((attr) =>
+                attr.noteId === target.noteId && attr.name === "equiv" && attr.value === source.noteId
+            )).toBe(true);
+        });
+
+        it("creates a self-inverse for a custom equivalence type defined on another note", () => {
+            buildNote({ id: "eqDef" });
+            addAttribute("eqDef", "label", "relation:translation", "multi,inverse=translation,equivalence");
+            const source = buildNote({ id: "trSrc" });
+            const target = buildNote({ id: "trTgt" });
+            const rel = addAttribute("trSrc", "relation", "translation", "trTgt");
+            const created: BAttribute[] = [];
+            vi.spyOn(BAttribute.prototype, "save").mockImplementation(function (this: BAttribute) {
+                created.push(this);
+                return this;
+            });
+
+            eventService.emit(eventService.ENTITY_CHANGED, { entityName: "attributes", entity: rel });
+
+            expect(created.some((attr) =>
+                attr.noteId === target.noteId && attr.name === "translation" && attr.value === source.noteId
+            )).toBe(true);
+        });
+
         it("re-sorts the owning note when a 'sorted' label changes", () => {
             buildNote({ id: "p" });
             const attr = addAttribute("p", "label", "sorted", "");

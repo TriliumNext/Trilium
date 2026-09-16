@@ -32,6 +32,7 @@ export default function OtherSettings() {
 function SearchSettings() {
     const [ fuzzyEnabled, setFuzzyEnabled ] = useTriliumOptionBool("searchEnableFuzzyMatching");
     const [ autocompleteFuzzy, setAutocompleteFuzzy ] = useTriliumOptionBool("searchAutocompleteFuzzy");
+    const [ expandEquivalence, setExpandEquivalence ] = useTriliumOptionBool("searchExpandEquivalence");
 
     return (
         <Card heading={t("search.title")}>
@@ -49,6 +50,14 @@ function SearchSettings() {
                 description={t("search.autocomplete_fuzzy_description")}
             >
                 <FormToggle currentValue={autocompleteFuzzy} onChange={setAutocompleteFuzzy} />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="search-expand-equivalence"
+                label={t("search.expand_equivalence_label")}
+                description={t("search.expand_equivalence_description")}
+            >
+                <FormToggle currentValue={expandEquivalence} onChange={setExpandEquivalence} />
             </OptionCardSection>
         </Card>
     );

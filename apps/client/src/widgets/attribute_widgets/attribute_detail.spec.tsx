@@ -225,6 +225,12 @@ describe("attribute detail popup naming", () => {
         expect(lookupAttributeHelp("label", "customRequestHandler")).toMatchObject({ helpPage: "J5Ex1ZrMbyJ6" });
         expect(lookupAttributeHelp("label", "somethingInvented")).toBeUndefined();
         expect(lookupAttributeHelp(undefined, "customRequestHandler")).toBeUndefined();
+        expect(lookupAttributeHelp("label", "equivLabel:translation")).toEqual(
+            lookupAttributeHelp("label", "equivLabel")
+        );
+        expect(lookupAttributeHelp("label", "canonical:translation")).toEqual(
+            lookupAttributeHelp("label", "canonical")
+        );
     });
 
     it("explains every name Trilium reads for itself, and no name it does not", async () => {

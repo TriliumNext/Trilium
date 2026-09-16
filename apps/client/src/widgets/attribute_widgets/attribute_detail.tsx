@@ -695,6 +695,47 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
+                {attrType === "relation-definition" && !opts.hideTypeOptions && (
+                    <OptionsRowWithToggle
+                        name="attr-equivalence"
+                        label={t("attribute_detail.equivalence")}
+                        description={t("attribute_detail.equivalence_title")}
+                        currentValue={!!definition.isEquivalence}
+                        disabled={!isOwned}
+                        onChange={(isEquivalence) => {
+                            commitDefinition({
+                                isEquivalence,
+                                inverseRelation: isEquivalence && !definition.inverseRelation
+                                    ? utils.filterAttributeName(name)
+                                    : definition.inverseRelation,
+                                expandSearch: isEquivalence,
+                                collapseMap: isEquivalence
+                            });
+                        }}
+                    />
+                )}
+
+                {attrType === "relation-definition" && !opts.hideTypeOptions && definition.isEquivalence && (
+                    <>
+                        <OptionsRowWithToggle
+                            name="attr-expand-search"
+                            label={t("attribute_detail.expand_search")}
+                            description={t("attribute_detail.expand_search_title")}
+                            currentValue={!!definition.expandSearch}
+                            disabled={!isOwned}
+                            onChange={(expandSearch) => commitDefinition({ expandSearch })}
+                        />
+                        <OptionsRowWithToggle
+                            name="attr-collapse-map"
+                            label={t("attribute_detail.collapse_map")}
+                            description={t("attribute_detail.collapse_map_title")}
+                            currentValue={!!definition.collapseMap}
+                            disabled={!isOwned}
+                            onChange={(collapseMap) => commitDefinition({ collapseMap })}
+                        />
+                    </>
+                )}
+
                 {/* No description: what a display name is needs no explaining. */}
                 {isDefinition(attrType) && (
                     <OptionsRow name="attr-promoted-alias" label={t("attribute_detail.promoted_alias")}>
@@ -828,8 +869,26 @@ export function isSystemAttribute(attrType: AttrType, name: string) {
 
 /** Normalised so that the shorthand entries, which are the description alone, read like the rest. */
 export function lookupAttributeHelp(attrType: AttrType, name: string): AttrHelpEntry | undefined {
-    const entry = attrType ? ATTR_HELP[attrType]?.[name] : undefined;
+    const entry = attrType
+        ? ATTR_HELP[attrType]?.[name] ?? typedEquivalenceHelp(attrType, name)
+        : undefined;
     return typeof entry === "string" ? { description: entry } : entry;
+}
+
+/**
+ * `#canonical:translation`, `#equivHub:translation` and `#equivLabel:translation` share the untyped
+ * help. Exact names such as `calendar:view` still win above, because they have their own entries.
+ */
+function typedEquivalenceHelp(attrType: AttrType, name: string): string | AttrHelpEntry | undefined {
+    if (attrType !== "label") {
+        return undefined;
+    }
+    for (const prefix of [ "equivLabel", "canonical", "equivHub" ]) {
+        if (name.startsWith(`${prefix}:`)) {
+            return ATTR_HELP.label[prefix];
+        }
+    }
+    return undefined;
 }
 
 /** Constant so it does not re-initialise the autocomplete on every render. */

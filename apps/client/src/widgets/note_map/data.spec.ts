@@ -55,6 +55,16 @@ describe("loadNotesAndRelations", () => {
         expect(treeMap.nodes.map((node) => node.id)).toEqual([ "root", "linked", "loose" ]);
         expect(treeMap.noteIdToSizeMap).toEqual({ root: 4 + 1 + Math.round(Math.log(4) / Math.log(1.5)), linked: 4 });
     });
+
+    it("forwards collapseRelations in the POST body", async () => {
+        const post = answerWith(response);
+        await loadNotesAndRelations("root", [ "a" ], [ "b" ], "link", false, [ "equiv" ]);
+        expect(post).toHaveBeenCalledWith("note-map/root/link", {
+            excludeRelations: [ "a" ],
+            includeRelations: [ "b" ],
+            collapseRelations: [ "equiv" ]
+        });
+    });
 });
 
 describe("dropUnlinkedNotes", () => {

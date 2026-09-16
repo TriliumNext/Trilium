@@ -1,4 +1,5 @@
 import eventService from "./events.js";
+import { isEquivalenceType } from "./equivalence.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
 import scriptService from "./script.js";
 import treeService from "./tree.js";
@@ -148,17 +149,24 @@ eventService.subscribe(eventService.CHILD_NOTE_CREATED, ({ parentNote, childNote
 function processInverseRelations(entityName: string, entity: BAttribute, handler: Handler) {
     if (entityName === "attributes" && entity.type === "relation") {
         const note = entity.getNote();
+        const targetNote = entity.getTargetNote();
+        if (!targetNote) {
+            return;
+        }
+
+        // Equivalence types are self-inverse for every member, even without a definition on this note.
+        if (isEquivalenceType(entity.name)) {
+            handler({ inverseRelation: entity.name }, note, targetNote);
+            return;
+        }
+
         const relDefinitions = note.getLabels(`relation:${entity.name}`);
 
         for (const relDefinition of relDefinitions) {
             const definition = relDefinition.getDefinition();
 
             if (definition.inverseRelation && definition.inverseRelation.trim()) {
-                const targetNote = entity.getTargetNote();
-
-                if (targetNote) {
-                    handler(definition, note, targetNote);
-                }
+                handler(definition, note, targetNote);
             }
         }
     }

@@ -92,6 +92,7 @@ export const ATTR_HELP: AttrHelpMap = {
         mapRootNoteId: t("attribute_detail.map_root_note_id"),
         mapExcludeRelation: t("attribute_detail.map_exclude_relation"),
         mapIncludeRelation: t("attribute_detail.map_include_relation"),
+        mapCollapseRelation: t("attribute_detail.map_collapse_relation"),
         sortNatural: t("attribute_detail.sort_natural"),
         sortLocale: t("attribute_detail.sort_locale"),
         bottom: t("attribute_detail.bottom"),
@@ -124,6 +125,9 @@ export const ATTR_HELP: AttrHelpMap = {
         docName: t("attribute_detail.doc_name"),
         docUrl: t("attribute_detail.doc_url"),
         language: t("attribute_detail.language"),
+        canonical: t("attribute_detail.canonical"),
+        equivHub: t("attribute_detail.equiv_hub"),
+        equivLabel: t("attribute_detail.equiv_label"),
         originalFileName: t("attribute_detail.original_file_name"),
         pageUrl: t("attribute_detail.page_url"),
         command: t("attribute_detail.command"),
@@ -134,6 +138,7 @@ export const ATTR_HELP: AttrHelpMap = {
         orderDirection: t("attribute_detail.order_direction"),
         limit: t("attribute_detail.limit"),
         fastSearch: t("attribute_detail.fast_search"),
+        expandEquivalence: t("attribute_detail.expand_equivalence"),
         includeArchivedNotes: t("attribute_detail.include_archived_notes"),
         debug: t("attribute_detail.debug"),
         launcherType: t("attribute_detail.launcher_type"),
@@ -231,6 +236,7 @@ export const ATTR_HELP: AttrHelpMap = {
         hoistedNote: t("attribute_detail.hoisted_note"),
         shareLogo: t("attribute_detail.share_logo"),
         shareOpenGraphImage: t("attribute_detail.share_open_graph_image_relation"),
-        shareHtml: t("attribute_detail.share_html")
+        shareHtml: t("attribute_detail.share_html"),
+        equiv: t("attribute_detail.equiv_relation")
     }
 };
