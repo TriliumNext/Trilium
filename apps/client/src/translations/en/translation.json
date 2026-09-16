@@ -4313,6 +4313,10 @@
   "equivalent_notes": {
     "title": "Equivalent notes",
     "display_name": "Name in this class",
-    "display_name_placeholder": "e.g. German"
+    "display_name_placeholder": "e.g. German",
+    "search_placeholder": "Search",
+    "types": "Equivalence types",
+    "all_types": "All types",
+    "no_matches": "No matching types or notes"
   }
 }
