@@ -103,13 +103,13 @@ What this does internally is that whenever we save a relation which has defined 
 
 ### Equivalence
 
-A relation definition can also be marked _Equivalence_. Notes linked by that relation then form a class: the link is treated as symmetric (set a self-inverse so one edge is enough) and transitive (adding a third member is one more link to anyone already in the class, not a complete graph).
+A relation definition can also be marked _Equivalence_. Notes linked by that relation then form a class: the link is treated as symmetric (one edge is enough, even if the definition sits on another note) and transitive (adding a third member is one more link to anyone already in the class).
 
-Each relation name is its own type. `~equiv` is the builtin type and is always self-inverse. A user-defined `~translation` stays a translation class and does not compose with `~entity`.
+Each relation name is its own type. `~equiv` is the builtin type: always self-inverse, and by default it expands in search and collapses on the link map.
 
-Search can expand hits across a class (opt-in: Options → Other → Search, or the _Expand equivalent notes_ search option). The link map can collapse a class into one node via `#mapCollapseRelation`. Attribute inheritance is **not** shared across the class — clones remain the way to share one note's attributes.
+Checking _Equivalence_ also turns on _Expand in search_ and _Collapse in note map_ for that type; you can switch those off on the same definition. A search can still expand every type, name specific types (`#expandEquivalence=translation`), or disable expansion (`#expandEquivalence=none`). A map can override collapse with `#mapCollapseRelation` (`none` turns collapse off for that map).
 
-A `#equivHub` note can sit at the centre of a star without being a member. `#canonical` picks which member is shown when a class is collapsed.
+`#canonical` / `#equivHub` / `#equivLabel` apply to `~equiv`. For a named type use `#canonical:translation`, `#equivHub:translation` and `#equivLabel:translation=German`. The name is what Equivalent notes and the collapsed link map show for that member under that type — it is not shared across types, and ordinary attribute inheritance is **not** shared across the class. Clones remain the way to share one note's attributes.
 
 ## See also
 

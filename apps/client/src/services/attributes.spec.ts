@@ -563,6 +563,7 @@ describe("isBuiltinAttribute", () => {
         expect(isBuiltinAttribute("label", "expandEquivalence")).toBe(true);
         expect(isBuiltinAttribute("label", "canonical")).toBe(true);
         expect(isBuiltinAttribute("label", "equivHub")).toBe(true);
+        expect(isBuiltinAttribute("label", "equivLabel")).toBe(true);
         expect(isBuiltinAttribute("relation", "equiv")).toBe(true);
     });
 

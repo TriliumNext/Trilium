@@ -123,7 +123,8 @@ describe("SearchContext", () => {
         const ctx = new SearchContext();
 
         expect(ctx.enableFuzzyMatching).toBe(true);
-        expect(ctx.expandEquivalence).toBe(false);
+        expect(ctx.expandEquivalence).toBe(true);
+        expect(ctx.expandAllEquivalenceTypes).toBe(false);
     });
 
     it("honours an explicit expandEquivalence param over the option", () => {
@@ -134,6 +135,7 @@ describe("SearchContext", () => {
 
         expect(ctx.expandEquivalence).toBe(true);
         expect(ctx.equivalenceTypes).toEqual(["translation"]);
+        expect(ctx.expandAllEquivalenceTypes).toBe(false);
     });
 
     it("reads the searchExpandEquivalence option when the param is omitted", () => {
@@ -143,6 +145,7 @@ describe("SearchContext", () => {
 
         expect(getOptionBool).toHaveBeenCalledWith("searchExpandEquivalence");
         expect(ctx.expandEquivalence).toBe(true);
+        expect(ctx.expandAllEquivalenceTypes).toBe(false);
     });
 
     describe("recordContentMatch", () => {

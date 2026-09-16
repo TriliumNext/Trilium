@@ -136,6 +136,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "mapExcludeRelation", valueType: "text" },
     { type: "label", name: "mapIncludeRelation", valueType: "text" },
     // Relation names whose equivalence classes the link map collapses into supernodes.
+    // Repeat once per type. `none` disables collapse on this map, including types marked collapseMap.
     { type: "label", name: "mapCollapseRelation", valueType: "text" },
     // Keeps a note out of the note map -- unless the map is rooted at it, which journals rely on.
     { type: "label", name: "excludeFromNoteMap", valueType: "boolean" },
@@ -214,10 +215,12 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "docName", valueType: "text", isDangerous: true },
     { type: "label", name: "docUrl", valueType: "url", isDangerous: true },
     { type: "label", name: "language", valueType: "text", hasUserValue: true },
-    // Marks a note as the display representative of its equivalence class.
+    // Display representative of the builtin `equiv` class. For a named type use `canonical:<type>`.
     { type: "label", name: "canonical", valueType: "boolean" },
-    // Meta-note that joins equivalent members (star hub) without itself being a member.
+    // Star hub for the builtin `equiv` class, not a member. For a named type use `equivHub:<type>`.
     { type: "label", name: "equivHub", valueType: "boolean" },
+    // This member's name in the builtin `equiv` class. For a named type use `equivLabel:<type>`.
+    { type: "label", name: "equivLabel", valueType: "text", hasUserValue: true },
     { type: "label", name: "originalFileName", valueType: "text", hasUserValue: true },
     { type: "label", name: "pageUrl", valueType: "url", hasUserValue: true },
     { type: "label", name: "command", valueType: "text", hasUserValue: true },
@@ -235,8 +238,8 @@ const BUILTIN_ATTRIBUTES = [
     ] },
     { type: "label", name: "limit", valueType: "text", hasUserValue: true },
     { type: "label", name: "fastSearch", valueType: "boolean" },
-    // Saved-search: also return notes equivalent to each hit under declared equivalence relations.
-    { type: "label", name: "expandEquivalence", valueType: "boolean" },
+    // Saved-search: empty expands every type; a value names types; `none` disables expansion.
+    { type: "label", name: "expandEquivalence", valueType: "text", hasUserValue: true },
     { type: "label", name: "includeArchivedNotes", valueType: "boolean" },
     { type: "label", name: "debug", valueType: "boolean" },
 

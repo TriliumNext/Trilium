@@ -794,12 +794,17 @@
     "share_open_graph_image_relation": "An image note served as the <code>og:image</code> of the shared page. Set the label of the same name instead to point at an address.",
     "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree.",
     "equivalence": "Equivalence",
-    "equivalence_title": "Notes linked by this relation are treated as interchangeable under this criterion. Search can expand hits across the class, and the note map can collapse it. Enabling this also sets a self-inverse if none is set, so one link is enough.",
-    "map_collapse_relation": "Relation names whose equivalence classes the link map collapses into one node.",
-    "expand_equivalence": "Also return notes equivalent to each search hit under declared equivalence relations.",
-    "canonical": "Display representative of an equivalence class.",
-    "equiv_hub": "Joins equivalent notes as a star hub without itself being a member of the class.",
-    "equiv_relation": "Marks two notes as equivalent under the builtin type. Always self-inverse."
+    "equivalence_title": "Notes linked by this relation are interchangeable under this criterion. Enabling this sets a self-inverse if none is set, and turns on search expansion and map collapse for this type (you can switch those off below).",
+    "map_collapse_relation": "Override which equivalence types this link map collapses. Repeat once per type. none disables collapse, including types marked Collapse in note map.",
+    "expand_equivalence": "On a search: empty expands every equivalence type; a value names types to expand; none disables expansion.",
+    "canonical": "Display representative of the builtin ~equiv class. For another type use #canonical:translation (etc.).",
+    "equiv_hub": "Star hub of the builtin ~equiv class, not a member. For another type use #equivHub:translation (etc.).",
+    "equiv_relation": "Marks two notes as equivalent under the builtin type. Always self-inverse.",
+    "expand_search": "Expand in search",
+    "expand_search_title": "Hits on a member also return the rest of this class.",
+    "collapse_map": "Collapse in note map",
+    "collapse_map_title": "The link map draws this class as one node. A map can override with #mapCollapseRelation.",
+    "equiv_label": "This member's name in the builtin ~equiv class, shown in Equivalent notes and on the collapsed link map. For another type use #equivLabel:translation=German."
   },
   "attribute_editor": {
     "help_text_body1": "To add label, just type e.g. <code>#rock</code> or if you want to add also value then e.g. <code>#year = 2020</code>",
@@ -1451,8 +1456,8 @@
     "search_note_saved": "Search note has been saved into {{- notePathTitle}}",
     "actions_executed": "Actions have been executed.",
     "view_options": "View options:",
-    "expand_equivalence": "Expand equivalent notes",
-    "expand_equivalence_description": "Also return notes equivalent to each hit under declared equivalence relations (~equiv, or a relation definition marked Equivalence). Types are not composed: a translation class and an entity class stay separate."
+    "expand_equivalence": "Expand all equivalent notes",
+    "expand_equivalence_description": "Expand every equivalence type for this search, not only types marked Expand in search. Set the label value to a relation name to expand only that type, or none to disable expansion."
   },
   "similar_notes": {
     "title": "Similar Notes",
@@ -2041,7 +2046,7 @@
     "autocomplete_fuzzy_label": "Typo tolerance in autocomplete",
     "autocomplete_fuzzy_description": "Affects jump-to-note and note selectors. Slower but tolerates typos.",
     "expand_equivalence_label": "Expand equivalent notes in search",
-    "expand_equivalence_description": "When a note matches, also return notes linked to it by an equivalence relation such as ~equiv or a relation whose definition is marked Equivalence. Off by default so a language-specific query stays language-specific."
+    "expand_equivalence_description": "When on, types marked Expand in search (including ~equiv by default) also return class members of each hit. A search can expand every type, name specific types, or set none to disable."
   },
   "search_engine": {
     "title": "Search Engine",
@@ -4306,6 +4311,8 @@
     "descending": "Descending"
   },
   "equivalent_notes": {
-    "title": "Equivalent notes"
+    "title": "Equivalent notes",
+    "display_name": "Name in this class",
+    "display_name_placeholder": "e.g. German"
   }
 }

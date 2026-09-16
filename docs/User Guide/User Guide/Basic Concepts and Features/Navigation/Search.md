@@ -55,9 +55,9 @@ The options available are:
     3.  The actions given are the same as the ones in <a class="reference-link" href="../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a>, which is an alternative for operating directly with notes within the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a>.
     4.  After defining the actions, first press _Search_ to check the matched notes and then press _Search & Execute actions_ to trigger the actions.
 8.  Expand equivalent notes
-    1.  When a note matches, notes linked to it by an [equivalence relation](../../Advanced%20Usage/Attributes/Relations.md) (`~equiv`, or a relation whose definition is marked _Equivalence_) are also returned.
-    2.  Expansion is per type: a translation class and an entity class stay separate.
-    3.  Off by default. The same behaviour can be turned on globally in Options → Other → Search.
+    1.  Types marked _Expand in search_ on their relation definition (including `~equiv` by default) also return class members of each hit. Options → Other → Search is a kill switch for that default.
+    2.  This search option expands **every** equivalence type. Give `#expandEquivalence` a relation name to expand only that type, or `none` to disable expansion for this search.
+    3.  Expansion is per type: a translation class and an entity class stay separate.
 
 ## Viewing search results
 

@@ -32,7 +32,7 @@ A new clone can be created from the top-right button.
 
 ## Equivalent notes
 
-Notes linked to the current one by an [equivalence relation](../../../Advanced%20Usage/Attributes/Relations.md) (`~equiv`, or a relation whose definition is marked _Equivalence_) are listed here, grouped by type. Clones (same note, several places in the tree) stay under Note paths; equivalent notes are distinct notes treated as interchangeable under one criterion.
+Notes linked to the current one by an [equivalence relation](../../../Advanced%20Usage/Attributes/Relations.md) (`~equiv`, or a relation whose definition is marked _Equivalence_) are listed here, grouped by type. Each row has a **name in this class** — `German` vs `English` for a translation type, or whatever distinguishes the members — which you can edit here. That name is `#equivLabel` for `~equiv` and `#equivLabel:<type>` otherwise. Clones (same note, several places in the tree) stay under Note paths; equivalent notes are distinct notes treated as interchangeable under one criterion.
 
 ## Backlinks
 

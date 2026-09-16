@@ -44,9 +44,12 @@ class SearchContext {
     /**
      * When true, each hit is unioned with its typed equivalence class after the filter pass.
      * Cross-type transitivity is not applied: expansion is per type, then the result sets are merged.
+     * When the param is omitted, types marked `expandSearch` expand if the option is on.
      */
     expandEquivalence: boolean;
-    /** Equivalence relation names to expand; empty means every known equivalence type. */
+    /** When true with an empty {@link equivalenceTypes}, every known equivalence type expands. */
+    expandAllEquivalenceTypes: boolean;
+    /** Equivalence relation names to expand; empty defers to marked types or all, depending on the flags. */
     equivalenceTypes: string[];
 
     constructor(params: SearchParams = {}) {
@@ -76,12 +79,15 @@ class SearchContext {
         }
         if (params.expandEquivalence !== undefined) {
             this.expandEquivalence = !!params.expandEquivalence;
+            this.expandAllEquivalenceTypes = this.expandEquivalence
+                && !(params.equivalenceTypes && params.equivalenceTypes.length > 0);
         } else {
             try {
                 this.expandEquivalence = optionService.getOptionBool("searchExpandEquivalence");
             } catch {
-                this.expandEquivalence = false;
+                this.expandEquivalence = true;
             }
+            this.expandAllEquivalenceTypes = false;
         }
         this.equivalenceTypes = params.equivalenceTypes ? [...params.equivalenceTypes] : [];
         this.highlightedTokens = [];

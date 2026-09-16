@@ -20,9 +20,9 @@ import parse from "./parse.js";
 import type { SearchParams, TokenStructure } from "./types.js";
 import { getSql } from "../../sql/index.js";
 import {
-    getEquivalenceTypeNames,
     getIndependentClassMembers,
-    isAllowedExpandedHit
+    isAllowedExpandedHit,
+    resolveTypesToExpand
 } from "../../equivalence.js";
 
 /** Cap on marker wraps per snippet field per token, bounding pathological regex patterns. */
@@ -111,12 +111,27 @@ function searchFromNoteWithContext(note: BNote): {
         limit: parseInt(note.getLabelValue("limit") || "0", 10),
         debug: note.hasLabel("debug"),
         fuzzyAttributeSearch: false,
-        ...(note.hasLabel("expandEquivalence") ? { expandEquivalence: true } : {})
+        ...searchEquivalenceParams(note)
     });
 
     const searchResults = findResultsWithQuery(searchString, searchContext);
 
     return { searchResults, searchContext, error: searchContext.getError() };
+}
+
+function searchEquivalenceParams(note: BNote): Pick<SearchParams, "expandEquivalence" | "equivalenceTypes"> {
+    const labels = note.getLabels("expandEquivalence");
+    if (labels.some((label) => label.value === "none")) {
+        return { expandEquivalence: false };
+    }
+    const listed = labels.map((label) => label.value).filter((value) => value);
+    if (listed.length > 0) {
+        return { expandEquivalence: true, equivalenceTypes: listed };
+    }
+    if (note.hasLabel("expandEquivalence")) {
+        return { expandEquivalence: true };
+    }
+    return {};
 }
 
 function searchFromRelation(note: BNote, relationName: string) {
@@ -392,10 +407,11 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
  * composed: Auto ≡translation Car ≡entity Vehicle does not pull Vehicle in for a hit on Auto.
  */
 function expandSearchResultsByEquivalence(searchResults: SearchResult[], searchContext: SearchContext) {
-    const knownTypes = new Set(getEquivalenceTypeNames());
-    const types = searchContext.equivalenceTypes.length > 0
-        ? searchContext.equivalenceTypes.filter((name) => knownTypes.has(name))
-        : [...knownTypes];
+    const types = resolveTypesToExpand({
+        enabled: searchContext.expandEquivalence,
+        expandAll: searchContext.expandAllEquivalenceTypes,
+        requestedTypes: searchContext.equivalenceTypes
+    });
     if (types.length === 0) {
         return;
     }

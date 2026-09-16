@@ -266,6 +266,16 @@ describe("Note map service (branch coverage)", () => {
         expect(cites).toHaveLength(1);
         expect(cites[0].targetNoteId).toBe("eqPaper");
         expect(["eqCar", "eqAuto"]).toContain(cites[0].sourceNoteId);
+
+        const byDefault = note_map.getLinkMap(req(mapRoot.noteId)) as LinkMapResponse;
+        expect(byDefault.notes.map((n) => n[0])).not.toContain("eqAuto");
+
+        const disabled = note_map.getLinkMap(req(mapRoot.noteId, {
+            collapseRelations: [ "none" ]
+        })) as LinkMapResponse;
+        expect(disabled.notes.map((n) => n[0]).sort()).toEqual(
+            expect.arrayContaining([ "eqAuto", "eqCar", "eqPaper" ])
+        );
     });
 
     it("keeps archived notes only for a map rooted at an archived note", () => {

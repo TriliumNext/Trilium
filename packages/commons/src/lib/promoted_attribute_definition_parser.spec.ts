@@ -87,10 +87,12 @@ describe("promoted_attribute_definition_parser.parse", () => {
 
     it("parses the equivalence flag on a relation definition", () => {
         expect(parse("equivalence")).toEqual({ isEquivalence: true });
-        expect(parse("multi,inverse=translation,equivalence")).toEqual({
+        expect(parse("multi,inverse=translation,equivalence,expandSearch,collapseMap")).toEqual({
             multiplicity: "multi",
             inverseRelation: "translation",
-            isEquivalence: true
+            isEquivalence: true,
+            expandSearch: true,
+            collapseMap: true
         });
     });
 
@@ -178,10 +180,15 @@ describe("promoted_attribute_definition_parser.serialize", () => {
 
     it("writes the equivalence flag for relations only", () => {
         expect(serialize({ isEquivalence: true }, "relation")).toBe("single,equivalence");
-        expect(serialize({ inverseRelation: "equiv", isEquivalence: true, multiplicity: "multi" }, "relation"))
-            .toBe("multi,inverse=equiv,equivalence");
+        expect(serialize({
+            inverseRelation: "equiv",
+            isEquivalence: true,
+            expandSearch: true,
+            collapseMap: true,
+            multiplicity: "multi"
+        }, "relation")).toBe("multi,inverse=equiv,equivalence,expandSearch,collapseMap");
         // A label definition has no equivalence to write.
-        expect(serialize({ isEquivalence: true }, "label")).toBe("single,text");
+        expect(serialize({ isEquivalence: true, expandSearch: true }, "label")).toBe("single,text");
     });
 });
 
@@ -193,7 +200,7 @@ describe("promoted_attribute_definition_parser round-trip", () => {
         const relationDefinition = "promoted,single,inverse=isChildOf";
         expect(serialize(parse(relationDefinition), "relation")).toBe(relationDefinition);
 
-        const equivalenceDefinition = "multi,inverse=translation,equivalence";
+        const equivalenceDefinition = "multi,inverse=translation,equivalence,expandSearch,collapseMap";
         expect(serialize(parse(equivalenceDefinition), "relation")).toBe(equivalenceDefinition);
     });
 

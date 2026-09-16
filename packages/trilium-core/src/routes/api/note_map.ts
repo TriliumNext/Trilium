@@ -5,7 +5,7 @@ import type { BacklinkCountResponse, BacklinksResponse, NoteMapNote } from "@tri
 import type { Request } from "../../http_interface";
 
 import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
-import { buildCanonicalMapping, collapseLinkMap, getEquivalenceTypeNames } from "../../services/equivalence.js";
+import { buildCanonicalMapping, collapseLinkMap, resolveTypesToCollapse } from "../../services/equivalence.js";
 
 interface TreeLink {
     sourceNoteId: string;
@@ -178,16 +178,7 @@ function getLinkMap(req: Request<{ noteId: string }>) {
 
     const noteIdToDescendantCountMap = buildDescendantCountMap(noteIdsArray);
 
-    if (collapseRelations.size === 0) {
-        return {
-            notes,
-            noteIdToDescendantCountMap,
-            links
-        };
-    }
-
-    const equivalenceTypes = new Set(getEquivalenceTypeNames());
-    const typesToCollapse = [...collapseRelations].filter((name) => equivalenceTypes.has(name));
+    const typesToCollapse = resolveTypesToCollapse([...collapseRelations]);
     if (typesToCollapse.length === 0) {
         return {
             notes,

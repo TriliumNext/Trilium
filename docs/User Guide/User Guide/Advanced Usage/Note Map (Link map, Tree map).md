@@ -46,7 +46,7 @@ The map indicates the following types of relations:
 
 The link map will also show unlinked notes that are part of the hierarchy as a cloud of unconnected dots. On the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>, the sidebar deliberately omits this in order to save some space, but they will be revealed once the map is maximized.
 
-To collapse notes that are [equivalent](Attributes/Relations.md) under a given relation into one node, set `#mapCollapseRelation` to that relation name (repeat the label once per type). Off by default.
+To collapse notes that are [equivalent](Attributes/Relations.md) under a given relation into one node, mark _Collapse in note map_ on that relation's definition (on for `~equiv` by default). A map can override with `#mapCollapseRelation` (repeat once per type, or `none` to keep every member as its own node). Collapsed nodes use each member's name in that class (`#equivLabel` / `#equivLabel:<type>`) when one is set.
 
 ## Tree Map
 

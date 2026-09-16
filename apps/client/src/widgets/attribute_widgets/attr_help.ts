@@ -127,6 +127,7 @@ export const ATTR_HELP: AttrHelpMap = {
         language: t("attribute_detail.language"),
         canonical: t("attribute_detail.canonical"),
         equivHub: t("attribute_detail.equiv_hub"),
+        equivLabel: t("attribute_detail.equiv_label"),
         originalFileName: t("attribute_detail.original_file_name"),
         pageUrl: t("attribute_detail.page_url"),
         command: t("attribute_detail.command"),

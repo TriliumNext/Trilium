@@ -31,6 +31,10 @@ export interface DefinitionObject {
      * under this criterion. Independent of promotion.
      */
     isEquivalence?: boolean;
+    /** Search unions hits with this type's class. Only written on relation definitions. */
+    expandSearch?: boolean;
+    /** The link map collapses this type's class into one node. Only written on relation definitions. */
+    collapseMap?: boolean;
 }
 
 /**
@@ -74,6 +78,10 @@ function parse(value: string): DefinitionObject {
             defObj.inverseRelation = filterAttributeName(parameterValue(token) ?? "");
         } else if (token === "equivalence") {
             defObj.isEquivalence = true;
+        } else if (token === "expandSearch") {
+            defObj.expandSearch = true;
+        } else if (token === "collapseMap") {
+            defObj.collapseMap = true;
         } else {
             console.log("Unrecognized attribute definition token:", token);
         }
@@ -127,6 +135,12 @@ function serialize(definition: DefinitionObject, valueType: "label" | "relation"
 
     if (valueType === "relation" && definition.isEquivalence) {
         props.push("equivalence");
+        if (definition.expandSearch) {
+            props.push("expandSearch");
+        }
+        if (definition.collapseMap) {
+            props.push("collapseMap");
+        }
     }
 
     return props.join(",");

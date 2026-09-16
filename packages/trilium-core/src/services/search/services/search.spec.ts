@@ -1200,13 +1200,13 @@ describe("Search equivalence expansion", () => {
         });
     });
 
-    it("does not pull equivalent notes in unless expandEquivalence is set", () => {
+    it("does not pull equivalent notes in when expansion is off", () => {
         const car = note("Car");
         const auto = note("Auto");
         car.relation("equiv", auto.note);
         rootNote.child(car).child(auto);
 
-        const off = searchService.findResultsWithQuery("Car", new SearchContext());
+        const off = searchService.findResultsWithQuery("Car", new SearchContext({ expandEquivalence: false }));
         expect(off.map((r) => r.noteId)).toEqual([car.note.noteId]);
 
         const on = searchService.findResultsWithQuery("Car", new SearchContext({ expandEquivalence: true }));
@@ -1237,6 +1237,27 @@ describe("Search equivalence expansion", () => {
         expect(ids).toContain(auto.note.noteId);
         expect(ids).toContain(car.note.noteId);
         expect(ids).not.toContain(vehicle.note.noteId);
+    });
+
+    it("expands only the types listed on the search, not every equivalence type", () => {
+        const auto = note("Auto");
+        const car = note("Car");
+        auto.relation("translation", car.note);
+        rootNote
+            .label("relation:translation", "multi,inverse=translation,equivalence,expandSearch")
+            .child(auto).child(car);
+
+        const listed = searchService.findResultsWithQuery("Auto", new SearchContext({
+            expandEquivalence: true,
+            equivalenceTypes: [ "translation" ]
+        }));
+        expect(listed.map((r) => r.noteId)).toContain(car.note.noteId);
+
+        const otherType = searchService.findResultsWithQuery("Auto", new SearchContext({
+            expandEquivalence: true,
+            equivalenceTypes: [ "equiv" ]
+        }));
+        expect(otherType.map((r) => r.noteId)).toEqual([auto.note.noteId]);
     });
 
     it("expands from a search note that carries #expandEquivalence", () => {

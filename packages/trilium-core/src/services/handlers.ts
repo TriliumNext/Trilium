@@ -1,4 +1,5 @@
 import eventService from "./events.js";
+import { isEquivalenceType } from "./equivalence.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
 import scriptService from "./script.js";
 import treeService from "./tree.js";
@@ -153,9 +154,9 @@ function processInverseRelations(entityName: string, entity: BAttribute, handler
             return;
         }
 
-        // Builtin ~equiv is always self-inverse, even without a relation definition on the note.
-        if (entity.name === "equiv") {
-            handler({ inverseRelation: "equiv" }, note, targetNote);
+        // Equivalence types are self-inverse for every member, even without a definition on this note.
+        if (isEquivalenceType(entity.name)) {
+            handler({ inverseRelation: entity.name }, note, targetNote);
             return;
         }
 
