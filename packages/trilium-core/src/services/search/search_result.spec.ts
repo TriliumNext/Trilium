@@ -367,4 +367,18 @@ describe("SearchResult", () => {
             expect(fuzzyTitleScore()).toBe(0);
         });
     });
+
+    describe("applyEquivalenceExpansionScore", () => {
+        it("caps the pulled-in member below a title word match and floors a tiny source score", () => {
+            const target = note("Auto");
+            rootNote.child(target);
+            const result = resultFor(target);
+
+            result.applyEquivalenceExpansionScore(2000);
+            expect(result.score).toBe(80);
+
+            result.applyEquivalenceExpansionScore(1);
+            expect(result.score).toBe(10);
+        });
+    });
 });

@@ -65,7 +65,7 @@ The following note types are supported:
 Obsidian has a few reserved property names, which are treated differently in Trilium as well:
 
 *   `tags`, where every tag is turned into its own [label](../../../Advanced%20Usage/Attributes/Labels.md) (e.g. `#one`, `#two` when `tags: [ one, two ]`).
-*   `aliases` are simply mapped to individual `#alias` labels
+*   `aliases` are simply mapped to individual `#alias` labels. Those extra names are searchable as ordinary labels; they do not make two notes interchangeable. For notes that represent the same concept (for example translations), use an [equivalence relation](../../../Advanced%20Usage/Attributes/Relations.md) such as `~equiv` instead.
 *   `cssclasses`, `publish`, `permalink` are ignored.
 
 ## Limitations

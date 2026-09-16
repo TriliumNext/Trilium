@@ -101,3 +101,7 @@ This is a list of labels that Trilium natively supports.
 | `similarNotesWidgetDisabled` | Disables the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Similar%20Notes.md">Similar Notes</a> ribbon tab (old layout only) |
 | `docName` , `docUrl` | Used internally for the in-app help. |
 | `aiQuickAction` | Defines a custom prompt to be used for the <a class="reference-link" href="../../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a>'s quick actions. |
+| `expandEquivalence` | On a saved search, also return notes equivalent to each hit. See [Search](../../Basic%20Concepts%20and%20Features/Navigation/Search.md) and [Relations](Relations.md). |
+| `canonical` | Display representative of an equivalence class. |
+| `equivHub` | Joins equivalent notes as a star hub without itself being a member of the class. |
+| `mapCollapseRelation` | Relation names whose equivalence classes the [Note Map](../../Note%20Types/Note%20Map.md) collapses into one node. |

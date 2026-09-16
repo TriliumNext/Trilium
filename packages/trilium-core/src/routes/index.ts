@@ -25,6 +25,7 @@ import specialNotesRoute from "./api/special_notes";
 import syncApiRoute from "./api/sync";
 import autocompleteApiRoute from "./api/autocomplete";
 import similarNotesRoute from "./api/similar_notes";
+import equivalentNotesRoute from "./api/equivalent_notes";
 import imageRoute from "./api/image";
 import setupApiRoute from "./api/setup";
 import filesRoute from "./api/files";
@@ -322,6 +323,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     route(GET, "/api/fonts", [checkApiAuthOrElectron], fontsRoute.getFontCss);
 
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
+    apiRoute(GET, "/api/notes/:noteId/equivalent-notes", equivalentNotesRoute.getEquivalentNotes);
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
 

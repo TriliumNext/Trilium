@@ -695,6 +695,24 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
+                {attrType === "relation-definition" && !opts.hideTypeOptions && (
+                    <OptionsRowWithToggle
+                        name="attr-equivalence"
+                        label={t("attribute_detail.equivalence")}
+                        description={t("attribute_detail.equivalence_title")}
+                        currentValue={!!definition.isEquivalence}
+                        disabled={!isOwned}
+                        onChange={(isEquivalence) => {
+                            commitDefinition({
+                                isEquivalence,
+                                inverseRelation: isEquivalence && !definition.inverseRelation
+                                    ? utils.filterAttributeName(name)
+                                    : definition.inverseRelation
+                            });
+                        }}
+                    />
+                )}
+
                 {/* No description: what a display name is needs no explaining. */}
                 {isDefinition(attrType) && (
                     <OptionsRow name="attr-promoted-alias" label={t("attribute_detail.promoted_alias")}>

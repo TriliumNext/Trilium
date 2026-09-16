@@ -101,6 +101,16 @@ Relation definition allows you to specify such "inverse relation" - for the rela
 
 What this does internally is that whenever we save a relation which has defined inverse relation, we check that this inverse relation exists on the relation target note. Similarly, when we delete relation, we also delete inverse relation on the target note.
 
+### Equivalence
+
+A relation definition can also be marked _Equivalence_. Notes linked by that relation then form a class: the link is treated as symmetric (set a self-inverse so one edge is enough) and transitive (adding a third member is one more link to anyone already in the class, not a complete graph).
+
+Each relation name is its own type. `~equiv` is the builtin type and is always self-inverse. A user-defined `~translation` stays a translation class and does not compose with `~entity`.
+
+Search can expand hits across a class (opt-in: Options → Other → Search, or the _Expand equivalent notes_ search option). The link map can collapse a class into one node via `#mapCollapseRelation`. Attribute inheritance is **not** shared across the class — clones remain the way to share one note's attributes.
+
+A `#equivHub` note can sit at the centre of a star without being a member. `#canonical` picks which member is shown when a class is collapsed.
+
 ## See also
 
 *   The <a class="reference-link" href="../../Collections/Table.md">Table</a> collection makes heavy use of promoted attributes to define the columns of the table, since they already carry the type information. When made inheritable, it's also easy to change those fields when the child notes are opened.

@@ -145,6 +145,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "cleanupToolOptions",
     "imageCompressionToolOptions",
     "searchEnableFuzzyMatching",
+    "searchExpandEquivalence",
     "searchAutocompleteFuzzy",
     "searchResultsPageSize",
     "redirectBareDomain",

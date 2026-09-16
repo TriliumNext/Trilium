@@ -148,17 +148,24 @@ eventService.subscribe(eventService.CHILD_NOTE_CREATED, ({ parentNote, childNote
 function processInverseRelations(entityName: string, entity: BAttribute, handler: Handler) {
     if (entityName === "attributes" && entity.type === "relation") {
         const note = entity.getNote();
+        const targetNote = entity.getTargetNote();
+        if (!targetNote) {
+            return;
+        }
+
+        // Builtin ~equiv is always self-inverse, even without a relation definition on the note.
+        if (entity.name === "equiv") {
+            handler({ inverseRelation: "equiv" }, note, targetNote);
+            return;
+        }
+
         const relDefinitions = note.getLabels(`relation:${entity.name}`);
 
         for (const relDefinition of relDefinitions) {
             const definition = relDefinition.getDefinition();
 
             if (definition.inverseRelation && definition.inverseRelation.trim()) {
-                const targetNote = entity.getTargetNote();
-
-                if (targetNote) {
-                    handler(definition, note, targetNote);
-                }
+                handler(definition, note, targetNote);
             }
         }
     }

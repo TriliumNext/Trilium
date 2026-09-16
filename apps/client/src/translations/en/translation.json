@@ -792,7 +792,14 @@
     "hoisted_note": "The note to hoist to when a launcher opens its target.",
     "share_logo": "An image note used as the logo of the shared page. It has to sit inside the shared subtree.",
     "share_open_graph_image_relation": "An image note served as the <code>og:image</code> of the shared page. Set the label of the same name instead to point at an address.",
-    "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree."
+    "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree.",
+    "equivalence": "Equivalence",
+    "equivalence_title": "Notes linked by this relation are treated as interchangeable under this criterion. Search can expand hits across the class, and the note map can collapse it. Enabling this also sets a self-inverse if none is set, so one link is enough.",
+    "map_collapse_relation": "Relation names whose equivalence classes the link map collapses into one node.",
+    "expand_equivalence": "Also return notes equivalent to each search hit under declared equivalence relations.",
+    "canonical": "Display representative of an equivalence class.",
+    "equiv_hub": "Joins equivalent notes as a star hub without itself being a member of the class.",
+    "equiv_relation": "Marks two notes as equivalent under the builtin type. Always self-inverse."
   },
   "attribute_editor": {
     "help_text_body1": "To add label, just type e.g. <code>#rock</code> or if you want to add also value then e.g. <code>#year = 2020</code>",
@@ -1443,7 +1450,9 @@
     "unknown_search_option": "Unknown search option {{searchOptionName}}",
     "search_note_saved": "Search note has been saved into {{- notePathTitle}}",
     "actions_executed": "Actions have been executed.",
-    "view_options": "View options:"
+    "view_options": "View options:",
+    "expand_equivalence": "Expand equivalent notes",
+    "expand_equivalence_description": "Also return notes equivalent to each hit under declared equivalence relations (~equiv, or a relation definition marked Equivalence). Types are not composed: a translation class and an entity class stay separate."
   },
   "similar_notes": {
     "title": "Similar Notes",
@@ -2030,7 +2039,9 @@
     "fuzzy_matching_label": "Typo tolerance in search",
     "fuzzy_matching_description": "Affects quick search and full search. Finds similar words when exact matches are insufficient.",
     "autocomplete_fuzzy_label": "Typo tolerance in autocomplete",
-    "autocomplete_fuzzy_description": "Affects jump-to-note and note selectors. Slower but tolerates typos."
+    "autocomplete_fuzzy_description": "Affects jump-to-note and note selectors. Slower but tolerates typos.",
+    "expand_equivalence_label": "Expand equivalent notes in search",
+    "expand_equivalence_description": "When a note matches, also return notes linked to it by an equivalence relation such as ~equiv or a relation whose definition is marked Equivalence. Off by default so a language-specific query stays language-specific."
   },
   "search_engine": {
     "title": "Search Engine",
@@ -4293,5 +4304,8 @@
     "creation-date": "Creation date & time",
     "ascending": "Ascending",
     "descending": "Descending"
+  },
+  "equivalent_notes": {
+    "title": "Equivalent notes"
   }
 }

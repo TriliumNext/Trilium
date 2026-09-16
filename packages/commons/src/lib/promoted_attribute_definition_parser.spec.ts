@@ -85,6 +85,15 @@ describe("promoted_attribute_definition_parser.parse", () => {
         expect(parse("inverse")).toEqual({ inverseRelation: "" });
     });
 
+    it("parses the equivalence flag on a relation definition", () => {
+        expect(parse("equivalence")).toEqual({ isEquivalence: true });
+        expect(parse("multi,inverse=translation,equivalence")).toEqual({
+            multiplicity: "multi",
+            inverseRelation: "translation",
+            isEquivalence: true
+        });
+    });
+
     it("combines multiple tokens, letting a later token of the same kind win", () => {
         expect(parse("promoted,single,text,precision=4,alias=Foo")).toEqual({
             isPromoted: true,
@@ -166,6 +175,14 @@ describe("promoted_attribute_definition_parser.serialize", () => {
         expect(serialize({ inverseRelation: "   " }, "relation")).toBe("single");
         expect(serialize({ inverseRelation: "isChildOf" }, "label")).toBe("single,text");
     });
+
+    it("writes the equivalence flag for relations only", () => {
+        expect(serialize({ isEquivalence: true }, "relation")).toBe("single,equivalence");
+        expect(serialize({ inverseRelation: "equiv", isEquivalence: true, multiplicity: "multi" }, "relation"))
+            .toBe("multi,inverse=equiv,equivalence");
+        // A label definition has no equivalence to write.
+        expect(serialize({ isEquivalence: true }, "label")).toBe("single,text");
+    });
 });
 
 describe("promoted_attribute_definition_parser round-trip", () => {
@@ -175,6 +192,9 @@ describe("promoted_attribute_definition_parser round-trip", () => {
 
         const relationDefinition = "promoted,single,inverse=isChildOf";
         expect(serialize(parse(relationDefinition), "relation")).toBe(relationDefinition);
+
+        const equivalenceDefinition = "multi,inverse=translation,equivalence";
+        expect(serialize(parse(equivalenceDefinition), "relation")).toBe(equivalenceDefinition);
     });
 
     it("round-trips select options through the escaping, edge cases included", () => {

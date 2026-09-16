@@ -41,6 +41,13 @@ class SearchContext {
      * Cleared at the start of each progressive search phase.
      */
     contentMatches: Map<string, ContentMatchQuality>;
+    /**
+     * When true, each hit is unioned with its typed equivalence class after the filter pass.
+     * Cross-type transitivity is not applied: expansion is per type, then the result sets are merged.
+     */
+    expandEquivalence: boolean;
+    /** Equivalence relation names to expand; empty means every known equivalence type. */
+    equivalenceTypes: string[];
 
     constructor(params: SearchParams = {}) {
         this.fastSearch = !!params.fastSearch;
@@ -67,6 +74,16 @@ class SearchContext {
         } catch {
             this.enableFuzzyMatching = true; // Default to true if option not yet initialized
         }
+        if (params.expandEquivalence !== undefined) {
+            this.expandEquivalence = !!params.expandEquivalence;
+        } else {
+            try {
+                this.expandEquivalence = optionService.getOptionBool("searchExpandEquivalence");
+            } catch {
+                this.expandEquivalence = false;
+            }
+        }
+        this.equivalenceTypes = params.equivalenceTypes ? [...params.equivalenceTypes] : [];
         this.highlightedTokens = [];
         this.regexTokens = new Set();
         this.originalQuery = "";

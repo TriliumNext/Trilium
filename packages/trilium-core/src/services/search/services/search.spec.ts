@@ -1184,3 +1184,71 @@ describe("Search", () => {
     //     expect(findNoteByTitle(searchResults, "Austria")).toBeTruthy();
     // })
 });
+
+describe("Search equivalence expansion", () => {
+    let rootNote: NoteBuilder;
+
+    beforeEach(() => {
+        becca.reset();
+
+        rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
+        new BBranch({
+            branchId: "none_root",
+            noteId: "root",
+            parentNoteId: "none",
+            notePosition: 10
+        });
+    });
+
+    it("does not pull equivalent notes in unless expandEquivalence is set", () => {
+        const car = note("Car");
+        const auto = note("Auto");
+        car.relation("equiv", auto.note);
+        rootNote.child(car).child(auto);
+
+        const off = searchService.findResultsWithQuery("Car", new SearchContext());
+        expect(off.map((r) => r.noteId)).toEqual([car.note.noteId]);
+
+        const on = searchService.findResultsWithQuery("Car", new SearchContext({ expandEquivalence: true }));
+        const ids = on.map((r) => r.noteId);
+        expect(ids).toContain(car.note.noteId);
+        expect(ids).toContain(auto.note.noteId);
+
+        const carResult = on.find((r) => r.noteId === car.note.noteId);
+        const autoResult = on.find((r) => r.noteId === auto.note.noteId);
+        expect(carResult?.score ?? 0).toBeGreaterThan(autoResult?.score ?? 0);
+    });
+
+    it("does not compose distinct equivalence types when expanding search", () => {
+        const auto = note("Auto");
+        const car = note("Car");
+        const vehicle = note("Vehicle");
+        auto.relation("translation", car.note);
+        car.relation("entity", vehicle.note);
+        rootNote
+            .label("relation:translation", "multi,inverse=translation,equivalence")
+            .label("relation:entity", "multi,inverse=entity,equivalence")
+            .child(auto).child(car).child(vehicle);
+
+        const results = searchService.findResultsWithQuery("Auto", new SearchContext({
+            expandEquivalence: true
+        }));
+        const ids = results.map((r) => r.noteId);
+        expect(ids).toContain(auto.note.noteId);
+        expect(ids).toContain(car.note.noteId);
+        expect(ids).not.toContain(vehicle.note.noteId);
+    });
+
+    it("expands from a search note that carries #expandEquivalence", () => {
+        const car = note("Car");
+        const auto = note("Auto");
+        car.relation("equiv", auto.note);
+        const searchNote = note("Find car").label("searchString", "Car").label("expandEquivalence", "");
+        rootNote.child(car).child(auto).child(searchNote);
+
+        const { searchResults } = searchService.searchFromNoteWithContext(searchNote.note);
+        const ids = searchResults.map((r) => r.noteId);
+        expect(ids).toContain(car.note.noteId);
+        expect(ids).toContain(auto.note.noteId);
+    });
+});

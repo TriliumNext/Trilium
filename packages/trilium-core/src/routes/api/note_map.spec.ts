@@ -242,6 +242,32 @@ describe("Note map service (branch coverage)", () => {
         expect(exNames).not.toContain("friend");
     });
 
+    it("getLinkMap: collapseRelations merges equivalent notes and their edges", () => {
+        const mapRoot = buildNote({
+            id: "eqRoot",
+            title: "EQ root",
+            children: [
+                { id: "eqCar", title: "Car", "#canonical": "true", "~equiv": "eqAuto", "~cites": "eqPaper" },
+                { id: "eqAuto", title: "Auto", "~cites": "eqPaper" },
+                { id: "eqPaper", title: "Paper" }
+            ]
+        });
+
+        const collapsed = note_map.getLinkMap(req(mapRoot.noteId, {
+            collapseRelations: [ "equiv" ]
+        })) as LinkMapResponse;
+
+        const ids = collapsed.notes.map((n) => n[0]);
+        expect(ids).toContain("eqCar");
+        expect(ids).not.toContain("eqAuto");
+        expect(ids).toContain("eqPaper");
+
+        const cites = collapsed.links.filter((l) => l.name === "cites");
+        expect(cites).toHaveLength(1);
+        expect(cites[0].targetNoteId).toBe("eqPaper");
+        expect(["eqCar", "eqAuto"]).toContain(cites[0].sourceNoteId);
+    });
+
     it("keeps archived notes only for a map rooted at an archived note", () => {
         const archivedRoot = buildNote({
             id: "arcRoot",

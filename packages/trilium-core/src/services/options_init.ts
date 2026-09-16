@@ -236,6 +236,7 @@ const defaultOptions: DefaultOption[] = [
 
     // Search settings
     { name: "searchEnableFuzzyMatching", value: "true", isSynced: true },
+    { name: "searchExpandEquivalence", value: "false", isSynced: true },
     { name: "searchAutocompleteFuzzy", value: "false", isSynced: true },
     { name: "searchResultsPageSize", value: "20", isSynced: true },
 

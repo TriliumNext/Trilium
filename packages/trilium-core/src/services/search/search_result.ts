@@ -38,7 +38,10 @@ const SCORE_WEIGHTS = {
     // Score caps to prevent fuzzy matches from outranking exact matches
     MAX_FUZZY_SCORE_PER_TOKEN: 3, // Cap fuzzy token contributions to stay below exact matches
     MAX_FUZZY_TOKEN_LENGTH_MULTIPLIER: 3, // Limit token length impact for fuzzy matches
-    MAX_TOTAL_FUZZY_SCORE: 200 // Total cap on fuzzy scoring per search
+    MAX_TOTAL_FUZZY_SCORE: 200, // Total cap on fuzzy scoring per search
+    // Pulled-in equivalence members did not match the query themselves. Stay below TITLE_WORD_MATCH
+    // (300) so a real title hit always outranks them.
+    EQUIVALENCE_EXPANSION: 80
 } as const;
 
 
@@ -235,6 +238,18 @@ class SearchResult {
         }
 
         return 0;
+    }
+
+    /**
+     * Score for a note pulled in because it is equivalent to a real hit. Capped below
+     * TITLE_WORD_MATCH so it cannot outrank a title match.
+     */
+    applyEquivalenceExpansionScore(sourceScore: number) {
+        const scaled = sourceScore * 0.15;
+        this.score = Math.min(
+            Math.max(scaled, 10),
+            SCORE_WEIGHTS.EQUIVALENCE_EXPANSION
+        );
     }
 
 }

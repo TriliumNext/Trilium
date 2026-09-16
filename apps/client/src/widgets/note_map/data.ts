@@ -47,9 +47,9 @@ export interface NotesAndRelationsData {
  *                          around through the charge force. Worth hiding in a small local view of
  *                          one note; the full-size maps keep the subtree their users expect of them.
  */
-export async function loadNotesAndRelations(mapRootNoteId: string, excludeRelations: string[], includeRelations: string[], mapType: MapType, hideUnlinkedNotes = false): Promise<NotesAndRelationsData> {
+export async function loadNotesAndRelations(mapRootNoteId: string, excludeRelations: string[], includeRelations: string[], mapType: MapType, hideUnlinkedNotes = false, collapseRelations: string[] = []): Promise<NotesAndRelationsData> {
     const resp = await server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, {
-        excludeRelations, includeRelations
+        excludeRelations, includeRelations, collapseRelations
     });
 
     const noteIdToSizeMap = calculateNodeSizes(resp, mapType);

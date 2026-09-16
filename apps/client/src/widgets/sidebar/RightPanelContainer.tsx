@@ -22,6 +22,7 @@ import AttributeList from "./AttributeList";
 import Backlinks from "./Backlinks";
 import BoardColumns from "./BoardColumns";
 import ChatHighlightsList from "./ChatHighlightsList";
+import EquivalentNotes from "./EquivalentNotes";
 import HighlightsList from "./HighlightsList";
 import NoteMap from "./NoteMap";
 import NotePaths from "./NotePaths";
@@ -233,6 +234,11 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): 
             // Where the note sits in the tree, above what points at it: placements first, then the
             // backlinks below.
             el: <NotePaths />,
+            enabled: !!note,
+            tab: "connections"
+        },
+        {
+            el: <EquivalentNotes />,
             enabled: !!note,
             tab: "connections"
         },

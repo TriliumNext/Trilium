@@ -302,6 +302,11 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     // Search settings
     /** Whether fuzzy matching is enabled in search (matches similar words when exact matches are insufficient). */
     searchEnableFuzzyMatching: boolean;
+    /**
+     * Whether free-text search also returns notes equivalent to each hit under declared
+     * equivalence relations (`~equiv` and user relation definitions marked `equivalence`).
+     */
+    searchExpandEquivalence: boolean;
     /** Whether fuzzy matching is enabled for autocomplete (typing in search bar). Disabled by default for faster response. */
     searchAutocompleteFuzzy: boolean;
     /** Number of search results shown per page on the full-search results view. */

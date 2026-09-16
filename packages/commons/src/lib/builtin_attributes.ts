@@ -135,6 +135,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "mapRootNoteId", valueType: "text" },
     { type: "label", name: "mapExcludeRelation", valueType: "text" },
     { type: "label", name: "mapIncludeRelation", valueType: "text" },
+    // Relation names whose equivalence classes the link map collapses into supernodes.
+    { type: "label", name: "mapCollapseRelation", valueType: "text" },
     // Keeps a note out of the note map -- unless the map is rooted at it, which journals rely on.
     { type: "label", name: "excludeFromNoteMap", valueType: "boolean" },
     { type: "label", name: "bookmarkFolder", valueType: "boolean" },
@@ -212,6 +214,10 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "docName", valueType: "text", isDangerous: true },
     { type: "label", name: "docUrl", valueType: "url", isDangerous: true },
     { type: "label", name: "language", valueType: "text", hasUserValue: true },
+    // Marks a note as the display representative of its equivalence class.
+    { type: "label", name: "canonical", valueType: "boolean" },
+    // Meta-note that joins equivalent members (star hub) without itself being a member.
+    { type: "label", name: "equivHub", valueType: "boolean" },
     { type: "label", name: "originalFileName", valueType: "text", hasUserValue: true },
     { type: "label", name: "pageUrl", valueType: "url", hasUserValue: true },
     { type: "label", name: "command", valueType: "text", hasUserValue: true },
@@ -229,6 +235,8 @@ const BUILTIN_ATTRIBUTES = [
     ] },
     { type: "label", name: "limit", valueType: "text", hasUserValue: true },
     { type: "label", name: "fastSearch", valueType: "boolean" },
+    // Saved-search: also return notes equivalent to each hit under declared equivalence relations.
+    { type: "label", name: "expandEquivalence", valueType: "boolean" },
     { type: "label", name: "includeArchivedNotes", valueType: "boolean" },
     { type: "label", name: "debug", valueType: "boolean" },
 
@@ -338,6 +346,8 @@ const BUILTIN_ATTRIBUTES = [
 
     // relation names
     { type: "relation", name: "internalLink" },
+    // Builtin typed-equivalence relation: always self-inverse, always an equivalence type.
+    { type: "relation", name: "equiv" },
     { type: "relation", name: "imageLink" },
     { type: "relation", name: "relationMapLink" },
     { type: "relation", name: "includeNoteLink" },

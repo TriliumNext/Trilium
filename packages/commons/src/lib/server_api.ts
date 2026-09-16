@@ -909,6 +909,24 @@ export interface NoteMapPostResponse {
     noteIdToDescendantCountMap: Record<string, number>;
 }
 
+/** One member of a typed equivalence class, excluding the note the listing was asked for. */
+export interface EquivalentNoteMember {
+    noteId: string;
+    title: string;
+    icon: string;
+}
+
+/** Members interchangeable with the asked-for note under one equivalence relation name. */
+export interface EquivalentNotesGroup {
+    relationName: string;
+    canonicalNoteId: string;
+    members: EquivalentNoteMember[];
+}
+
+export interface EquivalentNotesResponse {
+    groups: EquivalentNotesGroup[];
+}
+
 export interface UpdateAttributeResponse {
     attributeId: string;
 }

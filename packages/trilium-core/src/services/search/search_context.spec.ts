@@ -10,7 +10,15 @@ let getOptionBool: ReturnType<typeof vi.spyOn>;
 describe("SearchContext", () => {
     beforeEach(() => {
         getHoistedNoteId = vi.spyOn(hoistedNoteService, "getHoistedNoteId").mockReturnValue("root");
-        getOptionBool = vi.spyOn(optionService, "getOptionBool").mockReturnValue(true);
+        getOptionBool = vi.spyOn(optionService, "getOptionBool").mockImplementation((name) => {
+            if (name === "searchEnableFuzzyMatching") {
+                return true;
+            }
+            if (name === "searchExpandEquivalence") {
+                return false;
+            }
+            return false;
+        });
     });
 
     afterEach(() => {
@@ -33,6 +41,8 @@ describe("SearchContext", () => {
         expect(ctx.dbLoadNeeded).toBe(false);
         expect(ctx.debugInfo).toBeNull();
         expect(ctx.error).toBeNull();
+        expect(ctx.expandEquivalence).toBe(false);
+        expect(ctx.equivalenceTypes).toEqual([]);
     });
 
     it("coerces truthy/falsy param values into strict booleans", () => {
@@ -96,12 +106,13 @@ describe("SearchContext", () => {
     });
 
     it("reads the searchEnableFuzzyMatching option for enableFuzzyMatching", () => {
-        getOptionBool.mockReturnValue(false);
+        getOptionBool.mockImplementation((name) => name === "searchEnableFuzzyMatching");
 
         const ctx = new SearchContext();
 
         expect(getOptionBool).toHaveBeenCalledWith("searchEnableFuzzyMatching");
-        expect(ctx.enableFuzzyMatching).toBe(false);
+        expect(ctx.enableFuzzyMatching).toBe(true);
+        expect(ctx.expandEquivalence).toBe(false);
     });
 
     it("defaults enableFuzzyMatching to true when the option is not yet initialized (throws)", () => {
@@ -112,6 +123,26 @@ describe("SearchContext", () => {
         const ctx = new SearchContext();
 
         expect(ctx.enableFuzzyMatching).toBe(true);
+        expect(ctx.expandEquivalence).toBe(false);
+    });
+
+    it("honours an explicit expandEquivalence param over the option", () => {
+        const ctx = new SearchContext({
+            expandEquivalence: true,
+            equivalenceTypes: ["translation"]
+        });
+
+        expect(ctx.expandEquivalence).toBe(true);
+        expect(ctx.equivalenceTypes).toEqual(["translation"]);
+    });
+
+    it("reads the searchExpandEquivalence option when the param is omitted", () => {
+        getOptionBool.mockImplementation((name) => name === "searchExpandEquivalence");
+
+        const ctx = new SearchContext();
+
+        expect(getOptionBool).toHaveBeenCalledWith("searchExpandEquivalence");
+        expect(ctx.expandEquivalence).toBe(true);
     });
 
     describe("recordContentMatch", () => {

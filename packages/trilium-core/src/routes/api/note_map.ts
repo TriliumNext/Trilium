@@ -5,6 +5,7 @@ import type { BacklinkCountResponse, BacklinksResponse, NoteMapNote } from "@tri
 import type { Request } from "../../http_interface";
 
 import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
+import { buildCanonicalMapping, collapseLinkMap, getEquivalenceTypeNames } from "../../services/equivalence.js";
 
 interface TreeLink {
     sourceNoteId: string;
@@ -115,6 +116,7 @@ function getLinkMap(req: Request<{ noteId: string }>) {
 
     const excludeRelations = toSet(req.body.excludeRelations);
     const includeRelations = toSet(req.body.includeRelations);
+    const collapseRelations = toSet(req.body.collapseRelations);
 
     if (mapRootNote.type === "search") {
         // for search notes, we want to consider the direct search results only without the descendants
@@ -174,11 +176,31 @@ function getLinkMap(req: Request<{ noteId: string }>) {
             name: rel.name
         }));
 
-    return {
-        notes,
-        noteIdToDescendantCountMap: buildDescendantCountMap(noteIdsArray),
-        links
-    };
+    const noteIdToDescendantCountMap = buildDescendantCountMap(noteIdsArray);
+
+    if (collapseRelations.size === 0) {
+        return {
+            notes,
+            noteIdToDescendantCountMap,
+            links
+        };
+    }
+
+    const equivalenceTypes = new Set(getEquivalenceTypeNames());
+    const typesToCollapse = [...collapseRelations].filter((name) => equivalenceTypes.has(name));
+    if (typesToCollapse.length === 0) {
+        return {
+            notes,
+            noteIdToDescendantCountMap,
+            links
+        };
+    }
+
+    const { canonicalOf, classTitles } = buildCanonicalMapping(
+        typesToCollapse,
+        mapRootNote.noteId
+    );
+    return collapseLinkMap(notes, links, noteIdToDescendantCountMap, canonicalOf, classTitles);
 }
 
 function getTreeMap(req: Request<{ noteId: string }>) {

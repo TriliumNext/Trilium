@@ -81,6 +81,14 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         component: IncludeArchivedNotesOption
     },
     {
+        attributeName: "expandEquivalence",
+        attributeType: "label",
+        icon: "bx bx-git-merge",
+        label: t("search_definition.expand_equivalence"),
+        tooltip: t("search_definition.expand_equivalence_description"),
+        component: ExpandEquivalenceOption
+    },
+    {
         attributeName: "orderBy",
         attributeType: "label",
         defaultValue: "relevancy",
@@ -297,6 +305,14 @@ function DebugOption({ ...restProps }: SearchOptionProps) {
 function IncludeArchivedNotesOption({ ...restProps }: SearchOptionProps) {
     return <SearchOption
         titleIcon="bx bx-archive" title={t("include_archived_notes.include_archived_notes")}
+        {...restProps}
+    />;
+}
+
+function ExpandEquivalenceOption({ ...restProps }: SearchOptionProps) {
+    return <SearchOption
+        titleIcon="bx bx-git-merge" title={t("search_definition.expand_equivalence")}
+        help={t("search_definition.expand_equivalence_description")}
         {...restProps}
     />;
 }

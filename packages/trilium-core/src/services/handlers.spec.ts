@@ -103,6 +103,23 @@ describe("handlers", () => {
     });
 
     describe("ENTITY_CHANGED (attributes)", () => {
+        it("creates a self-inverse ~equiv on the target without a relation definition", () => {
+            const source = buildNote({ id: "eqSrc" });
+            const target = buildNote({ id: "eqTgt" });
+            const rel = addAttribute("eqSrc", "relation", "equiv", "eqTgt");
+            const created: BAttribute[] = [];
+            vi.spyOn(BAttribute.prototype, "save").mockImplementation(function (this: BAttribute) {
+                created.push(this);
+                return this;
+            });
+
+            eventService.emit(eventService.ENTITY_CHANGED, { entityName: "attributes", entity: rel });
+
+            expect(created.some((attr) =>
+                attr.noteId === target.noteId && attr.name === "equiv" && attr.value === source.noteId
+            )).toBe(true);
+        });
+
         it("re-sorts the owning note when a 'sorted' label changes", () => {
             buildNote({ id: "p" });
             const attr = addAttribute("p", "label", "sorted", "");
