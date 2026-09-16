@@ -39,7 +39,7 @@ overrides:
   # built by one provider stops being assignable to the ToolSet `ai` expects (TS2322 on the Anthropic
   # web-search tool). Pin the version `ai` itself is built against, and raise it with the next bump.
   "@ai-sdk/provider-utils": "5.0.40"
-  "zod": "4.6.2"
+  "zod": "4.6.4"
   "mermaid": "12.0.0"
   "preact": "10.29.8"
   "roughjs": "4.6.6"
