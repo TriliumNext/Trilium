@@ -1,0 +1,37 @@
+.equivalent-notes-display-name {
+    width: 7.5em;
+    flex-shrink: 0;
+    height: 1.8em;
+    padding-block: 0.15em;
+    font-size: inherit;
+}
+
+.equivalent-notes-widget {
+    .equivalent-notes-group + .equivalent-notes-group {
+        margin-top: 0.75em;
+    }
+
+    .equivalent-notes-type {
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+        margin-bottom: 0.25em;
+    }
+
+    .equivalent-notes-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            padding-block: 4px;
+            font-size: 0.9em;
+        }
+    }
+
+    .equivalent-notes-current {
+        font-weight: 500;
+    }
+}
