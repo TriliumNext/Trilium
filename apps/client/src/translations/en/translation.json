@@ -764,7 +764,7 @@
     "recurrence": "A CalDAV <code>RRULE</code> string making the event repeat. The start is taken from <code>#startDate</code> and <code>#startTime</code>, so the rule leaves <code>DTSTART</code> out.",
     "geolocation": "The latitude and longitude the note is placed at on a geo map.",
     "geo_shape": "A shape the note is drawn as on a geo map: the kind of shape, then the latitude and longitude of each point, e.g. <code>line:48.85,2.29 48.86,2.35</code> — or a circle as its center and reach in meters, <code>circle:48.85,2.29 500</code>.",
-    "map_type": "Which note map is drawn: <code>link</code> for the relations between notes, or <code>tree</code> for the hierarchy.",
+    "map_type": "Which note map is drawn: <code>link</code> for the relations between notes, <code>tree</code> for the notes under this one, or <code>clone</code> for every placement of this note in the tree.",
     "map_style": "Which style a geo map is drawn in, chosen from the raster and vector styles offered in the collection properties.",
     "map_dark_style": "Tells a geo map that the custom style given in <code>map:style</code> is a dark one, so that the marker titles are drawn light over it. The styles offered in the collection properties say so for themselves and need no such label.",
     "map_scale": "Shows a scale bar on the geo map.",
@@ -792,7 +792,8 @@
     "hoisted_note": "The note to hoist to when a launcher opens its target.",
     "share_logo": "An image note used as the logo of the shared page. It has to sit inside the shared subtree.",
     "share_open_graph_image_relation": "An image note served as the <code>og:image</code> of the shared page. Set the label of the same name instead to point at an address.",
-    "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree."
+    "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree.",
+    "map_clone_combine": "On a clone map of a search, <code>any</code> keeps a note if at least one seed sits on a clone path below it; <code>all</code> keeps a note if every seed does, plus the clone paths from that meet down to the seeds."
   },
   "attribute_editor": {
     "help_text_body1": "To add label, just type e.g. <code>#rock</code> or if you want to add also value then e.g. <code>#year = 2020</code>",
@@ -1458,7 +1459,7 @@
     "attributes_definitions_promoted": "A promoted attribute is shown on the note itself as a form field rather than being left to this panel. Definitions usually arrive from a template, and each row names the note it lives on.",
     "highlights_what": "The passages this note picks out by their formatting. That is a wider net than it sounds: an ordinary bold or italic sentence counts, not only text you have highlighted.",
     "highlights_configure": "Which formats count is yours to set: bold, italic, underlined, colored text and text on a background color can each be listed or left out, from the gear in this card's header. Pressing an entry scrolls the note to it.",
-    "note_map_what": "A map of what this note connects to. The link map draws the internal links and relations going in and out of it; the tree map draws where it sits in the note tree. The switcher in this header chooses between the two.",
+    "note_map_what": "A map of what this note connects to. The link map draws the internal links and relations going in and out of it; the tree map draws the notes under it; the clone map draws every placement of it in the tree. Rooted at a search, the clone map uses the results as seeds: Any keeps a note on at least one clone path to a seed, All only on clone paths that reach every seed. The switcher in this header chooses among them.",
     "note_map_interaction": "Hovering a note brings its own connections forward and fades the rest. The expand button opens the same map at the size of the window.",
     "note_paths_what": "A note can sit in more than one place in the note tree at once, and each of those places is listed here as a path.",
     "note_paths_cloning": "Adding a place is called cloning: nothing is copied, so an edit made under one path shows under all of them, and removing one path leaves the note under the others.",
@@ -2473,7 +2474,10 @@
   },
   "note-map": {
     "button-link-map": "Link Map",
-    "button-tree-map": "Tree map"
+    "button-tree-map": "Tree map",
+    "button-clone-map": "Clone map",
+    "button-clone-any": "Any seed",
+    "button-clone-all": "All seeds"
   },
   "tree-context-menu": {
     "open-in-a-new-tab": "Open in a new tab",

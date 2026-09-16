@@ -3,7 +3,7 @@
 
 A Note map is a note type which displays a standalone version of the feature of the same name: <a class="reference-link" href="../Advanced%20Usage/Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a>. Consult that page for more information on how the note map works and what it displays.
 
-Once created, the note map will display the relations between notes. Only the notes that are part of the parent of the note map will be displayed (including their children).
+Once created, the note map will display the relations between notes. Only the notes that are part of the parent of the note map will be displayed (including their children). The clone map is the exception: it shows the placements of the root note rather than that note's subtree.
 
 ## Root note
 
@@ -21,6 +21,8 @@ The note map can be customized using the following <a class="reference-link" hr
 
 | Label | Description |
 | --- | --- |
+| `#mapType` | Which visualization to draw: `link`, `tree`, or `clone`. The clone map shows every placement of the root note, not that note's subtree. |
+| `#mapCloneCombine` | On a clone map of a search: `any` keeps a note if at least one seed sits on a clone path below it; `all` keeps a note if every seed does, plus the clone paths from that meet down to the seeds. |
 | `#mapIncludeRelation` | Comma-delimited relation names to include from the note map. |
 | `#mapExcludeRelation` | Comma-delimited relation names to exclude from the note map. |
 | `#mapRootNoteId` | The ID of the note the map roots from, or `hoisted`. See the root note section above for more information. |

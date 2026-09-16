@@ -80,6 +80,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "rightPaneCollapsedItems",
     "rightPaneSelectedTab",
     "rightPaneNoteMapType",
+    "rightPaneNoteMapCloneCombine",
     "rightPaneVisible",
     "nativeTitleBarVisible",
     "headingStyle",
