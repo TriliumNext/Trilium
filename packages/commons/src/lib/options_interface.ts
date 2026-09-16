@@ -150,6 +150,13 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
      * that note's own `mapType` label instead.
      */
     rightPaneNoteMapType: string;
+    /**
+     * How the connections tab's clone map merges a search's results: `any` or `all`. A preference of
+     * the reader's, like {@link rightPaneNoteMapType}; a note map that is a note's own thing is told
+     * by that note's `mapCloneCombine` label instead. Decided on clone paths: `any` keeps a note if
+     * at least one seed sits below it, `all` if every seed does.
+     */
+    rightPaneNoteMapCloneCombine: string;
     eraseEntitiesAfterTimeInSeconds: number;
     eraseEntitiesAfterTimeScale: number;
     autoReadonlySizeText: number;

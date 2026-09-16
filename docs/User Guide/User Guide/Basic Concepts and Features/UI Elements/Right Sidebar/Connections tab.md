@@ -12,7 +12,7 @@ The note map displays a graph which shows the relation between the current notes
 
 *   The _Link map_, which displays the [relations](../../../Advanced%20Usage/Attributes/Relations.md) between notes.
 *   The _Tree map_, which displays the hierarchical structure under the current note.
-*   The _Clone map_, which displays every placement of the current note by walking its parents up to the root. Shared ancestors appear once.
+*   The _Clone map_, which displays every placement of the current note by walking its parents up to the root. Shared ancestors appear once. Rooted at a search note, it uses the results as seeds; *Any seed* keeps a note on at least one clone path to a seed, *All seeds* only on clone paths that reach every seed.
 
 The sidebar will remember which visualization is selected, as a global option. Note that note maps also have a `#mapType` which describes which visualization to use, but the sidebar deliberately ignores that to keep consistency when switching between notes.
 

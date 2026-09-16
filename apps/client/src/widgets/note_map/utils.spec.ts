@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getFitPadding, getHopDistances, mixColors, rgb2hex, toMapType, usesReaderPreference, withAlpha } from "./utils";
+import { getFitPadding, getHopDistances, mixColors, rgb2hex, showsCloneCombine, toCloneCombine, toMapType, usesReaderPreference, withAlpha } from "./utils";
 
 describe("getHopDistances", () => {
     const link = (source: string, target: string) => ({ source, target });
@@ -86,6 +86,27 @@ describe("toMapType", () => {
         expect(toMapType("nonsense")).toBe("link");
         expect(toMapType(null)).toBe("link");
         expect(toMapType(undefined)).toBe("link");
+    });
+});
+
+describe("toCloneCombine", () => {
+    it("reads All out of the value and takes anything else as Any", () => {
+        expect(toCloneCombine("all")).toBe("all");
+        expect(toCloneCombine("any")).toBe("any");
+        expect(toCloneCombine("nonsense")).toBe("any");
+        expect(toCloneCombine(null)).toBe("any");
+        expect(toCloneCombine(undefined)).toBe("any");
+    });
+});
+
+describe("showsCloneCombine", () => {
+    it("is only a choice on a clone map rooted at a search", () => {
+        expect(showsCloneCombine("clone", "search")).toBe(true);
+        expect(showsCloneCombine("clone", "text")).toBe(false);
+        expect(showsCloneCombine("link", "search")).toBe(false);
+        expect(showsCloneCombine("tree", "search")).toBe(false);
+        expect(showsCloneCombine("clone", null)).toBe(false);
+        expect(showsCloneCombine("clone", undefined)).toBe(false);
     });
 });
 

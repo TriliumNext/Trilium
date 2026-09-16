@@ -307,6 +307,11 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "mapType", valueType: "select", hasUserValue: true, selectOptions: [
         "link", "tree", "clone"
     ] },
+    // How a clone map of a search merges its results: `any` keeps a note if at least one seed sits
+    // on a clone path below it, `all` if every seed does, plus the clone paths from that meet down.
+    { type: "label", name: "mapCloneCombine", valueType: "select", hasUserValue: true, selectOptions: [
+        "any", "all"
+    ] },
     { type: "label", name: "map:style", valueType: "text", hasUserValue: true },
     // Says of a style Trilium knows nothing about that it is a dark one, which only the style itself
     // can tell. The styles offered in the collection properties declare it for themselves.

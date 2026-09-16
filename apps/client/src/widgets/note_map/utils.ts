@@ -5,6 +5,7 @@
  */
 export type NoteMapWidgetMode = "ribbon" | "sidebar" | "expanded" | "hoisted" | "type";
 export type MapType = "tree" | "link" | "clone";
+export type CloneCombine = "any" | "all";
 
 /**
  * Where the connections tab's map is told which kind to draw.
@@ -15,6 +16,13 @@ export type MapType = "tree" | "link" | "clone";
  * maps that are a note's own thing are told by that note instead, through its `mapType` label.
  */
 export const NOTE_MAP_TYPE_OPTION = "rightPaneNoteMapType";
+
+/**
+ * How the connections tab's clone map merges a search's results. Same split as
+ * {@link NOTE_MAP_TYPE_OPTION}: the tab stores the reader's preference, and a map that is a note's
+ * own thing is told through that note's `mapCloneCombine` label.
+ */
+export const NOTE_MAP_CLONE_COMBINE_OPTION = "rightPaneNoteMapCloneCombine";
 
 /**
  * Whether the map takes the reader's own preference ({@link NOTE_MAP_TYPE_OPTION}) rather than what
@@ -36,6 +44,16 @@ export function toMapType(labelValue: string | null | undefined): MapType {
         return labelValue;
     }
     return "link";
+}
+
+/** How a clone map of a search merges its seeds; anything but `all` is read as `any`. */
+export function toCloneCombine(value: string | null | undefined): CloneCombine {
+    return value === "all" ? "all" : "any";
+}
+
+/** The Any/All switcher is only a choice when the clone map is rooted at a search. */
+export function showsCloneCombine(mapType: MapType, mapRootType: string | null | undefined) {
+    return mapType === "clone" && mapRootType === "search";
 }
 
 /** How much of the map's box is kept clear around the graph when the view is fitted to it. */

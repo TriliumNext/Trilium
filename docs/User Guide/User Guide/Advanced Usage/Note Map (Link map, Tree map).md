@@ -61,6 +61,8 @@ Unlike the tree map, which draws the notes *under* the current note, the clone m
 
 On a dedicated <a class="reference-link" href="../Note%20Types/Note%20Map.md">Note Map</a> note, the clone map shows the placements of the map's root note, not that note's subtree.
 
+Rooted at a <a class="reference-link" href="../Note%20Types/Saved%20Search.md">search note</a>, the clone map uses the search results as seeds instead of the search note itself. Any and All are decided on clone paths only: *Any seed* keeps a note if at least one seed sits on a clone path below it; *All seeds* keeps a note if every seed does, plus the clone paths from that meet down to the seeds. A parent that is only on some of the seeds' clone paths is dropped, and a tree child that is not on any clone path is ignored. The choice is remembered like `#mapType`: as `#mapCloneCombine` on a dedicated note map, and as a sidebar option otherwise.
+
 ## See also
 
 *   Apart from the note map feature which can be accessed from any note, it is also possible to create a dedicated note which will display the relations in full screen. See <a class="reference-link" href="../Note%20Types/Note%20Map.md">Note Map</a> for more information.

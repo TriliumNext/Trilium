@@ -57,7 +57,7 @@ describe("loadNotesAndRelations", () => {
 
         // A clone map also links every note to a parent, so hiding unlinked notes is a no-op, and a
         // note is drawn the larger the more parents point at it.
-        answerWith({
+        const post = answerWith({
             ...response,
             links: [
                 { key: "1", sourceNoteId: "root", targetNoteId: "linked", name: "" },
@@ -66,7 +66,12 @@ describe("loadNotesAndRelations", () => {
             ],
             noteIdToDescendantCountMap: {}
         });
-        const cloneMap = await loadNotesAndRelations("loose", [], [], "clone", true);
+        const cloneMap = await loadNotesAndRelations("loose", [], [], "clone", true, "all");
+        expect(post).toHaveBeenCalledWith("note-map/loose/clone", {
+            excludeRelations: [],
+            includeRelations: [],
+            combine: "all"
+        });
         expect(cloneMap.nodes.map((node) => node.id)).toEqual([ "root", "linked", "loose" ]);
         expect(cloneMap.noteIdToSizeMap).toEqual({
             root: 4,

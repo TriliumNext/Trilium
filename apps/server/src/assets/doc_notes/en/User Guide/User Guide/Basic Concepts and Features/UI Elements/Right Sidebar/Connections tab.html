@@ -21,7 +21,10 @@ class="admonition note">
   <li>The <em>Tree map</em>, which displays the hierarchical structure under
     the current note.</li>
   <li>The <em>Clone map</em>, which displays every placement of the current note
-    by walking its parents up to the root. Shared ancestors appear once.</li>
+    by walking its parents up to the root. Shared ancestors appear once.
+    Rooted at a search note, it uses the results as seeds; <em>Any seed</em> keeps
+    a note on at least one clone path to a seed, <em>All seeds</em> only on clone
+    paths that reach every seed.</li>
 </ul>
 <p>The sidebar will remember which visualization is selected, as a global
   option. Note that note maps also have a <code>#mapType</code> which describes

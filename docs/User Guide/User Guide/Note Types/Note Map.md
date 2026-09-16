@@ -22,6 +22,7 @@ The note map can be customized using the following <a class="reference-link" hr
 | Label | Description |
 | --- | --- |
 | `#mapType` | Which visualization to draw: `link`, `tree`, or `clone`. The clone map shows every placement of the root note, not that note's subtree. |
+| `#mapCloneCombine` | On a clone map of a search: `any` keeps a note if at least one seed sits on a clone path below it; `all` keeps a note if every seed does, plus the clone paths from that meet down to the seeds. |
 | `#mapIncludeRelation` | Comma-delimited relation names to include from the note map. |
 | `#mapExcludeRelation` | Comma-delimited relation names to exclude from the note map. |
 | `#mapRootNoteId` | The ID of the note the map roots from, or `hoisted`. See the root note section above for more information. |
