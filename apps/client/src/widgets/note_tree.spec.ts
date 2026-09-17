@@ -1,10 +1,22 @@
 import $ from "jquery";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import FBranch from "../entities/fbranch.js";
+import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
+import LoadResults from "../services/load_results.js";
 import noteCreateService from "../services/note_create.js";
 import treeService from "../services/tree.js";
+import { buildNote } from "../test/easy-froca.js";
 import NoteTreeWidget, { publishDropMarkerShift } from "./note_tree.js";
+
+function treeOf(widget: NoteTreeWidget): Fancytree.Fancytree {
+    return (widget as unknown as { tree: Fancytree.Fancytree }).tree;
+}
+
+function setTree(widget: NoteTreeWidget, tree: Fancytree.Fancytree) {
+    (widget as unknown as { tree: Fancytree.Fancytree }).tree = tree;
+}
 
 describe("fancytree scrollIntoView patch", () => {
     it("resolves instead of crashing for a node without rendered markup (#10407)", async () => {
@@ -108,6 +120,205 @@ describe("NoteTreeWidget", () => {
 
         // The popup's own hoisted note is passed explicitly — not the active tab's.
         expect(isHoisted).toHaveBeenCalledWith("_taskStates");
+    });
+});
+
+describe("ghost-note reconcile after cut/move (#7288)", () => {
+    const widgets: NoteTreeWidget[] = [];
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        for (const widget of widgets) {
+            widget.$widget.remove();
+        }
+        widgets.length = 0;
+    });
+
+    async function mountTree(source: object[]) {
+        const widget = new NoteTreeWidget();
+        vi.spyOn(widget, "initFancyTree").mockImplementation(() => {});
+        widget.doRender();
+        await new Promise((resolve) => setTimeout(resolve));
+
+        widget.$widget.appendTo(document.body);
+        widgets.push(widget);
+
+        const $tree = widget.$widget.find(".tree");
+        $tree.fancytree({
+            source,
+            minExpandLevel: 1
+        });
+        setTree(widget, $tree.fancytree("getTree"));
+        vi.spyOn(widget, "filterHoistedBranch").mockResolvedValue(undefined);
+        vi.spyOn(widget, "getActiveNode").mockReturnValue(null);
+        vi.spyOn(widget, "getNodesByNoteId").mockImplementation((noteId: string) => {
+            const node = treeOf(widget).getNodeByKey(noteId);
+            return node ? [node] : [];
+        });
+        return widget;
+    }
+
+    function nodeData(noteId: string, branchId: string, extra: object = {}) {
+        return { title: noteId, key: noteId, noteId, branchId, ...extra };
+    }
+
+    function childNoteIds(node: Fancytree.FancytreeNode | null) {
+        return (node?.getChildren() ?? []).map((child) => child.data.noteId);
+    }
+
+    it("updateNode removes a leftover child whose branch froca already dropped", async () => {
+        const parent = buildNote({ title: "Main", children: [{ title: "Ghost" }] });
+        const ghostNoteId = parent.children[0];
+        const ghostBranchId = parent.childToBranch[ghostNoteId];
+
+        const widget = await mountTree([
+            nodeData(parent.noteId, "root_main", {
+                folder: true,
+                expanded: true,
+                children: [nodeData(ghostNoteId, ghostBranchId)]
+            })
+        ]);
+
+        delete froca.branches[ghostBranchId];
+        const ghost = treeOf(widget).getNodeByKey(ghostNoteId);
+        expect(ghost).toBeTruthy();
+
+        await widget.updateNode(ghost);
+
+        expect(treeOf(widget).getNodeByKey(ghostNoteId)).toBeFalsy();
+    });
+
+    it("updateNode leaves a parent-less node standing when its branch is gone", async () => {
+        const note = buildNote({ title: "Rootish" });
+        const widget = await mountTree([nodeData(note.noteId, "gone-branch")]);
+        const node = treeOf(widget).getNodeByKey(note.noteId);
+        vi.spyOn(node, "getParent").mockReturnValue(null as unknown as Fancytree.FancytreeNode);
+
+        await widget.updateNode(node);
+
+        expect(treeOf(widget).getNodeByKey(note.noteId)).toBeTruthy();
+    });
+
+    it("reconcile drops a ghost at the old parent, skips search notes, and ignores rows without a parent", async () => {
+        const parent = buildNote({
+            title: "Main",
+            children: [{ title: "Kept" }, { title: "Ghost" }]
+        });
+        const keptId = parent.children[0];
+        const ghostId = parent.children[1];
+        const ghostBranchId = parent.childToBranch[ghostId];
+        const searchNote = buildNote({ title: "Search", type: "search" });
+
+        const widget = await mountTree([
+            nodeData(parent.noteId, "root_main", {
+                folder: true,
+                expanded: true,
+                children: [
+                    nodeData(keptId, parent.childToBranch[keptId]),
+                    nodeData(ghostId, ghostBranchId)
+                ]
+            })
+        ]);
+
+        parent.children = parent.children.filter((id) => id !== ghostId);
+        delete parent.childToBranch[ghostId];
+        delete froca.branches[ghostBranchId];
+
+        const loadResults = new LoadResults([]);
+        loadResults.addBranch(ghostBranchId, "comp", { parentNoteId: parent.noteId, isDeleted: true });
+        loadResults.addBranch("search-row", "comp", { parentNoteId: searchNote.noteId, isDeleted: true });
+        loadResults.addBranch("no-parent-row", "comp", { isDeleted: true });
+
+        await widget.entitiesReloadedEvent({ loadResults });
+
+        expect(treeOf(widget).getNodeByKey(ghostId)).toBeFalsy();
+        expect(treeOf(widget).getNodeByKey(keptId)).toBeTruthy();
+    });
+
+    it("reconcile adds a missing child, fills an unloaded expanded folder from froca, and strips leftovers from a leaf", async () => {
+        const parent = buildNote({
+            title: "Main",
+            children: [{ title: "AlreadyThere" }, { title: "MissingInTree" }]
+        });
+        const thereId = parent.children[0];
+        const missingId = parent.children[1];
+
+        const dest = buildNote({ title: "Dest", children: [{ title: "Incoming" }] });
+        const incomingId = dest.children[0];
+        const destBranchId = `holder_${dest.noteId}`;
+        froca.branches[destBranchId] = new FBranch(froca, {
+            branchId: destBranchId,
+            noteId: dest.noteId,
+            parentNoteId: "holder",
+            notePosition: 0,
+            fromSearchNote: false,
+            isExpanded: true
+        });
+
+        const leaf = buildNote({ title: "Leaf" });
+        const stray = buildNote({ title: "Stray" });
+
+        const widget = await mountTree([
+            nodeData(parent.noteId, "root_main", {
+                folder: true,
+                expanded: true,
+                children: [nodeData(thereId, parent.childToBranch[thereId])]
+            }),
+            nodeData(dest.noteId, destBranchId, {
+                folder: true,
+                lazy: true
+            }),
+            nodeData(leaf.noteId, "root_leaf", {
+                folder: false,
+                expanded: true,
+                children: [nodeData(stray.noteId, "stray-branch")]
+            })
+        ]);
+
+        const destNode = treeOf(widget).getNodeByKey(dest.noteId);
+        destNode.data.branchId = destBranchId;
+
+        const loadResults = new LoadResults([]);
+        loadResults.addBranch("p", "comp", { parentNoteId: parent.noteId });
+        loadResults.addBranch("d", "comp", { parentNoteId: dest.noteId });
+        loadResults.addBranch("l", "comp", { parentNoteId: leaf.noteId });
+
+        await widget.entitiesReloadedEvent({ loadResults });
+
+        expect(childNoteIds(treeOf(widget).getNodeByKey(parent.noteId))).toContain(missingId);
+        expect(childNoteIds(treeOf(widget).getNodeByKey(dest.noteId))).toContain(incomingId);
+        expect(childNoteIds(treeOf(widget).getNodeByKey(leaf.noteId))).not.toContain(stray.noteId);
+    });
+
+    it("skips a to-add branch that vanished from froca and a prepareNode that returns null", async () => {
+        const parent = buildNote({ title: "P", children: [{ title: "SkipMe" }, { title: "AddMe" }] });
+        const skipId = parent.children[0];
+        const addId = parent.children[1];
+        const skipBranchId = parent.childToBranch[skipId];
+        const addBranchId = parent.childToBranch[addId];
+        const widget = await mountTree([
+            nodeData(parent.noteId, "root_p", { folder: true, expanded: true, children: [] })
+        ]);
+
+        vi.spyOn(widget, "prepareChildren").mockReturnValue([
+            { branchId: "already-gone" } as Fancytree.FancytreeNewNode,
+            { branchId: skipBranchId } as Fancytree.FancytreeNewNode,
+            { branchId: addBranchId } as Fancytree.FancytreeNewNode,
+            { title: "no-id" } as Fancytree.FancytreeNewNode
+        ]);
+        const originalPrepareNode = widget.prepareNode.bind(widget);
+        vi.spyOn(widget, "prepareNode").mockImplementation((branch, forceLazy) => {
+            if (branch.branchId === skipBranchId) {
+                return null;
+            }
+            return originalPrepareNode(branch, forceLazy);
+        });
+
+        const loadResults = new LoadResults([]);
+        loadResults.addBranch("p", "comp", { parentNoteId: parent.noteId });
+        await widget.entitiesReloadedEvent({ loadResults });
+
+        expect(childNoteIds(treeOf(widget).getNodeByKey(parent.noteId))).toEqual([addId]);
     });
 });
 
