@@ -23,6 +23,7 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
     const parentComponent = useContext(ParentComponent);
     const containerRef = useRef<HTMLDivElement>(null);
     const tabulatorRef = useRef<VanillaTabulator>(null);
+    const pendingDataRef = useRef<T[]>();
 
     useLayoutEffect(() => {
         if (!modules) return;
@@ -51,7 +52,22 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
             onReady?.();
         });
 
-        return () => tabulator.destroy();
+        // Deferred, because Tab ends the edit of one cell before the focus event opens the editor
+        // of the next one in the same task.
+        let flushTimer: ReturnType<typeof setTimeout> | undefined;
+        tabulator.on("cellEditCancelled", () => {
+            clearTimeout(flushTimer);
+            flushTimer = setTimeout(() => {
+                if (!pendingDataRef.current || isEditing(tabulator)) return;
+                tabulator.replaceData(pendingDataRef.current);
+                pendingDataRef.current = undefined;
+            }, 0);
+        });
+
+        return () => {
+            clearTimeout(flushTimer);
+            tabulator.destroy();
+        };
     }, [ dataTree ] );
 
     useEffect(() => {
@@ -71,7 +87,17 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
 
     // Change in data. replaceData rather than setData: it renders in position instead of
     // resetting the scroll (see resetScroll in Tabulator's RowManager).
-    useEffect(() => { tabulatorRef.current?.replaceData(data); }, [ data ]);
+    useEffect(() => {
+        const tabulator = tabulatorRef.current;
+        // replaceData rebuilds every row and cancels the open cell editor, so the rows wait in
+        // pendingDataRef until the "cellEditCancelled" handler or the next change applies them.
+        if (tabulator && isEditing(tabulator)) {
+            pendingDataRef.current = data;
+            return;
+        }
+        pendingDataRef.current = undefined;
+        tabulator?.replaceData(data);
+    }, [ data ]);
     useEffect(() => {
         if (!columns) return;
         tabulatorRef.current?.setColumns(columns);
@@ -80,4 +106,9 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
     return (
         <div ref={containerRef} className={className} />
     );
+}
+
+/** Tabulator's EditModule keeps this class on the table element while a cell editor is mounted. */
+function isEditing(tabulator: VanillaTabulator) {
+    return tabulator.element.classList.contains("tabulator-editing");
 }
