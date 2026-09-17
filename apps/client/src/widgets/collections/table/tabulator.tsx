@@ -63,7 +63,11 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
         // of the next one in the same task.
         let flushTimer: ReturnType<typeof setTimeout> | undefined;
         const observer = new MutationObserver(() => {
-            if (isEditing(tabulator)) return;
+            if (isEditing(tabulator)) {
+                // A commit that Tab follows with the next editor belongs to the previous cell.
+                committed = false;
+                return;
+            }
             clearTimeout(flushTimer);
             flushTimer = setTimeout(() => {
                 const wasCommitted = committed;

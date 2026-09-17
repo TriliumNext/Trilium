@@ -147,6 +147,25 @@ describe("Tabulator", () => {
         expect(tabulator.replaceData).not.toHaveBeenCalled();
     });
 
+    it("applies rows held in the next cell after Tab committed the previous one", async () => {
+        const tabulator = mount();
+        startEditing(tabulator);
+
+        // Tab: the first cell commits and the editor of the next cell opens in the same task.
+        tabulator.element.classList.remove("tabulator-editing");
+        tabulator.handlers.get("cellEdited")?.();
+        tabulator.element.classList.add("tabulator-editing");
+        await flush();
+
+        const pending = [ { title: "pending" } ];
+        renderTable(pending);
+
+        tabulator.element.classList.remove("tabulator-editing");
+        await flush();
+        expect(tabulator.replaceData).toHaveBeenCalledTimes(1);
+        expect(tabulator.replaceData).toHaveBeenLastCalledWith(pending);
+    });
+
     it("reads the class that the installed EditModule sets while an editor is open", async () => {
         const { TabulatorFull } = await vi.importActual<typeof import("tabulator-tables")>("tabulator-tables");
         const table = new TabulatorFull(container, {
