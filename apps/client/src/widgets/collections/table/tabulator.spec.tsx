@@ -39,7 +39,6 @@ describe("Tabulator", () => {
     let container: HTMLElement;
 
     beforeEach(() => {
-        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
         fake.FakeTabulator.instances = [];
         container = document.createElement("div");
         document.body.appendChild(container);
@@ -48,7 +47,6 @@ describe("Tabulator", () => {
     afterEach(() => {
         render(null, container);
         container.remove();
-        vi.useRealTimers();
     });
 
     function renderTable(data: Row[] | null) {
@@ -72,49 +70,84 @@ describe("Tabulator", () => {
         return tabulator;
     }
 
-    function cancelEdit(tabulator: InstanceType<typeof fake.FakeTabulator>) {
-        const handler = tabulator.handlers.get("cellEditCancelled");
-        expect(handler).toBeDefined();
-        handler?.();
+    function startEditing(tabulator: InstanceType<typeof fake.FakeTabulator>) {
+        tabulator.element.classList.add("tabulator-editing");
     }
 
-    it("holds new rows while a cell editor is open and applies the latest once it closes", () => {
+    /** Waits for the class MutationObserver's microtask and its deferred flush timer to run. */
+    async function flush() {
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+    }
+
+    it("applies rows held during editing once the editor closes without a committed change", async () => {
+        // Custom editors like SelectEditor can call success() with an unchanged value: Tabulator
+        // clears the "tabulator-editing" class but fires neither "cellEdited" nor "cellEditCancelled".
         const tabulator = mount();
+        startEditing(tabulator);
 
-        const second = [ { title: "second" } ];
-        renderTable(second);
-        expect(tabulator.replaceData).toHaveBeenCalledTimes(1);
-        expect(tabulator.replaceData).toHaveBeenLastCalledWith(second);
-
-        tabulator.element.classList.add("tabulator-editing");
-        renderTable([ { title: "third" } ]);
-        const fourth = [ { title: "fourth" } ];
-        renderTable(fourth);
-        expect(tabulator.replaceData).toHaveBeenCalledTimes(1);
-
-        // The editor of the next cell is open by the time the timer runs.
-        cancelEdit(tabulator);
-        vi.runAllTimers();
-        expect(tabulator.replaceData).toHaveBeenCalledTimes(1);
+        const pending = [ { title: "pending" } ];
+        renderTable(pending);
+        expect(tabulator.replaceData).not.toHaveBeenCalled();
 
         tabulator.element.classList.remove("tabulator-editing");
-        cancelEdit(tabulator);
-        vi.runAllTimers();
-        expect(tabulator.replaceData).toHaveBeenCalledTimes(2);
-        expect(tabulator.replaceData).toHaveBeenLastCalledWith(fourth);
+        await flush();
+        expect(tabulator.replaceData).toHaveBeenCalledTimes(1);
+        expect(tabulator.replaceData).toHaveBeenLastCalledWith(pending);
+    });
 
-        cancelEdit(tabulator);
-        vi.runAllTimers();
-        expect(tabulator.replaceData).toHaveBeenCalledTimes(2);
+    it("applies held rows after a cancelled edit and ignores a stale cellEditCancelled trigger", async () => {
+        const tabulator = mount();
+        startEditing(tabulator);
 
-        const fifth = [ { title: "fifth" } ];
-        renderTable(fifth);
-        expect(tabulator.replaceData).toHaveBeenCalledTimes(3);
-        expect(tabulator.replaceData).toHaveBeenLastCalledWith(fifth);
+        const pending = [ { title: "pending" } ];
+        renderTable(pending);
+
+        tabulator.element.classList.remove("tabulator-editing");
+        await flush();
+        expect(tabulator.replaceData).toHaveBeenCalledTimes(1);
+        expect(tabulator.replaceData).toHaveBeenLastCalledWith(pending);
+
+        // The component no longer subscribes to this event; a leftover call must not reapply.
+        tabulator.handlers.get("cellEditCancelled")?.();
+        await flush();
+        expect(tabulator.replaceData).toHaveBeenCalledTimes(1);
+    });
+
+    it("skips the held snapshot on a committed change, applying the next update once idle", async () => {
+        const tabulator = mount();
+        startEditing(tabulator);
+
+        const pending = [ { title: "pending" } ];
+        renderTable(pending);
+
+        // Tabulator dispatches "cellEdited" synchronously in the same task as the class removal.
+        tabulator.element.classList.remove("tabulator-editing");
+        tabulator.handlers.get("cellEdited")?.();
+        await flush();
+        expect(tabulator.replaceData).not.toHaveBeenCalled();
+
+        const next = [ { title: "next" } ];
+        renderTable(next);
+        expect(tabulator.replaceData).toHaveBeenCalledTimes(1);
+        expect(tabulator.replaceData).toHaveBeenLastCalledWith(next);
+    });
+
+    it("keeps rows held across a same-task Tab close-then-open of the editor", async () => {
+        const tabulator = mount();
+        startEditing(tabulator);
+
+        renderTable([ { title: "pending" } ]);
+
+        tabulator.element.classList.remove("tabulator-editing");
+        tabulator.element.classList.add("tabulator-editing");
+        await flush();
+        expect(tabulator.replaceData).not.toHaveBeenCalled();
     });
 
     it("reads the class that the installed EditModule sets while an editor is open", async () => {
-        vi.useRealTimers();
         const { TabulatorFull } = await vi.importActual<typeof import("tabulator-tables")>("tabulator-tables");
         const table = new TabulatorFull(container, {
             data: [ { id: 1, title: "first" } ],
@@ -131,17 +164,20 @@ describe("Tabulator", () => {
         table.destroy();
     });
 
-    it("does not apply held rows to a destroyed table", () => {
+    it("does not apply held rows to a destroyed table", async () => {
+        const disconnectSpy = vi.spyOn(MutationObserver.prototype, "disconnect");
         const tabulator = mount();
+        startEditing(tabulator);
 
-        tabulator.element.classList.add("tabulator-editing");
         renderTable([ { title: "second" } ]);
         tabulator.element.classList.remove("tabulator-editing");
-        cancelEdit(tabulator);
 
         renderTable(null);
         expect(tabulator.destroy).toHaveBeenCalledTimes(1);
-        vi.runAllTimers();
+        expect(disconnectSpy).toHaveBeenCalled();
+
+        await flush();
         expect(tabulator.replaceData).not.toHaveBeenCalled();
+        disconnectSpy.mockRestore();
     });
 });

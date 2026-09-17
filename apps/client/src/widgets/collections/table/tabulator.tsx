@@ -52,19 +52,32 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
             onReady?.();
         });
 
+        // Tabulator dispatches "cellEdited" synchronously from Cell.setValue, so this flag is
+        // already set by the time the deferred flush below reads it.
+        let committed = false;
+        tabulator.on("cellEdited", () => {
+            committed = true;
+        });
+
         // Deferred, because Tab ends the edit of one cell before the focus event opens the editor
         // of the next one in the same task.
         let flushTimer: ReturnType<typeof setTimeout> | undefined;
-        tabulator.on("cellEditCancelled", () => {
+        const observer = new MutationObserver(() => {
+            if (isEditing(tabulator)) return;
             clearTimeout(flushTimer);
             flushTimer = setTimeout(() => {
+                const wasCommitted = committed;
+                committed = false;
+                if (wasCommitted) return;
                 if (!pendingDataRef.current || isEditing(tabulator)) return;
                 tabulator.replaceData(pendingDataRef.current);
                 pendingDataRef.current = undefined;
             }, 0);
         });
+        observer.observe(tabulator.element, { attributes: true, attributeFilter: [ "class" ] });
 
         return () => {
+            observer.disconnect();
             clearTimeout(flushTimer);
             pendingDataRef.current = undefined;
             tabulator.destroy();
@@ -91,7 +104,7 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
     useEffect(() => {
         const tabulator = tabulatorRef.current;
         // replaceData rebuilds every row and cancels the open cell editor, so the rows wait in
-        // pendingDataRef until the "cellEditCancelled" handler or the next change applies them.
+        // pendingDataRef until the class observer's deferred flush or the next change applies them.
         if (tabulator && isEditing(tabulator)) {
             pendingDataRef.current = data;
             return;
