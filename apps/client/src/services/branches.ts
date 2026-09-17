@@ -36,6 +36,8 @@ async function moveBeforeBranch(branchIdsToMove: string[], beforeBranchId: strin
             toastService.showError(resp.message);
             return;
         }
+
+        await ws.waitForMaxKnownEntityChangeId();
     }
 }
 
@@ -64,6 +66,8 @@ async function moveAfterBranch(branchIdsToMove: string[], afterBranchId: string)
             toastService.showError(resp.message);
             return;
         }
+
+        await ws.waitForMaxKnownEntityChangeId();
     }
 }
 
@@ -93,6 +97,8 @@ async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: st
             toastService.showError(resp.message);
             return;
         }
+
+        await ws.waitForMaxKnownEntityChangeId();
     }
 }
 
@@ -246,6 +252,8 @@ async function moveNodeUpInHierarchy(node: Fancytree.FancytreeNode) {
         toastService.showError(resp.message);
         return;
     }
+
+    await ws.waitForMaxKnownEntityChangeId();
 }
 
 function filterSearchBranches(branchIds: string[]) {
