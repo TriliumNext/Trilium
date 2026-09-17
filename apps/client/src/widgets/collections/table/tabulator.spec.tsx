@@ -113,6 +113,24 @@ describe("Tabulator", () => {
         expect(tabulator.replaceData).toHaveBeenLastCalledWith(fifth);
     });
 
+    it("reads the class that the installed EditModule sets while an editor is open", async () => {
+        vi.useRealTimers();
+        const { TabulatorFull } = await vi.importActual<typeof import("tabulator-tables")>("tabulator-tables");
+        const table = new TabulatorFull(container, {
+            data: [ { id: 1, title: "first" } ],
+            columns: [ { title: "Title", field: "title", editor: "input" } ]
+        });
+        await new Promise<void>((resolve) => table.on("tableBuilt", resolve));
+
+        const [ cell ] = table.getRows()[0].getCells();
+        expect(table.element.classList.contains("tabulator-editing")).toBe(false);
+        cell.edit(true);
+        expect(table.element.classList.contains("tabulator-editing")).toBe(true);
+        cell.cancelEdit();
+        expect(table.element.classList.contains("tabulator-editing")).toBe(false);
+        table.destroy();
+    });
+
     it("does not apply held rows to a destroyed table", () => {
         const tabulator = mount();
 

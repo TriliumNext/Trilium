@@ -66,6 +66,7 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
 
         return () => {
             clearTimeout(flushTimer);
+            pendingDataRef.current = undefined;
             tabulator.destroy();
         };
     }, [ dataTree ] );
