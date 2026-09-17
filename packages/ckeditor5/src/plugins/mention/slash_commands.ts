@@ -639,42 +639,47 @@ function buildImageUploadCommand(editor: Editor): SlashCommandDefinition {
     return {
         id: "uploadImage",
         title: t("Upload image"),
+        description: t("Upload an image from your device."),
+        aliases: [ "picture", "photo" ],
         icon: IconImage,
-        execute(editor) {
+        // The entry opens a file picker instead of naming `uploadImage`, so `commandName` cannot
+        // gate it; without this it would be offered in an editor that has no `ImageUpload`.
+        isEnabled: (target) => target.commands.get("uploadImage")?.isEnabled ?? false,
+        execute(target) {
+            const imageTypes = target.config.get("image.upload.types") ?? [];
+            const imageTypesRegExp = createImageTypeRegExp(imageTypes);
             const input = document.createElement("input");
 
             input.type = "file";
-            input.accept = "*/*";
+            input.accept = imageTypes.map((type) => `image/${type}`).join(",");
+            input.multiple = true;
+            input.style.display = "none";
 
-            const imageTypes = editor.config.get(   'image.upload.types' )!;
-		    const imageTypesRegExp = createImageTypeRegExp( imageTypes );
-
-            input.addEventListener( "change", () => {
+            input.addEventListener("change", () => {
+                /* v8 ignore next -- `files` is only null on an input that is not of type `file` */
                 const imagesToUpload = Array.from(input.files ?? [])
-                    .filter( file => imageTypesRegExp.test(file.type));
+                    .filter((file) => imageTypesRegExp.test(file.type));
 
-                if (imagesToUpload) {
-                    editor.execute('uploadImage', { file: imagesToUpload });
-				    editor.editing.view.focus();
+                if (imagesToUpload.length) {
+                    target.execute("uploadImage", { file: imagesToUpload });
+                    target.editing.view.focus();
                 }
 
                 input.remove();
-            }, { once: true } );
+            }, { once: true });
 
-            input.style.display = 'none';
-            document.body.appendChild( input );
-
+            document.body.appendChild(input);
             input.click();
-        },
+        }
     };
 }
 
 // Source: https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-image/src/imageupload/utils.ts
-function createImageTypeRegExp( types: Array<string> ): RegExp {
-	// Sanitize the MIME type name which may include: "+", "-" or ".".
-	const regExpSafeNames = types.map( type => type.replace( '+', '\\+' ) );
+function createImageTypeRegExp(types: string[]): RegExp {
+    // Sanitize the MIME type name which can include: "+", "-" or ".".
+    const regExpSafeNames = types.map((type) => type.replace("+", "\\+"));
 
-	return new RegExp( `^image\\/(${ regExpSafeNames.join( '|' ) })$` );
+    return new RegExp(`^image\\/(${regExpSafeNames.join("|")})$`);
 }
 
 /**

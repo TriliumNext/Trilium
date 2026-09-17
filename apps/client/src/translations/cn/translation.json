@@ -1153,8 +1153,6 @@
     "edit_attribute": "编辑此属性",
     "delete_attribute": "删除此属性",
     "delete_confirmation": "从该集合中的每一张笔记中删除 <strong>{{name}}</strong> 及其值？此操作无法撤销。",
-    "shown_on_items": "在项目上显示",
-    "hidden_from_items": "在项目上隐藏",
     "label_name": "标签：{{name}}",
     "relation_name": "关系：{{name}}"
   },
@@ -3601,7 +3599,8 @@
       "stop": "停止",
       "tokens": "tokens",
       "try-again": "重试",
-      "working": "正在处理…"
+      "working": "正在处理…",
+      "upload-image": "上传图片"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -3655,7 +3654,17 @@
     "lan_access_label": "允许浏览器和网络访问",
     "lan_access_description": "通过 HTTP 提供应用、共享笔记和实时更新——可以从本机的浏览器以及网络中的其他设备访问。关闭时，仅保留本地集成功能（网页剪藏器、MCP、ETAPI）可访问。",
     "lan_access_title": "网络访问",
-    "lan_access_section_description": "桌面端为\"自包含\"（self-contained）应用：默认情况下，只有本机功能（网页剪藏器、MCP、ETAPI）可以访问它。启用此选项后，可以在浏览器中打开应用和共享笔记，也能让其他设备连接进来——例如从另一台设备同步数据。建议只在信任的网络中开启。"
+    "lan_access_section_description": "桌面端为\"自包含\"（self-contained）应用：默认情况下，只有本机功能（网页剪藏器、MCP、ETAPI）可以访问它。启用此选项后，可以在浏览器中打开应用和共享笔记，也能让其他设备连接进来——例如从另一台设备同步数据。建议只在信任的网络中开启。",
+    "standalone": {
+      "backend_scripting_section_description": "后端脚本在此浏览器内运行，可完全访问你的笔记、设置和同步凭据。它们可由同步、导入或任何包含可执行属性的内容触发，无需你打开该笔记。前端脚本始终启用，其权限也不超出应用本身。",
+      "reload_required": "需要重新加载才能使此更改生效。",
+      "reload_now": "立即重新加载页面",
+      "other_tab_hint": "这些设置由拥有数据库的那个标签页来更改，通常是你打开的第一个 Trilium 标签页。请关闭其他标签页并重新加载本页面，以便在此处更改它们。",
+      "confirm_enable": "启用 {{- setting}}？\n\n{{- warning}} 你笔记中的脚本可以请求这样做，因此请仅在你本人主动要求时才继续。",
+      "confirm_disable": "禁用 {{- setting}}？",
+      "confirm_backend_scripting_warning": "后端脚本可完全访问你的笔记、设置和同步凭据。",
+      "confirm_sql_console_warning": "SQL 控制台可以读取你的同步凭据和密码哈希，并可更改或删除任何笔记。"
+    }
   },
   "snippet_badge": {
     "label": "{{type}} 片段",

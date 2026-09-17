@@ -993,6 +993,52 @@ export function useElementSize(ref: RefObject<HTMLElement>) {
  *          screen actually changed — a request the browser refuses (no user gesture behind it, a
  *          policy against it) leaves the view exactly as it was.
  */
+/**
+ * Whether any part of an element is on screen, for something that floats over the page on the
+ * element's account and has no business there once the element is scrolled out of sight.
+ *
+ * Watched only while `enabled`, and true whenever it is not: an element that is not being watched
+ * is taken as on screen, and watching starts from that until the observer says otherwise.
+ */
+export function useIsOnScreen(ref: RefObject<Element>, enabled: boolean) {
+    const [ isOnScreen, setIsOnScreen ] = useState(true);
+
+    useEffect(() => {
+        const element = ref.current;
+        if (!enabled || !element) {
+            setIsOnScreen(true);
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([ entry ]) => setIsOnScreen(entry.isIntersecting));
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [ ref, enabled ]);
+
+    return isOnScreen;
+}
+
+/**
+ * `value`, held at true for `ms` after it turns false, for something that leaves the page with an
+ * animation: what draws it keeps drawing it that long, and tells it that it is leaving.
+ */
+export function useLingeringTrue(value: boolean, ms: number) {
+    const [ isLingering, setIsLingering ] = useState(value);
+
+    useEffect(() => {
+        if (value) {
+            setIsLingering(true);
+            return;
+        }
+
+        const timer = window.setTimeout(() => setIsLingering(false), ms);
+        return () => window.clearTimeout(timer);
+    }, [ value, ms ]);
+
+    return value || isLingering;
+}
+
 export function useFullscreen(element: HTMLElement | null | undefined, onChange?: () => void): [ boolean, () => Promise<boolean> ] {
     const [ isFullscreen, setFullscreen ] = useState(() => !!element && document.fullscreenElement === element);
     // Read afresh on every change rather than closed over, so that a listener bound once follows a

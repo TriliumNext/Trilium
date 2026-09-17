@@ -1635,6 +1635,28 @@ describe("collapsing a column", () => {
         expect(saved.at(-1)?.columns).toEqual([ { value: "To Do" }, { value: "Done" } ]);
     });
 
+    /** While a filter is on, the board holds the collapse state and nothing reaches the config. */
+    it("answers to the volatile collapse in place of the stored flags while set", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do", collapsed: true, keepCollapsed: true } ] },
+            [ "To Do", "Done" ]);
+        const setCollapsed = vi.fn();
+        api.volatileCollapse = { isCollapsed: (column) => column === "Done", setCollapsed };
+
+        expect(api.isColumnCollapsed("To Do")).toBe(false);
+        expect(api.isColumnCollapsed("Done")).toBe(true);
+        expect(api.isColumnKeptCollapsed("To Do")).toBe(false);
+
+        await api.setColumnCollapsed("Done", false);
+        await api.setAllColumnsCollapsed(true);
+        expect(setCollapsed.mock.calls).toEqual([ [ "Done", false ], [ null, true ] ]);
+        expect(saved).toEqual([]);
+
+        api.volatileCollapse = undefined;
+        expect(api.isColumnCollapsed("To Do")).toBe(true);
+        expect(api.isColumnKeptCollapsed("To Do")).toBe(true);
+    });
+
     /**
      * Turning it on collapses the column as well, so the entry does something the reader can see
      * rather than only deciding what the next open does.

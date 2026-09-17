@@ -193,6 +193,25 @@ describe("BoardGroupBy", () => {
         expect(create).toBe(divider + 1);
     });
 
+    /**
+     * The grouping in force is ticked, and stays open to the reader: a shut entry reads as one the
+     * board refuses rather than the one it is already on. Picking it again changes nothing.
+     */
+    it("ticks the grouping in force, and leaves it open to be picked again", async () => {
+        const { mountPoint, onSelect } = await setup("priority");
+        const [ status, priority ] = items(mountPoint);
+
+        expect(priority.querySelector(".bx-check")).toBeTruthy();
+        expect(status.querySelector(".bx-check")).toBeNull();
+        expect(priority.classList.contains("disabled")).toBe(false);
+
+        act(() => { (priority as HTMLElement).click(); });
+        expect(onSelect).not.toHaveBeenCalled();
+
+        act(() => { (status as HTMLElement).click(); });
+        expect(onSelect).toHaveBeenCalledWith("status");
+    });
+
     it("opens the editor on a promoted, inheritable select that cannot be changed", async () => {
         const { mountPoint } = await setup();
 

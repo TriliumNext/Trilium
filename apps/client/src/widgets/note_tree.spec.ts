@@ -17,6 +17,7 @@ function treeOf(widget: NoteTreeWidget): Fancytree.Fancytree {
 function setTree(widget: NoteTreeWidget, tree: Fancytree.Fancytree) {
     (widget as unknown as { tree: Fancytree.Fancytree }).tree = tree;
 }
+vi.mock("../services/import.js", () => ({ uploadFiles: vi.fn() }));
 
 describe("fancytree scrollIntoView patch", () => {
     it("resolves instead of crashing for a node without rendered markup (#10407)", async () => {
@@ -355,5 +356,42 @@ describe("the drop marker's distance from the row boundary", () => {
         publishDropMarkerShift({ span: undefined } as unknown as Fancytree.FancytreeNode);
 
         expect(shift()).toBe("8px");
+    });
+});
+
+describe("files dropped on the tree", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /** Drives the fancytree drop handler the widget registers, with nothing live behind the tree. */
+    async function dropFiles(files: File[]) {
+        const widget = new NoteTreeWidget();
+        let treeOptions: Fancytree.FancytreeOptions | undefined;
+        vi.spyOn(widget, "prepareRootNode").mockReturnValue({ key: "root" } as never);
+        vi.spyOn($.fn, "fancytree").mockImplementation(function (this: JQuery, opts: unknown) {
+            treeOptions = opts as Fancytree.FancytreeOptions;
+            return this;
+        } as never);
+        vi.spyOn($.ui.fancytree, "getTree").mockReturnValue({} as never);
+
+        widget.doRender();
+        // Let doRender's init promise chain settle against the stubs above.
+        await new Promise((resolve) => setTimeout(resolve));
+        widget.initFancyTree();
+
+        const dnd = treeOptions?.dnd5 as { dragDrop(node: unknown, data: unknown): Promise<void> };
+        await dnd.dragDrop(
+            { data: { noteId: "target", noteType: "text" } },
+            { hitMode: "over", dataTransfer: { files, getData: () => "" } }
+        );
+    }
+
+    it("tags the upload \"auto\", so an archive the importer recognizes is not imported as a plain zip", async () => {
+        const file = new File(["zip bytes"], "MyVault.zip");
+        await dropFiles([file]);
+
+        const { uploadFiles } = await import("../services/import.js");
+        expect(uploadFiles).toHaveBeenCalledWith("notes", "target", [file], expect.objectContaining({ format: "auto" }));
     });
 });

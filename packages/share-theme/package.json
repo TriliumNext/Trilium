@@ -35,7 +35,7 @@
     "dotenv": "17.4.2",
     "esbuild": "0.28.2",
     "highlight.js": "11.12.0",
-    "sass": "1.104.0",
+    "sass": "1.104.1",
     "typescript": "6.0.3",
     "vitest": "5.0.0"
   }

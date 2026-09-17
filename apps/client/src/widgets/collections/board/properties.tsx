@@ -49,7 +49,7 @@ export default function BoardProperties({ api, note, shown, onClose }: {
                 instruction={t("board_view.promoted-attributes-hint")}
                 note={note}
                 settings={api.getStoredPromotedAttributes()}
-                ignored={[ api.statusAttribute ]}
+                drawnByCollection={[ api.statusAttribute ]}
                 onChange={storeAttributes}
             />
 

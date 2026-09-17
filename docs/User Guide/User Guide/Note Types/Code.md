@@ -72,4 +72,14 @@ Since Trilium 0.94.0 the colors of code notes can be customized by going <a cla
 
 If you see `!=` displayed as `≠` or `->` as `→` inside a code note, those are _font ligature_: the default monospace font draws certain character pairs as a single symbol. The underlying text is not changed by Trilium (unlike text notes which have <a class="reference-link" href="Text/Automatic%20replacements.md">Automatic replacements</a>), and copying it out gives you back `!=` and `->`.
 
-This can be turned off with <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>_→ Appearance → Fonts → Programming ligatures._
+This can be turned off with <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>_→ Appearance → Fonts → Programming ligatures_.
+
+## Virtual keyboard behavior
+
+When using a virtual keyboard, keyboard suggestions and corrections are controlled as follows:
+
+*   For <a class="reference-link" href="Markdown.md">Markdown</a> and plain text code notes, the autocorrect is **on**, as well as automatic capitalization.
+*   For all the other code notes, the autocorrect is off in order to avoid issues when typing code.
+
+> [!NOTE]
+> Not all browsers and platforms respect this value, so the keyboard suggestions might appear without autocorrecting or the browser might disregard this and autocorrect anyway.

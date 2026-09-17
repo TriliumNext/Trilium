@@ -272,6 +272,7 @@ function sort(
             type: isRelation ? "relation" : "label",
             title: "Field",
             hidden: false,
+            drawnByCollection: false,
             definitionValue: "",
             labelType: isRelation ? undefined : fieldType,
             selectOptions,

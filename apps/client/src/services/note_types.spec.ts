@@ -17,7 +17,7 @@ vi.mock("./experimental_features.js", () => ({
 }));
 
 import { isExperimentalFeatureEnabled } from "./experimental_features.js";
-import noteTypesService from "./note_types";
+import noteTypesService, { isCurrentNoteType, selectableNoteTypes } from "./note_types";
 
 const llmFlag = vi.mocked(isExperimentalFeatureEnabled);
 
@@ -406,6 +406,62 @@ describe("new template badges", () => {
             expect(second.every((i: any) => !i.type || i.command === "insertChildNote")).toBe(true);
         } finally {
             restore();
+        }
+    });
+});
+
+describe("isCurrentNoteType", () => {
+    const CODE = { type: "code", mime: "text/plain" } as const;
+    const MARKDOWN = { type: "code", mime: "text/x-markdown" } as const;
+
+    it("tells the two code entries apart, which share a type", () => {
+        // A JavaScript note is the plain code entry, never the Markdown one.
+        const script = buildNote({ title: "script", type: "code", mime: "application/javascript" });
+        expect(isCurrentNoteType(CODE, script)).toBe(true);
+        expect(isCurrentNoteType(MARKDOWN, script)).toBe(false);
+
+        // Every mime `isMarkdown()` accepts picks the Markdown entry, `text/x-gfm` included.
+        for (const mime of [ "text/x-markdown", "text/markdown", "text/x-gfm" ]) {
+            const note = buildNote({ title: mime, type: "code", mime });
+            expect(isCurrentNoteType(MARKDOWN, note)).toBe(true);
+            expect(isCurrentNoteType(CODE, note)).toBe(false);
+        }
+    });
+
+    it("matches every other type on the type alone, and nothing without a note", () => {
+        const text = buildNote({ title: "prose", type: "text", mime: "text/html" });
+        expect(isCurrentNoteType({ type: "text", mime: "text/html" }, text)).toBe(true);
+        expect(isCurrentNoteType({ type: "canvas", mime: "application/json" }, text)).toBe(false);
+        expect(isCurrentNoteType(CODE, text)).toBe(false);
+        expect(isCurrentNoteType(CODE, null)).toBe(false);
+    });
+});
+
+describe("selectableNoteTypes", () => {
+    // The suite's other resets live inside their own describes, so pin the flag here rather than
+    // inheriting whatever the last test left behind.
+    beforeEach(() => llmFlag.mockReturnValue(false));
+
+    it("drops Markdown only where the MIME list already offers it", () => {
+        const markdownEntry = (withMimeList: boolean) =>
+            selectableNoteTypes(withMimeList).filter((nt) => nt.mime === "text/x-markdown");
+
+        // Beside the MIME list the code entries are only its heading, so one heading is left.
+        expect(markdownEntry(true)).toHaveLength(0);
+        expect(selectableNoteTypes(true).filter((nt) => nt.type === "code")).toHaveLength(1);
+
+        // On its own the menu is the only way to reach Markdown, so it stays.
+        expect(markdownEntry(false)).toHaveLength(1);
+    });
+
+    it("leaves out what cannot be created either way", () => {
+        for (const withMimeList of [ true, false ]) {
+            const types = selectableNoteTypes(withMimeList);
+            expect(types.some((nt) => nt.reserved)).toBe(false);
+            expect(types.some((nt) => nt.static)).toBe(false);
+            // The chat type is behind an experimental flag, mocked off for this suite.
+            expect(types.some((nt) => nt.type === "llmChat")).toBe(false);
+            expect(types.some((nt) => nt.type === "text")).toBe(true);
         }
     });
 });

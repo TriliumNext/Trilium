@@ -8,6 +8,8 @@ import {
     Essentials,
     _getModelData as getModelData,
     Heading,
+    Image,
+    ImageUpload,
     keyCodes,
     MentionEditing,
     Paragraph,
@@ -184,9 +186,10 @@ describe("TriliumSlashCommands", () => {
 
             // No `heading.options` to derive from, so the palette carries no headings at all...
             expect(buildDefaultSlashCommands(editor).map((definition) => definition.id))
-                .toEqual([ "blockQuote", "codeBlock", "insertTable", "horizontalLine", "indent", "outdent" ]);
+                .toEqual([ "blockQuote", "codeBlock", "insertTable", "horizontalLine", "indent", "outdent", "uploadImage" ]);
 
-            // ...and of those, only the one whose plugin is actually loaded survives the catalog.
+            // ...and of the command-backed ones, only the one whose plugin is actually loaded
+            // survives the catalog.
             const ids = (await queryPalette("")).map((item) => (item as { id: string }).id);
             expect(ids).toContain("/blockQuote");
             expect(ids).not.toContain("/codeBlock");
@@ -261,6 +264,107 @@ describe("TriliumSlashCommands", () => {
             expect(ids[0]).toBe("/paragraph");
             expect(ids.indexOf("/blockQuote")).toBeLessThan(ids.indexOf("/align-left"));
             expect(ids.indexOf("/align-left")).toBeLessThan(ids.indexOf("/anchor"));
+        });
+    });
+
+    describe("image upload", () => {
+        /** The palette entry opens a file picker, so the spec drives the `<input>` it creates. */
+        function uploadEntry(target: Editor): SlashCommandDefinition {
+            const definition = buildDefaultSlashCommands(target).find((candidate) => candidate.id === "uploadImage");
+
+            if (!definition) {
+                throw new Error("the palette should carry an `uploadImage` entry");
+            }
+
+            return definition;
+        }
+
+        function filesOf(...files: File[]): FileList {
+            const transfer = new DataTransfer();
+
+            for (const file of files) {
+                transfer.items.add(file);
+            }
+
+            return transfer.files;
+        }
+
+        it("is offered only where an `uploadImage` command is registered", async () => {
+            // The entry runs a file picker rather than naming the command, so `commandName` cannot
+            // gate it and `isEnabled` has to.
+            expect(isSlashCommandEnabled(editor, uploadEntry(editor))).toBe(false);
+            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).not.toContain("/uploadImage");
+
+            editor = await createTestEditor(
+                [ Essentials, Paragraph, Image, ImageUpload, MentionEditing, TriliumMentionUI, TriliumSlashCommands ]
+            );
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+            expect(isSlashCommandEnabled(editor, uploadEntry(editor))).toBe(true);
+            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).toContain("/uploadImage");
+        });
+
+        it("uploads only the picked files whose type `image.upload.types` allows", async () => {
+            editor = await createTestEditor(
+                [ Essentials, Paragraph, Image, ImageUpload, MentionEditing, TriliumMentionUI, TriliumSlashCommands ],
+                { image: { upload: { types: [ "png", "svg+xml" ] } } }
+            );
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+            const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
+            const click = vi.spyOn(HTMLInputElement.prototype, "click").mockReturnValue(undefined);
+
+            uploadEntry(editor).execute?.(editor);
+
+            expect(click).toHaveBeenCalledOnce();
+            const input = click.mock.instances[0] as HTMLInputElement;
+
+            // `accept` narrows the native picker to the configured types, and the `+` in a type
+            // like `svg+xml` survives into the filter regexp rather than being read as a quantifier.
+            expect(input.accept).toBe("image/png,image/svg+xml");
+            expect(input.type).toBe("file");
+            expect(input.isConnected).toBe(true);
+
+            const png = new File([ "" ], "a.png", { type: "image/png" });
+            const svg = new File([ "<svg/>" ], "b.svg", { type: "image/svg+xml" });
+            const text = new File([ "" ], "c.txt", { type: "text/plain" });
+            const gif = new File([ "" ], "d.gif", { type: "image/gif" });
+
+            input.files = filesOf(png, svg, text, gif);
+            input.dispatchEvent(new Event("change"));
+
+            expect(execute).toHaveBeenCalledWith("uploadImage", { file: [ png, svg ] });
+            expect(input.isConnected).toBe(false);
+        });
+
+        it("uploads nothing, and still cleans up, when the picker yields no allowed image", async () => {
+            editor = await createTestEditor(
+                [ Essentials, Paragraph, Image, ImageUpload, MentionEditing, TriliumMentionUI, TriliumSlashCommands ],
+                { image: { upload: { types: [ "png" ] } } }
+            );
+
+            const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
+            const click = vi.spyOn(HTMLInputElement.prototype, "click").mockReturnValue(undefined);
+
+            uploadEntry(editor).execute?.(editor);
+            const input = click.mock.instances[0] as HTMLInputElement;
+
+            input.files = filesOf(new File([ "" ], "c.txt", { type: "text/plain" }));
+            input.dispatchEvent(new Event("change"));
+
+            expect(execute).not.toHaveBeenCalled();
+            expect(input.isConnected).toBe(false);
+        });
+
+        it("accepts nothing in an editor that configures no upload types", async () => {
+            // `image.upload.types` is undefined without `ImageUpload`; reading it must not throw.
+            const click = vi.spyOn(HTMLInputElement.prototype, "click").mockReturnValue(undefined);
+
+            uploadEntry(editor).execute?.(editor);
+            const input = click.mock.instances[0] as HTMLInputElement;
+
+            expect(input.accept).toBe("");
+            input.remove();
         });
     });
 

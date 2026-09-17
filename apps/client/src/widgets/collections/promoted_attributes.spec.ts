@@ -57,6 +57,7 @@ describe("resolvePromotedAttributes", () => {
                 title: "Due",
                 promotedAlias: "Due",
                 hidden: false,
+                drawnByCollection: false,
                 definitionValue: "promoted,single,text",
                 isOwned: true,
                 isInheritable: true
@@ -172,12 +173,20 @@ describe("resolvePromotedAttributes", () => {
         expect(resolved.map((attribute) => attribute.name)).toEqual([ "dueDate" ]);
     });
 
-    /** What the collection draws itself is not the reader's to arrange. */
-    it("leaves out what the caller names as its own", () => {
+    /**
+     * What the collection draws itself is listed and arranged with the rest, so it keeps its place
+     * among them, but it is marked, and nothing shows it on an item.
+     */
+    it("marks what the caller names as its own rather than leaving it out", () => {
         const resolved = resolvePromotedAttributes(
             collection(DEFINED), [ { name: "owner" } ], [ "owner" ]);
 
         expect(resolved.map((attribute) => attribute.name))
+            .toEqual([ "owner", "dueDate", "requiresResearch" ]);
+        expect(resolved.map((attribute) => attribute.drawnByCollection))
+            .toEqual([ true, false, false ]);
+        // However it is stored, it is never among what an item draws.
+        expect(visiblePromotedAttributeNames(resolved))
             .toEqual([ "dueDate", "requiresResearch" ]);
     });
 

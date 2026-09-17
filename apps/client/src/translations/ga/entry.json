@@ -134,7 +134,8 @@
         "existing-data-skip-warning": "Níl aon rud scriosta go fóill. Ní chuirtear bunachar eolais nua in áit ach amháin nuair a roghnaíonn tú ceann nua a chruthú, cúltaca a athbhunú nó sioncrónú ó ghléas eile.",
         "unlock-refused": "Níor glacadh leis na sonraí sin. Déan iarracht arís.",
         "keep-existing": "Fill ar ais chuig an aip",
-        "keep-existing-description": "Coinnigh ort ag úsáid do bhunachar eolais atá ann cheana féin agus téigh ar ais chuig an aip."
+        "keep-existing-description": "Coinnigh ort ag úsáid do bhunachar eolais atá ann cheana féin agus téigh ar ais chuig an aip.",
+        "backup-saved-to": "Tá an cóip chúltaca sábháilte in {{- location}}. Brúigh \"Críochnaigh\" chun filleadh ar an bhfeidhmchlár."
     },
     "login": {
         "password": "Pasfhocal",

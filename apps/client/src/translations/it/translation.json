@@ -1866,8 +1866,6 @@
     "edit_attribute": "Modifica questo attributo",
     "delete_attribute": "Elimina questo attributo",
     "delete_confirmation": "Eliminare <strong>{{name}}</strong> e i suoi valori da tutte le note in questa collezione? Quest'operazione non può essere annullata.",
-    "shown_on_items": "Mostra sugli oggetti",
-    "hidden_from_items": "Nascosto dagli oggetti",
     "label_name": "Etichetta: {{name}}",
     "relation_name": "Relazione: {{name}}"
   },

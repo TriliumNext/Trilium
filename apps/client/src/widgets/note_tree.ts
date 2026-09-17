@@ -588,6 +588,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         const importService = await import("../services/import.js");
 
                         importService.uploadFiles("notes", node.data.noteId, files, {
+                            // Nothing was chosen here the way the import dialog makes a user choose, so
+                            // let the importer recognize an archive it knows (an Obsidian vault).
+                            format: "auto",
                             safeImport: true,
                             shrinkImages: true,
                             textImportedAsText: true,

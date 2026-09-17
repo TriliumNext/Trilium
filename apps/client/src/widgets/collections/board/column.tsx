@@ -14,11 +14,12 @@ import dialog from "../../../services/dialog";
 import { getHue, parseColor } from "../../../services/css_class_manager";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import { isMobile } from "../../../services/utils";
 import { DragData, TREE_CLIPBOARD_TYPE } from "../../note_tree";
 import ActionButton from "../../react/ActionButton";
 import Icon from "../../react/Icon";
 import { IconPickerButton } from "../../react/IconPicker";
-import { useStaticTooltip } from "../../react/hooks";
+import { useIsOnScreen, useLingeringTrue, useStaticTooltip } from "../../react/hooks";
 import { useFlip } from "../../react/flip";
 import { useScrollFade } from "../../react/scroll_fade";
 
@@ -38,12 +39,16 @@ const MIN_CARD_HEIGHT = 32;
 /** How long an open takes. Matches `--board-expand-duration` in the board's own rules. */
 export const EXPAND_MS = 200;
 import NoteLink from "../../react/NoteLink";
-import { BoardActionsContext, BoardDragStateContext, TitleEditor } from ".";
+import {
+    BoardActionsContext, BoardDragStateContext, BoardOverlayHostContext, BoardSelectionModeContext,
+    TitleEditor
+} from ".";
 import BoardApi from "./api";
 import Card from "./card";
 import CardTemplatePill from "./card_template_pill";
 import { cardTemplateIcon, type CardTemplates } from "./card_templates";
 import { DEFAULT_CARD_ICON, DEFAULT_COLUMN_ICON, INBOX_COLUMN } from "./columns";
+import { ColumnToolbar, RAIL_EXIT_MS } from "./card_toolbar";
 import { openColumnContextMenu, openColumnSortMenu, openCreateCardMenu } from "./context_menu";
 import type { ColumnSort } from "./data";
 import { cardSpacing } from "./drag_measure";
@@ -72,6 +77,9 @@ export default function Column({
     archived,
     collapsed,
     keepCollapsed,
+    isCollapseVolatile,
+    collapsesQuickly,
+    willOpen,
     isActive,
     isPeeked,
     isResizing,
@@ -99,6 +107,18 @@ export default function Column({
     collapsed?: boolean,
     /** Whether the column collapses again once opened, which keeps `collapsed` through an open. */
     keepCollapsed?: boolean,
+    /**
+     * Whether `collapsed` is the filter's rather than the stored flag, so a change to it is not
+     * written and the column is not offered to keep collapsed.
+     */
+    isCollapseVolatile?: boolean,
+    /** Whether a collapse now being drawn was asked for, which runs at the quick duration. */
+    collapsesQuickly?: boolean,
+    /**
+     * Whether the column is about to open, while it is still drawn as a strip. It lays its cards
+     * out meanwhile, so the open does not pay for that on the frame the width starts moving.
+     */
+    willOpen?: boolean,
     /** Whether this is the column the reader is working in, which opens it while it is collapsed. */
     isActive?: boolean,
     /** Whether the board is showing every collapsed column at once, which opens this one too. */
@@ -351,7 +371,7 @@ export default function Column({
      * hidden rather than taken out, which is what makes closing one cheap.
      */
     const [ isDrawn, setIsDrawn ] = useState(!isCollapsed);
-    if (!isDrawn && !isCollapsed) {
+    if (!isDrawn && (!isCollapsed || willOpen)) {
         setIsDrawn(true);
     }
 
@@ -455,6 +475,7 @@ export default function Column({
             canRename: !isCollapsed,
             isCollapsed,
             keepCollapsed,
+            canKeepCollapsed: !isCollapseVolatile,
             nested,
             onEditTitle: () => setColumnNameToEdit(column),
             onNewItem: beginNewItem,
@@ -480,7 +501,8 @@ export default function Column({
             }
         });
     }, [
-        api, column, color, archived, collapsed, keepCollapsed, collapse, isCollapsed, nested,
+        api, column, color, archived, collapsed, keepCollapsed, isCollapseVolatile, collapse,
+        isCollapsed, nested,
         columns, columnIndex, setColumnNameToEdit, setColumnLimitToEdit, setActiveColumn,
         onMoveColumn, onFocusColumn
     ]);
@@ -496,6 +518,27 @@ export default function Column({
             setColumnNameToEdit(column);
         }
     }, [ column, isCollapsed ]);
+
+    const overlayHost = useContext(BoardOverlayHostContext);
+    /** Whether the heading holds the focus, which on mobile floats the column's rail. */
+    const [ isHeaderFocused, setIsHeaderFocused ] = useState(false);
+    // Focus moving within the heading or onto the rail keeps the rail; anywhere else takes it.
+    const handleHeaderFocusOut = useCallback((e: FocusEvent) => {
+        const next = e.relatedTarget instanceof Element ? e.relatedTarget : null;
+        if (next && (headerRef.current?.contains(next) || next.closest(".board-card-toolbar"))) {
+            return;
+        }
+
+        setIsHeaderFocused(false);
+    }, []);
+    const isSelecting = useContext(BoardSelectionModeContext);
+    // Off the heading while its title is edited, since the rename it offers is under way, and in
+    // selection mode, where the board's own rail stands for the selection.
+    const isRailWanted = isMobile() && isHeaderFocused && !isEditing && !isSelecting;
+    const isHeaderOnScreen = useIsOnScreen(headerRef, isRailWanted);
+    const isRailShown = isRailWanted && isHeaderOnScreen;
+    // Kept drawn while it slides off.
+    const isRailDrawn = useLingeringTrue(isRailShown, RAIL_EXIT_MS);
 
     /** Allow using mouse wheel to scroll inside card, while also maintaining column horizontal scrolling. */
     const handleScroll = useCallback((event: JSX.TargetedWheelEvent<HTMLDivElement>) => {
@@ -607,12 +650,14 @@ export default function Column({
                 "drag-over": isDropTarget && (isSorted || draggedCard?.fromColumn !== column),
                 // The class the themes key a hue off, worn here as anywhere else that carries one.
                 "with-hue": hue !== undefined,
+                "board-column-inbox": column === INBOX_COLUMN,
                 "board-column-archived": archived,
                 "editing-open": hasEditedCard || !!insertBefore,
                 windowed: isWindowed,
                 "over-limit": isOverLimit,
                 collapsed: isCollapsed,
-                "quick-collapse": isCollapsingByHand,
+                "pre-expanding": isCollapsed && willOpen,
+                "quick-collapse": isCollapsingByHand || collapsesQuickly,
                 // Opening is drawn for the reader who asked for it. A column opened to take a
                 // dragged card takes its width at once, since the drop is measured as it opens.
                 "quick-expand": !isCollapsed && !opensAtOnce,
@@ -656,6 +701,12 @@ export default function Column({
                     }
                 }}
                 onKeyDown={handleTitleKeyDown}
+                // Only where the rail follows the focus: elsewhere a redraw on every focus
+                // change buys nothing, and would write a controlled editor's value back mid-edit.
+                onFocusIn={isMobile() ? () => setIsHeaderFocused(true) : undefined}
+                onFocusOut={isMobile() ? handleHeaderFocusOut : undefined}
+                // A tap takes the focus, which not every touch browser gives a heading on its own.
+                onClick={isMobile() ? () => headerRef.current?.focus() : undefined}
                 tabIndex={300}
             >
                 {isCollapsed ? (
@@ -775,6 +826,17 @@ export default function Column({
                 <div ref={roomRef} className="board-drop-room" />
             </div>}
 
+            {isRailDrawn && overlayHost.current && (
+                <ColumnToolbar
+                    host={overlayHost.current}
+                    isLeaving={!isRailShown}
+                    isCollapsed={isCollapsed}
+                    onRename={() => setColumnNameToEdit(column)}
+                    onToggleCollapse={isCollapsed ? select : collapse}
+                    onSort={(e) => openColumnSortMenu(api, e.pageX, e.pageY, column)}
+                    onFocusOut={handleHeaderFocusOut}
+                />
+            )}
             {!isCollapsed && <AddNewItem
                 api={api}
                 cardTemplates={cardTemplates}

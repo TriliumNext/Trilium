@@ -21,7 +21,7 @@ async function testImport(fileName: string) {
     return testImportBuffer(buffer);
 }
 
-async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData: Record<string, unknown> = { textImportedAsText: true }, opts?: { restoreAsRoot?: boolean; preserveIds?: boolean }) {
+async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData: Record<string, unknown> = { textImportedAsText: true }, opts?: Parameters<typeof zip.importZip>[3]) {
     const taskContext = TaskContext.getInstance(taskId, "importNotes", taskData);
 
     // `init` returns the callback's promise, so a failing import rejects here rather than hanging.
@@ -1496,5 +1496,53 @@ describe("removeTriliumTags", () => {
                     </ul>
             </body>`;
         expect(output).toEqual(expected);
+    });
+});
+
+describe("Obsidian vault detection", () => {
+    async function importWithFallback(files: Record<string, string>, taskId: string) {
+        const onObsidianVault = vi.fn().mockResolvedValue(becca.getNoteOrThrow("root"));
+        const buffer = await createZipBuffer(files);
+        const { importedNote } = await testImportBuffer(buffer, taskId, { textImportedAsText: true }, { onObsidianVault });
+        return { onObsidianVault, importedNote };
+    }
+
+    it("hands a vault to the fallback, zipped as its folder or as its contents", async () => {
+        const wrapped = await importWithFallback({ "MyVault/.obsidian/app.json": "{}", "MyVault/Note.md": "# Note" }, "obsidian-wrapped");
+        expect(wrapped.onObsidianVault).toHaveBeenCalled();
+        // The fallback's note is what the import returns, so the archive was handed over rather than imported.
+        expect(wrapped.importedNote).toBe(becca.getNoteOrThrow("root"));
+
+        const bare = await importWithFallback({ ".obsidian/app.json": "{}", "Note.md": "# Note" }, "obsidian-bare");
+        expect(bare.onObsidianVault).toHaveBeenCalled();
+    });
+
+    it("imports normally when the archive is a Trilium export or holds no vault", async () => {
+        // `!!!meta.json` marks a Trilium export and wins over a stray `.obsidian/` entry inside it.
+        const triliumExport = await importWithFallback({ "!!!meta.json": JSON.stringify({ files: [] }), ".obsidian/app.json": "{}" }, "obsidian-meta");
+        expect(triliumExport.onObsidianVault).not.toHaveBeenCalled();
+
+        const plain = await importWithFallback({ "docs/Note.md": "# Note" }, "obsidian-plain");
+        expect(plain.onObsidianVault).not.toHaveBeenCalled();
+        expect(plain.importedNote?.title).toBe("docs");
+    });
+
+    it("leaves a vault nested among unrelated content to this importer", async () => {
+        // importObsidian strips only its own vault root, so everything beside the vault would be imported
+        // with Obsidian semantics under a root named after it.
+        const nested = await importWithFallback({
+            "Documents/MyVault/.obsidian/app.json": "{}",
+            "Documents/MyVault/Note.md": "# Note",
+            "Documents/Unrelated.md": "# Unrelated"
+        }, "obsidian-nested");
+
+        expect(nested.onObsidianVault).not.toHaveBeenCalled();
+    });
+
+    it("imports a vault generically when no fallback is offered", async () => {
+        const buffer = await createZipBuffer({ "MyVault/.obsidian/app.json": "{}", "MyVault/Note.md": "# Note" });
+        const { importedNote } = await testImportBuffer(buffer, "obsidian-no-fallback");
+
+        expect(importedNote?.title).toBe("MyVault");
     });
 });

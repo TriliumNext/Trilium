@@ -67,6 +67,45 @@ describe("CodeMirror", () => {
             editor = build({ tabIndex: 7 });
             expect(editor.dom.tabIndex).toBe(7);
         });
+
+        it("keeps on-screen keyboard suggestions off unless the editor holds prose", () => {
+            // Android reads `autocomplete`, not the `spellcheck`/`autocorrect` pair CodeMirror sets
+            // on its own, so its absence is what lets Gboard complete and correct words in code.
+            editor = build();
+            expect(editor.contentDOM.getAttribute("autocomplete")).toBe("off");
+
+            editor.destroy();
+            editor = build({ allowKeyboardSuggestions: true });
+            expect(editor.contentDOM.hasAttribute("autocomplete")).toBe(false);
+        });
+
+        it("follows a switch between prose and code after construction", () => {
+            // The language dropdown can move a note between `text/plain` and a real language, so
+            // the attributes have to track it rather than being fixed when the editor is built.
+            editor = build();
+            editor.setAllowKeyboardSuggestions(true);
+            expect(editor.contentDOM.hasAttribute("autocomplete")).toBe(false);
+
+            editor.setAllowKeyboardSuggestions(false);
+            expect(editor.contentDOM.getAttribute("autocomplete")).toBe("off");
+        });
+
+        it("gives a prose editor back the keyboard help CodeMirror turns off for code", () => {
+            // CodeMirror hard-codes both to off for every editor, so leaving its defaults alone
+            // would cost a Markdown note its sentence capitalization and its typo correction.
+            editor = build();
+            expect(editor.contentDOM.getAttribute("autocorrect")).toBe("off");
+            expect(editor.contentDOM.getAttribute("autocapitalize")).toBe("off");
+
+            editor.setAllowKeyboardSuggestions(true);
+            expect(editor.contentDOM.getAttribute("autocorrect")).toBe("on");
+            expect(editor.contentDOM.getAttribute("autocapitalize")).toBe("sentences");
+
+            editor.destroy();
+            editor = build({ allowKeyboardSuggestions: true });
+            expect(editor.contentDOM.getAttribute("autocorrect")).toBe("on");
+            expect(editor.contentDOM.getAttribute("autocapitalize")).toBe("sentences");
+        });
     });
 
     describe("text access", () => {

@@ -46,7 +46,7 @@ describe("RelationValuesInput", () => {
         return container;
     }
 
-    it("shows the targets as chips naming their notes, and drops the one pressed", async () => {
+    it("shows the targets as chips linking to their notes, and drops the one pressed", async () => {
         const alpha = buildNote({ title: "Alpha" });
         const beta = buildNote({ title: "Beta" });
         const onCommit = vi.fn();
@@ -54,6 +54,15 @@ describe("RelationValuesInput", () => {
 
         const chips = [ ...container.querySelectorAll(".tn-chip") ];
         expect(chips.map((chip) => chip.textContent?.trim())).toEqual([ "Alpha", "Beta" ]);
+
+        // The title is the only way from the field to a target already held, so it opens the note:
+        // an anchor, which is what the global handler navigates on. The icon stays outside it, so
+        // the hover underline does not run across the gap between the two.
+        const links = chips.map((chip) => chip.querySelector("a.tn-link"));
+        expect(links.map((link) => link?.getAttribute("href")))
+            .toEqual([ `#root/${alpha.noteId}`, `#root/${beta.noteId}` ]);
+        expect(links[0]?.textContent).toBe("Alpha");
+        expect(links[0]?.querySelector(".tn-icon")).toBeNull();
 
         await act(async () => chips[0]?.querySelector<HTMLElement>(".tn-chip-remove")?.click());
         expect(onCommit).toHaveBeenCalledWith([ beta.noteId ]);

@@ -30,6 +30,8 @@ export interface EditableCodeProps extends TypeWidgetProps {
     placeholder?: string;
     /** Optional external ref to the underlying CodeMirror `EditorView`. Populated once the editor has initialized. */
     editorRef?: Ref<VanillaCodeMirror>;
+    /** Lets an on-screen keyboard offer word completions and autocorrection, for an editor holding prose rather than code. */
+    allowKeyboardSuggestions?: boolean;
 }
 
 export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
@@ -177,7 +179,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
     );
 }
 
-export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized, lineWrapping, ...editorProps }: CodeMirrorProps & Pick<TypeWidgetProps, "ntxId">) {
+export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized, lineWrapping, allowKeyboardSuggestions, ...editorProps }: CodeMirrorProps & Pick<TypeWidgetProps, "ntxId">) {
     const codeEditorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useSyncedRef(externalContainerRef);
     const initialized = useRef($.Deferred());
@@ -244,6 +246,7 @@ export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRe
         editorRef={codeEditorRef}
         containerRef={containerRef}
         lineWrapping={lineWrapping ?? codeLineWrapEnabled}
+        allowKeyboardSuggestions={allowKeyboardSuggestions ?? mime === "text/plain"}
         indentSize={editorProps.indentSize ?? (parseInt(codeNoteTabWidth) || 4)}
         useTabs={editorProps.useTabs ?? codeNoteIndentWithTabs}
         onInitialized={() => {

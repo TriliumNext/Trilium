@@ -9,7 +9,7 @@ Object.entries({
     "Icon": typeof id !== "undefined" ? id : name,
     "Type": "Application",
     "StartupNotify": "true",
-    "StartupWMClass": productName,
+    "StartupWMClass": name,
     "Categories": categories?.length ? `${categories.join(";")};` : undefined,
     "MimeType": mimeType?.length ? `${mimeType.join(";")};` : undefined
 })

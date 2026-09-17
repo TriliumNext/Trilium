@@ -25,7 +25,7 @@
   },
   "toast": {
     "critical-error": {
-      "title": "Kritische Error",
+      "title": "Kritieke fout",
       "message": "Een kritieke fout heeft plaatsgevonden waardoor de applicatie niet kon opstarten:\n\n{{message}}\n\nDit is waarschijnlijk veroorzaakt door een onverwachte fout in een script. Probeer de applicatie op te starten in veilige modus en het probleem op te lossen."
     },
     "widget-error": {
@@ -39,25 +39,32 @@
     },
     "scripting-error": "Error met script: {{title}}",
     "widget-list-error": {
-      "title": "Kon geen lijst met widgets ophalen van de server"
+      "title": "De lijst met widgets ophalen van de server is mislukt"
     },
     "widget-render-error": {
       "title": "React-widget kon niet geladen worden"
     },
     "widget-missing-parent": "Widget heeft niet het verplichte '{{property}}'-veld gedefinieerd.\n\nAls dit script is bedoeld om zonder interface te draaien, gebruik dan in plaats daarvan '#run=frontendStartup'.",
-    "open-script-note": "Open scriptnotitie"
+    "open-script-note": "Open scriptnotitie",
+    "unhandled-error": {
+      "title": "Een achtergrondtaak is mislukt",
+      "details-button": "Zie meer details...",
+      "details-intro": "De applicatie draait nog en je notities zijn niet aangetast. Als dit blijft gebeuren, overweeg het op Github te melden door de volgende informatie te plakken.",
+      "details-title": "Technische informatie"
+    }
   },
   "add_link": {
     "add_link": "Voeg link toe",
     "help_on_links": "Hulp bij links",
     "note": "notitie",
-    "search_note": "zoek voor notitie op naam",
+    "search_note": "zoek notitie op naam",
     "link_title_mirrors": "De link titel is hetzelfde als de notitie's huidige titel",
     "link_title": "Link titel",
     "button_add_link": "Link toevoegen",
     "link_title_arbitrary": "snelkoppelingsnaam kan willekeurig worden aangepast",
     "anchor": "Anker (optioneel)",
-    "anchor_none": "Geen (koppeling naar notitie)"
+    "anchor_none": "Geen (koppeling naar notitie)",
+    "edit_link": "Wijzig link"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Bewerk branch prefix",

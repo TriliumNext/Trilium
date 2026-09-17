@@ -23,10 +23,10 @@ interface RelationValuesInputProps {
  * The field a relation holding several targets is edited through: the targets as chips naming their
  * notes, and after them the search box a single relation is already picked in.
  *
- * A chip only names its note — icon and title — rather than linking to it: the field is for editing
- * the set, and a link inside it would carry a press meant for the chip off to the note instead. What
- * the box takes is a made choice, never text: a note has to be picked, so nothing typed is ever kept,
- * and a target already held is not taken a second time — the chips are a set.
+ * A chip names its note — icon and title — the title being a link opening it, the only way from
+ * here to a target already held; the button beside it removes the target. What the box takes is a
+ * made choice, never text: a note has to be picked, so nothing typed is ever kept, and a target
+ * already held is not taken a second time — the chips are a set.
  */
 export default function RelationValuesInput({ values, onCommit, inputId, tabIndex, disabled }: RelationValuesInputProps) {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +66,7 @@ export default function RelationValuesInput({ values, onCommit, inputId, tabInde
                     disabled={disabled}
                     onRemove={() => drop(noteId)}
                 >
-                    <span><NoteTitle note={notes[noteId]} /></span>
+                    <span><NoteTitle note={notes[noteId]} linkTo={`#root/${noteId}`} /></span>
                 </Chip>
             ))}
             <NoteAutocomplete
@@ -106,10 +106,17 @@ export function RelationValueChips({ values }: { values: readonly string[] }) {
 /**
  * A note as its chip names it: icon and title, or nothing while the note is still being fetched — a
  * placeholder would only flash for the moment froca takes.
+ *
+ * `linkTo` is what the title opens, the icon and the space before it staying outside the link as
+ * `link.createLink` keeps them — the hover underline then runs under the words rather than across the
+ * gap to the icon.
  */
-function NoteTitle({ note }: { note: FNote | null | undefined }) {
+function NoteTitle({ note, linkTo }: { note: FNote | null | undefined; linkTo?: string }) {
     if (!note) return null;
-    return <><Icon icon={note.getIcon()} />{" "}{note.title}</>;
+    return <>
+        <Icon icon={note.getIcon()} />{" "}
+        {linkTo ? <a className="tn-link" href={linkTo}>{note.title}</a> : note.title}
+    </>;
 }
 
 /**

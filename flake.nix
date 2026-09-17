@@ -23,7 +23,13 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfreePredicate = pkg:
+               system == "aarch64-darwin" && nixpkgs.lib.getName pkg == "google-chrome";
+          };
+        };
 
         electronVersion = packageJsonDesktop.devDependencies.electron;
         # `or null` because a major bump lands in apps/desktop/package.json long before
@@ -278,13 +284,13 @@
 
             desktopItems = lib.optionals (app == "desktop") [
               (makeDesktopItem {
-                name = "Trilium Notes";
+                name = meta.mainProgram;
                 exec = meta.mainProgram;
                 icon = "trilium";
                 comment = meta.description;
                 desktopName = "Trilium Notes";
                 categories = [ "Office" ];
-                startupWMClass = "Trilium Notes";
+                startupWMClass = meta.mainProgram;
               })
             ];
 
@@ -393,7 +399,11 @@
               --set TRILIUM_RESOURCE_DIR $out/opt/trilium-build-docs/server
           '';
         };
-
+        chrome =
+          if stdenv.hostPlatform.system == "aarch64-darwin" then
+            pkgs.google-chrome
+          else
+            pkgs.chromium;
       in
       {
         packages.desktop = desktop;
@@ -416,14 +426,14 @@
             nodejs.python
             # For the browser-mode tests (packages/ckeditor5). The Chromium Playwright downloads
             # for itself is dynamically linked against libraries no NixOS system provides, so it
-            # dies on a missing libxcb.so.1.
-            pkgs.chromium
+            # dies on a missing libxcb.so.1. Chromium is unsupported on aarch64-darwin, so we use
+            chrome
           ];
 
           # Read by packages/ckeditor5/vitest.config.ts and passed to Playwright as
           # `launchOptions.executablePath`. Without it Playwright launches its own Chromium and the
           # suite cannot start.
-          CHROME_BIN = "${pkgs.chromium}/bin/chromium";
+          CHROME_BIN = lib.getExe chrome;
         };
       }
     );

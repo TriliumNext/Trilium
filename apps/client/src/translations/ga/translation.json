@@ -1186,9 +1186,7 @@
     "relation_name": "Gaol: {{name}}",
     "edit_attribute": "Cuir an tréith seo in eagar",
     "delete_attribute": "Scrios an tréith seo",
-    "delete_confirmation": "An scriosfar <strong>{{name}}</strong> agus a luachanna as gach nóta sa bhailiúchán seo? Ní féidir é seo a chealú.",
-    "shown_on_items": "Ar taispeáint ar na míreanna",
-    "hidden_from_items": "Faoi cheilt ar na míreanna"
+    "delete_confirmation": "An scriosfar <strong>{{name}}</strong> agus a luachanna as gach nóta sa bhailiúchán seo? Ní féidir é seo a chealú."
   },
   "script_executor": {
     "query": "Iarratas",
@@ -1973,7 +1971,10 @@
     "handshake_failed": "Theip ar chroitheadh láimhe an fhreastalaí sioncrónaithe, earráid: {{message}}",
     "timeout_description": "Am fanacht sula dtugann tú suas ar nasc mall.",
     "server_address_description": "URL an fhreastalaí Trilium le sioncrónú leis.",
-    "proxy_description": "Fág bán chun seachfhreastalaí córais a úsáid (deasc amháin). Bain úsáid as \"noproxy\" chun na seachfhreastalaithe go léir a sheachaint."
+    "proxy_description": "Fág bán chun seachfhreastalaí córais a úsáid (deasc amháin). Bain úsáid as \"noproxy\" chun na seachfhreastalaithe go léir a sheachaint.",
+    "effective_server": "Freastalaí in úsáid",
+    "effective_server_description": "Socraítear é trí config.ini nó trí athróga timpeallachta, a bhfuil tús áite acu thar an seoladh freastalaí thuas.",
+    "effective_server_disabled": "Tá an sioncronú múchta."
   },
   "api_log": {
     "close": "Dún"
@@ -3419,7 +3420,12 @@
     "start_over_pending": "Beidh an scáileán socraithe le feiceáil an chéad uair eile a atosófar an freastalaí seo. Atosaigh an freastalaí nuair a bheidh tú réidh, nó cealaigh thíos chun gach rud a fhágáil mar atá.",
     "start_over_cancel": "Cealaigh an tús arís",
     "related_backup": "Cúltaca",
-    "related_backup_description": "Cruthaigh nó athchóirigh cúltacaí bunachar sonraí, bainistigh cúltacaí uathoibríocha."
+    "related_backup_description": "Cruthaigh nó athchóirigh cúltacaí bunachar sonraí, bainistigh cúltacaí uathoibríocha.",
+    "info_persistence": "Seasmhacht",
+    "info_persistence_persistent": "Leanúnach",
+    "info_persistence_best_effort": "De réir na hacmhainne is fearr",
+    "info_persistence_persistent_description": "Tá gealltanas tugtha ag an mbrabhsálaí an bunachar sonraí seo a choinneáil go dtí go scriosfaidh tú é.",
+    "info_persistence_best_effort_description": "Is féidir leis an mbrabhsálaí an bunachar sonraí seo a bhaint chun spás a fháil ar ais.\nDe ghnáth, cinntítear marthanacht trí Trilium a shuiteáil mar aip nó trí é a chur leis an scáileán baile."
   },
   "search": {
     "title": "Cuardaigh",
@@ -3737,7 +3743,9 @@
       "the-server-responded-with-http-0": "D’fhreagair an freastalaí le HTTP %0.",
       "tokens": "comharthaí",
       "try-again": "Déan iarracht arís",
-      "working": "Ag obair…"
+      "working": "Ag obair…",
+      "upload-an-image-from-your-device": "Uaslódáil íomhá ó do ghléas.",
+      "upload-image": "Uaslódáil íomhá"
     },
     "task-state-dropped-title": "Stádas tascanna neamhbhailí",
     "task-state-dropped-message_one": "Tá sainmhíniú stádais tasc saincheaptha neamhbhailí agus níor tugadh aird air.",
@@ -3770,7 +3778,17 @@
     "lan_access_title": "Rochtain líonra",
     "lan_access_section_description": "De réir réamhshocraithe, bíonn an aip deisce féinchuimsitheach: ní sheirbheáiltear an aip agus do nótaí comhroinnte thar an líonra, agus ní féidir ach le comhtháthú áitiúil (gearrthóir gréasáin, MCP, ETAPI) teacht air ón ríomhaire seo. Cumasaigh é seo chun an aip agus na nótaí comhroinnte a oscailt i mbrabhsálaí, agus chun ligean do ghléasanna eile ceangal — mar shampla, chun sioncrónú. Cumasaigh é seo ar líonraí a bhfuil muinín agat astu ach amháin.",
     "lan_access_label": "Ceadaigh rochtain gréasáin agus líonra",
-    "lan_access_description": "Freastalaíonn sé ar an aip, nótaí comhroinnte agus nuashonruithe beo thar HTTP — inrochtana ó bhrabhsálaí ar an ríomhaire seo agus ó ghléasanna eile ar do líonra. Nuair a bhíonn sé múchta, ní fhanann ach comhtháthú áitiúil (gearrthóir gréasáin, MCP, ETAPI) inrochtana."
+    "lan_access_description": "Freastalaíonn sé ar an aip, nótaí comhroinnte agus nuashonruithe beo thar HTTP — inrochtana ó bhrabhsálaí ar an ríomhaire seo agus ó ghléasanna eile ar do líonra. Nuair a bhíonn sé múchta, ní fhanann ach comhtháthú áitiúil (gearrthóir gréasáin, MCP, ETAPI) inrochtana.",
+    "standalone": {
+      "backend_scripting_section_description": "Ritheann scripteanna cúlr-oibríochta laistigh den bhrabhsálaí seo, agus bíonn rochtain iomlán acu ar do chuid nótaí, ar do chuid socruithe agus ar do chuid dintiúr sioncronaithe. Is féidir iad a spreagadh trí shioncronú, trí allmhairiú, nó trí aon ábhar a bhfuil tréithe inrite ag baint leis, gan gá duit an nóta a oscailt. Bíonn scripteanna réamhoibríochta (frontend scripts) cumasaithe i gcónaí, agus ní théann siad níos faide ná mar a théann an aip féin.",
+      "reload_required": "Teastaíonn athlódáil chun go dtiocfaidh an t-athrú seo i bhfeidhm.",
+      "reload_now": "Athluchtaigh an leathanach anois",
+      "other_tab_hint": "Athraítear na socruithe seo ón gcluaisín ina bhfuil an bunachar sonraí – an chéad chluaisín Trilium a d’oscail tú de ghnáth. Dún na cluaisíní eile agus athluchtaigh an leathanach seo chun iad a athrú anseo.",
+      "confirm_enable": "Cumasaigh {{- setting}}?\n\n{{- warning}} Is féidir le scripte i do chuid nótaí é seo a iarraidh; mar sin, ná lean ar aghaidh ach má d'iarr tú féin é.",
+      "confirm_disable": "Díchumasaigh {{- setting}}?",
+      "confirm_backend_scripting_warning": "Faigheann scripteanna cúlfhoirne rochtain iomlán ar do chuid nótaí, socruithe agus dintiúir shioncronaithe.",
+      "confirm_sql_console_warning": "Is féidir leis an gconsól SQL do chuid dintiúr sioncronaithe agus an hais pasfhocail a léamh, agus aon nóta a athrú nó a scriosadh."
+    }
   },
   "image_buttons": {
     "zoom_in": "Zúmáil isteach",
@@ -4087,7 +4105,8 @@
     "mismatch": "Ní hionann na pasfhocail."
   },
   "open": {
-    "directory_failed": "Níorbh fhéidir {{- directory}} a oscailt: {{- reason}}"
+    "directory_failed": "Níorbh fhéidir {{- directory}} a oscailt: {{- reason}}",
+    "download_failed": "Níorbh fhéidir an íoslódáil a shábháil: {{- reason}}"
   },
   "attachment_roles": {
     "favicon": "Deilbhín an tsuímh",

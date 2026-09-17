@@ -80,6 +80,13 @@ async function routeToImporter(taskContext: TaskContext<"importNotes">, file: Fi
         // Trilium export by extension alone; the Obsidian import dialog tags the upload to route it here.
         return await obsidianImportService.importObsidian(taskContext, zipSource, parentNote, file.originalname);
     } else if (extension === ".zip" && options.explodeArchives && (file.path || typeof file.buffer !== "string")) {
+        if (format === "auto") {
+            // "auto" is what the note tree's drop handler sends, naming no importer. A `.zip` chosen in the
+            // import dialog names one, so only the dropped archive is checked for an Obsidian vault.
+            return await zipImportService.importZip(taskContext, zipSource, parentNote, {
+                onObsidianVault: () => obsidianImportService.importObsidian(taskContext, zipSource, parentNote, file.originalname)
+            });
+        }
         return await zipImportService.importZip(taskContext, zipSource, parentNote);
     } else if (extension === ".opml" && options.explodeArchives) {
         return await opmlImportService.importOpml(taskContext, file.buffer, parentNote);

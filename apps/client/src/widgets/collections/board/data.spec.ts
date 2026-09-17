@@ -656,6 +656,7 @@ function definitions(name: string, type: "label" | "relation") {
         type,
         title: name,
         hidden: false,
+        drawnByCollection: false,
         definitionValue: "",
         isOwned: true,
         isInheritable: true

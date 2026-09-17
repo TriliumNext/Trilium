@@ -28,6 +28,12 @@ export interface PromotedAttribute {
     promotedAlias?: string;
     /** Whether the attribute is kept off the items. */
     hidden: boolean;
+    /**
+     * Whether the collection draws it itself, a board's grouping label being drawn as its columns.
+     * Such an attribute is listed and arranged like the rest, but never shown on an item and never
+     * offered to be: it is already on the screen, in the shape the collection gives it.
+     */
+    drawnByCollection: boolean;
     /** The definition as stored, which the attribute editor is handed to edit. */
     definitionValue: string;
     /** What the field holds: `text`, `date`, `boolean` and the rest. Absent for a relation. */
@@ -61,14 +67,14 @@ export function resolvePromotedAttributes(
     note: FNote | null | undefined,
     settings: PromotedAttributeSetting[] | undefined,
     /** Names the collection draws itself, such as the label a board groups by. */
-    ignored: string[] = []
+    drawnByCollection: string[] = []
 ): PromotedAttribute[] {
     const defined = new Map<string, PromotedAttribute>();
 
     for (const definition of note?.getAttributeDefinitions() ?? []) {
         const [ type, name ] = definition.name.split(":", 2);
         if ((type !== "label" && type !== "relation") || !name || defined.has(name)
-                || ignored.includes(name) || !definition.isInheritable) {
+                || !definition.isInheritable) {
             continue;
         }
 
@@ -82,6 +88,7 @@ export function resolvePromotedAttributes(
             labelType: parsed?.labelType,
             selectOptions: parsed?.selectOptions,
             hidden: false,
+            drawnByCollection: drawnByCollection.includes(name),
             definitionValue: definition.value,
             isOwned: definition.noteId === note?.noteId,
             isInheritable: definition.isInheritable
@@ -118,7 +125,9 @@ function defaultTitle(type: "label" | "relation", name: string) {
 
 /** The attributes drawn on an item, in order, for a view showing their values. */
 export function visiblePromotedAttributeNames(attributes: PromotedAttribute[]) {
-    return attributes.filter((attribute) => !attribute.hidden).map((attribute) => attribute.name);
+    return attributes
+        .filter((attribute) => !attribute.hidden && !attribute.drawnByCollection)
+        .map((attribute) => attribute.name);
 }
 
 /** What a collection stores for the attributes it has resolved. */

@@ -42,6 +42,20 @@ const lintTooltipTheme = EditorView.baseTheme({
     }
 });
 
+// Chromium maps `autocomplete="off"` on the focused element to Android's
+// `TYPE_TEXT_FLAG_NO_SUGGESTIONS`, which is what stops Gboard from offering word completions and
+// rewriting what was typed. The `spellcheck`, `autocorrect` and `writingsuggestions` attributes
+// CodeMirror already sets reach no equivalent flag, so the on-screen keyboard ignores them.
+const noKeyboardSuggestions = EditorView.contentAttributes.of({ autocomplete: "off" });
+
+// CodeMirror sets `autocorrect="off"` and `autocapitalize="off"` on every editor it builds, which
+// suits code. An editor holding prose overrides both, since `contentAttributes` is merged in after
+// those defaults, so the on-screen keyboard capitalizes sentences and fixes typos again.
+const proseKeyboardAttributes = EditorView.contentAttributes.of({
+    autocorrect: "on",
+    autocapitalize: "sentences"
+});
+
 type ContentChangedListener = () => void;
 
 export interface EditorConfig {
@@ -57,6 +71,12 @@ export interface EditorConfig {
     indentSize?: number;
     /** If true, indent using a tab character instead of spaces. Defaults to false. */
     useTabs?: boolean;
+    /**
+     * Lets an on-screen keyboard offer word completions, correct typos and capitalize sentences.
+     * Defaults to false, which suits code; an editor holding prose, such as the Markdown note
+     * type, sets it to true.
+     */
+    allowKeyboardSuggestions?: boolean;
     onContentChanged?: ContentChangedListener;
 }
 
@@ -71,6 +91,7 @@ export default class CodeMirror extends EditorView {
     private historyCompartment: Compartment;
     private themeCompartment: Compartment;
     private lineWrappingCompartment: Compartment;
+    private keyboardSuggestionsCompartment: Compartment;
     private indentUnitCompartment: Compartment;
     private searchHighlightCompartment: Compartment;
     private typeCompletionCompartment: Compartment;
@@ -91,6 +112,7 @@ export default class CodeMirror extends EditorView {
         const historyCompartment = new Compartment();
         const themeCompartment = new Compartment();
         const lineWrappingCompartment = new Compartment();
+        const keyboardSuggestionsCompartment = new Compartment();
         const indentUnitCompartment = new Compartment();
         const searchHighlightCompartment = new Compartment();
         const typeCompletionCompartment = new Compartment();
@@ -106,6 +128,7 @@ export default class CodeMirror extends EditorView {
             ...extensions,
             languageCompartment.of([]),
             lineWrappingCompartment.of(config.lineWrapping ? EditorView.lineWrapping : []),
+            keyboardSuggestionsCompartment.of(config.allowKeyboardSuggestions ? proseKeyboardAttributes : noKeyboardSuggestions),
             searchMatchHighlightTheme,
             lintTooltipTheme,
             searchHighlightCompartment.of([]),
@@ -167,6 +190,7 @@ export default class CodeMirror extends EditorView {
         this.historyCompartment = historyCompartment;
         this.themeCompartment = themeCompartment;
         this.lineWrappingCompartment = lineWrappingCompartment;
+        this.keyboardSuggestionsCompartment = keyboardSuggestionsCompartment;
         this.indentUnitCompartment = indentUnitCompartment;
         this.searchHighlightCompartment = searchHighlightCompartment;
         this.typeCompletionCompartment = typeCompletionCompartment;
@@ -241,6 +265,12 @@ export default class CodeMirror extends EditorView {
     setLineWrapping(wrapping: boolean) {
         this.dispatch({
             effects: [ this.lineWrappingCompartment.reconfigure(wrapping ? EditorView.lineWrapping : []) ]
+        });
+    }
+
+    setAllowKeyboardSuggestions(allow: boolean) {
+        this.dispatch({
+            effects: [ this.keyboardSuggestionsCompartment.reconfigure(allow ? proseKeyboardAttributes : noKeyboardSuggestions) ]
         });
     }
 

@@ -27,6 +27,9 @@ export interface NoteTypeMapping {
     static?: boolean;
 }
 
+/** The mime carried by the Markdown entry, which shares `type: "code"` with the plain code one. */
+export const MARKDOWN_NOTE_TYPE_MIME = "text/x-markdown";
+
 export const NOTE_TYPES: NoteTypeMapping[] = [
     // The suggested note type ordering method: insert the item into the corresponding group,
     // then ensure the items within the group are ordered alphabetically.
@@ -55,7 +58,7 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
 
     // Code notes
     { type: "code", mime: "text/plain", title: t("note_types.code"), icon: "bx-code" },
-    { type: "code", mime: "text/x-markdown", title: t("note_types.markdown"), icon: "bxl-markdown", isNew: true },
+    { type: "code", mime: MARKDOWN_NOTE_TYPE_MIME, title: t("note_types.markdown"), icon: "bxl-markdown", isNew: true },
 
     // Reserved types (cannot be created by the user)
     { type: "contentWidget", mime: "", title: t("note_types.widget"), reserved: true },
@@ -64,6 +67,31 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
     { type: "image", title: t("note_types.image"), reserved: true },
     { type: "launcher", mime: "", title: t("note_types.launcher"), reserved: true },
 ];
+
+/**
+ * Whether a {@link NOTE_TYPES} entry names the type `note` already has, so a menu can tick it.
+ *
+ * Code and Markdown are both `type: "code"`, so comparing types alone marks both of them for any
+ * code note; the note's mime is what tells the two entries apart.
+ */
+export function isCurrentNoteType(entry: Pick<NoteTypeMapping, "type" | "mime">, note: FNote | null | undefined) {
+    if (!note || entry.type !== note.type) return false;
+    if (entry.type !== "code") return true;
+    return note.isMarkdown() === (entry.mime === MARKDOWN_NOTE_TYPE_MIME);
+}
+
+/**
+ * The entries a note type menu offers, leaving out what the reader cannot create.
+ *
+ * `withMimeList` says the caller also renders the code MIME list, which already offers Markdown
+ * and every other language — so the Markdown entry is dropped and the code entries are left as
+ * that list's heading.
+ */
+export function selectableNoteTypes(withMimeList: boolean) {
+    return NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static
+        && (nt.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))
+        && (!withMimeList || nt.mime !== MARKDOWN_NOTE_TYPE_MIME));
+}
 
 /**
  * One thing a new note can be made from: a blank note type, or a note carrying `#template`.

@@ -244,6 +244,7 @@ function attribute(fields: Partial<PromotedAttribute> & { name: string }): Promo
         type: "label",
         title: fields.name,
         hidden: false,
+        drawnByCollection: false,
         definitionValue: "",
         isOwned: true,
         isInheritable: true,

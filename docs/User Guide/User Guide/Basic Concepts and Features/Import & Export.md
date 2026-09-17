@@ -1,7 +1,18 @@
 # Import & Export
-Trilium natively supports the following formats for both import and export.
+To import a note:
+
+*   The easiest way to import is to simply drag & drop a file or an archive into the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a>.
+    *   This will automatically detect some formats such as <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a>.
+    *   _Safe import_ is automatically on to prevent accidental running of foreign scripts.
+*   To configure an import, there is a dedicated dialog which can be accessed from either <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> → _Import into note_ or <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a> → _Import into note_.
+    *   This feature allows for dedicated importers for others apps such as <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a> or <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Microsoft%20OneNote.md">Microsoft OneNote</a>.
+    *   _Safe import_ as well as other options can be configured from the collapsed _Options_ section at the bottom.
+
+To export a note, right click the note in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_. Similarly, in <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a> there is a _Export note_ option.
 
 ## Supported formats
+
+Trilium natively supports the following formats for both import and export.
 
 *   HTML:
     *   This is the main format used by Trilium, where standard tags are used to represent basic formatting and layout (e.g. `<strong>`, `<table>`, `<pre>`).

@@ -111,9 +111,14 @@ export default function BoardGroupBy({ note, options, current, onSelect }: {
                 {options.map(option => (
                     <FormListItem
                         key={option.value}
-                        onClick={() => onSelect(option.value)}
-                        selected={option.value === current}
-                        disabled={option.value === current}
+                        // The one in force is ticked rather than held shut, which would read as a
+                        // grouping the board refuses. Picking it again changes nothing.
+                        checked={option.value === current}
+                        onClick={() => {
+                            if (option.value !== current) {
+                                onSelect(option.value);
+                            }
+                        }}
                     >{option.title}</FormListItem>
                 ))}
 
