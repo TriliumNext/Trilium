@@ -1,7 +1,5 @@
 /**
- * Diffs a tree parent's children against froca. After a cut/move, fancytree can
- * keep a node at the old parent while froca already dropped that branch; the
- * leftover is the ghost note. `toRemove` / `toAdd` are branchIds.
+ * Compares the tree and froca child lists by branch ID.
  */
 export function diffTreeChildren(treeChildBranchIds: string[], frocaChildBranchIds: string[]) {
     const frocaSet = new Set(frocaChildBranchIds);
