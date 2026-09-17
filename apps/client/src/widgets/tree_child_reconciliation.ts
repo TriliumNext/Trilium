@@ -12,10 +12,7 @@ export function diffTreeChildren(treeChildBranchIds: string[], frocaChildBranchI
 }
 
 /**
- * Whether a parent node's children should be synced from froca right now.
- * Collapsed unloaded folders stay lazy; an expanded froca branch (the backend
- * expands the target of a paste) must be filled from the cache so setExpanded
- * does not lazy-load a subtree mid-move.
+ * Reconciles loaded tree nodes and branches that froca marks as expanded.
  */
 export function shouldShowReconciledChildren(opts: {
     isFolder: boolean;
