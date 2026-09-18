@@ -34,8 +34,8 @@ export interface SafeFetchPolicy {
      */
     allowPrivateNetwork?: boolean;
     /**
-     * Exact addresses or CIDRs the operator named, honoured only where the operator chose the
-     * destination. The only range it can open is carrier-grade NAT (a tailnet node).
+     * IPv4 addresses or CIDRs from the operator's allowlist, honoured only where the operator
+     * chose the destination (`fetchApi`). Can allow only carrier-grade NAT addresses.
      */
     allowedAddresses?: string[];
     /**
@@ -53,64 +53,6 @@ export interface SafeFetchPolicy {
 }
 
 /**
- * A named address or CIDR the operator allows, resolved to a network and prefix for matching.
- */
-type AllowlistEntry = {
-    network: ipaddr.IPv4 | ipaddr.IPv6;
-    mask: number;
-};
-
-/**
- * Resolves the operator's list of exact addresses and CIDRs to networks for matching. An
- * unparseable entry is dropped, not fatal: a bad CIDR must not take down every outbound request.
- */
-function parseAllowlist(raw: string[]): AllowlistEntry[] {
-    const entries: AllowlistEntry[] = [];
-    for (const token of raw) {
-        const value = token.trim();
-        if (!value) {
-            continue;
-        }
-        try {
-            if (value.includes("/")) {
-                const [network, mask] = ipaddr.parseCIDR(value);
-                entries.push({ network, mask: Number(mask) });
-            } else {
-                const network = ipaddr.parse(value);
-                entries.push({ network, mask: network.kind() === "ipv4" ? 32 : 128 });
-            }
-        } catch {
-            // dropped
-        }
-    }
-    return entries;
-}
-
-function ipInAllowlist(ip: string, entries: AllowlistEntry[]): boolean {
-    if (entries.length === 0) {
-        return false;
-    }
-    let parsed: ipaddr.IPv4 | ipaddr.IPv6;
-    try {
-        parsed = ipaddr.parse(ip);
-    } catch {
-        return false;
-    }
-    if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
-        parsed = (parsed as ipaddr.IPv6).toIPv4Address();
-    }
-    for (const { network, mask } of entries) {
-        if (parsed.kind() === "ipv4" && (parsed as ipaddr.IPv4).match(network as ipaddr.IPv4, mask)) {
-            return true;
-        }
-        if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).match(network as ipaddr.IPv6, mask)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
  * Checks whether an IP address is private/reserved using ipaddr.js.
  * Returns true if the IP should be blocked.
  */
@@ -124,10 +66,7 @@ function isBlockedIP(ip: string, allowedRanges: ReadonlySet<string>, allowPrivat
         if (allowedRanges.has(parsed.range())) {
             return false;
         }
-        // The allowlist can open only the one range the built-in policy leaves closed that an
-        // operator might legitimately serve: carrier-grade NAT, where a Tailscale tailnet node
-        // lives. Every other range stays refused no matter what was listed, and the strict path
-        // never consults the list at all.
+        // The allowlist can open only carrier-grade NAT, and only on the relaxed path.
         return !(allowPrivateNetwork && parsed.range() === "carrierGradeNat" && ipInAllowlist(ip, allowlist));
     } catch {
         return true; // unparseable → treat as blocked
@@ -144,8 +83,8 @@ async function validateHostResolution(hostname: string, allowPrivateNetwork = fa
     // not a form either net.isIP or ipaddr.js recognises. Left as-is, such an address would be
     // taken for a name and looked up as one instead of being checked as the address it is.
     const host = hostname.replace(/^\[|\]$/g, "");
-    // The operator's list is honoured only on the relaxed path; the strict path checks it not at all.
-    const allowlist = allowPrivateNetwork ? parseAllowlist(allowedAddresses) : [];
+    // The allowlist applies only on the relaxed path; the strict path ignores it entirely.
+    const allowlist = allowPrivateNetwork ? parseAllowlist(allowedAddresses).entries : [];
 
     // If the hostname is already an IP literal, check it directly
     if (net.isIP(host)) {
@@ -338,6 +277,68 @@ async function safeFetch(url: string, options: RequestInit = {}, policy: SafeFet
     }
 
     throw new Error("Too many redirects");
+}
+
+/** An IPv4 network and prefix length parsed from one operator allowlist token. */
+type AllowlistEntry = {
+    network: ipaddr.IPv4;
+    mask: number;
+};
+
+/**
+ * Parses one allowlist token, accepting only canonical IPv4 addresses ("100.83.121.222") and
+ * CIDRs ("100.83.121.0/24"). ipaddr.js also accepts shorthand forms that name a different network
+ * than the operator typed ("100.64/10" is 100.0.0.64/10), and an IPv6 address can never match the
+ * carrier-grade NAT range the allowlist opens, so both are rejected.
+ */
+function parseAllowlistToken(value: string): AllowlistEntry {
+    if (value.includes("/")) {
+        const [network, mask] = ipaddr.parseCIDR(value);
+        if (network.kind() !== "ipv4" || `${network.toString()}/${mask}` !== value) {
+            throw new Error(`${value} is not a canonical IPv4 CIDR`);
+        }
+        return { network: network as ipaddr.IPv4, mask };
+    }
+    const network = ipaddr.parse(value);
+    if (network.kind() !== "ipv4" || network.toString() !== value) {
+        throw new Error(`${value} is not a canonical IPv4 address`);
+    }
+    return { network: network as ipaddr.IPv4, mask: 32 };
+}
+
+/**
+ * Resolves the operator's allowlist tokens to networks for matching. A token
+ * `parseAllowlistToken` rejects lands in `dropped`, so the operator can be told which entries are
+ * not in effect rather than left believing a typo was honored.
+ */
+export function parseAllowlist(raw: string[]): { entries: AllowlistEntry[]; dropped: string[] } {
+    const entries: AllowlistEntry[] = [];
+    const dropped: string[] = [];
+    for (const token of raw) {
+        const value = token.trim();
+        if (!value) {
+            continue;
+        }
+        try {
+            entries.push(parseAllowlistToken(value));
+        } catch {
+            dropped.push(value);
+        }
+    }
+    return { entries, dropped };
+}
+
+function ipInAllowlist(ip: string, entries: AllowlistEntry[]): boolean {
+    let parsed = ipaddr.parse(ip);
+    if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
+        parsed = (parsed as ipaddr.IPv6).toIPv4Address();
+    }
+    for (const { network, mask } of entries) {
+        if (parsed.kind() === "ipv4" && (parsed as ipaddr.IPv4).match(network, mask)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export { createPinnedLookup, safeFetch, validateHostResolution, validateUrl };

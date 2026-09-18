@@ -38,7 +38,19 @@ vi.mock("undici", () => ({
     fetch: undiciFetch
 }));
 
-import { safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
+// request.ts loads before initializeCore() initializes the log service, so getLog() must throw
+// until then — the spec setup initializes it, so the throw is recreated here.
+vi.mock("@triliumnext/core", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@triliumnext/core")>();
+    return {
+        ...actual,
+        getLog: () => {
+            throw new Error("Log service not initialized.");
+        }
+    };
+});
+
+import { parseAllowlist, safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
 
 // A minimal response-shaped object for tests that run outside the safeFetch describe block.
 function makeResponseStub(body: ReadableStream | null, init: ResponseInit) {
@@ -239,9 +251,14 @@ describe("validateHostResolution, with an allowlist of the operator's addresses"
         await expect(validateHostResolution("100.83.122.222", true, ["100.83.121.0/24"])).rejects.toThrow("link-local");
     });
 
+    it("still reaches a listed address when an IPv6 token precedes it in the list", async () => {
+        // An IPv6 entry before the matching IPv4 entry must not block the match.
+        await expect(validateHostResolution("100.83.121.222", true, ["2001:db8::1", "100.83.121.222"])).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+    });
+
     it("is not applied on the strict path, so note content cannot steer the server to a tailnet node", async () => {
-        // Even though the operator allowlists this node, a destination that arrived in note
-        // content is vetted under the strict policy, which ignores the list.
         await expect(validateHostResolution("100.83.121.222", false, ["100.83.121.222"])).rejects.toThrow("private/internal");
     });
 
@@ -250,10 +267,63 @@ describe("validateHostResolution, with an allowlist of the operator's addresses"
         fetchMock.mockReset();
         agentInstances.length = 0;
         fetchMock.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
-        // A literal tailnet address: allowed under the operator policy thanks to the allowlist.
         await expect(safeFetch("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true, allowedAddresses: ["100.83.121.222"] })).resolves.toBeDefined();
-        // The same address without the operator flag is refused, proving the flag is what opened it.
+        // Without the operator flag the address stays refused.
         await expect(safeFetch("http://100.83.121.222/v1")).rejects.toThrow("private/internal");
+    });
+});
+
+describe("parseAllowlist", () => {
+    it("returns empty entries and an empty dropped list for an empty input", () => {
+        expect(parseAllowlist([])).toEqual({ entries: [], dropped: [] });
+    });
+
+    it("parses exact addresses and CIDRs into entries, with no drops", () => {
+        // `entries` holds ipaddr.js objects, so its length is the readable assertion.
+        const result = parseAllowlist(["100.83.121.222", "100.83.121.0/24", "192.0.2.1"]);
+        expect(result.dropped).toEqual([]);
+        expect(result.entries).toHaveLength(3);
+    });
+
+    it("surfaces unparseable tokens in `dropped` so the operator can see which entry to fix", () => {
+        const result = parseAllowlist(["100.83.121.222", "not-an-address", "100.83.121.211.0/24", ""]);
+        // The two valid tokens land in entries; the other two are in `dropped`.
+        expect(result.entries).toHaveLength(1);
+        // Whitespace-only tokens are not surfaced — they are not "unparseable", just empty.
+        // The two genuinely malformed tokens are reported with their trimmed form.
+        expect(result.dropped).toEqual(["not-an-address", "100.83.121.211.0/24"]);
+    });
+
+    it("drops mistyped tokens instead of honoring them", () => {
+        // A hostname, five octets, a malformed CIDR network part, and an IPv4 mask above 32.
+        const result = parseAllowlist(["my-tailnet.tail.ts.net", "100.83.121.222.1", "100.83.121.211.0/24", "100.83.121.0/64"]);
+        expect(result.entries).toHaveLength(0);
+        expect(result.dropped).toEqual(["my-tailnet.tail.ts.net", "100.83.121.222.1", "100.83.121.211.0/24", "100.83.121.0/64"]);
+    });
+
+    it("drops ipaddr.js shorthand forms, which name a different network than the operator typed", () => {
+        // "100.64/10" parses as 100.0.0.64/10, which does not overlap the carrier-grade NAT range.
+        const result = parseAllowlist(["100", "0x64.83.121.222", "0300.83.121.222", "100.64/10"]);
+        expect(result.entries).toHaveLength(0);
+        expect(result.dropped).toEqual(["100", "0x64.83.121.222", "0300.83.121.222", "100.64/10"]);
+    });
+
+    it("drops IPv6 tokens, which cannot match the carrier-grade NAT range the allowlist opens", () => {
+        const result = parseAllowlist(["fd7a:115c:a1e0::abcd", "2001:db8::/48", "::ffff:100.83.121.222"]);
+        expect(result.entries).toHaveLength(0);
+        expect(result.dropped).toEqual(["fd7a:115c:a1e0::abcd", "2001:db8::/48", "::ffff:100.83.121.222"]);
+    });
+});
+
+describe("request.ts allowlist wiring", () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it("loads with a malformed TRILIUM_SAFE_FETCH_ALLOWLIST; nothing at module scope calls getLog()", async () => {
+        // getLog() throws until initializeCore() runs, and main.ts imports request.ts before that.
+        vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,not-an-address");
+        await expect(import("./request.js")).resolves.toBeDefined();
     });
 });
 
