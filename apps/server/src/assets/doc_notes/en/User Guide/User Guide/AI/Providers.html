@@ -113,3 +113,16 @@
 <p>For custom endpoints, the pricing of the models is not known so the cost
   of a conversation will not be displayed; this is especially relevant for
   hosted providers.</p>
+<p>Trilium refuses endpoints that resolve into address ranges nothing is
+  ordinarily served on — notably <code>100.64.0.0/10</code>, the range a Tailscale
+  tailnet uses.</p>
+<aside class="admonition note">
+  <p>If your custom endpoint is only reachable over a tailnet, set the <code>TRILIUM_SAFE_FETCH_ALLOWLIST</code> environment
+    variable on the machine running Trilium to a comma-separated list of the
+    IPv4 addresses or CIDRs it may contact anyway (e.g. <code>TRILIUM_SAFE_FETCH_ALLOWLIST=100.83.121.222</code>),
+    and restart Trilium. Only AI endpoint calls honor the list, and only addresses
+    inside the Tailscale range can be allowed; entries must be dotted-quad
+    IPv4 addresses or CIDRs, and anything else (an IPv6 address, a hostname)
+    is ignored and logged. Prefer exact addresses over broad CIDRs: a <code>/10</code> entry
+    also covers cloud metadata endpoints such as <code>100.100.100.200</code>.</p>
+</aside>

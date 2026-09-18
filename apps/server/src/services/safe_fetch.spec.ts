@@ -8,7 +8,9 @@ interface MockAgent {
     close(): void;
 }
 
-const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
+type GetLog = () => { info: (message: string) => void };
+
+const { agentInstances, getLogMock, MockAgent, undiciFetch } = vi.hoisted(() => {
     const agentInstances: MockAgent[] = [];
 
     class MockAgent {
@@ -25,7 +27,13 @@ const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
         }
     }
 
-    return { agentInstances, MockAgent, undiciFetch: vi.fn() };
+    // getLog() throws until initializeCore() runs; the spec setup initializes it, so the throw is
+    // the default here. The wiring test overrides it to record the dropped-token warning.
+    const getLogMock = vi.fn<() => { info: (message: string) => void }>(() => {
+        throw new Error("Log service not initialized.");
+    });
+
+    return { agentInstances, getLogMock, MockAgent, undiciFetch: vi.fn() };
 });
 
 // safeFetch calls undici's own `fetch` (not the global one) so that it and the `Agent` it passes as
@@ -39,14 +47,12 @@ vi.mock("undici", () => ({
 }));
 
 // request.ts loads before initializeCore() initializes the log service, so getLog() must throw
-// until then — the spec setup initializes it, so the throw is recreated here.
+// until then; see the getLogMock comment above.
 vi.mock("@triliumnext/core", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@triliumnext/core")>();
     return {
         ...actual,
-        getLog: () => {
-            throw new Error("Log service not initialized.");
-        }
+        getLog: (): ReturnType<GetLog> => getLogMock()
     };
 });
 
@@ -258,6 +264,12 @@ describe("validateHostResolution, with an allowlist of the operator's addresses"
         ]);
     });
 
+    it("masks a CIDR whose host bits are set", async () => {
+        await expect(validateHostResolution("100.83.121.5", true, ["100.83.121.222/24"])).resolves.toEqual([
+            { address: "100.83.121.5", family: 4 }
+        ]);
+    });
+
     it("is not applied on the strict path, so note content cannot steer the server to a tailnet node", async () => {
         await expect(validateHostResolution("100.83.121.222", false, ["100.83.121.222"])).rejects.toThrow("private/internal");
     });
@@ -318,12 +330,36 @@ describe("parseAllowlist", () => {
 describe("request.ts allowlist wiring", () => {
     afterEach(() => {
         vi.unstubAllEnvs();
+        getLogMock.mockReset();
+        getLogMock.mockImplementation(() => {
+            throw new Error("Log service not initialized.");
+        });
     });
 
     it("loads with a malformed TRILIUM_SAFE_FETCH_ALLOWLIST; nothing at module scope calls getLog()", async () => {
         // getLog() throws until initializeCore() runs, and main.ts imports request.ts before that.
         vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,not-an-address");
         await expect(import("./request.js")).resolves.toBeDefined();
+    });
+
+    it("feeds the env list into fetchApi and warns about dropped tokens once", async () => {
+        vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,not-an-address");
+        const infoMessages: string[] = [];
+        getLogMock.mockImplementation(() => ({
+            info: (message: string) => infoMessages.push(message)
+        }));
+        const requestModule = await import("./request.js");
+        undiciFetch.mockReset();
+        agentInstances.length = 0;
+        const provider = new requestModule.default();
+        undiciFetch.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        // The listed tailnet address is reachable through fetchApi; drop the allowedAddresses
+        // wiring and this rejects with the carrier-grade NAT refusal.
+        await expect(provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true })).resolves.toBeDefined();
+        undiciFetch.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        await provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true });
+        expect(infoMessages).toHaveLength(1);
+        expect(infoMessages[0]).toContain("not-an-address");
     });
 });
 
