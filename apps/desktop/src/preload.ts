@@ -328,3 +328,43 @@ contextBridge.exposeInMainWorld("electronApi", {
         }
     }
 } satisfies ElectronApi);
+
+/**
+ * Hands the page a `MessagePort` straight to the backend `utilityProcess`.
+ *
+ * `contextBridge` cannot carry a `Request` or a `Response`, so the transport
+ * cannot live in this isolated world. A `MessagePort`, though, transfers through
+ * `window.postMessage` into the main world, where the client builds its
+ * `localFetch` on top of it — and from then on the page talks to the backend
+ * without the main process in the path.
+ *
+ * The port is asked for here rather than pushed from main, because a push racing
+ * preload's own startup would be delivered to nobody.
+ */
+const BACKEND_PORT_CHANNEL = "trilium-backend-port";
+
+let backendPort: MessagePort | undefined;
+let backendPortSettled: ((available: boolean) => void) | undefined;
+const backendPortReady = new Promise<boolean>((resolve) => (backendPortSettled = resolve));
+
+ipcRenderer.on(BACKEND_PORT_CHANNEL, (event) => {
+    backendPort = event.ports[0];
+    backendPortSettled?.(true);
+});
+ipcRenderer.on(`${BACKEND_PORT_CHANNEL}-unavailable`, () => backendPortSettled?.(false));
+ipcRenderer.send(`${BACKEND_PORT_CHANNEL}-request`);
+
+contextBridge.exposeInMainWorld("triliumBackendBridge", {
+    /**
+     * Resolves true once the port has been transferred into the main world, or
+     * false when this build answers API calls in the main process instead.
+     */
+    async connect(): Promise<boolean> {
+        const available = await backendPortReady;
+        if (!available || !backendPort) {
+            return false;
+        }
+        window.postMessage({ type: BACKEND_PORT_CHANNEL }, "*", [ backendPort ]);
+        return true;
+    }
+});
