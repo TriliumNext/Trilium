@@ -228,22 +228,20 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
 
     options.fastSearch = true;
 
-    // Both rows stay above the results: the CKEditor mention feed renders only the first
-    // `mention.dropdownLimit` items, and the jQuery dropdown scrolls past as many as 200.
     if (pendingInboxTarget) {
-        results = [
+        results = mergeCreateNoteSuggestions(results, [
             {
                 action: "create-note",
                 noteTitle: term,
                 highlightedNotePathTitle: buildCreateNoteTitle(term, await pendingInboxTarget)
-            } as Suggestion,
+            },
             {
                 action: "create-child-note",
                 noteTitle: term,
                 parentNoteId: activeNoteId || "root",
                 highlightedNotePathTitle: t("note_autocomplete.create-child-note", { term })
-            } as Suggestion
-        ].concat(results);
+            }
+        ], term);
     }
 
     if (length >= 1 && options.allowJumpToSearchNotes) {
@@ -267,6 +265,26 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
     }
 
     cb(results);
+}
+
+/**
+ * An existing note whose title equals the query (case-insensitive, surrounding spaces ignored) is a better first pick than
+ * creating another with that name, so those rows stay above the create entries. A title that only
+ * contains the query still sits below them: the query can name a different sense of the word
+ * (autohyponyms), and create remains reachable without scrolling past every fuzzy hit.
+ */
+function mergeCreateNoteSuggestions(results: Suggestion[], createRows: Suggestion[], term: string): Suggestion[] {
+    const needle = term.trim().toLowerCase();
+    const exact: Suggestion[] = [];
+    const rest: Suggestion[] = [];
+    for (const row of results) {
+        if (row.noteTitle?.trim().toLowerCase() === needle) {
+            exact.push(row);
+        } else {
+            rest.push(row);
+        }
+    }
+    return exact.concat(createRows, rest);
 }
 
 // `autocomplete("val", ...)` does not dispatch a native "input" event, so each function below

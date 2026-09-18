@@ -137,7 +137,7 @@ describe("note_autocomplete", () => {
             ]) as typeof server.get;
 
             const result = (await noteAutocomplete.autocompleteSourceForCKEditor("Foo")) as any[];
-            // autocompleteSourceForCKEditor forces allowCreatingNotes -> the creation rows are prepended.
+            // autocompleteSourceForCKEditor forces allowCreatingNotes, so create rows sit after exact matches.
             const mapped = result.find((r) => r.notePath === "root/abc");
             expect(mapped).toEqual({
                 action: "search-notes",
@@ -279,7 +279,7 @@ describe("autocompleteSource (via dataset)", () => {
         expect(server.get).not.toHaveBeenCalled();
     });
 
-    it("keeps both creation rows above the results, so neither is scrolled or sliced away", async () => {
+    it("keeps both creation rows above fuzzy results when nothing matches the title exactly", async () => {
         server.get = vi.fn(async () => [{ noteTitle: "Existing", notePath: "root/y" }]) as typeof server.get;
         const { dataset } = initAndGetSource({ allowCreatingNotes: true, allowJumpToSearchNotes: true });
         const rows = await runSource(dataset, "New");
@@ -288,6 +288,38 @@ describe("autocompleteSource (via dataset)", () => {
         expect(rows[0].parentNoteId).toBeUndefined();
         expect(rows[1].parentNoteId).toBe("activeNote");
         expect(rows[2].noteTitle).toBe("Existing");
+    });
+
+    it("orders exact title matches, then create rows, then fuzzy matches", async () => {
+        server.get = vi.fn(async () => [
+            { noteTitle: "hello world", notePath: "root/fuzzy" },
+            { noteTitle: "Hello", notePath: "root/exact" },
+            { noteTitle: "hello", notePath: "root/exact-clone" }
+        ]) as typeof server.get;
+        const { dataset } = initAndGetSource({ allowCreatingNotes: true });
+        const rows = await runSource(dataset, "hello");
+        expect(rows.map((r) => r.notePath ?? r.action)).toEqual([
+            "root/exact",
+            "root/exact-clone",
+            "create-note",
+            "create-child-note",
+            "root/fuzzy"
+        ]);
+    });
+
+    it("treats a title that only differs by surrounding spaces as an exact match", async () => {
+        server.get = vi.fn(async () => [
+            { noteTitle: "hello world", notePath: "root/fuzzy" },
+            { noteTitle: "  Hello  ", notePath: "root/padded" }
+        ]) as typeof server.get;
+        const { dataset } = initAndGetSource({ allowCreatingNotes: true });
+        const rows = await runSource(dataset, " hello ");
+        expect(rows.map((r) => r.notePath ?? r.action)).toEqual([
+            "root/padded",
+            "create-note",
+            "create-child-note",
+            "root/fuzzy"
+        ]);
     });
 
     it.each([
