@@ -43,6 +43,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["showNoteAttributes"]} loader={() => import("../widgets/dialogs/note_attributes.jsx")} />)
         .child(<LazyDialog triggerEvents={["showUploadAttachmentsDialog"]} loader={() => import("../widgets/dialogs/upload_attachments.js")} />)
         .child(<LazyDialog triggerEvents={["openInTreePopup"]} loader={() => import("../widgets/dialogs/TreePopupEditor.jsx")} />)
+        .child(<LazyDialog triggerEvents={["showContentLightbox"]} loader={() => import("../widgets/dialogs/content_lightbox.jsx")} />)
         // The following three are deliberately eager (not wrapped in LazyDialog):
         //  - PopupEditor keeps itself in the DOM (`keepInDom`) for fast hover-preview latency, so deferring its module would defeat the purpose.
         //  - CallToAction has no summon event; it decides whether to show itself on startup, so there is nothing to lazily mount against.

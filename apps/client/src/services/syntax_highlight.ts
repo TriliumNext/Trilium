@@ -221,7 +221,7 @@ export function isSyntaxHighlightEnabled() {
  * @param el the HTML element from which to extract the language tag.
  * @returns the normalized MIME type (e.g. `text-css` instead of `language-text-css`).
  */
-function extractLanguageFromClassList(el: HTMLElement) {
+export function extractLanguageFromClassList(el: HTMLElement) {
     const prefix = "language-";
     for (const className of el.classList) {
         if (className.startsWith(prefix)) {
