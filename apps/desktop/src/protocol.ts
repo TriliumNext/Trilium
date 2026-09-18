@@ -1,12 +1,24 @@
-import { Readable } from "node:stream";
-
-import { markAsInternalElectronRequest } from "@triliumnext/server/src/services/electron_request.js";
 import electron, { protocol } from "electron";
-import EventEmitter from "events";
-import type { Application, Response as ExpressResponse } from "express";
-import { createResponse, type MockResponse } from "node-mocks-http";
+import type { Application } from "express";
 
+import { dispatch } from "./express_dispatch.js";
 import { isTriliumAppShellUrl, TRILIUM_APP_ORIGIN, TRILIUM_APP_SCHEME } from "./services/trilium_app_origin.js";
+
+/**
+ * Where a `trilium-app://` request is answered: either the Express application
+ * running in this process, or the backend `utilityProcess`, which answers over a
+ * `MessagePort` and so exposes a `dispatch` of its own. An Express application is
+ * itself a function, so the two are told apart by that property rather than by
+ * type.
+ */
+export interface RequestDispatcher {
+    dispatch(request: Request): Promise<Response>;
+}
+
+export type RequestSource =
+    | Application
+    | RequestDispatcher
+    | Promise<Application | RequestDispatcher>;
 
 /**
  * Registers the `trilium-app://` custom scheme as privileged so the renderer
@@ -57,7 +69,7 @@ export function registerTriliumAppScheme() {
  * renderer can spin up) concurrently with server startup; requests that
  * arrive early simply wait inside the handler until the app resolves.
  */
-export function setupTriliumAppProtocol(app: Application | Promise<Application>) {
+export function setupTriliumAppProtocol(app: RequestSource) {
     electron.app.whenReady().then(() => {
         installFrameOriginGuard();
         electron.protocol.handle(TRILIUM_APP_SCHEME, async (request) => {
@@ -67,7 +79,10 @@ export function setupTriliumAppProtocol(app: Application | Promise<Application>)
                 return new Response("Forbidden", { status: 403 });
             }
             try {
-                return await dispatch(await app, request);
+                const source = await app;
+                return "dispatch" in source
+                    ? await source.dispatch(request)
+                    : await dispatch(source, request);
             } catch (err) {
                 console.error(`[trilium-app] dispatch failed for ${request.method} ${request.url}:`, err);
                 return new Response("Internal Server Error", { status: 500 });
@@ -174,368 +189,4 @@ export function isDispatchOriginAllowed(origin: string | null): boolean {
     return origin === null || origin === TRILIUM_APP_ORIGIN;
 }
 
-export async function dispatch(app: Application, request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    const headers: Record<string, string> = {};
-    request.headers.forEach((value, key) => {
-        headers[key] = value;
-    });
-
-    const bodyBuffer = await readBody(request);
-
-    // body-parser / multer call `type-is`'s `hasBody`, which requires either a
-    // `content-length` or `transfer-encoding` header. Programmatically built
-    // `Request` objects don't carry content-length, so without this the body
-    // would be parsed as empty and JSON / multipart middleware would silently
-    // skip.
-    if (bodyBuffer && headers["content-length"] === undefined) {
-        headers["content-length"] = String(bodyBuffer.length);
-    }
-
-    return new Promise<Response>((resolve, reject) => {
-        const req = buildIncomingRequest({
-            method: request.method,
-            url: url.pathname + url.search,
-            headers,
-            bodyBuffer
-        });
-
-        const res = createResponse({
-            req,
-            eventEmitter: EventEmitter
-        });
-
-        const bridge = installStreamingBridge(res, resolve, reject, request.signal);
-
-        res.on("end", () => {
-            if (bridge.isStreaming) return; // streaming path already resolved
-            const getBuffer = (res as { _getBuffer?: () => Buffer | null })._getBuffer;
-            /* v8 ignore next -- defensive: node-mocks-http always provides _getBuffer */
-            const buf = typeof getBuffer === "function" ? getBuffer.call(res) : null;
-            const data = res._getData();
-            const rawPayload = buf && buf.length > 0 ? buf : data;
-            // The Fetch `Response` constructor rejects a non-null body for
-            // null-body status codes (101 / 204 / 205 / 304). Express is
-            // happy to call `res.status(204).send()` so we must filter here.
-            const body = NULL_BODY_STATUSES.has(res.statusCode) ? null : toUint8Array(rawPayload);
-            // Express's own Content-Length is stripped (it can mismatch the buffered body), but the
-            // media data source (<audio>/<video>) refuses a response with no length — unlike fetch(),
-            // which reads to EOF. We own the exact bytes here, so restore an accurate Content-Length.
-            const headers = normalizeResponseHeaders(res.getHeaders());
-            if (body) {
-                headers.push(["content-length", String(body.byteLength)]);
-            }
-            try {
-                resolve(new Response(body as BodyInit | null, {
-                    status: res.statusCode,
-                    headers
-                }));
-            } catch (err) {
-                reject(err);
-            }
-        });
-
-        try {
-            (app as unknown as (req: object, res: object, next: (err?: unknown) => void) => void)(
-                req,
-                res,
-                (err) => {
-                    // The no-error invocation is the unmatched-route (404) case,
-                    // which never happens for the real app and would hang here;
-                    // only the error path is reachable.
-                    /* v8 ignore next */
-                    if (err) {
-                        bridge.abort(err instanceof Error ? err : new Error(String(err)));
-                        reject(err);
-                    }
-                }
-            );
-        } catch (err) {
-            reject(err);
-        }
-    });
-}
-
-interface StreamingBridge {
-    /** True once `res.flushHeaders()` has been called and we've committed a streaming `Response`. */
-    readonly isStreaming: boolean;
-    /** Force-fail the streaming body (e.g. when Express's `next(err)` fires mid-stream). */
-    abort(reason: Error): void;
-}
-
-/**
- * Patches a node-mocks-http response so SSE / chunked handlers (e.g. the LLM
- * chat stream) deliver chunks to the renderer in real time instead of buffering
- * until `res.end()`.
- *
- * When the handler calls `res.flushHeaders()` — the standard "headers now,
- * body coming later" signal — the bridge resolves the Fetch `Response` with a
- * `ReadableStream` body and forwards subsequent `res.write(chunk)` calls into
- * the stream controller. Non-streaming handlers never call `flushHeaders`; for
- * them the original `write` / `end` run unchanged and the caller's existing
- * buffered `res.on("end")` path resolves the Response.
- *
- * The bridge also fixes a crash: Express rewires `res.__proto__` to
- * `app.response` (extends `http.ServerResponse`), so any method not shadowed
- * as an own property falls through to Node's real ServerResponse — whose
- * internals (`outputData`, …) were never initialised on the mock object.
- * `flushHeaders` and `flush` both trigger this and need own-property shims.
- */
-function installStreamingBridge(
-    res: MockResponse<ExpressResponse>,
-    onCommit: (response: Response) => void,
-    onCommitError: (err: unknown) => void,
-    abortSignal: AbortSignal | null | undefined
-): StreamingBridge {
-    let streaming = false;
-    let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
-    // Set when write() signalled backpressure (returned false). The producer
-    // (e.g. archiver's pipe) then pauses until we emit a 'drain' event.
-    let producerPaused = false;
-    const origWrite = res.write.bind(res);
-    const origEnd = res.end.bind(res);
-
-    // Bound how much streamed-but-unread data sits in the queue. Without this a
-    // consumer slower than the producer — e.g. Electron writing a multi-GB
-    // export to disk — would let the whole payload pile up in memory.
-    const HIGH_WATER_MARK = 1024 * 1024; // 1 MiB
-
-    // Handlers watch `res` for the client going away — llm_chat.ts aborts the
-    // agent turn on it — and nothing else emits it on this mock response.
-    let disconnected = false;
-    function signalDisconnect() {
-        if (disconnected) return;
-        disconnected = true;
-        res.emit("close");
-    }
-
-    function resumeProducerIfReady() {
-        if (producerPaused && controller && controller.desiredSize !== null && controller.desiredSize > 0) {
-            producerPaused = false;
-            res.emit("drain");
-        }
-    }
-
-    function commit() {
-        if (streaming) return;
-        streaming = true;
-        const body = new ReadableStream<Uint8Array>({
-            start(c) { controller = c; },
-            // The consumer pulled (queue has capacity again) → release a producer
-            // that paused on backpressure.
-            pull() { resumeProducerIfReady(); },
-            // The renderer stopped reading — it aborted the fetch or its window
-            // went away. `controller` is already closed, so drop it before the
-            // handler's next write() and let the handler unwind through 'close'.
-            cancel() { controller = null; signalDisconnect(); }
-        }, new ByteLengthQueuingStrategy({ highWaterMark: HIGH_WATER_MARK }));
-        try {
-            onCommit(new Response(body, {
-                /* v8 ignore next -- defensive: statusCode is always set before flushHeaders */
-                status: res.statusCode || 200,
-                headers: normalizeResponseHeaders(res.getHeaders())
-            }));
-        } catch (err) {
-            onCommitError(err);
-        }
-    }
-
-    function enqueue(chunk: unknown) {
-        const buf = toUint8Array(chunk);
-        if (!buf || !controller) return;
-        /* v8 ignore next -- defensive: enqueue() only throws if the stream was torn down without cancel() firing */
-        try { controller.enqueue(buf); } catch { controller = null; }
-    }
-
-    function closeStream() {
-        if (!controller) return;
-        /* v8 ignore next -- defensive: close() only throws if the stream was already torn down by a consumer cancel race */
-        try { controller.close(); } catch { /* already closed */ }
-        controller = null;
-    }
-
-    function errorStream(reason: Error) {
-        if (!controller) return;
-        /* v8 ignore next -- defensive: error() only throws if the stream was already closed by a consumer cancel race */
-        try { controller.error(reason); } catch { /* already closed */ }
-        controller = null;
-    }
-
-    // Install as own properties so Express's prototype swap can't reveal the
-    // broken inherited ServerResponse methods underneath.
-    Object.assign(res, {
-        flushHeaders: commit,
-        // Some handlers / compression middleware probe `res.flush()` to
-        // force-flush. Stream controllers deliver each enqueue eagerly, so
-        // this is a safe no-op — and prevents the same prototype-swap crash.
-        flush: () => {},
-        write(chunk: unknown, ...rest: unknown[]): boolean {
-            if (streaming) {
-                enqueue(chunk);
-                // Honour backpressure: once the queue is full, tell the producer
-                // to pause until the consumer drains it (pull → 'drain').
-                if (controller && controller.desiredSize !== null && controller.desiredSize <= 0) {
-                    producerPaused = true;
-                    return false;
-                }
-                return true;
-            }
-            return (origWrite as (...a: unknown[]) => boolean)(chunk, ...rest);
-        },
-        end(...args: unknown[]) {
-            if (!streaming) {
-                return (origEnd as (...a: unknown[]) => unknown)(...args);
-            }
-            if (args.length > 0 && args[0] != null && typeof args[0] !== "function") {
-                enqueue(args[0]);
-            }
-            closeStream();
-            // Keep mock state coherent for `on-finished` etc., but drop any
-            // payload args since we already drained them.
-            return (origEnd as (...a: unknown[]) => unknown)();
-        }
-    });
-
-    // Renderer cancelled the fetch (e.g. user hit stop, tab navigated).
-    abortSignal?.addEventListener("abort", () => {
-        if (!streaming) return;
-        errorStream(new Error("Renderer cancelled request"));
-        signalDisconnect();
-    });
-
-    return {
-        get isStreaming() { return streaming; },
-        abort: errorStream
-    };
-}
-
-async function readBody(request: Request): Promise<Buffer | null> {
-    if (request.method === "GET" || request.method === "HEAD" || !request.body) {
-        return null;
-    }
-    return Buffer.from(await request.arrayBuffer());
-}
-
-/**
- * Builds an IncomingMessage-shaped `Readable` for the request side.
- *
- * Express rewrites the prototype chain of the request it receives so that
- * `req.on` resolves to `Readable.prototype.on`, which dereferences internal
- * Readable state. So a plain `EventEmitter`-based mock breaks the moment
- * body-parser or multer touches the stream. Subclassing `Readable` here means
- * the state is initialised before Express ever sees it.
- *
- * We expose only the IncomingMessage surface Express middleware actually
- * reads (`method`, `url`, `headers`, `socket`, `ip`, ...); session, cookies,
- * `req.params` and so on are populated by middleware as usual.
- */
-interface BuildRequestOpts {
-    method: string;
-    url: string;
-    headers: Record<string, string>;
-    bodyBuffer: Buffer | null;
-}
-
-function buildIncomingRequest(opts: BuildRequestOpts): object {
-    const buffer = opts.bodyBuffer;
-    const stream = new Readable({
-        read() {
-            // read() is only pulled when there is a body to deliver, so the
-            // empty/absent-buffer side of this guard isn't reachable here.
-            /* v8 ignore next */
-            if (buffer && buffer.length > 0) {
-                this.push(buffer);
-            }
-            this.push(null);
-        }
-    }) as Readable & { complete: boolean };
-
-    // Express swaps in `app.request` (IncomingMessage subclass) as the
-    // prototype. IncomingMessage._destroy emits 'aborted' whenever the message
-    // wasn't marked complete and then tries to tear down a real socket. Mark
-    // complete on natural end (so multer/busboy don't think the request was
-    // aborted) and short-circuit the destroy path that touches the socket.
-    stream.on("end", () => { stream.complete = true; });
-    (stream as unknown as Record<string, unknown>)._destroy = (_err: Error | null, cb: (err?: Error | null) => void) => cb();
-
-    /* v8 ignore next -- no-op socket shims for Express middleware that may probe the connection but never does in dispatch */
-    const socket = { remoteAddress: "127.0.0.1", encrypted: false, readable: true, destroy() {}, end() {}, on() {}, removeListener() {} };
-
-    const req = Object.assign(stream, {
-        method: opts.method,
-        url: opts.url,
-        headers: opts.headers,
-        httpVersion: "1.1",
-        httpVersionMajor: 1,
-        httpVersionMinor: 1,
-        complete: false,
-        aborted: false,
-        // express-rate-limit and any IP-based middleware key off `req.ip`.
-        // socket / connection are read by Express's `req.ip` derivation and
-        // by `on-finished`: it treats the request as already finished when
-        // `socket.readable` is falsy, which makes body-parser skip the body.
-        socket,
-        connection: socket,
-        ip: "127.0.0.1"
-    });
-
-    // Tag the request so auth/CSRF middleware can distinguish a renderer→main
-    // protocol dispatch from a public-HTTP request. Without this they would
-    // have to fall back to the process-wide `isElectron` flag, which would
-    // also bypass the bypass for LAN-reachable TCP requests on the desktop's
-    // HTTP listener.
-    markAsInternalElectronRequest(req);
-
-    return req;
-}
-
-// Headers that either describe HTTP transport framing or assume an https
-// origin. Letting them through on the `trilium-app://` custom scheme
-// causes Chromium to abort the renderer with STATUS_BREAKPOINT — HSTS /
-// COOP / CORP / origin-agent-cluster all run as part of renderer process
-// setup and trip internal asserts when the scheme isn't http(s).
-// Content-Length / Transfer-Encoding from Express also don't match what
-// the renderer ends up reading, since we hand it a buffered body.
-// Status codes for which the Fetch `Response` constructor refuses any body.
-const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
-
-const STRIPPED_HEADERS = new Set([
-    "content-length",
-    "transfer-encoding",
-    "connection",
-    "keep-alive",
-    "upgrade",
-    "te",
-    "trailer",
-    "strict-transport-security",
-    "cross-origin-opener-policy",
-    "cross-origin-resource-policy",
-    "cross-origin-embedder-policy",
-    "origin-agent-cluster"
-]);
-
-function normalizeResponseHeaders(headers: Record<string, number | string | string[] | undefined>): [string, string][] {
-    const out: [string, string][] = [];
-    for (const [name, value] of Object.entries(headers)) {
-        /* v8 ignore next -- defensive: getHeaders() never yields undefined values */
-        if (value === undefined) continue;
-        if (STRIPPED_HEADERS.has(name.toLowerCase())) continue;
-        if (Array.isArray(value)) {
-            for (const v of value) out.push([name, String(v)]);
-        } else {
-            out.push([name, String(value)]);
-        }
-    }
-    return out;
-}
-
-// Copy whatever node-mocks-http handed us into a fresh Uint8Array the
-// Fetch `Response` fully owns. Passing a shared Buffer can leave Chromium
-// with a reference that's freed underneath it.
-function toUint8Array(payload: unknown): Uint8Array | null {
-    if (payload == null) return null;
-    if (payload instanceof Uint8Array) return new Uint8Array(payload);
-    if (typeof payload === "string") return new TextEncoder().encode(payload);
-    if (typeof payload === "object") return new TextEncoder().encode(JSON.stringify(payload));
-    return new TextEncoder().encode(String(payload));
-}
+export { dispatch } from "./express_dispatch.js";
