@@ -1,8 +1,9 @@
-import { getLog, options as optionService, utils as coreUtils } from "@triliumnext/core";
+import { getLog, utils as coreUtils } from "@triliumnext/core";
 import electron from "electron";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import * as mainOptions from "../backend/main_options.js";
 
 // Electron's app.setLoginItemSettings() covers macOS and Windows but is a no-op on
 // Linux, where autostart is instead a freedesktop ".desktop" file dropped into the
@@ -23,8 +24,8 @@ export const START_HIDDEN_FLAG = "--start-hidden";
  */
 export function applyLaunchOnStartup() {
     try {
-        const enabled = optionService.getOptionBool("launchOnStartup");
-        const hidden = enabled && optionService.getOptionBool("hideOnAutoStart");
+        const enabled = mainOptions.getOptionBool("launchOnStartup");
+        const hidden = enabled && mainOptions.getOptionBool("hideOnAutoStart");
 
         if (process.platform === "linux") {
             applyLinuxAutostart(enabled, hidden);
@@ -50,7 +51,7 @@ export function wasLaunchedHidden(): boolean {
     if (process.platform === "darwin") {
         // A macOS login item carries no arguments, so Electron reports only that the
         // app was opened at login and `hideOnAutoStart` decides whether to hide it.
-        return electron.app.getLoginItemSettings().wasOpenedAtLogin && optionService.getOptionBool("hideOnAutoStart");
+        return electron.app.getLoginItemSettings().wasOpenedAtLogin && mainOptions.getOptionBool("hideOnAutoStart");
     }
     return process.argv.includes(START_HIDDEN_FLAG);
 }

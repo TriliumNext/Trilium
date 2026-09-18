@@ -1,5 +1,6 @@
-import { becca, cls, getLog, options as optionService, sql_init } from "@triliumnext/core";
+import { becca, cls, getLog, sql_init } from "@triliumnext/core";
 import electron, { type Session } from "electron";
+import * as mainOptions from "../backend/main_options.js";
 
 const DICTIONARY_NOTE_ID = "_customDictionary";
 const loadedSessions = new WeakSet<Session>();
@@ -116,7 +117,7 @@ export async function loadForSession(session: Session) {
 export function setupCustomDictionary() {
     electron.app.on("web-contents-created", (_event, webContents) => {
         if (!sql_init.isDbInitialized()) return;
-        if (!optionService.getOptionBool("spellCheckEnabled")) return;
+        if (!mainOptions.getOptionBool("spellCheckEnabled")) return;
         const session = webContents.session;
         if (loadedSessions.has(session)) return;
         loadedSessions.add(session);

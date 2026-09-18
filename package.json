@@ -17,6 +17,7 @@
     "server:start-alt": "pnpm run --filter server dev-alt",
     "server:start-prod": "pnpm run --filter server start-prod",
     "desktop:start": "pnpm run --filter desktop dev",
+    "desktop:start-no-dir": "pnpm run --filter desktop start-no-dir",
     "desktop:build": "pnpm run --filter desktop build",
     "desktop:start-prod": "pnpm run --filter desktop start-prod",
     "standalone:start": "pnpm run --filter standalone dev",
