@@ -8,7 +8,7 @@ import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
 import { useFullscreen } from "../../react/hooks";
-import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton } from "../../react/OverlayControlGroup";
+import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton, ZoomControls } from "../../react/OverlayControlGroup";
 import { ParentMap, useMapPitch } from "./map";
 
 /**
@@ -88,20 +88,14 @@ export default function MapToolbar({ onLocationClick }: MapToolbarProps) {
                 className="geo-map-tilt-button"
                 onClick={() => map.easeTo({ pitch: isTilted ? 0 : TILTED_PITCH })}
             />
-            {!isMobile() && <>
-                <OverlayControlButton
-                    title={t("geo-map.zoom-out")}
-                    icon="bx-minus-circle"
-                    disabled={current <= map.getMinZoom()}
-                    onClick={() => map.zoomOut()}
+            {!isMobile() && (
+                <ZoomControls
+                    canZoomIn={current < map.getMaxZoom()}
+                    canZoomOut={current > map.getMinZoom()}
+                    onZoomIn={() => map.zoomIn()}
+                    onZoomOut={() => map.zoomOut()}
                 />
-                <OverlayControlButton
-                    title={t("geo-map.zoom-in")}
-                    icon="bx-plus-circle"
-                    disabled={current >= map.getMaxZoom()}
-                    onClick={() => map.zoomIn()}
-                />
-            </>}
+            )}
             {locate && <OverlayControlButton
                 title={locateTitle(locate)}
                 icon="bx-current-location"

@@ -7,7 +7,7 @@ const { staticTooltipSpy } = vi.hoisted(() => ({ staticTooltipSpy: vi.fn() }));
 vi.mock("./hooks", () => ({ useStaticTooltip: staticTooltipSpy }));
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 
-import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton } from "./OverlayControlGroup";
+import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton, ZoomControls } from "./OverlayControlGroup";
 
 let container: HTMLDivElement;
 
@@ -304,5 +304,48 @@ describe("OverlayFullscreenButton", () => {
         // Called with nothing: the press is the caller's cue, not something to hand on.
         expect(onToggle).toHaveBeenCalledTimes(1);
         expect(onToggle).toHaveBeenCalledWith();
+    });
+});
+
+describe("ZoomControls", () => {
+    const handlers = () => ({ onZoomIn: vi.fn(), onZoomOut: vi.fn(), onReset: vi.fn() });
+
+    it("rounds the percentage it is handed, and hands each press back to the caller", () => {
+        const on = handlers();
+        mount(<ZoomControls percent={144.4} {...on} />);
+
+        const [ zoomOut, readout, zoomIn ] = container.querySelectorAll("button");
+        expect(readout.textContent).toBe("144%");
+        expect(zoomOut.getAttribute("aria-label")).toBe("zoom_controls.zoom_out");
+        expect(zoomIn.getAttribute("aria-label")).toBe("zoom_controls.zoom_in");
+
+        act(() => zoomOut.click());
+        act(() => readout.click());
+        act(() => zoomIn.click());
+        expect(on.onZoomOut).toHaveBeenCalledTimes(1);
+        expect(on.onReset).toHaveBeenCalledTimes(1);
+        expect(on.onZoomIn).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves the two steps alive unless told a bound has been reached", () => {
+        mount(<ZoomControls percent={100} {...handlers()} />);
+        for (const button of container.querySelectorAll("button")) expect(button.disabled).toBe(false);
+
+        act(() => render(<ZoomControls percent={100} canZoomIn={false} canZoomOut={false} {...handlers()} />, container));
+        const [ zoomOut, readout, zoomIn ] = container.querySelectorAll("button");
+        expect(zoomOut.disabled).toBe(true);
+        expect(zoomIn.disabled).toBe(true);
+        // A bound disables the steps, not the readout, which always resets to the fitted view.
+        expect(readout.disabled).toBe(false);
+    });
+
+    it("shows the two steps alone where the content has no percentage worth saying, as a map has not", () => {
+        const on = handlers();
+        mount(<ZoomControls onZoomIn={on.onZoomIn} onZoomOut={on.onZoomOut} />);
+
+        const buttons = container.querySelectorAll("button");
+        expect(buttons).toHaveLength(2);
+        expect([ ...buttons ].map((b) => b.getAttribute("aria-label")))
+            .toEqual([ "zoom_controls.zoom_out", "zoom_controls.zoom_in" ]);
     });
 });

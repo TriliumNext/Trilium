@@ -353,9 +353,6 @@ importers:
       rrule:
         specifier: 2.8.1
         version: 2.8.1
-      svg-pan-zoom:
-        specifier: 3.6.2
-        version: 3.6.2
       tabulator-tables:
         specifier: 6.5.2
         version: 6.5.2
@@ -961,9 +958,6 @@ importers:
       scrypt-js:
         specifier: 3.0.1
         version: 3.0.1
-      svg-pan-zoom:
-        specifier: 3.6.2
-        version: 3.6.2
       tabulator-tables:
         specifier: 6.5.2
         version: 6.5.2
@@ -10712,9 +10706,6 @@ packages:
   supports-preserve-symlinks-flag@1.0.0:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
-
-  svg-pan-zoom@3.6.2:
-    resolution: {integrity: sha512-JwnvRWfVKw/Xzfe6jriFyfey/lWJLq4bUh2jwoR5ChWQuQoOH8FEh1l/bEp46iHHKHEJWIyFJETbazraxNWECg==}
 
   svg-tags@1.0.0:
     resolution: {integrity: sha512-ovssysQTa+luh7A5Weu3Rta6FJlFBBbInjOh722LIt6klpU2/HtdUbszju/G4devcvk8PGt7FCLv5wftu3THUA==}
@@ -23547,8 +23538,6 @@ snapshots:
       supports-color: 10.2.2
 
   supports-preserve-symlinks-flag@1.0.0: {}
-
-  svg-pan-zoom@3.6.2: {}
 
   svg-tags@1.0.0: {}
 

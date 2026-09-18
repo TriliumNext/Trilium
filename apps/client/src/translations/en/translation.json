@@ -1208,15 +1208,7 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Create child note and add it to map",
-    "create_child_note_text": "Add note",
-    "reset_pan_zoom_title": "Reset pan & zoom to initial coordinates and magnification",
-    "zoom_in_title": "Zoom In",
-    "zoom_out_title": "Zoom Out"
-  },
-  "image_buttons": {
-    "zoom_in": "Zoom in",
-    "zoom_out": "Zoom out",
-    "reset_zoom": "Reset zoom"
+    "create_child_note_text": "Add note"
   },
   "image_navigation": {
     "previous": "Previous image: {{- title}}",
@@ -1225,22 +1217,13 @@
   "image_viewer": {
     "loading_error": "There was an error loading the image.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Zoom in",
-      "zoom_out": "Zoom out",
-      "reset_zoom": "Reset zoom",
-      "pan": "Pan",
-      "pan_up": "Up",
-      "pan_down": "Down",
-      "pan_left": "Left",
-      "pan_right": "Right",
-      "pan_fast": "Faster panning",
       "navigation": "Navigation",
       "next_image": "Next image",
       "previous_image": "Previous image",
       "first_image": "First image",
       "last_image": "Last image"
-    }
+    },
+    "viewport": "Image view"
   },
   "shortcut_hints": {
     "show_button": "Show shortcut hints",
@@ -3049,8 +3032,6 @@
     "move-marker-toast-title": "Move marker",
     "unable-to-load-map": "Unable to load map.",
     "webgl-unavailable": "This map can't be drawn because WebGL isn't available. Check that hardware acceleration is enabled and that your graphics drivers are up to date.",
-    "zoom-in": "Zoom in",
-    "zoom-out": "Zoom out",
     "enter-3d": "Tilt into a 3D view\nHold Ctrl and drag to tilt the map freely",
     "exit-3d": "Lay the map flat again",
     "close-details": "Close",
@@ -3351,9 +3332,7 @@
   "svg": {
     "export_to_png": "The diagram could not be exported to PNG.",
     "export_to_svg": "The diagram could not be exported to SVG.",
-    "zoom_in": "Zoom in",
-    "zoom_out": "Zoom out",
-    "reset_zoom": "Reset zoom"
+    "preview": "Diagram preview"
   },
   "code_theme": {
     "title": "Appearance",
@@ -4004,9 +3983,6 @@
     "tags-differ": "The selected nodes don't carry the same tags, so these can only be read.",
     "add-tag": "Add this tag",
     "remove-tag": "Remove this tag",
-    "zoom-in": "Zoom in",
-    "zoom-out": "Zoom out",
-    "reset-zoom": "Reset zoom",
     "center-map": "Center the map",
     "direction-left": "Branches to the left",
     "direction-right": "Branches to the right",
@@ -4301,5 +4277,22 @@
     "creation-date": "Creation date & time",
     "ascending": "Ascending",
     "descending": "Descending"
+  },
+  "zoom_controls": {
+    "zoom_out": "Zoom out",
+    "reset": "Reset zoom",
+    "zoom_in": "Zoom in",
+    "hints": {
+      "zoom": "Zoom",
+      "zoom_in": "Zoom in",
+      "zoom_out": "Zoom out",
+      "reset_zoom": "Reset zoom",
+      "pan": "Pan",
+      "pan_up": "Up",
+      "pan_down": "Down",
+      "pan_left": "Left",
+      "pan_right": "Right",
+      "pan_fast": "Faster panning"
+    }
   }
 }

@@ -175,5 +175,55 @@ export function OverlayFullscreenButton({ isFullscreen, onToggle }: OverlayFulls
     );
 }
 
+interface ZoomControlsProps {
+    /**
+     * The scale to show between the two steps, as a percentage. What 100% means is the caller's
+     * choice: native resolution in `ImageViewer`, the fitted view in `SvgSplitEditor`, natural size
+     * in the mind map. Omit it to render the two steps with no readout, as the geo map does — a
+     * MapLibre zoom level means nothing as a percentage.
+     */
+    percent?: number;
+    /** Disables the matching step. Pass `false` once the scale has reached a bound. */
+    canZoomIn?: boolean;
+    canZoomOut?: boolean;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+    /** Runs when the readout is clicked, so it is only needed alongside `percent`. */
+    onReset?: () => void;
+}
+
+/**
+ * Renders the three zoom controls — out, the readout, in — for an {@link OverlayControlGroup} to
+ * hold.
+ *
+ * Buttons rather than a group of their own, because the geo map and mind map toolbars put them in
+ * one group beside a tilt, a recenter and a fullscreen button.
+ */
+export function ZoomControls({ percent, canZoomIn = true, canZoomOut = true, onZoomIn, onZoomOut, onReset }: ZoomControlsProps) {
+    return (
+        <>
+            <OverlayControlButton
+                title={t("zoom_controls.zoom_out")}
+                icon="bx-minus-circle"
+                disabled={!canZoomOut}
+                onClick={onZoomOut}
+            />
+            {percent !== undefined && (
+                <OverlayControlButton
+                    title={t("zoom_controls.reset")}
+                    text={`${Math.round(percent)}%`}
+                    onClick={onReset}
+                />
+            )}
+            <OverlayControlButton
+                title={t("zoom_controls.zoom_in")}
+                icon="bx-plus-circle"
+                disabled={!canZoomIn}
+                onClick={onZoomIn}
+            />
+        </>
+    );
+}
+
 /** Which way the tooltips on a group open, handed down by the group rather than repeated on each button. */
 const TooltipDirection = createContext<ActionButtonProps["titlePosition"]>("top");

@@ -101,10 +101,9 @@ interface DividerDragTestOpts {
 /**
  * Regression test for issue #9749: mermaid gantt-based diagrams (which mermaid renders with a
  * SVG `viewBox` inflated far beyond the visible chart, because of an off-screen "today" marker)
- * would collapse to a sub-pixel sliver after the split divider was dragged. The root cause was
- * that `svg-pan-zoom` strips the SVG's `viewBox` attribute on init and never restores it on
- * `destroy()`, so every divider-drag-triggered resize re-initialized pan/zoom by fitting from
- * `getBBox()` instead of the original `viewBox`, each time shrinking the effective scale further.
+ * would collapse to a sub-pixel sliver after the split divider was dragged, because the pan/zoom
+ * library re-fitted the diagram on every resize from a `viewBox` it had itself stripped. The
+ * preview now fits through the `viewBox` in CSS, so a resize re-fits nothing.
  *
  * The regression only shows up once the divider returns to (approximately) its original position:
  * a one-directional drag legitimately shrinks the rendered diagram proportionally to the smaller
@@ -120,15 +119,16 @@ async function testDividerDragSurvival({ page, context, noteTitle }: DividerDrag
     const svgData = app.currentNoteSplit.locator(".render-container svg");
     await expect(svgData).toBeVisible();
 
-    const viewport = app.currentNoteSplit.locator(".render-container svg .svg-pan-zoom_viewport");
-    await expect(viewport).toBeVisible();
+    // The SVG itself always measures as the whole pane, so read the on-screen height of what it
+    // actually draws: its bounding box in user units, scaled by the CTM that puts it on the screen.
+    const drawnHeight = () => svgData.evaluate((svg: SVGSVGElement) =>
+        svg.getBBox().height * (svg.getScreenCTM()?.d ?? 0));
 
-    // Let the initial pan/zoom fit settle (mounting can itself trigger one resize-driven re-init
-    // as the ResizeObserver reports the container's real size shortly after mount).
+    // Let the layout settle; mermaid sizes the diagram shortly after it mounts.
     await page.waitForTimeout(500);
 
-    const beforeBox = requireBoundingBox(await viewport.boundingBox(), "viewport (before drag)");
-    expect(beforeBox.height).toBeGreaterThan(0);
+    const beforeHeight = await drawnHeight();
+    expect(beforeHeight).toBeGreaterThan(0);
 
     const gutter = app.currentNoteSplit.locator(".gutter");
     await expect(gutter).toHaveCount(1);
@@ -153,12 +153,12 @@ async function testDividerDragSurvival({ page, context, noteTitle }: DividerDrag
 
     await page.waitForTimeout(500);
 
-    const afterBox = requireBoundingBox(await viewport.boundingBox(), "viewport (after drag)");
+    const afterHeight = await drawnHeight();
 
     // With the bug, this collapses to a sub-pixel sliver (observed ratio ~0.001 or less) even
-    // though the container returned to its original size. A healthy re-fit reproduces (close to)
+    // though the container returned to its original size. A healthy fit reproduces (close to)
     // the original height.
-    expect(afterBox.height).toBeGreaterThan(beforeBox.height * 0.5);
+    expect(afterHeight).toBeGreaterThan(beforeHeight * 0.5);
 }
 
 /**

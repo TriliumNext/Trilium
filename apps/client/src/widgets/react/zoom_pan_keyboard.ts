@@ -1,11 +1,43 @@
+import "./zoom_pan.css";
+
 import { useEffect } from "preact/hooks";
 import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 
+import type { ShortcutHintDefinition } from "../../services/shortcut_hints";
 import { isAppShortcutChord } from "../../services/shortcuts";
+import { clampPan, zoomToPointPosition } from "./zoom_pan";
 
-export type ImageViewerControl =
+export type ZoomPanControl =
     | "zoomIn" | "zoomOut" | "reset"
     | "panUp" | "panDown" | "panLeft" | "panRight";
+
+/** Draws the focus ring in zoom_pan.css. Put it on whichever element the caller gives `tabIndex`. */
+export const ZOOM_PAN_VIEWPORT_CLASS = "tn-zoom-pan-viewport";
+
+/**
+ * Shortcut hints for the keys {@link codeToControl} maps. A caller with more shortcuts spreads this
+ * and appends its own sections, as `ImageViewer` does for image navigation.
+ */
+export const ZOOM_PAN_HINTS: ShortcutHintDefinition = [
+    {
+        titleKey: "zoom_controls.hints.zoom",
+        hints: [
+            { keys: ["Ctrl++", "E"], labelKey: "zoom_controls.hints.zoom_in" },
+            { keys: ["Ctrl+-", "Q"], labelKey: "zoom_controls.hints.zoom_out" },
+            { keys: ["/", "Numpad /"], labelKey: "zoom_controls.hints.reset_zoom" }
+        ]
+    },
+    {
+        titleKey: "zoom_controls.hints.pan",
+        hints: [
+            { keys: ["Up", "W"], labelKey: "zoom_controls.hints.pan_up" },
+            { keys: ["Down", "S"], labelKey: "zoom_controls.hints.pan_down" },
+            { keys: ["Left", "A"], labelKey: "zoom_controls.hints.pan_left" },
+            { keys: ["Right", "D"], labelKey: "zoom_controls.hints.pan_right" },
+            { keys: ["Shift"], labelKey: "zoom_controls.hints.pan_fast" }
+        ]
+    }
+];
 
 /** Continuous keyboard zoom rate, as a per-second exponent fed to the library's zoomIn/zoomOut. */
 const ZOOM_RATE = 2.5;
@@ -35,7 +67,7 @@ export function claimsKeystroke(e: { code: string; ctrlKey: boolean; metaKey: bo
  * viewer may act on a modified one is {@link claimsKeystroke}'s call. Using `code` keeps it
  * keyboard-layout independent.
  */
-export function codeToControl(code: string): ImageViewerControl | null {
+export function codeToControl(code: string): ZoomPanControl | null {
     switch (code) {
         case "Equal": case "NumpadAdd": case "KeyE": return "zoomIn";
         case "Minus": case "NumpadSubtract": case "KeyQ": return "zoomOut";
@@ -53,7 +85,7 @@ export function codeToControl(code: string): ImageViewerControl | null {
  * moves the *view* that way (Right reveals the right side), so the content translates the opposite
  * way. Scaled by elapsed time, so the speed is frame-rate independent; Shift speeds it up.
  */
-export function getPanDelta(controls: Iterable<ImageViewerControl>, shiftKey: boolean, dtSeconds: number): { dx: number; dy: number } {
+export function getPanDelta(controls: Iterable<ZoomPanControl>, shiftKey: boolean, dtSeconds: number): { dx: number; dy: number } {
     const held = controls instanceof Set ? controls : new Set(controls);
     const speed = PAN_SPEED * (shiftKey ? PAN_FAST_FACTOR : 1) * dtSeconds;
     let dx = 0;
@@ -65,40 +97,22 @@ export function getPanDelta(controls: Iterable<ImageViewerControl>, shiftKey: bo
     return { dx, dy };
 }
 
-interface PanBounds { minPositionX: number; maxPositionX: number; minPositionY: number; maxPositionY: number; }
-
-/** Clamps a candidate content position to the library's computed pan bounds. */
-export function clampPan(x: number, y: number, bounds: PanBounds): { x: number; y: number } {
-    return {
-        x: Math.min(Math.max(x, bounds.minPositionX), bounds.maxPositionX),
-        y: Math.min(Math.max(y, bounds.minPositionY), bounds.maxPositionY)
-    };
-}
-
-/**
- * The content translation that keeps a viewport point fixed across a scale change — i.e. a zoom
- * anchored on (`cursorX`, `cursorY`) (wrapper-local pixels) rather than the viewport centre.
- * `scale0`/`posX0`/`posY0` describe the transform before zooming to `scale1`.
- */
-export function zoomToPointPosition(scale0: number, posX0: number, posY0: number, scale1: number, cursorX: number, cursorY: number): { x: number; y: number } {
-    const contentX = (cursorX - posX0) / scale0;
-    const contentY = (cursorY - posY0) / scale0;
-    return { x: cursorX - contentX * scale1, y: cursorY - contentY * scale1 };
-}
-
 /**
  * Wires keyboard zoom (`+`/`-`/`/`, with or without Ctrl/Cmd) and pan (arrows / WASD, Shift to speed
- * up) onto the focusable `elementRef`, driving the react-zoom-pan-pinch instance in `apiRef`. While
+ * up) onto the focusable `element`, driving the react-zoom-pan-pinch instance in `apiRef`. While
  * keys are held it runs a requestAnimationFrame loop that reuses the library's own
  * `zoomIn`/`zoomOut`/`setTransform`, so the motion is smooth and stays within the library's bounds.
- * Only active while the element is focused.
+ * Only active while `element` has focus, which a press on it gives; clicking an adjacent editor
+ * takes focus back, as with any other pane.
+ *
+ * Takes the element rather than a ref so the effect re-runs when a viewport mounts after the hook,
+ * as the preview pane does when a display-mode switch adds it.
  */
-export function useImageViewerKeyboard(
+export function useZoomPanKeyboard(
     apiRef: { current: ReactZoomPanPinchRef | null },
-    elementRef: { current: HTMLElement | null }
+    element: HTMLElement | null
 ) {
     useEffect(() => {
-        const element = elementRef.current;
         if (!element) return;
 
         const heldCodes = new Set<string>();
@@ -113,7 +127,7 @@ export function useImageViewerKeyboard(
         };
 
         const activeControls = () => {
-            const controls: ImageViewerControl[] = [];
+            const controls: ZoomPanControl[] = [];
             for (const code of heldCodes) {
                 const control = codeToControl(code);
                 if (control && control !== "reset") controls.push(control);
@@ -200,7 +214,7 @@ export function useImageViewerKeyboard(
             element.removeEventListener("pointerup", onPointerUp, true);
             stop();
         };
-    }, [ apiRef, elementRef ]);
+    }, [ apiRef, element ]);
 }
 
 /**
