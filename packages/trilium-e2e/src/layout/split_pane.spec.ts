@@ -31,9 +31,8 @@ test("Open the note in the correct split pane", async ({ page, context }) => {
     await expect(noteContent.locator("p")).toBeVisible();
     await noteContent.focus();
 
-    // Click the search result in the second split.
-    await resultsSelector.locator(".aa-suggestion", { hasText: CODE_NOTE_TITLE })
-        .nth(1).click();
+    // Click the existing-note hit in the second split (create rows also mention the title).
+    await app.existingNoteAutocompleteSuggestion(resultsSelector, CODE_NOTE_TITLE).click();
 
     await expect(split2).toContainText(CODE_NOTE_TITLE);
 });

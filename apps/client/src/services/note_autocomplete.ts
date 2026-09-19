@@ -21,6 +21,9 @@ const SELECTED_EXTERNAL_LINK_KEY = "data-external-link";
 // felt on every keystroke typed at a normal pace.
 const SEARCH_DEBOUNCE_MS = 50;
 
+// Must match `DEFAULT_DROPDOWN_LIMIT` in `trilium_mention_ui.ts`.
+const MENTION_DROPDOWN_LIMIT = 10;
+
 /**
  * Paces one input's searches: the first keystroke after a pause queries immediately, a burst typed
  * faster than {@link SEARCH_DEBOUNCE_MS} collapses into one search that runs once it stops, and at
@@ -228,22 +231,20 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
 
     options.fastSearch = true;
 
-    // Both rows stay above the results: the CKEditor mention feed renders only the first
-    // `mention.dropdownLimit` items, and the jQuery dropdown scrolls past as many as 200.
     if (pendingInboxTarget) {
-        results = [
+        results = mergeCreateNoteSuggestions(results, [
             {
                 action: "create-note",
                 noteTitle: term,
                 highlightedNotePathTitle: buildCreateNoteTitle(term, await pendingInboxTarget)
-            } as Suggestion,
+            },
             {
                 action: "create-child-note",
                 noteTitle: term,
                 parentNoteId: activeNoteId || "root",
                 highlightedNotePathTitle: t("note_autocomplete.create-child-note", { term })
-            } as Suggestion
-        ].concat(results);
+            }
+        ], term);
     }
 
     if (length >= 1 && options.allowJumpToSearchNotes) {
@@ -267,6 +268,27 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
     }
 
     cb(results);
+}
+
+/**
+ * Concatenates exact title matches of `term` (trimmed, case-insensitive), then `createRows`, then the rest.
+ * Caps the exact block so `createRows` still fit in CKEditor's mention panel; leftover exact hits follow create.
+ */
+function mergeCreateNoteSuggestions(results: Suggestion[], createRows: Suggestion[], term: string): Suggestion[] {
+    const needle = term.trim().toLowerCase();
+    const exact: Suggestion[] = [];
+    const rest: Suggestion[] = [];
+    for (const row of results) {
+        if (row.noteTitle?.trim().toLowerCase() === needle) {
+            exact.push(row);
+        } else {
+            rest.push(row);
+        }
+    }
+    const leadingExactCount = exact.length === 0
+        ? 0
+        : Math.min(exact.length, Math.max(1, MENTION_DROPDOWN_LIMIT - createRows.length));
+    return exact.slice(0, leadingExactCount).concat(createRows, exact.slice(leadingExactCount), rest);
 }
 
 // `autocomplete("val", ...)` does not dispatch a native "input" event, so each function below
@@ -449,8 +471,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                             html += '</div>';
                             return html;
                         }
-                        // Add special class for search-notes action
-                        const actionClass = suggestion.action === "search-notes" ? "search-notes-action" : "";
+                        const actionClass = suggestion.action ? `${suggestion.action}-action` : "";
 
                         // Choose appropriate icon based on action
                         let iconClass = suggestion.icon ?? "bx bx-note";
