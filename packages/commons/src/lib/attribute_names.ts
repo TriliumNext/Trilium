@@ -14,6 +14,8 @@
  * stripping), so it is not expressed in terms of these helpers.
  */
 const ATTRIBUTE_NAME_CHARS = "\\p{L}\\p{N}_:";
+/** The same rule as an HTML `pattern` attribute, for an input that takes an attribute name. */
+export const ATTRIBUTE_NAME_PATTERN = `[${ATTRIBUTE_NAME_CHARS}]+`;
 const DISALLOWED_MATCHER = new RegExp(`[^${ATTRIBUTE_NAME_CHARS}]`, "gu");
 const ATTR_NAME_MATCHER = new RegExp(`^[${ATTRIBUTE_NAME_CHARS}]+$`, "u");
 

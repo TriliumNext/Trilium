@@ -5,8 +5,8 @@ You can sort notes by right-clicking the parent note in the <a class="reference
 
 The sorting dialog allows:
 
-*   Sorting by title, creation or modification date.
-*   Changing sorting direction can also be adjusted (ascending or descending).
+*   Sorting by title, creation or modification date, or by the value of a label on the child notes.
+*   Sorting by several such criteria in turn, each ascending or descending: the next level only decides between notes the previous ones left equal.
 *   Ensuring folders are displayed at the top.
 *   Natural sort, based on the sorting rules of a particular language.
 
@@ -24,15 +24,15 @@ Child notes can be automatically sorted by attaching specific [labels](../../Adv
     <tbody>
         <tr>
             <td><code>#sorted</code></td>
-            <td><p>Keeps child notes sorted by title alphabetically.</p><p>When given a value, it will sort by the value of another label instead. If one of the child notes doesn't have the specified label, the title will be used for them instead.</p></td>
+            <td><p>Keeps child notes sorted by title alphabetically.</p><p>When given a value, it will sort by other criteria instead: a comma-separated list of levels, each <code>title</code>, <code>dateCreated</code>, <code>dateModified</code> or the name of a label on the child notes, optionally followed by <code>asc</code> or <code>desc</code>, as in a search's <code>orderBy</code>. For example <code>#sorted="priority desc, dueDate"</code> sorts by priority, highest first, and notes of equal priority by due date. A child note without a level's label sorts after every child that has it, whichever direction the level runs in. When neither note has the label, the next level decides.</p></td>
         </tr>
         <tr>
             <td><code>#sortDirection</code></td>
-            <td><p>If <code>sorted</code> is applied, specifies the direction of the sort:</p><ul><li><code>ASC</code>, ascending (default)</li><li><code>DESC</code>, descending</li></ul></td>
+            <td><p>If <code>sorted</code> is applied, specifies the direction of the sort:</p><ul><li><code>ASC</code>, ascending (default)</li><li><code>DESC</code>, descending</li></ul><p>A level of <code>sorted</code> followed by its own <code>asc</code> or <code>desc</code> keeps that direction regardless.</p></td>
         </tr>
         <tr>
             <td><code>#sortFoldersFirst</code></td>
-            <td>If <code>sorted</code> is applied, folders (notes with children) will be sorted as a group at the top, and the rest will be sorted.</td>
+            <td>If <code>sorted</code> is applied, folders (notes with children) will be sorted as a group at the top (at the bottom when <code>#sortDirection</code> is <code>desc</code>), and the rest will be sorted.</td>
         </tr>
         <tr>
             <td><code>#sortNatural</code></td>
@@ -61,6 +61,7 @@ Sorting is done by comparing note properties or specific labels on child notes. 
     *   **Default Sorting**: If `#sorted` has no value, notes are sorted alphabetically.
     *   **Property Sorting**: If `#sorted` is set to `title`, `dateModified`, or `dateCreated`, notes are sorted based on the specified property.
     *   **Label Sorting**: If `#sorted` has any other value, this value is treated as the name of a child note's label, and sorting is based on the values of this label. For example, setting `#sorted=myOrder` on the parent note and using `#myOrder=001`, `#myOrder=002`, etc., on child notes.
+    *   **Multi-Level Sorting**: Several of the above can be combined, separated by commas; each level is applied only where the previous ones are equal. Every level can carry its own direction as a word after the name, `asc` or `desc`, otherwise it follows `#sortDirection`. For example `#sorted="priority desc, area, dateCreated"` sorts by priority, highest first, then by area, then by creation date.
 4.  **Alphabetical Sorting**: Used as a last resort when other criteria result in equality.
 
 All comparisons are made string-wise (e.g., "1" \< "2" or "2020-10-10" < "2021-01-15", but also "2" \> "10").

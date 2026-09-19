@@ -1,0 +1,41 @@
+.modal.sort-child-notes-dialog {
+    /* Room for a criteria row: the kind select, a label name, the direction and the row buttons. */
+    .modal-dialog {
+        max-width: 600px;
+    }
+
+    /* The cards carry their own spacing, as the other card-bearing dialogs do. */
+    .tn-card {
+        margin-bottom: 1rem;
+    }
+
+    .tn-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .sort-level {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        /* The kind select takes whatever room the row does not otherwise need, so the direction
+           and the row buttons sit at the end whether or not a label name is showing. It shares
+           that room with the label name rather than taking it, so neither box is squeezed. */
+        .sort-level-kind {
+            flex: 1 1 11em;
+            min-width: 0;
+        }
+
+        .sort-level-label {
+            flex: 1 1 8em;
+            min-width: 0;
+        }
+
+        .tn-segmented-choice,
+        .sort-level-up,
+        .sort-level-down,
+        .sort-level-remove {
+            flex-shrink: 0;
+        }
+    }
+}

@@ -1310,7 +1310,10 @@ export interface BackendApi {
     getYearNote(year: string, rootNote?: ScriptBNote): ScriptBNote | null;
 
     /**
-     * Sort child notes of a given note.
+     * Sort child notes of a given note. `sortBy` takes the `#sorted` grammar — comma-separated
+     * levels of `title`, `dateCreated`, `dateModified` or a label name, each optionally followed by
+     * `asc` or `desc` (`priority desc, dueDate`); `reverse` is the direction of the levels without
+     * their own, of the folders grouping and of ties.
      */
     sortNotes(parentNoteId: string, sortConfig: { sortBy?: string; reverse?: boolean; foldersFirst?: boolean }): void;
     /**
