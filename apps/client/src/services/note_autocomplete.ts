@@ -467,8 +467,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                             html += '</div>';
                             return html;
                         }
-                        // Add special class for search-notes action
-                        const actionClass = suggestion.action === "search-notes" ? "search-notes-action" : "";
+                        const actionClass = suggestion.action ? `${suggestion.action}-action` : "";
 
                         // Choose appropriate icon based on action
                         let iconClass = suggestion.icon ?? "bx bx-note";

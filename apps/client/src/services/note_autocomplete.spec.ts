@@ -440,9 +440,15 @@ describe("autocompleteSource (via dataset)", () => {
         expect(dataset.templates.suggestion({ action: "search-notes", highlightedNotePathTitle: "S" }))
             .toContain("bx bx-search");
         expect(dataset.templates.suggestion({ action: "create-note", highlightedNotePathTitle: "C" }))
+            .toContain("create-note-action");
+        expect(dataset.templates.suggestion({ action: "create-note", highlightedNotePathTitle: "C" }))
             .toContain("bx bx-plus");
         expect(dataset.templates.suggestion({ action: "create-child-note", highlightedNotePathTitle: "C" }))
+            .toContain("create-child-note-action");
+        expect(dataset.templates.suggestion({ action: "create-child-note", highlightedNotePathTitle: "C" }))
             .toContain("bx bx-subdirectory-right");
+        expect(dataset.templates.suggestion({ action: "external-link", highlightedNotePathTitle: "E" }))
+            .toContain("external-link-action");
         expect(dataset.templates.suggestion({ action: "external-link", highlightedNotePathTitle: "E" }))
             .toContain("bx bx-link-external");
     });
