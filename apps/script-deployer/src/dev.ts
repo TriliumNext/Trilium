@@ -23,6 +23,9 @@ process.env.TRILIUM_PORT = String(PORT);
 process.env.TRILIUM_RESOURCE_DIR = resolve(__dirname, "../../server/src");
 process.env.NODE_ENV = "development";
 process.env.TRILIUM_ENV = "dev";
+// Deployed scripts are the whole point of this instance, so backend scripting
+// must be on — without it every #customRequestHandler request answers 403.
+process.env.TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED ??= "true";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 const SCRIPTS_DIR = resolve(__dirname, "../scripts");
@@ -186,15 +189,32 @@ function watchScripts() {
     console.log(`Watching ${SCRIPTS_DIR} for changes…`);
 }
 
+async function waitForServer() {
+    for (let attempt = 0; attempt < 240; attempt++) {
+        try {
+            await fetch(`http://localhost:${PORT}/`);
+            return;
+        } catch {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+    }
+    throw new Error(`Server did not come up on port ${PORT}.`);
+}
+
 async function main() {
     await ensureTranslations();
+
+    // Start the full server first — initializeCore() runs in main.js's startup
+    // path and owns one-time initialization (execution context, crypto/platform
+    // providers, database provider). ensureDatabase/ensureEtapiToken need cls,
+    // which only works after that, so they follow the server like the setup
+    // wizard does. main.js starts the server as an import side effect, so wait
+    // until the port answers.
+    await import("@triliumnext/server/src/main.js");
+    await waitForServer();
+
     await ensureDatabase();
     await ensureEtapiToken();
-
-    // Start the full HTTP server — this loads becca and makes the note
-    // tree available for subsequent setup steps.
-    const startTriliumServer = (await import("@triliumnext/server/src/www.js")).default;
-    await startTriliumServer();
 
     await ensureScriptsFolder();
     await deployScripts();
