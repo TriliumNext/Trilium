@@ -102,6 +102,22 @@ describe("QuickSearchWidget", () => {
         expect(triggerCommand).toHaveBeenCalledWith("searchNotes", { searchString: "hello" });
     });
 
+    it("sends slash-bearing text as a query parameter", async () => {
+        const get = vi.spyOn(server, "get").mockResolvedValue({
+            searchResultNoteIds: [],
+            searchResults: [],
+            error: ""
+        } as never);
+        const widget = renderWidget();
+        widget.$widget.find(".search-string").val("中/英");
+
+        await widget.search();
+
+        expect(get).toHaveBeenCalledWith(
+            `quick-search?searchString=${encodeURIComponent("中/英")}`
+        );
+    });
+
     it("puts the results of a search the server did not highlight in the same scroller", async () => {
         const widget = renderWidget();
         vi.spyOn(server, "get").mockResolvedValue({
