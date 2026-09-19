@@ -344,6 +344,17 @@ describe("content_renderer", () => {
                 expect(content).toStrictEqual("<p>Foo</p>");
             });
 
+            it("does not treat an external URL's query string as a note ID", () => {
+                const target = buildShareNote({ id: "extIdTarget1", title: "Target" });
+                const href = `https://example.com/${target.noteId}?x=1`;
+                const note = buildShareNote({
+                    id: "note",
+                    content: `<p><a class="reference-link" href="${href}">text</a></p>`
+                });
+                const result = getContent(note);
+                expect(result.content).toStrictEqual("<p>text</p>");
+            });
+
             it("properly escapes note title", () => {
                 buildShareNote({
                     id: "MSkxxCFbBsYP",
@@ -365,6 +376,53 @@ describe("content_renderer", () => {
                         <a class="reference-link type-text" href="./MSkxxCFbBsYP"><span><span class="tn-icon bx bx-note"></span>The quick &lt;strong&gt;brown&lt;/strong&gt; fox</span></a>
                     </p>
                 `);
+            });
+
+            it("keeps a reference link whose target has a shareAlias or shareExternalLink", () => {
+                buildShareNote({ id: "aliasTarget01", title: "Linux", "#shareAlias": "linux" });
+                buildShareNote({
+                    id: "extTarget0001",
+                    title: "Ext",
+                    "#shareExternalLink": "https://example.com/some/page"
+                });
+                const note = buildShareNote({
+                    id: "note",
+                    content: trimIndentation`\
+                        <p>
+                            <a class="reference-link" href="#root/zaIItd4TM5Ly/aliasTarget01">
+                                Old title
+                            </a>
+                            <a class="reference-link" href="#root/extTarget0001?viewMode=source">
+                                Old
+                            </a>
+                        </p>
+                    `
+                });
+                const result = getContent(note);
+                const links = parse(String(result.content)).querySelectorAll("a.reference-link");
+                expect(links).toHaveLength(2);
+
+                const [ aliasLink, externalLink ] = links;
+                expect(aliasLink.getAttribute("href")).toBe("./linux");
+                expect(aliasLink.classList.contains("type-text")).toBe(true);
+                expect(aliasLink.querySelector("span.tn-icon")).not.toBeNull();
+                expect(aliasLink.text).toBe("Linux");
+
+                expect(externalLink.getAttribute("href")).toBe("https://example.com/some/page");
+                expect(externalLink.getAttribute("target")).toBe("_blank");
+                expect(externalLink.getAttribute("rel")).toBe("noopener noreferrer");
+                expect(externalLink.text).toBe("Ext");
+            });
+
+            it("replaces a reference link to a missing attachment with its text", () => {
+                buildShareNote({ id: "attachOwner01", title: "Owner" });
+                const href = "#root/attachOwner01?viewMode=attachments&amp;attachmentId=missing01";
+                const note = buildShareNote({
+                    id: "note",
+                    content: `<p><a class="reference-link" href="${href}">clip.mp4</a></p>`
+                });
+                const result = getContent(note);
+                expect(result.content).toStrictEqual("<p>clip.mp4</p>");
             });
         });
     });

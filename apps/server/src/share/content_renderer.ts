@@ -532,7 +532,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             }
 
             if (linkEl.classList.contains("reference-link")) {
-                cleanUpReferenceLinks(linkEl, getNote);
+                cleanUpReferenceLinks(linkEl, href ?? "", getNote);
             }
         }
 
@@ -580,9 +580,7 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
             getLog().error(`Broken attachment link detected in shared note: unable to find attachment with ID ${attachmentId}`);
         }
     } else {
-        const [notePath] = href.split("?");
-        const notePathSegments = notePath.split("/");
-        const noteId = notePathSegments[notePathSegments.length - 1];
+        const noteId = getNoteIdFromLink(href);
         const linkedNote = getNote(noteId);
         if (linkedNote) {
             const isExternalLink = linkedNote.hasLabel("shareExternalLink");
@@ -607,10 +605,10 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
  * Processes reference links to ensure that they are up to date. More specifically, reference links contain in their HTML source code the note title at the time of the linking. It can be changed in the mean-time or the note can become protected, which leaks information.
  *
  * @param linkEl the <a> element to process.
+ * @param href the `href` stored in the note; `handleAttachmentLink()` rewrites the attribute.
  */
-function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
+function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNoteFunction) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
-    const href = linkEl.getAttribute("href") ?? "";
 
     // Handle attachment reference links
     if (linkEl.classList.contains("attachment-link")) {
@@ -619,7 +617,11 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
         return;
     }
 
-    const noteId = href.split("/").at(-1);
+    // `handleAttachmentLink()` removes the `href` of a link whose target is missing.
+    let noteId = "";
+    if (linkEl.hasAttribute("href")) {
+        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : (href.split("/").at(-1) ?? "");
+    }
     const note = noteId ? getNote(noteId) : undefined;
     if (!note) {
         // If a note is not found, simply replace it with a text.
@@ -629,6 +631,13 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
     } else {
         linkEl.innerHTML = `<span><span class="${escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
     }
+}
+
+/** Returns the ID of the note a link such as `#root/abc/def?viewMode=source` points to. */
+function getNoteIdFromLink(href: string) {
+    const [notePath] = href.split("?");
+    const notePathSegments = notePath.split("/");
+    return notePathSegments[notePathSegments.length - 1];
 }
 
 /**
