@@ -4,7 +4,7 @@ import type FNote from "../../entities/fnote";
 import type { IconGlyph } from "../../services/icon_glyphs";
 import { escapeHtml } from "../../services/utils";
 import { NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
-import { getFitPadding, getHopDistances, isRootedAtCurrentNote, mixColors, NoteMapWidgetMode, withAlpha } from "./utils";
+import { getFitPadding, getHopDistances, isRootedAtCurrentNote, MapType, mixColors, NoteMapWidgetMode, withAlpha } from "./utils";
 
 /** Roughly a second of simulation at 60 fps — see {@link setupFraming}. */
 const TICKS_UNTIL_DAMPED = 60;
@@ -115,10 +115,12 @@ interface RenderData {
     container: HTMLElement;
     /** What each note's icon class resolves to, as the icon pack draws it — see icon_glyphs.ts. */
     iconGlyphs: Map<string, IconGlyph>;
+    /** Hierarchical top-down layout is only for the clone map; link and tree stay force-directed. */
+    mapType: MapType;
 }
 
 /** @returns a teardown function to call when the graph is discarded. */
-export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, { note, mapRootId, themeStyle, widgetMode, noteIdToSizeMap, notesAndRelations, cssData, container, iconGlyphs }: RenderData) {
+export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, { note, mapRootId, themeStyle, widgetMode, noteIdToSizeMap, notesAndRelations, cssData, container, iconGlyphs, mapType }: RenderData) {
     // What the map is showing of the note under the pointer: the note itself, the notes a relation
     // runs between it and, and those relations. Worked out once when the hover changes rather than
     // while painting, so that every note of a frame is painted knowing the same thing.
@@ -491,6 +493,14 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
     graph.d3Force("center")?.strength(0.2);
     graph.d3Force("charge")?.strength(boundedCharge);
     graph.d3Force("charge")?.distanceMax(1000);
+
+    if (mapType === "clone") {
+        // Roots at the top, the map root at the bottom. `onDagError` swallows parent cycles so the
+        // layout does not throw; `walk` in `getCloneMap` already stops revisiting a note.
+        graph.dagMode("td")
+            .dagLevelDistance(40)
+            .onDagError(() => {});
+    }
 
     const stopFraming = setupFraming(graph, container, { note, widgetMode, notesAndRelations, hopDistances });
 

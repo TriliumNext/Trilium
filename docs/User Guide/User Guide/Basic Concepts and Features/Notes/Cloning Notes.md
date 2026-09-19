@@ -52,6 +52,8 @@ You can view the list of all available clones:
 *   In the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> for the <a class="reference-link" href="../UI%20Elements/New%20Layout.md">New Layout</a>.
 *   For the old layout, in the "Note Paths" tab in the <a class="reference-link" href="../UI%20Elements/Ribbon.md">Ribbon</a>.
 
+The Connections tab's note map also has a _Clone map_ that draws the same placements as a graph, with shared ancestors merged. See <a class="reference-link" href="../../Advanced%20Usage/Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a>.
+
 Titles of cloned notes in the tree view have an asterisk to the right to easily see that the note is also placed into some other location.
 
 ## Deleting notes/clones

@@ -1,8 +1,8 @@
 import { NoteMapLink, NoteMapPostResponse } from "@triliumnext/commons";
-import server from "../../services/server";
 import { LinkObject, NodeObject } from "force-graph";
 
-type MapType = "tree" | "link";
+import server from "../../services/server";
+import { CloneCombine, MapType } from "./utils";
 
 interface GroupedLink {
     id: string;
@@ -47,9 +47,16 @@ export interface NotesAndRelationsData {
  *                          around through the charge force. Worth hiding in a small local view of
  *                          one note; the full-size maps keep the subtree their users expect of them.
  */
-export async function loadNotesAndRelations(mapRootNoteId: string, excludeRelations: string[], includeRelations: string[], mapType: MapType, hideUnlinkedNotes = false): Promise<NotesAndRelationsData> {
+export async function loadNotesAndRelations(
+    mapRootNoteId: string,
+    excludeRelations: string[],
+    includeRelations: string[],
+    mapType: MapType,
+    hideUnlinkedNotes = false,
+    combine: CloneCombine = "any"
+): Promise<NotesAndRelationsData> {
     const resp = await server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, {
-        excludeRelations, includeRelations
+        excludeRelations, includeRelations, combine
     });
 
     const noteIdToSizeMap = calculateNodeSizes(resp, mapType);
@@ -62,7 +69,7 @@ export async function loadNotesAndRelations(mapRootNoteId: string, excludeRelati
         icon
     }));
 
-    // A tree map links every node to its parent, so it has no unlinked notes to speak of.
+    // A tree or clone map links every node to a parent, so it has no unlinked notes to speak of.
     if (hideUnlinkedNotes && mapType === "link") {
         nodes = dropUnlinkedNotes(nodes, links, mapRootNoteId);
     }
@@ -108,7 +115,7 @@ function calculateNodeSizes(resp: NoteMapPostResponse, mapType: MapType) {
                 noteIdToSizeMap[noteId] += 1 + Math.round(Math.log(count) / Math.log(1.5));
             }
         }
-    } else if (mapType === "link") {
+    } else if (mapType === "link" || mapType === "clone") {
         const noteIdToLinkCount: Record<string, number> = {};
 
         for (const link of resp.links) {

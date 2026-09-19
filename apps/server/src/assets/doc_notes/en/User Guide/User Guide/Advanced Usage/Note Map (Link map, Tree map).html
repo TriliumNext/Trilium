@@ -1,9 +1,11 @@
 <p>Note map is a visualization of connections between notes. This provides
   an insight into a structure ("web") of notes.</p>
-<p>There are two types of note map:</p>
+<p>There are three types of note map:</p>
 <ul>
   <li>Link Map, which shows relations between notes.</li>
-  <li>Note Map, which shows the hierarchical tree structure.</li>
+  <li>Tree Map, which shows the hierarchical tree structure under a note.</li>
+  <li>Clone Map, which shows every placement of a note by walking its parents
+    up to the root.</li>
 </ul>
 <h2>Accessing the note map</h2>
 <p>The note map comes into multiple flavors:</p>
@@ -88,6 +90,25 @@
   <img style="aspect-ratio:1420/1490;" src="1_Note Map (Link map, Tree map)_image.png"
   width="1420" height="1490">
 </figure>
+<h2>Clone Map</h2>
+<p>Shows every placement of the current note by walking its parents up to
+  the root. Shared ancestors appear once, so two clone paths that share a
+  parent merge instead of listing the same note twice.</p>
+<p>Unlike the tree map, which draws the notes <em>under</em> the current note,
+  the clone map draws the notes <em>above</em> it. A note that is not cloned
+  is a single chain to the root.</p>
+<p>On a dedicated&nbsp;<a class="reference-link" href="#root/_help_bdUJEHsAPYQR">Note Map</a>&nbsp;note,
+  the clone map shows the placements of the map's root note, not that note's
+  subtree.</p>
+<p>Rooted at a&nbsp;<a class="reference-link" href="#root/_help_m523cpzocqaD">search note</a>,
+  the clone map uses the search results as seeds instead of the search note
+  itself. Any and All are decided on clone paths only: <em>Any seed</em> keeps
+  a note if at least one seed sits on a clone path below it; <em>All seeds</em> keeps
+  a note if every seed does, plus the clone paths from that meet down to
+  the seeds. A parent that is only on some of the seeds' clone paths is dropped,
+  and a tree child that is not on any clone path is ignored. The choice is
+  remembered like <code>#mapType</code>: as <code>#mapCloneCombine</code> on a dedicated note
+  map, and as a sidebar option otherwise.</p>
 <h2>See also</h2>
 <ul>
   <li>Apart from the note map feature which can be accessed from any note, it
