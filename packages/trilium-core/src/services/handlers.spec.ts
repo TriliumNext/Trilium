@@ -134,6 +134,31 @@ describe("handlers", () => {
             expect(setContent).toHaveBeenCalledWith("TEMPLATE BODY");
             expect(duplicateSubtree).toHaveBeenCalledWith("tmpl", "n");
         });
+
+        it("copies template content into a note emptied in the editor (skeleton content, #10908)", () => {
+            buildNote({ id: "tmpl2", type: "text", mime: "text/html", content: "TEMPLATE BODY" });
+            // An emptied CKEditor note stores its empty paragraph, not "".
+            const note = buildNote({ id: "n2", type: "text", mime: "text/html", content: "<p>&nbsp;</p>" });
+            const setContent = vi.spyOn(note, "setContent").mockImplementation(() => {});
+            vi.spyOn(note, "save").mockReturnValue(note);
+            const rel = addAttribute("n2", "relation", "template", "tmpl2");
+
+            eventService.emit(eventService.ENTITY_CREATED, { entityName: "attributes", entity: rel });
+
+            expect(setContent).toHaveBeenCalledWith("TEMPLATE BODY");
+        });
+
+        it("still refuses to overwrite a note with real content", () => {
+            buildNote({ id: "tmpl3", type: "text", mime: "text/html", content: "TEMPLATE BODY" });
+            const note = buildNote({ id: "n3", type: "text", mime: "text/html", content: "<p>my draft</p>" });
+            const setContent = vi.spyOn(note, "setContent").mockImplementation(() => {});
+            vi.spyOn(note, "save").mockReturnValue(note);
+            const rel = addAttribute("n3", "relation", "template", "tmpl3");
+
+            eventService.emit(eventService.ENTITY_CREATED, { entityName: "attributes", entity: rel });
+
+            expect(setContent).not.toHaveBeenCalled();
+        });
     });
 
     describe("ENTITY_DELETED", () => {

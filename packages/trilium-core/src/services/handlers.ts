@@ -10,6 +10,7 @@ import oneTimeTimer from "./one_time_timer.js";
 import type BNote from "../becca/entities/bnote.js";
 import type AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import { DefinitionObject } from "@triliumnext/commons";
+import { isVisuallyEmptyTextContent } from "./content-emptiness.js"
 
 type Handler = (definition: DefinitionObject, note: BNote, targetNote: BNote) => void;
 
@@ -105,8 +106,10 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
             if (
                 note.hasStringContent() &&
                 typeof content === "string" &&
-                // if the note has already content we're not going to overwrite it with template's one
-                (!content || content.trim().length === 0) &&
+                // if the note has already content we're not going to overwrite it with template's one.
+                // Emptied-in-editor notes store the empty paragraph skeleton (<p>&nbsp;</p>), so
+                // a raw ""/whitespace check would refuse the template on a visually empty note (#10908).
+                (!content || isVisuallyEmptyTextContent(content)) &&
                 templateNote.hasStringContent()
             ) {
                 const templateNoteContent = templateNote.getContent();
