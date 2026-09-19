@@ -7,6 +7,7 @@ describe("buildShareLink", () => {
 
     afterEach(() => {
         window.glob = originalGlob;
+        history.replaceState({}, "", "/");
     });
 
     function setGlob(patch: Record<string, unknown>) {
@@ -31,9 +32,38 @@ describe("buildShareLink", () => {
         expect(buildShareLink("abc123", null)).toBe("http://localhost:3000/share/abc123");
     });
 
+    it("keeps the browser deployment subpath with or without a trailing slash", () => {
+        setGlob({});
+
+        history.replaceState({}, "", "/trilium");
+        expect(buildShareLink("abc123", null)).toBe("http://localhost:3000/trilium/share/abc123");
+
+        history.replaceState({}, "", "/trilium/");
+        expect(buildShareLink("abc123", null)).toBe("http://localhost:3000/trilium/share/abc123");
+    });
+
     it("resolves an empty shareId (share root) to the /share/ base", () => {
         setGlob({ httpBaseUrl: "http://127.0.0.1:37742" });
         expect(buildShareLink("", undefined)).toBe("http://127.0.0.1:37742/share/");
+    });
+
+    it("keeps the subpath when the sync server is reverse-proxied below the domain root", () => {
+        setGlob({ httpBaseUrl: "http://127.0.0.1:37742" });
+
+        const subpath = "https://notes.example.com/trilium";
+        expect(buildShareLink("abc123", subpath)).toBe(`${subpath}/share/abc123`);
+        expect(buildShareLink("abc123", `${subpath}/`)).toBe(`${subpath}/share/abc123`);
+        expect(buildShareLink("abc123", `${subpath}///`)).toBe(`${subpath}/share/abc123`);
+
+        const nested = "https://notes.example.com/a/b";
+        expect(buildShareLink("abc123", nested)).toBe(`${nested}/share/abc123`);
+    });
+
+    it("drops a query or fragment carried by the configured sync server address", () => {
+        setGlob({ httpBaseUrl: "http://127.0.0.1:37742" });
+
+        const subpath = "https://notes.example.com/trilium";
+        expect(buildShareLink("abc123", `${subpath}?x=1#y`)).toBe(`${subpath}/share/abc123`);
     });
 
     it("percent-encodes a shareId carrying characters that are not path-safe", () => {
