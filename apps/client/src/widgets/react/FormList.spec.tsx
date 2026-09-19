@@ -8,7 +8,7 @@ vi.mock("bootstrap", () => ({
     Tooltip: class { static getInstance() { return null; } }
 }));
 
-import FormList, { FormListItem } from "./FormList";
+import FormList, { FormDropdownSubmenu, FormListItem } from "./FormList";
 
 describe("FormList keyboard activation", () => {
     it.each([ "Enter", " " ])("activates the focused item on %j like a click", (key) => {
@@ -53,6 +53,49 @@ describe("FormList keyboard activation", () => {
 
         expect(onSelect).not.toHaveBeenCalled();
         expect(event.defaultPrevented).toBe(false);
+    });
+});
+
+describe("FormDropdownSubmenu", () => {
+    it("flips the submenu up on hover while it overflows the bottom of the viewport", () => {
+        Object.defineProperty(document.documentElement, "clientHeight",
+            { value: 800, configurable: true });
+        Object.defineProperty(document.documentElement, "clientWidth",
+            { value: 1000, configurable: true });
+        const container = mount(
+            <FormDropdownSubmenu icon="bx bx-cog" title="Advanced">
+                <FormListItem value="source">Note source</FormListItem>
+            </FormDropdownSubmenu>
+        );
+        const parent = container.querySelector<HTMLElement>("li.dropdown-submenu");
+        const submenu = parent?.querySelector<HTMLElement>("ul.dropdown-menu");
+        if (!parent || !submenu) throw new Error("expected a submenu");
+
+        // happy-dom does not lay out, so each call stubs `getBoundingClientRect()`.
+        const place = (top: number) =>
+            Object.defineProperty(submenu, "getBoundingClientRect", {
+                value: () => ({
+                    top, bottom: top + 200, height: 200,
+                    left: 100, right: 300, width: 200
+                }),
+                configurable: true
+            });
+
+        place(700);
+        parent.dispatchEvent(new MouseEvent("mouseenter"));
+        expect(submenu.classList.contains("submenu-flip-up")).toBe(true);
+
+        place(300);
+        parent.dispatchEvent(new MouseEvent("mouseenter"));
+        expect(submenu.classList.contains("submenu-flip-up")).toBe(false);
+
+        // The mobile layout unfolds the submenu in place, so a hover leaves it alone.
+        const device = window.glob.device;
+        window.glob.device = "mobile";
+        place(700);
+        parent.dispatchEvent(new MouseEvent("mouseenter"));
+        window.glob.device = device;
+        expect(submenu.classList.contains("submenu-flip-up")).toBe(false);
     });
 });
 

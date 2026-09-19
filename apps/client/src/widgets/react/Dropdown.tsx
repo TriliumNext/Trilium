@@ -1,3 +1,4 @@
+import type { Options as PopperOptions } from "@popperjs/core";
 import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { ComponentChildren, HTMLAttributes } from "preact";
@@ -288,4 +289,18 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
                 : menu}
         </div>
     );
+}
+
+/**
+ * A `popperConfig` for a menu too tall to fit above or below its toggle. Popper guards only the
+ * main axis against overflow; guarding `altAxis` too slides the menu back inside the viewport.
+ */
+export function keepMenuInViewport(defaults: Partial<PopperOptions>): Partial<PopperOptions> {
+    return {
+        ...defaults,
+        modifiers: [
+            ...(defaults.modifiers ?? []),
+            { name: "preventOverflow", options: { altAxis: true, padding: 8 } }
+        ]
+    };
 }

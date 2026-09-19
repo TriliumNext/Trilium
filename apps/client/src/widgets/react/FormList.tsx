@@ -6,6 +6,7 @@ import { ComponentChildren, RefObject } from "preact";
 import { type CSSProperties,useEffect, useMemo, useRef, useState } from "preact/compat";
 
 import { CommandNames } from "../../components/app_context";
+import { repositionSubmenu } from "../../menus/submenu_placement";
 import { handleRightToLeftPlacement, isMobile, openInAppHelpFromUrl } from "../../services/utils";
 import FormToggle from "./FormToggle";
 import HelpTooltipButton from "./HelpTooltipButton";
@@ -262,9 +263,19 @@ export function FormDropdownSubmenu({ icon, title, children, dropStart, onDropdo
     dropStart?: boolean
 }) {
     const [ openOnMobile, setOpenOnMobile ] = useState(false);
+    const submenuRef = useRef<HTMLUListElement>(null);
 
     return (
-        <li className={clsx("dropdown-item dropdown-submenu", { "submenu-open": openOnMobile, "dropstart": dropStart })}>
+        <li
+            className={clsx("dropdown-item dropdown-submenu", {
+                "submenu-open": openOnMobile,
+                "dropstart": dropStart
+            })}
+            // The desktop `:hover` rule lays the submenu out before `mouseenter` fires.
+            onMouseEnter={() => {
+                if (!isMobile() && submenuRef.current) repositionSubmenu(submenuRef.current);
+            }}
+        >
             <span
                 className="dropdown-toggle"
                 onClick={(e) => {
@@ -282,7 +293,7 @@ export function FormDropdownSubmenu({ icon, title, children, dropStart, onDropdo
                 {title}
             </span>
 
-            <ul className={`dropdown-menu ${openOnMobile ? "show" : ""}`}>
+            <ul ref={submenuRef} className={`dropdown-menu ${openOnMobile ? "show" : ""}`}>
                 {children}
             </ul>
         </li>
