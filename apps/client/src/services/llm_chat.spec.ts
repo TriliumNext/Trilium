@@ -245,6 +245,34 @@ describe("streamChatCompletion", () => {
         ]);
     });
 
+
+    it("reports an interruption when the body ends without a terminal chunk (#10883)", async () => {
+        // A proxy can close an SSE body cleanly: end-of-stream without the
+        // server's done chunk is a dropped response, not a completion.
+        const chunks = [`data: ${JSON.stringify({ type: "text", content: "partial" })}
+`];
+        vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse(chunks)));
+
+        const cb = makeCallbacks();
+        await streamChatCompletion(messages, config, cb);
+        expect(cb.onChunk).toHaveBeenCalledWith("partial");
+        expect(cb.onDone).not.toHaveBeenCalled();
+        expect(cb.onError).toHaveBeenCalledWith(
+            "LLM stream ended without completing — the connection closed before the response finished (network or proxy interruption)."
+        );
+    });
+
+    it("does not stack the missing-terminal error on top of a stream error chunk", async () => {
+        const chunks = [`data: ${JSON.stringify({ type: "error", error: "model failed" })}
+`];
+        vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse(chunks)));
+
+        const cb = makeCallbacks();
+        await streamChatCompletion(messages, config, cb);
+        expect(cb.onError).toHaveBeenCalledTimes(1);
+        expect(cb.onError).toHaveBeenCalledWith("model failed", undefined);
+    });
+
     it("skips optional callbacks that are not provided", async () => {
         const events = [
             { type: "thinking", content: "TH" },
@@ -253,7 +281,8 @@ describe("streamChatCompletion", () => {
             { type: "tool_use", toolCallId: "c1", toolName: "search", toolInput: { q: "x" } },
             { type: "tool_result", toolCallId: "c1", toolName: "search", result: "res" },
             { type: "citation", citation: { id: "cit1" } },
-            { type: "usage", usage: { totalTokens: 1 } }
+            { type: "usage", usage: { totalTokens: 1 } },
+            { type: "done" }
         ];
         const chunks = events.map((e) => `data: ${JSON.stringify(e)}\n`);
         vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse(chunks)));
