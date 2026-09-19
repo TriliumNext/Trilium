@@ -1284,7 +1284,8 @@ export default class CollapsibleEditing extends Plugin {
                 sanitize: false,
                 customClass: "text-editor-content-tooltip"
             },
-            autoHideAfterMs: HINT_AUTO_HIDE_MS
+            autoHideAfterMs: HINT_AUTO_HIDE_MS,
+            popupPositionIsFixed: true
         });
         this.summaryHintManager = manager;
 
