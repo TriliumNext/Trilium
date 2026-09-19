@@ -21,6 +21,9 @@ const SELECTED_EXTERNAL_LINK_KEY = "data-external-link";
 // felt on every keystroke typed at a normal pace.
 const SEARCH_DEBOUNCE_MS = 50;
 
+// Must match `DEFAULT_DROPDOWN_LIMIT` in `trilium_mention_ui.ts`.
+const MENTION_DROPDOWN_LIMIT = 10;
+
 /**
  * Paces one input's searches: the first keystroke after a pause queries immediately, a burst typed
  * faster than {@link SEARCH_DEBOUNCE_MS} collapses into one search that runs once it stops, and at
@@ -269,7 +272,7 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
 
 /**
  * Concatenates exact title matches of `term` (trimmed, case-insensitive), then `createRows`, then the rest.
- * Contains-matches go last so create is still the next pick when the query names a different sense of the word.
+ * Caps the exact block so `createRows` still fit in CKEditor's mention panel; leftover exact hits follow create.
  */
 function mergeCreateNoteSuggestions(results: Suggestion[], createRows: Suggestion[], term: string): Suggestion[] {
     const needle = term.trim().toLowerCase();
@@ -282,7 +285,10 @@ function mergeCreateNoteSuggestions(results: Suggestion[], createRows: Suggestio
             rest.push(row);
         }
     }
-    return exact.concat(createRows, rest);
+    const leadingExactCount = exact.length === 0
+        ? 0
+        : Math.min(exact.length, Math.max(1, MENTION_DROPDOWN_LIMIT - createRows.length));
+    return exact.slice(0, leadingExactCount).concat(createRows, exact.slice(leadingExactCount), rest);
 }
 
 // `autocomplete("val", ...)` does not dispatch a native "input" event, so each function below

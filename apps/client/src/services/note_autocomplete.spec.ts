@@ -322,6 +322,29 @@ describe("autocompleteSource (via dataset)", () => {
         ]);
     });
 
+    it("keeps both creation rows among the first 10 suggestions when many notes share the title", async () => {
+        server.get = vi.fn(async () =>
+            Array.from({ length: 12 }, (_, i) => ({ noteTitle: "Hello", notePath: `root/exact-${i}` }))
+        ) as typeof server.get;
+        const { dataset } = initAndGetSource({ allowCreatingNotes: true });
+        const rows = await runSource(dataset, "hello");
+        expect(rows.slice(0, 10).map((r) => r.notePath ?? r.action)).toEqual([
+            "root/exact-0",
+            "root/exact-1",
+            "root/exact-2",
+            "root/exact-3",
+            "root/exact-4",
+            "root/exact-5",
+            "root/exact-6",
+            "root/exact-7",
+            "create-note",
+            "create-child-note"
+        ]);
+        expect(rows.slice(10).map((r) => r.notePath)).toEqual([
+            "root/exact-8", "root/exact-9", "root/exact-10", "root/exact-11"
+        ]);
+    });
+
     it.each([
         { kind: "inbox", title: "Inbox" },
         { kind: "workspaceInbox", title: "Work" },
