@@ -757,10 +757,7 @@
     "button_title": "دىئاگراممىنى SVG قىلىپ چىقىرىش"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "تارماق خاتىرە قۇرۇش ۋە خەرىتىگە قوشۇش",
-    "reset_pan_zoom_title": "سۈرۈش ۋە چوڭايتىشنى دەسلەپكى كوئوردېنات ھەم نىسبەتكە ئەسلىگە كەلتۈرۈش",
-    "zoom_in_title": "چوڭايتىش",
-    "zoom_out_title": "كىچىكلىتىش"
+    "create_child_note_title": "تارماق خاتىرە قۇرۇش ۋە خەرىتىگە قوشۇش"
   },
   "zpetne_odkazy": {
     "backlink_one": "{{count}} تەتۈر ئۇلانما",

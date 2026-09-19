@@ -690,10 +690,7 @@
     "button_title": "Exportar diagrama como SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Criar nota filha e adicione neste mapa de relação",
-    "reset_pan_zoom_title": "Redefinir pan & zoom para coordenadas e ampliação iniciais",
-    "zoom_in_title": "Aumentar",
-    "zoom_out_title": "Reduzir"
+    "create_child_note_title": "Criar nota filha e adicione neste mapa de relação"
   },
   "zpetne_odkazy": {
     "relation": "relação",

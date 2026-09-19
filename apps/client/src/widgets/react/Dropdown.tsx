@@ -38,6 +38,10 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
      * working pseudo-element layer.
      */
     noDropdownListStyle?: boolean;
+    /**
+     * The only supported way to disable the toggle. Bootstrap cannot close a menu whose toggle is
+     * disabled through `buttonProps` or a `disabled` class.
+     */
     disabled?: boolean;
     text?: ComponentChildren;
     forceShown?: boolean;
@@ -160,7 +164,7 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
     // Show a forced-open dropdown once mounted, and dispose the instance only when the component truly
     // unmounts (not on every menu remount driven by the effect above).
     useEffect(() => {
-        if (forceShown) {
+        if (forceShown && !disabled) {
             dropdownInstanceRef.current?.show();
             setShown(true);
         }
@@ -187,6 +191,14 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
             document.getElementById("context-menu-cover")?.classList.remove("show", "global-menu-cover");
         }
     }, [ mobileBackdrop ]);
+
+    // Bootstrap's `hide()` and `clearMenus()` skip a disabled toggle, so this effect closes the
+    // menu first. The toggle takes the `disabled` attribute only once `shown` is false.
+    useLayoutEffect(() => {
+        if (disabled && shown) {
+            dropdownInstanceRef.current?.hide();
+        }
+    }, [ disabled, shown ]);
 
     // A portaled menu lives in `document.body`, outside any modal that opened it. That modal's focus-trap
     // would keep yanking focus back into the modal, so an input in the menu (e.g. the note-icon picker's
@@ -259,7 +271,7 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
                 aria-haspopup="true"
                 aria-expanded={shown}
                 id={id ?? ariaId}
-                disabled={disabled}
+                disabled={disabled && !shown}
                 // Mount the portaled menu just before it can open: any interaction that leads to a
                 // Bootstrap open (pointer press, or focusing the toggle ahead of a keyboard open) is
                 // preceded by one of these, so `_menu` is wired by the time the click/keydown fires.

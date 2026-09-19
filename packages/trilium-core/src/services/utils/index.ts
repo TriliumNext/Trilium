@@ -45,6 +45,14 @@ export function newEntityId() {
     return randomString(12);
 }
 
+/**
+ * Link parsing (`link.ts` on the client, `findInternalLinks()` on the server) matches only this
+ * character set, so a note ID outside it cannot be the target of a link.
+ */
+export function isValidEntityId(id: string) {
+    return /^[A-Za-z0-9_]{4,128}$/.test(id);
+}
+
 export function hashedBlobId(content: string | Uint8Array) {
     if (content === null || content === undefined) {
         content = "";

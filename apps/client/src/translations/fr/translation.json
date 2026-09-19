@@ -768,10 +768,7 @@
     "button_title": "Exporter le diagramme au format SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Créer une note enfant et l'ajouter à la carte",
-    "reset_pan_zoom_title": "Réinitialiser le panoramique et le zoom aux coordonnées et à la position initiales",
-    "zoom_in_title": "Zoomer",
-    "zoom_out_title": "Dézoomer"
+    "create_child_note_title": "Créer une note enfant et l'ajouter à la carte"
   },
   "zpetne_odkazy": {
     "relation": "relation",
@@ -2799,11 +2796,6 @@
       "type-the-content-here": "Saisissez le contenu ici...",
       "undefined-custom-task-state": "État personnalisé non défini"
     }
-  },
-  "image_buttons": {
-    "zoom_in": "Zoomer",
-    "zoom_out": "Dézoomer",
-    "reset_zoom": "Zoom par défaut"
   },
   "image_navigation": {
     "previous": "Image précédente : {{- title}}",

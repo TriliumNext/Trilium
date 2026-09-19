@@ -54,7 +54,7 @@
     "jquery.fancytree": "2.38.5",
     "jsplumb": "2.15.6",
     "katex": "0.18.7",
-    "maplibre-gl": "6.9.1",
+    "maplibre-gl": "6.10.0",
     "mark.js": "8.11.1",
     "marked": "18.0.13",
     "mermaid": "12.0.0",
@@ -67,7 +67,7 @@
     "react-zoom-pan-pinch": "4.2.0",
     "reveal.js": "6.0.2",
     "rrule": "2.8.1",
-    "tabulator-tables": "6.5.2",
+    "tabulator-tables": "6.5.3",
     "temporal-polyfill": "1.0.5",
     "terra-draw": "1.33.0",
     "terra-draw-maplibre-gl-adapter": "1.4.1"

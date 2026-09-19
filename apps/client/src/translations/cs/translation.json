@@ -742,10 +742,7 @@
     "button_title": "Exportovat diagram jako SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu",
-    "reset_pan_zoom_title": "Resetovat posun & zoom na počáteční souřadnice a zvětšení",
-    "zoom_in_title": "Přiblížit",
-    "zoom_out_title": "Oddálit"
+    "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Vložit dceřinou poznámku",

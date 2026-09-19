@@ -810,10 +810,7 @@
     "button_title": "匯出 SVG 格式圖片"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "新增子筆記並添加至關聯圖",
-    "reset_pan_zoom_title": "重置平移和縮放至初始坐標和放大倍率",
-    "zoom_in_title": "放大",
-    "zoom_out_title": "縮小"
+    "create_child_note_title": "新增子筆記並添加至關聯圖"
   },
   "zpetne_odkazy": {
     "relation": "關聯",
@@ -2776,11 +2773,6 @@
   "options": {
     "title": "選項",
     "back": "返回所有選項"
-  },
-  "image_buttons": {
-    "zoom_in": "放大",
-    "zoom_out": "縮小",
-    "reset_zoom": "重設縮放"
   },
   "image_navigation": {
     "previous": "上一張圖片：{{- title}}",

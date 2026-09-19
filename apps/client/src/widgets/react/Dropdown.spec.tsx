@@ -113,6 +113,46 @@ describe("Dropdown", () => {
         expect(getToggle().getAttribute("aria-expanded")).toBe("true");
     });
 
+    it("closes an open menu before disabling the toggle", () => {
+        const el = renderInto(<Dropdown>item</Dropdown>);
+        const dropdownEl = el.querySelector(".dropdown");
+        expect(dropdownEl).toBeTruthy();
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("show.bs.dropdown");
+        });
+
+        // Bootstrap's hide() returns early on a disabled toggle, so the state at call time matters.
+        let disabledAtHide: boolean | undefined;
+        instance.hide.mockImplementationOnce(() => {
+            disabledAtHide = getToggle().disabled;
+        });
+        void act(() => render(<Dropdown disabled>item</Dropdown>, el));
+        expect(instance.hide).toHaveBeenCalledTimes(1);
+        expect(disabledAtHide).toBe(false);
+
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("hide.bs.dropdown");
+        });
+        expect(getToggle().disabled).toBe(true);
+        expect(getToggle().getAttribute("aria-expanded")).toBe("false");
+
+        // A closed dropdown takes the attribute at once and has nothing to hide.
+        void act(() => render(null, el));
+        el.remove();
+        instance.hide.mockClear();
+        const closedEl = renderInto(<Dropdown disabled>item</Dropdown>);
+        expect(instance.hide).not.toHaveBeenCalled();
+        expect(getToggle().disabled).toBe(true);
+
+        // `forceShown` does not open a disabled dropdown, so the toggle keeps the attribute.
+        void act(() => render(null, closedEl));
+        closedEl.remove();
+        instance.show.mockClear();
+        renderInto(<Dropdown disabled forceShown>item</Dropdown>);
+        expect(instance.show).not.toHaveBeenCalled();
+        expect(getToggle().disabled).toBe(true);
+    });
+
     it("mounts the portaled menu on arm (pointerdown/focus), wires _menu, and tears down on blur without open", () => {
         renderInto(<Dropdown portalToBody className="my-scope" text="btn">item</Dropdown>);
 

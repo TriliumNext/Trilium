@@ -250,8 +250,6 @@
     "move-marker-instruction": "Fai clic sulla mappa per spostare il marcatore in quella posizione oppure premi Esc per chiuderlo.",
     "move-marker-toast-title": "Sposta marcatore",
     "webgl-unavailable": "Impossibile visualizzare questa mappa perché WebGL non è disponibile. Verifica che l'accelerazione hardware sia abilitata e che i driver della scheda grafica siano aggiornati.",
-    "zoom-in": "Ingrandisci",
-    "zoom-out": "Riduci lo zoom",
     "enter-3d": "Inclina la mappa in una visualizzazione 3D\nTieni premuto Ctrl e trascina per inclinare liberamente la mappa",
     "exit-3d": "Rimetti la mappa in piano",
     "close-details": "Vicino",
@@ -1698,9 +1696,6 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Crea una nota secondaria e aggiungila alla mappa",
-    "reset_pan_zoom_title": "Ripristina panoramica e zoom alle coordinate e all'ingrandimento iniziali",
-    "zoom_in_title": "Ingrandisci",
-    "zoom_out_title": "Rimpicciolisci",
     "create_child_note_text": "Aggiungi una nota"
   },
   "zpetne_odkazy": {
@@ -2648,10 +2643,7 @@
   },
   "svg": {
     "export_to_png": "Non è stato possibile esportare il diagramma in formato PNG.",
-    "export_to_svg": "Il diagramma non può essere esportato in formato SVG.",
-    "zoom_in": "Ingrandisci",
-    "zoom_out": "Riduci l'ingrandimento",
-    "reset_zoom": "Ripristina lo zoom"
+    "export_to_svg": "Il diagramma non può essere esportato in formato SVG."
   },
   "code_theme": {
     "title": "Aspetto",
@@ -3308,9 +3300,6 @@
     "tags-differ": "I nodi selezionati non hanno gli stessi tag, quindi questi possono essere solo letti.",
     "add-tag": "Aggiungi questo tag",
     "remove-tag": "Rimuovi questo tag",
-    "zoom-in": "Ingrandisci",
-    "zoom-out": "Riduci lo zoom",
-    "reset-zoom": "Ripristina lo zoom",
     "center-map": "Centra la mappa",
     "direction-left": "Rami a sinistra",
     "direction-right": "Rami a destra",
@@ -3700,11 +3689,6 @@
     "type_code": "Codice",
     "tooltip": "Un frammento di testo o codice riutilizzabile, pensato per essere inserito nell'editor (dal menu degli snippet nella barra degli strumenti o tramite un comando con la barra)."
   },
-  "image_buttons": {
-    "zoom_in": "Ingrandisci",
-    "zoom_out": "Riduci",
-    "reset_zoom": "Ripristina lo zoom"
-  },
   "image_navigation": {
     "previous": "Immagine precedente: {{- title}}",
     "next": "Immagine successiva: {{- title}}"
@@ -3712,16 +3696,6 @@
   "image_viewer": {
     "loading_error": "Si è verificato un errore durante il caricamento dell'immagine.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Ingrandisci",
-      "zoom_out": "Riduci lo zoom",
-      "reset_zoom": "Ripristina lo zoom",
-      "pan": "Padella",
-      "pan_up": "Su",
-      "pan_down": "Giù",
-      "pan_left": "Sinistra",
-      "pan_right": "Giusto",
-      "pan_fast": "Panoramica più veloce",
       "navigation": "Navigazione",
       "next_image": "Immagine successiva",
       "previous_image": "Immagine precedente",

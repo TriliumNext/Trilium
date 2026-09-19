@@ -1117,10 +1117,7 @@
     "button_title": "Eksportuj diagram jako SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Utwórz notatkę podrzędną i dodaj ją do mapy",
-    "reset_pan_zoom_title": "Zresetuj przesunięcie i powiększenie do początkowych współrzędnych i powiększenia",
-    "zoom_in_title": "Powiększ",
-    "zoom_out_title": "Pomniejsz"
+    "create_child_note_title": "Utwórz notatkę podrzędną i dodaj ją do mapy"
   },
   "zpetne_odkazy": {
     "relation": "relacja",

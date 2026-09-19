@@ -537,10 +537,7 @@
     "show_highlights_list": "ハイライトリストを表示"
   },
   "relation_map_buttons": {
-    "zoom_out_title": "ズームアウト",
-    "zoom_in_title": "ズームイン",
     "create_child_note_title": "子ノートを作成し、マップに追加",
-    "reset_pan_zoom_title": "パンとズームを初期座標と倍率にリセット",
     "create_child_note_text": "ノートを追加"
   },
   "tree-context-menu": {
@@ -1910,9 +1907,7 @@
   "svg": {
     "export_to_png": "図をPNG形式でエクスポートできませんでした。",
     "export_to_svg": "図をSVG形式でエクスポートできませんでした。",
-    "zoom_in": "拡大",
-    "zoom_out": "縮小",
-    "reset_zoom": "ズームをリセット"
+    "preview": "図のプレビュー"
   },
   "code_theme": {
     "title": "外観",
@@ -2459,8 +2454,6 @@
     "move-marker-instruction": "地図をクリックしてマーカーをその位置に移動するか、Esc キーを押して閉じてください。",
     "move-marker-toast-title": "マーカーを移動",
     "webgl-unavailable": "WebGL が利用できないため、この地図を表示できません。ハードウェアアクセラレーションが有効になっていること、およびグラフィックスドライバーが最新であることを確認してください。",
-    "zoom-in": "拡大",
-    "zoom-out": "縮小",
     "create-child-note-cancel": "ノートの追加をキャンセル",
     "add-marker": "マーカーを追加",
     "add-marker-cancel": "キャンセル",
@@ -3137,13 +3130,10 @@
     "tags-differ": "選択されたノードには共通のタグが含まれていないため、これらは閲覧のみ可能です。",
     "add-tag": "このタグを追加",
     "remove-tag": "このタグを削除",
-    "zoom-in": "拡大",
-    "zoom-out": "縮小",
     "center-map": "マップを中央に配置",
     "direction-left": "左にブランチを配置",
     "direction-right": "右にブランチを配置",
     "direction-side": "両側にブランチを配置",
-    "reset-zoom": "ズームをリセット",
     "direction-down": "下向きに分岐"
   },
   "llm": {
@@ -3652,11 +3642,6 @@
     "type_code": "コード",
     "tooltip": "エディタに挿入するための、繰り返し利用できるテキストまたはコードです（ツールバーのスニペットメニュー、またはスラッシュコマンドから挿入できます）。"
   },
-  "image_buttons": {
-    "zoom_in": "ズームイン",
-    "zoom_out": "ズームアウト",
-    "reset_zoom": "ズームをリセット"
-  },
   "image_navigation": {
     "previous": "前の画像: {{- title}}",
     "next": "次の画像: {{- title}}"
@@ -3664,22 +3649,13 @@
   "image_viewer": {
     "loading_error": "画像の読み込み中にエラーが発生しました。",
     "hints": {
-      "zoom": "ズーム",
-      "zoom_in": "拡大",
-      "zoom_out": "縮小",
-      "reset_zoom": "ズームをリセット",
-      "pan": "パン",
-      "pan_up": "上",
-      "pan_down": "下",
-      "pan_left": "左",
-      "pan_right": "右",
-      "pan_fast": "パン高速化",
       "navigation": "ナビゲーション",
       "next_image": "次の画像",
       "previous_image": "前の画像",
       "first_image": "最初の画像",
       "last_image": "最後の画像"
-    }
+    },
+    "viewport": "画像表示"
   },
   "options": {
     "title": "オプション",
@@ -4236,5 +4212,22 @@
   "attribute_menu": {
     "attributes": "属性",
     "not-set": "未設定"
+  },
+  "zoom_controls": {
+    "zoom_out": "ズームアウト",
+    "reset": "ズームをリセット",
+    "zoom_in": "ズームイン",
+    "hints": {
+      "zoom": "ズーム",
+      "zoom_in": "ズームイン",
+      "zoom_out": "ズームアウト",
+      "reset_zoom": "ズームをリセット",
+      "pan": "画面移動",
+      "pan_up": "上",
+      "pan_down": "下",
+      "pan_left": "左",
+      "pan_right": "右",
+      "pan_fast": "高速画面移動"
+    }
   }
 }

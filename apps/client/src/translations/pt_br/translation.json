@@ -1106,10 +1106,7 @@
     "button_title": "Exportar diagrama como SVG"
   },
   "relation_map_buttons": {
-    "zoom_in_title": "Aumentar",
-    "zoom_out_title": "Reduzir",
-    "create_child_note_title": "Criar nova nota filha e adicione neste mapa de relação",
-    "reset_pan_zoom_title": "Redefinir pan & zoom para coordenadas e ampliação iniciais"
+    "create_child_note_title": "Criar nova nota filha e adicione neste mapa de relação"
   },
   "zpetne_odkazy": {
     "relation": "relação",
@@ -2134,8 +2131,6 @@
     "move-marker-instruction": "Clique no mapa para mover o marcador para aquele local ou pressione Escape para dispensar.",
     "move-marker-toast-title": "Mover marcador",
     "webgl-unavailable": "Este mapa não pode ser desenhado porque o WebGL não está disponível. Verifique se a aceleração de hardware está ativada e se os drivers gráficos estão atualizados.",
-    "zoom-in": "Ampliar",
-    "zoom-out": "Reduzir",
     "enter-3d": "Inclinar para uma visualização 3D\nSegure Ctrl e arraste para inclinar o mapa livremente",
     "exit-3d": "Deixar o mapa plano novamente",
     "close-details": "Fechar",
@@ -3003,9 +2998,6 @@
     "tags-differ": "Os nós selecionados não carregam as mesmas etiquetas, então estas só podem ser lidas.",
     "add-tag": "Adicionar esta etiqueta",
     "remove-tag": "Remover esta etiqueta",
-    "zoom-in": "Ampliar",
-    "zoom-out": "Reduzir",
-    "reset-zoom": "Redefinir zoom",
     "center-map": "Centralizar o mapa",
     "direction-left": "Ramos para a esquerda",
     "direction-right": "Ramos para a direita",
@@ -3326,11 +3318,6 @@
     "title": "Opções",
     "back": "Voltar a todas as opções"
   },
-  "image_buttons": {
-    "zoom_in": "Ampliar",
-    "zoom_out": "Reduzir",
-    "reset_zoom": "Redefinir zoom"
-  },
   "image_navigation": {
     "previous": "Imagem anterior: {{- title}}",
     "next": "Próxima imagem: {{- title}}"
@@ -3338,16 +3325,6 @@
   "image_viewer": {
     "loading_error": "Ocorreu um erro ao carregar a imagem.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Ampliar",
-      "zoom_out": "Reduzir",
-      "reset_zoom": "Redefinir zoom",
-      "pan": "Movimentar",
-      "pan_up": "Para cima",
-      "pan_down": "Para baixo",
-      "pan_left": "Para a esquerda",
-      "pan_right": "Para a direita",
-      "pan_fast": "Movimentação mais rápida",
       "navigation": "Navegação",
       "next_image": "Próxima imagem",
       "previous_image": "Imagem anterior",

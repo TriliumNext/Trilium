@@ -1432,10 +1432,7 @@
     "rename_relation": "Redenumește relația"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Crează o subnotiță și adaug-o în harta relațiilor",
-    "reset_pan_zoom_title": "Resetează poziția și zoom-ul la valorile implicite",
-    "zoom_in_title": "Mărire",
-    "zoom_out_title": "Micșorare"
+    "create_child_note_title": "Crează o subnotiță și adaug-o în harta relațiilor"
   },
   "rename_label": {
     "name_title": "Caracterele permise sunt alfanumerice, underline și două puncte.",
@@ -2212,8 +2209,6 @@
     "move-marker-instruction": "Faceți clic pe hartă pentru a muta marcajul în acea poziție sau apăsați Escape pentru a renunța.",
     "move-marker-toast-title": "Mută marcajul",
     "webgl-unavailable": "Această hartă nu poate fi desenată deoarece WebGL nu este disponibil. Verificați dacă accelerarea hardware este activată și dacă driverele plăcii video sunt actualizate.",
-    "zoom-in": "Mărește",
-    "zoom-out": "Micșorează",
     "enter-3d": "Înclină harta într-o vizualizare 3D\nȚineți apăsat Ctrl și trageți pentru a înclina harta liber",
     "exit-3d": "Readu harta în plan",
     "close-details": "Închide",
@@ -3178,9 +3173,6 @@
     "tags-differ": "Nodurile selectate nu au aceleași etichete, așa că acestea pot fi doar citite.",
     "add-tag": "Adaugă această etichetă",
     "remove-tag": "Elimină această etichetă",
-    "zoom-in": "Mărește",
-    "zoom-out": "Micșorează",
-    "reset-zoom": "Resetează zoomul",
     "center-map": "Centrează harta",
     "direction-left": "Ramuri spre stânga",
     "direction-right": "Ramuri spre dreapta",
@@ -3588,11 +3580,6 @@
     "title": "Opțiuni",
     "back": "Înapoi la toate opțiunile"
   },
-  "image_buttons": {
-    "zoom_in": "Mărește",
-    "zoom_out": "Micșorează",
-    "reset_zoom": "Resetează zoomul"
-  },
   "image_navigation": {
     "previous": "Imaginea anterioară: {{- title}}",
     "next": "Imaginea următoare: {{- title}}"
@@ -3600,16 +3587,6 @@
   "image_viewer": {
     "loading_error": "A apărut o eroare la încărcarea imaginii.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Mărește",
-      "zoom_out": "Micșorează",
-      "reset_zoom": "Resetează zoomul",
-      "pan": "Deplasare",
-      "pan_up": "Sus",
-      "pan_down": "Jos",
-      "pan_left": "Stânga",
-      "pan_right": "Dreapta",
-      "pan_fast": "Deplasare mai rapidă",
       "navigation": "Navigare",
       "next_image": "Imaginea următoare",
       "previous_image": "Imaginea anterioară",

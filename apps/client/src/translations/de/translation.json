@@ -988,9 +988,6 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
-    "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
-    "zoom_in_title": "Hineinzoomen",
-    "zoom_out_title": "Herauszoomen",
     "create_child_note_text": "Notiz hinzufügen"
   },
   "zpetne_odkazy": {
@@ -3150,11 +3147,6 @@
       "url": "URL"
     }
   },
-  "image_buttons": {
-    "zoom_in": "Vergrößern",
-    "zoom_out": "Verkleinern",
-    "reset_zoom": "Zoom zurücksetzen"
-  },
   "image_navigation": {
     "previous": "Vorheriges Bild: {{- title}}",
     "next": "Nächstes Bild: {{- title}}"
@@ -3162,16 +3154,6 @@
   "image_viewer": {
     "loading_error": "Beim Laden des Bildes ist ein Fehler aufgetreten.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Vergrößern",
-      "zoom_out": "Verkleinern",
-      "reset_zoom": "Zoom zurücksetzen",
-      "pan": "Verschieben",
-      "pan_up": "Nach oben",
-      "pan_down": "Nach unten",
-      "pan_left": "Nach links",
-      "pan_right": "Nach rechts",
-      "pan_fast": "Schneller verschieben",
       "navigation": "Navigation",
       "next_image": "Nächstes Bild",
       "previous_image": "Vorheriges Bild",

@@ -995,9 +995,6 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "创建子笔记并添加到图",
-    "reset_pan_zoom_title": "重置平移和缩放到初始坐标和放大倍率",
-    "zoom_in_title": "放大",
-    "zoom_out_title": "缩小",
     "create_child_note_text": "添加笔记"
   },
   "zpetne_odkazy": {
@@ -2301,8 +2298,6 @@
     "move-marker-instruction": "点击地图即可将标记移动到该位置，或按 Escape 取消。",
     "move-marker-toast-title": "移动标记",
     "webgl-unavailable": "由于 WebGL 不可用，无法绘制此地图。请检查是否已启用硬件加速，并确保显卡驱动程序为最新版本。",
-    "zoom-in": "放大",
-    "zoom-out": "缩小",
     "create-child-note-cancel": "取消添加笔记",
     "add-marker": "添加标记",
     "add-marker-cancel": "取消",
@@ -2429,10 +2424,7 @@
   },
   "svg": {
     "export_to_png": "无法将图表导出为PNG。",
-    "export_to_svg": "此图像无法导出为SVG。",
-    "zoom_in": "放大",
-    "zoom_out": "缩小",
-    "reset_zoom": "重置缩放"
+    "export_to_svg": "此图像无法导出为SVG。"
   },
   "code_theme": {
     "title": "外观",
@@ -3154,13 +3146,10 @@
     "tags-differ": "选中的节点标签各不相同，因此这些标签只能查看。",
     "add-tag": "添加此标签",
     "remove-tag": "移除此标签",
-    "zoom-in": "放大",
-    "zoom-out": "缩小",
     "center-map": "将地图居中",
     "direction-left": "分支向左",
     "direction-right": "分支向右",
     "direction-side": "分支向两侧",
-    "reset-zoom": "重置缩放",
     "direction-down": "向下分支"
   },
   "llm": {
@@ -3617,11 +3606,6 @@
       "alignment": "对齐"
     }
   },
-  "image_buttons": {
-    "zoom_in": "放大",
-    "zoom_out": "缩小",
-    "reset_zoom": "重置缩放"
-  },
   "image_navigation": {
     "previous": "上一张图片：{{- title}}",
     "next": "下一张图片：{{- title}}"
@@ -3629,16 +3613,6 @@
   "image_viewer": {
     "loading_error": "图片加载出错。",
     "hints": {
-      "zoom": "缩放",
-      "zoom_in": "放大",
-      "zoom_out": "缩小",
-      "reset_zoom": "重置缩放",
-      "pan": "平移",
-      "pan_up": "上",
-      "pan_down": "下",
-      "pan_left": "左",
-      "pan_right": "右",
-      "pan_fast": "快速平移",
       "navigation": "导航",
       "next_image": "下一张图片",
       "previous_image": "上一张图片",

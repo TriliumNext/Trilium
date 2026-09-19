@@ -8,13 +8,13 @@
     "update-model-prices": "tsx ./scripts/update-model-prices.ts"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "4.0.53",
-    "@ai-sdk/google": "4.0.69",
-    "@ai-sdk/openai": "4.0.66",
+    "@ai-sdk/anthropic": "4.0.54",
+    "@ai-sdk/google": "4.0.72",
+    "@ai-sdk/openai": "4.0.67",
     "@braintree/sanitize-url": "7.1.2",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/turndown-plugin-gfm": "workspace:*",
-    "ai": "7.0.100",
+    "ai": "7.0.102",
     "async-mutex": "0.5.0",
     "chardet": "2.2.0",
     "color": "5.0.3",

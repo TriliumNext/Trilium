@@ -132,7 +132,7 @@ jobs:
           retention-days: 30
 
       - name: Upload client coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-client.outcome == 'success' }}
         with:
           files: apps/client/test-output/vitest/coverage/lcov.info
@@ -141,7 +141,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload client test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-client.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -156,7 +156,7 @@ jobs:
         run: pnpm run --filter=desktop test --coverage
 
       - name: Upload desktop coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-desktop.outcome == 'success' }}
         with:
           files: apps/desktop/test-output/vitest/coverage/lcov.info
@@ -165,7 +165,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload desktop test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-desktop.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -180,7 +180,7 @@ jobs:
         run: pnpm run --filter=commons test --coverage
 
       - name: Upload commons coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-commons.outcome == 'success' }}
         with:
           files: packages/commons/test-output/vitest/coverage/lcov.info
@@ -189,7 +189,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload commons test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-commons.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -204,7 +204,7 @@ jobs:
         run: pnpm run --filter=codemirror test --coverage
 
       - name: Upload codemirror coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-codemirror.outcome == 'success' }}
         with:
           files: packages/codemirror/test-output/vitest/coverage/lcov.info
@@ -213,7 +213,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload codemirror test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-codemirror.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -228,7 +228,7 @@ jobs:
         run: pnpm run --filter=highlightjs test --coverage
 
       - name: Upload highlightjs coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-highlightjs.outcome == 'success' }}
         with:
           files: packages/highlightjs/test-output/vitest/coverage/lcov.info
@@ -237,7 +237,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload highlightjs test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-highlightjs.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -252,7 +252,7 @@ jobs:
         run: pnpm run --filter=pdfjs-viewer test --coverage
 
       - name: Upload pdfjs-viewer coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-pdfjs-viewer.outcome == 'success' }}
         with:
           files: packages/pdfjs-viewer/test-output/vitest/coverage/lcov.info
@@ -261,7 +261,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload pdfjs-viewer test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-pdfjs-viewer.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -322,7 +322,7 @@ jobs:
           retention-days: 30
 
       - name: Upload server coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-server.outcome == 'success' }}
         with:
           files: apps/server/test-output/vitest/coverage/lcov.info
@@ -331,7 +331,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload server test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-server.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -376,7 +376,7 @@ jobs:
         run: pnpm run --filter=standalone test --coverage
 
       - name: Upload standalone coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-standalone.outcome == 'success' }}
         with:
           files: apps/standalone/test-output/vitest/coverage/lcov.info
@@ -385,7 +385,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload standalone test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-standalone.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -511,7 +511,7 @@ jobs:
         run: pnpm run --filter=ckeditor5 test --mergeReports --coverage
 
       - name: Upload ckeditor5 coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-ckeditor5.outcome == 'success' }}
         with:
           files: packages/ckeditor5/test-output/vitest/coverage/lcov.info
@@ -520,7 +520,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload ckeditor5 test results to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
         if: ${{ !cancelled() && steps.test-ckeditor5.outcome != 'skipped' }}
         with:
           report_type: test_results
@@ -562,8 +562,8 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Trigger server build
         run: pnpm run server:build
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
-      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: apps/server
           cache-from: type=gha
@@ -608,10 +608,10 @@ jobs:
         run: echo "TEST_TAG=${TEST_TAG,,}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+        uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
 
       - name: Build and export to Docker
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: apps/server
           file: apps/server/${{ matrix.dockerfile }}

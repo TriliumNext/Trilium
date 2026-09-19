@@ -46,6 +46,21 @@ describe("#newEntityId", () => {
     });
 });
 
+describe("#isValidEntityId", () => {
+    it("accepts only letters, digits and underscores with a length of 4 to 128", () => {
+        const accepted = [ "root", "_hidden", "abcDEF012345", "a".repeat(128) ];
+        for (const id of accepted) {
+            expect(utils.isValidEntityId(id), id).toBe(true);
+        }
+
+        const dashedId = "0d8949e4-6fe3-4f4b-82c1-679baf64fccb";
+        const rejected = [ "", "abc", "a".repeat(129), dashedId, "bad/id01", "bad id01" ];
+        for (const id of rejected) {
+            expect(utils.isValidEntityId(id), id).toBe(false);
+        }
+    });
+});
+
 describe("#randomString", () => {
     it("should return a string with a length as per argument", () => {
         const stringLength = 5;

@@ -992,9 +992,6 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Crear una subnota y agregarla al mapa",
-    "reset_pan_zoom_title": "Restablecer la panorámica y el zoom a las coordenadas y ampliación iniciales",
-    "zoom_in_title": "Acercar",
-    "zoom_out_title": "Alejar",
     "create_child_note_text": "Agregar nota"
   },
   "zpetne_odkazy": {
@@ -2301,8 +2298,6 @@
     "move-marker-instruction": "Haga clic en el mapa para mover el marcador a esa ubicación o pulse Escape para cancelar.",
     "move-marker-toast-title": "Mover marcador",
     "webgl-unavailable": "No se puede dibujar este mapa porque WebGL no está disponible. Compruebe que la aceleración por hardware esté habilitada y que los controladores gráficos estén actualizados.",
-    "zoom-in": "Acercar",
-    "zoom-out": "Alejar",
     "expand-details": "Expandir la nota para llenar el mapa",
     "restore-details": "Devolver la nota junto al mapa",
     "create-child-note-cancel": "Cancelar la adición de la nota",
@@ -3130,13 +3125,10 @@
     "tags-differ": "Los nodos seleccionados no llevan las mismas etiquetas, por lo que estas solo se pueden consultar.",
     "add-tag": "Añadir esta etiqueta",
     "remove-tag": "Quitar esta etiqueta",
-    "zoom-in": "Acercar",
-    "zoom-out": "Alejar",
     "center-map": "Centrar el mapa",
     "direction-left": "Ramas hacia la izquierda",
     "direction-right": "Ramas hacia la derecha",
     "direction-side": "Ramas hacia ambos lados",
-    "reset-zoom": "Restablecer zoom",
     "direction-down": "Ramas hacia abajo"
   },
   "llm": {
@@ -3370,11 +3362,6 @@
     "search_hint": "Escribe una palabra clave para buscar en todas las páginas de configuración.",
     "search_no_results": "Ninguna configuración coincide con lo que estás buscando."
   },
-  "image_buttons": {
-    "zoom_in": "Acercar",
-    "zoom_out": "Alejar",
-    "reset_zoom": "Restablecer zoom"
-  },
   "image_navigation": {
     "previous": "Imagen anterior: {{- title}}",
     "next": "Imagen siguiente: {{- title}}"
@@ -3382,16 +3369,6 @@
   "image_viewer": {
     "loading_error": "Se produjo un error al cargar la imagen.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Acercar",
-      "zoom_out": "Alejar",
-      "reset_zoom": "Restablecer zoom",
-      "pan": "Desplazar",
-      "pan_up": "Arriba",
-      "pan_down": "Abajo",
-      "pan_left": "Izquierda",
-      "pan_right": "Derecha",
-      "pan_fast": "Desplazamiento más rápido",
       "navigation": "Navegación",
       "next_image": "Imagen siguiente",
       "previous_image": "Imagen anterior",

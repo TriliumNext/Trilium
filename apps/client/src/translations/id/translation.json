@@ -1075,15 +1075,7 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Buat catatan anak dan tambahkan ke peta",
-    "reset_pan_zoom_title": "Setel ulang pan & zoom ke koordinat dan pembesaran awal",
-    "zoom_in_title": "Perbesar",
-    "zoom_out_title": "Perkecil",
     "create_child_note_text": "Tambahkan catatan"
-  },
-  "image_buttons": {
-    "zoom_in": "Perbesar",
-    "zoom_out": "Perkecil",
-    "reset_zoom": "Setel ulang zoom"
   },
   "zpetne_odkazy": {
     "backlink_other": "{{count}} Backlink",
@@ -2609,8 +2601,6 @@
     "move-marker-instruction": "Klik peta untuk memindahkan penanda ke lokasi tersebut atau tekan Escape untuk membatalkan.",
     "move-marker-toast-title": "Pindahkan penanda",
     "webgl-unavailable": "Peta ini tidak dapat digambar karena WebGL tidak tersedia. Periksa bahwa akselerasi perangkat keras telah diaktifkan dan driver grafis Anda sudah diperbarui.",
-    "zoom-in": "Perbesar",
-    "zoom-out": "Perkecil",
     "enter-3d": "Miringkan ke tampilan 3D\nTahan Ctrl dan seret untuk memiringkan peta secara bebas",
     "exit-3d": "Ratakkan kembali peta",
     "close-details": "Tutup",
@@ -2704,10 +2694,7 @@
   },
   "svg": {
     "export_to_png": "Diagram tidak dapat diekspor ke PNG.",
-    "export_to_svg": "Diagram tidak dapat diekspor ke SVG.",
-    "zoom_in": "Perbesar",
-    "zoom_out": "Perkecil",
-    "reset_zoom": "Atur ulang zoom"
+    "export_to_svg": "Diagram tidak dapat diekspor ke SVG."
   },
   "code_theme": {
     "title": "Tampilan",
@@ -3176,9 +3163,6 @@
     "tags-differ": "Node yang dipilih tidak memiliki tag yang sama, sehingga tag ini hanya dapat dibaca.",
     "add-tag": "Tambahkan tag ini",
     "remove-tag": "Hapus tag ini",
-    "zoom-in": "Perbesar",
-    "zoom-out": "Perkecil",
-    "reset-zoom": "Atur ulang zoom",
     "center-map": "Tengahkan peta",
     "direction-left": "Cabang di kiri",
     "direction-right": "Cabang di kanan",
@@ -3472,16 +3456,6 @@
   "image_viewer": {
     "loading_error": "Terjadi kesalahan saat memuat gambar.",
     "hints": {
-      "zoom": "Perbesar/Perkecil",
-      "zoom_in": "Perbesar",
-      "zoom_out": "Perkecil",
-      "reset_zoom": "Atur ulang pembesaran",
-      "pan": "Geser",
-      "pan_up": "Atas",
-      "pan_down": "Bawah",
-      "pan_left": "Kiri",
-      "pan_right": "Kanan",
-      "pan_fast": "Percepatan penggeseran",
       "navigation": "Navigasi",
       "next_image": "Gambar berikutnya",
       "previous_image": "Gambar sebelumnya",

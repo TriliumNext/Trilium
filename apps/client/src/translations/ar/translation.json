@@ -1471,9 +1471,6 @@
     "button_title": "عرض الازرار"
   },
   "relation_map_buttons": {
-    "zoom_in_title": "تكبير",
-    "zoom_out_title": "تصغير",
-    "reset_pan_zoom_title": "إعادة ضبط التحريك والتكبير إلى الإحداثيات والتكبير الأصليين",
     "create_child_note_title": "إنشاء ملاحظة فرعية وإضافتها إلى الخريطة"
   },
   "inherited_attribute_list": {

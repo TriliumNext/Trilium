@@ -37,6 +37,6 @@
     "highlight.js": "11.12.0",
     "sass": "1.104.1",
     "typescript": "6.0.3",
-    "vitest": "5.0.0"
+    "vitest": "5.0.1"
   }
 }
