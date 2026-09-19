@@ -1,4 +1,5 @@
 import { KeyboardActionNames } from "@triliumnext/commons";
+import { Tooltip } from "bootstrap";
 import { h, JSX, render } from "preact";
 
 import keyboardActionService, { getActionSync } from "../services/keyboard_actions.js";
@@ -104,6 +105,7 @@ class ContextMenu {
         this.options = options;
 
         note_tooltip.dismissAllTooltips();
+        hideShownTooltips();
 
         if (this.$widget.hasClass("show")) {
             // The menu is already visible. Hide the menu then open it again
@@ -463,3 +465,11 @@ class ContextMenu {
 const contextMenu = new ContextMenu();
 
 export default contextMenu;
+
+// Bootstrap sets `aria-describedby` on a trigger while its tooltip is shown. `hide()` also clears
+// the hover and focus triggers that keep the tooltip up.
+function hideShownTooltips() {
+    for (const trigger of document.querySelectorAll("[aria-describedby]")) {
+        Tooltip.getInstance(trigger)?.hide();
+    }
+}

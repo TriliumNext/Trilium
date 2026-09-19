@@ -170,6 +170,50 @@ describe("contextMenu", () => {
         expect(contextMenu.isShown()).toBe(true);
     });
 
+    it("hides a Bootstrap tooltip that is up when the menu opens", async () => {
+        buildPage();
+        const contextMenu = await buildContextMenu();
+        // Imported after `vi.resetModules()` so that the spec and `context_menu` share one
+        // Bootstrap instance registry.
+        const { Tooltip } = await import("bootstrap");
+
+        const button = document.createElement("button");
+        document.body.append(button);
+        const tooltip = new Tooltip(button, {
+            title: "Calendar",
+            animation: false,
+            trigger: "hover focus"
+        });
+        // A field that points `aria-describedby` at its help text has no Bootstrap tooltip.
+        const field = document.createElement("input");
+        field.setAttribute("aria-describedby", "field-help");
+        document.body.append(field);
+        const showMenu = () =>
+            contextMenu.show({ x: 10, y: 10, items, selectMenuItemHandler: () => {} });
+
+        tooltip.show();
+        expect(document.querySelector(".tooltip")).not.toBeNull();
+        expect(button.hasAttribute("aria-describedby")).toBe(true);
+
+        await showMenu();
+        expect(document.querySelector(".tooltip")).toBeNull();
+        expect(button.hasAttribute("aria-describedby")).toBe(false);
+        expect(field.getAttribute("aria-describedby")).toBe("field-help");
+
+        // A right-click also focuses the trigger, which keeps the focus trigger active. Bootstrap
+        // shows the tooltip from a timer, so the spec waits for it.
+        button.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+        await vi.waitFor(() => expect(document.querySelector(".tooltip")).not.toBeNull());
+
+        await showMenu();
+        expect(document.querySelector(".tooltip")).toBeNull();
+        expect(button.hasAttribute("aria-describedby")).toBe(false);
+
+        tooltip.dispose();
+        button.remove();
+        field.remove();
+    });
+
     it("says whether it is up, for a host whose own press would otherwise not know", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();
