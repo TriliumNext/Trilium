@@ -517,7 +517,15 @@ export default function Column({
         if (e.key === "F2" && !isCollapsed) {
             setColumnNameToEdit(column);
         }
-    }, [ column, isCollapsed ]);
+
+        // Space collapses the column; `keyboard.ts` handles it on a strip. The target check
+        // excludes the heading's buttons, which activate on Space themselves.
+        if (e.key === " " && !isCollapsed && e.target === e.currentTarget) {
+            e.preventDefault();
+            e.stopPropagation();
+            collapse();
+        }
+    }, [ collapse, column, isCollapsed ]);
 
     const overlayHost = useContext(BoardOverlayHostContext);
     /** Whether the heading holds the focus, which on mobile floats the column's rail. */
@@ -684,11 +692,11 @@ export default function Column({
             <h3
                 ref={headerRef}
                 className={`${isEditing ? "editing" : ""}`}
-                // While collapsed the header is what opens the column, so it says so and answers
-                // for the keys a button answers for. Open, it is a heading again and Space does
-                // nothing, so neither is claimed.
+                // A collapsed header opens the column, so it is announced as a button. Open, it
+                // is a heading, and Space collapses it as a board shortcut like F2.
                 role={isCollapsed ? "button" : undefined}
                 aria-expanded={isCollapsed ? false : undefined}
+                aria-keyshortcuts="Space"
                 onContextMenu={openMenu}
                 onMouseDown={(e) => {
                     if (e.detail <= 1) {

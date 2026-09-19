@@ -289,6 +289,7 @@ export function useBoardKeyboard({
         }
 
         // Both keys, the collapsed header answering for a button and being announced as one.
+        // `column.tsx` handles Space on an open column, where the collapse is drawn faster.
         if ((e.key === " " || e.key === "Enter") && spot.kind === "header") {
             const column = columns[spot.column];
             if (!columnsOf(container)[spot.column]?.classList.contains("collapsed")) return;

@@ -199,10 +199,10 @@ describe("Board column context menu", () => {
 
     /**
      * The inbox holds a name of its own, so it is renamed like any other column; what it has not
-     * is anything to archive, or anywhere to go, and it is put away by the board's own setting
-     * instead.
+     * is anything to archive, anywhere to go or a limit, and it is put away by the board's own
+     * setting instead.
      */
-    it("offers the inbox no archive and no move, and puts it away instead", () => {
+    it("offers the inbox no archive, move or limit, and puts it away instead", () => {
         const api = {
             getColumnIcon: () => DEFAULT_COLUMN_ICON,
             getColumnColorClass: () => "",
@@ -219,6 +219,9 @@ describe("Board column context menu", () => {
         expect(icons).not.toContain("bx bx-archive");
         // The inbox leads the board and cannot be moved off the head of it.
         expect(icons).not.toContain("bx bx-horizontal-left");
+        // The inbox is where every card without a grouping value goes, so a limit there is not
+        // enforceable.
+        expect(icons).not.toContain("bx bx-tachometer");
 
         const remove = items.find(item =>
             item && "uiIcon" in item && item.uiIcon === "bx bx-trash");

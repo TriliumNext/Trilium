@@ -503,11 +503,22 @@ describe("Board keyboard", () => {
             expect(focusedName(board)).toBe("Third");
         });
 
-        it("leaves Space and Enter alone on a column that is not collapsed", async () => {
+        /** This harness never reads the write back, so `index.spec.tsx` covers the strip. */
+        it("collapses an open column with Space instead of walking on", async () => {
             const board = await renderBoard();
             focusHeader(board, 1);
 
             press(board, " ");
+            await act(async () => { await flush(); });
+
+            expect(saved.at(-1)?.columns?.find(col => col.value === "Doing")?.collapsed)
+                .toBe(true);
+        });
+
+        it("leaves Enter alone on a column that is not collapsed", async () => {
+            const board = await renderBoard();
+            focusHeader(board, 1);
+
             press(board, "Enter");
 
             expect(document.activeElement).toBe(columnAt(board, 1).querySelector("h3"));

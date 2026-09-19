@@ -739,13 +739,21 @@ export default class BoardApi {
         await attributes.setLabel(note.noteId, COLUMN_WIDTH_LABEL, width);
     }
 
-    /** The note limit set for a column, absent if disabled. */
+    /** The note limit set for a column, absent if disabled or for the inbox. */
     getColumnLimit(column: string) {
+        if (column === INBOX_COLUMN) {
+            return undefined;
+        }
+
         return this.storedColumns.find(col => col.value === column)?.limit;
     }
 
     /** Sets a column's note limit. Pass `undefined` to disable it. */
     async setColumnLimit(column: string, limit: number | undefined) {
+        if (column === INBOX_COLUMN) {
+            return;
+        }
+
         await this.updateColumn(column, { limit });
     }
 

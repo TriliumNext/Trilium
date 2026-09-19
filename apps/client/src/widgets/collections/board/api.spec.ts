@@ -2006,6 +2006,25 @@ describe("filing a card under the inbox", () => {
     });
 });
 
+describe("the limit set on a column", () => {
+    /**
+     * The inbox is where every card without a grouping value goes, so a limit there is not
+     * enforceable. One stored by an older board is read as none.
+     */
+    it("reads no limit for the inbox and writes none to it", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "", limit: 2 }, { value: "To Do", limit: 3 } ] },
+            [ "", "To Do" ]);
+
+        expect(api.getColumnLimit("")).toBeUndefined();
+        expect(api.getColumnLimit("To Do")).toBe(3);
+
+        await api.setColumnLimit("", 5);
+
+        expect(saved).toHaveLength(0);
+    });
+});
+
 describe("the promoted attributes a card shows", () => {
     /** A board defining two promoted labels, which is what the cards can show. */
     function boardWithAttributes() {
