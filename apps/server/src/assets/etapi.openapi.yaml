@@ -1150,6 +1150,20 @@ components:
                 utcDateCreated:
                     $ref: "#/components/schemas/UtcDateTime"
                     description: UTC timestap of the note creation. Specify only if you want to override the default (current datetime).
+                dateModified:
+                    $ref: "#/components/schemas/LocalDateTime"
+                    description: >
+                        Local timestamp of the note's last modification. Optional, for migration
+                        imports that preserve the source's last-modified date. If both modification
+                        timestamps are supplied, utcDateModified takes precedence. Omit to stamp
+                        the current datetime.
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    description: >
+                        UTC timestamp of the note's last modification. Optional, for migration
+                        imports that preserve the source's last-modified date. If both modification
+                        timestamps are supplied, this value takes precedence. Omit to stamp the
+                        current datetime.
         Note:
             type: object
             properties:
@@ -1208,12 +1222,21 @@ components:
                     $ref: "#/components/schemas/LocalDateTime"
                 dateModified:
                     $ref: "#/components/schemas/LocalDateTime"
-                    readOnly: true
+                    description: >
+                        Local timestamp of the note's last modification. Writable via
+                        POST /create-note and PATCH /notes/{noteId}, e.g. for migration
+                        imports restoring the source date after content rewrites.
+                        If both modification timestamps are supplied, utcDateModified
+                        takes precedence.
                 utcDateCreated:
                     $ref: "#/components/schemas/UtcDateTime"
                 utcDateModified:
                     $ref: "#/components/schemas/UtcDateTime"
-                    readOnly: true
+                    description: >
+                        UTC timestamp of the note's last modification. Writable via
+                        POST /create-note and PATCH /notes/{noteId}, e.g. for migration
+                        imports restoring the source date after content rewrites.
+                        Takes precedence over dateModified when both are supplied.
         Branch:
             type: object
             description: Branch places the note into the tree, it represents the relationship between a parent note and child note
