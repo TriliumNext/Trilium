@@ -81,6 +81,34 @@ describe("LoadResults", () => {
         expect(lr.getBranchRows()).toEqual([{ branchId: "b1", parentNoteId: "p", componentId: "comp1" }]);
     });
 
+    it("keeps a deleted branch row that carries identity even without an entity payload", () => {
+        const lr = new LoadResults([]);
+        lr.addBranch("oldParent_n1", "comp1", {
+            noteId: "n1",
+            parentNoteId: "oldParent",
+            isDeleted: true
+        });
+
+        expect(lr.getBranchRows()).toEqual([{
+            branchId: "oldParent_n1",
+            componentId: "comp1",
+            noteId: "n1",
+            parentNoteId: "oldParent",
+            isDeleted: true
+        }]);
+    });
+
+    it("prefers the tracked isDeleted flag when the entity POJO still says the branch is live", () => {
+        const lr = new LoadResults([
+            ec("branches", "b-del", { branchId: "b-del", noteId: "n1", parentNoteId: "p", isDeleted: false })
+        ]);
+        lr.addBranch("b-del", "comp1", { noteId: "n1", parentNoteId: "p", isDeleted: true });
+
+        expect(lr.getBranchRows()).toEqual([
+            expect.objectContaining({ branchId: "b-del", isDeleted: true, componentId: "comp1" })
+        ]);
+    });
+
     it("filters attribute rows by component id and merges entity data", () => {
         const lr = new LoadResults([
             ec("attributes", "a1", { attributeId: "a1", name: "color" }),

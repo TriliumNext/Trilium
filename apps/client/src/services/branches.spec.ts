@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // transitively (via app_context -> main_tree_executors) before any top-level spec code runs, so we
 // must capture those subscribers through a hoisted ws mock. We still provide
 // waitForMaxKnownEntityChangeId so froca keeps working.
-const { wsCallbacks } = vi.hoisted(() => ({ wsCallbacks: [] as ((message: any) => Promise<void>)[] }));
+const { wsCallbacks, waitForMaxKnownEntityChangeId } = vi.hoisted(() => ({
+    wsCallbacks: [] as ((message: any) => Promise<void>)[],
+    waitForMaxKnownEntityChangeId: vi.fn(async () => {})
+}));
 
 vi.mock("./ws.js", () => {
     const logError = (message: string) => console.error(message);
@@ -18,7 +21,7 @@ vi.mock("./ws.js", () => {
     return {
         default: {
             subscribeToMessages,
-            waitForMaxKnownEntityChangeId: async () => {},
+            waitForMaxKnownEntityChangeId,
             getMaxKnownEntityChangeSyncId: () => 0,
             logError
         },
@@ -89,6 +92,7 @@ describe("moveBeforeBranch", () => {
         await branches.moveBeforeBranch(["virt-x", "rootBranch", "a1"], "before1");
         expect(server.put).toHaveBeenCalledTimes(1);
         expect(server.put).toHaveBeenCalledWith(`branches/a1/move-before/before1`);
+        expect(waitForMaxKnownEntityChangeId).toHaveBeenCalledTimes(1);
         expect(beforeBranch.noteId).toBe(targetNote.noteId);
         expect(a).toBeDefined();
 
@@ -130,6 +134,7 @@ describe("moveAfterBranch", () => {
         // reversed order: m2 first, then m1
         expect((server.put as any).mock.calls[0][0]).toBe("branches/m2/move-after/afterDest");
         expect((server.put as any).mock.calls[1][0]).toBe("branches/m1/move-after/afterDest");
+        expect(waitForMaxKnownEntityChangeId).toHaveBeenCalledTimes(2);
 
         server.put = vi.fn(async () => ({ success: false, message: "fail" })) as typeof server.put;
         await branches.moveAfterBranch(["m1"], "afterDest");
@@ -185,6 +190,7 @@ describe("moveToParentNote", () => {
 
         expect(server.put).toHaveBeenCalledTimes(1);
         expect(server.put).toHaveBeenCalledWith("branches/regularBranch/move-to/destParent", undefined, "comp-1");
+        expect(waitForMaxKnownEntityChangeId).toHaveBeenCalledTimes(1);
     });
 
     it("shows error and bails when the move fails", async () => {
@@ -482,6 +488,7 @@ describe("moveNodeUpInHierarchy", () => {
 
         await branches.moveNodeUpInHierarchy(fakeNode({ parentNoteType: "text", parentBranchId: "pb", branchId: "cb" }));
         expect(server.put).toHaveBeenCalledWith("branches/cb/move-after/pb");
+        expect(waitForMaxKnownEntityChangeId).toHaveBeenCalledTimes(1);
 
         server.put = vi.fn(async () => ({ success: false, message: "denied" })) as typeof server.put;
         await branches.moveNodeUpInHierarchy(fakeNode({ parentNoteType: "text", parentBranchId: "pb", branchId: "cb" }));
