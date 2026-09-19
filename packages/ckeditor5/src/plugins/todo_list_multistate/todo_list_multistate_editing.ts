@@ -6,7 +6,7 @@ import { ContentHintManager, type HintHandle } from "../../content_hint_manager.
 import { renderShortcut } from "../../shortcut.js";
 
 /**
- * Dwell delay before a hover or a stationary caret pops the checkbox tooltip.
+ * Dwell delay before hovering a checkbox pops its tooltip.
  * Long enough that brief flyovers don't spawn a tooltip, short enough that
  * intentional attention consistently produces one.
  */
@@ -38,38 +38,14 @@ export default class TodoListMultistateEditing extends Plugin {
         return [TodoList, ListEditing] as const;
     }
 
-    /**
-     * Shared content-hint stack. One hover handle per rendered checkbox plus
-     * one caret handle (moved between checkboxes as the caret does) push/pop
-     * against it — only the top of the stack is on screen at a time. See
-     * {@link ContentHintManager} for the rationale.
-     */
+    /** Shared content-hint stack, with one hover handle per rendered checkbox. */
     private _hintManager?: ContentHintManager;
 
     /** Hover-driven handle per rendered checkbox. Disposed when the checkbox detaches. */
     private readonly _hoverHandles = new Map<HTMLInputElement, HintHandle>();
 
-    /**
-     * Last known task state per rendered checkbox — used to detect content-changing
-     * events (Ctrl+Shift+Enter, native toggle) so the caret handle can force an
-     * immediate `show()` instead of a delayed one.
-     */
+    /** Last known task state per rendered checkbox, used to refresh hover content. */
     private readonly _knownState = new Map<HTMLInputElement, string | null>();
-
-    /** Caret-driven handle, if the caret is currently inside a todo item. */
-    private _caretHandle: HintHandle | null = null;
-
-    /** DOM checkbox the caret handle is currently attached to. */
-    private _caretInput: HTMLInputElement | null = null;
-
-    /**
-     * `data-list-item-id` of the todo item the caret is currently inside, or
-     * `null` when the caret isn't inside a todo item. Tracks the *conceptual*
-     * caret target so a mere DOM-node rebuild (Ctrl+Shift+Enter across the
-     * isCompleted boundary recreates the checkbox input) doesn't get treated
-     * as a fresh visit and delayed by the dwell timer.
-     */
-    private _caretItemId: string | null = null;
 
     /** State-name → definition, keyed for `buildTooltipTitle` calls. */
     private _stateByName!: Map<string, TaskStateDef>;
@@ -93,11 +69,7 @@ export default class TodoListMultistateEditing extends Plugin {
                     sanitize: false,
                     customClass: "text-editor-content-tooltip"
                 },
-                // Self-dismiss the tooltip 1s after the last relevant event (push,
-                // content update, top change). Anything that would legitimately
-                // keep the hint alive — hover crossing, caret movement, state
-                // change — pushes to the manager, so the timer resets and the
-                // popup stays. When events stop, it fades on its own.
+                // Self-dismiss the tooltip after the last relevant hover event.
                 autoHideAfterMs: 2000
             });
         }
@@ -175,19 +147,7 @@ export default class TodoListMultistateEditing extends Plugin {
                 if (!domRoot) {
                     return;
                 }
-                // Refresh handles first; the return value tells `_syncCaretTooltip`
-                // whether the caret's item changed state on this render (Ctrl+Shift+Enter,
-                // native toggle, etc.) so it can force an immediate `show()` instead
-                // of waiting out the dwell timer again.
-                const caretItemStateChanged = this._refreshHoverHandles(domRoot);
-                this._syncCaretTooltip({ forceShowIfSameTarget: caretItemStateChanged });
-            });
-
-            // Keyboard-only navigation into an <li> doesn't move DOM focus (the editable
-            // root keeps it), so the manager needs to be driven from model-selection
-            // changes to catch the keyboard-into-todo case.
-            this.listenTo(editor.model.document.selection, "change:range", () => {
-                this._syncCaretTooltip({ forceShowIfSameTarget: false });
+                this._refreshHoverHandles(domRoot);
             });
         }
 
@@ -258,10 +218,6 @@ export default class TodoListMultistateEditing extends Plugin {
     }
 
     override destroy() {
-        this._caretHandle?.dispose();
-        this._caretHandle = null;
-        this._caretInput = null;
-        this._caretItemId = null;
         for (const handle of this._hoverHandles.values()) {
             handle.dispose();
         }
@@ -276,20 +232,15 @@ export default class TodoListMultistateEditing extends Plugin {
      * Creates a handle + attaches mouseenter/mouseleave for each new checkbox,
      * disposes handles whose input was detached, and refreshes content on
      * inputs whose task state changed since the last render.
-     *
-     * Returns `true` iff the caret's own checkbox saw a state change on this
-     * render — the caller uses that to force `show()` its caret handle instead
-     * of waiting out the dwell timer (state change should reveal the tooltip
-     * immediately, per the "reappear on state change" spec).
      */
-    private _refreshHoverHandles(domRoot: HTMLElement): boolean {
+    private _refreshHoverHandles(domRoot: HTMLElement): void {
         const manager = this._hintManager;
         // The two callers that reach this method are gated on `hintsEnabled`
         // in `init()`, so `_hintManager` is set here in practice. The guard
         // keeps TypeScript happy and documents the contract.
         /* v8 ignore next 3 */
         if (!manager) {
-            return false;
+            return;
         }
         // Reap detached checkboxes.
         for (const input of Array.from(this._hoverHandles.keys())) {
@@ -297,17 +248,8 @@ export default class TodoListMultistateEditing extends Plugin {
                 this._hoverHandles.get(input)?.dispose();
                 this._hoverHandles.delete(input);
                 this._knownState.delete(input);
-                if (input === this._caretInput) {
-                    // Caret handle for a detached input; drop it — `_syncCaretTooltip`
-                    // will pick up the new one via `_findCaretCheckbox`.
-                    this._caretHandle?.dispose();
-                    this._caretHandle = null;
-                    this._caretInput = null;
-                }
             }
         }
-
-        let caretItemStateChanged = false;
 
         for (const input of domRoot.querySelectorAll<HTMLInputElement>(".todo-list__label input[type=\"checkbox\"]")) {
             const currentState = readTaskState(input);
@@ -318,23 +260,10 @@ export default class TodoListMultistateEditing extends Plugin {
             if (isNew) {
                 const handle = manager.createHandle(input, this._computeContent(input));
                 this._hoverHandles.set(input, handle);
-                // Cache the enclosing item's id — stable for this input's life, and we
-                // need it on every hover event to decide whether to yield to the caret.
-                /* v8 ignore next -- CKEditor's list plugin guarantees every
-                   `<li>` inside a rendered todo list carries `data-list-item-id`
-                   and the checkbox is nested inside that `<li>`. The `?.` /
-                   `?? null` fallbacks are defensive. */
-                const ownItemId = input.closest<HTMLElement>("li")?.getAttribute("data-list-item-id") ?? null;
-                // Hover on the checkbox whose item already has the caret is a no-op:
-                // the caret handle already owns that item's tooltip visibility, and
-                // running the dwell + push cycle on top of it only confuses the stack.
-                const ownedByCaret = () => ownItemId !== null && ownItemId === this._caretItemId;
                 input.addEventListener("mouseenter", () => {
-                    if (ownedByCaret()) return;
                     handle.showAfter(TOOLTIP_DWELL_MS);
                 });
                 input.addEventListener("mouseleave", () => {
-                    if (ownedByCaret()) return;
                     handle.hide();
                 });
             /* v8 ignore start -- taskState is scope:"item", so any state change
@@ -344,84 +273,8 @@ export default class TodoListMultistateEditing extends Plugin {
                ever stopped reconverting on scope:"item" attribute changes. */
             } else if (currentState !== previousState) {
                 this._hoverHandles.get(input)?.setContent(this._computeContent(input));
-                if (input === this._caretInput) {
-                    caretItemStateChanged = true;
-                }
             }
             /* v8 ignore stop */
-        }
-
-        return caretItemStateChanged;
-    }
-
-    /**
-     * Reconcile the caret handle against the current model caret target. Called
-     * on selection changes AND at the end of every render.
-     *
-     * The item-id vs input-identity distinction matters: a state change across
-     * the isCompleted boundary reconverts the todo item, giving us a new DOM
-     * checkbox even though the caret hasn't moved. We want the tooltip to
-     * reappear immediately in that case (per "reappear on state change"), not
-     * to be delayed as if the user just navigated in.
-     *
-     * Cases:
-     *   - Item unchanged, input unchanged, state unchanged → no-op.
-     *   - Item unchanged, input unchanged, state changed (`forceShowIfSameTarget`)
-     *     → refresh content, force immediate `show()`.
-     *   - Item unchanged, input replaced (isCompleted-boundary reconversion)
-     *     → rebuild handle on the new input, immediate `show()`.
-     *   - Item changed (user actually moved the caret) → new handle,
-     *     `showAfter(TOOLTIP_DWELL_MS)`, so drive-throughs don't spawn a tooltip.
-     */
-    private _syncCaretTooltip(options: { forceShowIfSameTarget: boolean }): void {
-        const manager = this._hintManager;
-        /* v8 ignore next 3 -- gated same as _refreshHoverHandles, see there. */
-        if (!manager) {
-            return;
-        }
-        const target = this._findCaretCheckbox();
-        const targetItemId = target?.closest<HTMLElement>("li")?.getAttribute("data-list-item-id") ?? null;
-        const itemChanged = targetItemId !== this._caretItemId;
-        const inputChanged = target !== this._caretInput;
-
-        if (!itemChanged) {
-            if (inputChanged) {
-                // Same conceptual item, but the DOM input was recreated — rebuild
-                // the handle and show immediately (no dwell delay for a rebuild).
-                this._caretHandle?.dispose();
-                this._caretHandle = null;
-                this._caretInput = target;
-                /* v8 ignore next -- inside the "same item, input changed"
-                   branch, `target` cannot be null: `!itemChanged` means
-                   `targetItemId === this._caretItemId`, and if `target` were
-                   null then `targetItemId` would be null too, forcing the
-                   `_caretItemId` we're comparing against to also be null —
-                   but then `_caretInput` was null too, so `inputChanged`
-                   would be false and we wouldn't be in this branch. */
-                if (target) {
-                    this._caretHandle = manager.createHandle(target, this._computeContent(target));
-                    this._caretHandle.show();
-                }
-            /* v8 ignore start -- reachable only when `forceShowIfSameTarget`
-               is true, which the render listener only sets when
-               `_refreshHoverHandles` observes a state change on the caret's
-               input WITHOUT the input being recreated — see the paired v8
-               ignore in `_refreshHoverHandles`. Defensive counterpart. */
-            } else if (target && this._caretHandle && options.forceShowIfSameTarget) {
-                this._caretHandle.setContent(this._computeContent(target));
-                this._caretHandle.show();
-            }
-            /* v8 ignore stop */
-            return;
-        }
-
-        this._caretHandle?.dispose();
-        this._caretHandle = null;
-        this._caretInput = target;
-        this._caretItemId = targetItemId;
-        if (target) {
-            this._caretHandle = manager.createHandle(target, this._computeContent(target));
-            this._caretHandle.showAfter(TOOLTIP_DWELL_MS);
         }
     }
 
@@ -434,38 +287,6 @@ export default class TodoListMultistateEditing extends Plugin {
             this.editor.t,
             renderShortcut(this.editor, STATE_CYCLE_SHORTCUT)
         );
-    }
-
-    /**
-     * The <input> DOM checkbox of the todo item the caret is currently inside, or
-     * `null` when the caret isn't inside a todo item. Walks up the model to find
-     * an ancestor block with `listType == "todo"`, then queries the editing DOM
-     * for the matching <li data-list-item-id="…">.
-     */
-    private _findCaretCheckbox(): HTMLInputElement | null {
-        const position = this.editor.model.document.selection.getFirstPosition();
-        let node: ModelElement | null = null;
-        let candidate = position?.parent ?? null;
-        while (candidate) {
-            if (candidate.is("element") && candidate.getAttribute("listType") === "todo") {
-                node = candidate as ModelElement;
-                break;
-            }
-            candidate = candidate.parent;
-        }
-        if (!node) {
-            return null;
-        }
-        const itemId = node.getAttribute("listItemId");
-        /* v8 ignore next 3 -- CKEditor's list plugin guarantees `listItemId`
-           is a non-empty string on every todo item; defensive fallback. */
-        if (typeof itemId !== "string" || !itemId) {
-            return null;
-        }
-        const domRoot = this.editor.editing.view.getDomRoot();
-        return domRoot?.querySelector<HTMLInputElement>(
-            `li[data-list-item-id="${CSS.escape(itemId)}"] .todo-list__label input[type="checkbox"]`
-        ) ?? null;
     }
 
 }
