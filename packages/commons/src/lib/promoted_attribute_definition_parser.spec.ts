@@ -62,8 +62,10 @@ describe("promoted_attribute_definition_parser.parse", () => {
         expect(parse("options")).toEqual({ selectOptions: [] });
     });
 
-    it("parses the promoted alias verbatim, including spaces", () => {
+    it("parses the promoted alias, keeping spaces and decoding the escapes", () => {
         expect(parse("alias=My Label")).toEqual({ promotedAlias: "My Label" });
+        // `%2C`/`%25` carry the characters the format claims for itself.
+        expect(parse("alias=My%2C Label 100%25")).toEqual({ promotedAlias: "My, Label 100%" });
         expect(parse("alias=")).toEqual({ promotedAlias: "" });
         // A missing value yields undefined rather than throwing.
         expect(parse("alias")).toEqual({ promotedAlias: undefined });
@@ -125,6 +127,13 @@ describe("promoted_attribute_definition_parser.serialize", () => {
         // whether the attribute is promoted, so it is written whether or not the flag is set.
         expect(serialize({ promotedAlias: "Foo" }, "label")).toBe("alias=Foo,single,text");
         expect(serialize({ isPromoted: true }, "label")).toBe("promoted,single,text");
+    });
+
+    it("escapes the token separator and the escape character in the alias", () => {
+        expect(serialize({ promotedAlias: "myLabel, very pretty" }, "label"))
+            .toBe("alias=myLabel%2C very pretty,single,text");
+        // `;` separates nothing at this level, so it is written verbatim.
+        expect(serialize({ promotedAlias: "50%; a" }, "relation")).toBe("alias=50%25; a,single");
     });
 
     it("falls back to the multiplicity and label type the consumers assume", () => {
@@ -190,6 +199,22 @@ describe("promoted_attribute_definition_parser round-trip", () => {
                 labelType: "select", multiplicity: "single", selectOptions: options
             });
         }
+    });
+
+    it("round-trips an alias through the escaping, edge cases included", () => {
+        // A fragment after a comma can spell a live token, and must not be read as one.
+        for (const promotedAlias of [
+            "myLabel, very pretty", "Size, number", "Foo, promoted", "a, multi, options=x",
+            "100%", "50%25", "%2C", "a=b", "a;b"
+        ]) {
+            expect(parse(serialize({ promotedAlias, labelType: "text" }, "label"))).toEqual({
+                promotedAlias, multiplicity: "single", labelType: "text"
+            });
+        }
+
+        expect(parse(serialize({ promotedAlias: "Parent, inverse=x" }, "relation"))).toEqual({
+            promotedAlias: "Parent, inverse=x", multiplicity: "single"
+        });
     });
 
     it("parses a serialized definition back to the same object, for every label type", () => {
