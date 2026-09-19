@@ -268,10 +268,8 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
 }
 
 /**
- * An existing note whose title equals the query (case-insensitive, surrounding spaces ignored) is a better first pick than
- * creating another with that name, so those rows stay above the create entries. A title that only
- * contains the query still sits below them: the query can name a different sense of the word
- * (autohyponyms), and create remains reachable without scrolling past every fuzzy hit.
+ * Concatenates exact title matches of `term` (trimmed, case-insensitive), then `createRows`, then the rest.
+ * Contains-matches go last so create is still the next pick when the query names a different sense of the word.
  */
 function mergeCreateNoteSuggestions(results: Suggestion[], createRows: Suggestion[], term: string): Suggestion[] {
     const needle = term.trim().toLowerCase();
