@@ -62,6 +62,11 @@ declare global {
         };
 
         electronApi?: ElectronApi;
+        /**
+         * Present only on the desktop, and only when the backend runs in a utilityProcess.
+         * Transfers the port the client builds its localFetch on into this world.
+         */
+        triliumBackendBridge?: { connect(): Promise<boolean> };
         /** Present only in the standalone build, where the stack runs in this browser. */
         standaloneApi?: StandaloneApi;
 

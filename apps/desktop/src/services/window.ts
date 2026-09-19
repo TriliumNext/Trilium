@@ -1,4 +1,4 @@
-import { app_info, cls, events, getLog, isSetupRequested, keyboard_actions as keyboardActionsService, options as optionService, sql_init, utils as coreUtils } from "@triliumnext/core";
+import { app_info, cls, events, getLog, isSetupRequested, keyboard_actions as keyboardActionsService, sql_init, utils as coreUtils } from "@triliumnext/core";
 import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import { supportsBackgroundMaterial } from "@triliumnext/server/src/services/utils.js";
 import { type BrowserWindow, type BrowserWindowConstructorOptions, default as electron, type Session, type WebContents } from "electron";
@@ -8,6 +8,7 @@ import path from "path";
 import { markStartupMetric } from "./startup_metrics.js";
 import { TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
 import { setupWebContentsSecurity } from "./web_contents_security.js";
+import * as mainOptions from "../backend/main_options.js";
 
 // Preload bundle path. Two layouts:
 //   - Dev: this file lives at apps/desktop/src/services/window.ts, and the
@@ -50,14 +51,14 @@ function trackWindowFocus(win: BrowserWindow) {
     win.on("focus", () => {
         allWindows = allWindows.filter(w => !w.isDestroyed() && w !== win);
         allWindows.push(win);
-        if (!optionService.getOptionBool("disableTray")) {
+        if (!mainOptions.getOptionBool("disableTray")) {
             electron.ipcMain.emit("reload-tray");
         }
     });
 
     win.on("closed", () => {
         allWindows = allWindows.filter(w => !w.isDestroyed());
-        if (!optionService.getOptionBool("disableTray")) {
+        if (!mainOptions.getOptionBool("disableTray")) {
             electron.ipcMain.emit("reload-tray");
         }
     });
@@ -103,7 +104,7 @@ function getExtraWindowOptions(): BrowserWindowConstructorOptions {
 /** Per-window wiring for an extra window, whichever way it was created. */
 function adoptExtraWindow(win: BrowserWindow) {
     win.setMenuBarVisibility(false);
-    configureWebContents(win.webContents, optionService.getOptionBool("spellCheckEnabled"));
+    configureWebContents(win.webContents, mainOptions.getOptionBool("spellCheckEnabled"));
     trackWindowFocus(win);
 }
 
@@ -129,7 +130,7 @@ async function createMainWindow(startHidden = false) {
         defaultHeight: 800
     });
 
-    const spellcheckEnabled = optionService.getOptionBool("spellCheckEnabled");
+    const spellcheckEnabled = mainOptions.getOptionBool("spellCheckEnabled");
 
     const { BrowserWindow } = await import("electron"); // should not be statically imported
 
@@ -174,7 +175,7 @@ async function createMainWindow(startHidden = false) {
     // instead of quitting. Only intercepts a genuine window close (not an app
     // quit, which sets `isQuitting` first). Extra windows are unaffected.
     mainWindow.on("close", (event) => {
-        if (!isQuitting && !optionService.getOptionBool("disableTray") && optionService.getOptionBool("closeToTray")) {
+        if (!isQuitting && !mainOptions.getOptionBool("disableTray") && mainOptions.getOptionBool("closeToTray")) {
             event.preventDefault();
             mainWindow?.hide();
         }
@@ -188,7 +189,7 @@ async function createMainWindow(startHidden = false) {
 function getWindowExtraOpts() {
     const extraOpts: Partial<BrowserWindowConstructorOptions> = {};
 
-    if (!optionService.getOptionBool("nativeTitleBarVisible")) {
+    if (!mainOptions.getOptionBool("nativeTitleBarVisible")) {
         if (coreUtils.isMac()) {
             extraOpts.titleBarStyle = "hiddenInset";
             extraOpts.titleBarOverlay = true;
@@ -204,7 +205,7 @@ function getWindowExtraOpts() {
 
         // Window effects (Mica on Windows and Vibrancy on macOS)
         // These only work if native title bar is not enabled.
-        if (optionService.getOptionBool("backgroundEffects")) {
+        if (mainOptions.getOptionBool("backgroundEffects")) {
             if (coreUtils.isMac()) {
                 extraOpts.transparent = true;
                 extraOpts.visualEffectState = "active";
@@ -323,8 +324,7 @@ function setupSpellcheckForSession(session: Session, enabled: boolean) {
 }
 
 function getConfiguredSpellcheckLanguages(): string[] {
-    return optionService
-        .getOption("spellCheckLanguageCode")
+    return (mainOptions.getOption("spellCheckLanguageCode") ?? "")
         .split(",")
         .map((code) => code.trim())
         .filter(Boolean);
@@ -339,7 +339,7 @@ function applySpellcheckLanguages(languageCodes: string[]) {
     // setSpellCheckerLanguages() forces the enabled state to !languageCodes.empty(), so a
     // language change while spell check is disabled would re-enable it. Re-assert the option
     // afterwards to keep the toggle authoritative (see setupSpellcheckForSession, issue #10569).
-    const enabled = optionService.getOptionBool("spellCheckEnabled");
+    const enabled = mainOptions.getOptionBool("spellCheckEnabled");
     const sessions = new Set<Session>();
     for (const win of electron.BrowserWindow.getAllWindows()) {
         sessions.add(win.webContents.session);
@@ -416,6 +416,12 @@ function closeSetupWindow() {
 
 async function registerGlobalShortcuts() {
     const { globalShortcut } = await import("electron");
+
+    // The keyboard actions come from core, which is in the backend process. Reaching
+    // them from here needs a route of their own.
+    if (mainOptions.isBackendOutOfProcess()) {
+        return;
+    }
 
     await sql_init.dbReady;
 
