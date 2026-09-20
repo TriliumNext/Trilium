@@ -10,6 +10,8 @@ function lex(str: string) {
     let quotes: boolean | string = false; // otherwise contains used quote - ', " or `
     let fulltextEnded = false;
     let currentWord = "";
+    // Set while the word being built opens with a parenthesis the query escaped.
+    let openingParenEscaped = false;
     let leadingOperator = "";
 
     function isSymbolAnOperator(chr: string) {
@@ -52,6 +54,7 @@ function lex(str: string) {
         }
 
         currentWord = "";
+        openingParenEscaped = false;
     }
 
     for (let i = 0; i < str.length; i++) {
@@ -60,6 +63,10 @@ function lex(str: string) {
         if (chr === "\\") {
             if (i + 1 < str.length) {
                 i++;
+
+                if (str[i] === "(" && /^\(*$/.test(currentWord)) {
+                    openingParenEscaped = true;
+                }
 
                 currentWord += str[i];
             } else {
@@ -96,15 +103,25 @@ function lex(str: string) {
             if (chr === "#" || chr === "~") {
                 // A prefix closes the pending word, so "towers#book" keeps
                 // "towers" as a full-text token next to the #book filter.
-                // A pending word of only parentheses is grouping syntax, not a
-                // term to search for, so "(#a)" does not look for "(".
-                if (!/^\(+$/.test(currentWord)) {
+                // A pending word of only parentheses is grouping syntax rather than a
+                // term. Unescaped ones open the expression; an escaped one is left
+                // exactly as it was, since a query mixing the two has no reading here.
+                const parenthesesOnly = /^\(+$/.test(currentWord);
+                const openingParens = parenthesesOnly && !openingParenEscaped ? currentWord : "";
+
+                if (!parenthesesOnly) {
                     finishWord(i - 1);
                 }
 
                 fulltextEnded = true;
 
+                for (let offset = 0; offset < openingParens.length; offset++) {
+                    currentWord = "(";
+                    finishWord(i - openingParens.length + offset);
+                }
+
                 currentWord = chr;
+                openingParenEscaped = false;
 
                 continue;
             } else if (["#", "~"].includes(currentWord) && chr === "!") {

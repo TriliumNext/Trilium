@@ -61,6 +61,9 @@ describe("Search", () => {
         const results = searchService.findResultsWithQuery("(#a OR #b)", searchContext);
 
         expect(results.length).toEqual(2);
+        // The opening parenthesis reaches handleParens, so its ")" is matched
+        // and no error is reported for a query that returns the right notes.
+        expect(searchContext.error).toBeNull();
     });
 
     it("normal search looks also at attributes", () => {

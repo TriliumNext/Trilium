@@ -79,10 +79,29 @@ describe("Lexer fulltext", () => {
         const spaced = lex("towers #book").fulltextTokens.map((t) => t.token);
         expect(spaced).toEqual([ "towers" ]);
 
-        // A pending word of only parentheses is grouping syntax, not a term.
+        // A pending word of only parentheses opens the expression.
         const grouped = lex("(#a)");
         expect(grouped.fulltextTokens.map((t) => t.token)).toEqual([]);
-        expect(grouped.expressionTokens.map((t) => t.token)).toEqual([ "#a", ")" ]);
+        expect(grouped.expressionTokens.map((t) => t.token)).toEqual([ "(", "#a", ")" ]);
+
+        const nested = lex("((#a))").expressionTokens.map((t) => t.token);
+        expect(nested).toEqual([ "(", "(", "#a", ")", ")" ]);
+
+        const groupedRelation = lex("(~rel)").expressionTokens.map((t) => t.token);
+        expect(groupedRelation).toEqual([ "(", "~rel", ")" ]);
+
+        // A parenthesis inside or around a plain word stays full-text.
+        expect(lex("(hello world)").fulltextTokens.map((t) => t.token))
+            .toEqual([ "(hello", "world)" ]);
+
+        // An escaped parenthesis does not open a group, and a run mixing the two
+        // has no grouped reading, so both are left as they were.
+        const escaped = lex("\\(#a");
+        expect(escaped.fulltextTokens.map((t) => t.token)).toEqual([]);
+        expect(escaped.expressionTokens.map((t) => t.token)).toEqual([ "#a" ]);
+
+        const mixed = lex("(\\(#a)").expressionTokens.map((t) => t.token);
+        expect(mixed).toEqual([ "#a", ")" ]);
     });
 
     it("escaping special characters", () => {
