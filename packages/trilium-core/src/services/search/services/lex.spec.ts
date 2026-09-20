@@ -102,6 +102,13 @@ describe("Lexer fulltext", () => {
 
         const mixed = lex("(\\(#a)").expressionTokens.map((t) => t.token);
         expect(mixed).toEqual([ "#a", ")" ]);
+
+        // The same applies to a note property, whose prefix is the word "note".
+        const property = lex("(note.title=x)").expressionTokens.map((t) => t.token);
+        expect(property).toEqual([ "(", "note", ".", "title", "=", "x", ")" ]);
+
+        // A word that merely starts with "note" is still full-text.
+        expect(lex("(notebook)").fulltextTokens.map((t) => t.token)).toEqual([ "(notebook)" ]);
     });
 
     it("escaping special characters", () => {

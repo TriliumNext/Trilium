@@ -66,6 +66,19 @@ describe("Search", () => {
         expect(searchContext.error).toBeNull();
     });
 
+    it("a parenthesised note-property query still filters", () => {
+        rootNote
+            .child(note("Alpha").label("a"))
+            .child(note("Beta").label("b"));
+
+        const searchContext = new SearchContext();
+        const results = searchService.findResultsWithQuery("(note.title = 'Alpha')", searchContext);
+
+        expect(results.length).toEqual(1);
+        expect(findNoteByTitle(results, "Alpha")).toBeTruthy();
+        expect(searchContext.error).toBeNull();
+    });
+
     it("normal search looks also at attributes", () => {
         const austria = note("Austria");
         const vienna = note("Vienna");

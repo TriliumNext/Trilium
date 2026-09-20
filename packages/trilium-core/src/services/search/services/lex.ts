@@ -57,6 +57,17 @@ function lex(str: string) {
         openingParenEscaped = false;
     }
 
+    /**
+     * Emits the grouping parentheses that open the expression part, in source order, so
+     * handleParens can match each one with its closing counterpart.
+     */
+    function emitOpeningParens(parens: string, start: number) {
+        for (let offset = 0; offset < parens.length; offset++) {
+            currentWord = "(";
+            finishWord(start + offset);
+        }
+    }
+
     for (let i = 0; i < str.length; i++) {
         const chr = str[i];
 
@@ -96,18 +107,25 @@ function lex(str: string) {
 
             continue;
         } else if (!quotes) {
-            if (!fulltextEnded && currentWord === "note" && chr === "." && i + 1 < str.length) {
+            // Grouping parentheses can open either kind of expression, so they are read off
+            // the pending word before it is matched against what starts one. An escaped one
+            // is a character to search for, so it stays part of the word instead.
+            const openingParens = openingParenEscaped ? "" : (/^\(+/.exec(currentWord)?.[0] ?? "");
+            const pendingWord = currentWord.slice(openingParens.length);
+
+            if (!fulltextEnded && pendingWord === "note" && chr === "." && i + 1 < str.length) {
                 fulltextEnded = true;
+
+                emitOpeningParens(openingParens, i - currentWord.length);
+                currentWord = pendingWord;
             }
 
             if (chr === "#" || chr === "~") {
                 // A prefix closes the pending word, so "towers#book" keeps
                 // "towers" as a full-text token next to the #book filter.
                 // A pending word of only parentheses is grouping syntax rather than a
-                // term. Unescaped ones open the expression; an escaped one is left
-                // exactly as it was, since a query mixing the two has no reading here.
+                // term, so it is not emitted as one.
                 const parenthesesOnly = /^\(+$/.test(currentWord);
-                const openingParens = parenthesesOnly && !openingParenEscaped ? currentWord : "";
 
                 if (!parenthesesOnly) {
                     finishWord(i - 1);
@@ -115,9 +133,10 @@ function lex(str: string) {
 
                 fulltextEnded = true;
 
-                for (let offset = 0; offset < openingParens.length; offset++) {
-                    currentWord = "(";
-                    finishWord(i - openingParens.length + offset);
+                // Unescaped parentheses alone open the expression, so "(#a)" emits "("
+                // for handleParens rather than searching for "(" or dropping it.
+                if (!pendingWord) {
+                    emitOpeningParens(openingParens, i - openingParens.length);
                 }
 
                 currentWord = chr;
