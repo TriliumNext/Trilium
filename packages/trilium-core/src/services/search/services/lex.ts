@@ -94,11 +94,15 @@ function lex(str: string) {
             }
 
             if (chr === "#" || chr === "~") {
-                if (!fulltextEnded) {
-                    fulltextEnded = true;
-                } else {
+                // A prefix closes the pending word, so "towers#book" keeps
+                // "towers" as a full-text token next to the #book filter.
+                // A pending word of only parentheses is grouping syntax, not a
+                // term to search for, so "(#a)" does not look for "(".
+                if (!/^\(+$/.test(currentWord)) {
                     finishWord(i - 1);
                 }
+
+                fulltextEnded = true;
 
                 currentWord = chr;
 
