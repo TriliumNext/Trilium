@@ -757,6 +757,7 @@
     "calendar_slot_duration": "How long each timeslot of a calendar lasts, as <code>HH:MM:SS</code>. Defaults to 15 minutes.",
     "calendar_slot_label_interval": "How often the timeslots of a calendar are labeled, as <code>HH:MM:SS</code>. Defaults to an hour.",
     "calendar_title": "Names the attribute an event takes its title from, instead of the note title. Either a label or a relation, written without <code>#</code> or <code>~</code>.",
+    "calendar_title_template": "How an event is titled on the calendar, filled in for every occurrence of a repeating one. Reads <code>${title}</code>, <code>${age}</code> (whole years since the start date) and the dates <code>${date}</code> and <code>${startDate}</code>, e.g. <code>${title} (${age})</code> on a yearly birthday.",
     "calendar_displayed_attributes": "Comma-delimited attribute names whose values are shown on the event. A relation is shown as the title of the note it points at.",
     "calendar_start_date": "Names the label an event reads its start date from, instead of <code>#startDate</code>. Written without the <code>#</code>.",
     "calendar_end_date": "Names the label an event reads its end date from, instead of <code>#endDate</code>.",

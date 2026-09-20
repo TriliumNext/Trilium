@@ -36,7 +36,7 @@ import EventPopover from "./EventPopover";
 import GhostPopover from "./GhostPopover";
 import { openCalendarContextMenu } from "./context_menu";
 import { CalendarSelection, EventDraft } from "./selection";
-import { buildEvents, buildEventsForCalendar } from "./event_builder";
+import { buildEvents, buildEventsForCalendar, buildOccurrenceTitle } from "./event_builder";
 import { formatDateToLocalISO, formatTimeToLocalISO, isAttributeChangeAffecting, isBranchChangeAffecting, isValidDuration, parseDurationSeconds, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 interface CalendarViewData {
@@ -676,6 +676,9 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
      * v7 names its elements with hashed classes, so there is no `.fc-event-title` left to find. The
      * theme hands out the very classes its time and title would have worn, so what is drawn here is
      * Forma's chip with an icon in it rather than something of ours standing in for one.
+     *
+     * The title comes from buildOccurrenceTitle() rather than from the event, so a repeating event
+     * can title each of its occurrences differently.
      */
     const eventContent = useCallback((e: EventDisplayInfo) => {
         const { iconClass, promotedAttributes } = e.event.extendedProps;
@@ -685,7 +688,7 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
                 {e.timeText && <div className={e.timeClass}>{e.timeText}</div>}
                 <div className={e.titleClass}>
                     {iconClass && <span className={`calendar-event-icon ${iconClass}`} />}
-                    {e.event.title}
+                    {buildOccurrenceTitle(e.event)}
                 </div>
                 {!!promotedAttributes?.length && roomForAttributes(e) && (
                     <div className="calendar-event-attributes">

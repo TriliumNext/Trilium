@@ -1,4 +1,4 @@
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, evaluateTemplate } from "@triliumnext/commons";
 import clsx from "clsx";
 import { EventInput, EventSourceFuncInfo, EventSourceInput } from "fullcalendar";
 import * as rruleLib from 'rrule';
@@ -8,7 +8,7 @@ import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import server from "../../../services/server";
 import toastService from "../../../services/toast";
-import { getCustomisableLabel, getMonthsInDateRange } from "./utils";
+import { formatDateToLocalISO, getCustomisableLabel, getMonthsInDateRange } from "./utils";
 
 interface Event {
     startDate: string,
@@ -100,6 +100,11 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
     const colorClass = note.getColorClass();
     const events: EventInput[] = [];
 
+    // The day the series starts on, read before the code below appends the start time and the
+    // exclusive end date. buildOccurrenceTitle() counts every occurrence from it.
+    const seriesStart = startDate;
+    const titleTemplate = note.getLabelValue("calendar:titleTemplate");
+
     const calendarDisplayedAttributes = note.getLabelValue("calendar:displayedAttributes")?.split(",");
     let displayedAttributesData: Array<[string, string]> | null = null;
     if (calendarDisplayedAttributes) {
@@ -144,6 +149,8 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
             url: `#${note.noteId}?popup`,
             noteId: note.noteId,
             iconClass: note.getLabelValue("iconClass"),
+            titleTemplate,
+            seriesStart,
             promotedAttributes: displayedAttributesData,
             className: clsx({archived: isArchived}, colorClass)
         };
@@ -179,6 +186,69 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
         events.push(eventData);
     }
     return events;
+}
+
+/**
+ * Builds the title one occurrence of an event is drawn with: the note's `#calendar:titleTemplate`
+ * filled in for the day the occurrence falls on, or the plain title when the note has no template.
+ *
+ * Runs as the chip is drawn rather than in {@link buildEvent} because FullCalendar expands a
+ * `#recurrence` rule into occurrences itself: a repeating event is one {@link EventInput} with
+ * one title, so `${age}` — the whole years from `#startDate` to this occurrence — is only known
+ * here.
+ *
+ * A template {@link evaluateTemplate} rejects leaves the event with its plain title.
+ */
+export function buildOccurrenceTitle({ title, start, extendedProps }: OccurrenceEvent) {
+    const { titleTemplate, seriesStart } = extendedProps;
+    if (!titleTemplate || !seriesStart) {
+        return title;
+    }
+
+    // Both dates as plain days, without the time: a DST shift between them would otherwise take an
+    // hour off the span and round `age` down by a year.
+    const occurrenceDay = formatDateToLocalISO(start);
+    const seriesStartDay = dayjs(seriesStart.split("T")[0]);
+    const occurrence = occurrenceDay ? dayjs(occurrenceDay) : seriesStartDay;
+
+    try {
+        return evaluateTemplate(titleTemplate, {
+            title,
+            age: occurrence.diff(seriesStartDay, "year"),
+            date: occurrence,
+            startDate: seriesStartDay
+        });
+    } catch (error) {
+        reportBrokenTitleTemplate(titleTemplate, error);
+        return title;
+    }
+}
+
+/** The parts of a FullCalendar event {@link buildOccurrenceTitle} reads. */
+interface OccurrenceEvent {
+    title: string;
+    /** Where this occurrence starts; the template is filled in for that day. */
+    start: Date | null;
+    extendedProps: {
+        titleTemplate?: string | null;
+        /** The `#startDate` the series is counted from, as {@link buildEvent} wrote it. */
+        seriesStart?: string | null;
+    };
+}
+
+/** Templates already reported. {@link buildOccurrenceTitle} runs for every chip the calendar
+ *  draws, so a rejected template would otherwise be logged once per chip. */
+const brokenTitleTemplates = new Set<string>();
+
+/** Logs a template {@link evaluateTemplate} rejects, once per template. */
+function reportBrokenTitleTemplate(template: string, error: unknown) {
+    if (brokenTitleTemplates.has(template)) {
+        return;
+    }
+
+    brokenTitleTemplates.add(template);
+    const reason = error instanceof Error ? error.message : error;
+    console.error(`Invalid #calendar:titleTemplate "${template}": ${reason}`);
 }
 
 /**
