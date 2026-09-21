@@ -1015,6 +1015,41 @@ describe("Search", () => {
         });
     });
 
+    describe("the two-pass shortlist cut", () => {
+        function create(title: string, parentNoteId: string) {
+            return getContext().init(() => noteService.createNewNote({
+                parentNoteId,
+                title,
+                content: "<p>widget details</p>",
+                type: "text"
+            }).note);
+        }
+
+        it("cuts down to the shallowest matches, the way a tie is ranked", () => {
+            // 205 notes share one title and one body, so the first pass scores them alike and only
+            // the order of the scan can decide who reaches the shortlist. The rule the final
+            // comparator applies to an equal score is nearness to the root, and the cut is part of
+            // that ranking, so it has to apply the same rule.
+            const outer = create("Boxes", "root");
+            const inner = create("Sub", outer.noteId);
+
+            for (let index = 0; index < 200; index++) {
+                create("Widget", inner.noteId);
+            }
+
+            const shallow = [ ...Array(5) ].map(() => create("Widget", "root"));
+
+            const searchContext = new SearchContext({ rankInTwoPasses: true });
+            const results = searchService.findResultsWithQuery("widget", searchContext);
+            const shallowIds = new Set(shallow.map((note) => note.noteId));
+            const kept = results.filter((result) => shallowIds.has(result.noteId));
+
+            // The premise: more matches than the shortlist holds, so the cut is what is measured.
+            expect(results.length).toEqual(200);
+            expect(kept.length).toEqual(5);
+        });
+    });
+
     describe("fuzzy content match highlighting", () => {
         function contentNote(title: string, content: string) {
             return getContext().init(() => noteService.createNewNote({
