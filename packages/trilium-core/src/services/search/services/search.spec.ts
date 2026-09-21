@@ -1026,14 +1026,15 @@ describe("Search", () => {
         }
 
         it("cuts down to the shallowest matches, the way a tie is ranked", () => {
-            // 205 notes share one title and one body, so the first pass scores them alike and only
+            // 505 notes share one title and one body, so the first pass scores them alike and only
             // the order of the scan can decide who reaches the shortlist. The rule the final
             // comparator applies to an equal score is nearness to the root, and the cut is part of
-            // that ranking, so it has to apply the same rule.
+            // that ranking, so it has to apply the same rule. The plateau is deliberately larger
+            // than the tie group the cut will carry, so this measures the depth rule itself.
             const outer = create("Boxes", "root");
             const inner = create("Sub", outer.noteId);
 
-            for (let index = 0; index < 200; index++) {
+            for (let index = 0; index < 500; index++) {
                 create("Widget", inner.noteId);
             }
 
@@ -1044,9 +1045,30 @@ describe("Search", () => {
             const shallowIds = new Set(shallow.map((note) => note.noteId));
             const kept = results.filter((result) => shallowIds.has(result.noteId));
 
-            // The premise: more matches than the shortlist holds, so the cut is what is measured.
-            expect(results.length).toEqual(200);
+            // The premise: far more matches than the shortlist holds, so the cut is what is measured.
+            expect(results.length).toBeGreaterThan(200);
+            expect(results.length).toBeLessThan(505);
             expect(kept.length).toEqual(5);
+        });
+
+        it("carries a deep note into the pass that scores its path", () => {
+            // Same title and body throughout, so the first pass cannot separate any of them and the
+            // leaf's advantage exists only in the path score the shortlist unlocks. Ranking the cut
+            // by depth alone would drop that leaf as the deepest of the tie, which is the one note
+            // the deferred score would have placed first.
+            const matched = create("Widget", "root");
+            const nested = create("Widget", matched.noteId);
+            const leaf = create("Widget", nested.noteId);
+
+            for (let index = 0; index < 200; index++) {
+                create("Widget", "root");
+            }
+
+            const searchContext = new SearchContext({ rankInTwoPasses: true });
+            const results = searchService.findResultsWithQuery("widget", searchContext);
+
+            expect(results.map((result) => result.noteId)).toContain(leaf.noteId);
+            expect(results[0].noteId).toEqual(leaf.noteId);
         });
     });
 
