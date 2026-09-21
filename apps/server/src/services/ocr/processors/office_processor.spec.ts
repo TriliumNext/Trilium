@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockParseOffice = vi.fn();
+const mockToText = vi.fn();
 
 vi.mock('officeparser', () => ({
     OfficeParser: {
@@ -53,7 +54,7 @@ describe('OfficeProcessor', () => {
 
     it('extracts text and reports high confidence when text is present', async () => {
         const processor = new OfficeProcessor();
-        mockParseOffice.mockResolvedValue({ toText: () => '  document body  ' });
+        mockParseOffice.mockResolvedValue(astYielding('  document body  '));
 
         const result = await processor.extractText(buffer, { mimeType: DOCX, language: 'deu' });
 
@@ -62,21 +63,21 @@ describe('OfficeProcessor', () => {
         expect(result.pageCount).toBe(1);
         expect(result.language).toBe('deu');
         expect(mockParseOffice).toHaveBeenCalledWith(buffer, {
-            outputErrorToConsole: false,
             newlineDelimiter: '\n',
             ignoreNotes: false
         });
+        // Flat text, not officeparser's layout-preserving default.
+        expect(mockToText).toHaveBeenCalledWith('text', { textConfig: { preserveLayout: false } });
     });
 
     it('passes an explicit fileType hint for RTF, whose buffer auto-detection is unreliable', async () => {
         const processor = new OfficeProcessor();
-        mockParseOffice.mockResolvedValue({ toText: () => 'rtf body' });
+        mockParseOffice.mockResolvedValue(astYielding('rtf body'));
 
         const result = await processor.extractText(buffer, { mimeType: RTF });
 
         expect(result.text).toBe('rtf body');
         expect(mockParseOffice).toHaveBeenCalledWith(buffer, {
-            outputErrorToConsole: false,
             newlineDelimiter: '\n',
             ignoreNotes: false,
             fileType: 'rtf'
@@ -85,13 +86,12 @@ describe('OfficeProcessor', () => {
 
     it('passes an explicit fileType hint for EPUB, which shares the ZIP container with DOCX/ODT', async () => {
         const processor = new OfficeProcessor();
-        mockParseOffice.mockResolvedValue({ toText: () => 'epub body' });
+        mockParseOffice.mockResolvedValue(astYielding('epub body'));
 
         const result = await processor.extractText(buffer, { mimeType: EPUB });
 
         expect(result.text).toBe('epub body');
         expect(mockParseOffice).toHaveBeenCalledWith(buffer, {
-            outputErrorToConsole: false,
             newlineDelimiter: '\n',
             ignoreNotes: false,
             fileType: 'epub'
@@ -100,7 +100,7 @@ describe('OfficeProcessor', () => {
 
     it('reports zero confidence and defaults language when no text is extracted', async () => {
         const processor = new OfficeProcessor();
-        mockParseOffice.mockResolvedValue({ toText: () => '   ' });
+        mockParseOffice.mockResolvedValue(astYielding('   '));
 
         const result = await processor.extractText(buffer, { mimeType: ODT });
 
@@ -126,3 +126,8 @@ describe('OfficeProcessor', () => {
         ).rejects.toThrow('Unsupported MIME type for Office processor: application/pdf');
     });
 });
+
+/** Minimal stand-in for the parsed AST: `extractText` only calls `to('text')` on it. */
+function astYielding(text: string) {
+    return { to: mockToText.mockResolvedValue({ value: text, messages: [] }) };
+}

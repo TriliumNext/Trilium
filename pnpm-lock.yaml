@@ -785,8 +785,8 @@ importers:
         specifier: 2.4.0
         version: 2.4.0
       officeparser:
-        specifier: 7.8.0
-        version: 7.8.0(supports-color@10.2.2)
+        specifier: 8.0.0
+        version: 8.0.0(supports-color@10.2.2)
       openid-client:
         specifier: 6.8.8
         version: 6.8.8
@@ -1441,8 +1441,8 @@ importers:
         specifier: 9.0.4
         version: 9.0.4
       officeparser:
-        specifier: 7.8.0
-        version: 7.8.0(supports-color@10.2.2)
+        specifier: 8.0.0
+        version: 8.0.0(supports-color@10.2.2)
       sanitize-filename:
         specifier: 1.6.4
         version: 1.6.4
@@ -2139,13 +2139,6 @@ packages:
 
   '@csstools/css-calc@3.4.0':
     resolution: {integrity: sha512-XQKj5B7QiZcHiegCOCAzcAOJdhGgWOHbbu62h5e5mkHnn8lWcfiJhllkqWmxu5zWR9jucPHuo1iTB56P033hcg==}
-    engines: {node: '>=20.19.0'}
-    peerDependencies:
-      '@csstools/css-parser-algorithms': ^4.0.0
-      '@csstools/css-tokenizer': ^4.0.0
-
-  '@csstools/css-color-parser@4.2.2':
-    resolution: {integrity: sha512-3QKjR/vxyjcSXBLgb6lP0S3MGdvwbmqSsvLPbYdVORqPDc8FX1HAJ0Spk38bxaRXgvENTA47tlhhbb5Z2e8hEg==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       '@csstools/css-parser-algorithms': ^4.0.0
@@ -7541,8 +7534,8 @@ packages:
     resolution: {integrity: sha512-Ievi/yy8DS3ygGvT47PjSfdFoX+2isQueoYP1cntFW1JLYAuS4GD7NUPGg4zv2iZfV52uDyk5w5Z0TdpRS6Q1g==}
     engines: {node: '>=20'}
 
-  file-type@22.0.2:
-    resolution: {integrity: sha512-0H8TsCUGBLx+V5adH3EY52hTAcyLKbV1D4gq5cIOJ6DnQAHeV9Z2Hhuc5CoBX4YmvB2oL+JIC84z0qO7JsCoNw==}
+  file-type@22.1.1:
+    resolution: {integrity: sha512-sEB0oStmeLGtpmSAD88RDNuLsvhv4iC3u0lE25CUvfCULvj49xoQ3l3K525Vn+ZzsZ6DOLajQCV6RmhwwhqiJg==}
     engines: {node: '>=22'}
 
   file-uri-to-path@2.0.0:
@@ -9468,13 +9461,16 @@ packages:
     resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
     engines: {node: '>=12.20.0'}
 
-  officeparser@7.8.0:
-    resolution: {integrity: sha512-z3stbbcwTA4HsGuUz2XJEBbl6WV1X2qCvuiokc2D0593wnu8H7kaD9UY5YAHc8uMjMhH07FxXikzP0BFLSna4A==}
-    engines: {node: '>=18.0.0'}
+  officeparser@8.0.0:
+    resolution: {integrity: sha512-Hwwx0PoIyEIJl7FqzE6nS5MUDKC3sNhYt9SJKuZ+sM1V30bL2CywYE/cwSC9fToqZrmnp8hR7XvhyWKI/x/1Ig==}
+    engines: {node: '>=22.13.0'}
     hasBin: true
     peerDependencies:
-      puppeteer: '*'
+      pdf-lib: ^1.17.1
+      puppeteer: '>=22'
     peerDependenciesMeta:
+      pdf-lib:
+        optional: true
       puppeteer:
         optional: true
 
@@ -9706,8 +9702,8 @@ packages:
     resolution: {integrity: sha512-mnvGdvOrIvJOBGUEdGkrVXjN8E/VkIJCkf2eS1DH2yv82ORUlLttmDt0rWY38yYZmVwciZwBUvHM20qxBZf40w==}
     hasBin: true
 
-  pdfjs-dist@6.1.200:
-    resolution: {integrity: sha512-o8MolyzirkkLrcdsae/HEOiIcXWI7DS5zGpvqW8xTC2YUsW30rltFw2bDGvw/fskUdEMrQm2br68jzDS5BH2vw==}
+  pdfjs-dist@6.2.108:
+    resolution: {integrity: sha512-YxFb+SQcodN2rnX9Tn3dHYlqfb7NjlzzfONPpJd+AKoKtUjEdevTfbC07d5TcczzOK6261auRkP/M8OBHs9vFQ==}
     engines: {node: '>=22.13.0 || >=24'}
 
   pdfjs-dist@6.3.289:
@@ -11884,11 +11880,11 @@ snapshots:
 
   '@asamuzakjp/css-color@6.0.7':
     dependencies:
-      '@csstools/css-calc': 3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
-      '@csstools/css-color-parser': 4.2.2(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
-      '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
-      '@csstools/css-tokenizer': 4.0.0
-      lru-cache: 11.5.2
+      '@csstools/css-calc': 3.4.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.1))(@csstools/css-tokenizer@4.0.1)
+      '@csstools/css-color-parser': 4.2.3(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.1))(@csstools/css-tokenizer@4.0.1)
+      '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.1)
+      '@csstools/css-tokenizer': 4.0.1
+      lru-cache: 11.5.3
     optional: true
 
   '@asamuzakjp/css-color@7.0.1':
@@ -11904,7 +11900,7 @@ snapshots:
       bidi-js: 1.1.0
       css-tree: 3.2.1
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.5.2
+      lru-cache: 11.5.3
     optional: true
 
   '@asamuzakjp/dom-selector@9.2.1':
@@ -13014,12 +13010,10 @@ snapshots:
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.1
 
-  '@csstools/css-color-parser@4.2.2(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)':
+  '@csstools/css-calc@3.4.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.1))(@csstools/css-tokenizer@4.0.1)':
     dependencies:
-      '@csstools/color-helpers': 6.1.1
-      '@csstools/css-calc': 3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
-      '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
-      '@csstools/css-tokenizer': 4.0.0
+      '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.1)
+      '@csstools/css-tokenizer': 4.0.1
     optional: true
 
   '@csstools/css-color-parser@4.2.3(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.1)':
@@ -13028,6 +13022,14 @@ snapshots:
       '@csstools/css-calc': 3.4.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.1)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.1
+
+  '@csstools/css-color-parser@4.2.3(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.1))(@csstools/css-tokenizer@4.0.1)':
+    dependencies:
+      '@csstools/color-helpers': 6.1.1
+      '@csstools/css-calc': 3.4.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.1))(@csstools/css-tokenizer@4.0.1)
+      '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.1)
+      '@csstools/css-tokenizer': 4.0.1
+    optional: true
 
   '@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0)':
     dependencies:
@@ -19970,7 +19972,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  file-type@22.0.2(supports-color@10.2.2):
+  file-type@22.1.1(supports-color@10.2.2):
     dependencies:
       '@tokenizer/inflate': 0.4.1(supports-color@10.2.2)
       strtok3: 10.3.5
@@ -21052,14 +21054,14 @@ snapshots:
       '@asamuzakjp/css-color': 6.0.7
       '@asamuzakjp/dom-selector': 8.3.2
       '@bramus/specificity': 2.4.2
-      '@csstools/css-syntax-patches-for-csstree': 1.1.12(css-tree@3.2.1)
+      '@csstools/css-syntax-patches-for-csstree': 1.1.14(css-tree@3.2.1)
       '@exodus/bytes': 1.15.1(@noble/hashes@2.4.0)
       css-tree: 3.2.1
       data-urls: 7.0.0(@noble/hashes@2.4.0)
       decimal.js: 10.6.0
       html-encoding-sniffer: 6.0.0(@noble/hashes@2.4.0)
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.5.2
+      lru-cache: 11.5.3
       parse5: 8.0.1
       saxes: 6.0.0
       symbol-tree: 3.2.4
@@ -22175,12 +22177,12 @@ snapshots:
 
   obug@2.2.1: {}
 
-  officeparser@7.8.0(supports-color@10.2.2):
+  officeparser@8.0.0(supports-color@10.2.2):
     dependencies:
       '@xmldom/xmldom': 0.9.12
       fflate: 0.8.3
-      file-type: 22.0.2(supports-color@10.2.2)
-      pdfjs-dist: 6.1.200
+      file-type: 22.1.1(supports-color@10.2.2)
+      pdfjs-dist: 6.2.108
       tesseract.js: 7.0.0
     transitivePeerDependencies:
       - encoding
@@ -22403,7 +22405,7 @@ snapshots:
     dependencies:
       resolve-protobuf-schema: 2.1.0
 
-  pdfjs-dist@6.1.200:
+  pdfjs-dist@6.2.108:
     optionalDependencies:
       '@napi-rs/canvas': 1.0.9
 

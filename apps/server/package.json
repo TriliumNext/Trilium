@@ -92,7 +92,7 @@
     "marked": "18.0.13",
     "mime-types": "3.0.2",
     "multer": "2.4.0",
-    "officeparser": "7.8.0",
+    "officeparser": "8.0.0",
     "openid-client": "6.8.8",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",

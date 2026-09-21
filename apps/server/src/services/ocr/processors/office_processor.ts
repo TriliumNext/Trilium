@@ -6,7 +6,6 @@ import { OCRProcessingOptions, OCRResult } from '../ocr_service.js';
 import { FileProcessor } from './file_processor.js';
 
 const PARSER_CONFIG: OfficeParserConfig = {
-    outputErrorToConsole: false,
     newlineDelimiter: '\n',
     ignoreNotes: false
 };
@@ -39,7 +38,10 @@ export class OfficeProcessor extends FileProcessor {
         // Dynamically imported so officeparser only loads when an Office file is actually processed.
         const { OfficeParser } = await import('officeparser');
         const ast = await OfficeParser.parseOffice(buffer, config);
-        const trimmed = ast.toText().trim();
+        // `preserveLayout` pads tables into aligned columns and prefixes list items with their
+        // markers; the search index wants the words alone, so render a flat stream instead.
+        const { value } = await ast.to('text', { textConfig: { preserveLayout: false } });
+        const trimmed = value.trim();
 
         return {
             text: trimmed,

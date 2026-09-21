@@ -24,7 +24,7 @@
     "lz-string": "1.5.0",
     "mime-types": "3.0.2",
     "node-html-parser": "9.0.4",
-    "officeparser": "7.8.0",
+    "officeparser": "8.0.0",
     "sanitize-filename": "1.6.4",
     "sanitize-html": "2.17.7",
     "sax": "1.6.1",
