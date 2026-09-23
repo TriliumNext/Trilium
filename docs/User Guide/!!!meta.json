@@ -1119,14 +1119,6 @@
                                     "dataFileName": "Synchronization_image.png"
                                 },
                                 {
-                                    "attachmentId": "wlHlhXqZ0i1S",
-                                    "title": "sync-config.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "Synchronization_sync-config.png"
-                                },
-                                {
                                     "attachmentId": "x0t06ATHph6b",
                                     "title": "sync-init.png",
                                     "role": "image",
@@ -2771,6 +2763,50 @@
                                     "format": "markdown",
                                     "dataFileName": "Content width.md",
                                     "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "jcQVxzYybYgz",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "Vc8PjrjAGuOp",
+                                        "jcQVxzYybYgz"
+                                    ],
+                                    "title": "Note contextual menu",
+                                    "notePosition": 260,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "note-menu",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-menu",
+                                            "isInheritable": false,
+                                            "position": 70
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Note contextual menu.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "cph789BVB0Zg",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Note contextual menu_image.png"
+                                        }
+                                    ]
                                 }
                             ]
                         },
@@ -3660,6 +3696,81 @@
                                             "position": 10,
                                             "dataFileName": "Search_image.png"
                                         }
+                                    ],
+                                    "dirFileName": "Search",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Oxyb6jOjjVNL",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "gh7bpGYxajRS",
+                                                "wArbEsdSae6g",
+                                                "eIg8jdvaoNNd",
+                                                "Oxyb6jOjjVNL"
+                                            ],
+                                            "title": "Under the hood",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bxs-cog",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "under-the-hood",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Under the hood.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "WbjlujkUhEb5",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "gh7bpGYxajRS",
+                                                "wArbEsdSae6g",
+                                                "eIg8jdvaoNNd",
+                                                "WbjlujkUhEb5"
+                                            ],
+                                            "title": "How search matches your text",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "matching",
+                                                    "isInheritable": false,
+                                                    "position": 50
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-file-find",
+                                                    "isInheritable": false,
+                                                    "position": 60
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "How search matches your text.md",
+                                            "attachments": []
+                                        }
                                     ]
                                 },
                                 {
@@ -4099,6 +4210,41 @@
                                             "dataFileName": "Icon Packs_image.png"
                                         }
                                     ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "w4rMEhJsALlA",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "Wy267RK4M69c",
+                                        "w4rMEhJsALlA"
+                                    ],
+                                    "title": "Personalizing the font",
+                                    "notePosition": 30,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-font",
+                                            "isInheritable": false,
+                                            "position": 80
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "fonts",
+                                            "isInheritable": false,
+                                            "position": 90
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Personalizing the font.md",
+                                    "attachments": []
                                 }
                             ]
                         },
@@ -7198,7 +7344,7 @@
                             "dataFileName": "Mermaid Diagrams.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "EN4DhmgiSH6t",
+                                    "attachmentId": "6uRyawJoeKCM",
                                     "title": "image.png",
                                     "role": "image",
                                     "mime": "image/png",
@@ -7206,20 +7352,12 @@
                                     "dataFileName": "Mermaid Diagrams_image.png"
                                 },
                                 {
-                                    "attachmentId": "if9nzuWHt5KP",
+                                    "attachmentId": "EN4DhmgiSH6t",
                                     "title": "image.png",
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
                                     "dataFileName": "1_Mermaid Diagrams_image.png"
-                                },
-                                {
-                                    "attachmentId": "TpPwoCFIePXm",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "2_Mermaid Diagrams_image.png"
                                 }
                             ],
                             "dirFileName": "Mermaid Diagrams",
@@ -8127,6 +8265,44 @@
                                     "mime": "image/png",
                                     "position": 10,
                                     "dataFileName": "3_Geo Map_image.png"
+                                }
+                            ],
+                            "dirFileName": "Geo Map",
+                            "children": [
+                                {
+                                    "isClone": false,
+                                    "noteId": "C2H9HK4BzwG7",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "GTwFsgaA0lCt",
+                                        "81SGnPGMk7Xc",
+                                        "C2H9HK4BzwG7"
+                                    ],
+                                    "title": "Drawing shapes",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-shape-square",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "shapes",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Drawing shapes.md",
+                                    "attachments": []
                                 }
                             ]
                         },

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyTheme, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle, getThemeStyle, initThemeChangeNotifier } from "./theme.js";
+import { applyTheme, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle, getThemeStyle, initThemeChangeNotifier, onEffectiveThemeStyleChange } from "./theme.js";
 
 // theme.ts lazily imports the app context to emit `themeChanged`; mock it so the tests capture the emission
 // without pulling the whole app graph into happy-dom.
@@ -32,6 +32,11 @@ function setTheme(theme: ThemeValue) {
     win.glob = { ...(win.glob ?? {}), theme };
 }
 
+/** happy-dom models no window visibility, so `document.hidden` is shadowed on the instance. */
+function setDocumentHidden(hidden: boolean) {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
+}
+
 afterEach(async () => {
     // Let any pending `themeChanged` dynamic import settle before teardown, so a late emit can't leak into the
     // next test, then clear the captured calls.
@@ -39,6 +44,7 @@ afterEach(async () => {
     win.getComputedStyle = originalGetComputedStyle;
     win.matchMedia = originalMatchMedia;
     win.glob = originalGlob;
+    Reflect.deleteProperty(document, "hidden");
     triggerEvent.mockClear();
     vi.restoreAllMocks();
 });
@@ -326,6 +332,57 @@ describe("initThemeChangeNotifier", () => {
 
         mql.matches = true;
         mql.listener?.();
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(triggerEvent).not.toHaveBeenCalled();
+    });
+
+    /** Chromium withholds the `change` event while the window is hidden and never replays it (#11267). */
+    function flipWithoutEventWhileHidden(mql: { matches: boolean }) {
+        setDocumentHidden(true);
+        mql.matches = true;
+        setDocumentHidden(false);
+        document.dispatchEvent(new Event("visibilitychange"));
+    }
+
+    it("recovers an OS flip that arrived with no change event while the window was hidden", async () => {
+        setTheme("auto");
+        const mql = installMatchMedia(false);
+        initThemeChangeNotifier();
+
+        flipWithoutEventWhileHidden(mql);
+
+        await vi.waitFor(() => expect(triggerEvent).toHaveBeenCalledWith("themeChanged", { themeStyle: "dark" }));
+    });
+
+    it("notifies subscribers of a flip recovered on becoming visible, exactly once", async () => {
+        setTheme("auto");
+        const mql = installMatchMedia(false);
+        const listener = vi.fn();
+        const unsubscribe = onEffectiveThemeStyleChange(listener);
+        initThemeChangeNotifier();
+
+        flipWithoutEventWhileHidden(mql);
+        expect(listener).toHaveBeenCalledExactlyOnceWith("dark");
+
+        // Becoming visible again with nothing changed must stay quiet.
+        document.dispatchEvent(new Event("visibilitychange"));
+        expect(listener).toHaveBeenCalledTimes(1);
+
+        unsubscribe();
+        mql.matches = false;
+        mql.listener?.();
+        expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it("stays quiet while the window is still hidden", async () => {
+        setTheme("auto");
+        const mql = installMatchMedia(false);
+        initThemeChangeNotifier();
+
+        setDocumentHidden(true);
+        mql.matches = true;
+        document.dispatchEvent(new Event("visibilitychange"));
+
         await new Promise((resolve) => setTimeout(resolve));
         expect(triggerEvent).not.toHaveBeenCalled();
     });

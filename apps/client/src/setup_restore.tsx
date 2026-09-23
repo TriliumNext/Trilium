@@ -8,7 +8,7 @@ import { ChunkedUploadError, uploadInChunks } from "./services/chunked_upload";
 import { describeDatabaseFile, describeDatabaseFormat } from "./services/database_files";
 import { t } from "./services/i18n";
 import server from "./services/server";
-import { formatSize } from "./services/utils";
+import { fileAccept, formatSize } from "./services/utils";
 import Button from "./widgets/react/Button";
 import { Card, CardSection } from "./widgets/react/Card";
 import DatabaseFileBadges from "./widgets/react/DatabaseFileBadges";
@@ -404,7 +404,7 @@ function PickBackup({ backups, onPick, onUpload, onFailure }: {
                     <input
                         ref={fileInput}
                         type="file"
-                        accept=".db,.tnbackup"
+                        accept={fileAccept(".db,.tnbackup")}
                         class="restore-file-input"
                         onChange={(e) => {
                             const file = (e.target as HTMLInputElement).files?.[0];

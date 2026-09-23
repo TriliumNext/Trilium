@@ -68,6 +68,28 @@ describe("Route transport & middleware", () => {
                 .expect(403);
         });
 
+        it("accepts a valid CSRF token in a browser form body", async () => {
+            const agent = supertest.agent(app);
+            await agent.post("/login").send({ password: "demo1234" }).expect(302);
+            const csrfToken = (await agent.get("/bootstrap").expect(200)).body.csrfToken;
+
+            await agent.post("/logout")
+                .type("form")
+                .send({ "x-csrf-token": csrfToken })
+                .expect(302);
+        });
+
+        it("returns a failed logout form navigation to the app, keeping any prefix", async () => {
+            // "." resolves against the request URL, so /trilium/logout lands on /trilium/ rather
+            // than the origin root; ".." would drop the prefix and strand the user outside the app.
+            const res = await supertest(app).post("/logout")
+                .type("form")
+                .set("Accept", "text/html")
+                .send({ "x-csrf-token": "bogustoken1234567890" })
+                .expect(302);
+            expect(res.headers.location).toBe(".");
+        });
+
         it("returns a 404 body for an unknown route", async () => {
             const res = await supertest(app).get("/this-route-does-not-exist").expect(404);
             expect(res.body.message).toBeTruthy();

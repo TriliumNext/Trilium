@@ -436,14 +436,11 @@ div.tn-tool-dialog {
  * NOTE TYPE CHOOSER DIALOG
  */
 
-.note-type-chooser-dialog div.note-type-dropdown {
-    /* Disable the active item highlighting since there is no use for it here */
-    --active-item-text-color: initial;
-    --active-item-background-color: initial;
-
-    font-size: unset;
-}
-
-.note-type-chooser-dialog div.note-type-dropdown .dropdown-item span.tn-icon {
-    margin-inline-end: .25em;
+/* :focus, not :focus-visible, so the pointer and keyboard paths match. The :hover selector keeps
+   style.css from tinting the focused row, which it does to anything hovered that is not .active. */
+:root .note-type-chooser-dialog .dropdown-item:focus,
+:root .note-type-chooser-dialog .dropdown-item:focus:hover {
+    outline: 2px solid var(--input-focus-outline-color) !important;
+    outline-offset: -2px;
+    background-color: var(--active-item-background-color) !important;
 }

@@ -4,7 +4,7 @@ function mapNoteToPojo(note: BNote) {
     return {
         noteId: note.noteId,
         isProtected: note.isProtected,
-        title: note.title,
+        title: note.getTitleOrProtected(),
         type: note.type,
         mime: note.mime,
         blobId: note.blobId,
@@ -51,7 +51,7 @@ function mapAttachmentToPojo(attachment: BAttachment) {
         ownerId: attachment.ownerId,
         role: attachment.role,
         mime: attachment.mime,
-        title: attachment.title,
+        title: attachment.getTitleOrProtected(),
         position: attachment.position,
         blobId: attachment.blobId,
         dateModified: attachment.dateModified,

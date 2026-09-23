@@ -1,5 +1,5 @@
 import becca from "../../becca/becca.js";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import { NoteSizeResponse, SubtreeSizeResponse } from "@triliumnext/commons";
 import { getSql } from "../../services/sql/index.js";
 

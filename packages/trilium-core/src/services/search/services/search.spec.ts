@@ -5,6 +5,8 @@ import BBranch from "../../../becca/entities/bbranch.js";
 import SearchContext from "../search_context.js";
 import dateUtils from "../../utils/date.js";
 import becca from "../../../becca/becca.js";
+import { getContext } from "../../context.js";
+import noteService from "../../notes.js";
 import protectedSessionService from "../../protected_session.js";
 import { encodeUtf8 } from "../../utils/binary.js";
 import { findNoteByTitle, note, NoteBuilder } from "../../../test/becca_mocking.js";
@@ -110,6 +112,26 @@ describe("Search", () => {
         searchResults = searchService.findResultsWithQuery("#caPItal=vienNa", searchContext);
         expect(searchResults.length).toEqual(1);
         expect(findNoteByTitle(searchResults, "Austria")).toBeTruthy();
+    });
+
+    it("label comparison with a comma in a quoted value", () => {
+        rootNote.child(note("Eiffel Tower").label("geolocation", "48.8583,2.2945")).child(note("Charles Bridge").label("geolocation", "50.0865,14.4114"));
+
+        const searchContext = new SearchContext();
+
+        // The Geo Map manual documents exactly this form; the lexer used to strip the comma
+        // inside the quotes, so the stored value could never be matched (#11132).
+        let searchResults = searchService.findResultsWithQuery('#geolocation="48.8583,2.2945"', searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "Eiffel Tower")).toBeTruthy();
+
+        searchResults = searchService.findResultsWithQuery("#geolocation='50.0865,14.4114'", searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "Charles Bridge")).toBeTruthy();
+
+        // A quoted value that matches no stored value still returns nothing.
+        searchResults = searchService.findResultsWithQuery('#geolocation="48.8583"', searchContext);
+        expect(searchResults.length).toEqual(0);
     });
 
     it("label comparison with full syntax", () => {
@@ -389,6 +411,44 @@ describe("Search", () => {
         // Without =, should find all matches containing "test" substring
         searchResults = searchService.findResultsWithQuery("test", searchContext);
         expect(searchResults.length).toEqual(5);
+    });
+
+    it("exact word search matches a content word wrapped in punctuation (#10616)", () => {
+        // The note body contains "(sync)" (parenthesised). Exact-word search for
+        // "sync" must still find it, because content tokenization strips boundary
+        // punctuation so "(sync)" tokenizes to the word "sync". The title
+        // deliberately omits the word so the match comes from the body.
+        const guide = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root",
+            title: "Networking Guide",
+            content: "see (sync) mode",
+            type: "text"
+        }).note);
+
+        const searchContext = new SearchContext();
+        const searchResults = searchService.findResultsWithQuery("=sync", searchContext);
+
+        expect(searchResults.length).toEqual(1);
+        expect(searchResults[0].noteId).toEqual(guide.noteId);
+    });
+
+    it("fuzzy operator queries (~=) match note properties, labels and relations end-to-end (#9426)", () => {
+        const tolkienAuthor = note("Tolkien");
+        const booksNote = note("Books")
+            .label("title", "Books")
+            .label("book", "Tolkien")
+            .relation("author", tolkienAuthor.note);
+        rootNote.child(booksNote).child(tolkienAuthor);
+
+        const searchContext = new SearchContext();
+
+        // note.property ~= value
+        expect(findNoteByTitle(searchService.findResultsWithQuery("note.title ~= books", searchContext), "Books")).toBeTruthy();
+        // #label ~= value
+        expect(findNoteByTitle(searchService.findResultsWithQuery("#title ~= books", searchContext), "Books")).toBeTruthy();
+        expect(findNoteByTitle(searchService.findResultsWithQuery("#book ~= tolkien", searchContext), "Books")).toBeTruthy();
+        // ~relation.property ~= value
+        expect(findNoteByTitle(searchService.findResultsWithQuery("~author.title ~= tolkien", searchContext), "Books")).toBeTruthy();
     });
 
     it("fuzzy attribute search", () => {
@@ -689,7 +749,7 @@ describe("Search", () => {
     it("test attribute group AND-ed with a note property, then ordered", () => {
         // The shape the Content Manager builds when its filter box is used: an OR chain of attribute
         // filters grouped in parens, AND-ed with a title match, with `orderBy` still at top level.
-        // The title condition leads deliberately — a query *starting* with "(" is mis-lexed, since
+        // The title condition leads deliberately: a query *starting* with "(" is mis-lexed, since
         // the paren is swallowed into the fulltext portion before any token ends it.
         const alpha = note("Alpha script").label("run", "hourly");
         const beta = note("Beta script").label("run", "daily");
@@ -831,6 +891,186 @@ describe("Search", () => {
         const firstFuzzyIndex = Math.min(...fuzzyMatchIndices);
 
         expect(lastExactIndex).toBeLessThan(firstFuzzyIndex);
+    });
+
+    describe("content-aware ranking (search-overhaul)", () => {
+        function contentNote(title: string, content: string) {
+            return getContext().init(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title,
+                content,
+                type: "text"
+            }).note);
+        }
+
+        function rank(searchResults: Array<{ noteId: string }>, noteId: string) {
+            return searchResults.findIndex((result) => result.noteId === noteId);
+        }
+
+        it("ranks a body phrase match above scattered word matches (#10616)", () => {
+            const phrase = contentNote("Alpha", "I like you and me as a phrase");
+            const scattered = contentNote("Beta", "the menu is here and you know it");
+
+            const searchResults = searchService.findResultsWithQuery("you and me", new SearchContext());
+
+            const phraseRank = rank(searchResults, phrase.noteId);
+            const scatteredRank = rank(searchResults, scattered.noteId);
+
+            expect(phraseRank).toBeGreaterThanOrEqual(0);
+            expect(scatteredRank).toBeGreaterThanOrEqual(0);
+            expect(phraseRank).toBeLessThan(scatteredRank);
+        });
+
+        it("ranks a title match above a content-only match for the same query", () => {
+            const titled = contentNote("sync stuff", "");
+            const bodyOnly = contentNote("Docs", "please sync now");
+
+            const searchResults = searchService.findResultsWithQuery("sync", new SearchContext());
+
+            const titledRank = rank(searchResults, titled.noteId);
+            const bodyRank = rank(searchResults, bodyOnly.noteId);
+
+            expect(titledRank).toBeGreaterThanOrEqual(0);
+            expect(bodyRank).toBeGreaterThanOrEqual(0);
+            expect(titledRank).toBeLessThan(bodyRank);
+        });
+
+        it("finds a body typo via phase-2 fuzzy fallback, ranked below exact matches (combinef -> combined)", () => {
+            const exact = contentNote("ExactNote", "the combinef marker is set");
+            const fuzzy = contentNote("FuzzyNote", "the values were combined together");
+
+            const searchResults = searchService.findResultsWithQuery("combinef", new SearchContext());
+
+            const exactRank = rank(searchResults, exact.noteId);
+            const fuzzyRank = rank(searchResults, fuzzy.noteId);
+
+            expect(exactRank).toBeGreaterThanOrEqual(0);
+            expect(fuzzyRank).toBeGreaterThanOrEqual(0);
+            expect(exactRank).toBeLessThan(fuzzyRank);
+            // A fuzzy-only body match (weight 5) stays below the quality threshold (10),
+            // so it never suppresses the fuzzy phase.
+            expect(searchResults[fuzzyRank].score).toBeLessThan(10);
+        });
+
+        it("finds a note via a reference-link's resolved target title, ranked below the target (#10616)", () => {
+            // Note A is the link target; note B links to it with an empty-text reference link.
+            // Searching A's title must find B (its title is injected into B's searchable content)
+            // and rank A (a direct title match) above B (an indirect content match).
+            const target = contentNote("Special Topic", "");
+            const linker = contentNote("Linker", `<p>see <a class="reference-link" href="#root/${target.noteId}"></a></p>`);
+
+            const searchResults = searchService.findResultsWithQuery("special topic", new SearchContext());
+
+            const targetRank = rank(searchResults, target.noteId);
+            const linkerRank = rank(searchResults, linker.noteId);
+
+            expect(targetRank).toBeGreaterThanOrEqual(0);
+            expect(linkerRank).toBeGreaterThanOrEqual(0);
+            expect(targetRank).toBeLessThan(linkerRank);
+        });
+
+        it("finds a note by a SINGLE word from a reference-link's target title, as a phase-1 exact match", () => {
+            // The injected title is normalized like the body, so a single lowercased query token
+            // hits it via the default *=* content includes() in phase 1, not only via phase-2
+            // fuzzy (where it would rank last, or be dropped entirely once phase 1 is sufficient).
+            const target = contentNote("Special Topic", "");
+            const linker = contentNote("Linker", `<p>see <a class="reference-link" href="#root/${target.noteId}"></a></p>`);
+
+            const context = new SearchContext();
+            const searchResults = searchService.findResultsWithQuery("special", context);
+
+            expect(rank(searchResults, linker.noteId)).toBeGreaterThanOrEqual(0);
+            // exact_word (not "fuzzy") proves the injected title matched in phase 1, not the fallback.
+            expect(context.contentMatches.get(linker.noteId)?.tier).toBe("exact_word");
+        });
+
+        it("finds a note via a reference-link target title with diacritics (zurich -> Zürich), as an exact match", () => {
+            // Normalization strips diacritics on the injected title too, so `zurich` matches a
+            // linked "Zürich"; without normalizing the injected text this only surfaced via fuzzy.
+            const target = contentNote("Zürich", "");
+            const linker = contentNote("Linker", `<p>see <a class="reference-link" href="#root/${target.noteId}"></a></p>`);
+
+            const context = new SearchContext();
+            const searchResults = searchService.findResultsWithQuery("zurich", context);
+
+            expect(rank(searchResults, linker.noteId)).toBeGreaterThanOrEqual(0);
+            expect(context.contentMatches.get(linker.noteId)?.tier).toBe("exact_word");
+        });
+
+        it("skips content matching in fast search, so content scoring is a natural no-op", () => {
+            const doc = contentNote("Doc", "please sync the database now");
+
+            // Fast search builds no NoteContentFulltextExp, so the body is never
+            // scanned: no content match is recorded and the body-only note is absent.
+            const fast = new SearchContext({ fastSearch: true });
+            const fastResults = searchService.findResultsWithQuery("sync", fast);
+            expect(fast.contentMatches.size).toBe(0);
+            expect(rank(fastResults, doc.noteId)).toBe(-1);
+
+            // A normal search does scan the body and records the content match.
+            const full = new SearchContext();
+            const fullResults = searchService.findResultsWithQuery("sync", full);
+            expect(full.contentMatches.get(doc.noteId)?.tier).toBe("exact_word");
+            expect(rank(fullResults, doc.noteId)).toBeGreaterThanOrEqual(0);
+        });
+    });
+
+    describe("fuzzy content match highlighting", () => {
+        function contentNote(title: string, content: string) {
+            return getContext().init(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title,
+                content,
+                type: "text"
+            }).note);
+        }
+
+        function detailsFor(query: string) {
+            const searchContext = new SearchContext();
+            const results = searchService.findResultsWithQuery(query, searchContext);
+            return searchService.buildSearchResultDetails(results, searchContext);
+        }
+
+        it("highlights the word a fuzzy body match actually matched", () => {
+            // "writer" is two edits from "orbiter", which AUTO allows for a 7-character token, so
+            // this note is a result even though the word the user typed appears nowhere in it.
+            // The padding pushes the match past the snippet window, so the excerpt only reaches it
+            // by centering on the matched word rather than starting at the top of the note.
+            const asimov = contentNote("Asimov", `<p>${"padding ".repeat(60)}by American writer Isaac Asimov</p>`);
+
+            const detail = detailsFor("orbiter").find((d) => d.noteId === asimov.noteId);
+
+            expect(detail?.contentSnippet).toContain("writer");
+            expect(detail?.highlightedContentSnippet).toContain(`<b class="search-fuzzy-match">writer</b>`);
+        });
+
+        it("keeps one note's fuzzy word out of another note's highlighting", () => {
+            const shuttle = contentNote("Shuttle", "<p>The Orbiter met the writer yesterday.</p>");
+            const asimov = contentNote("Asimov", "<p>a short story by American writer Isaac Asimov</p>");
+
+            const details = detailsFor("orbiter");
+            const exact = details.find((d) => d.noteId === shuttle.noteId);
+            const fuzzy = details.find((d) => d.noteId === asimov.noteId);
+
+            // The exact match highlights only what was typed, even though "writer" is the word
+            // that pulled the other note in and appears here too.
+            expect(exact?.highlightedContentSnippet).toContain("<b>Orbiter</b>");
+            expect(exact?.highlightedContentSnippet).not.toContain("search-fuzzy-match");
+            expect(fuzzy?.highlightedContentSnippet).toContain(`<b class="search-fuzzy-match">writer</b>`);
+        });
+
+        it("marks an exact hit and a fuzzy stand-in apart in the same snippet", () => {
+            // "rocket" is in the note and "orbiter" is not, so the note only survives phase 2 by
+            // accepting "writer" for "orbiter". The two have to render differently, or the word
+            // the user never typed reads exactly like the word they did.
+            const both = contentNote("Both", "<p>The rocket and the writer met</p>");
+
+            const detail = detailsFor("orbiter rocket").find((d) => d.noteId === both.noteId);
+
+            expect(detail?.highlightedContentSnippet).toBe(
+                `The <b>rocket</b> and the <b class="search-fuzzy-match">writer</b> met`
+            );
+        });
     });
 
 

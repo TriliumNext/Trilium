@@ -335,6 +335,69 @@ export interface SubtreeSizeResponse {
 }
 
 /**
+ * A single token to highlight in search results, tagged with how it should be
+ * matched. `plain` tokens are matched literally (case-insensitively); `regex`
+ * tokens (produced by the `%=` operator) are compiled to a regular expression.
+ */
+export interface HighlightedTokenInfo {
+    token: string;
+    /**
+     * `plain` is matched literally and `regex` (from `%=`) as a regular expression. `fuzzy` is a
+     * word the search accepted in place of one the user typed, matched literally but rendered in a
+     * muted style so an approximate hit does not read as an exact one.
+     */
+    type: "plain" | "regex" | "fuzzy";
+}
+
+/** Response for `GET /api/search/:searchString?includeTokens=true`. */
+export interface SearchWithTokensResponse {
+    searchResultNoteIds: string[];
+    highlightedTokens: HighlightedTokenInfo[];
+    error: string | null;
+}
+
+/** Request body for `POST /api/search-note/:noteId/result-details` (max 100 noteIds). */
+export interface SearchResultDetailsRequest {
+    noteIds: string[];
+}
+
+/** Request body for `POST /api/search/lint`, which reads a query without running it. */
+export interface SearchLintRequest {
+    searchString: string;
+}
+
+/** Response for `POST /api/search/lint`: the first fault in the query, or `null` where it has none. */
+export interface SearchLintResponse {
+    error: string | null;
+}
+
+/**
+ * Per-note snippet + highlight details for one search result, built lazily for a
+ * page of results. Snippet fields are absent when there is nothing to show (e.g.
+ * protected notes without a session, or script-based searches).
+ */
+export interface SearchResultDetails {
+    noteId: string;
+    notePath: string;
+    noteTitle: string;
+    notePathTitle: string;
+    highlightedNotePathTitle?: string;
+    contentSnippet?: string;
+    highlightedContentSnippet?: string;
+    attributeSnippet?: string;
+    highlightedAttributeSnippet?: string;
+    icon: string;
+}
+
+/** Response for `POST /api/search-note/:noteId/result-details`. */
+export interface SearchResultDetailsResponse {
+    /** Requested-order details; requested ids not in the result set are omitted. */
+    results: SearchResultDetails[];
+    highlightedTokenInfos: HighlightedTokenInfo[];
+    error: string | null;
+}
+
+/**
  * How far an on-demand image compression run should go. Every field is optional, and what is left
  * out falls back to the corresponding option — so an empty request compresses exactly the way the
  * automatic import-time shrinking would, only without needing that shrinking to be enabled.
@@ -739,6 +802,28 @@ export interface SimilarNote {
 export type SimilarNoteResponse = SimilarNote[];
 
 export type SaveSearchNoteResponse = CloneResponse;
+
+/**
+ * Which rule decided where a quickly captured note goes. `dayNote` carries no note ID, because
+ * the day note is created at capture time.
+ */
+export type InboxTargetKind = "inbox" | "workspaceInbox" | "workspaceRoot" | "dayNote" | "root";
+
+/** Where `POST /api/notes/:id/children` would put a note captured into the inbox. */
+export interface InboxTargetResponse {
+    kind: InboxTargetKind;
+    noteId?: string;
+    title?: string;
+}
+
+/** A font file note carrying `#customFont`, as the font picker in the options lists it. */
+export interface UserFont {
+    noteId: string;
+    /** The name the font is offered under: the note's own title. */
+    title: string;
+    /** Versions the request for the font's bytes, so a replaced file is not served from the cache. */
+    blobId: string;
+}
 
 export interface TemplatesResponse {
     /** The IDs of the user-defined templates, i.e. the notes labelled with `#template`. */

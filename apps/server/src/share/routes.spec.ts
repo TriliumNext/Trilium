@@ -1,4 +1,4 @@
-import { cls, options } from "@triliumnext/core";
+import { becca, cls, options, password_encryption, protected_session, task_states } from "@triliumnext/core";
 import type { Application, NextFunction,Request, Response } from "express";
 import supertest from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -97,13 +97,24 @@ describe("Share API test", () => {
     // root:password) and "Shared Note Template" (shareHiddenFromTree).
     const SHARE_ROOT_ID = "y0AFOwgOgkWO";
 
-    async function searchTitles(query: string, auth?: string) {
+    interface ShareSearchResult {
+        id: string;
+        title: string;
+        snippet?: string;
+        highlightedSnippet?: string;
+    }
+
+    async function searchShare(query: string, auth?: string): Promise<ShareSearchResult[]> {
         let request = supertest(app).get(`/share/api/notes?ancestorNoteId=${SHARE_ROOT_ID}&search=${encodeURIComponent(query)}`);
         if (auth) {
             request = request.set("Authorization", `Basic ${Buffer.from(auth).toString("base64")}`);
         }
         const response = await request.expect(200);
-        return (response.body.results as Array<{ title: string }>).map((r) => r.title);
+        return response.body.results;
+    }
+
+    async function searchTitles(query: string, auth?: string) {
+        return (await searchShare(query, auth)).map((r) => r.title);
     }
 
     it("does not leak shareHiddenFromTree notes via public search", async () => {
@@ -133,6 +144,56 @@ describe("Share API test", () => {
         expect(isVisibleInShareTree(SHARE_ROOT_ID, ["root", "someUnsharedNote"])).toBe(false);
     });
 
+    it("returns plain and highlighted content snippets for authorized search results", async () => {
+        // "Shared that uses template" has the content "<p>Hello world.</p>".
+        const results = await searchShare("world");
+        const match = results.find((r) => r.title === "Shared that uses template");
+
+        expect(match?.snippet).toBe("Hello world.");
+        expect(match?.highlightedSnippet).toBe("Hello <b>world</b>.");
+        expect(cannotSetHeadersCount).toBe(0);
+    });
+
+    it("does not build snippets for notes the caller cannot see", async () => {
+        // Snippets are extracted only after the authorization filter, so an anonymous response
+        // contains neither the hidden template's content ("Content Start") nor the
+        // credential-protected note in any field.
+        const hiddenContent = await searchShare("Content Start");
+        expect(JSON.stringify(hiddenContent)).not.toContain("Content Start");
+
+        const anonymous = await searchShare("Password protected share");
+        expect(JSON.stringify(anonymous)).not.toContain("Password protected");
+
+        const authenticated = await searchShare("Password protected share", "root:password");
+        expect(authenticated.map((r) => r.title)).toContain("Password protected share");
+        expect(cannotSetHeadersCount).toBe(0);
+    });
+
+    it("drops protected notes from search results while a protected session is open", async () => {
+        // Protected notes cannot be shared (GHSA-xmv9-3v98-7gq8). With the owner's protected
+        // session open, becca decrypts on read, so the route must drop these notes before
+        // snippet extraction instead of relying on the content being unreadable.
+        const dataKey = await password_encryption.getDataKey("demo1234");
+        if (!(dataKey instanceof Uint8Array)) {
+            throw new Error("Expected a data key from the fixture password.");
+        }
+        protected_session.default.setDataKey(dataKey);
+        try {
+            becca.decryptProtectedNotes();
+            const protectedNote = becca.getNoteOrThrow(PROTECTED_SHARED_NOTE_ID);
+            expect(protectedNote.isDecrypted).toBe(true);
+
+            const results = await searchShare(protectedNote.title);
+            const leaked = results.filter((r) => r.id === PROTECTED_SHARED_NOTE_ID
+                || r.title === "[protected]"
+                || r.title === protectedNote.title);
+            expect(leaked).toEqual([]);
+        } finally {
+            protected_session.resetDataKey();
+        }
+        expect(cannotSetHeadersCount).toBe(0);
+    });
+
     it("renders custom share template", async () => {
         // Custom EJS templates require scripting to be enabled
         const originalEnabled = config.Security.backendScriptingEnabled;
@@ -147,6 +208,28 @@ describe("Share API test", () => {
         } finally {
             config.Security.backendScriptingEnabled = originalEnabled;
         }
+    });
+
+    it("keeps the generated icon-pack stylesheet inside its style element", async () => {
+        // The share page embeds the icon-pack and task-state CSS inline, so a value carried
+        // into it from a note must not be able to close `<style>` and have the rest of the
+        // response parsed as markup. A task state's color is one such value.
+        cls.init(() => task_states.createTaskStateNote({
+            name: "sharecssbreakout",
+            title: "Share CSS breakout",
+            markdownSymbol: "%",
+            isCompleted: false,
+            color: `red; } </style><script>window.xss=1</script><style> .x {`,
+            icon: "bx bx-loader"
+        }));
+
+        const response = await supertest(app).get("/share/").expect(200);
+        const styleEl = response.text.match(/<style id="trilium-icon-packs">([\s\S]*?)<\/style>/);
+
+        expect(styleEl).toBeTruthy();
+        expect(styleEl?.[1]).not.toContain("<script>");
+        expect(response.text).not.toContain("window.xss=1");
+        expect(cannotSetHeadersCount).toBe(0);
     });
 
 });

@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("./services/i18n", () => ({ t: (key: string) => key }));
 
 const serverMock = vi.hoisted(() => ({
-    // `get` is here for the eager module-load fetches the import graph makes (options, keyboard
-    // actions), not for anything this screen asks for itself.
+    // The eager module-load fetches the import graph makes (options, keyboard actions). This screen
+    // asks for nothing through `server` itself — it reads the status of its own `fetch`.
     get: vi.fn(async (url: string): Promise<unknown> => (url === "keyboard-actions" ? [] : {})),
     post: vi.fn(async (_url: string, _body?: unknown): Promise<unknown> => ({}))
 }));
@@ -39,11 +39,34 @@ function submit() {
     container.querySelector("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 }
 
+/** The answer that unlocks, which most cases want and none of them vary. */
+const UNLOCKED = { status: 200, body: { authenticated: true, token: "a-token" } };
+
+/** What `POST /api/setup/auth` answers with, or a connection that never reached it. */
+function answerWith(resp: { status: number; body?: unknown } | "reject") {
+    const fn = resp === "reject"
+        ? vi.fn().mockRejectedValue(new Error("network down"))
+        : vi.fn().mockResolvedValue({
+            ok: resp.status >= 200 && resp.status < 300,
+            status: resp.status,
+            json: async () => resp.body ?? {}
+        });
+    globalThis.fetch = fn as typeof fetch;
+
+    return fn;
+}
+
+/** The body of the single call the screen made. */
+function sentBody(fn: ReturnType<typeof answerWith>) {
+    return JSON.parse(fn.mock.calls[0]?.[1]?.body as string);
+}
+
 beforeEach(() => {
     vi.useFakeTimers();
     onUnlocked.mockReset();
     setSetupAuthToken.mockReset();
-    serverMock.post.mockReset().mockResolvedValue({ authenticated: true, token: "a-token" });
+    serverMock.post.mockReset();
+    answerWith(UNLOCKED);
     window.glob.setupSecondFactorRequired = undefined;
 });
 
@@ -71,6 +94,8 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
         renderScreen();
         await settle();
 
+        const fetchFn = answerWith(UNLOCKED);
+
         const input = password();
         if (input) {
             input.value = "hunter2";
@@ -78,13 +103,14 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
         submit();
         await settle();
 
-        expect(serverMock.post).toHaveBeenCalledWith("setup/auth", { password: "hunter2", totpToken: "" });
+        expect(fetchFn.mock.calls[0]?.[0]).toBe("api/setup/auth");
+        expect(sentBody(fetchFn)).toEqual({ password: "hunter2", totpToken: "" });
         expect(setSetupAuthToken).toHaveBeenCalledWith("a-token");
         expect(onUnlocked).toHaveBeenCalled();
     });
 
     it("says so and stays put on a wrong password, so the next attempt is a keystroke away", async () => {
-        serverMock.post.mockResolvedValue({ authenticated: false });
+        answerWith({ status: 401, body: { authenticated: false } });
         renderScreen();
         await settle();
 
@@ -98,9 +124,8 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
     });
 
     it("says so on a connection that failed, which a wrong password never looks like", async () => {
-        // A refused password is answered, not thrown. Anything landing here is the connection, or
-        // the rate limiter counting the attempts.
-        serverMock.post.mockRejectedValue(new Error("network down"));
+        // A refused password is a status, not a rejection: `fetch` rejects only below HTTP.
+        answerWith("reject");
         renderScreen();
         await settle();
 
@@ -111,8 +136,23 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
         expect(onUnlocked).not.toHaveBeenCalled();
     });
 
+    it("reports the limiter's refusal as a wait, not as an unreachable server", async () => {
+        // 429 is the limiter, and only reachable because a refusal is a 401 that it counts.
+        // Reported apart from a wrong answer, and apart from a dead link.
+        answerWith({ status: 429 });
+        renderScreen();
+        await settle();
+
+        submit();
+        await settle();
+
+        const error = container.querySelector(".page-error")?.textContent;
+        expect(error).toContain("login.too-many-attempts");
+        expect(onUnlocked).not.toHaveBeenCalled();
+    });
+
     it("refuses the answer where the server said yes but handed nothing over", async () => {
-        serverMock.post.mockResolvedValue({ authenticated: true });
+        answerWith({ status: 200, body: { authenticated: true } });
         renderScreen();
         await settle();
 
@@ -126,9 +166,10 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
     it("does not ask twice over while an answer is still coming", async () => {
         // The button is disabled while it runs, but Enter in the field is a second way in.
         let answer: (value: unknown) => void = () => {};
-        serverMock.post.mockImplementation(() => new Promise((resolve) => {
+        const fetchFn = vi.fn(() => new Promise((resolve) => {
             answer = resolve;
         }));
+        globalThis.fetch = fetchFn as unknown as typeof fetch;
         renderScreen();
         await settle();
 
@@ -137,9 +178,9 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
         submit();
         await settle();
 
-        expect(serverMock.post).toHaveBeenCalledOnce();
+        expect(fetchFn).toHaveBeenCalledOnce();
 
-        answer({ authenticated: true, token: "a-token" });
+        answer({ ok: true, status: 200, json: async () => UNLOCKED.body });
         await settle();
         expect(onUnlocked).toHaveBeenCalled();
     });
@@ -163,6 +204,8 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
             renderScreen();
             await settle();
 
+            const fetchFn = answerWith(UNLOCKED);
+
             const totp = container.querySelector<HTMLInputElement>("input[name=totpToken]");
             if (totp) {
                 totp.value = "123456";
@@ -170,7 +213,7 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
             submit();
             await settle();
 
-            expect(serverMock.post).toHaveBeenCalledWith("setup/auth", { password: "", totpToken: "123456" });
+            expect(sentBody(fetchFn)).toEqual({ password: "", totpToken: "123456" });
         });
 
         it("is not asked for where the instance has none", async () => {
@@ -188,6 +231,8 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
         renderScreen();
         await settle();
 
+        const fetchFn = answerWith(UNLOCKED);
+
         const input = password();
         if (input) {
             input.value = "filled-in-by-the-browser";
@@ -195,6 +240,6 @@ describe("unlocking a wizard that is standing over a knowledge base", () => {
         submit();
         await settle();
 
-        expect(serverMock.post).toHaveBeenCalledWith("setup/auth", { password: "filled-in-by-the-browser", totpToken: "" });
+        expect(sentBody(fetchFn)).toEqual({ password: "filled-in-by-the-browser", totpToken: "" });
     });
 });

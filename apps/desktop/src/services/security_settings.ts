@@ -1,3 +1,4 @@
+import { parseSecuritySettings, type SecuritySettings } from "@triliumnext/commons";
 import dataDirs from "@triliumnext/server/src/services/data_dir.js";
 import electron from "electron";
 import fs from "fs";
@@ -6,16 +7,10 @@ import path from "path";
 
 const SECURITY_JSON_PATH = path.join(dataDirs.TRILIUM_DATA_DIR, "security.json");
 
-interface SecuritySettings {
-    backendScriptingEnabled?: boolean;
-    sqlConsoleEnabled?: boolean;
-    allowLanAccess?: boolean;
-}
-
 function readSettings(): SecuritySettings {
     try {
         if (fs.existsSync(SECURITY_JSON_PATH)) {
-            return JSON.parse(fs.readFileSync(SECURITY_JSON_PATH, "utf-8"));
+            return parseSecuritySettings(fs.readFileSync(SECURITY_JSON_PATH, "utf-8"));
         }
     } catch {
         // Corrupted or unreadable — treat as defaults

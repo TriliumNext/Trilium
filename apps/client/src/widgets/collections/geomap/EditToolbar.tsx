@@ -21,8 +21,8 @@ interface EditToolbarProps {
 
 /**
  * The editing actions, standing in the middle of the map's foot on an {@link OverlayControlGroup} of
- * their own — the surface every group over this map stands on: adding a marker and bringing in a GPX
- * track today, with room along the row for whatever editing the map comes to offer next.
+ * their own — the surface every group over this map stands on: adding a marker and bringing in a
+ * GPX track. The drawing tools have a group of their own (see {@link DrawToolbar}).
  *
  * A group of its own rather than more buttons on {@link MapToolbar}: that one is the camera — how
  * close in the map is drawn, how much screen it gets — and what changes the map is another kind of

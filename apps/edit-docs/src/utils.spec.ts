@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { rewriteHelpLinks } from "./utils.js";
+import { normalizeLineEndings, rewriteHelpLinks } from "./utils.js";
 
 // utils.ts bootstraps Electron at module load (registers the `trilium-app://` scheme and
 // pulls in the desktop window service, whose resource_dir lookup calls process.exit in a
 // non-Electron test runner). Stub those side-effectful imports so the pure helpers below
-// (rewriteHelpLinks) can be imported in isolation.
+// (rewriteHelpLinks, normalizeLineEndings) can be imported in isolation.
 vi.mock("electron", () => ({ default: { app: {}, protocol: { registerSchemesAsPrivileged: () => {} } } }));
 vi.mock("@triliumnext/desktop/src/protocol.js", () => ({ registerTriliumAppScheme: () => {}, setupTriliumAppProtocol: () => {} }));
 vi.mock("@triliumnext/desktop/src/services/window.js", () => ({ default: {}, setupWindowing: () => {} }));
@@ -64,5 +64,38 @@ describe("rewriteHelpLinks", () => {
     it("is idempotent for already-prefixed help links", () => {
         const input = `<a href="#root/_help_iPIMuisry3hd">Text</a>`;
         expect(rewriteHelpLinks(input)).toBe(input);
+    });
+});
+
+describe("normalizeLineEndings", () => {
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    it("rewrites CRLF to LF and keeps a lone CR, LF and trailing CR", () => {
+        const input = encoder.encode("# Title\r\n\r\nA line.\nAnother\rline.\r");
+        expect(decoder.decode(normalizeLineEndings(input))).toBe("# Title\n\nA line.\nAnother\rline.\r");
+    });
+
+    it("keeps multi-byte characters intact", () => {
+        const input = encoder.encode("Ștergere\r\nnotițe 😀\r\n");
+        expect(decoder.decode(normalizeLineEndings(input))).toBe("Ștergere\nnotițe 😀\n");
+    });
+
+    it("returns the same content when there is no CRLF to rewrite", () => {
+        const input = encoder.encode("Already normalized.\n");
+        expect(normalizeLineEndings(input)).toBe(input);
+    });
+
+    it("leaves binary content untouched", () => {
+        // A PNG header, whose byte 4 is the NUL that marks the content as binary, followed by
+        // pixel data that happens to contain a CRLF pair.
+        const input = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x0d, 0x0a, 0xff]);
+        expect(normalizeLineEndings(input)).toBe(input);
+    });
+
+    it("normalizes content whose NUL sits past the 8000-byte detection window", () => {
+        const prefix = "a".repeat(8000);
+        const input = encoder.encode(`${prefix}\r\n\0`);
+        expect(decoder.decode(normalizeLineEndings(input))).toBe(`${prefix}\n\0`);
     });
 });

@@ -7,6 +7,7 @@ import hiddenSubtreeService from "./hidden_subtree.js";
 import { reconcileLanguageAfterDbInit } from "./i18n.js";
 import { getLog } from "./log.js";
 import options from "./options.js";
+import { getPlatform } from "./platform.js";
 import protected_session from "./protected_session.js";
 import scriptService from "./script.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
@@ -61,7 +62,7 @@ export function startScheduler() {
 
     // Periodic checks.
     sqlInit.dbReady.then(() => {
-        if (!process.env.TRILIUM_SAFE_MODE && isScriptingEnabled()) {
+        if (!getPlatform().getEnv("TRILIUM_SAFE_MODE") && isScriptingEnabled()) {
             setTimeout(
                 cls.wrap(() => runNotesWithLabel("backendStartup")),
                 10 * 1000

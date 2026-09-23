@@ -318,6 +318,16 @@ export function isIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
+/**
+ * The `accept` value for a file input, widened to every file on Android and iOS: both turn `accept`
+ * into a MIME filter (`Intent.EXTRA_MIME_TYPES`, UTIs) whose tables lack `.gpx`, `.enex` and
+ * `.tnbackup`, so a document provider types those files as `application/octet-stream` and the picker
+ * greys out every one of them. A caller offering `.zip`, which both tables name, keeps its filter.
+ */
+export function fileAccept(accept: string) {
+    return /Android|iPad|iPhone|iPod/.test(navigator.userAgent) ? "*/*" : accept;
+}
+
 export function isDesktop() {
     return (
         window.glob?.device === "desktop" ||

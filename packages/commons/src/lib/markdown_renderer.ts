@@ -593,7 +593,7 @@ export class CustomMarkdownRenderer extends Renderer {
     }
 
     override codespan({ text }: Tokens.Codespan): string {
-        return `<code spellcheck="false">${escapeHtml(text)}</code>`;
+        return `<code>${escapeHtml(text)}</code>`;
     }
 
 }

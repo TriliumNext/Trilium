@@ -55,7 +55,8 @@ export function announceLeadership(): void {
     navigator.serviceWorker?.controller?.postMessage({ type: "LEADER_ANNOUNCE" });
 }
 
-const LOCAL_API_PREFIXES = ["/bootstrap", "/api/", "/sync/", "/search/"];
+/** Must stay in step with LOCAL_FIRST_PREFIXES in sw.ts, which covers the same paths on the web. */
+const LOCAL_API_PREFIXES = ["/bootstrap", "/api/", "/sync/", "/search/", "/custom/"];
 
 /**
  * Restores the database from a backup, on the worker that owns it.
@@ -95,6 +96,54 @@ export function restoreBackup(opts: {
             backup: opts.backup,
             passphrase: opts.passphrase
         });
+    });
+}
+
+/** Security changes waiting on the worker that owns the file, by id. */
+const securityChanges = new Map<string, (written: boolean) => void>();
+
+/** Long enough for a worker that is still starting up, short enough that the toggle answers. */
+const SECURITY_CHANGE_TIMEOUT_MS = 30_000;
+
+/**
+ * The private channel a security setting is written over, entangled with the worker at startup.
+ * Module scope is what makes it trustworthy: backend scripts run through `eval()` in the worker's
+ * realm, which reaches its globals, `self.onmessage` among them, but no module's bindings.
+ */
+let securityPort: MessagePort | null = null;
+
+/**
+ * Writes a security setting, on the worker that holds the lock on the file it lives in.
+ *
+ * The page cannot write that file itself: the lock is the whole point, see
+ * `lightweight/security_settings.ts`. This deliberately avoids the request path too, since a route
+ * would put the change behind the same API a frontend script already calls freely.
+ *
+ * Only the leader tab has that worker. A follower is refused rather than served, as for a backup.
+ */
+export function requestSecurityChange(setting: string, enabled: boolean): Promise<boolean> {
+    if (!isLeader()) {
+        return Promise.resolve(false);
+    }
+
+    startLocalServerWorker();
+    const port = securityPort;
+    if (!port) {
+        return Promise.resolve(false);
+    }
+
+    const id = Math.random().toString(36).slice(2);
+
+    return new Promise((resolve) => {
+        const settle = (written: boolean) => {
+            clearTimeout(timer);
+            securityChanges.delete(id);
+            resolve(written);
+        };
+        const timer = setTimeout(() => settle(false), SECURITY_CHANGE_TIMEOUT_MS);
+
+        securityChanges.set(id, settle);
+        port.postMessage({ type: "SECURITY_SET", id, setting, enabled });
     });
 }
 
@@ -209,6 +258,116 @@ function settlePendingDownload(result: StandaloneDownloadResult): void {
     }
 }
 
+/** Where a save in flight wants its progress, which arrives on the worker's own channel. */
+let saveProgress: ((sentBytes: number, totalBytes: number) => void) | null = null;
+
+/**
+ * Writes the same backup onto the device, for the mobile shell.
+ *
+ * The service worker drops out of the path entirely: it exists in {@link downloadDatabase} only to
+ * turn the stream into a `Response` the browser's download manager will take, and the WebView has
+ * no download manager to take it. Here the page consumes the stream itself — the same pull-driven
+ * protocol, the same container, the same passphrase — and writes it to the app's documents
+ * directory, so it also works on iOS, where a service worker cannot be registered at all.
+ *
+ * A dismissed share sheet is still a backup: the file is complete before the sheet opens, so that
+ * outcome is `done` with the path it went to, not `cancelled`.
+ */
+export async function saveDatabase(
+    fileName: string,
+    passphrase?: string,
+    onProgress?: (sentBytes: number, totalBytes: number) => void
+): Promise<StandaloneDownloadResult> {
+    if (!isLeader()) {
+        return {
+            status: "failed",
+            message: "A backup can only be taken from the tab that owns the database. "
+                + "Close the other Trilium tabs and try again."
+        };
+    }
+
+    const { saveChunksToDevice, BACKUP_TARGET } = await import("./services/capacitor_download.js");
+
+    saveProgress = onProgress ?? null;
+    try {
+        const result = await saveChunksToDevice(fileName, backupChunks(passphrase), BACKUP_TARGET);
+        if (result.status === "failed") {
+            return { status: "failed", message: result.message };
+        }
+        return { status: "done", location: result.location };
+    } finally {
+        saveProgress = null;
+    }
+}
+
+/**
+ * The backup as a stream of bytes, pulled straight off the local worker.
+ *
+ * The worker answers one `chunk` per `pull` and ends with `end`, which is what carries backpressure
+ * back to the database reads: chunks are asked for as fast as they can be written and no faster. A
+ * few pulls are kept outstanding so the worker reads the next pages while the current chunk is
+ * still crossing the plugin bridge, which is by far the slower of the two.
+ */
+async function* backupChunks(passphrase: string | undefined): AsyncGenerator<Uint8Array> {
+    const worker = startLocalServerWorker();
+    const channel = new MessageChannel();
+    const port = channel.port1;
+
+    const arrived: unknown[] = [];
+    let waiting: ((message: unknown) => void) | null = null;
+    port.onmessage = (event) => {
+        if (waiting) {
+            const resolve = waiting;
+            waiting = null;
+            resolve(event.data);
+        } else {
+            arrived.push(event.data);
+        }
+    };
+    const next = (): Promise<unknown> => arrived.length
+        ? Promise.resolve(arrived.shift())
+        : new Promise((resolve) => { waiting = resolve; });
+
+    worker.postMessage({ type: "BACKUP_STREAM", port: channel.port2, passphrase }, [ channel.port2 ]);
+
+    try {
+        const begin = await next() as { type?: string; message?: string } | null;
+        if (begin?.type !== "begin") {
+            throw new Error(begin?.message ?? "The backup stream did not start.");
+        }
+
+        let outstanding = 0;
+        for (;;) {
+            while (outstanding < MAX_BACKUP_CHUNKS_IN_FLIGHT) {
+                outstanding++;
+                port.postMessage({ type: "pull" });
+            }
+
+            const message = await next() as { type?: string; data?: ArrayBuffer; message?: string } | null;
+            outstanding--;
+
+            if (message?.type === "end") {
+                return;
+            }
+            if (message?.type !== "chunk" || !message.data) {
+                throw new Error(message?.message ?? "The backup stream failed.");
+            }
+            yield new Uint8Array(message.data);
+        }
+    } finally {
+        // Ends the stream for a consumer that stopped early — a failed write, say — rather than
+        // leaving the worker reading pages nothing will collect.
+        port.postMessage({ type: "cancel" });
+        port.close();
+    }
+}
+
+/**
+ * How many chunks may be in flight at once. The worker reads ahead this far while the plugin
+ * bridge is busy with the previous one; every chunk beyond that is memory held for nothing.
+ */
+const MAX_BACKUP_CHUNKS_IN_FLIGHT = 4;
+
 export function isLocalApiRequest(url: URL): boolean {
     return LOCAL_API_PREFIXES.some(p => url.pathname.startsWith(p));
 }
@@ -281,11 +440,24 @@ export function registerNativeHttpHandler(handler: NativeHttpHandler) {
 export function startLocalServerWorker() {
     if (localWorker) return localWorker;
     localWorker = new LocalServerWorker();
+
+    // Handed over with the worker's first message, before it has loaded a module of its own and
+    // long before it can run a note's script. See `securityPort`.
+    const security = new MessageChannel();
+    securityPort = security.port1;
+    securityPort.onmessage = (event) => {
+        const msg = event.data;
+        if (msg?.type === "SECURITY_SET_RESULT") {
+            securityChanges.get(msg.id)?.(msg.written === true);
+        }
+    };
+
     localWorker.postMessage({
         type: "INIT",
         queryString: location.search,
-        useNativeHttp: nativeHttpHandler != null
-    });
+        useNativeHttp: nativeHttpHandler != null,
+        securityPort: security.port2
+    }, [ security.port2 ]);
 
     // Handle worker errors during initialization
     localWorker.onerror = (event) => {
@@ -362,11 +534,14 @@ export function startLocalServerWorker() {
         // download UI behind the notification shade.
         if (msg?.type === "BACKUP_STREAM_PROGRESS") {
             pendingDownload?.onProgress?.(Number(msg.sentBytes), Number(msg.totalBytes));
+            saveProgress?.(Number(msg.sentBytes), Number(msg.totalBytes));
             return;
         }
 
         if (msg?.type === "BACKUP_STREAM_ACTIVE") {
-            setBackupPinging(msg.active === true);
+            // Only a stream the service worker is holding open needs it kept alive; `saveDatabase`
+            // consumes its own, and on iOS the ping would be a request to a worker that is not there.
+            setBackupPinging(msg.active === true && pendingDownload !== null);
             if (msg.active === true) {
                 if (pendingDownload) {
                     clearTimeout(pendingDownload.startTimer);

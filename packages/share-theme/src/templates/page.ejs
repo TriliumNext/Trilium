@@ -92,7 +92,7 @@
     <!-- Meta Tags Generated via https://opengraph.dev -->
     <meta name="theme-color" content="<%= openGraphColor %>">
     <style id="trilium-icon-packs">
-      <%- iconPackCss %>
+      <%- utils.escapeInlineStylesheet(iconPackCss) %>
     </style>
     <%- renderSnippets("head:end") %>
 </head>
@@ -184,9 +184,13 @@ content = content.replaceAll(headingRe, (...match) => {
                         <%
                         const action = note.type === "book" ? "getChildNotes" : "getVisibleChildNotes";
                         for (const childNote of note[action]()) {
-                            const isExternalLink = childNote.hasLabel("shareExternal") || childNote.hasLabel("shareExternalLink");
-                            const rawHref = isExternalLink ? childNote.getLabelValue("shareExternal") ?? childNote.getLabelValue("shareExternalLink") : `./${childNote.shareId}`;
-                            const linkHref = isExternalLink ? sanitizeUrl(rawHref ?? "") : rawHref;
+                            const externalHref = childNote
+                                .getLabelValue("shareExternalLink")?.trim()
+                                || childNote.getLabelValue("shareExternal")?.trim();
+                            const isExternalLink = !!externalHref;
+                            const linkHref = isExternalLink
+                                ? sanitizeUrl(externalHref)
+                                : `./${childNote.shareId}`;
                         %>
                             <li>
                                 <a class="type-<%= childNote.type %>" href="<%= linkHref %>"<% if (isExternalLink) { %> target="_blank" rel="noopener noreferrer"<% } %>><%= childNote.title %></a>

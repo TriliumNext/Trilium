@@ -63,6 +63,18 @@ When a `.gpx` note is dropped in a <a class="reference-link" href="../Collectio
 
 <figure class="image"><img style="aspect-ratio:1500/807;" src="4_File_image.png" width="1500" height="807"></figure>
 
+### Fonts
+
+Supported font formats will show an interactive preview of the font:
+
+*   A field to type in a custom text.
+*   A slider to change the font size of the preview.
+*   A preview of the text at the given size.
+*   A sampling of various font sizes for this font.
+*   The Latin alphabet.
+
+Additionally, enabling _In font picker_ will make the font available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ font selection. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Personalizing the font</a> for more information.
+
 ### Unknown file types
 
 <figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:532/240;" src="3_File_image.png" width="532" height="240"></figure>

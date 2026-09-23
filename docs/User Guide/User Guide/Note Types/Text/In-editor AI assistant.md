@@ -14,7 +14,7 @@ To access the AI assistant:
 *   Look for the <img class="image_resized" style="aspect-ratio:150/150;width:3.16%;" src="In-editor AI assistant_ai.svg" width="150" height="150"> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. Press the button itself to enter the _Ask AI_ mode or press the arrow key next to it to access the quick commands and the model selection.
 *   Look for _AI assistant_ or any of the _AI_\-prefixed quick commands in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
 *   Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
-*   On the desktop app, right click in the text and choose the _AI assistant_ option.
+*   Select a text and choose the _AI assistant_ option in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20contextual%20menu.md">Note contextual menu</a>.
 
 ## What the assistant works on
 

@@ -247,6 +247,27 @@ describe("geo map SearchBox", () => {
         expect(map.fitBounds).not.toHaveBeenCalled();
     });
 
+    it("offers a drawn shape by its title, framed on the ground it covers", async () => {
+        mockGeocoder([]);
+        const map = fakeMap();
+        const shape = buildNote({ title: "Old town walls", "#geoShape": "polygon:39.5,19.5 39.75,19.5 39.75,20" });
+        const container = renderSearchBox(map, [ ...mapNotes(), shape ]);
+
+        await type(container, "walls");
+        expect(labels()[0]).toBe("Old town walls");
+
+        await pick(0);
+
+        // Framed on its box rather than flown to one of its corners, and measured from the middle of
+        // that box, so it is ordered among the markers by how far off it stands.
+        const bounds = [ [ 19.5, 39.5 ], [ 20, 39.75 ] ];
+        expect(picked.at(-1)?.results[0]).toEqual({
+            kind: "note", noteId: shape.noteId, center: [ 19.75, 39.625 ], bounds
+        });
+        expect(map.fitBounds).toHaveBeenCalledWith(bounds, expect.anything());
+        expect(map.flyTo).not.toHaveBeenCalled();
+    });
+
     it("offers a point named outright, above whatever was searched for", async () => {
         mockGeocoder([]);
         const map = fakeMap();

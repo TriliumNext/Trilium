@@ -1,6 +1,7 @@
 import type { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { onEffectiveThemeStyleChange } from "../../../services/theme";
 import { useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 
 interface FontDefinition {
@@ -90,9 +91,7 @@ function useStyleInjection(iframeRef: RefObject<HTMLIFrameElement>, disableSelec
             styleRef.current!.textContent = cssVarsToString(getRootCssVariables());
         };
 
-        const media = window.matchMedia("(prefers-color-scheme: dark)");
-        media.addEventListener("change", listener);
-        return () => media.removeEventListener("change", listener);
+        return onEffectiveThemeStyleChange(listener);
     }, [ iframeRef ]);
 
     return onLoad;

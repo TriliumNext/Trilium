@@ -294,8 +294,8 @@ nothing loads it, no button shows, or lint/license/localization is off.
   expected to suppress native behaviour; an assertion made immediately after an event the browser
   dispatches asynchronously (`<details>` `toggle`, for one); or `preventDefault` used as proof
   that a handler ran when a CKEditor plugin also calls it.
-- Why: both CKEditor packages run in **real headless Chrome** (`@vitest/browser-webdriverio`, NOT
-  Playwright). Tests ported from the old happy-dom setup relied on stubbed layout and synchronous
+- Why: both CKEditor packages run in **real headless Chromium** (`@vitest/browser-playwright`).
+  Tests ported from the old happy-dom setup relied on stubbed layout and synchronous
   events, and pass or fail for the wrong reasons here.
 - Fix: make synthetic events cancelable, await the real event before asserting, and prove a handler
   ran by spying on `editor.execute` or asserting the model.

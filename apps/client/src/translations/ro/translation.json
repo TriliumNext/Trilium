@@ -868,7 +868,6 @@
     "fonts": "Fonturi",
     "main_font": "Fontul principal",
     "monospace_font": "Fontul monospace (pentru cod)",
-    "not_all_fonts_available": "Nu toate fonturile listate aici pot fi disponibile pe acest sistem.",
     "note_detail_font": "Fontul pentru detaliile notițelor",
     "note_tree_font": "Fontul arborelui de notițe",
     "size": "Mărime",
@@ -1433,10 +1432,7 @@
     "rename_relation": "Redenumește relația"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Crează o subnotiță și adaug-o în harta relațiilor",
-    "reset_pan_zoom_title": "Resetează poziția și zoom-ul la valorile implicite",
-    "zoom_in_title": "Mărire",
-    "zoom_out_title": "Micșorare"
+    "create_child_note_title": "Crează o subnotiță și adaug-o în harta relațiilor"
   },
   "rename_label": {
     "name_title": "Caracterele permise sunt alfanumerice, underline și două puncte.",
@@ -1583,21 +1579,27 @@
     "title": "Notițe similare"
   },
   "sort_child_notes": {
-    "ascending": "ascendent",
-    "date_created": "data creării",
-    "date_modified": "data modificării",
-    "descending": "descendent",
-    "folders": "Dosare",
+    "ascending": "Ascendent",
+    "date_created": "Data creării",
+    "date_modified": "Data modificării",
+    "descending": "Descendent",
     "natural_sort": "Ordonare naturală",
     "natural_sort_language": "Limba pentru ordonare naturală",
     "sort": "Ordonare",
     "sort_children_by": "Ordonează subnotițele după...",
-    "sort_folders_at_top": "ordonează dosarele primele",
-    "sort_with_respect_to_different_character_sorting": "ordonează respectând regulile de sortare și clasificare diferite în funcție de limbă și regiune.",
+    "sort_folders_at_top": "Ordonează dosarele primele",
+    "sort_with_respect_to_different_character_sorting": "Ordonează respectând regulile de sortare și clasificare diferite în funcție de limbă și regiune.",
     "sorting_criteria": "Criterii de ordonare",
-    "sorting_direction": "Direcția de ordonare",
     "the_language_code_for_natural_sort": "Codul limbii pentru ordonarea naturală, e.g. „zn-CN” pentru chineză.",
-    "title": "titlu"
+    "title": "Titlu",
+    "sorting_criteria_description": "Notițele sunt ordonate după primul nivel; nivelul următor decide doar între notițele lăsate egale de nivelurile anterioare.",
+    "label": "Etichetă",
+    "label_name": "Numele etichetei",
+    "add_level": "Adaugă nivel",
+    "remove_level": "Elimină nivelul",
+    "move_level_up": "Mută nivelul mai sus",
+    "move_level_down": "Mută nivelul mai jos",
+    "folders_follow_first_level": "Ultimele, când primul nivel este descendent."
   },
   "spellcheck": {
     "description": "Aceste opțiuni se aplică doar pentru aplicația de desktop, navigatoarele web folosesc propriile corectoare ortografice.",
@@ -2213,8 +2215,6 @@
     "move-marker-instruction": "Faceți clic pe hartă pentru a muta marcajul în acea poziție sau apăsați Escape pentru a renunța.",
     "move-marker-toast-title": "Mută marcajul",
     "webgl-unavailable": "Această hartă nu poate fi desenată deoarece WebGL nu este disponibil. Verificați dacă accelerarea hardware este activată și dacă driverele plăcii video sunt actualizate.",
-    "zoom-in": "Mărește",
-    "zoom-out": "Micșorează",
     "enter-3d": "Înclină harta într-o vizualizare 3D\nȚineți apăsat Ctrl și trageți pentru a înclina harta liber",
     "exit-3d": "Readu harta în plan",
     "close-details": "Închide",
@@ -2451,7 +2451,6 @@
   },
   "board_view": {
     "delete-note": "Șterge notița...",
-    "move-to": "Mută la",
     "insert-above": "Inserează deasupra",
     "insert-below": "Inserează dedesubt",
     "delete-column": "Șterge coloana",
@@ -2464,7 +2463,6 @@
     "new-item-placeholder": "Introduceți titlul notiței...",
     "add-column-placeholder": "Introduceți denumirea coloanei...",
     "edit-note-title": "Clic pentru a edita titlul notiței",
-    "edit-column-title": "Clic pentru a edita titlul coloanei",
     "column-already-exists": "Această coloană deja există.",
     "column-definition-save-error": "Coloanele au fost salvate pe tablă, dar nu au putut fi salvate în atributul de stare.",
     "status-alias": "Stare"
@@ -3181,9 +3179,6 @@
     "tags-differ": "Nodurile selectate nu au aceleași etichete, așa că acestea pot fi doar citite.",
     "add-tag": "Adaugă această etichetă",
     "remove-tag": "Elimină această etichetă",
-    "zoom-in": "Mărește",
-    "zoom-out": "Micșorează",
-    "reset-zoom": "Resetează zoomul",
     "center-map": "Centrează harta",
     "direction-left": "Ramuri spre stânga",
     "direction-right": "Ramuri spre dreapta",
@@ -3591,11 +3586,6 @@
     "title": "Opțiuni",
     "back": "Înapoi la toate opțiunile"
   },
-  "image_buttons": {
-    "zoom_in": "Mărește",
-    "zoom_out": "Micșorează",
-    "reset_zoom": "Resetează zoomul"
-  },
   "image_navigation": {
     "previous": "Imaginea anterioară: {{- title}}",
     "next": "Imaginea următoare: {{- title}}"
@@ -3603,16 +3593,6 @@
   "image_viewer": {
     "loading_error": "A apărut o eroare la încărcarea imaginii.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Mărește",
-      "zoom_out": "Micșorează",
-      "reset_zoom": "Resetează zoomul",
-      "pan": "Deplasare",
-      "pan_up": "Sus",
-      "pan_down": "Jos",
-      "pan_left": "Stânga",
-      "pan_right": "Dreapta",
-      "pan_fast": "Deplasare mai rapidă",
       "navigation": "Navigare",
       "next_image": "Imaginea următoare",
       "previous_image": "Imaginea anterioară",

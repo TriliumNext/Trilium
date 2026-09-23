@@ -7,8 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // A relation's target is picked in an Algolia autocomplete bound to jQuery, which is not loaded
 // here; a plain input in its place keeps the cell around it assertable.
 vi.mock("./react/NoteAutocomplete", () => ({
-    default: ({ id, noteId }: { id?: string; noteId?: string }) =>
-        <input id={id} className="note-autocomplete-stub" value={noteId} />
+    default: ({ id, noteId, tabIndex }: { id?: string; noteId?: string; tabIndex?: number }) =>
+        <input id={id} tabIndex={tabIndex} className="note-autocomplete-stub" value={noteId} />
 }));
 
 // The chip fields have specs of their own; here they hand over their props, which is where the
@@ -496,7 +496,10 @@ describe("PromotedAttributesContent rendering", () => {
 
         expect(container.querySelector(".promoted-attribute-cell")?.className)
             .toContain("promoted-attribute-relation");
-        expect(container.querySelector<HTMLInputElement>(".note-autocomplete-stub")?.value).toBe("targetNoteId");
+        const input = container.querySelector<HTMLInputElement>(".note-autocomplete-stub");
+        expect(input?.value).toBe("targetNoteId");
+        // 200 plus the definition's position, as the label fields around it have.
+        expect(input?.getAttribute("tabindex")).toBe("210");
     });
 
     it("logs an error for an unknown attribute type and renders no input", async () => {
@@ -591,6 +594,27 @@ describe("PromotedAttributesContent rendering", () => {
         // A text field whose name nothing else holds a value under is bound no more than a flag is.
         await renderCells(note, [ buildCell(note, { name: "fresh", definition: { labelType: "text" }, uniqueId: "fresh" }) ]);
         expect(autocompleteMock).not.toHaveBeenCalled();
+    });
+
+    it("hands a multi text field the values the name holds, and the other kinds none", async () => {
+        serverGetMock.mockResolvedValue([ "alpha", "beta" ]);
+        const held = (definition: DefinitionObject, name: string) =>
+            [ { ...buildCell(note, { name, definition, uniqueId: name }), values: [] } ];
+
+        await renderCells(note, held({ labelType: "text" }, "tags"));
+        const source = multiInput.current?.source as (query: string) => Promise<string[]>;
+        // useLabelValueSuggestions requests the values on the first query, not when the grid
+        // renders.
+        expect(serverGetMock).not.toHaveBeenCalledWith("attribute-values/tags");
+        expect(await source("al")).toEqual([ "alpha" ]);
+        expect(serverGetMock).toHaveBeenCalledWith("attribute-values/tags");
+
+        // MultiLabelInput passes the source for `text` alone; a select offers its declared
+        // options instead.
+        await renderCells(note, held({ labelType: "number" }, "size"));
+        expect(multiInput.current?.source).toBeUndefined();
+        await renderCells(note, held({ labelType: "select", selectOptions: [ "Todo" ] }, "status"));
+        expect(multiInput.current?.source).toBeUndefined();
     });
 });
 

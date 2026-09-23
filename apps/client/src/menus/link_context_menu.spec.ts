@@ -87,6 +87,23 @@ describe("getItems", () => {
         expect(linkContextMenu.getItems(contextMenuEvent())[1])
             .toMatchObject({ title: "link_context_menu.open_note_in_new_split" });
     });
+
+    /** For a menu with entries of its own, which lists quick edit and folds the rest away. */
+    it("folds the three places into one submenu, quick edit standing on its own", () => {
+        const open = linkContextMenu.getOpenNoteItem(contextMenuEvent());
+
+        // The entry acts as well as folding: picking it opens the note where it is opened most.
+        expect(open).toMatchObject({
+            title: "link_context_menu.open_note",
+            command: "openNoteInNewTab"
+        });
+        expect("items" in open && open.items?.map((item) => "command" in item && item.command))
+            .toEqual([ "openNoteInNewTab", "openNoteInNewSplit", "openNoteInNewWindow" ]);
+        expect(linkContextMenu.getQuickEditItem()).toMatchObject({
+            title: "link_context_menu.open_note_in_popup",
+            command: "openNoteInPopup"
+        });
+    });
 });
 
 describe("handleLinkContextMenuItem", () => {
@@ -94,13 +111,15 @@ describe("handleLinkContextMenuItem", () => {
         expect(handle("openNoteInNewTab", VIEW_SCOPE, "explicitHoist")).toBe(true);
         expect(mocks.openContextWithNote).toHaveBeenCalledWith("root/n1", {
             hoistedNoteId: "explicitHoist",
-            viewScope: VIEW_SCOPE
+            viewScope: VIEW_SCOPE,
+            placement: "afterCurrent"
         });
 
         handle("openNoteInNewTab");
         expect(mocks.openContextWithNote).toHaveBeenLastCalledWith("root/n1", {
             hoistedNoteId: "hoistedNote",
-            viewScope: {}
+            viewScope: {},
+            placement: "afterCurrent"
         });
     });
 
@@ -145,7 +164,8 @@ describe("handleLinkContextMenuItem", () => {
         expect(handle("openNoteInNewTab")).toBe(true);
         expect(mocks.openContextWithNote).toHaveBeenCalledWith("root/n1", {
             hoistedNoteId: null,
-            viewScope: {}
+            viewScope: {},
+            placement: "afterCurrent"
         });
 
         // On the desktop the split is resolved from that same missing tab.

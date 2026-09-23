@@ -434,8 +434,18 @@ function getTodayNote(rootNote: BNote | null = null) {
     return getDayNote(dayjs().format("YYYY-MM-DD"), rootNote);
 }
 
+/**
+ * Whether a journal exists. `getRootCalendarNote()` builds one when it finds none, which is
+ * what asking for a day note means; callers that are only capturing a note check this first so
+ * that a deleted journal stays deleted.
+ */
+function hasCalendarRoot() {
+    return !!attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+}
+
 export default {
     getRootCalendarNote,
+    hasCalendarRoot,
     getYearNote,
     getQuarterNote,
     getMonthNote,

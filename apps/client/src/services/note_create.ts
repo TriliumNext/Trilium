@@ -236,9 +236,40 @@ async function duplicateSubtree(noteId: string, parentNotePath: string) {
     toastService.showMessage(t("note_create.duplicated", { title: origNote?.title }));
 }
 
+/**
+ * Creates a template under `parentNoteId` and opens it in the popup editor.
+ *
+ * A template is a note carrying `#template`. The popup editor keeps the dialog that asked for the
+ * template open, which a tab switch would not.
+ *
+ * @returns the new note, or `undefined` when it could not be created.
+ */
+async function createTemplateNote(parentNoteId: string, title: string) {
+    const { note } = await createNote(parentNoteId, {
+        activate: false,
+        title,
+        type: "text",
+        attributes: [
+            { type: "label", name: "template", value: "", isInheritable: false }
+        ]
+    });
+
+    if (!note) {
+        return undefined;
+    }
+
+    // Blank when it opens, so the editor offers the note types to make it one of instead.
+    appContext.triggerCommand("openInPopup", {
+        noteIdOrPath: note.noteId,
+        showNoteTypeSwitcher: true
+    });
+    return note;
+}
+
 export default {
     createNote,
     createNoteWithTypePrompt,
+    createTemplateNote,
     duplicateSubtree,
     chooseNoteType
 };

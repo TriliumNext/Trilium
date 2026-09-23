@@ -52,8 +52,7 @@ export function sanitizeHtml(dirtyHtml: string) {
             input: ["type", "checked"],
             img: ["width", "height"],
             td: ["colspan", "rowspan"],
-            th: ["colspan", "rowspan", "scope"],
-            code: [ "spellcheck" ]
+            th: ["colspan", "rowspan", "scope"]
         },
         allowedStyles: {
             "*": {

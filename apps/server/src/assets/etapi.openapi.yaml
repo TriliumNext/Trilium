@@ -345,7 +345,9 @@ paths:
               schema:
                   $ref: "#/components/schemas/EntityId"
         get:
-            description: Returns all revisions for a note identified by its ID
+            description: |
+                Returns the revisions of a note identified by its ID. Protected revisions are
+                omitted, since they cannot be read through ETAPI individually either.
             operationId: getNoteRevisions
             responses:
                 "200":
@@ -793,7 +795,8 @@ paths:
         get:
             description: >
                 returns an "inbox" note, into which note can be created. Date will be used depending on whether the inbox
-                is a fixed note (identified with #inbox label) or a day note in a journal.
+                is a fixed note (identified with #inbox label) or a day note in a journal. A database with neither
+                returns the root note, and ignores the date, rather than creating a journal to hold a day note.
             operationId: getInboxNote
             parameters:
                 - name: date
@@ -831,6 +834,37 @@ paths:
             responses:
                 "200":
                     description: day note
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /calendar/week-first-day/{date}:
+        get:
+            summary: Get the day note starting the week
+            description: |
+                Returns the day note for the first day of the week containing the given date, honouring
+                the configured first day of week. The note is created if it doesn't exist. This returns a
+                day note, not a week note, so unlike /calendar/weeks/{week} it does not require the
+                enableWeekNote label on the calendar root.
+            operationId: getWeekFirstDayNote
+            parameters:
+                - name: date
+                  in: path
+                  required: true
+                  description: Any date within the week, in the format YYYY-MM-DD.
+                  schema:
+                      type: string
+                      format: date
+                  example: 2022-02-22
+            responses:
+                "200":
+                    description: day note starting the week
                     content:
                         application/json; charset=utf-8:
                             schema:
@@ -1002,6 +1036,49 @@ paths:
                         application/json; charset=utf-8:
                             schema:
                                 $ref: "#/components/schemas/Error"
+    /metrics:
+        get:
+            summary: Get instance metrics
+            description: |
+                Returns instance and database metrics for monitoring: note, attachment, revision,
+                branch, attribute and blob counts, note and attachment type breakdowns, version
+                information and database size. Counts only — no note titles, content or attributes.
+
+                The same data is served by GET /api/metrics to the web session.
+            operationId: getMetrics
+            parameters:
+                - name: format
+                  in: query
+                  required: false
+                  description: Response format. Defaults to Prometheus text.
+                  schema:
+                      type: string
+                      enum: [prometheus, json]
+                      default: prometheus
+            responses:
+                "200":
+                    description: instance metrics
+                    content:
+                        text/plain:
+                            schema:
+                                type: string
+                            example: |
+                                # HELP trilium_info Trilium instance information
+                                # TYPE trilium_info gauge
+                                trilium_info{version="0.99.3",db_version="231"} 1 1701432000
+
+                                # HELP trilium_notes_total Total number of notes including deleted
+                                # TYPE trilium_notes_total gauge
+                                trilium_notes_total 1234 1701432000
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Metrics"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
 components:
     securitySchemes:
         EtapiTokenAuth:
@@ -1081,6 +1158,9 @@ components:
                     readOnly: true
                 title:
                     type: string
+                    description: |
+                        Title of the note. Returned as "[protected]" for protected notes, since ETAPI
+                        cannot open a protected session.
                 type:
                     type: string
                     enum:
@@ -1181,6 +1261,9 @@ components:
                     type: string
                 title:
                     type: string
+                    description: |
+                        Title of the attachment. Returned as "[protected]" for protected attachments,
+                        since ETAPI cannot open a protected session.
                 position:
                     type: integer
                     format: int32
@@ -1427,3 +1510,91 @@ components:
                 canBeUndeleted:
                     type: boolean
                     description: Whether the note can be undeleted (only present for deleted notes)
+        Metrics:
+            type: object
+            description: Instance and database metrics, as served by GET /etapi/metrics?format=json
+            properties:
+                version:
+                    type: object
+                    properties:
+                        app:
+                            type: string
+                            example: "0.99.3"
+                        db:
+                            type: integer
+                            example: 231
+                        node:
+                            type: string
+                            example: v22.14.0
+                        sync:
+                            type: integer
+                            example: 35
+                        buildDate:
+                            type: string
+                            example: "2024-09-07T18:36:34Z"
+                        buildRevision:
+                            type: string
+                            example: 7c0d6930fa8f20d269dcfbcbc8f636a25f6bb9a7
+                database:
+                    type: object
+                    properties:
+                        totalNotes:
+                            type: integer
+                        deletedNotes:
+                            type: integer
+                        activeNotes:
+                            type: integer
+                        protectedNotes:
+                            type: integer
+                        totalAttachments:
+                            type: integer
+                        deletedAttachments:
+                            type: integer
+                        activeAttachments:
+                            type: integer
+                        totalRevisions:
+                            type: integer
+                        totalBranches:
+                            type: integer
+                        totalAttributes:
+                            type: integer
+                        totalBlobs:
+                            type: integer
+                        totalEtapiTokens:
+                            type: integer
+                        totalRecentNotes:
+                            type: integer
+                noteTypes:
+                    type: object
+                    description: Number of active notes per note type
+                    additionalProperties:
+                        type: integer
+                    example:
+                        text: 800
+                        code: 200
+                attachmentTypes:
+                    type: object
+                    description: Number of active attachments per MIME type
+                    additionalProperties:
+                        type: integer
+                    example:
+                        image/png: 45
+                        application/pdf: 14
+                statistics:
+                    type: object
+                    properties:
+                        oldestNote:
+                            type: string
+                            nullable: true
+                        newestNote:
+                            type: string
+                            nullable: true
+                        lastModified:
+                            type: string
+                            nullable: true
+                        databaseSizeBytes:
+                            type: integer
+                            nullable: true
+                timestamp:
+                    type: string
+                    example: "2024-12-01T12:00:00.000Z"

@@ -144,9 +144,58 @@ describe("parseNavigationStateFromUrl", () => {
         warn.mockRestore();
     });
 
+    it("carries a board reference through, for the column and for the card", () => {
+        const column = parseNavigationStateFromUrl("#root/aaaaaaaaaaaa?column=colTodo00001");
+        expect((column as any).viewScope).toMatchObject({ column: "colTodo00001" });
+
+        const card = parseNavigationStateFromUrl("#root/aaaaaaaaaaaa?card=card00000001");
+        expect((card as any).viewScope).toMatchObject({ card: "card00000001" });
+    });
+
     it("returns empty object when the note path does not match the id pattern", () => {
         // hash present at index 0, but the path is too short to be a valid note id
         expect(parseNavigationStateFromUrl("#ab")).toStrictEqual({});
+    });
+
+    it("parses the app's own address with a query or a slash-less sub-path before the hash", () => {
+        const note = { notePath: "root/WWaBNf3SSA1b", noteId: "WWaBNf3SSA1b" };
+        const desktop = new URL("https://host/?desktop");
+        const mobile = new URL("https://host/?mobile");
+        const subPath = new URL("https://host/trilium");
+
+        expect(parseNavigationStateFromUrl("https://host/?desktop#root/WWaBNf3SSA1b", desktop))
+            .toMatchObject(note);
+        expect(parseNavigationStateFromUrl("https://host/?mobile#root/WWaBNf3SSA1b", mobile))
+            .toMatchObject(note);
+        expect(parseNavigationStateFromUrl("https://host/trilium#root/WWaBNf3SSA1b", subPath))
+            .toMatchObject(note);
+        expect(parseNavigationStateFromUrl("https://host/?desktop#?searchString=hello", desktop))
+            .toMatchObject({ searchString: "hello" });
+
+        // Another origin or another pathname is an external document, whatever its hash holds.
+        expect(parseNavigationStateFromUrl("https://other/?desktop#root/WWaBNf3SSA1b", desktop))
+            .toStrictEqual({});
+        expect(parseNavigationStateFromUrl("https://host/wiki/Page?x=1#root/WWaBNf3SSA1b", desktop))
+            .toStrictEqual({});
+
+        // A different query string, such as the `?print` entry point, is an external document too.
+        expect(parseNavigationStateFromUrl("https://host/?print#root/WWaBNf3SSA1b", new URL("https://host/")))
+            .toStrictEqual({});
+        expect(parseNavigationStateFromUrl("https://host/?print#root/WWaBNf3SSA1b", desktop))
+            .toStrictEqual({});
+    });
+
+    it("compares against window.location by default", () => {
+        const { happyDOM } = window as unknown as { happyDOM: { setURL(url: string): void } };
+        const previousUrl = window.location.href;
+        happyDOM.setURL("https://host/?desktop");
+
+        try {
+            expect(parseNavigationStateFromUrl("https://host/?desktop#root/WWaBNf3SSA1b"))
+                .toMatchObject({ notePath: "root/WWaBNf3SSA1b" });
+        } finally {
+            happyDOM.setURL(previousUrl);
+        }
     });
 });
 
@@ -169,6 +218,21 @@ describe("calculateHash", () => {
         expect(hash).toBe("#root/abc?ntxId=n1&hoistedNoteId=h1&viewMode=source&attachmentId=att%201");
     });
 
+    it("writes a board reference back into the hash it was read from", () => {
+        const hash = calculateHash({
+            notePath: "root/abc",
+            viewScope: { column: "colTodo00001" }
+        } as any);
+        expect(hash).toBe("#root/abc?column=colTodo00001");
+        // Read back, the path spelled out at the length a note id is checked against.
+        const read = `http://localhost:8080/#root/aaaaaaaaaaaa${hash.slice("#root/abc".length)}`;
+        expect(parseNavigationStateFromUrl(read))
+            .toMatchObject({ viewScope: { column: "colTodo00001" } });
+
+        expect(calculateHash({ notePath: "root/abc", viewScope: { card: "card00000001" } } as any))
+            .toBe("#root/abc?card=card00000001");
+    });
+
     it("omits params that are at their defaults", () => {
         const hash = calculateHash({
             notePath: "root/abc",
@@ -180,6 +244,53 @@ describe("calculateHash", () => {
 
     it("produces only the param string when note path is empty", () => {
         expect(calculateHash({ ntxId: "n1" } as any)).toBe("#?ntxId=n1");
+    });
+});
+
+describe("searchTerms view scope round-trip", () => {
+    it("omits the searchTerms param when the array is empty or undefined", () => {
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: [] } } as any)).toBe("#root/aaaaaaaaaaaa");
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: {} } as any)).toBe("#root/aaaaaaaaaaaa");
+        expect(calculateHash({ notePath: "root/aaaaaaaaaaaa" } as any)).toBe("#root/aaaaaaaaaaaa");
+    });
+
+    it("emits a searchTerms param when non-empty", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello"] } } as any);
+        expect(hash).toContain("searchTerms=");
+    });
+
+    it("round-trips a single search term", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello"] } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["hello"]);
+    });
+
+    it("round-trips multiple search terms, preserving order", () => {
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: ["hello", "world", "foo"] } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["hello", "world", "foo"]);
+    });
+
+    it("round-trips tokens containing commas, percent signs, quotes and unicode", () => {
+        const terms = ["a,b", "100% done", 'she said "hi"', "héllo wörld 日本語"];
+        const hash = calculateHash({ notePath: "root/aaaaaaaaaaaa", viewScope: { searchTerms: terms } } as any);
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(terms);
+    });
+
+    it("drops malformed encoded search-term entries instead of throwing", () => {
+        // Hand-craft a hash whose decoded searchTerms value is "good,%E0%A4%A" -- a well-formed
+        // token followed by a truncated (invalid) percent-encoding sequence.
+        const hash = `#root/aaaaaaaaaaaa?searchTerms=${encodeURIComponent("good,%E0%A4%A")}`;
+        expect(() => parseNavigationStateFromUrl(hash)).not.toThrow();
+        const { viewScope } = parseNavigationStateFromUrl(hash) as any;
+        expect(viewScope.searchTerms).toEqual(["good"]);
+    });
+
+    it("does not touch the legacy #?searchString= branch", () => {
+        const output = parseNavigationStateFromUrl("#?searchString=hello&searchTerms=world");
+        // searchString short-circuits to its own dedicated return before viewScope is even considered
+        expect(output).toStrictEqual({ searchString: "hello" });
     });
 });
 
@@ -435,7 +546,7 @@ describe("createLink", () => {
             showNoteIcon: true,
             viewScope: { viewMode: "source" }
         });
-        expect($el.find("span.bx.bx-code-curly").length).toBe(1);
+        expect($el.find("span.tn-icon.bx.bx-code-curly").length).toBe(1);
     });
 
     it("uses an attachments-mode icon when showing the icon for an attachments view", async () => {
@@ -445,7 +556,7 @@ describe("createLink", () => {
             showNoteIcon: true,
             viewScope: { viewMode: "attachments", attachmentId: "att-x" }
         });
-        expect($el.find("span.bx.bx-file").length).toBe(1);
+        expect($el.find("span.tn-icon.bx.bx-file").length).toBe(1);
     });
 
     it("renders no icon for a view mode without a dedicated icon", async () => {
@@ -737,6 +848,24 @@ describe("getReferenceLinkTitle / getReferenceLinkTitleSync", () => {
         expect(linkService.getReferenceLinkTitleSync(`#root/${note2.noteId}?viewMode=attachments&attachmentId=a1`)).toBe("Matched");
     });
 
+    it("names the card a board reference points at, rather than the board", async () => {
+        const board = buildNote({ title: "Board" });
+        const card = buildNote({ title: "Card" });
+        const href = `#root/${board.noteId}?card=${card.noteId}`;
+
+        expect(await linkService.getReferenceLinkTitle(href)).toBe("Card");
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Card");
+    });
+
+    it("names the board a column reference points at, and the column after it", async () => {
+        const board = buildNote({ title: "Board" });
+        const href = `#root/${board.noteId}?column=colTodo00001&columnTitle=To%20Do`;
+
+        // The link body is the board, so the column shows only where a suffix can be drawn.
+        expect(await linkService.getReferenceLinkTitle(href)).toBe("Board");
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Board: To Do");
+    });
+
     it("getReferenceLinkTitleSync returns [missing note] when the note is not in cache", () => {
         const orig = froca.getNoteFromCache;
         froca.getNoteFromCache = vi.fn(() => null) as unknown as typeof froca.getNoteFromCache;
@@ -797,6 +926,44 @@ describe("loadReferenceLinkTitle", () => {
         expect($iconSpan.hasClass("bx-star")).toBe(true);
     });
 
+    it("draws a card reference from the card's own icon and colour", async () => {
+        const board = buildNote({ title: "Board" });
+        const card = buildNote({ title: "Card", "#color": "green", "#iconClass": "bx bx-task" });
+        const href = `#root/${board.noteId}?card=${card.noteId}`;
+        const $el = $("<span>");
+
+        await linkService.loadReferenceLinkTitle($el, href);
+
+        expect($el.text()).toBe("Card");
+        expect($el.hasClass(card.getColorClass())).toBe(true);
+        expect($el.children("span").first().hasClass("bx-task")).toBe(true);
+    });
+
+    it("appends the column a reference names, tinted with its own colour", async () => {
+        const board = buildNote({ title: "Board" });
+        const href = `#root/${board.noteId}?column=colTodo00001&columnTitle=To%20Do`
+            + "&columnIcon=bx%20bx-star&columnColor=%23ff8800";
+        const $el = $("<span>");
+
+        await linkService.loadReferenceLinkTitle($el, href);
+
+        expect($el.text()).toContain("Board:");
+        const $column = $el.find("small");
+        expect($column.text()).toBe(" To Do");
+        expect($column.children("span").hasClass("bx-star")).toBe(true);
+        expect($column.hasClass("color-FF8800")).toBe(true);
+    });
+
+    it("falls back to a column glyph for a reference carrying no icon of its own", async () => {
+        const board = buildNote({ title: "Board" });
+        const $el = $("<span>");
+
+        await linkService.loadReferenceLinkTitle($el,
+            `#root/${board.noteId}?column=colTodo00001&columnTitle=To%20Do`);
+
+        expect($el.find("small span").hasClass("bx-columns")).toBe(true);
+    });
+
     it("uses the element's own href and finds the inner anchor when none is passed", async () => {
         const note = buildNote({ title: "Inner" });
         const $a = $("<a>").attr("href", `#root/${note.noteId}`);
@@ -826,6 +993,14 @@ describe("loadReferenceLinkTitle", () => {
         await linkService.loadReferenceLinkTitle($el, `#root/${note.noteId}`);
         expect($el.text()).toContain("NoIconRef");
         expect($el.children("span").length).toBe(0);
+    });
+
+    it("gives the source view icon the tn-icon class that the link CSS targets", async () => {
+        const note = buildNote({ title: "SourceRef" });
+        const href = `#root/${note.noteId}?viewMode=source`;
+        const $el = $("<span>").append($("<a>").attr("href", href));
+        await linkService.loadReferenceLinkTitle($el, href);
+        expect($el.children("span.tn-icon.bx-code-curly").length).toBe(1);
     });
 });
 

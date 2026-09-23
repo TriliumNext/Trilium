@@ -306,10 +306,8 @@
     "title": "název",
     "date_created": "datum vytvoření",
     "date_modified": "datum úpravy",
-    "sorting_direction": "Směr řazení",
     "ascending": "vzestupně",
     "descending": "sestupně",
-    "folders": "Složky",
     "sort_folders_at_top": "řadit složky nahoře",
     "natural_sort": "Přirozené řazení",
     "sort_with_respect_to_different_character_sorting": "řadit s ohledem na různá pravidla řazení a kolace v různých jazycích nebo oblastech.",
@@ -742,10 +740,7 @@
     "button_title": "Exportovat diagram jako SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu",
-    "reset_pan_zoom_title": "Resetovat posun & zoom na počáteční souřadnice a zvětšení",
-    "zoom_in_title": "Přiblížit",
-    "zoom_out_title": "Oddálit"
+    "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Vložit dceřinou poznámku",
@@ -1155,7 +1150,6 @@
     "note_tree_font": "Font stromu poznámek",
     "note_detail_font": "Font detailu poznámky",
     "monospace_font": "Monospace (kód) Font",
-    "not_all_fonts_available": "Ne všechny uvedené fonty nemusí být dostupné ve vašem systému.",
     "generic-fonts": "Obecné fonty",
     "sans-serif-system-fonts": "Systémové sans-serif fonty",
     "serif-system-fonts": "Systémové serif fonty",
@@ -1992,7 +1986,6 @@
     "remove-from-board": "Odebrat z tabule",
     "archive-note": "Archivovat poznámku",
     "unarchive-note": "Odarchivovat poznámku",
-    "move-to": "Přesunout do",
     "insert-above": "Vložit nad",
     "insert-below": "Vložit pod",
     "delete-column": "Odstranit sloupec",
@@ -2002,7 +1995,6 @@
     "add-column": "Přidat sloupec",
     "add-column-placeholder": "Zadejte název sloupce...",
     "edit-note-title": "Kliknutím upravíte název poznámky",
-    "edit-column-title": "Kliknutím upravíte název sloupce",
     "column-already-exists": "Tento sloupec již na tabuli existuje."
   },
   "presentation_view": {

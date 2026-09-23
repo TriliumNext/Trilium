@@ -10,31 +10,64 @@ import SearchContext from "./search/search_context.js";
 import { LBTPL_NOTE_LAUNCHER, LBTPL_CUSTOM_WIDGET, LBTPL_SPACER, LBTPL_SCRIPT } from "./hidden_subtree.js";
 import { t } from "i18next";
 import BNote from '../becca/entities/bnote.js';
-import { SaveLlmChatResponse, SaveSearchNoteResponse, SaveSqlConsoleResponse } from "@triliumnext/commons";
+import {
+    InboxTargetKind, InboxTargetResponse, SaveLlmChatResponse, SaveSearchNoteResponse,
+    SaveSqlConsoleResponse
+} from "@triliumnext/commons";
 
 function getInboxNote(date: string) {
+    const { note } = resolveInboxTarget();
+
+    return note ?? dateNoteService.getDayNote(date);
+}
+
+/**
+ * Decides where a quickly captured note goes. Creates nothing, unlike `getInboxNote()`, which
+ * creates the day note it falls back to. Use this to name the destination without capturing.
+ */
+function resolveInboxTarget(): { kind: InboxTargetKind; note?: BNote } {
     const workspaceNote = hoistedNoteService.getWorkspaceNote();
     if (!workspaceNote) {
         throw new Error("Unable to find workspace note");
     }
 
-    let inbox: BNote;
-
     if (!workspaceNote.isRoot()) {
-        inbox = workspaceNote.searchNoteInSubtree("#workspaceInbox");
-
-        if (!inbox) {
-            inbox = workspaceNote.searchNoteInSubtree("#inbox");
+        const workspaceInbox = workspaceNote.searchNoteInSubtree("#workspaceInbox");
+        if (workspaceInbox) {
+            return { kind: "workspaceInbox", note: workspaceInbox };
         }
 
-        if (!inbox) {
-            inbox = workspaceNote;
+        const inbox = workspaceNote.searchNoteInSubtree("#inbox");
+        if (inbox) {
+            return { kind: "inbox", note: inbox };
         }
-    } else {
-        inbox = attributeService.getNoteWithLabel("inbox") || dateNoteService.getDayNote(date);
+
+        // Capture into today's note when this workspace has its own journal.
+        if (workspaceNote.searchNoteInSubtree("#workspaceCalendarRoot")) {
+            return { kind: "dayNote" };
+        }
+
+        return { kind: "workspaceRoot", note: workspaceNote };
     }
 
-    return inbox;
+    const inbox = attributeService.getNoteWithLabel("inbox");
+    if (inbox) {
+        return { kind: "inbox", note: inbox };
+    }
+
+    // Capturing a note is not a request for a journal, so a database without one keeps the note
+    // at the top level rather than having a calendar built around it (#11034).
+    if (dateNoteService.hasCalendarRoot()) {
+        return { kind: "dayNote" };
+    }
+
+    return { kind: "root", note: workspaceNote };
+}
+
+function getInboxTarget(): InboxTargetResponse {
+    const { kind, note } = resolveInboxTarget();
+
+    return { kind, noteId: note?.noteId, title: note?.getTitleOrProtected() };
 }
 
 function createSqlConsole() {
@@ -389,6 +422,7 @@ function saveLlmChat(llmChatNoteId: string | null) {
 
 export default {
     getInboxNote,
+    getInboxTarget,
     createSqlConsole,
     saveSqlConsole,
     createSearchNote,

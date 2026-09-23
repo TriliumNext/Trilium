@@ -177,6 +177,44 @@ CKEditorInspector.attach( editor );
 imports allowed in Trilium code; everything else imports from the `ckeditor5` aggregate. There is
 also a bookmarklet that injects the inspector without code changes (blocked under a strict CSP).
 
+## Reading CKEditor's own source
+
+`node_modules/ckeditor5` ships only a re-export shim, and each `@ckeditor/ckeditor5-*` package
+ships a bundle — there is no `src/` to grep. The original TypeScript is in the bundles'
+sourcemaps, under `sourcesContent`. Unpack the package you need into a scratch directory and grep
+that:
+
+```js
+// node -e, from the repo root
+const fs = require( 'fs' );
+const map = JSON.parse( fs.readFileSync( 'node_modules/@ckeditor/ckeditor5-list/dist/index.js.map', 'utf8' ) );
+const dir = `${ process.env.TEMP }/cksrc/`;
+fs.mkdirSync( dir, { recursive: true } );
+map.sources.forEach( ( s, i ) => fs.writeFileSync(
+	dir + s.replace( /^\.\.\/src\//, '' ).replace( /\//g, '__' ), map.sourcesContent[ i ] || '' ) );
+```
+
+(`node_modules/ckeditor5/dist/ckeditor5.js.map` has no original sources — always go to the
+individual `@ckeditor/ckeditor5-<feature>` package.) This is how you answer "when exactly does
+CKEditor decide X", which the Inspector cannot show.
+
+For the *dynamic* half of the same question, monkey-patch inside a spec. Both of these read
+cleanly against a real `ClassicEditor` and are how the reconversion hazard above was pinned down:
+
+```ts
+// Which view operations a change actually performs.
+const proto = ViewDowncastWriter.prototype as any;
+const move = proto.move;
+proto.move = function( range: any, target: any ) { console.log( "MOVE", … ); return move.call( this, range, target ); };
+
+// Which items a feature decides to re-downcast, and what its checks return.
+const editing = editor.editing as any;
+const orig = editing.reconvertItem.bind( editing );
+editing.reconvertItem = ( item: any ) => { console.log( "refresh", item ); return orig( item ); };
+```
+
+Restore the prototype in a `finally` — it is shared across the editors a spec file creates.
+
 ## Per-package commands
 
 Run scripts through the pnpm workspace filter:
@@ -188,9 +226,9 @@ pnpm --filter @triliumnext/ckeditor5-<feature> lint        # eslint-config-ckedi
 pnpm --filter @triliumnext/ckeditor5-<feature> stylelint   # theme CSS
 ```
 
-Tests run in a real headless Chrome that webdriverio downloads. Where that build cannot run — NixOS
-being the case in point — set `CHROME_BIN` and `CHROMEDRIVER_PATH` to a matching system pair, which
-`nix develop` already exports; don't start a driver by hand.
+Tests run in a real headless Chromium that Playwright downloads (`pnpm exec playwright install
+chromium`). Where that build cannot run — NixOS being the case in point — set `CHROME_BIN` to a
+system browser, which `nix develop` already exports.
 
 For test setup, model/view assertions, and command/UI test patterns, use the separate
 **`ckeditor5-testing`** skill.

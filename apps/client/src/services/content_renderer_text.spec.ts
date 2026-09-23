@@ -19,8 +19,6 @@ const mermaidInitialize = vi.fn();
 vi.mock("mermaid", () => ({
     default: {
         initialize: (...args: unknown[]) => mermaidInitialize(...args),
-        // loadElkIfNeeded() probes the source via parse(); no ELK layout in tests.
-        parse: async () => undefined,
         render: (id: string, source: string) => mermaidRenderImpl(id, source)
     }
 }));

@@ -131,10 +131,10 @@ body[dir=rtl] .geo-map-container {
  * which is the point of insetting rather than padding.
  */
 .geo-map-container:fullscreen {
-  --geo-map-inset-top: calc(var(--geo-map-inset) + env(safe-area-inset-top));
-  --geo-map-inset-bottom: calc(var(--geo-map-inset) + env(safe-area-inset-bottom));
-  --geo-map-inset-left: calc(var(--geo-map-inset) + env(safe-area-inset-left));
-  --geo-map-inset-right: calc(var(--geo-map-inset) + env(safe-area-inset-right));
+  --geo-map-inset-top: calc(var(--geo-map-inset) + var(--safe-area-inset-top, env(safe-area-inset-top)));
+  --geo-map-inset-bottom: calc(var(--geo-map-inset) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+  --geo-map-inset-left: calc(var(--geo-map-inset) + var(--safe-area-inset-left, env(safe-area-inset-left)));
+  --geo-map-inset-right: calc(var(--geo-map-inset) + var(--safe-area-inset-right, env(safe-area-inset-right)));
 }
 
 /*
@@ -163,11 +163,12 @@ body[dir=rtl] .geo-map-container {
 }
 
 /*
- * Everything the control groups standing over the map have in common — the camera's in the foot
- * corner (MapToolbar) and the editing actions at the middle of the foot (EditToolbar) — said here
- * once for both: the room they keep from the map's edges, the layer they stand on, and the set the
- * map's furniture is dressed in, all under the names the shared group reads (see the overlay buttons
- * in theme-next/forms.css). What is left for each of them to say is the corner it stands at.
+ * Everything the control groups standing over the map have in common — the camera in the foot
+ * corner (MapToolbar), the editing actions at the middle of the foot (EditToolbar), the drawing
+ * tools at the head or down the leading edge (DrawToolbar) — said here once for all of them: the
+ * room they keep from the map's edges, the layer they stand on, and the set the map's furniture is
+ * dressed in, all under the names the shared group reads (see the overlay buttons in
+ * theme-next/forms.css). What is left for each of them to say is where it stands.
  *
  * Set on the groups rather than on the map, so that nothing else standing over the map is dressed
  * for a theme the reader did not choose — a marker's preview is the app's own note tooltip, and it

@@ -1,6 +1,6 @@
 ---
 name: cutting-a-release
-description: Use when cutting, preparing, or debugging a Trilium release — bumping the monorepo version, tagging, or diagnosing a failed "Release" workflow run. Covers the ordered bump recipe (edit root package.json → chore:update-version → commit → v-prefixed tag → push), which of the TWO divergent version scripts to use (update-version for releases vs update-nightly-version for CI nightlies), why the CI version-consistency gate validates only 5 of the 8 files update-version writes, the exact `docs/Release Notes/Release Notes/<tag>.md` path the publish step hard-requires, the substring-based rc/beta "latest" labeling, and the RELEASE_PAT (not GITHUB_TOKEN) dependency. Also covers dispatching `nightly.yml` on a branch to test packaging on real CI runners (publish is gated on `main`; other refs upload artifacts). Bundles a pre-flight verifier that catches what the CI gate misses before you push the tag.
+description: Use when cutting, preparing, or debugging a Trilium release — bumping the monorepo version, tagging, or diagnosing a failed "Release" workflow run. Covers the ordered bump recipe (edit root package.json → chore:update-version → commit → v-prefixed tag → push), which of the TWO divergent version scripts to use (update-version for releases vs update-nightly-version for CI nightlies), why the CI version-consistency gate validates only 5 of the 9 files update-version writes, the exact `docs/Release Notes/Release Notes/<tag>.md` path the publish step hard-requires, the substring-based rc/beta "latest" labeling, and the RELEASE_PAT (not GITHUB_TOKEN) dependency. Also covers dispatching `nightly.yml` on a branch to test packaging on real CI runners (publish is gated on `main`; other refs upload artifacts). Bundles a pre-flight verifier that catches what the CI gate misses before you push the tag.
 ---
 
 # Cutting a Trilium release
@@ -9,9 +9,9 @@ Releases are a tag push, not a button. Pushing a `v*` tag to `main` triggers `.g
 
 ## Five traps that bite before you read anything else
 
-1. **Edit the ROOT `package.json` only, then propagate.** Root is the single source of truth. `pnpm chore:update-version` (`scripts/update-version.ts:26-37`) reads root and writes 8 *other* package.jsons. Hand-editing the children desyncs the tree.
+1. **Edit the ROOT `package.json` only, then propagate.** Root is the single source of truth. `pnpm chore:update-version` (`scripts/update-version.ts:27-46`) reads root, writes 8 *other* package.jsons and regenerates the Flathub metainfo's `<releases>` from `git for-each-ref`. Hand-editing the children desyncs the tree.
 2. **There are TWO version scripts — use `update-version`, not `update-nightly-version`.** The nightly one (`scripts/update-nightly-version.ts`) writes a *different* set of files and appends a `-test-YYMMDD-HHMMSS` suffix; it's CI-only. Running it for a release poisons the version. ([§ The two scripts](#the-two-version-scripts--pick-the-right-one))
-3. **The CI version gate is a strict SUBSET — don't trust it.** `scripts/check-version-consistency.ts` validates only 5 files; `update-version` writes 8. The 4 gaps (standalone, edit-docs, pdfjs-viewer, trilium-core) can be wrong and still ship. Run the bundled pre-flight, which checks all 9.
+3. **The CI version gate is a strict SUBSET — don't trust it.** `scripts/check-version-consistency.ts` validates only 5 files; `update-version` writes 8 package.jsons plus the metainfo. The 4 gaps (standalone, edit-docs, pdfjs-viewer, trilium-core) can be wrong and still ship. Run the bundled pre-flight, which checks all 9 plus the metainfo entry.
 4. **The release-notes file must exist BEFORE you tag, at a DOUBLED path.** `docs/Release Notes/Release Notes/v<X.Y.Z>.md` — note `Release Notes/Release Notes/` twice, and the `v` prefix in the filename. The publish step `ENOENT`s without it (`release.yml:155`).
 5. **The tag must be `v`-prefixed.** `release.yml` triggers only on `push: tags: v*` (`release.yml:3-5`). A bare `0.103.0` tag runs nothing, silently.
 
@@ -21,7 +21,7 @@ Don't hand-roll a version checker — run the bundled pre-flight, a superset of 
 npx tsx .claude/skills/cutting-a-release/scripts/preflight-release-check.mts v0.103.0
 ```
 
-It asserts all 9 package.jsons match, that the release-notes file exists at the doubled path, and warns on the rc/beta labeling footgun (trap below). Run it right before pushing the tag.
+It asserts all 9 package.jsons match, that the metainfo `<release>` is the version being tagged, that the release-notes file exists at the doubled path, and warns on the rc/beta labeling footgun (trap below). Run it right before pushing the tag.
 
 ## The recipe (order is load-bearing)
 
@@ -29,9 +29,9 @@ It asserts all 9 package.jsons match, that the release-notes file exists at the 
 |---|------|----------------|--------|
 | 1 | Write release notes | create `docs/Release Notes/Release Notes/v<X.Y.Z>.md` | filename = tag incl. `v`; publish hard-fails without it (`release.yml:155`) |
 | 2 | Bump ROOT only | edit `package.json` `version` | do NOT hand-edit the other package.jsons |
-| 3 | Propagate | `pnpm chore:update-version` | rewrites 8 package.jsons from root; never the reverse |
-| 4 | Pre-flight | `npx tsx .claude/skills/cutting-a-release/scripts/preflight-release-check.mts v<X.Y.Z>` | catches the 4 files CI never checks + a missing notes file |
-| 5 | Commit | `chore(release): prepare for v<X.Y.Z>` | stage every changed package.json + the new release-notes md |
+| 3 | Propagate | `pnpm chore:update-version` | rewrites 8 package.jsons from root, and regenerates the metainfo `<releases>` Flathub displays; never the reverse |
+| 4 | Pre-flight | `npx tsx .claude/skills/cutting-a-release/scripts/preflight-release-check.mts v<X.Y.Z>` | catches the 4 files CI never checks, a stale metainfo `<release>` + a missing notes file |
+| 5 | Commit | `chore(release): prepare for v<X.Y.Z>` | stage every changed package.json, the metainfo + the new release-notes md |
 | 6 | Tag (`v`-prefixed) | `git tag v<X.Y.Z>` | `release.yml` only fires on `v*` |
 | 7 | Push commit + tag | `git push && git push --tags` | |
 | 8 | Watch CI, then download + smoke-test the GitHub release | — | see [references/ci-pipeline.md](references/ci-pipeline.md) to map a red job |
@@ -45,14 +45,14 @@ The upstream doc (`docs/Developer Guide/Developer Guide/Building/Releasing a new
 | npm script | `chore:update-version` (`package.json:38`) | `chore:ci-update-nightly-version` (`package.json:34`) |
 | Use for | **releases — manual, this skill** | CI nightlies only |
 | Invoked by | you | `nightly.yml:75`, `main-docker.yml:163` |
-| Reads root version? | yes (`update-version.ts:27`) | yes, then mutates it |
+| Reads root version? | yes (`update-version.ts:28`) | yes, then mutates it |
 | Writes root? | **no** | **yes** (`update-nightly-version.ts:47`) |
-| Files written | **8**: apps server/client/standalone/desktop/edit-docs + packages commons/pdfjs-viewer/trilium-core (`update-version.ts:30,34`) | **6**: root + apps server/client/standalone/desktop + pdfjs-viewer (`update-nightly-version.ts:50,55`) |
+| Files written | **9**: apps server/client/standalone/desktop/edit-docs + packages commons/pdfjs-viewer/trilium-core, + the Flathub metainfo (`update-version.ts:31,35,44`) | **6**: root + apps server/client/standalone/desktop + pdfjs-viewer (`update-nightly-version.ts:50,55`) |
 | Version shape | root version, verbatim | strips `-beta`, appends `-test-YYMMDD-HHMMSS` (`update-nightly-version.ts:19-24`) |
 
 The two sets diverge in both directions: `update-version` touches edit-docs/commons/trilium-core (nightly doesn't); nightly touches root (update-version doesn't). Run the wrong one and the tree desyncs — e.g. running nightly during a release stamps `0.103.0-test-260613-...` into root and leaves commons/trilium-core untouched.
 
-## The CI gate checks 5 of 8 — verify all 9 yourself
+## The CI gate checks 5 of 9 — verify all 10 yourself
 
 `scripts/check-version-consistency.ts:5-11` validates exactly:
 
@@ -60,9 +60,9 @@ The two sets diverge in both directions: `update-version` touches edit-docs/comm
 package.json, apps/server, apps/client, apps/desktop, packages/commons
 ```
 
-(stripping a leading `v` from the tag arg, lines 20-22). But `update-version` writes **8**, so **`apps/standalone`, `apps/edit-docs`, `packages/pdfjs-viewer`, and `packages/trilium-core` are written but never validated.** A stale version in any of those passes the `sanity-check` job (`release.yml:30-31`) and ships.
+(stripping a leading `v` from the tag arg, lines 20-22). But `update-version` writes **9**, so **`apps/standalone`, `apps/edit-docs`, `packages/pdfjs-viewer`, `packages/trilium-core` and the Flathub metainfo are written but never validated.** A stale version in any of those passes the `sanity-check` job (`release.yml:30-31`) and ships.
 
-This isn't theoretical — real release-prep commits touched *different* file subsets because `update-version` only produces a git diff for files that were previously stale: `v0.103.0` (`44f5be88b7`) changed 7 package.jsons including pdfjs-viewer; `v0.102.1` (`8ac9daa5d3`) changed 6, no pdfjs-viewer. The CI gate would not have caught a wrong value in the un-checked four either time. The bundled pre-flight checks all 9 — use it instead of trusting the gate.
+This isn't theoretical — real release-prep commits touched *different* file subsets because `update-version` only produces a git diff for files that were previously stale: `v0.103.0` (`44f5be88b7`) changed 7 package.jsons including pdfjs-viewer; `v0.102.1` (`8ac9daa5d3`) changed 6, no pdfjs-viewer. The CI gate would not have caught a wrong value in the un-checked four either time. The bundled pre-flight checks all 9, and the metainfo `<release>` the gate has never known about — use it instead of trusting the gate.
 
 ## The publish step — exact strings that hard-fail
 
@@ -84,8 +84,9 @@ This isn't theoretical — real release-prep commits touched *different* file su
 - **Lockfile is NOT touched by a version-only bump.** Internal deps are `workspace:*` (resolve to `link:`, no version recorded — `grep 0.103.0 pnpm-lock.yaml` = 0 hits), and the release-prep commits above never touched `pnpm-lock.yaml`. CI installs `--frozen-lockfile` *before* any bump (`nightly.yml:71` then bump at `:75`; `release.yml:28`). `--frozen-lockfile` only fails if the release *also* changes a real dependency. The upstream doc's "run `pnpm i`" step is precautionary and misnames the file.
 - **Tag must be `v`-prefixed** — `release.yml:3-5` triggers only on `v*`. A bare `0.103.0` tag does nothing.
 - **`RELEASE_PAT`, not `GITHUB_TOKEN`** — `release.yml:161`. Confirmed the only PAT in the release flow; winget (downstream) uses a separate `WINGET_PAT` (`release-winget.yml:19`).
+- **Flathub opens a pull request, it does not publish.** `release.yml` has no Flathub job; `release-flathub.yml` runs on `release: published` (prereleases skipped) and opens a pull request against `flathub/org.triliumnotes.Trilium` that someone still has to merge. `gh workflow run "Release to Flathub" -f ref=v<X.Y.Z>` re-runs it by hand. Needs the `FLATHUB_PAT` secret. See the `packaging-for-flathub` skill.
 - **Don't hand-edit child package.jsons** — let `update-version` propagate from root, or they desync silently past the 5-file gate.
-- **`update-version` is idempotent but partial in the diff** — it rewrites all 8 unconditionally; only the previously-stale ones show up in `git status`. "Only 6 files changed" is normal and not a sign you missed one.
+- **`update-version` is idempotent but partial in the diff** — it rewrites all 8 unconditionally; only the previously-stale ones show up in `git status`. "Only 6 files changed" is normal and not a sign you missed one. The metainfo is the exception: its `<releases>` is *derived*, not accumulated — the newest 5 `vX.Y.Z` tags, dated by `creatordate`, with the version being prepared dated today until its own tag supplies the date. A re-run after tagging therefore settles on the tag date, and a checkout without tags fails the script rather than truncating the list.
 
 ## Testing packaging on CI: dispatching `nightly.yml` on a branch
 

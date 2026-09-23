@@ -771,10 +771,8 @@
     "title": "başlık",
     "date_created": "oluşturulma tarihi",
     "date_modified": "değiştirilme tarihi",
-    "sorting_direction": "Sıralama yönü",
     "ascending": "artan",
     "descending": "azalan",
-    "folders": "Klasöler",
     "sort_folders_at_top": "klasörleri en üstte sırala",
     "natural_sort": "Doğal Sıralama",
     "sort_with_respect_to_different_character_sorting": "farklı dillerde veya bölgelerde geçerli olan farklı karakter sıralama ve karşılaştırma kurallarına göre sırala.",
@@ -1526,15 +1524,7 @@
     "button_title": "Diyagramı SVG olarak dışa aktar"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Alt not oluştur ve haritaya ekle",
-    "reset_pan_zoom_title": "Kaydırma ve yakınlaştırmayı başlangıç koordinatlarına ve büyütmeye sıfırla",
-    "zoom_in_title": "Yakınlaştır",
-    "zoom_out_title": "Uzaklaştır"
-  },
-  "image_buttons": {
-    "zoom_in": "Yakınlaştır",
-    "zoom_out": "Uzaklaştır",
-    "reset_zoom": "Yakınlaştırmayı sıfırla"
+    "create_child_note_title": "Alt not oluştur ve haritaya ekle"
   },
   "image_navigation": {
     "previous": "Önceki resim: {{- title}}",
@@ -1543,16 +1533,6 @@
   "image_viewer": {
     "loading_error": "Resim yüklenirken bir hata oluştu.",
     "hints": {
-      "zoom": "Yakınlaştırma",
-      "zoom_in": "Yakınlaştır",
-      "zoom_out": "Uzaklaştır",
-      "reset_zoom": "Yakınlaştırmayı sıfırla",
-      "pan": "Kaydırma",
-      "pan_up": "Yukarı",
-      "pan_down": "Aşağı",
-      "pan_left": "Sol",
-      "pan_right": "Sağ",
-      "pan_fast": "Daha hızlı kaydırma",
       "navigation": "Gezinme",
       "next_image": "Sonraki resim",
       "previous_image": "Önceki resim",
@@ -2080,7 +2060,6 @@
     "monospace_ligatures": "Programlama bağlantı harfleri",
     "monospace_ligatures_description": "Eş aralıklı yazı tipi destekliyorsa, != ve -> gibi karakter çiftlerini tek sembol olarak (≠, →) oluşturur. Metnin kendisi değişmez.",
     "size_relative_to_general": "Boyut, genel yazı tipi boyutuna görecelidir",
-    "not_all_fonts_available": "Listelenen tüm yazı tipleri sisteminizde mevcut olmayabilir",
     "apply_changes": "Değişiklikleri uygulamak için yeniden yükle",
     "generic-fonts": "Genel yazı tipleri",
     "sans-serif-system-fonts": "Sans-serif sistem yazı tipleri",
@@ -3090,8 +3069,6 @@
     "move-marker-toast-title": "İşaretçiyi taşı",
     "unable-to-load-map": "Harita yüklenemiyor.",
     "webgl-unavailable": "WebGL kullanılamadığı için bu harita çizilemiyor. Donanım hızlandırmanın etkin ve ekran kartı sürücülerinizin güncel olduğunu kontrol edin.",
-    "zoom-in": "Yakınlaştır",
-    "zoom-out": "Uzaklaştır",
     "enter-3d": "3B görünüme eğ\nHaritayı serbestçe eğmek için Ctrl'yi basılı tutup sürükleyin",
     "exit-3d": "Haritayı tekrar düz yatır",
     "close-details": "Kapat",
@@ -3459,7 +3436,6 @@
     "remove-from-board": "Panodan kaldır",
     "archive-note": "Notu arşivle",
     "unarchive-note": "Notu arşivden çıkar",
-    "move-to": "Taşı",
     "insert-above": "Üstüne ekle",
     "insert-below": "Altına ekle",
     "delete-column": "Sütunu sil",
@@ -3469,7 +3445,6 @@
     "add-column": "Sütun Ekle",
     "add-column-placeholder": "Sütun adını girin...",
     "edit-note-title": "Not başlığını düzenlemek için tıklayın",
-    "edit-column-title": "Sütun başlığını düzenlemek için tıklayın",
     "column-already-exists": "Bu sütun panoda zaten var.",
     "column-definition-save-error": "Sütunlar panoda kaydedildi, ancak durum özelliğine kaydedilemedi.",
     "status-alias": "Durum"
@@ -3881,9 +3856,6 @@
     "tags-differ": "Seçili düğümler aynı etiketleri taşımıyor, bu yüzden bunlar yalnızca okunabilir.",
     "add-tag": "Bu etiketi ekle",
     "remove-tag": "Bu etiketi kaldır",
-    "zoom-in": "Yakınlaştır",
-    "zoom-out": "Uzaklaştır",
-    "reset-zoom": "Yakınlaştırmayı sıfırla",
     "center-map": "Haritayı ortala",
     "direction-left": "Dallar sola",
     "direction-right": "Dallar sağa",

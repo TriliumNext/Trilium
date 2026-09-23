@@ -18,7 +18,7 @@
         available languages.</li>
     </ul>
   </li>
-  <li>Type <code spellcheck="false">```</code> (as in Markdown).
+  <li>Type <code>```</code> (as in Markdown).
     <ul>
       <li>Note that it's not possible to specify the language, as it will default
         to the last selected language.</li>
@@ -28,15 +28,15 @@
 <h2>Exiting out of the code block</h2>
 <ul>
   <li>To exit out of a code block and enter a normal paragraph, move the cursor
-    at the end of the code block and press <kbd>Enter</kbd> twice.</li>
+    at the end of the code block and press Enter twice.</li>
   <li>Similarly, to insert a paragraph above the note block, move the cursor
-    at the beginning of the code block and press <kbd>Enter</kbd> twice.</li>
+    at the beginning of the code block and press Enter twice.</li>
 </ul>
 <aside class="admonition note">
   <p>If you've pasted a code block with a more complex HTML structure, exiting
-    out of the code block by pressing <kbd>Enter</kbd> multiple times might not
-    work. In that case the best approach is to delete the code block entirely
-    and use <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd> (paste as plain text).</p>
+    out of the code block by pressing Enter multiple times might not work.
+    In that case the best approach is to delete the code block entirely and
+    use Ctrl+Shift+V (paste as plain text).</p>
 </aside>
 <h2>Syntax highlighting &amp; color schemes</h2>
 <p>Since TriliumNext v0.90.12, Trilium will try to offer syntax highlighting
@@ -55,10 +55,12 @@
 <p>Note that when editing a text note, syntax highlighting is automatically
   disabled if the code block is too big (somewhere around 500 lines). This
   value is currently not configurable. For&nbsp;<a class="reference-link"
-  href="#root/_help_CoFPLs3dRlXc">Read-Only Notes</a>, this limitation is not applied.</p>
-<p>In order to configure this new feature, a section has been added in Options
-  → Appearance to control the syntax highlighting. There the color scheme
-  can be chosen, from a builtin selection of themes from Highlight.js.</p>
+  href="#root/_help_CoFPLs3dRlXc">Read-Only Notes</a>, this limitation is
+  not applied.</p>
+<p>In order to configure this new feature, a section has been added in&nbsp;<a
+  class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Appearance</em> to
+  control the syntax highlighting. There the color scheme can be chosen,
+  from a builtin selection of themes from Highlight.js.</p>
 <ul>
   <li>It is possible to disable the syntax highlighting for all the notes by
     selecting “No syntax highlighting” in the “Color scheme” option.</li>
@@ -93,13 +95,26 @@
   <img src="2_Code blocks_image.png">
 </p>
 <h2>Adjusting the list of languages</h2>
-<p>The code blocks feature shares the list of languages with the&nbsp;
-  <a
-  class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note type.</p>
+<p>The code blocks feature shares the list of languages with the&nbsp;<a
+  class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
+  type.</p>
 <p>The supported languages can be adjusted by going to&nbsp;<a class="reference-link"
-  href="#root/_help_4TIF1oA4VQRO">Options</a>, then <em>Code Notes</em> and looking
-  for the <em>Available MIME types in the dropdown</em> section. Simply check
-  any of the items to add them to the list, or uncheck them to remove them
-  from the list.</p>
+  href="#root/_help_4TIF1oA4VQRO">Options</a>, then <em>Code Notes</em> and
+  looking for the <em>Available MIME types in the dropdown</em> section. Simply
+  check any of the items to add them to the list, or uncheck them to remove
+  them from the list.</p>
 <p>Note that the list of languages is not immediately refreshed, you'd have
   to manually <a href="#root/_help_s8alTXmpFR61">refresh the application</a>.</p>
+<h2>Text replacements and ligatures</h2>
+<p><a class="reference-link" href="#root/_help_oI7GoyilXXAr">Automatic replacements</a>&nbsp;are
+  a feature of text notes which converts some character sequences into another
+  and some of them interfere with programming text, such as the conversion
+  of quotes. While in a code block, the automatic replacements <strong>are not effect</strong>.
+  The only way the automatic replacements can interfere is if the text is
+  typed/pasted before being put in a code block.</p>
+<p>A different feature is <em>programming ligatures</em>, which is simply
+  a display affordance which turns <code>!=</code> into <code>≠</code> or <code>-&gt;</code> as <code>→</code> .
+  These come from the <a href="#root/_help_w4rMEhJsALlA">font</a>. The underlying
+  text is not actually changed, and copying it out gives you back <code>!=</code> and <code>-&gt;</code>.</p>
+<p>Ligatures can be disabled in&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a><em>→ Appearance → Fonts → Programming ligatures.</em>
+</p>

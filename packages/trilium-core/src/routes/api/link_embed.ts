@@ -5,7 +5,7 @@ import {
     linkPreviewImageName,
     safeHostname
 } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import { parse } from "node-html-parser";
 
 import { ValidationError } from "../../errors.js";

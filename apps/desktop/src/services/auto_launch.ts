@@ -10,8 +10,8 @@ import path from "path";
 
 // We tag the autostart command so the app can tell, at launch, that it was started
 // by the OS at login (and should hide to the tray) rather than launched manually
-// (where it must show a window). macOS has no argv hook for login items, so it uses
-// the native openAsHidden flag and reports it back via wasOpenedAsHidden instead.
+// (where it must show a window). macOS has no argv hook for login items, so
+// wasLaunchedHidden() reads `wasOpenedAtLogin` from the login item there instead.
 export const START_HIDDEN_FLAG = "--start-hidden";
 
 /**
@@ -29,12 +29,11 @@ export function applyLaunchOnStartup() {
         if (process.platform === "linux") {
             applyLinuxAutostart(enabled, hidden);
         } else {
-            // macOS + Windows: handled natively by Electron. `openAsHidden` is the
-            // macOS mechanism; `args` is the Windows one. Each platform ignores the
-            // option that doesn't apply to it.
+            // macOS + Windows: handled natively by Electron. `args` is the Windows
+            // mechanism and macOS ignores it, so `hidden` reaches macOS through the
+            // `hideOnAutoStart` option that wasLaunchedHidden() reads at startup.
             electron.app.setLoginItemSettings({
                 openAtLogin: enabled,
-                openAsHidden: hidden,
                 args: hidden ? [START_HIDDEN_FLAG] : []
             });
         }
@@ -49,7 +48,9 @@ export function applyLaunchOnStartup() {
  */
 export function wasLaunchedHidden(): boolean {
     if (process.platform === "darwin") {
-        return electron.app.getLoginItemSettings().wasOpenedAsHidden;
+        // A macOS login item carries no arguments, so Electron reports only that the
+        // app was opened at login and `hideOnAutoStart` decides whether to hide it.
+        return electron.app.getLoginItemSettings().wasOpenedAtLogin && optionService.getOptionBool("hideOnAutoStart");
     }
     return process.argv.includes(START_HIDDEN_FLAG);
 }

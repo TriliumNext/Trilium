@@ -11,7 +11,11 @@ vi.mock("../react/NoteAutocomplete", async () => {
     return {
         default: (props: Record<string, unknown>) => {
             autocomplete.current = props;
-            return h("input", { id: props.id as string | undefined, ref: props.inputRef });
+            return h("input", {
+                id: props.id as string | undefined,
+                tabIndex: props.tabIndex as number | undefined,
+                ref: props.inputRef
+            });
         }
     };
 });
@@ -46,7 +50,7 @@ describe("RelationValuesInput", () => {
         return container;
     }
 
-    it("shows the targets as chips naming their notes, and drops the one pressed", async () => {
+    it("shows the targets as chips linking to their notes, and drops the one pressed", async () => {
         const alpha = buildNote({ title: "Alpha" });
         const beta = buildNote({ title: "Beta" });
         const onCommit = vi.fn();
@@ -54,6 +58,15 @@ describe("RelationValuesInput", () => {
 
         const chips = [ ...container.querySelectorAll(".tn-chip") ];
         expect(chips.map((chip) => chip.textContent?.trim())).toEqual([ "Alpha", "Beta" ]);
+
+        // The title is the only way from the field to a target already held, so it opens the note:
+        // an anchor, which is what the global handler navigates on. The icon stays outside it, so
+        // the hover underline does not run across the gap between the two.
+        const links = chips.map((chip) => chip.querySelector("a.tn-link"));
+        expect(links.map((link) => link?.getAttribute("href")))
+            .toEqual([ `#root/${alpha.noteId}`, `#root/${beta.noteId}` ]);
+        expect(links[0]?.textContent).toBe("Alpha");
+        expect(links[0]?.querySelector(".tn-icon")).toBeNull();
 
         await act(async () => chips[0]?.querySelector<HTMLElement>(".tn-chip-remove")?.click());
         expect(onCommit).toHaveBeenCalledWith([ beta.noteId ]);
@@ -85,7 +98,6 @@ describe("RelationValuesInput", () => {
         await mount({ values: [], onCommit: vi.fn(), inputId: "field-id", tabIndex: 205 });
         const input = container.querySelector("input");
         expect(input?.id).toBe("field-id");
-        // Set onto the box by hand: the field does not carry the attribute through to it.
         expect(input?.getAttribute("tabindex")).toBe("205");
     });
 });

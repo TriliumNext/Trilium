@@ -77,7 +77,7 @@ Once you've created your custom theme:
 2.  In the theme selection dropdown, you should see your custom theme listed under the name you provided with the `#appTheme` [label](../Advanced%20Usage/Attributes.md).
 3.  Select your custom theme to activate it.
 
-If you make changes to your theme, press <kbd>Ctrl</kbd> + <kbd>R</kbd> to reload the frontend and apply your updates.
+If you make changes to your theme, press Ctrl + R to reload the frontend and apply your updates.
 
 ### Sharing and Importing Themes
 
@@ -110,7 +110,7 @@ For example:
 
 When Trilium's frontend starts, all notes labeled with `appCss` are automatically included in the style element of the HTML page.
 
-After making changes, press <kbd>Ctrl</kbd> + <kbd>R</kbd> to reload the frontend and apply your new styles.
+After making changes, press Ctrl + R to reload the frontend and apply your new styles.
 
 ![](Themes_image.png)
 

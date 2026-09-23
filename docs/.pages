@@ -1,7 +1,0 @@
-# Navigation order for top-level sections
-nav:
-  - index.md
-  - User Guide
-  - Developer Guide
-  - Script API
-  - Release Notes

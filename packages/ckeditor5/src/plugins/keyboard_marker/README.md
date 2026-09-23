@@ -9,9 +9,15 @@ Derived from [mlewand/ckeditor5-keyboard-marker](https://github.com/mlewand/cked
 by Marek Lewandowski, licensed **GPL-3.0** — see [`LICENSE`](./LICENSE) next to this file.
 
 The source was ported to TypeScript and to current CKEditor 5 APIs, and has since diverged from
-upstream (two-step caret movement, `spellcheck="false"` on the downcast element, and
+upstream (two-step caret movement, `spellcheck="false"` on the editing-view element only, and
 `copyOnEnter: false` so the formatting does not carry onto the next paragraph). Upstream targets a
 long-obsolete CKEditor 5 version and is not tracked; treat this as Trilium-maintained code.
+
+The conversion is split rather than two-way: the upcast matches any `<kbd>`, the data downcast emits
+a plain one, and only the editing downcast carries `spellcheck="false"`. A two-way converter keyed on
+that attribute left a plain `<kbd>` — what `docs/` and every Markdown import hold, since
+`sanitizeHtml` allows `spellcheck` on `code` but not on `kbd` — to General HTML Support, which drops
+it under the shipped empty allow-list.
 
 It lived at `packages/ckeditor5-keyboard-marker` until it was folded into this package — it had no
 consumers outside `@triliumnext/ckeditor5`, was never published, and carried a full

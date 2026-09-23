@@ -6,14 +6,18 @@ import { deferred } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
+import { consumeBookmark } from "../../../services/bookmark_jump";
+import dateNoteService from "../../../services/date_notes";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
+import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
 import CKEditorWithWatchdog, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditorWithWatchdog";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
@@ -30,6 +34,8 @@ import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./util
 export default function EditableText({ note, parentComponent, ntxId, noteContext }: TypeWidgetProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<string>("");
+    /** The note `contentRef` holds the content of, so a restarted editor can be marked as holding it. */
+    const contentNoteIdRef = useRef<string>();
     const watchdogRef = useRef<EditorWatchdog>(null);
     const editorApiRef = useRef<CKEditorApi>(null);
     const [ language ] = useNoteLabel(note, "language");
@@ -63,25 +69,33 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         },
         onContentChange(newContent) {
             contentRef.current = newContent;
-            watchdogRef.current?.editor?.setData(newContent);
+            contentNoteIdRef.current = note?.noteId;
+            const editor = watchdogRef.current?.editor;
+            if (editor && note) {
+                setEditorNoteId(editor, note.noteId);
+            }
+            editor?.setData(newContent);
+
+            // Jump to the first search match when navigated from search results.
+            consumeSearchTerms(noteContext, ntxId);
 
             // Scroll to bookmark anchor if navigated with ?bookmark=...
             const viewScope = noteContext?.viewScope;
             if (viewScope?.bookmark) {
                 requestAnimationFrame(() => {
-                    const el = watchdogRef.current?.editor?.editing.view.getDomRoot()
-                        ?.querySelector(`[id="${CSS.escape(viewScope.bookmark!)}"]`);
-                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    viewScope.bookmark = undefined;
+                    consumeBookmark(watchdogRef.current?.editor?.editing.view.getDomRoot(), viewScope);
                 });
             }
         },
         dataSaved(savedData) {
             // Store back the saved data in order to retrieve it in case the CKEditor crashes.
             contentRef.current = savedData.content;
+            contentNoteIdRef.current = note?.noteId;
         }
     });
     const templates = useTemplates();
+
+    useSearchTermsConsumer(note, noteContext, ntxId);
 
     useTriliumEvent("scrollToEnd", () => {
         const editor = watchdogRef.current?.editor;
@@ -155,8 +169,8 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             linkEmbedService.renderMentionPreview(container, metadata, editable);
         },
         // Creating notes in @-completion
-        async createNoteForReferenceLink(title: string) {
-            const notePath = noteContext?.notePath;
+        async createNoteForReferenceLink(title: string, intoInbox: boolean) {
+            const notePath = intoInbox ? await dateNoteService.getInboxNotePath() : noteContext?.notePath;
             if (!notePath) return;
 
             const resp = await note_create.createNoteWithTypePrompt(notePath, {
@@ -464,6 +478,9 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     initialized.current.resolve();
                     // Restore the data, either on the first render or if the editor crashes.
                     // We are not using CKEditor's built-in watch dog content, instead we are using the data we store regularly in the spaced update (see `dataSaved`).
+                    if (contentNoteIdRef.current) {
+                        setEditorNoteId(editor, contentNoteIdRef.current);
+                    }
                     editor.setData(contentRef.current);
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
 

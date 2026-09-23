@@ -54,18 +54,18 @@ Since we set the script to be run on start-up, all we need to do is to [refresh 
     	// [...]
     }
 });</code></pre></td>
-            <td><p>This uses the <a href="../../Frontend%20Basics.md">Front-end API</a> to create a icon in the&nbsp;<a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, by specifying:</p><ul><li>A title</li><li>A corresponding boxicons icon (without the <code spellcheck="false">bx-</code> prefix).</li><li>Optionally, a keyboard shortcut to assign to it.</li><li>The action, which will be executed when the button is pressed.</li></ul></td>
+            <td><p>This uses the <a href="../../Frontend%20Basics.md">Front-end API</a> to create a icon in the&nbsp;<a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, by specifying:</p><ul><li>A title</li><li>A corresponding boxicons icon (without the <code>bx-</code> prefix).</li><li>Optionally, a keyboard shortcut to assign to it.</li><li>The action, which will be executed when the button is pressed.</li></ul></td>
         </tr>
         <tr>
             <td><pre><code class="language-text-x-trilium-auto">const taskNoteId = await api.runOnBackend(() =&gt; {
     // Shown below.           
     return resp.note.noteId;
 });</code></pre></td>
-            <td><ul><li>This portion of code is actually executed on the server (backend) and not on the client (i.e. browser).<ul><li>The reason is that the creating notes is the responsibility of the server.</li></ul></li><li>Here we can also see that it is possible to return results from the server execution and read them in the client (<code spellcheck="false">taskNoteId</code>).</li></ul></td>
+            <td><ul><li>This portion of code is actually executed on the server (backend) and not on the client (i.e. browser).<ul><li>The reason is that the creating notes is the responsibility of the server.</li></ul></li><li>Here we can also see that it is possible to return results from the server execution and read them in the client (<code>taskNoteId</code>).</li></ul></td>
         </tr>
         <tr>
             <td><pre><code class="language-text-x-trilium-auto">const todoRootNote = api.getNoteWithLabel("taskTodoRoot");</code></pre></td>
-            <td><ul><li>Here we identify a note with the <a href="../../../Advanced%20Usage/Attributes.md">label</a> <code spellcheck="false">#taskTodoRoot</code>. This is how the&nbsp;<a class="reference-link" href="../../../Advanced%20Usage/Advanced%20Showcases/Task%20Manager.md">Task Manager</a>&nbsp;showcase knows where to place all the different tasks.</li><li>Normally this might return a <code spellcheck="false">null</code> value if no such note could be identified, but error handling is outside the scope of this example.&nbsp;</li></ul></td>
+            <td><ul><li>Here we identify a note with the <a href="../../../Advanced%20Usage/Attributes.md">label</a> <code>#taskTodoRoot</code>. This is how the&nbsp;<a class="reference-link" href="../../../Advanced%20Usage/Advanced%20Showcases/Task%20Manager.md">Task Manager</a>&nbsp;showcase knows where to place all the different tasks.</li><li>Normally this might return a <code>null</code> value if no such note could be identified, but error handling is outside the scope of this example.&nbsp;</li></ul></td>
         </tr>
         <tr>
             <td><pre><code class="language-text-x-trilium-auto">const resp = api.createTextNote(todoRootNote.noteId, "New task", "")</code></pre></td>

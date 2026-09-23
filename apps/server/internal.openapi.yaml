@@ -1998,9 +1998,27 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Note'
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: Distinct notes matching, counted before the twenty-result cap.
+                  results:
+                    type: array
+                    description: At most twenty, name-and-value matches ahead of name-only ones.
+                    items:
+                      type: object
+                      properties:
+                        notePathArray:
+                          type: array
+                          description: Note IDs from the root down to the matched note.
+                          items:
+                            type: string
+                        score:
+                          type: number
+                          description: Search relevance, higher is better.
+                      required: [notePathArray, score]
+                required: [count, results]
                   
   /api/search-templates:
     get:
@@ -2053,22 +2071,6 @@ paths:
                     path:
                       type: string
                       
-  /api/autocomplete/notesCount:
-    get:
-      tags: [Search]
-      summary: Get total notes count
-      operationId: getNotesCount
-      responses:
-        '200':
-          description: Notes count
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  count:
-                    type: integer
-                    
   /api/similar-notes/{noteId}:
     get:
       tags: [Search]
@@ -2942,7 +2944,7 @@ paths:
           schema:
             type: string
             enum: [prometheus, json]
-            default: json
+            default: prometheus
       responses:
         '200':
           description: System metrics
@@ -3137,6 +3139,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/Note'
                 
+  /api/special-notes/inbox-target:
+    get:
+      tags: [Special Notes]
+      summary: Resolve where an inbox capture would go
+      description: >
+        Reports the destination `/api/special-notes/inbox/{date}` would use, without creating
+        anything. Honours the hoisted note, read from the `trilium-hoisted-note-id` header.
+      operationId: getInboxTarget
+      responses:
+        '200':
+          description: The resolved destination
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [kind]
+                properties:
+                  kind:
+                    type: string
+                    enum: [inbox, workspaceInbox, workspaceRoot, dayNote, root]
+                    description: >
+                      Which rule decided the destination. `dayNote` names no note, because the
+                      day note is created when the capture happens.
+                  noteId:
+                    type: string
+                    description: Absent for `dayNote`.
+                  title:
+                    type: string
+                    description: Absent for `dayNote`.
+
   /api/special-notes/days/{date}:
     get:
       tags: [Special Notes]

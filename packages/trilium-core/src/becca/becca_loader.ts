@@ -1,4 +1,4 @@
-import type { AttributeRow, BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
+import type { BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
 import eventService from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
@@ -35,22 +35,27 @@ function load() {
     // we know this is slow and the total becca load time is logged
     const sql = getSql();
     sql.disableSlowQueryLogging(() => {
-        // using a raw query and passing arrays to avoid allocating new objects,
-        // this is worth it for the becca load since it happens every run and blocks the app until finished
+        // Rows arrive as positional arrays, which the entities consume without allocating
+        // an object per row, and in one bulk read rather than a column at a time. Both
+        // matter here: the load happens every run and blocks the app until it finishes.
 
-        for (const row of sql.getRawRows(/*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified FROM notes WHERE isDeleted = 0`)) {
+        const notesFrom = /*sql*/`FROM notes WHERE isDeleted = 0`;
+        for (const row of sql.getRawRowsBulk(NOTE_COLUMNS, notesFrom)) {
             new BNote().update(row).init();
         }
 
-        const branchRows = sql.getRawRows<BranchRow>(/*sql*/`SELECT branchId, noteId, parentNoteId, prefix, notePosition, isExpanded, utcDateModified FROM branches WHERE isDeleted = 0`);
+        const branchesFrom = /*sql*/`FROM branches WHERE isDeleted = 0`;
+        const branchRows = sql.getRawRowsBulk(BRANCH_COLUMNS, branchesFrom);
         // in-memory sort is faster than in the DB
-        branchRows.sort((a, b) => (a.notePosition || 0) - (b.notePosition || 0));
+        const positionIdx = BRANCH_COLUMNS.indexOf("notePosition");
+        branchRows.sort((a, b) => (Number(a[positionIdx]) || 0) - (Number(b[positionIdx]) || 0));
 
         for (const row of branchRows) {
             new BBranch().update(row).init();
         }
 
-        for (const row of sql.getRawRows<AttributeRow>(/*sql*/`SELECT attributeId, noteId, type, name, value, isInheritable, position, utcDateModified FROM attributes WHERE isDeleted = 0`)) {
+        const attributesFrom = /*sql*/`FROM attributes WHERE isDeleted = 0`;
+        for (const row of sql.getRawRowsBulk(ATTRIBUTE_COLUMNS, attributesFrom)) {
             new BAttribute().update(row).init();
         }
 
@@ -72,6 +77,19 @@ function load() {
 
     getLog().info(`Becca (note cache) load took ${Date.now() - start}ms`);
 }
+
+// The order each entity's update() destructures its row in. None of these columns holds a
+// BLOB or an integer large enough for getRawRowsBulk()'s JSON round-trip to lose precision.
+const NOTE_COLUMNS = [
+    "noteId", "title", "type", "mime", "isProtected", "blobId",
+    "dateCreated", "dateModified", "utcDateCreated", "utcDateModified"
+];
+const BRANCH_COLUMNS = [
+    "branchId", "noteId", "parentNoteId", "prefix", "notePosition", "isExpanded", "utcDateModified"
+];
+const ATTRIBUTE_COLUMNS = [
+    "attributeId", "noteId", "type", "name", "value", "isInheritable", "position", "utcDateModified"
+];
 
 function reload(reason: string) {
     load();
@@ -189,6 +207,9 @@ function noteUpdated(entityRow: NoteRow) {
         // TODO, this wouldn't have worked in the original implementation since the variable was named __flatTextCache.
         // type / mime could have been changed, and they are present in flatTextCache
         note.__flatTextCache = null;
+        // A local rename assigns `title` and saves without going through `updateFromRow`, so this
+        // is the only point where the caches derived from the title are dropped for it.
+        note.__searchableTitleCache = null;
     }
 }
 

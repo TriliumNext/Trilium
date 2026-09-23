@@ -106,6 +106,19 @@
     }
 }
 
+/* A rail down one side of the content instead of a bar across it (see `vertical` on
+   OverlayControlGroup). */
+.tn-overlay-control-group[data-orientation="vertical"] {
+    flex-direction: column;
+
+    /* The ends of the run are the top and the bottom, so the rounding follows them. The group's
+       attribute is named alongside the child, to outweigh the row form above. */
+    :where(button):first-child,
+    :where(button):last-child {
+        border-radius: var(--_start-border-radius, 0) var(--_start-border-radius, 0) var(--_end-border-radius, 0) var(--_end-border-radius, 0);
+    }
+}
+
 .tn-overlay-control-group[data-placement] {
     position: absolute;
 }
@@ -133,4 +146,12 @@
     inset-inline: var(--overlay-group-inset-start, var(--overlay-group-inset)) var(--overlay-group-inset-end, var(--overlay-group-inset));
     margin-inline: auto;
     width: fit-content;
+}
+
+/* The middle of a side edge, measured as `-center` measures the middle of a top or bottom one:
+   stretched between the two insets, with the margins sharing what the group does not take. */
+.tn-overlay-control-group[data-placement^="middle-"] {
+    inset-block: var(--overlay-group-inset-top, var(--overlay-group-inset)) var(--overlay-group-inset-bottom, var(--overlay-group-inset));
+    margin-block: auto;
+    height: fit-content;
 }

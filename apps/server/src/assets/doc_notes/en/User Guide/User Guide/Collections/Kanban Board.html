@@ -1,6 +1,6 @@
 <figure class="image">
-  <img style="aspect-ratio:918/248;" src="2_Kanban Board_image.png"
-  width="918" height="248">
+  <img style="aspect-ratio:918/248;" src="2_Kanban Board_image.png" width="918"
+  height="248">
 </figure>
 <p>The Board view presents sub-notes in columns for a Kanban-like experience.
   Each column represents a possible value for a status label, which can be
@@ -11,18 +11,19 @@
   look for <em>Kanban Board</em>.</p>
 <h2>How it works</h2>
 <p>When first creating a collection of <em>Board</em> type, a few subnotes
-  will be created, each having a <code spellcheck="false">#status</code> label
-  set. The board then groups each note by the value of the status attribute.</p>
+  will be created, each having a <code>#status</code> label set. The board
+  then groups each note by the value of the status attribute.</p>
 <p>Notes are displayed recursively, so even the child notes of the child
   notes will be displayed. However, unlike the&nbsp;<a class="reference-link"
-  href="#root/_help_2FvYrpmOXm29">Table</a>, the notes are not displayed in a hierarchy.</p>
+  href="#root/_help_2FvYrpmOXm29">Table</a>, the notes are not displayed
+  in a hierarchy.</p>
 <h2>Interaction</h2>
 <h3>Working with columns</h3>
 <ul>
   <li>Create a new column by pressing <em>Add Column</em> near the last column.
     <ul>
       <li>Once pressed, a text box will be displayed to set the name of the column.
-        Press <kbd>Enter</kbd> to confirm, or <kbd>Escape</kbd> to dismiss.</li>
+        Press Enter to confirm, or Escape to dismiss.</li>
     </ul>
   </li>
   <li>To reorder a column, simply hold the mouse over the title and drag it
@@ -41,10 +42,9 @@
 <ul>
   <li>Create a new note in any column by pressing <em>New item</em>
     <ul>
-      <li>Enter the name of the note and press <kbd>Enter</kbd> or click away. To
-        dismiss the creation of a new note, simply press <kbd>Escape</kbd> or leave
-        the name empty.</li>
-      <li>Once created, the new note will have an attribute (<code spellcheck="false">status</code> label
+      <li>Enter the name of the note and press Enter or click away. To dismiss the
+        creation of a new note, simply press Escape or leave the name empty.</li>
+      <li>Once created, the new note will have an attribute (<code>status</code> label
         by default) set to the name of the column.</li>
     </ul>
   </li>
@@ -92,25 +92,28 @@
 <h3>Keyboard interaction</h3>
 <p>The board view has mild support for keyboard-based navigation:</p>
 <ul>
-  <li>Use <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd>Tab</kbd> to navigate between
-    column titles, notes and the “New item” button for each of the columns,
-    in sequential order.</li>
-  <li>To rename a column or a note, press <kbd>F2</kbd> while it is focused.</li>
-  <li>To open a specific note or create a new item, press <kbd>Enter</kbd> while
-    it is focused.</li>
-  <li>To dismiss a rename of a note or a column, press <kbd>Escape</kbd>.</li>
+  <li>Use Tab and Shift+Tab to navigate between column titles, notes and the
+    “New item” button for each of the columns, in sequential order.</li>
+  <li>To rename a column or a note, press F2 while it is focused.</li>
+  <li>To open a specific note or create a new item, press Enter while it is
+    focused.</li>
+  <li>To create a card at the top of a column, press Enter while its header
+    is focused; Shift+Enter creates one at the bottom.</li>
+  <li>To collapse or expand a column, press Space while its header is
+    focused.</li>
+  <li>To dismiss a rename of a note or a column, press Escape.</li>
 </ul>
 <h2>Configuration</h2>
 <h3>Displaying custom attributes</h3>
 <figure class="image image-style-align-center">
-  <img style="aspect-ratio:531/485;" src="Kanban Board_image.png"
-  width="531" height="485">
+  <img style="aspect-ratio:531/485;" src="Kanban Board_image.png" width="531"
+  height="485">
 </figure>
 <p>Since v0.100.0, note attributes can be displayed on the board to enhance
   it with custom information such as adding a <em>Due date</em> for your tasks.</p>
 <p>This feature works exclusively via attribute definitions (<a class="reference-link"
-  href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>). The easiest way to
-  add these is:</p>
+  href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>). The easiest way
+  to add these is:</p>
 <ol>
   <li>Go to board note.</li>
   <li>In the ribbon select <em>Owned Attributes</em> → plus button → <em>Add new label/relation definition</em>.</li>
@@ -129,21 +132,16 @@
   <li>All label types are supported, including dates, booleans and URLs.</li>
   <li>Relation attributes are also supported as well, showing a link with the
     target note title and icon.</li>
-  <li>Currently, it's not possible to adjust which promoted attributes are displayed,
-    since all promoted attributes will be displayed (except the <code spellcheck="false">board:groupBy</code> one).
-    There are plans to improve upon this being able to hide promoted attributes
-    individually.</li>
 </ul>
 <h3>Grouping by another label</h3>
-<p>By default, the label used to group the notes is <code spellcheck="false">#status</code>.
-  It is possible to use a different label if needed by defining a label named
-  <code
-  spellcheck="false">#board:groupBy</code>with the value being the attribute to use (with or
-    without <code spellcheck="false">#</code> attribute prefix).</p>
+<p>By default, the label used to group the notes is <code>#status</code>.
+  It is possible to use a different label if needed by defining a label named <code>#board:groupBy</code> with
+  the value being the attribute to use (with or without <code>#</code> attribute
+  prefix).</p>
 <h3>Grouping by relations</h3>
 <figure class="image image-style-align-right">
-  <img style="aspect-ratio:535/245;" src="1_Kanban Board_image.png"
-  width="535" height="245">
+  <img style="aspect-ratio:535/245;" src="1_Kanban Board_image.png" width="535"
+  height="245">
 </figure>
 <p>A more advanced use-case is grouping by <a href="#root/_help_Cq5X6iKQop6R">Relations</a>.</p>
 <p>During this mode:</p>
@@ -169,14 +167,11 @@
     <p>First, create a Kanban board from scratch and not a template:</p>
   </li>
   <li>
-    <p>Assign <code spellcheck="false">#viewType=board #hidePromotedAttributes</code> to
-      emulate the default template.</p>
+    <p>Assign <code>#viewType=board #hidePromotedAttributes</code> to emulate the
+      default template.</p>
   </li>
   <li>
-    <p>Set <code spellcheck="false">#board:groupBy</code> to the name of a relation
-      to group by, <strong>including the</strong>  <code spellcheck="false">~</code>  <strong>prefix</strong> (e.g.
-      <code
-      spellcheck="false">~status</code>).</p>
+    <p>Set <code>#board:groupBy</code> to the name of a relation to group by, <strong>including the</strong>  <code>~</code>  <strong>prefix</strong> (e.g. <code>~status</code>).</p>
   </li>
   <li>
     <p>Optionally, use&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;for

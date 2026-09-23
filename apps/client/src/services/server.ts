@@ -188,6 +188,16 @@ interface CallOptions {
  */
 const DEFAULT_TIMEOUT = 60000;
 
+/**
+ * Whether a standalone tab that owns the SQLite worker answers its own API calls, rather than
+ * letting the XHR below reach that same worker through the service worker's forwarding.
+ *
+ * Build with `VITE_DISABLE_LOCAL_FETCH=true` to take the service worker's route instead, which is
+ * what compares the two transports. An unset variable keeps the direct path, so a build that does
+ * not name the variable still gets it.
+ */
+const USE_LOCAL_FETCH = import.meta.env.VITE_DISABLE_LOCAL_FETCH !== "true";
+
 async function call<T>(method: string, url: string, componentId?: string, options: CallOptions = {}) {
     const headers = await getHeaders({
         "trilium-component-id": componentId
@@ -210,6 +220,14 @@ async function call<T>(method: string, url: string, componentId?: string, option
 }
 
 function ajax(url: string, method: string, data: unknown, headers: Headers, opts: CallOptions): Promise<Response> {
+    // The standalone leader tab defines `standaloneApi.localFetch`, which the in-page SQLite
+    // worker answers directly — the XHR below would reach the same worker through the service
+    // worker's forwarding. Follower tabs and the other builds leave it unset.
+    const localFetch = USE_LOCAL_FETCH ? window.standaloneApi?.localFetch : undefined;
+    if (localFetch) {
+        return localAjax(localFetch, url, method, data, headers, opts);
+    }
+
     return new Promise((res, rej) => {
         const options: JQueryAjaxSettings = {
             url: window.glob.baseApiUrl + url,
@@ -292,6 +310,98 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, opts
 
         $.ajax(options);
     });
+}
+
+/**
+ * The `ajax()` fast path for the standalone leader tab: the same request shape, response contract
+ * and error handling, but answered by `standaloneApi.localFetch` instead of an XHR.
+ */
+async function localAjax(
+    localFetch: (request: Request) => Promise<globalThis.Response>,
+    url: string,
+    method: string,
+    data: unknown,
+    headers: Headers,
+    opts: CallOptions
+): Promise<Response> {
+    const requestHeaders: Record<string, string> = {};
+    for (const [ name, value ] of Object.entries(headers)) {
+        if (value) {
+            requestHeaders[name] = value;
+        }
+    }
+
+    let body: string | undefined;
+    if (data) {
+        try {
+            body = JSON.stringify(data);
+            requestHeaders["content-type"] = "application/json";
+        } catch (e) {
+            console.log("Can't stringify data: ", data, " because of error: ", e);
+        }
+    }
+
+    // The worker carries on with a request this stops waiting for, the same way the XHR path
+    // abandons one still in flight. Nothing else bounds the wait: a worker that died rejects what
+    // it was holding, but one stuck inside a request never answers it.
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    const expiry = new Promise<never>((_, rej) => {
+        timeoutHandle = setTimeout(() => rej(new Error(`Timed out after ${timeoutMs}ms: ${method} ${url}`)), timeoutMs);
+    });
+
+    const request = new Request(window.glob.baseApiUrl + url, { method, headers: requestHeaders, body });
+    const startedAt = performance.now();
+
+    let resp: globalThis.Response;
+    try {
+        resp = await Promise.race([ localFetch(request), expiry ]);
+    } finally {
+        clearTimeout(timeoutHandle);
+        if (import.meta.env.DEV) {
+            // This transport opens no XHR, so devtools' network panel lists none of these.
+            console.debug(`[api] ${method} ${url} ${(performance.now() - startedAt).toFixed(1)}ms`);
+        }
+    }
+
+    const responseText = await resp.text();
+
+    if (!resp.ok) {
+        // If the CSRF token is stale (e.g. session expired while tab was backgrounded),
+        // refresh it and retry the request once.
+        if (!opts.csrfRetried && isCsrfError(resp.status, responseText)) {
+            await refreshCsrfToken();
+            // Rebuild headers so the fresh glob.csrfToken is picked up
+            const retryHeaders = await getHeaders({ "trilium-component-id": headers["trilium-component-id"] });
+            return await ajax(url, method, data, retryHeaders, { ...opts, csrfRetried: true });
+        }
+
+        const silenced = (opts.silentNotFound && resp.status === 404)
+            || (opts.silentInternalServerError && resp.status === 500)
+            || (opts.silentUnauthorized && resp.status === 401);
+
+        if (!silenced) {
+            try {
+                await reportError(method, url, resp.status, responseText);
+            } catch {
+                // reportError may throw (e.g. ValidationError); the throw below signals the caller either way.
+            }
+        }
+
+        throw responseText;
+    }
+
+    const respHeaders: Headers = {};
+    for (const [ name, value ] of resp.headers.entries()) {
+        respHeaders[name] = value;
+    }
+
+    let respBody: unknown = responseText;
+    if (!opts.raw && (resp.headers.get("content-type") ?? "").includes("json")) {
+        respBody = responseText ? JSON.parse(responseText) : null;
+    }
+
+    return { body: respBody, headers: respHeaders };
 }
 
 async function reportError(method: string, url: string, statusCode: number, response: unknown) {

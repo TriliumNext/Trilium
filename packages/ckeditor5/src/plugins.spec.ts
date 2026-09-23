@@ -9,6 +9,7 @@ import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
 import { CHAT_INPUT_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
+import FindInLinkWidgets from "./plugins/find_in_link_widgets.js";
 import TriliumFormatPainter from "./plugins/format_painter/format_painter.js";
 import IncludeNote from "./plugins/includenote.js";
 import InternalLinkPlugin from "./plugins/internallink.js";
@@ -79,6 +80,7 @@ describe("plugin lists", () => {
         expect(COMMON_PLUGINS).toContain(InternalLinkPlugin);
         expect(COMMON_PLUGINS).toContain(IncludeNote);
         expect(COMMON_PLUGINS).toContain(LinkEmbed);
+        expect(COMMON_PLUGINS).toContain(FindInLinkWidgets);
         expect(COMMON_PLUGINS).toContain(Uploadfileplugin);
     });
 

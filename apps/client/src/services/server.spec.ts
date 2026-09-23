@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Toggleable flag backing the `isShare` named export of ./utils.js.
 let isShareValue = false;
@@ -428,5 +428,180 @@ describe("upload", () => {
             throw "string failure";
         });
         await expect(server.upload("upload/url", makeFile())).rejects.toBe("string failure");
+    });
+});
+
+describe("localFetch transport", () => {
+    let localFetch: ReturnType<typeof vi.fn>;
+
+    function answerWith(body: string, init: { status?: number; headers?: Record<string, string> } = {}) {
+        localFetch.mockResolvedValue(
+            new Response(body, {
+                status: init.status ?? 200,
+                headers: init.headers ?? { "content-type": "application/json" }
+            })
+        );
+    }
+
+    beforeEach(() => {
+        localFetch = vi.fn();
+        (window as any).standaloneApi = { localFetch };
+        // Every test in here must reach the worker directly. Failing loudly beats asserting
+        // `not.toHaveBeenCalled()` in each one, and names what went wrong.
+        (window as any).$.ajax = () => {
+            throw new Error("$.ajax was used even though a tab owns the worker");
+        };
+    });
+
+    afterEach(() => {
+        delete (window as any).standaloneApi;
+    });
+
+    it("answers from the worker and tracks the max entity change id", async () => {
+        answerWith(JSON.stringify({ ok: true }), {
+            headers: { "content-type": "application/json", "trilium-max-entity-change-id": "99" }
+        });
+
+        const result = await server.get<{ ok: boolean }>("some/url", "comp-x");
+
+        expect(result).toEqual({ ok: true });
+        expect(server.getMaxKnownEntityChangeId()).toBeGreaterThanOrEqual(99);
+
+        const request = localFetch.mock.calls[0][0] as Request;
+        expect(request.method).toBe("GET");
+        expect(request.url).toMatch(/\/api\/some\/url$/);
+        expect(request.headers.get("trilium-component-id")).toBe("comp-x");
+        expect(request.headers.get("x-csrf-token")).toBe("csrf-1");
+    });
+
+    it("sends a JSON body for POST and hands back text for a raw GET", async () => {
+        answerWith(JSON.stringify({ saved: true }));
+        await server.post("post/url", { title: "hello" });
+
+        const request = localFetch.mock.calls[0][0] as Request;
+        expect(request.method).toBe("POST");
+        expect(request.headers.get("content-type")).toBe("application/json");
+        expect(await request.text()).toBe(JSON.stringify({ title: "hello" }));
+
+        // `raw` asks for the body as it arrived, whatever the content type claims.
+        answerWith(JSON.stringify({ parsed: false }));
+        const raw = await server.get("raw/url", undefined, true);
+        expect(raw).toBe(JSON.stringify({ parsed: false }));
+    });
+
+    it("stays silent on the statuses the caller presents itself, still rejecting with the body", async () => {
+        answerWith("{}", { status: 404 });
+        await expect(server.getWithSilentNotFound("url")).rejects.toBeDefined();
+
+        answerWith("boom", { status: 500 });
+        await expect(server.postWithSilentInternalServerError("url", {})).rejects.toBeDefined();
+
+        answerWith("The OneNote connection was lost.", { status: 401 });
+        await expect(server.getWithSilentUnauthorized("url")).rejects.toBe("The OneNote connection was lost.");
+
+        expect(toastMock.showError).not.toHaveBeenCalled();
+        expect((window as any).logError).not.toHaveBeenCalled();
+    });
+
+    it("reports a validation error and rejects with the raw body", async () => {
+        const responseText = JSON.stringify({ message: "Bad input" });
+        answerWith(responseText, { status: 400 });
+
+        await expect(server.post("url", {})).rejects.toBe(responseText);
+        expect(toastMock.showError).toHaveBeenCalledWith("Bad input");
+    });
+
+    it("refreshes a stale csrf token and retries once, over the same transport", async () => {
+        (window as any).fetch = vi.fn(async () => ({
+            ok: true,
+            json: async () => ({ csrfToken: "fresh-token" })
+        }));
+        (window as any).location = { search: "?x=1" } as any;
+
+        localFetch
+            .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Invalid CSRF token" }), {
+                status: 403,
+                headers: { "content-type": "application/json" }
+            }))
+            .mockResolvedValueOnce(new Response(JSON.stringify({ retried: true }), {
+                status: 200,
+                headers: { "content-type": "application/json" }
+            }));
+
+        const result = await server.get<{ retried: boolean }>("retry/url");
+
+        expect(result).toEqual({ retried: true });
+        expect(localFetch).toHaveBeenCalledTimes(2);
+        expect((window as any).glob.csrfToken).toBe("fresh-token");
+        // The retry carries the token the refresh just fetched, which is the point of retrying.
+        expect((localFetch.mock.calls[1][0] as Request).headers.get("x-csrf-token")).toBe("fresh-token");
+    });
+
+    it("gives up on a worker that never answers", async () => {
+        localFetch.mockReturnValue(new Promise(() => {}));
+
+        await expect(server.getWithTimeout("stuck/url", 20)).rejects.toThrow(/Timed out after 20ms/);
+    });
+
+    it("uses the XHR transport when no tab owns the worker", async () => {
+        delete (window as any).standaloneApi;
+        const ajaxSpy = vi.fn((opts: AjaxOptions) => {
+            opts.success({ viaXhr: true }, "success", fakeJqXhr(""));
+        });
+        (window as any).$.ajax = ajaxSpy;
+
+        await expect(server.get("url")).resolves.toEqual({ viaXhr: true });
+        expect(localFetch).not.toHaveBeenCalled();
+    });
+
+    it("answers an empty body with null rather than parsing it", async () => {
+        // What a DELETE returns, and what `JSON.parse("")` would throw on.
+        localFetch.mockResolvedValue(new Response(null, {
+            status: 204,
+            headers: { "content-type": "application/json" }
+        }));
+
+        await expect(server.remove("del/url")).resolves.toBeNull();
+    });
+
+    it("hands back a body the response does not call json as it arrived", async () => {
+        answerWith("plain words", { headers: { "content-type": "text/plain" } });
+
+        await expect(server.get("text/url")).resolves.toBe("plain words");
+    });
+
+    it("drops the headers that have no value", async () => {
+        // No active context, so `trilium-hoisted-note-id` is null. Left in, it would reach the
+        // worker as the string "null".
+        answerWith(JSON.stringify({}));
+        await server.get("url");
+
+        const request = localFetch.mock.calls[0][0] as Request;
+        expect(request.headers.has("trilium-hoisted-note-id")).toBe(false);
+    });
+
+    it("refreshes the csrf token only once, however many times the retry is refused", async () => {
+        (window as any).fetch = vi.fn(async () => ({
+            ok: true,
+            json: async () => ({ csrfToken: "fresh-token" })
+        }));
+        (window as any).location = { search: "" } as any;
+
+        const refusal = JSON.stringify({ message: "Invalid CSRF token" });
+        localFetch.mockImplementation(async () => new Response(refusal, {
+            status: 403,
+            headers: { "content-type": "application/json" }
+        }));
+
+        await expect(server.get("retry-forever/url")).rejects.toBe(refusal);
+        // The retry carries `csrfRetried`, so its own refusal reports rather than retrying again.
+        expect(localFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("lets a worker failure through instead of reading a response out of it", async () => {
+        // What local-bridge.ts rejects every in-flight request with when the worker dies.
+        localFetch.mockRejectedValue(new Error("Worker error: boom"));
+
+        await expect(server.get("url")).rejects.toThrow("Worker error: boom");
     });
 });

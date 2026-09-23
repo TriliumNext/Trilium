@@ -520,16 +520,22 @@
     "title": "제목",
     "date_created": "생성일",
     "date_modified": "수정일",
-    "sorting_direction": "정렬 방향",
     "ascending": "오름차순",
     "descending": "내림차순",
-    "folders": "폴더",
     "sort_folders_at_top": "폴더를 맨 위로 정렬",
     "natural_sort": "자연 정렬",
-    "sort_with_respect_to_different_character_sorting": "서로 다른 언어나 지역에서 서로 다른 문자 정렬 및 정렬 규칙에 따라 정렬합니다.",
+    "sort_with_respect_to_different_character_sorting": "언어나 지역별 문자 정렬 및 비교 규칙을 반영하여 정렬합니다.",
     "natural_sort_language": "자연 정렬 언어",
     "the_language_code_for_natural_sort": "자연 정렬의 언어 코드, 예: 중국어의 \"zh-CN\".",
-    "sort": "정렬"
+    "sort": "정렬",
+    "sorting_criteria_description": "노트는 첫 번째 정렬 단계를 기준으로 정렬되며, 이전 단계에서 값이 같은 경우에만 다음 단계가 적용됩니다.",
+    "label": "라벨",
+    "label_name": "라벨 이름",
+    "add_level": "정렬 단계 추가",
+    "remove_level": "정렬 단계 제거",
+    "move_level_up": "정렬 단계 위로 이동",
+    "move_level_down": "정렬 단계 아래로 이동",
+    "folders_follow_first_level": "첫 번째 정렬 단계가 내림차순이면 폴더는 대신 맨 아래에 정렬됩니다."
   },
   "upload_attachments": {
     "upload_attachments_to_note": "노트에 첨부 파일 업로드",
@@ -592,8 +598,8 @@
     "run_on_instance": "이 항목을 실행할 Trilium 인스턴스를 지정합니다. 기본값은 모든 인스턴스입니다.",
     "run_at_hour": "실행할 시간을 지정합니다. <code>#run=hourly</code> 와 함께 사용해야 합니다. 하루에 여러 번 실행하려면 여러 번 정의할 수 있습니다.",
     "disable_inclusion": "이 라벨이 붙은 스크립트는 상위 스크립트 실행에 포함되지 않습니다.",
-    "sorted": "하위 노트를 제목의 알파벳순으로 유지합니다.",
-    "sort_direction": "<code>#sorted</code> 의 정렬 방향을 지정합니다. 내림차순은 <code>desc</code> 로 지정하고, 그 외의 값은 오름차순으로 정렬합니다. <code>#sorted</code> 가 설정되지 않으면 무시됩니다.",
+    "sorted": "하위 노트를 제목 기준 알파벳순으로 정렬합니다. 값을 지정하면 다른 기준으로 정렬할 수 있습니다. 쉼표로 구분된 여러 단계에 <code>title</code>, <code>dateCreated</code>, <code>dateModified</code> 또는 라벨 이름을 지정하고, 각 항목 뒤에는 <code>asc</code> 또는 <code>desc</code>, 둘 중 하나를 선택적으로 붙일 수 있습니다. 예: <code>priority desc, dueDate</code>.",
+    "sort_direction": "정렬 방향은 <code>#sorted</code> 설정으로 결정됩니다. 내림차순은 <code>desc</code> 값을 사용하고, 그 외의 값은 오름차순입니다. 각 정렬 단계에 <code>asc</code> 또는 <code>desc</code> 값을 직접 지정하면 이 설정을 무시합니다. <code>#sorted</code> 설정이 없으면 적용되지 않습니다.",
     "sort_folders_first": "폴더(하위 노트가 있는 노트)를 맨 위에 정렬합니다.",
     "top": "이 노트를 상위 노트의 맨 위에 유지합니다. 상위 노트가 정렬된 경우에만 적용됩니다.",
     "hide_promoted_attributes": "이 노트에서 표시 속성을 숨깁니다.",
@@ -761,7 +767,7 @@
     "calendar_hide_weekends": "달력에서 토요일과 일요일을 숨깁니다. 값의 내용과 관계없이 속성이 있으면 적용됩니다.",
     "calendar_week_numbers": "달력에 주 번호를 표시합니다. 값의 내용과 관계없이 속성이 있으면 적용됩니다.",
     "calendar_slot_duration": "달력의 각 시간 구간 길이를 <code>HH:MM:SS</code> 형식으로 지정합니다. 기본값은 15분입니다.",
-    "calendar_slot_label_interval": "달력의 시간 구간에 라벨을 표시할 간격을 <code>HH:MM:SS</code> 형식으로 지정합니다. 기본값은 1시간입니다.",
+    "calendar_slot_label_interval": "달력의 시간대에 레이블을 표시하는 간격을 <code>HH:MM:SS</code> 형식으로 지정합니다. 기본값은 1시간입니다.",
     "calendar_title": "이벤트 제목에 노트 제목 대신 사용할 속성 이름을 지정합니다. 레이블 또는 관계 이름을 <code>#</code> 또는 <code>~</code> 없이 입력합니다.",
     "calendar_displayed_attributes": "이벤트에 값을 표시할 속성 이름을 쉼표로 구분하여 입력합니다. 관계 값은 관계가 가리키는 노트의 제목으로 표시합니다.",
     "calendar_start_date": "<code>#startDate</code> 대신 이벤트 시작일을 읽을 라벨 이름을 지정합니다. <code>#</code> 기호 없이 입력합니다.",
@@ -780,7 +786,7 @@
     "map_scale": "지리 맵에 축척 막대를 표시합니다.",
     "map_hide_labels": "지리 맵의 마커 옆에 표시되는 노트 제목을 숨깁니다.",
     "presentation_theme": "프레젠테이션에 사용할 테마입니다.",
-    "slide_background": "슬라이드 배경을 색상 또는 CSS 그라데이션으로 지정합니다.",
+    "slide_background": "슬라이드의 배경을 색상 또는 CSS 그라데이션으로 지정합니다.",
     "tab_width": "이 코드 노트에서 들여쓰기 한 단계에 사용할 공백 수입니다.",
     "indent_with_tabs": "이 코드 노트는 공백 대신 탭으로 들여쓰기합니다.",
     "wrap_lines": "이 코드 노트의 긴 줄을 가로로 스크롤하지 않고 줄 바꿈하여 표시합니다.",
@@ -805,7 +811,14 @@
     "map_dark_style": "<code>map:style</code> 에 지정된 사용자 지정 스타일이 어두운 스타일임을 지리 지도에 알려, 그 위에 표시되는 마커 제목을 밝게 그리도록 합니다. 컬렉션 속성에서 제공하는 스타일은 자체적으로 이를 나타내므로 이러한 레이블이 필요하지 않습니다.",
     "map_cluster": "서로 가까이 표시되는 마커를 하나의 숫자 원으로 묶으며, 클릭하면 펼쳐집니다.",
     "ai_quick_action": "이 노트를 텍스트 편집기의 AI 어시스턴트 메뉴에 지시문으로 제공합니다. 제목은 작업 이름이 되고, 내용은 프롬프트가 됩니다.",
-    "template_new_note_default_parent": "템플릿 노트에 설정합니다. 템플릿에서 생성된 노트(예: @ 자동 완성 사용)는 다른 위치를 명시적으로 선택하지 않는 한 대상 노트 아래에 배치됩니다."
+    "template_new_note_default_parent": "템플릿 노트에 설정합니다. 템플릿에서 생성된 노트(예: @ 자동 완성 사용)는 다른 위치를 명시적으로 선택하지 않는 한 대상 노트 아래에 배치됩니다.",
+    "custom_font": "Trilium 옵션의 글꼴 선택기에 표시할 글꼴 파일을 지정합니다. 노트 자체 제목 아래에 표시됩니다.",
+    "enable_inbox_column": "보드 컬렉션에서 받은 편지함 열을 표시합니다. 이 열에는 보드 열에 할당되지 않은 모든 하위 노트가 나열됩니다.",
+    "sort_columns": "보드 컬렉션에서 열이 카드를 정렬하는 순서를 지정합니다. 열에 별도의 정렬 순서가 지정되지 않은 경우 이 설정을 따릅니다. <code>title</code>, <code>creationDate</code> 또는 <code>attr:</code> 뒤에 승격된 속성의 이름을 사용할 수 있습니다.",
+    "sort_columns_descending": "보드 컬렉션에서는 <code>#sortColumns</code> 설정의 정렬 순서를 반대로 적용합니다.",
+    "board_card_redirect_to": "보드 카드에서 카드를 열면 카드 자체가 아니라 이 카드가 가리키는 노트로 이동합니다.",
+    "board_card_width": "보드 컬렉션에서 열이 표시되는 너비를 지정합니다: <code>narrow</code>, <code>medium</code> 또는 <code>wide</code>. 모바일에서는 무시되며, 모바일 화면에 맞는 너비로 표시됩니다.",
+    "geo_shape": "지리 지도에서 노트를 표시할 도형을 지정합니다. 먼저 도형 종류를 입력한 다음 각 지점의 위도와 경도를 입력합니다. 예: <code>line:48.85,2.29 48.86,2.35</code> — 원의 경우에는 중심점과 반경(미터)을 입력합니다. 예: <code>circle:48.85,2.29 500</code>."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
@@ -1217,15 +1230,7 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "하위 노트를 만들어 맵에 추가",
-    "reset_pan_zoom_title": "팬과 확대/축소를 초기 좌표와 배율로 재설정",
-    "zoom_in_title": "확대",
-    "zoom_out_title": "축소",
     "create_child_note_text": "노트 추가"
-  },
-  "image_buttons": {
-    "zoom_in": "확대",
-    "zoom_out": "축소",
-    "reset_zoom": "확대/축소 초기화"
   },
   "image_navigation": {
     "previous": "이전 이미지: {{- title}}",
@@ -1234,22 +1239,13 @@
   "image_viewer": {
     "loading_error": "이미지 로딩에 오류가 발생했습니다.",
     "hints": {
-      "zoom": "줌",
-      "zoom_in": "확대",
-      "zoom_out": "축소",
-      "reset_zoom": "확대/축소 초기화",
-      "pan": "팬",
-      "pan_up": "일어",
-      "pan_down": "아래쪽",
-      "pan_left": "왼쪽",
-      "pan_right": "오른쪽",
-      "pan_fast": "더 빠른 팬닝",
       "navigation": "탐색",
       "next_image": "다음 이미지",
       "previous_image": "이전 이미지",
       "first_image": "첫 번째 이미지",
       "last_image": "마지막 이미지"
-    }
+    },
+    "viewport": "이미지 보기"
   },
   "shortcut_hints": {
     "show_button": "단축키 힌트 표시",
@@ -1403,7 +1399,15 @@
     "remove_value": "이 값 제거",
     "select_values_placeholder": "옵션을 선택하거나 새로 만드세요",
     "values_placeholder": "값을 입력하고 Enter 키를 누르세요",
-    "add_value": "이 값 추가"
+    "add_value": "이 값 추가",
+    "create_attribute": "새 속성 생성",
+    "edit_attribute": "이 속성 편집",
+    "delete_attribute": "이 속성 삭제",
+    "delete_confirmation": "이 컬렉션의 모든 노트에서 <strong>{{name}}</strong> 및 해당 값을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "label_name": "라벨: {{name}}",
+    "relation_name": "관계: {{name}}",
+    "drawn_by_collection": "컬렉션이 이 속성을 기준으로 구성되므로 항목에는 이 속성이 반복해서 표시되지 않습니다",
+    "display_on_items": "컬렉션 항목에 속성 표시"
   },
   "script_executor": {
     "query": "쿼리",
@@ -1739,7 +1743,12 @@
     "related_backup": "백업",
     "related_backup_description": "데이터베이스 백업을 만들거나 복원하고, 자동 백업을 관리합니다.",
     "info_notes_other": "{{count}} 노트",
-    "info_attachments_other": "첨부파일 {{count}}개"
+    "info_attachments_other": "첨부파일 {{count}}개",
+    "info_persistence": "지속성",
+    "info_persistence_persistent": "지속적",
+    "info_persistence_best_effort": "최선형",
+    "info_persistence_persistent_description": "브라우저는 사용자가 삭제할 때까지 이 데이터베이스를 유지하도록 설정되어 있습니다.",
+    "info_persistence_best_effort_description": "브라우저는 저장 공간을 확보하기 위해 이 데이터베이스를 삭제할 수 있습니다.\nTrilium을 앱으로 설치하거나 홈 화면에 추가하면 일반적으로 데이터베이스가 지속적으로 유지됩니다."
   },
   "vacuum_database": {
     "title": "데이터베이스 압축",
@@ -1761,7 +1770,7 @@
   "fonts": {
     "theme_defined": "테마 지정",
     "fonts": "글꼴",
-    "custom_fonts": "사용자 지정 글꼴 사용",
+    "custom_fonts": "다른 글꼴 사용",
     "main_font": "인터페이스 텍스트",
     "font_family": "글꼴 계열",
     "size": "크기",
@@ -1771,19 +1780,29 @@
     "monospace_font": "고정폭 텍스트",
     "monospace_font_description": "코드 노트 및 코드 블록에 사용됩니다",
     "size_relative_to_general": "크기는 일반적인 글꼴 크기에 상대적입니다",
-    "not_all_fonts_available": "모든 나열된 글꼴이 시스템에서 사용 가능할 수는 없습니다",
     "apply_changes": "변경 사항을 적용하려면 다시 불러오기",
     "generic-fonts": "일반 글꼴",
-    "sans-serif-system-fonts": "산세리프 시스템 폰트",
-    "serif-system-fonts": "세리프 시스템 글꼴",
-    "monospace-system-fonts": "고정폭 시스템 글꼴",
-    "handwriting-system-fonts": "필기 시스템 폰트",
+    "sans-serif-system-fonts": "산세리프 글꼴",
+    "serif-system-fonts": "세리프 글꼴",
+    "monospace-system-fonts": "고정폭 글꼴",
+    "handwriting-system-fonts": "손글씨 글꼴",
     "serif": "세리프",
     "sans-serif": "산세리프",
     "monospace": "고정폭",
     "system-default": "시스템 기본 설정",
     "monospace_ligatures": "프로그래밍 합자",
-    "monospace_ligatures_description": "고정폭 글꼴에서 지원하는 경우, !=와 -> 같은 문자 조합을 하나의 기호(≠, →)로 표시합니다. 텍스트 자체는 변경되지 않습니다."
+    "monospace_ligatures_description": "고정폭 글꼴에서 지원하는 경우, !=와 -> 같은 문자 조합을 하나의 기호(≠, →)로 표시합니다. 텍스트 자체는 변경되지 않습니다.",
+    "custom_fonts_description": "테마의 글꼴을 대체합니다. Trilium에 업로드한 글꼴은 해당 글꼴의 노트에서 추가할 수 있습니다.",
+    "user-fonts": "사용자 지정 글꼴",
+    "main_font_short": "인터페이스",
+    "note_tree_font_short": "노트 트리",
+    "note_detail_font_short": "문서",
+    "monospace_font_short": "고정폭",
+    "proportional-system-fonts": "비례폭 글꼴",
+    "search_placeholder": "글꼴 검색",
+    "no_fonts_found": "찾으시는 글꼴과 일치하는 항목이 없습니다.",
+    "document_preview_heading": "퍼플 하트 삽목",
+    "document_preview_body": "마디 아래에서 줄기 4개를 잘라 창가의 물에 꽂아 두었더니, 첫 뿌리는 <strong>9일 후</strong>. <em>직사광선</em> 아래에서는 색을 유지하고 그늘에서는 녹색으로 옅어집니다."
   },
   "max_content_width": {
     "title": "콘텐츠 폭",
@@ -2118,7 +2137,17 @@
     "server_config_hint": "config.ini 파일에 다음 항목을 추가하세요:",
     "server_env_hint": "또는 다음 환경 변수를 설정하세요:",
     "restart_required": "이 변경이 적용되려면 재시작이 필요합니다.",
-    "restart_now": "지금 애플리케이션 다시 시작"
+    "restart_now": "지금 애플리케이션 다시 시작",
+    "standalone": {
+      "backend_scripting_section_description": "백엔드 스크립트는 이 브라우저 내에서 실행되며, 사용자의 노트, 설정 및 동기화 자격 증명에 완전히 접근할 수 있습니다. 노트를 직접 열지 않더라도 동기화, 가져오기 또는 실행 가능한 속성이 포함된 콘텐츠를 통해 실행될 수 있습니다. 프런트엔드 스크립트는 항상 활성화되어 있으며, 앱 자체가 접근할 수 있는 범위를 벗어나지는 않습니다.",
+      "reload_required": "이 변경 사항을 적용하려면 다시 불러와야 합니다.",
+      "reload_now": "지금 페이지 다시 불러오기",
+      "other_tab_hint": "이 설정은 데이터베이스를 소유한 탭에서 변경되며, 일반적으로 처음 연 Trilium 탭입니다. 여기에서 변경하려면 다른 탭을 닫고 이 페이지를 다시 불러오세요.",
+      "confirm_enable": "{{- setting}}을(를) 활성화하시겠습니까?\n\n{{- warning}} 노트의 스크립트가 이를 요청할 수 있으므로, 직접 요청한 경우에만 계속 진행하세요.",
+      "confirm_disable": "{{- setting}}을(를) 비활성화하시겠습니까?",
+      "confirm_backend_scripting_warning": "백엔드 스크립트는 사용자의 노트, 설정 및 동기화 자격 증명에 완전히 접근할 수 있습니다.",
+      "confirm_sql_console_warning": "SQL 콘솔은 동기화 자격 증명과 비밀번호 해시를 읽을 수 있으며, 모든 노트를 변경하거나 삭제할 수 있습니다."
+    }
   },
   "password": {
     "heading": "비밀번호",
@@ -2302,7 +2331,10 @@
     "test_title": "테스트 연결",
     "test_description": "동기화 서버와의 연결을 테스트해 보세요. 초기화되지 않으면 동기화가 시작됩니다.",
     "test_button": "지금 테스트",
-    "handshake_failed": "동기화 서버 핸드셰이크 실패, 오류: {{message}}"
+    "handshake_failed": "동기화 서버 핸드셰이크 실패, 오류: {{message}}",
+    "effective_server": "서버 사용 중",
+    "effective_server_description": "config.ini 또는 환경 변수를 통해 설정되며, 이는 위의 서버 주소보다 우선합니다.",
+    "effective_server_disabled": "동기화가 꺼져 있습니다."
   },
   "api_log": {
     "close": "닫기"
@@ -2406,7 +2438,9 @@
     "task-list": "작업 목록",
     "new-feature": "신규",
     "collections": "컬렉션",
-    "spreadsheet": "스프레드시트"
+    "spreadsheet": "스프레드시트",
+    "note-types": "노트 유형",
+    "built-in-templates": "기본 제공 템플릿"
   },
   "protect_note": {
     "toggle-on": "노트 보호",
@@ -2605,7 +2639,10 @@
   "search_result": {
     "no_notes_found": "주어진 검색 매개변수에 대한 노트는 발견되지 않았습니다.",
     "search_not_executed": "아직 수색은 실행되지 않았습니다.",
-    "search_now": "지금 검색"
+    "search_now": "지금 검색",
+    "result_count_other": "{{count}}개 결과",
+    "page_size": "페이지당",
+    "snippet_unavailable": "미리보기를 사용할 수 없습니다."
   },
   "sql_result": {
     "not_executed": "쿼리는 아직 실행되지 않았습니다.",
@@ -2674,7 +2711,9 @@
     "delete-notes-in-progress": "진행 중인 노트 삭제: {{count}}",
     "delete-finished-successfully": "삭제는 성공적으로 완료되었습니다.",
     "undeleting-notes-in-progress": "노트 삭제 취소 중: {{count}}",
-    "undeleting-notes-finished-successfully": "노트 삭제 해제는 성공적으로 완료되었습니다."
+    "undeleting-notes-finished-successfully": "노트 삭제 해제는 성공적으로 완료되었습니다.",
+    "delete-notes-in-progress-with-total": "총 {{total}}개 중 {{progress}}개 노트를 삭제했습니다",
+    "erasing-notes": "노트를 삭제하는 중…"
   },
   "frontend_script_api": {
     "async_warning": "`api.runOnBackend()`에 비동기 함수를 전달하면 의도한 대로 작동하지 않을 수 있습니다.\\n함수에서 `async` 키워드를 제거하여 동기 함수로 만들거나 `api.runAsyncOnBackendWithManualTransactionHandling()`을 사용하세요.",
@@ -2776,7 +2815,8 @@
     "open_note_in_new_split": "새 분할 창에서 노트 열기",
     "open_note_in_other_split": "다른 분할 창에서 노트 열기",
     "open_note_in_new_window": "새 창에서 노트 열기",
-    "open_note_in_popup": "빠른 편집"
+    "open_note_in_popup": "빠른 편집",
+    "open_note": "노트 열기"
   },
   "electron_integration": {
     "desktop-application": "데스크톱 애플리케이션",
@@ -2789,11 +2829,15 @@
   },
   "note_autocomplete": {
     "search-for": "\"{{term}}\" 검색",
-    "create-note": "하위 노트 \"{{term}}\" 생성 및 링크",
+    "create-note": "노트 \"{{term}}\" 생성",
     "insert-external-link": "\"{{term}}\" 외부 링크 삽입",
     "clear-text-field": "입력 내용 지우기",
     "show-recent-notes": "최근 노트 표시",
-    "full-text-search": "전체 텍스트 검색"
+    "full-text-search": "전체 텍스트 검색",
+    "create-note-into": "{{parentTitle}}에 노트 \"{{term}}\" 생성",
+    "create-note-into-day-note": "오늘의 데일리 노트에 \"{{term}}\" 노트 생성",
+    "create-note-into-root": "최상위에 \"{{term}}\" 노트 생성",
+    "create-child-note": "자식 노트 \"{{term}}\" 생성"
   },
   "note_tooltip": {
     "note-has-been-deleted": "노트는 삭제되었습니다.",
@@ -2807,8 +2851,6 @@
     "move-marker-instruction": "지도를 클릭하여 마커를 해당 위치로 이동하거나 Esc 키를 눌러 취소합니다.",
     "move-marker-toast-title": "마커 이동",
     "webgl-unavailable": "WebGL을 사용할 수 없어 이 지도를 표시할 수 없습니다. 하드웨어 가속이 활성화되어 있고 그래픽 드라이버가 최신 상태인지 확인하세요.",
-    "zoom-in": "확대",
-    "zoom-out": "축소",
     "create-child-note-cancel": "노트 추가 취소",
     "add-marker": "마커 추가",
     "add-marker-cancel": "취소",
@@ -2833,7 +2875,28 @@
     "next-result": "다음 결과",
     "result-position": "총 {{total}}개 중 {{index}}번째 결과, 클릭하여 해당 결과로 돌아가기",
     "results-on-map": "이 지도에서",
-    "go-to-coordinates": "{{- coordinates}}(으)로 이동"
+    "go-to-coordinates": "{{- coordinates}}(으)로 이동",
+    "locate": "현재 위치 표시",
+    "locate-waiting": "현재 위치 찾는 중…",
+    "locate-following": "현재 위치 추적 중지",
+    "locate-return": "현재 위치로 돌아가기",
+    "locate-error": "현재 위치를 찾을 수 없습니다. 찾기를 중지하려면 다시 누르세요.",
+    "locate-unavailable": "현재 위치를 사용할 수 없습니다",
+    "location-denied": "위치 접근이 거부되었습니다. 지도에 현재 위치를 표시하려면 브라우저 또는 시스템 설정에서 Trilium의 위치 접근을 허용하세요.",
+    "location-unavailable": "현재 위치를 확인할 수 없습니다.",
+    "draw-line": "지도에 경로 그리기",
+    "draw-polygon": "지도에 영역 그리기",
+    "draw-cancel": "그리기 취소",
+    "draw-line-toast-title": "경로 그리기",
+    "draw-line-instruction": "지도를 클릭하여 지점을 추가하세요. 마지막 지점을 다시 클릭하거나 Enter 키를 눌러 완료하고, Escape 키를 눌러 취소할 수 있습니다.",
+    "draw-polygon-toast-title": "영역 그리기",
+    "draw-polygon-instruction": "지도를 클릭하여 모서리를 추가하세요. 첫 번째 모서리를 다시 클릭하거나 Enter 키를 눌러 완료하고, Escape 키를 눌러 취소할 수 있습니다.",
+    "draw-rectangle": "지도에 사각형 그리기",
+    "draw-rectangle-toast-title": "사각형 그리기",
+    "draw-rectangle-instruction": "지도에서 한쪽 모서리를 클릭한 다음 반대쪽 모서리를 다시 클릭하세요. 한쪽 모서리에서 다른 쪽 모서리까지 드래그할 수도 있습니다. Escape 키를 눌러 취소할 수 있습니다.",
+    "draw-circle": "지도에 원 그리기",
+    "draw-circle-toast-title": "원 그리기",
+    "draw-circle-instruction": "지도에서 중심점을 클릭한 다음 원의 반경이 될 위치를 다시 클릭하세요. 중심점에서 바깥쪽으로 드래그할 수도 있습니다. Escape 키를 눌러 취소할 수 있습니다."
   },
   "geo-map-context": {
     "open-location": "위치 열기",
@@ -3082,9 +3145,7 @@
   "svg": {
     "export_to_png": "이 다이어그램은 PNG로 내보낼 수 없었습니다.",
     "export_to_svg": "다이어그램을 SVG로 내보낼 수 없습니다.",
-    "zoom_in": "확대",
-    "zoom_out": "축소",
-    "reset_zoom": "확대/축소 초기화"
+    "preview": "다이어그램 미리보기"
   },
   "code_theme": {
     "title": "외형",
@@ -3151,7 +3212,10 @@
     "show-scale": "축척 표시",
     "show-labels": "마커 이름 표시",
     "cluster-markers": "가까운 마커 그룹화",
-    "presentation-theme": "테마"
+    "presentation-theme": "테마",
+    "board-inbox-column": "받은 편지함 열 표시",
+    "board-inbox-column-help": "열에 할당되지 않은 하위 노트를 나열하는 받은 편지함 열을 표시합니다.",
+    "vector_auto": "벡터(자동)"
   },
   "table_context_menu": {
     "delete_row": "행 삭제"
@@ -3161,20 +3225,135 @@
     "remove-from-board": "보드에서 제거",
     "archive-note": "노트 보관",
     "unarchive-note": "노트 보관 해제",
-    "move-to": "이동",
-    "insert-above": "위에 삽입",
-    "insert-below": "아래에 삽입",
-    "delete-column": "열 삭제",
+    "insert-above": "위에 새 항목 삽입",
+    "insert-below": "아래에 새 항목 삽입",
+    "delete-column": "열 삭제...",
     "delete-column-confirmation": "이 열을 삭제하시겠습니까? 이 열 아래의 노트에서도 해당 속성이 삭제됩니다.",
-    "new-item": "새 항목",
-    "new-item-placeholder": "노트 제목을 입력하세요...",
+    "new-item": "새 카드",
+    "new-item-placeholder": "카드 제목을 입력하세요...",
     "add-column": "열 추가",
     "add-column-placeholder": "열 이름을 입력하세요...",
-    "edit-note-title": "노트 제목 편집 클릭",
-    "edit-column-title": "칼럼 제목 편집 클릭",
+    "edit-note-title": "카드 제목을 편집하려면 클릭",
     "column-already-exists": "이 칼럼은 이미 게시판에 존재합니다.",
     "column-definition-save-error": "열은 보드에 저장했지만 상태 속성에는 저장하지 못했습니다.",
-    "status-alias": "상태"
+    "status-alias": "상태",
+    "archive-column": "열 보관",
+    "unarchive-column": "열 보관 해제",
+    "archived-badge": "보관됨",
+    "add-new-item": "새 카드 추가",
+    "add-existing-item": "기존 노트를 카드로 추가...",
+    "add-existing-item-title": "기존 노트를 보드에 추가",
+    "add-existing-item-ok": "열에 추가",
+    "add-new-column": "새 열 추가",
+    "add-column-before": "앞에",
+    "add-column-after": "뒤에",
+    "new-column": "새 열",
+    "existing-item-conflict": "이 노트는 이미 “{{label}}” 기준으로 그룹화된 다른 보드에 속해 있습니다. 여기에 추가하면 원래 보드에서도 다른 열로 이동합니다. 그래도 추가하시겠습니까?",
+    "rename-column": "열 이름 변경",
+    "change-column-icon": "열 아이콘 변경",
+    "column-menu": "열 메뉴",
+    "save-error": "변경 사항을 저장할 수 없습니다.",
+    "status-header": "상태",
+    "duplicate-item": "복제",
+    "move-column": "열 이동",
+    "move-column-first": "첫 번째 열로",
+    "move-column-after": "{{column}} 뒤로",
+    "hints": {
+      "navigation": "탐색",
+      "navigate_items": "카드 간 이동",
+      "navigate_columns": "열 간 이동",
+      "first_last_item": "열의 첫 번째 / 마지막 카드",
+      "editing": "편집",
+      "insert_item": "아래 / 위에 카드 삽입",
+      "insert_column": "뒤 / 앞에 열 삽입",
+      "open_item": "카드 열기",
+      "rename": "카드 또는 열 이름 변경",
+      "remove_item": "보드에서 카드 제거",
+      "delete_item": "노트 삭제",
+      "remove_column": "열 제거(선택한 열 머리글에서)",
+      "moving": "이동",
+      "move_item": "카드를 위 / 아래로 이동",
+      "move_within": "열의 맨 위 / 맨 아래로 이동",
+      "move_across": "이전 / 다음 열로 이동",
+      "move_to_end_column": "첫 번째 / 마지막 열로 이동",
+      "move_column": "열을 왼쪽 / 오른쪽으로 이동",
+      "move_column_to_edge": "열을 맨 왼쪽 / 맨 오른쪽으로 이동",
+      "selection": "선택",
+      "select_column": "열의 모든 카드 선택",
+      "clear_selection": "선택 해제"
+    },
+    "inbox": "받은 편지함",
+    "inherited-column": "이 카드는 템플릿 또는 상위 노트에서 열을 상속받으며, 해당 위치에서 변경할 수 있습니다.",
+    "inbox-nested": "중첩된 노트 포함",
+    "inbox-remove": "받은 편지함 열 제거",
+    "card-count-over-limit": "이 열에 설정된 카드 수 제한을 초과했습니다!",
+    "set-limit": "제한 설정...",
+    "set-limit-ok": "제한 설정",
+    "limit-capacity": "열 용량 초과 시 경고",
+    "limit-count": "열의 최대 카드 수",
+    "card-count_other": "{{count}}개 카드",
+    "card-count-with-archived_other": "활성 카드 {{count}}개, 보관된 카드 {{archived}}개",
+    "collapse-column": "열 접기",
+    "edit-title": "제목 및 아이콘 편집",
+    "move-to-top": "맨 위로 이동",
+    "create-new-note": "카드 생성",
+    "create-new-column": "열 생성",
+    "create-hold-hint": "오른쪽 클릭하거나 길게 눌러 더 많은 옵션을 확인하세요.",
+    "create-at-top": "맨 위에 생성",
+    "create-at-bottom": "맨 아래에 생성",
+    "create-column-at-start": "맨 앞에 열 생성",
+    "create-column-at-end": "맨 끝에 열 생성",
+    "keep-column-collapsed": "열을 접은 상태로 유지",
+    "collapse-hint": "두 번 클릭하여 접기",
+    "more-columns": "더 보기…",
+    "collapse-all-columns": "모든 열 접기",
+    "expand-all-columns": "모든 열 펼치기",
+    "show-inbox-column": "받은 편지함 열 표시",
+    "show-archived-notes": "보관된 카드/열 표시",
+    "more-templates": "더 많은 템플릿…",
+    "card-template": "카드 템플릿 선택",
+    "change-note-icon": "아이콘 변경",
+    "general": "일반",
+    "show-archived": "보관된 카드 및 열 표시",
+    "properties": "보드 속성",
+    "properties-title": "보드 속성",
+    "card-templates": "카드 템플릿",
+    "card-templates-hint": "새 보드 카드를 만들 때 사용할 노트 유형과 노트 템플릿을 선택하세요.",
+    "promoted-attributes": "카드 속성",
+    "promoted-attributes-hint": "카드에 표시할 속성을 선택하고, 표시될 순서대로 드래그하여 정렬하세요.",
+    "new-template-name": "새 카드 템플릿",
+    "filter-placeholder": "보드 필터링...",
+    "card-outside-filter": "이 카드는 현재 필터링 범위를 벗어났습니다",
+    "insert-new": "새 항목 삽입",
+    "group-by": "카드 그룹화 기준",
+    "grouping-already-defined": "\"{{- name}}\" 항목은 이 보드에 이미 정의되어 있습니다. 이 항목으로 그룹화하려면 목록에서 선택하세요.",
+    "sort": "정렬",
+    "sort-manually": "수동",
+    "sort-board-default": "보드 기본값",
+    "sorted-no-reorder": "정렬된 열에서는 카드 순서를 변경할 수 없습니다.",
+    "default-card-order": "기본 카드 정렬 순서",
+    "default-card-order-description": "특정 열에 별도의 정렬 옵션을 지정하지 않은 경우, 각 열에서 카드가 정렬되는 방식입니다.",
+    "reset-column-sorting": "모든 열의 정렬 옵션을 기본값으로 재설정",
+    "reset-column-sorting-confirm": "현재 보기의 모든 열에 대한 정렬 옵션을 기본값으로 재설정하시겠습니까?",
+    "column-name-taken": "\"{{- column}}\"이라는 이름의 열이 이미 존재합니다.",
+    "columns-title": "열",
+    "columns-empty": "이 보드에는 아직 열이 없습니다.",
+    "column-width": "열 너비",
+    "drop-as-first-item": "첫 번째 카드로 놓기",
+    "drop-as-last-item": "마지막 카드로 놓기",
+    "column-width-narrow": "좁게 (기본값)",
+    "column-width-medium": "중간",
+    "column-width-wide": "넓게",
+    "copy-reference": "참조 복사",
+    "reference-column-missing": "해당 열은 더 이상 이 보드에 없습니다.",
+    "reference-archived": "해당 카드는 보관되어 있어 보드에 표시되지 않습니다.",
+    "reference-missing": "해당 카드는 더 이상 이 보드에 없습니다.",
+    "more-actions": "추가 작업",
+    "selection-mode": "카드 선택",
+    "select-column-cards": "열의 모든 카드 선택",
+    "reset-selection": "선택 초기화",
+    "expand-column": "열 펼치기",
+    "cards-selected_other": "{{count}}개 카드 선택됨"
   },
   "dashboard_view": {
     "refresh-widget": "새로 고침",
@@ -3344,7 +3523,9 @@
     "save_status_error": "저장 실패",
     "save_status_saving_tooltip": "변화가 지켜지고 있습니다.",
     "save_status_unsaved_tooltip": "저장하지 않은 변경 사항이 있습니다. 잠시 후 자동으로 저장됩니다.",
-    "save_status_error_tooltip": "노트를 저장하는 과정에서 오류가 발생했습니다. 가능하다면 노트 내용을 다른 곳에 복사해서 애플리케이션을 다시 불러오세요."
+    "save_status_error_tooltip": "노트를 저장하는 과정에서 오류가 발생했습니다. 가능하다면 노트 내용을 다른 곳에 복사해서 애플리케이션을 다시 불러오세요.",
+    "office_preview": "미리보기",
+    "office_preview_description": "이 문서는 읽기 전용 미리보기로 표시되므로 여기에서 편집할 수 없습니다.\n\n변경하려면 파일을 다운로드하여 외부 애플리케이션에서 편집한 후 새 수정본으로 다시 업로드하세요."
   },
   "status_bar": {
     "language_title": "콘텐츠 언어 변경",
@@ -3566,13 +3747,10 @@
     "tags-differ": "선택한 노드의 태그가 서로 다르므로 읽기만 할 수 있습니다.",
     "add-tag": "이 태그 추가",
     "remove-tag": "이 태그 제거",
-    "zoom-in": "확대",
-    "zoom-out": "축소",
     "center-map": "지도를 중앙에 맞추기",
     "direction-left": "왼쪽으로 가지 펼치기",
     "direction-right": "오른쪽으로 가지 펼치기",
     "direction-side": "양쪽으로 가지 펼치기",
-    "reset-zoom": "확대/축소 초기화",
     "direction-down": "아래쪽으로 분기"
   },
   "llm": {
@@ -3838,7 +4016,9 @@
       "stop": "중지",
       "tokens": "토큰",
       "try-again": "다시 시도",
-      "working": "처리 중…"
+      "working": "처리 중…",
+      "upload-image": "이미지 업로드",
+      "upload-an-image-from-your-device": "기기에서 이미지를 업로드하세요."
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -3858,7 +4038,7 @@
     "attributes_definitions_what": "정의는 속성 이름에 적용되는 규칙입니다. 어떤 형식의 값을 사용할 수 있는지, 여러 번 지정할 수 있는지, 그리고 승격 여부를 정합니다.",
     "attributes_definitions_promoted": "승격된 속성은 이 패널이 아니라 노트 본문에 입력 필드로 표시됩니다. 속성 정의는 보통 템플릿을 통해 적용되며, 각 행에는 그 정의가 설정된 노트가 표시됩니다.",
     "highlights_what": "이 노트에서 서식으로 구분된 구절입니다. 직접 하이라이트한 텍스트뿐 아니라 일반적인 굵게 또는 기울임꼴 문장도 포함됩니다.",
-    "highlights_configure": "포함할 서식은 이 카드 머리글의 톱니바퀴 메뉴에서 설정할 수 있습니다. 굵게, 기울임꼴, 밑줄, 색상 텍스트, 배경색 텍스트를 각각 포함하거나 제외할 수 있으며, 항목을 누르면 노트의 해당 위치로 이동합니다.",
+    "highlights_configure": "어떤 서식을 집계할지는 사용자가 설정할 수 있습니다. 이 카드 헤더의 톱니바퀴 메뉴에서 굵게, 기울임꼴, 밑줄, 색상 텍스트, 배경색이 적용된 텍스트를 각각 포함하거나 제외할 수 있습니다. 항목을 누르면 노트의 해당 위치로 이동합니다.",
     "note_map_what": "이 노트의 연결 관계를 보여주는 지도입니다. 링크 맵은 이 노트로 들어오고 나가는 내부 링크와 관계를 표시하며, 트리 맵은 노트 트리에서의 위치를 보여줍니다. 머리글의 전환 버튼으로 두 지도 사이를 전환할 수 있습니다.",
     "note_map_interaction": "노트에 마우스를 올리면 해당 노트의 연결 관계가 강조되고, 나머지는 흐리게 표시됩니다. 펼치기 버튼을 누르면 같은 지도가 창 전체 크기로 열립니다.",
     "note_paths_what": "하나의 노트가 노트 트리의 여러 위치에 동시에 있을 수 있으며, 각각의 위치가 여기에 경로로 표시됩니다.",
@@ -3910,7 +4090,8 @@
     "unit_mph": "{{value}} mph"
   },
   "open": {
-    "directory_failed": "{{- directory}} 열기 실패: {{- reason}}"
+    "directory_failed": "{{- directory}} 열기 실패: {{- reason}}",
+    "download_failed": "다운로드를 저장할 수 없습니다: {{- reason}}"
   },
   "embedded_note": {
     "open-note": "노트 열기",
@@ -3991,5 +4172,70 @@
     "reformat_callout": "콜아웃",
     "reformat_collapsible": "접이식 섹션",
     "reformat_action_items": "실행 항목"
+  },
+  "note_picker": {
+    "title": "노트 선택",
+    "label": "노트",
+    "ok": "선택"
+  },
+  "font_preview": {
+    "pangram": "다람쥐 헌 쳇바퀴에 타고파",
+    "specimen_placeholder": "미리 볼 텍스트를 입력하세요…",
+    "size": "미리보기 크기",
+    "size_pixels": "{{size}} px",
+    "in_picker": "글꼴 선택기에 표시",
+    "offer_in_picker": "이 글꼴을 화면 설정에서 사용할 수 있도록 표시",
+    "remove_from_picker": "이 글꼴을 화면 설정에서 더 이상 표시하지 않기"
+  },
+  "template_selection": {
+    "add-existing": "기존 템플릿 추가",
+    "add-title": "템플릿 추가",
+    "create": "새 템플릿 생성",
+    "new-name": "새 템플릿",
+    "menu": "템플릿 메뉴",
+    "remove": "목록에서 제거"
+  },
+  "item_picker": {
+    "title": "항목 선택",
+    "search": "검색…",
+    "nothing-found": "입력한 내용과 일치하는 항목이 없습니다."
+  },
+  "sortable_card": {
+    "reorder": "드래그하여 순서 변경"
+  },
+  "collection_filter": {
+    "placeholder": "필터링...",
+    "clear": "필터 지우기",
+    "fetch-error": "필터를 실행할 수 없습니다.",
+    "submit": "필터 적용"
+  },
+  "attribute_menu": {
+    "attributes": "속성",
+    "not-set": "설정 안 함"
+  },
+  "sorting": {
+    "default": "기본값",
+    "none": "없음",
+    "title": "제목",
+    "creation-date": "생성 날짜 및 시간",
+    "ascending": "오름차순",
+    "descending": "내림차순"
+  },
+  "zoom_controls": {
+    "zoom_out": "축소",
+    "reset": "확대/축소 초기화",
+    "zoom_in": "확대",
+    "hints": {
+      "zoom": "확대/축소",
+      "zoom_in": "확대",
+      "zoom_out": "축소",
+      "reset_zoom": "확대/축소 초기화",
+      "pan": "이동",
+      "pan_up": "위로",
+      "pan_down": "아래로",
+      "pan_left": "왼쪽으로",
+      "pan_right": "오른쪽으로",
+      "pan_fast": "빠르게 이동"
+    }
   }
 }

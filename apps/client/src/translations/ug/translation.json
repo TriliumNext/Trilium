@@ -340,10 +340,8 @@
     "title": "ماۋزۇسى",
     "date_created": "قۇرۇلغان ۋاقتى",
     "date_modified": "ئۆزگەرتىلگەن ۋاقتى",
-    "sorting_direction": "تەرتىپلەش يۆنىلىشى",
     "ascending": "ئۆرلەش تەرتىپى",
     "descending": "تۆۋەنلەش تەرتىپى",
-    "folders": "ھۆججەت قىسقۇچى",
     "sort_folders_at_top": "ھۆججەت قىسقۇچىنى ئالدىدا تەرتىپلەش",
     "natural_sort": "تەبىئىي تەرتىپلەش",
     "sort_with_respect_to_different_character_sorting": "ئوخشاش بولمىغان تىل ياكى رايونلارنىڭ ھەرپ تەرتىپى ۋە قائىدىسى بويىچە تەرتىپلەش.",
@@ -757,10 +755,7 @@
     "button_title": "دىئاگراممىنى SVG قىلىپ چىقىرىش"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "تارماق خاتىرە قۇرۇش ۋە خەرىتىگە قوشۇش",
-    "reset_pan_zoom_title": "سۈرۈش ۋە چوڭايتىشنى دەسلەپكى كوئوردېنات ھەم نىسبەتكە ئەسلىگە كەلتۈرۈش",
-    "zoom_in_title": "چوڭايتىش",
-    "zoom_out_title": "كىچىكلىتىش"
+    "create_child_note_title": "تارماق خاتىرە قۇرۇش ۋە خەرىتىگە قوشۇش"
   },
   "zpetne_odkazy": {
     "backlink_one": "{{count}} تەتۈر ئۇلانما",
@@ -1130,7 +1125,6 @@
     "monospace_font": "تەڭ كەڭلىكتىكى خەت نۇسخىسى",
     "monospace_font_description": "كود خاتىرىلىرى ۋە كود بۆلەكلىرى ئۈچۈن ئىشلىتىلىدۇ",
     "size_relative_to_general": "چوڭلۇقى ئادەتتىكى خەت چوڭلۇقىغا نىسبەتەن بەلگىلىنىدۇ",
-    "not_all_fonts_available": "تىزىملىكتىكى بارلىق خەت نۇسخىلىرى سىستېمىڭىزدا بولماسلىقى مۇمكىن",
     "generic-fonts": "ئومۇمىي خەت نۇسخىلىرى"
   },
   "max_content_width": {

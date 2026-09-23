@@ -9,7 +9,7 @@ const state = vi.hoisted(() => ({
     appName: "Trilium Notes",
     setLoginItemSettings: vi.fn(),
     setLoginItemThrows: false,
-    wasOpenedAsHidden: false,
+    wasOpenedAtLogin: false,
     ipcOn: new Map<string, Handler>(),
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock("electron", () => ({
                 if (state.setLoginItemThrows) throw new Error("boom");
                 return state.setLoginItemSettings(...a);
             },
-            getLoginItemSettings: () => ({ wasOpenedAsHidden: state.wasOpenedAsHidden }),
+            getLoginItemSettings: () => ({ wasOpenedAtLogin: state.wasOpenedAtLogin }),
             getName: () => state.appName
         },
         ipcMain: {
@@ -77,7 +77,7 @@ beforeEach(() => {
     state.launchOnStartup = false;
     state.hideOnAutoStart = false;
     state.setLoginItemThrows = false;
-    state.wasOpenedAsHidden = false;
+    state.wasOpenedAtLogin = false;
     state.ipcOn.clear();
     delete process.env.APPIMAGE;
     delete process.env.XDG_CONFIG_HOME;
@@ -95,14 +95,14 @@ describe("auto_launch", () => {
         setPlatform("win32");
         state.launchOnStartup = true;
         applyLaunchOnStartup();
-        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true, openAsHidden: false, args: [] });
+        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true, args: [] });
     });
 
     it("disables the OS login item when the option is off", () => {
         setPlatform("darwin");
         state.launchOnStartup = false;
         applyLaunchOnStartup();
-        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false, openAsHidden: false, args: [] });
+        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false, args: [] });
     });
 
     it("tags the login item to start hidden when hide-on-auto-start is on", () => {
@@ -112,7 +112,6 @@ describe("auto_launch", () => {
         applyLaunchOnStartup();
         expect(state.setLoginItemSettings).toHaveBeenCalledWith({
             openAtLogin: true,
-            openAsHidden: true,
             args: [START_HIDDEN_FLAG]
         });
     });
@@ -122,7 +121,7 @@ describe("auto_launch", () => {
         state.launchOnStartup = false;
         state.hideOnAutoStart = true;
         applyLaunchOnStartup();
-        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false, openAsHidden: false, args: [] });
+        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false, args: [] });
     });
 
     it("writes a .desktop autostart file on Linux when enabled", () => {
@@ -208,11 +207,17 @@ describe("auto_launch", () => {
         }
     });
 
-    it("wasLaunchedHidden reflects wasOpenedAsHidden on macOS", () => {
+    it("wasLaunchedHidden combines wasOpenedAtLogin with hide-on-auto-start on macOS", () => {
         setPlatform("darwin");
-        state.wasOpenedAsHidden = true;
+        state.wasOpenedAtLogin = true;
+        state.hideOnAutoStart = true;
         expect(wasLaunchedHidden()).toBe(true);
-        state.wasOpenedAsHidden = false;
+
+        state.hideOnAutoStart = false;
+        expect(wasLaunchedHidden()).toBe(false);
+
+        state.wasOpenedAtLogin = false;
+        state.hideOnAutoStart = true;
         expect(wasLaunchedHidden()).toBe(false);
     });
 
@@ -225,6 +230,6 @@ describe("auto_launch", () => {
 
         state.launchOnStartup = true;
         handler?.();
-        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true, openAsHidden: false, args: [] });
+        expect(state.setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true, args: [] });
     });
 });

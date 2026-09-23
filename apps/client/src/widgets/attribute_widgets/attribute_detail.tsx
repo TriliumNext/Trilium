@@ -32,7 +32,8 @@ import NoteLink, { NewNoteLink } from "../react/NoteLink.jsx";
 import { disposeReactWidget, ParentComponent, renderReactWidgetAtElement } from "../react/react_utils.jsx";
 import OptionsRow, { OptionsRowWithToggle } from "../type_widgets/options/components/OptionsRow.jsx";
 import { ATTR_HELP, AttrHelpEntry } from "./attr_help.js";
-import LabelValueInput, { getTypedInputForLabel } from "./label_value_input.js";
+import { DEFINITION_TYPE_ICONS, RELATION_DEFINITION_TYPE } from "./attribute_types.js";
+import LabelValueInput, { getTypedInputForLabel, useLabelValueSuggestions } from "./label_value_input.js";
 import ValuesInput from "./values_input.jsx";
 
 export interface AttributeDetailOpts {
@@ -48,6 +49,21 @@ export interface AttributeDetailOpts {
      */
     parent?: HTMLElement;
     hideMultiplicity?: boolean;
+    /**
+     * Leaves out the inheritable and promoted toggles. For a host that sets both itself, such as a
+     * collection whose attributes are all inheritable and promoted.
+     */
+    hideInheritance?: boolean;
+    /**
+     * Leaves out the kind dropdown, holding the definition to the kind it was opened on. For a host
+     * that can only use one, such as a board grouping by a select.
+     */
+    hideType?: boolean;
+    /**
+     * Leaves out the rows the chosen kind adds, such as the precision of a number or the options of a
+     * select. For a host that fills them in itself, such as a board whose columns are the options.
+     */
+    hideTypeOptions?: boolean;
     /**
      * Places the popup beside this element instead of at `x`/`y`. For hosts whose attributes are shown
      * far from the note attributes pane the coordinates are otherwise resolved against, e.g. the
@@ -326,6 +342,9 @@ export function isSameShow(previous: AttributeDetailOpts | null, next: Attribute
     return !next.focus
         && previous.isOwned === next.isOwned
         && previous.hideMultiplicity === next.hideMultiplicity
+        && previous.hideInheritance === next.hideInheritance
+        && previous.hideType === next.hideType
+        && previous.hideTypeOptions === next.hideTypeOptions
         && previous.attribute.noteId === next.attribute.noteId
         && previous.attribute.type === next.attribute.type
         && previous.attribute.name === next.attribute.name
@@ -392,24 +411,7 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
         // same place the type came from rather than passed in.
         return labelType && { labelType, selectOptions: getBuiltinLabelSelectOptions(name) };
     }, [ attrType, name ]);
-    // The values known for a label name never change while the popup is open, so they are fetched
-    // once per name and filtered locally afterwards.
-    const knownValues = useRef<{ name: string; values: string[] }>();
-    const suggestLabelValues = useCallback(async (query: string) => {
-        if (!name.trim()) {
-            return [];
-        }
-
-        if (knownValues.current?.name !== name) {
-            knownValues.current = {
-                name,
-                values: await server.get<string[]>(`attribute-values/${encodeURIComponent(name)}`)
-            };
-        }
-
-        const term = query.toLowerCase();
-        return knownValues.current.values.filter((value) => value.toLowerCase().includes(term));
-    }, [ name ]);
+    const suggestLabelValues = useLabelValueSuggestions(name);
     // Committing mid-composition makes the spawning editor re-render and swallow the
     // characters being composed: https://github.com/zadam/trilium/pull/3812
     const isComposing = useRef(false);
@@ -591,7 +593,7 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
 
                 {/* No description: the values name themselves, and what they do to the field is plain
                     enough once one is picked. */}
-                {isDefinition(attrType) && (
+                {isDefinition(attrType) && !opts.hideType && (
                     <OptionsRow name="attr-label-type" label={t("attribute_detail.label_type")}>
                         <FormDropdownList
                             className="attr-input-label-type"
@@ -612,7 +614,8 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "label-definition" && definition.labelType === "number" && (
+                {attrType === "label-definition" && definition.labelType === "number"
+                    && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-number-precision"
                         label={t("attribute_detail.precision")}
@@ -632,7 +635,8 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "label-definition" && definition.labelType === "select" && (
+                {attrType === "label-definition" && definition.labelType === "select"
+                    && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-select-options"
                         label={t("attribute_detail.select_options")}
@@ -653,7 +657,7 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     </OptionsRow>
                 )}
 
-                {attrType === "relation-definition" && (
+                {attrType === "relation-definition" && !opts.hideTypeOptions && (
                     <OptionsRow
                         name="attr-inverse-relation"
                         label={t("attribute_detail.inverse_relation")}
@@ -699,20 +703,22 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     />
                 )}
 
-                <OptionsRowWithToggle
-                    name="attr-inheritable"
-                    label={t("attribute_detail.inheritable")}
-                    description={t("attribute_detail.inheritable_title")}
-                    currentValue={isInheritable}
-                    disabled={!isOwned}
-                    onChange={(checked) => {
-                        setIsInheritable(checked);
-                        attribute.isInheritable = checked;
-                        onAttributesChanged?.(allAttributes ?? []);
-                    }}
-                />
+                {!opts.hideInheritance && (
+                    <OptionsRowWithToggle
+                        name="attr-inheritable"
+                        label={t("attribute_detail.inheritable")}
+                        description={t("attribute_detail.inheritable_title")}
+                        currentValue={isInheritable}
+                        disabled={!isOwned}
+                        onChange={(checked) => {
+                            setIsInheritable(checked);
+                            attribute.isInheritable = checked;
+                            onAttributesChanged?.(allAttributes ?? []);
+                        }}
+                    />
+                )}
 
-                {isDefinition(attrType) && (
+                {isDefinition(attrType) && !opts.hideInheritance && (
                     <OptionsRowWithToggle
                         name="attr-promoted"
                         label={t("attribute_detail.promoted")}
@@ -816,23 +822,21 @@ const TARGET_NOTE_OPTS = { allowCreatingNotes: true };
  * The value standing for a definition that points at a note rather than holding a value of its own.
  * Not a label type: it is what the definition is named after, `relation:foo` rather than `label:foo`.
  */
-export const RELATION_DEFINITION_TYPE = "relation";
-
 /** Exported so that hosts listing definitions can name their label type as the popup does. */
 export const LABEL_TYPES = [
-    { value: "text", title: t("attribute_detail.text"), icon: "bx bx-text" },
-    { value: "textarea", title: t("attribute_detail.textarea"), icon: "bx bx-align-left" },
-    { value: "number", title: t("attribute_detail.number"), icon: "bx bx-hash" },
-    { value: "boolean", title: t("attribute_detail.boolean"), icon: "bx bx-toggle-left" },
-    { value: "select", title: t("attribute_detail.select_type"), icon: "bx bx-list-ul" },
-    { value: "date", title: t("attribute_detail.date"), icon: "bx bx-calendar" },
-    { value: "datetime", title: t("attribute_detail.date_time"), icon: "bx bx-calendar-event" },
-    { value: "time", title: t("attribute_detail.time"), icon: "bx bx-time" },
-    { value: "url", title: t("attribute_detail.url"), icon: "bx bx-link" },
-    { value: "email", title: t("attribute_detail.email"), icon: "bx bx-envelope" },
-    { value: "phone", title: t("attribute_detail.phone"), icon: "bx bx-phone" },
-    { value: "color", title: t("attribute_detail.color_type"), icon: "bx bx-palette" }
-];
+    { value: "text", title: t("attribute_detail.text") },
+    { value: "textarea", title: t("attribute_detail.textarea") },
+    { value: "number", title: t("attribute_detail.number") },
+    { value: "boolean", title: t("attribute_detail.boolean") },
+    { value: "select", title: t("attribute_detail.select_type") },
+    { value: "date", title: t("attribute_detail.date") },
+    { value: "datetime", title: t("attribute_detail.date_time") },
+    { value: "time", title: t("attribute_detail.time") },
+    { value: "url", title: t("attribute_detail.url") },
+    { value: "email", title: t("attribute_detail.email") },
+    { value: "phone", title: t("attribute_detail.phone") },
+    { value: "color", title: t("attribute_detail.color_type") }
+].map((type) => ({ ...type, icon: DEFINITION_TYPE_ICONS[type.value] }));
 
 /**
  * What a definition can set its field up to hold, the note it can point at instead included. The last
@@ -846,7 +850,7 @@ export const DEFINITION_TYPES: { value: string; title: string; icon: string; sta
     {
         value: RELATION_DEFINITION_TYPE,
         title: t("attribute_detail.relation_type"),
-        icon: "bx bx-transfer",
+        icon: DEFINITION_TYPE_ICONS[RELATION_DEFINITION_TYPE],
         startsGroup: true
     }
 ];

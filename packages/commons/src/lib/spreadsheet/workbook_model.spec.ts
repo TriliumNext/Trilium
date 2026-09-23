@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    getCellDocumentSegments,
+    getCellDocumentText,
     getDataValidations,
     getFloatingDrawings,
     type IWorkbookData,
+    normalizeDataStream,
+    parseWorkbookData,
+    type PersistedData,
     SHEET_DATA_VALIDATION_RESOURCE,
     SHEET_DRAWING_RESOURCE
 } from "./workbook_model.js";
@@ -12,6 +17,27 @@ import {
 function workbookWithResource(name: string, data: string): IWorkbookData {
     return { sheetOrder: ["sheet1"], sheets: {}, resources: [{ name, data }] };
 }
+
+describe("parseWorkbookData", () => {
+    it("parses a JSON string and reports unparseable content", () => {
+        expect(parseWorkbookData('{"version":1}')).toEqual({ ok: true, data: { version: 1 } });
+        // Valid JSON that holds no workbook still parses; only broken JSON is `ok: false`.
+        expect(parseWorkbookData("null")).toEqual({ ok: true, data: null });
+        expect(parseWorkbookData("{")).toEqual({ ok: false, data: null });
+    });
+
+    it("passes an already-parsed workbook through without serializing it", () => {
+        const data: PersistedData = {
+            version: 1,
+            workbook: { sheetOrder: ["sheet1"], sheets: { sheet1: { id: "sheet1", name: "Sheet1", cellData: {} } } }
+        };
+
+        const result = parseWorkbookData(data);
+
+        expect(result.ok).toBe(true);
+        expect(result.data).toBe(data);
+    });
+});
 
 describe("getFloatingDrawings", () => {
     it("returns the sheet's drawings in their stored z-order", () => {
@@ -100,5 +126,66 @@ describe("getDataValidations", () => {
             workbookWithResource(SHEET_DATA_VALIDATION_RESOURCE, JSON.stringify({ sheet1: { uid: "v1" } })),
             "sheet1"
         )).toEqual([]);
+    });
+});
+
+describe("getCellDocumentText", () => {
+    it("reads the rich-text document, dropping the terminator and structural characters", () => {
+        expect(getCellDocumentText({ p: { body: { dataStream: "Pen\r\n" } } })).toBe("Pen");
+        expect(getCellDocumentText({ p: { body: { dataStream: "first\rsecond\r\n" } } })).toBe("first\nsecond");
+        expect(getCellDocumentText({ p: { body: { dataStream: "logo\b\r\n" } } })).toBe("logo");
+    });
+
+    it("returns an empty string when the cell carries no document text", () => {
+        expect(getCellDocumentText(undefined)).toBe("");
+        expect(getCellDocumentText({ v: "plain" })).toBe("");
+        expect(getCellDocumentText({ p: { drawings: {} } })).toBe("");
+        expect(getCellDocumentText({ p: { body: { dataStream: "\r\n" } } })).toBe("");
+        expect(normalizeDataStream(42)).toBe("");
+    });
+});
+
+describe("getCellDocumentSegments", () => {
+    it("cuts the document into plain and linked runs", () => {
+        const segments = getCellDocumentSegments({
+            p: {
+                body: {
+                    dataStream: "see supplier now\r\n",
+                    customRanges: [{ startIndex: 4, endIndex: 11, properties: { url: "https://example.com" } }]
+                }
+            }
+        });
+
+        expect(segments).toEqual([
+            { text: "see " },
+            { text: "supplier", url: "https://example.com" },
+            { text: " now" }
+        ]);
+    });
+
+    it("ignores a range whose offsets describe no span", () => {
+        const segmentsFor = (startIndex: number, endIndex: number) => getCellDocumentSegments({
+            p: {
+                body: {
+                    dataStream: "Pen\r\n",
+                    customRanges: [{ startIndex, endIndex, properties: { url: "https://example.com" } }]
+                }
+            }
+        });
+
+        // Reversed offsets, then a range starting past the end of the stream.
+        expect(segmentsFor(2, 0)).toEqual([{ text: "Pen" }]);
+        expect(segmentsFor(9, 12)).toEqual([{ text: "Pen" }]);
+    });
+
+    it("keeps the trailing terminator out of a run that ends the document", () => {
+        expect(getCellDocumentSegments({
+            p: {
+                body: {
+                    dataStream: "Pen\r\n",
+                    customRanges: [{ startIndex: 0, endIndex: 4, properties: { url: "https://example.com" } }]
+                }
+            }
+        })).toEqual([{ text: "Pen", url: "https://example.com" }]);
     });
 });

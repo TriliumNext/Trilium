@@ -435,23 +435,40 @@ function register(router: Router) {
 
         const searchContext = new SearchContext({ ancestorNoteId });
         const searchResults = searchService.findResultsWithQuery(search, searchContext);
-        const filteredResults = searchResults
-            // Apply the same per-note authorization as the direct content routes:
-            // keep only results the caller may access and that are visible in the tree.
+        const authorizedResults = searchResults
+            // Apply the same per-note authorization as the direct content routes: drop protected
+            // notes (GHSA-xmv9-3v98-7gq8) and keep only results the caller can access that are
+            // visible in the tree.
             .filter((sr) => {
                 const fullNote = shaca.notes[sr.noteId];
 
                 return fullNote
+                    && !fullNote.isProtected
                     && hasCredentialAccess(fullNote, req)
                     && isVisibleInShareTree(ancestorNoteId, sr.notePathArray);
-            })
-            .map((sr) => {
-                const fullNote = shaca.notes[sr.noteId];
-                const startIndex = sr.notePathArray.indexOf(ancestorNoteId);
-                const localPathArray = sr.notePathArray.slice(startIndex + 1).filter((id) => shaca.notes[id]);
-                const pathTitle = localPathArray.map((id) => shaca.notes[id].title).join(" / ");
-                return { id: fullNote.shareId, title: fullNote.title, score: sr.score, path: pathTitle };
             });
+
+        // buildSearchResultDetails() reads each note's content to set contentSnippet and
+        // highlightedContentSnippet, so it runs only on authorized results and only on the first
+        // SNIPPET_LIMIT of them (the share popout renders 5); later results carry no snippet.
+        const SNIPPET_LIMIT = 20;
+        searchService.buildSearchResultDetails(authorizedResults.slice(0, SNIPPET_LIMIT), searchContext);
+
+        const filteredResults = authorizedResults.map((sr) => {
+            const fullNote = shaca.notes[sr.noteId];
+            const startIndex = sr.notePathArray.indexOf(ancestorNoteId);
+            const localPathArray = sr.notePathArray.slice(startIndex + 1).filter((id) => shaca.notes[id]);
+            const pathTitle = localPathArray.map((id) => shaca.notes[id].title).join(" / ");
+            return {
+                id: fullNote.shareId,
+                title: fullNote.title,
+                score: sr.score,
+                path: pathTitle,
+                // Plain-text fallback and the <b>-highlighted variant from the search service.
+                snippet: sr.contentSnippet,
+                highlightedSnippet: sr.highlightedContentSnippet
+            };
+        });
 
         res.json({ results: filteredResults });
     });

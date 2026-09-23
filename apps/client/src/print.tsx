@@ -49,6 +49,11 @@ export async function main() {
 
     const note = await froca.getNote(noteId);
 
+    // printToPDF() and the browser print dialog name the document after document.title.
+    if (note?.title) {
+        document.title = note.title;
+    }
+
     const bodyWrapper = document.createElement("div");
     render(<App note={note} noteId={noteId} />, bodyWrapper);
     document.body.appendChild(bodyWrapper);

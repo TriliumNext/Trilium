@@ -1,0 +1,15 @@
+/* The name takes the free space, pushing the buttons to the trailing edge. */
+.template-selection-name {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.template-selection-remove {
+    flex-shrink: 0;
+}
+
+.template-selection-menu {
+    flex-shrink: 0;
+}

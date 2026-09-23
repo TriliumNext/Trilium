@@ -345,10 +345,8 @@
     "title": "Titel",
     "date_created": "Erstellungsdatum",
     "date_modified": "Änderungsdatum",
-    "sorting_direction": "Sortierrichtung",
     "ascending": "aufsteigend",
     "descending": "absteigend",
-    "folders": "Ordner",
     "sort_folders_at_top": "Ordner oben sortieren",
     "natural_sort": "Natürliche Sortierung",
     "sort_with_respect_to_different_character_sorting": "Sortierung unter Berücksichtigung unterschiedlicher Regeln für Zeichensortierung und Kollation in verschiedenen Sprachen oder Regionen.",
@@ -988,9 +986,6 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
-    "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
-    "zoom_in_title": "Hineinzoomen",
-    "zoom_out_title": "Herauszoomen",
     "create_child_note_text": "Notiz hinzufügen"
   },
   "zpetne_odkazy": {
@@ -1399,7 +1394,6 @@
     "note_tree_font": "Notizbaum-Schriftart",
     "note_detail_font": "Notiz-Detail-Schriftart",
     "monospace_font": "Monospace-Schriftart (Code)",
-    "not_all_fonts_available": "Möglicherweise sind nicht alle aufgelisteten Schriftarten auf Ihrem System verfügbar",
     "generic-fonts": "Generische Schriftarten",
     "sans-serif-system-fonts": "Sans-serif Systemschriftarten",
     "serif-system-fonts": "Serif Systemschriftarten",
@@ -2381,7 +2375,6 @@
   },
   "board_view": {
     "delete-note": "Notiz löschen...",
-    "move-to": "Verschieben zu",
     "insert-above": "Oberhalb einfügen",
     "insert-below": "Unterhalb einfügen",
     "delete-column": "Spalte entfernen",
@@ -2394,7 +2387,6 @@
     "new-item-placeholder": "Notiztitel eingeben...",
     "add-column-placeholder": "Spaltenname eingeben...",
     "edit-note-title": "Zum Bearbeiten des Notiztitels klicken",
-    "edit-column-title": "Zum Bearbeiten des Spaltentitels klicken",
     "column-already-exists": "Die Spalte ist auf dem Board bereits vorhanden."
   },
   "command_palette": {
@@ -3153,11 +3145,6 @@
       "url": "URL"
     }
   },
-  "image_buttons": {
-    "zoom_in": "Vergrößern",
-    "zoom_out": "Verkleinern",
-    "reset_zoom": "Zoom zurücksetzen"
-  },
   "image_navigation": {
     "previous": "Vorheriges Bild: {{- title}}",
     "next": "Nächstes Bild: {{- title}}"
@@ -3165,16 +3152,6 @@
   "image_viewer": {
     "loading_error": "Beim Laden des Bildes ist ein Fehler aufgetreten.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Vergrößern",
-      "zoom_out": "Verkleinern",
-      "reset_zoom": "Zoom zurücksetzen",
-      "pan": "Verschieben",
-      "pan_up": "Nach oben",
-      "pan_down": "Nach unten",
-      "pan_left": "Nach links",
-      "pan_right": "Nach rechts",
-      "pan_fast": "Schneller verschieben",
       "navigation": "Navigation",
       "next_image": "Nächstes Bild",
       "previous_image": "Vorheriges Bild",

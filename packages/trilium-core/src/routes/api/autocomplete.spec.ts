@@ -86,24 +86,22 @@ describe("Autocomplete API (core)", () => {
             expect(Array.isArray(res.body)).toBe(true);
         });
 
+        it("returns at most one dropdown's worth of results", async () => {
+            const marker = `capmarker${Date.now()}`;
+            for (let i = 0; i < 30; i++) {
+                await createTextNote(api, { title: `${marker} note ${i}` });
+            }
+
+            const res = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: marker }
+            });
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(25);
+        });
+
         it("400s when the query param is missing", async () => {
             const res = await api.get("/api/autocomplete");
             expect(res.status).toBe(400);
-        });
-    });
-
-    describe("getNotesCount", () => {
-        it("returns the count of non-deleted notes as a number", async () => {
-            const before = await api.get<number>("/api/autocomplete/notesCount");
-            expect(before.status).toBe(200);
-            expect(typeof before.body).toBe("number");
-            expect(before.body).toBeGreaterThan(0);
-
-            await createTextNote(api, { title: "Counts towards total" });
-
-            const after = await api.get<number>("/api/autocomplete/notesCount");
-            expect(after.status).toBe(200);
-            expect(after.body).toBeGreaterThan(before.body);
         });
     });
 });

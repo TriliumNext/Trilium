@@ -220,10 +220,52 @@ export async function extractZip(zipFilePath: string, outputPath: string, ignore
                 const fileContent = await readContent();
 
                 await fs.mkdir(path.dirname(destPath), { recursive: true });
-                await fs.writeFile(destPath, fileContent);
+                await fs.writeFile(destPath, normalizeLineEndings(fileContent));
             }
         });
         promise.resolve();
     }, 1000);
     await promise;
+}
+
+/**
+ * Rewrites CRLF line endings to LF, so that `extractZip` writes the same bytes on Windows as it
+ * does elsewhere. The exported trees (`docs/`, the help HTML, the demo) are stored with LF, and
+ * Git only hides the difference once a file is staged.
+ *
+ * Binary entries such as images keep their bytes. They are detected the way Git detects them: a
+ * NUL byte within the first {@link BINARY_DETECTION_LENGTH} bytes marks the content as binary.
+ */
+export function normalizeLineEndings(content: Uint8Array): Uint8Array {
+    if (isBinary(content)) {
+        return content;
+    }
+
+    const normalized = new Uint8Array(content.length);
+    let length = 0;
+    for (const [index, byte] of content.entries()) {
+        if (byte === CARRIAGE_RETURN && content[index + 1] === LINE_FEED) {
+            continue;
+        }
+
+        normalized[length++] = byte;
+    }
+
+    return length === content.length ? content : normalized.subarray(0, length);
+}
+
+const NUL = 0x00;
+const LINE_FEED = 0x0a;
+const CARRIAGE_RETURN = 0x0d;
+const BINARY_DETECTION_LENGTH = 8000;
+
+function isBinary(content: Uint8Array) {
+    const end = Math.min(content.length, BINARY_DETECTION_LENGTH);
+    for (let index = 0; index < end; index++) {
+        if (content[index] === NUL) {
+            return true;
+        }
+    }
+
+    return false;
 }

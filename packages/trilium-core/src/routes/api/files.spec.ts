@@ -361,12 +361,12 @@ describe("Files API (core)", () => {
         it("converts an RTF file note to an embeddable HTML fragment", async () => {
             const noteId = await createRtfNote();
 
-            const res = await api.get<{ html: string }>(`/api/notes/${noteId}/office-preview`);
+            const res = await api.get<string>(`/api/notes/${noteId}/office-preview`);
             expect(res.status).toBe(200);
-            expect(res.body.html).toContain("Hello");
-            expect(res.body.html).toContain("World");
+            expect(res.body).toContain("Hello");
+            expect(res.body).toContain("World");
             // fragment mode — no full standalone document wrapper
-            expect(res.body.html).not.toContain("<html");
+            expect(res.body).not.toContain("<html");
         });
 
         it("converts an RTF attachment to an embeddable HTML fragment", async () => {
@@ -377,9 +377,27 @@ describe("Files API (core)", () => {
             expect(save.status).toBe(204);
             const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
 
-            const res = await api.get<{ html: string }>(`/api/attachments/${list.body[0].attachmentId}/office-preview`);
+            const res = await api.get<string>(`/api/attachments/${list.body[0].attachmentId}/office-preview`);
             expect(res.status).toBe(200);
-            expect(res.body.html).toContain("Hello");
+            expect(res.body).toContain("Hello");
+        });
+
+        it("answers with the corner of a workbook when the caller asks to trim it", async () => {
+            const wb = new ExcelJS.Workbook();
+            const sheet = wb.addWorksheet("Data");
+            for (let row = 1; row <= 60; row++) {
+                for (let col = 1; col <= 40; col++) sheet.getCell(row, col).value = `r${row}c${col}`;
+            }
+            const noteId = await createXlsxNote(Buffer.from(await wb.xlsx.writeBuffer()));
+
+            const whole = await api.get<string>(`/api/notes/${noteId}/office-preview`);
+            const corner = await api.get<string>(`/api/notes/${noteId}/office-preview?trim=1`);
+
+            expect(corner.status).toBe(200);
+            expect((corner.body.match(/<td/g) ?? []).length).toBe(20 * 15);
+            expect(corner.body).toContain("r1c1");
+            expect(corner.body).not.toContain("r60c40");
+            expect(corner.body.length).toBeLessThan(whole.body.length / 5);
         });
 
         it("rejects an unsupported MIME type with 400", async () => {
@@ -407,16 +425,16 @@ describe("Files API (core)", () => {
 
             const noteId = await createXlsxNote(xlsxBuffer);
 
-            const res = await api.get<{ html: string }>(`/api/notes/${noteId}/office-preview`);
+            const res = await api.get<string>(`/api/notes/${noteId}/office-preview`);
             expect(res.status).toBe(200);
-            expect(res.body.html).toContain("Merged header");
+            expect(res.body).toContain("Merged header");
             // Native-renderer features officeparser's grid lacks: merged cells,
             // number formatting (numfmt) and inline borders...
-            expect(res.body.html).toContain('colspan="2"');
-            expect(res.body.html).toContain("1,234.50");
-            expect(res.body.html).toContain("border");
+            expect(res.body).toContain('colspan="2"');
+            expect(res.body).toContain("1,234.50");
+            expect(res.body).toContain("border");
             // ...and none of officeparser's class-styled A/B/C header chrome.
-            expect(res.body.html).not.toContain("excel-col-header");
+            expect(res.body).not.toContain("excel-col-header");
         });
     });
 });

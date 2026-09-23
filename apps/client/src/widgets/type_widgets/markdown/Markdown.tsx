@@ -120,6 +120,7 @@ export default function Markdown(props: TypeWidgetProps) {
                 onContentChanged={setContent}
                 previewContent={<MarkdownPreview ntxId={props.ntxId} />}
                 forceOrientation={isDesktop() ? "horizontal" : "vertical"}
+                allowKeyboardSuggestions
             />
         </MarkdownContext.Provider>
     );
@@ -269,9 +270,13 @@ function useSyncedScrolling(view: VanillaCodeMirror | null, preview: HTMLDivElem
 }
 
 /**
- * Highlights the preview block that corresponds to the editor's active line,
- * matching the built-in `cm-activeLine` behavior. Re-runs when the rendered
- * HTML changes so newly inserted blocks pick up the current cursor position.
+ * Marks the preview block that corresponds to the editor's active line, matching the built-in
+ * `cm-activeLine` behavior. Re-runs when the rendered HTML changes so newly inserted blocks pick
+ * up the current cursor position.
+ *
+ * The marker is painted as the preview's background (see `Markdown.css`), so its geometry has to
+ * be measured here. Every block is observed for resize, since a block that grows after render —
+ * a mermaid diagram, an image, an included note — shifts everything below it.
  */
 function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTMLDivElement | null, html: string) {
     useEffect(() => {
@@ -282,26 +287,43 @@ function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTMLDivElem
         function update() {
             if (!view || !preview) return;
             const activeLine = view.state.doc.lineAt(view.state.selection.main.head).number;
-
             const blocks = preview.querySelectorAll<HTMLElement>("[data-source-line]");
-            let match: HTMLElement | null = null;
-            for (const el of blocks) {
-                if (parseInt(el.dataset.sourceLine!, 10) <= activeLine) match = el;
-                else break;
-            }
+            const match = findActiveBlock(blocks, activeLine);
 
-            if (match === current) return;
-            current?.classList.remove("markdown-preview-active");
-            match?.classList.add("markdown-preview-active");
+            // Animate from one block to the next, but not into or out of nothing: with no
+            // marker to move from, a transition reads as the bar growing out of the top edge.
+            const moving = !!current && !!match && current !== match;
+            preview.classList.toggle("markdown-preview-marker-moving", moving);
             current = match;
+
+            // `offsetTop` and the marker's containing block are both the preview's padding box.
+            preview.style.setProperty("--markdown-preview-marker-top", `${match?.offsetTop ?? 0}px`);
+            preview.style.setProperty("--markdown-preview-marker-height", `${match?.offsetHeight ?? 0}px`);
         }
 
         update();
+        const observer = new ResizeObserver(update);
+        observer.observe(preview);
+        for (const block of preview.children) observer.observe(block);
+
         const unsubscribe = view.addUpdateListener((v) => {
             if (v.selectionSet || v.docChanged) update();
         });
-        return unsubscribe;
+        return () => {
+            observer.disconnect();
+            unsubscribe();
+        };
     }, [ view, preview, html ]);
+}
+
+/** The last block that starts at or before `activeLine`, i.e. the one the cursor sits in. */
+export function findActiveBlock(blocks: ArrayLike<HTMLElement>, activeLine: number) {
+    let match: HTMLElement | null = null;
+    for (const block of Array.from(blocks)) {
+        if (Number(block.dataset.sourceLine) <= activeLine) match = block;
+        else break;
+    }
+    return match;
 }
 
 //#region Text commands

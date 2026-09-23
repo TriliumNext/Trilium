@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import { useFullscreen } from "../../react/hooks";
-import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton } from "../../react/OverlayControlGroup";
+import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton, ZoomControls } from "../../react/OverlayControlGroup";
 import OverlayToolbar, { OverlayToolbarButton } from "../../react/OverlayToolbar";
 import { centerMapOn, type MapPoint, readMapCenter, stepZoom } from "./viewport";
 
@@ -55,25 +55,16 @@ export default function MapToolbar({ mind }: MapToolbarProps) {
                 />
             )}
 
-            {!isMobile() && <>
-                <OverlayControlButton
-                    title={t("mind-map.zoom-out")}
-                    icon="bx-minus-circle"
-                    disabled={zoomedOut === null}
-                    onClick={() => zoomedOut !== null && mind.scale(zoomedOut)}
+            {!isMobile() && (
+                <ZoomControls
+                    percent={scale * 100}
+                    canZoomIn={zoomedIn !== null}
+                    canZoomOut={zoomedOut !== null}
+                    onZoomIn={() => { if (zoomedIn !== null) mind.scale(zoomedIn); }}
+                    onZoomOut={() => { if (zoomedOut !== null) mind.scale(zoomedOut); }}
+                    onReset={() => mind.scale(1)}
                 />
-                <OverlayControlButton
-                    title={t("mind-map.reset-zoom")}
-                    text={`${Math.round(scale * 100)}%`}
-                    onClick={() => mind.scale(1)}
-                />
-                <OverlayControlButton
-                    title={t("mind-map.zoom-in")}
-                    icon="bx-plus-circle"
-                    disabled={zoomedIn === null}
-                    onClick={() => zoomedIn !== null && mind.scale(zoomedIn)}
-                />
-            </>}
+            )}
             <OverlayControlButton
                 title={t("mind-map.center-map")}
                 icon="bx-current-location"

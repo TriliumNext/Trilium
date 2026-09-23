@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { GEO_LOCATION_ATTRIBUTE, getImageAttachmentTitle, getMimeIcon, getNoteIcon, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink } from "./notes.js";
+import {
+    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getImageAttachmentTitle, getMimeIcon, getNoteIcon,
+    NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
+} from "./notes.js";
 import { NoteType } from "./rows.js";
 
 function buildArgs(overrides: {
@@ -106,6 +109,27 @@ describe("getNoteIcon", () => {
         }))).toBe("bx bx-trip");
     });
 
+    it("draws a shape note as the shape its label names, by the same rules as a pin", () => {
+        const drawn = (value: string) =>
+            (name: string) => name === GEO_SHAPE_ATTRIBUTE ? value : null;
+
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("line:48.85,2.29 48.86,2.35") })))
+            .toBe("bx bx-vector");
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("polygon:48.85,2.29 48.9,2.3") })))
+            .toBe("bx bx-shape-polygon");
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("circle:48.85,2.29 500") })))
+            .toBe("bx bx-shape-circle");
+        // Nothing is written onto a shape note either, so the map's own icon still wins, and the
+        // icon follows a shape redrawn as another kind.
+        expect(getNoteIcon(buildArgs({
+            getLabelValue: drawn("circle:48.85,2.29 500"), iconClass: "bx bx-store"
+        }))).toBe("bx bx-store");
+        // A label nobody can read draws no shape on the map, but the note still carries one, so
+        // the line icon is the fallback.
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("nonsense") }))).toBe("bx bx-vector");
+        expect(getNoteIcon(buildArgs({ getLabelValue: drawn("") }))).toBe("bx bx-note");
+    });
+
     it("returns the note icon for a text note that is not a folder", () => {
         const icon = getNoteIcon(buildArgs({ type: "text", isFolder: () => false }));
         expect(icon).toBe("bx bx-note");
@@ -141,9 +165,27 @@ describe("getNoteIcon", () => {
         expect(icon).toBe("bx bxs-file-pdf");
     });
 
+    it("marks a font file as a font, whichever media type it arrived under", () => {
+        expect(getNoteIcon(buildArgs({ type: "file", mime: "font/woff2" }))).toBe("bx bx-font");
+        expect(getNoteIcon(buildArgs({ type: "file", mime: "application/x-font-ttf" }))).toBe("bx bx-font");
+        // EOT is no font Trilium can draw, so it stays a plain file.
+        expect(getNoteIcon(buildArgs({ type: "file", mime: "application/vnd.ms-fontobject" }))).toBe("bx bx-file");
+    });
+
     it("marks a GPX track as the journey it holds rather than as a file", () => {
         const icon = getNoteIcon(buildArgs({ type: "file", mime: "application/gpx+xml" }));
         expect(icon).toBe("bx bx-trip");
+    });
+
+    it("marks every spreadsheet format as a spreadsheet", () => {
+        for (const mime of [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.oasis.opendocument.spreadsheet",
+            "application/vnd.ms-excel",
+            "text/csv"
+        ]) {
+            expect(getNoteIcon(buildArgs({ type: "file", mime }))).toBe("bx bx-spreadsheet");
+        }
     });
 
     it("falls back to the file icon for a file note with an unmapped mime", () => {
@@ -199,6 +241,8 @@ describe("getMimeIcon", () => {
         expect(getMimeIcon("image/gif")).toBe("bx bxs-file-gif");
         expect(getMimeIcon("image/png")).toBe("bx bx-image");
         expect(getMimeIcon("application/gpx+xml")).toBe("bx bx-trip");
+        expect(getMimeIcon("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).toBe("bx bx-spreadsheet");
+        expect(getMimeIcon("text/csv")).toBe("bx bx-spreadsheet");
         expect(getMimeIcon("text/plain")).toBe("bx bx-file");
     });
 

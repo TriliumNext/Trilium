@@ -11,6 +11,9 @@ The share theme represents the layout, styles and scripts behind the Share notes
 
 *   In `packages/share-theme`, run `pnpm build` to trigger a build. This will generate `dist` which will then be used by the server.
 *   Alternatively, use `pnpm dev` to watch for changes.
+*   `pnpm dist` is the same build, minified. It is what the app builds run, so a release ships the minified assets while local development keeps readable ones.
+
+Both scripts clear `dist` first, since esbuild writes into it without removing what an earlier build left there — a minified release build would otherwise be copied alongside the unminified files `pnpm install` produces. A `--module=` build (`build-scripts`, `build-styles`) builds one entry point and deliberately does not clear, so it leaves the other's output alone.
 
 ## Integration with the server for the share functionality
 

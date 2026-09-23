@@ -1,6 +1,7 @@
 import type { FileStream, ZipArchive, ZipArchiveEntryOptions, ZipEntry, ZipProvider, ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
 import { ZipArchive as ArchiverZip } from "archiver";
 import fs from "fs";
+import type { FileHandle } from "fs/promises";
 import type { Stream } from "stream";
 import * as yauzl from "yauzl";
 
@@ -102,9 +103,31 @@ async function openZip(source: ZipSource) {
         // Wrap the bytes in a Buffer *view* (no copy); fall through to fromBuffer. A `path` source is
         // opened straight from disk so a multi-GB zip is never held in memory (and dodges fs.readFile's
         // ~2 GiB ceiling) — yauzl reads the central directory and each entry on demand from the fd.
-        return yauzl.fromBufferPromise(asBuffer(source), options);
+        const buffer = asBuffer(source);
+        const tail = buffer.subarray(Math.max(0, buffer.length - EOCD_MAX_SIZE));
+        return yauzl.fromBufferPromise(buffer.subarray(0, findArchiveEnd(tail, buffer.length)), options);
     }
-    return yauzl.openPromise(source.path, options);
+
+    const handle = await fs.promises.open(source.path, "r");
+    let size: number;
+    let end: number;
+    try {
+        size = (await handle.stat()).size;
+        const tail = Buffer.alloc(Math.min(size, EOCD_MAX_SIZE));
+        if (tail.length >= EOCD_MIN_SIZE) {
+            await handle.read(tail, 0, tail.length, size - tail.length);
+        }
+        end = findArchiveEnd(tail, size);
+    } catch (e) {
+        await handle.close();
+        throw e;
+    }
+
+    if (end === size) {
+        await handle.close();
+        return yauzl.openPromise(source.path, options);
+    }
+    return yauzl.fromRandomAccessReaderPromise(new FileRangeReader(source.path, handle), end, options);
 }
 
 export default class NodejsZipProvider implements ZipProvider {
@@ -183,6 +206,71 @@ export default class NodejsZipProvider implements ZipProvider {
                 zipfile.close();
             }
         }
+    }
+}
+
+/** End-of-central-directory record signature (`PK\x05\x06`). */
+const EOCD_SIGNATURE = 0x06054b50;
+/** Size of the end-of-central-directory record itself, before its variable-length comment. */
+const EOCD_MIN_SIZE = 22;
+/** How far back from the end of a zip the record can start: the record plus a maximum-length comment. */
+const EOCD_MAX_SIZE = EOCD_MIN_SIZE + 0xffff;
+
+/**
+ * Returns the offset one past the archive's last byte — the end-of-central-directory record plus its
+ * comment — given the last {@link EOCD_MAX_SIZE} bytes of a zip and its total size, or `totalSize` when
+ * no record is found, which leaves yauzl to report the malformed archive itself.
+ *
+ * Zips are often padded or concatenated with trailing bytes and every mainstream extractor ignores them.
+ * yauzl instead takes whatever follows the record to be its comment and rejects the archive with
+ * "Invalid comment length", so the size it is given has to stop where the archive does.
+ */
+function findArchiveEnd(tail: Buffer, totalSize: number): number {
+    // Scan backwards like yauzl does, so the record nearest the end wins.
+    for (let i = tail.length - EOCD_MIN_SIZE; i >= 0; i--) {
+        if (tail.readUInt32LE(i) !== EOCD_SIGNATURE) {
+            continue;
+        }
+        const end = totalSize - tail.length + i + EOCD_MIN_SIZE + tail.readUInt16LE(i + 20);
+        return end < totalSize ? end : totalSize;
+    }
+    return totalSize;
+}
+
+/**
+ * Reads a zip for {@link yauzl.fromRandomAccessReaderPromise}, which — unlike `yauzl.open()`, whose size
+ * comes from fstat — accepts an archive size smaller than the file it is read from.
+ */
+class FileRangeReader extends yauzl.RandomAccessReader {
+    readonly #path: string;
+    readonly #handle: FileHandle;
+
+    constructor(path: string, handle: FileHandle) {
+        super();
+        this.#path = path;
+        this.#handle = handle;
+    }
+
+    _readStreamForRange(start: number, end: number) {
+        // A stream over its own descriptor rather than over #handle: yauzl destroys the stream once the
+        // entry has been read, and Node closes the descriptor behind it whatever `autoClose` says. yauzl's
+        // range end is exclusive, createReadStream's is inclusive.
+        return fs.createReadStream(this.#path, { start, end: end - 1 });
+    }
+
+    read(
+        buffer: Buffer,
+        offset: number,
+        length: number,
+        position: number,
+        callback: (err: Error | null, bytesRead?: number) => void
+    ) {
+        this.#handle.read(buffer, offset, length, position)
+            .then(({ bytesRead }) => callback(null, bytesRead), callback);
+    }
+
+    close(callback: (err: Error | null) => void) {
+        this.#handle.close().then(() => callback(null), callback);
     }
 }
 

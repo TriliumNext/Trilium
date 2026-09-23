@@ -38,6 +38,14 @@ const HIGHLIGHT_MAX_LINE_COUNT = 500;
 const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
 
 /**
+ * The base a web view's rooted source is resolved against, to tell a path that stays on this site
+ * from one that only looks rooted at it. `.invalid` is reserved and resolves nowhere, so a source
+ * that reaches this origin can only have done so by staying relative. See {@link isFramableSource}.
+ */
+const SAME_SITE_BASE = "https://web-view.invalid/";
+const SAME_SITE_ORIGIN = new URL(SAME_SITE_BASE).origin;
+
+/**
  * Represents the output of the content renderer.
  */
 export interface Result {
@@ -524,7 +532,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             }
 
             if (linkEl.classList.contains("reference-link")) {
-                cleanUpReferenceLinks(linkEl, getNote);
+                cleanUpReferenceLinks(linkEl, href ?? "", getNote);
             }
         }
 
@@ -572,9 +580,7 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
             getLog().error(`Broken attachment link detected in shared note: unable to find attachment with ID ${attachmentId}`);
         }
     } else {
-        const [notePath] = href.split("?");
-        const notePathSegments = notePath.split("/");
-        const noteId = notePathSegments[notePathSegments.length - 1];
+        const noteId = getNoteIdFromLink(href);
         const linkedNote = getNote(noteId);
         if (linkedNote) {
             const isExternalLink = linkedNote.hasLabel("shareExternalLink");
@@ -599,10 +605,10 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
  * Processes reference links to ensure that they are up to date. More specifically, reference links contain in their HTML source code the note title at the time of the linking. It can be changed in the mean-time or the note can become protected, which leaks information.
  *
  * @param linkEl the <a> element to process.
+ * @param href the `href` stored in the note; `handleAttachmentLink()` rewrites the attribute.
  */
-function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
+function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNoteFunction) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
-    const href = linkEl.getAttribute("href") ?? "";
 
     // Handle attachment reference links
     if (linkEl.classList.contains("attachment-link")) {
@@ -611,7 +617,11 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
         return;
     }
 
-    const noteId = href.split("/").at(-1);
+    // `handleAttachmentLink()` removes the `href` of a link whose target is missing.
+    let noteId = "";
+    if (linkEl.hasAttribute("href")) {
+        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : (href.split("/").at(-1) ?? "");
+    }
     const note = noteId ? getNote(noteId) : undefined;
     if (!note) {
         // If a note is not found, simply replace it with a text.
@@ -621,6 +631,13 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
     } else {
         linkEl.innerHTML = `<span><span class="${escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
     }
+}
+
+/** Returns the ID of the note a link such as `#root/abc/def?viewMode=source` points to. */
+function getNoteIdFromLink(href: string) {
+    const [notePath] = href.split("?");
+    const notePathSegments = notePath.split("/");
+    return notePathSegments[notePathSegments.length - 1];
 }
 
 /**
@@ -736,11 +753,6 @@ function renderSpreadsheet(result: Result) {
 /**
  * Renders a web view note as the frame that embeds its source.
  *
- * Only an absolute http(s) URL is framed, which is the source a web view is documented to take and
- * the only one its setup form will write. Any other value reaches the label by another route — a
- * hand-edited attribute, an import, ETAPI, a sync — and is either not framable at all or points at
- * this very server, which `allow-same-origin` would then not isolate from the page framing it.
- *
  * The frame is built as an element rather than assembled as a string: `setAttribute()` escapes the
  * value it is handed, so the source is placed as a value and can only ever be read back as one.
  */
@@ -748,8 +760,8 @@ function renderWebView(note: SNote | BNote, result: Result) {
     const url = note.getLabelValue("webViewSrc");
     if (!url) return;
 
-    if (!isHttpUrl(url)) {
-        getLog().error(`Web view of shared note '${note.noteId}' not rendered: '${url}' is not an absolute http(s) URL.`);
+    if (!isFramableSource(url)) {
+        getLog().error(`Web view of shared note '${note.noteId}' not rendered: '${url}' is neither an absolute http(s) URL nor a path on this site.`);
         return;
     }
 
@@ -761,6 +773,37 @@ function renderWebView(note: SNote | BNote, result: Result) {
     // embedding it; only dropping allow-same-origin would isolate it.
     frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups");
     result.content = frame.toString();
+}
+
+/**
+ * True when a web view's source is one the share page may frame: an absolute http(s) URL, or a path
+ * rooted at the site serving the page.
+ *
+ * Those two are what a web view is documented to take — the setup form writes the first, and the
+ * user guide's API reference pages carry the second to reach the Redoc and TypeDoc output the docs
+ * build writes beside them. Any other value reaches the label by another route — a hand-edited
+ * attribute, an import, ETAPI, a sync — and is either not framable at all or leaves the site while
+ * looking rooted at it.
+ *
+ * A rooted path is resolved against a base no source can name, so anything that reaches a different
+ * origin is rejected however it spelled the authority: `sanitizeUrl()` passes `//example.com` and
+ * `/\example.com` through untouched, and the URL parser folds a backslash, and strips a tab, into
+ * the second slash that starts one.
+ */
+function isFramableSource(url: string): boolean {
+    if (isHttpUrl(url)) {
+        return true;
+    }
+
+    if (!url.startsWith("/")) {
+        return false;
+    }
+
+    try {
+        return new URL(url, SAME_SITE_BASE).origin === SAME_SITE_ORIGIN;
+    } catch {
+        return false;
+    }
 }
 
 

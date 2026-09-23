@@ -193,7 +193,7 @@
     "download_helper_desktop_macos": {
         "title_x64": "macOS (Intel)",
         "title_arm64": "macOS (Apple Silicon)",
-        "description_x64": "macOS Monterey 이상을 실행하는 Intel 기반 Mac용입니다.",
+        "description_x64": "macOS Ventura 이상을 실행하는 Intel 기반 Mac용입니다.",
         "description_arm64": "M1, M2 등의 Apple Silicon 칩이 탑재된 Mac용입니다.",
         "quick_start": "Homebrew로 설치:",
         "download_dmg": "설치 프로그램 다운로드(.dmg)",

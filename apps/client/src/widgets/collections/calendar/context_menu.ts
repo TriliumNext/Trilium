@@ -1,6 +1,7 @@
+import type { CommandNames } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import contextMenu, { ContextMenuEvent } from "../../../menus/context_menu";
-import { getArchiveMenuItem } from "../../../menus/context_menu_utils";
+import { getArchiveMenuItems } from "../../../menus/context_menu_utils";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import link_context_menu from "../../../menus/link_context_menu";
 import branches from "../../../services/branches";
@@ -16,7 +17,7 @@ export function openCalendarContextMenu(e: ContextMenuEvent, note: FNote, parent
         items: [
             ...link_context_menu.getItems(e),
             { kind: "separator" },
-            getArchiveMenuItem(note),
+            ...getArchiveMenuItems<CommandNames>([ note ]),
             {
                 title: t("calendar_view.delete_note"),
                 uiIcon: "bx bx-trash",

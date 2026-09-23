@@ -14,7 +14,8 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@noble/hashes": "^2.2.0"
+    "@noble/hashes": "^2.2.0",
+    "hash-wasm": "^4.12.0"
   },
   "keywords": [
     "backup",

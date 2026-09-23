@@ -40,26 +40,22 @@
   <li>First, Claude Code needs to be installed on the machine that runs Trilium.
     So for a&nbsp;<a class="reference-link" href="#root/_help_poXkQfguuA0U">Desktop Installation</a>,
     Claude needs to be installed locally and for a&nbsp;<a class="reference-link"
-    href="#root/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;accessed via a browser,
-    Claude needs to be installed on the server.</li>
-  <li>Claude Code must already be authenticated. To do so, run <code spellcheck="false">claude</code> in
-    a terminal once, type <code spellcheck="false">/login</code> and follow the
-    instructions.</li>
+    href="#root/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;accessed via
+    a browser, Claude needs to be installed on the server.</li>
+  <li>Claude Code must already be authenticated. To do so, run <code>claude</code> in
+    a terminal once, type <code>/login</code> and follow the instructions.</li>
   <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and
     add the Claude Code provider.</li>
 </ol>
 <p>Trilium will identify your Claude Code binary in this order:</p>
 <ul>
-  <li>By looking for a <code spellcheck="false">TRILIUM_CLAUDE_CODE_PATH</code> environment
-    variable pointing to the Claude binary. This allows overriding the path
-    if needed.</li>
-  <li>By looking for <code spellcheck="false">claude</code> in your PATH, generally
-    works in most circumstances.</li>
-  <li>By asking your login shell for its <code spellcheck="false">PATH</code> which
-    lets a desktop install find a CLI installed through <code spellcheck="false">nvm</code>,
-    <code
-    spellcheck="false">fnm</code>, <code spellcheck="false">asdf</code> or Homebrew, since a GUI-launched
-      app doesn't inherit your terminal's environment.</li>
+  <li>By looking for a <code>TRILIUM_CLAUDE_CODE_PATH</code> environment variable
+    pointing to the Claude binary. This allows overriding the path if needed.</li>
+  <li>By looking for <code>claude</code> in your PATH, generally works in most
+    circumstances.</li>
+  <li>By asking your login shell for its <code>PATH</code> which lets a desktop
+    install find a CLI installed through <code>nvm</code>, <code>fnm</code>, <code>asdf</code> or
+    Homebrew, since a GUI-launched app doesn't inherit your terminal's environment.</li>
 </ul>
 <p>After your provider is set up, you'll benefit from the same features as
   an API key (note tools, web search, extended thinking, image/PDF attachments,
@@ -83,7 +79,7 @@
   <li>Ollama
     <ul>
       <li>Generally Ollama runs in the background so it should be directly usable
-        in Trilium as long as the models are downloaded (e.g. <code spellcheck="false">ollama pull llama3.2</code>).</li>
+        in Trilium as long as the models are downloaded (e.g. <code>ollama pull llama3.2</code>).</li>
     </ul>
   </li>
   <li>LM Studio
@@ -110,6 +106,10 @@
   from the <em>Custom endpoint</em> section.</p>
 <p>This allows you to set the base URL to an OpenAI-compatible API, with
   an optional API key if required by the service.</p>
+<p>Enter the base URL exactly as the service documents it, including its
+  version path, such as <code>https://api.groq.com/openai/v1</code> or <code>https://open.bigmodel.cn/api/paas/v4</code>.
+  Only a bare host such as <code>http://localhost:8080</code> is completed
+  with <code>/v1</code>.</p>
 <p>For custom endpoints, the pricing of the models is not known so the cost
   of a conversation will not be displayed; this is especially relevant for
   hosted providers.</p>

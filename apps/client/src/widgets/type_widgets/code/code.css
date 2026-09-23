@@ -3,6 +3,12 @@
     min-height: 50px;
     position: relative;
 }
+
+/* Fills the wrapper in the full-height layout so the editor's own scroller can scroll; resolves
+   to auto in the flowing layout, where the wrapper has no set height. */
+.note-detail-readonly-code .note-detail-readonly-code-content {
+    height: 100%;
+}
 /* #endregion */
 
 /* #region Editable code */
@@ -32,4 +38,13 @@
 
 .note-split.type-code .note-list {
     margin-top: 1em;
+}
+
+.note-detail:not(.full-height) {
+    > .note-detail-code .note-detail-code-editor,
+    > .note-detail-readonly-code .note-detail-readonly-code-content {
+        border-end-start-radius: var(--center-pane-border-radius);
+        border-end-end-radius: var(--center-pane-border-radius);
+        overflow: hidden;
+    }
 }

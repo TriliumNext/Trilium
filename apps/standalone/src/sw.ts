@@ -10,12 +10,14 @@ if (isDev) {
     console.log('[Service Worker] Running in DEV mode - caching disabled');
 }
 
-// Adjust these to your routes:
+// Adjust these to your routes. Must stay in step with LOCAL_API_PREFIXES in local-bridge.ts, which
+// covers the same paths on iOS, where no service worker can register.
 const LOCAL_FIRST_PREFIXES = [
     "/bootstrap",
     "/api/",
     "/sync/",
-    "/search/"
+    "/search/",
+    "/custom/"
 ];
 
 // Optional: basic precache list (keep small; you can expand later)

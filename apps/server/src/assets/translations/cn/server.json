@@ -221,7 +221,8 @@
   "notes": {
     "new-note": "新建笔记",
     "duplicate-note-suffix": "(重复)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "删除笔记失败：{{- message}}"
   },
   "backend_log": {
     "log-does-not-exist": "后端日志文件 '{{ fileName }}' 暂不存在。",

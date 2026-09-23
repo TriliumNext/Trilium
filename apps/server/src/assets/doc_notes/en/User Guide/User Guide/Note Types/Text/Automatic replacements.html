@@ -1,13 +1,12 @@
 <h2>Automatic replacements</h2>
 <p>As you type in a text note, certain character sequences are replaced with
-  the typographic symbol they represent. Typing <code spellcheck="false">(c)</code> gives
-  you <code spellcheck="false">©</code>, <code spellcheck="false">...</code> gives
-  you <code spellcheck="false">…</code>, and <code spellcheck="false">"quote"</code> gives
-  you <code spellcheck="false">“quote”</code>.</p>
+  the typographic symbol they represent. Typing <code>(c)</code> gives you <code>©</code>, <code>...</code> gives
+  you <code>…</code>, and <code>"quote"</code> gives you <code>“quote”</code>.</p>
 <p>These replacements are not applied inside code blocks or inline code,
-  and pasted text is never affected — only text you type. If you have pasted
+  and pasted text is never affected, only text you type. If you have pasted
   a code snippet, or written one inside a code block, its characters are
   left exactly as they are.</p>
+<h3>Undoing a replacement</h3>
 <p>Once an automatic replacement takes place, it can be undone by:</p>
 <ul>
   <li>Pressing <kbd>Backspace</kbd> immediately after a replacement undoes it
@@ -22,6 +21,7 @@
   <li>Pressing <kbd>Ctrl</kbd>+<kbd>Z</kbd>, which works even after pressing
     space.</li>
 </ul>
+<h3>Replacement groups &amp; configuration</h3>
 <p>Each group can be turned off in&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Text notes</em> → <em>Automatic replacements</em>.</p>
 <figure
 class="table">
@@ -35,29 +35,17 @@ class="table">
     <tbody>
       <tr>
         <td>Punctuation</td>
-        <td><code spellcheck="false">...</code> with an ellipsis (<code spellcheck="false">…</code>),
-          and <code spellcheck="false">--</code> and <code spellcheck="false">---</code>  <em>surrounded by spaces</em> with
-          an en dash (<code spellcheck="false">–</code>) and an em dash (<code spellcheck="false">—</code>)</td>
+        <td><code>...</code> with an ellipsis (<code>…</code>), and <code>--</code> and <code>---</code>  <em>surrounded by spaces</em> with
+          an en dash (<code>–</code>) and an em dash (<code>—</code>)</td>
       </tr>
       <tr>
         <td>Mathematical symbols</td>
-        <td>fractions such as <code spellcheck="false">1/2</code> with <code spellcheck="false">½</code>,
-          and the operators <code spellcheck="false">&lt;=</code>, <code spellcheck="false">&gt;=</code>,
-          <code
-          spellcheck="false">!=</code>, <code spellcheck="false">&lt;-</code> and <code spellcheck="false">-&gt;</code> with
-            <code
-            spellcheck="false">≤</code>, <code spellcheck="false">≥</code>, <code spellcheck="false">≠</code>,
-              <code
-              spellcheck="false">←</code>and <code spellcheck="false">→</code>
+        <td>fractions such as <code>1/2</code> with <code>½</code>, and the operators <code>&lt;=</code>, <code>&gt;=</code>, <code>!=</code>, <code>&lt;-</code> and <code>-&gt;</code> with <code>≤</code>, <code>≥</code>, <code>≠</code>, <code>←</code> and <code>→</code>
         </td>
       </tr>
       <tr>
         <td>Copyright and trademark</td>
-        <td><code spellcheck="false">(c)</code>, <code spellcheck="false">(r)</code> and
-          <code
-          spellcheck="false">(tm)</code>with <code spellcheck="false">©</code>, <code spellcheck="false">®</code> and
-            <code
-            spellcheck="false">™</code>
+        <td><code>(c)</code>, <code>(r)</code> and <code>(tm)</code> with <code>©</code>, <code>®</code> and <code>™</code>
         </td>
       </tr>
       <tr>
@@ -66,88 +54,78 @@ class="table">
       </tr>
     </tbody>
   </table>
-  </figure>
-  <h2>Quotation marks</h2>
-  <p>Quotation marks are configured separately from the rest, with one setting
-    for the <strong>double</strong> quote key and one for the <strong>single</strong> quote
-    key, because which pair belongs on which key differs between conventions
-    — British typography traditionally sets a quotation in <code spellcheck="false">‘…’</code> where
-    American sets it in <code spellcheck="false">“…”</code>.</p>
-  <p>Each offers:</p>
-  <ul>
-    <li><em>Based on the note's content language</em> (the default) — English gives
-      <code
-      spellcheck="false">“quote”</code>, German <code spellcheck="false">„quote“</code>, French
-        <code
-        spellcheck="false">« quote »</code>, Japanese <code spellcheck="false">「quote」</code>. See <em>Content language &amp; Right-to-left support</em> for
-          how a note's language is decided.</li>
-    <li><em>Disabled,</em> straight quotes stay straight.</li>
-    <li><em>A specific pair</em> — <code spellcheck="false">“…”</code>, <code spellcheck="false">‘…’</code>,
-      <code
-      spellcheck="false">„…“</code>, <code spellcheck="false">„…”</code>, <code spellcheck="false">«…»</code>,
-        <code
-        spellcheck="false">« … »</code>, <code spellcheck="false">‹…›</code>, <code spellcheck="false">「…」</code>,
-          <code
-          spellcheck="false">『…』</code>. Choosing one applies it to every note, whatever language it
-            is written in.</li>
-  </ul>
-  <h2>Custom replacements</h2>
-  <p>You can add your own under&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Text notes</em> → <em>Automatic replacements</em> → <em>Custom replacements</em>.
-    Type the text to replace and the replacement, then press Enter. Existing
-    ones are shown as chips and removed with the × on each.</p>
-  <p>A custom replacement is applied when the text is typed as a whole word
-    and followed by a space, so longer words that begin with it are left alone
-    — a <code spellcheck="false">TN</code> replacement does not rewrite the end
-    of <code spellcheck="false">BTN</code>, and <code spellcheck="false">TNT</code> can
-    still be typed.</p>
-  <p>Capitalisation follows what you type, unless the replacement has capitals
-    of its own:</p>
-  <figure class="table">
-    <table>
-      <thead>
-        <tr>
-          <th><strong>Replacement you defined</strong>
-          </th>
-          <th><strong>You type</strong>
-          </th>
-          <th><strong>You get</strong>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><code spellcheck="false">teh</code> → <code spellcheck="false">the</code>
-          </td>
-          <td><code spellcheck="false">teh</code> / <code spellcheck="false">Teh</code> /
-            <code
-            spellcheck="false">TEH</code>
-          </td>
-          <td><code spellcheck="false">the</code> / <code spellcheck="false">The</code> /
-            <code
-            spellcheck="false">THE</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code spellcheck="false">TN</code> → <code spellcheck="false">Trilium Notes</code>
-          </td>
-          <td><code spellcheck="false">TN</code> or <code spellcheck="false">tn</code>
-          </td>
-          <td><code spellcheck="false">Trilium Notes</code> (unchanged — it has capitals)</td>
-        </tr>
-      </tbody>
-    </table>
-  </figure>
-  <p>The text to replace is matched literally; it is not a pattern. Typing
-    a replacement whose "text to replace" already exists updates that entry
-    rather than adding a second one.</p>
-  <h2>Characters that only look replaced (ligatures)</h2>
-  <p>If you see <code spellcheck="false">!=</code> displayed as <code spellcheck="false">≠</code> or
-    <code
-    spellcheck="false">-&gt;</code>as <code spellcheck="false">→</code> inside a code block, that
-      is not a replacement — replacements never run there. It is a <em>font ligature</em>:
-      the default monospace font draws certain character pairs as a single symbol.
-      The underlying text is unchanged, and copying it out gives you back
-      <code
-      spellcheck="false">!=</code>and <code spellcheck="false">-&gt;</code>.</p>
-  <p>This can be turned off with&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a><em>→ Appearance → Fonts → Programming ligatures.</em>
-  </p>
+</figure>
+<h2>Quotation marks</h2>
+<p>Quotation marks are configured separately from the rest, with one setting
+  for the <strong>double</strong> quote key and one for the <strong>single</strong> quote
+  key, because which pair belongs on which key differs between conventions:
+  British typography traditionally sets a quotation in <code>‘…’</code> where
+  American sets it in <code>“…”</code>.</p>
+<p>Each offers:</p>
+<ul>
+  <li><em>Based on the note's content language</em> (the default) — English gives <code>“quote”</code>,
+    German <code>„quote“</code>, French <code>« quote »</code>, Japanese <code>「quote」</code>.
+    See&nbsp;<a class="reference-link" href="#root/_help_veGu4faJErEM">Content language &amp; Right-to-left support</a>&nbsp;for
+    how a note's language is decided.</li>
+  <li><em>Disabled,</em> straight quotes stay straight.</li>
+  <li>A specific pair_:_ <code>“…”</code>, <code>‘…’</code>, <code>„…“</code>, <code>„…”</code>, <code>«…»</code>, <code>« … »</code>, <code>‹…›</code>, <code>「…」</code>, <code>『…』</code>.
+    Choosing one applies it to every note, regardless of its content language.</li>
+</ul>
+<h2>Custom replacements</h2>
+<p>You can add your own under&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Text notes</em> → <em>Automatic replacements</em> → <em>Custom replacements</em>.
+  Type the text to replace and the replacement, then press Enter. Existing
+  ones are shown as chips and removed with the × on each.</p>
+<p>A custom replacement is applied when the text is typed as a whole word
+  and followed by a space, so longer words that begin with it are left alone
+  — a <code>TN</code> replacement does not rewrite the end of <code>BTN</code>,
+  and <code>TNT</code> can still be typed.</p>
+<p>Capitalization follows what you type, unless the replacement has capitals
+  of its own:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th><strong>Replacement you defined</strong>
+        </th>
+        <th><strong>You type</strong>
+        </th>
+        <th><strong>You get</strong>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>teh</code> → <code>the</code>
+        </td>
+        <td><code>teh</code> / <code>Teh</code> / <code>TEH</code>
+        </td>
+        <td><code>the</code> / <code>The</code> / <code>THE</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>TN</code> → <code>Trilium Notes</code>
+        </td>
+        <td><code>TN</code> or <code>tn</code>
+        </td>
+        <td><code>Trilium Notes</code> (unchanged, it has capitals)</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>Of note:</p>
+<ul>
+  <li>The text to replace is matched literally; it is not a pattern.</li>
+  <li>Typing a "text to replace" that already exists in the list of replacements
+    will update the existing one instead. It's not possible to have multiple
+    replacements for the same text.</li>
+  <li>The same “text to replace” with different capitalization (e.g. <code>TN</code> and <code>tn</code> co-existing)
+    doesn't work because it would interfere with the capitalization rules above.</li>
+</ul>
+<h2>Characters that only look replaced (ligatures)</h2>
+<p>If you see <code>!=</code> displayed as <code>≠</code> or <code>-&gt;</code> as <code>→</code> inside
+  a code block, that is not a replacement since replacements never run there
+  (unless a code block is applied to an existing text). It is a <em>font ligature</em>:
+  the default monospace font draws certain character pairs as a single symbol.
+  The underlying text is unchanged, and copying it out gives you back <code>!=</code> and <code>-&gt;</code>.</p>
+<p>This can be turned off with&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a><em>→ Appearance → Fonts → Programming ligatures.</em>
+</p>

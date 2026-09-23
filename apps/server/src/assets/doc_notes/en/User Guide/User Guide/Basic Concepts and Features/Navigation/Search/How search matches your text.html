@@ -1,0 +1,559 @@
+<p>The single most common source of confusion is that the <code>=</code> sign
+  means two <em>different</em> things depending on where it appears. Read this
+  section once and the rest of search becomes predictable.</p>
+<p>There are three matching modes:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Mode</th>
+        <th>How you trigger it</th>
+        <th>What it matches</th>
+        <th>Substring?</th>
+        <th>Fuzzy (typos)?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Default</strong>
+        </td>
+        <td>type words with no prefix</td>
+        <td>whole words <em>and</em> substrings, anywhere in title, content or attributes,
+          relevance-ranked</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><strong>Exact full-text</strong>
+        </td>
+        <td>a leading <code>=</code> (e.g. <code>=sync</code>)</td>
+        <td>the exact whole word or phrase, ignoring surrounding punctuation</td>
+        <td>No</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td><strong>Attribute / property equality</strong>
+        </td>
+        <td><code>=</code> inside a <code>#label=value</code> or <code>note.property=value</code> clause</td>
+        <td>the <em>entire</em> attribute or property value, exactly</td>
+        <td>No</td>
+        <td>No</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>Every example below is backed 1:1 by an automated test, so the documentation
+  cannot drift from the engine.</p>
+<h3>Default matching (no prefix)</h3>
+<p><strong>Rule:</strong> typing words with no prefix finds notes that contain
+  those words anywhere in the title, content or attributes, as whole words
+  or as substrings. The closest matches are ranked first.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>sync</code>
+        </td>
+        <td><code>please sync the folders</code>
+        </td>
+        <td>Yes (ranked higher)</td>
+        <td>contains the exact word <code>sync</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>sync</code>
+        </td>
+        <td><code>synchronize the database now</code>
+        </td>
+        <td>Yes (ranked lower)</td>
+        <td><code>sync</code> is a substring of <code>synchronize</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Exact match with the <code>=</code> prefix</h3>
+<p><strong>Rule:</strong> a leading <code>=</code> switches the full-text search
+  to exact matching. It finds the whole word or phrase only, ignoring surrounding
+  punctuation, with <strong>no</strong> substring and <strong>no</strong> fuzzy
+  matching. Use it when a normal search returns too many near-matches.</p>
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>=sync</code>
+        </td>
+        <td><code>see (sync) mode</code>
+        </td>
+        <td>Yes</td>
+        <td><code>(sync)</code> is the whole word <code>sync</code>; punctuation is
+          ignored</td>
+      </tr>
+      <tr>
+        <td><code>=sync</code>
+        </td>
+        <td><code>in sync, then continue</code>
+        </td>
+        <td>Yes</td>
+        <td><code>sync,</code> is the whole word <code>sync</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>=sync</code>
+        </td>
+        <td><code>he said "sync" out loud</code>
+        </td>
+        <td>Yes</td>
+        <td><code>"sync"</code> is the whole word <code>sync</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>=sync</code>
+        </td>
+        <td><code>synchronize the database now</code>
+        </td>
+        <td>No</td>
+        <td><code>=</code> never matches substrings</td>
+      </tr>
+      <tr>
+        <td><code>=sync</code>
+        </td>
+        <td><code>please send the file</code>
+        </td>
+        <td>No</td>
+        <td><code>=</code> never matches typos / fuzzy</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>To match an exact <strong>phrase</strong>, quote it after the <code>=</code> (single,
+  double or backtick quotes all work). The phrase must appear as consecutive
+  words, but punctuation between or around them is ignored:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note (title or content)</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>="project plan"</code>
+        </td>
+        <td>title <code>Project Plan</code>
+        </td>
+        <td>Yes</td>
+        <td>the title is exactly the phrase</td>
+      </tr>
+      <tr>
+        <td><code>="project plan"</code>
+        </td>
+        <td><code>the (project plan) is ready to share</code>
+        </td>
+        <td>Yes</td>
+        <td>the consecutive phrase appears; punctuation is ignored</td>
+      </tr>
+      <tr>
+        <td><code>="project plan"</code>
+        </td>
+        <td><code>the plan for this project is late</code>
+        </td>
+        <td>No</td>
+        <td>the words are present but not consecutive</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Attribute and property equality (<code>=</code>, <code>!=</code>)</h3>
+<p><strong>Rule:</strong> when <code>=</code> compares an attribute or property,
+  as in <code>#label=value</code> or <code>note.title=value</code>, it is <strong>strict full-value equality</strong>:
+  the <em>whole</em> value must equal what you typed, ignoring case and diacritics.
+  This is <strong>not</strong> word matching. <code>!=</code> inverts it.</p>
+<p>The examples below assume four notes: <em>Austria</em> (<code>#capital=Vienna</code>), <em>Somewhere</em> (<code>#capital=Vienna Austria</code>), <em>Czech Republic</em> (<code>#capital=Prague</code>)
+  and <em>Switzerland</em> (<code>#capital=Zürich</code>).</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example label value</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>#capital=Vienna</code>
+        </td>
+        <td><code>Vienna</code>
+        </td>
+        <td>Yes</td>
+        <td>the whole value equals <code>Vienna</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>#capital=Vienna</code>
+        </td>
+        <td><code>Vienna Austria</code>
+        </td>
+        <td>No</td>
+        <td>the whole value is <code>Vienna Austria</code>, not <code>Vienna</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>#capital="Vienna Austria"</code>
+        </td>
+        <td><code>Vienna Austria</code>
+        </td>
+        <td>Yes</td>
+        <td>quote a multi-word value to match it in full</td>
+      </tr>
+      <tr>
+        <td><code>#capital=Zurich</code>
+        </td>
+        <td><code>Zürich</code>
+        </td>
+        <td>Yes</td>
+        <td>equality ignores diacritics</td>
+      </tr>
+      <tr>
+        <td><code>#capital!=Vienna</code>
+        </td>
+        <td><code>Prague</code>
+        </td>
+        <td>Yes</td>
+        <td><code>!=</code> matches every value that is not <code>Vienna</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>#capital!=Vienna</code>
+        </td>
+        <td><code>Vienna</code>
+        </td>
+        <td>No</td>
+        <td><code>!=</code> excludes the exact value</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<blockquote>
+  <p><strong>Quick search relaxes this.</strong> The <a href="#root/_help_Ms1nauBra7gq">Quick search</a> bar
+    and autocomplete treat an attribute <code>=</code> as "contains", so <code>#capital=Vienna</code> typed
+    there also matches <code>Vienna Austria</code>. The strict full-value equality
+    described here applies only in the full Search.</p>
+</blockquote>
+<h3>Fuzzy operators (<code>~=</code> and <code>~*</code>)</h3>
+<p><strong>Rule:</strong> the fuzzy operators tolerate typos. <code>~=</code> (fuzzy-equals)
+  matches a value that is a close whole-word variant of your term. <code>~*</code> (fuzzy-contains)
+  matches when your term appears anywhere inside the value, either as a fragment
+  or as a near-miss. Both work on note properties such as <code>note.title</code> and <code>note.content</code>,
+  and on labels (<code>#label</code>). Fuzzy operators accept terms of at
+  least 3 characters, though how many typos each term tolerates depends on
+  its length — see <em>Fuzzy tolerance</em> below.</p>
+<p>The examples assume a note titled <code>Books</code> carrying the label <code>#author=Tolkien</code>,
+  and a note whose content is <code>learn programming today</code>.</p>
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example value</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>note.title ~= boks</code>
+        </td>
+        <td>title <code>Books</code>
+        </td>
+        <td>Yes</td>
+        <td>one edit away from <code>books</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>#author ~= tolkein</code>
+        </td>
+        <td>author <code>Tolkien</code>
+        </td>
+        <td>Yes</td>
+        <td><code>tolkein</code> is a typo of <code>tolkien</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>note.content ~* progr</code>
+        </td>
+        <td><code>learn programming today</code>
+        </td>
+        <td>Yes</td>
+        <td><code>progr</code> is a fragment of <code>programming</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>note.content ~* programing</code>
+        </td>
+        <td><code>learn programming today</code>
+        </td>
+        <td>Yes</td>
+        <td><code>programing</code> is one edit from <code>programming</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Fuzzy tolerance</h3>
+<p><strong>Rule:</strong> how many typos are tolerated depends on the <strong>length</strong> of
+  your search term. Short terms must match exactly, because a single edit
+  is enough to turn one short word into an unrelated one; longer terms tolerate
+  more.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Term length</th>
+        <th>Edits allowed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1–3 characters</td>
+        <td>0 (exact only)</td>
+      </tr>
+      <tr>
+        <td>4–6 characters</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>7+ characters</td>
+        <td>2</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Term length</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>cat</code>
+        </td>
+        <td>3</td>
+        <td><code>a bright red car</code>
+        </td>
+        <td>No</td>
+        <td>No edits are allowed below 4 characters, so <code>cat</code> does not reach <code>car</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>carr</code>
+        </td>
+        <td>4</td>
+        <td><code>a blue debit card</code>
+        </td>
+        <td>Yes</td>
+        <td>1 edit is within budget for 4–6 character terms</td>
+      </tr>
+      <tr>
+        <td><code>ceck</code>
+        </td>
+        <td>4</td>
+        <td><code>the latest tech trends</code>
+        </td>
+        <td>No</td>
+        <td><code>ceck</code>→<code>tech</code> needs 2 edits; only 1 is allowed at
+          this length</td>
+      </tr>
+      <tr>
+        <td><code>combinef</code>
+        </td>
+        <td>8</td>
+        <td><code>the values were combined together</code>
+        </td>
+        <td>Yes</td>
+        <td><code>combinef</code>→<code>combined</code> is 1 edit; up to 2 are allowed
+          at 7+ characters</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Relevance ranking</h3>
+<p><strong>Rule:</strong> results are ordered by <em>how well</em> they match,
+  not merely whether they match. Exact whole-word and phrase matches rank
+  above substring and fuzzy matches, and a note where your words appear as
+  a consecutive phrase outranks one where they are scattered.</p>
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Ranked higher</th>
+        <th>Ranked lower</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>sync</code>
+        </td>
+        <td><code>please sync the folders</code>
+        </td>
+        <td><code>synchronize the database now</code>
+        </td>
+        <td>exact word beats substring</td>
+      </tr>
+      <tr>
+        <td><code>you and me</code>
+        </td>
+        <td><code>I like you and me as a phrase</code>
+        </td>
+        <td><code>the menu is here and you know it</code>
+        </td>
+        <td>consecutive phrase beats scattered words</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>What is searchable</h3>
+<p>A search looks at more than the visible body text. All of the following
+  are indexed and searchable:</p>
+<ul>
+  <li>note titles,</li>
+  <li>note body content,</li>
+  <li>labels and relations (<a href="#root/_help_zEY4DaJG4YT5">attributes</a>),</li>
+  <li>link URLs and the titles/descriptions of link previews,</li>
+  <li>the titles of notes that a note reference-links to.</li>
+</ul>
+<p>The last point is the least obvious: if a note's only content is a reference
+  link to another note, searching for that other note's <strong>title</strong> still
+  finds the linking note.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Setup</th>
+        <th>Matches?</th>
+        <th>Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>special topic</code>
+        </td>
+        <td>a note whose only content is a reference link to a note titled <code>Special Topic</code>
+        </td>
+        <td>Yes, and the linked target ranks first</td>
+        <td>the target's title is indexed into the linking note's searchable text</td>
+      </tr>
+      <tr>
+        <td><code>special</code>
+        </td>
+        <td>the same note (only a reference link to <code>Special Topic</code>)</td>
+        <td>Yes, one word from the target's title is enough</td>
+        <td>the indexed title is normalized just like body text, so even one lowercased
+          word matches</td>
+      </tr>
+      <tr>
+        <td><code>zurich</code>
+        </td>
+        <td>a note whose only content is a reference link to a note titled <code>Zürich</code>
+        </td>
+        <td>Yes</td>
+        <td>the indexed title has its accents normalized, so the plain form matches
+          the accented title</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Diacritics</h3>
+<p><strong>Rule:</strong> accents are normalized on both sides, so an accented
+  word and its plain form match each other.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>ktory</code>
+        </td>
+        <td><code>slovo ktorý znamena nieco</code>
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>ktorý</code>
+        </td>
+        <td><code>the word ktory appears here</code>
+        </td>
+        <td>Yes</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Regular expressions (<code>%=</code>)</h3>
+<p><strong>Rule:</strong> the <code>%=</code> operator matches a property or
+  label value against a regular expression.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Example note content</th>
+        <th>Matches?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>note.content %= 'colou?r'</code>
+        </td>
+        <td><code>my favorite color of all</code>
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>note.content %= 'colou?r'</code>
+        </td>
+        <td><code>my favourite colour of all</code>
+        </td>
+        <td>Yes</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>&nbsp;</p>

@@ -29,7 +29,7 @@
     hyphens: auto;
 }
 
-.toc li.active > .item-content {
+.toc li.active > .item-content, .toc li.collapsed:has(+ ol .active) > .item-content {
     font-weight: bold;
     color: var(--main-text-color);
 }

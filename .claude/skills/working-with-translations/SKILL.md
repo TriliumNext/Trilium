@@ -86,6 +86,30 @@ node $S add client dialog.my_thing "Save changes"
 
 Then use it: `t("dialog.my_thing")`. Only `en/` changes — Weblate carries the string to the other locales, and you should **not** hand-edit the other ~38 locale files.
 
+### Write US English, and mirror the difference into `en-GB`
+
+The `en` catalogues are **US English**: `color`, `center`, `meter`, `recognize`, `labeled`, `canceled`,
+`organize`, `defense`, `gray`. `en-GB` is a locale of its own, and unlike the ~38 translated locales it
+is sparse on purpose — it carries **only** the strings whose British spelling differs (`"color_type":
+"Colour"`, `"centerContent": "Keep content centred"`), and falls back to `en` for everything else.
+
+So a string containing one of those words is two edits, not one:
+
+```bash
+node $S add client dialog.my_thing "Pick a color"
+# then, only because the spelling differs:
+printf '{"dialog.my_thing":"Pick a colour"}' > /tmp/en-GB.json
+node .claude/skills/translating-locales/locale.mjs merge en-GB client /tmp/en-GB.json
+```
+
+Leave `en-GB` alone where the spelling is the same in both — an entry identical to English is noise
+that `measure` then reports as untranslated. `i18n.mjs` writes `en/` only, by design; `locale.mjs
+merge` is the sanctioned way into a locale file, and it preserves key order and formatting.
+
+To check a catalogue, grep its values for the British halves of those pairs — `colour`, `centre`,
+`metre`, `-ise`/`-isation`, `-lled`/`-lling`, `defence`, `licence`, `grey`, `programme`, `whilst`.
+The English catalogues currently read 0 hits, so anything found is newly introduced.
+
 ### Pluralization
 
 i18next pluralizes only when the translation has `_one` / `_other` keys **and** the call site passes `{ count }`. Add both forms and call `t("key", { count })`:

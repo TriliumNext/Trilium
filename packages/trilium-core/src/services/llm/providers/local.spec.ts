@@ -108,6 +108,16 @@ describe("LocalProvider", () => {
             expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "local", baseURL: "https://proxy.example.com/llm/v1", fetch: llmFetch });
         });
 
+        it("uses a path-carrying URL as entered, appending /v1 only to a bare host", () => {
+            // Zhipu serves its OpenAI-compatible API under /v4, so /v1 must not be appended.
+            new LocalProvider("openai-compatible", "", "https://open.bigmodel.cn/api/paas/v4");
+            expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "local", baseURL: "https://open.bigmodel.cn/api/paas/v4", fetch: llmFetch });
+
+            // A path naming no version is used as entered too — appending /v1 would invent a route.
+            new LocalProvider("openai-compatible", "", "https://gateway.example.com/openai");
+            expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "local", baseURL: "https://gateway.example.com/openai", fetch: llmFetch });
+        });
+
         it("forwards a supplied API key to the SDK", () => {
             new LocalProvider("openai-compatible", "sk-proxy", "http://box:8080/v1");
             expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "sk-proxy", baseURL: "http://box:8080/v1", fetch: llmFetch });
@@ -187,6 +197,20 @@ describe("LocalProvider", () => {
 
             expect(models[0].pricing).toBeUndefined();
             expect(provider.getModelPricing("gpt-4.1")).toBeUndefined();
+        });
+
+        it("lists models from an explicit non-v1 API version", async () => {
+            fetchMock.mockImplementation(routes({ "/api/paas/v4/models": openAiModels(["glm-4.5"]) }));
+
+            const provider = new LocalProvider("openai-compatible", "", "https://open.bigmodel.cn/api/paas/v4");
+
+            await expect(provider.listModels()).resolves.toEqual([expect.objectContaining({ id: "glm-4.5" })]);
+            // Only `/v1` is dropped from the probe root, so a `/v4` endpoint keeps its full path.
+            expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+                "https://open.bigmodel.cn/api/paas/v4/api/tags",
+                "https://open.bigmodel.cn/api/paas/v4/api/v0/models",
+                "https://open.bigmodel.cn/api/paas/v4/models"
+            ]);
         });
 
         it("prices an endpoint identified as a local runtime as free", async () => {

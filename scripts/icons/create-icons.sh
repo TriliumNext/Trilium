@@ -71,6 +71,9 @@ done
 npx iconsur set fakeapp.app -l -i "png/1024x1024-dev.png" -o "mac/master-dev.png" -s 0.8
 build_icns "mac/master-dev.png" "icon-dev.icns" "mac/dev"
 
+# The Icon Composer leaves in icon.icon/Assets and icon-dev.icon/Assets are hand-copied path groups of
+# icon-color.svg and icon-purple.svg, so edit them whenever those source SVGs change.
+
 # Build Windows icon
 magick -background none "$source_icon_dir/icon-color.svg" -define icon:auto-resize=16,32,48,64,128,256 "./icon.ico"
 magick -background none "$source_icon_dir/icon-purple.svg" -define icon:auto-resize=16,32,48,64,128,256 "./icon-dev.ico"

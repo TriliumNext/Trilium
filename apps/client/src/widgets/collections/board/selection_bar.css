@@ -1,0 +1,26 @@
+:where(:root) {
+  --board-selection-bar-background: var(--main-background-color);
+}
+
+.board-header-tools {
+  display: flex;
+  position: relative;
+  flex: 1;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5em;
+}
+
+/* Over the grouping, the filter and the toggle, all of which the selection replaces meanwhile. */
+.board-header-tools .board-selection-bar {
+  display: flex;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  gap: 0.5em;
+  background-color: var(--board-selection-bar-background);
+}
+
+.board-header-tools .board-selection-count {
+  flex: 1;
+}

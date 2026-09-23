@@ -2,14 +2,47 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // A controllable stand-in for the bundled local-server-worker. vi.hoisted lets the
 // (hoisted) vi.mock factory share the instance registry with the test body.
-const { workerInstances, leadership } = vi.hoisted(() => ({
+const { workerInstances, leadership, saved } = vi.hoisted(() => ({
     workerInstances: [] as MockWorker[],
     // Most of this suite exercises the leader, which is the tab that owns the
     // worker. Followers take a different path — see the leadership describe.
-    leadership: { isLeader: true }
+    leadership: { isLeader: true },
+    // What saveDatabase() handed the device, and what the device said back.
+    saved: {
+        fileName: "",
+        chunks: [] as Uint8Array[],
+        target: null as unknown,
+        result: { status: "saved", location: "/documents/Trilium/db.tnbackup" } as {
+            status: string;
+            location?: string;
+            message?: string;
+        }
+    }
 }));
 
 vi.mock("./leader_election.js", () => ({ isLeader: () => leadership.isLeader }));
+
+// The Capacitor plugins are not there under happy-dom, and what matters on this side is which
+// target the backup asked for and what reached it — see capacitor_download.spec.ts for the writing.
+vi.mock("./services/capacitor_download.js", () => ({
+    BACKUP_TARGET: { directory: "DOCUMENTS", folder: "Trilium", sweep: false },
+    saveChunksToDevice: async (
+        fileName: string, chunks: AsyncIterable<Uint8Array>, target: unknown
+    ) => {
+        saved.fileName = fileName;
+        saved.target = target;
+        saved.chunks = [];
+        try {
+            for await (const chunk of chunks) {
+                saved.chunks.push(chunk);
+            }
+        } catch (e) {
+            // The real one reports a broken source rather than rejecting; see its own spec.
+            return { fileName, status: "failed", message: (e as Error).message };
+        }
+        return { fileName, ...saved.result };
+    }
+}));
 
 class MockWorker {
     postMessage = vi.fn();
@@ -33,6 +66,7 @@ async function freshBridge(withServiceWorker = true): Promise<LocalBridge> {
     vi.resetModules();
     workerInstances.length = 0;
     leadership.isLeader = true;
+    saved.result = { status: "saved", location: "/documents/Trilium/db.tnbackup" };
     swHandler = undefined;
     if (withServiceWorker) {
         Object.defineProperty(navigator, "serviceWorker", {
@@ -91,7 +125,11 @@ describe("startLocalServerWorker", () => {
         const bridge = await freshBridge();
         const worker = bridge.startLocalServerWorker();
         expect(workerInstances).toHaveLength(1);
-        expect(worker.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "INIT", useNativeHttp: false }));
+        expect(worker.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "INIT", useNativeHttp: false }),
+            // The security channel's worker end, transferred rather than copied.
+            [ expect.anything() ]
+        );
 
         // Second call returns the same instance without creating another worker.
         expect(bridge.startLocalServerWorker()).toBe(worker);
@@ -102,7 +140,10 @@ describe("startLocalServerWorker", () => {
         const bridge = await freshBridge();
         bridge.registerNativeHttpHandler(vi.fn());
         bridge.startLocalServerWorker();
-        expect(lastWorker().postMessage).toHaveBeenCalledWith(expect.objectContaining({ useNativeHttp: true }));
+        expect(lastWorker().postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ useNativeHttp: true }),
+            [ expect.anything() ]
+        );
     });
 });
 
@@ -417,7 +458,9 @@ describe("localFetch", () => {
 describe("isLocalApiRequest", () => {
     it("matches only the local API prefixes", async () => {
         const bridge = await freshBridge();
-        for (const path of ["/bootstrap", "/api/notes", "/sync/changed", "/search/q"]) {
+        // `/custom/` carries custom request handlers and resource providers, which a frontend
+        // script reaches with a plain fetch rather than through `server.ts`.
+        for (const path of ["/bootstrap", "/api/notes", "/sync/changed", "/search/q", "/custom/my-handler"]) {
             expect(bridge.isLocalApiRequest(new URL(`http://x${path}`))).toBe(true);
         }
         expect(bridge.isLocalApiRequest(new URL("http://x/app.js"))).toBe(false);
@@ -430,7 +473,7 @@ describe("backup download keepalive", () => {
         vi.useFakeTimers();
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
         const bridge = await freshBridge();
-        bridge.startLocalServerWorker();
+        void bridge.downloadDatabase("Backup.tnbackup");
 
         lastWorker().onmessage?.({ data: { type: "BACKUP_STREAM_ACTIVE", active: true } });
         await vi.advanceTimersByTimeAsync(25_000);
@@ -441,6 +484,21 @@ describe("backup download keepalive", () => {
         await vi.advanceTimersByTimeAsync(60_000);
         expect(fetchSpy).toHaveBeenCalledTimes(2);
 
+        vi.useRealTimers();
+    });
+
+    it("does not ping for a stream the page consumes itself", async () => {
+        vi.useFakeTimers();
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+        const bridge = await freshBridge();
+        bridge.startLocalServerWorker();
+
+        // saveDatabase() holds the stream open in the page, so there is no service worker waiting
+        // on it — and on iOS there is no service worker at all.
+        lastWorker().onmessage?.({ data: { type: "BACKUP_STREAM_ACTIVE", active: true } });
+        await vi.advanceTimersByTimeAsync(60_000);
+
+        expect(fetchSpy).not.toHaveBeenCalled();
         vi.useRealTimers();
     });
 });
@@ -490,6 +548,92 @@ describe("downloadDatabase", () => {
 
         expect(await pending).toMatchObject({ status: "failed" });
         vi.useRealTimers();
+    });
+});
+
+describe("saveDatabase", () => {
+    /** What the bridge asked the worker to stream, including the port to play it down. */
+    function backupMessage(worker: MockWorker): { port?: MessagePort; passphrase?: string } {
+        return worker.postMessage.mock.calls
+            .map(([ message ]) => message as { type: string; port?: MessagePort; passphrase?: string })
+            .find((message) => message.type === "BACKUP_STREAM") ?? {};
+    }
+
+    /** The port the bridge handed the worker, played from the worker's side. */
+    function backupPort(worker: MockWorker): MessagePort {
+        const port = backupMessage(worker).port;
+        if (!port) {
+            throw new Error("no BACKUP_STREAM sent");
+        }
+        return port;
+    }
+
+    /** Answers the bridge's pulls with `chunks`, then ends — what the local worker does. */
+    function serveStream(port: MessagePort, chunks: Uint8Array[]) {
+        let next = 0;
+        port.onmessage = (event) => {
+            const message = event.data as { type?: string };
+            if (message?.type !== "pull") {
+                return;
+            }
+            if (next < chunks.length) {
+                const chunk = chunks[next++];
+                port.postMessage({ type: "chunk", data: chunk.buffer.slice(0) });
+            } else {
+                port.postMessage({ type: "end" });
+            }
+        };
+        port.postMessage({ type: "begin", byteSize: chunks.reduce((sum, c) => sum + c.length, 0) });
+    }
+
+    it("streams the backup to the device and reports where it went", async () => {
+        const bridge = await freshBridge();
+        const progress: number[] = [];
+        const pending = bridge.saveDatabase("db.tnbackup", "hunter2", (sent) => progress.push(sent));
+
+        // The dynamic import of the save module resolves before the stream is asked for.
+        await vi.waitFor(() => backupPort(lastWorker()));
+        serveStream(backupPort(lastWorker()), [ Uint8Array.from([ 1, 2, 3 ]), Uint8Array.from([ 4, 5 ]) ]);
+        lastWorker().onmessage?.({
+            data: { type: "BACKUP_STREAM_PROGRESS", sentBytes: 3, totalBytes: 5 }
+        });
+
+        expect(await pending).toEqual({ status: "done", location: "/documents/Trilium/db.tnbackup" });
+        expect(saved.chunks).toEqual([ Uint8Array.from([ 1, 2, 3 ]), Uint8Array.from([ 4, 5 ]) ]);
+        expect(saved.fileName).toBe("db.tnbackup");
+        // Documents, not the share sheet's scratch directory: a backup outlives the sheet.
+        expect(saved.target).toMatchObject({ directory: "DOCUMENTS", sweep: false });
+        // The passphrase rides the worker message rather than any URL.
+        expect(backupMessage(lastWorker()).passphrase).toBe("hunter2");
+        expect(progress).toEqual([ 3 ]);
+    });
+
+    it("is done, not cancelled, when the user dismisses the share sheet", async () => {
+        const bridge = await freshBridge();
+        saved.result = { status: "cancelled", location: "/documents/Trilium/db.tnbackup" };
+        const pending = bridge.saveDatabase("db.tnbackup");
+
+        await vi.waitFor(() => backupPort(lastWorker()));
+        serveStream(backupPort(lastWorker()), [ Uint8Array.from([ 1 ]) ]);
+
+        // The file was written before the sheet opened, so there is a backup either way.
+        expect(await pending).toEqual({ status: "done", location: "/documents/Trilium/db.tnbackup" });
+    });
+
+    it("fails when the stream never begins, and refuses outright in a follower tab", async () => {
+        const bridge = await freshBridge();
+        const pending = bridge.saveDatabase("db.tnbackup");
+
+        await vi.waitFor(() => backupPort(lastWorker()));
+        backupPort(lastWorker()).postMessage({ type: "error", message: "The database is not ready yet." });
+
+        expect(await pending).toMatchObject({
+            status: "failed",
+            message: "The database is not ready yet."
+        });
+
+        leadership.isLeader = false;
+        expect(await bridge.saveDatabase("db.tnbackup")).toMatchObject({ status: "failed" });
     });
 });
 
@@ -639,6 +783,122 @@ describe("leadership", () => {
     it("survives announcing with no controlling service worker", async () => {
         const bridge = await freshBridge(false);
         expect(() => bridge.announceLeadership()).not.toThrow();
+    });
+});
+
+describe("security settings", () => {
+    /**
+     * The worker's end of the security channel, handed over with INIT.
+     *
+     * A channel of its own rather than the worker's message handler, because that handler is
+     * reachable from inside the worker: backend scripts run through `eval()` in its realm, so a
+     * command sitting on `self.onmessage` is one a script can issue without the browser ever
+     * drawing its confirmation dialog.
+     */
+    function securityPort(worker: MockWorker): MessagePort {
+        const init = worker.postMessage.mock.calls
+            .map(([message]) => message as { type: string; securityPort?: MessagePort })
+            .find((message) => message.type === "INIT");
+        if (!init?.securityPort) {
+            throw new Error("INIT carried no security port");
+        }
+        return init.securityPort;
+    }
+
+    /** What the page sent over that channel, as the worker would see it. */
+    type SecurityChange = { id: string; setting: string; enabled: boolean };
+
+    function changesSentTo(port: MessagePort): Promise<SecurityChange[]> {
+        const seen: SecurityChange[] = [];
+        port.onmessage = (event) => {
+            const msg = event.data as SecurityChange & { type: string };
+            if (msg?.type === "SECURITY_SET") {
+                seen.push(msg);
+            }
+        };
+        return vi.waitFor(() => {
+            expect(seen.length).toBeGreaterThan(0);
+            return seen;
+        });
+    }
+
+    it("sends the change over the port, and answers what the worker wrote", async () => {
+        const bridge = await freshBridge();
+        const port = securityPort(bridge.startLocalServerWorker() as unknown as MockWorker);
+        const seen = changesSentTo(port);
+
+        const change = bridge.requestSecurityChange("backendScriptingEnabled", true);
+        const [ sent ] = await seen;
+        expect(sent).toMatchObject({ setting: "backendScriptingEnabled", enabled: true });
+
+        port.postMessage({ type: "SECURITY_SET_RESULT", id: sent.id, written: true });
+        await expect(change).resolves.toBe(true);
+    });
+
+    it("never puts the change on the worker's own message handler", async () => {
+        const bridge = await freshBridge();
+        const worker = bridge.startLocalServerWorker() as unknown as MockWorker;
+        const seen = changesSentTo(securityPort(worker));
+
+        bridge.requestSecurityChange("backendScriptingEnabled", true);
+        await seen;
+
+        // Only INIT ever goes to the worker itself. A SECURITY_SET there would be a command a
+        // backend script could issue for itself, since eval() runs in the worker's realm.
+        const toWorker = worker.postMessage.mock.calls
+            .map(([message]) => (message as { type: string }).type);
+        expect(toWorker).not.toContain("SECURITY_SET");
+    });
+
+    it("answers no when the worker refused to write it", async () => {
+        const bridge = await freshBridge();
+        const port = securityPort(bridge.startLocalServerWorker() as unknown as MockWorker);
+        const seen = changesSentTo(port);
+
+        const change = bridge.requestSecurityChange("sqlConsoleEnabled", true);
+        const [ sent ] = await seen;
+        // A worker whose settings file is not locked reports the change as unwritten rather than
+        // pretending; anything but an outright `true` leaves the setting where it was.
+        port.postMessage({ type: "SECURITY_SET_RESULT", id: sent.id, written: "yes" });
+
+        await expect(change).resolves.toBe(false);
+    });
+
+    it("ignores a result that answers a different change", async () => {
+        const bridge = await freshBridge();
+        const port = securityPort(bridge.startLocalServerWorker() as unknown as MockWorker);
+        const change = bridge.requestSecurityChange("backendScriptingEnabled", true);
+
+        port.postMessage({ type: "SECURITY_SET_RESULT", id: "some other change", written: true });
+
+        let settled = false;
+        void change.then(() => { settled = true; });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(settled).toBe(false);
+    });
+
+    it("gives up rather than hanging when the worker never answers", async () => {
+        vi.useFakeTimers();
+        try {
+            const bridge = await freshBridge();
+            const change = bridge.requestSecurityChange("backendScriptingEnabled", true);
+
+            await vi.advanceTimersByTimeAsync(30_000);
+
+            await expect(change).resolves.toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("a follower writes nothing, since the file belongs to the leader's worker", async () => {
+        const bridge = await freshBridge();
+        leadership.isLeader = false;
+
+        await expect(bridge.requestSecurityChange("backendScriptingEnabled", true)).resolves.toBe(false);
+
+        // No worker either: one here would open a second database against the same OPFS pool.
+        expect(workerInstances).toHaveLength(0);
     });
 });
 

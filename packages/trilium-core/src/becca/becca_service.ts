@@ -67,7 +67,11 @@ function getNoteTitleAndIcon(childNoteId: string, parentNoteId?: string) {
     }
 }
 
-function getNoteTitleArrayForPath(notePathArray: string[]) {
+/**
+ * Titles for each segment of a note path. Results under the same ancestors resolve the same
+ * segments, so a caller ranking many of them can pass a cache and resolve each pair once.
+ */
+function getNoteTitleArrayForPath(notePathArray: string[], segmentTitles?: SegmentTitleCache) {
     if (!notePathArray || !Array.isArray(notePathArray)) {
         throw new Error(`${notePathArray} is not an array.`);
     }
@@ -88,9 +92,7 @@ function getNoteTitleArrayForPath(notePathArray: string[]) {
     for (const noteId of notePathArray) {
         // start collecting path segment titles only after hoisted note
         if (hoistedNotePassed) {
-            const title = getNoteTitle(noteId, parentNoteId);
-
-            titles.push(title);
+            titles.push(segmentTitles ? getCachedNoteTitle(segmentTitles, noteId, parentNoteId) : getNoteTitle(noteId, parentNoteId));
         }
 
         if (!hoistedNotePassed && (noteId === hoistedNoteId || outsideOfHoistedSubtree)) {
@@ -103,6 +105,27 @@ function getNoteTitleArrayForPath(notePathArray: string[]) {
     return titles;
 }
 
+/** Nested by parent then child, so a lookup builds no key string and allocates nothing. */
+export type SegmentTitleCache = Map<string, Map<string, string>>;
+
+function getCachedNoteTitle(segmentTitles: SegmentTitleCache, noteId: string, parentNoteId: string) {
+    let byChild = segmentTitles.get(parentNoteId);
+
+    if (!byChild) {
+        byChild = new Map();
+        segmentTitles.set(parentNoteId, byChild);
+    }
+
+    let title = byChild.get(noteId);
+
+    if (title === undefined) {
+        title = getNoteTitle(noteId, parentNoteId);
+        byChild.set(noteId, title);
+    }
+
+    return title;
+}
+
 function getNoteTitleForPath(notePathArray: string[]) {
     const titles = getNoteTitleArrayForPath(notePathArray);
 
@@ -111,6 +134,7 @@ function getNoteTitleForPath(notePathArray: string[]) {
 
 export default {
     getNoteTitle,
+    getNoteTitleArrayForPath,
     getNoteTitleAndIcon,
     getNoteTitleForPath,
     isNotePathArchived

@@ -1,5 +1,5 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
-import { FilterLabelsByType, KeyboardActionNames, NoteType, OptionNames, RelationNames } from "@triliumnext/commons";
+import { FilterLabelsByType, HighlightedTokenInfo, KeyboardActionNames, NoteType, OptionNames, RelationNames } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import Mark from "mark.js";
 import { Ref, RefObject, VNode } from "preact";
@@ -17,8 +17,10 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import keyboard_actions from "../../services/keyboard_actions";
 import { parseNavigationStateFromUrl, ViewScope } from "../../services/link";
+import { getNoteTypeOptions, type NoteTypeOption } from "../../services/note_types";
 import options, { type OptionValue } from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
+import { consumeSearchTerms } from "../../services/search_jump";
 import server from "../../services/server";
 import type { ShortcutHintDefinition, ShortcutHintProvider } from "../../services/shortcut_hints";
 import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
@@ -26,7 +28,7 @@ import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import { getEffectiveThemeStyle } from "../../services/theme";
 import toast, { ToastOptions } from "../../services/toast";
 import tree from "../../services/tree";
-import utils, { escapeRegExp, getErrorMessage, randomString, reloadFrontendApp } from "../../services/utils";
+import utils, { getErrorMessage, randomString, reloadFrontendApp } from "../../services/utils";
 import ws from "../../services/ws";
 import BasicWidget, { ReactWrappedWidget } from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
@@ -738,8 +740,15 @@ export function useNoteLabelWithDefault(note: FNote | undefined | null, labelNam
 export function useNoteLabelBoolean(note: FNote | undefined | null, labelName: FilterLabelsByType<boolean>): [ boolean, (newValue: boolean) => void] {
     const [, forceRender] = useState({});
 
+    // Not on the first run: the render that mounted the component has already read the label, so
+    // forcing another draws every consumer twice for a value that has not changed. 72 components
+    // use this hook, and a board draws it once a card.
+    const seenNote = useRef<FNote | undefined | null>(undefined);
     useEffect(() => {
-        forceRender({});
+        if (seenNote.current !== undefined) {
+            forceRender({});
+        }
+        seenNote.current = note;
     }, [ note ]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
@@ -865,6 +874,20 @@ export function useNoteBlob(note: FNote | null | undefined, componentId?: string
     return blob;
 }
 
+/**
+ * Calls `consumeSearchTerms` when a search result is re-clicked while its note is already open.
+ * That switch does not change the blob, so the widget's own content-ready path does not re-run.
+ * The switch must target the note this widget shows: a switch to a different note belongs to the
+ * newly mounted widget, and consuming it here would clear the terms before its content is ready.
+ */
+export function useSearchTermsConsumer(note: FNote | null | undefined, noteContext: NoteContext | undefined, ntxId: string | null | undefined) {
+    useTriliumEvent("noteSwitched", ({ noteContext: switchedContext }) => {
+        if (switchedContext.ntxId !== ntxId) return;
+        if (switchedContext.note?.noteId !== note?.noteId) return;
+        consumeSearchTerms(noteContext, ntxId);
+    });
+}
+
 export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, { noteContext, containerClassName, containerStyle }: {
     noteContext?: NoteContext;
     containerClassName?: string;
@@ -970,6 +993,52 @@ export function useElementSize(ref: RefObject<HTMLElement>) {
  *          screen actually changed — a request the browser refuses (no user gesture behind it, a
  *          policy against it) leaves the view exactly as it was.
  */
+/**
+ * Whether any part of an element is on screen, for something that floats over the page on the
+ * element's account and has no business there once the element is scrolled out of sight.
+ *
+ * Watched only while `enabled`, and true whenever it is not: an element that is not being watched
+ * is taken as on screen, and watching starts from that until the observer says otherwise.
+ */
+export function useIsOnScreen(ref: RefObject<Element>, enabled: boolean) {
+    const [ isOnScreen, setIsOnScreen ] = useState(true);
+
+    useEffect(() => {
+        const element = ref.current;
+        if (!enabled || !element) {
+            setIsOnScreen(true);
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([ entry ]) => setIsOnScreen(entry.isIntersecting));
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [ ref, enabled ]);
+
+    return isOnScreen;
+}
+
+/**
+ * `value`, held at true for `ms` after it turns false, for something that leaves the page with an
+ * animation: what draws it keeps drawing it that long, and tells it that it is leaving.
+ */
+export function useLingeringTrue(value: boolean, ms: number) {
+    const [ isLingering, setIsLingering ] = useState(value);
+
+    useEffect(() => {
+        if (value) {
+            setIsLingering(true);
+            return;
+        }
+
+        const timer = window.setTimeout(() => setIsLingering(false), ms);
+        return () => window.clearTimeout(timer);
+    }, [ value, ms ]);
+
+    return value || isLingering;
+}
+
 export function useFullscreen(element: HTMLElement | null | undefined, onChange?: () => void): [ boolean, () => Promise<boolean> ] {
     const [ isFullscreen, setFullscreen ] = useState(() => !!element && document.fullscreenElement === element);
     // Read afresh on every change rather than closed over, so that a listener bound once follows a
@@ -1367,6 +1436,26 @@ export function useContextualShortcutHints(hints: ShortcutHintDefinition | (() =
     useDebugValue("contextual-shortcut-hints");
 }
 
+/**
+ * The element a ref points at, as state, so an effect keyed on it runs once the element is there.
+ *
+ * Filling a ref triggers no render, so an effect that reads `ref.current` in its dependencies never
+ * hears the element arrive. Containers drawn only once their content has loaded are the ordinary
+ * case for that.
+ */
+export function useTrackedElement<T extends HTMLElement>(ref: RefObject<T>): T | null {
+    const [ element, setElement ] = useState<T | null>(null);
+
+    // Every render, and set only where it changed, so this settles in one further pass.
+    useLayoutEffect(() => {
+        if (ref.current !== element) {
+            setElement(ref.current);
+        }
+    });
+
+    return element;
+}
+
 export function useSyncedRef<T>(externalRef?: Ref<T>, initialValue: T | null = null): RefObject<T> {
     const ref = useRef<T>(initialValue);
 
@@ -1381,19 +1470,25 @@ export function useSyncedRef<T>(externalRef?: Ref<T>, initialValue: T | null = n
     return ref;
 }
 
-export function useImperativeSearchHighlighlighting(highlightedTokens: string[] | null | undefined) {
+/** Longer regex tokens are rejected outright rather than compiled, to avoid pathological patterns. */
+const MAX_REGEX_TOKEN_LENGTH = 1000;
+/** Caps the number of matches a single regex token can wrap, mirroring the cap mark.js's own term API implicitly applies via node-at-a-time processing. */
+const MAX_REGEX_MATCHES = 500;
+
+export function useImperativeSearchHighlighlighting(
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
+) {
     const mark = useRef<Mark>();
-    const highlightRegex = useMemo(() => {
+    const tokenInfos = useMemo<HighlightedTokenInfo[] | null>(() => {
         if (!highlightedTokens?.length) return null;
-        const regex = highlightedTokens.map((token) => escapeRegExp(token)).join("|");
-        return new RegExp(regex, "gi");
+        return highlightedTokens.map((token) => (typeof token === "string" ? { token, type: "plain" as const } : token));
     }, [ highlightedTokens ]);
 
     return (el: HTMLElement | null | undefined) => {
         if (!el) return;
 
         // Nothing has ever been highlighted here, so there is also nothing to clear.
-        if (!mark.current && !highlightRegex) return;
+        if (!mark.current && !tokenInfos) return;
 
         if (!mark.current) {
             mark.current = new Mark(el);
@@ -1404,17 +1499,47 @@ export function useImperativeSearchHighlighlighting(highlightedTokens: string[] 
         // previous highlights, which would otherwise stay in the DOM for good.
         mark.current.unmark();
 
-        if (!highlightRegex) return;
+        if (!tokenInfos) return;
 
-        mark.current.markRegExp(highlightRegex, {
-            element: "span",
-            className: "ck-find-result",
-            // Reveal matches that landed inside collapsed <details> blocks — they
-            // are highlighted in the DOM but hidden until the block is expanded.
-            done: () => {
-                el.querySelectorAll<HTMLElement>(".ck-find-result").forEach(expandAncestorDetails);
+        const plainTokens = tokenInfos.filter((info) => info.type === "plain").map((info) => info.token);
+        if (plainTokens.length) {
+            // Term API (not markRegExp): its diacritics map lets an unaccented query like "ktory"
+            // (the server strips diacritics before indexing) still highlight "ktorý" (#10616).
+            // separateWordSearch: false keeps a multi-word token as one literal phrase; the default
+            // "partially" accuracy keeps plain substring matching, so CJK tokens without word
+            // boundaries (e.g. "笔记" inside "我的笔记本") keep working.
+            mark.current.mark(plainTokens, {
+                separateWordSearch: false,
+                diacritics: true,
+                caseSensitive: false,
+                element: "span",
+                className: "ck-find-result"
+            });
+        }
+
+        for (const info of tokenInfos) {
+            if (info.type !== "regex" || info.token.length > MAX_REGEX_TOKEN_LENGTH) continue;
+
+            let regex: RegExp;
+            try {
+                regex = new RegExp(info.token, "gi");
+            } catch {
+                // Invalid regex (e.g. from a malformed %= search) - skip rather than crash the render.
+                continue;
             }
-        });
+
+            mark.current.markRegExp(regex, {
+                element: "span",
+                className: "ck-find-result",
+                // markRegExp's filter is called as (node, match, totalCounter so far); returning
+                // false once the cap is hit stops further matches from being wrapped.
+                filter: (_node, _match, totalCounter) => totalCounter < MAX_REGEX_MATCHES
+            });
+        }
+
+        // Reveal matches that landed inside collapsed <details> blocks, which are highlighted in
+        // the DOM but hidden until the block is expanded.
+        el.querySelectorAll<HTMLElement>(".ck-find-result").forEach(expandAncestorDetails);
     };
 }
 
@@ -1857,6 +1982,62 @@ export function useNoteColorClass(note: FNote | null | undefined) {
         setColorClass(note?.getColorClass());
     }, [ color, note ]);
     return colorClass;
+}
+
+/**
+ * Everything a note can be created from: the note types, the templates the app ships and the
+ * reader's own.
+ *
+ * Read when the caller mounts and again whenever a template is made, deleted, renamed or given
+ * another icon, so what is offered is what exists now.
+ */
+export function useNoteTypeOptions() {
+    const [ options, setOptions ] = useState<NoteTypeOption[]>([]);
+    /** How many reads were asked for, and the newest one answered. */
+    const asked = useRef(0);
+    const answered = useRef(0);
+
+    const read = useCallback(() => {
+        const attempt = ++asked.current;
+        getNoteTypeOptions().then((types) => {
+            // Two reads can be in flight at once, the one made on arrival and one a template being
+            // made asks for. They need not answer in the order they were asked, and one of them can
+            // fail and leave no answer at all, so what is taken is what no newer answer has taken
+            // over.
+            if (attempt > answered.current) {
+                answered.current = attempt;
+                setOptions(types);
+            }
+        }).catch((e) => console.error("Failed to read what a note can be made from:", e));
+    }, []);
+
+    useEffect(() => {
+        read();
+        // A read still in flight when the caller goes has nothing left to answer.
+        return () => { answered.current = asked.current + 1; };
+    }, [ read ]);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const offered = new Set(options
+            .map((option) => option.options.templateNoteId)
+            .filter((noteId) => !!noteId));
+        // A note taking `#template` or losing it changes what can be created. So does any attribute
+        // of a note already offered: the icon comes from `iconClass`, from `workspaceIconClass`
+        // where there is none, and from a `#geoLocation` on a text note, all of them labels rather
+        // than part of the note row a reload would report.
+        const templated = loadResults.getAttributeRows().some((attribute) =>
+            attribute.name === "template"
+                || (!!attribute.noteId && offered.has(attribute.noteId)));
+        const renamed = options.some((option) =>
+            option.options.templateNoteId
+                && loadResults.isNoteReloaded(option.options.templateNoteId));
+
+        if (templated || renamed) {
+            read();
+        }
+    });
+
+    return options;
 }
 
 export function useTextEditor(noteContext: NoteContext | null | undefined) {

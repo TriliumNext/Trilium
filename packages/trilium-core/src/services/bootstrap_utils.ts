@@ -119,7 +119,7 @@ function getCustomThemeCssUrl(theme: string, themeNote: BNote | null) {
         return undefined;
     }
 
-    if (!process.env.TRILIUM_SAFE_MODE && themeNote) {
+    if (!getPlatform().getEnv("TRILIUM_SAFE_MODE") && themeNote) {
         return `api/notes/download/${themeNote.noteId}`;
     }
 

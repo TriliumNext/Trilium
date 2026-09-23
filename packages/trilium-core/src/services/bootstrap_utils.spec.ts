@@ -5,6 +5,7 @@ import getSharedBootstrapItems, { getIconConfig } from "./bootstrap_utils.js";
 import * as cls from "./context.js";
 import notes from "./notes.js";
 import options from "./options.js";
+import { getPlatform } from "./platform.js";
 import { enterSetupMode, leaveSetupMode } from "./setup_mode.js";
 import sqlInit from "./sql_init.js";
 
@@ -140,6 +141,31 @@ describe("bootstrap_utils (real DB)", () => {
         expect(items.themeCssUrl).toBe(`api/notes/download/${noteId}`);
         expect(items.customThemeCssUrl).toBe(`api/notes/download/${noteId}`);
         expect(items.themeBase).toBe("next-dark");
+    });
+
+    it("withholds both custom theme URLs in safe mode", () => {
+        cls.init(() => {
+            const { note } = notes.createNewNote({
+                parentNoteId: "root",
+                title: "Custom Theme",
+                content: "body {}",
+                type: "code",
+                mime: "text/css"
+            });
+            attributes.createLabel(note.noteId, "appTheme", "mySafeModeTheme");
+        });
+
+        // Safe mode reaches core through the platform provider rather than `process.env`: the
+        // browser build has no `process` and takes the value from a `?safeMode` URL parameter.
+        const envSpy = vi.spyOn(getPlatform(), "getEnv")
+            .mockImplementation((key) => (key === "TRILIUM_SAFE_MODE" ? "1" : undefined));
+        try {
+            const items = fullPayload("mySafeModeTheme");
+            expect(items.themeCssUrl).toBe(false);
+            expect(items.customThemeCssUrl).toBeUndefined();
+        } finally {
+            envSpy.mockRestore();
+        }
     });
 
     it("falls back to the baseline light theme for an unknown theme with no matching note", () => {

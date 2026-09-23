@@ -209,9 +209,9 @@ describe("renderToHtml", () => {
     });
 
     describe("inline code (codespan)", () => {
-        it("renders inline code with spellcheck disabled and escaped content", () => {
+        it("renders inline code with escaped content", () => {
             const html = render("use `foo > bar` here");
-            expect(html).toBe('<p>use <code spellcheck="false">foo &gt; bar</code> here</p>');
+            expect(html).toBe('<p>use <code>foo &gt; bar</code> here</p>');
         });
     });
 
@@ -565,7 +565,7 @@ describe("renderToHtml", () => {
         it("does not convert a formula-like sequence inside inline code (codeMap path)", () => {
             const html = render("use `$x$` and real $y$");
             // The `$x$` inside the codespan stays literal; only the bare $y$ becomes a formula.
-            expect(html).toContain('<code spellcheck="false">$x$</code>');
+            expect(html).toContain('<code>$x$</code>');
             expect(html).toContain('<span class="math-tex">\\(y\\)</span>');
         });
 
@@ -637,7 +637,7 @@ describe("renderToHtml", () => {
         });
 
         it("does not highlight == inside code", () => {
-            expect(render("`==x==`")).toBe('<p><code spellcheck="false">==x==</code></p>');
+            expect(render("`==x==`")).toBe('<p><code>==x==</code></p>');
             expect(render("```\na ==x== b\n```")).toContain("a ==x== b");
         });
 

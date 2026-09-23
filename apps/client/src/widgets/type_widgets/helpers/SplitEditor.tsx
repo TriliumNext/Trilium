@@ -82,7 +82,6 @@ export default function SplitEditor({ note, noteContext, error, previewStale, sp
                         noteContext={noteContext}
                         lineWrapping={false}
                         updateInterval={750} debounceUpdate
-                        noBackgroundChange
                         {...editorProps}
                     />)}
             </div>

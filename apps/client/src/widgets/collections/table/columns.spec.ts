@@ -148,6 +148,20 @@ describe("restoreExistingData", () => {
         const restored = restoreExistingData(newDefs, oldDefs);
         expect(restored[0].width).toStrictEqual("100px");
     });
+
+    it("enforces size for non-resizable columns persisted by Tabulator", () => {
+        // Tabulator's persistence stores only `title`, `width` and `visible`, so a stored "#"
+        // column carries no `resizable` flag. Restoring its width would pin the column to the
+        // digit count the table had when it was last persisted.
+        const newDefs: ColumnDefinition[] = [
+            { title: "#", resizable: false, width: 80 }
+        ];
+        const oldDefs: ColumnDefinition[] = [
+            { title: "#", width: 48, visible: true }
+        ];
+        const restored = restoreExistingData(newDefs, oldDefs);
+        expect(restored[0].width).toStrictEqual(80);
+    });
 });
 
 describe("buildColumnDefinitions — typed columns", () => {

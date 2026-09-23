@@ -2,10 +2,10 @@
 # for every supported platform/arch inside the package itself, which the server
 # build copies into ./dist. There is therefore no native compile step and no
 # builder stage any more. The Linux prebuilds need glibc >= 2.34 (x64) and
-# >= 2.38 (arm64), so the base image is trixie rather than bullseye (glibc 2.31).
+# >= 2.38 (arm64), so the base image is trixie rather than bookworm (glibc 2.36).
 # Platforms without a prebuild (32-bit ARM) are served by Dockerfile.legacy,
 # which still compiles from source.
-FROM node:24.19.0-trixie-slim
+FROM node:24.21.0-trixie-slim
 
 # Install only runtime dependencies
 RUN apt-get update && \

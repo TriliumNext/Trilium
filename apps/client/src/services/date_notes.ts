@@ -1,4 +1,4 @@
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, type InboxTargetResponse } from "@triliumnext/commons";
 
 import type { FNoteRow } from "../entities/fnote.js";
 import froca from "./froca.js";
@@ -9,6 +9,21 @@ async function getInboxNote() {
     const note = await server.get<FNoteRow>(`special-notes/inbox/${dayjs().format("YYYY-MM-DD")}`, "date-note");
 
     return await froca.getNote(note.noteId);
+}
+
+/** Resolves the inbox note to a note path, for callers that create notes there. */
+async function getInboxNotePath() {
+    const inboxNote = await getInboxNote();
+
+    return inboxNote?.getBestNotePathString();
+}
+
+/**
+ * Names where `getInboxNote()` would place a note, without creating the day note it would
+ * otherwise create. Honours the hoisted note, which the server reads from the request.
+ */
+async function getInboxTarget() {
+    return await server.get<InboxTargetResponse>("special-notes/inbox-target");
 }
 
 async function getTodayNote() {
@@ -135,6 +150,8 @@ async function getRecentLlmChats(limit: number = 10): Promise<RecentLlmChat[]> {
 
 export default {
     getInboxNote,
+    getInboxNotePath,
+    getInboxTarget,
     getTodayNote,
     getDayNote,
     getWeekFirstDayNote,

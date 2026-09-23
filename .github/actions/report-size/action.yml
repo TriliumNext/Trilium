@@ -46,6 +46,7 @@ runs:
     - name: Checkout base branch
       uses: actions/checkout@v7
       with:
+        persist-credentials: false
         ref: ${{ inputs.branch }}
         path: br-base
         token: ${{ inputs.ghToken }}
@@ -53,7 +54,7 @@ runs:
     # Generate the bundle size difference report [required]
     - name: Generate report
       id: bundleSize
-      uses: nejcm/bundle-size-reporter-action@v1.4.1
+      uses: nejcm/bundle-size-reporter-action@007b40dc7e8dd0905e729faa4d37d6a8f141aa6b # v1.4.1
       with:
         paths: ${{ inputs.paths }}
         onlyDiff: ${{ inputs.onlyDiff }}
@@ -69,7 +70,7 @@ runs:
 
     # Post github action comment
     - name: Post comment
-      uses: marocchino/sticky-pull-request-comment@v3
+      uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
       if: ${{ steps.bundleSize.outputs.hasDifferences == 'true' }} # post only in case of changes
       with:
         number: ${{ github.event.pull_request.number }}

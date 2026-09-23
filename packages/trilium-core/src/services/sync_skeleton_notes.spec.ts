@@ -1,5 +1,5 @@
 import type { EntityChange, EntityChangeRecord, EntityRow, NoteRow } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../http_interface";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../becca/becca.js";

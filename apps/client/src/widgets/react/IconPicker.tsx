@@ -117,6 +117,17 @@ interface IconPickerButtonProps extends Pick<IconPickerProps, "onSelect" | "onRe
     /** The host's own class, for a host that dresses the button or the widget around it. */
     className?: string;
     disabled?: boolean;
+    /**
+     * Said as the picker opens and closes, for a host that has to hold something open while the
+     * reader is in it: the picker takes focus with it, and an editor that closes on losing focus
+     * would take the picker down with itself.
+     */
+    onOpened?: () => void;
+    onClosed?: () => void;
+    /** Dim the page behind the picker, for a host that would rather it were answered before
+     * anything else. Has no effect on a phone, where the picker is a dialog with a backdrop of its
+     * own. */
+    backdrop?: boolean;
 }
 
 /**
@@ -136,7 +147,9 @@ export function IconPickerButton({ className, ...props }: IconPickerButtonProps)
 }
 
 /** The picker under the button, as a desktop shows it. */
-function IconPickerDropdownButton({ icon, title, className, disabled, onSelect, onReset, resetText }: IconPickerButtonProps) {
+function IconPickerDropdownButton({
+    icon, title, className, disabled, onSelect, onReset, resetText, onOpened, onClosed, backdrop
+}: IconPickerButtonProps) {
     const dropdownRef = useRef<BootstrapDropdown>(null);
     const [ pickerShown, setPickerShown ] = useState(false);
 
@@ -150,14 +163,34 @@ function IconPickerDropdownButton({ icon, title, className, disabled, onSelect, 
             disabled={disabled}
             dropdownRef={dropdownRef}
             dropdownContainerStyle={{ width: "620px" }}
-            dropdownOptions={{ autoClose: "outside" }}
+            dropdownOptions={{
+                autoClose: "outside",
+                // Popper guards only the main axis against overflow, so a menu this tall, hung off
+                // a button with room for it neither above nor below, was left hanging off the
+                // bottom of the screen. Guarding the other axis too slides it back into view; the
+                // side it opens on is still `flip`'s to choose.
+                popperConfig: (defaults) => ({
+                    ...defaults,
+                    modifiers: [
+                        ...(defaults.modifiers ?? []),
+                        { name: "preventOverflow", options: { altAxis: true, padding: 8 } }
+                    ]
+                })
+            }}
             // The menu is wider than some of the places a button stands in, and the inline title
             // establishes a backdrop root that would flatten its blur into a tint; hand the menu to
             // the page rather than leaving it to be clipped or dulled.
             portalToBody
+            backdrop={backdrop}
             hideToggleArrow
-            onShown={() => setPickerShown(true)}
-            onHidden={() => setPickerShown(false)}
+            onShown={() => {
+                setPickerShown(true);
+                onOpened?.();
+            }}
+            onHidden={() => {
+                setPickerShown(false);
+                onClosed?.();
+            }}
         >
             {/* Built only once opened: it holds every icon of every installed pack, which is far
                 more work than a button that merely happens to be on screen should be doing. */}
@@ -180,7 +213,9 @@ function IconPickerDropdownButton({ icon, title, className, disabled, onSelect, 
 }
 
 /** The picker on a screen of its own, as a phone shows it. */
-function IconPickerModalButton({ icon, title, className, disabled, onSelect, onReset, resetText }: IconPickerButtonProps) {
+function IconPickerModalButton({
+    icon, title, className, disabled, onSelect, onReset, resetText, onOpened, onClosed
+}: IconPickerButtonProps) {
     const [ modalShown, setModalShown ] = useState(false);
     const { windowWidth } = useWindowSize();
 
@@ -190,7 +225,14 @@ function IconPickerModalButton({ icon, title, className, disabled, onSelect, onR
                 className="note-icon"
                 icon={icon}
                 text={title}
-                onClick={() => setModalShown(true)}
+                // The dropdown button a desktop shows is a `btn`, which the note icon's own rules
+                // size. `icon-action` instead is sized by the theme as a toolbar button, which is
+                // larger, so the same icon would be drawn differently on the two.
+                noIconActionClass
+                onClick={() => {
+                    setModalShown(true);
+                    onOpened?.();
+                }}
                 disabled={disabled}
             />
 
@@ -200,9 +242,14 @@ function IconPickerModalButton({ icon, title, className, disabled, onSelect, onR
                 <Modal
                     title={title}
                     size="xl"
-                    show={modalShown} onHidden={() => setModalShown(false)}
+                    show={modalShown}
+                    onHidden={() => {
+                        setModalShown(false);
+                        onClosed?.();
+                    }}
                     className="icon-switcher note-icon-widget"
                     scrollable
+                    stackable
                 >
                     {/* As many icons as the screen has room for, rather than the twelve a menu is
                         built for (see the CSS, which gives the grid the rest of the screen). */}

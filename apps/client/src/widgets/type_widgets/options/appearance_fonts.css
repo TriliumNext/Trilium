@@ -1,0 +1,249 @@
+/* Font Option Row */
+.font-option {
+    cursor: pointer;
+
+    /* Shown rather than hidden with custom fonts off, so the settings can still be read. */
+    &.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}
+
+.font-option-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-text-color);
+}
+
+/* The specimen is drawn at the user's own family and size, so it can outgrow the screen: it takes
+   the line below the name earlier than an ordinary option does. Measured against the card, which
+   `Card.css` makes a container. */
+@container (max-width: 600px) {
+    .font-option {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .font-option .font-option-preview {
+        justify-content: space-between;
+    }
+
+    .font-option .font-option-specimen {
+        /* `anywhere`: a family name is often one word, with no break the browser would take. */
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Font Picker Modal */
+body.desktop .modal.font-picker-modal {
+    .modal-content-with-sidebar {
+        height: 60vh;
+    }
+
+    /* On the sidebar rather than on the list, which a search matching nothing takes away. */
+    .modal-sidebar {
+        width: 280px;
+    }
+
+    /* The title is hidden beside a sidebar (see `style.css`) and grows to fill the header, which
+       would push the switcher against the close button. */
+    .modal-header > .modal-title {
+        flex-grow: 0;
+    }
+
+    .font-picker-targets {
+        margin-inline-end: auto;
+    }
+}
+
+.modal.font-picker-modal {
+    /* Keep the sidebar background within the rounded corners. */
+    .modal-content {
+        overflow: hidden;
+    }
+
+    .modal-body {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-sidebar {
+        background-color: var(--card-background-color);
+    }
+
+    .modal-sidebar .dropdown-menu.static {
+        background-color: transparent !important;
+        border: none;
+        border-radius: 0 !important;
+    }
+
+    /* Set here rather than by the field, which takes the room it is given (see SettingsSearch.css).
+       Room below as well as above: the focus ring reaches past the border, and the list beneath it
+       paints over whatever crosses into it. */
+    .settings-search {
+        margin: 8px;
+    }
+
+    .font-picker-list {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow: auto;
+
+        .dropdown-item {
+            font-size: 14px;
+
+            /* Each row names a family the browser has to resolve to lay the row out, and the list
+               runs to every family the device has. Skipping the rows out of view keeps that off the
+               first open, which costs ~250ms of blocked main thread at 90 families and grows with
+               the count. `auto` holds each row's height once measured, which this list needs: every
+               family sets its label at its own. */
+            content-visibility: auto;
+            contain-intrinsic-size: auto 30px;
+        }
+    }
+
+    .font-picker-empty {
+        flex: 1 1 0;
+        min-height: 0;
+        padding: 16px;
+    }
+
+    .font-picker-settings {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        gap: 16px;
+    }
+}
+
+.font-size-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+        font-weight: 500;
+        color: var(--muted-text-color);
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+
+    .font-size-description {
+        color: var(--muted-text-color);
+        font-size: 12px;
+    }
+}
+
+.font-size-slider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .slider {
+        flex: 1;
+    }
+
+    /* The pair sizes itself (see `theme-next/forms.css`), so the slider takes what is left. */
+    .tn-number-unit-pair {
+        flex: 0 0 auto;
+    }
+
+    /* Dragging the slider runs the number through every value between: proportional digits would
+       shuffle its width the whole way. */
+    .font-size-value {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.font-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+
+    label {
+        font-weight: 500;
+        color: var(--muted-text-color);
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+}
+
+.font-preview-text {
+    flex: 1;
+    padding: 16px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    background: var(--main-background-color);
+    overflow: auto;
+    line-height: 1.6;
+}
+
+pre.font-preview-code {
+    padding: 0;
+}
+
+.font-preview-interface {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+
+    /* The menu is a specimen, so it takes the room its entries need rather than the width it would
+       have as a dropdown. */
+    .dropdownWrapper {
+        max-width: 100%;
+    }
+
+    .font-preview-interface-buttons {
+        display: flex;
+        gap: 8px;
+    }
+}
+
+/* Sized in em, so the heading keeps its proportion to the text under it as the slider moves. */
+.font-preview-document {
+    h3 {
+        font-size: 1.5em;
+        font-weight: 600;
+        margin: 0 0 0.4em;
+    }
+
+    p {
+        margin: 0;
+    }
+}
+
+/* Rows at the density the note tree stacks them at, which is what the font has to hold up at.
+   Sized in em throughout, so the whole thing follows the size slider rather than only the titles. */
+.font-preview-tree {
+    line-height: 1.3;
+
+    .font-preview-tree-row {
+        display: flex;
+        align-items: center;
+        gap: 0.3em;
+        padding: 0.2em 0.3em;
+        border-radius: 4px;
+
+        &.nested {
+            padding-inline-start: 1.6em;
+        }
+
+        /* Reads as the tree's own hierarchy rather than as part of a title. */
+        .font-preview-tree-expander {
+            color: var(--muted-text-color);
+        }
+
+        .font-preview-tree-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+}

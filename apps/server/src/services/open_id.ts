@@ -328,7 +328,11 @@ export function createReactiveOidcMiddleware(deps: Partial<ReactiveOidcDeps> = {
                 // only evaluated the first time OAuth is actually used, never on a server that runs with
                 // OAuth unselected. The sole static reference to the package is the erased `Session` type
                 // import, so the bundler keeps it out of the eager-init graph (see scripts/build-utils.ts).
-                const authFactory = buildAuth ?? (await import("express-openid-connect")).auth;
+                // `express-openid-connect` is CommonJS, and the ESM split build emits it as a chunk
+                // whose only export is `default`, so reading `.auth` off the namespace yields
+                // undefined. Go through the interop.
+                const oidc = await import("express-openid-connect");
+                const authFactory = buildAuth ?? (oidc.default ?? oidc).auth;
                 const { endSessionSupported, issuerBaseUrl, idTokenSigningAlg, metadataAvailable } = await probe();
                 const built = authFactory(buildOAuthConfig(endSessionSupported, issuerBaseUrl, idTokenSigningAlg));
 

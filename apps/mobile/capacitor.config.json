@@ -8,7 +8,7 @@
   },
   "ios": {
     "limitsNavigationsToAppBoundDomains": true,
-    "includePlugins": ["@capacitor/keyboard"]
+    "includePlugins": ["@capacitor/keyboard", "@capacitor/filesystem", "@capacitor/share"]
   },
   "plugins": {
     "Keyboard": {

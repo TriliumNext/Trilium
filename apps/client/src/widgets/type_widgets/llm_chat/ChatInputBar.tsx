@@ -32,17 +32,13 @@ const READ_ONLY_LOCK = "llm-chat-streaming";
 const mentionFeeds: MentionFeed[] = [
     {
         marker: "@",
-        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText),
+        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText, false),
         itemRenderer: (rawItem) => {
             const item = rawItem as Suggestion;
             const itemElement = document.createElement("button");
 
             const iconElement = document.createElement("span");
-            let iconClass = item.icon ?? "bx bx-note";
-            if (item.action === "create-note") {
-                iconClass = "bx bx-plus";
-            }
-            iconElement.className = iconClass;
+            iconElement.className = item.icon ?? "bx bx-note";
 
             itemElement.append(iconElement, document.createTextNode(" "));
             const titleContainer = document.createElement("span");

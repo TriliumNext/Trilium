@@ -1,7 +1,7 @@
 import "./Card.css";
 import { cloneElement, ComponentChildren, createContext, isValidElement } from "preact";
 import { JSX, HTMLAttributes } from "preact";
-import { useContext } from "preact/hooks";
+import { useCallback, useContext, useLayoutEffect, useRef, useState } from "preact/hooks";
 import clsx from "clsx";
 
 import {
@@ -117,6 +117,8 @@ export interface CardSectionProps {
      * as any of them is (see {@link FilterRole}).
      */
     filterRole?: FilterRole;
+    /** Hands back the element the section is drawn as, for a caller that reads what it holds. */
+    elementRef?: (element: HTMLElement | null) => void;
 }
 
 interface CardSectionContextType {
@@ -139,6 +141,7 @@ export function CardSection(props: {children: ComponentChildren} & CardSectionPr
     return <>
         {props.href
             ? <a className={clsx(className, "tn-card-section-link", "no-tooltip-preview")}
+                 ref={props.elementRef}
                  style={style}
                  href={props.href}
                  data-no-contained-navigation={props.noContainedNavigation ? "" : undefined}
@@ -147,6 +150,7 @@ export function CardSection(props: {children: ComponentChildren} & CardSectionPr
                 <span className="tn-card-section-chevron" />
             </a>
             : <section className={className}
+                       ref={props.elementRef}
                        style={style}
                        onClick={props.onAction}>
                 {props.children}
@@ -205,11 +209,24 @@ export function OptionCardSection(props: OptionCardSectionProps) {
     const filtering = useIsFiltering();
     const id = useUniqueName(name);
     const bound = !!name && isValidElement(children);
+    const row = useRef<HTMLElement | null>(null);
+    const keepRow = useCallback((element: HTMLElement | null) => { row.current = element; }, []);
+    const [ wide, setWide ] = useState(false);
+
+    // Whether the control is one of the wide ones, which stack under the label on a narrow card.
+    // Read off the row rather than matched by a `:has()` rule: Chrome restyles the whole document
+    // on every structural change anywhere in it for as long as such a rule is loaded.
+    useLayoutEffect(() => {
+        const element = row.current;
+        setWide(!!element && !holdsSmallControl(element));
+    });
 
     if (!matched && !subSections) return null;
 
-    return <CardSection className={clsx("tn-card-option", className, {
-                            "tn-card-option-stacked": stacked
+    return <CardSection elementRef={keepRow}
+                        className={clsx("tn-card-option", className, {
+                            "tn-card-option-stacked": stacked,
+                            "tn-card-option-wide": wide
                         })}
                         // Kept for its details rather than itself, which is what a companion is.
                         filterRole={filtering ? (matched ? "match" : "companion") : undefined}
@@ -227,6 +244,26 @@ export function OptionCardSection(props: OptionCardSectionProps) {
 
         {bound ? cloneElement(children, { id }) : children}
     </CardSection>;
+}
+
+/**
+ * Controls small enough to stay beside their label on a narrow card.
+ *
+ * A switch moved below its label would cost a whole row and break the line the labels are read
+ * down. A bare figure is small enough to stay; one carrying a unit beside it is not. A chevron is
+ * no control at all but the mark of a row that leads somewhere, and keeps its place at every width.
+ */
+const SMALL_CONTROLS = ".switch-widget, .icon-action, .tn-card-option-actions, select, .dropdown,"
+    + " .tn-card-section-chevron, input[type=\"number\"]";
+
+function holdsSmallControl(element: HTMLElement) {
+    for (const child of element.children) {
+        if (child.matches(SMALL_CONTROLS)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // #endregion

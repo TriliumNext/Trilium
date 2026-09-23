@@ -2,7 +2,7 @@ import { trimIndentation } from "@triliumnext/commons";
 import { sanitize, utils } from "@triliumnext/core";
 import ejs from "ejs";
 import { parse } from "node-html-parser";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
 import { getContent, getDefaultTemplatePath, readTemplate, renderCode, renderNoteContent, type Result, shouldSyntaxHighlight } from "./content_renderer.js";
@@ -10,16 +10,14 @@ import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
 import shareRoot from "./share_root.js";
 
-describe("content_renderer", () => {
-    beforeAll(() => {
-        vi.mock("../becca/becca_loader.js", () => ({
-            default: {
-                load: vi.fn(),
-                loaded: Promise.resolve()
-            }
-        }));
-    });
+vi.mock("../becca/becca_loader.js", () => ({
+    default: {
+        load: vi.fn(),
+        loaded: Promise.resolve()
+    }
+}));
 
+describe("content_renderer", () => {
     it("Reports protected notes not being renderable", () => {
         const note = buildShareNote({ isProtected: true });
         const result = getContent(note);
@@ -346,6 +344,17 @@ describe("content_renderer", () => {
                 expect(content).toStrictEqual("<p>Foo</p>");
             });
 
+            it("does not treat an external URL's query string as a note ID", () => {
+                const target = buildShareNote({ id: "extIdTarget1", title: "Target" });
+                const href = `https://example.com/${target.noteId}?x=1`;
+                const note = buildShareNote({
+                    id: "note",
+                    content: `<p><a class="reference-link" href="${href}">text</a></p>`
+                });
+                const result = getContent(note);
+                expect(result.content).toStrictEqual("<p>text</p>");
+            });
+
             it("properly escapes note title", () => {
                 buildShareNote({
                     id: "MSkxxCFbBsYP",
@@ -367,6 +376,53 @@ describe("content_renderer", () => {
                         <a class="reference-link type-text" href="./MSkxxCFbBsYP"><span><span class="tn-icon bx bx-note"></span>The quick &lt;strong&gt;brown&lt;/strong&gt; fox</span></a>
                     </p>
                 `);
+            });
+
+            it("keeps a reference link whose target has a shareAlias or shareExternalLink", () => {
+                buildShareNote({ id: "aliasTarget01", title: "Linux", "#shareAlias": "linux" });
+                buildShareNote({
+                    id: "extTarget0001",
+                    title: "Ext",
+                    "#shareExternalLink": "https://example.com/some/page"
+                });
+                const note = buildShareNote({
+                    id: "note",
+                    content: trimIndentation`\
+                        <p>
+                            <a class="reference-link" href="#root/zaIItd4TM5Ly/aliasTarget01">
+                                Old title
+                            </a>
+                            <a class="reference-link" href="#root/extTarget0001?viewMode=source">
+                                Old
+                            </a>
+                        </p>
+                    `
+                });
+                const result = getContent(note);
+                const links = parse(String(result.content)).querySelectorAll("a.reference-link");
+                expect(links).toHaveLength(2);
+
+                const [ aliasLink, externalLink ] = links;
+                expect(aliasLink.getAttribute("href")).toBe("./linux");
+                expect(aliasLink.classList.contains("type-text")).toBe(true);
+                expect(aliasLink.querySelector("span.tn-icon")).not.toBeNull();
+                expect(aliasLink.text).toBe("Linux");
+
+                expect(externalLink.getAttribute("href")).toBe("https://example.com/some/page");
+                expect(externalLink.getAttribute("target")).toBe("_blank");
+                expect(externalLink.getAttribute("rel")).toBe("noopener noreferrer");
+                expect(externalLink.text).toBe("Ext");
+            });
+
+            it("replaces a reference link to a missing attachment with its text", () => {
+                buildShareNote({ id: "attachOwner01", title: "Owner" });
+                const href = "#root/attachOwner01?viewMode=attachments&amp;attachmentId=missing01";
+                const note = buildShareNote({
+                    id: "note",
+                    content: `<p><a class="reference-link" href="${href}">clip.mp4</a></p>`
+                });
+                const result = getContent(note);
+                expect(result.content).toStrictEqual("<p>clip.mp4</p>");
             });
         });
     });
@@ -524,16 +580,29 @@ describe("content_renderer", () => {
             }
         });
 
-        it("renders nothing for a source URL a frame has no business loading", () => {
-            // A web view frames a website, and the setup form only ever writes an absolute URL.
-            // Anything else reaches the label by another route — a hand-edited attribute, an
-            // import, ETAPI, a sync — and either cannot be framed at all or would frame this very
-            // server, which the sandbox's allow-same-origin would then not isolate from the page
-            // doing the framing.
+        it("loads a source rooted at the site serving the page, unchanged", () => {
+            // The user guide points its API reference pages at the Redoc and TypeDoc output the
+            // docs build writes beside them, which is only ever reachable as a rooted path.
             for (const src of [
-                "/relative/path",
+                "/rest-api/etapi/",
+                "/script-api/frontend/interfaces/FNote.html"
+            ]) {
+                expect(renderWebViewNote(src).frame?.getAttribute("src")).toBe(src);
+            }
+        });
+
+        it("renders nothing for a source URL a frame has no business loading", () => {
+            // A web view frames a website or a page of this site, and the setup form only ever
+            // writes an absolute URL. Anything else reaches the label by another route — a
+            // hand-edited attribute, an import, ETAPI, a sync — and either cannot be framed at all
+            // or leaves the site while looking rooted at it: the URL parser folds a backslash, and
+            // strips a tab, into the second slash that starts an authority.
+            for (const src of [
                 "//example.com/protocol-relative",
+                "/\\example.com/backslash",
+                "/\t/example.com",
                 "./a",
+                "relative/path",
                 "mailto:a@b.com",
                 "ftp://example.com/file",
                 "javascript:alert(1)",
@@ -659,6 +728,56 @@ describe("content_renderer", () => {
             expect(Object.keys(internal?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
         });
 
+        it("links to the first non-empty value of either external link label", () => {
+            const documented = renderTreeItemAnchor({
+                "id": "external2",
+                "#shareExternalLink": "https://example.com/page"
+            });
+            const bothLabels = renderTreeItemAnchor({
+                "id": "external3",
+                "#shareExternal": "",
+                "#shareExternalLink": "https://example.com/page"
+            });
+
+            for (const anchor of [ documented, bothLabels ]) {
+                expect(anchor?.getAttribute("href")).toBe("https://example.com/page");
+                expect(anchor?.getAttribute("target")).toBe("_blank");
+                expect(anchor?.getAttribute("rel")).toBe("noopener noreferrer");
+                expect(Object.keys(anchor?.attributes ?? {}).sort())
+                    .toEqual([ "class", "href", "rel", "target" ]);
+            }
+
+            const noUrl = renderTreeItemAnchor({ "id": "external4", "#shareExternal": "" });
+
+            expect(noUrl?.getAttribute("href")).toBe("./external4");
+            expect(Object.keys(noUrl?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
+
+            const twoUrls = renderTreeItemAnchor({
+                "id": "external5",
+                "#shareExternal": "https://example.com/legacy",
+                "#shareExternalLink": "https://example.com/documented"
+            });
+
+            expect(twoUrls?.getAttribute("href")).toBe("https://example.com/documented");
+
+            const whitespaceWithLegacy = renderTreeItemAnchor({
+                "id": "external6",
+                "#shareExternal": "https://example.com/legacy2",
+                "#shareExternalLink": "   "
+            });
+
+            expect(whitespaceWithLegacy?.getAttribute("href")).toBe("https://example.com/legacy2");
+
+            const whitespaceOnly = renderTreeItemAnchor({
+                "id": "external7",
+                "#shareExternalLink": "   "
+            });
+
+            expect(whitespaceOnly?.getAttribute("href")).toBe("./external7");
+            expect(Object.keys(whitespaceOnly?.attributes ?? {}).sort())
+                .toEqual([ "class", "href" ]);
+        });
+
         function renderTreeItemAnchor(noteDef: Parameters<typeof buildShareNote>[0]) {
             const note = buildShareNote(noteDef);
             const subRootNote = buildShareNote({ id: `subRoot-${noteDef.id}` });
@@ -687,10 +806,37 @@ describe("content_renderer", () => {
                         "title": "External",
                         "#shareExternal": "https://example.com/page"
                     },
-                    { id: "pageInternal", title: "Internal" }
+                    {
+                        "id": "pageBothLabels",
+                        "title": "Both labels",
+                        "#shareExternal": "",
+                        "#shareExternalLink": "https://example.com/other"
+                    },
+                    { id: "pageInternal", title: "Internal" },
+                    {
+                        "id": "pageTwoUrls",
+                        "title": "Two URLs",
+                        "#shareExternal": "https://example.com/legacy",
+                        "#shareExternalLink": "https://example.com/documented"
+                    },
+                    {
+                        "id": "pageWhitespaceWithLegacy",
+                        "title": "Whitespace with legacy",
+                        "#shareExternal": "https://example.com/legacy2",
+                        "#shareExternalLink": "   "
+                    },
+                    {
+                        "id": "pageWhitespaceOnly",
+                        "title": "Whitespace only",
+                        "#shareExternalLink": "   "
+                    }
                 ]
             });
             const anchors = renderPageAnchors("pageParent");
+
+            const bothLabels = anchors.find((a) => a.textContent === "Both labels");
+            expect(bothLabels?.getAttribute("href")).toBe("https://example.com/other");
+            expect(bothLabels?.getAttribute("target")).toBe("_blank");
 
             const external = anchors.find((a) => a.textContent === "External");
             expect(external?.getAttribute("href")).toBe("https://example.com/page");
@@ -702,6 +848,18 @@ describe("content_renderer", () => {
             const internal = anchors.find((a) => a.textContent === "Internal");
             expect(internal?.getAttribute("href")).toBe("./pageInternal");
             expect(Object.keys(internal?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
+
+            const twoUrls = anchors.find((a) => a.textContent === "Two URLs");
+            expect(twoUrls?.getAttribute("href")).toBe("https://example.com/documented");
+
+            const whitespaceWithLegacy = anchors
+                .find((a) => a.textContent === "Whitespace with legacy");
+            expect(whitespaceWithLegacy?.getAttribute("href")).toBe("https://example.com/legacy2");
+
+            const whitespaceOnly = anchors.find((a) => a.textContent === "Whitespace only");
+            expect(whitespaceOnly?.getAttribute("href")).toBe("./pageWhitespaceOnly");
+            expect(Object.keys(whitespaceOnly?.attributes ?? {}).sort())
+                .toEqual([ "class", "href" ]);
         });
 
         function renderPageAnchors(noteId: string) {

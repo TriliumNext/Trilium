@@ -8,6 +8,7 @@ import { type CSSProperties,useEffect, useMemo, useRef, useState } from "preact/
 import { CommandNames } from "../../components/app_context";
 import { handleRightToLeftPlacement, isMobile, openInAppHelpFromUrl } from "../../services/utils";
 import FormToggle from "./FormToggle";
+import HelpTooltipButton from "./HelpTooltipButton";
 import { useStaticTooltip, useSyncedRef } from "./hooks";
 import Icon from "./Icon";
 
@@ -167,10 +168,14 @@ export function FormListItem({ className, icon, iconClassName, value, title, act
     );
 }
 
-export function FormListToggleableItem({ title, currentValue, onChange, disabled, helpPage, ...props }: Omit<FormListItemOpts, "onClick" | "children"> & {
+export function FormListToggleableItem({
+    title, currentValue, onChange, disabled, helpPage, helpTooltip, ...props
+}: Omit<FormListItemOpts, "onClick" | "children"> & {
     title: string;
     currentValue: boolean;
     helpPage?: string;
+    /** What the setting does, shown on hover. Unlike {@link helpPage}, it opens nothing. */
+    helpTooltip?: string;
     onChange(newValue: boolean): void | Promise<void>;
 }) {
     const isWaiting = useRef(false);
@@ -203,6 +208,7 @@ export function FormListToggleableItem({ title, currentValue, onChange, disabled
                             onClick={() => openInAppHelpFromUrl(helpPage)}
                         />
                     )}
+                    {helpTooltip && <HelpTooltipButton description={helpTooltip} />}
                     <span class="switch-spacer" />
                 </>}
             />

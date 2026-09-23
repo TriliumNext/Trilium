@@ -10,7 +10,9 @@ import { t } from "../../services/i18n.js";
 import keyboard_actions from "../../services/keyboard_actions.js";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display.js";
 import { collectShortcutHints } from "../../services/shortcut_hints.js";
-import OverlayControlGroup, { OverlayControlButton } from "../react/OverlayControlGroup.js";
+import OverlayControlGroup, {
+    OverlayControlButton, type OverlayPlacement
+} from "../react/OverlayControlGroup.js";
 import { ParentComponent } from "../react/react_utils.js";
 
 /**
@@ -18,11 +20,16 @@ import { ParentComponent } from "../react/react_utils.js";
  * this when the widget has no existing overlay controls. To add the button to an *existing*
  * {@link OverlayControlGroup}, use the {@link ShortcutHintOverlayButton} named export instead.
  */
-export default function ShortcutHintButton({ className }: { className?: string }) {
+export default function ShortcutHintButton(
+    { className, placement = "top-end" }: { className?: string; placement?: OverlayPlacement }
+) {
     return (
-        // Standing at the head of what it is put over, its tooltip opens downwards of its own accord,
-        // away from that edge (see `placement` on OverlayControlGroup).
-        <OverlayControlGroup className={clsx("shortcut-hint-button-group", className)} placement="top-end">
+        // The group opens its tooltips away from the edge it is pinned to, of its own accord (see
+        // `placement` on OverlayControlGroup).
+        <OverlayControlGroup
+            className={clsx("shortcut-hint-button-group", className)}
+            placement={placement}
+        >
             <ShortcutHintOverlayButton />
         </OverlayControlGroup>
     );

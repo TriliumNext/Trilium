@@ -15,11 +15,11 @@ Note that this feature is meant for generally small snippets of code. For larger
 
 ## Exiting out of the code block
 
-*   To exit out of a code block and enter a normal paragraph, move the cursor at the end of the code block and press <kbd>Enter</kbd> twice.
-*   Similarly, to insert a paragraph above the note block, move the cursor at the beginning of the code block and press <kbd>Enter</kbd> twice.
+*   To exit out of a code block and enter a normal paragraph, move the cursor at the end of the code block and press Enter twice.
+*   Similarly, to insert a paragraph above the note block, move the cursor at the beginning of the code block and press Enter twice.
 
 > [!NOTE]
-> If you've pasted a code block with a more complex HTML structure, exiting out of the code block by pressing <kbd>Enter</kbd> multiple times might not work. In that case the best approach is to delete the code block entirely and use <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd> (paste as plain text).
+> If you've pasted a code block with a more complex HTML structure, exiting out of the code block by pressing Enter multiple times might not work. In that case the best approach is to delete the code block entirely and use Ctrl+Shift+V (paste as plain text).
 
 ## Syntax highlighting & color schemes
 
@@ -32,7 +32,7 @@ Interaction:
 
 Note that when editing a text note, syntax highlighting is automatically disabled if the code block is too big (somewhere around 500 lines). This value is currently not configurable. For <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, this limitation is not applied.
 
-In order to configure this new feature, a section has been added in Options → Appearance to control the syntax highlighting. There the color scheme can be chosen, from a builtin selection of themes from Highlight.js.
+In order to configure this new feature, a section has been added in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ to control the syntax highlighting. There the color scheme can be chosen, from a builtin selection of themes from Highlight.js.
 
 *   It is possible to disable the syntax highlighting for all the notes by selecting “No syntax highlighting” in the “Color scheme” option.
 *   Word wrapping is disabled by default, but can be configured from the same section.
@@ -63,3 +63,11 @@ The code blocks feature shares the list of languages with the <a class="referen
 The supported languages can be adjusted by going to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>, then _Code Notes_ and looking for the _Available MIME types in the dropdown_ section. Simply check any of the items to add them to the list, or uncheck them to remove them from the list.
 
 Note that the list of languages is not immediately refreshed, you'd have to manually [refresh the application](../../../Troubleshooting/Refreshing%20the%20application.md).
+
+## Text replacements and ligatures
+
+<a class="reference-link" href="../Automatic%20replacements.md">Automatic replacements</a> are a feature of text notes which converts some character sequences into another and some of them interfere with programming text, such as the conversion of quotes. While in a code block, the automatic replacements **are not effect**. The only way the automatic replacements can interfere is if the text is typed/pasted before being put in a code block.
+
+A different feature is _programming ligatures_, which is simply a display affordance which turns `!=` into `≠` or `->` as `→` . These come from the [font](../../../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md). The underlying text is not actually changed, and copying it out gives you back `!=` and `->`.
+
+Ligatures can be disabled in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>_→ Appearance → Fonts → Programming ligatures._

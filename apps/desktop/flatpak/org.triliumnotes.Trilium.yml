@@ -1,0 +1,85 @@
+app-id: org.triliumnotes.Trilium
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '25.08'
+sdk-extensions:
+  # Provides node on PATH at build time only; nothing of it ships in the app.
+  - org.freedesktop.Sdk.Extension.node24
+command: trilium
+# Electron carries its own locale files
+separate-locales: false
+
+finish-args:
+  # Wayland first, X11 only where Wayland is unavailable.
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  # GPU acceleration for the Chromium renderer.
+  - --device=dri
+  # Audio playback (attached media, notification sounds).
+  - --socket=pulseaudio
+  # Sync with self-hosted servers and fetching remote content in notes.
+  - --share=network
+  # Allow drag & drop from common dirs. Otherwise drag to import would fail due
+  # to unreachable files. See https://github.com/electron/electron/issues/30650
+  - --filesystem=xdg-download:ro
+  - --filesystem=xdg-documents:ro
+  - --filesystem=xdg-pictures:ro
+  - --filesystem=xdg-videos:ro
+  # Tray icon.
+  - --talk-name=org.kde.StatusNotifierWatcher
+
+modules:
+  - name: trilium
+    buildsystem: simple
+    build-options:
+      # pnpm first because apps/desktop/scripts/build.ts needs `pnpm build`.
+      append-path: /run/build/trilium/flatpak-node/pnpm:/usr/lib/sdk/node24/bin
+      env:
+        XDG_CACHE_HOME: /run/build/trilium/flatpak-node/cache
+    build-commands:
+      - pnpm install --offline --frozen-lockfile --reporter=append-only
+
+      - pnpm chore:update-build-info --from-commit
+      - pnpm desktop:build
+
+      - install -d /app/lib/trilium
+      - cp -a apps/desktop/dist/. /app/lib/trilium/
+
+      # Electron downloads its binary lazily on first use, which an offline sandbox cannot allow.
+      # Unpack the cached zip instead.
+      - unzip -q flatpak-node/cache/electron/electron-v*-linux-*.zip -d /app/lib/electron
+      - mv /app/lib/electron/electron /app/lib/electron/trilium
+      - rm /app/lib/electron/chrome-sandbox
+
+      - pnpm exec tsx apps/desktop/electron-forge/flip-fuses.ts /app/lib/electron/trilium
+      - pnpm exec tsx apps/desktop/electron-forge/trim-locales.ts /app/lib/electron/locales
+
+      - install -Dm755 trilium.sh /app/bin/trilium
+      - install -Dm644 apps/desktop/flatpak/${FLATPAK_ID}.desktop /app/share/applications/${FLATPAK_ID}.desktop
+      - install -Dm644 apps/desktop/flatpak/${FLATPAK_ID}.metainfo.xml /app/share/metainfo/${FLATPAK_ID}.metainfo.xml
+      - for s in 128 256 512; do install -Dm644 "apps/desktop/electron-forge/app-icon/png/${s}x${s}.png"
+        "/app/share/icons/hicolor/${s}x${s}/apps/${FLATPAK_ID}.png"; done
+    sources:
+      - type: git
+        url: https://github.com/TriliumNext/Trilium.git
+        tag: __TAG__
+        commit: __COMMIT__
+      - generated-sources.json
+      # pnpm 12 ships as a native binary per platform; the wrapper package's
+      # postinstall, which an offline sandbox cannot run, is what would pick one.
+      - type: archive
+        url: https://registry.npmjs.org/@pnpm/exe.linux-x64/-/exe.linux-x64-__PNPM_VERSION__.tgz
+        sha256: __PNPM_SHA256_X64__
+        dest: flatpak-node/pnpm
+        only-arches: [x86_64]
+      - type: archive
+        url: https://registry.npmjs.org/@pnpm/exe.linux-arm64/-/exe.linux-arm64-__PNPM_VERSION__.tgz
+        sha256: __PNPM_SHA256_ARM64__
+        dest: flatpak-node/pnpm
+        only-arches: [aarch64]
+      # The launch wrapper stays a repo file, reviewable without opening the checkout.
+      - type: file
+        path: trilium.sh

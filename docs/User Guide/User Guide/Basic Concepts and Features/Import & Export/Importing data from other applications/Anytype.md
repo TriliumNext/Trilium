@@ -81,19 +81,19 @@ The following types are supported:
     <tbody>
         <tr>
             <td>Text / Select</td>
-            <td>Single-valued <code spellcheck="false">text</code> label</td>
+            <td>Single-valued <code>text</code> label</td>
         </tr>
         <tr>
             <td>Number</td>
-            <td>Single-valued <code spellcheck="false">number</code> label</td>
+            <td>Single-valued <code>number</code> label</td>
         </tr>
         <tr>
             <td>Multi-select</td>
-            <td>One <code spellcheck="false">text</code> label per option (multi)</td>
+            <td>One <code>text</code> label per option (multi)</td>
         </tr>
         <tr>
             <td>Date / Date with time</td>
-            <td><ul><li><code spellcheck="false">datetime</code> if the time is included.</li><li><code spellcheck="false">date</code> if only dates.</li></ul></td>
+            <td><ul><li><code>datetime</code> if the time is included.</li><li><code>date</code> if only dates.</li></ul></td>
         </tr>
         <tr>
             <td>File</td>
@@ -101,11 +101,11 @@ The following types are supported:
         </tr>
         <tr>
             <td>Checkbox</td>
-            <td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/<code spellcheck="false">false</code>).</td>
+            <td><code>boolean</code> label (<code>true</code>/<code>false</code>).</td>
         </tr>
         <tr>
             <td>URL / Email / Phone</td>
-            <td><code spellcheck="false">url</code> label (<code spellcheck="false">mailto:</code>, <code spellcheck="false">tel:</code> prefix)</td>
+            <td><code>url</code> label (<code>mailto:</code>, <code>tel:</code> prefix)</td>
         </tr>
     </tbody>
 </table>

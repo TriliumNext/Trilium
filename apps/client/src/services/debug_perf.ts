@@ -237,7 +237,7 @@ function report() {
 interface CensusComponent {
     children: CensusComponent[];
     /** Handlers registered by `useTriliumEvent`. Private on the component, hence the local shape. */
-    listeners: Record<string, unknown[]> | null;
+    listeners: Record<string, Set<unknown>> | null;
 }
 
 let previousCensus = new Map<string, number>();
@@ -273,8 +273,8 @@ function components() {
         count(`class ${component.constructor.name}`, 1);
 
         for (const [ eventName, listeners ] of Object.entries(component.listeners ?? {})) {
-            handlers += listeners.length;
-            count(`event ${eventName}`, listeners.length);
+            handlers += listeners.size;
+            count(`event ${eventName}`, listeners.size);
         }
 
         component.children.forEach(walk);

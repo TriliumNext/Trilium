@@ -22,6 +22,8 @@
 
 Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序，专注于建立大型个人知识库。
 
+在找「Trillium Notes」吗？项目的规范拼写是「Trilium Notes」，只有一个 `l`。
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ 下载

@@ -7,8 +7,12 @@
     "start": "tsx ."
   },
   "keywords": [],
+  "dependencies": {
+    "@triliumnext/commons": "workspace:*"
+  },
   "devDependencies": {
     "@mdi/font": "7.4.47",
-    "@phosphor-icons/web": "2.1.2"
+    "@phosphor-icons/web": "2.1.2",
+    "opentype.js": "2.0.0"
   }
 }

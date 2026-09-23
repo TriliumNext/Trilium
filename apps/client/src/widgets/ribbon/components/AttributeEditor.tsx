@@ -14,6 +14,7 @@ import contextMenu from "../../../menus/context_menu";
 import attribute_parser, { Attribute } from "../../../services/attribute_parser";
 import attribute_renderer from "../../../services/attribute_renderer";
 import attributes, { isBuiltinAttribute } from "../../../services/attributes";
+import dateNoteService from "../../../services/date_notes";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import { ATTRIBUTE_HELP_PAGE } from "../../../services/in_app_help";
@@ -250,14 +251,14 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
 
             $el.text(title);
         },
-        createNoteForReferenceLink: async (title: string) => {
-            let result;
-            if (notePath) {
-                result = await note_create.createNoteWithTypePrompt(notePath, {
-                    activate: false,
-                    title
-                });
-            }
+        createNoteForReferenceLink: async (title: string, intoInbox: boolean) => {
+            const parentNotePath = intoInbox ? await dateNoteService.getInboxNotePath() : notePath;
+            if (!parentNotePath) return;
+
+            const result = await note_create.createNoteWithTypePrompt(parentNotePath, {
+                activate: false,
+                title
+            });
 
             return result?.note?.getBestNotePathString();
         }

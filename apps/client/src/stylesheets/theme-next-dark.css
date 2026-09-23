@@ -140,6 +140,7 @@
     --quick-search-focus-color: white;
     --quick-search-result-content-background: #0000004d;
     --quick-search-result-highlight-color: #a4d995;
+    --quick-search-result-fuzzy-highlight-color: #efb075;
 
     --left-pane-collapsed-border-color: #0009;
     --left-pane-background-color: #1f1f1f;
@@ -191,7 +192,7 @@
 
     --right-pane-heading-color: gray;
     --right-pane-peek-background: #303030dc;
-    
+
     --peek-pane-backdrop-color: #00000032;
     --peek-pane-shadow-color: #000000a8;
 
@@ -221,6 +222,7 @@
 
     --badge-temporaraily-editable-background-color: #297331;
     --badge-read-only-background-color: #af4340;
+    --badge-office-preview-background-color: #3f5470;
     --badge-share-background-color: #4d4d4d;
     --badge-snippet-background-color: #4d4d4d;
     --badge-clipped-note-background-color: #295773;
@@ -288,6 +290,17 @@
     --log-error-line-background-color: #d44b4b1f;
     --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
 
+    /* Search query syntax (the search string of a saved search) */
+    --search-label-color: #79b8ff;
+    --search-relation-color: #c2a8ff;
+    --search-negation-color: #ff6b6b;
+    --search-property-color: #5bc4b1;
+    --search-keyword-color: #ff7eb6;
+    --search-operator-color: #9aa4b0;
+    --search-string-color: #8fd48f;
+    --search-literal-color: #e0a85c;
+    --search-bracket-color: #8a94a0;
+
     --card-background-color: #ffffff12;
     --card-background-hover-color: #ffffff20;
     --card-border-color: transparent;
@@ -342,6 +355,7 @@
     --note-list-view-large-icon-color: var(--note-icon-color);
     --note-list-view-search-result-highlight-background: transparent;
     --note-list-view-search-result-highlight-color: var(--quick-search-result-highlight-color);
+    --note-list-view-search-result-fuzzy-highlight-color: var(--quick-search-result-fuzzy-highlight-color);
     --note-list-view-content-background: rgba(0, 0, 0, .2);
     --note-list-view-content-search-result-highlight-background: var(--quick-search-result-highlight-color);
     --note-list-view-content-search-result-highlight-color: black;
@@ -395,6 +409,34 @@
 
     --space-usage-donut-hover-saturation: 90%;
     --space-usage-donut-hover-lightness: 80%;
+
+    --board-limit-exceeded-background: #e57373;
+    --board-limit-exceeded-outline: #e5737380;
+    --board-column-background: #3b3b3b;
+    --board-column-background-saturation: 14%;
+    --board-column-background-lightness: 23%;
+
+    --board-item-background-saturation: 21%;
+    --board-item-background-lightness: 32%;
+
+    --board-item-hover-background-saturation: 25%;
+    --board-item-hover-background-lightness: 35%;
+
+    --board-drop-hint-background-saturation: 20%;
+    --board-drop-hint-background-lightness: 45%;
+    --board-drop-hint-color: #ffffffc9;
+
+    --board-text-saturation: 25%;
+    --board-text-lightness: 80%;
+    --board-muted-text-saturation: 18%;
+    --board-muted-text-lightness: 73%;
+    --board-column-header-text-saturation: 67%;
+    --board-column-header-text-lightness: 81%;
+    --board-column-header-muted-text-saturation: 18%;
+    --board-column-header-muted-text-lightness: 73%;
+
+    --board-focus-outline-saturation: 60%;
+    --board-focus-outline-lightness: 70%;
 
     --space-usage-donut-selected-saturation: 90%;
     --space-usage-donut-selected-lightness: 80%;
@@ -467,7 +509,8 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 .geo-detail-sheet.with-hue,
 .nested-note-list-item.with-hue,
 .note-book-card.with-hue .note-book-header,
-.ck-template-icon.with-hue {
+.ck-template-icon.with-hue,
+.board-column h3 {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 15.8%, 30.9%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 100%, 76.5%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 28.3%, 36.7%);

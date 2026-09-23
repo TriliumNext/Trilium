@@ -10,10 +10,10 @@ afterEach(() => {
 
 describe("focus service", () => {
     it("does nothing (no focus change) when nothing was focused at save time", () => {
-        // saveFocusedElement() always assigns a jQuery object: $(":focus") is an *empty* wrapped
-        // set when nothing is focused (never null). So the early-return at the top of
-        // focusSavedElement() is NOT hit here; execution falls through to .hasClass("ck") (false)
-        // then .focus() on the empty set, which is a harmless no-op.
+        // saveFocusedElement() always assigns a jQuery object: $(":focus") is never null, only an
+        // empty wrapped set (or, under happy-dom, the <body> itself). So the early-return at the
+        // top of focusSavedElement() is NOT hit here; execution falls through to .hasClass("ck")
+        // (false) and then to a focus() that changes nothing.
         const $body = $(document.body);
         ($body[0] as HTMLElement).focus();
         // happy-dom keeps focus on <body> by default; record the active element to prove it is unchanged.
@@ -21,11 +21,7 @@ describe("focus service", () => {
 
         saveFocusedElement();
 
-        // Spy on jQuery's focus to prove no real element receives focus via the empty-set branch.
-        const focusProtoSpy = vi.spyOn($.fn, "focus");
         expect(() => focusSavedElement()).not.toThrow();
-        // .focus() is invoked on the empty wrapped set (harmless), but the active element is unchanged.
-        expect(focusProtoSpy).toHaveBeenCalledTimes(1);
         expect(document.activeElement).toBe(before);
     });
 
@@ -63,8 +59,12 @@ describe("focus service", () => {
         ($other[0] as HTMLInputElement).focus();
         expect(document.activeElement).toBe($other[0]);
 
+        // The element is focused natively and without scrolling: the user has not moved, so the
+        // page must not move either.
+        const focusSpy = vi.spyOn(el, "focus");
         focusSavedElement();
         expect(document.activeElement).toBe(el);
+        expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
 
         // After restoring, the saved element is cleared -> calling again is a no-op.
         ($other[0] as HTMLInputElement).focus();

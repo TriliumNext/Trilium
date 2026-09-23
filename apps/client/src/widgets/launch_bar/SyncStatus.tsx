@@ -8,7 +8,7 @@ import { t } from "../../services/i18n";
 import sync from "../../services/sync";
 import { escapeQuotes } from "../../services/utils";
 import ws, { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
-import { useStaticTooltip, useTriliumOption } from "../react/hooks";
+import { useStaticTooltip, useTriliumOption, useTriliumOptionBool } from "../react/hooks";
 import { launcherContextMenuHandler, LauncherNoteProps } from "./launch_bar_widgets";
 
 type SyncState = "unknown" | "in-progress"
@@ -54,13 +54,23 @@ export default function SyncStatus({ launcherNote }: LauncherNoteProps) {
     const syncState = useSyncStatus();
     const { title, icon, hasChanges } = STATE_MAPPINGS[syncState];
     const spanRef = useRef<HTMLSpanElement>(null);
-    const [ syncServerHost ] = useTriliumOption("syncServerHost");
+    const [ storedSyncServerHost ] = useTriliumOption("syncServerHost");
+    const [ effectiveSyncServerHost ] = useTriliumOption("effectiveSyncServerHost");
+    const [ isSyncServerHostOverridden ] = useTriliumOptionBool("syncServerHostOverridden");
+
     useStaticTooltip(spanRef, {
         html: true,
         title: escapeQuotes(title)
     });
 
-    return (syncServerHost &&
+    // config.ini and environment variables hold still for the life of the process, so only the
+    // stored option can change while the app runs. Reading it directly makes the button appear as
+    // soon as sync is configured, without waiting for a reload.
+    const showSyncStatus = isSyncServerHostOverridden
+        ? !!effectiveSyncServerHost
+        : !!storedSyncServerHost && storedSyncServerHost !== "disabled";
+
+    return (showSyncStatus &&
         <div
             class="sync-status-widget launcher-button"
             onContextMenu={launcherContextMenuHandler(launcherNote)}

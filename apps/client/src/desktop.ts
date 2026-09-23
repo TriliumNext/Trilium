@@ -4,6 +4,7 @@ import type { ElectronWindowApi } from "@triliumnext/commons";
 
 import appContext, { type CommandNames } from "./components/app_context.js";
 import electronContextMenu from "./menus/electron_context_menu.js";
+import { setupContextMenu as setupBrowserContextMenu } from "./menus/note_context_menu.js";
 import bundleService from "./services/bundle.js";
 import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
 import glob from "./services/glob.js";
@@ -11,7 +12,7 @@ import { t } from "./services/i18n.js";
 import { syncNativeWindowWithTheme } from "./services/native_window.js";
 import noteAutocompleteService from "./services/note_autocomplete.js";
 import noteTooltipService from "./services/note_tooltip.js";
-import { setBackgroundEffectsSuspended } from "./services/theme.js";
+import { onEffectiveThemeStyleChange, setBackgroundEffectsSuspended } from "./services/theme.js";
 import toastService from "./services/toast.js";
 import utils from "./services/utils.js";
 import { preloadCommonNoteTypes } from "./widgets/note_types.js";
@@ -59,6 +60,8 @@ setupClipboardImageEmbed();
 
 if (utils.isElectron()) {
     electronContextMenu.setupContextMenu();
+} else {
+    setupBrowserContextMenu();
 }
 
 function initOnElectron() {
@@ -77,7 +80,7 @@ function initOnElectron() {
 
     // With an "auto" theme the effective colors of background effects and the native title bar
     // follow the OS color scheme.
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncNativeWindowWithTheme);
+    onEffectiveThemeStyleChange(() => syncNativeWindowWithTheme());
 
     // Clear navigation history on frontend refresh.
     api.navigation.clearNavigationHistory();

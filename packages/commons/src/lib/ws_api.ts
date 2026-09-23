@@ -77,8 +77,11 @@ export type TaskResult<T extends TaskType> = TaskResultDefinitions[T];
  * "throttled" is a transient state rather than a pipeline stage: the task is alive but deliberately
  * waiting out an external service's rate limiting (e.g. the OneNote importer under Graph throttling),
  * so the count will not move for a while and the client should say why instead of looking hung.
+ *
+ * "erasing" is the same kind of state for a permanent delete: `eraseNotesWithDeleteIds` runs bulk
+ * SQL with nothing to count per item, so the client drops the bar and says what is happening.
  */
-export type ProgressPhase = "extracting" | "processing" | "throttled";
+export type ProgressPhase = "extracting" | "processing" | "throttled" | "erasing";
 
 type TaskDefinition<T extends TaskType> = {
     type: "taskProgressCount",

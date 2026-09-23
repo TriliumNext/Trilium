@@ -215,14 +215,19 @@ export class CoreApiTester {
     private registerAll() {
         const apiRoute = (method: HttpMethod, path: string, handler: Handler) =>
             this.add(method, path, async (req) => {
-                const result = await getContext().init(() =>
-                    getSql().transactional(() => handler(req)));
+                const result = await getContext().init(() => {
+                    seedContext(req);
+                    return getSql().transactional(() => handler(req));
+                });
                 return formatApiResult(result);
             });
 
         const asyncApiRoute = (method: HttpMethod, path: string, handler: Handler) =>
             this.add(method, path, async (req) => {
-                const result = await getContext().init(async () => await handler(req));
+                const result = await getContext().init(async () => {
+                    seedContext(req);
+                    return await handler(req);
+                });
                 return formatApiResult(result);
             });
 
@@ -238,8 +243,14 @@ export class CoreApiTester {
                     const mockRes = createMockResponse();
                     const invoke = () => handler(req, mockRes);
                     const result = transactional
-                        ? await getContext().init(() => getSql().transactional(invoke))
-                        : await getContext().init(async () => await invoke());
+                        ? await getContext().init(() => {
+                            seedContext(req);
+                            return getSql().transactional(invoke);
+                        })
+                        : await getContext().init(async () => {
+                            seedContext(req);
+                            return await invoke();
+                        });
 
                     if (mockRes.used) {
                         return mockRes.snapshot();
@@ -362,4 +373,16 @@ export class CoreApiTester {
         return this.request<T>("delete", path, opts);
     }
 
+}
+
+/**
+ * Seeds the execution context from the `trilium-*` request headers, the way both real adapters do
+ * (`route_api.ts` on Express, `browser_routes.ts` in standalone). Routes that read the hoisted note
+ * through `cls.getHoistedNoteId()` need this to see anything other than "root".
+ */
+function seedContext(req: ApiRequest) {
+    const ctx = getContext();
+    ctx.set("componentId", req.get("trilium-component-id"));
+    ctx.set("localNowDateTime", req.get("trilium-local-now-datetime"));
+    ctx.set("hoistedNoteId", req.get("trilium-hoisted-note-id") || "root");
 }

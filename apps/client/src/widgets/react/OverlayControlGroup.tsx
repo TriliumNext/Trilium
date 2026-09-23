@@ -9,10 +9,10 @@ import type { ActionButtonProps } from "./ActionButton";
 import { useStaticTooltip } from "./hooks";
 
 /**
- * Where a group stands over what it is put on: which edge of it, and where along that edge. Every
- * group over the app's content stands at one of these six.
+ * Where a group stands over what it is put on: which edge of it, and where along that edge. A group
+ * pinned to a side edge stands at the middle of it, which is where a vertical rail goes.
  */
-export type OverlayPlacement = `${"top" | "bottom"}-${"start" | "center" | "end"}`;
+export type OverlayPlacement = `${"top" | "bottom"}-${"start" | "center" | "end"}` | `middle-${"start" | "end"}`;
 
 interface OverlayControlGroupProps {
     /**
@@ -31,6 +31,11 @@ interface OverlayControlGroupProps {
      * group is pinned to — and is only worth passing for a group placed by hand.
      */
     titlePosition?: ActionButtonProps["titlePosition"];
+    /**
+     * Stacks the buttons into a column instead of a row, for a rail down one side of the content.
+     * The rounding of the two ends follows the column, and the tooltips open sideways.
+     */
+    vertical?: boolean;
     /**
      * Keeps a press on the group from reaching what it stands on, for a group over a canvas that is
      * dragged: a map would otherwise take a press on a button for the start of a drag.
@@ -55,14 +60,15 @@ interface OverlayControlGroupProps {
  * is a bar of separate buttons on a pane of glass, and it brings its own surface with it. This is a
  * single chip with no gaps, and it is what the app's zoom and navigation controls are built from.
  */
-export default function OverlayControlGroup({ placement, className, titlePosition, overCanvas, children }: OverlayControlGroupProps) {
+export default function OverlayControlGroup({ placement, className, titlePosition, vertical, overCanvas, children }: OverlayControlGroupProps) {
     return (
         <div
             className={clsx("tn-overlay-control-group", className)}
             data-placement={placement}
+            data-orientation={vertical ? "vertical" : undefined}
             onMouseDown={overCanvas ? (e) => e.stopPropagation() : undefined}
         >
-            <TooltipDirection.Provider value={titlePosition ?? tooltipDirectionFor(placement)}>
+            <TooltipDirection.Provider value={titlePosition ?? tooltipDirectionFor(placement, vertical)}>
                 {children}
             </TooltipDirection.Provider>
         </div>
@@ -71,10 +77,15 @@ export default function OverlayControlGroup({ placement, className, titlePositio
 
 /**
  * Which way a group's tooltips open, given where it stands: away from the edge it is pinned to, so
- * that a group at the head of the content does not open its tooltips off the top of it. A group
- * placed by hand is taken to stand at the foot, which is where all but one of them do.
+ * that a group at the head of the content does not open its tooltips off the top of it. A vertical
+ * group is pinned to a side edge, so its tooltips open sideways instead. A group placed by hand is
+ * taken to stand at the foot, which is where all but one of them do.
  */
-function tooltipDirectionFor(placement: OverlayPlacement | undefined): ActionButtonProps["titlePosition"] {
+function tooltipDirectionFor(placement: OverlayPlacement | undefined, vertical: boolean | undefined): ActionButtonProps["titlePosition"] {
+    if (vertical) {
+        return placement?.endsWith("-end") ? "left" : "right";
+    }
+
     return placement?.startsWith("top-") ? "bottom" : "top";
 }
 
@@ -161,6 +172,56 @@ export function OverlayFullscreenButton({ isFullscreen, onToggle }: OverlayFulls
             icon={isFullscreen ? "bx-exit-fullscreen" : "bx-fullscreen"}
             onClick={() => onToggle()}
         />
+    );
+}
+
+interface ZoomControlsProps {
+    /**
+     * The scale to show between the two steps, as a percentage. What 100% means is the caller's
+     * choice: native resolution in `ImageViewer`, the fitted view in `SvgSplitEditor`, natural size
+     * in the mind map. Omit it to render the two steps with no readout, as the geo map does — a
+     * MapLibre zoom level means nothing as a percentage.
+     */
+    percent?: number;
+    /** Disables the matching step. Pass `false` once the scale has reached a bound. */
+    canZoomIn?: boolean;
+    canZoomOut?: boolean;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+    /** Runs when the readout is clicked, so it is only needed alongside `percent`. */
+    onReset?: () => void;
+}
+
+/**
+ * Renders the three zoom controls — out, the readout, in — for an {@link OverlayControlGroup} to
+ * hold.
+ *
+ * Buttons rather than a group of their own, because the geo map and mind map toolbars put them in
+ * one group beside a tilt, a recenter and a fullscreen button.
+ */
+export function ZoomControls({ percent, canZoomIn = true, canZoomOut = true, onZoomIn, onZoomOut, onReset }: ZoomControlsProps) {
+    return (
+        <>
+            <OverlayControlButton
+                title={t("zoom_controls.zoom_out")}
+                icon="bx-minus-circle"
+                disabled={!canZoomOut}
+                onClick={onZoomOut}
+            />
+            {percent !== undefined && (
+                <OverlayControlButton
+                    title={t("zoom_controls.reset")}
+                    text={`${Math.round(percent)}%`}
+                    onClick={onReset}
+                />
+            )}
+            <OverlayControlButton
+                title={t("zoom_controls.zoom_in")}
+                icon="bx-plus-circle"
+                disabled={!canZoomIn}
+                onClick={onZoomIn}
+            />
+        </>
     );
 }
 

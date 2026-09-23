@@ -1,21 +1,24 @@
 # Environment Setup
+## Node.js
+
+Use the Node.js version pinned in `.nvmrc` at the root of the repository. With [nvm](https://github.com/nvm-sh/nvm), `nvm install` run inside the repository installs and activates it.
+
 ## Setting up `pnpm`
 
-Trilium uses the `pnpm` package manager in order to better manage its mono-repo structure. Unlike `npm` which comes by default with Node.js, `pnpm` needs to be manually activated.
+Trilium uses the `pnpm` package manager in order to better manage its mono-repo structure. Unlike `npm` which comes by default with Node.js, `pnpm` needs to be installed separately. The expected version is the `packageManager` field of the root `package.json`; a newer release of the same major works too, since `pmOnFail: ignore` in `pnpm-workspace.yaml` tolerates the difference.
 
-For most systems this can be achieved via `corepack`:
-
-```
-corepack enable
-```
-
-After that, run `pnpm` in a new terminal to see if it is working. On Windows, if you get:
+Install it with `npm`:
 
 ```
-pnpm : The term 'pnpm' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+npm install -g pnpm
 ```
 
-The solution is to run `corepack enable` in a Terminal with administrative rights.
+pnpm 12 is a native executable that its install script links into place, so the command needs lifecycle scripts allowed (npm's default). Under a version manager such as nvm, a global package belongs to one Node.js version, so run the command again after switching to another one. The [standalone installer](https://pnpm.io/installation) is an alternative that does not depend on the Node.js version.
+
+After that, run `pnpm` in a new terminal to see if it is working.
+
+> [!WARNING]
+> `corepack enable` is no longer the recommended way to obtain `pnpm`. Only Corepack 0.34.5 or newer (bundled from Node.js 24.12 on) can start the native pnpm 12, and Node.js 25 no longer ships Corepack at all. An older Corepack fails with `Cannot find module '…/corepack/v1/pnpm/12.x.y/bin/pnpm.cjs'`, and the `~/.cache/node/corepack/v1/pnpm/12.x.y` directory it wrote makes a newer Corepack fail the same way, so delete that directory too.
 
 As a quick heads-up of some differences when compared to `npm`:
 

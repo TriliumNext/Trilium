@@ -1,6 +1,6 @@
 
 
-import type { Response } from "express";
+import type { Response } from "../../http_interface";
 import html from "html";
 import mimeTypes from "mime-types";
 

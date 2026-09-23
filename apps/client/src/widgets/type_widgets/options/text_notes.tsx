@@ -27,6 +27,7 @@ import RadioWithIllustration from "./components/RadioWithIllustration";
 import RelatedSettings from "./components/RelatedSettings";
 import ThemeModeSelector from "./components/ThemeModeSelector";
 import { HighlightsListOptions } from "./highlights_list_options";
+import HelpButton from "../../react/HelpButton";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
@@ -82,7 +83,8 @@ function ToolbarStyle() {
     const [ textNoteEditorType, setTextNoteEditorType ] = useTriliumOption("textNoteEditorType");
 
     return (
-        <Card className="thumbnail-selector-option-card" heading={t("editing.editor_type.toolbar_style")}>
+        <Card className="thumbnail-selector-option-card" heading={t("editing.editor_type.toolbar_style")}
+            actions={<HelpButton helpPage="nRhnJkTT8cPs" />}>
             <CardSection>
                 <RadioWithIllustration
                     currentValue={textNoteEditorType}
@@ -233,6 +235,7 @@ function AutomaticReplacements() {
         <Card className="text-notes-replacements"
             heading={t("automatic_replacements.title")}
             description={t("automatic_replacements.description")}
+            actions={<HelpButton helpPage="oI7GoyilXXAr" />}
         >
             <OptionCardSection
                 name="double-quote-style"

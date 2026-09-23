@@ -80,7 +80,7 @@
         "table_title": "テーブル",
         "table_description": "ノートに関する情報を表形式で表示・編集できます。テキスト、数値、チェックボックス、日時、リンク、色など、様々な列タイプに対応し、リレーションもサポートしています。オプションで、ノートを表内のツリー階層に表示することもできます。",
         "board_title": "カンバンボード",
-        "board_description": "新しい項目や列を簡単に作成し、ボード上でドラッグするだけでステータスを変更できるカンバン ボードで、タスクやプロジェクトのステータスを整理できます。",
+        "board_description": "新しいアイテムや列を簡単に作成し、ボード上でドラッグするだけでステータスを変更できるカンバン ボードで、タスクやプロジェクトのステータスを整理できます。",
         "geomap_title": "ジオマップ",
         "geomap_description": "カスタマイズ可能なマーカーを使って、休暇を計画したり、興味のある場所を地図上に直接マークしたりできます。記録されたGPXトラックを表示して、旅程を追跡できます。",
         "title": "あらゆる視点からノートを確認できます",
@@ -186,7 +186,7 @@
     "download_helper_desktop_macos": {
         "title_x64": "Intel 向け macOS",
         "title_arm64": "Apple Silicon 向け macOS",
-        "description_x64": "macOS Monterey 以降を実行している Intel ベースの Mac 向け。",
+        "description_x64": "macOS Ventura 以降を搭載した Intel ベースの Mac 向け。",
         "description_arm64": "M1 および M2 チップを搭載した Apple Silicon Mac 向け。",
         "quick_start": "Homebrew 経由でインストールするには:",
         "download_dmg": "インストーラーをダウンロード (.dmg)",
@@ -221,7 +221,7 @@
     "resources": {
         "title": "リソース",
         "icon_packs": "アイコンパック",
-        "icon_packs_intro": "アイコンパックを使用すると、ノートで使用できるアイコンの選択肢が広がります。アイコンパックの詳細については、<DocumentationLink>公式ドキュメント</DocumentationLink>をご覧ください。",
+        "icon_packs_intro": "アイコンパックを使用すると、ノートで使用できるアイコンの選択肢が広がります。アイコンパックの詳細については、 <DocumentationLink>公式ドキュメント</DocumentationLink> をご覧ください。",
         "download": "ダウンロード",
         "website": "Webサイト"
     },

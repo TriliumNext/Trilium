@@ -9,7 +9,7 @@
  * (which carries the saving component's id) is misclassified as a foreign change. The
  * hidden widget then refetches the whole blob after every save and publishes
  * `contentLoad: "loading"` to the shared note context, which makes the note-detail
- * loading overlay cover the visible editor — the content "disappears and reappears"
+ * loading overlay cover the visible editor, so the content "disappears and reappears"
  * while typing.
  *
  * These tests assert the *correct* behavior, so they are red while the bug exists and
@@ -134,7 +134,7 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         // save carries the shared parent component's id.
         await harness.fireContentChange(harness.parent.componentId);
 
-        // The change originated here — refetching the whole blob is pure waste...
+        // The change originated here, so refetching the whole blob is pure waste...
         expect(harness.getBlobSpy).toHaveBeenCalledTimes(1);
         // ...and publishing "loading" makes the note-detail overlay cover the editor mid-typing.
         expect(harness.contentLoadStates).toEqual([]);
@@ -174,6 +174,65 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         // ...and re-locks the note: the read-only view must not show stale content.
         await harness.mount(true);
         expect(harness.getBlobSpy).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe("ReadOnlyText ?bookmark= handling", () => {
+    let cleanupContainer: HTMLElement | undefined;
+
+    afterEach(() => {
+        if (cleanupContainer) {
+            render(null, cleanupContainer);
+            cleanupContainer.remove();
+            cleanupContainer = undefined;
+        }
+    });
+
+    it("keeps the bookmark until the content renders, then expands the collapsible and consumes it", async () => {
+        Element.prototype.scrollIntoView = vi.fn();
+        const note = buildNote({
+            title: "Collapsible note",
+            type: "text",
+            content:
+                `<details class="trilium-collapsible"><summary>Hidden</summary>` +
+                `<p><a id="deep-anchor"></a>target</p></details>`
+        });
+        const parent = new Component();
+        const noteContext = new NoteContext("bm-ntx");
+        noteContext.viewScope = { bookmark: "deep-anchor" };
+
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+        cleanupContainer = container;
+
+        // First act cycle only: the blob resolves on a microtask after the first effect flush
+        // (see setupHarness.mount), so this mounts with the content still loading.
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <ReadOnlyText
+                        note={note}
+                        noteContext={noteContext}
+                        ntxId={noteContext.ntxId}
+                        parentComponent={parent}
+                        viewScope={noteContext.viewScope}
+                        isVisible={true}
+                    />
+                </ParentComponent.Provider>,
+                container
+            );
+        });
+
+        // The mount effect ran against an empty container, so it must not consume the bookmark
+        // yet, or the post-load pass has nothing left to reveal.
+        expect(noteContext.viewScope?.bookmark).toBe("deep-anchor");
+
+        // Second act cycle: the blob lands, the content commits, and the [blob] effect fires.
+        await act(async () => {});
+
+        const details = container.querySelector("details");
+        expect(details?.open).toBe(true);
+        expect(noteContext.viewScope?.bookmark).toBeUndefined();
     });
 });
 
